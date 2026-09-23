@@ -256,8 +256,8 @@ class QueryNodeConverter : public QueryVisitor {
     void visit(StringRangeTerm& node) override {
         createTermNode(node, ParseItem::ITEM_STRING_RANGE_TERM);
         const auto& range = node.getTerm();
-        bool        left_unbounded = !range || range->left_unbounded;
-        bool        right_unbounded = !range || range->right_unbounded;
+        bool        left_unbounded = !range || !range->left;
+        bool        right_unbounded = !range || !range->right;
         bool        left_closed = !range || range->left_closed;
         bool        right_closed = !range || range->right_closed;
         uint8_t     flags = 0;
@@ -275,10 +275,10 @@ class QueryNodeConverter : public QueryVisitor {
         }
         appendByte(flags);
         if (!left_unbounded) { // This implies that we have a value
-            appendString(range->left);
+            appendString(*range->left);
         }
         if (!right_unbounded) { // This implies that we have a value
-            appendString(range->right);
+            appendString(*range->right);
         }
         appendCompressedNumber(range.has_value() ? range->range_limit : 0);
     }

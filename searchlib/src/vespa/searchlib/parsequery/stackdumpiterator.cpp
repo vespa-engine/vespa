@@ -293,15 +293,13 @@ void SimpleQueryStackDumpIterator::read_numeric_in(const char*& p) {
 void SimpleQueryStackDumpIterator::read_string_range_term(const char*& p) {
     uint8_t flags = read_value<uint8_t>(p);
     auto    spec = std::make_unique<StringRangeSpec>();
-    spec->left_unbounded = (flags & ParseItem::SRT_LEFT_UNBOUNDED) != 0;
-    spec->right_unbounded = (flags & ParseItem::SRT_RIGHT_UNBOUNDED) != 0;
     spec->left_closed = (flags & ParseItem::SRT_LEFT_CLOSED) != 0;
     spec->right_closed = (flags & ParseItem::SRT_RIGHT_CLOSED) != 0;
-    if (!spec->left_unbounded) {
-        spec->left = std::string(read_string_view(p));
+    if ((flags & ParseItem::SRT_LEFT_UNBOUNDED) == 0) {
+        spec->left = std::make_optional(read_string_view(p));
     }
-    if (!spec->right_unbounded) {
-        spec->right = std::string(read_string_view(p));
+    if ((flags & ParseItem::SRT_RIGHT_UNBOUNDED) == 0) {
+        spec->right = std::make_optional(read_string_view(p));
     }
     spec->range_limit = static_cast<int32_t>(readCompressedInt(p));
     _d.string_range_spec = std::move(spec);

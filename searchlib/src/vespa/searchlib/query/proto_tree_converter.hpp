@@ -424,10 +424,11 @@ public:
 
     bool handle(const ItemStringRangeTerm& item) {
         auto                           d = fillTermProperties(item.properties());
-        std::optional<StringRangeSpec> range(std::in_place, item.lower_limit(), item.lower_inclusive(),
-                                             !item.has_lower_limit(), item.upper_limit(), item.upper_inclusive(),
-                                             !item.has_upper_limit(),
-                                             item.range_limit()); // range_limit() defaults to 0 if not present
+        std::optional<StringRangeSpec> range(
+            std::in_place, item.has_lower_limit() ? std::make_optional(item.lower_limit()) : std::nullopt,
+            item.lower_inclusive(), item.has_upper_limit() ? std::make_optional(item.upper_limit()) : std::nullopt,
+            item.upper_inclusive(),
+            item.range_limit()); // range_limit() defaults to 0 if not present
         auto& term = _builder.add_string_range_term(range, d.index_view, d.uniqueId, d.weight);
         if (d.noRankFlag) {
             term.setRanked(false);

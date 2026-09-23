@@ -355,11 +355,11 @@ private:
         }
         auto* item = _item_stack.back()->mutable_item_string_range_term();
         copyTermState(node, item->mutable_properties());
-        if (!range->left_unbounded) {
-            item->set_lower_limit(range->left);
+        if (range->left) {
+            item->set_lower_limit(*range->left);
         }
-        if (!range->right_unbounded) {
-            item->set_upper_limit(range->right);
+        if (range->right) {
+            item->set_upper_limit(*range->right);
         }
         item->set_lower_inclusive(range->left_closed);
         item->set_upper_inclusive(range->right_closed);
