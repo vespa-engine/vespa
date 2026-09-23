@@ -94,16 +94,37 @@ public class TritonOnnxClient implements AutoCloseable {
     public static class ModelMetadata {
         public final Map<String, TensorType> inputs;
         public final Map<String, TensorType> outputs;
+        // Triton metadata of each input, keyed by both its ONNX name and the Vespa identifier derived from it.
         // Only used by `evaluate` inside the client, thus `private`.
-        private final List<GrpcService.ModelMetadataResponse.TensorMetadata> tritonInputs;
+        private final Map<String, GrpcService.ModelMetadataResponse.TensorMetadata> tritonInputs;
 
         private ModelMetadata(
                 Map<String, TensorType> inputs,
                 Map<String, TensorType> outputs,
-                List<GrpcService.ModelMetadataResponse.TensorMetadata> tritonInputs) {
+                Map<String, GrpcService.ModelMetadataResponse.TensorMetadata> tritonInputs) {
             this.inputs = Collections.unmodifiableMap(inputs);
             this.outputs = Collections.unmodifiableMap(outputs);
-            this.tritonInputs = Collections.unmodifiableList(tritonInputs);
+            this.tritonInputs = Collections.unmodifiableMap(tritonInputs);
+        }
+
+        static ModelMetadata of(
+                List<GrpcService.ModelMetadataResponse.TensorMetadata> inputs,
+                List<GrpcService.ModelMetadataResponse.TensorMetadata> outputs) {
+            Map<String, GrpcService.ModelMetadataResponse.TensorMetadata> tritonInputs = new HashMap<>();
+            for (var input : inputs) {
+                tritonInputs.put(input.getName(), input);
+                tritonInputs.put(OnnxImporter.asValidIdentifier(input.getName()), input);
+            }
+            return new ModelMetadata(toTensorTypes(inputs), toTensorTypes(outputs), tritonInputs);
+        }
+
+        /** Returns the Triton metadata of the input with the given ONNX name or Vespa identifier. */
+        GrpcService.ModelMetadataResponse.TensorMetadata findInput(String name) {
+            var input = tritonInputs.get(name);
+            if (input == null) {
+                throw new TritonException("No matching input type found for " + name);
+            }
+            return input;
         }
     }
 
@@ -112,9 +133,7 @@ public class TritonOnnxClient implements AutoCloseable {
                 GrpcService.ModelMetadataRequest.newBuilder().setName(modelName).build();
         var response = invokeGrpc(grpcInferenceStub.withDeadlineAfter(defaultTimeout),
                 s -> s.modelMetadata(request), "Failed to get model metadata");
-        var inputs = toTensorTypes(response.getInputsList());
-        var outputs = toTensorTypes(response.getOutputsList());
-        return new ModelMetadata(inputs, outputs, response.getInputsList());
+        return ModelMetadata.of(response.getInputsList(), response.getOutputsList());
     }
 
     public boolean isModelReady(String modelName) {
@@ -319,7 +338,7 @@ public class TritonOnnxClient implements AutoCloseable {
 
         var requestBuilder = GrpcService.ModelInferRequest.newBuilder().setModelName(modelName);
 
-        inputs.forEach((name, tensor) -> addInputToBuilder(modelMetadata.tritonInputs, requestBuilder, tensor, name));
+        inputs.forEach((name, tensor) -> addInputToBuilder(modelMetadata, requestBuilder, tensor, name));
 
         // Returns all output if none is specified
         outputNames.forEach(
@@ -359,14 +378,14 @@ public class TritonOnnxClient implements AutoCloseable {
     }
 
     private static void addInputToBuilder(
-            List<GrpcService.ModelMetadataResponse.TensorMetadata> onnxInputTypes,
+            ModelMetadata modelMetadata,
             GrpcService.ModelInferRequest.Builder builder,
             Tensor vespaTensor,
             String vespaName) {
         if (!(vespaTensor instanceof IndexedTensor indexedTensor)) {
             throw new TritonException("Nvidia Triton currently only supports tensors with indexed dimensions");
         }
-        var onnxInput = findMatchingInput(onnxInputTypes, vespaName);
+        var onnxInput = modelMetadata.findInput(vespaName);
         var inputBuilder = GrpcService.ModelInferRequest.InferInputTensor.newBuilder()
                 .setName(onnxInput.getName())
                 .setDatatype(onnxInput.getDatatype());
@@ -375,17 +394,6 @@ public class TritonOnnxClient implements AutoCloseable {
         }
         builder.addInputs(inputBuilder.build());
         builder.addRawInputContents(createRawInputContent(onnxInput, indexedTensor));
-    }
-
-    private static GrpcService.ModelMetadataResponse.TensorMetadata findMatchingInput(
-            List<GrpcService.ModelMetadataResponse.TensorMetadata> onnxInputTypes, String vespaName) {
-        for (var inputType : onnxInputTypes) {
-            if (inputType.getName().equals(vespaName)) return inputType;
-        }
-        for (var inputType : onnxInputTypes) {
-            if (OnnxImporter.asValidIdentifier(inputType.getName()).equals(vespaName)) return inputType;
-        }
-        throw new TritonException("No matching input type found for " + vespaName);
     }
 
     private static ByteString createRawInputContent(
