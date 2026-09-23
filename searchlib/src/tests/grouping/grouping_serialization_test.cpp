@@ -11,7 +11,9 @@
 #include <vespa/searchlib/expression/geo_distance_function_node.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/getymumchecksumfunctionnode.h>
+#include <vespa/searchlib/expression/in_predicate_node.h>
 #include <vespa/searchlib/expression/position_document_field_node.h>
+#include <vespa/searchlib/expression/regex_predicate_node.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
@@ -319,6 +321,18 @@ TEST(GroupingSerializationTest, testGroupingLevel) {
                       .setMaxGroups(100)
                       .setExpression(createDummyExpression())
                       .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression())));
+}
+
+TEST(GroupingSerializationTest, testFilterExpression) {
+    Fixture f("testFilterExpression");
+    f.checkObject(RegexPredicateNode("^foo.*", MU<AttributeNode>("attributeA")));
+    f.checkObject(RegexPredicateNode("^foo.*", ExpressionNode::UP()));
+    f.checkObject(InPredicateNode(MU<AttributeNode>("attributeA"), {"foo", "bar"}));
+    {
+        char tmp[7] = {(char)0xe5, (char)0xa6, (char)0x82, (char)0xe6, (char)0x9e, (char)0x9c, 0};
+        f.checkObject(InPredicateNode(MU<AttributeNode>("attributeA"), {tmp}));
+    }
+    f.checkObject(InPredicateNode(ExpressionNode::UP(), {"foo"}));
 }
 
 TEST(GroupingSerializationTest, testGroup) {
