@@ -71,6 +71,9 @@ struct AttributesStateExplorerTest : public ::testing::Test {
     void add_bool_attribute(const std::string& name) {
         _mgr->addAttribute({name, AttributeUtils::get_bool_config()}, 1);
     }
+    void add_quantized_tensor_attribute(const std::string& name) {
+        _mgr->addAttribute({name, AttributeUtils::get_quantized_tensor_config()}, 1);
+    }
     void add_fast_search_attribute(const std::string& name, DictionaryConfig::Type dictionary_type) {
         search::attribute::Config cfg = AttributeUtils::getInt32Config();
         cfg.setFastSearch(true);
@@ -178,6 +181,18 @@ TEST_F(AttributesStateExplorerTest, require_that_bool_attribute_shows_bitvector)
     auto slime = explore_attribute("bool");
     EXPECT_EQ(0, slime[bitvector]["true_bits"].asLong());
     EXPECT_EQ(1, slime[bitvector]["size"].asLong());
+}
+
+TEST_F(AttributesStateExplorerTest, quantized_tensor_attribute_shows_unquantized_type_and_quantization_params) {
+    add_quantized_tensor_attribute("my_tensor");
+    auto slime = explore_attribute("my_tensor");
+    auto& cfg = slime["config"];
+    ASSERT_TRUE(cfg.valid()) << slime.toString();
+    EXPECT_EQ(cfg["unquantized_type"].asString(), "tensor(x{},y[128])");
+    auto& q = cfg["quantization"];
+    ASSERT_TRUE(q.valid()) << slime.toString();
+    EXPECT_EQ(q["bits"].asLong(), 4);
+    EXPECT_EQ(q["mode"].asString(), "MSE");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
