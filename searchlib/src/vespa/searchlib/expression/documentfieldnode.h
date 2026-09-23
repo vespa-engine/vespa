@@ -11,6 +11,9 @@
 
 namespace search::expression {
 
+/**
+ * Represents the default value used in DocumentFieldNode.
+ */
 class DefaultValue final : public ResultNode {
 public:
     DECLARE_EXPRESSIONNODE(DefaultValue);
