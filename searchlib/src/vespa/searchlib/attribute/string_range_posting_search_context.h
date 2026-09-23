@@ -20,11 +20,8 @@ private:
 
     const StringRangeSpec* _range_spec;
 
-    // Note: Steps iterator one or more steps when not using dictionary entry
-    bool use_dictionary_entry(PostingListSearchContext::DictionaryConstIterator& it) const override;
-    // Note: Uses copy of dictionary iterator to avoid stepping original.
     bool use_single_dictionary_entry(PostingListSearchContext::DictionaryConstIterator it) const {
-        return use_dictionary_entry(it);
+        return this->match(_enumStore.get_value(it.getKey().load_acquire()));
     }
     bool use_posting_lists_when_non_strict(const ExecuteInfo& info) const override;
 

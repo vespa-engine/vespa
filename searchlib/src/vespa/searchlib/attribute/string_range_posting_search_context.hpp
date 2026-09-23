@@ -44,15 +44,7 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
         // effect on both sides of the range: the boundary entry drops out of the walk.
         //
         // With that narrowing, [_lowerDictItr, _upperDictItr> should hold exactly the matching
-        // entries, which would make the match() call in use_dictionary_entry() below redundant -
-        // it runs a folded compare per unique value in the range, in both
-        // calc_estimated_hits_in_range() and fill_array_or_bitvector(). It is kept for now
-        // because the narrowing compares with the enum store's folded comparator (derived from
-        // the dictionary config) while match() compares with StringRangeSearchHelper (derived
-        // from the attribute's match config), and those are separate config fields. Whether they
-        // can actually disagree - and hence whether the filtering is needed at all - needs
-        // further investigation; if they cannot, drop the use_dictionary_entry() override and
-        // let the base implementation accept every entry in the range.
+        // entries.
         auto make_lower = [this] {
             const char* value = _range_spec->left->c_str();
             return _range_spec->left_closed ? _enumStore.string_lookup_comparator(value)
@@ -84,23 +76,13 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
                     _enumStore.get_data_store()));
         }
         if (this->_uniqueValues == 1u) {
-            if (!this->_lowerDictItr.valid() || use_single_dictionary_entry(this->_lowerDictItr)) {
+            if (this->_lowerDictItr.valid() && use_single_dictionary_entry(this->_lowerDictItr)) {
                 this->lookupSingle();
             } else {
                 this->_uniqueValues = 0;
             }
         }
     }
-}
-
-template <typename BaseSC, typename AttrT, typename DataT>
-bool StringRangePostingSearchContext<BaseSC, AttrT, DataT>::use_dictionary_entry(
-    PostingListSearchContext::DictionaryConstIterator& it) const {
-    if (this->match(_enumStore.get_value(it.getKey().load_acquire()))) {
-        return true;
-    }
-    ++it;
-    return false;
 }
 
 template <typename BaseSC, typename AttrT, typename DataT>
