@@ -218,13 +218,13 @@ void PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType
 template <typename P, typename LoadedVector, typename LoadedValueType, typename EnumStoreType>
 void PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::updatePostings(
     PostingMap& changePost) {
-    updatePostings(changePost, _es.get_folded_comparator());
+    updatePostings(changePost, _es.get_lookup_source());
 }
 
 template <typename P, typename LoadedVector, typename LoadedValueType, typename EnumStoreType>
 void PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::clearPostings(
     attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid, uint32_t toLid) {
-    clearPostings(eidx, fromLid, toLid, _es.get_folded_comparator());
+    clearPostings(eidx, fromLid, toLid, _es.get_lookup_source());
 }
 
 template class PostingListAttributeBase<AttributePosting>;

@@ -53,10 +53,26 @@ public:
     using EntryComparator = vespalib::datastore::EntryComparator;
 
 private:
+    using ParentDataStore = UniqueStoreType::DataStoreType;
+    static ComparatorType make_normal_enum_store_comparator(const ParentDataStore& data_store) {
+        if constexpr (has_string_type) {
+            return ComparatorType(data_store, false);
+        } else {
+            return ComparatorType(data_store);
+        }
+    }
+    static ComparatorType make_cased_enum_store_comparator(const ParentDataStore& data_store) {
+        if constexpr (has_string_type) {
+            return ComparatorType(data_store, true);
+        } else {
+            return ComparatorType(data_store);
+        }
+    }
+
+    bool                               _match_uncased;
     UniqueStoreType                    _store;
     IEnumStoreDictionary*              _dict;
-    bool                               _is_folded;
-    ComparatorType                     _foldedComparator;
+    ComparatorType                     _lookup_source;
     enumstore::EnumStoreCompactionSpec _compaction_spec;
     EntryType                          _default_value;
     AtomicIndex                        _default_value_ref;
@@ -70,8 +86,15 @@ private:
     ssize_t load_unique_values_internal(const void* src, size_t available, IndexVector& idx);
     ssize_t load_unique_value(const void* src, size_t available, Index& idx);
 
-    std::unique_ptr<EntryComparator> allocate_optionally_folded_comparator(bool folded) const;
-    ComparatorType make_optionally_folded_comparator(bool folded) const;
+    ComparatorType make_optionally_folded_comparator() const {
+        if constexpr (has_string_type) {
+            if (use_folding()) {
+                return _store.get_comparator().make_folded();
+            }
+        }
+        return _store.get_comparator();
+    }
+    std::unique_ptr<EntryComparator> optionally_allocate_folded_comparator() const;
 
 public:
     EnumStoreT(const EnumStoreT& rhs) = delete;
@@ -88,7 +111,7 @@ public:
     void set_ref_count(Index idx, uint32_t ref_count) override { get_entry_base(idx).set_ref_count(ref_count); }
 
     uint32_t get_num_uniques() const override { return _dict->get_num_uniques(); }
-    bool is_folded() const { return _is_folded; }
+    bool use_folding() const { return has_string_type && _match_uncased; }
 
     vespalib::MemoryUsage get_values_memory_usage() const override {
         return _store.get_allocator().get_data_store().getMemoryUsage();
@@ -170,7 +193,7 @@ public:
         return _store.get_comparator().make_for_lookup(lookup_value);
     }
 
-    const EntryComparator& get_folded_comparator() const { return _foldedComparator; }
+    const EntryComparator& get_lookup_source() const { return _lookup_source; }
 
     void write_value(BufferWriter& writer, Index idx) const override;
     bool is_folded_change(Index idx1, Index idx2) const override;
@@ -194,14 +217,14 @@ public:
     std::unique_ptr<EntryComparator> allocate_comparator() const override;
 
     // Methods below are only relevant for strings, and are templated to only be instantiated on demand.
-    template <typename Type> ComparatorType make_folded_comparator(const Type& lookup_value) const {
-        return _foldedComparator.make_for_lookup(lookup_value);
+    template <typename Type> ComparatorType string_lookup_comparator(const Type& lookup_value) const {
+        return _lookup_source.make_for_lookup(lookup_value);
     }
-    template <typename Type> ComparatorType make_folded_comparator_prefix(const Type& lookup_value) const {
-        return _foldedComparator.make_for_prefix_lookup(lookup_value);
+    template <typename Type> ComparatorType prefix_lookup_comparator(const Type& lookup_value) const {
+        return _lookup_source.make_for_prefix_lookup(lookup_value);
     }
     template <typename Type> std::vector<IEnumStore::EnumHandle> find_folded_enums(Type value) const {
-        auto cmp = make_folded_comparator(value);
+        auto cmp = string_lookup_comparator(value);
         return _dict->find_matching_enums(cmp);
     }
     const vespalib::datastore::DataStoreT<IEnumStore::InternalIndex>& get_data_store() const noexcept {
