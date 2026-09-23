@@ -29,7 +29,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
 
     private final EmbeddedOnnxRuntime.ReferencedOrtSession session;
     private final OrtEnvironment ortEnvironment;
-    private final Map<String, NodeInfo> inputInfo;
+    private final TensorConverter.ModelInputs modelInputs;
     private final Map<String, OnnxEvaluator.IdAndType> inputs;
     private final Map<String, OnnxEvaluator.IdAndType> outputs;
     private final Map<String, TensorType> inputTypes;
@@ -42,7 +42,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
         try {
             var inputInfo = session.instance().getInputInfo();
             var outputInfo = session.instance().getOutputInfo();
-            this.inputInfo = Map.copyOf(inputInfo);
+            this.modelInputs = TensorConverter.ModelInputs.of(inputInfo);
             this.inputs = toSpecMap(inputInfo);
             this.outputs = toSpecMap(outputInfo);
             this.inputTypes = TensorConverter.toVespaTypes(inputInfo);
@@ -58,7 +58,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
         Map<String, OnnxTensor> onnxInputs = null;
         try {
             output = mapToInternalName(output);
-            onnxInputs = TensorConverter.toOnnxTensors(inputs, inputInfo, ortEnvironment);
+            onnxInputs = TensorConverter.toOnnxTensors(inputs, modelInputs, ortEnvironment);
             try (OrtSession.Result result = session.instance().run(onnxInputs, Collections.singleton(output))) {
                 return TensorConverter.toVespaTensor(result.get(0));
             }
@@ -76,7 +76,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Duration timeout) {
         Map<String, OnnxTensor> onnxInputs = null;
         try {
-            onnxInputs = TensorConverter.toOnnxTensors(inputs, inputInfo, ortEnvironment);
+            onnxInputs = TensorConverter.toOnnxTensors(inputs, modelInputs, ortEnvironment);
             Map<String, Tensor> outputs = new HashMap<>();
             try (OrtSession.Result result = session.instance().run(onnxInputs)) {
                 for (Map.Entry<String, OnnxValue> output : result) {
