@@ -6,6 +6,7 @@ import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.TokenType;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.OrItem;
@@ -39,15 +40,18 @@ public final class LinguisticsParser extends AbstractParser {
     }
 
     @Override
-    Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
+    Item parse(String text, String filter, Language language,
                IndexFacts.Session indexFacts, String fieldOrFieldSet, Parsable parsable) {
-        setState(parsingLanguage, indexFacts, fieldOrFieldSet);
+        setState(language, indexFacts, fieldOrFieldSet);
         List<FieldProfile> linguisticProfiles = linguisticProfilesForFieldArgument(fieldOrFieldSet, parsable);
         List<FieldTokens> tokensPerField =
-                linguisticProfiles.stream().map(fieldProfile -> new FieldTokens(fieldProfile.fieldOrFieldSet(),
-                                                                                tokenize(queryToParse, fieldProfile.profile(), parsingLanguage).iterator())).toList();
-        var parent = newComposite();
+                linguisticProfiles.stream()
+                                  .map(profile -> FieldTokens.create(profile, text, language, environment))
+                                  .toList();
+        return combineTokensInto(newComposite(), tokensPerField);
+    }
 
+    private Item combineTokensInto(CompositeItem parent, List<FieldTokens> tokensPerField) {
         // Iterate over the tokens of each resulting tokenization in parallel to create an OR item for each token
         for (List<FieldToken> nextTokens = nextTokens(tokensPerField);
              !nextTokens.isEmpty();
@@ -111,17 +115,6 @@ public final class LinguisticsParser extends AbstractParser {
         return List.of(new FieldProfile(fieldOrFieldSet, linguisticsProfileFor(fieldOrFieldSet)));
     }
 
-    private Iterable<com.yahoo.language.process.Token> tokenize(String queryToParse,
-                                                                String profile,
-                                                                Language parsingLanguage) {
-        var parameters = new LinguisticsParameters(profile,
-                                                   parsingLanguage,
-                                                   StemMode.BEST,
-                                                   true,
-                                                   true);
-        return environment.getLinguistics().getTokenizer().tokenize(queryToParse, parameters);
-    }
-
     private Item toItem(com.yahoo.language.process.Token token, String index) {
         TermItem item;
         if (token.getType() == TokenType.NUMERIC) {
@@ -149,7 +142,22 @@ public final class LinguisticsParser extends AbstractParser {
     }
 
     private record FieldProfile(String fieldOrFieldSet, String profile) {}
-    private record FieldTokens(String fieldOrFieldSet, Iterator<com.yahoo.language.process.Token> tokens) {}
+    private record FieldTokens(String fieldOrFieldSet, Iterator<com.yahoo.language.process.Token> tokens) {
+
+        static FieldTokens create(FieldProfile profile, String text, Language language, ParserEnvironment environment) {
+            return new FieldTokens(profile.fieldOrFieldSet(),
+                                   tokenize(text, profile.profile(), language, environment).iterator());
+        }
+
+        private static Iterable<com.yahoo.language.process.Token> tokenize(String queryToParse,
+                                                                           String profile,
+                                                                           Language language,
+                                                                           ParserEnvironment environment) {
+            var parameters = new LinguisticsParameters(profile, language, StemMode.BEST, true, true);
+            return environment.getLinguistics().getTokenizer().tokenize(queryToParse, parameters);
+        }
+
+    }
     private record FieldToken(String fieldOrFieldSet, com.yahoo.language.process.Token token) {}
 
 }
