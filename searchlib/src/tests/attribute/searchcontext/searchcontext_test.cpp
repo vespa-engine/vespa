@@ -154,6 +154,7 @@ protected:
     ConfigMap          _integerCfg;
     ConfigMap          _floatCfg;
     ConfigMap          _stringCfg;
+    ConfigMap          _casedStringCfg;
     static std::string _test_dir;
     static bool        _default_preserve_weight;
 
@@ -250,6 +251,9 @@ protected:
     // test lexical range search
     void test_lexical_range_search(const std::string& name, const Config& cfg);
 
+    // test lexical range search over values that only differ by case
+    void test_mixed_case_lexical_range_search(const std::string& name, const Config& cfg);
+
     // test case insensitive search
     void performCaseInsensitiveSearch(const StringAttribute& vec, const std::string& term, const DocSet& expected);
     void testCaseInsensitiveSearch(const AttributePtr& ptr);
@@ -300,7 +304,7 @@ public:
 std::string SearchContextTest::_test_dir = "test_data";
 bool        SearchContextTest::_default_preserve_weight = false;
 
-SearchContextTest::SearchContextTest() : _integerCfg(), _floatCfg(), _stringCfg() {
+SearchContextTest::SearchContextTest() : _integerCfg(), _floatCfg(), _stringCfg(), _casedStringCfg() {
     initIntegerConfig();
     initFloatConfig();
     initStringConfig();
@@ -1389,6 +1393,107 @@ TEST_F(SearchContextTest, test_lexical_range_search) {
     }
 }
 
+namespace {
+
+std::unique_ptr<QueryTermSimple> make_string_range_query_term(const std::string& left, bool left_closed,
+                                                              bool left_unbounded, const std::string& right,
+                                                              bool right_closed, bool right_unbounded) {
+    return std::make_unique<QueryTermUCS4>(
+        QueryTermSimple::Type::WORD,
+        std::make_unique<StringRangeSpec>(left_unbounded ? std::nullopt : std::optional(left), left_closed,
+                                          right_unbounded ? std::nullopt : std::optional(right), right_closed));
+}
+
+} // namespace
+
+/*
+ * Lexical range search over a dictionary holding several values that only differ by case.
+ *
+ * An open (exclusive) range boundary is resolved against the dictionary with a less-or-equal
+ * comparator, which has to step past *every* dictionary entry that compares equal to the
+ * boundary value - for an uncased attribute that is the whole group of case variants, not just
+ * the entry that happens to be spelled like the boundary. The hex values used by
+ * test_lexical_range_search above are all distinct under both compare strategies, so they never
+ * exercise that stepping, and they never exercise a cased dictionary order either.
+ */
+void SearchContextTest::test_mixed_case_lexical_range_search(const std::string& name, const Config& cfg) {
+    LOG(info, "test_mixed_case_lexical_range_search: vector '%s'", name.c_str());
+    const bool                     cased = (cfg.get_match() == Config::Match::CASED);
+    const std::vector<std::string> values{"BAR", "bar", "Bar", "baz", "FOO", "foo", "zzz"};
+    //                              docid:    1      2      3      4      5      6      7
+    // uncased order: BAR = bar = Bar < baz < FOO = foo < zzz
+    // cased order:   BAR < Bar < FOO < bar < baz < foo < zzz
+
+    AttributeVector::SP attr_ptr = AttributeFactory::createAttribute(name, cfg);
+    auto&               attr = dynamic_cast<StringAttribute&>(*attr_ptr);
+    attr.addReservedDoc();
+    attr.addDocs(values.size());
+    for (uint32_t docid = 1; docid <= values.size(); ++docid) {
+        attr.update(docid, values[docid - 1]);
+    }
+    attr.commit(CommitParam::UpdateStats::FORCE);
+
+    auto expect = [this, &attr](const std::string& left, bool left_closed, bool left_unbounded,
+                                const std::string& right, bool right_closed, bool right_unbounded,
+                                const DocSet& expected) {
+        perform_search(
+            queryeval::ExecuteInfo::FULL, attr,
+            make_string_range_query_term(left, left_closed, left_unbounded, right, right_closed, right_unbounded),
+            expected);
+    };
+
+    if (!cased) {
+        // Both open boundaries have to step past all three of BAR, bar and Bar / both of FOO, foo.
+        expect("bar", false, false, "foo", false, false, {4});
+        expect("bar", true, false, "foo", false, false, {1, 2, 3, 4});
+        expect("bar", false, false, "foo", true, false, {4, 5, 6});
+        expect("bar", true, false, "foo", true, false, {1, 2, 3, 4, 5, 6});
+        // The spelling of the boundary itself must not matter for an uncased attribute.
+        expect("BAR", false, false, "FOO", false, false, {4});
+        expect("Bar", false, false, "Foo", false, false, {4});
+        // Narrows to a single dictionary entry only because the open boundary skips the whole
+        // group of case variants.
+        expect("bar", false, false, "baz", true, false, {4});
+        expect("bar", false, false, "baz", false, false, {});
+        // An open boundary that lands on a group of case variants leaves nothing between them.
+        expect("bar", false, false, "Bar", true, false, {});
+        expect("foo", false, false, "zzz", false, false, {});
+        // Unbounded on one side.
+        expect("", false, true, "bar", false, false, {});
+        expect("", false, true, "bar", true, false, {1, 2, 3});
+        expect("zzz", false, false, "", false, true, {});
+        expect("zzz", true, false, "", false, true, {7});
+        expect("foo", false, false, "", false, true, {7});
+    } else {
+        // Case variants are distinct entries here, so an open boundary steps past exactly one.
+        expect("BAR", false, false, "foo", false, false, {3, 5, 2, 4});
+        expect("BAR", true, false, "foo", false, false, {1, 3, 5, 2, 4});
+        expect("BAR", false, false, "foo", true, false, {3, 5, 2, 4, 6});
+        expect("BAR", true, false, "foo", true, false, {1, 3, 5, 2, 4, 6});
+        // "Bar" and "bar" bracket "FOO" in cased order.
+        expect("Bar", false, false, "bar", false, false, {5});
+        expect("Bar", true, false, "bar", true, false, {3, 5, 2});
+        // A boundary spelled with the wrong case picks out a different range than above.
+        expect("bar", false, false, "baz", true, false, {4});
+        expect("bar", false, false, "baz", false, false, {});
+        // Unbounded on one side.
+        expect("", false, true, "BAR", false, false, {});
+        expect("", false, true, "BAR", true, false, {1});
+        expect("zzz", false, false, "", false, true, {});
+        expect("zzz", true, false, "", false, true, {7});
+        expect("foo", false, false, "", false, true, {7});
+    }
+}
+
+TEST_F(SearchContextTest, test_mixed_case_lexical_range_search) {
+    for (const auto& cfg : _stringCfg) {
+        test_mixed_case_lexical_range_search(cfg.first, cfg.second);
+    }
+    for (const auto& cfg : _casedStringCfg) {
+        test_mixed_case_lexical_range_search(cfg.first, cfg.second);
+    }
+}
+
 //-----------------------------------------------------------------------------
 // Test case insensitive search
 //-----------------------------------------------------------------------------
@@ -2050,6 +2155,14 @@ void SearchContextTest::initStringConfig() {
         Config cfg(BasicType::STRING, CollectionType::WSET);
         cfg.setFastSearch(true);
         _stringCfg["w-fs-str"] = cfg;
+    }
+    // Cased counterparts of the configs above, i.e. matching and the dictionary order
+    // both distinguish case.
+    for (const auto& entry : _stringCfg) {
+        Config cfg(entry.second);
+        cfg.set_match(Config::Match::CASED);
+        cfg.set_dictionary_config(DictionaryConfig(DictionaryConfig::Type::BTREE, DictionaryConfig::Match::CASED));
+        _casedStringCfg[entry.first + "-cased"] = cfg;
     }
 }
 
