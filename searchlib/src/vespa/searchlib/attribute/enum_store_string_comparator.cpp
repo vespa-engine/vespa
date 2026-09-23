@@ -9,49 +9,13 @@ LOG_SETUP(".searchlib.attribute.enum_store_string_comparator");
 
 namespace search {
 
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store,
-                                                     CompareStrategy      compare_strategy) noexcept
-    : ParentType(data_store, nullptr), _compare_strategy(compare_strategy), _prefix(false), _prefix_len(0) {
-}
-
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store,
-                                                     CompareStrategy      compare_strategy,
-                                                     const char*          lookup_value) noexcept
-    : ParentType(data_store, lookup_value), _compare_strategy(compare_strategy), _prefix(false), _prefix_len(0) {
-}
-
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store,
-                                                     CompareStrategy compare_strategy, const char* lookup_value,
-                                                     bool prefix) noexcept
-    : ParentType(data_store, lookup_value), _compare_strategy(compare_strategy), _prefix(prefix), _prefix_len(0) {
-    if (use_prefix()) {
-        _prefix_len = FoldedStringCompare::size(lookup_value);
-    }
-}
-
 bool EnumStoreStringComparator::less(vespalib::datastore::EntryRef lhs,
                                      vespalib::datastore::EntryRef rhs) const noexcept {
-    if (use_prefix()) [[unlikely]] {
-        switch (_compare_strategy) {
-        case CompareStrategy::CASED:
-            return (FoldedStringCompare::compareFoldedPrefix<false, false>(get(lhs), get(rhs), _prefix_len) < 0);
-        case CompareStrategy::UNCASED_THEN_CASED:
-            LOG_ABORT("Cannot do prefix lookup in UNCASED_THEN_CASED mode");
-        case CompareStrategy::UNCASED:
-        default:
-            return (FoldedStringCompare::compareFoldedPrefix<true, true>(get(lhs), get(rhs), _prefix_len) < 0);
-        }
-    } else {
-        switch (_compare_strategy) {
-        case CompareStrategy::UNCASED:
-            return (FoldedStringCompare::compareFolded<true, true>(get(lhs), get(rhs)) < 0);
-        case CompareStrategy::CASED:
-            return (FoldedStringCompare::compareFolded<false, false>(get(lhs), get(rhs)) < 0);
-        case CompareStrategy::UNCASED_THEN_CASED:
-        default:
-            return (FoldedStringCompare::compare(get(lhs), get(rhs)) < 0);
-        }
-    }
+    auto l_val = get(lhs);
+    auto r_val = get(rhs);
+    auto p_len = _prefix_len;
+
+    return std::visit([=](const auto& strategy) noexcept { return strategy.less(l_val, r_val, p_len); }, _strategy);
 }
 
 } // namespace search
