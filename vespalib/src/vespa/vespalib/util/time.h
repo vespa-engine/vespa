@@ -3,6 +3,7 @@
 #pragma once
 
 #include <sys/time.h>
+#include <time.h>
 
 #include <chrono>
 #include <string>
@@ -102,5 +103,7 @@ public:
 uint32_t getVespaTimerHz();
 duration adjustTimeoutByDetectedHz(duration timeout);
 duration adjustTimeoutByHz(duration timeout, long hz);
+
+void toGmtDateAndTime(time_t seconds_since_epoch, struct tm& target);
 
 } // namespace vespalib
