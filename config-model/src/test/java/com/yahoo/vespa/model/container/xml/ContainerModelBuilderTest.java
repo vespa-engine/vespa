@@ -479,17 +479,17 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         root = ContentClusterUtils.createMockRoot(new String[]{"host1", "host2"});
         createModel(root, containerElem);
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
+        ContainerCluster<?> cluster = (ContainerCluster<?>) root.getChildren().get("default");
         assertEquals(2, cluster.getContainers().size());
-        assertEquals(root.getConfig(QrMonitorConfig.class, "default/container.0").requesttimeout(), 111);
-        assertEquals(root.getConfig(QrMonitorConfig.class, "default/container.1").requesttimeout(), 222);
+        assertEquals(111, root.getConfig(QrMonitorConfig.class, "default/container.0").requesttimeout());
+        assertEquals(222, root.getConfig(QrMonitorConfig.class, "default/container.1").requesttimeout());
     }
 
     @Test
     void component_includes_are_added() {
         VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg("src/test/cfg/application/include_dirs");
         VespaModel model = creator.create(true);
-        ContainerCluster cluster = model.getContainerClusters().get("default");
+        ContainerCluster<?> cluster = model.getContainerClusters().get("default");
         Map<ComponentId, Component<?, ?>> componentsMap = cluster.getComponentsMap();
         Component<?, ?> example = componentsMap.get(
                 ComponentId.fromString("test.Exampledocproc"));
@@ -515,11 +515,12 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     void singlenode_servicespec_is_used_with_hosts_xml() throws IOException, SAXException {
         String servicesXml = "<container id='default' version='1.0' />";
-        String hostsXml = "<hosts>\n" +
-                "    <host name=\"test1.yahoo.com\">\n" +
-                "        <alias>node1</alias>\n" +
-                "    </host>\n" +
-                "</hosts>";
+        String hostsXml = """
+                <hosts>
+                    <host name="test1.yahoo.com">
+                        <alias>node1</alias>
+                    </host>
+                </hosts>""";
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
                 .withHosts(hostsXml)
                 .withServices(servicesXml)
@@ -601,9 +602,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                                                 .setCloudAccount(cloudAccount))
                 .build());
         assertEquals(2, model.hostSystem().getHosts().size());
-        assertEquals(List.of(cloudAccount), model.provisioned().capacities().values()
+        assertEquals(List.of(cloudAccount), model.provisioned().clusters().values()
                                                  .stream()
-                                                 .map(Capacity::cloudAccount)
+                                                 .map(cluster -> cluster.capacity().cloudAccount())
                                                  .toList());
     }
 

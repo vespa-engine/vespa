@@ -10,7 +10,6 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
@@ -72,17 +71,17 @@ public class ClusterInfoTest {
                             </deployment>
                             """;
 
-        var requestedInUsEast1 = requestedCapacityIn("default", "us-east-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofMinutes(0), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofMinutes(0), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        var requestedInUsEast1 = requestedIn("default", "us-east-1", servicesXml, deploymentXml);
+        assertEquals(Duration.ofMinutes(0), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofMinutes(0), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
-        var requestedInUsWest1 = requestedCapacityIn("default", "us-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofMinutes(30), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofMinutes(30), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        var requestedInUsWest1 = requestedIn("default", "us-west-1", servicesXml, deploymentXml);
+        assertEquals(Duration.ofMinutes(30), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofMinutes(30), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
-        var requestedInEuWest1 = requestedCapacityIn("default", "eu-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInEuWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInEuWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        var requestedInEuWest1 = requestedIn("default", "eu-west-1", servicesXml, deploymentXml);
+        assertEquals(Duration.ofHours(48), requestedInEuWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInEuWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
     }
 
     /** A high default deadline only will cause no resources to be set aside for BCP. */
@@ -112,13 +111,13 @@ public class ClusterInfoTest {
                             </deployment>
                             """;
 
-        var requestedInUsEast1 = requestedCapacityIn("default", "us-east-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        var requestedInUsEast1 = requestedIn("default", "us-east-1", servicesXml, deploymentXml);
+        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
-        var requestedInUsWest1 = requestedCapacityIn("default", "us-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        var requestedInUsWest1 = requestedIn("default", "us-west-1", servicesXml, deploymentXml);
+        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
     }
 
     /** This implicitly creates one BCP group (which gives the same result as above). */
@@ -148,13 +147,13 @@ public class ClusterInfoTest {
                             </deployment>
                             """;
 
-        var requestedInUsEast1 = requestedCapacityIn("default", "us-east-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        var requestedInUsEast1 = requestedIn("default", "us-east-1", servicesXml, deploymentXml);
+        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsEast1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
-        var requestedInUsWest1 = requestedCapacityIn("default", "us-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        var requestedInUsWest1 = requestedIn("default", "us-west-1", servicesXml, deploymentXml);
+        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInUsWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
     }
 
     @Test
@@ -189,21 +188,21 @@ public class ClusterInfoTest {
                             </deployment>
                             """;
 
-        var requestedInI1UsEast1 = requestedCapacityIn("i1", "us-east-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInI1UsEast1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInI1UsEast1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        var requestedInI1UsEast1 = requestedIn("i1", "us-east-1", servicesXml, deploymentXml);
+        assertEquals(Duration.ofHours(48), requestedInI1UsEast1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI1UsEast1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
-        var requestedInI1UsWest1 = requestedCapacityIn("i1", "us-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInI1UsWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInI1UsWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        var requestedInI1UsWest1 = requestedIn("i1", "us-west-1", servicesXml, deploymentXml);
+        assertEquals(Duration.ofHours(48), requestedInI1UsWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI1UsWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
-        var requestedInI2UsEast1 = requestedCapacityIn("i2", "us-east-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInI2UsEast1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInI2UsEast1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        var requestedInI2UsEast1 = requestedIn("i2", "us-east-1", servicesXml, deploymentXml);
+        assertEquals(Duration.ofHours(48), requestedInI2UsEast1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI2UsEast1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
 
-        var requestedInI2UsWest1 = requestedCapacityIn("i2", "eu-west-1", servicesXml, deploymentXml);
-        assertEquals(Duration.ofHours(48), requestedInI2UsWest1.get(new ClusterSpec.Id("testcontainer")).clusterInfo().bcpDeadline());
-        assertEquals(Duration.ofHours(48), requestedInI2UsWest1.get(new ClusterSpec.Id("testcontent")).clusterInfo().bcpDeadline());
+        var requestedInI2UsWest1 = requestedIn("i2", "eu-west-1", servicesXml, deploymentXml);
+        assertEquals(Duration.ofHours(48), requestedInI2UsWest1.get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().bcpDeadline());
+        assertEquals(Duration.ofHours(48), requestedInI2UsWest1.get(new ClusterSpec.Id("testcontent")).capacity().clusterInfo().bcpDeadline());
     }
 
     @Test
@@ -230,16 +229,16 @@ public class ClusterInfoTest {
 
         Cloud gcp = Cloud.builder().name(CloudName.GCP).account(CloudAccount.from("vespaz")).allowEnclave(true).build();
         CloudAccount account = CloudAccount.from("gcp:foobar");
-        assertEquals(Duration.ofHours(24), requestedCapacityIn(account, gcp, "default", "us-east-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).clusterInfo().hostTTL());
-        assertEquals(Duration.ZERO, requestedCapacityIn(account, gcp, "default", "us-north-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).clusterInfo().hostTTL());
-        assertEquals(Duration.ZERO, requestedCapacityIn(CloudAccount.unspecified(), gcp, "default", "us-west-1", servicesXml, deploymentXml).get(new Id("testcontainer")).clusterInfo().hostTTL());
+        assertEquals(Duration.ofHours(24), requestedIn(account, gcp, "default", "us-east-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().hostTTL());
+        assertEquals(Duration.ZERO, requestedIn(account, gcp, "default", "us-north-1", servicesXml, deploymentXml).get(new ClusterSpec.Id("testcontainer")).capacity().clusterInfo().hostTTL());
+        assertEquals(Duration.ZERO, requestedIn(CloudAccount.unspecified(), gcp, "default", "us-west-1", servicesXml, deploymentXml).get(new Id("testcontainer")).capacity().clusterInfo().hostTTL());
     }
 
-    private Map<ClusterSpec.Id, Capacity> requestedCapacityIn(String instance, String region, String servicesXml, String deploymentXml) throws Exception {
-        return requestedCapacityIn(CloudAccount.unspecified(), Cloud.defaultCloud(), instance, region, servicesXml, deploymentXml);
+    private Map<ClusterSpec.Id, ClusterSpec> requestedIn(String instance, String region, String servicesXml, String deploymentXml) throws Exception {
+        return requestedIn(CloudAccount.unspecified(), Cloud.defaultCloud(), instance, region, servicesXml, deploymentXml);
     }
 
-    private Map<ClusterSpec.Id, Capacity> requestedCapacityIn(CloudAccount account, Cloud cloud, String instance, String region, String servicesXml, String deploymentXml) throws Exception {
+    private Map<ClusterSpec.Id, ClusterSpec> requestedIn(CloudAccount account, Cloud cloud, String instance, String region, String servicesXml, String deploymentXml) throws Exception {
         var applicationPackage = new MockApplicationPackage.Builder()
                                          .withServices(servicesXml)
                                          .withDeploymentSpec(deploymentXml)
@@ -258,7 +257,7 @@ public class ClusterInfoTest {
                                   .zone(new Zone(Environment.prod, RegionName.from(region)))
                                   .build();
         new VespaModel(new NullConfigModelRegistry(), deployState);
-        return deployState.provisioned().capacities();
+        return deployState.provisioned().clusters();
     }
 
 }

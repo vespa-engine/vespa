@@ -348,7 +348,7 @@ public class NodesSpecification {
                 .profile(profile)
                 .build();
 
-        return hostSystem.allocateHosts(cluster, capacity, deployState);
+        return hostSystem.allocateHosts(cluster, deployState);
     }
 
     public ClusterSpec cluster() {

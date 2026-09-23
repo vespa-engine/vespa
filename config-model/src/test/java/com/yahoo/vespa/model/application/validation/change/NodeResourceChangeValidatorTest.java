@@ -52,7 +52,7 @@ public class NodeResourceChangeValidatorTest {
         ConfigChangeAction containerAction = validate(model(1, 1, 1, 1), model(2, 1, 1, 1)).get(0);
         assertEquals(ConfigChangeAction.Type.RESTART, containerAction.getType());
         assertEquals("service 'container' of type container on host0", containerAction.getServices().get(0).toString());
-        assertEquals(false, containerAction.ignoreForInternalRedeploy());
+        assertFalse(containerAction.ignoreForInternalRedeploy());
 
         ConfigChangeAction contentAction = validate(model(1, 1, 1, 1), model(1, 1, 2, 1)).get(0);
         assertEquals(ConfigChangeAction.Type.RESTART, contentAction.getType());
@@ -120,10 +120,10 @@ public class NodeResourceChangeValidatorTest {
         }
 
         @Override
-        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+        public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
             List<HostSpec> hosts = new ArrayList<>();
-            var resources = capacity.minResources().nodeResources();
-            for (int i = 0; i < capacity.minResources().nodes(); i++)
+            var resources = cluster.capacity().minResources().nodeResources();
+            for (int i = 0; i < cluster.capacity().minResources().nodes(); i++)
                 hosts.add(new HostSpec("host" + (hostsCreated++),
                                        resources, resources, resources,
                                        ClusterMembership.from(cluster, 0, i),
