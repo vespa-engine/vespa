@@ -21,11 +21,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,14 +48,20 @@ public final class ApplicationMetricsRetriever extends AbstractComponent impleme
     private static final int HTTP_CONNECT_TIMEOUT = 5000;
     private static final int HTTP_SOCKET_TIMEOUT = 30000;
     private static final Duration METRICS_TTL = Duration.ofSeconds(30);
+    // Must be well below the timeout used by clients proxying to this handler, e.g. the container's /metrics/v2 handler,
+    // and below the default 10s scrape timeout of Prometheus.
+    static final Duration FIRST_POLL_TIMEOUT = Duration.ofSeconds(5);
 
     private final CloseableHttpAsyncClient httpClient = createHttpClient();
     private final List<NodeMetricsClient> clients;
     private final Thread pollThread;
     private final Set<ConsumerId> consumerSet;
+    private final Map<ConsumerId, CompletableFuture<Void>> firstPolls = new HashMap<>();
     private long pollCount = 0;
     private volatile boolean stopped;
     private volatile Duration taskTimeout;
+    private volatile Duration firstPollTimeout = FIRST_POLL_TIMEOUT;
+    private final AtomicBoolean awaitingFirstPoll = new AtomicBoolean();
 
     @Inject
     public ApplicationMetricsRetriever(MetricsNodesConfig nodesConfig) {
@@ -126,10 +133,20 @@ public final class ApplicationMetricsRetriever extends AbstractComponent impleme
 
     public Map<Node, List<MetricsPacket>> getMetrics(ConsumerId consumer) {
         log.log(Level.FINE, () -> "Retrieving metrics from " + clients.size() + " nodes.");
+        CompletableFuture<Void> firstPoll = null;
         synchronized (pollThread) {
             if (consumerSet.add(consumer)) {
+                firstPoll = new CompletableFuture<>();
+                firstPolls.put(consumer, firstPoll);
                 // Wakeup poll thread first time we see a new consumer
                 pollThread.notifyAll();
+            }
+        }
+        if (firstPoll != null && pollThread.isAlive() && awaitingFirstPoll.compareAndSet(false, true)) {
+            try {
+                awaitFirstPoll(consumer, firstPoll);
+            } finally {
+                awaitingFirstPoll.set(false);
             }
         }
         Map<Node, List<MetricsPacket>> metrics = new HashMap<>();
@@ -137,6 +154,24 @@ public final class ApplicationMetricsRetriever extends AbstractComponent impleme
             metrics.put(client.node, client.getMetrics(consumer));
         }
         return metrics;
+    }
+
+    /**
+     * A new consumer has no metrics until the poll thread has fetched them, so wait for that instead of returning
+     * empty metrics for every node. Handler threads are shared with the handlers serving this node's own metrics,
+     * which the poll threads on all nodes depend on, so only one thread waits at a time, and only for a short while.
+     */
+    private void awaitFirstPoll(ConsumerId consumer, CompletableFuture<Void> firstPoll) {
+        try {
+            firstPoll.get(firstPollTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            log.log(Level.INFO, "Timed out after " + firstPollTimeout + " waiting for metrics for consumer '" +
+                                consumer + "', returning the metrics retrieved so far");
+        } catch (ExecutionException e) {
+            throw new IllegalStateException("First poll is never completed exceptionally", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     void startPollAndWait() {
@@ -156,13 +191,20 @@ public final class ApplicationMetricsRetriever extends AbstractComponent impleme
     }
 
     private int fetchMetricsAsync(ConsumerId consumer) {
-        Map<Node, Future<?>> futures = new HashMap<>();
+        Map<Node, CompletableFuture<?>> futures = new HashMap<>();
         for (NodeMetricsClient client : clients) {
             client.startSnapshotUpdate(consumer, METRICS_TTL).ifPresent(future -> futures.put(client.node, future));
         }
+        CompletableFuture<Void> firstPoll;
+        synchronized (pollThread) {
+            firstPoll = firstPolls.remove(consumer);
+        }
+        if (firstPoll != null)
+            CompletableFuture.allOf(futures.values().toArray(CompletableFuture[]::new))
+                             .whenComplete((result, exception) -> firstPoll.complete(null));
         int numOk = 0;
         int numTried = futures.size();
-        for (Map.Entry<Node, Future<?>> entry : futures.entrySet()) {
+        for (Map.Entry<Node, CompletableFuture<?>> entry : futures.entrySet()) {
             if (stopped) break;
             try {
                 entry.getValue().get(taskTimeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -210,6 +252,11 @@ public final class ApplicationMetricsRetriever extends AbstractComponent impleme
     // For testing only!
     void setTaskTimeout(Duration taskTimeout) {
         this.taskTimeout = taskTimeout;
+    }
+
+    // For testing only!
+    void setFirstPollTimeout(Duration firstPollTimeout) {
+        this.firstPollTimeout = firstPollTimeout;
     }
 
 }

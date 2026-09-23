@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -59,14 +58,14 @@ public class NodeMetricsClient {
         return (snapshot != null) ? snapshot.metrics : List.of();
     }
 
-    Optional<Future<?>> startSnapshotUpdate(ConsumerId consumer, Duration ttl) {
+    Optional<CompletableFuture<?>> startSnapshotUpdate(ConsumerId consumer, Duration ttl) {
         var snapshot = snapshots.get(consumer);
         if ((snapshot != null) && snapshot.isValid(clock.instant(), ttl)) return Optional.empty();
 
         return Optional.of(retrieveMetrics(consumer));
     }
 
-    private Future<?> retrieveMetrics(ConsumerId consumer) {
+    private CompletableFuture<?> retrieveMetrics(ConsumerId consumer) {
         String metricsUri = node.metricsUri(consumer).toString();
         log.log(FINE, () -> "Retrieving metrics from host " + metricsUri);
 
@@ -74,8 +73,12 @@ public class NodeMetricsClient {
         httpClient.execute(SimpleRequestBuilder.get(metricsUri).build(),
                 new FutureCallback<>() {
                     @Override public void completed(SimpleHttpResponse result) {
-                        handleResponse(node, metricsUri, consumer, result.getBodyText());
-                        onDone.complete(null);
+                        try {
+                            handleResponse(node, metricsUri, consumer, result.getBodyText());
+                            onDone.complete(null);
+                        } catch (RuntimeException e) {
+                            onDone.completeExceptionally(e);
+                        }
                     }
                     @Override public void failed(Exception ex) { onDone.completeExceptionally(ex); }
                     @Override public void cancelled() { onDone.cancel(false);  }
