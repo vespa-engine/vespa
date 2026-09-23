@@ -109,8 +109,8 @@ TEST(StreamingQueryBuilderTest, onear_with_negative_terms) {
 TEST(StreamingQueryBuilderTest, string_range_term_is_constructed) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
 
-    builder.add_string_range_term(
-        search::query::StringRange(std::in_place, "aaa", true, false, "zzz", false, false, 100), "", 42, Weight(24));
+    builder.add_string_range_term(search::query::StringRange(std::in_place, "aaa", true, "zzz", false, 100), "", 42,
+                                  Weight(24));
     auto node = builder.build();
 
     // Convert to protobuf
@@ -133,10 +133,10 @@ TEST(StreamingQueryBuilderTest, string_range_term_is_constructed) {
     // Verify the string-range specs
     auto term_spec = string_range_term.get_string_range_spec();
     ASSERT_TRUE(term_spec);
-    EXPECT_EQ("aaa", term_spec->left);
+    ASSERT_TRUE(term_spec->left);
+    EXPECT_EQ("aaa", *term_spec->left);
     EXPECT_TRUE(term_spec->left_closed);
-    EXPECT_FALSE(term_spec->left_unbounded);
-    EXPECT_EQ("zzz", term_spec->right);
+    ASSERT_TRUE(term_spec->right);
+    EXPECT_EQ("zzz", *term_spec->right);
     EXPECT_FALSE(term_spec->right_closed);
-    EXPECT_FALSE(term_spec->right_unbounded);
 }

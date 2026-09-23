@@ -24,14 +24,14 @@ bool StringRangeSearchHelper::is_match(const char* src) const {
 template <bool fold>
 bool StringRangeSearchHelper::is_match_internal(const char* src) const {
     if (is_valid()) {
-        return (_range_spec->left_unbounded ||
+        return (!_range_spec->left ||
                 (_range_spec->left_closed
-                     ? FoldedStringCompare::compareFolded<fold, fold>(_range_spec->left.c_str(), src) <= 0
-                     : FoldedStringCompare::compareFolded<fold, fold>(_range_spec->left.c_str(), src) < 0)) &&
-               (_range_spec->right_unbounded ||
+                     ? FoldedStringCompare::compareFolded<fold, fold>(_range_spec->left->c_str(), src) <= 0
+                     : FoldedStringCompare::compareFolded<fold, fold>(_range_spec->left->c_str(), src) < 0)) &&
+               (!_range_spec->right ||
                 (_range_spec->right_closed
-                     ? FoldedStringCompare::compareFolded<fold, fold>(src, _range_spec->right.c_str()) <= 0
-                     : FoldedStringCompare::compareFolded<fold, fold>(src, _range_spec->right.c_str()) < 0));
+                     ? FoldedStringCompare::compareFolded<fold, fold>(src, _range_spec->right->c_str()) <= 0
+                     : FoldedStringCompare::compareFolded<fold, fold>(src, _range_spec->right->c_str()) < 0));
     } else {
         return true;
     }

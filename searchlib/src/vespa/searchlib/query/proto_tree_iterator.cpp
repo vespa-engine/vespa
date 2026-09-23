@@ -288,8 +288,6 @@ bool handle(const ItemStringRangeTerm& item, QueryStackIterator::Data& _d) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_STRING_RANGE_TERM;
     auto spec = std::make_unique<StringRangeSpec>();
-    spec->left_unbounded = !item.has_lower_limit();
-    spec->right_unbounded = !item.has_upper_limit();
     if (item.has_lower_limit()) {
         spec->left = item.lower_limit();
     }
