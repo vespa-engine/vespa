@@ -55,14 +55,11 @@
 %global _use_vespa_openblas 1
 %global _vespa_openblas_excludes |openblas
 
-%if 0%{?fedora}
-%if %{fedora} > 43
+%if 0%{?fedora} && ! 0%{?amzn2023} && ! 0%{?amzn2027}
 %global _vespa_java_version 25
-%else
-%if %{fedora} > 39
-%global _vespa_java_version 21
 %endif
-%endif
+%if 0%{?amzn2027}
+%global _vespa_java_version 25
 %endif
 %if 0%{?el10}
 %global _vespa_java_version 25
@@ -141,8 +138,10 @@ Requires: zstd
 %define _devtoolset_enable /opt/rh/gcc-toolset/enable
 %endif
 
+%if 0%{?amzn2023} || 0%{?amzn2027}
+%global _java_home /usr/lib/jvm/java-%{_vespa_java_version}-amazon-corretto
+%endif
 %if 0%{?amzn2023}
-%global _java_home /usr/lib/jvm/java-17-amazon-corretto
 %global _use_vespa_xxhash 1
 %global _vespa_xxhash_excludes |xxhash
 
@@ -186,9 +185,9 @@ Vespa - The open big data serving engine
 
 Summary: Vespa - The open big data serving engine - base
 
-%if 0%{?amzn2023}
-Requires: java-17-amazon-corretto-devel
-Requires: java-17-amazon-corretto
+%if 0%{?amzn2023} || 0%{?amzn2027}
+Requires: java-%{_vespa_java_version}-amazon-corretto-devel
+Requires: java-%{_vespa_java_version}-amazon-corretto
 %else
 Requires: java-%{_vespa_java_version}-openjdk-devel
 %endif
@@ -214,8 +213,6 @@ Requires: openssl-libs
 %endif
 Requires: vespa-lz4 >= 1.9.4-1
 Requires: vespa-libzstd >= 1.5.6-1
-%if 0%{?amzn2023}
-%endif
 %if 0%{?el8} || 0%{?el9} || 0%{?el10} || 0%{?fedora}
 Requires: glibc-langpack-en
 %endif
@@ -342,8 +339,8 @@ BuildArch: noarch
 # Self-contained: the fat JAR bundles all provided-scope deps, so no Vespa install is required.
 # Mirrors the java requirement conditional in %package base, but pulls the headless runtime
 # instead of the full JDK since this is a runtime-only CLI.
-%if 0%{?amzn2023}
-Requires: java-17-amazon-corretto-headless
+%if 0%{?amzn2023} || 0%{?amzn2027}
+Requires: java-%{_vespa_java_version}-amazon-corretto-headless
 %else
 Requires: java-%{_vespa_java_version}-openjdk-headless
 %endif
