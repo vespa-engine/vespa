@@ -217,14 +217,14 @@ public:
     std::unique_ptr<EntryComparator> allocate_comparator() const override;
 
     // Methods below are only relevant for strings, and are templated to only be instantiated on demand.
-    template <typename Type> ComparatorType make_folded_comparator(const Type& lookup_value) const {
+    template <typename Type> ComparatorType string_lookup_comparator(const Type& lookup_value) const {
         return _lookup_source.make_for_lookup(lookup_value);
     }
-    template <typename Type> ComparatorType make_folded_comparator_prefix(const Type& lookup_value) const {
+    template <typename Type> ComparatorType prefix_lookup_comparator(const Type& lookup_value) const {
         return _lookup_source.make_for_prefix_lookup(lookup_value);
     }
     template <typename Type> std::vector<IEnumStore::EnumHandle> find_folded_enums(Type value) const {
-        auto cmp = make_folded_comparator(value);
+        auto cmp = string_lookup_comparator(value);
         return _dict->find_matching_enums(cmp);
     }
     const vespalib::datastore::DataStoreT<IEnumStore::InternalIndex>& get_data_store() const noexcept {

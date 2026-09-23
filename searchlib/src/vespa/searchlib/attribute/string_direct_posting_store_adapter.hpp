@@ -22,7 +22,7 @@ StringDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::lo
     // Assert the unfortunate assumption of the comparators.
     // Should be lifted once they take the length too.
     assert(keyAsString.data()[keyAsString.size()] == '\0');
-    auto comp = this->_enum_store.make_folded_comparator(keyAsString.data());
+    auto comp = this->_enum_store.string_lookup_comparator(keyAsString.data());
     auto find_result = this->_dict.find_posting_list(comp, dictionary_snapshot);
     if (find_result.first.valid()) {
         auto pidx = find_result.second;

@@ -246,7 +246,7 @@ template <typename EntryT> std::unique_ptr<EntryComparator> EnumStoreT<EntryT>::
 template <typename EntryT>
 std::unique_ptr<EntryComparator> EnumStoreT<EntryT>::optionally_allocate_folded_comparator() const {
     return use_folding()
-            ? std::make_unique<ComparatorType>(_store.get_comparator().make_folded())
+            ? std::make_unique<ComparatorType>(make_optionally_folded_comparator())
             : std::unique_ptr<EntryComparator>();
 }
 

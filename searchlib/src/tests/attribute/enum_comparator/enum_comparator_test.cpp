@@ -189,8 +189,8 @@ TEST(EnumComparatorTest, require_that_folded_less_is_working) {
     EXPECT_FALSE(cmp1.less(e2, e1)); // similar folded
     EXPECT_TRUE(cmp1.less(e2, e3));  // folded compare
     EXPECT_FALSE(cmp1.less(e3, e2)); // folded compare
-    auto cmp2 = es.make_folded_comparator("fol");
-    auto cmp3 = es.make_folded_comparator_prefix("fol");
+    auto cmp2 = es.string_lookup_comparator("fol");
+    auto cmp3 = es.prefix_lookup_comparator("fol");
     EXPECT_TRUE(cmp2.less(EnumIndex(), e4));
     EXPECT_FALSE(cmp2.less(e4, EnumIndex()));
     EXPECT_FALSE(cmp3.less(EnumIndex(), e4)); // similar when prefix
@@ -237,14 +237,14 @@ TEST(EnumComparatorTest, require_that_cased_less_is_working) {
     EXPECT_FALSE(cmp1.less(e2, e1));
     EXPECT_FALSE(cmp1.less(e2, e3));
     EXPECT_TRUE(cmp1.less(e3, e2));
-    auto cmp2 = es.make_folded_comparator("fol");
-    auto cmp3 = es.make_folded_comparator_prefix("fol");
+    auto cmp2 = es.string_lookup_comparator("fol");
+    auto cmp3 = es.prefix_lookup_comparator("fol");
     EXPECT_FALSE(cmp2.less(EnumIndex(), e4)); // case mismatch
     EXPECT_TRUE(cmp2.less(e4, EnumIndex()));  // case mismatch
     EXPECT_FALSE(cmp3.less(EnumIndex(), e4)); // case mismatch
     EXPECT_TRUE(cmp3.less(e4, EnumIndex()));  // case mismatch
-    auto cmp4 = es.make_folded_comparator("Fol");
-    auto cmp5 = es.make_folded_comparator_prefix("Fol");
+    auto cmp4 = es.string_lookup_comparator("Fol");
+    auto cmp5 = es.prefix_lookup_comparator("Fol");
     EXPECT_TRUE(cmp4.less(EnumIndex(), e4));  // no match
     EXPECT_FALSE(cmp4.less(e4, EnumIndex())); // no match
     EXPECT_FALSE(cmp5.less(EnumIndex(), e4)); // prefix match

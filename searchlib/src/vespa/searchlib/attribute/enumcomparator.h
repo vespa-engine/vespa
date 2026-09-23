@@ -27,7 +27,6 @@ private:
 public:
     static bool equal_helper(const EntryT& lhs, const EntryT& rhs) noexcept;
 
-    EnumStoreComparator<EntryT> make_folded() const noexcept { return *this; }
     EnumStoreComparator<EntryT> make_for_lookup(const EntryT& lookup_value) const noexcept {
         return {this->_store, lookup_value};
     }
