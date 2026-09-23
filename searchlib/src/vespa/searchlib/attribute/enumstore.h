@@ -219,7 +219,7 @@ public:
     template <typename Type> ComparatorType prefix_lookup_comparator(const Type& lookup_value) const {
         return _lookup_source.make_for_prefix_lookup(lookup_value);
     }
-    template <typename Type> ComparatorType make_folded_comparator_less_or_equal(const Type& lookup_value) const {
+    template <typename Type> ComparatorType string_lookup_lteq_comparator(const Type& lookup_value) const {
         return _lookup_source.make_for_less_or_equal_lookup(lookup_value);
     }
     template <typename Type> std::vector<IEnumStore::EnumHandle> find_folded_enums(Type value) const {
