@@ -5,7 +5,7 @@ go 1.27
 require (
 	github.com/briandowns/spinner v1.23.2
 	github.com/fatih/color v1.19.0
-	github.com/fxamacker/cbor/v2 v2.9.3
+	github.com/fxamacker/cbor/v2 v2.9.4
 	github.com/go-json-experiment/json v0.0.0-20260820222146-c27c302e5fc3
 	github.com/klauspost/compress v1.20.0
 	github.com/mattn/go-colorable v0.1.15
