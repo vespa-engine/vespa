@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/attribute/dfa_string_comparator.h>
+#include <vespa/searchlib/attribute/enum_store_string_comparator.h>
 #include <vespa/searchlib/attribute/enumcomparator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/gtest/gtest.h>

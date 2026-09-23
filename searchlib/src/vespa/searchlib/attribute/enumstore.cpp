@@ -2,6 +2,8 @@
 
 #include "enumstore.hpp"
 
+#include "enum_store_folded_dictionary.h"
+
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
 
 #include <iomanip>
