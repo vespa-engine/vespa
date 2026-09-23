@@ -4,6 +4,9 @@
 
 #include <vespa/searchlib/util/foldedstringcompare.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.enum_store_string_comparator");
+
 namespace search {
 
 EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store,
@@ -28,19 +31,26 @@ EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_s
 
 bool EnumStoreStringComparator::less(vespalib::datastore::EntryRef lhs,
                                      vespalib::datastore::EntryRef rhs) const noexcept {
-    switch (_compare_strategy) {
-    case CompareStrategy::UNCASED:
-        return (use_prefix()
-                    ? (FoldedStringCompare::compareFoldedPrefix<true, true>(get(lhs), get(rhs), _prefix_len) < 0)
-                    : (FoldedStringCompare::compareFolded<true, true>(get(lhs), get(rhs)) < 0));
-    case CompareStrategy::CASED:
-        return (use_prefix()
-                    ? (FoldedStringCompare::compareFoldedPrefix<false, false>(get(lhs), get(rhs), _prefix_len) < 0)
-                    : (FoldedStringCompare::compareFolded<false, false>(get(lhs), get(rhs)) < 0));
-    case CompareStrategy::UNCASED_THEN_CASED:
-    default:
-        return (use_prefix() ? (FoldedStringCompare::comparePrefix(get(lhs), get(rhs), _prefix_len) < 0)
-                             : (FoldedStringCompare::compare(get(lhs), get(rhs)) < 0));
+    if (use_prefix()) [[unlikely]] {
+        switch (_compare_strategy) {
+        case CompareStrategy::CASED:
+            return (FoldedStringCompare::compareFoldedPrefix<false, false>(get(lhs), get(rhs), _prefix_len) < 0);
+        case CompareStrategy::UNCASED_THEN_CASED:
+            LOG_ABORT("Cannot do prefix lookup in UNCASED_THEN_CASED mode");
+        case CompareStrategy::UNCASED:
+        default:
+            return (FoldedStringCompare::compareFoldedPrefix<true, true>(get(lhs), get(rhs), _prefix_len) < 0);
+        }
+    } else {
+        switch (_compare_strategy) {
+        case CompareStrategy::UNCASED:
+            return (FoldedStringCompare::compareFolded<true, true>(get(lhs), get(rhs)) < 0);
+        case CompareStrategy::CASED:
+            return (FoldedStringCompare::compareFolded<false, false>(get(lhs), get(rhs)) < 0);
+        case CompareStrategy::UNCASED_THEN_CASED:
+        default:
+            return (FoldedStringCompare::compare(get(lhs), get(rhs)) < 0);
+        }
     }
 }
 
