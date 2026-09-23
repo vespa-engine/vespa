@@ -40,7 +40,7 @@ public:
 
         std::unique_ptr<query::PredicateQueryTerm> predicateQueryTerm;
         std::unique_ptr<query::TermVector>         termVector;
-        std::unique_ptr<StringRangeSpec>           stringRangeSpec;
+        std::unique_ptr<StringRangeSpec>           string_range_spec;
 
         std::string_view index_view;
         std::string_view term_view;

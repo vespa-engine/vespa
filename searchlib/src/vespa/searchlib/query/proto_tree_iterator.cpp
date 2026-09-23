@@ -299,7 +299,7 @@ bool handle(const ItemStringRangeTerm& item, QueryStackIterator::Data& _d) {
     spec->left_closed = item.lower_inclusive();
     spec->right_closed = item.upper_inclusive();
     spec->range_limit = item.range_limit();
-    _d.stringRangeSpec = std::move(spec);
+    _d.string_range_spec = std::move(spec);
     return true;
 }
 
@@ -401,8 +401,9 @@ bool handle(const ItemGeoLocationTerm& item, QueryStackIterator::Data& _d, std::
         int n = std::round(item.n() * M);
         tmp = std::format("[2,{},{},{},{}]", w, s, e, n);
     }
-    if (tmp == "")
+    if (tmp == "") {
         return false;
+    }
     _d.term_view = tmp;
     return true;
 }
