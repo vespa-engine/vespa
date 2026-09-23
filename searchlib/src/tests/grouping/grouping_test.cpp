@@ -24,7 +24,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 #include <limits>
 
 #include <vespa/log/log.h>
@@ -107,7 +106,7 @@ public:
         }
         return *this;
     }
-    const RankedHit* hits() const { return &_hits[0]; }
+    const std::span<const RankedHit> hits() const { return _hits; }
     uint32_t size() const { return _hits.size(); }
 };
 
@@ -157,7 +156,7 @@ private:
 bool testAggregation(AggregationContext& ctx, const Grouping& request, const Group& expect) {
     Grouping tmp = request; // create local copy
     ctx.setup(tmp);
-    tmp.aggregate(ctx.result().hits(), ctx.result().size());
+    tmp.aggregate(ctx.result().hits());
     tmp.cleanupAttributeReferences();
     CheckAttributeReferences attrCheck;
     tmp.select(attrCheck, attrCheck);
@@ -407,7 +406,7 @@ TEST(GroupingTest, argmax_aggregation_result_selects_by_key_expression) {
     Grouping request;
     request.setRoot(Group().addResult(argmax));
     ctx.setup(request);
-    request.aggregate(ctx.result().hits(), ctx.result().size());
+    request.aggregate(ctx.result().hits());
 
     const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
     EXPECT_TRUE(res.has_value());
@@ -432,7 +431,7 @@ TEST(GroupingTest, argmax_aggregation_result_with_negated_key_selects_the_smalle
     Grouping request;
     request.setRoot(Group().addResult(argmin));
     ctx.setup(request);
-    request.aggregate(ctx.result().hits(), ctx.result().size());
+    request.aggregate(ctx.result().hits());
 
     const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
     EXPECT_TRUE(res.has_value());
@@ -574,7 +573,7 @@ TEST(GroupingTest, argmax_aggregation_result_skips_undefined_float_attribute_key
     Grouping request;
     request.setRoot(Group().addResult(argmax).addResult(argmin));
     ctx.setup(request);
-    request.aggregate(ctx.result().hits(), ctx.result().size());
+    request.aggregate(ctx.result().hits());
 
     const auto& max_res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
     EXPECT_EQ(30, max_res.value().getInteger()); // docid 2 has the largest defined key
@@ -2100,7 +2099,7 @@ TEST(GroupingTest, argmax_aggregation_result_selects_by_document_field_key_when_
         doc.addField("key", header.intTypeRef());
         doc.addField("value", header.intTypeRef());
     });
-    auto make_doc = [&builder](uint32_t id, int32_t key, int32_t value) {
+    auto                     make_doc = [&builder](uint32_t id, int32_t key, int32_t value) {
         auto doc = builder.make_document("id:ns:searchdocument::" + std::to_string(id));
         doc->setValue("key", document::IntFieldValue(key));
         doc->setValue("value", document::IntFieldValue(value));

@@ -175,6 +175,10 @@ Grouping::Grouping(const Grouping&) = default;
 Grouping& Grouping::operator=(const Grouping&) = default;
 Grouping::~Grouping() = default;
 
+std::span<const RankedHit> Grouping::limit_to_top_n(std::span<const RankedHit> hits) const noexcept {
+    return {hits.data(), getMaxN(hits.size())};
+}
+
 void Grouping::selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) {
     for (GroupingLevel& level : _levels) {
         level.select(predicate, operation);
@@ -236,13 +240,13 @@ void Grouping::postProcess() {
     sortById();
 }
 
-void Grouping::aggregate(const RankedHit* rankedHit, unsigned int len) {
+void Grouping::aggregate(std::span<const RankedHit> hits) {
     bool isOrdered(!needResort());
     preAggregate(isOrdered);
     HitsAggregationResult::SetOrdered pred;
     select(pred, pred);
-    for (unsigned int i(0), m(getMaxN(len)); i < m; i++) {
-        aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
+    for (const auto& hit : limit_to_top_n(hits)) {
+        aggregate(hit.getDocId(), hit.getRank());
     }
     postProcess();
 }
@@ -312,8 +316,9 @@ void Grouping::cleanTemporary() {
 bool Grouping::needResort() const {
     bool resort(_root.needResort());
     for (const auto& level : _levels) {
-        if (resort)
+        if (resort) {
             break;
+        }
         resort = level.needResort();
     }
     return (resort && getTopN() <= 0);
