@@ -148,7 +148,7 @@ std::string FieldValue::getAsString() const {
     throw InvalidDataTypeConversionException(*getDataType(), *DataType::STRING, VESPA_STRLOC);
 }
 
-std::pair<const char*, size_t> FieldValue::getAsRaw() const {
+std::span<const char> FieldValue::getAsRaw() const {
     throw InvalidDataTypeConversionException(*getDataType(), *DataType::RAW, VESPA_STRLOC);
 }
 
