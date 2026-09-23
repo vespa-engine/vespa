@@ -10153,6 +10153,24 @@
     ],
     "fields" : [ ]
   },
+  "ai.vespa.search.counting.FilterIntersectionsSearcher" : {
+    "superClass" : "com.yahoo.search.Searcher",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields" : [
+      "public static final com.yahoo.processing.request.CompoundName PARAM_FILTERS",
+      "public static final com.yahoo.processing.request.CompoundName PARAM_SEPARATOR",
+      "public static final com.yahoo.processing.request.CompoundName PARAM_DIMENSIONS",
+      "public static final com.yahoo.processing.request.CompoundName PARAM_MAX_CELLS",
+      "public static final int DEFAULT_MAX_CELLS"
+    ]
+  },
   "ai.vespa.search.llm.LLMSearcher" : {
     "superClass" : "com.yahoo.search.Searcher",
     "interfaces" : [ ],
