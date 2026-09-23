@@ -175,10 +175,12 @@ void DocumentFieldNode::onDocType(const DocumentType& docType) {
 
 bool DocumentFieldNode::hasMultiValue() const {
     for (const auto& entry : _fieldPath) {
-        if (entry->getDataType().isArray())
+        if (entry->getDataType().isArray()) {
             return true;
-        if (entry->getDataType().isMap())
+        }
+        if (entry->getDataType().isMap()) {
             return true;
+        }
     }
     return false;
 }
@@ -260,12 +262,14 @@ DefaultValue DocumentFieldNode::SingleHandler::_defaultValue;
 
 void DocumentFieldNode::SingleHandler::onPrimitive(uint32_t, const Content& c) {
     LOG(spam, "SingleHandler::onPrimitive: field value '%s'", c.getValue().toString().c_str());
+    set_found_value(true);
     FieldValue2ResultNode converter(&c.getValue());
     _result.set(converter);
 }
 
 void DocumentFieldNode::MultiHandler::onPrimitive(uint32_t, const Content& c) {
     LOG(spam, "MultiHandler::onPrimitive: field value '%s'", c.getValue().toString().c_str());
+    set_found_value(true);
     FieldValue2ResultNode converter(&c.getValue());
     _result.push_back_safe(converter);
 }

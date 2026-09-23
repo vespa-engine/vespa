@@ -4,6 +4,7 @@
 
 #include "attributenode.h"
 #include "documentaccessornode.h"
+#include "documentfieldnode.h"
 #include "relevancenode.h"
 
 #include <vespa/searchcommon/attribute/iattributevector.h>
@@ -116,6 +117,18 @@ bool ExpressionTree::has_undefined_attribute(DocId docId) const noexcept {
         const auto* attribute = node->getAttribute();
         if (attribute != nullptr && attribute->isUndefined(docId)) {
             return true;
+        }
+    }
+    return false;
+}
+
+bool ExpressionTree::has_undefined_field() const noexcept {
+    for (const DocumentAccessorNode* node : _documentAccessorNodes) {
+        if (node->inherits(DocumentFieldNode::classId)) {
+            const auto& doc_node = static_cast<const DocumentFieldNode&>(*node);
+            if (!doc_node.has_field_value()) {
+                return true;
+            }
         }
     }
     return false;

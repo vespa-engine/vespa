@@ -135,6 +135,12 @@ void ArgmaxAggregationResult::onAggregate(const ResultNode& result, DocId docId,
 void ArgmaxAggregationResult::onAggregate(const ResultNode& result, const document::Document& doc, HitRank rank) {
     if (_key_tree->getRoot() != nullptr) {
         _key_tree->execute(doc, rank);
+        // A document without the key field leaves the handler at its default value, which reads as zero for an
+        // integer key and would otherwise compete with real keys. Ask the field node whether it actually saw a
+        // value, so a hit without a key is never selected.
+        if (_key_tree->has_undefined_field()) {
+            return;
+        }
     }
     onAggregate(result);
 }
