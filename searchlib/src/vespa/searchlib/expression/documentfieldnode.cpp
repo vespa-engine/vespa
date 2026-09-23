@@ -50,6 +50,8 @@ DocumentFieldNode& DocumentFieldNode::operator=(const DocumentFieldNode& rhs) {
     return *this;
 }
 
+namespace {
+
 std::unique_ptr<ResultNode> deduceResultNode(std::string_view fieldName, const FieldValue& fv,
                                              bool preserveAccurateTypes, bool nestedMultiValue) {
     std::unique_ptr<ResultNode> value;
@@ -122,6 +124,8 @@ std::unique_ptr<ResultNode> deduceResultNode(std::string_view fieldName, const F
     return value;
 }
 
+} // namespace
+
 void DocumentFieldNode::onPrepare(bool preserveAccurateTypes) {
     LOG(debug, "DocumentFieldNode::onPrepare(this=%p)", this);
 
@@ -193,19 +197,12 @@ class FieldValue2ResultNode : public ResultNode {
 public:
     DECLARE_EXPRESSIONNODE(FieldValue2ResultNode);
     FieldValue2ResultNode(const FieldValue* fv = nullptr) : _fv(fv) {}
-    int64_t onGetInteger(size_t index) const override {
-        (void)index;
-        return _fv ? _fv->getAsLong() : 0;
-    }
-    double onGetFloat(size_t index) const override {
-        (void)index;
-        return _fv ? _fv->getAsDouble() : 0;
-    }
-    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
-        (void)index;
+    int64_t onGetInteger(size_t) const override { return _fv ? _fv->getAsLong() : 0; }
+    double onGetFloat(size_t) const override { return _fv ? _fv->getAsDouble() : 0; }
+    ConstBufferRef onGetString(size_t, BufferRef buf) const override {
         if (_fv) {
-            std::pair<const char*, size_t> raw = _fv->getAsRaw();
-            return ConstBufferRef(raw.first, raw.second);
+            std::span<const char> raw = _fv->getAsRaw();
+            return ConstBufferRef(raw.data(), raw.size());
         }
         return buf;
     }
