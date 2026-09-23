@@ -175,10 +175,12 @@ void DocumentFieldNode::onDocType(const DocumentType& docType) {
 
 bool DocumentFieldNode::hasMultiValue() const {
     for (const auto& entry : _fieldPath) {
-        if (entry->getDataType().isArray())
+        if (entry->getDataType().isArray()) {
             return true;
-        if (entry->getDataType().isMap())
+        }
+        if (entry->getDataType().isMap()) {
             return true;
+        }
     }
     return false;
 }
@@ -217,7 +219,7 @@ private:
     const FieldValue* _fv;
 };
 
-char DefaultValue::null = 0;
+char DefaultValue::_null = 0;
 
 void DefaultValue::set(const ResultNode&) {
     throw std::runtime_error("DefaultValue::set(const ResultNode&) is not possible.");
