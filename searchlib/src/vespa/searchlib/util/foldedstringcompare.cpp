@@ -96,14 +96,6 @@ int FoldedStringCompare::compareFoldedPrefix(const char* key, const char* okey, 
     return 0;
 }
 
-int FoldedStringCompare::comparePrefix(const char* key, const char* okey, size_t prefixLen) noexcept {
-    int res = compareFoldedPrefix<true, true>(key, okey, prefixLen);
-    if (res != 0) {
-        return res;
-    }
-    return compareFoldedPrefix<false, false>(key, okey, prefixLen);
-}
-
 int FoldedStringCompare::compare(const char* key, const char* okey) noexcept {
     int res = compareFolded<true, true>(key, okey);
     if (res != 0) {
