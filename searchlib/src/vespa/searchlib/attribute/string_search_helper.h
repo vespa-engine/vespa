@@ -26,7 +26,7 @@ class StringSearchHelper {
 public:
     using FuzzyMatcher = vespalib::FuzzyMatcher;
     StringSearchHelper(
-        QueryTermUCS4& qTerm, bool cased,
+        const QueryTermUCS4& qTerm, bool cased,
         vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm = vespalib::FuzzyMatchingAlgorithm::BruteForce);
     StringSearchHelper(StringSearchHelper&&) noexcept;
     StringSearchHelper(const StringSearchHelper&) = delete;

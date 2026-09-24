@@ -7,8 +7,6 @@
 #include "string_search_context.h"
 
 #include <vespa/searchlib/query/query_term_ucs4.h>
-#include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
-#include <vespa/vespalib/util/regexp.h>
 
 namespace search::attribute {
 
@@ -30,7 +28,7 @@ const QueryTermUCS4* StringSearchContextT<Matcher>::queryTerm() const {
 
 template <typename Matcher>
 bool StringSearchContextT<Matcher>::valid() const {
-    return Matcher::isValid();
+    return Matcher::is_valid();
 }
 
 template <typename Matcher>

@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
 #include <vespa/searchlib/attribute/string_matcher_factory.h>
 #include <vespa/searchlib/attribute/string_range_search_helper.h>
+#include <vespa/searchlib/attribute/string_search_helper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/casts.h>
 
@@ -409,7 +410,10 @@ template <typename Attribute> void testSingleValue(Attribute& svsa, Config& cfg)
 TEST_F(StringAttributeTest, testSingleValue) {
     EXPECT_EQ(24u, sizeof(SearchContext));
     EXPECT_EQ(48u, sizeof(StringSearchHelper));
-    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringMatcher>));
+    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringCasedMatcher>));
+    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringUncasedMatcher>));
+    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringRegexMatcher>));
+    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringFuzzyMatcher>));
     {
         Config                     cfg(BasicType::STRING, CollectionType::SINGLE);
         SingleValueStringAttribute svsa("svsa", cfg);
@@ -450,10 +454,15 @@ bool creates_string_matcher(std::unique_ptr<QueryTermSimple> term, bool cased) {
 TEST_F(StringAttributeTest, test_string_matcher_factory) {
     using QTT = QueryTermSimple::Type;
     for (bool cased : {false, true}) {
-        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::WORD, cased));
-        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::PREFIXTERM, cased));
-        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("x.z", QTT::REGEXP, cased));
-        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::FUZZYTERM, cased));
+        if (cased) {
+            EXPECT_TRUE(creates_string_matcher<attribute::StringCasedMatcher>("xyz", QTT::WORD, cased));
+            EXPECT_TRUE(creates_string_matcher<attribute::StringCasedMatcher>("xyz", QTT::PREFIXTERM, cased));
+        } else {
+            EXPECT_TRUE(creates_string_matcher<attribute::StringUncasedMatcher>("xyz", QTT::WORD, cased));
+            EXPECT_TRUE(creates_string_matcher<attribute::StringUncasedMatcher>("xyz", QTT::PREFIXTERM, cased));
+        }
+        EXPECT_TRUE(creates_string_matcher<attribute::StringRegexMatcher>("x.z", QTT::REGEXP, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringFuzzyMatcher>("xyz", QTT::FUZZYTERM, cased));
         EXPECT_TRUE(creates_string_matcher<attribute::StringRangeMatcher>(
             std::make_unique<QueryTermUCS4>(
                 QTT::STRING_RANGE, std::make_unique<StringRangeSpec>(StringRangeSpec{"BAR", true, "FOO", true})),

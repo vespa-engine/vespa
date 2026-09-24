@@ -13,7 +13,6 @@ class StringPostingSearchContext
 private:
     using ExecuteInfo = queryeval::ExecuteInfo;
     using Parent = PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>;
-    using RegexpUtil = vespalib::RegexpUtil;
     using Parent::_enumStore;
     // Note: Steps iterator one or more steps when not using dictionary entry
     bool use_dictionary_entry(PostingListSearchContext::DictionaryConstIterator& it) const override;

@@ -3,9 +3,6 @@
 #pragma once
 
 #include "search_context.h"
-#include "string_matcher.h"
-
-#include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 
 namespace search {
 

@@ -2,11 +2,14 @@
 
 #include "single_string_enum_search_context.hpp"
 
-#include "string_range_matcher.h"
+#include "string_matcher_factory.h"
 
 namespace search::attribute {
 
-template class SingleStringEnumSearchContextT<StringMatcher>;
+template class SingleStringEnumSearchContextT<StringCasedMatcher>;
+template class SingleStringEnumSearchContextT<StringUncasedMatcher>;
+template class SingleStringEnumSearchContextT<StringRegexMatcher>;
+template class SingleStringEnumSearchContextT<StringFuzzyMatcher>;
 
 template class SingleStringEnumSearchContextT<StringRangeMatcher>;
 

@@ -32,7 +32,7 @@ LDT to_dfa_type(FMA algorithm) {
 
 } // namespace
 
-StringSearchHelper::StringSearchHelper(QueryTermUCS4& term, bool cased,
+StringSearchHelper::StringSearchHelper(const QueryTermUCS4& term, bool cased,
                                        vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm)
     : _regex(),
       _fuzzyMatcher(),

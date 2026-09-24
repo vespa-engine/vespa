@@ -4,7 +4,7 @@
 
 #include "numeric_range_matcher.h"
 #include "numeric_search_context.h"
-#include "string_range_matcher.h"
+#include "string_matcher_factory.h"
 #include "string_search_context.h"
 
 using ValueRef = vespalib::datastore::AtomicEntryRef;
@@ -12,7 +12,10 @@ using WeightedValueRef = search::multivalue::WeightedValue<vespalib::datastore::
 
 namespace search::attribute {
 
-template class MultiEnumSearchContext<const char*, StringSearchContextT<StringMatcher>, ValueRef>;
+template class MultiEnumSearchContext<const char*, StringSearchContextT<StringCasedMatcher>, ValueRef>;
+template class MultiEnumSearchContext<const char*, StringSearchContextT<StringUncasedMatcher>, ValueRef>;
+template class MultiEnumSearchContext<const char*, StringSearchContextT<StringRegexMatcher>, ValueRef>;
+template class MultiEnumSearchContext<const char*, StringSearchContextT<StringFuzzyMatcher>, ValueRef>;
 template class MultiEnumSearchContext<const char*, StringSearchContextT<StringRangeMatcher>, ValueRef>;
 template class MultiEnumSearchContext<int8_t, NumericSearchContext<NumericRangeMatcher<int8_t>>, ValueRef>;
 template class MultiEnumSearchContext<int16_t, NumericSearchContext<NumericRangeMatcher<int16_t>>, ValueRef>;
@@ -21,7 +24,10 @@ template class MultiEnumSearchContext<int64_t, NumericSearchContext<NumericRange
 template class MultiEnumSearchContext<float, NumericSearchContext<NumericRangeMatcher<float>>, ValueRef>;
 template class MultiEnumSearchContext<double, NumericSearchContext<NumericRangeMatcher<double>>, ValueRef>;
 
-template class MultiEnumSearchContext<const char*, StringSearchContextT<StringMatcher>, WeightedValueRef>;
+template class MultiEnumSearchContext<const char*, StringSearchContextT<StringCasedMatcher>, WeightedValueRef>;
+template class MultiEnumSearchContext<const char*, StringSearchContextT<StringUncasedMatcher>, WeightedValueRef>;
+template class MultiEnumSearchContext<const char*, StringSearchContextT<StringRegexMatcher>, WeightedValueRef>;
+template class MultiEnumSearchContext<const char*, StringSearchContextT<StringFuzzyMatcher>, WeightedValueRef>;
 template class MultiEnumSearchContext<const char*, StringSearchContextT<StringRangeMatcher>, WeightedValueRef>;
 template class MultiEnumSearchContext<int8_t, NumericSearchContext<NumericRangeMatcher<int8_t>>, WeightedValueRef>;
 template class MultiEnumSearchContext<int16_t, NumericSearchContext<NumericRangeMatcher<int16_t>>, WeightedValueRef>;

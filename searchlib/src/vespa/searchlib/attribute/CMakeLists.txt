@@ -155,15 +155,19 @@ vespa_add_library(searchlib_attribute OBJECT
     singlestringattribute.cpp
     singlestringpostattribute.cpp
     sourceselector.cpp
-    string_matcher.cpp
+    string_cased_matcher.cpp
+    string_fuzzy_matcher.cpp
+    string_matcher_base.cpp
     string_posting_search_context.cpp
     string_range_matcher.cpp
     string_range_posting_search_context.cpp
     string_range_search_helper.cpp
+    string_regex_matcher.cpp
     string_search_context.cpp
     string_search_helper.cpp
     string_sort_blob_writer.cpp
     string_to_number.cpp
+    string_uncased_matcher.cpp
     stringbase.cpp
     valuemodifier.cpp
     DEPENDS

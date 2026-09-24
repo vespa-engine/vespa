@@ -3,7 +3,10 @@
 #pragma once
 
 #include "posting_list_folded_search_context.hpp"
+#include "string_fuzzy_matcher.h"
 #include "string_posting_search_context.h"
+
+#include <type_traits>
 
 namespace search::attribute {
 
@@ -12,25 +15,11 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::StringPostingSearchContext(Bas
                                                                              const AttrT& toBeSearched)
     : Parent(std::move(base_sc), useBitVector, toBeSearched) {
     if (this->valid()) {
-        if (this->isPrefix()) {
-            auto comp = _enumStore.prefix_lookup_comparator(this->queryTerm()->getTerm());
-            this->lookupRange(comp, comp);
-        } else if (this->isRegex()) {
-            std::string prefix(RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
-            auto        comp = _enumStore.prefix_lookup_comparator(prefix.c_str());
-            this->lookupRange(comp, comp);
-        } else if (this->isFuzzy()) {
-            std::string prefix(this->getFuzzyMatcher().getPrefix());
-            auto        comp = _enumStore.prefix_lookup_comparator(prefix.c_str());
-            this->lookupRange(comp, comp);
-        } else {
-            auto comp = _enumStore.string_lookup_comparator(this->queryTerm()->getTerm());
-            this->lookupTerm(comp);
-        }
+        this->lookup_dictionary(_enumStore, *this);
         if (this->_uniqueValues == 1u) {
             /*
              * A single dictionary entry from lookupRange() might not be
-             * a match if this is a regex search or a fuzzy search.
+             * a match, e.g. if this is a cased, regex or fuzzy search.
              */
             if (!this->_lowerDictItr.valid() || use_single_dictionary_entry(this->_lowerDictItr)) {
                 this->lookupSingle();
@@ -44,31 +33,13 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::StringPostingSearchContext(Bas
 template <typename BaseSC, typename AttrT, typename DataT>
 bool StringPostingSearchContext<BaseSC, AttrT, DataT>::use_dictionary_entry(
     PostingListSearchContext::DictionaryConstIterator& it) const {
-    if (this->isRegex()) {
-        if (this->getRegex().valid() &&
-            this->getRegex().partial_match(_enumStore.get_value(it.getKey().load_acquire())))
-        {
-            return true;
-        }
-        ++it;
-        return false;
-    } else if (this->isCased()) {
-        if (this->match(_enumStore.get_value(it.getKey().load_acquire()))) {
-            return true;
-        }
-        ++it;
-        return false;
-    } else if (this->isFuzzy()) {
-        return this->is_fuzzy_match(_enumStore.get_value(it.getKey().load_acquire()), it,
-                                    _enumStore.get_data_store());
-    }
-    return true;
+    return this->match_dictionary_entry(_enumStore, it);
 }
 
 template <typename BaseSC, typename AttrT, typename DataT>
 bool StringPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_lists_when_non_strict(
     const ExecuteInfo& info) const {
-    if (this->isFuzzy()) {
+    if constexpr (std::is_same_v<typename BaseSC::MatcherType, StringFuzzyMatcher>) {
         uint32_t           exp_doc_hits = this->_docIdLimit * info.hit_rate();
         constexpr uint32_t fuzzy_use_posting_lists_doc_limit = 10000;
         /**

@@ -4,12 +4,15 @@
 
 #include "numeric_range_matcher.h"
 #include "numeric_search_context.h"
-#include "string_range_matcher.h"
+#include "string_matcher_factory.h"
 #include "string_search_context.h"
 
 namespace search::attribute {
 
-template class SingleEnumSearchContext<const char*, StringSearchContextT<StringMatcher>>;
+template class SingleEnumSearchContext<const char*, StringSearchContextT<StringCasedMatcher>>;
+template class SingleEnumSearchContext<const char*, StringSearchContextT<StringUncasedMatcher>>;
+template class SingleEnumSearchContext<const char*, StringSearchContextT<StringRegexMatcher>>;
+template class SingleEnumSearchContext<const char*, StringSearchContextT<StringFuzzyMatcher>>;
 template class SingleEnumSearchContext<const char*, StringSearchContextT<StringRangeMatcher>>;
 template class SingleEnumSearchContext<int8_t, NumericSearchContext<NumericRangeMatcher<int8_t>>>;
 template class SingleEnumSearchContext<int16_t, NumericSearchContext<NumericRangeMatcher<int16_t>>>;

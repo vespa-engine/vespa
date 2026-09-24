@@ -63,9 +63,6 @@ protected:
     }
     double avg_postinglist_size() const noexcept { return static_cast<double>(_numValues) / _dictSize; }
 
-    void lookupTerm(const vespalib::datastore::EntryComparator& comp);
-    void lookupRange(const vespalib::datastore::EntryComparator& low,
-                     const vespalib::datastore::EntryComparator& high);
     void lookupSingle();
     size_t estimated_hits_in_range() const;
     virtual bool use_dictionary_entry(DictionaryConstIterator& it) const {
@@ -81,6 +78,10 @@ protected:
     virtual size_t calc_estimated_hits_in_range() const = 0;
 
 public:
+    void lookupTerm(const vespalib::datastore::EntryComparator& comp);
+    void lookupRange(const vespalib::datastore::EntryComparator& low,
+                     const vespalib::datastore::EntryComparator& high);
+
     // Used by unit tests.
     static bool get_preserve_weight() noexcept { return _preserve_weight; }
     static void set_preserve_weight(bool value) noexcept { _preserve_weight = value; }

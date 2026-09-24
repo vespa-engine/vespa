@@ -2,7 +2,7 @@
 
 #include "multi_string_enum_search_context.hpp"
 
-#include "string_range_matcher.h"
+#include "string_matcher_factory.h"
 
 #include <vespa/searchcommon/attribute/multivalue.h>
 
@@ -11,10 +11,16 @@ using WeightedValueRef = search::multivalue::WeightedValue<vespalib::datastore::
 
 namespace search::attribute {
 
-template class MultiStringEnumSearchContextT<ValueRef, StringMatcher>;
+template class MultiStringEnumSearchContextT<ValueRef, StringCasedMatcher>;
+template class MultiStringEnumSearchContextT<ValueRef, StringUncasedMatcher>;
+template class MultiStringEnumSearchContextT<ValueRef, StringRegexMatcher>;
+template class MultiStringEnumSearchContextT<ValueRef, StringFuzzyMatcher>;
 template class MultiStringEnumSearchContextT<ValueRef, StringRangeMatcher>;
 
-template class MultiStringEnumSearchContextT<WeightedValueRef, StringMatcher>;
+template class MultiStringEnumSearchContextT<WeightedValueRef, StringCasedMatcher>;
+template class MultiStringEnumSearchContextT<WeightedValueRef, StringUncasedMatcher>;
+template class MultiStringEnumSearchContextT<WeightedValueRef, StringRegexMatcher>;
+template class MultiStringEnumSearchContextT<WeightedValueRef, StringFuzzyMatcher>;
 template class MultiStringEnumSearchContextT<WeightedValueRef, StringRangeMatcher>;
 
 } // namespace search::attribute
