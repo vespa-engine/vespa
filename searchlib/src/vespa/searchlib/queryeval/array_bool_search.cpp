@@ -13,10 +13,27 @@ LOG_SETUP(".searchlib.queryeval.array_bool_search");
 namespace search::queryeval {
 
 ArrayBoolSearch::ArrayBoolSearch(const ArrayBoolAttribute& attr, const std::vector<uint32_t>& element_filter,
-                                 fef::TermFieldMatchData* tfmd)
-    : _attr(attr), _element_filter(element_filter), _tfmd(tfmd) {
+                                 fef::TermFieldMatchData* tfmd, bool unpack_element_positions)
+    : _attr(attr),
+      _element_filter(element_filter),
+      _tfmd(tfmd),
+      _unpack_element_positions(unpack_element_positions),
+      _matching_elements() {
     assert(!_element_filter.empty());
     assert(tfmd != nullptr);
+}
+
+void ArrayBoolSearch::doUnpack(uint32_t docid) {
+    if (_unpack_element_positions && _tfmd->needs_normal_features()) {
+        _tfmd->reset(docid);
+        _matching_elements.clear();
+        get_element_ids(docid, _matching_elements);
+        for (uint32_t element_id : _matching_elements) {
+            _tfmd->appendPosition(fef::TermFieldMatchDataPosition(element_id, 0, 1, 1));
+        }
+    } else {
+        _tfmd->resetOnlyDocId(docid);
+    }
 }
 
 /**
@@ -27,8 +44,8 @@ template <bool want_true, bool strict> class ArrayBoolSearchSingleImpl : public 
 
 public:
     ArrayBoolSearchSingleImpl(const ArrayBoolAttribute& attr, const std::vector<uint32_t>& element_filter,
-                              fef::TermFieldMatchData* tfmd)
-        : ArrayBoolSearch(attr, element_filter, tfmd), _element_id(0) {
+                              fef::TermFieldMatchData* tfmd, bool unpack_element_positions)
+        : ArrayBoolSearch(attr, element_filter, tfmd, unpack_element_positions), _element_id(0) {
         assert(element_filter.size() == 1);
         _element_id = element_filter[0];
     }
@@ -49,8 +66,6 @@ public:
         }
         setAtEnd();
     }
-
-    void doUnpack(uint32_t docid) override { _tfmd->resetOnlyDocId(docid); }
 
     bool check_array(uint32_t docid) const {
         auto bools = _attr.get_bools(docid);
@@ -74,8 +89,8 @@ public:
 template <bool want_true, bool strict> class ArrayBoolSearchMultiImpl : public ArrayBoolSearch {
 public:
     ArrayBoolSearchMultiImpl(const ArrayBoolAttribute& attr, const std::vector<uint32_t>& element_filter,
-                             fef::TermFieldMatchData* tfmd)
-        : ArrayBoolSearch(attr, element_filter, tfmd) {}
+                             fef::TermFieldMatchData* tfmd, bool unpack_element_positions)
+        : ArrayBoolSearch(attr, element_filter, tfmd, unpack_element_positions) {}
 
     Trinary is_strict() const override { return strict ? Trinary::True : Trinary::False; }
 
@@ -93,8 +108,6 @@ public:
         }
         setAtEnd();
     }
-
-    void doUnpack(uint32_t docid) override { _tfmd->resetOnlyDocId(docid); }
 
     bool check_array(uint32_t docid) const {
         auto bools = _attr.get_bools(docid);
@@ -132,33 +145,35 @@ namespace {
 template <bool want_true, bool strict>
 std::unique_ptr<ArrayBoolSearch> resolve_multi(const attribute::ArrayBoolAttribute& attr,
                                                const std::vector<uint32_t>&         element_filter,
-                                               fef::TermFieldMatchData*             tfmd) {
+                                               fef::TermFieldMatchData* tfmd, bool unpack_element_positions) {
     if (element_filter.size() == 1) {
-        return std::make_unique<ArrayBoolSearchSingleImpl<want_true, strict>>(attr, element_filter, tfmd);
+        return std::make_unique<ArrayBoolSearchSingleImpl<want_true, strict>>(attr, element_filter, tfmd,
+                                                                              unpack_element_positions);
     } else {
-        return std::make_unique<ArrayBoolSearchMultiImpl<want_true, strict>>(attr, element_filter, tfmd);
+        return std::make_unique<ArrayBoolSearchMultiImpl<want_true, strict>>(attr, element_filter, tfmd,
+                                                                             unpack_element_positions);
     }
 }
 
 template <bool want_true>
 std::unique_ptr<ArrayBoolSearch> resolve_strict(bool strict, const attribute::ArrayBoolAttribute& attr,
                                                 const std::vector<uint32_t>& element_filter,
-                                                fef::TermFieldMatchData*     tfmd) {
+                                                fef::TermFieldMatchData* tfmd, bool unpack_element_positions) {
     if (strict) {
-        return resolve_multi<want_true, true>(attr, element_filter, tfmd);
+        return resolve_multi<want_true, true>(attr, element_filter, tfmd, unpack_element_positions);
     } else {
-        return resolve_multi<want_true, false>(attr, element_filter, tfmd);
+        return resolve_multi<want_true, false>(attr, element_filter, tfmd, unpack_element_positions);
     }
 }
 
 std::unique_ptr<ArrayBoolSearch> resolve_want_true(bool want_true, bool strict,
                                                    const attribute::ArrayBoolAttribute& attr,
                                                    const std::vector<uint32_t>&         element_filter,
-                                                   fef::TermFieldMatchData*             tfmd) {
+                                                   fef::TermFieldMatchData* tfmd, bool unpack_element_positions) {
     if (want_true) {
-        return resolve_strict<true>(strict, attr, element_filter, tfmd);
+        return resolve_strict<true>(strict, attr, element_filter, tfmd, unpack_element_positions);
     } else {
-        return resolve_strict<false>(strict, attr, element_filter, tfmd);
+        return resolve_strict<false>(strict, attr, element_filter, tfmd, unpack_element_positions);
     }
 }
 
@@ -166,8 +181,9 @@ std::unique_ptr<ArrayBoolSearch> resolve_want_true(bool want_true, bool strict,
 
 std::unique_ptr<ArrayBoolSearch> ArrayBoolSearch::create(const ArrayBoolAttribute&    attr,
                                                          const std::vector<uint32_t>& element_filter, bool want_true,
-                                                         bool strict, fef::TermFieldMatchData* tfmd) {
-    return resolve_want_true(want_true, strict, attr, element_filter, tfmd);
+                                                         bool strict, fef::TermFieldMatchData* tfmd,
+                                                         bool unpack_element_positions) {
+    return resolve_want_true(want_true, strict, attr, element_filter, tfmd, unpack_element_positions);
 }
 
 } // namespace search::queryeval

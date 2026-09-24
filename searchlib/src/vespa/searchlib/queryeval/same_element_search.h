@@ -17,6 +17,10 @@ namespace search::queryeval {
 /**
  * Search iterator for a collection of terms that need to match within
  * the same element (array index).
+ *
+ * When normal features are needed, the match data for this iterator gets
+ * one position per matching element on unpack, exposing the matching
+ * element ids to ranking.
  */
 class SameElementSearch : public SearchIterator {
 private:

@@ -23,6 +23,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -544,6 +545,124 @@ public class RankingExpressionTypeResolverTestCase {
         builder.build(true);
         String message = logger.findMessage("The following query features");
         assertNull(message);
+    }
+
+    private static String elementwiseMatchesSchema(String feature) {
+        return joinLines(
+                "schema test {",
+                "  document test { ",
+                "    struct person {",
+                "      field name type string {}",
+                "      field age type int {}",
+                "    }",
+                "    field people type array<person> {",
+                "      indexing: summary",
+                "      struct-field name { indexing: attribute }",
+                "      struct-field age { indexing: attribute }",
+                "    }",
+                "    field props type map<string, string> {",
+                "      indexing: summary",
+                "      struct-field key { indexing: attribute }",
+                "      struct-field value { indexing: attribute }",
+                "    }",
+                "    field tags type array<string> {",
+                "      indexing: attribute | summary",
+                "    }",
+                "    field title type string {",
+                "      indexing: index | summary",
+                "    }",
+                "    field location type position {",
+                "      indexing: attribute | summary",
+                "    }",
+                "    field locations type array<position> {",
+                "      indexing: attribute | summary",
+                "    }",
+                "  }",
+                "  rank-profile my_rank_profile {",
+                "    function my_func() {",
+                "      expression: reduce(" + feature + ", sum)",
+                "    }",
+                "    first-phase {",
+                "      expression: my_func",
+                "    }",
+                "    summary-features: " + feature,
+                "  }",
+                "}");
+    }
+
+    private static void buildElementwiseMatches(String feature) throws Exception {
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchema(elementwiseMatchesSchema(feature));
+        builder.build(true);
+    }
+
+    private static void assertElementwiseMatchesFails(String feature, String fieldName) throws Exception {
+        try {
+            buildElementwiseMatches(feature);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals("In schema 'test', rank profile 'my_rank_profile': The function 'my_func' is invalid: " +
+                         feature + " is invalid: field '" + fieldName + "' is not an array of struct or map field",
+                         Exceptions.toMessageString(expected));
+        }
+    }
+
+    @Test
+    void elementwiseMatchesIsAcceptedForArrayOfStructAndMapFields() throws Exception {
+        buildElementwiseMatches("elementwise(matches(people),x,float)");
+        buildElementwiseMatches("elementwise(matches(props),x)");
+    }
+
+    @Test
+    void elementwiseMatchesIsRejectedForOtherFields() throws Exception {
+        assertElementwiseMatchesFails("elementwise(matches(tags),x,float)", "tags");
+        assertElementwiseMatchesFails("elementwise(matches(title),x,float)", "title");
+        assertElementwiseMatchesFails("elementwise(matches(people.name),x,float)", "people.name");
+        assertElementwiseMatchesFails("elementwise(matches(unknown),x,float)", "unknown");
+        assertElementwiseMatchesFails("elementwise(matches(location),x,float)", "location");
+        assertElementwiseMatchesFails("elementwise(matches(locations),x,float)", "locations");
+    }
+
+    @Test
+    void elementwiseMatchesIsValidatedInSummaryFeatures() throws Exception {
+        try {
+            ApplicationBuilder builder = new ApplicationBuilder();
+            builder.addSchema(joinLines(
+                    "schema test {",
+                    "  document test { ",
+                    "    field tags type array<string> {",
+                    "      indexing: attribute | summary",
+                    "    }",
+                    "  }",
+                    "  rank-profile my_rank_profile {",
+                    "    summary-features: elementwise(matches(tags),x,float)",
+                    "  }",
+                    "}"));
+            builder.build(true);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException expected) {
+            String message = Exceptions.toMessageString(expected);
+            assertTrue(message.contains("field 'tags' is not an array of struct or map field"), message);
+        }
+    }
+
+    @Test
+    void elementwiseBm25IsNotAffectedByElementwiseMatchesValidation() throws Exception {
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchema(joinLines(
+                "schema test {",
+                "  document test { ",
+                "    field chunks type array<string> {",
+                "      indexing: index | summary",
+                "    }",
+                "  }",
+                "  rank-profile my_rank_profile {",
+                "    summary-features: elementwise(bm25(chunks),x,float)",
+                "  }",
+                "}"));
+        builder.build(true);
     }
 
     private Map<String, ReferenceNode> summaryFeatures(RankProfile profile) {

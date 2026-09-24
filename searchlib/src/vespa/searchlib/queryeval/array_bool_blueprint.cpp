@@ -19,8 +19,13 @@ using namespace search::queryeval::flow;
 namespace search::queryeval {
 
 ArrayBoolBlueprint::ArrayBoolBlueprint(FieldSpecBase field, const ArrayBoolAttribute& attr,
-                                       const std::vector<uint32_t>& element_filter, bool want_true)
-    : SimpleLeafBlueprint(field), _attr(attr), _element_filter(element_filter), _want_true(want_true) {
+                                       const std::vector<uint32_t>& element_filter, bool want_true,
+                                       bool unpack_element_positions)
+    : SimpleLeafBlueprint(field),
+      _attr(attr),
+      _element_filter(element_filter),
+      _want_true(want_true),
+      _unpack_element_positions(unpack_element_positions) {
     auto num_docs = _attr.getNumDocs();
     setEstimate(HitEstimate(num_docs, num_docs == 0));
 }
@@ -35,7 +40,7 @@ search::queryeval::FlowStats ArrayBoolBlueprint::calculate_flow_stats(uint32_t /
 std::unique_ptr<SearchIterator>
 ArrayBoolBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const {
     assert(tfmda.size() == 1); // always search in only one field
-    return ArrayBoolSearch::create(_attr, _element_filter, _want_true, strict(), tfmda[0]);
+    return ArrayBoolSearch::create(_attr, _element_filter, _want_true, strict(), tfmda[0], _unpack_element_positions);
 }
 
 std::unique_ptr<SearchIterator> ArrayBoolBlueprint::createFilterSearchImpl(FilterConstraint constraint) const {

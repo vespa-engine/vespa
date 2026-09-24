@@ -20,6 +20,9 @@ namespace search::features {
  * value. e.g. both elementwise(bm25(i),x,double) and elementwise(bm25(i),x) will pass (i,x,double) to the inner
  * elementwise bm25 ranking feature blueprint and rank property keys used for tuning must always contain the cell type
  * name.
+ *
+ * Supported inner features: bm25 (e.g. elementwise(bm25(i),x,float)) and matches (e.g. elementwise(matches(f),x),
+ * giving 1.0 for each element id matched by sameElement in an array of struct or map field f).
  */
 class ElementwiseBlueprint : public fef::Blueprint {
 public:
