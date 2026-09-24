@@ -2,11 +2,22 @@
 // Unit tests for grouping_serialization.
 
 #include <vespa/document/base/documentid.h>
-#include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/argmax_aggregation_result.h>
+#include <vespa/searchlib/aggregation/averageaggregationresult.h>
+#include <vespa/searchlib/aggregation/countaggregationresult.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
+#include <vespa/searchlib/aggregation/grouping.h>
+#include <vespa/searchlib/aggregation/groupinglevel.h>
+#include <vespa/searchlib/aggregation/hitlist.h>
+#include <vespa/searchlib/aggregation/hitsaggregationresult.h>
+#include <vespa/searchlib/aggregation/maxaggregationresult.h>
+#include <vespa/searchlib/aggregation/minaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/quantile_aggregation_result.h>
+#include <vespa/searchlib/aggregation/standarddeviationaggregationresult.h>
+#include <vespa/searchlib/aggregation/sumaggregationresult.h>
+#include <vespa/searchlib/aggregation/xoraggregationresult.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/geo_distance_function_node.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
@@ -25,7 +36,6 @@ LOG_SETUP("grouping_serialization_test");
 
 using search::HitRank;
 using vespalib::Identifiable;
-using vespalib::make_string;
 using vespalib::NBOSerializer;
 using vespalib::nbostream;
 using namespace search::aggregation;

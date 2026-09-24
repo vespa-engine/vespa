@@ -15,9 +15,9 @@
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/matching/viewresolver.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
-#include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
+#include <vespa/searchlib/aggregation/sumaggregationresult.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/converters.h>
 #include <vespa/searchlib/engine/docsumreply.h>
