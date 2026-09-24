@@ -1395,13 +1395,10 @@ TEST_F(SearchContextTest, test_lexical_range_search) {
 
 namespace {
 
-std::unique_ptr<QueryTermSimple> make_string_range_query_term(const std::string& left, bool left_closed,
-                                                              bool left_unbounded, const std::string& right,
-                                                              bool right_closed, bool right_unbounded) {
-    return std::make_unique<QueryTermUCS4>(
-        QueryTermSimple::Type::WORD,
-        std::make_unique<StringRangeSpec>(left_unbounded ? std::nullopt : std::optional(left), left_closed,
-                                          right_unbounded ? std::nullopt : std::optional(right), right_closed));
+std::unique_ptr<QueryTermSimple> make_string_range_query_term(std::optional<std::string> left, bool left_closed,
+                                                              std::optional<std::string> right, bool right_closed) {
+    return std::make_unique<QueryTermUCS4>(QueryTermSimple::Type::WORD,
+                                           std::make_unique<StringRangeSpec>(left, left_closed, right, right_closed));
 }
 
 } // namespace
@@ -1433,55 +1430,52 @@ void SearchContextTest::test_mixed_case_lexical_range_search(const std::string& 
     }
     attr.commit(CommitParam::UpdateStats::FORCE);
 
-    auto expect = [this, &attr](const std::string& left, bool left_closed, bool left_unbounded,
-                                const std::string& right, bool right_closed, bool right_unbounded,
-                                const DocSet& expected) {
-        perform_search(
-            queryeval::ExecuteInfo::FULL, attr,
-            make_string_range_query_term(left, left_closed, left_unbounded, right, right_closed, right_unbounded),
-            expected);
+    auto expect = [this, &attr](std::optional<std::string> left, bool left_closed, std::optional<std::string> right,
+                                bool right_closed, const DocSet& expected) {
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_string_range_query_term(left, left_closed, right, right_closed), expected);
     };
 
     if (!cased) {
         // Both open boundaries have to step past all three of BAR, bar and Bar / both of FOO, foo.
-        expect("bar", false, false, "foo", false, false, {4});
-        expect("bar", true, false, "foo", false, false, {1, 2, 3, 4});
-        expect("bar", false, false, "foo", true, false, {4, 5, 6});
-        expect("bar", true, false, "foo", true, false, {1, 2, 3, 4, 5, 6});
+        expect("bar", false, "foo", false, {4});
+        expect("bar", true, "foo", false, {1, 2, 3, 4});
+        expect("bar", false, "foo", true, {4, 5, 6});
+        expect("bar", true, "foo", true, {1, 2, 3, 4, 5, 6});
         // The spelling of the boundary itself must not matter for an uncased attribute.
-        expect("BAR", false, false, "FOO", false, false, {4});
-        expect("Bar", false, false, "Foo", false, false, {4});
+        expect("BAR", false, "FOO", false, {4});
+        expect("Bar", false, "Foo", false, {4});
         // Narrows to a single dictionary entry only because the open boundary skips the whole
         // group of case variants.
-        expect("bar", false, false, "baz", true, false, {4});
-        expect("bar", false, false, "baz", false, false, {});
+        expect("bar", false, "baz", true, {4});
+        expect("bar", false, "baz", false, {});
         // An open boundary that lands on a group of case variants leaves nothing between them.
-        expect("bar", false, false, "Bar", true, false, {});
-        expect("foo", false, false, "zzz", false, false, {});
+        expect("bar", false, "Bar", true, {});
+        expect("foo", false, "zzz", false, {});
         // Unbounded on one side.
-        expect("", false, true, "bar", false, false, {});
-        expect("", false, true, "bar", true, false, {1, 2, 3});
-        expect("zzz", false, false, "", false, true, {});
-        expect("zzz", true, false, "", false, true, {7});
-        expect("foo", false, false, "", false, true, {7});
+        expect(std::nullopt, false, "bar", false, {});
+        expect(std::nullopt, false, "bar", true, {1, 2, 3});
+        expect("zzz", false, std::nullopt, false, {});
+        expect("zzz", true, std::nullopt, false, {7});
+        expect("foo", false, std::nullopt, false, {7});
     } else {
         // Case variants are distinct entries here, so an open boundary steps past exactly one.
-        expect("BAR", false, false, "foo", false, false, {3, 5, 2, 4});
-        expect("BAR", true, false, "foo", false, false, {1, 3, 5, 2, 4});
-        expect("BAR", false, false, "foo", true, false, {3, 5, 2, 4, 6});
-        expect("BAR", true, false, "foo", true, false, {1, 3, 5, 2, 4, 6});
+        expect("BAR", false, "foo", false, {3, 5, 2, 4});
+        expect("BAR", true, "foo", false, {1, 3, 5, 2, 4});
+        expect("BAR", false, "foo", true, {3, 5, 2, 4, 6});
+        expect("BAR", true, "foo", true, {1, 3, 5, 2, 4, 6});
         // "Bar" and "bar" bracket "FOO" in cased order.
-        expect("Bar", false, false, "bar", false, false, {5});
-        expect("Bar", true, false, "bar", true, false, {3, 5, 2});
+        expect("Bar", false, "bar", false, {5});
+        expect("Bar", true, "bar", true, {3, 5, 2});
         // A boundary spelled with the wrong case picks out a different range than above.
-        expect("bar", false, false, "baz", true, false, {4});
-        expect("bar", false, false, "baz", false, false, {});
+        expect("bar", false, "baz", true, {4});
+        expect("bar", false, "baz", false, {});
         // Unbounded on one side.
-        expect("", false, true, "BAR", false, false, {});
-        expect("", false, true, "BAR", true, false, {1});
-        expect("zzz", false, false, "", false, true, {});
-        expect("zzz", true, false, "", false, true, {7});
-        expect("foo", false, false, "", false, true, {7});
+        expect(std::nullopt, false, "BAR", false, {});
+        expect(std::nullopt, false, "BAR", true, {1});
+        expect("zzz", false, std::nullopt, false, {});
+        expect("zzz", true, std::nullopt, false, {7});
+        expect("foo", false, std::nullopt, false, {7});
     }
 }
 
