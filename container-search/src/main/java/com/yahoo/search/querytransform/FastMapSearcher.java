@@ -23,6 +23,8 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 import com.yahoo.searchlib.document.FastMapSearch;
 
+import java.util.regex.Pattern;
+
 /**
  * When a field has fast map search enabled, this class transforms queries on
  * that field to target the fast map attribute.
@@ -154,6 +156,14 @@ public class FastMapSearcher extends Searcher {
                 return makeWord(key, value, fieldName);
             }
             return makeLongRange(key, valueItem, fieldName);
+        }
+
+        if (mapType.valueType().kind() == Field.Type.Kind.FLOAT || mapType.valueType().kind() == Field.Type.Kind.DOUBLE) {
+            var key = getString(keyItem);
+            if (key == null) {
+                return null;
+            }
+            return makeFloatingPointItem(key, valueItem, fieldName, mapType.valueType().kind() == Field.Type.Kind.FLOAT);
         }
 
         return null;
@@ -312,6 +322,88 @@ public class FastMapSearcher extends Searcher {
     WordItem makeWord(String key, Long value, String fieldName) {
         return new WordItem(FastMapSearch.toKeyValue16Term(key, value),
                             FastMapSearch.toKeyValueFieldName(fieldName), false);
+    }
+
+    /**
+     * Returns the fast map lookup term equivalent to the given value term on the float or double value of
+     * one map key, or null if it cannot be expressed as one.
+     *
+     * Each endpoint is rounded to the nearest value of the attribute type, like the backend does for a
+     * float or double attribute. Since -0.0 and 0.0 are equal as numbers but not as encoded strings, a
+     * zero endpoint is encoded as the zero which makes the range include or exclude both zeros.
+     * A single value (other than zero) becomes a word lookup, anything else a lexical range.
+     *
+     * Package-private for unit testing.
+     */
+    TermItem makeFloatingPointItem(String key, TermItem valueItem, String fieldName, boolean isFloat) {
+        Limit fromLimit;
+        Limit toLimit;
+        if (valueItem instanceof IntItem intItem) {
+            if (intItem.getHitLimit() != 0) {
+                return null; // a hit limit counts entries in the value attribute, not the synthetic one
+            }
+            fromLimit = intItem.getFromLimit();
+            toLimit = intItem.getToLimit();
+        } else if (valueItem.getClass() == WordItem.class) {
+            Double value = parseDecimal(((WordItem) valueItem).getWord());
+            if (value == null) {
+                return null;
+            }
+            fromLimit = toLimit = new Limit(value, true);
+        } else {
+            return null;
+        }
+        // An unbounded limit is included by the backend whether the limit is inclusive or not.
+        boolean fromInclusive = fromLimit.isInfinite() || fromLimit.isInclusive();
+        boolean toInclusive = toLimit.isInfinite() || toLimit.isInclusive();
+        double from = toFloatingPointBound(fromLimit, isFloat, true, fromInclusive);
+        double to = toFloatingPointBound(toLimit, isFloat, false, toInclusive);
+        if (Double.isNaN(from) || Double.isNaN(to)) {
+            return null; // matches nothing in the backend: fall back to the regular sameElement
+        }
+        String fieldNameOfKeyValue = FastMapSearch.toKeyValueFieldName(fieldName);
+        if (fromInclusive && toInclusive && Double.doubleToRawLongBits(from) == Double.doubleToRawLongBits(to)) {
+            return new WordItem(toKeyValueTerm(key, from, isFloat), fieldNameOfKeyValue, false);
+        }
+        return new StringRangeItem(toKeyValueTerm(key, from, isFloat), fromInclusive,
+                                   toKeyValueTerm(key, to, isFloat), toInclusive,
+                                   fieldNameOfKeyValue, false, null);
+    }
+
+    /**
+     * Returns the float or double endpoint of a range with the given limit. An unbounded limit becomes
+     * the infinity in its direction. A zero endpoint becomes the zero on the outside of the range when
+     * inclusive, and on the inside when exclusive, so that either both zeros are matched or neither is.
+     */
+    private static double toFloatingPointBound(Limit limit, boolean isFloat, boolean isLower, boolean inclusive) {
+        double bound;
+        if (limit.isInfinite()) {
+            bound = isLower ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        } else if (isFloat) {
+            bound = (float) limit.number().doubleValue(); // via double, like the backend
+        } else {
+            bound = limit.number().doubleValue();
+        }
+        if (bound == 0.0) {
+            bound = (isLower == inclusive) ? -0.0 : 0.0;
+        }
+        return bound;
+    }
+
+    private static String toKeyValueTerm(String key, double value, boolean isFloat) {
+        return isFloat ? FastMapSearch.toKeyValueFloatTerm(key, (float) value)
+                       : FastMapSearch.toKeyValueDoubleTerm(key, value);
+    }
+
+    private static final Pattern decimalNumber = Pattern.compile("[+-]?(\\d+\\.?\\d*|\\.\\d+)([eE][+-]?\\d+)?");
+
+    /** Returns the given word as a double if it is a plain decimal number, and null otherwise. */
+    private static Double parseDecimal(String word) {
+        String trimmed = word.trim();
+        if ( ! decimalNumber.matcher(trimmed).matches()) {
+            return null; // a range expression, or not a number: the caller falls back to the regular sameElement
+        }
+        return Double.parseDouble(trimmed);
     }
 
     /** Returns the map type of the given field if it has fast map search enabled, and null otherwise. */
