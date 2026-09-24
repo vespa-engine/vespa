@@ -13,28 +13,39 @@ StringRangeSearchHelper::StringRangeSearchHelper(const StringRangeSpec* range_sp
 
 StringRangeSearchHelper::~StringRangeSearchHelper() = default;
 
-bool StringRangeSearchHelper::is_match(const char* src) const {
+template <detail::FoldableString T>
+bool StringRangeSearchHelper::is_match(T src) const {
     if (_cased) {
-        return is_match_internal<false>(src);
+        return is_match_internal<false, T>(src);
     } else {
-        return is_match_internal<true>(src);
+        return is_match_internal<true, T>(src);
     }
 }
 
-template <bool fold>
-bool StringRangeSearchHelper::is_match_internal(const char* src) const {
+template bool StringRangeSearchHelper::is_match<const char*>(const char* src) const;
+template bool StringRangeSearchHelper::is_match<std::string_view>(std::string_view src) const;
+
+template <bool fold, detail::FoldableString T>
+bool StringRangeSearchHelper::is_match_internal(T src) const {
     if (is_valid()) {
         return (!_range_spec->left ||
-                (_range_spec->left_closed
-                     ? FoldedStringCompare::compareFolded<fold, fold>(_range_spec->left->c_str(), src) <= 0
-                     : FoldedStringCompare::compareFolded<fold, fold>(_range_spec->left->c_str(), src) < 0)) &&
+                (_range_spec->left_closed ? FoldedStringCompare::compareFolded<fold, fold, T, T>(
+                                                string_as<T>(*_range_spec->left), src) <= 0
+                                          : FoldedStringCompare::compareFolded<fold, fold, T, T>(
+                                                string_as<T>(*_range_spec->left), src) < 0)) &&
                (!_range_spec->right ||
-                (_range_spec->right_closed
-                     ? FoldedStringCompare::compareFolded<fold, fold>(src, _range_spec->right->c_str()) <= 0
-                     : FoldedStringCompare::compareFolded<fold, fold>(src, _range_spec->right->c_str()) < 0));
+                (_range_spec->right_closed ? FoldedStringCompare::compareFolded<fold, fold, T, T>(
+                                                 src, string_as<T>(*_range_spec->right)) <= 0
+                                           : FoldedStringCompare::compareFolded<fold, fold, T, T>(
+                                                 src, string_as<T>(*_range_spec->right)) < 0));
     } else {
         return true;
     }
 }
+
+template bool StringRangeSearchHelper::is_match_internal<false, const char*>(const char* src) const;
+template bool StringRangeSearchHelper::is_match_internal<true, const char*>(const char* src) const;
+template bool StringRangeSearchHelper::is_match_internal<false, std::string_view>(std::string_view src) const;
+template bool StringRangeSearchHelper::is_match_internal<true, std::string_view>(std::string_view src) const;
 
 } // namespace search::attribute

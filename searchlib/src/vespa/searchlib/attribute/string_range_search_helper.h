@@ -2,11 +2,22 @@
 
 #pragma once
 
+#include <optional>
+#include <string>
+#include <string_view>
+
 namespace search {
 struct StringRangeSpec;
 }
 
 namespace search::attribute {
+
+namespace detail {
+
+template <typename T>
+concept FoldableString = std::same_as<const char*, T> || std::same_as<std::string_view, T>;
+
+}
 
 /**
  * Helper class for StringRangeMatcher that implements the actual matching logic.
@@ -24,11 +35,20 @@ public:
 
     [[nodiscard]] bool is_valid() const noexcept { return _range_spec != nullptr; }
     [[nodiscard]] const StringRangeSpec* get_string_range_spec() const { return _range_spec; }
-    [[nodiscard]] bool is_match(const char* src) const;
+    template <detail::FoldableString T>
+    [[nodiscard]] bool is_match(T src) const;
 
 private:
-    template <bool fold>
-    [[nodiscard]] bool is_match_internal(const char* src) const;
+    template <detail::FoldableString T> static T string_as(const std::optional<std::string>& str);
+    template <bool fold, detail::FoldableString T>
+    [[nodiscard]] bool is_match_internal(T src) const;
 };
+
+template <> inline const char* StringRangeSearchHelper::string_as(const std::optional<std::string>& str) {
+    return str->c_str();
+}
+template <> inline std::string_view StringRangeSearchHelper::string_as(const std::optional<std::string>& str) {
+    return *str;
+}
 
 } // namespace search::attribute
