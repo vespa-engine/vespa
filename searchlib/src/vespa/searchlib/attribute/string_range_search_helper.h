@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <optional>
 #include <string>
 #include <string_view>
 
@@ -39,16 +38,16 @@ public:
     [[nodiscard]] bool is_match(T src) const;
 
 private:
-    template <detail::FoldableString T> static T string_as(const std::optional<std::string>& str);
+    template <detail::FoldableString T> static T string_as(const std::string& str);
     template <bool fold, detail::FoldableString T>
     [[nodiscard]] bool is_match_internal(T src) const;
 };
 
-template <> inline const char* StringRangeSearchHelper::string_as(const std::optional<std::string>& str) {
-    return str->c_str();
+template <> inline const char* StringRangeSearchHelper::string_as(const std::string& str) {
+    return str.c_str();
 }
-template <> inline std::string_view StringRangeSearchHelper::string_as(const std::optional<std::string>& str) {
-    return *str;
+template <> inline std::string_view StringRangeSearchHelper::string_as(const std::string& str) {
+    return str;
 }
 
 } // namespace search::attribute
