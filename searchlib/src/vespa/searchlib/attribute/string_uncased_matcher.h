@@ -3,7 +3,7 @@
 #pragma once
 
 #include "string_matcher_base.h"
-#include "string_search_helper.h"
+#include "string_uncased_search_helper.h"
 
 #include <vespa/searchlib/query/query_term_ucs4.h>
 
@@ -21,7 +21,7 @@ class EnumHintSearchContext;
  */
 class StringUncasedMatcher : public StringMatcherBase {
 private:
-    StringSearchHelper _helper;
+    StringUncasedSearchHelper _helper;
 
 public:
     explicit StringUncasedMatcher(std::unique_ptr<QueryTermSimple> query_term);
@@ -29,7 +29,7 @@ public:
     ~StringUncasedMatcher();
 
 protected:
-    [[nodiscard]] bool match(const char* src) const { return _helper.isMatch(src); }
+    [[nodiscard]] bool match(const char* src) const { return _helper.is_match(src); }
     void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
 
     /*
@@ -37,7 +37,7 @@ protected:
      */
     template <typename EnumStoreType, typename LookupContext>
     void lookup_dictionary(const EnumStoreType& enum_store, LookupContext& ctx) const {
-        if (_helper.isPrefix()) {
+        if (_helper.is_prefix()) {
             auto comp = enum_store.prefix_lookup_comparator(get_query_term().getTerm());
             ctx.lookupRange(comp, comp);
         } else {

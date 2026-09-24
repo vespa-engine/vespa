@@ -8,7 +8,7 @@
 namespace search::attribute {
 
 StringCasedMatcher::StringCasedMatcher(std::unique_ptr<QueryTermSimple> query_term)
-    : StringMatcherBase(std::move(query_term)), _helper(get_query_term(), true) {
+    : StringMatcherBase(std::move(query_term)), _helper(get_query_term()) {
 }
 
 StringCasedMatcher::StringCasedMatcher(StringCasedMatcher&&) noexcept = default;

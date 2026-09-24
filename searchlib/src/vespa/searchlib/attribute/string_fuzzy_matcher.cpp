@@ -5,8 +5,6 @@
 #include "enumhintsearchcontext.h"
 #include "enumstore.h"
 
-#include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
-
 namespace search::attribute {
 
 StringFuzzyMatcher::StringFuzzyMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased,
@@ -17,10 +15,6 @@ StringFuzzyMatcher::StringFuzzyMatcher(std::unique_ptr<QueryTermSimple> query_te
 StringFuzzyMatcher::StringFuzzyMatcher(StringFuzzyMatcher&&) noexcept = default;
 
 StringFuzzyMatcher::~StringFuzzyMatcher() = default;
-
-std::string StringFuzzyMatcher::get_prefix() const {
-    return _helper.getFuzzyMatcher().getPrefix();
-}
 
 void StringFuzzyMatcher::setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store,
                                             EnumHintSearchContext&         enum_hint_sc) {

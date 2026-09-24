@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "string_fuzzy_search_helper.h"
 #include "string_matcher_base.h"
-#include "string_search_helper.h"
 
 #include <vespa/searchlib/query/query_term_ucs4.h>
 
@@ -23,7 +23,7 @@ class EnumHintSearchContext;
  */
 class StringFuzzyMatcher : public StringMatcherBase {
 private:
-    StringSearchHelper _helper;
+    StringFuzzySearchHelper _helper;
 
 public:
     StringFuzzyMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased,
@@ -32,8 +32,8 @@ public:
     ~StringFuzzyMatcher();
 
 protected:
-    [[nodiscard]] bool match(const char* src) const { return _helper.isMatch(src); }
-    [[nodiscard]] std::string get_prefix() const;
+    [[nodiscard]] bool match(const char* src) const { return _helper.is_match(src); }
+    [[nodiscard]] std::string get_prefix() const { return _helper.get_prefix(); }
     void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
 
     /*
@@ -52,8 +52,7 @@ protected:
      */
     template <typename EnumStoreType, typename DictionaryConstIterator>
     [[nodiscard]] bool match_dictionary_entry(const EnumStoreType& enum_store, DictionaryConstIterator& it) const {
-        return _helper.is_fuzzy_match(enum_store.get_value(it.getKey().load_acquire()), it,
-                                      enum_store.get_data_store());
+        return _helper.is_match(enum_store.get_value(it.getKey().load_acquire()), it, enum_store.get_data_store());
     }
 };
 

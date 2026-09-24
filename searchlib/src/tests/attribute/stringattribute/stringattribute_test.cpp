@@ -7,9 +7,12 @@
 #include <vespa/searchlib/attribute/single_string_enum_search_context.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
+#include <vespa/searchlib/attribute/string_cased_search_helper.h>
+#include <vespa/searchlib/attribute/string_fuzzy_search_helper.h>
 #include <vespa/searchlib/attribute/string_matcher_factory.h>
 #include <vespa/searchlib/attribute/string_range_search_helper.h>
-#include <vespa/searchlib/attribute/string_search_helper.h>
+#include <vespa/searchlib/attribute/string_regex_search_helper.h>
+#include <vespa/searchlib/attribute/string_uncased_search_helper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/casts.h>
 
@@ -23,7 +26,10 @@ LOG_SETUP("stringattribute_test");
 using search::attribute::CollectionType;
 using search::attribute::IAttributeVector;
 using search::attribute::SearchContext;
-using search::attribute::StringSearchHelper;
+using search::attribute::StringCasedSearchHelper;
+using search::attribute::StringFuzzySearchHelper;
+using search::attribute::StringRegexSearchHelper;
+using search::attribute::StringUncasedSearchHelper;
 using vespalib::datastore::EntryRef;
 using namespace search;
 
@@ -409,11 +415,14 @@ template <typename Attribute> void testSingleValue(Attribute& svsa, Config& cfg)
 
 TEST_F(StringAttributeTest, testSingleValue) {
     EXPECT_EQ(24u, sizeof(SearchContext));
-    EXPECT_EQ(48u, sizeof(StringSearchHelper));
-    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringCasedMatcher>));
-    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringUncasedMatcher>));
-    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringRegexMatcher>));
-    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringFuzzyMatcher>));
+    EXPECT_EQ(16u, sizeof(StringCasedSearchHelper));
+    EXPECT_EQ(16u, sizeof(StringUncasedSearchHelper));
+    EXPECT_EQ(8u, sizeof(StringRegexSearchHelper));
+    EXPECT_EQ(16u, sizeof(StringFuzzySearchHelper));
+    EXPECT_EQ(72u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringCasedMatcher>));
+    EXPECT_EQ(72u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringUncasedMatcher>));
+    EXPECT_EQ(64u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringRegexMatcher>));
+    EXPECT_EQ(72u, sizeof(attribute::SingleStringEnumSearchContextT<attribute::StringFuzzyMatcher>));
     {
         Config                     cfg(BasicType::STRING, CollectionType::SINGLE);
         SingleValueStringAttribute svsa("svsa", cfg);
@@ -471,116 +480,98 @@ TEST_F(StringAttributeTest, test_string_matcher_factory) {
 }
 
 TEST_F(StringAttributeTest, test_uncased_match) {
-    QueryTermUCS4      xyz("xyz", QueryTermSimple::Type::WORD);
-    StringSearchHelper helper(xyz, false);
-    EXPECT_FALSE(helper.isCased());
-    EXPECT_FALSE(helper.isPrefix());
-    EXPECT_FALSE(helper.isRegex());
-    EXPECT_FALSE(helper.isMatch("axyz"));
-    EXPECT_FALSE(helper.isMatch("xyza"));
-    EXPECT_TRUE(helper.isMatch("xyz"));
-    EXPECT_TRUE(helper.isMatch("XyZ"));
-    EXPECT_FALSE(helper.isMatch("Xy"));
+    QueryTermUCS4             xyz("xyz", QueryTermSimple::Type::WORD);
+    StringUncasedSearchHelper helper(xyz);
+    EXPECT_FALSE(helper.is_prefix());
+    EXPECT_FALSE(helper.is_match("axyz"));
+    EXPECT_FALSE(helper.is_match("xyza"));
+    EXPECT_TRUE(helper.is_match("xyz"));
+    EXPECT_TRUE(helper.is_match("XyZ"));
+    EXPECT_FALSE(helper.is_match("Xy"));
 }
 
 TEST_F(StringAttributeTest, test_uncased_prefix_match) {
-    QueryTermUCS4      xyz("xyz", QueryTermSimple::Type::PREFIXTERM);
-    StringSearchHelper helper(xyz, false);
-    EXPECT_FALSE(helper.isCased());
-    EXPECT_TRUE(helper.isPrefix());
-    EXPECT_FALSE(helper.isRegex());
-    EXPECT_FALSE(helper.isMatch("axyz"));
-    EXPECT_TRUE(helper.isMatch("xyza"));
-    EXPECT_TRUE(helper.isMatch("xYza"));
-    EXPECT_TRUE(helper.isMatch("xyz"));
-    EXPECT_TRUE(helper.isMatch("XyZ"));
-    EXPECT_FALSE(helper.isMatch("Xy"));
-    QueryTermUCS4      aa(u8"å"_C, QueryTermSimple::Type::PREFIXTERM);
-    StringSearchHelper aa_helper(aa, false);
-    EXPECT_FALSE(aa_helper.isMatch("alle"));
-    EXPECT_TRUE(aa_helper.isMatch(u8"ås"_C));
-    EXPECT_TRUE(aa_helper.isMatch(u8"Ås"_C));
-    EXPECT_FALSE(aa_helper.isMatch(u8"Ørn"_C));
+    QueryTermUCS4             xyz("xyz", QueryTermSimple::Type::PREFIXTERM);
+    StringUncasedSearchHelper helper(xyz);
+    EXPECT_TRUE(helper.is_prefix());
+    EXPECT_FALSE(helper.is_match("axyz"));
+    EXPECT_TRUE(helper.is_match("xyza"));
+    EXPECT_TRUE(helper.is_match("xYza"));
+    EXPECT_TRUE(helper.is_match("xyz"));
+    EXPECT_TRUE(helper.is_match("XyZ"));
+    EXPECT_FALSE(helper.is_match("Xy"));
+    QueryTermUCS4             aa(u8"å"_C, QueryTermSimple::Type::PREFIXTERM);
+    StringUncasedSearchHelper aa_helper(aa);
+    EXPECT_FALSE(aa_helper.is_match("alle"));
+    EXPECT_TRUE(aa_helper.is_match(u8"ås"_C));
+    EXPECT_TRUE(aa_helper.is_match(u8"Ås"_C));
+    EXPECT_FALSE(aa_helper.is_match(u8"Ørn"_C));
 }
 
 TEST_F(StringAttributeTest, test_cased_match) {
-    QueryTermUCS4      xyz("XyZ", QueryTermSimple::Type::WORD);
-    StringSearchHelper helper(xyz, true);
-    EXPECT_TRUE(helper.isCased());
-    EXPECT_FALSE(helper.isPrefix());
-    EXPECT_FALSE(helper.isRegex());
-    EXPECT_FALSE(helper.isMatch("aXyZ"));
-    EXPECT_FALSE(helper.isMatch("XyZa"));
-    EXPECT_FALSE(helper.isMatch("xyz"));
-    EXPECT_FALSE(helper.isMatch("Xyz"));
-    EXPECT_TRUE(helper.isMatch("XyZ"));
-    EXPECT_FALSE(helper.isMatch("Xy"));
+    QueryTermUCS4           xyz("XyZ", QueryTermSimple::Type::WORD);
+    StringCasedSearchHelper helper(xyz);
+    EXPECT_FALSE(helper.is_prefix());
+    EXPECT_FALSE(helper.is_match("aXyZ"));
+    EXPECT_FALSE(helper.is_match("XyZa"));
+    EXPECT_FALSE(helper.is_match("xyz"));
+    EXPECT_FALSE(helper.is_match("Xyz"));
+    EXPECT_TRUE(helper.is_match("XyZ"));
+    EXPECT_FALSE(helper.is_match("Xy"));
 }
 
 TEST_F(StringAttributeTest, test_cased_prefix_match) {
-    QueryTermUCS4      xyz("XyZ", QueryTermSimple::Type::PREFIXTERM);
-    StringSearchHelper helper(xyz, true);
-    EXPECT_TRUE(helper.isCased());
-    EXPECT_TRUE(helper.isPrefix());
-    EXPECT_FALSE(helper.isRegex());
-    EXPECT_FALSE(helper.isMatch("aXyZ"));
-    EXPECT_TRUE(helper.isMatch("XyZa"));
-    EXPECT_FALSE(helper.isMatch("xyZa"));
-    EXPECT_FALSE(helper.isMatch("xyz"));
-    EXPECT_FALSE(helper.isMatch("Xyz"));
-    EXPECT_TRUE(helper.isMatch("XyZ"));
-    EXPECT_FALSE(helper.isMatch("Xy"));
-    QueryTermUCS4      aa(u8"å"_C, QueryTermSimple::Type::PREFIXTERM);
-    StringSearchHelper aa_helper(aa, true);
-    EXPECT_FALSE(aa_helper.isMatch("alle"));
-    EXPECT_TRUE(aa_helper.isMatch(u8"ås"_C));
-    EXPECT_FALSE(aa_helper.isMatch(u8"Ås"_C));
-    EXPECT_FALSE(aa_helper.isMatch(u8"Ørn"_C));
+    QueryTermUCS4           xyz("XyZ", QueryTermSimple::Type::PREFIXTERM);
+    StringCasedSearchHelper helper(xyz);
+    EXPECT_TRUE(helper.is_prefix());
+    EXPECT_FALSE(helper.is_match("aXyZ"));
+    EXPECT_TRUE(helper.is_match("XyZa"));
+    EXPECT_FALSE(helper.is_match("xyZa"));
+    EXPECT_FALSE(helper.is_match("xyz"));
+    EXPECT_FALSE(helper.is_match("Xyz"));
+    EXPECT_TRUE(helper.is_match("XyZ"));
+    EXPECT_FALSE(helper.is_match("Xy"));
+    QueryTermUCS4           aa(u8"å"_C, QueryTermSimple::Type::PREFIXTERM);
+    StringCasedSearchHelper aa_helper(aa);
+    EXPECT_FALSE(aa_helper.is_match("alle"));
+    EXPECT_TRUE(aa_helper.is_match(u8"ås"_C));
+    EXPECT_FALSE(aa_helper.is_match(u8"Ås"_C));
+    EXPECT_FALSE(aa_helper.is_match(u8"Ørn"_C));
 }
 
 TEST_F(StringAttributeTest, test_uncased_regex_match) {
-    QueryTermUCS4      xyz("x[yY]+Z", QueryTermSimple::Type::REGEXP);
-    StringSearchHelper helper(xyz, false);
-    EXPECT_FALSE(helper.isCased());
-    EXPECT_FALSE(helper.isPrefix());
-    EXPECT_TRUE(helper.isRegex());
-    EXPECT_TRUE(helper.isMatch("axyZ"));
-    EXPECT_TRUE(helper.isMatch("xyZa"));
-    EXPECT_TRUE(helper.isMatch("xyZ"));
-    EXPECT_TRUE(helper.isMatch("xyz"));
-    EXPECT_FALSE(helper.isMatch("xyaZ"));
-    EXPECT_FALSE(helper.isMatch("xy"));
+    QueryTermUCS4           xyz("x[yY]+Z", QueryTermSimple::Type::REGEXP);
+    StringRegexSearchHelper helper(xyz, false);
+    EXPECT_TRUE(helper.is_match("axyZ"));
+    EXPECT_TRUE(helper.is_match("xyZa"));
+    EXPECT_TRUE(helper.is_match("xyZ"));
+    EXPECT_TRUE(helper.is_match("xyz"));
+    EXPECT_FALSE(helper.is_match("xyaZ"));
+    EXPECT_FALSE(helper.is_match("xy"));
 }
 
 TEST_F(StringAttributeTest, test_cased_regex_match) {
-    QueryTermUCS4      xyz("x[Y]+Z", QueryTermSimple::Type::REGEXP);
-    StringSearchHelper helper(xyz, true);
-    EXPECT_TRUE(helper.isCased());
-    EXPECT_FALSE(helper.isPrefix());
-    EXPECT_TRUE(helper.isRegex());
-    EXPECT_TRUE(helper.isMatch("axYZ"));
-    EXPECT_TRUE(helper.isMatch("xYZa"));
-    EXPECT_FALSE(helper.isMatch("xyZ"));
-    EXPECT_TRUE(helper.isMatch("xYZ"));
-    EXPECT_FALSE(helper.isMatch("xYz"));
-    EXPECT_FALSE(helper.isMatch("xaYZ"));
-    EXPECT_FALSE(helper.isMatch("xY"));
+    QueryTermUCS4           xyz("x[Y]+Z", QueryTermSimple::Type::REGEXP);
+    StringRegexSearchHelper helper(xyz, true);
+    EXPECT_TRUE(helper.is_match("axYZ"));
+    EXPECT_TRUE(helper.is_match("xYZa"));
+    EXPECT_FALSE(helper.is_match("xyZ"));
+    EXPECT_TRUE(helper.is_match("xYZ"));
+    EXPECT_FALSE(helper.is_match("xYz"));
+    EXPECT_FALSE(helper.is_match("xaYZ"));
+    EXPECT_FALSE(helper.is_match("xY"));
 }
 
 TEST_F(StringAttributeTest, test_fuzzy_match) {
-    QueryTermUCS4      xyz("xyz", QueryTermSimple::Type::FUZZYTERM);
-    StringSearchHelper helper(xyz, false);
-    EXPECT_FALSE(helper.isCased());
-    EXPECT_FALSE(helper.isPrefix());
-    EXPECT_FALSE(helper.isRegex());
-    EXPECT_TRUE(helper.isFuzzy());
-    EXPECT_TRUE(helper.isMatch("xyz"));
-    EXPECT_TRUE(helper.isMatch("xyza"));
-    EXPECT_TRUE(helper.isMatch("xyv"));
-    EXPECT_TRUE(helper.isMatch("xy"));
-    EXPECT_TRUE(helper.isMatch("x"));
-    EXPECT_TRUE(helper.isMatch("xvv"));
-    EXPECT_FALSE(helper.isMatch("vvv"));
+    QueryTermUCS4           xyz("xyz", QueryTermSimple::Type::FUZZYTERM);
+    StringFuzzySearchHelper helper(xyz, false);
+    EXPECT_TRUE(helper.is_match("xyz"));
+    EXPECT_TRUE(helper.is_match("xyza"));
+    EXPECT_TRUE(helper.is_match("xyv"));
+    EXPECT_TRUE(helper.is_match("xy"));
+    EXPECT_TRUE(helper.is_match("x"));
+    EXPECT_TRUE(helper.is_match("xvv"));
+    EXPECT_FALSE(helper.is_match("vvv"));
 }
 
 TEST_F(StringAttributeTest, test_range_match_cased) {
