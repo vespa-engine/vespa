@@ -52,19 +52,20 @@ public final class LinguisticsParser extends AbstractParser {
                                   .map(profile -> FieldTokens.create(profile, text, language, environment))
                                   .toList();
         if (linguisticProfiles.size() > 1)
-            tokensPerField.forEach(fieldTokens -> fieldTokens.padSkippedPositions());
+            tokensPerField.forEach(FieldTokens::padSkippedPositions);
         return combineTokensInto(newComposite(), tokensPerField);
     }
 
+    /** Iterates over the tokens of each resulting tokenization in parallel to create an OR item for each token. */
     private Item combineTokensInto(CompositeItem parent, List<FieldTokens> tokensPerField) {
-        // Iterate over the tokens of each resulting tokenization in parallel to create an OR item for each token
         for (List<FieldToken> nextTokens = nextTokens(tokensPerField);
              !nextTokens.isEmpty();
              nextTokens = nextTokens(tokensPerField)) {
+            nextTokens = nextTokens.stream().filter(token -> token.token() != paddingToken).toList();
             if (nextTokens.size() == 1) {
                 parent.addItem(toItem(nextTokens.get(0).token(), nextTokens.get(0).fieldOrFieldSet()));
             }
-            else {
+            else if (nextTokens.size() > 1) {
                 OrItem orOverFields = new OrItem();
                 for (FieldToken nextToken : nextTokens)
                     orOverFields.addItem(toItem(nextToken.token(), nextToken.fieldOrFieldSet()));
@@ -82,7 +83,7 @@ public final class LinguisticsParser extends AbstractParser {
         List<FieldToken> next = new ArrayList<>();
         for (FieldTokens fieldTokens : tokensPerField) {
             var fieldToken = nextIndexable(fieldTokens);
-            if (fieldToken != null && fieldToken.token() != paddingToken)
+            if (fieldToken != null)
                 next.add(fieldToken);
         }
         return next;

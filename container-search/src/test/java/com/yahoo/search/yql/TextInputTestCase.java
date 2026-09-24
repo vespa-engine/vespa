@@ -293,6 +293,22 @@ public class TextInputTestCase {
                                                                                 SimpleToken.fromStems("text", List.of("t")));
         tester.assertParsed("AND (OR WORD_ALTERNATIVES field1:[ q1(1.0) q2(1.0) ] field2:qu) WORD_ALTERNATIVES field2:[ the(1.0) tze(1.0) ] (OR field1:txt field2:t)",
                             "select * from schema1 where fieldSet1 contains ({grammar.composite:'and'}text('query the text'))");
+
+        // Skipped tokens in all tokenizers
+        tester.tokenizer().putTokens("profile1", "the text", SimpleToken.fromStems("the text", List.of("txt"))
+                                                                        .setPositionIncrement(2));
+        tester.tokenizer().putTokens("profile2", "the text", SimpleToken.fromStems("the text", List.of("text"))
+                                                                        .setPositionIncrement(2));
+        tester.assertParsed("AND (OR field1:txt field2:text)",
+                            "select * from schema1 where fieldSet1 contains ({grammar.composite:'and'}text('the text'))");
+
+        // Skip beyond input length
+        tester.tokenizer().putTokens("profile1", "the text", SimpleToken.fromStems("the text", List.of("txt"))
+                                                                        .setPositionIncrement(2));
+        tester.tokenizer().putTokens("profile2", "the text", SimpleToken.fromStems("the text", List.of("text"))
+                                                                        .setPositionIncrement(3));
+        tester.assertParsed("AND field1:txt field2:text",
+                            "select * from schema1 where fieldSet1 contains ({grammar.composite:'and'}text('the text'))");
     }
 
 }
