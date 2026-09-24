@@ -193,6 +193,8 @@ TOKEN :
     <EXACT: "exact"> |
     <EXHEX8_ENCODE: "exhex8encode"> |
     <EXHEX16_ENCODE: "exhex16encode"> |
+    <EXHEX8_FLOAT_ENCODE: "exhex8floatencode"> |
+    <EXHEX16_DOUBLE_ENCODE: "exhex16doubleencode"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
     <GENERATE: "generate"> |
@@ -358,6 +360,8 @@ Expression value() :
       val = exactExp()              |
       val = exHex8EncodeExp()       |
       val = exHex16EncodeExp()      |
+      val = exHex8FloatEncodeExp()  |
+      val = exHex16DoubleEncodeExp() |
       val = flattenExp()            |
       val = forEachExp()            |
       val = generateExp()           |
@@ -517,6 +521,16 @@ Expression exHex8EncodeExp() : { }
 Expression exHex16EncodeExp() : { }
     ( <EXHEX16_ENCODE> )
     { return new ExcessHex16EncodeExpression(); }
+;
+
+Expression exHex8FloatEncodeExp() : { }
+    ( <EXHEX8_FLOAT_ENCODE> )
+    { return new ExcessHex8FloatEncodeExpression(); }
+;
+
+Expression exHex16DoubleEncodeExp() : { }
+    ( <EXHEX16_DOUBLE_ENCODE> )
+    { return new ExcessHex16DoubleEncodeExpression(); }
 ;
 
 Expression flattenExp() : { }
