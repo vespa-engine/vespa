@@ -255,6 +255,64 @@ TEST(EnumComparatorTest, require_that_cased_less_is_working) {
     EXPECT_EQ((EnumIndexVector{e1, e4, e3, e2}), vec);
 }
 
+TEST(EnumComparatorTest, require_that_folded_less_or_equal_is_working) {
+    StringEnumStore es(false, DictionaryConfig::Type::BTREE);
+    EnumIndex       e1 = es.insert("Aa");
+    EnumIndex       e2 = es.insert("aB");
+    auto            cmp_lt = es.string_lookup_comparator("aa");
+    auto            cmp_le = es.string_lookup_lteq_comparator("aa");
+    // "aa" folded-equals "Aa": less() treats them as neither less, less_or_equal() as ordered.
+    EXPECT_FALSE(cmp_lt.less(EnumIndex(), e1));
+    EXPECT_TRUE(cmp_le.less(EnumIndex(), e1));
+    EXPECT_FALSE(cmp_lt.less(e1, EnumIndex()));
+    EXPECT_TRUE(cmp_le.less(e1, EnumIndex()));
+    // "aa" folded-less-than "aB": less() and less_or_equal() agree.
+    EXPECT_TRUE(cmp_lt.less(EnumIndex(), e2));
+    EXPECT_TRUE(cmp_le.less(EnumIndex(), e2));
+    EXPECT_FALSE(cmp_lt.less(e2, EnumIndex()));
+    EXPECT_FALSE(cmp_le.less(e2, EnumIndex()));
+}
+
+TEST(EnumComparatorTest, require_that_cased_less_or_equal_is_working) {
+    StringEnumStore es(false, DictionaryConfig(DictionaryConfig::Type::BTREE, DictionaryConfig::Match::CASED));
+    EnumIndex       e1 = es.insert("Fol");
+    auto            cmp_lt = es.string_lookup_comparator("Fol");
+    auto            cmp_le = es.string_lookup_lteq_comparator("Fol");
+    // Exact (cased) match: less() treats them as neither less, less_or_equal() as ordered.
+    EXPECT_FALSE(cmp_lt.less(EnumIndex(), e1));
+    EXPECT_TRUE(cmp_le.less(EnumIndex(), e1));
+    EXPECT_FALSE(cmp_lt.less(e1, EnumIndex()));
+    EXPECT_TRUE(cmp_le.less(e1, EnumIndex()));
+    // Case mismatch is a strict (cased) inequality, so less() and less_or_equal() agree.
+    auto cmp_le2 = es.string_lookup_lteq_comparator("fol"); // 'f' > 'F', so "fol" > "Fol"
+    EXPECT_FALSE(cmp_le2.less(EnumIndex(), e1));
+    EXPECT_TRUE(cmp_le2.less(e1, EnumIndex()));
+}
+
+TEST(EnumComparatorTest, require_that_unsupported_strategy_transformations_abort) {
+    StringEnumStore           es(false, DictionaryConfig::Type::BTREE);
+    EnumStoreStringComparator uncased_then_cased(es.get_data_store());
+    // UNCASED_THEN_CASED has neither a prefix nor a less-or-equal counterpart. Quietly
+    // folding it to UNCASED would compare differently from the comparator it was derived
+    // from, so both transformations abort instead.
+    ASSERT_DEATH({ (void)uncased_then_cased.make_for_prefix_lookup("fol"); }, "");
+    ASSERT_DEATH({ (void)uncased_then_cased.make_for_less_or_equal_lookup("fol"); }, "");
+
+    // Prefix and less-or-equal do not combine either, in either order.
+    auto folded = uncased_then_cased.make_folded();
+    ASSERT_DEATH({ (void)folded.make_for_prefix_lookup("fol").make_for_less_or_equal_lookup("fol"); }, "");
+    ASSERT_DEATH({ (void)folded.make_for_less_or_equal_lookup("fol").make_for_prefix_lookup("fol"); }, "");
+
+    // Folding an already-folded (UNCASED) comparator aborts too; only an UNCASED_THEN_CASED
+    // comparator can be folded.
+    ASSERT_DEATH({ (void)folded.make_folded(); }, "");
+    ASSERT_DEATH({ (void)folded.make_for_prefix_lookup("fol").make_folded(); }, "");
+
+    // The transformations the call sites actually use are unaffected.
+    (void)folded.make_for_prefix_lookup("fol");
+    (void)folded.make_for_less_or_equal_lookup("fol");
+}
+
 TEST(DfaStringComparatorTest, require_that_folded_less_is_working) {
     StringEnumStore     es(false, DictionaryConfig::Type::BTREE);
     EnumIndex           e1 = es.insert("Aa");

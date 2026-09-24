@@ -127,7 +127,9 @@ std::unique_ptr<search::StringRangeSpec> parse_string_range_params(std::string_v
     spec->left_closed = (s.substr(0, s.find(';')) == "true");
     s.erase(0, s.find(';') + 1);
 
-    spec->left_unbounded = (s.substr(0, s.find(';')) == "true");
+    if ((s.substr(0, s.find(';')) == "true")) { // left unbounded
+        spec->left = std::nullopt;
+    }
     s.erase(0, s.find(';') + 1);
 
     spec->right = s.substr(0, s.find(';'));
@@ -136,7 +138,9 @@ std::unique_ptr<search::StringRangeSpec> parse_string_range_params(std::string_v
     spec->right_closed = (s.substr(0, s.find(';')) == "true");
     s.erase(0, s.find(';') + 1);
 
-    spec->right_unbounded = (s.substr(0, s.find(';')) == "true");
+    if ((s.substr(0, s.find(';')) == "true")) { // right unbounded
+        spec->right = std::nullopt;
+    }
     s.erase(0, s.find(';') + 1);
 
     return spec;

@@ -314,10 +314,10 @@ MyAttributeManager make_fast_search_string_attribute_manager(const string& value
     return MyAttributeManager(attr_ptr);
 }
 
-SimpleStringRangeTerm make_string_range_term(const string& left, bool left_closed, bool left_unbounded,
-                                             const string& right, bool right_closed, bool right_unbounded) {
-    return {StringRange(std::in_place, left, left_closed, left_unbounded, right, right_closed, right_unbounded),
-            field, 0, Weight(0)};
+SimpleStringRangeTerm make_string_range_term(std::optional<std::string> left, bool left_closed,
+                                             std::optional<std::string> right, bool right_closed) {
+    return {StringRange(std::in_place, std::move(left), left_closed, std::move(right), right_closed), field, 0,
+            Weight(0)};
 }
 
 MyAttributeManager makeFastSearchLongAttributeManager(int64_t value) {
@@ -357,24 +357,24 @@ TEST(AttributeSearchableAdapterTest, require_that_string_range_terms_work) {
             fast_search ? make_fast_search_string_attribute_manager("foo") : makeAttributeManager("foo");
 
         // Contained in range
-        EXPECT_TRUE(search(make_string_range_term("bar", true, false, "fox", true, false), attribute_manager,
-                           fast_search, true, false));
-        EXPECT_TRUE(search(make_string_range_term("foo", true, false, "foo", true, false), attribute_manager,
-                           fast_search, true, false));
-        EXPECT_TRUE(search(make_string_range_term("bar", true, false, "", false, true), attribute_manager,
-                           fast_search, true, false));
+        EXPECT_TRUE(
+            search(make_string_range_term("bar", true, "fox", true), attribute_manager, fast_search, true, false));
+        EXPECT_TRUE(
+            search(make_string_range_term("foo", true, "foo", true), attribute_manager, fast_search, true, false));
+        EXPECT_TRUE(search(make_string_range_term("bar", true, std::nullopt, false), attribute_manager, fast_search,
+                           true, false));
         // matching is uncased by default
-        EXPECT_TRUE(search(make_string_range_term("BAR", true, false, "FOX", true, false), attribute_manager,
-                           fast_search, true, false));
+        EXPECT_TRUE(
+            search(make_string_range_term("BAR", true, "FOX", true), attribute_manager, fast_search, true, false));
 
         // Not contained in range
-        EXPECT_FALSE(search(make_string_range_term("bar", true, false, "fon", true, false), attribute_manager,
-                            fast_search, true, true));
+        EXPECT_FALSE(
+            search(make_string_range_term("bar", true, "fon", true), attribute_manager, fast_search, true, true));
         // The following two cannot be expected to be empty since the closed range contains foo
-        EXPECT_FALSE(search(make_string_range_term("foo", false, false, "fox", true, false), attribute_manager,
-                            fast_search, true, false));
-        EXPECT_FALSE(search(make_string_range_term("bar", true, false, "foo", false, false), attribute_manager,
-                            fast_search, true, false));
+        EXPECT_FALSE(
+            search(make_string_range_term("foo", false, "fox", true), attribute_manager, fast_search, true, false));
+        EXPECT_FALSE(
+            search(make_string_range_term("bar", true, "foo", false), attribute_manager, fast_search, true, false));
     }
 }
 

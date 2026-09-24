@@ -154,6 +154,7 @@ protected:
     ConfigMap          _integerCfg;
     ConfigMap          _floatCfg;
     ConfigMap          _stringCfg;
+    ConfigMap          _casedStringCfg;
     static std::string _test_dir;
     static bool        _default_preserve_weight;
 
@@ -250,6 +251,9 @@ protected:
     // test lexical range search
     void test_lexical_range_search(const std::string& name, const Config& cfg);
 
+    // test lexical range search over values that only differ by case
+    void test_mixed_case_lexical_range_search(const std::string& name, const Config& cfg);
+
     // test case insensitive search
     void performCaseInsensitiveSearch(const StringAttribute& vec, const std::string& term, const DocSet& expected);
     void testCaseInsensitiveSearch(const AttributePtr& ptr);
@@ -300,7 +304,7 @@ public:
 std::string SearchContextTest::_test_dir = "test_data";
 bool        SearchContextTest::_default_preserve_weight = false;
 
-SearchContextTest::SearchContextTest() : _integerCfg(), _floatCfg(), _stringCfg() {
+SearchContextTest::SearchContextTest() : _integerCfg(), _floatCfg(), _stringCfg(), _casedStringCfg() {
     initIntegerConfig();
     initFloatConfig();
     initStringConfig();
@@ -921,14 +925,16 @@ void SearchContextTest::fillForSearchIteratorUnpackingTest(IntegerAttribute* ia,
         ia->append(3, 10, 50);
     }
     ia->commit(CommitParam::UpdateStats::FORCE);
-    if (!extra)
+    if (!extra) {
         return;
+    }
     ia->addDocs(20);
     for (uint32_t d = 4; d < 24; ++d) {
-        if (ia->getCollectionType() == CollectionType::SINGLE)
+        if (ia->getCollectionType() == CollectionType::SINGLE) {
             ia->update(d, 10);
-        else
+        } else {
             ia->append(d, 10, 1);
+        }
     }
     ia->commit(CommitParam::UpdateStats::FORCE);
 }
@@ -1298,18 +1304,17 @@ std::string to_hex(uint32_t n) {
     return std::format("{:016X}", n);
 }
 
-std::unique_ptr<QueryTermSimple> make_string_range_query_term(uint32_t left, bool left_closed, bool left_unbounded,
-                                                              uint32_t right, bool right_closed,
-                                                              bool right_unbounded) {
-    return std::make_unique<QueryTermUCS4>(
-        QueryTermSimple::Type::WORD, std::make_unique<StringRangeSpec>(to_hex(left), left_closed, left_unbounded,
-                                                                       to_hex(right), right_closed, right_unbounded));
+std::unique_ptr<QueryTermSimple> make_string_range_query_term(std::optional<uint32_t> left, bool left_closed,
+                                                              std::optional<uint32_t> right, bool right_closed) {
+    return std::make_unique<QueryTermUCS4>(QueryTermSimple::Type::WORD,
+                                           std::make_unique<StringRangeSpec>(left.transform(to_hex), left_closed,
+                                                                             right.transform(to_hex), right_closed));
 }
 
-DocSet make_range_doc_set(uint32_t n, uint32_t left, bool left_closed, bool left_unbounded, uint32_t right,
-                          bool right_closed, bool right_unbounded) {
-    uint32_t from = left_unbounded ? 1 : (left_closed ? left : left + 1);
-    uint32_t to = right_unbounded ? n : (right_closed ? right : right - 1);
+DocSet make_range_doc_set(uint32_t n, std::optional<uint32_t> left, bool left_closed, std::optional<uint32_t> right,
+                          bool right_closed) {
+    uint32_t from = left ? (left_closed ? *left : *left + 1) : 1;
+    uint32_t to = right ? (right_closed ? *right : *right - 1) : n;
     DocSet   expected;
     for (uint32_t i = from; i <= to; ++i) {
         expected.put(i);
@@ -1336,40 +1341,35 @@ void SearchContextTest::test_lexical_range_search(const std::string& name, const
     for (uint32_t i = 1; i <= n; ++i) {
         // (-\infty, i]
         // (lower bound 5 is ignored)
-        perform_search(queryeval::ExecuteInfo::FULL, attr,
-                       make_string_range_query_term(5, false, true, i, true, false),
-                       make_range_doc_set(n, 5, false, true, i, true, false));
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(std::nullopt, false, i, true),
+                       make_range_doc_set(n, std::nullopt, false, i, true));
         // [i, \infty)
         // (upped bound 10 is ignored)
-        perform_search(queryeval::ExecuteInfo::FULL, attr,
-                       make_string_range_query_term(i, true, false, 10, false, true),
-                       make_range_doc_set(n, i, true, false, 10, false, true));
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(i, true, std::nullopt, false),
+                       make_range_doc_set(n, i, true, std::nullopt, false));
     }
 
     // (-\infty, \infty)
     // bounds 5 and 10 are ignored
-    perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(5, false, true, 10, false, true),
-                   make_range_doc_set(n, 5, false, true, 10, false, true));
+    perform_search(queryeval::ExecuteInfo::FULL, attr,
+                   make_string_range_query_term(std::nullopt, false, std::nullopt, false),
+                   make_range_doc_set(n, std::nullopt, false, std::nullopt, false));
 
     // bounded intervals
     for (uint32_t i = 1; i <= n; ++i) {
         for (uint32_t j = 1; j <= n; ++j) {
             // [i, j]
-            perform_search(queryeval::ExecuteInfo::FULL, attr,
-                           make_string_range_query_term(i, true, false, j, true, false),
-                           make_range_doc_set(n, i, true, false, j, true, false));
+            perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(i, true, j, true),
+                           make_range_doc_set(n, i, true, j, true));
             // (i, j]
-            perform_search(queryeval::ExecuteInfo::FULL, attr,
-                           make_string_range_query_term(i, false, false, j, true, false),
-                           make_range_doc_set(n, i, false, false, j, true, false));
+            perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(i, false, j, true),
+                           make_range_doc_set(n, i, false, j, true));
             // [i, j)
-            perform_search(queryeval::ExecuteInfo::FULL, attr,
-                           make_string_range_query_term(i, true, false, j, false, false),
-                           make_range_doc_set(n, i, true, false, j, false, false));
+            perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(i, true, j, false),
+                           make_range_doc_set(n, i, true, j, false));
             // (i, j)
-            perform_search(queryeval::ExecuteInfo::FULL, attr,
-                           make_string_range_query_term(i, false, false, j, false, false),
-                           make_range_doc_set(n, i, false, false, j, false, false));
+            perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(i, false, j, false),
+                           make_range_doc_set(n, i, false, j, false));
         }
     }
 
@@ -1383,13 +1383,114 @@ void SearchContextTest::test_lexical_range_search(const std::string& name, const
     attr.commit(CommitParam::UpdateStats::FORCE);
     // [n + 1, n + longrange_values]
     perform_search(queryeval::ExecuteInfo::FULL, attr,
-                   make_string_range_query_term(n + 1, true, false, n + longrange_values, true, false),
-                   make_range_doc_set(n + longrange_values, n + 1, true, false, n + longrange_values, true, false));
+                   make_string_range_query_term(n + 1, true, n + longrange_values, true),
+                   make_range_doc_set(n + longrange_values, n + 1, true, n + longrange_values, true));
 }
 
 TEST_F(SearchContextTest, test_lexical_range_search) {
     for (const auto& cfg : _stringCfg) {
         test_lexical_range_search(cfg.first, cfg.second);
+    }
+}
+
+namespace {
+
+std::unique_ptr<QueryTermSimple> make_string_range_query_term(const std::string& left, bool left_closed,
+                                                              bool left_unbounded, const std::string& right,
+                                                              bool right_closed, bool right_unbounded) {
+    return std::make_unique<QueryTermUCS4>(
+        QueryTermSimple::Type::WORD,
+        std::make_unique<StringRangeSpec>(left_unbounded ? std::nullopt : std::optional(left), left_closed,
+                                          right_unbounded ? std::nullopt : std::optional(right), right_closed));
+}
+
+} // namespace
+
+/*
+ * Lexical range search over a dictionary holding several values that only differ by case.
+ *
+ * An open (exclusive) range boundary is resolved against the dictionary with a less-or-equal
+ * comparator, which has to step past *every* dictionary entry that compares equal to the
+ * boundary value - for an uncased attribute that is the whole group of case variants, not just
+ * the entry that happens to be spelled like the boundary. The hex values used by
+ * test_lexical_range_search above are all distinct under both compare strategies, so they never
+ * exercise that stepping, and they never exercise a cased dictionary order either.
+ */
+void SearchContextTest::test_mixed_case_lexical_range_search(const std::string& name, const Config& cfg) {
+    LOG(info, "test_mixed_case_lexical_range_search: vector '%s'", name.c_str());
+    const bool                     cased = (cfg.get_match() == Config::Match::CASED);
+    const std::vector<std::string> values{"BAR", "bar", "Bar", "baz", "FOO", "foo", "zzz"};
+    //                              docid:    1      2      3      4      5      6      7
+    // uncased order: BAR = bar = Bar < baz < FOO = foo < zzz
+    // cased order:   BAR < Bar < FOO < bar < baz < foo < zzz
+
+    AttributeVector::SP attr_ptr = AttributeFactory::createAttribute(name, cfg);
+    auto&               attr = dynamic_cast<StringAttribute&>(*attr_ptr);
+    attr.addReservedDoc();
+    attr.addDocs(values.size());
+    for (uint32_t docid = 1; docid <= values.size(); ++docid) {
+        attr.update(docid, values[docid - 1]);
+    }
+    attr.commit(CommitParam::UpdateStats::FORCE);
+
+    auto expect = [this, &attr](const std::string& left, bool left_closed, bool left_unbounded,
+                                const std::string& right, bool right_closed, bool right_unbounded,
+                                const DocSet& expected) {
+        perform_search(
+            queryeval::ExecuteInfo::FULL, attr,
+            make_string_range_query_term(left, left_closed, left_unbounded, right, right_closed, right_unbounded),
+            expected);
+    };
+
+    if (!cased) {
+        // Both open boundaries have to step past all three of BAR, bar and Bar / both of FOO, foo.
+        expect("bar", false, false, "foo", false, false, {4});
+        expect("bar", true, false, "foo", false, false, {1, 2, 3, 4});
+        expect("bar", false, false, "foo", true, false, {4, 5, 6});
+        expect("bar", true, false, "foo", true, false, {1, 2, 3, 4, 5, 6});
+        // The spelling of the boundary itself must not matter for an uncased attribute.
+        expect("BAR", false, false, "FOO", false, false, {4});
+        expect("Bar", false, false, "Foo", false, false, {4});
+        // Narrows to a single dictionary entry only because the open boundary skips the whole
+        // group of case variants.
+        expect("bar", false, false, "baz", true, false, {4});
+        expect("bar", false, false, "baz", false, false, {});
+        // An open boundary that lands on a group of case variants leaves nothing between them.
+        expect("bar", false, false, "Bar", true, false, {});
+        expect("foo", false, false, "zzz", false, false, {});
+        // Unbounded on one side.
+        expect("", false, true, "bar", false, false, {});
+        expect("", false, true, "bar", true, false, {1, 2, 3});
+        expect("zzz", false, false, "", false, true, {});
+        expect("zzz", true, false, "", false, true, {7});
+        expect("foo", false, false, "", false, true, {7});
+    } else {
+        // Case variants are distinct entries here, so an open boundary steps past exactly one.
+        expect("BAR", false, false, "foo", false, false, {3, 5, 2, 4});
+        expect("BAR", true, false, "foo", false, false, {1, 3, 5, 2, 4});
+        expect("BAR", false, false, "foo", true, false, {3, 5, 2, 4, 6});
+        expect("BAR", true, false, "foo", true, false, {1, 3, 5, 2, 4, 6});
+        // "Bar" and "bar" bracket "FOO" in cased order.
+        expect("Bar", false, false, "bar", false, false, {5});
+        expect("Bar", true, false, "bar", true, false, {3, 5, 2});
+        // A boundary spelled with the wrong case picks out a different range than above.
+        expect("bar", false, false, "baz", true, false, {4});
+        expect("bar", false, false, "baz", false, false, {});
+        // Unbounded on one side.
+        expect("", false, true, "BAR", false, false, {});
+        expect("", false, true, "BAR", true, false, {1});
+        expect("zzz", false, false, "", false, true, {});
+        expect("zzz", true, false, "", false, true, {7});
+        expect("foo", false, false, "", false, true, {7});
+    }
+}
+
+TEST_F(SearchContextTest, test_mixed_case_lexical_range_search) {
+    for (const auto& cfg : _stringCfg) {
+        test_mixed_case_lexical_range_search(cfg.first, cfg.second);
+    }
+    for (const auto& cfg : _casedStringCfg) {
+        test_mixed_case_lexical_range_search(cfg.first, cfg.second);
     }
 }
 
@@ -1709,8 +1810,9 @@ void SearchContextTest::requireThatSearchIsWorkingAfterLoadAndClearDoc(const std
         for (uint32_t i = 0; i < 14; ++i) {
             if (i < 5) {
                 EXPECT_EQ(i + 1, array[i].getDocId());
-            } else
+            } else {
                 EXPECT_EQ(i + 2, array[i].getDocId());
+            }
         }
     }
     ValueType buf;
@@ -2053,6 +2155,14 @@ void SearchContextTest::initStringConfig() {
         Config cfg(BasicType::STRING, CollectionType::WSET);
         cfg.setFastSearch(true);
         _stringCfg["w-fs-str"] = cfg;
+    }
+    // Cased counterparts of the configs above, i.e. matching and the dictionary order
+    // both distinguish case.
+    for (const auto& entry : _stringCfg) {
+        Config cfg(entry.second);
+        cfg.set_match(Config::Match::CASED);
+        cfg.set_dictionary_config(DictionaryConfig(DictionaryConfig::Type::BTREE, DictionaryConfig::Match::CASED));
+        _casedStringCfg[entry.first + "-cased"] = cfg;
     }
 }
 

@@ -542,7 +542,7 @@ TEST_F(StringAttributeTest, test_fuzzy_match) {
 }
 
 TEST_F(StringAttributeTest, test_range_match_cased) {
-    StringRangeSpec                    range = {"BAR", true, false, "FOO", true, false};
+    StringRangeSpec                    range = {"BAR", true, "FOO", true};
     attribute::StringRangeSearchHelper helper(&range, true);
 
     // "BAR", "FOO", "bar", "foo"
@@ -553,7 +553,7 @@ TEST_F(StringAttributeTest, test_range_match_cased) {
 }
 
 TEST_F(StringAttributeTest, test_range_match_uncased) {
-    StringRangeSpec                    range = {"BAR", true, false, "FOO", true, false};
+    StringRangeSpec                    range = {"BAR", true, "FOO", true};
     attribute::StringRangeSearchHelper helper(&range, false);
 
     // "BAR", "bar", "FOO", "foo"
@@ -579,28 +579,28 @@ void verify_range(const StringRangeSpec& range, bool aaa, bool abb, bool acc, bo
 
 TEST_F(StringAttributeTest, test_range_is_match) {
     // ["Abb", "Add"]
-    verify_range({"Abb", true, false, "Add", true, false}, false, true, true, true, false);
+    verify_range({"Abb", true, "Add", true}, false, true, true, true, false);
 
     // ("Abb", "Add"]
-    verify_range({"Abb", false, false, "Add", true, false}, false, false, true, true, false);
+    verify_range({"Abb", false, "Add", true}, false, false, true, true, false);
 
     // ["Abb", "Add")
-    verify_range({"Abb", true, false, "Add", false, false}, false, true, true, false, false);
+    verify_range({"Abb", true, "Add", false}, false, true, true, false, false);
 
     // ("Abb", "Add")
-    verify_range({"Abb", false, false, "Add", false, false}, false, false, true, false, false);
+    verify_range({"Abb", false, "Add", false}, false, false, true, false, false);
 
     // (\infty, "Add")
-    verify_range({"Abb", false, true, "Add", false, false}, true, true, true, false, false);
+    verify_range({std::nullopt, false, "Add", false}, true, true, true, false, false);
 
     // ("Abb", \infty)
-    verify_range({"Abb", false, false, "Add", false, true}, false, false, true, true, true);
+    verify_range({"Abb", false, std::nullopt, false}, false, false, true, true, true);
 
     // (\infty, \infty)
-    verify_range({"Abb", false, true, "Add", false, true}, true, true, true, true, true);
+    verify_range({std::nullopt, false, std::nullopt, false}, true, true, true, true, true);
 
     // ["Add", "Abb"] = \varnothing
-    verify_range({"Add", true, false, "Abb", true, false}, false, false, false, false, false);
+    verify_range({"Add", true, "Abb", true}, false, false, false, false, false);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

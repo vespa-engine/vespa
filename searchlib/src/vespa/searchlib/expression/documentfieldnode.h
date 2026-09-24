@@ -11,22 +11,15 @@
 
 namespace search::expression {
 
+/**
+ * Represents the default value used in DocumentFieldNode.
+ */
 class DefaultValue final : public ResultNode {
 public:
     DECLARE_EXPRESSIONNODE(DefaultValue);
-    int64_t onGetInteger(size_t index) const override {
-        (void)index;
-        return 0;
-    }
-    double onGetFloat(size_t index) const override {
-        (void)index;
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
-        (void)index;
-        (void)buf;
-        return ConstBufferRef(&null, 0);
-    }
+    int64_t onGetInteger(size_t) const override { return 0; }
+    double onGetFloat(size_t) const override { return std::numeric_limits<double>::quiet_NaN(); }
+    ConstBufferRef onGetString(size_t, BufferRef) const override { return ConstBufferRef(&_null, 0); }
 
 private:
     void set(const ResultNode&) override;
@@ -34,7 +27,7 @@ private:
 
     std::string_view friendly_type_name() const noexcept override { return "<default>"; }
 
-    static char null;
+    static char _null;
 };
 
 class DocumentFieldNode : public DocumentAccessorNode {

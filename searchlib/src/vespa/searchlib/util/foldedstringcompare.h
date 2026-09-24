@@ -59,18 +59,6 @@ public:
      * @return integer   -1 if key < okey, 0 if key == okey, 1 if key > okey
      */
     static int compare(const char* key, const char* okey) noexcept;
-
-    /*
-     * Compare UTF-8 key with UTF-8 other key after folding both for prefix, if
-     * they seem equal then fall back to comparing without folding.
-     *
-     * @param key         NUL terminated UTF-8 string
-     * @param okey        NUL terminated UTF-8 string
-     * @param prefixLen   max number of symbols to compare before
-     *                    considering keys identical.
-     * @return integer   -1 if key < okey, 0 if key == okey, 1 if key > okey
-     */
-    static int comparePrefix(const char* key, const char* okey, size_t prefixLen) noexcept;
 };
 
 } // namespace search
