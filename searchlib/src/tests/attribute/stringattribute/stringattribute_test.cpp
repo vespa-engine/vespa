@@ -545,22 +545,30 @@ TEST_F(StringAttributeTest, test_range_match_cased) {
     StringRangeSpec                    range = {"BAR", true, "FOO", true};
     attribute::StringRangeSearchHelper helper(&range, true);
 
-    // "BAR", "FOO", "bar", "foo"
-    EXPECT_TRUE(helper.is_match("BAR"));
-    EXPECT_TRUE(helper.is_match("FOO"));
-    EXPECT_FALSE(helper.is_match("bar"));
-    EXPECT_FALSE(helper.is_match("foo"));
+    auto verify = [=]<typename T>() {
+        // "BAR", "FOO", "bar", "foo"
+        EXPECT_TRUE(helper.is_match<T>("BAR"));
+        EXPECT_TRUE(helper.is_match<T>("FOO"));
+        EXPECT_FALSE(helper.is_match<T>("bar"));
+        EXPECT_FALSE(helper.is_match<T>("foo"));
+    };
+    verify.template operator()<const char*>();
+    verify.template operator()<std::string_view>();
 }
 
 TEST_F(StringAttributeTest, test_range_match_uncased) {
     StringRangeSpec                    range = {"BAR", true, "FOO", true};
     attribute::StringRangeSearchHelper helper(&range, false);
 
-    // "BAR", "bar", "FOO", "foo"
-    EXPECT_TRUE(helper.is_match("BAR"));
-    EXPECT_TRUE(helper.is_match("bar"));
-    EXPECT_TRUE(helper.is_match("FOO"));
-    EXPECT_TRUE(helper.is_match("foo"));
+    auto verify = [=]<typename T>() {
+        // "BAR", "bar", "FOO", "foo"
+        EXPECT_TRUE(helper.is_match<T>("BAR"));
+        EXPECT_TRUE(helper.is_match<T>("bar"));
+        EXPECT_TRUE(helper.is_match<T>("FOO"));
+        EXPECT_TRUE(helper.is_match<T>("foo"));
+    };
+    verify.template operator()<const char*>();
+    verify.template operator()<std::string_view>();
 }
 
 namespace {
@@ -568,11 +576,15 @@ void verify_range(const StringRangeSpec& range, bool aaa, bool abb, bool acc, bo
     for (bool cased : {true, false}) {
         attribute::StringRangeSearchHelper helper(&range, cased);
 
-        EXPECT_EQ(aaa, helper.is_match("Aaa"));
-        EXPECT_EQ(abb, helper.is_match("Abb"));
-        EXPECT_EQ(acc, helper.is_match("Acc"));
-        EXPECT_EQ(add, helper.is_match("Add"));
-        EXPECT_EQ(aee, helper.is_match("Aee"));
+        auto verify = [=]<typename T>() {
+            EXPECT_EQ(aaa, helper.is_match<T>("Aaa"));
+            EXPECT_EQ(abb, helper.is_match<T>("Abb"));
+            EXPECT_EQ(acc, helper.is_match<T>("Acc"));
+            EXPECT_EQ(add, helper.is_match<T>("Add"));
+            EXPECT_EQ(aee, helper.is_match<T>("Aee"));
+        };
+        verify.template operator()<const char*>();
+        verify.template operator()<std::string_view>();
     }
 }
 } // namespace

@@ -53,10 +53,7 @@ size_t UTF8FlexibleStringFieldSearcher::match_fuzzy(const FieldRef& f, search::s
 size_t UTF8FlexibleStringFieldSearcher::match_string_range(const FieldRef& f, search::streaming::QueryTerm& qt) {
     search::attribute::StringRangeSearchHelper helper(qt.get_string_range_spec(),
                                                       normalize_mode() == Normalizing::NONE);
-    // StringRangeSearchHelper takes a null-terminated string
-    // TODO Avoid having to copy the string
-    std::string copy({f.data(), f.size()});
-    if (helper.is_valid() && helper.is_match(copy.c_str())) {
+    if (helper.is_valid() && helper.is_match(f)) {
         addHit(qt, 0);
     }
     return 1;

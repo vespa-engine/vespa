@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <string_view>
 #include <vector>
 
 namespace search {
@@ -12,8 +13,8 @@ namespace search {
 namespace detail {
 
 template <typename T>
-concept FoldableString =
-    std::same_as<const char*, T> || std::same_as<std::reference_wrapper<const std::vector<uint32_t>>, T>;
+concept FoldableString = std::same_as<const char*, T> || std::same_as<std::string_view, T> ||
+                         std::same_as<std::reference_wrapper<const std::vector<uint32_t>>, T>;
 
 }
 
