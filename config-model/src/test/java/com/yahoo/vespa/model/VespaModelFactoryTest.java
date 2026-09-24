@@ -38,6 +38,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,7 +60,7 @@ public class VespaModelFactoryTest {
         VespaModelFactory modelFactory =  VespaModelFactory.createTestFactory();
         Model model = modelFactory.createModel(testModelContext);
         assertNotNull(model);
-        assertTrue(model instanceof VespaModel);
+        assertInstanceOf(VespaModel.class, model);
     }
 
     // Uses an application package that throws IllegalArgumentException when validating
@@ -204,7 +205,7 @@ public class VespaModelFactoryTest {
         }
 
         @Override
-        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+        public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
             return hosts;
         }
 

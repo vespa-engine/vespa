@@ -1291,9 +1291,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .availabilityZones(context.availabilityZones())
                 .build();
         Map<HostResource, ClusterMembership> hosts =
-                cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
-                                                             Capacity.fromRequiredNodeType(type),
-                                                             context.getDeployState());
+                cluster.getRoot().hostSystem().allocateHosts(clusterSpec, context.getDeployState());
         return createNodesFromHosts(hosts, clusterSpec, cluster, context.getDeployState());
     }
 
