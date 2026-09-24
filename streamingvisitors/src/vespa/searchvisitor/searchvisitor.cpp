@@ -367,10 +367,12 @@ uint32_t count_normalize_none(const vsm::FieldSearchSpecMapT& specMap, const Str
 search::Normalizing SearchVisitor::normalizing_mode(std::string_view index) const noexcept {
     StringFieldIdTMap fieldIdMap;
     _fieldSearchSpecMap.addFieldsFromIndex(index, fieldIdMap);
-    if (count_normalize_none(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size())
+    if (count_normalize_none(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size()) {
         return Normalizing::NONE;
-    if (count_normalize_lowercase(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size())
+    }
+    if (count_normalize_lowercase(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size()) {
         return Normalizing::LOWERCASE;
+    }
     return Normalizing::LOWERCASE_AND_FOLD;
 }
 
@@ -598,8 +600,7 @@ void SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content& c) {
     } else if (_attribute.isStringType()) {
         attr.add(value.getAsString().c_str(), c.getWeight());
     } else if (_attribute.is_raw_type()) {
-        auto raw_value = value.getAsRaw();
-        attr.add(std::span<const char>(raw_value.first, raw_value.second), c.getWeight());
+        attr.add(value.getAsRaw(), c.getWeight());
     } else if (_attribute.isTensorType()) {
         auto tfvalue = dynamic_cast<const document::TensorFieldValue*>(&value);
         if (tfvalue != nullptr) {
@@ -950,8 +951,9 @@ void SearchVisitor::setupAttributeVector(const FieldPath& fieldPath) {
 namespace {
 bool notContained(const std::vector<size_t>& sortList, size_t idx) {
     for (size_t v : sortList) {
-        if (v == idx)
+        if (v == idx) {
             return false;
+        }
     }
     return true;
 }

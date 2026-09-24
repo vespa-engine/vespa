@@ -231,8 +231,7 @@ void SlimeFiller::visit(const PredicateFieldValue& value) {
 }
 
 void SlimeFiller::visit(const RawFieldValue& value) {
-    std::pair<const char*, size_t> buf = value.getAsRaw();
-    _inserter.insertData(Memory(buf.first, buf.second));
+    _inserter.insertData(Memory(value.getAsRaw()));
 }
 
 void SlimeFiller::visit(const StructFieldValue& value) {
