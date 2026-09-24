@@ -276,7 +276,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
      * The config model only accepts 'map: fast-search' on maps whose key and value types are among these,
      * see CreateFastMapSearch and ConvertParsedFields in config-model.
      */
-    private static final Set<String> FAST_MAP_SEARCH_KEY_VALUE_TYPES = Set.of("string", "int", "long");
+    private static final Set<String> FAST_MAP_SEARCH_KEY_TYPES = Set.of("string", "int", "long");
+    private static final Set<String> FAST_MAP_SEARCH_VALUE_TYPES = Set.of("string", "int", "long", "float", "double");
 
     /** Snippets for the map settings block, only offered in fields where fast map search is allowed. */
     private static final List<CompletionItem> mapFieldSnippets = withDocumentation(List.of(
@@ -284,10 +285,10 @@ public class BodyKeywordCompletion implements CompletionProvider {
         FixedKeywordBodies.MAP.getBodySnippet()
     ));
 
-    private static boolean isFastMapSearchKeyValueType(ParsedType type) {
+    private static boolean isFastMapSearchType(ParsedType type, Set<String> allowedTypes) {
         return type != null
             && type.getVariant() == Variant.BUILTIN
-            && FAST_MAP_SEARCH_KEY_VALUE_TYPES.contains(type.name());
+            && allowedTypes.contains(type.name());
     }
 
     /**
@@ -305,7 +306,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
             if (type == null || type.getVariant() != Variant.MAP) {
                 return false;
             }
-            return isFastMapSearchKeyValueType(type.mapKeyType()) && isFastMapSearchKeyValueType(type.mapValueType());
+            return isFastMapSearchType(type.mapKeyType(), FAST_MAP_SEARCH_KEY_TYPES)
+                && isFastMapSearchType(type.mapValueType(), FAST_MAP_SEARCH_VALUE_TYPES);
         }
         return false;
     }

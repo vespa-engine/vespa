@@ -17,8 +17,10 @@ import com.yahoo.searchlib.document.FastMapSearch;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.CatExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex16DoubleEncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex16EncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8EncodeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8FloatEncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetFieldExpression;
@@ -114,7 +116,7 @@ public class CreateFastMapSearch extends Processor {
 
     /**
      * Returns whether the synthetic attribute of the given map field is matched cased. Key and value share one
-     * term, so a string value must be matched like the key. An int or long value is hex encoded, and so is matched the
+     * term, so a string value must be matched like the key. A numeric value is hex encoded, and so is matched the
      * same way whichever casing the term has.
      */
     private boolean isCasedKeyValue(SDField inputField, DataType valueType, boolean validate) {
@@ -142,6 +144,8 @@ public class CreateFastMapSearch extends Processor {
      * where VALUE_EXP is
      * "(get_field $value | exhex8encode)" if the value type is int,
      * "(get_field $value | exhex16encode)" if the value type is long,
+     * "(get_field $value | exhex8floatencode)" if the value type is float,
+     * "(get_field $value | exhex16doubleencode)" if the value type is double,
      * "get_field $value" if the value type is string,
      * and throws an IllegalArgumentException otherwise.
      * */
@@ -164,6 +168,8 @@ public class CreateFastMapSearch extends Processor {
      * Builds
      * "(get_field $value | exhex8encode)" if the value type is int,
      * "(get_field $value | exhex16encode)" if the value type is long,
+     * "(get_field $value | exhex8floatencode)" if the value type is float,
+     * "(get_field $value | exhex16doubleencode)" if the value type is double,
      * "get_field $value" if the value type is string,
      * and throws an IllegalArgumentException otherwise.
      * */
@@ -174,6 +180,10 @@ public class CreateFastMapSearch extends Processor {
             return new ParenthesisExpression(new StatementExpression(field, new ExcessHex8EncodeExpression()));
         } else if (valueType == DataType.LONG) {
             return new ParenthesisExpression(new StatementExpression(field, new ExcessHex16EncodeExpression()));
+        } else if (valueType == DataType.FLOAT) {
+            return new ParenthesisExpression(new StatementExpression(field, new ExcessHex8FloatEncodeExpression()));
+        } else if (valueType == DataType.DOUBLE) {
+            return new ParenthesisExpression(new StatementExpression(field, new ExcessHex16DoubleEncodeExpression()));
         } else if (valueType == DataType.STRING) {
             return field;
         } else {
