@@ -180,22 +180,38 @@ public class MapFastSearchTestCase {
     }
 
     @Test
+    void requireRepeatedKeyOrValueIsAParseError() {
+        var exception = assertThrows(ParseException.class,
+                                     () -> build(getSdWithEntry("string", "string",
+                                                                fieldWithMap("array<entry>", "key: mykey", "value: myvalue",
+                                                                             "key: myvalue", "fast-search")), true));
+        assertTrue(exception.getMessage().contains("'key' is given more than once in 'map' of field 'm'."),
+                   "Unexpected message: " + exception.getMessage());
+        exception = assertThrows(ParseException.class,
+                                 () -> build(getSdWithEntry("string", "string",
+                                                            fieldWithMap("array<entry>", "key: mykey", "value: myvalue",
+                                                                         "value: myvalue", "fast-search")), true));
+        assertTrue(exception.getMessage().contains("'value' is given more than once in 'map' of field 'm'."),
+                   "Unexpected message: " + exception.getMessage());
+    }
+
+    @Test
     void requireFastMapFieldsAreExportedInSchemaInfo() throws ParseException {
         String fields = joinLines("field plain type map<string, string> { }",
                                   "field fastmap type map<string, int> { map: fast-search }",
                                   namedFieldWithMap("fastarray", "array<entry>", "key: mykey", "value: myvalue", "fast-search"));
         var schema = build(getSdWithEntry("string", "long", fields), true);
         var config = schemaInfoConfigOf(schema).schema(0);
-        assertTrue(fieldConfig(config, "plain").fastMapSearch().isEmpty());
+        assertTrue(fieldConfig(config, "plain").fastMapSearchFields().isEmpty());
 
-        var fastMap = fieldConfig(config, "fastmap").fastMapSearch();
+        var fastMap = fieldConfig(config, "fastmap").fastMapSearchFields();
         assertEquals(1, fastMap.size());
         assertEquals("key", fastMap.get(0).keyField());
         assertEquals("string", fastMap.get(0).keyType());
         assertEquals("value", fastMap.get(0).valueField());
         assertEquals("int", fastMap.get(0).valueType());
 
-        var fastArray = fieldConfig(config, "fastarray").fastMapSearch();
+        var fastArray = fieldConfig(config, "fastarray").fastMapSearchFields();
         assertEquals(1, fastArray.size());
         assertEquals("mykey", fastArray.get(0).keyField());
         assertEquals("string", fastArray.get(0).keyType());

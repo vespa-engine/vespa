@@ -26,6 +26,10 @@ import com.yahoo.searchlib.document.FastMapSearch;
 /**
  * When a field (a map, or an array of struct) has fast map search enabled, this class transforms
  * sameElement queries on that field to target the fast map attribute.
+ * <p>
+ * A rewritten query no longer searches the field itself, so anything which depends on the sameElement
+ * matching the original field, such as matched-elements-only summaries and match features on its
+ * key and value struct fields, will not see the match.
  *
  * @author johsol
  */

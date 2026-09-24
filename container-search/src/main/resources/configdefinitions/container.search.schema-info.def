@@ -13,10 +13,10 @@ schema[].field[].index bool
 schema[].field[].bitPacked bool
 ## Present (with a single entry) if this field has fast map search, i.e. does map: fast-search,
 ## either on a map, or on an array of struct with the key and value struct fields given here
-schema[].field[].fastMapSearch[].keyField string default="key"
-schema[].field[].fastMapSearch[].keyType string
-schema[].field[].fastMapSearch[].valueField string default="value"
-schema[].field[].fastMapSearch[].valueType string
+schema[].field[].fastMapSearchFields[].keyField string default="key"
+schema[].field[].fastMapSearchFields[].keyType string
+schema[].field[].fastMapSearchFields[].valueField string default="value"
+schema[].field[].fastMapSearchFields[].valueType string
 
 ## Field sets
 schema[].fieldset[].name string

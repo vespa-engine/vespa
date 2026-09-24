@@ -1092,9 +1092,13 @@ void mapBody(ParsedField field) :
     ( <FAST_SEARCH> { field.setFastMapSearch(true); }
     | name = identifier() <COLON> structFieldName = identifier()
       {
-          if (name.equals("key")) field.setFastMapKeyField(structFieldName);
-          else if (name.equals("value")) field.setFastMapValueField(structFieldName);
-          else throw new ParseException("Expected 'fast-search', 'key' or 'value' in map, but got '" + name + "'.");
+          try {
+              if (name.equals("key")) field.setFastMapKeyField(structFieldName);
+              else if (name.equals("value")) field.setFastMapValueField(structFieldName);
+              else throw new ParseException("Expected 'fast-search', 'key' or 'value' in map, but got '" + name + "'.");
+          } catch (IllegalArgumentException e) {
+              throw new ParseException(e.getMessage());
+          }
       } )
 }
 

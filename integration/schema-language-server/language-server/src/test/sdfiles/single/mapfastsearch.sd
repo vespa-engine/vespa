@@ -13,5 +13,17 @@ schema mapfastsearch {
                 fast-search
             }
         }
+        struct entry {
+            field mykey type string { }
+            field myvalue type int { }
+        }
+        field array_form type array<entry> {
+            indexing: summary
+            map {
+                key: mykey
+                value: myvalue
+                fast-search
+            }
+        }
     }
 }

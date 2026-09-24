@@ -133,9 +133,16 @@ public class ParsedField extends ParsedBlock {
 
     public void setBolding(boolean value) { this.hasBolding = value; }
     public void setFastMapSearch(boolean value) { this.fastMapSearch = value; }
-    public void setFastMapKeyField(String value) { this.fastMapKeyField = value; }
-    public void setFastMapValueField(String value) { this.fastMapValueField = value; }
+    public void setFastMapKeyField(String value) { this.fastMapKeyField = setOnce("key", this.fastMapKeyField, value); }
+    public void setFastMapValueField(String value) { this.fastMapValueField = setOnce("value", this.fastMapValueField, value); }
     public void setFilter(boolean value) { this.isFilter = value; }
+
+    private String setOnce(String setting, String current, String value) {
+        if (current != null)
+            throw new IllegalArgumentException("'" + setting + "' is given more than once in 'map' of field '" + name() + "'.");
+        return value;
+    }
+
     public void setId(int id) { this.overrideId = id; }
     public void setLiteral(boolean value) { this.isLiteral = value; }
     public void setNormal(boolean value) { this.isNormal = value; }

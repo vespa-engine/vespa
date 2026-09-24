@@ -130,11 +130,11 @@ public final class SchemaInfo extends Derived {
         var fastMapFields = field.getFastMapSearch();
         if (fastMapFields != null) {
             var type = field.getDataType();
-            fieldBuilder.fastMapSearch(new SchemaInfoConfig.Schema.Field.FastMapSearch.Builder()
-                                               .keyField(fastMapFields.keyField())
-                                               .keyType(toTypeSpec(fastMapFields.keyType(type)))
-                                               .valueField(fastMapFields.valueField())
-                                               .valueType(toTypeSpec(fastMapFields.valueType(type))));
+            fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
+                                                     .keyField(fastMapFields.keyField())
+                                                     .keyType(toTypeSpec(fastMapFields.keyType(type)))
+                                                     .valueField(fastMapFields.valueField())
+                                                     .valueType(toTypeSpec(fastMapFields.valueType(type))));
         }
         schemaBuilder.field(fieldBuilder);
     }

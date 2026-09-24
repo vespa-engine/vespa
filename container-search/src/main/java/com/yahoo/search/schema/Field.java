@@ -64,15 +64,17 @@ public class Field implements FieldInfo {
     public boolean equals(Object o) {
         if ( ! (o instanceof Field other)) return false;
         if ( ! this.name.equals(other.name)) return false;
+        if ( ! this.type.equals(other.type)) return false;
         if ( this.isAttribute != other.isAttribute) return false;
         if ( this.isIndex != other.isIndex) return false;
+        if ( ! Objects.equals(this.fastMapSearch, other.fastMapSearch)) return false;
         if ( ! this.aliases.equals(other.aliases)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, isAttribute, isIndex, aliases);
+        return Objects.hash(name, type, isAttribute, isIndex, fastMapSearch, aliases);
     }
 
     @Override
@@ -96,6 +98,18 @@ public class Field implements FieldInfo {
          * Structured types have additional information in the subclass specific to that kind of type.
          */
         public Kind kind() { return kind; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if (o == null || o.getClass() != this.getClass()) return false;
+            return this.kind == ((Type)o).kind;
+        }
+
+        @Override
+        public int hashCode() {
+            return kind.hashCode();
+        }
 
         @Override
         public String toString() {
@@ -156,6 +170,17 @@ public class Field implements FieldInfo {
         public TensorType tensorType() { return tensorType; }
 
         @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            return this.tensorType.equals(((TensorFieldType)o).tensorType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), tensorType);
+        }
+
+        @Override
         public String toString() {
             return tensorType.toString();
         }
@@ -179,6 +204,18 @@ public class Field implements FieldInfo {
 
         public Type valueType() {
             return valueType;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            var other = (MapFieldType)o;
+            return this.keyType.equals(other.keyType) && this.valueType.equals(other.valueType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), keyType, valueType);
         }
 
         public static Type from(String typeString) {
