@@ -55,15 +55,11 @@ public:
 private:
     using ParentDataStore = UniqueStoreType::DataStoreType;
     static ComparatorType make_normal_enum_store_comparator(const ParentDataStore& data_store) {
-        if constexpr (has_string_type) {
-            return ComparatorType(data_store, false);
-        } else {
-            return ComparatorType(data_store);
-        }
+        return ComparatorType(data_store);
     }
     static ComparatorType make_cased_enum_store_comparator(const ParentDataStore& data_store) {
         if constexpr (has_string_type) {
-            return ComparatorType(data_store, true);
+            return ComparatorType::cased(data_store);
         } else {
             return ComparatorType(data_store);
         }
@@ -222,6 +218,9 @@ public:
     }
     template <typename Type> ComparatorType prefix_lookup_comparator(const Type& lookup_value) const {
         return _lookup_source.make_for_prefix_lookup(lookup_value);
+    }
+    template <typename Type> ComparatorType string_lookup_lteq_comparator(const Type& lookup_value) const {
+        return _lookup_source.make_for_less_or_equal_lookup(lookup_value);
     }
     template <typename Type> std::vector<IEnumStore::EnumHandle> find_folded_enums(Type value) const {
         auto cmp = string_lookup_comparator(value);
