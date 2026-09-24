@@ -113,8 +113,10 @@ void SameElementQueryNode::unpack_match_data(uint32_t docid, const ITermData& td
         auto  tmd = match_data.resolveTermField(tfd.getHandle());
         tmd->setFieldId(field_id);
         tmd->reset(docid);
-        for (uint32_t element_id : _element_ids) {
-            tmd->appendPosition(search::fef::TermFieldMatchDataPosition(element_id, 0, 1, 1));
+        if (tmd->needs_normal_features()) {
+            for (uint32_t element_id : _element_ids) {
+                tmd->appendPosition(search::fef::TermFieldMatchDataPosition(element_id, 0, 1, 1));
+            }
         }
     }
 }
