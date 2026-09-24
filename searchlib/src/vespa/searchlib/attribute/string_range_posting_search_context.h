@@ -20,9 +20,6 @@ private:
 
     const StringRangeSpec* _range_spec;
 
-    bool use_single_dictionary_entry(PostingListSearchContext::DictionaryConstIterator it) const {
-        return this->match(_enumStore.get_value(it.getKey().load_acquire()));
-    }
     bool use_posting_lists_when_non_strict(const ExecuteInfo& info) const override;
 
 public:

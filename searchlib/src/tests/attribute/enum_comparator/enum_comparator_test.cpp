@@ -289,7 +289,7 @@ TEST(EnumComparatorTest, require_that_cased_less_or_equal_is_working) {
     EXPECT_TRUE(cmp_le2.less(e1, EnumIndex()));
 }
 
-TEST(EnumComparatorTest, require_that_unsupported_strategy_transformations_abort) {
+TEST(EnumComparatorDeathTest, require_that_unsupported_strategy_transformations_abort) {
     StringEnumStore           es(false, DictionaryConfig::Type::BTREE);
     EnumStoreStringComparator uncased_then_cased(es.get_data_store());
     // UNCASED_THEN_CASED has neither a prefix nor a less-or-equal counterpart. Quietly
