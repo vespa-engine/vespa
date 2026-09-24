@@ -1428,10 +1428,14 @@ void mapBody(ParsedField field) :
     ( <FAST_SEARCH> { field.setFastMapSearch(true); }
     | name = identifierStr() { nameToken = lastConsumedToken; } <COLON> structFieldName = identifierStr()
       {
-          if (name.equals("key")) field.setFastMapKeyField(structFieldName);
-          else if (name.equals("value")) field.setFastMapValueField(structFieldName);
-          else nameToken.addIllegalArgumentException(new IllegalArgumentException(
-                   "Expected 'fast-search', 'key' or 'value' in map, but got '" + name + "'."));
+          try {
+              if (name.equals("key")) field.setFastMapKeyField(structFieldName);
+              else if (name.equals("value")) field.setFastMapValueField(structFieldName);
+              else nameToken.addIllegalArgumentException(new IllegalArgumentException(
+                       "Expected 'fast-search', 'key' or 'value' in map, but got '" + name + "'."));
+          } catch (IllegalArgumentException e) {
+              nameToken.addIllegalArgumentException(e);
+          }
       } )
 ;
 

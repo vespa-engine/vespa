@@ -2,12 +2,18 @@
 package com.yahoo.docprocs.indexing;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.StructDataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
+import com.yahoo.document.update.FieldUpdate;
+import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
@@ -117,7 +123,7 @@ public class ScriptManagerTestCase {
         update.addFieldPathUpdate(new AssignFieldPathUpdate(update.getDocumentType(), "myMap{key}",
                                                             new StringFieldValue("value")));
         try {
-            executeWithFastMapSearchOnMyMap(update);
+            executeWithFastMapSearch(update);
             fail("Expected exception");
         }
         catch (InvalidInputException e) {
@@ -135,7 +141,7 @@ public class ScriptManagerTestCase {
 
         DocumentUpdate update = newUpdate();
         update.addFieldPathUpdate(new AssignFieldPathUpdate(update.getDocumentType(), "myMap", map));
-        executeWithFastMapSearchOnMyMap(update);
+        executeWithFastMapSearch(update);
     }
 
     @Test
@@ -143,18 +149,71 @@ public class ScriptManagerTestCase {
         DocumentUpdate update = newUpdate();
         update.addFieldPathUpdate(new AssignFieldPathUpdate(update.getDocumentType(), "myOtherMap{key}",
                                                             new StringFieldValue("value")));
-        executeWithFastMapSearchOnMyMap(update);
+        executeWithFastMapSearch(update);
+    }
+
+    @Test
+    public void requireThatElementUpdateOfFastSearchArrayIsRejected() {
+        assertArrayUpdateRejected(FieldUpdate.createMap(myArrayField(), new IntegerFieldValue(0),
+                                                        ValueUpdate.createAssign(newEntry("key", "value"))));
+    }
+
+    @Test
+    public void requireThatRemoveFromFastSearchArrayIsRejected() {
+        assertArrayUpdateRejected(FieldUpdate.createRemove(myArrayField(), newEntry("key", "value")));
+    }
+
+    @Test
+    public void requireThatAssignClearAndAddOnFastSearchArrayAreAccepted() {
+        Array<Struct> array = new Array<>(myArrayField().getDataType());
+        array.add(newEntry("key", "value"));
+        executeWithFastMapSearch(newUpdate().addFieldUpdate(FieldUpdate.createAssign(myArrayField(), array)));
+        executeWithFastMapSearch(newUpdate().addFieldUpdate(FieldUpdate.createClearField(myArrayField())));
+        executeWithFastMapSearch(newUpdate().addFieldUpdate(FieldUpdate.createAdd(myArrayField(), newEntry("key", "value"))));
+    }
+
+    private static void assertArrayUpdateRejected(FieldUpdate fieldUpdate) {
+        try {
+            executeWithFastMapSearch(newUpdate().addFieldUpdate(fieldUpdate));
+            fail("Expected exception");
+        }
+        catch (InvalidInputException e) {
+            assertEquals("Field 'myArray' has 'map: fast-search', which does not support updating or removing " +
+                         "single array elements. Assign the whole field instead.",
+                         e.getMessage());
+        }
+    }
+
+    private static final StructDataType entryType = newEntryType();
+
+    private static StructDataType newEntryType() {
+        var type = new StructDataType("entry");
+        type.addField(new com.yahoo.document.Field("mykey", DataType.STRING));
+        type.addField(new com.yahoo.document.Field("myvalue", DataType.STRING));
+        return type;
+    }
+
+    private static Struct newEntry(String key, String value) {
+        Struct entry = entryType.createFieldValue();
+        entry.setFieldValue("mykey", key);
+        entry.setFieldValue("myvalue", value);
+        return entry;
+    }
+
+    private static com.yahoo.document.Field myArrayField() {
+        return newUpdate().getDocumentType().getField("myArray");
     }
 
     private static DocumentUpdate newUpdate() {
         DocumentType docType = new DocumentType("myDocumentType");
         docType.addField("myMap", DataType.getMap(DataType.STRING, DataType.STRING));
         docType.addField("myOtherMap", DataType.getMap(DataType.STRING, DataType.STRING));
+        docType.addField("myArray", DataType.getArray(entryType));
         return new DocumentUpdate(docType, "id:ns:myDocumentType::");
     }
 
-    /** Runs the given update through a script manager configured with 'map: fast-search' on 'myMap'. */
-    private static void executeWithFastMapSearchOnMyMap(DocumentUpdate update) {
+    /** Runs the given update through a script manager configured with 'map: fast-search' on 'myMap' and 'myArray'. */
+    private static void executeWithFastMapSearch(DocumentUpdate update) {
         DocumentType docType = update.getDocumentType();
         var typeMgr = new DocumentTypeManager();
         typeMgr.registerDocumentType(docType);
@@ -164,7 +223,10 @@ public class ScriptManagerTestCase {
                                 .doctype(docType.getName())
                                 .docfield("myMap")
                                 .docfield("myOtherMap")
+                                .docfield("myArray")
                                 .complexfield(field -> field.name("myMap")
+                                                            .why(IlscriptsConfig.Ilscript.Complexfield.Why.FAST_MAP_SEARCH))
+                                .complexfield(field -> field.name("myArray")
                                                             .why(IlscriptsConfig.Ilscript.Complexfield.Why.FAST_MAP_SEARCH)));
         ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null,
                                                     Chunker.throwsOnUse.asMap(),

@@ -9269,6 +9269,8 @@
       "public void <init>(com.yahoo.search.schema.Field$Type, com.yahoo.search.schema.Field$Type)",
       "public com.yahoo.search.schema.Field$Type keyType()",
       "public com.yahoo.search.schema.Field$Type valueType()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
     ],
     "fields" : [ ]
@@ -9282,6 +9284,8 @@
     "methods" : [
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.TensorType tensorType()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public java.lang.String toString()"
     ],
     "fields" : [ ]
@@ -9327,6 +9331,8 @@
     ],
     "methods" : [
       "public com.yahoo.search.schema.Field$Type$Kind kind()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public java.lang.String toString()",
       "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
     ],

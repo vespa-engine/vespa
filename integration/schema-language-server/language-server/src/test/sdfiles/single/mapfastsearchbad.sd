@@ -1,0 +1,26 @@
+schema mapfastsearchbad {
+    document mapfastsearchbad {
+        struct entry {
+            field mykey type string { }
+            field myvalue type int { }
+        }
+        field unknown_setting type array<entry> {
+            indexing: summary
+            map {
+                foo: mykey
+                key: mykey
+                value: myvalue
+                fast-search
+            }
+        }
+        field repeated_key type array<entry> {
+            indexing: summary
+            map {
+                key: mykey
+                key: myvalue
+                value: myvalue
+                fast-search
+            }
+        }
+    }
+}
