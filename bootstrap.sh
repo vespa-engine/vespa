@@ -67,8 +67,24 @@ if [ "$current_mvn_version" = "$wanted_mvn_version" ]; then
 else
     # Set up maven wrapper.
     echo "Setting up maven wrapper ${wanted_mvn_version} in $(pwd)"
+    maven_wrapper_args=(-B)
+    if [[ -n "${MAVEN_GLOBAL_SETTINGS:-}" ]]; then
+        maven_wrapper_args=(-gs "$MAVEN_GLOBAL_SETTINGS" -B)
+    fi
     # shellcheck disable=SC2086 # allow word splitting for maven extra opts
-    mvn -B wrapper:wrapper -Dmaven="${wanted_mvn_version}" -N ${MAVEN_EXTRA_OPTS}
+    mvn "${maven_wrapper_args[@]}" wrapper:wrapper -Dmaven="${wanted_mvn_version}" -N ${MAVEN_EXTRA_OPTS}
+
+    # Keep verification independent of the mirror used to fetch the wrapper.
+    wrapper_properties=.mvn/wrapper/maven-wrapper.properties
+    distribution_sha256=5af3b743dd8b876b5c45da33b676251e5f1687712644abb4ee519ca56e1d89ce
+    if grep -q '^distributionSha256Sum=' "$wrapper_properties"; then
+        grep -qx "distributionSha256Sum=$distribution_sha256" "$wrapper_properties" || {
+            echo "Unexpected Maven wrapper distribution checksum" >&2
+            exit 1
+        }
+    else
+        printf '\ndistributionSha256Sum=%s\n' "$distribution_sha256" >> "$wrapper_properties"
+    fi
 
     # Proxy allowing you to put $(pwd)/maven-wrapper/bin first in PATH
     # to redirect any plain "mvn" commands so they use the wrapper
