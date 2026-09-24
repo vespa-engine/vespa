@@ -259,12 +259,14 @@ DefaultValue DocumentFieldNode::SingleHandler::_defaultValue;
 
 void DocumentFieldNode::SingleHandler::onPrimitive(uint32_t, const Content& c) {
     LOG(spam, "SingleHandler::onPrimitive: field value '%s'", c.getValue().toString().c_str());
+    set_found_value(true);
     FieldValue2ResultNode converter(&c.getValue());
     _result.set(converter);
 }
 
 void DocumentFieldNode::MultiHandler::onPrimitive(uint32_t, const Content& c) {
     LOG(spam, "MultiHandler::onPrimitive: field value '%s'", c.getValue().toString().c_str());
+    set_found_value(true);
     FieldValue2ResultNode converter(&c.getValue());
     _result.push_back_safe(converter);
 }

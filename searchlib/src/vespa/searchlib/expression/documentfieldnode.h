@@ -48,8 +48,14 @@ public:
 
 public:
     class Handler : public document::fieldvalue::IteratorHandler {
+        bool _found_value = false;
+
     public:
         virtual void reset() = 0;
+        [[nodiscard]] bool found_value() const noexcept { return _found_value; }
+
+    protected:
+        void set_found_value(bool found) noexcept { _found_value = found; }
 
     private:
         void onCollectionStart(const Content& c) override;
@@ -58,13 +64,18 @@ public:
     const CurrentIndex* getCurrentIndex() { return _currentIndex; }
     void setCurrentIndex(const CurrentIndex* index);
 
+    [[nodiscard]] bool has_field_value() const noexcept { return _handler && _handler->found_value(); }
+
 private:
     class SingleHandler : public Handler {
     public:
         SingleHandler(ResultNode& result) : _result(result) {}
 
     private:
-        void reset() override { _result.set(_defaultValue); }
+        void reset() override {
+            _result.set(_defaultValue);
+            set_found_value(false);
+        }
         ResultNode&         _result;
         static DefaultValue _defaultValue;
         void onPrimitive(uint32_t fid, const Content& c) override;
@@ -74,7 +85,10 @@ private:
         MultiHandler(ResultNodeVector& result) : _result(result) {}
 
     private:
-        void reset() override { _result.clear(); }
+        void reset() override {
+            _result.clear();
+            set_found_value(false);
+        }
         ResultNodeVector& _result;
         void onPrimitive(uint32_t fid, const Content& c) override;
     };

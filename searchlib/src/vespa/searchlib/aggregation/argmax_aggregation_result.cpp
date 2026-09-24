@@ -83,7 +83,7 @@ bool ArgmaxAggregationResult::fill_scratch_key() {
     // Start from the smallest representable key so that NaN, which fails every comparison, is never picked.
     _scratch_key->setMin();
     if (key->isMultiValue()) {
-        bool ok = false;
+        bool        ok = false;
         const auto& key_values = static_cast<const ResultNodeVector&>(*key);
         for (const auto& key_value : key_values) {
             if (key_value.getFloat() >= _scratch_key->getFloat()) {
@@ -122,6 +122,11 @@ void ArgmaxAggregationResult::onAggregate(const ResultNode& result) {
 
 void ArgmaxAggregationResult::onAggregate(const ResultNode& result, DocId docId, HitRank rank) {
     if (_key_tree->getRoot() != nullptr) {
+        // An integer attribute encodes a missing value as its type minimum, which the key comparison cannot
+        // tell apart from a real value. Ask the attribute instead, so a hit without a key is never selected.
+        if (_key_tree->has_undefined_attribute(docId)) {
+            return;
+        }
         _key_tree->execute(docId, rank);
     }
     onAggregate(result);
@@ -130,6 +135,12 @@ void ArgmaxAggregationResult::onAggregate(const ResultNode& result, DocId docId,
 void ArgmaxAggregationResult::onAggregate(const ResultNode& result, const document::Document& doc, HitRank rank) {
     if (_key_tree->getRoot() != nullptr) {
         _key_tree->execute(doc, rank);
+        // A document without the key field leaves the handler at its default value, which reads as zero for an
+        // integer key and would otherwise compete with real keys. Ask the field node whether it actually saw a
+        // value, so a hit without a key is never selected.
+        if (_key_tree->has_undefined_field()) {
+            return;
+        }
     }
     onAggregate(result);
 }
