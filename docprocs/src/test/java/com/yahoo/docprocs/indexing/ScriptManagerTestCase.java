@@ -122,7 +122,7 @@ public class ScriptManagerTestCase {
         }
         catch (InvalidInputException e) {
             assertEquals("Field 'myMap' has 'map: fast-search', which does not support field path updates " +
-                         "into the map. Assign the whole map instead.",
+                         "into the field. Assign the whole field instead.",
                          e.getMessage());
         }
     }

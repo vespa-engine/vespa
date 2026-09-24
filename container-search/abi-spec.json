@@ -9233,7 +9233,29 @@
       "public com.yahoo.search.schema.Field$Builder setIndex(boolean)",
       "public com.yahoo.search.schema.Field$Builder setBitPacked(boolean)",
       "public com.yahoo.search.schema.Field$Builder setFastMapSearch(boolean)",
+      "public com.yahoo.search.schema.Field$Builder setFastMapSearch(com.yahoo.search.schema.Field$FastMapSearchFields)",
       "public com.yahoo.search.schema.Field build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Field$FastMapSearchFields" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, com.yahoo.search.schema.Field$Type, java.lang.String, com.yahoo.search.schema.Field$Type)",
+      "public static com.yahoo.search.schema.Field$FastMapSearchFields of(com.yahoo.search.schema.Field$MapFieldType)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public java.lang.String keyField()",
+      "public com.yahoo.search.schema.Field$Type keyType()",
+      "public java.lang.String valueField()",
+      "public com.yahoo.search.schema.Field$Type valueType()"
     ],
     "fields" : [ ]
   },
@@ -9326,6 +9348,7 @@
       "public boolean isAttribute()",
       "public boolean isIndex()",
       "public boolean hasFastMapSearch()",
+      "public java.util.Optional fastMapSearch()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"

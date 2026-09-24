@@ -88,8 +88,8 @@ class DocumentScript {
     }
 
     /**
-     * A map with fast search is indexed into a synthetic key-value attribute derived from the whole map, so a
-     * field path update reaching into the map would leave that attribute holding only the updated entries.
+     * A map (or array of struct) with fast search is indexed into a synthetic key-value attribute derived from the
+     * whole field, so a field path update reaching into it would leave that attribute holding only the updated entries.
      * Assigning the whole field is fine, as it is turned into a regular field update which reruns the script.
      */
     private void requireThatFieldPathUpdateIsSupported(Field field, FieldPathUpdate fieldUpdate) {
@@ -100,7 +100,7 @@ class DocumentScript {
             return;
         }
         throw new InvalidInputException("Field '" + field.getName() + "' has 'map: fast-search', which does not " +
-                                        "support field path updates into the map. Assign the whole map instead.");
+                                        "support field path updates into the field. Assign the whole field instead.");
     }
 
     private void removeAnyLinguisticsSpanTree(ValueUpdate<?> valueUpdate) {

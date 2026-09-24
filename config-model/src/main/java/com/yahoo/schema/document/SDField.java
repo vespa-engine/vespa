@@ -54,7 +54,7 @@ public class SDField extends Field implements ImmutableSDField {
     private boolean indexStructureField = false;
 
     /** Whether a synthetic key+value field should be built (with fast search structure) */
-    private boolean fastMapSearch = false;
+    private FastMapSearchFields fastMapSearch = null;
 
     /** The indexing statements to be applied to this value during indexing */
     private ScriptExpression indexingScript = new ScriptExpression();
@@ -513,10 +513,16 @@ public class SDField extends Field implements ImmutableSDField {
     /** Returns whether a fast search structure should be built for the synthetic key value field */
     @Override
     public boolean hasFastMapSearch() {
+        return fastMapSearch != null;
+    }
+
+    /** Returns the key and value fields of this field if it has fast map search, and null otherwise */
+    @Override
+    public FastMapSearchFields getFastMapSearch() {
         return fastMapSearch;
     }
 
-    public void setFastMapSearch(boolean fastMapSearch) {
+    public void setFastMapSearch(FastMapSearchFields fastMapSearch) {
         this.fastMapSearch = fastMapSearch;
     }
 

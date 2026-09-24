@@ -152,7 +152,7 @@ public class LSPTest {
 
     /**
      * 'map: fast-search' is only accepted by the config model on maps with string, int or long keys and values,
-     * so {@link BodyKeywordCompletion} should only suggest the map block in such fields.
+     * and on arrays of struct, so {@link BodyKeywordCompletion} should only suggest the map block in such fields.
      */
     @Test
     void mapFastSearchCompletionTest() throws IOException, InvalidContextException {
@@ -190,6 +190,11 @@ public class LSPTest {
                      "fast-search should be the only suggestion inside a map block.");
         assertFalse(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(34, 12)).contains("map"),
                     "map should not be suggested in a map<string, double> field.");
+        assertTrue(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(41, 12)).contains("map"),
+                   "map should be suggested in an array of struct field.");
+        assertEquals(List.of("fast-search", "key", "value"),
+                     completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(46, 16)),
+                     "fast-search, key and value should be suggested inside the map block of an array of struct field.");
     }
 
     /**
