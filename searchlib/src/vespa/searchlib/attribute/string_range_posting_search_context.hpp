@@ -64,11 +64,7 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
                     _enumStore.get_data_store()));
         }
         if (this->_uniqueValues == 1u) {
-            if (this->_lowerDictItr.valid() && use_single_dictionary_entry(this->_lowerDictItr)) {
-                this->lookupSingle();
-            } else {
-                this->_uniqueValues = 0;
-            }
+            this->lookupSingle();
         }
     }
 }
