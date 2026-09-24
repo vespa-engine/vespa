@@ -8,6 +8,7 @@
 #include <cstring>
 
 using vespalib::LowerCase;
+using vespalib::Utf8Reader;
 using vespalib::Utf8ReaderForZTS;
 namespace search {
 
@@ -33,6 +34,11 @@ template <typename T> class FoldableStringHelper;
 template <> class FoldableStringHelper<const char*> {
 public:
     using Reader = Utf8ReaderForZTS;
+};
+
+template <> class FoldableStringHelper<std::string_view> {
+public:
+    using Reader = Utf8Reader;
 };
 
 template <> class FoldableStringHelper<Utf32VectorRef> {
@@ -113,6 +119,11 @@ template int FoldedStringCompare::compareFolded<false, false>(const char* key, c
 template int FoldedStringCompare::compareFolded<false, true>(const char* key, const char* okey);
 template int FoldedStringCompare::compareFolded<true, false>(const char* key, const char* okey);
 template int FoldedStringCompare::compareFolded<true, true>(const char* key, const char* okey);
+
+template int FoldedStringCompare::compareFolded<false, false>(std::string_view key, std::string_view okey);
+template int FoldedStringCompare::compareFolded<false, true>(std::string_view key, std::string_view okey);
+template int FoldedStringCompare::compareFolded<true, false>(std::string_view key, std::string_view okey);
+template int FoldedStringCompare::compareFolded<true, true>(std::string_view key, std::string_view okey);
 
 template int FoldedStringCompare::compareFoldedPrefix<false, false>(const char* key, const char* okey,
                                                                     size_t prefixLen);
