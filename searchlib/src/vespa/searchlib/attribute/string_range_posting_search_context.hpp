@@ -15,36 +15,24 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
                                                                                        const AttrT& to_be_searched)
     : Parent(std::move(base_sc), use_bit_vector, to_be_searched), _range_spec(this->get_string_range_spec()) {
     if (this->valid() && _range_spec) {
-        // An open (exclusive) boundary uses a less-or-equal comparator instead of an ordinary
-        // less-than one: driving the dictionary walk with it skips past the entries equal to the
-        // boundary value, narrowing the walk to exactly the (half-)open range instead of relying
-        // on use_dictionary_entry()'s match() filtering to exclude them after the fact.
-        //
-        // _lowerDictItr.lower_bound(low) bottoms out in std::lower_bound, which calls
-        // low.less(candidate, needle) - candidate first - for each dictionary entry it probes,
-        // and settles on the first entry where that call returns false:
-        //  - an ordinary less comparator computes "candidate < boundary", which turns false at
-        //    the first candidate >= boundary, so the walk starts inclusive of the boundary entry.
-        //  - a less-or-equal comparator computes "candidate <= boundary", which turns false one
-        //    entry later, at the first candidate > boundary, so the walk starts strictly past the
+        // In both ends, an open (exclusive) boundary uses a less-or-equal comparator while closed
+        // (inclusive) boundary uses an ordinary less-than variant.  It works like this:
+        // _lowerDictItr.lower_bound(low) will call low.less(candidate, boundary) finding the first
+        // entry where that call returns false:
+        //  - an ordinary less comparator computes "candidate < boundary", which turns false at the
+        //    first candidate >= boundary, so the walk starts inclusive of the boundary entry.
+        //  - a less-or-equal comparator computes "candidate <= needs", which turns false some
+        //    entries later, at the first candidate > boundary, so the walk starts strictly past the
         //    boundary entry, i.e. exclusive.
-        //
-        // _upperDictItr.seekPast(high) calls high.less(needle, candidate) - needle first, the
-        // opposite order from lower_bound - and keeps advancing past entries while that call
-        // returns false, stopping at the first entry where it turns true:
-        //  - an ordinary less comparator computes "boundary < candidate", which stays false
-        //    while candidate <= boundary, so the walk advances past the boundary entry too,
-        //    keeping it in range (inclusive upper bound).
-        //  - a less-or-equal comparator computes "boundary <= candidate", which turns true one
-        //    entry earlier, at the boundary entry itself, so the walk stops there instead of
-        //    past it, excluding it (exclusive upper bound).
-        //
-        // So although lower_bound and seekPast call the comparator with the candidate and needle
-        // in opposite argument order, swapping in a less-or-equal comparator has the same visible
-        // effect on both sides of the range: the boundary entry drops out of the walk.
-        //
-        // With that narrowing, [_lowerDictItr, _upperDictItr> should hold exactly the matching
-        // entries.
+        // _upperDictItr.seekPast(high) calls high.less(boundary, candidate) - the opposite order from
+        // lower_bound - finding the first entry where it turns true:
+        //  - an ordinary less comparator computes "boundary < candidate", which stays false while
+        //    candidate <= boundary, so the walk advances past the boundary entry too, keeping it in
+        //    range (inclusive upper bound).
+        //  - a less-or-equal comparator computes "boundary <= candidate", which turns true one entry
+        //    earlier, at the boundary entry itself, so the walk stops there instead of past it,
+        //    excluding it (exclusive upper bound).
+        // With that narrowing, [_lowerDictItr, _upperDictItr> will hold exactly the matching entries.
         auto make_lower = [this] {
             const char* value = _range_spec->left->c_str();
             return _range_spec->left_closed ? _enumStore.string_lookup_comparator(value)
