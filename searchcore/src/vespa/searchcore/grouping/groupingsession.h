@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "grouping_pass_details.h"
 #include "sessionid.h"
 
 #include <vespa/searchlib/attribute/iattributemanager.h>
@@ -176,8 +177,10 @@ public:
      *
      * @param context The grouping context which contains information about the
      *                current pass.
+     * @param details If not null, details about each grouping in this pass are
+     *                appended here (used for query tracing).
      **/
-    void continueExecution(GroupingContext& context);
+    void continueExecution(GroupingContext& context, std::vector<GroupingPassDetails>* details = nullptr);
 
     /**
      * Checks whether or not the session is finished.

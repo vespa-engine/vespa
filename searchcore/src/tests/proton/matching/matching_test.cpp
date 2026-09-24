@@ -1335,6 +1335,81 @@ TEST_F(MatchingTest, require_that_grouping_is_performed_with_multi_threaded_matc
     }
 }
 
+namespace {
+
+void set_group_spec(SearchRequest& request, const Grouping& grouping) {
+    vespalib::nbostream     buf;
+    vespalib::NBOSerializer os(buf);
+    uint32_t                n = 1;
+    os << n;
+    grouping.serialize(os);
+    request.groupSpec.assign(buf.data(), buf.data() + buf.size());
+}
+
+const vespalib::slime::Inspector* find_trace_entry(const SearchRequest& request, const std::string& tag) {
+    const auto& traces = request.trace().getRoot()["traces"];
+    for (size_t i = 0; i < traces.entries(); ++i) {
+        if (traces[i]["tag"].asString().make_string() == tag) {
+            return &traces[i];
+        }
+    }
+    return nullptr;
+}
+
+} // namespace
+
+TEST_F(MatchingTest, require_that_grouping_details_are_traced) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.basicResults();
+    Grouping grequest;
+    grequest.setId(3).setFirstLevel(0).setLastLevel(0).addLevel(
+        std::move(GroupingLevel().setExpression(createAttr())));
+
+    // First pass matches and groups, and keeps the session for the next pass.
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->propertiesMap.lookupCreate(search::MapNames::CACHES).add("grouping", "true");
+    request->sessionId.push_back('g');
+    request->setTraceLevel(6, 1);
+    set_group_spec(*request, grequest);
+    world.performSearch(*request, 1);
+    const auto* entry = find_trace_entry(*request, "grouping");
+    ASSERT_TRUE(entry != nullptr) << request->trace().getSlime().toString();
+    EXPECT_FALSE((*entry)["continued_session"].asBool());
+    EXPECT_TRUE((*entry)["session_cached"].asBool());
+    ASSERT_EQ(1u, (*entry)["groupings"].entries());
+    const auto& first = (*entry)["groupings"][0];
+    EXPECT_EQ(3, first["id"].asLong());
+    EXPECT_TRUE(first["from_session"].asBool());
+    EXPECT_FALSE(first["session_done"].asBool());
+    EXPECT_EQ(9, first["levels"][0]["session_groups"].asLong());
+    EXPECT_EQ(9, first["levels"][0]["groups"].asLong());
+
+    // Second pass is served by the cached session, which is then done.
+    SearchRequest::SP request2 = MyWorld::createSimpleRequest("f1", "spread");
+    request2->propertiesMap.lookupCreate(search::MapNames::CACHES).add("grouping", "true");
+    request2->sessionId.push_back('g');
+    request2->setTraceLevel(6, 1);
+    grequest.setFirstLevel(1).setLastLevel(1);
+    set_group_spec(*request2, grequest);
+    world.performSearch(*request2, 1);
+    entry = find_trace_entry(*request2, "grouping");
+    ASSERT_TRUE(entry != nullptr) << request2->trace().getSlime().toString();
+    EXPECT_TRUE((*entry)["continued_session"].asBool());
+    EXPECT_FALSE((*entry)["session_cached"].asBool());
+    const auto& second = (*entry)["groupings"][0];
+    EXPECT_TRUE(second["from_session"].asBool());
+    EXPECT_TRUE(second["session_done"].asBool());
+    EXPECT_EQ(find_trace_entry(*request2, "query_execution"), nullptr);
+
+    // Not traced below level 6.
+    SearchRequest::SP request3 = MyWorld::createSimpleRequest("f1", "spread");
+    request3->setTraceLevel(5, 1);
+    set_group_spec(*request3, grequest.setFirstLevel(0).setLastLevel(0));
+    world.performSearch(*request3, 1);
+    EXPECT_EQ(find_trace_entry(*request3, "grouping"), nullptr);
+}
+
 TEST_F(MatchingTest, require_that_zero_hit_grouping_still_groups_with_feature_sort_spec) {
     MyWorld world(shared_state());
     world.basicSetup();

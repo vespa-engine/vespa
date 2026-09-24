@@ -77,7 +77,10 @@ ResultProcessor::ResultProcessor(IAttributeContext& attrContext, const search::I
       _offset(offset),
       _hits(hits),
       _wasMerged(false),
-      _sort_feature_failed(false) {
+      _sort_feature_failed(false),
+      _collect_grouping_details(false),
+      _grouping_session_cached(false),
+      _grouping_details() {
     if (!_groupingContext.empty()) {
         _groupingSession = std::make_unique<GroupingSession>(sessionId, _groupingContext, attrContext, nullptr);
     }
@@ -131,10 +134,12 @@ ResultProcessor::Result::UP ResultProcessor::makeReply(PartialResultUP full_resu
         if (_wasMerged) {
             _groupingSession->getGroupingManager().prune();
         }
-        _groupingSession->continueExecution(_groupingContext);
+        _groupingSession->continueExecution(_groupingContext,
+                                            _collect_grouping_details ? &_grouping_details : nullptr);
         numFs4Hits = _groupingContext.countFS4Hits();
         _groupingContext.getResult().swap(r.groupResult);
         if (!_groupingSession->getSessionId().empty() && !_groupingSession->finished()) {
+            _grouping_session_cached = true;
             _sessionMgr.insert(std::move(_groupingSession));
         }
     }

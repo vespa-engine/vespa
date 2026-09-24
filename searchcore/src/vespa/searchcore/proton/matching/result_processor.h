@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchcore/grouping/grouping_pass_details.h>
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/vespalib/util/dual_merge_director.h>
 
@@ -93,16 +94,19 @@ public:
     };
 
 private:
-    IAttributeContext&                _attrContext;
-    const search::IDocumentMetaStore& _metaStore;
-    SessionManager&                   _sessionMgr;
-    GroupingContext&                  _groupingContext;
-    std::unique_ptr<GroupingSession>  _groupingSession;
-    const std::string&                _sortSpec;
-    size_t                            _offset;
-    size_t                            _hits;
-    bool                              _wasMerged;
-    std::atomic<bool>                 _sort_feature_failed;
+    IAttributeContext&                                 _attrContext;
+    const search::IDocumentMetaStore&                  _metaStore;
+    SessionManager&                                    _sessionMgr;
+    GroupingContext&                                   _groupingContext;
+    std::unique_ptr<GroupingSession>                   _groupingSession;
+    const std::string&                                 _sortSpec;
+    size_t                                             _offset;
+    size_t                                             _hits;
+    bool                                               _wasMerged;
+    std::atomic<bool>                                  _sort_feature_failed;
+    bool                                               _collect_grouping_details;
+    bool                                               _grouping_session_cached;
+    std::vector<search::grouping::GroupingPassDetails> _grouping_details;
 
 public:
     ResultProcessor(IAttributeContext& attrContext, const search::IDocumentMetaStore& metaStore,
@@ -129,6 +133,20 @@ public:
      * were not available. Only meaningful once all match threads are done.
      **/
     bool sort_feature_failed() const noexcept { return _sort_feature_failed.load(std::memory_order_relaxed); }
+
+    /**
+     * Collect details about each grouping when makeReply() produces the grouping result,
+     * to be traced by the caller.
+     **/
+    void collect_grouping_details() noexcept { _collect_grouping_details = true; }
+    const std::vector<search::grouping::GroupingPassDetails>& grouping_details() const noexcept {
+        return _grouping_details;
+    }
+
+    /**
+     * True if makeReply() stored the grouping session for later passes.
+     **/
+    bool grouping_session_cached() const noexcept { return _grouping_session_cached; }
 };
 
 } // namespace proton::matching

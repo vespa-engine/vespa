@@ -100,13 +100,29 @@ bool willNeedRanking(const SearchRequest& request, const GroupingContext& groupi
             first_phase_rank_score_drop_limit.has_value());
 }
 
+void trace_grouping_details(Trace& trace, bool continued_session, bool session_cached,
+                            const std::vector<GroupingPassDetails>& details) {
+    auto& cursor = trace.createCursor("grouping");
+    // continued_session: this pass was served from a grouping session kept since an earlier pass,
+    // without matching. session_cached: the session was kept for later passes.
+    cursor.setBool("continued_session", continued_session);
+    cursor.setBool("session_cached", session_cached);
+    GroupingPassDetails::as_slime(details, cursor.setArray("groupings"));
+}
+
 SearchReply::UP handleGroupingSession(SessionManager& sessionMgr, GroupingContext& groupingContext,
-                                      GroupingSession::UP groupingSession) {
-    auto reply = std::make_unique<SearchReply>();
-    groupingSession->continueExecution(groupingContext);
+                                      GroupingSession::UP groupingSession, Trace& trace) {
+    auto                             reply = std::make_unique<SearchReply>();
+    std::vector<GroupingPassDetails> details;
+    const bool                       trace_details = trace.shouldTrace(6);
+    groupingSession->continueExecution(groupingContext, trace_details ? &details : nullptr);
     groupingContext.getResult().swap(reply->groupResult);
-    if (!groupingSession->finished()) {
+    const bool session_cached = !groupingSession->finished();
+    if (session_cached) {
         sessionMgr.insert(std::move(groupingSession));
+    }
+    if (trace_details) {
+        trace_grouping_details(trace, true, session_cached, details);
     }
     return reply;
 }
@@ -341,7 +357,7 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
             if (shouldCacheGroupingSession) {
                 GroupingSession::UP session(sessionMgr.pickGrouping(sessionId));
                 if (session) {
-                    return handleGroupingSession(sessionMgr, groupingContext, std::move(session));
+                    return handleGroupingSession(sessionMgr, groupingContext, std::move(session), request.trace());
                 }
             }
         }
@@ -418,6 +434,10 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
 
         ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId, sort_spec, params.offset,
                            params.hits);
+        const bool      trace_grouping = !groupingContext.empty() && request.trace().shouldTrace(6);
+        if (trace_grouping) {
+            rp.collect_grouping_details();
+        }
 
         size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate(), rankProperties);
         vespalib::LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
@@ -429,6 +449,9 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
         ResultProcessor::Result::UP result =
             master.match(request.trace(), params, limitedThreadBundle, *mtf, rp, _distributionKey, numParts);
         my_stats = MatchMaster::getStats(std::move(master));
+        if (trace_grouping) {
+            trace_grouping_details(request.trace(), false, rp.grouping_session_cached(), rp.grouping_details());
+        }
         my_stats.add_query_setup_stats(setup_stats);
         // Sorting on a rank feature whose values turned out to be unavailable cannot
         // be silently downgraded to another order; fail the query closed instead.
