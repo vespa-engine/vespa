@@ -105,7 +105,15 @@ void SameElementSearch::doSeek(uint32_t docid) {
 }
 
 void SameElementSearch::doUnpack(uint32_t docid) {
-    _tfmd.resetOnlyDocId(docid);
+    if (_tfmd.needs_normal_features()) {
+        // Expose matching elements to ranking (e.g. elementwise(matches(field),dim)), one position per element
+        _tfmd.reset(docid);
+        for (uint32_t element_id : _matchingElements) {
+            _tfmd.appendPosition(fef::TermFieldMatchDataPosition(element_id, 0, 1, 1));
+        }
+    } else {
+        _tfmd.resetOnlyDocId(docid);
+    }
     for (const auto& child : _children) {
         child->unpack(docid);
     }

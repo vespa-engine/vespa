@@ -158,7 +158,8 @@ Blueprint::UP SameElementBlueprint::get_replacement() {
 
                 return std::make_unique<ArrayBoolBlueprint>(
                     _expose_match_data_for_same_element ? _field : state.field(0),
-                    array_bool_context->get_attribute(), _element_filter, array_bool_context->get_want_true());
+                    array_bool_context->get_attribute(), _element_filter, array_bool_context->get_want_true(),
+                    _expose_match_data_for_same_element);
             }
         }
     }

@@ -32,9 +32,12 @@ protected:
     const ArrayBoolAttribute&    _attr;
     const std::vector<uint32_t>& _element_filter;
     fef::TermFieldMatchData*     _tfmd;
+    bool                         _unpack_element_positions;
+    std::vector<uint32_t>        _matching_elements;
 
     ArrayBoolSearch(const ArrayBoolAttribute& attr, const std::vector<uint32_t>& element_filter,
-                    fef::TermFieldMatchData* tfmd);
+                    fef::TermFieldMatchData* tfmd, bool unpack_element_positions);
+    void doUnpack(uint32_t docid) override;
 
 public:
     virtual bool get_want_true() const = 0;
@@ -49,10 +52,13 @@ public:
      * @param want_true The truth value to check for.
      * @param strict Whether the iterator should  be strict.
      * @param tfmd TermFieldMatchData to unpack into.
+     * @param unpack_element_positions Whether to unpack one position per matching element into tfmd (when normal
+     *                                 features are needed), exposing the matching element ids to ranking.
      **/
     static std::unique_ptr<ArrayBoolSearch> create(const ArrayBoolAttribute&    attr,
                                                    const std::vector<uint32_t>& element_filter, bool want_true,
-                                                   bool strict, fef::TermFieldMatchData* tfmd);
+                                                   bool strict, fef::TermFieldMatchData* tfmd,
+                                                   bool unpack_element_positions = false);
 };
 
 } // namespace search::queryeval

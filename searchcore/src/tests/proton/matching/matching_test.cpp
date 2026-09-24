@@ -1735,6 +1735,28 @@ TEST_F(MatchingTest, require_that_same_element_search_works) {
     EXPECT_EQ(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
 }
 
+TEST_F(MatchingTest, require_that_elementwise_matches_reports_matching_elements_for_same_element) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_same_element_results("foo", "bar");
+    world.config.add(indexproperties::match::Feature::NAME, "elementwise(matches(my),x)");
+    SearchRequest::SP request = MyWorld::createSameElementRequest("foo", "bar");
+    SearchReply::UP   reply = world.performSearch(*request, 1);
+    ASSERT_EQ(1u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 1u);
+    ASSERT_EQ(reply->match_features.values.size(), names.size());
+    auto decode = [&](const std::string& name) {
+        const auto& value = reply->match_features.values[feature_index(names, name)];
+        EXPECT_TRUE(value.is_data());
+        nbostream buf(value.as_data().data, value.as_data().size);
+        return spec_from_value(*SimpleValue::from_stream(buf));
+    };
+    // doc 20 has my.a1 matching elements {2,3} and my.f1 matching elements {1,2}; only element 2 matches both
+    EXPECT_EQ(decode("elementwise(matches(my),x)"), TensorSpec("tensor(x{})").add({{"x", "2"}}, 1.0));
+}
+
 TEST_F(MatchingTest, require_that_invalid_queries_are_handled) {
     MyWorld world(shared_state());
     world.basicSetup();

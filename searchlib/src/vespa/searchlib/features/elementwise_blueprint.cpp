@@ -3,6 +3,7 @@
 #include "elementwise_blueprint.h"
 
 #include "elementwise_bm25_blueprint.h"
+#include "elementwise_matches_blueprint.h"
 #include "elementwise_utils.h"
 
 #include <vespa/eval/eval/value_type_spec.h>
@@ -54,6 +55,7 @@ ElementwiseBlueprint::~ElementwiseBlueprint() = default;
 ElementwiseBlueprint::NestedBlueprints ElementwiseBlueprint::make_default_nested_blueprints() {
     auto nested_blueprints = std::make_shared<NestedBlueprints::element_type>();
     nested_blueprints->emplace("bm25", std::make_shared<ElementwiseBm25Blueprint>());
+    nested_blueprints->emplace("matches", std::make_shared<ElementwiseMatchesBlueprint>());
     return nested_blueprints;
 }
 
