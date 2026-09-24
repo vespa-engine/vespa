@@ -458,7 +458,7 @@ TEST(GroupingTest, argmax_aggregation_result_with_negated_key_skips_hits_with_un
     Grouping request;
     request.setRoot(Group().addResult(argmin));
     ctx.setup(request);
-    request.aggregate(ctx.result().hits(), ctx.result().size());
+    request.aggregate(ctx.result().hits());
 
     const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
     EXPECT_TRUE(res.has_value());
@@ -483,7 +483,7 @@ TEST(GroupingTest, argmax_aggregation_result_has_no_value_when_every_key_is_unde
     Grouping request;
     request.setRoot(Group().addResult(argmax));
     ctx.setup(request);
-    request.aggregate(ctx.result().hits(), ctx.result().size());
+    request.aggregate(ctx.result().hits());
 
     const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
     EXPECT_FALSE(res.has_value());
