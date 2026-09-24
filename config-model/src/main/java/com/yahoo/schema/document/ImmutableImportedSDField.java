@@ -269,4 +269,9 @@ public class ImmutableImportedSDField implements ImmutableSDField {
         return importedField.targetField().hasFastMapSearch();
     }
 
+    @Override
+    public FastMapSearchFields getFastMapSearch() {
+        return importedField.targetField().getFastMapSearch();
+    }
+
 }

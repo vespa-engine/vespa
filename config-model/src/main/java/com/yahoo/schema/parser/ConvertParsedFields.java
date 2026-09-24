@@ -13,6 +13,7 @@ import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.BooleanIndexDefinition;
 import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.Dictionary;
+import com.yahoo.schema.document.FastMapSearchFields;
 import com.yahoo.schema.document.NormalizeLevel;
 import com.yahoo.schema.document.RankType;
 import com.yahoo.schema.document.SDDocumentType;
@@ -253,40 +254,54 @@ public class ConvertParsedFields {
         if (parsed.hasNormal()) {
             field.getRanking().setNormal(true);
         }
-        if (parsed.getFastMapSearch()) {
-            convertFastMapSearch(schema, field);
+        if (parsed.getFastMapSearch() || parsed.getFastMapKeyField() != null || parsed.getFastMapValueField() != null) {
+            convertFastMapSearch(schema, field, parsed);
         }
     }
 
-    private void convertFastMapSearch(Schema schema, SDField field) {
-        if (!(field.getDataType() instanceof MapDataType mapType)) {
-            throw new IllegalArgumentException(
-                    String.format(
-                            "For schema '%s', field '%s': 'map: fast-search' requires a map field, but the type is %s.",
-                            schema.getName(),
-                            field.getName(),
-                            field.getDataType().getName()));
+    private void convertFastMapSearch(Schema schema, SDField field, ParsedField parsed) {
+        if ( ! parsed.getFastMapSearch()) {
+            throw fastMapSearchError(schema, field, "'key' and 'value' in 'map' are only supported together with 'fast-search'.");
         }
-        validateFastMapSubtype(schema, field, mapType.getKeyType(), "key", false);
-        validateFastMapSubtype(schema, field, mapType.getValueType(), "value", true);
+        FastMapSearchFields fastMapFields;
+        if (field.getDataType() instanceof MapDataType) {
+            validateMapFieldName(schema, field, parsed.getFastMapKeyField(), FastMapSearchFields.MAP_KEY);
+            validateMapFieldName(schema, field, parsed.getFastMapValueField(), FastMapSearchFields.MAP_VALUE);
+            fastMapFields = FastMapSearchFields.MAP;
+        } else if (FastMapSearchFields.isArrayOfStruct(field.getDataType())) {
+            if (parsed.getFastMapKeyField() == null || parsed.getFastMapValueField() == null) {
+                throw fastMapSearchError(schema, field, "'map: fast-search' on an array of struct requires " +
+                                                        "'key' and 'value' in 'map' to name the struct fields to use.");
+            }
+            if (parsed.getFastMapKeyField().equals(parsed.getFastMapValueField())) {
+                throw fastMapSearchError(schema, field, "'map: fast-search' requires 'key' and 'value' to be different struct fields.");
+            }
+            fastMapFields = new FastMapSearchFields(parsed.getFastMapKeyField(), parsed.getFastMapValueField());
+        } else {
+            throw fastMapSearchError(schema, field, "'map: fast-search' requires a map or an array of struct field, " +
+                                                    "but the type is " + field.getDataType().getName() + ".");
+        }
+        validateFastMapSubtype(schema, field, fastMapFields.keyType(field.getDataType()), fastMapFields.keyField(), "key", false);
+        validateFastMapSubtype(schema, field, fastMapFields.valueType(field.getDataType()), fastMapFields.valueField(), "value", true);
         if (!properties.featureFlags().fastMapSearch()) {
-            throw new IllegalArgumentException(
-                    String.format("For schema '%s', field '%s': 'map: fast-search' is an unfinished feature that " +
-                                  "will not be enabled yet. Please remove this property from the field.",
-                                  schema.getName(),
-                                  field.getName()));
+            throw fastMapSearchError(schema, field, "'map: fast-search' is an unfinished feature that " +
+                                                    "will not be enabled yet. Please remove this property from the field.");
         }
-        field.setFastMapSearch(true);
+        field.setFastMapSearch(fastMapFields);
     }
 
-    private void validateFastMapSubtype(Schema schema, SDField field, DataType type, String keyOrValue, boolean allowFloatingPoint) {
+    private void validateFastMapSubtype(Schema schema, SDField field, DataType type, String subField, String keyOrValue, boolean allowFloatingPoint) {
+        if (type == null) {
+            throw fastMapSearchError(schema, field, "'map: fast-search' requires " + keyOrValue + " '" + subField +
+                                                    "' to be a field in the struct.");
+        }
         if (!isSupportedFastMapKeyValueType(type, allowFloatingPoint)) {
             throw new IllegalArgumentException(
                     String.format(
                             "For schema '%s', field '%s': 'map: fast-search' requires %s to be of type %s, but the type is %s.",
                             schema.getName(),
                             field.getName(),
-                            keyOrValue,
+                            subField,
                             allowFloatingPoint ? "string, int, long, float or double" : "string, int or long",
                             type.getName()));
         }
@@ -297,6 +312,19 @@ public class ConvertParsedFields {
                 || dataType.equals(DataType.INT)
                 || dataType.equals(DataType.LONG)
                 || (allowFloatingPoint && (dataType.equals(DataType.FLOAT) || dataType.equals(DataType.DOUBLE)));
+    }
+
+    /** A map always has struct fields named key and value, so naming them is allowed but can not change them. */
+    private void validateMapFieldName(Schema schema, SDField field, String given, String required) {
+        if (given != null && ! given.equals(required)) {
+            throw fastMapSearchError(schema, field, "'map: fast-search' on a map requires " + required + " to be '" +
+                                                    required + "', but got '" + given + "'.");
+        }
+    }
+
+    private static IllegalArgumentException fastMapSearchError(Schema schema, SDField field, String message) {
+        return new IllegalArgumentException(String.format("For schema '%s', field '%s': %s",
+                                                          schema.getName(), field.getName(), message));
     }
 
     private void convertStructField(Schema schema, SDField field, ParsedField parsed) {

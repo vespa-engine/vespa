@@ -6,6 +6,7 @@ import com.yahoo.tensor.TensorType;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -20,7 +21,7 @@ public class Field implements FieldInfo {
     private final boolean isAttribute;
     private final boolean isIndex;
     private final boolean bitPacked;
-    private final boolean fastMapSearch;
+    private final FastMapSearchFields fastMapSearch;
     private final Set<String> aliases;
 
     public Field(Builder builder) {
@@ -51,7 +52,12 @@ public class Field implements FieldInfo {
 
     @Override
     public boolean hasFastMapSearch() {
-        return fastMapSearch;
+        return fastMapSearch != null;
+    }
+
+    /** Returns the key and value fields used by fast map search, if this field has fast map search enabled. */
+    public Optional<FastMapSearchFields> fastMapSearch() {
+        return Optional.ofNullable(fastMapSearch);
     }
 
     @Override
@@ -184,6 +190,26 @@ public class Field implements FieldInfo {
         }
     }
 
+    /**
+     * The struct fields holding the key and the value of a field with fast map search, which is
+     * either a map, or an array of a struct acting as a map entry.
+     */
+    public record FastMapSearchFields(String keyField, Type keyType, String valueField, Type valueType) {
+
+        public FastMapSearchFields {
+            Objects.requireNonNull(keyField);
+            Objects.requireNonNull(keyType);
+            Objects.requireNonNull(valueField);
+            Objects.requireNonNull(valueType);
+        }
+
+        /** Returns the fast map search fields of a map, which are always named key and value. */
+        public static FastMapSearchFields of(MapFieldType mapType) {
+            return new FastMapSearchFields("key", mapType.keyType(), "value", mapType.valueType());
+        }
+
+    }
+
     public static class Builder {
 
         private final String name;
@@ -192,7 +218,7 @@ public class Field implements FieldInfo {
         private boolean isAttribute;
         private boolean isIndex;
         private boolean isBitPacked;
-        private boolean fastMapSearch;
+        private FastMapSearchFields fastMapSearch;
 
         public Builder(String name, String typeString) {
             this.name = name;
@@ -219,7 +245,20 @@ public class Field implements FieldInfo {
             return this;
         }
 
+        /** Enables or disables fast map search on this field, which must be a map if enabled. */
         public Builder setFastMapSearch(boolean fastMapSearch) {
+            if ( ! fastMapSearch) {
+                this.fastMapSearch = null;
+            } else if (type instanceof MapFieldType mapType) {
+                this.fastMapSearch = FastMapSearchFields.of(mapType);
+            } else {
+                throw new IllegalArgumentException("Fast map search on " + name + " requires the key and value " +
+                                                   "fields, since it is not a map but " + type);
+            }
+            return this;
+        }
+
+        public Builder setFastMapSearch(FastMapSearchFields fastMapSearch) {
             this.fastMapSearch = fastMapSearch;
             return this;
         }

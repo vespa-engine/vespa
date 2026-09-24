@@ -33,7 +33,6 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
-    schema[0].field[0].fastMapSearch false
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
     schema[0].summaryclass[0].fields[0].type "longstring"
@@ -57,13 +56,11 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
-    schema[0].field[0].fastMapSearch false
     schema[0].field[1].name "f2"
     schema[0].field[1].type "string"
     schema[0].field[1].attribute false
     schema[0].field[1].index false
     schema[0].field[1].bitPacked false
-    schema[0].field[1].fastMapSearch false
     schema[0].fieldset[0].name "fs1"
     schema[0].fieldset[0].field[0] "f1"
     schema[0].fieldset[0].field[1] "f2"
@@ -91,7 +88,6 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
-    schema[0].field[0].fastMapSearch false
     schema[0].field[1].name "f1Index"
     schema[0].field[1].type "string"
     schema[0].field[1].alias[0] "a1"
@@ -99,7 +95,6 @@ public class SchemaInfoTestCase {
     schema[0].field[1].attribute false
     schema[0].field[1].index true
     schema[0].field[1].bitPacked false
-    schema[0].field[1].fastMapSearch false
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
     schema[0].summaryclass[0].fields[0].type "longstring"
@@ -122,7 +117,6 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
-    schema[0].field[0].fastMapSearch false
     schema[0].field[1].name "f1Attribute"
     schema[0].field[1].type "int"
     schema[0].field[1].alias[0] "a1"
@@ -130,7 +124,6 @@ public class SchemaInfoTestCase {
     schema[0].field[1].attribute true
     schema[0].field[1].index false
     schema[0].field[1].bitPacked false
-    schema[0].field[1].fastMapSearch false
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
     schema[0].summaryclass[0].fields[0].type "longstring"

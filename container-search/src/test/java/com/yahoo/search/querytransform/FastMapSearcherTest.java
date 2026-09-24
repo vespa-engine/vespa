@@ -75,6 +75,27 @@ public class FastMapSearcherTest {
     }
 
     @Test
+    public void requireSameElementRewrittenForFastArrayOfStructField() {
+        // The key and value are the struct fields given in the schema
+        assertRewritten("myarray$keyvalue:foo" + FastMapSearch.keyValueSeparator() + "bar",
+                        sameElement("myarray", new WordItem("foo", "mykey"), new WordItem("bar", "myvalue")));
+        assertRewritten("myarray$keyvalue:foo" + FastMapSearch.keyValueSeparator() + "bar",
+                        sameElement("myarray", new WordItem("bar", "myvalue"), new WordItem("foo", "mykey")));
+        assertRewritten("intvaluearray$keyvalue:" + FastMapSearch.toKeyValue8Term("foo", 10),
+                        sameElement("intvaluearray", new WordItem("foo", "mykey"), new IntItem("10", "myvalue")));
+        assertRewritten("STRING_RANGE longvaluearray$keyvalue:[\"" + FastMapSearch.toKeyValue16Term("foo", 5L) + "\";\""
+                        + FastMapSearch.toKeyValue16Term("foo", 10L) + "\"]",
+                        sameElement("longvaluearray", new WordItem("foo", "mykey"), new IntItem("[5;10]", "myvalue")));
+
+        // Terms on the map key and value names, or on other struct fields, are not rewritten
+        assertUntouched(sameElement("myarray", new WordItem("foo", "key"), new WordItem("bar", "value")));
+        assertUntouched(sameElement("myarray", new WordItem("foo", "mykey"), new WordItem("bar", "other")));
+
+        // Untouched when the field does not have fast map search
+        assertUntouched(sameElement("otherarray", new WordItem("foo", "mykey"), new WordItem("bar", "myvalue")));
+    }
+
+    @Test
     public void requireIntValueEncodedInExcessHex() {
         String expected = "intvaluemap$keyvalue:" + FastMapSearch.toKeyValue8Term("foo", 10);
 
@@ -414,9 +435,17 @@ public class FastMapSearcherTest {
                 .add(new Field.Builder("floatvaluemap", "map<string,float>").setFastMapSearch(true).build())
                 .add(new Field.Builder("doublevaluemap", "map<string,double>").setFastMapSearch(true).build())
                 .add(new Field.Builder("othermap", "map<string,string>").build())
+                .add(new Field.Builder("myarray", "array<entry>").setFastMapSearch(arrayFields("string")).build())
+                .add(new Field.Builder("intvaluearray", "array<intentry>").setFastMapSearch(arrayFields("int")).build())
+                .add(new Field.Builder("longvaluearray", "array<longentry>").setFastMapSearch(arrayFields("long")).build())
+                .add(new Field.Builder("otherarray", "array<entry>").build())
                 .build();
         var schemaInfo = new SchemaInfo(List.of(schema), List.of());
         return new Execution(Execution.Context.createContextStub(schemaInfo));
+    }
+
+    private static Field.FastMapSearchFields arrayFields(String valueType) {
+        return new Field.FastMapSearchFields("mykey", Field.Type.from("string"), "myvalue", Field.Type.from(valueType));
     }
 
     private static SameElementItem sameElement(String field) {
