@@ -4,9 +4,18 @@
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/searchlib/aggregation/aggregation.h>
+#include <vespa/searchlib/aggregation/averageaggregationresult.h>
+#include <vespa/searchlib/aggregation/countaggregationresult.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
+#include <vespa/searchlib/aggregation/grouping.h>
+#include <vespa/searchlib/aggregation/hitsaggregationresult.h>
+#include <vespa/searchlib/aggregation/maxaggregationresult.h>
+#include <vespa/searchlib/aggregation/minaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
+#include <vespa/searchlib/aggregation/standarddeviationaggregationresult.h>
+#include <vespa/searchlib/aggregation/sumaggregationresult.h>
+#include <vespa/searchlib/aggregation/xoraggregationresult.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
@@ -598,8 +607,9 @@ std::string getVespaChecksumV2(const std::string& ymumid, int fid, const std::st
 
     std::string               new_flags_str = "";
     std::list<char>::iterator it;
-    for (it = flags_list.begin(); it != flags_list.end(); it++)
+    for (it = flags_list.begin(); it != flags_list.end(); it++) {
         new_flags_str += *it;
+    }
 
     uint32_t networkFid = htonl(fid);
 
@@ -1186,10 +1196,10 @@ void testArithmeticArguments(NumericFunctionNode& function, const std::vector<do
 //  - longVec OP shortVec  -> argSize == 1 branch
 //  - shortVec OP longVec  -> old_res_sz == 1 branch
 // Caller must supply a commutative function, so the expected result is the same in both directions.
-void testArithmeticBroadcast(NumericFunctionNode& function, const std::vector<double>& longVec,
-                             double scalar, const std::vector<double>& expected) {
+void testArithmeticBroadcast(NumericFunctionNode& function, const std::vector<double>& longVec, double scalar,
+                             const std::vector<double>& expected) {
     const std::vector<double> shortVec{scalar};
-    const size_t n = expected.size();
+    const size_t              n = expected.size();
 
     IntegerResultNodeVector ir;
     for (size_t i(0); i < n; i++) {
@@ -1287,7 +1297,7 @@ TEST(PerDocExprTest, testArithmeticOperations) {
         testArithmeticArguments(f2, b, a, r, b[0] * b[1] * b[2] * b[3] * b[4] * b[5] * b[6]);
     }
     {
-        constexpr double scalar = 10;
+        constexpr double    scalar = 10;
         std::vector<double> r_add(b.size());
         for (size_t i = 0; i < b.size(); i++) {
             r_add[i] = b[i] + scalar;
@@ -1296,7 +1306,7 @@ TEST(PerDocExprTest, testArithmeticOperations) {
         testArithmeticBroadcast(f, b, scalar, r_add);
     }
     {
-        constexpr double scalar = 3;
+        constexpr double    scalar = 3;
         std::vector<double> r_mul(b.size());
         for (size_t i = 0; i < b.size(); i++) {
             r_mul[i] = b[i] * scalar;
