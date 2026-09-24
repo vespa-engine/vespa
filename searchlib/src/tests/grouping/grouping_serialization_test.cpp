@@ -28,6 +28,7 @@
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+#include <vespa/vespalib/util/casts.h>
 
 #include <fstream>
 
@@ -118,10 +119,8 @@ TEST(GroupingSerializationTest, testResultTypes) {
     f.checkObject(Int64ResultNode(7));
     f.checkObject(FloatResultNode(7.3));
     f.checkObject(StringResultNode("7.3"));
-    {
-        char tmp[7] = {(char)0xe5, (char)0xa6, (char)0x82, (char)0xe6, (char)0x9e, (char)0x9c, 0};
-        f.checkObject(StringResultNode(tmp));
-    }
+    // "\u5982\u679c"; UTF-8: e5 a6 82 e6 9e 9c
+    f.checkObject(StringResultNode(u8"如果"_C));
     {
         char tmp[] = {'7', '.', '4'};
         f.checkObject(RawResultNode(tmp, 3));
@@ -338,10 +337,8 @@ TEST(GroupingSerializationTest, testFilterExpression) {
     f.checkObject(RegexPredicateNode("^foo.*", MU<AttributeNode>("attributeA")));
     f.checkObject(RegexPredicateNode("^foo.*", ExpressionNode::UP()));
     f.checkObject(InPredicateNode(MU<AttributeNode>("attributeA"), {"foo", "bar"}));
-    {
-        char tmp[7] = {(char)0xe5, (char)0xa6, (char)0x82, (char)0xe6, (char)0x9e, (char)0x9c, 0};
-        f.checkObject(InPredicateNode(MU<AttributeNode>("attributeA"), {tmp}));
-    }
+    // "如果"; UTF-8: e5 a6 82 e6 9e 9c
+    f.checkObject(InPredicateNode(MU<AttributeNode>("attributeA"), {"\u5982\u679c"}));
     f.checkObject(InPredicateNode(ExpressionNode::UP(), {"foo"}));
 }
 

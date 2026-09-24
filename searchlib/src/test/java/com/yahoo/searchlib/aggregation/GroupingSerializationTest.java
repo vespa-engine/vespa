@@ -5,7 +5,6 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.GlobalId;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.searchlib.aggregation.hll.SparseSketch;
-import java.nio.charset.StandardCharsets;
 import com.yahoo.searchlib.expression.AddFunctionNode;
 import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.CatFunctionNode;
@@ -93,9 +92,7 @@ public class GroupingSerializationTest {
             t.assertMatch(new IntegerResultNode(7));
             t.assertMatch(new FloatResultNode(7.3));
             t.assertMatch(new StringResultNode("7.3"));
-            t.assertMatch(new StringResultNode(
-                    new String(new byte[]{(byte)0xe5, (byte)0xa6, (byte)0x82, (byte)0xe6, (byte)0x9e, (byte)0x9c},
-                               StandardCharsets.UTF_8)));
+            t.assertMatch(new StringResultNode("\u5982\u679C"));
             t.assertMatch(new RawResultNode(new byte[]{'7', '.', '4'}));
             t.assertMatch(new IntegerBucketResultNode());
             t.assertMatch(new FloatBucketResultNode());
@@ -379,9 +376,7 @@ public class GroupingSerializationTest {
             t.assertMatch(new RegexPredicateNode("^foo.*", new AttributeNode("attributeA")));
             t.assertMatch(new RegexPredicateNode("^foo.*", null));
             t.assertMatch(new InPredicateNode(new AttributeNode("attributeA"), List.of("foo", "bar")));
-            t.assertMatch(new InPredicateNode(new AttributeNode("attributeA"), List.of(
-                    new String(new byte[]{(byte)0xe5, (byte)0xa6, (byte)0x82, (byte)0xe6, (byte)0x9e, (byte)0x9c},
-                               StandardCharsets.UTF_8))));
+            t.assertMatch(new InPredicateNode(new AttributeNode("attributeA"), List.of("\u5982\u679C")));
             t.assertMatch(new InPredicateNode(null, List.of("foo")));
         }
     }
