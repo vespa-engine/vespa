@@ -30,7 +30,7 @@ public class BertEmbedder extends OnnxEmbedder implements BertBaseEmbedderConfig
     private final String transformerOutput;
     private final Integer transformerStartSequenceToken;
     private final Integer transformerEndSequenceToken;
-    private final String poolingStrategy;
+    private final PoolingStrategy.Enum poolingStrategy;
 
     public BertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.BertBaseEmbedder", INTEGRATION_BUNDLE_NAME, xml, state);
@@ -44,7 +44,7 @@ public class BertEmbedder extends OnnxEmbedder implements BertBaseEmbedderConfig
         transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
         transformerStartSequenceToken = getChildValue(xml, "transformer-start-sequence-token").map(Integer::parseInt).orElse(null);
         transformerEndSequenceToken = getChildValue(xml, "transformer-end-sequence-token").map(Integer::parseInt).orElse(null);
-        poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
+        poolingStrategy = parsePoolingStrategy(xml, PoolingStrategy.Enum.class).orElse(null);
         model.registerOnnxModelCost(cluster, onnxModelOptions);
     }
 
@@ -58,7 +58,7 @@ public class BertEmbedder extends OnnxEmbedder implements BertBaseEmbedderConfig
         if (transformerOutput != null) b.transformerOutput(transformerOutput);
         if (transformerStartSequenceToken != null) b.transformerStartSequenceToken(transformerStartSequenceToken);
         if (transformerEndSequenceToken != null) b.transformerEndSequenceToken(transformerEndSequenceToken);
-        if (poolingStrategy != null) b.poolingStrategy(PoolingStrategy.Enum.valueOf(poolingStrategy));
+        if (poolingStrategy != null) b.poolingStrategy(poolingStrategy);
     }
 
 }

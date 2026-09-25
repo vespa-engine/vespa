@@ -31,7 +31,7 @@ public class HuggingFaceEmbedder extends OnnxEmbedder implements HuggingFaceEmbe
     private final String transformerTokenTypeIds;
     private final String transformerOutput;
     private final Boolean normalize;
-    private final String poolingStrategy;
+    private final PoolingStrategy.Enum poolingStrategy;
     private final EmbedderPrependConfig prepend;
 
     public HuggingFaceEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
@@ -45,7 +45,7 @@ public class HuggingFaceEmbedder extends OnnxEmbedder implements HuggingFaceEmbe
         transformerTokenTypeIds = getChildValue(xml, "transformer-token-type-ids").orElse(null);
         transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
         normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
-        poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
+        poolingStrategy = parsePoolingStrategy(xml, PoolingStrategy.Enum.class).orElse(null);
         prepend = parsePrependElement(xml);
         model.registerOnnxModelCost(cluster, onnxModelOptions);
     }
@@ -59,7 +59,7 @@ public class HuggingFaceEmbedder extends OnnxEmbedder implements HuggingFaceEmbe
         if (transformerTokenTypeIds != null) b.transformerTokenTypeIds(transformerTokenTypeIds);
         if (transformerOutput != null) b.transformerOutput(transformerOutput);
         if (normalize != null) b.normalize(normalize);
-        if (poolingStrategy != null) b.poolingStrategy(PoolingStrategy.Enum.valueOf(poolingStrategy));
+        if (poolingStrategy != null) b.poolingStrategy(poolingStrategy);
         if (prepend != null) prepend.applyTo(b::prependQuery, b::prependDocument);
     }
 }
