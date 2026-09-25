@@ -301,6 +301,10 @@ func (d *Decoder) readField(name string, offset int64, doc *Document) error {
 		bodyBuf.Write(fieldsSuffix)
 		doc.Body = bodyBuf.Bytes()
 		doc.resetFunc = func() { d.documentBuffers.Put(bodyBuf) }
+	default:
+	    return fmt.Errorf(
+	        "unexpected json format. " +
+	        "See https://docs.vespa.ai/en/reference/schemas/document-json-format.html#document-operations")
 	}
 	if readId {
 		s, err := d.readString()
