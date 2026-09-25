@@ -731,7 +731,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 Inspector key = obj.field("key");
                 Inspector value = obj.field("value");
                 if (!key.valid() || !value.valid()) return false;
-                if (key.type() != Type.STRING && !settings.jsonMapsAll) return false;
+                if (key.type() != Type.STRING && !(settings.jsonMapsAll && isFieldNameType(key))) return false;
                 keys[i] = key;
                 values[i] = value;
             }
@@ -766,7 +766,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 Inspector weight = obj.field("weight");
                 if (!item.valid() || !weight.valid()) return false;
                 if (weight.type() != Type.LONG) return false;
-                if (item.type() != Type.STRING && !settings.jsonWsetsAll) return false;
+                if (item.type() != Type.STRING && !(settings.jsonWsetsAll && isFieldNameType(item))) return false;
                 items[i] = item;
                 weights[i] = weight.asLong();
             }
@@ -778,6 +778,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             }
             dataSink().endObject();
             return true;
+        }
+
+        /** True for the types fieldNameFromPrimitive can write as an object field name. */
+        private static boolean isFieldNameType(Inspector value) {
+            return switch (value.type()) {
+                case STRING, LONG, DOUBLE, BOOL, DATA -> true;
+                default -> false;
+            };
         }
 
         /** Emit an object with potential deep conversion of nested values */
@@ -802,7 +810,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         /** Emit a value, applying map/wset conversion if applicable */
         private void emitWithConversion(Inspector data) {
-            if (data.type() == Type.ARRAY) {
+            // An empty array would pass the map and wset checks vacuously and render as {}.
+            // An empty map or wset is therefore rendered as [], as it already is at the top level.
+            if (data.type() == Type.ARRAY && data.entryCount() > 0) {
                 if (settings.jsonDeepMaps && tryEmitAsMap(data)) {
                     return;
                 }
