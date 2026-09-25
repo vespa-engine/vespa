@@ -140,6 +140,7 @@ public class CreateFastMapSearchTest {
         assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex16doubleencode) } | attribute \"foo$keyvalue\"; }", script);
     }
 
+    @Test
     void requireKeyValueFieldIsCreatedForFastSearchArrayOfStruct() throws ParseException {
         for (String valueType : supportedValueTypes) {
             var schema = build(fastSearchArray("foo", "string", valueType));
