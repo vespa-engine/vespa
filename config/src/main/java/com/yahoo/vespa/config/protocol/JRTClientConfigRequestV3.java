@@ -23,33 +23,32 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
  * Represents version 3 config request for config clients. Provides methods for inspecting request and response
  * values.
- *
  * See {@link JRTServerConfigRequestV3} for protocol details.
  *
  * @author Ulf Lilleengen
  */
 public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
 
-    protected static final Logger log = Logger.getLogger(JRTClientConfigRequestV3.class.getName());
-    protected final SlimeRequestData requestData;
-    protected final Request request;
+    private static final Logger log = Logger.getLogger(JRTClientConfigRequestV3.class.getName());
+
+    private final SlimeRequestData requestData;
+    private final Request request;
     private final SlimeResponseData responseData;
 
-    protected JRTClientConfigRequestV3(ConfigKey<?> key,
-                                       String hostname,
-                                       DefContent defSchema,
-                                       PayloadChecksums payloadChecksums,
-                                       long generation,
-                                       long timeout,
-                                       Trace trace,
-                                       CompressionType compressionType,
-                                       Optional<VespaVersion> vespaVersion) {
+    JRTClientConfigRequestV3(ConfigKey<?> key,
+                             String hostname,
+                             DefContent defSchema,
+                             PayloadChecksums payloadChecksums,
+                             long generation,
+                             long timeout,
+                             Trace trace,
+                             CompressionType compressionType,
+                             Optional<VespaVersion> vespaVersion) {
         Slime data = SlimeRequestData.encodeRequest(key,
                                                     hostname,
                                                     defSchema,
@@ -68,7 +67,7 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         this.request = jrtReq;
     }
 
-    protected static String encodeAsUtf8String(Slime data) {
+    static String encodeAsUtf8String(Slime data) {
         ByteArrayOutputStream baos = new NoCopyByteArrayOutputStream();
         try {
             new JsonFormat(true /* compact format */).encode(baos, data);
@@ -78,11 +77,11 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return Utf8.toString(baos.toByteArray());
     }
 
-    protected String getJRTMethodName() {
+    String getJRTMethodName() {
         return JRTMethods.configV3getConfigMethodName;
     }
 
-    protected boolean checkReturnTypes(Request request) {
+    boolean checkReturnTypes(Request request) {
         return JRTMethods.checkV3ReturnTypes(request);
     }
 
@@ -227,13 +226,13 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return requestData.getTimeout();
     }
 
-    protected PayloadChecksums newConfigChecksums() {
+    PayloadChecksums newConfigChecksums() {
         PayloadChecksums newChecksum = getNewChecksums();
         if (PayloadChecksums.empty().equals(newChecksum)) return getRequestConfigChecksums();
         return newChecksum;
     }
 
-    protected long newGen() {
+    long newGen() {
         long newGen = getNewGeneration();
         if (newGen == 0) return getRequestGeneration();
         return newGen;
@@ -257,11 +256,6 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         PayloadChecksums newChecksums = getNewChecksums();
         log.log(Level.FINE, () -> "new checksums for " + getConfigKey() + ": " + newChecksums);
         if (newChecksums.isEmpty()) return false;
-
-        PayloadChecksum respMd5 = newChecksums.getForType(MD5);
-        boolean updated = respMd5 != null && ! requestConfigChecksums.getForType(MD5).equals(respMd5);
-
-        if (updated) return true;
 
         PayloadChecksum respXxhash64 = newChecksums.getForType(XXHASH64);
         return respXxhash64 != null &&  ! requestConfigChecksums.getForType(XXHASH64).equals(respXxhash64);
@@ -320,7 +314,7 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return requestData.getRequestGeneration();
     }
 
-    protected SlimeResponseData getResponseData() {
+    SlimeResponseData getResponseData() {
         return responseData;
     }
 }

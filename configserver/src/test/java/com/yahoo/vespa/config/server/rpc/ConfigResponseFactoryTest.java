@@ -23,8 +23,6 @@ public class ConfigResponseFactoryTest {
 
     private static final PayloadChecksums payloadChecksums = PayloadChecksums.fromPayload(Payload.from(payload));
     private static final PayloadChecksums payloadChecksumsEmpty = PayloadChecksums.empty();
-    private static final PayloadChecksums payloadChecksumsOnlyMd5 =
-            PayloadChecksums.from(PayloadChecksum.fromPayload(Payload.from(payload), MD5));
     private static final PayloadChecksums payloadChecksumsOnlyXxhash64 =
             PayloadChecksums.from(PayloadChecksum.fromPayload(Payload.from(payload), XXHASH64));
 
@@ -35,32 +33,25 @@ public class ConfigResponseFactoryTest {
         assertEquals(CompressionType.UNCOMPRESSED, response.getCompressionInfo().getCompressionType());
         assertEquals(3L,response.getGeneration());
         assertEquals(25, response.getPayload().getByteLength());
-        assertEquals(payloadChecksums, response.getPayloadChecksums());
+        assertNull(response.getPayloadChecksums().getForType(MD5));
+        assertEquals(payloadChecksums.getForType(XXHASH64), response.getPayloadChecksums().getForType(XXHASH64));
     }
 
     @Test
     public void testLZ4CompressedFactory() {
-        // md5 and xxhash64 checksums in request, both md5 and xxhash64 checksums should be in response
+        // Response never includes a md5 checksum, regardless of what the request contains, only xxhash64
         {
             ConfigResponse response = createResponse(payloadChecksums);
-            assertEquals(payloadChecksums, response.getPayloadChecksums());
+            assertNull(response.getPayloadChecksums().getForType(MD5));
+            assertEquals(payloadChecksums.getForType(XXHASH64), response.getPayloadChecksums().getForType(XXHASH64));
         }
 
-        // Empty md5 and xxhash64 checksums in request, both md5 and xxhash64 checksum should be in response
         {
             ConfigResponse response = createResponse(payloadChecksumsEmpty);
-            assertEquals(payloadChecksums.getForType(MD5), response.getPayloadChecksums().getForType(MD5));
+            assertNull(response.getPayloadChecksums().getForType(MD5));
             assertEquals(payloadChecksums.getForType(XXHASH64), response.getPayloadChecksums().getForType(XXHASH64));
         }
 
-        // md5 checksum and no xxhash64 checksum in request, md5 and xxhash6 checksum in response
-        {
-            ConfigResponse response = createResponse(payloadChecksumsOnlyMd5);
-            assertEquals(payloadChecksumsOnlyMd5.getForType(MD5), response.getPayloadChecksums().getForType(MD5));
-            assertEquals(payloadChecksums.getForType(XXHASH64), response.getPayloadChecksums().getForType(XXHASH64));
-        }
-
-        // Only xxhash64 checksum in request, only xxhash64 checksums in response
         {
             ConfigResponse response = createResponse(payloadChecksumsOnlyXxhash64);
             assertNull(response.getPayloadChecksums().getForType(MD5));
