@@ -802,7 +802,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         /** Emit a value, applying map/wset conversion if applicable */
         private void emitWithConversion(Inspector data) {
-            if (data.type() == Type.ARRAY) {
+            // An empty array would pass the map and wset checks vacuously and render as {}
+            if (data.type() == Type.ARRAY && data.entryCount() > 0) {
                 if (settings.jsonDeepMaps && tryEmitAsMap(data)) {
                     return;
                 }

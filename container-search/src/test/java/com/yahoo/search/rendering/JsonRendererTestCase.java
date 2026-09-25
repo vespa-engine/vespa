@@ -1656,6 +1656,52 @@ public class JsonRendererTestCase {
 
     @Test
     @Timeout(300)
+    void testEmptyArraysDeepInFields() throws IOException, InterruptedException, ExecutionException {
+        // An empty array is neither a map nor a weighted set; it must stay an array at every depth.
+        var expected = dataFromSimplified(
+                "{root: { id:'toplevel', relevance:1.0, fields: { totalCount: 1 }," +
+                        "  children: [ { id: 'myHitName', relevance: 1.0," +
+                        "    fields: { " +
+                        "      f1: [ ]," +
+                        "      f2: { list: [ ] }," +
+                        "      f3: [ 'v1', [ ] ]," +
+                        "      f4: { a: { b: [ ], c: [ 'v2' ] } }," +
+                        "      f5: [ { list: [ ] } ]" +
+                        "    }" +
+                        "  } ]" +
+                        "}}");
+        Hit h = new Hit("myHitName");
+        h.setField("f1", dataFromSimplified("[ ]"));
+        h.setField("f2", dataFromSimplified("{ list: [ ] }"));
+        h.setField("f3", dataFromSimplified("[ 'v1', [ ] ]"));
+        h.setField("f4", dataFromSimplified("{ a: { b: [ ], c: [ 'v2' ] } }"));
+        h.setField("f5", dataFromSimplified("[ { list: [ ] } ]"));
+        for (String params : List.of("", "renderer.json.jsonMaps=true", "renderer.json.jsonWsets=true",
+                                     "renderer.json.jsonMaps=true&renderer.json.jsonWsets=true",
+                                     "renderer.json.jsonMaps=false&renderer.json.jsonWsets=false")) {
+            Result r = new Result(new Query("/?" + params));
+            r.hits().add(h);
+            r.setTotalHitCount(1L);
+            assertEqualJson(expected.toString(), render(r));
+        }
+
+        // An empty array as a map value keeps its type too.
+        expected = dataFromSimplified(
+                "{root: { id:'toplevel', relevance:1.0, fields: { totalCount: 1 }," +
+                        "  children: [ { id: 'myHitName', relevance: 1.0," +
+                        "    fields: { m: { k1: [ ], k2: [ 'v3' ] } }" +
+                        "  } ]" +
+                        "}}");
+        Hit m = new Hit("myHitName");
+        m.setField("m", dataFromSimplified("[ { key: 'k1', value: [ ] }, { key: 'k2', value: [ 'v3' ] } ]"));
+        Result r = new Result(new Query("/?renderer.json.jsonMaps=true"));
+        r.hits().add(m);
+        r.setTotalHitCount(1L);
+        assertEqualJson(expected.toString(), render(r));
+    }
+
+    @Test
+    @Timeout(300)
     void testWsetInFields() throws IOException, InterruptedException, ExecutionException {
         Result r = new Result(new Query("/?renderer.json.jsonWsets=true"));
         var expected = dataFromSimplified(
