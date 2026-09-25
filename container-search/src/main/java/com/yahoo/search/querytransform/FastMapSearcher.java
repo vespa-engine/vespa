@@ -282,9 +282,6 @@ public class FastMapSearcher extends Searcher {
         if (!(valueItem instanceof IntItem intItem)) {
             return null;
         }
-        if (intItem.getHitLimit() != 0) {
-            return null; // a hit limit counts entries in the value attribute, not the synthetic one
-        }
         Limit fromLimit = intItem.getFromLimit();
         Limit toLimit = intItem.getToLimit();
         Long from = toLongBound(fromLimit, Long.MIN_VALUE);
@@ -294,6 +291,7 @@ public class FastMapSearcher extends Searcher {
         }
         return new StringRangeItem(FastMapSearch.toKeyValue16Term(key, from), fromLimit.isInclusive(),
                                    FastMapSearch.toKeyValue16Term(key, to), toLimit.isInclusive(),
+                                   intItem.getHitLimit(),
                                    FastMapSearch.toKeyValueFieldName(fieldName), false, null);
     }
 
@@ -338,10 +336,9 @@ public class FastMapSearcher extends Searcher {
     TermItem makeFloatingPointItem(String key, TermItem valueItem, String fieldName, boolean isFloat) {
         Limit fromLimit;
         Limit toLimit;
+        int hitLimit = 0;
         if (valueItem instanceof IntItem intItem) {
-            if (intItem.getHitLimit() != 0) {
-                return null; // a hit limit counts entries in the value attribute, not the synthetic one
-            }
+            hitLimit = intItem.getHitLimit();
             fromLimit = intItem.getFromLimit();
             toLimit = intItem.getToLimit();
         } else if (valueItem.getClass() == WordItem.class) {
@@ -367,6 +364,7 @@ public class FastMapSearcher extends Searcher {
         }
         return new StringRangeItem(toKeyValueTerm(key, from, isFloat), fromInclusive,
                                    toKeyValueTerm(key, to, isFloat), toInclusive,
+                                   hitLimit,
                                    fieldNameOfKeyValue, false, null);
     }
 
