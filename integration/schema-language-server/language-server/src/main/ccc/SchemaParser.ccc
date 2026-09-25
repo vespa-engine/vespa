@@ -36,6 +36,7 @@ INJECT SchemaParser:
     import com.yahoo.schema.parser.DictionaryOption;
     import com.yahoo.schema.parser.ParsedAnnotation;
     import com.yahoo.schema.parser.ParsedAttribute;
+    import com.yahoo.schema.parser.ParsedQuantization;
     import com.yahoo.schema.parser.ParsedDocument;
     import com.yahoo.schema.parser.ParsedDocumentSummary;
     import com.yahoo.schema.parser.ParsedField;
@@ -582,6 +583,8 @@ TOKEN :
 | < DISTANCE_METRIC: "distance-metric" >
 | < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
 | < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
+| < QUANTIZATION: "quantization" >
+| < BITS: "bits" >
 | < MATCH_FEATURES: "match-features" >
 | < SELECT_ELEMENTS_BY: "select-elements-by" >
 | < SUMMARY_FEATURES: "summary-features" >
@@ -1525,6 +1528,26 @@ void sortingSetting(ParsedSorting sorting) :
     )
 ;
 
+void attributeQuantization(ParsedAttribute attr) :
+{
+    int bits;
+    Token bitsToken;
+}
+
+    <QUANTIZATION> ( openLbrace()
+                     <BITS> <COLON> bits = integerElm() { bitsToken = lastConsumedToken; }
+                     {
+                         try {
+                             attr.setQuantization(ParsedQuantization.ofBits(bits));
+                         } catch (IllegalArgumentException e) {
+                             bitsToken.addIllegalArgumentException(e);
+                         }
+                     }
+                     (<NL>)*
+                     <RBRACE>
+                   )
+;
+
 /**
  * This rule consumes a single attribute setting statement of an attribute element.
  *
@@ -1551,6 +1574,7 @@ void attributeSetting(ParsedAttribute attribute) :
           attribute.addAlias(aliasedName, alias);
       }
       | <DISTANCE_METRIC> <COLON> str = identifierWithDashStr { attribute.setDistanceMetric(str); }
+      | attributeQuantization(attribute)
     )
 ;
 
@@ -3701,6 +3725,7 @@ String identifierStr :
       | <AS>
       | <ASCENDING>
       | <ATTRIBUTE>
+      | <BITS>
       | <BOLDING>
       | <BTREE>
       | <CASED>
@@ -3770,6 +3795,7 @@ String identifierStr :
       | <PRIMARY>
       | <PROFILE>
       | <PROPERTIES>
+      | <QUANTIZATION>
       | <QUATERNARY>
       | <QUERY>
       | <RANK>

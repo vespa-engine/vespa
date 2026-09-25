@@ -161,6 +161,8 @@ TOKEN :
     <ALIAS: "alias"> |
     <ALL: "all"> |
     <AND: "and"> |
+    <ARGMAX: "argmax"> |
+    <ARGMIN: "argmin"> |
     <ARRAY: "array"> |
     <AS: "as"> |
     <AT: "at"> |
@@ -188,6 +190,7 @@ TOKEN :
     <GROUP: "group"> |
     <HINT: "hint"> |
     <HYPOT: "hypot"> |
+    <IN: "in"> |
     <ISTRUE: "istrue"> |
     <KEEP: "keep"> |
     <LOG: "log"> |
@@ -438,6 +441,8 @@ GroupingExpression value(GroupingOperation grp) :
       ( ( lbraceElm exp = expElm(grp) rbraceElm )           |
                    exp = addFunction(grp)              |
                    exp = andFunction(grp)              |
+                   exp = argmaxAggregator(grp)         |
+                   exp = argminAggregator(grp)         |
                    exp = attributeFunction           |
                    exp = avgExpression(grp)            |
                    exp = catFunction(grp)              |
@@ -902,6 +907,22 @@ SumAggregator sumAggregator(GroupingOperation grp) :
     { return new SumAggregator(exp); }
 ;
 
+ArgmaxAggregator argmaxAggregator(GroupingOperation grp) :
+{
+    GroupingExpression key, exp;
+}
+    ( <ARGMAX> lbraceElm key = expElm(grp) commaElm exp = expElm(grp) rbraceElm )
+    { return new ArgmaxAggregator(key, exp); }
+;
+
+ArgminAggregator argminAggregator(GroupingOperation grp) :
+{
+    GroupingExpression key, exp;
+}
+    ( <ARGMIN> lbraceElm key = expElm(grp) commaElm exp = expElm(grp) rbraceElm )
+    { return new ArgminAggregator(key, exp); }
+;
+
 
 SummaryValue summaryValue :
 {
@@ -1050,7 +1071,8 @@ FilterExpression filterPrimary(GroupingOperation grp) :
     ( lbraceElm f = filterExp(grp) rbraceElm ) |
     ( f = regexPredicate(grp) )                |
     ( f = rangePredicate(grp) )                |
-    ( f = istruePredicate(grp) )
+    ( f = istruePredicate(grp) )               |
+    ( f = inPredicate(grp) )
 )
 {
     return f;
@@ -1101,6 +1123,16 @@ IsTruePredicate istruePredicate(GroupingOperation grp) :
 {
     return new IsTruePredicate(exp);
 }
+;
+
+InPredicate inPredicate(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+    String arg;
+    List<String> args = new ArrayList<String>();
+}
+    <IN> lbraceElm exp = expElm(grp) ( commaElm arg = stringElm { args.add(arg); } )+ rbraceElm
+    { return new InPredicate(exp, args); }
 ;
 
 FilterExpression orPredicate(GroupingOperation grp) :
@@ -1218,6 +1250,8 @@ String identifierStr :
         <ALIAS> |
         <ALL> |
         <AND> |
+        <ARGMAX> |
+        <ARGMIN> |
         <ARRAY> |
         <AS> |
         <AT> |
@@ -1245,6 +1279,7 @@ String identifierStr :
         <HINT> |
         <HYPOT> |
         <IDENTIFIER> |
+        <IN> |
         <ISTRUE> |
         <KEEP> |
         <LOG> |

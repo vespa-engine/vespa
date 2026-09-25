@@ -279,6 +279,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/inheritfromparent/",
             "../../../config-model/src/test/derived/inheritstruct/",
             "../../../config-model/src/test/derived/namecollision/",
+            "../../../config-model/src/test/derived/quantized_tensors/",
             "../../../config-model/src/test/derived/rankprofileinheritance/",
             "../../../config-model/src/test/derived/schemainheritance/",
             "../../../config-model/src/test/derived/tensor2/",
