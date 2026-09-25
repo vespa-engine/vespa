@@ -1657,7 +1657,8 @@ public class JsonRendererTestCase {
     @Test
     @Timeout(300)
     void testEmptyArraysDeepInFields() throws IOException, InterruptedException, ExecutionException {
-        // An empty array is neither a map nor a weighted set; it must stay an array at every depth.
+        // An empty array stays an array at every depth, as at the top level: it is not rendered as
+        // an (empty) map or weighted set, so a producer that means an empty object must emit one.
         var expected = dataFromSimplified(
                 "{root: { id:'toplevel', relevance:1.0, fields: { totalCount: 1 }," +
                         "  children: [ { id: 'myHitName', relevance: 1.0," +
@@ -1678,6 +1679,8 @@ public class JsonRendererTestCase {
         h.setField("f5", dataFromSimplified("[ { list: [ ] } ]"));
         for (String params : List.of("", "renderer.json.jsonMaps=true", "renderer.json.jsonWsets=true",
                                      "renderer.json.jsonMaps=true&renderer.json.jsonWsets=true",
+                                     "renderer.json.jsonMaps=true&renderer.json.jsonWsets=false",
+                                     "renderer.json.jsonMaps=false&renderer.json.jsonWsets=true",
                                      "renderer.json.jsonMaps=false&renderer.json.jsonWsets=false")) {
             Result r = new Result(new Query("/?" + params));
             r.hits().add(h);
@@ -1696,6 +1699,32 @@ public class JsonRendererTestCase {
         m.setField("m", dataFromSimplified("[ { key: 'k1', value: [ ] }, { key: 'k2', value: [ 'v3' ] } ]"));
         Result r = new Result(new Query("/?renderer.json.jsonMaps=true"));
         r.hits().add(m);
+        r.setTotalHitCount(1L);
+        assertEqualJson(expected.toString(), render(r));
+    }
+
+    @Test
+    @Timeout(300)
+    void testKeysThatCannotBeFieldNamesAreNotRenderedAsMaps() throws IOException, InterruptedException, ExecutionException {
+        // A key or item that is an array or object cannot be an object field name: the pairs render as they are.
+        var expected = dataFromSimplified(
+                "{root: { id:'toplevel', relevance:1.0, fields: { totalCount: 1 }," +
+                        "  children: [ { id: 'myHitName', relevance: 1.0," +
+                        "    fields: { " +
+                        "      f1: [ { key: [ ], value: 1 } ]," +
+                        "      f2: { n: [ { key: { a: 1 }, value: 2 } ] }," +
+                        "      f3: [ { item: [ 'x' ], weight: 3 } ]," +
+                        "      f4: { n: [ { item: { a: 1 }, weight: 4 } ] }" +
+                        "    }" +
+                        "  } ]" +
+                        "}}");
+        Hit h = new Hit("myHitName");
+        h.setField("f1", dataFromSimplified("[ { key: [ ], value: 1 } ]"));
+        h.setField("f2", dataFromSimplified("{ n: [ { key: { a: 1 }, value: 2 } ] }"));
+        h.setField("f3", dataFromSimplified("[ { item: [ 'x' ], weight: 3 } ]"));
+        h.setField("f4", dataFromSimplified("{ n: [ { item: { a: 1 }, weight: 4 } ] }"));
+        Result r = new Result(new Query("/?"));
+        r.hits().add(h);
         r.setTotalHitCount(1L);
         assertEqualJson(expected.toString(), render(r));
     }
