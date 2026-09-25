@@ -267,8 +267,8 @@ public class ConvertParsedFields {
                             field.getName(),
                             field.getDataType().getName()));
         }
-        validateFastMapSubtype(schema, field, mapType.getKeyType(), "key");
-        validateFastMapSubtype(schema, field, mapType.getValueType(), "value");
+        validateFastMapSubtype(schema, field, mapType.getKeyType(), "key", false);
+        validateFastMapSubtype(schema, field, mapType.getValueType(), "value", true);
         if (!properties.featureFlags().fastMapSearch()) {
             throw new IllegalArgumentException(
                     String.format("For schema '%s', field '%s': 'map: fast-search' is an unfinished feature that " +
@@ -279,22 +279,24 @@ public class ConvertParsedFields {
         field.setFastMapSearch(true);
     }
 
-    private void validateFastMapSubtype(Schema schema, SDField field, DataType type, String keyOrValue) {
-        if (!isSupportedFastMapKeyValueType(type)) {
+    private void validateFastMapSubtype(Schema schema, SDField field, DataType type, String keyOrValue, boolean allowFloatingPoint) {
+        if (!isSupportedFastMapKeyValueType(type, allowFloatingPoint)) {
             throw new IllegalArgumentException(
                     String.format(
-                            "For schema '%s', field '%s': 'map: fast-search' requires %s to be of type string, int or long, but the type is %s.",
+                            "For schema '%s', field '%s': 'map: fast-search' requires %s to be of type %s, but the type is %s.",
                             schema.getName(),
                             field.getName(),
                             keyOrValue,
+                            allowFloatingPoint ? "string, int, long, float or double" : "string, int or long",
                             type.getName()));
         }
     }
 
-    private boolean isSupportedFastMapKeyValueType(DataType dataType) {
+    private boolean isSupportedFastMapKeyValueType(DataType dataType, boolean allowFloatingPoint) {
         return dataType.equals(DataType.STRING)
                 || dataType.equals(DataType.INT)
-                || dataType.equals(DataType.LONG);
+                || dataType.equals(DataType.LONG)
+                || (allowFloatingPoint && (dataType.equals(DataType.FLOAT) || dataType.equals(DataType.DOUBLE)));
     }
 
     private void convertStructField(Schema schema, SDField field, ParsedField parsed) {

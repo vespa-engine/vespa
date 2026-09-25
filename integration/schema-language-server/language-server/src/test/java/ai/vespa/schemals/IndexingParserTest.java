@@ -16,6 +16,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EmbedExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex16EncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8EncodeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8FloatEncodeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex16DoubleEncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
@@ -100,6 +102,18 @@ public class IndexingParserTest {
             InputExpression.class,
             ExcessHex16EncodeExpression.class,
             AttributeExpression.class}, "input weight_src | exhex16encode | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            InputExpression.class,
+            ExcessHex8FloatEncodeExpression.class,
+            AttributeExpression.class}, "input weight_src | exhex8floatencode | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            InputExpression.class,
+            ExcessHex16DoubleEncodeExpression.class,
+            AttributeExpression.class}, "input weight_src | exhex16doubleencode | attribute");
     }
 
     private static void assertEqualsParsedFlattened(Class<?>[] expectedFlattened, String input) {

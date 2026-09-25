@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @author johsol
  */
 public class CreateFastMapSearchTest {
-    private static String[] supportedValueTypes = { "string", "int", "long" };
+    private static String[] supportedValueTypes = { "string", "int", "long", "float", "double" };
 
     @Test
     void requireKeyValueFieldIsCreatedForFastSearchMap() throws ParseException {
@@ -79,10 +79,10 @@ public class CreateFastMapSearchTest {
         assertEquals(Case.CASED, attribute.getDictionary().getMatch());
     }
 
-    /** An int or long value is hex encoded the same way at index and query time, so only the key decides the casing. */
+    /** A numeric value is hex encoded the same way at index and query time, so only the key decides the casing. */
     @Test
     void requireKeyValueAttributeOfANumericMapFollowsTheKeyCasing() throws ParseException {
-        for (String valueType : new String[] { "int", "long" }) {
+        for (String valueType : new String[] { "int", "long", "float", "double" }) {
             assertEquals(Case.CASED, keyValueAttribute(build(casedFastSearchMap("foo", valueType, true, false)), "foo").getCase());
             assertEquals(Case.UNCASED, keyValueAttribute(build(casedFastSearchMap("foo", valueType, false, false)), "foo").getCase());
         }
@@ -122,6 +122,22 @@ public class CreateFastMapSearchTest {
 
         String script = schema.getConcreteField("foo$keyvalue").getIndexingScript().toString();
         assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex16encode) } | attribute \"foo$keyvalue\"; }", script);
+    }
+
+    @Test
+    void requireKeyValueAttributeHasCorrectIndexingScriptForFloatValues() throws ParseException {
+        var schema = build(fastSearchMap("foo", "string", "float"));
+
+        String script = schema.getConcreteField("foo$keyvalue").getIndexingScript().toString();
+        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex8floatencode) } | attribute \"foo$keyvalue\"; }", script);
+    }
+
+    @Test
+    void requireKeyValueAttributeHasCorrectIndexingScriptForDoubleValues() throws ParseException {
+        var schema = build(fastSearchMap("foo", "string", "double"));
+
+        String script = schema.getConcreteField("foo$keyvalue").getIndexingScript().toString();
+        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex16doubleencode) } | attribute \"foo$keyvalue\"; }", script);
     }
 
     @Test

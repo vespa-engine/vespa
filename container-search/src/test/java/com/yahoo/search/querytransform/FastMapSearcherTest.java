@@ -262,6 +262,132 @@ public class FastMapSearcherTest {
         assertNull(searcher.makeLongRange("foo", new IntItem("[5;10;100]", "value"), "longvaluemap"));
     }
 
+    @Test
+    public void requireFloatValueEncodedInExcessHex() {
+        String expected = "floatvaluemap$keyvalue:" + FastMapSearch.toKeyValueFloatTerm("foo", 1.5f);
+
+        // The value arrives as an IntItem
+        assertRewritten(expected, sameElement("floatvaluemap", new WordItem("foo", "key"), new IntItem("1.5", "value")));
+
+        // The value arrives as a WordItem holding a number
+        assertRewritten(expected, sameElement("floatvaluemap", new WordItem("foo", "key"), new WordItem("1.5", "value")));
+
+        // An integral value is a float too
+        assertRewritten("floatvaluemap$keyvalue:" + FastMapSearch.toKeyValueFloatTerm("foo", 10.0f),
+                        sameElement("floatvaluemap", new WordItem("foo", "key"), new IntItem("10", "value")));
+
+        // A value which is not exactly a float is rounded to the nearest one, like the backend does
+        assertRewritten("floatvaluemap$keyvalue:" + FastMapSearch.toKeyValueFloatTerm("foo", 0.1f),
+                        sameElement("floatvaluemap", new WordItem("foo", "key"), new IntItem("0.1", "value")));
+
+        // Negative values encode across zero
+        assertRewritten("floatvaluemap$keyvalue:" + FastMapSearch.toKeyValueFloatTerm("foo", -3.25f),
+                        sameElement("floatvaluemap", new WordItem("foo", "key"), new WordItem("-3.25", "value")));
+    }
+
+    @Test
+    public void requireDoubleValueEncodedInExcessHex() {
+        String expected = "doublevaluemap$keyvalue:" + FastMapSearch.toKeyValueDoubleTerm("foo", 0.1);
+
+        // The value arrives as an IntItem
+        assertRewritten(expected, sameElement("doublevaluemap", new WordItem("foo", "key"), new IntItem("0.1", "value")));
+
+        // The value arrives as a WordItem holding a number
+        assertRewritten(expected, sameElement("doublevaluemap", new WordItem("foo", "key"), new WordItem("0.1", "value")));
+        assertRewritten("doublevaluemap$keyvalue:" + FastMapSearch.toKeyValueDoubleTerm("foo", 1.5e300),
+                        sameElement("doublevaluemap", new WordItem("foo", "key"), new WordItem("1.5e300", "value")));
+
+        // Negative values encode across zero
+        assertRewritten("doublevaluemap$keyvalue:" + FastMapSearch.toKeyValueDoubleTerm("foo", -3.0),
+                        sameElement("doublevaluemap", new WordItem("foo", "key"), new IntItem("-3", "value")));
+    }
+
+    /** -0.0 and 0.0 are equal as numbers, but not as encoded strings, so a zero must match both. */
+    @Test
+    public void requireFloatingPointZeroMatchesBothZeros() {
+        var searcher = new FastMapSearcher();
+        for (boolean isFloat : new boolean[] { true, false }) {
+            for (String zero : new String[] { "0", "0.0", "-0.0" }) {
+                var range = (StringRangeItem) searcher.makeFloatingPointItem("foo", new IntItem(zero, "value"), "map", isFloat);
+                assertEquals(floatingPointTerm("foo", -0.0, isFloat), range.getFrom());
+                assertEquals(floatingPointTerm("foo", 0.0, isFloat), range.getTo());
+                assertTrue(range.isFromInclusive());
+                assertTrue(range.isToInclusive());
+            }
+
+            // An inclusive zero endpoint includes both zeros
+            var closed = (StringRangeItem) searcher.makeFloatingPointItem("foo", new IntItem("[-1;0]", "value"), "map", isFloat);
+            assertEquals(floatingPointTerm("foo", 0.0, isFloat), closed.getTo());
+            closed = (StringRangeItem) searcher.makeFloatingPointItem("foo", new IntItem("[0;1]", "value"), "map", isFloat);
+            assertEquals(floatingPointTerm("foo", -0.0, isFloat), closed.getFrom());
+
+            // An exclusive zero endpoint excludes both zeros
+            var open = (StringRangeItem) searcher.makeFloatingPointItem("foo", intRange(new Limit(-1.0, true), new Limit(0.0, false)), "map", isFloat);
+            assertEquals(floatingPointTerm("foo", -0.0, isFloat), open.getTo());
+            assertFalse(open.isToInclusive());
+            open = (StringRangeItem) searcher.makeFloatingPointItem("foo", new IntItem(">0", "value"), "map", isFloat);
+            assertEquals(floatingPointTerm("foo", 0.0, isFloat), open.getFrom());
+            assertFalse(open.isFromInclusive());
+        }
+    }
+
+    @Test
+    public void requireFloatingPointRangeRewrittenToLexicalRange() {
+        var searcher = new FastMapSearcher();
+
+        // A closed range becomes a closed lexical range over the encoded endpoints.
+        var closed = (StringRangeItem) searcher.makeFloatingPointItem("foo", new IntItem("[-1.5;2.5]", "value"), "floatvaluemap", true);
+        assertEquals("floatvaluemap$keyvalue", closed.getIndexName());
+        assertEquals(FastMapSearch.toKeyValueFloatTerm("foo", -1.5f), closed.getFrom());
+        assertEquals(FastMapSearch.toKeyValueFloatTerm("foo", 2.5f), closed.getTo());
+        assertTrue(closed.isFromInclusive());
+        assertTrue(closed.isToInclusive());
+
+        // Exclusive endpoints stay exclusive.
+        var open = (StringRangeItem) searcher.makeFloatingPointItem("foo", intRange(new Limit(1.0, false), new Limit(2.0, false)), "floatvaluemap", true);
+        assertEquals(FastMapSearch.toKeyValueFloatTerm("foo", 1.0f), open.getFrom());
+        assertEquals(FastMapSearch.toKeyValueFloatTerm("foo", 2.0f), open.getTo());
+        assertFalse(open.isFromInclusive());
+        assertFalse(open.isToInclusive());
+
+        // An unbounded end becomes the infinity in its direction, which the backend includes.
+        var toInfinity = (StringRangeItem) searcher.makeFloatingPointItem("foo", new IntItem(">5", "value"), "doublevaluemap", false);
+        assertEquals(FastMapSearch.toKeyValueDoubleTerm("foo", 5.0), toInfinity.getFrom());
+        assertFalse(toInfinity.isFromInclusive());
+        assertEquals(FastMapSearch.toKeyValueDoubleTerm("foo", Double.POSITIVE_INFINITY), toInfinity.getTo());
+        assertTrue(toInfinity.isToInclusive());
+        var fromInfinity = (StringRangeItem) searcher.makeFloatingPointItem("foo", new IntItem("<5", "value"), "floatvaluemap", true);
+        assertEquals(FastMapSearch.toKeyValueFloatTerm("foo", Float.NEGATIVE_INFINITY), fromInfinity.getFrom());
+        assertTrue(fromInfinity.isFromInclusive());
+        assertEquals(FastMapSearch.toKeyValueFloatTerm("foo", 5.0f), fromInfinity.getTo());
+        assertFalse(fromInfinity.isToInclusive());
+
+        // End to end, through the searcher.
+        String expected = "STRING_RANGE doublevaluemap$keyvalue:[\"" + FastMapSearch.toKeyValueDoubleTerm("foo", 0.5) + "\";\""
+                          + FastMapSearch.toKeyValueDoubleTerm("foo", 10.0) + "\"]";
+        assertRewritten(expected, sameElement("doublevaluemap", new WordItem("foo", "key"), new IntItem("[0.5;10]", "value")));
+    }
+
+    @Test
+    public void requireFallbackForUnsupportedFloatingPointTerms() {
+        var searcher = new FastMapSearcher();
+
+        // Not a number
+        assertUntouched(sameElement("floatvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value")));
+        assertUntouched(sameElement("doublevaluemap", new WordItem("foo", "key"), new WordItem("NaN", "value")));
+        assertNull(searcher.makeFloatingPointItem("foo", intRange(new Limit(Double.NaN, true), new Limit(1.0, true)), "doublevaluemap", false));
+
+        // A hit limit counts entries in the value attribute, not in the synthetic one.
+        assertNull(searcher.makeFloatingPointItem("foo", new IntItem("[5;10;100]", "value"), "doublevaluemap", false));
+
+        // A prefix term matches more than one string
+        assertUntouched(sameElement("doublevaluemap", new WordItem("foo", "key"), new PrefixItem("1", "value")));
+    }
+
+    private static String floatingPointTerm(String key, double value, boolean isFloat) {
+        return isFloat ? FastMapSearch.toKeyValueFloatTerm(key, (float) value) : FastMapSearch.toKeyValueDoubleTerm(key, value);
+    }
+
     private static IntItem intRange(Limit from, Limit to) {
         return new IntItem(from, to, "value");
     }
@@ -285,6 +411,8 @@ public class FastMapSearcherTest {
                 .add(new Field.Builder("intvaluemap", "map<string,int>").setFastMapSearch(true).build())
                 .add(new Field.Builder("intkeymap", "map<int,string>").setFastMapSearch(true).build())
                 .add(new Field.Builder("longvaluemap", "map<string,long>").setFastMapSearch(true).build())
+                .add(new Field.Builder("floatvaluemap", "map<string,float>").setFastMapSearch(true).build())
+                .add(new Field.Builder("doublevaluemap", "map<string,double>").setFastMapSearch(true).build())
                 .add(new Field.Builder("othermap", "map<string,string>").build())
                 .build();
         var schemaInfo = new SchemaInfo(List.of(schema), List.of());

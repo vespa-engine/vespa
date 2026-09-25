@@ -66,15 +66,17 @@ public class MapFastSearchTestCase {
         assertRejected("field m type map<double, string> { map: fast-search }", true,
                        "For schema 'test', field 'm': 'map: fast-search' requires key to be of type string, int or long, but the type is double.");
         assertRejected("field m type map<string, bool> { map: fast-search }", true,
-                       "For schema 'test', field 'm': 'map: fast-search' requires value to be of type string, int or long, but the type is bool.");
+                       "For schema 'test', field 'm': 'map: fast-search' requires value to be of type string, int, long, float or double, but the type is bool.");
     }
 
     @Test
-    void requireFastMapAcceptsStringIntAndLongKeyAndValue() throws ParseException {
+    void requireFastMapAcceptsSupportedKeyAndValueTypes() throws ParseException {
         assertTrue(fastMapSearchOf("field m type map<int, string> { map: fast-search }", true));
         assertTrue(fastMapSearchOf("field m type map<string, int> { map: fast-search }", true));
         assertTrue(fastMapSearchOf("field m type map<long, string> { map: fast-search }", true));
         assertTrue(fastMapSearchOf("field m type map<string, long> { map: fast-search }", true));
+        assertTrue(fastMapSearchOf("field m type map<string, float> { map: fast-search }", true));
+        assertTrue(fastMapSearchOf("field m type map<string, double> { map: fast-search }", true));
     }
 
     @Test
