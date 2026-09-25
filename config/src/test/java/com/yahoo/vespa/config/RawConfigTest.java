@@ -30,7 +30,7 @@ public class RawConfigTest {
     private static final ConfigKey<?> key = new ConfigKey<>("foo", "id", "bar");
     private static final List<String> defContent = List.of("version=1", "anInt int");
     private static final String defMd5 = ConfigUtils.getDefMd5FromRequest("", defContent);
-    private static final PayloadChecksums payloadChecksums = PayloadChecksums.from("012345", "");
+    private static final PayloadChecksums payloadChecksums = PayloadChecksums.from("", "012345");
     private static final Payload payload = Payload.from(new Utf8String("anInt 1"), CompressionInfo.uncompressed());
     private static final long generation = 1L;
 
@@ -49,7 +49,7 @@ public class RawConfigTest {
         RawConfig copiedConfig = new RawConfig(config);
         assertEquals(config, copiedConfig);
 
-        assertEquals("bar.foo," + defMd5 + ",id,MD5:,XXHASH64:,0,null", config.toString());
+        assertEquals("bar.foo," + defMd5 + ",id,,0,null", config.toString());
         assertEquals(Optional.empty(), config.getVespaVersion());
     }
 
@@ -92,6 +92,7 @@ public class RawConfigTest {
         RawConfig errorConfig2 = new RawConfig(key, defMd5, payload, payloadChecksums, generation, false, 2, defContent, Optional.empty());
         assertThat(errorConfig1, is(not(errorConfig2)));
         assertThat(errorConfig1.hashCode(), is(not(errorConfig2.hashCode())));
+        assertEquals("bar.foo," + defMd5 + ",id,XXHASH64:012345,1,anInt 1", config.toString());
     }
 
     @Test
