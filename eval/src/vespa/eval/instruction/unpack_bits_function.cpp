@@ -11,6 +11,8 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/wrap_param.h>
 
+#include <algorithm>
+#include <array>
 #include <cassert>
 
 namespace vespalib::eval {
@@ -26,21 +28,31 @@ namespace {
 
 //-----------------------------------------------------------------------------
 
+// Precomputed byte -> 8-element unpack pattern, generated at compile time.
+// One instantiation per (OCT, big) combination; each is 256 * 8 * sizeof(OCT) bytes
+// (e.g. 8KiB for float), small enough to stay resident in L1 across a whole scan.
+template <typename OCT, bool big> struct UnpackLut {
+    static constexpr std::array<std::array<OCT, 8>, 256> table = [] {
+        std::array<std::array<OCT, 8>, 256> t{};
+        for (int byte = 0; byte < 256; ++byte) {
+            for (int n = 0; n < 8; ++n) {
+                int bit_pos = big ? (7 - n) : n;
+                t[byte][n] = static_cast<OCT>(bool(byte & (1 << bit_pos)));
+            }
+        }
+        return t;
+    }();
+};
+
 template <typename OCT, bool big> void my_unpack_bits_op(InterpretedFunction::State& state, uint64_t param) {
     const ValueType& res_type = unwrap_param<ValueType>(param);
     auto             packed_cells = state.peek(0).cells().typify<Int8Float>();
     auto             unpacked_cells = state.stash.create_uninitialized_array<OCT>(packed_cells.size() * 8);
     OCT*             dst = unpacked_cells.data();
+    const auto&      lut = UnpackLut<OCT, big>::table;
     for (Int8Float cell : packed_cells) {
-        if constexpr (big) {
-            for (int n = 7; n >= 0; --n) {
-                *dst++ = (OCT) bool(cell.get_bits() & (1 << n));
-            }
-        } else {
-            for (int n = 0; n <= 7; ++n) {
-                *dst++ = (OCT) bool(cell.get_bits() & (1 << n));
-            }
-        }
+        const auto& row = lut[static_cast<uint8_t>(cell.get_bits())];
+        dst = std::copy(row.begin(), row.end(), dst);
     }
     Value& result_ref = state.stash.create<ValueView>(res_type, state.peek(0).index(), TypedCells(unpacked_cells));
     state.pop_push(result_ref);
