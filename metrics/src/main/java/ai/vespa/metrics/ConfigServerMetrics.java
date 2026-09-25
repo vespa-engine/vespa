@@ -159,7 +159,6 @@ public enum ConfigServerMetrics implements VespaMetrics {
     NODE_FAIL_THROTTLING("nodeFailThrottling", Unit.BINARY, "Metric indicating when node failure throttling is active. The value 1 means active, 0 means inactive"),
     CLUSTER_AUTOSCALED("clusterAutoscaled", Unit.OPERATION, "Number of times a cluster has been rescaled by the autoscaler"),
     SCALING_DURATION("clusterScalingDuration", Unit.SECOND, "The currently predicted duration of a rescaling of this cluster"),
-    AUTOSCALE_SCALING_DURATION("clusterAutoscaleDuration", Unit.SECOND, "Replaced by clusterScalingDuration"), // TODO: Remove when no longer used
 
     DEPLOYMENT_PREPARE_MILLIS("deployment.prepareMillis", Unit.MILLISECOND, "Duration of deployment preparations"),
     DEPLOYMENT_ACTIVATE_MILLIS("deployment.activateMillis", Unit.MILLISECOND, "Duration of deployment activations"),
