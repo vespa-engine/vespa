@@ -328,7 +328,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
         if (type == null || type.getVariant() != Variant.MAP) {
             return false;
         }
-        return isFastMapSearchKeyValueType(type.mapKeyType()) && isFastMapSearchKeyValueType(type.mapValueType());
+        return isFastMapSearchType(type.mapKeyType(), FAST_MAP_SEARCH_KEY_TYPES)
+            && isFastMapSearchType(type.mapValueType(), FAST_MAP_SEARCH_VALUE_TYPES);
     }
 
     /**

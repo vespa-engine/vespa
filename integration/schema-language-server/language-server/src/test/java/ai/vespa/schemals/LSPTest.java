@@ -194,10 +194,10 @@ public class LSPTest {
                    "map should be suggested in a map<string, double> field.");
         assertFalse(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(38, 12)).contains("map"),
                     "map should not be suggested in a map<double, string> field.");
-        assertTrue(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(41, 12)).contains("map"),
+        assertTrue(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(46, 12)).contains("map"),
                    "map should be suggested in an array of struct field.");
         assertEquals(List.of("fast-search", "key", "value"),
-                     completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(46, 16)),
+                     completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(51, 16)),
                      "fast-search, key and value should be suggested inside the map block of an array of struct field.");
     }
 
