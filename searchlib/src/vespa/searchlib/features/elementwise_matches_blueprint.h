@@ -19,7 +19,8 @@ namespace search::features {
  * element id in the field 'f' that was matched by a sameElement query item searching the field.
  *
  * Element ids are taken from the positions in the match data for the sameElement query items, which have one
- * position per matching element.
+ * position per matching element. This match data is only exposed when all ranked query terms below the sameElement
+ * query item are qualified with a struct field name (e.g. people contains sameElement(name contains "x")).
  */
 class ElementwiseMatchesBlueprint : public fef::Blueprint {
     const fef::FieldInfo*                  _field;

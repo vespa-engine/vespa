@@ -625,6 +625,45 @@ public class RankingExpressionTypeResolverTestCase {
     }
 
     @Test
+    void elementwiseMatchesIsAcceptedForImportedArrayOfStructAndMapFields() throws Exception {
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchema(joinLines(
+                "schema parent {",
+                "  document parent {",
+                "    struct person {",
+                "      field name type string {}",
+                "    }",
+                "    field people type array<person> {",
+                "      indexing: summary",
+                "      struct-field name { indexing: attribute }",
+                "    }",
+                "    field props type map<string, string> {",
+                "      indexing: summary",
+                "      struct-field key { indexing: attribute }",
+                "      struct-field value { indexing: attribute }",
+                "    }",
+                "  }",
+                "}"));
+        builder.addSchema(joinLines(
+                "schema child {",
+                "  document child {",
+                "    field ref type reference<parent> {",
+                "      indexing: attribute | summary",
+                "    }",
+                "  }",
+                "  import field ref.people as imported_people {}",
+                "  import field ref.props as imported_props {}",
+                "  rank-profile my_rank_profile {",
+                "    summary-features {",
+                "      elementwise(matches(imported_people),x,float)",
+                "      elementwise(matches(imported_props),x)",
+                "    }",
+                "  }",
+                "}"));
+        builder.build(true);
+    }
+
+    @Test
     void elementwiseMatchesIsValidatedInSummaryFeatures() throws Exception {
         try {
             ApplicationBuilder builder = new ApplicationBuilder();

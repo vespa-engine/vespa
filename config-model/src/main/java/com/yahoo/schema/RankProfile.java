@@ -1426,9 +1426,10 @@ public class RankProfile implements Cloneable {
                                                 Map<Reference, TensorType> featureTypes) {
         MapEvaluationTypeContext context = new MapEvaluationTypeContext(getExpressionFunctions(), featureTypes);
         if (schema != null) {
-            context.setElementwiseMatchesFields(allFields().filter(RankProfile::isArrayOfStructOrMap)
-                                                           .map(ImmutableSDField::getName)
-                                                           .collect(Collectors.toSet()));
+            context.setElementwiseMatchesFields(Stream.concat(allFields(), allImportedFields())
+                                                      .filter(RankProfile::isArrayOfStructOrMap)
+                                                      .map(ImmutableSDField::getName)
+                                                      .collect(Collectors.toSet()));
         }
 
         constants().forEach((k, v) -> context.setType(k, v.type()));
