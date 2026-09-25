@@ -13,12 +13,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,6 +48,38 @@ public class BundleValidatorTest {
         } catch (IllegalArgumentException e) {
             assertEquals(exceptionMessage, e.getMessage());
         }
+    }
+
+    @Test
+    void missing_bundle_version_is_reported_not_a_null_pointer() throws IOException {
+        JarFile jarFile = createTemporaryJarFile(tempDir, "missing-bundle-version");
+        List<String> errors = new ArrayList<>();
+        assertDoesNotThrow(() -> new BundleValidator().validateJarFile(collectingContextOf(TestDeployState.create(), errors), jarFile));
+        assertEquals(List.of("Required OSGI header 'Bundle-Version' was not found in manifest in 'missing-bundle-version.jar'"), errors);
+    }
+
+    @Test
+    void blank_bundle_version_is_reported() throws IOException {
+        JarFile jarFile = createTemporaryJarFile(tempDir, "blank-bundle-version");
+        List<String> errors = new ArrayList<>();
+        assertDoesNotThrow(() -> new BundleValidator().validateJarFile(collectingContextOf(TestDeployState.create(), errors), jarFile));
+        assertEquals(List.of("Required OSGI header 'Bundle-Version' is blank in manifest in 'blank-bundle-version.jar'"), errors);
+    }
+
+    @Test
+    void header_names_are_case_insensitive() throws IOException {
+        JarFile jarFile = createTemporaryJarFile(tempDir, "lowercase-bundle-version");
+        List<String> errors = new ArrayList<>();
+        new BundleValidator().validateJarFile(collectingContextOf(TestDeployState.create(), errors), jarFile);
+        assertEquals(List.of(), errors);
+    }
+
+    @Test
+    void missing_manifest_is_reported_not_a_null_pointer() throws IOException {
+        JarFile jarFile = createTemporaryJarFile(tempDir, "nomanifest");
+        List<String> errors = new ArrayList<>();
+        assertDoesNotThrow(() -> new BundleValidator().validateJarFile(collectingContextOf(TestDeployState.create(), errors), jarFile));
+        assertEquals(List.of("Non-existing or invalid manifest in nomanifest.jar"), errors);
     }
 
     @Test
@@ -129,6 +163,15 @@ public class BundleValidatorTest {
         return new JarContext() {
             @Override public void illegal(String error) { throw new IllegalArgumentException(error); }
             @Override public void illegal(String error, Throwable cause) { throw new IllegalArgumentException(error, cause); }
+            @Override public DeployState deployState() { return state; }
+        };
+    }
+
+    /** Collects errors instead of throwing, as deployment does. */
+    private static JarContext collectingContextOf(DeployState state, List<String> errors) {
+        return new JarContext() {
+            @Override public void illegal(String error) { errors.add(error); }
+            @Override public void illegal(String error, Throwable cause) { errors.add(error); }
             @Override public DeployState deployState() { return state; }
         };
     }
