@@ -124,6 +124,10 @@ mvn -v
 
 Use this if you only need to build the Java modules, otherwise follow the complete development guide above.
 
+When `MAVEN_GLOBAL_SETTINGS` is set, `bootstrap.sh` uses the supplied global Maven
+settings while generating a wrapper. The generated Maven 3.9.16 distribution
+is checked against a pinned SHA-256 independently of its download URL.
+
 ### Run tests for shell scripts (on Mac)
 Shell scripts are tested with [BATS](https://bats-core.readthedocs.io/en/stable/).
 To run the tests locally, install the testing framework and its plugins.
