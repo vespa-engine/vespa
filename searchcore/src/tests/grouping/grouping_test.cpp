@@ -576,11 +576,14 @@ TEST(GroupingTest, test_pass_details) {
         EXPECT_EQ(2u, d.levels[1].groups);
     }
 
+    EXPECT_GE(details[0].time_ms, 0.0);
+    details[0].time_ms = 0.0; // not deterministic
     vespalib::Slime slime;
     GroupingPassDetails::as_slime(details, slime.setArray());
     vespalib::Slime expected;
     vespalib::slime::JsonFormat::decode(
-        R"([{"id":7,"first_level":2,"last_level":2,"hits":0,"from_session":true,"session_done":true,"levels":[)"
+        R"([{"id":7,"first_level":2,"last_level":2,"hits":0,"from_session":true,"session_done":true,"time_ms":0.0,)"
+        R"("levels":[)"
         R"({"max_groups":2,"precision":5,"groups":2,"session_groups":2},)"
         R"({"max_groups":-1,"precision":-1,"groups":2,"session_groups":2}]}])",
         expected);

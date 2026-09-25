@@ -25,7 +25,15 @@ void count_children(const Group& group, size_t level, std::vector<size_t>& count
 } // namespace
 
 GroupingPassDetails::GroupingPassDetails() noexcept
-    : id(0), first_level(0), last_level(0), top_n(-1), hits(0), from_session(false), session_done(false), levels() {
+    : id(0),
+      first_level(0),
+      last_level(0),
+      top_n(-1),
+      hits(0),
+      from_session(false),
+      session_done(false),
+      time_ms(0.0),
+      levels() {
 }
 
 GroupingPassDetails::GroupingPassDetails(const GroupingPassDetails&) = default;
@@ -54,6 +62,7 @@ void GroupingPassDetails::as_slime(const std::vector<GroupingPassDetails>& detai
         if (d.from_session) {
             obj.setBool("session_done", d.session_done);
         }
+        obj.setDouble("time_ms", d.time_ms);
         auto& levels = obj.setArray("levels");
         for (const auto& level : d.levels) {
             auto& lobj = levels.addObject();

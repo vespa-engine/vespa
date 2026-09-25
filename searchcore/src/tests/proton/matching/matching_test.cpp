@@ -1356,6 +1356,25 @@ const vespalib::slime::Inspector* find_trace_entry(const SearchRequest& request,
     return nullptr;
 }
 
+std::vector<const vespalib::slime::Inspector*> find_thread_trace_entries(const SearchRequest& request,
+                                                                         const std::string&   tag) {
+    std::vector<const vespalib::slime::Inspector*> result;
+    const auto*                                    execution = find_trace_entry(request, "query_execution");
+    if (execution == nullptr) {
+        return result;
+    }
+    const auto& threads = (*execution)["threads"];
+    for (size_t t = 0; t < threads.entries(); ++t) {
+        const auto& traces = threads[t]["traces"];
+        for (size_t i = 0; i < traces.entries(); ++i) {
+            if (traces[i]["tag"].asString().make_string() == tag) {
+                result.push_back(&traces[i]);
+            }
+        }
+    }
+    return result;
+}
+
 } // namespace
 
 TEST_F(MatchingTest, require_that_grouping_details_are_traced) {
@@ -1384,6 +1403,13 @@ TEST_F(MatchingTest, require_that_grouping_details_are_traced) {
     EXPECT_FALSE(first["session_done"].asBool());
     EXPECT_EQ(9, first["levels"][0]["session_groups"].asLong());
     EXPECT_EQ(9, first["levels"][0]["groups"].asLong());
+    EXPECT_TRUE(first["time_ms"].valid());
+    EXPECT_TRUE((*entry)["continue_ms"].valid());
+    EXPECT_FALSE((*entry)["merge_ms"].valid()); // single thread, nothing merged
+    EXPECT_FALSE((*entry)["prune_ms"].valid());
+    auto thread_timing = find_thread_trace_entries(*request, "grouping_timing");
+    ASSERT_EQ(1u, thread_timing.size());
+    EXPECT_TRUE((*thread_timing[0])["aggregate_ms"].valid());
 
     // Second pass is served by the cached session, which is then done.
     SearchRequest::SP request2 = MyWorld::createSimpleRequest("f1", "spread");
@@ -1400,6 +1426,7 @@ TEST_F(MatchingTest, require_that_grouping_details_are_traced) {
     const auto& second = (*entry)["groupings"][0];
     EXPECT_TRUE(second["from_session"].asBool());
     EXPECT_TRUE(second["session_done"].asBool());
+    EXPECT_TRUE((*entry)["continue_ms"].valid());
     EXPECT_EQ(find_trace_entry(*request2, "query_execution"), nullptr);
 
     // Not traced below level 6.
@@ -1408,6 +1435,19 @@ TEST_F(MatchingTest, require_that_grouping_details_are_traced) {
     set_group_spec(*request3, grequest.setFirstLevel(0).setLastLevel(0));
     world.performSearch(*request3, 1);
     EXPECT_EQ(find_trace_entry(*request3, "grouping"), nullptr);
+    EXPECT_TRUE(find_thread_trace_entries(*request3, "grouping_timing").empty());
+
+    // With several threads, merging and pruning of the merged result is timed as well.
+    SearchRequest::SP request4 = MyWorld::createSimpleRequest("f1", "spread");
+    request4->setTraceLevel(6, 1);
+    set_group_spec(*request4, grequest);
+    world.performSearch(*request4, 4);
+    entry = find_trace_entry(*request4, "grouping");
+    ASSERT_TRUE(entry != nullptr) << request4->trace().getSlime().toString();
+    EXPECT_TRUE((*entry)["merge_ms"].valid());
+    EXPECT_TRUE((*entry)["prune_ms"].valid());
+    EXPECT_TRUE((*entry)["continue_ms"].valid());
+    EXPECT_EQ(4u, find_thread_trace_entries(*request4, "grouping_timing").size());
 }
 
 TEST_F(MatchingTest, require_that_zero_hit_grouping_still_groups_with_feature_sort_spec) {

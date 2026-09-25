@@ -88,6 +88,7 @@ void GroupingSession::continueExecution(GroupingContext& groupingContext, std::v
     for (const auto& groupingPtr : orig) {
         Grouping&            origGrouping(*groupingPtr);
         GroupingPassDetails* d = nullptr;
+        vespalib::Timer      timer;
         if (details != nullptr) {
             d = &details->emplace_back();
             d->id = origGrouping.getId();
@@ -114,6 +115,7 @@ void GroupingSession::continueExecution(GroupingContext& groupingContext, std::v
             }
         }
         if (d != nullptr) {
+            d->time_ms = vespalib::count_ns(timer.elapsed()) / 1000000.0;
             aggregation::CountFS4Hits counter;
             origGrouping.select(counter, counter);
             d->hits = counter.getHitCount();

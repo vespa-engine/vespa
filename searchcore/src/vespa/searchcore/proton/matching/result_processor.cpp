@@ -10,6 +10,7 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
+#include <vespa/vespalib/util/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.result_processor");
@@ -59,8 +60,10 @@ void ResultProcessor::GroupingSource::merge(Source& s) {
     auto& rhs = dynamic_cast<GroupingSource&>(s);
     assert((ctx == nullptr) == (rhs.ctx == nullptr));
     if (ctx != nullptr) {
+        vespalib::Timer                   timer;
         search::grouping::GroupingManager man(*ctx);
         man.merge(*rhs.ctx);
+        merge_time_s += rhs.merge_time_s + vespalib::to_s(timer.elapsed());
     }
 }
 
@@ -80,7 +83,11 @@ ResultProcessor::ResultProcessor(IAttributeContext& attrContext, const search::I
       _sort_feature_failed(false),
       _collect_grouping_details(false),
       _grouping_session_cached(false),
-      _grouping_details() {
+      _grouping_details(),
+      _first_grouping_source(nullptr),
+      _grouping_merge_ms(0.0),
+      _grouping_prune_ms(0.0),
+      _grouping_continue_ms(0.0) {
     if (!_groupingContext.empty()) {
         _groupingSession = std::make_unique<GroupingSession>(sessionId, _groupingContext, attrContext, nullptr);
     }
@@ -109,8 +116,13 @@ ResultProcessor::createThreadContext(const vespalib::Doom& hardDoom, size_t thre
     if (_groupingSession) {
         groupingContext = _groupingSession->createThreadContext(thread_id, _attrContext, nullptr);
     }
-    return std::make_unique<Context>(_metaStore.getValidLids(), std::move(sort), std::move(result),
-                                     std::move(groupingContext));
+    auto context = std::make_unique<Context>(_metaStore.getValidLids(), std::move(sort), std::move(result),
+                                             std::move(groupingContext));
+    if (thread_id == 0) {
+        // Only read by makeReply(), after all threads are done; the context outlives that call.
+        _first_grouping_source = &context->groupingSource;
+    }
+    return context;
 }
 
 std::vector<std::pair<uint32_t, uint32_t>>
@@ -131,11 +143,18 @@ ResultProcessor::Result::UP ResultProcessor::makeReply(PartialResultUP full_resu
     PartialResult&               result = *full_result;
     size_t                       numFs4Hits(0);
     if (_groupingSession) {
-        if (_wasMerged) {
-            _groupingSession->getGroupingManager().prune();
+        if (_collect_grouping_details && (_first_grouping_source != nullptr)) {
+            _grouping_merge_ms = _first_grouping_source->merge_time_s * 1000.0;
         }
+        if (_wasMerged) {
+            vespalib::Timer prune_timer;
+            _groupingSession->getGroupingManager().prune();
+            _grouping_prune_ms = vespalib::count_ns(prune_timer.elapsed()) / 1000000.0;
+        }
+        vespalib::Timer continue_timer;
         _groupingSession->continueExecution(_groupingContext,
                                             _collect_grouping_details ? &_grouping_details : nullptr);
+        _grouping_continue_ms = vespalib::count_ns(continue_timer.elapsed()) / 1000000.0;
         numFs4Hits = _groupingContext.countFS4Hits();
         _groupingContext.getResult().swap(r.groupResult);
         if (!_groupingSession->getSessionId().empty() && !_groupingSession->finished()) {

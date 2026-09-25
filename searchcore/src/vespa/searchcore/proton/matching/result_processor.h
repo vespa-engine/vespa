@@ -64,7 +64,11 @@ public:
      **/
     struct GroupingSource : vespalib::DualMergeDirector::Source {
         GroupingContext* ctx;
-        explicit GroupingSource(GroupingContext* g) noexcept : ctx(g) {}
+        // Time spent merging grouping results into this source, including the merge time
+        // already accumulated by the sources merged into it. After all threads are merged,
+        // the source of thread 0 holds the total for the query.
+        double merge_time_s;
+        explicit GroupingSource(GroupingContext* g) noexcept : ctx(g), merge_time_s(0.0) {}
         void merge(Source& s) override;
     };
 
@@ -107,6 +111,10 @@ private:
     bool                                               _collect_grouping_details;
     bool                                               _grouping_session_cached;
     std::vector<search::grouping::GroupingPassDetails> _grouping_details;
+    const GroupingSource*                              _first_grouping_source;
+    double                                             _grouping_merge_ms;
+    double                                             _grouping_prune_ms;
+    double                                             _grouping_continue_ms;
 
 public:
     ResultProcessor(IAttributeContext& attrContext, const search::IDocumentMetaStore& metaStore,
@@ -147,6 +155,18 @@ public:
      * True if makeReply() stored the grouping session for later passes.
      **/
     bool grouping_session_cached() const noexcept { return _grouping_session_cached; }
+
+    /**
+     * Timing of the grouping work done when results from the match threads are combined: total
+     * time spent merging grouping results across threads (only collected together with grouping
+     * details), time spent pruning the merged result (only done when more than one thread was
+     * used) and time spent producing the result for this pass in makeReply(), including
+     * serialization.
+     **/
+    double grouping_merge_ms() const noexcept { return _grouping_merge_ms; }
+    double grouping_prune_ms() const noexcept { return _grouping_prune_ms; }
+    double grouping_continue_ms() const noexcept { return _grouping_continue_ms; }
+    bool grouping_was_merged() const noexcept { return _wasMerged; }
 };
 
 } // namespace proton::matching

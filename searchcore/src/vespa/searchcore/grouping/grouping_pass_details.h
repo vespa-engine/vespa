@@ -39,7 +39,10 @@ struct GroupingPassDetails {
     bool from_session;
     // The session keeps no state for this grouping after this pass. Only meaningful when
     // from_session is set.
-    bool               session_done;
+    bool session_done;
+    // Time spent producing the result for this grouping in this pass (pruning the session's full
+    // result and merging it into the request), excluding serialization.
+    double             time_ms;
     std::vector<Level> levels;
 
     GroupingPassDetails() noexcept;
