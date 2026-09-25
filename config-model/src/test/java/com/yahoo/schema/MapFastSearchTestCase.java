@@ -113,9 +113,8 @@ public class MapFastSearchTestCase {
 
     @Test
     void requireMapKeyAndValueMayBeNamedButNotChanged() throws ParseException {
-        assertEquals(FastMapSearchFields.MAP,
-                     fieldIn(build(getSd(fieldWithMap("map<string, string>", "key: key", "value: value", "fast-search")), true), "m")
-                             .getFastMapSearch());
+        var field = fieldIn(build(getSd(fieldWithMap("map<string, string>", "key: key", "value: value", "fast-search")), true), "m");
+        assertEquals(FastMapSearchFields.forMap(field.getDataType()), field.getFastMapSearch());
         assertRejected(fieldWithMap("map<string, string>", "key: k", "fast-search"), true,
                        "For schema 'test', field 'm': 'map: fast-search' on a map requires key to be 'key', but got 'k'.");
     }
@@ -127,7 +126,7 @@ public class MapFastSearchTestCase {
                                                      fieldWithMap("array<entry>", "key: mykey", "value: myvalue", "fast-search")),
                                       true), "m");
             assertTrue(field.hasFastMapSearch());
-            assertEquals(new FastMapSearchFields("mykey", "myvalue"), field.getFastMapSearch());
+            assertEquals(FastMapSearchFields.forArrayOfStruct(field.getDataType(), "mykey", "myvalue"), field.getFastMapSearch());
         }
     }
 

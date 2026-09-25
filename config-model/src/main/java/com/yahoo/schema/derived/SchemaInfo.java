@@ -129,12 +129,11 @@ public final class SchemaInfo extends Derived {
         fieldBuilder.bitPacked(field.doesBitPacking());
         var fastMapFields = field.getFastMapSearch();
         if (fastMapFields != null) {
-            var type = field.getDataType();
             fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
                                                      .keyField(fastMapFields.keyField())
-                                                     .keyType(toTypeSpec(fastMapFields.keyType(type)))
+                                                     .keyType(toTypeSpec(fastMapFields.keyType()))
                                                      .valueField(fastMapFields.valueField())
-                                                     .valueType(toTypeSpec(fastMapFields.valueType(type))));
+                                                     .valueType(toTypeSpec(fastMapFields.valueType())));
         }
         schemaBuilder.field(fieldBuilder);
     }

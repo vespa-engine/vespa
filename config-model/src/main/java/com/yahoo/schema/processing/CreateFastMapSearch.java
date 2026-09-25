@@ -4,7 +4,6 @@ package com.yahoo.schema.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.document.DataType;
-import com.yahoo.document.MapDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
@@ -81,7 +80,7 @@ public class CreateFastMapSearch extends Processor {
     /** Returns whether a fast map attribute should be created for the given field. */
     private boolean shouldCreateFastMapAttribute(SDField field) {
         return field.hasFastMapSearch() &&
-               (field.getDataType() instanceof MapDataType || FastMapSearchFields.isArrayOfStruct(field.getDataType()));
+               (field.getFastMapSearch().isMap() || field.getFastMapSearch().isArrayOfStruct());
     }
 
     /**
@@ -95,13 +94,12 @@ public class CreateFastMapSearch extends Processor {
         }
 
         FastMapSearchFields fastMapFields = inputField.getFastMapSearch();
-        var valueType = fastMapFields.valueType(inputField.getDataType());
 
         SDField field = new SDField(repo, fieldName, DataType.getArray(DataType.STRING));
         Attribute attribute = new Attribute(fieldName, Attribute.Type.STRING, Attribute.CollectionType.ARRAY);
         attribute.setFastSearch(true);
         field.addAttribute(attribute);
-        if (isCasedKeyValue(inputField, fastMapFields, valueType, validate)) {
+        if (isCasedKeyValue(inputField, fastMapFields, validate)) {
             // Uncased is the default, so only a cased map has anything to set. The field must carry the
             // casing too, as later processors derive attribute casing from it, and the dictionary must be
             // cased or the lookup would be folded.
@@ -111,7 +109,7 @@ public class CreateFastMapSearch extends Processor {
             dictionary.updateMatch(Case.CASED);
             attribute.setDictionary(dictionary);
         }
-        field.setIndexingScript(schema.getName(), keyValueScript(inputField, fieldName, valueType));
+        field.setIndexingScript(schema.getName(), keyValueScript(fastMapFields, inputField.getName(), fieldName));
         field.setInternalField(true);
         return field;
     }
@@ -121,9 +119,9 @@ public class CreateFastMapSearch extends Processor {
      * term, so a string value must be matched like the key. A numeric value is hex encoded, and so is matched the
      * same way whichever casing the term has.
      */
-    private boolean isCasedKeyValue(SDField inputField, FastMapSearchFields fastMapFields, DataType valueType, boolean validate) {
+    private boolean isCasedKeyValue(SDField inputField, FastMapSearchFields fastMapFields, boolean validate) {
         boolean casedKey = isCased(inputField, fastMapFields.keyField());
-        if (valueType != DataType.STRING) {
+        if (fastMapFields.valueType() != DataType.STRING) {
             return casedKey;
         }
         boolean casedValue = isCased(inputField, fastMapFields.valueField());
@@ -152,13 +150,12 @@ public class CreateFastMapSearch extends Processor {
      * "get_field VALUE" if the value type is string,
      * and throws an IllegalArgumentException otherwise.
      * */
-    private static ScriptExpression keyValueScript(SDField inputField, String fieldName, DataType valueType) {
-        boolean isMap = inputField.getDataType() instanceof MapDataType;
-        String keyName = isMap ? "$key" : inputField.getFastMapSearch().keyField();
-        String valueName = isMap ? "$value" : inputField.getFastMapSearch().valueField();
+    private static ScriptExpression keyValueScript(FastMapSearchFields fastMapFields, String inputFieldName, String fieldName) {
+        String keyName = fastMapFields.isMap() ? "$key" : fastMapFields.keyField();
+        String valueName = fastMapFields.isMap() ? "$value" : fastMapFields.valueField();
         return new ScriptExpression(
                 new StatementExpression(
-                        new InputExpression(inputField.getName()),
+                        new InputExpression(inputFieldName),
                         new ForEachExpression(
                                 // Note: the array cast picks the varargs constructor. CatExpression is an
                                 // Iterable<Expression>, so passing it directly would flatten it into a pipeline.
@@ -166,7 +163,7 @@ public class CreateFastMapSearch extends Processor {
                                         new CatExpression(
                                                 new GetFieldExpression(keyName),
                                                 new ConstantExpression(new StringFieldValue(FastMapSearch.keyValueSeparator())),
-                                                valueExpression(valueName, valueType)) })),
+                                                valueExpression(valueName, fastMapFields.valueType())) })),
                         new AttributeExpression(fieldName)));
     }
 

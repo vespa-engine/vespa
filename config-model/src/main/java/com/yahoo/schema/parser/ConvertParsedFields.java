@@ -267,7 +267,7 @@ public class ConvertParsedFields {
         if (field.getDataType() instanceof MapDataType) {
             validateMapFieldName(schema, field, parsed.getFastMapKeyField(), FastMapSearchFields.MAP_KEY);
             validateMapFieldName(schema, field, parsed.getFastMapValueField(), FastMapSearchFields.MAP_VALUE);
-            fastMapFields = FastMapSearchFields.MAP;
+            fastMapFields = FastMapSearchFields.forMap(field.getDataType());
         } else if (FastMapSearchFields.isArrayOfStruct(field.getDataType())) {
             if (parsed.getFastMapKeyField() == null || parsed.getFastMapValueField() == null) {
                 throw fastMapSearchError(schema, field, "'map: fast-search' on an array of struct requires " +
@@ -276,13 +276,13 @@ public class ConvertParsedFields {
             if (parsed.getFastMapKeyField().equals(parsed.getFastMapValueField())) {
                 throw fastMapSearchError(schema, field, "'map: fast-search' requires 'key' and 'value' to be different struct fields.");
             }
-            fastMapFields = new FastMapSearchFields(parsed.getFastMapKeyField(), parsed.getFastMapValueField());
+            fastMapFields = FastMapSearchFields.forArrayOfStruct(field.getDataType(), parsed.getFastMapKeyField(), parsed.getFastMapValueField());
         } else {
             throw fastMapSearchError(schema, field, "'map: fast-search' requires a map or an array of struct field, " +
                                                     "but the type is " + field.getDataType().getName() + ".");
         }
-        validateFastMapSubtype(schema, field, fastMapFields.keyType(field.getDataType()), fastMapFields.keyField(), "key", false);
-        validateFastMapSubtype(schema, field, fastMapFields.valueType(field.getDataType()), fastMapFields.valueField(), "value", true);
+        validateFastMapSubtype(schema, field, fastMapFields.keyType(), fastMapFields.keyField(), "key", false);
+        validateFastMapSubtype(schema, field, fastMapFields.valueType(), fastMapFields.valueField(), "value", true);
         if (!properties.featureFlags().fastMapSearch()) {
             throw fastMapSearchError(schema, field, "'map: fast-search' is an unfinished feature that " +
                                                     "will not be enabled yet. Please remove this property from the field.");
