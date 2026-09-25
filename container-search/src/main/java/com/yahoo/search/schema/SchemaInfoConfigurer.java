@@ -26,7 +26,11 @@ class SchemaInfoConfigurer {
             fieldBuilder.setAttribute(fieldConfig.attribute());
             fieldBuilder.setIndex(fieldConfig.index());
             fieldBuilder.setBitPacked(fieldConfig.bitPacked());
-            fieldBuilder.setFastMapSearch(fieldConfig.fastMapSearch());
+            for (var fastMapConfig : fieldConfig.fastMapSearchFields())
+                fieldBuilder.setFastMapSearch(new Field.FastMapSearchFields(fastMapConfig.keyField(),
+                                                                            Field.Type.from(fastMapConfig.keyType()),
+                                                                            fastMapConfig.valueField(),
+                                                                            Field.Type.from(fastMapConfig.valueType())));
             for (var alias : fieldConfig.alias())
                 fieldBuilder.addAlias(alias);
             schemaBuilder.add(fieldBuilder.build());

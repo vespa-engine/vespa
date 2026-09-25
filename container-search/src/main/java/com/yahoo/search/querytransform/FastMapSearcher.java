@@ -26,8 +26,12 @@ import com.yahoo.searchlib.document.FastMapSearch;
 import java.util.regex.Pattern;
 
 /**
- * When a field has fast map search enabled, this class transforms queries on
- * that field to target the fast map attribute.
+ * When a field (a map, or an array of struct) has fast map search enabled, this class transforms
+ * sameElement queries on that field to target the fast map attribute.
+ * <p>
+ * A rewritten query no longer searches the field itself, so anything which depends on the sameElement
+ * matching the original field, such as matched-elements-only summaries and match features on its
+ * key and value struct fields, will not see the match.
  *
  * @author johsol
  */
@@ -69,9 +73,9 @@ public class FastMapSearcher extends Searcher {
 
             // handle sameelement rewrite
             if (item instanceof SameElementItem sameElementItem) {
-                Field.MapFieldType mapType = fastMapSearchType(sameElementItem.getFieldName(), session);
-                if (mapType != null) {
-                    TermItem rewritten = tryMakeFastMapItem(sameElementItem, mapType);
+                Field.FastMapSearchFields fastMap = fastMapSearch(sameElementItem.getFieldName(), session);
+                if (fastMap != null) {
+                    TermItem rewritten = tryMakeFastMapItem(sameElementItem, fastMap);
                     if (rewritten != null) {
                         hasRewritten = true;
                         return rewritten;
@@ -100,7 +104,7 @@ public class FastMapSearcher extends Searcher {
      * or null if the sameElement cannot be expressed as one. A single value becomes a
      * word lookup, a range becomes a lexical range, both on the synthetic attribute.
      */
-    private TermItem tryMakeFastMapItem(SameElementItem sameElementItem, Field.MapFieldType mapType) {
+    private TermItem tryMakeFastMapItem(SameElementItem sameElementItem, Field.FastMapSearchFields fastMap) {
         if (!sameElementItem.getElementFilter().isEmpty()) {
             return null; // element filter used for arrays.
         }
@@ -112,20 +116,20 @@ public class FastMapSearcher extends Searcher {
         // resolve which is key and which is value.
         Item first = sameElementItem.getItem(0);
         Item second = sameElementItem.getItem(1);
-        TermItem keyItem = termWithIndex("key", first, second);
-        TermItem valueItem = termWithIndex("value", first, second);
+        TermItem keyItem = termWithIndex(fastMap.keyField(), first, second);
+        TermItem valueItem = termWithIndex(fastMap.valueField(), first, second);
         if (keyItem == null || valueItem == null) {
             return null;
         }
 
         // only support string keys for now.
-        if (mapType.keyType().kind() != Field.Type.Kind.STRING) {
+        if (fastMap.keyType().kind() != Field.Type.Kind.STRING) {
             return null;
         }
 
         String fieldName = sameElementItem.getFieldName();
 
-        if (mapType.valueType().kind() == Field.Type.Kind.STRING) {
+        if (fastMap.valueType().kind() == Field.Type.Kind.STRING) {
             var key = getString(keyItem);
             var value = getString(valueItem);
             if (key == null || value == null) {
@@ -134,7 +138,7 @@ public class FastMapSearcher extends Searcher {
             return makeWord(key, value, fieldName);
         }
 
-        if (mapType.valueType().kind() == Field.Type.Kind.INT) {
+        if (fastMap.valueType().kind() == Field.Type.Kind.INT) {
             var key = getString(keyItem);
             if (key == null) {
                 return null;
@@ -146,7 +150,7 @@ public class FastMapSearcher extends Searcher {
             return makeIntRange(key, valueItem, fieldName);
         }
 
-        if (mapType.valueType().kind() == Field.Type.Kind.LONG) {
+        if (fastMap.valueType().kind() == Field.Type.Kind.LONG) {
             var key = getString(keyItem);
             if (key == null) {
                 return null;
@@ -158,12 +162,12 @@ public class FastMapSearcher extends Searcher {
             return makeLongRange(key, valueItem, fieldName);
         }
 
-        if (mapType.valueType().kind() == Field.Type.Kind.FLOAT || mapType.valueType().kind() == Field.Type.Kind.DOUBLE) {
+        if (fastMap.valueType().kind() == Field.Type.Kind.FLOAT || fastMap.valueType().kind() == Field.Type.Kind.DOUBLE) {
             var key = getString(keyItem);
             if (key == null) {
                 return null;
             }
-            return makeFloatingPointItem(key, valueItem, fieldName, mapType.valueType().kind() == Field.Type.Kind.FLOAT);
+            return makeFloatingPointItem(key, valueItem, fieldName, fastMap.valueType().kind() == Field.Type.Kind.FLOAT);
         }
 
         return null;
@@ -404,11 +408,11 @@ public class FastMapSearcher extends Searcher {
         return Double.parseDouble(trimmed);
     }
 
-    /** Returns the map type of the given field if it has fast map search enabled, and null otherwise. */
-    private static Field.MapFieldType fastMapSearchType(String fieldName, SchemaInfo.Session session) {
+    /** Returns the key and value fields of the given field if it has fast map search enabled, and null otherwise. */
+    private static Field.FastMapSearchFields fastMapSearch(String fieldName, SchemaInfo.Session session) {
         FieldInfo info = session.fieldInfo(fieldName).orElse(null);
-        if (info != null && info.hasFastMapSearch() && info.type() instanceof Field.MapFieldType mapType) {
-            return mapType;
+        if (info instanceof Field field) {
+            return field.fastMapSearch().orElse(null);
         }
         return null;
     }

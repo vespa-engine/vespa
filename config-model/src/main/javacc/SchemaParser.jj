@@ -1083,9 +1083,23 @@ void map(ParsedField field) : { }
  *
  * @param field The field to modify.
  */
-void mapBody(ParsedField field) : { }
+void mapBody(ParsedField field) :
 {
-    ( <FAST_SEARCH> { field.setFastMapSearch(true); } )
+    String name;
+    String structFieldName;
+}
+{
+    ( <FAST_SEARCH> { field.setFastMapSearch(true); }
+    | name = identifier() <COLON> structFieldName = identifier()
+      {
+          try {
+              if (name.equals("key")) field.setFastMapKeyField(structFieldName);
+              else if (name.equals("value")) field.setFastMapValueField(structFieldName);
+              else throw new ParseException("Expected 'fast-search', 'key' or 'value' in map, but got '" + name + "'.");
+          } catch (IllegalArgumentException e) {
+              throw new ParseException(e.getMessage());
+          }
+      } )
 }
 
 /**
