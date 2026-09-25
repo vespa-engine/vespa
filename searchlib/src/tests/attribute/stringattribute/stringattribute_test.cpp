@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/single_string_enum_search_context.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
+#include <vespa/searchlib/attribute/string_matcher_factory.h>
 #include <vespa/searchlib/attribute/string_range_search_helper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/casts.h>
@@ -425,6 +426,38 @@ TEST_F(StringAttributeTest, testSingleValue) {
 
         SingleValueStringPostingAttribute svsb("svspb", cfg);
         testDefaultValueOnAddDoc(svsb);
+    }
+}
+
+namespace {
+
+template <typename ExpMatcher>
+bool creates_string_matcher(const std::string& term, QueryTermSimple::Type type, bool cased) {
+    return attribute::StringMatcherFactory::create_and_apply(
+        std::make_unique<QueryTermUCS4>(term, type), cased, vespalib::FuzzyMatchingAlgorithm::BruteForce,
+        []<typename Matcher>(Matcher&&) { return std::is_same_v<Matcher, ExpMatcher>; });
+}
+
+template <typename ExpMatcher>
+bool creates_string_matcher(std::unique_ptr<QueryTermSimple> term, bool cased) {
+    return attribute::StringMatcherFactory::create_and_apply(
+        std::move(term), cased, vespalib::FuzzyMatchingAlgorithm::BruteForce,
+        []<typename Matcher>(Matcher&&) { return std::is_same_v<Matcher, ExpMatcher>; });
+}
+
+} // namespace
+
+TEST_F(StringAttributeTest, test_string_matcher_factory) {
+    using QTT = QueryTermSimple::Type;
+    for (bool cased : {false, true}) {
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::WORD, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::PREFIXTERM, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("x.z", QTT::REGEXP, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::FUZZYTERM, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringRangeMatcher>(
+            std::make_unique<QueryTermUCS4>(
+                QTT::STRING_RANGE, std::make_unique<StringRangeSpec>(StringRangeSpec{"BAR", true, "FOO", true})),
+            cased));
     }
 }
 
