@@ -19,6 +19,7 @@ public class Node {
     private final int group;
     private final OptionalInt groupWhenMultiple;
     private final String availabilityZone;
+    private final boolean retired;
     private int pathIndex;
 
     private final AtomicLong pingSequence = new AtomicLong(0);
@@ -33,12 +34,18 @@ public class Node {
     }
 
     public Node(String clusterName, int key, String hostname, int group, boolean multipleGroups, String availabilityZone) {
+        this(clusterName, key, hostname, group, multipleGroups, availabilityZone, false);
+    }
+
+    public Node(String clusterName, int key, String hostname, int group, boolean multipleGroups, String availabilityZone,
+                boolean retired) {
         this.clusterName = clusterName;
         this.key = key;
         this.hostname = hostname;
         this.group = group;
         this.groupWhenMultiple = multipleGroups ? OptionalInt.of(group) : OptionalInt.empty();
         this.availabilityZone = availabilityZone;
+        this.retired = retired;
     }
 
     /** Returns a monotonically increasing sequence number.*/
@@ -81,6 +88,9 @@ public class Node {
 
     /** Returns the name of the availability zone this node is allocated in, or "default" when not known. */
     public String availabilityZone() { return availabilityZone; }
+
+    /** Returns whether this node is retired, i.e., its data is being moved elsewhere */
+    public boolean isRetired() { return retired; }
 
     public void setWorking(boolean working) {
         this.statusIsKnown = true;

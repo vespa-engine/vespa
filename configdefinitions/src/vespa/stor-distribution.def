@@ -57,3 +57,7 @@ group[].nodes[].retired bool default=false
 # mappings will be the same across groups that have the same number of nodes
 # in an available state.
 relative_node_order_scoring bool default=false
+
+# Iff true, groups where all nodes are retired get no bucket replicas as long as some
+# group is not retired, and their nodes may be removed once the other groups are in sync.
+drain_retired_groups bool default=false

@@ -16,6 +16,7 @@ Group::Group(uint16_t index, std::string_view name) noexcept
     : _name(name),
       _index(index),
       _descendent_node_count(0),
+      _retired(false),
       _distributionHash(0),
       _capacity(1.0),
       _subGroups(),
@@ -26,6 +27,7 @@ Group::Group(uint16_t index, std::string_view name, const Distribution& d, uint1
     : _name(name),
       _index(index),
       _descendent_node_count(0),
+      _retired(false),
       _distributionHash(0),
       _distributionSpec(d),
       _preCalculated(redundancy + 1),
@@ -46,7 +48,8 @@ Group::~Group() {
 
 bool Group::operator==(const Group& other) const noexcept {
     return (_name == other._name && _index == other._index &&
-            _descendent_node_count == other._descendent_node_count && _distributionSpec == other._distributionSpec &&
+            _descendent_node_count == other._descendent_node_count && _retired == other._retired &&
+            _distributionSpec == other._distributionSpec &&
             _preCalculated.size() == other._preCalculated.size() && _capacity == other._capacity &&
             _subGroups == other._subGroups && _nodes == other._nodes);
 }
@@ -158,6 +161,16 @@ uint16_t Group::update_descendent_node_counts() noexcept {
     return nodes;
 }
 
+bool Group::update_retired() noexcept {
+    if (!isLeafGroup()) {
+        _retired = !_subGroups.empty();
+        for (const auto& g : _subGroups) {
+            _retired &= g.second->update_retired();
+        }
+    }
+    return _retired;
+}
+
 void Group::calculateDistributionHashValues(uint32_t parentHash) noexcept {
     _distributionHash = parentHash ^ (1664525L * _index + 1013904223L);
     for (const auto& subGroup : _subGroups) {
@@ -168,6 +181,7 @@ void Group::calculateDistributionHashValues(uint32_t parentHash) noexcept {
 void Group::finalize() noexcept {
     calculateDistributionHashValues();
     (void)update_descendent_node_counts();
+    (void)update_retired();
 }
 
 void Group::getConfigHash(vespalib::asciistream& out) const {

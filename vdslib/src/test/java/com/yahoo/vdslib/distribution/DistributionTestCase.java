@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.Stack;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class DistributionTestCase {
@@ -380,15 +381,57 @@ public class DistributionTestCase {
             ++counts[ test.recordResult(bucket).assertNodeCount(1).getNodes().get(0) ];
         }
         int groupCount = 0;
-        for (StorDistributionConfig.Group.Nodes.Builder n : config.group.get(1).nodes) {
-            StorDistributionConfig.Group.Nodes node = new StorDistributionConfig.Group.Nodes(n);
-            groupCount += counts[ node.index() ];
+        for (int node : nodeIndexes(config.group.get(1))) {
+            groupCount += counts[node];
         }
         int avg3 = groupCount / 3;
         int avg1 = (900 - groupCount) / 6;
         double diff = 1.0 * avg3 / avg1;
         assertTrue(Arrays.toString(counts) + ": Too large diff" + diff, diff < 3.1);
         assertTrue(Arrays.toString(counts) + ": Too small diff" + diff, diff > 2.9);
+    }
+
+    @Test
+    public void testRetiredGroupIsDrained() throws Exception {
+        // 3 groups of 3 nodes with 2 replicas in 2 of the groups, where all nodes in the first group are retired
+        StorDistributionConfig.Builder config = buildHierarchicalConfig(4, 3, 1, "2|*", 3).drain_retired_groups(true);
+        config.group.get(1).nodes.forEach(node -> node.retired(true));
+        List<Integer> retired = nodeIndexes(config.group.get(1));
+        StringBuilder state = new StringBuilder("distributor:9 storage:9");
+        retired.forEach(node -> state.append(" .").append(node).append(".s:r"));
+        test = new DistributionTestFactory("hierarchical-grouping-retired-group")
+                .setDistribution(config)
+                .setRedundancy(4)
+                .setNodeType(NodeType.STORAGE)
+                .setClusterState(new ClusterState(state.toString()));
+
+        ClusterState allUp = new ClusterState("distributor:9 storage:9");
+        Distribution unretired = new Distribution(new StorDistributionConfig(buildHierarchicalConfig(4, 3, 1, "2|*", 3)));
+        Distribution notDraining = new Distribution(new StorDistributionConfig(
+                new StorDistributionConfig.Builder(new StorDistributionConfig(config)).drain_retired_groups(false)));
+        StorDistributionConfig.Builder allRetiredConfig = buildHierarchicalConfig(4, 3, 1, "2|*", 3).drain_retired_groups(true);
+        allRetiredConfig.group.forEach(group -> group.nodes.forEach(node -> node.retired(true)));
+        Distribution allRetired = new Distribution(new StorDistributionConfig(allRetiredConfig));
+        for (BucketId bucket : getTestBuckets()) {
+            List<Integer> nodes = test.recordResult(bucket).assertNodeCount(4)
+                                      .assertNodesNotUsed(retired.stream().mapToInt(i -> i).toArray())
+                                      .getNodes();
+            List<Integer> unretiredNodes = unretired.getIdealStorageNodes(allUp, bucket, "uim");
+            // Buckets not in the retired group are not moved
+            if (Collections.disjoint(unretiredNodes, retired))
+                assertEquals(bucket.toString(), unretiredNodes, nodes);
+            // Nothing is drained when draining is off, or all groups are retired
+            assertEquals(bucket.toString(), unretiredNodes, notDraining.getIdealStorageNodes(allUp, bucket, "uim"));
+            assertEquals(bucket.toString(), unretiredNodes, allRetired.getIdealStorageNodes(allUp, bucket, "uim"));
+        }
+        assertTrue(test.getDistribution().isInDrainedGroup(retired.get(0)));
+        assertFalse(test.getDistribution().isInDrainedGroup(nodeIndexes(config.group.get(2)).get(0)));
+        assertFalse(notDraining.isInDrainedGroup(retired.get(0)));
+        assertFalse(allRetired.isInDrainedGroup(retired.get(0)));
+    }
+
+    private static List<Integer> nodeIndexes(StorDistributionConfig.Group.Builder group) {
+        return group.nodes.stream().map(node -> new StorDistributionConfig.Group.Nodes(node).index()).toList();
     }
 
     @Test(expected = Distribution.NoDistributorsAvailableException.class)

@@ -166,6 +166,12 @@ public class Group implements Comparable<Group> {
     public double getCapacity() { return capacity; }
     public int getDistributionHash() { return distributionHash; }
     public boolean isLeafGroup() { return (distribution == null); }
+
+    /** Returns whether all nodes in or under this group are retired */
+    public boolean isRetired() {
+        if (isLeafGroup()) return ! nodes.isEmpty() && nodes.stream().allMatch(ConfiguredNode::retired);
+        return ! subgroups.isEmpty() && subgroups.values().stream().allMatch(Group::isRetired);
+    }
     public Distribution getDistribution() { return distribution; }
 
     /**

@@ -12,6 +12,9 @@ node[].group int default=0
 # The name of the availability zone this search node is allocated in
 node[].availabilityZone string default="default"
 
+# Whether this search node is retired. Groups where all nodes are retired are only queried as a fallback.
+node[].retired bool default=false
+
 # The host name of this search node
 node[].host string
 

@@ -238,10 +238,14 @@ public class SearchCluster implements NodeManager<Node> {
         long medianDocuments = groups.medianDocumentCount();
         long maxDocuments = groups.maxDocumentCount();
         groups.setDocumentCount(new DocumentCount(maxDocuments, groups.maxTargetDocumentCount(), groups.hasGroupWithAllNodesWorking()));
+        boolean nonRetiredGroupHasSufficientCoverage =
+                groups.groups().stream().anyMatch(group -> ! group.isRetired() &&
+                                                           groups.isGroupCoverageSufficient(group.hasSufficientCoverage(),
+                                                                                            group.activeDocuments(), medianDocuments, maxDocuments));
         for (Group group : groups.groups()) {
             boolean sufficientCoverage = groups.isGroupCoverageSufficient(group.hasSufficientCoverage(),
                                                                           group.activeDocuments(), medianDocuments, maxDocuments);
-            updateSufficientCoverage(group, sufficientCoverage);
+            updateSufficientCoverage(group, sufficientCoverage && ! (group.isRetired() && nonRetiredGroupHasSufficientCoverage));
             trackGroupCoverageChanges(group, sufficientCoverage, medianDocuments, maxDocuments);
         }
     }

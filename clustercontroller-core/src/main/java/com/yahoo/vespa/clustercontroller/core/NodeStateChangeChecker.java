@@ -184,6 +184,9 @@ public class NodeStateChangeChecker {
                             " got info for storage node " + nodeIndex + " at a different version " +
                             hostInfoNodeVersion);
 
+        if (cluster.getDistribution().isInDrainedGroup(nodeIndex))
+            return checkGroupsNotDrainedAreInSync(clusterState);
+
         var metrics = dataMetricsFromHostInfo(hostInfo);
         // Bucket count metric should always be present
         if (metrics.buckets.isEmpty() || metrics.buckets.get().getLast() == null) {
@@ -198,6 +201,41 @@ public class NodeStateChangeChecker {
         //  - Would need wiring of aggregated content cluster stats
         var entriesCheckResult = checkZeroEntriesStoredOnContentNode(metrics, nodeIndex);
         return entriesCheckResult.orElseGet(() -> checkLegacyZeroBucketsStoredOnContentNode(metrics.buckets.get().getLast()));
+    }
+
+    /**
+     * Nodes in groups where all nodes are retired keep their data, so that these groups have full coverage
+     * until all distributors report that the nodes in the other groups have all their buckets in sync.
+     */
+    private Result checkGroupsNotDrainedAreInSync(ClusterState clusterState) {
+        var distribution = cluster.getDistribution();
+        for (var storageNodeInfo : clusterInfo.getStorageNodeInfos()) {
+            if (distribution.isInDrainedGroup(storageNodeInfo.getNodeIndex())) continue;
+            State state = clusterState.getNodeState(storageNodeInfo.getNode()).getState();
+            if (state != UP)
+                return disallow("Storage node " + storageNodeInfo.getNodeIndex() + ", which is not being drained, is " + state);
+        }
+
+        boolean distributorUp = false;
+        for (var distributorNodeInfo : clusterInfo.getDistributorNodeInfos()) {
+            if (clusterState.getNodeState(distributorNodeInfo.getNode()).getState() != UP) continue;
+            distributorUp = true;
+            Integer version = distributorNodeInfo.getHostInfo().getClusterStateVersionOrNull();
+            if (version == null || version != clusterState.getVersion())
+                return disallow("Distributor " + distributorNodeInfo.getNodeIndex() + " has not reported buckets for " +
+                                "cluster state version " + clusterState.getVersion());
+            for (StorageNode storageNode : distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes()) {
+                if (distribution.isInDrainedGroup(storageNode.getIndex())) continue;
+                for (var bucketSpace : storageNode.getBucketSpacesStats()) {
+                    if ( ! bucketSpace.valid() || bucketSpace.getBucketStats().getPending() > 0)
+                        return disallow("Distributor " + distributorNodeInfo.getNodeIndex() + " reports buckets pending in " +
+                                        bucketSpace.getName() + " space on storage node " + storageNode.getIndex());
+                }
+            }
+        }
+        if ( ! distributorUp)
+            return disallow("No distributors are up");
+        return allow();
     }
 
     private Result canSetStateUp(NodeInfo nodeInfo, NodeState oldWantedState) {

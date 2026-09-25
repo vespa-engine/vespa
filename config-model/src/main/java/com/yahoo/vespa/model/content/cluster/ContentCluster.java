@@ -92,6 +92,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
     private final String documentSelection;
     private ContentSearchCluster search;
     private final boolean isHosted;
+    private final boolean drainRetiredGroups;
     private final Map<String, NewDocumentType> documentDefinitions;
     private final Set<NewDocumentType> globallyDistributedDocuments;
     private com.yahoo.vespa.model.content.StorageGroup rootGroup;
@@ -519,6 +520,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                            String routingSelection, DeployState deployState) {
         super(parent, clusterId);
         this.isHosted = deployState.isHosted();
+        this.drainRetiredGroups = isHosted && deployState.featureFlags().drainRetiredContentGroups();
         this.clusterId = clusterId;
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;
@@ -593,7 +595,11 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             builder.active_per_leaf_group(true);
         }
         builder.relative_node_order_scoring(usePseudoRowColumnDistribution);
+        builder.drain_retired_groups(drainRetiredGroups);
     }
+
+    /** Returns whether groups where all nodes are retired should have their data moved to the other groups */
+    public boolean drainRetiredGroups() { return drainRetiredGroups; }
 
     int getNodeCount() {
         return storageNodes.getChildren().size();

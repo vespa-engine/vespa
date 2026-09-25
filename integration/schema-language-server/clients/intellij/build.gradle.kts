@@ -5,8 +5,8 @@ plugins {
 }
 
 group = "ai.vespa.schemals"
-version = File("VERSION").inputStream().readBytes().toString(Charsets.UTF_8).trim()
-val changeNotesTxt = File("../../resources/CHANGENOTES.txt").inputStream().readBytes().toString(Charsets.UTF_8)
+version = project.file("VERSION").readText().trim()
+val changeNotesTxt = project.file("../../resources/CHANGENOTES.txt").readText()
 val JAVA_VERSION = "17"
 
 repositories {

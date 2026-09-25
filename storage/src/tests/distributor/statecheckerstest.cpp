@@ -219,6 +219,7 @@ struct StateCheckersTest : Test, DistributorStripeTestUtil {
 
     std::string testBucketState(const std::string& bucketInfo, uint32_t redundancy = 2, bool includePriority = false);
     std::string testBucketStatePerGroup(const std::string& bucketInfo, bool includePriority = false);
+    std::string testPerGroup(StateChecker& checker, const std::string& bucketInfo, bool includePriority = false);
 
     void do_test_bucket_activation();
 
@@ -993,17 +994,22 @@ TEST_F(StateCheckersTest, no_active_change_for_non_ideal_copies_when_otherwise_i
 }
 
 std::string StateCheckersTest::testBucketStatePerGroup(const std::string& bucketInfo, bool includePriority) {
+    BucketStateStateChecker checker;
+    return testPerGroup(checker, bucketInfo, includePriority);
+}
+
+std::string StateCheckersTest::testPerGroup(StateChecker& checker, const std::string& bucketInfo,
+                                            bool includePriority) {
     document::BucketId bid(17, 0);
     addNodesToBucketDB(bid, bucketInfo);
 
-    BucketStateStateChecker     checker;
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context       c(node_context(), operation_context(), getDistributorBucketSpace(), statsTracker,
                                   makeDocumentBucket(bid));
     return testStateChecker(checker, c, false, PendingMessage(), includePriority);
 }
 
-std::shared_ptr<lib::Distribution> make_3x3_group_config() {
+std::shared_ptr<lib::Distribution> make_3x3_group_config(bool drain_middle_group = false) {
     vespa::config::content::StorDistributionConfigBuilder config;
     config.activePerLeafGroup = true;
     config.redundancy = 6;
@@ -1029,6 +1035,14 @@ std::shared_ptr<lib::Distribution> make_3x3_group_config() {
     config.group[3].nodes[0].index = 9;
     config.group[3].nodes[1].index = 10;
     config.group[3].nodes[2].index = 11;
+    if (drain_middle_group) { // As configured while all nodes in the middle group are retired
+        config.drainRetiredGroups = true;
+        config.redundancy = 4;
+        config.group[0].partitions = "2|*";
+        for (auto& node : config.group[3].nodes) {
+            node.retired = true;
+        }
+    }
     return std::make_shared<lib::Distribution>(config);
 }
 
@@ -1076,6 +1090,21 @@ TEST_F(StateCheckersTest, bucket_state_per_group) {
                                       "5=2/3/4/t, 6=2/3/4/t, 8=2/3/4/t, "
                                       "9=2/3/4/t, 10=2/3/4/t, 11=2/3/4/t",
                                       true));
+}
+
+TEST_F(StateCheckersTest, replicas_in_drained_group_stay_active_until_its_nodes_are_removed) {
+    setup_stripe(4, 12, "distributor:1 storage:12 .9.s:r .10.s:r .11.s:r");
+    trigger_distribution_change(make_3x3_group_config(true));
+
+    // The drained group keeps full coverage while the other groups are filled
+    EXPECT_EQ("NO OPERATIONS GENERATED", testBucketStatePerGroup("0=2/3/4/t/a/r, 5=2/3/4/t/a/r, 11=2/3/4/t/a/r"));
+
+    // Only its inactive replicas are removed, as they are not in the ideal state
+    DeleteExtraCopiesStateChecker delete_checker;
+    EXPECT_EQ("[Removing redundant in-sync copy from node 0][Removing redundant in-sync copy from node 5]"
+              "[Removing redundant in-sync copy from node 9][Removing redundant in-sync copy from node 10]",
+              testPerGroup(delete_checker, "0=3/3/3/t, 1=3/3/3/t, 3=3/3/3/t, 5=3/3/3/t, 6=3/3/3/t, 8=3/3/3/t, "
+                                           "9=3/3/3/t, 10=3/3/3/t, 11=3/3/3/t/a"));
 }
 
 TEST_F(StateCheckersTest, do_not_activate_replicas_that_are_out_of_sync_with_majority) {

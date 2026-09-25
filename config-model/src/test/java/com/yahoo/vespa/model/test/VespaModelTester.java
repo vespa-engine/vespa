@@ -14,6 +14,8 @@ import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
@@ -52,6 +54,7 @@ public class VespaModelTester {
     private final ConfigModelRegistry configModelRegistry;
 
     private boolean hosted = true;
+    private int retiredContentGroups = 0;
     private TestProperties modelProperties = new TestProperties();
     private final Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
@@ -102,6 +105,9 @@ public class VespaModelTester {
 
     /** Sets whether this sets up a model for a hosted system. Default: true */
     public void setHosted(boolean hosted) { this.hosted = hosted; }
+
+    /** Adds this many groups of retired nodes to hosted content clusters, as when moving to new groups */
+    public void setRetiredContentGroups(int count) { this.retiredContentGroups = count; }
 
     /** Sets whether this sets up a model for a hosted system. Default: true */
     public void setModelProperties(TestProperties testProperties) { this.modelProperties = testProperties; }
@@ -212,7 +218,7 @@ public class VespaModelTester {
                                                                       startIndexForClusters,
                                                                       retiredHostNames);
             provisioner.setEnvironment(zone.environment());
-            this.provisioner = new ProvisionerAdapter(provisioner);
+            this.provisioner = new ProvisionerAdapter(provisioner, retiredContentGroups);
             if (containerEndpoints.isEmpty()) {
                 containerEndpoints = Set.of(new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com")));
             }
@@ -240,9 +246,11 @@ public class VespaModelTester {
     private static class ProvisionerAdapter implements HostProvisioner {
 
         private final InMemoryProvisioner provisioner;
+        private final int retiredContentGroups;
 
-        public ProvisionerAdapter(InMemoryProvisioner provisioner) {
+        public ProvisionerAdapter(InMemoryProvisioner provisioner, int retiredContentGroups) {
             this.provisioner = provisioner;
+            this.retiredContentGroups = retiredContentGroups;
         }
 
         public InMemoryProvisioner provisioner() { return provisioner; }
@@ -255,7 +263,15 @@ public class VespaModelTester {
 
         @Override
         public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
-            return provisioner.prepare(cluster, context);
+            if (retiredContentGroups == 0 || ! cluster.type().isContent()) return provisioner.prepare(cluster, context);
+
+            ClusterResources requested = cluster.capacity().minResources();
+            int groupSize = requested.nodes() / requested.groups();
+            ClusterResources withRetired = requested.withNodes(requested.nodes() + retiredContentGroups * groupSize)
+                                                    .withGroups(requested.groups() + retiredContentGroups);
+            return provisioner.prepare(cluster.builder().capacity(Capacity.from(withRetired)).build(), context).stream()
+                              .map(host -> host.membership().get().group() >= requested.groups() ? InMemoryProvisioner.retire(host) : host)
+                              .toList();
         }
 
     }

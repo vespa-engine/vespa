@@ -254,6 +254,15 @@ public class Flags {
             TENANT_ID
     );
 
+    public static final UnboundBooleanFlag DRAIN_RETIRED_CONTENT_GROUPS = defineFeatureFlag(
+            "drain-retired-content-groups", false,
+            List.of("bragehk"), "2026-09-24", "2026-12-24",
+            "Whether content groups where all nodes are retired are left out of redundancy and partitions, " +
+            "so their data is moved to the other groups. Requires content nodes on a version which drains such groups.",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
+
     public static final UnboundIntFlag APPLICATION_UPDATE_ROLLOUT_PERCENT = defineIntFlag(
             "application-update-rollout-percent", 0,
             List.of("gjoranv"), "2026-09-09", "2027-03-08",

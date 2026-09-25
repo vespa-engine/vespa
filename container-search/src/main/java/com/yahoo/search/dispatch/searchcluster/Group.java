@@ -20,6 +20,7 @@ public class Group {
     private final int id;
     private final List<Node> nodes;
     private final String availabilityZone;
+    private final boolean retired;
 
     // Using volatile to ensure visibility for reader.
     // All updates are done in a single writer thread
@@ -33,6 +34,7 @@ public class Group {
         this.id = id;
         this.nodes = List.copyOf(nodes);
         this.availabilityZone = azOf(nodes);
+        this.retired = ! nodes.isEmpty() && nodes.stream().allMatch(Node::isRetired);
 
         int index = 0;
         for (var node: nodes) {
@@ -49,6 +51,9 @@ public class Group {
 
     /** Returns the name of the availability zone this group is allocated in. */
     public String availabilityZone() { return availabilityZone; }
+
+    /** Returns whether all nodes in this are retired, which means it should only be used when no other group can */
+    public boolean isRetired() { return retired; }
 
     /** Returns the number of nodes in this. */
     public int size() { return nodes.size(); }

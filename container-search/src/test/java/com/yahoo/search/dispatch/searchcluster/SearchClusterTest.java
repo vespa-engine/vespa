@@ -50,6 +50,10 @@ public class SearchClusterTest {
         }
 
         State(String clusterId, int nodesPerGroup, List<String> nodeNames) {
+            this(clusterId, nodesPerGroup, nodeNames, Set.of());
+        }
+
+        State(String clusterId, int nodesPerGroup, List<String> nodeNames, Set<Integer> retiredGroups) {
             this.clusterId = clusterId;
             this.nodesPerGroup = nodesPerGroup;
             vipStatus = new VipStatus(new QrSearchersConfig.Builder().searchcluster(new QrSearchersConfig.Searchcluster.Builder().name(clusterId)).build(),
@@ -61,7 +65,7 @@ public class SearchClusterTest {
             for (String name : nodeNames) {
                 int key = nodes.size() % nodesPerGroup;
                 int group = nodes.size() / nodesPerGroup;
-                nodes.add(new Node("test", key, name, group, true));
+                nodes.add(new Node("test", key, name, group, true, "default", retiredGroups.contains(group)));
                 numDocsPerNode.add(new AtomicInteger(1));
                 pingCounts.add(new AtomicInteger(0));
             }
@@ -339,6 +343,21 @@ public class SearchClusterTest {
     void requireThatVipStatusUpRequireOnlyOneOnlineNode() {
         verifyThatVipStatusUpRequireOnlyOneOnlineNode(1, 2);
         verifyThatVipStatusUpRequireOnlyOneOnlineNode(3, 3);
+    }
+
+    @Test
+    void requireThatRetiredGroupIsOnlyUsedWhenNoOtherGroupHasSufficientCoverage() {
+        try (State test = new State("cluster.1", 2, generateNodeNames(2, 2), Set.of(1))) {
+            test.waitOneFullPingRound();
+            assertTrue(test.searchCluster.group(0).hasSufficientCoverage());
+            assertFalse(test.searchCluster.group(1).hasSufficientCoverage());
+
+            test.numDocsPerNode.get(0).set(0);
+            test.numDocsPerNode.get(1).set(0);
+            test.waitOneFullPingRound();
+            assertFalse(test.searchCluster.group(0).hasSufficientCoverage());
+            assertTrue(test.searchCluster.group(1).hasSufficientCoverage());
+        }
     }
 
     @Test

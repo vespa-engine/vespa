@@ -28,8 +28,10 @@ import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
+import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
+import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -1043,6 +1045,46 @@ public class ModelProvisioningTest {
         assertEquals("1|*", cluster.getRootGroup().getPartitions().get());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(2, cluster.getRootGroup().getSubgroups().size());
+    }
+
+    @Test
+    public void testRedundancyWithRetiredGroup() {
+        assertRedundancyWithRetiredGroup(2, false, 4, "2|2|*", List.of(false, false, false, false, false, false));
+        assertRedundancyWithRetiredGroup(2, true, 4, "2|*", List.of(false, false, false, false, true, true));
+        assertRedundancyWithRetiredGroup(1, true, 2, "*", List.of(false, false, true, true));
+    }
+
+    /** Deploys groups of 2 nodes with redundancy 2, plus one group of retired nodes */
+    private void assertRedundancyWithRetiredGroup(int groups, boolean drainRetiredGroups, int redundancy, String partitions,
+                                                  List<Boolean> retiredInDispatch) {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='" + 2 * groups + "' groups='" + groups + "'/>" +
+                "  </content>" +
+                "</services>";
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(2 * (groups + 1));
+        tester.setRetiredContentGroups(1);
+        tester.setModelProperties(new TestProperties().drainRetiredContentGroups(drainRetiredGroups));
+        VespaModel model = tester.createModel(Zone.defaultZone(), services, false, deployStateWithClusterEndpoints("bar.indexing"));
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        assertEquals(groups + 1, cluster.getRootGroup().getSubgroups().size());
+        assertEquals(redundancy, cluster.getRedundancy().effectiveFinalRedundancy());
+        assertEquals(partitions, cluster.getRootGroup().getPartitions().get());
+        StorDistributionConfig.Builder distribution = new StorDistributionConfig.Builder();
+        cluster.getConfig(distribution);
+        assertEquals(drainRetiredGroups, distribution.build().drain_retired_groups());
+        DispatchNodesConfig.Builder dispatchNodes = new DispatchNodesConfig.Builder();
+        cluster.getSearch().getConfig(dispatchNodes);
+        assertEquals(retiredInDispatch, dispatchNodes.build().node().stream().map(DispatchNodesConfig.Node::retired).toList());
     }
 
     @Test

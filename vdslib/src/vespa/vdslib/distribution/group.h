@@ -33,6 +33,7 @@ private:
     std::string                _name;
     uint16_t                   _index;
     uint16_t                   _descendent_node_count;
+    bool                       _retired;
     uint32_t                   _distributionHash;
     Distribution               _distributionSpec;
     std::vector<Distribution>  _preCalculated;
@@ -48,6 +49,7 @@ private:
 
     void calculateDistributionHashValues(uint32_t parentHash) noexcept;
     [[nodiscard]] uint16_t update_descendent_node_counts() noexcept;
+    bool update_retired() noexcept;
     void getConfigHash(vespalib::asciistream& out) const;
 
     /**
@@ -67,6 +69,8 @@ public:
     [[nodiscard]] bool isLeafGroup() const noexcept { return !_nodes.empty(); }
     // Total number of leaf nodes existing recursively in/under this group
     [[nodiscard]] uint16_t descendent_node_count() const noexcept { return _descendent_node_count; }
+    // Whether all nodes in or under this group are retired
+    [[nodiscard]] bool isRetired() const noexcept { return _retired; }
     bool operator==(const Group& other) const noexcept;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
@@ -85,6 +89,7 @@ public:
 
     void addSubGroup(Group::UP);
     void setCapacity(vespalib::Double capacity);
+    void setRetired(bool retired) noexcept { _retired = retired; }
     void setNodes(const std::vector<uint16_t>& nodes, bool normalize_order);
     void setNodes(const std::vector<uint16_t>& nodes) { setNodes(nodes, true); }
 

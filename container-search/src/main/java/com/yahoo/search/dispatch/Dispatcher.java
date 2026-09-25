@@ -289,7 +289,7 @@ public class Dispatcher extends AbstractComponent {
     private static List<Node> toNodes(String clusterName, DispatchNodesConfig nodesConfig) {
         boolean multipleGroups = nodesConfig.node().stream().map(node -> node.group()).distinct().count() > 1;
         return nodesConfig.node().stream()
-                .map(n -> new Node(clusterName, n.key(), n.host(), n.group(), multipleGroups, n.availabilityZone()))
+                .map(n -> new Node(clusterName, n.key(), n.host(), n.group(), multipleGroups, n.availabilityZone(), n.retired()))
                 .toList();
     }
 

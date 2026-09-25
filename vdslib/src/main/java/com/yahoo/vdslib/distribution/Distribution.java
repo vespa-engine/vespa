@@ -27,13 +27,21 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class Distribution {
 
-    private record Config(Group nodeGraph, int redundancy, boolean relativeNodeOrderScoring) { }
+    private record Config(Group nodeGraph, int redundancy, boolean relativeNodeOrderScoring, boolean drainRetiredGroups) { }
 
     private ConfigSubscriber configSub;
-    private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1, false));
+    private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1, false, false));
 
     public Group getRootGroup() {
         return config.getAcquire().nodeGraph;
+    }
+
+    /** Returns whether the given storage node is in a group where all nodes are retired, which is being drained */
+    public boolean isInDrainedGroup(int node) {
+        Config cfg = config.getAcquire();
+        if ( ! cfg.drainRetiredGroups || cfg.nodeGraph.isRetired()) return false;
+        Group group = cfg.nodeGraph.getGroupForNode(node);
+        return group != null && group.isRetired();
     }
 
     public int getRedundancy() {
@@ -93,7 +101,7 @@ public final class Distribution {
                 throw new IllegalStateException("Config does not specify a root group");
             }
             root.calculateDistributionHashValues();
-            Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.relative_node_order_scoring()));
+            Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.relative_node_order_scoring(), config.drain_retired_groups()));
         } catch (ParseException e) {
             throw new IllegalStateException("Failed to parse config", e);
         }
@@ -140,7 +148,7 @@ public final class Distribution {
                 throw new IllegalStateException("Config does not specify a root group");
             }
             root.calculateDistributionHashValues();
-            Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.relative_node_order_scoring()));
+            Distribution.this.config.setRelease(new Config(root, config.redundancy(), config.relative_node_order_scoring(), false));
         } catch (ParseException e) {
             throw new IllegalStateException("Failed to parse config", e);
         }
@@ -290,7 +298,7 @@ public final class Distribution {
     }
 
     private void getIdealGroups(BucketId bucketId, ClusterState clusterState, Group parent,
-                               int redundancy, List<ResultGroup> results) {
+                               int redundancy, boolean drainRetiredGroups, List<ResultGroup> results) {
         if (parent.isLeafGroup()) {
             results.add(new ResultGroup(parent, redundancy));
             return;
@@ -309,12 +317,15 @@ public final class Distribution {
 
         int currentIndex = 0;
         Map<Integer, Group> subGroups = parent.getSubgroups();
+        // Groups where all nodes are retired are drained, unless there is nowhere else to put the data
+        boolean skipRetired = drainRetiredGroups && ! parent.isRetired();
 
         for (Map.Entry<Integer, Group> group : subGroups.entrySet()) {
             while (group.getKey() < currentIndex++) {
                 random.nextDouble();
             }
             double score = random.nextDouble();
+            if (skipRetired && group.getValue().isRetired()) continue;
             if (group.getValue().getCapacity() != 1) {
                 score = Math.pow(score, 1.0 / group.getValue().getCapacity());
             }
@@ -329,7 +340,7 @@ public final class Distribution {
             Group group = tmpResults.get(i).group;
 
             if (group != null) {
-                getIdealGroups(bucketId, clusterState, group, redundancyArray[i], results);
+                getIdealGroups(bucketId, clusterState, group, redundancyArray[i], drainRetiredGroups, results);
             }
         }
     }
@@ -350,7 +361,7 @@ public final class Distribution {
         List<ResultGroup> groupDistribution = new ArrayList<>();
 
         Config cfg = config.getAcquire();
-        getIdealGroups(bucket, clusterState, cfg.nodeGraph, cfg.redundancy, groupDistribution);
+        getIdealGroups(bucket, clusterState, cfg.nodeGraph, cfg.redundancy, cfg.drainRetiredGroups, groupDistribution);
 
         int seed = getStorageSeed(bucket, clusterState);
 

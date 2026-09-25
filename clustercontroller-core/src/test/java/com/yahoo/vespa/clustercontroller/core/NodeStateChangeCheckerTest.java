@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.yahoo.vdslib.state.NodeType.DISTRIBUTOR;
@@ -855,16 +856,52 @@ public class NodeStateChangeCheckerTest {
                                           int hostInfoClusterStateVersion,
                                           HostInfoMetrics hostInfoMetrics,
                                           int maxNumberOfGroupsAllowedToBeDown) {
-        ContentCluster cluster = createCluster(4, maxNumberOfGroupsAllowedToBeDown);
-        NodeStateChangeChecker nodeStateChangeChecker = createChangeChecker(cluster);
+        return evaluateDownTransition(createCluster(4, maxNumberOfGroupsAllowedToBeDown), storageNode, clusterState,
+                                      reportedState, hostInfoClusterStateVersion, hostInfoMetrics);
+    }
 
-        StorageNodeInfo nodeInfo = cluster.clusterInfo().getStorageNodeInfo(storageNode.getIndex());
+    private Result evaluateDownTransition(ContentCluster cluster, Node node, ClusterState clusterState, State reportedState,
+                                          int hostInfoClusterStateVersion, HostInfoMetrics hostInfoMetrics) {
+        StorageNodeInfo nodeInfo = cluster.clusterInfo().getStorageNodeInfo(node.getIndex());
         nodeInfo.setReportedState(new NodeState(STORAGE, reportedState), 0);
         nodeInfo.setHostInfo(createHostInfoWithMetrics(hostInfoClusterStateVersion, hostInfoMetrics));
 
-        return nodeStateChangeChecker.evaluateTransition(
-                storageNode, clusterState, SAFE,
-                UP_NODE_STATE, DOWN_NODE_STATE);
+        return createChangeChecker(cluster).evaluateTransition(node, clusterState, SAFE, UP_NODE_STATE, DOWN_NODE_STATE);
+    }
+
+    @Test
+    void node_in_drained_group_may_go_down_with_its_data_when_other_groups_are_in_sync() {
+        // 2 groups of 2 nodes, where all nodes in the second group are retired, and the group is drained
+        var config = new StorDistributionConfig.Builder(createDistributionConfig(4, 2)).drain_retired_groups(true);
+        config.group.get(2).nodes.forEach(node -> node.retired(true));
+        var cluster = new ContentCluster("clustername", createNodes(4), new Distribution(new StorDistributionConfig(config)), 1);
+        var node = new Node(STORAGE, 2);
+        var hasData = new HostInfoMetrics(10, 10, 10);
+        ClusterState retired = clusterState(Text.format("version:%d distributor:4 storage:4 .2.s:r .3.s:r", currentClusterStateVersion));
+
+        setDistributorHostInfoWithPendingBucketsOnNode0(cluster, 0);
+        assertTrue(evaluateDownTransition(cluster, node, retired, UP, currentClusterStateVersion, hasData).allowed());
+
+        setDistributorHostInfoWithPendingBucketsOnNode0(cluster, 1);
+        assertEquals("Distributor 0 reports buckets pending in default space on storage node 0",
+                     evaluateDownTransition(cluster, node, retired, UP, currentClusterStateVersion, hasData).reason());
+
+        setDistributorHostInfoWithPendingBucketsOnNode0(cluster, 0);
+        ClusterState node0Down = clusterState(Text.format("version:%d distributor:4 storage:4 .0.s:d .2.s:r .3.s:r", currentClusterStateVersion));
+        assertEquals("Storage node 0, which is not being drained, is Down",
+                     evaluateDownTransition(cluster, node, node0Down, UP, currentClusterStateVersion, hasData).reason());
+    }
+
+    /** Sets host info for all distributors, where the nodes being drained always have pending buckets */
+    private static void setDistributorHostInfoWithPendingBucketsOnNode0(ContentCluster cluster, int pending) {
+        String storageNodes = IntStream.range(0, 4)
+                                       .mapToObj(node -> Text.format("{ \"node-index\": %d, \"bucket-spaces\": [ { \"name\": \"default\", " +
+                                                                     "\"buckets\": { \"total\": 10, \"pending\": %d } } ] }",
+                                                                     node, node == 0 ? pending : node >= 2 ? 5 : 0))
+                                       .collect(Collectors.joining(","));
+        for (var distributor : cluster.clusterInfo().getDistributorNodeInfos())
+            distributor.setHostInfo(HostInfo.createHostInfo(Text.format("{ \"cluster-state-version\": %d, \"distributor\": { \"storage-nodes\": [ %s ] } }",
+                                                                        currentClusterStateVersion, storageNodes)));
     }
 
     private ClusterState retiredClusterStateSuffix() {

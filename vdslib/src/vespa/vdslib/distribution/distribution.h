@@ -41,6 +41,7 @@ private:
     bool                      _activePerGroup;
     bool                      _ensurePrimaryPersisted;
     bool                      _relative_node_order_scoring;
+    bool                      _drain_retired_groups;
     std::string               _serialized;
 
     struct ResultGroup {
@@ -158,6 +159,7 @@ public:
      */
     using IndexList = vespalib::SmallVector<uint16_t, 4>;
     std::vector<IndexList> splitNodesIntoLeafGroups(std::span<const uint16_t> nodes) const;
+
 
     static bool allDistributorsDown(const Group&, const ClusterState&);
 

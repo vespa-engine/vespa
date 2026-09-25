@@ -35,7 +35,8 @@ Distribution::Distribution()
       _global(false),
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
-      _relative_node_order_scoring(false) {
+      _relative_node_order_scoring(false),
+      _drain_retired_groups(false) {
     auto                      config(getDefaultDistributionConfig(0, 0));
     vespalib::asciistream     ost;
     config::AsciiConfigWriter writer(ost);
@@ -55,6 +56,7 @@ Distribution::Distribution(const Distribution& d)
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
       _relative_node_order_scoring(false),
+      _drain_retired_groups(false),
       _serialized(d._serialized) {
     vespalib::asciistream                                                     ist(_serialized);
     config::AsciiConfigReader<vespa::config::content::StorDistributionConfig> reader(ist);
@@ -86,7 +88,8 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig&
       _global(is_global),
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
-      _relative_node_order_scoring(false) {
+      _relative_node_order_scoring(false),
+      _drain_retired_groups(false) {
     vespalib::asciistream     ost;
     config::AsciiConfigWriter writer(ost);
     writer.write(config);
@@ -104,6 +107,7 @@ Distribution::Distribution(const std::string& serialized)
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
       _relative_node_order_scoring(false),
+      _drain_retired_groups(false),
       _serialized(serialized) {
     vespalib::asciistream                                                     ist(_serialized);
     config::AsciiConfigReader<vespa::config::content::StorDistributionConfig> reader(ist);
@@ -132,9 +136,11 @@ void Distribution::configure(const vespa::config::content::StorDistributionConfi
         group->setCapacity(cg.capacity);
         if (isLeafGroup) {
             std::vector<uint16_t> nodes(cg.nodes.size());
+            bool                  groupRetired = true;
             for (uint32_t j = 0, m = nodes.size(); j < m; ++j) {
                 uint16_t nodeIndex = cg.nodes[j].index;
                 nodes[j] = nodeIndex;
+                groupRetired &= cg.nodes[j].retired;
                 if (node2Group.size() <= nodeIndex) {
                     node2Group.resize(nodeIndex + 1);
                 }
@@ -144,6 +150,7 @@ void Distribution::configure(const vespa::config::content::StorDistributionConfi
             // using distribution keys, but _not_ when scoring based on relative
             // configured index (as that would mess up this ordering).
             group->setNodes(nodes, !config.relativeNodeOrderScoring);
+            group->setRetired(groupRetired);
         }
         if (path.empty()) {
             nodeGraph = std::move(group);
@@ -171,6 +178,7 @@ void Distribution::configure(const vespa::config::content::StorDistributionConfi
     _readyCopies = config.readyCopies;
     _activePerGroup = config.activePerLeafGroup;
     _relative_node_order_scoring = config.relativeNodeOrderScoring;
+    _drain_retired_groups = config.drainRetiredGroups;
     if (_global) {
         // Top-level `_redundancy` is used for flat topologies, in which case global
         // distribution is trivial.
@@ -269,11 +277,16 @@ void Distribution::getIdealGroups(const document::BucketId& bucket, const Cluste
     const auto&              subGroups = parent.getSubGroups();
     std::vector<ScoredGroup> tmpResults;
     tmpResults.reserve(subGroups.size());
+    // Groups where all nodes are retired are drained, unless there is nowhere else to put the data
+    const bool skip_retired = _drain_retired_groups && !_global && !parent.isRetired();
     for (const auto& g : subGroups) {
         while (g.first < currentIndex++) {
             random.nextDouble();
         }
         double score = random.nextDouble();
+        if (skip_retired && g.second->isRetired()) {
+            continue;
+        }
         if (g.second->getCapacity() != 1) {
             // Capacity shouldn't possibly be 0.
             // Verified in Group::setCapacity()

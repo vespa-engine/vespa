@@ -1545,7 +1545,8 @@
       "public boolean protonResampleDiskCapacity()",
       "public boolean fastMapSearch()",
       "public boolean relaxStrictlyIncreasingClusterStateVersions()",
-      "public boolean commerceDiscovery()"
+      "public boolean commerceDiscovery()",
+      "public boolean drainRetiredContentGroups()"
     ],
     "fields" : [ ]
   },

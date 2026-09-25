@@ -11,6 +11,7 @@ import com.yahoo.vespa.model.content.CoveragePolicy;
 import com.yahoo.vespa.model.content.DispatchTuning;
 import com.yahoo.vespa.model.content.Redundancy;
 import com.yahoo.vespa.model.content.SearchCoverage;
+import com.yahoo.vespa.model.content.StorageNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,12 +30,14 @@ public class IndexedSearchCluster extends SearchCluster {
 
     private final List<SearchNode> searchNodes = new ArrayList<>();
     private final double dispatchWarmup;
+    private final boolean drainRetiredGroups;
 
     public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName,
                                 Redundancy.Provider redundancyProvider, ModelContext.FeatureFlags featureFlags) {
         super(parent, clusterName);
         this.redundancyProvider = redundancyProvider;
         dispatchWarmup = featureFlags.queryDispatchWarmup();
+        drainRetiredGroups = featureFlags.drainRetiredContentGroups();
     }
 
     public void addSearchNode(SearchNode searchNode) {
@@ -74,6 +77,8 @@ public class IndexedSearchCluster extends SearchCluster {
             nodeBuilder.group(node.getNodeSpec().groupIndex());
             if (node.getHostResource() != null)
                 nodeBuilder.availabilityZone(node.getHostResource().spec().availabilityZone().value());
+            if (drainRetiredGroups && node.getServiceLayerService() instanceof StorageNode storageNode)
+                nodeBuilder.retired(storageNode.isRetired());
             nodeBuilder.host(node.getHostName());
             nodeBuilder.port(node.getRpcPort());
             builder.node(nodeBuilder);

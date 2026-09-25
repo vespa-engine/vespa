@@ -142,11 +142,14 @@ public class StorageGroup {
         builder.capacity(getCapacity());
     }
 
-    public int getNumberOfLeafGroups() {
-        if (subgroups.isEmpty()) return 1;
+    public int getNumberOfLeafGroups() { return getNumberOfLeafGroups(true); }
+
+    /** Returns the number of leaf groups in this, excluding groups where all nodes are retired unless includeRetired */
+    public int getNumberOfLeafGroups(boolean includeRetired) {
+        if (subgroups.isEmpty()) return includeRetired || countNodes(false) > 0 ? 1 : 0;
         int count = 0;
         for (StorageGroup g : subgroups)
-            count += g.getNumberOfLeafGroups();
+            count += g.getNumberOfLeafGroups(includeRetired);
         return count;
     }
 
@@ -224,11 +227,16 @@ public class StorageGroup {
                                             ? groupBuilder.buildHosted(deployState, owner, Optional.empty(), context)
                                             : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
 
+                // Groups where all nodes are retired are drained, unless all groups are
+                boolean includeRetiredGroups = ! owner.drainRetiredGroups() || storageGroup.countNodes(false) == 0;
                 RedundancyBuilder redundancyBuilder = new RedundancyBuilder(clusterElement);
                 Redundancy redundancy = redundancyBuilder.build(owner.isHosted(), isStreaming, storageGroup.subgroups.size(),
-                                                                storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(false));
+                                                                storageGroup.getNumberOfLeafGroups(includeRetiredGroups),
+                                                                storageGroup.countNodes(false));
                 owner.setRedundancy(redundancy);
-                if (storageGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {
+                // A drained group is not counted, but must still be covered by the partitions
+                if (storageGroup.partitions.isEmpty() &&
+                    (redundancy.groups() > 1 || (owner.drainRetiredGroups() && storageGroup.subgroups.size() > 1))) {
                     storageGroup.partitions = Optional.of(computePartitions(redundancy.finalRedundancy(), redundancy.groups()));
                 }
                 return storageGroup;

@@ -210,7 +210,7 @@ public class InMemoryProvisioner implements HostProvisioner {
         return allocation;
     }
 
-    private HostSpec retire(HostSpec host) {
+    public static HostSpec retire(HostSpec host) {
         return new HostSpec(host.hostname(),
                             host.realResources(),
                             host.advertisedResources(),
