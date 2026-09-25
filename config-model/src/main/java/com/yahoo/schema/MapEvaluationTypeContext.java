@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -55,6 +56,9 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     private final SortedSet<Reference> queryFeaturesNotDeclared;
     private boolean tensorsAreUsed;
 
+    /** Names of the fields which can be used with elementwise(matches(field),...), or empty if unknown */
+    private Optional<Set<String>> elementwiseMatchesFields = Optional.empty();
+
     MapEvaluationTypeContext(ImmutableMap<String, ExpressionFunction> functions, Map<Reference, TensorType> featureTypes) {
         super(functions);
         this.parent = Optional.empty();
@@ -80,6 +84,11 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         this.queryFeaturesNotDeclared = queryFeaturesNotDeclared;
         this.tensorsAreUsed = tensorsAreUsed;
         this.globallyResolvedTypes = globallyResolvedTypes;
+    }
+
+    /** Sets the names of the (array of struct or map) fields which can be used with elementwise(matches(field),...) */
+    public void setElementwiseMatchesFields(Set<String> fields) {
+        this.elementwiseMatchesFields = Optional.of(Set.copyOf(fields));
     }
 
     public void setType(Reference reference, TensorType type) {
@@ -372,6 +381,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             if (arg2 != null) {
                 cellType = TensorType.Value.fromId(arg2.toString());
             }
+            validateElementwiseMatches(arg0);
         }
         if (reference.name().equals("tensorFromStructs")) {
             int numArgs = reference.arguments().size();
@@ -444,6 +454,19 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         return Optional.of(new TensorType.Builder(cellType).mapped(dimension).build());
     }
 
+    /** Validates that elementwise(matches(field),...) refers to an array of struct or map field */
+    private void validateElementwiseMatches(ExpressionNode arg0) {
+        if ( ! (arg0 instanceof ReferenceNode arg0ref && arg0ref.reference().name().equals("matches"))) return;
+        var matches = arg0ref.reference();
+        if (matches.arguments().size() != 1 || matches.output() != null)
+            throw new IllegalArgumentException("matches must have exactly one argument, naming " +
+                                               "an array of struct or map field");
+        if (elementwiseMatchesFields.isEmpty()) return;
+        String fieldName = matches.arguments().expressions().get(0).toString();
+        if ( ! elementwiseMatchesFields.get().contains(fieldName))
+            throw new IllegalArgumentException("field '" + fieldName + "' is not an array of struct or map field");
+    }
+
     /** Binds the given list of formal arguments to their actual values */
     private Map<String, String> bind(List<String> formalArguments,
                                      Arguments invocationArguments) {
@@ -469,14 +492,16 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     @Override
     public MapEvaluationTypeContext withBindings(Map<String, String> bindings) {
-        return new MapEvaluationTypeContext(getFunctions(),
-                                            bindings,
-                                            Optional.of(this),
-                                            featureTypes,
-                                            currentResolutionCallStack,
-                                            queryFeaturesNotDeclared,
-                                            tensorsAreUsed,
-                                            globallyResolvedTypes);
+        var context = new MapEvaluationTypeContext(getFunctions(),
+                                                   bindings,
+                                                   Optional.of(this),
+                                                   featureTypes,
+                                                   currentResolutionCallStack,
+                                                   queryFeaturesNotDeclared,
+                                                   tensorsAreUsed,
+                                                   globallyResolvedTypes);
+        context.elementwiseMatchesFields = elementwiseMatchesFields;
+        return context;
     }
 
 }

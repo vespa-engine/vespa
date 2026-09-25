@@ -15,13 +15,39 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
                                                                                        const AttrT& to_be_searched)
     : Parent(std::move(base_sc), use_bit_vector, to_be_searched), _range_spec(this->get_string_range_spec()) {
     if (this->valid() && _range_spec) {
+        // In both ends, an open (exclusive) boundary uses a less-or-equal comparator while closed
+        // (inclusive) boundary uses an ordinary less-than variant.  It works like this:
+        // _lowerDictItr.lower_bound(low) will call low.less(candidate, boundary) finding the first
+        // entry where that call returns false:
+        //  - an ordinary less comparator computes "candidate < boundary", which turns false at the
+        //    first candidate >= boundary, so the walk starts inclusive of the boundary entry.
+        //  - a less-or-equal comparator computes "candidate <= needs", which turns false some
+        //    entries later, at the first candidate > boundary, so the walk starts strictly past the
+        //    boundary entry, i.e. exclusive.
+        // _upperDictItr.seekPast(high) calls high.less(boundary, candidate) - the opposite order from
+        // lower_bound - finding the first entry where it turns true:
+        //  - an ordinary less comparator computes "boundary < candidate", which stays false while
+        //    candidate <= boundary, so the walk advances past the boundary entry too, keeping it in
+        //    range (inclusive upper bound).
+        //  - a less-or-equal comparator computes "boundary <= candidate", which turns true one entry
+        //    earlier, at the boundary entry itself, so the walk stops there instead of past it,
+        //    excluding it (exclusive upper bound).
+        // With that narrowing, [_lowerDictItr, _upperDictItr> will hold exactly the matching entries.
+        auto make_lower = [this] {
+            const char* value = _range_spec->left->c_str();
+            return _range_spec->left_closed ? _enumStore.string_lookup_comparator(value)
+                                            : _enumStore.string_lookup_lteq_comparator(value);
+        };
+        auto make_upper = [this] {
+            const char* value = _range_spec->right->c_str();
+            return _range_spec->right_closed ? _enumStore.string_lookup_comparator(value)
+                                             : _enumStore.string_lookup_lteq_comparator(value);
+        };
         if (_range_spec->left && _range_spec->right) {
-            this->lookupRange(_enumStore.string_lookup_comparator(_range_spec->left->c_str()),
-                              _enumStore.string_lookup_comparator(_range_spec->right->c_str()));
-
+            this->lookupRange(make_lower(), make_upper());
         } else if (_range_spec->left) {
             this->lookupRange(
-                _enumStore.string_lookup_comparator(_range_spec->left->c_str()),
+                make_lower(),
                 vespalib::datastore::PositiveInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
                     _enumStore.get_data_store()));
 
@@ -29,8 +55,7 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
             this->lookupRange(
                 vespalib::datastore::NegativeInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
                     _enumStore.get_data_store()),
-                _enumStore.string_lookup_comparator(_range_spec->right->c_str()));
-
+                make_upper());
         } else {
             this->lookupRange(
                 vespalib::datastore::NegativeInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
@@ -39,23 +64,9 @@ StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchC
                     _enumStore.get_data_store()));
         }
         if (this->_uniqueValues == 1u) {
-            if (!this->_lowerDictItr.valid() || use_single_dictionary_entry(this->_lowerDictItr)) {
-                this->lookupSingle();
-            } else {
-                this->_uniqueValues = 0;
-            }
+            this->lookupSingle();
         }
     }
-}
-
-template <typename BaseSC, typename AttrT, typename DataT>
-bool StringRangePostingSearchContext<BaseSC, AttrT, DataT>::use_dictionary_entry(
-    PostingListSearchContext::DictionaryConstIterator& it) const {
-    if (this->match(_enumStore.get_value(it.getKey().load_acquire()))) {
-        return true;
-    }
-    ++it;
-    return false;
 }
 
 template <typename BaseSC, typename AttrT, typename DataT>

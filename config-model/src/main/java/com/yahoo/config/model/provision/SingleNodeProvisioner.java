@@ -56,7 +56,7 @@ public class SingleNodeProvisioner implements HostProvisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+    public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
         List<HostSpec> hosts = new ArrayList<>();
         hosts.add(new HostSpec(host.hostname(),
                                NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),

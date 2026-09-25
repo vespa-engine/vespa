@@ -55,8 +55,7 @@ public class QuotaValidator implements Validator {
         for (var clusterId : context.model().allClusters()) {
             if (adminClusterIds(context.model()).contains(clusterId)) continue;
             var cluster = context.model().provisioned().clusters().get(clusterId);
-            var capacity = context.model().provisioned().capacities().getOrDefault(clusterId, zeroCapacity);
-            maxSpend += capacityPolicies.applyOn(capacity, cluster.isExclusive()).maxResources().cost();
+            maxSpend += capacityPolicies.applyOn(cluster.capacity(), cluster.isExclusive()).maxResources().cost();
         }
 
         var actualSpend = context.model().allocatedHosts().getHosts().stream()
@@ -85,11 +84,11 @@ public class QuotaValidator implements Validator {
 
     /** Check that all clusters in the application do not exceed the quota max cluster size. */
     private void validateMaxClusterSize(int maxClusterSize, VespaModel model) {
-        var invalidClusters = model.provisioned().capacities().entrySet().stream()
+        var invalidClusters = model.provisioned().clusters().entrySet().stream()
                 .filter(entry -> entry.getValue() != null)
                 .filter(entry -> {
                     var cluster = entry.getValue();
-                    var clusterSize = cluster.maxResources().nodes();
+                    var clusterSize = cluster.capacity().maxResources().nodes();
                     return clusterSize > maxClusterSize;
                 })
                 .map(Map.Entry::getKey)

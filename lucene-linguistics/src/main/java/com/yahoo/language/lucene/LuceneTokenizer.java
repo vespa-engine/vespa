@@ -53,21 +53,22 @@ class LuceneTokenizer implements Tokenizer {
         List<Token> tokens = new ArrayList<>();
         TokenStream tokenStream = analyzer.tokenStream(FIELD_NAME, text);
 
-        CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
-        OffsetAttribute offsetAttribute = tokenStream.addAttribute(OffsetAttribute.class);
-        PositionIncrementAttribute posIncAttribute = tokenStream.addAttribute(PositionIncrementAttribute.class);
+        var charTerm = tokenStream.addAttribute(CharTermAttribute.class);
+        var offset = tokenStream.addAttribute(OffsetAttribute.class);
+        var positionIncrement = tokenStream.addAttribute(PositionIncrementAttribute.class);
         try {
             tokenStream.reset();
             SimpleToken current = null;
             while (tokenStream.incrementToken()) {
-                String originalString = text.substring(offsetAttribute.startOffset(), offsetAttribute.endOffset());
-                String tokenString = charTermAttribute.toString();
-                if (isAtSamePosition(current, posIncAttribute)) {
+                String originalString = text.substring(offset.startOffset(), offset.endOffset());
+                String tokenString = charTerm.toString();
+                if (isAtSamePosition(current, positionIncrement)) {
                     current.addStem(tokenString);
                 }
                 else {
                     current = new SimpleToken(originalString, tokenString).setType(TokenType.ALPHABETIC)
-                                                                          .setOffset(offsetAttribute.startOffset());
+                                                                          .setOffset(offset.startOffset())
+                                                                          .setPositionIncrement(positionIncrement.getPositionIncrement());
                     tokens.add(current);
                 }
             }

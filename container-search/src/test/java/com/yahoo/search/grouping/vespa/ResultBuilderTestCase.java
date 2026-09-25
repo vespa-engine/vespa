@@ -88,6 +88,7 @@ public class ResultBuilderTestCase {
         assertResult("[69,70]", new ArgmaxAggregationResult(new IntegerResultNode(1),
                                                             new IntegerResultNodeVector().add(new IntegerResultNode(69))
                                                                                          .add(new IntegerResultNode(70))));
+        assertResult("null", new ArgmaxAggregationResult());
         assertResult("69", new MaxAggregationResult(new IntegerResultNode(69)));
         assertResult("69", new MinAggregationResult(new IntegerResultNode(69)));
         assertResult("69", new SumAggregationResult(new IntegerResultNode(69)));

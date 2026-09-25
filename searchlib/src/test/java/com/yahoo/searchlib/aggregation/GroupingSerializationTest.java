@@ -23,6 +23,7 @@ import com.yahoo.searchlib.expression.GeoDistanceFunctionNode;
 import com.yahoo.searchlib.expression.GetDocIdNamespaceSpecificFunctionNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNodeVector;
+import com.yahoo.searchlib.expression.InPredicateNode;
 import com.yahoo.searchlib.expression.IntegerResultNode;
 import com.yahoo.searchlib.expression.IntegerResultNodeVector;
 import com.yahoo.searchlib.expression.MD5BitFunctionNode;
@@ -291,6 +292,16 @@ public class GroupingSerializationTest {
                             new SumAggregationResult()
                                     .setExpression(createDummyExpression()));
             t.assertMatch(withFilter);
+
+            GroupingLevel withInFilter = new GroupingLevel();
+            withInFilter.setMaxGroups(100)
+                    .setExpression(createDummyExpression())
+                    .setFilter(new InPredicateNode(new AttributeNode("attributeA"), List.of("foo", "bar")))
+                    .getGroupPrototype()
+                    .addAggregationResult(
+                            new SumAggregationResult()
+                                    .setExpression(createDummyExpression()));
+            t.assertMatch(withInFilter);
         }
     }
 
@@ -367,6 +378,11 @@ public class GroupingSerializationTest {
         try (SerializationTester t = new SerializationTester("testFilterExpression")) {
             t.assertMatch(new RegexPredicateNode("^foo.*", new AttributeNode("attributeA")));
             t.assertMatch(new RegexPredicateNode("^foo.*", null));
+            t.assertMatch(new InPredicateNode(new AttributeNode("attributeA"), List.of("foo", "bar")));
+            t.assertMatch(new InPredicateNode(new AttributeNode("attributeA"), List.of(
+                    new String(new byte[]{(byte)0xe5, (byte)0xa6, (byte)0x82, (byte)0xe6, (byte)0x9e, (byte)0x9c},
+                               StandardCharsets.UTF_8))));
+            t.assertMatch(new InPredicateNode(null, List.of("foo")));
         }
     }
 

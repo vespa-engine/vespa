@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/single_string_enum_search_context.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
+#include <vespa/searchlib/attribute/string_matcher_factory.h>
 #include <vespa/searchlib/attribute/string_range_search_helper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/casts.h>
@@ -428,6 +429,38 @@ TEST_F(StringAttributeTest, testSingleValue) {
     }
 }
 
+namespace {
+
+template <typename ExpMatcher>
+bool creates_string_matcher(const std::string& term, QueryTermSimple::Type type, bool cased) {
+    return attribute::StringMatcherFactory::create_and_apply(
+        std::make_unique<QueryTermUCS4>(term, type), cased, vespalib::FuzzyMatchingAlgorithm::BruteForce,
+        []<typename Matcher>(Matcher&&) { return std::is_same_v<Matcher, ExpMatcher>; });
+}
+
+template <typename ExpMatcher>
+bool creates_string_matcher(std::unique_ptr<QueryTermSimple> term, bool cased) {
+    return attribute::StringMatcherFactory::create_and_apply(
+        std::move(term), cased, vespalib::FuzzyMatchingAlgorithm::BruteForce,
+        []<typename Matcher>(Matcher&&) { return std::is_same_v<Matcher, ExpMatcher>; });
+}
+
+} // namespace
+
+TEST_F(StringAttributeTest, test_string_matcher_factory) {
+    using QTT = QueryTermSimple::Type;
+    for (bool cased : {false, true}) {
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::WORD, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::PREFIXTERM, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("x.z", QTT::REGEXP, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::FUZZYTERM, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringRangeMatcher>(
+            std::make_unique<QueryTermUCS4>(
+                QTT::STRING_RANGE, std::make_unique<StringRangeSpec>(StringRangeSpec{"BAR", true, "FOO", true})),
+            cased));
+    }
+}
+
 TEST_F(StringAttributeTest, test_uncased_match) {
     QueryTermUCS4      xyz("xyz", QueryTermSimple::Type::WORD);
     StringSearchHelper helper(xyz, false);
@@ -545,22 +578,30 @@ TEST_F(StringAttributeTest, test_range_match_cased) {
     StringRangeSpec                    range = {"BAR", true, "FOO", true};
     attribute::StringRangeSearchHelper helper(&range, true);
 
-    // "BAR", "FOO", "bar", "foo"
-    EXPECT_TRUE(helper.is_match("BAR"));
-    EXPECT_TRUE(helper.is_match("FOO"));
-    EXPECT_FALSE(helper.is_match("bar"));
-    EXPECT_FALSE(helper.is_match("foo"));
+    auto verify = [=]<typename T>() {
+        // "BAR", "FOO", "bar", "foo"
+        EXPECT_TRUE(helper.is_match<T>("BAR"));
+        EXPECT_TRUE(helper.is_match<T>("FOO"));
+        EXPECT_FALSE(helper.is_match<T>("bar"));
+        EXPECT_FALSE(helper.is_match<T>("foo"));
+    };
+    verify.template operator()<const char*>();
+    verify.template operator()<std::string_view>();
 }
 
 TEST_F(StringAttributeTest, test_range_match_uncased) {
     StringRangeSpec                    range = {"BAR", true, "FOO", true};
     attribute::StringRangeSearchHelper helper(&range, false);
 
-    // "BAR", "bar", "FOO", "foo"
-    EXPECT_TRUE(helper.is_match("BAR"));
-    EXPECT_TRUE(helper.is_match("bar"));
-    EXPECT_TRUE(helper.is_match("FOO"));
-    EXPECT_TRUE(helper.is_match("foo"));
+    auto verify = [=]<typename T>() {
+        // "BAR", "bar", "FOO", "foo"
+        EXPECT_TRUE(helper.is_match<T>("BAR"));
+        EXPECT_TRUE(helper.is_match<T>("bar"));
+        EXPECT_TRUE(helper.is_match<T>("FOO"));
+        EXPECT_TRUE(helper.is_match<T>("foo"));
+    };
+    verify.template operator()<const char*>();
+    verify.template operator()<std::string_view>();
 }
 
 namespace {
@@ -568,11 +609,15 @@ void verify_range(const StringRangeSpec& range, bool aaa, bool abb, bool acc, bo
     for (bool cased : {true, false}) {
         attribute::StringRangeSearchHelper helper(&range, cased);
 
-        EXPECT_EQ(aaa, helper.is_match("Aaa"));
-        EXPECT_EQ(abb, helper.is_match("Abb"));
-        EXPECT_EQ(acc, helper.is_match("Acc"));
-        EXPECT_EQ(add, helper.is_match("Add"));
-        EXPECT_EQ(aee, helper.is_match("Aee"));
+        auto verify = [=]<typename T>() {
+            EXPECT_EQ(aaa, helper.is_match<T>("Aaa"));
+            EXPECT_EQ(abb, helper.is_match<T>("Abb"));
+            EXPECT_EQ(acc, helper.is_match<T>("Acc"));
+            EXPECT_EQ(add, helper.is_match<T>("Add"));
+            EXPECT_EQ(aee, helper.is_match<T>("Aee"));
+        };
+        verify.template operator()<const char*>();
+        verify.template operator()<std::string_view>();
     }
 }
 } // namespace

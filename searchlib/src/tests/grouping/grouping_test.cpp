@@ -4,13 +4,23 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
-#include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/argmax_aggregation_result.h>
 #include <vespa/searchlib/aggregation/attribute_node_replacer.h>
+#include <vespa/searchlib/aggregation/averageaggregationresult.h>
+#include <vespa/searchlib/aggregation/countaggregationresult.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
+#include <vespa/searchlib/aggregation/grouping.h>
+#include <vespa/searchlib/aggregation/groupinglevel.h>
+#include <vespa/searchlib/aggregation/hitlist.h>
 #include <vespa/searchlib/aggregation/hitsaggregationresult.h>
+#include <vespa/searchlib/aggregation/maxaggregationresult.h>
+#include <vespa/searchlib/aggregation/minaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/predicates.h>
+#include <vespa/searchlib/aggregation/standarddeviationaggregationresult.h>
+#include <vespa/searchlib/aggregation/sumaggregationresult.h>
+#include <vespa/searchlib/aggregation/xoraggregationresult.h>
+#include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
@@ -25,6 +35,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
 
 #include <vespa/log/log.h>
 LOG_SETUP("grouping_test");
@@ -82,6 +93,7 @@ public:
 };
 
 using IntAttrBuilder = AttrBuilder<SingleIntegerExtAttribute, int64_t>;
+using Int32AttrBuilder = AttrBuilder<SingleInt32ExtAttribute, int32_t>;
 using FloatAttrBuilder = AttrBuilder<SingleFloatExtAttribute, double>;
 using StringAttrBuilder = AttrBuilder<SingleStringExtAttribute, const char*>;
 
@@ -437,6 +449,54 @@ TEST(GroupingTest, argmax_aggregation_result_with_negated_key_selects_the_smalle
     EXPECT_TRUE(res.has_value());
     EXPECT_EQ(20, res.value().getInteger()); // docid 1 has the smallest key
     EXPECT_EQ(-3, res.key().getInteger());
+}
+
+/**
+ * Test that a hit whose integer key attribute has no value is skipped by argmin. The undefined
+ * marker is the type minimum, which the negated key would otherwise turn into the largest key.
+ **/
+TEST(GroupingTest, argmax_aggregation_result_with_negated_key_skips_hits_with_undefined_key) {
+    AggregationContext ctx;
+    ctx.result().add(0).add(1).add(2);
+    ctx.add(IntAttrBuilder("value").add(10).add(20).add(30).sp());
+    ctx.add(Int32AttrBuilder("key").add(7).add(getUndefined<int32_t>()).add(3).sp());
+
+    ArgmaxAggregationResult argmin;
+    argmin.set_key_expression(MU<NegateFunctionNode>(MU<AttributeNode>("key")));
+    argmin.setExpression(MU<AttributeNode>("value"));
+
+    Grouping request;
+    request.setRoot(Group().addResult(argmin));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits());
+
+    const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
+    EXPECT_TRUE(res.has_value());
+    EXPECT_EQ(30, res.value().getInteger()); // docid 2 has the smallest defined key
+    EXPECT_EQ(-3, res.key().getInteger());
+}
+
+/**
+ * Test that a group where no hit has a key ends up without a value instead of selecting a hit
+ * whose key is the undefined marker.
+ **/
+TEST(GroupingTest, argmax_aggregation_result_has_no_value_when_every_key_is_undefined) {
+    AggregationContext ctx;
+    ctx.result().add(0).add(1);
+    ctx.add(IntAttrBuilder("value").add(10).add(20).sp());
+    ctx.add(Int32AttrBuilder("key").add(getUndefined<int32_t>()).add(getUndefined<int32_t>()).sp());
+
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<AttributeNode>("key"));
+    argmax.setExpression(MU<AttributeNode>("value"));
+
+    Grouping request;
+    request.setRoot(Group().addResult(argmax));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits());
+
+    const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
+    EXPECT_FALSE(res.has_value());
 }
 
 /**
@@ -2125,6 +2185,78 @@ TEST(GroupingTest, argmax_aggregation_result_selects_by_document_field_key_when_
     EXPECT_TRUE(res.has_value());
     EXPECT_EQ(10, res.value().getInteger()); // document 1 has the largest key
     EXPECT_EQ(7, res.key().getInteger());
+}
+
+/**
+ * Test that a document without the key field is skipped by argmin. The field node falls back to a default
+ * value that reads as zero, which the negated key would otherwise turn into the largest key.
+ **/
+TEST(GroupingTest, argmax_aggregation_result_skips_documents_without_key_field) {
+    search::test::DocBuilder builder([](auto& header, auto& doc) noexcept {
+        doc.addField("key", header.intTypeRef());
+        doc.addField("value", header.intTypeRef());
+    });
+    auto                     make_doc = [&builder](uint32_t id, std::optional<int32_t> key, int32_t value) {
+        auto doc = builder.make_document("id:ns:searchdocument::" + std::to_string(id));
+        if (key.has_value()) {
+            doc->setValue("key", document::IntFieldValue(*key));
+        }
+        doc->setValue("value", document::IntFieldValue(value));
+        return doc;
+    };
+
+    ArgmaxAggregationResult argmin;
+    argmin.set_key_expression(MU<NegateFunctionNode>(MU<AttributeNode>("key")));
+    argmin.setExpression(MU<AttributeNode>("value"));
+
+    Grouping request;
+    request.setRoot(Group().addResult(argmin));
+    aggregation::Attribute2DocumentAccessor attr2DocumentAccessor;
+    request.select(attr2DocumentAccessor, attr2DocumentAccessor);
+    request.configureStaticStuff(ConfigureStaticParams(nullptr, &builder.get_document_type()));
+    request.preAggregate(false);
+    request.aggregate(*make_doc(1, 7, 10), HitRank(1.0));
+    request.aggregate(*make_doc(2, std::nullopt, 20), HitRank(1.0)); // no key: the default 0 negated would win
+    request.aggregate(*make_doc(3, 5, 30), HitRank(1.0));
+    request.postAggregate();
+
+    const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
+    EXPECT_TRUE(res.has_value());
+    EXPECT_EQ(30, res.value().getInteger()); // document 3 has the smallest defined key
+    EXPECT_EQ(-5, res.key().getInteger());
+}
+
+/**
+ * Test that a group where no document has the key field ends up without a value instead of selecting a
+ * document whose key is the default value.
+ **/
+TEST(GroupingTest, argmax_aggregation_result_has_no_value_when_no_document_has_key_field) {
+    search::test::DocBuilder builder([](auto& header, auto& doc) noexcept {
+        doc.addField("key", header.intTypeRef());
+        doc.addField("value", header.intTypeRef());
+    });
+    auto                     make_doc = [&builder](uint32_t id, int32_t value) {
+        auto doc = builder.make_document("id:ns:searchdocument::" + std::to_string(id));
+        doc->setValue("value", document::IntFieldValue(value));
+        return doc;
+    };
+
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<AttributeNode>("key"));
+    argmax.setExpression(MU<AttributeNode>("value"));
+
+    Grouping request;
+    request.setRoot(Group().addResult(argmax));
+    aggregation::Attribute2DocumentAccessor attr2DocumentAccessor;
+    request.select(attr2DocumentAccessor, attr2DocumentAccessor);
+    request.configureStaticStuff(ConfigureStaticParams(nullptr, &builder.get_document_type()));
+    request.preAggregate(false);
+    request.aggregate(*make_doc(1, 10), HitRank(1.0));
+    request.aggregate(*make_doc(2, 20), HitRank(1.0));
+    request.postAggregate();
+
+    const auto& res = static_cast<const ArgmaxAggregationResult&>(request.getRoot().getAggregationResult(0));
+    EXPECT_FALSE(res.has_value());
 }
 
 TEST(GroupingTest, test_bad_grouping) {

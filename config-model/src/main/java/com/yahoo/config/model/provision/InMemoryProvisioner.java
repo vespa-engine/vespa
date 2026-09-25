@@ -155,8 +155,9 @@ public class InMemoryProvisioner implements HostProvisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity requested, ProvisionContext context) {
+    public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
         clusters.add(cluster);
+        var requested = cluster.capacity();
         if (environment == Environment.dev && ! requested.isRequired()) {
             requested = requested.withLimits(requested.minResources().withNodes(1),
                                              requested.maxResources().withNodes(1));

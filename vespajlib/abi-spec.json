@@ -3509,6 +3509,8 @@
       "public static varargs java.lang.String format(java.lang.String, java.lang.Object[])",
       "public static java.lang.String toExcessHex8(int)",
       "public static java.lang.String toExcessHex16(long)",
+      "public static java.lang.String floatToExcessHex8(float)",
+      "public static java.lang.String doubleToExcessHex16(double)",
       "public static boolean containsControlCharacter(java.lang.String)"
     ],
     "fields" : [ ]

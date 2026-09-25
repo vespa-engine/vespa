@@ -104,6 +104,8 @@ void SameElementQueryNode::unpack_match_data(uint32_t docid, const ITermData& td
     /*
      * Currently reports hit for all fields for query node instead of
      * just the fields where the related subfields had matches.
+     * One position per matching element is added to expose the
+     * matching element ids to ranking.
      */
     for (size_t field_idx = 0; field_idx < num_fields; ++field_idx) {
         auto& tfd = td.field(field_idx);
@@ -111,6 +113,11 @@ void SameElementQueryNode::unpack_match_data(uint32_t docid, const ITermData& td
         auto  tmd = match_data.resolveTermField(tfd.getHandle());
         tmd->setFieldId(field_id);
         tmd->reset(docid);
+        if (tmd->needs_normal_features()) {
+            for (uint32_t element_id : _element_ids) {
+                tmd->appendPosition(search::fef::TermFieldMatchDataPosition(element_id, 0, 1, 1));
+            }
+        }
     }
 }
 

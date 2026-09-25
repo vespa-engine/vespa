@@ -69,18 +69,4 @@ public class Items {
                                           .setDefaultIndexName(fieldOrFieldSet)).getRoot();
     }
 
-    public static Item createText(String fieldOrFieldSet,
-                                  String text,
-                                  Query query,
-                                  Execution execution) {
-        Parser parser = ParserFactory.newInstance(query.getModel().getQueryType(),
-                                                  ParserEnvironment.fromExecutionContext(execution.context()));
-        return parser.parse(new Parsable().setQuery(text)
-                                          .addSources(query.getModel().getSources())
-                                          .addRestricts(query.getModel().getRestrict())
-                                          .setLanguage(query.getModel().getParsingLanguage())
-                                          .setDefaultIndexName(fieldOrFieldSet)).getRoot();
-    }
-
-
 }

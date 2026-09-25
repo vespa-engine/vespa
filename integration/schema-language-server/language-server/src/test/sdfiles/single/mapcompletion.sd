@@ -32,6 +32,25 @@ schema mapcompletion {
         }
         field double_values type map<string, double> {
             indexing: summary
+
+        }
+        field double_keys type map<double, string> {
+            indexing: summary
+
+        }
+        struct entry {
+            field mykey type string { }
+            field myvalue type int { }
+        }
+        field entries type array<entry> {
+            indexing: summary
+
+        }
+        field entry_block type array<entry> {
+            indexing: summary
+            map {
+
+            }
         }
     }
 }

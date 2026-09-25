@@ -203,7 +203,7 @@ EmbedderBatchingParams =
         attribute max-delay { xsd:string }
     }?
 
-EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" | "none" }?
+EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" | "last" | "none" }?
 
 EmbedderQuantization = element quantization { "auto" | "float" | "int8" | "binary" }?
 

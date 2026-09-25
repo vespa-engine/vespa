@@ -41,6 +41,9 @@ public interface ImmutableSDField {
 
     boolean hasFastMapSearch();
 
+    /** Returns the key and value fields if this has fast map search, and null otherwise. */
+    FastMapSearchFields getFastMapSearch();
+
     /**
      * Whether this field at some time was configured to do attributing.
      *

@@ -11,22 +11,15 @@
 
 namespace search::expression {
 
+/**
+ * Represents the default value used in DocumentFieldNode.
+ */
 class DefaultValue final : public ResultNode {
 public:
     DECLARE_EXPRESSIONNODE(DefaultValue);
-    int64_t onGetInteger(size_t index) const override {
-        (void)index;
-        return 0;
-    }
-    double onGetFloat(size_t index) const override {
-        (void)index;
-        return std::numeric_limits<double>::quiet_NaN();
-    }
-    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
-        (void)index;
-        (void)buf;
-        return ConstBufferRef(&null, 0);
-    }
+    int64_t onGetInteger(size_t) const override { return 0; }
+    double onGetFloat(size_t) const override { return std::numeric_limits<double>::quiet_NaN(); }
+    ConstBufferRef onGetString(size_t, BufferRef) const override { return ConstBufferRef(&_null, 0); }
 
 private:
     void set(const ResultNode&) override;
@@ -34,7 +27,7 @@ private:
 
     std::string_view friendly_type_name() const noexcept override { return "<default>"; }
 
-    static char null;
+    static char _null;
 };
 
 class DocumentFieldNode : public DocumentAccessorNode {
@@ -55,8 +48,14 @@ public:
 
 public:
     class Handler : public document::fieldvalue::IteratorHandler {
+        bool _found_value = false;
+
     public:
         virtual void reset() = 0;
+        [[nodiscard]] bool found_value() const noexcept { return _found_value; }
+
+    protected:
+        void set_found_value(bool found) noexcept { _found_value = found; }
 
     private:
         void onCollectionStart(const Content& c) override;
@@ -65,13 +64,18 @@ public:
     const CurrentIndex* getCurrentIndex() { return _currentIndex; }
     void setCurrentIndex(const CurrentIndex* index);
 
+    [[nodiscard]] bool has_field_value() const noexcept { return _handler && _handler->found_value(); }
+
 private:
     class SingleHandler : public Handler {
     public:
         SingleHandler(ResultNode& result) : _result(result) {}
 
     private:
-        void reset() override { _result.set(_defaultValue); }
+        void reset() override {
+            _result.set(_defaultValue);
+            set_found_value(false);
+        }
         ResultNode&         _result;
         static DefaultValue _defaultValue;
         void onPrimitive(uint32_t fid, const Content& c) override;
@@ -81,7 +85,10 @@ private:
         MultiHandler(ResultNodeVector& result) : _result(result) {}
 
     private:
-        void reset() override { _result.clear(); }
+        void reset() override {
+            _result.clear();
+            set_found_value(false);
+        }
         ResultNodeVector& _result;
         void onPrimitive(uint32_t fid, const Content& c) override;
     };

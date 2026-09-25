@@ -26,11 +26,15 @@ public:
     }
     bool allocated() const { return (static_cast<uint32_t*>(_ptr)[3] == ALLOC_MAGIC); }
     size_t size() const { return static_cast<const uint32_t*>(_ptr)[0]; }
+    // Stack trace is aligned on 8 bytes, placed after the allocated memory
+    [[nodiscard]] static size_t align_down_size(size_t sz) noexcept { return sz & ~size_t(7); }
+    [[nodiscard]] static size_t align_up_size(size_t sz) noexcept { return (sz + 7) & ~size_t(7); }
+    [[nodiscard]] size_t align_up_size() const noexcept { return align_up_size(size()); }
     size_t alignment() const { return static_cast<const uint32_t*>(_ptr)[1]; }
     uint32_t threadId() const { return static_cast<uint32_t*>(_ptr)[2]; }
-    Stack* callStack() { return reinterpret_cast<Stack*>((char*)_ptr + size() + alignment()); }
+    Stack* callStack() { return reinterpret_cast<Stack*>((char*)_ptr + align_up_size() + alignment()); }
     const Stack* callStack() const {
-        return reinterpret_cast<const Stack*>((const char*)_ptr + size() + alignment());
+        return reinterpret_cast<const Stack*>((const char*)_ptr + align_up_size() + alignment());
     }
     void fillMemory(size_t sz) {
         if (_fillValue != NO_FILL) {
@@ -91,7 +95,7 @@ public:
     bool validCommon() const {
         const unsigned* p(reinterpret_cast<const unsigned*>(_ptr));
         return p && ((p[3] == ALLOC_MAGIC) || (p[3] == FREE_MAGIC)) &&
-               *(reinterpret_cast<const unsigned*>((const char*)_ptr + size() + alignment() +
+               *(reinterpret_cast<const unsigned*>((const char*)_ptr + align_up_size() + alignment() +
                                                    StackTraceLen * sizeof(void*))) == TAIL_MAGIC;
     }
     template <typename T> static size_t usable_size(void* ptr, const T& segment) {
@@ -142,9 +146,11 @@ public:
         }
         return StackTraceLen;
     }
-    static constexpr size_t adjustSize(size_t sz) { return sz + overhead(); }
-    static constexpr size_t adjustSize(size_t sz, std::align_val_t alignment) { return sz + overhead(alignment); }
-    static constexpr size_t unAdjustSize(size_t sz) { return sz - overhead(); }
+    static constexpr size_t adjustSize(size_t sz) { return align_up_size(sz) + overhead(); }
+    static constexpr size_t adjustSize(size_t sz, std::align_val_t alignment) {
+        return align_up_size(sz) + overhead(alignment);
+    }
+    static constexpr size_t unAdjustSize(size_t sz) { return align_down_size(sz - overhead()); }
     static void dumpInfo(size_t level) __attribute__((noinline));
     static constexpr size_t getMinSizeForAlignment(size_t align, size_t sz) { return sz + align; }
     void info(FILE* os, unsigned level = 0) const __attribute__((noinline));
@@ -156,7 +162,7 @@ protected:
         return preambleOverhead(alignment) + postambleOverhead();
     }
     void setTailMagic() {
-        *(reinterpret_cast<unsigned*>((char*)_ptr + size() + alignment() + StackTraceLen * sizeof(void*))) =
+        *(reinterpret_cast<unsigned*>((char*)_ptr + align_up_size() + alignment() + StackTraceLen * sizeof(void*))) =
             TAIL_MAGIC;
     }
     void init(size_t sz, size_t alignment) {

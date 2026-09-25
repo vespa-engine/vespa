@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -97,6 +98,7 @@ public class EmbedderTestCase {
         assertEquals("my_input_ids", embedderCfg.transformerInputIds());
         assertEquals("https://my/url/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals(1024, embedderCfg.transformerMaxTokens());
+        assertEquals(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.mean, embedderCfg.poolingStrategy());
         
         var tokenizer = assertHuggingfaceTokenizerComponentPresent(cluster);
         var tokenizerCfgBuilder = new HuggingFaceTokenizerConfig.Builder();
@@ -138,6 +140,7 @@ public class EmbedderTestCase {
         assertEquals("my_input_ids", embedderCfg.transformerInputIds());
         assertEquals("https://data.vespa-cloud.com/onnx_models/e5-base-v2/model.onnx", modelReference(embedderCfg, "transformerModel").url().orElseThrow().value());
         assertEquals(1024, embedderCfg.transformerMaxTokens());
+        assertEquals(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.mean, embedderCfg.poolingStrategy());
 
         var tokenizer = assertHuggingfaceTokenizerComponentPresent(cluster);
         var tokenizerCfgBuilder = new HuggingFaceTokenizerConfig.Builder();
@@ -310,6 +313,28 @@ public class EmbedderTestCase {
     @Test
     void negativeGpuDevicePassesXmlValidation() {
         new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed_negative_gpu/").create();
+    }
+
+    @Test
+    void lastPoolingStrategyPassesXmlValidation() {
+        var model = new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed_last_pooling/").create();
+        var cluster = model.getContainerClusters().get("container");
+
+        var huggingfaceConfig = new HuggingFaceEmbedderConfig.Builder();
+        assertHuggingfaceEmbedderComponentPresent(cluster).getConfig(huggingfaceConfig);
+        assertEquals(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.last, huggingfaceConfig.build().poolingStrategy());
+
+        var bertConfig = new BertBaseEmbedderConfig.Builder();
+        assertBertEmbedderComponentPresent(cluster).getConfig(bertConfig);
+        assertEquals(BertBaseEmbedderConfig.PoolingStrategy.Enum.last, bertConfig.build().poolingStrategy());
+    }
+
+    @Test
+    void bertEmbedderRejectsUnsupportedPoolingStrategy() {
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> new VespaModelCreatorWithFilePkg("src/test/cfg/application/embed_bert_none_pooling/").create());
+        assertEquals("Unsupported pooling-strategy 'none' for bert-embedder, supported values are [cls, mean, last]",
+                     exception.getMessage());
     }
 
     @Test

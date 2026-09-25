@@ -5,7 +5,9 @@ import com.yahoo.language.Language;
 import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.TokenType;
+import com.yahoo.language.simple.SimpleToken;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.OrItem;
@@ -34,28 +36,36 @@ import java.util.Set;
  */
 public final class LinguisticsParser extends AbstractParser {
 
+    private static final com.yahoo.language.process.Token paddingToken = new SimpleToken("(ignored)").setType(TokenType.ALPHABETIC);
+
     public LinguisticsParser(ParserEnvironment environment) {
         super(environment);
     }
 
     @Override
-    Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
+    Item parse(String text, String filter, Language language,
                IndexFacts.Session indexFacts, String fieldOrFieldSet, Parsable parsable) {
-        setState(parsingLanguage, indexFacts, fieldOrFieldSet);
+        setState(language, indexFacts, fieldOrFieldSet);
         List<FieldProfile> linguisticProfiles = linguisticProfilesForFieldArgument(fieldOrFieldSet, parsable);
         List<FieldTokens> tokensPerField =
-                linguisticProfiles.stream().map(fieldProfile -> new FieldTokens(fieldProfile.fieldOrFieldSet(),
-                                                                                tokenize(queryToParse, fieldProfile.profile(), parsingLanguage).iterator())).toList();
-        var parent = newComposite();
+                linguisticProfiles.stream()
+                                  .map(profile -> FieldTokens.create(profile, text, language, environment))
+                                  .toList();
+        if (linguisticProfiles.size() > 1)
+            tokensPerField.forEach(FieldTokens::padSkippedPositions);
+        return combineTokensInto(newComposite(), tokensPerField);
+    }
 
-        // Iterate over the tokens of each resulting tokenization in parallel to create an OR item for each token
+    /** Iterates over the tokens of each resulting tokenization in parallel to create an OR item for each token. */
+    private Item combineTokensInto(CompositeItem parent, List<FieldTokens> tokensPerField) {
         for (List<FieldToken> nextTokens = nextTokens(tokensPerField);
              !nextTokens.isEmpty();
              nextTokens = nextTokens(tokensPerField)) {
+            nextTokens = nextTokens.stream().filter(token -> token.token() != paddingToken).toList();
             if (nextTokens.size() == 1) {
                 parent.addItem(toItem(nextTokens.get(0).token(), nextTokens.get(0).fieldOrFieldSet()));
             }
-            else {
+            else if (nextTokens.size() > 1) {
                 OrItem orOverFields = new OrItem();
                 for (FieldToken nextToken : nextTokens)
                     orOverFields.addItem(toItem(nextToken.token(), nextToken.fieldOrFieldSet()));
@@ -111,17 +121,6 @@ public final class LinguisticsParser extends AbstractParser {
         return List.of(new FieldProfile(fieldOrFieldSet, linguisticsProfileFor(fieldOrFieldSet)));
     }
 
-    private Iterable<com.yahoo.language.process.Token> tokenize(String queryToParse,
-                                                                String profile,
-                                                                Language parsingLanguage) {
-        var parameters = new LinguisticsParameters(profile,
-                                                   parsingLanguage,
-                                                   StemMode.BEST,
-                                                   true,
-                                                   true);
-        return environment.getLinguistics().getTokenizer().tokenize(queryToParse, parameters);
-    }
-
     private Item toItem(com.yahoo.language.process.Token token, String index) {
         TermItem item;
         if (token.getType() == TokenType.NUMERIC) {
@@ -149,7 +148,53 @@ public final class LinguisticsParser extends AbstractParser {
     }
 
     private record FieldProfile(String fieldOrFieldSet, String profile) {}
-    private record FieldTokens(String fieldOrFieldSet, Iterator<com.yahoo.language.process.Token> tokens) {}
+
     private record FieldToken(String fieldOrFieldSet, com.yahoo.language.process.Token token) {}
+
+    private static class FieldTokens {
+
+        private final String fieldOrFieldSet;
+        private Iterator<com.yahoo.language.process.Token> tokens;
+
+        private FieldTokens(String fieldOrFieldSet, Iterator<com.yahoo.language.process.Token> tokens) {
+            this.fieldOrFieldSet = fieldOrFieldSet;
+            this.tokens = tokens;
+        }
+
+        String fieldOrFieldSet() { return fieldOrFieldSet; }
+        Iterator<com.yahoo.language.process.Token> tokens() { return tokens; }
+
+        private static Iterable<com.yahoo.language.process.Token> tokenize(String queryToParse,
+                                                                           String profile,
+                                                                           Language language,
+                                                                           ParserEnvironment environment) {
+            var parameters = new LinguisticsParameters(profile, language, StemMode.BEST, true, true);
+            return environment.getLinguistics().getTokenizer().tokenize(queryToParse, parameters);
+        }
+
+        /**
+         * This translates token t with positionIncrement i>1 into i tokens where t is the last and the others are
+         * non-text (skipped), such that we align tokens in multiple iterators correctly.
+         * Since tokenize does not return a ListIterator we cannot do this without first consuming the token stream
+         * as it requires being able to push tokens back.
+         */
+        private void padSkippedPositions() {
+            List<com.yahoo.language.process.Token> paddedTokens = new ArrayList<>();
+            for (var i = tokens; i.hasNext();) {
+                var token = i.next();
+                for (long position = token.getPositionIncrement(); position > 1; position--) {
+                    paddedTokens.add(paddingToken);
+                }
+                paddedTokens.add(token);
+            }
+            this.tokens = paddedTokens.iterator();
+        }
+
+        static FieldTokens create(FieldProfile profile, String text, Language language, ParserEnvironment environment) {
+            return new FieldTokens(profile.fieldOrFieldSet(),
+                                   tokenize(text, profile.profile(), language, environment).iterator());
+        }
+
+    }
 
 }

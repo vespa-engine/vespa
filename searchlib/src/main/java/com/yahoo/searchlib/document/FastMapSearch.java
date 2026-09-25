@@ -52,4 +52,18 @@ public class FastMapSearch {
         return toKeyValueTerm(encodedKey, Text.toExcessHex16(value));
     }
 
+    /**
+     * Combine key as string and value as float with separator.
+     */
+    public static String toKeyValueFloatTerm(String encodedKey, float value) {
+        return toKeyValueTerm(encodedKey, Text.floatToExcessHex8(value));
+    }
+
+    /**
+     * Combine key as string and value as double with separator.
+     */
+    public static String toKeyValueDoubleTerm(String encodedKey, double value) {
+        return toKeyValueTerm(encodedKey, Text.doubleToExcessHex16(value));
+    }
+
 }

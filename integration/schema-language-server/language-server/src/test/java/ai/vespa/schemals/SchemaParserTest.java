@@ -279,6 +279,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/inheritfromparent/",
             "../../../config-model/src/test/derived/inheritstruct/",
             "../../../config-model/src/test/derived/namecollision/",
+            "../../../config-model/src/test/derived/quantized_tensors/",
             "../../../config-model/src/test/derived/rankprofileinheritance/",
             "../../../config-model/src/test/derived/schemainheritance/",
             "../../../config-model/src/test/derived/tensor2/",
@@ -334,6 +335,7 @@ public class SchemaParserTest {
 
             new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 5), // TODO: unused rank-profile functions should throw errors? Also rank-type doesntexist: ... in field?
 
+            new BadFileTestCase("src/test/sdfiles/single/mapfastsearchbad.sd", 2),
             new BadFileTestCase("src/test/sdfiles/single/bm25forlabelsargsbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/bm25forlabelsattrbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/bm25labelbarebad.sd", 1),

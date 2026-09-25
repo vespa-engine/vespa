@@ -1416,7 +1416,7 @@
     ],
     "methods" : [
       "public com.yahoo.config.provision.HostSpec allocateHost(java.lang.String)",
-      "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionLogger)",
+      "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.ProvisionContext)",
       "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionContext)"
     ],
     "fields" : [ ]
@@ -1865,6 +1865,7 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public void add(com.yahoo.config.provision.ClusterSpec)",
       "public void add(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity)",
       "public java.util.Map clusters()",
       "public java.util.Map capacities()"

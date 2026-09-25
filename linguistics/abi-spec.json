@@ -902,6 +902,7 @@
       "public abstract int getNumComponents()",
       "public abstract com.yahoo.language.process.Token getComponent(int)",
       "public abstract long getOffset()",
+      "public long getPositionIncrement()",
       "public abstract com.yahoo.language.process.TokenScript getScript()",
       "public abstract java.lang.String getTokenString()",
       "public abstract boolean isSpecialToken()",

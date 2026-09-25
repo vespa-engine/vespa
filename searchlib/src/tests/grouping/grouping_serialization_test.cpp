@@ -2,16 +2,29 @@
 // Unit tests for grouping_serialization.
 
 #include <vespa/document/base/documentid.h>
-#include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/argmax_aggregation_result.h>
+#include <vespa/searchlib/aggregation/averageaggregationresult.h>
+#include <vespa/searchlib/aggregation/countaggregationresult.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
+#include <vespa/searchlib/aggregation/grouping.h>
+#include <vespa/searchlib/aggregation/groupinglevel.h>
+#include <vespa/searchlib/aggregation/hitlist.h>
+#include <vespa/searchlib/aggregation/hitsaggregationresult.h>
+#include <vespa/searchlib/aggregation/maxaggregationresult.h>
+#include <vespa/searchlib/aggregation/minaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/quantile_aggregation_result.h>
+#include <vespa/searchlib/aggregation/standarddeviationaggregationresult.h>
+#include <vespa/searchlib/aggregation/sumaggregationresult.h>
+#include <vespa/searchlib/aggregation/xoraggregationresult.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/geo_distance_function_node.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/getymumchecksumfunctionnode.h>
+#include <vespa/searchlib/expression/in_predicate_node.h>
 #include <vespa/searchlib/expression/position_document_field_node.h>
+#include <vespa/searchlib/expression/regex_predicate_node.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
@@ -23,7 +36,6 @@ LOG_SETUP("grouping_serialization_test");
 
 using search::HitRank;
 using vespalib::Identifiable;
-using vespalib::make_string;
 using vespalib::NBOSerializer;
 using vespalib::nbostream;
 using namespace search::aggregation;
@@ -319,6 +331,18 @@ TEST(GroupingSerializationTest, testGroupingLevel) {
                       .setMaxGroups(100)
                       .setExpression(createDummyExpression())
                       .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression())));
+}
+
+TEST(GroupingSerializationTest, testFilterExpression) {
+    Fixture f("testFilterExpression");
+    f.checkObject(RegexPredicateNode("^foo.*", MU<AttributeNode>("attributeA")));
+    f.checkObject(RegexPredicateNode("^foo.*", ExpressionNode::UP()));
+    f.checkObject(InPredicateNode(MU<AttributeNode>("attributeA"), {"foo", "bar"}));
+    {
+        char tmp[7] = {(char)0xe5, (char)0xa6, (char)0x82, (char)0xe6, (char)0x9e, (char)0x9c, 0};
+        f.checkObject(InPredicateNode(MU<AttributeNode>("attributeA"), {tmp}));
+    }
+    f.checkObject(InPredicateNode(ExpressionNode::UP(), {"foo"}));
 }
 
 TEST(GroupingSerializationTest, testGroup) {

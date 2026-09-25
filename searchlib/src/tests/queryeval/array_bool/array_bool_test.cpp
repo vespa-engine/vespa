@@ -673,6 +673,46 @@ void verify_unpacking(TestAttribute& test_attr, const std::vector<uint32_t>& ele
     }
 }
 
+// Whether the builder gives a search iterator unpacking one position per matching element into builder.tfmd()
+template <typename B> constexpr bool exposes_matching_elements = false;
+template <> constexpr bool           exposes_matching_elements<SameElementArrayBoolSearchBuilder> = true;
+template <> constexpr bool           exposes_matching_elements<SameElementMultiArrayBoolSearchBuilder> = true;
+template <> constexpr bool           exposes_matching_elements<SameElementGenericSearchBuilder> = true;
+template <> constexpr bool           exposes_matching_elements<SameElementBlueprintSearchBuilder> = true;
+template <> constexpr bool           exposes_matching_elements<SameElementBlueprintReplacementSearchBuilder> = true;
+
+template <typename B>
+void verify_unpacked_elements(TestAttribute& test_attr, const std::vector<uint32_t>& element_filter, bool want_true,
+                              const std::vector<std::pair<uint32_t, std::vector<uint32_t>>>& expected) {
+    for (bool strict : {false, true}) {
+        SCOPED_TRACE(strict ? "strict" : "non-strict");
+        B    builder(test_attr, element_filter, want_true);
+        auto search = builder.create_search(strict);
+
+        search->initRange(1, test_attr.attr->getCommittedDocIdLimit());
+        for (const auto& [docid, exp_elements] : expected) {
+            SCOPED_TRACE("docid=" + std::to_string(docid));
+            EXPECT_TRUE(search->seek(docid));
+            search->unpack(docid);
+            std::vector<uint32_t> act;
+            for (const auto& pos : *builder.tfmd()) {
+                act.push_back(pos.getElementId());
+            }
+            if (exposes_matching_elements<B>) {
+                EXPECT_EQ(exp_elements, act);
+            } else {
+                EXPECT_TRUE(act.empty());
+            }
+        }
+    }
+}
+
+TYPED_TEST(ArrayBoolSearchTest, require_that_matching_elements_are_exposed_when_unpacking) {
+    verify_unpacked_elements<TypeParam>(this->_test_attribute, {0, 1, 2}, true, {{1, {1}}, {3, {0}}, {4, {0, 1, 2}}});
+    verify_unpacked_elements<TypeParam>(this->_test_attribute, {0, 2}, false, {{1, {0, 2}}, {2, {0, 2}}});
+    verify_unpacked_elements<TypeParam>(this->_test_attribute, {1}, true, {{1, {1}}, {4, {1}}});
+}
+
 TYPED_TEST(ArrayBoolSearchTest, require_that_single_element_iterator_can_unpack_matching_docid) {
     // Matches doc 1 and 4
     verify_unpacking<TypeParam>(this->_test_attribute, {1}, true, {1, 4});

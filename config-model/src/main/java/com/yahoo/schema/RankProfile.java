@@ -5,6 +5,9 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.StructDataType;
 import com.yahoo.path.Path;
 import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -13,6 +16,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.search.query.ranking.ElementGap;
 import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.expressiontransforms.ExpressionTransforms;
@@ -1421,6 +1425,12 @@ public class RankProfile implements Cloneable {
     public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles,
                                                 Map<Reference, TensorType> featureTypes) {
         MapEvaluationTypeContext context = new MapEvaluationTypeContext(getExpressionFunctions(), featureTypes);
+        if (schema != null) {
+            context.setElementwiseMatchesFields(Stream.concat(allFields(), allImportedFields())
+                                                      .filter(RankProfile::isArrayOfStructOrMap)
+                                                      .map(ImmutableSDField::getName)
+                                                      .collect(Collectors.toSet()));
+        }
 
         constants().forEach((k, v) -> context.setType(k, v.type()));
 
@@ -1514,6 +1524,19 @@ public class RankProfile implements Cloneable {
             }
             return false;
         }
+    }
+
+    /**
+     * Returns whether the field may be represented as a virtual field in the backend, which is what
+     * elementwise(matches(field),...) requires. Position fields are never virtual fields. Whether the struct-fields
+     * make the field virtual depends on the indexing mode (indexed search requires at least one struct-field
+     * attribute, streaming search does not), which is not known here, so that is checked by the backend.
+     */
+    private static boolean isArrayOfStructOrMap(ImmutableSDField field) {
+        var type = field.getDataType();
+        if (GeoPos.isAnyPos(type)) return false;
+        return (type instanceof MapDataType) ||
+               (type instanceof ArrayDataType arrayType && arrayType.getNestedType() instanceof StructDataType);
     }
 
     private void addAttributeFeatureTypes(ImmutableSDField field, Map<Reference, TensorType> featureTypes) {

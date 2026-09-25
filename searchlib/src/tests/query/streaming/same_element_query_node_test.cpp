@@ -336,7 +336,12 @@ TEST_F(SameElementQueryNodeTest, test_same_element_evaluate) {
     sameElem->unpack_match_data(2, td, *md, ie, ElementIds::select_all());
     EXPECT_TRUE(tfmd0->has_ranking_data(2));
     EXPECT_EQ(0, tfmd0->getNumOccs());
-    EXPECT_EQ(0, tfmd0->end() - tfmd0->begin());
+    // One position per matching element exposes the matching element ids to ranking
+    std::vector<uint32_t> unpacked_element_ids;
+    for (const auto& pos : *tfmd0) {
+        unpacked_element_ids.push_back(pos.getElementId());
+    }
+    EXPECT_EQ((std::vector<uint32_t>{0, 2, 4, 5}), unpacked_element_ids);
 }
 
 TEST_F(SameElementQueryNodeTest, and_below_same_element) {

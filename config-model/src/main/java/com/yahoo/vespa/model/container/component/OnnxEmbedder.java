@@ -7,6 +7,7 @@ import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 import static com.yahoo.text.XML.getChild;
@@ -80,6 +81,22 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
                 .orElse(opts);
         
         onnxModelOptions = opts;
+    }
+
+    /**
+     * Reads the pooling-strategy element as one of the values the embedder's config supports.
+     * The schema allows the union of all embedders' values, so unsupported ones are rejected here.
+     */
+    protected static <E extends Enum<E>> Optional<E> parsePoolingStrategy(Element xml, Class<E> supported) {
+        return getChildValue(xml, "pooling-strategy").map(value -> {
+            try {
+                return Enum.valueOf(supported, value);
+            } catch (IllegalArgumentException e) {
+                var supportedNames = Arrays.stream(supported.getEnumConstants()).map(Enum::name).toList();
+                throw new IllegalArgumentException("Unsupported pooling-strategy '" + value + "' for " +
+                                                   xml.getAttribute("type") + ", supported values are " + supportedNames);
+            }
+        });
     }
 
     @Override

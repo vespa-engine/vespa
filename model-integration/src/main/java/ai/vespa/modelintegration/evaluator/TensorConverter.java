@@ -26,8 +26,6 @@ import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -36,18 +34,63 @@ import java.util.stream.Collectors;
  */
 class TensorConverter {
 
-    static Map<String, OnnxTensor> toOnnxTensors(Map<String, Tensor> tensorMap, Map<String, NodeInfo> inputInfo, OrtEnvironment env)
+    /**
+     * The inputs of an ONNX model. Each input has an ONNX name, which is its name in the model, and a
+     * Vespa identifier derived from it (see {@link #asValidName}). Holds the tensor info of each input
+     * and a lookup from either name to the ONNX name.
+     */
+    record ModelInputs(Map<String, String> nameMapping, Map<String, TensorInfo> tensorInfos) {
+
+        static ModelInputs of(Map<String, NodeInfo> inputInfo) {
+            Map<String, String> nameMapping = new HashMap<>();
+            Map<String, TensorInfo> tensorInfos = new HashMap<>();
+
+            for (var entry : inputInfo.entrySet()) {
+                String onnxName = entry.getKey();
+                nameMapping.put(onnxName, onnxName);
+                nameMapping.put(asValidName(onnxName), onnxName);
+                tensorInfos.put(onnxName, toTensorInfo(entry.getValue().getInfo()));
+            }
+
+            return new ModelInputs(Map.copyOf(nameMapping), Map.copyOf(tensorInfos));
+        }
+
+        /** Returns the ONNX name of the input with the given ONNX name or Vespa identifier. */
+        String toOnnxName(String name) {
+            String onnxName = nameMapping.get(name);
+            
+            if (onnxName == null)
+                throw new IllegalArgumentException("ONNX model has no input with name " + name);
+            
+            return onnxName;
+        }
+
+        TensorInfo tensorInfo(String onnxName) {
+            return tensorInfos.get(onnxName);
+        }
+
+    }
+
+    /**
+     * Converts Vespa tensors to ONNX tensors.
+     * The caller owns the returned tensors and must close them. If conversion of any input fails,
+     * the tensors already created are closed before the exception is propagated.
+     */
+    static Map<String, OnnxTensor> toOnnxTensors(Map<String, Tensor> tensorMap, ModelInputs inputs, OrtEnvironment env)
         throws OrtException
     {
         Map<String, OnnxTensor> result = new HashMap<>();
-        for (String name : tensorMap.keySet()) {
-            Tensor vespaTensor = tensorMap.get(name);
-            name = toOnnxName(name, inputInfo.keySet());
-            TensorInfo onnxTensorInfo = toTensorInfo(inputInfo.get(name).getInfo());
-            OnnxTensor onnxTensor = toOnnxTensor(vespaTensor, onnxTensorInfo, env);
-            result.put(name, onnxTensor);
+        try {
+            for (var entry : tensorMap.entrySet()) {
+                String onnxName = inputs.toOnnxName(entry.getKey());
+                OnnxTensor onnxTensor = toOnnxTensor(entry.getValue(), inputs.tensorInfo(onnxName), env);
+                result.put(onnxName, onnxTensor);
+            }
+            return result;
+        } catch (Throwable t) {
+            result.values().forEach(OnnxTensor::close);
+            throw t;
         }
-        return result;
     }
 
     static OnnxTensor toOnnxTensor(Tensor vespaTensor, TensorInfo onnxTensorInfo, OrtEnvironment environment)
@@ -169,16 +212,6 @@ class TensorConverter {
 
     static String asValidName(String name) {
         return OnnxImporter.asValidIdentifier(name);
-    }
-
-    static String toOnnxName(String name, Set<String> onnxNames) {
-        if (onnxNames.contains(name))
-            return name;
-        for (String onnxName : onnxNames) {
-            if (asValidName(onnxName).equals(name))
-                return onnxName;
-        }
-        throw new IllegalArgumentException("ONNX model has no input with name " + name);
     }
 
     static TensorType toVespaType(ValueInfo valueInfo) {

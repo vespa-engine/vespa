@@ -4,7 +4,10 @@
 
 #include "attributenode.h"
 #include "documentaccessornode.h"
+#include "documentfieldnode.h"
 #include "relevancenode.h"
+
+#include <vespa/searchcommon/attribute/iattributevector.h>
 
 namespace search::expression {
 
@@ -107,6 +110,28 @@ void ExpressionTree::execute(DocId docId, HitRank rank) const {
     std::for_each(_relevanceNodes.cbegin(), _relevanceNodes.cend(),
                   [rank](RelevanceNode* node) { node->setRelevance(rank); });
     _root->execute();
+}
+
+bool ExpressionTree::has_undefined_attribute(DocId docId) const noexcept {
+    for (const AttributeNode* node : _attributeNodes) {
+        const auto* attribute = node->getAttribute();
+        if (attribute != nullptr && attribute->isUndefined(docId)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ExpressionTree::has_undefined_field() const noexcept {
+    for (const DocumentAccessorNode* node : _documentAccessorNodes) {
+        if (node->inherits(DocumentFieldNode::classId)) {
+            const auto& doc_node = static_cast<const DocumentFieldNode&>(*node);
+            if (!doc_node.has_field_value()) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void ExpressionTree::visitMembers(vespalib::ObjectVisitor& visitor) const {

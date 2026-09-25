@@ -127,7 +127,14 @@ public final class SchemaInfo extends Derived {
         fieldBuilder.attribute(field.doesAttributing());
         fieldBuilder.index(field.doesIndexing());
         fieldBuilder.bitPacked(field.doesBitPacking());
-        fieldBuilder.fastMapSearch(field.hasFastMapSearch());
+        var fastMapFields = field.getFastMapSearch();
+        if (fastMapFields != null) {
+            fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
+                                                     .keyField(fastMapFields.keyField())
+                                                     .keyType(toTypeSpec(fastMapFields.keyType()))
+                                                     .valueField(fastMapFields.valueField())
+                                                     .valueType(toTypeSpec(fastMapFields.valueType())));
+        }
         schemaBuilder.field(fieldBuilder);
     }
 

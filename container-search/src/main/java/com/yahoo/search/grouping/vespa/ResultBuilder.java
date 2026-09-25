@@ -308,8 +308,9 @@ class ResultBuilder {
             } else if (execResult instanceof ExpressionCountAggregationResult) {
                 long count = ((ExpressionCountAggregationResult)execResult).getEstimatedUniqueCount();
                 return correctExpressionCountEstimate(count, tag);
-            } else if (execResult instanceof ArgmaxAggregationResult) {
-                return newResultValue(((ArgmaxAggregationResult)execResult).getValue());
+            } else if (execResult instanceof ArgmaxAggregationResult argmax) {
+                // No hit in the group had a key, so there is no value to select.
+                return argmax.hasValue() ? newResultValue(argmax.getValue()) : null;
             } else if (execResult instanceof MaxAggregationResult) {
                 return ((MaxAggregationResult)execResult).getMax().getValue();
             } else if (execResult instanceof MinAggregationResult) {
