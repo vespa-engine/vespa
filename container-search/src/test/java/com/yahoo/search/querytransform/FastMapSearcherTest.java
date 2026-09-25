@@ -212,6 +212,7 @@ public class FastMapSearcherTest {
         assertEquals(FastMapSearch.toKeyValue16Term("foo", low), closed.getFrom());
         assertEquals(FastMapSearch.toKeyValue16Term("foo", high), closed.getTo());
         assertTrue(closed.isFromInclusive());
+        assertEquals(0, closed.getHitLimit());
         assertTrue(closed.isToInclusive());
 
         // Exclusive endpoints stay exclusive.
@@ -248,6 +249,19 @@ public class FastMapSearcherTest {
     }
 
     @Test
+    public void requireLongRangeWithHitLimitRewrittenToLexicalRange() {
+        var searcher = new FastMapSearcher();
+
+        var closed = searcher.makeLongRange("foo", new IntItem("[5;10;42]", "value"), "longvaluemap");
+        assertEquals("longvaluemap$keyvalue", closed.getIndexName());
+        assertEquals(FastMapSearch.toKeyValue16Term("foo", 5), closed.getFrom());
+        assertEquals(FastMapSearch.toKeyValue16Term("foo", 10), closed.getTo());
+        assertTrue(closed.isFromInclusive());
+        assertEquals(42, closed.getHitLimit());
+        assertTrue(closed.isToInclusive());
+    }
+
+    @Test
     public void requireFallbackForRangesWhichAreNotPlainLongRanges() {
         var searcher = new FastMapSearcher();
 
@@ -257,9 +271,6 @@ public class FastMapSearcherTest {
         // An endpoint beyond the long range has no encoding.
         assertNull(searcher.makeLongRange("foo", new IntItem("[0;99999999999999999999]", "value"), "longvaluemap"));
         assertNull(searcher.makeLongRange("foo", intRange(new Limit(0, true), new Limit(1e19, true)), "longvaluemap"));
-
-        // A hit limit counts entries in the value attribute, not in the synthetic one.
-        assertNull(searcher.makeLongRange("foo", new IntItem("[5;10;100]", "value"), "longvaluemap"));
     }
 
     @Test
@@ -340,6 +351,7 @@ public class FastMapSearcherTest {
         assertEquals("floatvaluemap$keyvalue", closed.getIndexName());
         assertEquals(FastMapSearch.toKeyValueFloatTerm("foo", -1.5f), closed.getFrom());
         assertEquals(FastMapSearch.toKeyValueFloatTerm("foo", 2.5f), closed.getTo());
+        assertEquals(0, closed.getHitLimit());
         assertTrue(closed.isFromInclusive());
         assertTrue(closed.isToInclusive());
 
@@ -369,6 +381,19 @@ public class FastMapSearcherTest {
     }
 
     @Test
+    public void requireFloatingPointRangeWithHitLimitRewrittenToLexicalRange() {
+        var searcher = new FastMapSearcher();
+
+        var closed = (StringRangeItem) searcher.makeFloatingPointItem("foo", new IntItem("[-1.5;2.5;42]", "value"), "floatvaluemap", true);
+        assertEquals("floatvaluemap$keyvalue", closed.getIndexName());
+        assertEquals(FastMapSearch.toKeyValueFloatTerm("foo", -1.5f), closed.getFrom());
+        assertEquals(FastMapSearch.toKeyValueFloatTerm("foo", 2.5f), closed.getTo());
+        assertEquals(42, closed.getHitLimit());
+        assertTrue(closed.isFromInclusive());
+        assertTrue(closed.isToInclusive());
+    }
+
+        @Test
     public void requireFallbackForUnsupportedFloatingPointTerms() {
         var searcher = new FastMapSearcher();
 
@@ -376,9 +401,6 @@ public class FastMapSearcherTest {
         assertUntouched(sameElement("floatvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value")));
         assertUntouched(sameElement("doublevaluemap", new WordItem("foo", "key"), new WordItem("NaN", "value")));
         assertNull(searcher.makeFloatingPointItem("foo", intRange(new Limit(Double.NaN, true), new Limit(1.0, true)), "doublevaluemap", false));
-
-        // A hit limit counts entries in the value attribute, not in the synthetic one.
-        assertNull(searcher.makeFloatingPointItem("foo", new IntItem("[5;10;100]", "value"), "doublevaluemap", false));
 
         // A prefix term matches more than one string
         assertUntouched(sameElement("doublevaluemap", new WordItem("foo", "key"), new PrefixItem("1", "value")));
