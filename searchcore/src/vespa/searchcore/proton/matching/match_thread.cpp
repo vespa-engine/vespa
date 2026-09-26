@@ -440,9 +440,18 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
     if (doom.hard_doom()) {
         return;
     }
+    // Aggregation into groupings is only timed for query tracing.
+    const bool time_grouping = hasGrouping && trace->shouldTrace(6);
     if (hasGrouping) {
+        std::optional<vespalib::steady_time> start;
+        if (time_grouping) {
+            start.emplace(vespalib::steady_clock::now());
+        }
         search::grouping::GroupingManager man(*context.grouping);
         man.groupUnordered(_distributionKey, hits, bits);
+        if (start) {
+            grouping_aggregate_time_s += vespalib::to_s(vespalib::steady_clock::now() - *start);
+        }
     }
     if (doom.hard_doom()) {
         return;
@@ -457,9 +466,16 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
         return;
     }
     if (hasGrouping) {
+        std::optional<vespalib::steady_time> start;
+        if (time_grouping) {
+            start.emplace(vespalib::steady_clock::now());
+        }
         search::grouping::GroupingManager man(*context.grouping);
         man.groupInRelevanceOrder(_distributionKey, hits);
         man.convertToGlobalId(matchToolsFactory.metaStore());
+        if (start) {
+            grouping_aggregate_time_s += vespalib::to_s(vespalib::steady_clock::now() - *start);
+        }
     }
     if (doom.hard_doom()) {
         return;
@@ -495,6 +511,7 @@ MatchThread::MatchThread(size_t thread_id_in, size_t num_threads_in, const Match
       total_time_s(0.0),
       match_time_s(0.0),
       wait_time_s(0.0),
+      grouping_aggregate_time_s(0.0),
       match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores()),
       trace(parent_trace.make_trace_up()),
       match_profiler(),
@@ -559,6 +576,10 @@ void MatchThread::run() {
     trace->addEvent(4, "Start thread merge");
     mergeDirector.dualMerge(thread_id, *resultContext->result, resultContext->groupingSource);
     trace->addEvent(4, "MatchThread::run Done");
+    if (resultContext->grouping && trace->shouldTrace(6)) {
+        // Time this thread spent aggregating hits into its groupings (sorting excluded).
+        trace->createCursor("grouping_timing").setDouble("aggregate_ms", grouping_aggregate_time_s * 1000.0);
+    }
     if (match_profiler) {
         match_profiler->report(trace->createCursor("match_profiling"));
     }
