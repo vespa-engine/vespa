@@ -17,12 +17,10 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
-import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
-import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 
@@ -259,6 +257,13 @@ public class Flags {
             List.of("gjoranv"), "2026-09-09", "2027-03-08",
             "Temporary percentage of applications selected for rollout, from 0 to 100",
             "Takes effect on the next prepare. Lowering the percentage can restore previous behavior.",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag ENABLE_LANDLOCK = defineFeatureFlag(
+            "enable-landlock", false,
+            List.of("hmusum", "vekterli"), "2026-09-25", "2027-03-08",
+            "Whether to set env variables enabling Landlock for sandboxing.",
+            "Takes effect on the next deployment.",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
