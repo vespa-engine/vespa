@@ -34,17 +34,20 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.config.text.StringUtilities.escape;
+import static java.util.logging.Level.INFO;
 
 /**
  * Validates rank setup for all content clusters (rank-profiles, index-schema, attributes configs), validation is done
  * by running the binary 'vespa-verify-ranksetup-bin'
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class RankSetupValidator implements Validator {
 
@@ -72,7 +75,7 @@ public class RankSetupValidator implements Validator {
                     String schemaDir = clusterDir + schemaName + "/";
                     writeConfigs(schemaDir, docDb);
                     writeExtraVerifyRankSetupConfig(schemaDir, docDb);
-                    if (!validate(context, "dir:" + schemaDir, sc, schemaName, cfgDir, docDb.getDerivedConfiguration().isStreaming())) {
+                    if (!validate(context, schemaDir, sc, schemaName, cfgDir, docDb.getDerivedConfiguration().isStreaming())) {
                         return;
                     }
                 }
@@ -85,11 +88,11 @@ public class RankSetupValidator implements Validator {
         }
     }
 
-    private boolean validate(Context context, String configId, SearchCluster searchCluster, String schema, File tempDir, boolean isStreaming) {
+    private boolean validate(Context context, String schemaDir, SearchCluster searchCluster, String schema, File tempDir, boolean isStreaming) {
         Instant start = Instant.now();
         try {
-            log.log(Level.FINE, () -> Text.format("Validating schema '%s' for cluster %s with config id %s", schema, searchCluster, configId));
-            boolean ret = execValidate(context, configId, searchCluster, schema, isStreaming);
+            log.log(Level.FINE, () -> Text.format("Validating schema '%s' for cluster %s with schema dir %s", schema, searchCluster, schemaDir));
+            boolean ret = execValidate(context, schemaDir, searchCluster, schema, isStreaming);
             if (!ret) {
                 // Give up, don't log same error msg repeatedly
                 deleteTempDir(tempDir);
@@ -174,10 +177,9 @@ public class RankSetupValidator implements Validator {
         IOUtils.writeFile(dir + configName, StringUtilities.implodeMultiline(ConfigInstance.serialize(config)), false);
     }
 
-    private boolean execValidate(Context context, String configId, SearchCluster sc, String sdName, boolean isStreaming) {
-        String command = Text.format((isStreaming ? "%s %s -S" : "%s %s"), binaryName, configId);
+    private boolean execValidate(Context context, String schemaDir, SearchCluster sc, String sdName, boolean isStreaming) {
         try {
-            Pair<Integer, String> ret = new ProcessExecuter(true).exec(command);
+            Pair<Integer, String> ret = execute(context, schemaDir, isStreaming);
             Integer exitCode = ret.getFirst();
             String output = ret.getSecond();
             if (exitCode != 0) {
@@ -188,6 +190,22 @@ public class RankSetupValidator implements Validator {
             return false;
         }
         return true;
+    }
+
+    private Pair<Integer, String> execute(Context context, String schemaDir, boolean isStreaming) throws IOException {
+        var configId = "dir:" + schemaDir;
+        String command = Text.format((isStreaming ? "%s %s -S" : "%s %s"), binaryName, configId);
+        return new ProcessExecuter(true).exec(command, createEnvForEnablingLandlock(context, schemaDir));
+    }
+
+    static Map<String, String> createEnvForEnablingLandlock(Context context, String schemaDir) {
+        if (!context.deployState().featureFlags().enableLandlock()) {
+            return Map.of();
+        }
+
+        return Map.of("VESPA_ENABLE_LANDLOCK", "true",
+                      // All with read-only access
+                     "VESPA_LANDLOCK_PATHS", "/dev,ro:/sys,ro:/proc/self,ro:" + schemaDir + ",ro");
     }
 
     private void validateWarn(Exception e, DeployLogger deployLogger) {
