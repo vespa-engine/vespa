@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-09-24
+Last updated: 2026-09-26
 
 ---
 
@@ -772,7 +772,6 @@ Last updated: 2026-09-24
 - Homepage: <https://github.com/micromark/micromark/tree/main#readme>
 - Copyright Titus Wormer
 - Copyright 2020 Titus Wormer <tituswormer@gmail.com>
-- Copyright Titus Wormer <tituswormer@gmail.com>
 
 ---
 
