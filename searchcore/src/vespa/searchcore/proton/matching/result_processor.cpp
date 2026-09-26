@@ -12,6 +12,8 @@
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/vespalib/util/time.h>
 
+#include <optional>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.result_processor");
 
@@ -56,14 +58,33 @@ ResultProcessor::Context::Context(const search::BitVector& validLids, Sort::UP s
 
 ResultProcessor::Context::~Context() = default;
 
+namespace {
+
+double elapsed_ms(vespalib::steady_time start) {
+    return vespalib::count_ns(vespalib::steady_clock::now() - start) / 1000000.0;
+}
+
+} // namespace
+
 void ResultProcessor::GroupingSource::merge(Source& s) {
     auto& rhs = dynamic_cast<GroupingSource&>(s);
     assert((ctx == nullptr) == (rhs.ctx == nullptr));
     if (ctx != nullptr) {
-        vespalib::Timer                   timer;
+        std::optional<vespalib::steady_time> start;
+        if (timed) {
+            start.emplace(vespalib::steady_clock::now());
+        }
         search::grouping::GroupingManager man(*ctx);
         man.merge(*rhs.ctx);
-        merge_time_s += rhs.merge_time_s + vespalib::to_s(timer.elapsed());
+        if (start) {
+            // Not a data race although the merging thread may not be the thread owning this
+            // source: the merge director hands each pair of sources to exactly one thread and
+            // synchronizes (rendezvous) between merge steps, so updates of a source never overlap,
+            // and the totals in the source of thread 0 are only read by makeReply(), after the
+            // thread bundle has joined all match threads.
+            merge_time_s += rhs.merge_time_s + vespalib::to_s(vespalib::steady_clock::now() - *start);
+            merge_count += rhs.merge_count + 1;
+        }
     }
 }
 
@@ -83,9 +104,10 @@ ResultProcessor::ResultProcessor(IAttributeContext& attrContext, const search::I
       _sort_feature_failed(false),
       _collect_grouping_details(false),
       _grouping_session_cached(false),
-      _grouping_details(),
+      _grouping_trace(),
       _first_grouping_source(nullptr),
       _grouping_merge_ms(0.0),
+      _grouping_merge_count(0),
       _grouping_prune_ms(0.0),
       _grouping_continue_ms(0.0) {
     if (!_groupingContext.empty()) {
@@ -118,6 +140,7 @@ ResultProcessor::createThreadContext(const vespalib::Doom& hardDoom, size_t thre
     }
     auto context = std::make_unique<Context>(_metaStore.getValidLids(), std::move(sort), std::move(result),
                                              std::move(groupingContext));
+    context->groupingSource.timed = _collect_grouping_details;
     if (thread_id == 0) {
         // Only read by makeReply(), after all threads are done; the context outlives that call.
         _first_grouping_source = &context->groupingSource;
@@ -145,16 +168,25 @@ ResultProcessor::Result::UP ResultProcessor::makeReply(PartialResultUP full_resu
     if (_groupingSession) {
         if (_collect_grouping_details && (_first_grouping_source != nullptr)) {
             _grouping_merge_ms = _first_grouping_source->merge_time_s * 1000.0;
+            _grouping_merge_count = _first_grouping_source->merge_count;
         }
+        std::optional<vespalib::steady_time> start;
         if (_wasMerged) {
-            vespalib::Timer prune_timer;
+            if (_collect_grouping_details) {
+                start.emplace(vespalib::steady_clock::now());
+            }
             _groupingSession->getGroupingManager().prune();
-            _grouping_prune_ms = vespalib::count_ns(prune_timer.elapsed()) / 1000000.0;
+            if (start) {
+                _grouping_prune_ms = elapsed_ms(*start);
+            }
         }
-        vespalib::Timer continue_timer;
-        _groupingSession->continueExecution(_groupingContext,
-                                            _collect_grouping_details ? &_grouping_details : nullptr);
-        _grouping_continue_ms = vespalib::count_ns(continue_timer.elapsed()) / 1000000.0;
+        if (_collect_grouping_details) {
+            start.emplace(vespalib::steady_clock::now());
+        }
+        _groupingSession->continueExecution(_groupingContext, _collect_grouping_details ? &_grouping_trace : nullptr);
+        if (start) {
+            _grouping_continue_ms = elapsed_ms(*start);
+        }
         numFs4Hits = _groupingContext.countFS4Hits();
         _groupingContext.getResult().swap(r.groupResult);
         if (!_groupingSession->getSessionId().empty() && !_groupingSession->finished()) {

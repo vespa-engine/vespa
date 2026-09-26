@@ -64,11 +64,16 @@ public:
      **/
     struct GroupingSource : vespalib::DualMergeDirector::Source {
         GroupingContext* ctx;
-        // Time spent merging grouping results into this source, including the merge time
-        // already accumulated by the sources merged into it. After all threads are merged,
-        // the source of thread 0 holds the total for the query.
-        double merge_time_s;
-        explicit GroupingSource(GroupingContext* g) noexcept : ctx(g), merge_time_s(0.0) {}
+        // Only when set are merges timed and counted (used for query tracing).
+        bool timed;
+        // Time spent merging grouping results into this source and the number of merges, both
+        // including what was already accumulated by the sources merged into it. After all
+        // threads are merged, the source of thread 0 holds the totals for the query. Note that
+        // the time is a sum over merges that may have run in parallel, not wall clock time.
+        double   merge_time_s;
+        uint32_t merge_count;
+        explicit GroupingSource(GroupingContext* g) noexcept
+            : ctx(g), timed(false), merge_time_s(0.0), merge_count(0) {}
         void merge(Source& s) override;
     };
 
@@ -98,23 +103,24 @@ public:
     };
 
 private:
-    IAttributeContext&                                 _attrContext;
-    const search::IDocumentMetaStore&                  _metaStore;
-    SessionManager&                                    _sessionMgr;
-    GroupingContext&                                   _groupingContext;
-    std::unique_ptr<GroupingSession>                   _groupingSession;
-    const std::string&                                 _sortSpec;
-    size_t                                             _offset;
-    size_t                                             _hits;
-    bool                                               _wasMerged;
-    std::atomic<bool>                                  _sort_feature_failed;
-    bool                                               _collect_grouping_details;
-    bool                                               _grouping_session_cached;
-    std::vector<search::grouping::GroupingPassDetails> _grouping_details;
-    const GroupingSource*                              _first_grouping_source;
-    double                                             _grouping_merge_ms;
-    double                                             _grouping_prune_ms;
-    double                                             _grouping_continue_ms;
+    IAttributeContext&                  _attrContext;
+    const search::IDocumentMetaStore&   _metaStore;
+    SessionManager&                     _sessionMgr;
+    GroupingContext&                    _groupingContext;
+    std::unique_ptr<GroupingSession>    _groupingSession;
+    const std::string&                  _sortSpec;
+    size_t                              _offset;
+    size_t                              _hits;
+    bool                                _wasMerged;
+    std::atomic<bool>                   _sort_feature_failed;
+    bool                                _collect_grouping_details;
+    bool                                _grouping_session_cached;
+    search::grouping::GroupingPassTrace _grouping_trace;
+    const GroupingSource*               _first_grouping_source;
+    double                              _grouping_merge_ms;
+    uint32_t                            _grouping_merge_count;
+    double                              _grouping_prune_ms;
+    double                              _grouping_continue_ms;
 
 public:
     ResultProcessor(IAttributeContext& attrContext, const search::IDocumentMetaStore& metaStore,
@@ -147,9 +153,7 @@ public:
      * to be traced by the caller.
      **/
     void collect_grouping_details() noexcept { _collect_grouping_details = true; }
-    const std::vector<search::grouping::GroupingPassDetails>& grouping_details() const noexcept {
-        return _grouping_details;
-    }
+    const search::grouping::GroupingPassTrace& grouping_trace() const noexcept { return _grouping_trace; }
 
     /**
      * True if makeReply() stored the grouping session for later passes.
@@ -157,13 +161,14 @@ public:
     bool grouping_session_cached() const noexcept { return _grouping_session_cached; }
 
     /**
-     * Timing of the grouping work done when results from the match threads are combined: total
-     * time spent merging grouping results across threads (only collected together with grouping
-     * details), time spent pruning the merged result (only done when more than one thread was
-     * used) and time spent producing the result for this pass in makeReply(), including
-     * serialization.
+     * Timing of the grouping work done when results from the match threads are combined, only
+     * measured together with grouping details: total time spent in (and number of) merges of
+     * grouping results across threads, time spent pruning the merged result (both only done when
+     * more than one thread was used) and time spent producing the result for this pass in
+     * makeReply(), including serialization.
      **/
     double grouping_merge_ms() const noexcept { return _grouping_merge_ms; }
+    uint32_t grouping_merge_count() const noexcept { return _grouping_merge_count; }
     double grouping_prune_ms() const noexcept { return _grouping_prune_ms; }
     double grouping_continue_ms() const noexcept { return _grouping_continue_ms; }
     bool grouping_was_merged() const noexcept { return _wasMerged; }

@@ -513,8 +513,9 @@ TEST(GroupingTest, test_pass_details) {
     }
     session.getGroupingManager().groupInRelevanceOrder(7, hits);
 
-    std::vector<GroupingPassDetails> details;
-    session.continueExecution(initContext, &details);
+    GroupingPassTrace trace;
+    auto&             details = trace.groupings;
+    session.continueExecution(initContext, &trace);
     ASSERT_EQ(1u, details.size());
     {
         const auto& d = details[0];
@@ -544,7 +545,7 @@ TEST(GroupingTest, test_pass_details) {
     r2->setRoot(root);
     context2.addGrouping(r2);
     details.clear();
-    session.continueExecution(context2, &details);
+    session.continueExecution(context2, &trace);
     ASSERT_FALSE(session.finished());
     ASSERT_EQ(1u, details.size());
     {
@@ -563,7 +564,7 @@ TEST(GroupingTest, test_pass_details) {
     r3->setFirstLevel(2).setLastLevel(2);
     context3.addGrouping(r3);
     details.clear();
-    session.continueExecution(context3, &details);
+    session.continueExecution(context3, &trace);
     ASSERT_TRUE(session.finished());
     ASSERT_EQ(1u, details.size());
     {
@@ -576,16 +577,17 @@ TEST(GroupingTest, test_pass_details) {
         EXPECT_EQ(2u, d.levels[1].groups);
     }
 
-    EXPECT_GE(details[0].time_ms, 0.0);
-    details[0].time_ms = 0.0; // not deterministic
+    // Timing is not deterministic
+    details[0].time_ms = 0.0;
+    trace.serialize_ms = 0.0;
     vespalib::Slime slime;
-    GroupingPassDetails::as_slime(details, slime.setArray());
+    trace.as_slime(slime.setObject());
     vespalib::Slime expected;
     vespalib::slime::JsonFormat::decode(
-        R"([{"id":7,"first_level":2,"last_level":2,"hits":0,"from_session":true,"session_done":true,"time_ms":0.0,)"
-        R"("levels":[)"
+        R"({"serialize_ms":0.0,"groupings":[{"id":7,"first_level":2,"last_level":2,"top_n":-1,"summary_hits":0,)"
+        R"("from_session":true,"session_done":true,"time_ms":0.0,"levels":[)"
         R"({"max_groups":2,"precision":5,"groups":2,"session_groups":2},)"
-        R"({"max_groups":-1,"precision":-1,"groups":2,"session_groups":2}]}])",
+        R"({"max_groups":-1,"precision":-1,"groups":2,"session_groups":2}]}]})",
         expected);
     EXPECT_EQ(expected, slime) << slime.toString();
 }
@@ -615,9 +617,21 @@ TEST(GroupingTest, testEmptySessionId) {
     EXPECT_EQ(id, session.getSessionId());
     ASSERT_TRUE(!session.getGroupingManager().empty());
     ASSERT_TRUE(session.finished() && session.getSessionId().empty());
-    session.continueExecution(initContext);
+    GroupingPassTrace trace;
+    session.continueExecution(initContext, &trace);
     ASSERT_TRUE(session.finished());
     ASSERT_TRUE(r1->getRoot().getChildrenSize() > 0);
+
+    // Without a session id the grouping was aggregated directly into the request.
+    ASSERT_EQ(1u, trace.groupings.size());
+    const auto& d = trace.groupings[0];
+    EXPECT_FALSE(d.from_session);
+    EXPECT_EQ(1u, d.levels[0].groups);
+    vespalib::Slime slime;
+    d.as_slime(slime.setObject());
+    EXPECT_FALSE(slime.get()["session_done"].valid());
+    EXPECT_FALSE(slime.get()["time_ms"].valid());
+    EXPECT_FALSE(slime.get()["levels"][0]["session_groups"].valid());
 }
 
 TEST(GroupingTest, testSessionManager) {

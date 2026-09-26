@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <cinttypes>
+#include <optional>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.matcher");
@@ -100,33 +101,36 @@ bool willNeedRanking(const SearchRequest& request, const GroupingContext& groupi
             first_phase_rank_score_drop_limit.has_value());
 }
 
-vespalib::slime::Cursor& trace_grouping_details(Trace& trace, bool continued_session, bool session_cached,
-                                                const std::vector<GroupingPassDetails>& details) {
+vespalib::slime::Cursor& trace_grouping_pass(Trace& trace, bool continued_session, bool session_cached,
+                                             double continue_ms, const GroupingPassTrace& pass_trace) {
     auto& cursor = trace.createCursor("grouping");
     // continued_session: this pass was served from a grouping session kept since an earlier pass,
-    // without matching. session_cached: the session was kept for later passes.
+    // without matching. session_cached: the session was kept for later passes. continue_ms: time
+    // spent producing the result for this pass, including serialization (serialize_ms).
     cursor.setBool("continued_session", continued_session);
     cursor.setBool("session_cached", session_cached);
-    GroupingPassDetails::as_slime(details, cursor.setArray("groupings"));
+    cursor.setDouble("continue_ms", continue_ms);
+    pass_trace.as_slime(cursor);
     return cursor;
 }
 
 SearchReply::UP handleGroupingSession(SessionManager& sessionMgr, GroupingContext& groupingContext,
                                       GroupingSession::UP groupingSession, Trace& trace) {
-    auto                             reply = std::make_unique<SearchReply>();
-    std::vector<GroupingPassDetails> details;
-    const bool                       trace_details = trace.shouldTrace(6);
-    vespalib::Timer                  timer;
-    groupingSession->continueExecution(groupingContext, trace_details ? &details : nullptr);
-    const double continue_ms = vespalib::count_ns(timer.elapsed()) / 1000000.0;
+    auto                                 reply = std::make_unique<SearchReply>();
+    GroupingPassTrace                    pass_trace;
+    std::optional<vespalib::steady_time> start;
+    if (trace.shouldTrace(6)) {
+        start.emplace(vespalib::steady_clock::now());
+    }
+    groupingSession->continueExecution(groupingContext, start ? &pass_trace : nullptr);
+    const double continue_ms = start ? (vespalib::count_ns(vespalib::steady_clock::now() - *start) / 1000000.0) : 0.0;
     groupingContext.getResult().swap(reply->groupResult);
     const bool session_cached = !groupingSession->finished();
     if (session_cached) {
         sessionMgr.insert(std::move(groupingSession));
     }
-    if (trace_details) {
-        // Time spent producing the result for this pass, including serialization.
-        trace_grouping_details(trace, true, session_cached, details).setDouble("continue_ms", continue_ms);
+    if (start) {
+        trace_grouping_pass(trace, true, session_cached, continue_ms, pass_trace);
     }
     return reply;
 }
@@ -454,14 +458,15 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
             master.match(request.trace(), params, limitedThreadBundle, *mtf, rp, _distributionKey, numParts);
         my_stats = MatchMaster::getStats(std::move(master));
         if (trace_grouping) {
-            auto& cursor =
-                trace_grouping_details(request.trace(), false, rp.grouping_session_cached(), rp.grouping_details());
+            auto& cursor = trace_grouping_pass(request.trace(), false, rp.grouping_session_cached(),
+                                               rp.grouping_continue_ms(), rp.grouping_trace());
             // Per thread aggregation time is traced by each match thread (grouping_timing).
             if (rp.grouping_was_merged()) {
+                // merge_ms is summed over merges that may have run in parallel (merge_count).
                 cursor.setDouble("merge_ms", rp.grouping_merge_ms());
+                cursor.setLong("merge_count", rp.grouping_merge_count());
                 cursor.setDouble("prune_ms", rp.grouping_prune_ms());
             }
-            cursor.setDouble("continue_ms", rp.grouping_continue_ms());
         }
         my_stats.add_query_setup_stats(setup_stats);
         // Sorting on a rank feature whose values turned out to be unavailable cannot

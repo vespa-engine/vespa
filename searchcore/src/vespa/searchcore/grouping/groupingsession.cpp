@@ -7,6 +7,8 @@
 
 #include <vespa/searchlib/aggregation/predicates.h>
 
+#include <optional>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".groupingsession");
 
@@ -83,14 +85,21 @@ GroupingContext::UP GroupingSession::createThreadContext(size_t thread_id, const
     return ctx;
 }
 
-void GroupingSession::continueExecution(GroupingContext& groupingContext, std::vector<GroupingPassDetails>* details) {
+namespace {
+
+double elapsed_ms(vespalib::steady_time start) {
+    return vespalib::count_ns(vespalib::steady_clock::now() - start) / 1000000.0;
+}
+
+} // namespace
+
+void GroupingSession::continueExecution(GroupingContext& groupingContext, GroupingPassTrace* trace) {
     GroupingList& orig(groupingContext.getGroupingList());
     for (const auto& groupingPtr : orig) {
         Grouping&            origGrouping(*groupingPtr);
         GroupingPassDetails* d = nullptr;
-        vespalib::Timer      timer;
-        if (details != nullptr) {
-            d = &details->emplace_back();
+        if (trace != nullptr) {
+            d = &trace->groupings.emplace_back();
             d->id = origGrouping.getId();
             d->first_level = origGrouping.getFirstLevel();
             d->last_level = origGrouping.getLastLevel();
@@ -99,13 +108,18 @@ void GroupingSession::continueExecution(GroupingContext& groupingContext, std::v
         std::vector<size_t> sessionGroups;
         auto                found = _groupingMap.find(origGrouping.getId());
         if (found != _groupingMap.end()) {
-            Grouping& cachedGrouping(*found->second);
+            Grouping&                            cachedGrouping(*found->second);
+            std::optional<vespalib::steady_time> start;
             if (d != nullptr) {
                 d->from_session = true;
                 sessionGroups = GroupingPassDetails::count_groups_per_level(cachedGrouping);
+                start.emplace(vespalib::steady_clock::now());
             }
             cachedGrouping.prune(origGrouping);
             origGrouping.mergePartial(cachedGrouping);
+            if (start) {
+                d->time_ms = elapsed_ms(*start);
+            }
             // No use in keeping it for the next round
             if (origGrouping.getLastLevel() == cachedGrouping.getLastLevel()) {
                 _groupingMap.erase(origGrouping.getId());
@@ -115,10 +129,9 @@ void GroupingSession::continueExecution(GroupingContext& groupingContext, std::v
             }
         }
         if (d != nullptr) {
-            d->time_ms = vespalib::count_ns(timer.elapsed()) / 1000000.0;
             aggregation::CountFS4Hits counter;
             origGrouping.select(counter, counter);
-            d->hits = counter.getHitCount();
+            d->summary_hits = counter.getHitCount();
             auto        groups = GroupingPassDetails::count_groups_per_level(origGrouping);
             const auto& levels = origGrouping.getLevels();
             d->levels.reserve(levels.size());
@@ -129,7 +142,14 @@ void GroupingSession::continueExecution(GroupingContext& groupingContext, std::v
         }
         LOG(debug, "Continue execution result: %s", origGrouping.asString().c_str());
     }
+    std::optional<vespalib::steady_time> start;
+    if (trace != nullptr) {
+        start.emplace(vespalib::steady_clock::now());
+    }
     groupingContext.serialize();
+    if (start) {
+        trace->serialize_ms = elapsed_ms(*start);
+    }
 }
 
 } // namespace search::grouping

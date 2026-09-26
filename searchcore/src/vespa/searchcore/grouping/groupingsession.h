@@ -177,10 +177,11 @@ public:
      *
      * @param context The grouping context which contains information about the
      *                current pass.
-     * @param details If not null, details about each grouping in this pass are
-     *                appended here (used for query tracing).
+     * @param trace If not null, details about each grouping in this pass and the
+     *              time spent serializing the result are collected here (used for
+     *              query tracing). No timing is done when it is null.
      **/
-    void continueExecution(GroupingContext& context, std::vector<GroupingPassDetails>* details = nullptr);
+    void continueExecution(GroupingContext& context, GroupingPassTrace* trace = nullptr);
 
     /**
      * Checks whether or not the session is finished.

@@ -16,6 +16,7 @@
 #include <vespa/searchcore/proton/matching/viewresolver.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchlib/aggregation/grouping.h>
+#include <vespa/searchlib/aggregation/hitsaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
@@ -1381,9 +1382,22 @@ TEST_F(MatchingTest, require_that_grouping_details_are_traced) {
     MyWorld world(shared_state());
     world.basicSetup();
     world.basicResults();
+    // Keeps the 3 best hits (out of 9) at the root, and groups on a1 (9 distinct values).
     Grouping grequest;
-    grequest.setId(3).setFirstLevel(0).setLastLevel(0).addLevel(
-        std::move(GroupingLevel().setExpression(createAttr())));
+    grequest.setId(3)
+        .setFirstLevel(0)
+        .setLastLevel(0)
+        .setRoot(Group().addResult(HitsAggregationResult().setMaxHits(3).setExpression(
+            std::make_unique<ConstantNode>(std::make_unique<Int64ResultNode>(0)))))
+        .addLevel(std::move(GroupingLevel().setExpression(createAttr())));
+    auto expect_consistent_timing = [](const vespalib::slime::Inspector& entry) {
+        // Grouping time and serialization are both part of producing the result for the pass.
+        double parts = entry["serialize_ms"].asDouble();
+        for (size_t i = 0; i < entry["groupings"].entries(); ++i) {
+            parts += entry["groupings"][i]["time_ms"].asDouble();
+        }
+        EXPECT_GE(entry["continue_ms"].asDouble() + 1e-9, parts);
+    };
 
     // First pass matches and groups, and keeps the session for the next pass.
     SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
@@ -1403,8 +1417,12 @@ TEST_F(MatchingTest, require_that_grouping_details_are_traced) {
     EXPECT_FALSE(first["session_done"].asBool());
     EXPECT_EQ(9, first["levels"][0]["session_groups"].asLong());
     EXPECT_EQ(9, first["levels"][0]["groups"].asLong());
+    EXPECT_EQ(3, first["summary_hits"].asLong());
+    EXPECT_EQ(-1, first["top_n"].asLong());
     EXPECT_TRUE(first["time_ms"].valid());
     EXPECT_TRUE((*entry)["continue_ms"].valid());
+    EXPECT_TRUE((*entry)["serialize_ms"].valid());
+    expect_consistent_timing(*entry);
     EXPECT_FALSE((*entry)["merge_ms"].valid()); // single thread, nothing merged
     EXPECT_FALSE((*entry)["prune_ms"].valid());
     auto thread_timing = find_thread_trace_entries(*request, "grouping_timing");
@@ -1426,7 +1444,9 @@ TEST_F(MatchingTest, require_that_grouping_details_are_traced) {
     const auto& second = (*entry)["groupings"][0];
     EXPECT_TRUE(second["from_session"].asBool());
     EXPECT_TRUE(second["session_done"].asBool());
+    EXPECT_EQ(0, second["summary_hits"].asLong()); // root level hits were returned in the first pass
     EXPECT_TRUE((*entry)["continue_ms"].valid());
+    expect_consistent_timing(*entry);
     EXPECT_EQ(find_trace_entry(*request2, "query_execution"), nullptr);
 
     // Not traced below level 6.
@@ -1437,7 +1457,8 @@ TEST_F(MatchingTest, require_that_grouping_details_are_traced) {
     EXPECT_EQ(find_trace_entry(*request3, "grouping"), nullptr);
     EXPECT_TRUE(find_thread_trace_entries(*request3, "grouping_timing").empty());
 
-    // With several threads, merging and pruning of the merged result is timed as well.
+    // With several threads, merging and pruning of the merged result is timed as well. Without a
+    // session id the grouping is aggregated directly into the request, so it is not from_session.
     SearchRequest::SP request4 = MyWorld::createSimpleRequest("f1", "spread");
     request4->setTraceLevel(6, 1);
     set_group_spec(*request4, grequest);
@@ -1445,9 +1466,17 @@ TEST_F(MatchingTest, require_that_grouping_details_are_traced) {
     entry = find_trace_entry(*request4, "grouping");
     ASSERT_TRUE(entry != nullptr) << request4->trace().getSlime().toString();
     EXPECT_TRUE((*entry)["merge_ms"].valid());
+    EXPECT_EQ(3, (*entry)["merge_count"].asLong());
     EXPECT_TRUE((*entry)["prune_ms"].valid());
     EXPECT_TRUE((*entry)["continue_ms"].valid());
     EXPECT_EQ(4u, find_thread_trace_entries(*request4, "grouping_timing").size());
+    const auto& direct = (*entry)["groupings"][0];
+    EXPECT_FALSE(direct["from_session"].asBool());
+    EXPECT_FALSE(direct["session_done"].valid());
+    EXPECT_FALSE(direct["time_ms"].valid());
+    EXPECT_FALSE(direct["levels"][0]["session_groups"].valid());
+    EXPECT_EQ(9, direct["levels"][0]["groups"].asLong());
+    EXPECT_EQ(3, direct["summary_hits"].asLong());
 }
 
 TEST_F(MatchingTest, require_that_zero_hit_grouping_still_groups_with_feature_sort_spec) {

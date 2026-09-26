@@ -440,11 +440,18 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
     if (doom.hard_doom()) {
         return;
     }
+    // Aggregation into groupings is only timed for query tracing.
+    const bool time_grouping = hasGrouping && trace->shouldTrace(6);
     if (hasGrouping) {
-        vespalib::Timer                   timer;
+        std::optional<vespalib::steady_time> start;
+        if (time_grouping) {
+            start.emplace(vespalib::steady_clock::now());
+        }
         search::grouping::GroupingManager man(*context.grouping);
         man.groupUnordered(_distributionKey, hits, bits);
-        grouping_aggregate_time_s += vespalib::to_s(timer.elapsed());
+        if (start) {
+            grouping_aggregate_time_s += vespalib::to_s(vespalib::steady_clock::now() - *start);
+        }
     }
     if (doom.hard_doom()) {
         return;
@@ -459,11 +466,16 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
         return;
     }
     if (hasGrouping) {
-        vespalib::Timer                   timer;
+        std::optional<vespalib::steady_time> start;
+        if (time_grouping) {
+            start.emplace(vespalib::steady_clock::now());
+        }
         search::grouping::GroupingManager man(*context.grouping);
         man.groupInRelevanceOrder(_distributionKey, hits);
         man.convertToGlobalId(matchToolsFactory.metaStore());
-        grouping_aggregate_time_s += vespalib::to_s(timer.elapsed());
+        if (start) {
+            grouping_aggregate_time_s += vespalib::to_s(vespalib::steady_clock::now() - *start);
+        }
     }
     if (doom.hard_doom()) {
         return;
