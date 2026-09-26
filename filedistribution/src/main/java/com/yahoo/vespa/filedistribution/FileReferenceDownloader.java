@@ -62,7 +62,7 @@ public class FileReferenceDownloader {
     static final Duration defaultPermissionDeniedGracePeriod;
     static {
         var graceSeconds = System.getenv("VESPA_FILE_DOWNLOAD_PERMISSION_DENIED_GRACE_PERIOD_SECONDS");
-        defaultPermissionDeniedGracePeriod = Duration.ofSeconds(graceSeconds == null ? 10 : Long.parseLong(graceSeconds));
+        defaultPermissionDeniedGracePeriod = Duration.ofSeconds(graceSeconds == null ? 30 : Long.parseLong(graceSeconds));
     }
 
     // Undocumented on purpose, might change or be removed at any time
