@@ -16,8 +16,17 @@ jobs:
   verify-opensource-rpm-installable:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - almalinux-version: 8
+            crb-repo: powertools
+          - almalinux-version: 9
+            crb-repo: crb
+
     container:
-      image: almalinux:8
+      image: almalinux:${{ matrix.almalinux-version }}
 
     steps:
       - name: Install Vespa
@@ -25,6 +34,6 @@ jobs:
           dnf list llvm-libs --showduplicates
           dnf install -y dnf-plugins-core
           dnf -y config-manager --add-repo https://raw.githubusercontent.com/vespa-engine/vespa/master/dist/vespa-engine.repo
-          dnf config-manager --enable powertools
+          dnf config-manager --enable ${{ matrix.crb-repo }}
           dnf install -y epel-release
           dnf install -y vespa
