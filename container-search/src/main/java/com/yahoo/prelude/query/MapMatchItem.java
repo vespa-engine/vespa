@@ -23,6 +23,10 @@ public class MapMatchItem extends NonReducibleCompositeItem implements HasIndexI
 
     public MapMatchItem(String fieldName, Item keyItem, Item valueItem) {
         Validator.ensureNonEmpty("Field name", fieldName);
+        if ( ! (keyItem instanceof TermItem))
+            throw new IllegalArgumentException("The key of a map match must be a term, but got " + keyItem);
+        if ( ! (valueItem instanceof TermItem))
+            throw new IllegalArgumentException("The value of a map match must be a term, but got " + valueItem);
         this.fieldName = fieldName;
         super.addItem(keyItem);
         super.addItem(valueItem);

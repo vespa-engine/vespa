@@ -123,14 +123,17 @@ public class FastMapSearcher extends Searcher {
         if (lookup != null) {
             return lookup;
         }
-        return toSameElement(keyItem, valueItem, fieldName, fastMap);
+        return toSameElement(mapMatchItem, fieldName, fastMap);
     }
 
-    /** Returns the sameElement on the given field equivalent to a map lookup of the given key and value on its lookup field. */
-    private static SameElementItem toSameElement(Item keyItem, Item valueItem, String fieldName, Field.FastMapSearchFields fastMap) {
+    /** Returns the sameElement on the given field equivalent to the given map lookup on its lookup field. */
+    private static SameElementItem toSameElement(MapMatchItem mapMatchItem, String fieldName, Field.FastMapSearchFields fastMap) {
         SameElementItem sameElement = new SameElementItem(fieldName);
-        sameElement.addItem(withIndex(keyItem.clone(), fastMap.keyField()));
-        sameElement.addItem(withIndex(valueItem.clone(), fastMap.valueField()));
+        sameElement.addItem(withIndex(mapMatchItem.keyItem().clone(), fastMap.keyField()));
+        sameElement.addItem(withIndex(mapMatchItem.valueItem().clone(), fastMap.valueField()));
+        sameElement.setWeight(mapMatchItem.getWeight());
+        sameElement.setRanked(mapMatchItem.isRanked());
+        sameElement.setLabel(mapMatchItem.getLabel());
         return sameElement;
     }
 

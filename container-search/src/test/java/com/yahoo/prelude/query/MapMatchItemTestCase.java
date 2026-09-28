@@ -33,6 +33,20 @@ public class MapMatchItemTestCase {
     }
 
     @Test
+    void testKeyAndValueMustBeTerms() {
+        var phrase = new PhraseItem();
+        phrase.setIndexName("key");
+        phrase.addItem(new WordItem("foo", "key"));
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> new MapMatchItem("mymap", phrase, new IntItem("42", "value")));
+        assertEquals("The key of a map match must be a term, but got key:\"foo\"", exception.getMessage());
+        exception = assertThrows(IllegalArgumentException.class,
+                                 () -> new MapMatchItem("mymap", new WordItem("foo", "key"), new AndItem()));
+        assertEquals("The value of a map match must be a term, but got AND ", exception.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> new MapMatchItem("mymap", null, new IntItem("42", "value")));
+    }
+
+    @Test
     void testChildrenSearchFieldsInsideTheMap() {
         var mapMatch = mapMatch();
         assertEquals("mymap", mapMatch.getFieldName());

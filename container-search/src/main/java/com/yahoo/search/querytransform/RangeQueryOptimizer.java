@@ -49,7 +49,8 @@ public class RangeQueryOptimizer extends Searcher {
     private boolean optimize(Item item, IndexFacts.Session indexFacts) {
         if ( ! (item instanceof CompositeItem composite)) return false;
 
-        // already OK
+        // A map match has a fixed key and value which cannot be removed or added to,
+        // and its single value range has nothing to be consolidated with
         if (item instanceof MapMatchItem)
             return false;
 

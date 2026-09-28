@@ -256,12 +256,14 @@ public class BodyKeywordCompletion implements CompletionProvider {
 
     /**
      * Attaches hover documentation to each completion item, looked up by the item label.
+     * The documentation files are named as the labels in upper case, with dashes and spaces replaced by
+     * underscores, as in FAST_SEARCH_MAP_FIELD.md for 'fast-search map field'.
      * Returns the same list to allow use in field initializers.
      */
     private static List<CompletionItem> withDocumentation(List<CompletionItem> items) {
         Path schemaHoverPath = SchemaLanguageServer.getDefaultDocumentationPath().resolve("schema");
         for (CompletionItem item : items) {
-            String markdownKey = item.getLabel().toUpperCase(Locale.ROOT).replaceAll("-", "_");
+            String markdownKey = item.getLabel().toUpperCase(Locale.ROOT).replaceAll("[- ]", "_");
             Optional<Hover> hover = SchemaHover.getFileHoverInformation(schemaHoverPath, markdownKey, new Range());
             if (hover.isPresent() && hover.get().getContents().isRight()) {
                 item.setDocumentation(hover.get().getContents().getRight());
@@ -280,18 +282,18 @@ public class BodyKeywordCompletion implements CompletionProvider {
     private static final String FAST_SEARCH_MAP_FIELD = "fast-search map field";
 
     /** Snippet for the fast-search map field statement, only offered in map fields where fast map search is allowed. */
-    private static final List<CompletionItem> mapFieldSnippets = List.of(
+    private static final List<CompletionItem> mapFieldSnippets = withDocumentation(List.of(
         CompletionUtils.constructSnippet(FAST_SEARCH_MAP_FIELD, FAST_SEARCH_MAP_FIELD + ": $0", FAST_SEARCH_MAP_FIELD + ":")
-    );
+    ));
 
     /**
      * Snippet for the fast-search map field statement in an array of struct field, where the struct fields
      * holding the key and the value must be given in its block.
      */
-    private static final List<CompletionItem> arrayOfStructMapFieldSnippets = List.of(
+    private static final List<CompletionItem> arrayOfStructMapFieldSnippets = withDocumentation(List.of(
         CompletionUtils.constructSnippet(FAST_SEARCH_MAP_FIELD, FAST_SEARCH_MAP_FIELD + ": $1 {\n\tkey: $2\n\tvalue: $3\n}",
-                                         FAST_SEARCH_MAP_FIELD + ": {}")
-    );
+                                         FAST_SEARCH_MAP_FIELD + ": name {}")
+    ));
 
     /** Items inside the fast-search map field block of an array of struct field. */
     private static final List<CompletionItem> arrayOfStructMapBodySnippets = List.of(

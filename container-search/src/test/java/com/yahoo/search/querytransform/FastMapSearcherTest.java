@@ -185,6 +185,19 @@ public class FastMapSearcherTest {
     }
 
     @Test
+    public void requireFallbackKeepsTheSettingsOfTheMapLookup() {
+        var mapMatch = mapMatch("intvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value"));
+        mapMatch.setWeight(150);
+        mapMatch.setRanked(false);
+        mapMatch.setLabel("my_lookup");
+        var sameElement = (SameElementItem) rewritten(mapMatch);
+        assertEquals(150, sameElement.getWeight());
+        assertFalse(sameElement.isRanked());
+        assertEquals("my_lookup", sameElement.getLabel());
+        assertEquals("intvaluemap:{key:foo value:bar}!150", sameElement.toString());
+    }
+
+    @Test
     public void requireFallbackWhenTermsDoNotMatchOneEntry() {
         // Not parseable as an int for an int-valued map
         assertFallback(mapMatch("intvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value")));
