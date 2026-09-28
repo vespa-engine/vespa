@@ -33,17 +33,16 @@ public class MapMatchItemTestCase {
     }
 
     @Test
-    void testKeyAndValueMustBeTerms() {
+    void testKeyAndValueMayBeCompositeItems() {
         var phrase = new PhraseItem();
-        phrase.setIndexName("key");
-        phrase.addItem(new WordItem("foo", "key"));
-        var exception = assertThrows(IllegalArgumentException.class,
-                                     () -> new MapMatchItem("mymap", phrase, new IntItem("42", "value")));
-        assertEquals("The key of a map match must be a term, but got key:\"foo\"", exception.getMessage());
-        exception = assertThrows(IllegalArgumentException.class,
-                                 () -> new MapMatchItem("mymap", new WordItem("foo", "key"), new AndItem()));
-        assertEquals("The value of a map match must be a term, but got AND ", exception.getMessage());
-        assertThrows(IllegalArgumentException.class, () -> new MapMatchItem("mymap", null, new IntItem("42", "value")));
+        phrase.setIndexName("value");
+        phrase.addItem(new WordItem("new", "value"));
+        phrase.addItem(new WordItem("york", "value"));
+        var mapMatch = new MapMatchItem("mymap", new WordItem("foo", "key"), phrase);
+        assertSame(phrase, mapMatch.valueItem());
+        assertEquals("mymap.value", phrase.getFieldName());
+        assertThrows(NullPointerException.class, () -> new MapMatchItem("mymap", null, new IntItem("42", "value")));
+        assertThrows(NullPointerException.class, () -> new MapMatchItem("mymap", new WordItem("foo", "key"), null));
     }
 
     @Test
