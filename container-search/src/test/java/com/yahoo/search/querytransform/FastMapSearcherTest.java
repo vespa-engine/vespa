@@ -132,6 +132,35 @@ public class FastMapSearcherTest {
                      result.getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    /**
+     * A string key or value has the matching settings of the lookup attribute in the index info,
+     * so that the parser keeps it as one term, as it is matched as a whole.
+     */
+    @Test
+    public void requireMultiwordAndPunctuatedKeysAndValuesKeptAsOneTerm() {
+        var sd = new SearchDefinition("test");
+        for (String map : List.of("mymap", "intvaluemap")) {
+            sd.addCommand(map, "multivalue");
+            sd.addCommand(map + ".lookup", "multivalue");
+            for (String command : List.of("lowercase", "multivalue", "attribute", "fast-search", "string", "word", "type string"))
+                sd.addCommand(map + ".lookup.key", command);
+        }
+        for (String command : List.of("lowercase", "multivalue", "attribute", "fast-search", "string", "word", "type string"))
+            sd.addCommand("mymap.lookup.value", command);
+        for (String command : List.of("multivalue", "numerical", "integer", "type int"))
+            sd.addCommand("intvaluemap.lookup.value", command);
+        var indexFacts = new IndexFacts(new IndexModel(sd));
+
+        assertEquals("mymap$lookup:new york" + FastMapSearch.keyValueSeparator() + "big apple",
+                     searchYqlTree("mymap.lookup{\"new york\"} contains \"big apple\"", indexFacts));
+        assertEquals("mymap$lookup:foo!" + FastMapSearch.keyValueSeparator() + "bar!",
+                     searchYqlTree("mymap.lookup{\"foo!\"} contains \"bar!\"", indexFacts));
+        assertEquals("intvaluemap$lookup:" + FastMapSearch.toKeyValue8Term("new york", 42),
+                     searchYqlTree("intvaluemap.lookup{\"new york\"} = 42", indexFacts));
+        assertEquals("intvaluemap$lookup:" + FastMapSearch.toKeyValue8Term("foo!", 42),
+                     searchYqlTree("intvaluemap.lookup{\"foo!\"} = 42", indexFacts));
+    }
+
     @Test
     public void requireMapLookupRewrittenForFastArrayOfStructField() {
         // A map lookup has a key and a value, whatever the struct fields holding them are named
@@ -574,6 +603,12 @@ public class FastMapSearcherTest {
         Query query = new Query("?yql=" + URLEncoder.encode("select * from sources * where " + where, StandardCharsets.UTF_8));
         var context = Execution.Context.createContextStub(null, indexFacts, execution().context().schemaInfo(), null);
         return new Execution(new Chain<>(new MinimalQueryInserter(), new FastMapSearcher()), context).search(query);
+    }
+
+    private static String searchYqlTree(String where, IndexFacts indexFacts) {
+        var result = searchYql(where, indexFacts);
+        assertNull(result.hits().getError(), where);
+        return result.getQuery().getModel().getQueryTree().getRoot().toString();
     }
 
     /** Returns the query tree after parsing the given YQL where clause and running the searcher. */

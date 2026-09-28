@@ -258,27 +258,40 @@ public class MapFastSearchTestCase {
         assertEquals(IlscriptsConfig.Ilscript.Complexfield.Why.FAST_MAP_SEARCH, complexFields.get(0).why());
     }
 
-    /** The lookup field and its key and value are given the index settings of the field and its key and value. */
+    /**
+     * The lookup field is given the index settings of the field. A string key or value is given the matching settings
+     * of the lookup attribute, so that it is kept as one term, and a numeric value the settings of its struct field.
+     */
     @Test
     void requireLookupFieldsAreListedInIndexInfo() throws ParseException {
         String fields = joinLines("field fastmap type map<string, int> {",
                                   "  fast-search map field: lookup",
-                                  "  struct-field key { indexing: attribute }",
                                   "  struct-field value { indexing: attribute }",
                                   "}",
+                                  "field stringmap type map<string, string> { fast-search map field: lookup }",
                                   namedFieldWithLookup("fastarray", "array<entry>", "key: mykey", "value: myvalue"));
         var indexInfo = indexInfoOf(build(getSdWithEntry("string", "long", fields), true));
 
-        assertFalse(commandsOf(indexInfo, "fastmap.key").isEmpty());
         assertEquals(commandsOf(indexInfo, "fastmap"), commandsOf(indexInfo, "fastmap.lookup"));
-        assertEquals(commandsOf(indexInfo, "fastmap.key"), commandsOf(indexInfo, "fastmap.lookup.key"));
+        assertEquals(lookupAttributeCommands(indexInfo, "fastmap$lookup"), commandsOf(indexInfo, "fastmap.lookup.key"));
+        assertFalse(commandsOf(indexInfo, "fastmap.value").isEmpty());
         assertEquals(commandsOf(indexInfo, "fastmap.value"), commandsOf(indexInfo, "fastmap.lookup.value"));
-        assertTrue(commandsOf(indexInfo, "fastmap.lookup.key").contains("lowercase"));
 
-        assertFalse(commandsOf(indexInfo, "fastarray.mykey").isEmpty());
+        assertEquals(lookupAttributeCommands(indexInfo, "stringmap$lookup"), commandsOf(indexInfo, "stringmap.lookup.key"));
+        assertEquals(lookupAttributeCommands(indexInfo, "stringmap$lookup"), commandsOf(indexInfo, "stringmap.lookup.value"));
+
         assertEquals(commandsOf(indexInfo, "fastarray"), commandsOf(indexInfo, "fastarray.lookup"));
-        assertEquals(commandsOf(indexInfo, "fastarray.mykey"), commandsOf(indexInfo, "fastarray.lookup.key"));
+        assertEquals(lookupAttributeCommands(indexInfo, "fastarray$lookup"), commandsOf(indexInfo, "fastarray.lookup.key"));
         assertEquals(commandsOf(indexInfo, "fastarray.myvalue"), commandsOf(indexInfo, "fastarray.lookup.value"));
+    }
+
+    /** Returns the commands of the given lookup attribute, with its type replaced by the type of a string key or value. */
+    private static List<String> lookupAttributeCommands(IndexInfoConfig indexInfo, String lookupAttribute) {
+        var commands = new ArrayList<>(commandsOf(indexInfo, lookupAttribute));
+        assertTrue(commands.containsAll(List.of("attribute", "word", "type Array<string>")), commands.toString());
+        commands.remove("type Array<string>");
+        commands.add("type string");
+        return commands;
     }
 
     @Test
