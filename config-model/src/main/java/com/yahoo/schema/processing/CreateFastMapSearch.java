@@ -32,7 +32,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 
 /**
- * Adds a "fieldName$keyvalue" attribute to maps, and arrays of struct used as maps, with fast-search enabled.
+ * Adds a "fieldName$lookupName" attribute to maps, and arrays of struct used as maps, with a 'fast-search map field'.
  *
  * The attribute holds one string per map entry or array element, on the form key + separator + value,
  * so that a key-value pair can be matched with a single lexical lookup.
@@ -64,7 +64,7 @@ public class CreateFastMapSearch extends Processor {
                 continue;
             }
 
-            String fieldName = FastMapSearch.toKeyValueFieldName(field.getName());
+            String fieldName = FastMapSearch.toLookupFieldName(field.getName(), field.getFastMapSearch().lookupName());
             // Inheritance: there is a parent that has already made the attribute.
             var existing = schema.getConcreteField(fieldName);
             if (existing != null && existing.isInternalField()) {

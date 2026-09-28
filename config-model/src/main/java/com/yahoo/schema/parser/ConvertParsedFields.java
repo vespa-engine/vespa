@@ -254,37 +254,44 @@ public class ConvertParsedFields {
         if (parsed.hasNormal()) {
             field.getRanking().setNormal(true);
         }
-        if (parsed.getFastMapSearch() || parsed.getFastMapKeyField() != null || parsed.getFastMapValueField() != null) {
+        if (parsed.getFastMapSearchName() != null) {
             convertFastMapSearch(schema, field, parsed);
         }
     }
 
     private void convertFastMapSearch(Schema schema, SDField field, ParsedField parsed) {
-        if ( ! parsed.getFastMapSearch()) {
-            throw fastMapSearchError(schema, field, "'key' and 'value' in 'map' are only supported together with 'fast-search'.");
-        }
+        String lookupName = parsed.getFastMapSearchName();
         FastMapSearchFields fastMapFields;
         if (field.getDataType() instanceof MapDataType) {
             validateMapFieldName(schema, field, parsed.getFastMapKeyField(), FastMapSearchFields.MAP_KEY);
             validateMapFieldName(schema, field, parsed.getFastMapValueField(), FastMapSearchFields.MAP_VALUE);
-            fastMapFields = FastMapSearchFields.forMap(field.getDataType());
+            fastMapFields = FastMapSearchFields.forMap(field.getDataType(), lookupName);
         } else if (FastMapSearchFields.isArrayOfStruct(field.getDataType())) {
             if (parsed.getFastMapKeyField() == null || parsed.getFastMapValueField() == null) {
-                throw fastMapSearchError(schema, field, "'map: fast-search' on an array of struct requires " +
-                                                        "'key' and 'value' in 'map' to name the struct fields to use.");
+                throw fastMapSearchError(schema, field, "'fast-search map field' on an array of struct requires " +
+                                                        "'key' and 'value' in its block to name the struct fields to use.");
             }
             if (parsed.getFastMapKeyField().equals(parsed.getFastMapValueField())) {
-                throw fastMapSearchError(schema, field, "'map: fast-search' requires 'key' and 'value' to be different struct fields.");
+                throw fastMapSearchError(schema, field, "'fast-search map field' requires 'key' and 'value' to be different struct fields.");
             }
-            fastMapFields = FastMapSearchFields.forArrayOfStruct(field.getDataType(), parsed.getFastMapKeyField(), parsed.getFastMapValueField());
+            fastMapFields = FastMapSearchFields.forArrayOfStruct(field.getDataType(), lookupName, parsed.getFastMapKeyField(), parsed.getFastMapValueField());
         } else {
-            throw fastMapSearchError(schema, field, "'map: fast-search' requires a map or an array of struct field, " +
+            throw fastMapSearchError(schema, field, "'fast-search map field' requires a map or an array of struct field, " +
                                                     "but the type is " + field.getDataType().getName() + ".");
+        }
+        if (lookupName.equals(FastMapSearchFields.MAP_KEY) || lookupName.equals(FastMapSearchFields.MAP_VALUE)) {
+            throw fastMapSearchError(schema, field, "'fast-search map field' can not be named '" + lookupName +
+                                                    "', as 'key' and 'value' name the key and value in a lookup.");
+        }
+        if (fastMapFields.hasSubField(lookupName)) {
+            throw fastMapSearchError(schema, field, "'fast-search map field' can not be named '" + lookupName +
+                                                    "', which is the name of a field in the " +
+                                                    (fastMapFields.isMap() ? "map" : "struct") + ".");
         }
         validateFastMapSubtype(schema, field, fastMapFields.keyType(), fastMapFields.keyField(), "key", false);
         validateFastMapSubtype(schema, field, fastMapFields.valueType(), fastMapFields.valueField(), "value", true);
         if (!properties.featureFlags().fastMapSearch()) {
-            throw fastMapSearchError(schema, field, "'map: fast-search' is an unfinished feature that " +
+            throw fastMapSearchError(schema, field, "'fast-search map field' is an unfinished feature that " +
                                                     "will not be enabled yet. Please remove this property from the field.");
         }
         field.setFastMapSearch(fastMapFields);
@@ -292,13 +299,13 @@ public class ConvertParsedFields {
 
     private void validateFastMapSubtype(Schema schema, SDField field, DataType type, String subField, String keyOrValue, boolean allowFloatingPoint) {
         if (type == null) {
-            throw fastMapSearchError(schema, field, "'map: fast-search' requires " + keyOrValue + " '" + subField +
+            throw fastMapSearchError(schema, field, "'fast-search map field' requires " + keyOrValue + " '" + subField +
                                                     "' to be a field in the struct.");
         }
         if (!isSupportedFastMapKeyValueType(type, allowFloatingPoint)) {
             throw new IllegalArgumentException(
                     String.format(
-                            "For schema '%s', field '%s': 'map: fast-search' requires %s to be of type %s, but the type is %s.",
+                            "For schema '%s', field '%s': 'fast-search map field' requires %s to be of type %s, but the type is %s.",
                             schema.getName(),
                             field.getName(),
                             subField,
@@ -317,7 +324,7 @@ public class ConvertParsedFields {
     /** A map always has struct fields named key and value, so naming them is allowed but can not change them. */
     private void validateMapFieldName(Schema schema, SDField field, String given, String required) {
         if (given != null && ! given.equals(required)) {
-            throw fastMapSearchError(schema, field, "'map: fast-search' on a map requires " + required + " to be '" +
+            throw fastMapSearchError(schema, field, "'fast-search map field' on a map requires " + required + " to be '" +
                                                     required + "', but got '" + given + "'.");
         }
     }

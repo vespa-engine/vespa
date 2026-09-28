@@ -29,10 +29,12 @@ public class SchemaInfoTest {
         schemaConfig.field(new SchemaInfoConfig.Schema.Field.Builder().name("fastmap").type("map<string,int>")
                                                                       .index(false).attribute(false).bitPacked(false)
                                                                       .fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
+                                                                                                   .lookupName("maplookup")
                                                                                                    .keyType("string").valueType("int")));
         schemaConfig.field(new SchemaInfoConfig.Schema.Field.Builder().name("fastarray").type("array<entry>")
                                                                       .index(false).attribute(false).bitPacked(false)
                                                                       .fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
+                                                                                                   .lookupName("arraylookup")
                                                                                                    .keyField("mykey").keyType("string")
                                                                                                    .valueField("myvalue").valueType("long")));
         var schema = SchemaInfoConfigurer.toSchemas(new SchemaInfoConfig.Builder().schema(schemaConfig).build()).get(0);
@@ -41,6 +43,7 @@ public class SchemaInfoTest {
         assertTrue(schema.fields().get("plain").fastMapSearch().isEmpty());
 
         var fastMap = schema.fields().get("fastmap").fastMapSearch().orElseThrow();
+        assertEquals("maplookup", fastMap.lookupName());
         assertEquals("key", fastMap.keyField());
         assertEquals(Field.Type.Kind.STRING, fastMap.keyType().kind());
         assertEquals("value", fastMap.valueField());
@@ -48,13 +51,14 @@ public class SchemaInfoTest {
 
         assertTrue(schema.fields().get("fastarray").hasFastMapSearch());
         var fastArray = schema.fields().get("fastarray").fastMapSearch().orElseThrow();
+        assertEquals("arraylookup", fastArray.lookupName());
         assertEquals("mykey", fastArray.keyField());
         assertEquals(Field.Type.Kind.STRING, fastArray.keyType().kind());
         assertEquals("myvalue", fastArray.valueField());
         assertEquals(Field.Type.Kind.LONG, fastArray.valueType().kind());
-        assertEquals(new Field.FastMapSearchFields("mykey", Field.Type.from("string"), "myvalue", Field.Type.from("long")),
+        assertEquals(new Field.FastMapSearchFields("arraylookup", "mykey", Field.Type.from("string"), "myvalue", Field.Type.from("long")),
                      fastArray);
-        assertEquals(Field.FastMapSearchFields.of((Field.MapFieldType)Field.Type.from("map<string,int>")), fastMap);
+        assertEquals(Field.FastMapSearchFields.of("maplookup", (Field.MapFieldType)Field.Type.from("map<string,int>")), fastMap);
     }
 
     @Test

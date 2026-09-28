@@ -17,7 +17,6 @@ import ai.vespa.schemals.parser.ast.fieldRankFilter;
 import ai.vespa.schemals.parser.ast.fieldStemming;
 import ai.vespa.schemals.parser.ast.hnswIndex;
 import ai.vespa.schemals.parser.ast.indexInsideField;
-import ai.vespa.schemals.parser.ast.mapElm;
 import ai.vespa.schemals.parser.ast.matchSettingsElm;
 import ai.vespa.schemals.parser.ast.normalizingElm;
 import ai.vespa.schemals.parser.ast.onnxModelItem;
@@ -135,10 +134,6 @@ public class FixedKeywordBodies {
     public static FixedKeywordBody WEIGHTEDSET = new FixedKeywordBody("weightedset", TokenType.WEIGHTEDSET, weightedsetElm.class, List.of(
         CompletionUtils.constructBasic("create-if-nonexistent"),
         CompletionUtils.constructBasic("remove-if-zero")
-    ));
-
-    public static FixedKeywordBody MAP = new FixedKeywordBody("map", TokenType.MAP, mapElm.class, List.of(
-        CompletionUtils.constructBasic("fast-search")
     ));
 
     public static FixedKeywordBody HNSW = new FixedKeywordBody("hnsw", TokenType.HNSW, hnswIndex.class, List.of(

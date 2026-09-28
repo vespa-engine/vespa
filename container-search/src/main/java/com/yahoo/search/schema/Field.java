@@ -228,21 +228,22 @@ public class Field implements FieldInfo {
     }
 
     /**
-     * The struct fields holding the key and the value of a field with fast map search, which is
-     * either a map, or an array of a struct acting as a map entry.
+     * The name of the lookup field, and the struct fields holding the key and the value, of a field with
+     * fast map search, which is either a map, or an array of a struct acting as a map entry.
      */
-    public record FastMapSearchFields(String keyField, Type keyType, String valueField, Type valueType) {
+    public record FastMapSearchFields(String lookupName, String keyField, Type keyType, String valueField, Type valueType) {
 
         public FastMapSearchFields {
+            Objects.requireNonNull(lookupName);
             Objects.requireNonNull(keyField);
             Objects.requireNonNull(keyType);
             Objects.requireNonNull(valueField);
             Objects.requireNonNull(valueType);
         }
 
-        /** Returns the fast map search fields of a map, which are always named key and value. */
-        public static FastMapSearchFields of(MapFieldType mapType) {
-            return new FastMapSearchFields("key", mapType.keyType(), "value", mapType.valueType());
+        /** Returns the fast map search fields of a map, whose key and value are always named key and value. */
+        public static FastMapSearchFields of(String lookupName, MapFieldType mapType) {
+            return new FastMapSearchFields(lookupName, "key", mapType.keyType(), "value", mapType.valueType());
         }
 
     }
@@ -282,12 +283,15 @@ public class Field implements FieldInfo {
             return this;
         }
 
-        /** Enables or disables fast map search on this field, which must be a map if enabled. */
-        public Builder setFastMapSearch(boolean fastMapSearch) {
-            if ( ! fastMapSearch) {
+        /**
+         * Enables fast map search with the given lookup field name on this field, which must be a map,
+         * or disables it if the name is null.
+         */
+        public Builder setFastMapSearch(String lookupName) {
+            if (lookupName == null) {
                 this.fastMapSearch = null;
             } else if (type instanceof MapFieldType mapType) {
-                this.fastMapSearch = FastMapSearchFields.of(mapType);
+                this.fastMapSearch = FastMapSearchFields.of(lookupName, mapType);
             } else {
                 throw new IllegalArgumentException("Fast map search on " + name + " requires the key and value " +
                                                    "fields, since it is not a map but " + type);

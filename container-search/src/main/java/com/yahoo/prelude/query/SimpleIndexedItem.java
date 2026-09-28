@@ -28,14 +28,11 @@ public abstract class SimpleIndexedItem extends SimpleTaggableItem implements In
 
     /**
      * The *full* name of the field searched by this,
-     * which is prefixed by the parent name and a dot if this is inside a SameElement,
+     * which is prefixed by the parent name and a dot if this is inside a SameElement or MapMatch,
      * and the same as getIndexName otherwise.
      */
     public String getFieldName() {
-        if (getParent() != null && getParent() instanceof SameElementItem sameElementParent)
-            return sameElementParent.getFieldName() + "." + getIndexName();
-        else
-            return getIndexName();
+        return ElementFieldNames.fieldName(getParent(), getIndexName());
     }
 
     // encode index bytes

@@ -130,6 +130,7 @@ public final class SchemaInfo extends Derived {
         var fastMapFields = field.getFastMapSearch();
         if (fastMapFields != null) {
             fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
+                                                     .lookupName(fastMapFields.lookupName())
                                                      .keyField(fastMapFields.keyField())
                                                      .keyType(toTypeSpec(fastMapFields.keyType()))
                                                      .valueField(fastMapFields.valueField())

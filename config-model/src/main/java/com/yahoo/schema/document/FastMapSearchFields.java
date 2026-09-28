@@ -7,24 +7,24 @@ import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructuredDataType;
 
 /**
- * The type of a field with fast map search, and the names of the struct fields holding its key and value.
- * The field is either a map, or an array of a struct acting as a map entry.
+ * The type of a field with fast map search, the name of its lookup field, and the names of the struct fields
+ * holding its key and value. The field is either a map, or an array of a struct acting as a map entry.
  *
  * @author arnej
  */
-public record FastMapSearchFields(DataType fieldType, String keyField, String valueField) {
+public record FastMapSearchFields(DataType fieldType, String lookupName, String keyField, String valueField) {
 
     public static final String MAP_KEY = "key";
     public static final String MAP_VALUE = "value";
 
-    /** Returns the key and value fields of a map field, which are always named key and value. */
-    public static FastMapSearchFields forMap(DataType fieldType) {
-        return new FastMapSearchFields(fieldType, MAP_KEY, MAP_VALUE);
+    /** Returns the fast map search fields of a map field, whose key and value are always named key and value. */
+    public static FastMapSearchFields forMap(DataType fieldType, String lookupName) {
+        return new FastMapSearchFields(fieldType, lookupName, MAP_KEY, MAP_VALUE);
     }
 
-    /** Returns the key and value fields of an array of struct field, named as given. */
-    public static FastMapSearchFields forArrayOfStruct(DataType fieldType, String keyField, String valueField) {
-        return new FastMapSearchFields(fieldType, keyField, valueField);
+    /** Returns the fast map search fields of an array of struct field, with key and value named as given. */
+    public static FastMapSearchFields forArrayOfStruct(DataType fieldType, String lookupName, String keyField, String valueField) {
+        return new FastMapSearchFields(fieldType, lookupName, keyField, valueField);
     }
 
     /** Returns whether this is the fields of a map, rather than an array of struct. */
@@ -45,6 +45,11 @@ public record FastMapSearchFields(DataType fieldType, String keyField, String va
     /** Returns the type of the value, or null if there is no such value. */
     public DataType valueType() {
         return subType(valueField);
+    }
+
+    /** Returns whether the field has a struct field, or for a map a key or value, with the given name. */
+    public boolean hasSubField(String name) {
+        return subType(name) != null;
     }
 
     /** Returns whether a field of the given type is an array of struct, rather than a map. */

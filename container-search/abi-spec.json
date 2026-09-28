@@ -952,19 +952,40 @@
     ]
   },
   "com.yahoo.prelude.query.MapMatchItem" : {
-    "superClass" : "com.yahoo.prelude.query.SameElementItem",
-    "interfaces" : [ ],
+    "superClass" : "com.yahoo.prelude.query.NonReducibleCompositeItem",
+    "interfaces" : [
+      "com.yahoo.prelude.query.HasIndexItem"
+    ],
     "attributes" : [
       "public"
     ],
     "methods" : [
       "public void <init>(java.lang.String, com.yahoo.prelude.query.Item, com.yahoo.prelude.query.Item)",
-      "protected void adding(com.yahoo.prelude.query.Item)"
+      "public com.yahoo.prelude.query.Item keyItem()",
+      "public com.yahoo.prelude.query.Item valueItem()",
+      "public java.lang.String getFieldName()",
+      "public java.lang.String getIndexName()",
+      "public void setIndexName(java.lang.String)",
+      "public int getNumWords()",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public void addItem(com.yahoo.prelude.query.Item)",
+      "public void addItem(int, com.yahoo.prelude.query.Item)",
+      "public com.yahoo.prelude.query.Item removeItem(int)",
+      "public boolean removeItem(com.yahoo.prelude.query.Item)",
+      "public java.util.ListIterator getItemIterator()",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "protected void appendHeadingString(java.lang.StringBuilder)",
+      "protected void appendBodyString(java.lang.StringBuilder)",
+      "public com.yahoo.prelude.query.MapMatchItem clone()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
+      "public bridge synthetic com.yahoo.prelude.query.CompositeItem clone()",
+      "public bridge synthetic com.yahoo.prelude.query.Item clone()",
+      "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields" : [
-      "public final com.yahoo.prelude.query.Item keyItem",
-      "public final com.yahoo.prelude.query.Item valueItem"
-    ]
+    "fields" : [ ]
   },
   "com.yahoo.prelude.query.MarkerWordItem" : {
     "superClass" : "com.yahoo.prelude.query.WordItem",
@@ -9247,7 +9268,7 @@
       "public com.yahoo.search.schema.Field$Builder setAttribute(boolean)",
       "public com.yahoo.search.schema.Field$Builder setIndex(boolean)",
       "public com.yahoo.search.schema.Field$Builder setBitPacked(boolean)",
-      "public com.yahoo.search.schema.Field$Builder setFastMapSearch(boolean)",
+      "public com.yahoo.search.schema.Field$Builder setFastMapSearch(java.lang.String)",
       "public com.yahoo.search.schema.Field$Builder setFastMapSearch(com.yahoo.search.schema.Field$FastMapSearchFields)",
       "public com.yahoo.search.schema.Field build()"
     ],
@@ -9262,11 +9283,12 @@
       "record"
     ],
     "methods" : [
-      "public void <init>(java.lang.String, com.yahoo.search.schema.Field$Type, java.lang.String, com.yahoo.search.schema.Field$Type)",
-      "public static com.yahoo.search.schema.Field$FastMapSearchFields of(com.yahoo.search.schema.Field$MapFieldType)",
+      "public void <init>(java.lang.String, java.lang.String, com.yahoo.search.schema.Field$Type, java.lang.String, com.yahoo.search.schema.Field$Type)",
+      "public static com.yahoo.search.schema.Field$FastMapSearchFields of(java.lang.String, com.yahoo.search.schema.Field$MapFieldType)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
+      "public java.lang.String lookupName()",
       "public java.lang.String keyField()",
       "public com.yahoo.search.schema.Field$Type keyType()",
       "public java.lang.String valueField()",

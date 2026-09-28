@@ -102,7 +102,7 @@ class DocumentScript {
         if (FieldPathUpdateHelper.isFieldValues(fieldUpdate)) {
             return;
         }
-        throw new InvalidInputException("Field '" + field.getName() + "' has 'map: fast-search', which does not " +
+        throw new InvalidInputException("Field '" + field.getName() + "' has 'fast-search map field', which does not " +
                                         "support field path updates into the field. Assign the whole field instead.");
     }
 
@@ -122,7 +122,7 @@ class DocumentScript {
         }
         for (ValueUpdate<?> valueUpdate : fieldUpdate.getValueUpdates()) {
             if (valueUpdate instanceof MapValueUpdate || valueUpdate instanceof RemoveValueUpdate) {
-                throw new InvalidInputException("Field '" + field.getName() + "' has 'map: fast-search', which does " +
+                throw new InvalidInputException("Field '" + field.getName() + "' has 'fast-search map field', which does " +
                                                 "not support updating or removing single array elements. " +
                                                 "Assign the whole field instead.");
             }

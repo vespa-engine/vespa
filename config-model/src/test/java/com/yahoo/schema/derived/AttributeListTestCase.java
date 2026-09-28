@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.derived;
 
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.AbstractSchemaTestCase;
@@ -118,12 +119,16 @@ public class AttributeListTestCase extends AbstractSchemaTestCase {
 
     @Test
     void fields_in_map_of_primitive_are_derived_into_array_attributes() throws IOException, ParseException {
-        Schema schema = ApplicationBuilder.buildFromFile("src/test/derived/map_attribute/test.sd");
+        var b = new ApplicationBuilder(new TestProperties().fastMapSearch(true));
+        b.addSchemaFile("src/test/derived/map_attribute/test.sd");
+        b.build(true);
+        Schema schema = b.getSchema();
         Iterator<Attribute> attributes = new AttributeFields(schema).attributeIterator();
 
         assertAttribute("str_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());
         assertAttribute("str_map.value", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, false, attributes.next());
         assertAttribute("int_map.key", Attribute.Type.INTEGER, Attribute.CollectionType.ARRAY, false, attributes.next());
+        assertAttribute("fast_map$fast_lookup", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());
         assertFalse(attributes.hasNext());
     }
 

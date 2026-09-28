@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Tests the synthetic key-value attribute created for map fields with 'map: fast-search'.
+ * Tests the synthetic key-value attribute created for map fields with 'fast-search map field'.
  *
  * @author johsol
  */
@@ -33,7 +33,7 @@ public class CreateFastMapSearchTest {
         for (String valueType : supportedValueTypes) {
             var schema = build(fastSearchMap("foo", "string", valueType));
 
-            SDField field = schema.getConcreteField("foo$keyvalue");
+            SDField field = schema.getConcreteField("foo$lookup");
             assertNotNull(field, "Expected a synthetic key-value field");
             assertEquals(DataType.getArray(DataType.STRING), field.getDataType());
         }
@@ -49,7 +49,7 @@ public class CreateFastMapSearchTest {
         for (String valueType : supportedValueTypes) {
             var schema = build(fastSearchMap("foo", "string", valueType));
 
-            Attribute attribute = schema.getConcreteField("foo$keyvalue").getAttributes().get("foo$keyvalue");
+            Attribute attribute = schema.getConcreteField("foo$lookup").getAttributes().get("foo$lookup");
             assertNotNull(attribute);
             assertEquals(Attribute.Type.STRING, attribute.getType());
             assertEquals(Attribute.CollectionType.ARRAY, attribute.getCollectionType());
@@ -104,40 +104,40 @@ public class CreateFastMapSearchTest {
     void requireKeyValueAttributeHasCorrectIndexingScriptForStringValues() throws ParseException {
         var schema = build(fastSearchMap("foo", "string", "string"));
 
-        String script = schema.getConcreteField("foo$keyvalue").getIndexingScript().toString();
-        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . get_field $value } | attribute \"foo$keyvalue\"; }", script);
+        String script = schema.getConcreteField("foo$lookup").getIndexingScript().toString();
+        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . get_field $value } | attribute \"foo$lookup\"; }", script);
     }
 
     @Test
     void requireKeyValueAttributeHasCorrectIndexingScriptForIntValues() throws ParseException {
         var schema = build(fastSearchMap("foo", "string", "int"));
 
-        String script = schema.getConcreteField("foo$keyvalue").getIndexingScript().toString();
-        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex8encode) } | attribute \"foo$keyvalue\"; }", script);
+        String script = schema.getConcreteField("foo$lookup").getIndexingScript().toString();
+        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex8encode) } | attribute \"foo$lookup\"; }", script);
     }
 
     @Test
     void requireKeyValueAttributeHasCorrectIndexingScriptForLongValues() throws ParseException {
         var schema = build(fastSearchMap("foo", "string", "long"));
 
-        String script = schema.getConcreteField("foo$keyvalue").getIndexingScript().toString();
-        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex16encode) } | attribute \"foo$keyvalue\"; }", script);
+        String script = schema.getConcreteField("foo$lookup").getIndexingScript().toString();
+        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex16encode) } | attribute \"foo$lookup\"; }", script);
     }
 
     @Test
     void requireKeyValueAttributeHasCorrectIndexingScriptForFloatValues() throws ParseException {
         var schema = build(fastSearchMap("foo", "string", "float"));
 
-        String script = schema.getConcreteField("foo$keyvalue").getIndexingScript().toString();
-        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex8floatencode) } | attribute \"foo$keyvalue\"; }", script);
+        String script = schema.getConcreteField("foo$lookup").getIndexingScript().toString();
+        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex8floatencode) } | attribute \"foo$lookup\"; }", script);
     }
 
     @Test
     void requireKeyValueAttributeHasCorrectIndexingScriptForDoubleValues() throws ParseException {
         var schema = build(fastSearchMap("foo", "string", "double"));
 
-        String script = schema.getConcreteField("foo$keyvalue").getIndexingScript().toString();
-        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex16doubleencode) } | attribute \"foo$keyvalue\"; }", script);
+        String script = schema.getConcreteField("foo$lookup").getIndexingScript().toString();
+        assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex16doubleencode) } | attribute \"foo$lookup\"; }", script);
     }
 
     @Test
@@ -145,7 +145,7 @@ public class CreateFastMapSearchTest {
         for (String valueType : supportedValueTypes) {
             var schema = build(fastSearchArray("foo", "string", valueType));
 
-            SDField field = schema.getConcreteField("foo$keyvalue");
+            SDField field = schema.getConcreteField("foo$lookup");
             assertNotNull(field, "Expected a synthetic key-value field");
             assertEquals(DataType.getArray(DataType.STRING), field.getDataType());
             Attribute attribute = keyValueAttribute(schema, "foo");
@@ -156,12 +156,12 @@ public class CreateFastMapSearchTest {
 
     @Test
     void requireKeyValueAttributeHasCorrectIndexingScriptForArrayOfStruct() throws ParseException {
-        assertEquals("{ input foo | for_each { get_field mykey . \"\\x7f\" . get_field myvalue } | attribute \"foo$keyvalue\"; }",
-                     build(fastSearchArray("foo", "string", "string")).getConcreteField("foo$keyvalue").getIndexingScript().toString());
-        assertEquals("{ input foo | for_each { get_field mykey . \"\\x7f\" . (get_field myvalue | exhex8encode) } | attribute \"foo$keyvalue\"; }",
-                     build(fastSearchArray("foo", "string", "int")).getConcreteField("foo$keyvalue").getIndexingScript().toString());
-        assertEquals("{ input foo | for_each { get_field mykey . \"\\x7f\" . (get_field myvalue | exhex16encode) } | attribute \"foo$keyvalue\"; }",
-                     build(fastSearchArray("foo", "string", "long")).getConcreteField("foo$keyvalue").getIndexingScript().toString());
+        assertEquals("{ input foo | for_each { get_field mykey . \"\\x7f\" . get_field myvalue } | attribute \"foo$lookup\"; }",
+                     build(fastSearchArray("foo", "string", "string")).getConcreteField("foo$lookup").getIndexingScript().toString());
+        assertEquals("{ input foo | for_each { get_field mykey . \"\\x7f\" . (get_field myvalue | exhex8encode) } | attribute \"foo$lookup\"; }",
+                     build(fastSearchArray("foo", "string", "int")).getConcreteField("foo$lookup").getIndexingScript().toString());
+        assertEquals("{ input foo | for_each { get_field mykey . \"\\x7f\" . (get_field myvalue | exhex16encode) } | attribute \"foo$lookup\"; }",
+                     build(fastSearchArray("foo", "string", "long")).getConcreteField("foo$lookup").getIndexingScript().toString());
     }
 
     @Test
@@ -183,8 +183,8 @@ public class CreateFastMapSearchTest {
 
             var internal = schema.fieldSets().builtInFieldSets().get(BuiltInFieldSets.INTERNAL_FIELDSET_NAME);
             assertNotNull(internal);
-            assertTrue(internal.getFieldNames().contains("foo$keyvalue"),
-                    "Expected foo$keyvalue in " + internal.getFieldNames());
+            assertTrue(internal.getFieldNames().contains("foo$lookup"),
+                    "Expected foo$lookup in " + internal.getFieldNames());
         }
     }
 
@@ -192,7 +192,7 @@ public class CreateFastMapSearchTest {
     void requireNoKeyValueFieldWithoutFastSearch() throws ParseException {
         for (String valueType : supportedValueTypes) {
             var schema = build(nonFastSearchMap("foo", "string", valueType));
-            assertNull(schema.getConcreteField("foo$keyvalue"));
+            assertNull(schema.getConcreteField("foo$lookup"));
         }
     }
 
@@ -202,7 +202,7 @@ public class CreateFastMapSearchTest {
                                      "  indexing: summary",
                                      "}"));
 
-        assertNull(schema.getConcreteField("foo$keyvalue"));
+        assertNull(schema.getConcreteField("foo$lookup"));
     }
 
     @Test
@@ -212,9 +212,9 @@ public class CreateFastMapSearchTest {
                                          fastSearchMap("bar", "string", valueType),
                                          nonFastSearchMap("baz", "string", valueType)));
 
-            assertNotNull(schema.getConcreteField("foo$keyvalue"));
-            assertNotNull(schema.getConcreteField("bar$keyvalue"));
-            assertNull(schema.getConcreteField("baz$keyvalue"));
+            assertNotNull(schema.getConcreteField("foo$lookup"));
+            assertNotNull(schema.getConcreteField("bar$lookup"));
+            assertNull(schema.getConcreteField("baz$lookup"));
         }
     }
 
@@ -223,7 +223,7 @@ public class CreateFastMapSearchTest {
      */
     @Test
     void requireUsersCannotDeclareTheKeyValueFieldName() {
-        assertThrows(ParseException.class, () -> build(joinLines("field foo$keyvalue type array<string> {",
+        assertThrows(ParseException.class, () -> build(joinLines("field foo$lookup type array<string> {",
                         "  indexing: attribute",
                         "}")));
     }
@@ -234,9 +234,9 @@ public class CreateFastMapSearchTest {
             var exception = assertThrows(IllegalArgumentException.class,
                     () -> build(joinLines(fastSearchMap("foo", "string", valueType),
                                           "field other type array<string> {",
-                                          "  indexing: attribute \"foo$keyvalue\"",
+                                          "  indexing: attribute \"foo$lookup\"",
                                           "}")));
-            assertTrue(exception.getMessage().contains("Incompatible map attribute 'foo$keyvalue' already created"),
+            assertTrue(exception.getMessage().contains("Incompatible map attribute 'foo$lookup' already created"),
                     "Unexpected message: " + exception.getMessage());
         }
     }
@@ -265,18 +265,18 @@ public class CreateFastMapSearchTest {
 
             // The inherited key-value field is the parent's, not a copy made by the child. A copy would
             // shadow the parent's field, since own extra fields are looked up before inherited ones.
-            SDField inherited = child.getConcreteField("foo$keyvalue");
+            SDField inherited = child.getConcreteField("foo$lookup");
             assertNotNull(inherited, "Expected child to see the inherited key-value field");
-            assertSame(parent.getConcreteField("foo$keyvalue"), inherited);
+            assertSame(parent.getConcreteField("foo$lookup"), inherited);
 
             // The child's own fast-search map is still derived, and only in the child.
-            assertNotNull(child.getConcreteField("bar$keyvalue"), "Expected key-value field for the child's own map");
-            assertNull(parent.getConcreteField("bar$keyvalue"));
+            assertNotNull(child.getConcreteField("bar$lookup"), "Expected key-value field for the child's own map");
+            assertNull(parent.getConcreteField("bar$lookup"));
         }
     }
 
     private static Attribute keyValueAttribute(Schema schema, String mapName) {
-        String fieldName = mapName + "$keyvalue";
+        String fieldName = mapName + "$lookup";
         Attribute attribute = schema.getConcreteField(fieldName).getAttributes().get(fieldName);
         assertNotNull(attribute);
         return attribute;
@@ -285,7 +285,7 @@ public class CreateFastMapSearchTest {
     private static String casedFastSearchMap(String name, String valueType, boolean casedKey, boolean casedValue) {
         return joinLines("field " + name + " type map<string, " + valueType + "> {",
                          "  indexing: summary",
-                         "  map: fast-search",
+                         "  fast-search map field: lookup",
                          "  struct-field key {",
                          "    indexing: attribute",
                          "    match: " + (casedKey ? "cased" : "uncased"),
@@ -308,10 +308,9 @@ public class CreateFastMapSearchTest {
         return joinLines(entryStruct(keyType, valueType),
                          "field " + name + " type array<entry> {",
                          "  indexing: summary",
-                         "  map {",
+                         "  fast-search map field: lookup {",
                          "    key: mykey",
                          "    value: myvalue",
-                         "    fast-search",
                          "  }",
                          "}");
     }
@@ -320,10 +319,9 @@ public class CreateFastMapSearchTest {
         return joinLines(entryStruct("string", "string"),
                          "field " + name + " type array<entry> {",
                          "  indexing: summary",
-                         "  map {",
+                         "  fast-search map field: lookup {",
                          "    key: mykey",
                          "    value: myvalue",
-                         "    fast-search",
                          "  }",
                          "  struct-field mykey {",
                          "    indexing: attribute",
@@ -345,7 +343,7 @@ public class CreateFastMapSearchTest {
     private static String fastSearchMap(String name, String keyType, String valueType) {
         return joinLines("field " + name + " type map<" + keyType + ", " + valueType + "> {",
                          "  indexing: summary",
-                         "  map: fast-search",
+                         "  fast-search map field: lookup",
                          "}");
     }
 
