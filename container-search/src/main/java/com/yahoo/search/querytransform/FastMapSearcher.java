@@ -6,6 +6,7 @@ import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.ExactStringItem;
+import com.yahoo.prelude.query.HasIndexItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
@@ -18,19 +19,26 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.schema.Field;
-import com.yahoo.search.schema.FieldInfo;
+import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
+import com.yahoo.search.yql.YqlParser;
 import com.yahoo.searchlib.document.FastMapSearch;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
  * When a field (a map, or an array of struct) has fast map search enabled, this class transforms
  * map lookups naming its lookup field, such as myMap.myLookup{"key"} = 42, to target the fast map attribute.
  * Such a lookup is a {@link MapMatchItem} on the field name followed by a dot and the lookup name.
- * A lookup which cannot be expressed as a single term on the fast map attribute is rejected.
+ * A lookup which cannot be expressed as a single term on the fast map attribute is rejected, as is any other
+ * query on the lookup field or its key and value, and a lookup on a field which does not have the same lookup
+ * field in all the schemas searched.
  * <p>
  * A rewritten query no longer searches the field itself, so anything which depends on the sameElement
  * matching the original field, such as matched-elements-only summaries and match features on its
@@ -44,20 +52,40 @@ public class FastMapSearcher extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
-        var schemaInfo = execution.context().schemaInfo();
-        var session = schemaInfo.newSession(query);
-        new Rewriter().rewriteFastMapSearch(query, session);
+        var session = execution.context().schemaInfo().newSession(query);
+        var lookupNames = lookupNames(session);
+        if ( ! lookupNames.isEmpty()) {
+            new Rewriter(session, lookupNames).rewriteFastMapSearch(query);
+        }
         return execution.search(query);
+    }
+
+    /** Returns the names of the lookup fields, as in field.lookupName, of the fields in the schemas of the given session. */
+    private static Set<String> lookupNames(SchemaInfo.Session session) {
+        Set<String> names = new HashSet<>();
+        for (Schema schema : session.schemas()) {
+            for (Field field : schema.fields().values()) {
+                field.fastMapSearch().ifPresent(fastMap -> names.add(field.name() + "." + fastMap.lookupName()));
+            }
+        }
+        return names;
     }
 
     private class Rewriter {
 
+        private final SchemaInfo.Session session;
+        private final Set<String> lookupNames;
         private boolean hasRewritten = false;
 
+        Rewriter(SchemaInfo.Session session, Set<String> lookupNames) {
+            this.session = session;
+            this.lookupNames = lookupNames;
+        }
+
         /** Entry point for rewriting a query */
-        private void rewriteFastMapSearch(Query query, SchemaInfo.Session session) {
+        private void rewriteFastMapSearch(Query query) {
             Item root = query.getModel().getQueryTree().getRoot();
-            Item possibleNewRoot = rewriteFastMapSearchVisit(root, session);
+            Item possibleNewRoot = rewriteFastMapSearchVisit(root);
             if (root != possibleNewRoot) {
                 query.getModel().getQueryTree().setRoot(possibleNewRoot);
             }
@@ -67,28 +95,33 @@ public class FastMapSearcher extends Searcher {
         }
 
         /**
-         * Rewrite map lookups for fast map search.
+         * Rewrite map lookups for fast map search, and reject any other use of a lookup field.
          */
-        private Item rewriteFastMapSearchVisit(Item item, SchemaInfo.Session session) {
+        private Item rewriteFastMapSearchVisit(Item item) {
             if (item == null) {
                 return null;
             }
 
-            // handle map lookup rewrite
+            // handle map lookup rewrite. Its children are relative to it, and are handled by the rewrite.
             if (item instanceof MapMatchItem mapMatchItem) {
                 Item rewritten = tryRewriteMapMatch(mapMatchItem, session);
                 if (rewritten != null) {
                     hasRewritten = true;
                     return rewritten;
                 }
+                rejectLookupFieldUse(mapMatchItem);
                 return item;
+            }
+
+            if (item instanceof HasIndexItem indexed) {
+                rejectLookupFieldUse(indexed);
             }
 
             // recursively try rewrite children.
             if (item instanceof CompositeItem composite) {
                 for (int i = 0; i < composite.getItemCount(); i++) {
                     Item child = composite.getItem(i);
-                    Item newChild = rewriteFastMapSearchVisit(child, session);
+                    Item newChild = rewriteFastMapSearchVisit(child);
                     if (newChild != child) {
                         composite.setItem(i, newChild);
                     }
@@ -98,13 +131,31 @@ public class FastMapSearcher extends Searcher {
             return item;
         }
 
+        /** A lookup field, and its key and value, can only be searched by a map lookup, which is rewritten. */
+        private void rejectLookupFieldUse(HasIndexItem item) {
+            String name = item.getFieldName();
+            if (name == null) return;
+            String lookupName = name;
+            if (name.endsWith("." + YqlParser.KEY_FIELD_NAME) || name.endsWith("." + YqlParser.VALUE_FIELD_NAME)) {
+                String withoutSuffix = name.substring(0, name.lastIndexOf('.'));
+                if (lookupNames.contains(withoutSuffix)) {
+                    lookupName = withoutSuffix;
+                }
+            }
+            if (lookupNames.contains(lookupName)) {
+                throw new IllegalInputException("'" + name + "' can only be searched by a map lookup, as in " +
+                                                lookupName + "{\"key\"} = value, but got " + item);
+            }
+        }
+
     }
 
     /**
      * Returns the rewrite of the given map lookup, or null if it does not name the lookup field of a field
      * with fast map search. The rewrite is a single term on the fast map attribute.
      *
-     * @throws IllegalInputException if the lookup cannot be expressed as a single term
+     * @throws IllegalInputException if the lookup cannot be expressed as a single term, or the lookup field
+     *         is not the same in all the schemas searched which have the field
      */
     private Item tryRewriteMapMatch(MapMatchItem mapMatchItem, SchemaInfo.Session session) {
         String name = mapMatchItem.getFieldName();
@@ -114,8 +165,8 @@ public class FastMapSearcher extends Searcher {
         }
         String fieldName = name.substring(0, dot);
         String lookupName = name.substring(dot + 1);
-        Field.FastMapSearchFields fastMap = fastMapSearch(fieldName, session);
-        if (fastMap == null || ! fastMap.lookupName().equals(lookupName)) {
+        Field.FastMapSearchFields fastMap = fastMapSearch(name, fieldName, lookupName, session);
+        if (fastMap == null) {
             return null;
         }
         Item keyItem = mapMatchItem.keyItem();
@@ -415,13 +466,45 @@ public class FastMapSearcher extends Searcher {
         return Double.parseDouble(trimmed);
     }
 
-    /** Returns the key and value fields of the given field if it has fast map search enabled, and null otherwise. */
-    private static Field.FastMapSearchFields fastMapSearch(String fieldName, SchemaInfo.Session session) {
-        FieldInfo info = session.fieldInfo(fieldName).orElse(null);
-        if (info instanceof Field field) {
-            return field.fastMapSearch().orElse(null);
+    /**
+     * Returns the fast map search fields of the given field if it has the given lookup field in some schema
+     * searched, and null otherwise.
+     *
+     * @throws IllegalInputException if some schema searched has the field, but not with the same lookup field,
+     *         as the lookup would then silently miss the documents of that schema
+     */
+    private static Field.FastMapSearchFields fastMapSearch(String name, String fieldName, String lookupName, SchemaInfo.Session session) {
+        Field.FastMapSearchFields found = null;
+        List<String> withLookup = new ArrayList<>();
+        List<String> withoutLookup = new ArrayList<>();
+        boolean differs = false;
+        for (Schema schema : session.schemas()) {
+            if ( ! (schema.fieldInfo(fieldName).orElse(null) instanceof Field field)) continue;
+            var fastMap = field.fastMapSearch().filter(f -> f.lookupName().equals(lookupName)).orElse(null);
+            if (fastMap == null) {
+                withoutLookup.add(schema.name());
+                continue;
+            }
+            withLookup.add(schema.name());
+            if (found == null)
+                found = fastMap;
+            else if ( ! found.equals(fastMap))
+                differs = true;
         }
-        return null;
+        if (found == null) return null;
+        if ( ! withoutLookup.isEmpty())
+            throw new IllegalInputException("Lookup '" + name + "' is not defined for field '" + fieldName + "' in " +
+                                            schemaList(withoutLookup) + ", but is in " + schemaList(withLookup) +
+                                            ". Restrict the query to the schemas which have it");
+        if (differs)
+            throw new IllegalInputException("Lookup '" + name + "' has different key or value types in " +
+                                            schemaList(withLookup) + ". Restrict the query to schemas where it is the same");
+        return found;
+    }
+
+    private static String schemaList(List<String> schemas) {
+        return (schemas.size() == 1 ? "schema " : "schemas ") +
+               String.join(", ", schemas.stream().sorted().map(schema -> "'" + schema + "'").toList());
     }
 
 }

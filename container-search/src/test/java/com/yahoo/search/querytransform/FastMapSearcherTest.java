@@ -162,6 +162,83 @@ public class FastMapSearcherTest {
     }
 
     @Test
+    public void requireOtherUseOfLookupFieldRejected() {
+        assertLookupFieldUseRejected(new WordItem("x", "mymap.lookup"));
+        assertLookupFieldUseRejected(new WordItem("x", "mymap.lookup.key"));
+        assertLookupFieldUseRejected(new WordItem("x", "mymap.lookup.value"));
+        assertLookupFieldUseRejected(new PrefixItem("x", "myarray.lookup.key"));
+        assertLookupFieldUseRejected(sameElement("mymap.lookup"));
+        assertLookupFieldUseRejected(sameElement("mymap", new WordItem("foo", "lookup.key"), new WordItem("bar", "value")));
+        AndItem and = new AndItem();
+        and.addItem(new WordItem("other", "title"));
+        and.addItem(new WordItem("x", "mymap.lookup"));
+        assertLookupFieldUseRejected(and);
+
+        var exception = assertThrows(IllegalInputException.class, () -> rewrittenYql("mymap.lookup contains \"x\""));
+        assertEquals("'mymap.lookup' can only be searched by a map lookup, as in mymap.lookup{\"key\"} = value, but got mymap.lookup:x",
+                     exception.getMessage());
+        assertThrows(IllegalInputException.class, () -> rewrittenYql("mymap.lookup.key contains \"x\""));
+        assertThrows(IllegalInputException.class,
+                     () -> rewrittenYql("mymap.lookup contains sameElement(key contains \"foo\", value contains \"bar\")"));
+
+        // Other names are not lookup fields
+        assertUntouched(new WordItem("x", "mymap.key"));
+        assertUntouched(new WordItem("x", "mymap.lookupx"));
+        assertUntouched(new WordItem("x", "othermap.lookup"));
+        assertUntouched(new WordItem("x", "mymap.lookup.other"));
+    }
+
+    @Test
+    public void requireLookupResolvedAcrossSchemas() {
+        var withLookup = new Schema.Builder("withlookup")
+                .add(new Field.Builder("mymap", "map<string,string>").setFastMapSearch("lookup").build())
+                .build();
+        var sameLookup = new Schema.Builder("samelookup")
+                .add(new Field.Builder("mymap", "map<string,string>").setFastMapSearch("lookup").build())
+                .build();
+        var withoutLookup = new Schema.Builder("withoutlookup")
+                .add(new Field.Builder("mymap", "map<string,string>").build())
+                .build();
+        var otherLookup = new Schema.Builder("otherlookup")
+                .add(new Field.Builder("mymap", "map<string,string>").setFastMapSearch("other").build())
+                .build();
+        var otherType = new Schema.Builder("othertype")
+                .add(new Field.Builder("mymap", "map<string,int>").setFastMapSearch("lookup").build())
+                .build();
+        var withoutField = new Schema.Builder("withoutfield")
+                .add(new Field.Builder("title", "string").build())
+                .build();
+        String expected = "mymap$lookup:foo" + FastMapSearch.keyValueSeparator() + "bar";
+
+        assertEquals(expected, rewritten(mapMatch("mymap"), withLookup, sameLookup).toString());
+        assertEquals(expected, rewritten(mapMatch("mymap"), withoutField, withLookup).toString());
+
+        var exception = assertThrows(IllegalInputException.class,
+                                     () -> rewritten(mapMatch("mymap"), withoutLookup, withLookup));
+        assertEquals("Lookup 'mymap.lookup' is not defined for field 'mymap' in schema 'withoutlookup', " +
+                     "but is in schema 'withlookup'. Restrict the query to the schemas which have it",
+                     exception.getMessage());
+        exception = assertThrows(IllegalInputException.class,
+                                 () -> rewritten(mapMatch("mymap"), otherLookup, withLookup, sameLookup));
+        assertEquals("Lookup 'mymap.lookup' is not defined for field 'mymap' in schema 'otherlookup', " +
+                     "but is in schemas 'samelookup', 'withlookup'. Restrict the query to the schemas which have it",
+                     exception.getMessage());
+        exception = assertThrows(IllegalInputException.class,
+                                 () -> rewritten(mapMatch("mymap"), withLookup, otherType));
+        assertEquals("Lookup 'mymap.lookup' has different key or value types in schemas 'othertype', 'withlookup'. " +
+                     "Restrict the query to schemas where it is the same",
+                     exception.getMessage());
+
+        // A lookup field in one schema is not searchable directly in any
+        assertThrows(IllegalInputException.class,
+                     () -> rewritten(new WordItem("x", "mymap.lookup"), withoutLookup, withLookup));
+
+        // Without any lookup fields, nothing is changed
+        var plain = new MapMatchItem("mymap.lookup", new WordItem("foo", "key"), new WordItem("bar", "value"));
+        assertEquals(plain.toString(), rewritten(plain, withoutLookup, withoutField).toString());
+    }
+
+    @Test
     public void requireMapLookupRewrittenForFastArrayOfStructField() {
         // A map lookup has a key and a value, whatever the struct fields holding them are named
         assertRewritten("myarray$lookup:foo" + FastMapSearch.keyValueSeparator() + "bar",
@@ -536,6 +613,18 @@ public class FastMapSearcherTest {
     private static void assertRejected(MapMatchItem mapMatch) {
         var exception = assertThrows(IllegalInputException.class, () -> rewritten(mapMatch), mapMatch.toString());
         assertTrue(exception.getMessage().startsWith("Lookup '" + mapMatch.getFieldName() + "' requires "), exception.getMessage());
+    }
+
+    private static void assertLookupFieldUseRejected(Item item) {
+        var exception = assertThrows(IllegalInputException.class, () -> rewritten(item), item.toString());
+        assertTrue(exception.getMessage().contains("can only be searched by a map lookup"), exception.getMessage());
+    }
+
+    private static Item rewritten(Item item, Schema ... schemas) {
+        Query query = queryWith(item.clone());
+        var schemaInfo = new SchemaInfo(List.of(schemas), List.of());
+        new FastMapSearcher().search(query, new Execution(Execution.Context.createContextStub(schemaInfo)));
+        return query.getModel().getQueryTree().getRoot();
     }
 
     private static Item rewritten(Item item) {
