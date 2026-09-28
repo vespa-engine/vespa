@@ -152,7 +152,7 @@ public class LSPTest {
 
     /**
      * 'fast-search map field' is only accepted by the config model on maps with
-     * string, int or long keys and string, int, long, float or double values,
+     * string keys and string, int, long, float or double values,
      * or on arrays of struct, so {@link BodyKeywordCompletion} should only suggest it in
      * such fields.
      */

@@ -288,8 +288,8 @@ public class ConvertParsedFields {
                                                     "', which is the name of a field in the " +
                                                     (fastMapFields.isMap() ? "map" : "struct") + ".");
         }
-        validateFastMapSubtype(schema, field, fastMapFields.keyType(), fastMapFields.keyField(), "key", false);
-        validateFastMapSubtype(schema, field, fastMapFields.valueType(), fastMapFields.valueField(), "value", true);
+        validateFastMapSubtype(schema, field, fastMapFields.keyType(), fastMapFields.keyField(), "key");
+        validateFastMapSubtype(schema, field, fastMapFields.valueType(), fastMapFields.valueField(), "value");
         if (!properties.featureFlags().fastMapSearch()) {
             throw fastMapSearchError(schema, field, "'fast-search map field' is an unfinished feature that " +
                                                     "will not be enabled yet. Please remove this property from the field.");
@@ -297,28 +297,31 @@ public class ConvertParsedFields {
         field.setFastMapSearch(fastMapFields);
     }
 
-    private void validateFastMapSubtype(Schema schema, SDField field, DataType type, String subField, String keyOrValue, boolean allowFloatingPoint) {
+    /** Validates the type of the key or value. Only string keys are supported by the query rewrite so far. */
+    private void validateFastMapSubtype(Schema schema, SDField field, DataType type, String subField, String keyOrValue) {
         if (type == null) {
             throw fastMapSearchError(schema, field, "'fast-search map field' requires " + keyOrValue + " '" + subField +
                                                     "' to be a field in the struct.");
         }
-        if (!isSupportedFastMapKeyValueType(type, allowFloatingPoint)) {
+        boolean isKey = keyOrValue.equals("key");
+        if (isKey ? ! type.equals(DataType.STRING) : ! isSupportedFastMapValueType(type)) {
             throw new IllegalArgumentException(
                     String.format(
                             "For schema '%s', field '%s': 'fast-search map field' requires %s to be of type %s, but the type is %s.",
                             schema.getName(),
                             field.getName(),
                             subField,
-                            allowFloatingPoint ? "string, int, long, float or double" : "string, int or long",
+                            isKey ? "string" : "string, int, long, float or double",
                             type.getName()));
         }
     }
 
-    private boolean isSupportedFastMapKeyValueType(DataType dataType, boolean allowFloatingPoint) {
+    private boolean isSupportedFastMapValueType(DataType dataType) {
         return dataType.equals(DataType.STRING)
                 || dataType.equals(DataType.INT)
                 || dataType.equals(DataType.LONG)
-                || (allowFloatingPoint && (dataType.equals(DataType.FLOAT) || dataType.equals(DataType.DOUBLE)));
+                || dataType.equals(DataType.FLOAT)
+                || dataType.equals(DataType.DOUBLE);
     }
 
     /** A map always has struct fields named key and value, so naming them is allowed but can not change them. */

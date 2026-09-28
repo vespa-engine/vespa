@@ -100,16 +100,18 @@ public class MapFastSearchTestCase {
     @Test
     void requireFastMapRejectedForUnsupportedKeyAndValueTypes() throws ParseException {
         assertRejected("field m type map<double, string> { fast-search map field: lookup }", true,
-                       "For schema 'test', field 'm': 'fast-search map field' requires key to be of type string, int or long, but the type is double.");
+                       "For schema 'test', field 'm': 'fast-search map field' requires key to be of type string, but the type is double.");
+        assertRejected("field m type map<int, string> { fast-search map field: lookup }", true,
+                       "For schema 'test', field 'm': 'fast-search map field' requires key to be of type string, but the type is int.");
+        assertRejected("field m type map<long, string> { fast-search map field: lookup }", true,
+                       "For schema 'test', field 'm': 'fast-search map field' requires key to be of type string, but the type is long.");
         assertRejected("field m type map<string, bool> { fast-search map field: lookup }", true,
                        "For schema 'test', field 'm': 'fast-search map field' requires value to be of type string, int, long, float or double, but the type is bool.");
     }
 
     @Test
     void requireFastMapAcceptsSupportedKeyAndValueTypes() throws ParseException {
-        assertTrue(fastMapSearchOf("field m type map<int, string> { fast-search map field: lookup }", true));
         assertTrue(fastMapSearchOf("field m type map<string, int> { fast-search map field: lookup }", true));
-        assertTrue(fastMapSearchOf("field m type map<long, string> { fast-search map field: lookup }", true));
         assertTrue(fastMapSearchOf("field m type map<string, long> { fast-search map field: lookup }", true));
         assertTrue(fastMapSearchOf("field m type map<string, float> { fast-search map field: lookup }", true));
         assertTrue(fastMapSearchOf("field m type map<string, double> { fast-search map field: lookup }", true));
@@ -190,7 +192,9 @@ public class MapFastSearchTestCase {
     @Test
     void requireFastSearchOnArrayOfStructRejectedForUnsupportedTypes() {
         assertRejectedWithEntry("double", "string", fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"), true,
-                                "For schema 'test', field 'm': 'fast-search map field' requires mykey to be of type string, int or long, but the type is double.");
+                                "For schema 'test', field 'm': 'fast-search map field' requires mykey to be of type string, but the type is double.");
+        assertRejectedWithEntry("int", "string", fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"), true,
+                                "For schema 'test', field 'm': 'fast-search map field' requires mykey to be of type string, but the type is int.");
         assertRejectedWithEntry("string", "bool", fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"), true,
                                 "For schema 'test', field 'm': 'fast-search map field' requires myvalue to be of type string, int, long, float or double, but the type is bool.");
     }

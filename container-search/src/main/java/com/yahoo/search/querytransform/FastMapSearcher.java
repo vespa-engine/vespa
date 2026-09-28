@@ -3,15 +3,14 @@ package com.yahoo.search.querytransform;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.ExactStringItem;
-import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
-import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.WordItem;
@@ -31,6 +30,7 @@ import java.util.regex.Pattern;
  * When a field (a map, or an array of struct) has fast map search enabled, this class transforms
  * map lookups naming its lookup field, such as myMap.myLookup{"key"} = 42, to target the fast map attribute.
  * Such a lookup is a {@link MapMatchItem} on the field name followed by a dot and the lookup name.
+ * A lookup which cannot be expressed as a single term on the fast map attribute is rejected.
  * <p>
  * A rewritten query no longer searches the field itself, so anything which depends on the sameElement
  * matching the original field, such as matched-elements-only summaries and match features on its
@@ -102,8 +102,9 @@ public class FastMapSearcher extends Searcher {
 
     /**
      * Returns the rewrite of the given map lookup, or null if it does not name the lookup field of a field
-     * with fast map search. The rewrite is a single term on the fast map attribute if the lookup can be
-     * expressed as one, and otherwise the equivalent sameElement on the field itself.
+     * with fast map search. The rewrite is a single term on the fast map attribute.
+     *
+     * @throws IllegalInputException if the lookup cannot be expressed as a single term
      */
     private Item tryRewriteMapMatch(MapMatchItem mapMatchItem, SchemaInfo.Session session) {
         String name = mapMatchItem.getFieldName();
@@ -120,28 +121,20 @@ public class FastMapSearcher extends Searcher {
         Item keyItem = mapMatchItem.keyItem();
         Item valueItem = mapMatchItem.valueItem();
         TermItem lookup = tryMakeFastMapItem(keyItem, valueItem, fastMap, FastMapSearch.toLookupFieldName(fieldName, lookupName));
-        if (lookup != null) {
-            return lookup;
+        if (lookup == null) {
+            throw new IllegalInputException("Lookup '" + name + "' requires a single word as key, and " +
+                                            describeSupportedValues(fastMap.valueType()) +
+                                            " as value, but got " + mapMatchItem);
         }
-        return toSameElement(mapMatchItem, fieldName, fastMap);
+        return lookup;
     }
 
-    /** Returns the sameElement on the given field equivalent to the given map lookup on its lookup field. */
-    private static SameElementItem toSameElement(MapMatchItem mapMatchItem, String fieldName, Field.FastMapSearchFields fastMap) {
-        SameElementItem sameElement = new SameElementItem(fieldName);
-        sameElement.addItem(withIndex(mapMatchItem.keyItem().clone(), fastMap.keyField()));
-        sameElement.addItem(withIndex(mapMatchItem.valueItem().clone(), fastMap.valueField()));
-        sameElement.setWeight(mapMatchItem.getWeight());
-        sameElement.setRanked(mapMatchItem.isRanked());
-        sameElement.setLabel(mapMatchItem.getLabel());
-        return sameElement;
-    }
-
-    private static Item withIndex(Item item, String indexName) {
-        if (item instanceof IndexedItem indexed) {
-            indexed.setIndexName(indexName);
-        }
-        return item;
+    private static String describeSupportedValues(Field.Type valueType) {
+        return switch (valueType.kind()) {
+            case INT, LONG -> "a single integer or an integer range";
+            case FLOAT, DOUBLE -> "a single number or a number range";
+            default -> "a single word";
+        };
     }
 
     /**
@@ -154,11 +147,7 @@ public class FastMapSearcher extends Searcher {
             return null;
         }
 
-        // only support string keys for now.
-        if (fastMap.keyType().kind() != Field.Type.Kind.STRING) {
-            return null;
-        }
-
+        // The config model only allows string keys.
         if (fastMap.valueType().kind() == Field.Type.Kind.STRING) {
             var key = getString(keyItem);
             var value = getString(valueItem);
@@ -286,7 +275,7 @@ public class FastMapSearcher extends Searcher {
         int asInt = limit.number().intValue();
         double asDouble = limit.number().doubleValue();
         if (asDouble != (double)asInt) {
-            return null; // not an int endpoint: fall back to the regular sameElement
+            return null; // not an int endpoint
         }
         return asInt;
     }
@@ -334,7 +323,7 @@ public class FastMapSearcher extends Searcher {
         // range which equals its own rounding is an integer, and is cast exactly.
         double asDouble = number.doubleValue();
         if (asDouble != Math.rint(asDouble) || asDouble < -0x1p63 || asDouble >= 0x1p63) {
-            return null; // fall back to the regular sameElement
+            return null;
         }
         return (long) asDouble;
     }
@@ -379,7 +368,7 @@ public class FastMapSearcher extends Searcher {
         double from = toFloatingPointBound(fromLimit, isFloat, true, fromInclusive);
         double to = toFloatingPointBound(toLimit, isFloat, false, toInclusive);
         if (Double.isNaN(from) || Double.isNaN(to)) {
-            return null; // matches nothing in the backend: fall back to the regular sameElement
+            return null; // matches nothing in the backend
         }
         if (fromInclusive && toInclusive && Double.doubleToRawLongBits(from) == Double.doubleToRawLongBits(to)) {
             return new WordItem(toKeyValueTerm(key, from, isFloat), lookupFieldName, false);
@@ -421,7 +410,7 @@ public class FastMapSearcher extends Searcher {
     private static Double parseDecimal(String word) {
         String trimmed = word.trim();
         if ( ! decimalNumber.matcher(trimmed).matches()) {
-            return null; // a range expression, or not a number: the caller falls back to the regular sameElement
+            return null; // a range expression, or not a number
         }
         return Double.parseDouble(trimmed);
     }
