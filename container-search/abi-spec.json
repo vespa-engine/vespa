@@ -962,7 +962,10 @@
       "public com.yahoo.prelude.query.Item keyItem()",
       "public com.yahoo.prelude.query.Item valueItem()",
       "protected void adding(com.yahoo.prelude.query.Item)",
-      "public com.yahoo.prelude.query.Item setItem(int, com.yahoo.prelude.query.Item)"
+      "public com.yahoo.prelude.query.Item setItem(int, com.yahoo.prelude.query.Item)",
+      "public com.yahoo.prelude.query.Item removeItem(int)",
+      "public boolean removeItem(com.yahoo.prelude.query.Item)",
+      "public java.util.ListIterator getItemIterator()"
     ],
     "fields" : [ ]
   },

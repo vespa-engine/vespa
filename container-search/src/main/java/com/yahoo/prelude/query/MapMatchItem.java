@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import java.util.ListIterator;
+
 /**
  * This class represents matching both key and value in a map.
  *
@@ -34,6 +36,22 @@ public class MapMatchItem extends SameElementItem {
     @Override
     public Item setItem(int index, Item item) {
         throw new UnsupportedOperationException("cannot replace children of MapMatchItem");
+    }
+
+    @Override
+    public Item removeItem(int index) {
+        throw new UnsupportedOperationException("cannot remove children of MapMatchItem");
+    }
+
+    @Override
+    public boolean removeItem(Item item) {
+        throw new UnsupportedOperationException("cannot remove children of MapMatchItem");
+    }
+
+    /** Returns an iterator over the children, which cannot be used to change them. */
+    @Override
+    public ListIterator<Item> getItemIterator() {
+        return items().listIterator();
     }
 
 }

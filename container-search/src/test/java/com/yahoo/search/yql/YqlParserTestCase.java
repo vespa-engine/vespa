@@ -17,6 +17,7 @@ import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
@@ -819,6 +820,49 @@ public class YqlParserTestCase {
         // The rewritten tree serializes and re-parses to the same tree.
         assertCanonicalParse("select * from sources * where range(my_map{'foo'}, 40, 50)",
                              "my_map:{key:foo value:[40;50]}");
+    }
+
+    @Test
+    void testMapAccessProducesMapMatch() {
+        for (String where : List.of("my_map{'foo'} contains 'bar'", "my_map{'foo'} = 10", "range(my_map{'foo'}, 40, 50)",
+                                    "my_map contains mapMatch(key contains 'foo', value contains 'bar')",
+                                    "my_map contains mapMatch(value contains 'bar', key contains 'foo')")) {
+            MapMatchItem mapMatch = assertInstanceOf(MapMatchItem.class, parse("select * from sources * where " + where).getRoot(), where);
+            assertEquals("my_map", mapMatch.getFieldName(), where);
+            assertEquals("key", ((IndexedItem) mapMatch.keyItem()).getIndexName(), where);
+            assertEquals("foo", ((WordItem) mapMatch.keyItem()).getWord(), where);
+            assertEquals("value", ((IndexedItem) mapMatch.valueItem()).getIndexName(), where);
+        }
+
+        // The key and value are the first and second child, whatever order they are given in
+        assertParse("select * from sources * where my_map contains mapMatch(value contains 'bar', key contains 'foo')",
+                    "my_map:{key:foo value:bar}");
+
+        // A dotted field name, as for the lookup field of a map with fast search, is kept as is
+        MapMatchItem lookup = assertInstanceOf(MapMatchItem.class,
+                                               parse("select * from sources * where my_map.lookup{'foo'} = 10").getRoot());
+        assertEquals("my_map.lookup", lookup.getFieldName());
+        assertEquals("my_map.lookup:{key:foo value:10}", lookup.toString());
+
+        // A plain sameElement is not a map lookup
+        assertEquals(SameElementItem.class,
+                     parse("select * from sources * where my_map contains sameElement(key contains 'foo', value contains 'bar')").getRoot().getClass());
+    }
+
+    @Test
+    void testMapMatchRequiresOneKeyAndOneValue() {
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo')",
+                        new IllegalArgumentException("mapMatch requires both a key and a value item"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(value contains 'bar')",
+                        new IllegalArgumentException("mapMatch requires both a key and a value item"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', key contains 'baz', value contains 'bar')",
+                        new IllegalArgumentException("unknown or extra item inside mapMatch: key:baz"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', value contains 'bar', value contains 'baz')",
+                        new IllegalArgumentException("unknown or extra item inside mapMatch: value:baz"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', other contains 'bar')",
+                        new IllegalArgumentException("unknown or extra item inside mapMatch: other:bar"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', value contains 'bar' and value contains 'baz')",
+                        new IllegalArgumentException("bad item type inside mapMatch: AND value:bar value:baz"));
     }
 
     @Test
