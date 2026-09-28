@@ -369,6 +369,10 @@ template <typename Traits> struct FixtureBase {
         }
         _subDb.onReprocessDone(serialNum);
     }
+    void on_replay_done() {
+        runInMasterAndSync([&]() { perform_replay_done(); });
+    }
+    void perform_replay_done() { _subDb.onReplayDone(); }
 
     proton::IAttributeManager::SP getAttributeManager() { return _subDb.getAttributeManager(); }
     const typename Traits::FeedView* getFeedView() {
@@ -860,7 +864,7 @@ void assertAttribute2(const AttributeGuard& attr, SerialNum createSerialNum, Ser
 
 TEST(DocumentSubDBsTest, require_that_fast_access_attributes_are_populated_during_feed) {
     FastAccessOnlyFixture f;
-    f._subDb.onReplayDone();
+    f.on_replay_done();
     DocumentHandler<FastAccessOnlyFixture> handler(f);
     handler.putDocs();
 
@@ -872,7 +876,7 @@ TEST(DocumentSubDBsTest, require_that_fast_access_attributes_are_populated_durin
 
 template <typename FixtureType, typename ConfigDirT>
 void requireThatAttributesArePopulatedDuringReprocessing(FixtureType& f) {
-    f._subDb.onReplayDone();
+    f.on_replay_done();
     DocumentHandler<FixtureType> handler(f);
     handler.putDocs();
 
@@ -934,7 +938,7 @@ bool assertOperation(DocumentOperation& op, uint32_t expPrevSubDbId, uint32_t ex
 TEST(DocumentSubDBsTest, require_that_lid_allocation_uses_lowest_free_lid) {
     StoreOnlyFixture f;
     using Handler = DocumentHandler<StoreOnlyFixture>;
-    f._subDb.onReplayDone();
+    f.on_replay_done();
     Handler                  handler(f);
     Document::UP             doc;
     PutOperation             putOp;
