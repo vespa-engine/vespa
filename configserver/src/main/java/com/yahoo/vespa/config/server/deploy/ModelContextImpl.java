@@ -263,6 +263,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean failWhenConfiguringIndexedMapOfArray() { return flag(Flags.FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY).value(); }
         @Override public boolean fastMapSearch() { return flag(Flags.FAST_MAP_SEARCH).value(); }
         @Override public boolean commerceDiscovery() { return flag(Flags.COMMERCE_DISCOVERY).value(); }
+        @Override public boolean enableLandlock() { return flag(Flags.ENABLE_LANDLOCK).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();

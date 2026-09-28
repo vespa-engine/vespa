@@ -134,6 +134,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}) default boolean fastMapSearch() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.755") default boolean relaxStrictlyIncreasingClusterStateVersions() { return true; }
         @ModelFeatureFlag(owners = {"sebasabe"}) default boolean commerceDiscovery() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum", "vekterli"}) default boolean enableLandlock() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
