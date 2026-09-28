@@ -294,6 +294,22 @@ public class MapFastSearchTestCase {
         return commands;
     }
 
+    /** The lookup name is split from the field name at the last dot in queries, and is part of an attribute name. */
+    @Test
+    void requireLookupNameIsAPlainIdentifier() throws ParseException {
+        for (String name : List.of("a.b", "1a", "a.b.c")) {
+            assertRejected("field m type map<string, string> { fast-search map field: " + name + " }", true,
+                           "For schema 'test', field 'm': 'fast-search map field' must be a letter or underscore followed by " +
+                           "letters, digits or underscores, but got '" + name + "'.");
+        }
+        for (String name : List.of("a$b", "a-b")) {
+            assertThrows(ParseException.class,
+                         () -> build(getSd("field m type map<string, string> { fast-search map field: " + name + " }"), true),
+                         name);
+        }
+        assertTrue(fastMapSearchOf("field m type map<string, string> { fast-search map field: _my_Lookup2 }", true));
+    }
+
     @Test
     void requireLookupFieldIsNotNamedKeyOrValue() throws ParseException {
         for (String name : List.of("key", "value")) {

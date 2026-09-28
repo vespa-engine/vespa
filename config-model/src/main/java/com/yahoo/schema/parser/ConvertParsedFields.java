@@ -27,6 +27,7 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 /**
  * Helper for converting ParsedField etc. to SDField with settings
@@ -259,6 +260,9 @@ public class ConvertParsedFields {
         }
     }
 
+    /** A lookup name is queried as field.lookupName and is part of the fieldName$lookupName attribute name. */
+    private static final Pattern validLookupName = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
+
     private void convertFastMapSearch(Schema schema, SDField field, ParsedField parsed) {
         String lookupName = parsed.getFastMapSearchName();
         FastMapSearchFields fastMapFields;
@@ -278,6 +282,10 @@ public class ConvertParsedFields {
         } else {
             throw fastMapSearchError(schema, field, "'fast-search map field' requires a map or an array of struct field, " +
                                                     "but the type is " + field.getDataType().getName() + ".");
+        }
+        if ( ! validLookupName.matcher(lookupName).matches()) {
+            throw fastMapSearchError(schema, field, "'fast-search map field' must be a letter or underscore followed by " +
+                                                    "letters, digits or underscores, but got '" + lookupName + "'.");
         }
         if (lookupName.equals(FastMapSearchFields.MAP_KEY) || lookupName.equals(FastMapSearchFields.MAP_VALUE)) {
             throw fastMapSearchError(schema, field, "'fast-search map field' can not be named '" + lookupName +
