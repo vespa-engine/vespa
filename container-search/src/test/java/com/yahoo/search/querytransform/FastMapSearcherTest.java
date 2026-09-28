@@ -2,6 +2,9 @@
 package com.yahoo.search.querytransform;
 
 import com.yahoo.component.chain.Chain;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
@@ -13,6 +16,7 @@ import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
+import com.yahoo.search.Result;
 import com.yahoo.search.schema.Field;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
@@ -98,6 +102,29 @@ public class FastMapSearcherTest {
 
         // Without the lookup field name, the map lookup is a regular sameElement on the map
         assertEquals("mymap:{key:foo value:bar}", rewrittenYql("mymap{\"foo\"} contains \"bar\""));
+    }
+
+    /**
+     * With index facts, as in a deployment, the parser requires the lookup field and its key and value
+     * to be known indexes. They are added to the index info by the config model.
+     */
+    @Test
+    public void requireYqlMapLookupOnLookupFieldParsedWithIndexFacts() {
+        var sd = new SearchDefinition("test");
+        for (String index : List.of("mymap", "mymap.key", "mymap.value"))
+            sd.addCommand(index, "attribute");
+        var withoutLookup = new IndexFacts(new IndexModel(sd));
+        var result = searchYql("mymap.lookup{\"foo\"} contains \"bar\"", withoutLookup);
+        assertEquals("Could not create query from YQL: Field 'mymap.lookup' does not exist.",
+                     result.hits().getError().getDetailedMessage());
+
+        for (String index : List.of("mymap.lookup", "mymap.lookup.key", "mymap.lookup.value"))
+            sd.addCommand(index, "attribute");
+        var withLookup = new IndexFacts(new IndexModel(sd));
+        result = searchYql("mymap.lookup{\"foo\"} contains \"bar\"", withLookup);
+        assertNull(result.hits().getError());
+        assertEquals("mymap$lookup:foo" + FastMapSearch.keyValueSeparator() + "bar",
+                     result.getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
@@ -525,6 +552,13 @@ public class FastMapSearcherTest {
         sameElement.addItem(key);
         sameElement.addItem(value);
         return sameElement;
+    }
+
+    /** Returns the result of parsing the given YQL where clause with the given index facts and running the searcher. */
+    private static Result searchYql(String where, IndexFacts indexFacts) {
+        Query query = new Query("?yql=" + URLEncoder.encode("select * from sources * where " + where, StandardCharsets.UTF_8));
+        var context = Execution.Context.createContextStub(null, indexFacts, execution().context().schemaInfo(), null);
+        return new Execution(new Chain<>(new MinimalQueryInserter(), new FastMapSearcher()), context).search(query);
     }
 
     /** Returns the query tree after parsing the given YQL where clause and running the searcher. */

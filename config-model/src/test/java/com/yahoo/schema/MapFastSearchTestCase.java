@@ -3,12 +3,14 @@ package com.yahoo.schema;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.schema.derived.IndexInfo;
 import com.yahoo.schema.derived.IndexingScript;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.derived.Summaries;
 import com.yahoo.schema.document.FastMapSearchFields;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.jupiter.api.Test;
@@ -250,6 +252,62 @@ public class MapFastSearchTestCase {
         assertEquals(1, complexFields.size());
         assertEquals("m", complexFields.get(0).name());
         assertEquals(IlscriptsConfig.Ilscript.Complexfield.Why.FAST_MAP_SEARCH, complexFields.get(0).why());
+    }
+
+    /** The lookup field and its key and value are given the index settings of the field and its key and value. */
+    @Test
+    void requireLookupFieldsAreListedInIndexInfo() throws ParseException {
+        String fields = joinLines("field fastmap type map<string, int> {",
+                                  "  fast-search map field: lookup",
+                                  "  struct-field key { indexing: attribute }",
+                                  "  struct-field value { indexing: attribute }",
+                                  "}",
+                                  namedFieldWithLookup("fastarray", "array<entry>", "key: mykey", "value: myvalue"));
+        var indexInfo = indexInfoOf(build(getSdWithEntry("string", "long", fields), true));
+
+        assertFalse(commandsOf(indexInfo, "fastmap.key").isEmpty());
+        assertEquals(commandsOf(indexInfo, "fastmap"), commandsOf(indexInfo, "fastmap.lookup"));
+        assertEquals(commandsOf(indexInfo, "fastmap.key"), commandsOf(indexInfo, "fastmap.lookup.key"));
+        assertEquals(commandsOf(indexInfo, "fastmap.value"), commandsOf(indexInfo, "fastmap.lookup.value"));
+        assertTrue(commandsOf(indexInfo, "fastmap.lookup.key").contains("lowercase"));
+
+        assertFalse(commandsOf(indexInfo, "fastarray.mykey").isEmpty());
+        assertEquals(commandsOf(indexInfo, "fastarray"), commandsOf(indexInfo, "fastarray.lookup"));
+        assertEquals(commandsOf(indexInfo, "fastarray.mykey"), commandsOf(indexInfo, "fastarray.lookup.key"));
+        assertEquals(commandsOf(indexInfo, "fastarray.myvalue"), commandsOf(indexInfo, "fastarray.lookup.value"));
+    }
+
+    @Test
+    void requireLookupFieldIsNotNamedKeyOrValue() throws ParseException {
+        for (String name : List.of("key", "value")) {
+            String expected = "For schema 'test', field 'm': 'fast-search map field' can not be named '" + name +
+                              "', as 'key' and 'value' name the key and value in a lookup.";
+            assertRejected("field m type map<string, string> { fast-search map field: " + name + " }", true, expected);
+            assertRejectedWithEntry("string", "string",
+                                    joinLines("field m type array<entry> {",
+                                              "  fast-search map field: " + name + " { key: mykey value: myvalue }",
+                                              "}"), true, expected);
+        }
+    }
+
+    @Test
+    void requireLookupFieldNameDiffersFromTheStructFields() throws ParseException {
+        assertRejectedWithEntry("string", "string",
+                                joinLines("field m type array<entry> {",
+                                          "  fast-search map field: mykey { key: mykey value: myvalue }",
+                                          "}"), true,
+                                "For schema 'test', field 'm': 'fast-search map field' can not be named 'mykey', which is the name of a field in the struct.");
+    }
+
+    private static IndexInfoConfig indexInfoOf(Schema schema) {
+        var builder = new IndexInfoConfig.Builder();
+        new IndexInfo(schema, false).getConfig(builder);
+        return builder.build();
+    }
+
+    /** Returns the commands of the given index, in order. */
+    private static List<String> commandsOf(IndexInfoConfig config, String index) {
+        return config.indexinfo(0).command().stream().filter(c -> c.indexname().equals(index)).map(c -> c.command()).toList();
     }
 
     private static SchemaInfoConfig schemaInfoConfigOf(Schema schema) {

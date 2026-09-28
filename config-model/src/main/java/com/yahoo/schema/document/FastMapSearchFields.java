@@ -47,6 +47,11 @@ public record FastMapSearchFields(DataType fieldType, String lookupName, String 
         return subType(valueField);
     }
 
+    /** Returns whether the field has a struct field, or for a map a key or value, with the given name. */
+    public boolean hasSubField(String name) {
+        return subType(name) != null;
+    }
+
     /** Returns whether a field of the given type is an array of struct, rather than a map. */
     public static boolean isArrayOfStruct(DataType fieldType) {
         return fieldType instanceof ArrayDataType array && array.getNestedType() instanceof StructuredDataType;

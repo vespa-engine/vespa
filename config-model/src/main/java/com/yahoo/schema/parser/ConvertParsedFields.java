@@ -279,6 +279,15 @@ public class ConvertParsedFields {
             throw fastMapSearchError(schema, field, "'fast-search map field' requires a map or an array of struct field, " +
                                                     "but the type is " + field.getDataType().getName() + ".");
         }
+        if (lookupName.equals(FastMapSearchFields.MAP_KEY) || lookupName.equals(FastMapSearchFields.MAP_VALUE)) {
+            throw fastMapSearchError(schema, field, "'fast-search map field' can not be named '" + lookupName +
+                                                    "', as 'key' and 'value' name the key and value in a lookup.");
+        }
+        if (fastMapFields.hasSubField(lookupName)) {
+            throw fastMapSearchError(schema, field, "'fast-search map field' can not be named '" + lookupName +
+                                                    "', which is the name of a field in the " +
+                                                    (fastMapFields.isMap() ? "map" : "struct") + ".");
+        }
         validateFastMapSubtype(schema, field, fastMapFields.keyType(), fastMapFields.keyField(), "key", false);
         validateFastMapSubtype(schema, field, fastMapFields.valueType(), fastMapFields.valueField(), "value", true);
         if (!properties.featureFlags().fastMapSearch()) {

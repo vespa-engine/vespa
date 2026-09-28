@@ -13,6 +13,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.BooleanIndexDefinition;
 import com.yahoo.schema.document.Case;
+import com.yahoo.schema.document.FastMapSearchFields;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
@@ -25,6 +26,7 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.search.config.IndexInfoConfig;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -85,6 +87,10 @@ public class IndexInfo extends Derived {
         for (Index index : schema.getExplicitIndices()) {
             derive(index, schema);
         }
+        // Must follow, as the lookup fields get the settings of the fields they look up in
+        for (ImmutableSDField field : schema.allConcreteFields()) {
+            deriveFastMapLookupField(field);
+        }
 
         // Commands for summary fields
         // TODO: Move to schemainfo and implement differently
@@ -102,6 +108,28 @@ public class IndexInfo extends Derived {
                                 "ngram " + (sourceField.getMatching().getGramSize().orElse(NGramMatch.DEFAULT_GRAM_SIZE)));
 
             }
+        }
+    }
+
+    /**
+     * A map, or array of struct, with fast map search is queried as field.lookupName, as in
+     * field.lookupName{"key"} = value, with key and value relative to it. These names are given the settings
+     * of the field itself and of its key and value struct fields, so that they are known to the query parser,
+     * and query terms are processed as for the field itself until they are rewritten to a fast map lookup.
+     */
+    private void deriveFastMapLookupField(ImmutableSDField field) {
+        var fastMap = field.getFastMapSearch();
+        if (fastMap == null) return;
+        String lookupField = field.getName() + "." + fastMap.lookupName();
+        copyIndexCommands(field.getName(), lookupField);
+        copyIndexCommands(field.getName() + "." + fastMap.keyField(), lookupField + "." + FastMapSearchFields.MAP_KEY);
+        copyIndexCommands(field.getName() + "." + fastMap.valueField(), lookupField + "." + FastMapSearchFields.MAP_VALUE);
+    }
+
+    private void copyIndexCommands(String fromIndex, String toIndex) {
+        for (IndexCommand command : List.copyOf(commands)) {
+            if (command.index().equals(fromIndex))
+                addIndexCommand(toIndex, command.command());
         }
     }
 
