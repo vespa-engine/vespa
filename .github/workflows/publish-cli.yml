@@ -42,6 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
           fetch-depth: 0 # Fetch all history for git operations.
 
       - name: Define Build Version
@@ -112,6 +113,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-go@v5
 
@@ -153,6 +156,7 @@ jobs:
       - name: Checkout Repository at tagged version
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           fetch-depth: 0
           # Prefix the version with "v" to checkout the tag.
           ref: "v${{ needs.prepare.outputs.build-version }}"
