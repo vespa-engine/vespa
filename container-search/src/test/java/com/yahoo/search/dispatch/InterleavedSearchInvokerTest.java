@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -289,6 +290,57 @@ public class InterleavedSearchInvokerTest {
         node1.setActiveDocuments(10);
         group.aggregateNodeValues();
         assertTopKProbabilityOverride(0.8, 8, group);
+    }
+
+    @Test
+    void topKIsEstimatedForAllNodesWhenBalanced() throws IOException {
+        assertEquals(33, hitsRequestedPerNode(300, repeat(24, 100_000)));
+    }
+
+    @Test
+    void topKIsEstimatedFromTheLargestNodeWhenSkewed() throws IOException {
+        // Scaling down: 14 retiring nodes have no active documents left
+        assertEquals(59, hitsRequestedPerNode(300, concat(repeat(10, 100_000), repeat(14, 0))));
+        // Scaling up: 12 new nodes are still empty
+        assertEquals(52, hitsRequestedPerNode(300, concat(repeat(12, 100_000), repeat(12, 0))));
+        // Redistribution in progress: as if 1_200_000 / 60_000 = 20 nodes
+        assertEquals(37, hitsRequestedPerNode(300, concat(repeat(12, 60_000), repeat(12, 40_000))));
+        // All content on a single node: every node is asked for all hits
+        assertEquals(300, hitsRequestedPerNode(300, concat(repeat(1, 100_000), repeat(23, 0))));
+    }
+
+    /** Returns the hits requested from the first node when searching for the given hits in a group with these active documents per node. */
+    private int hitsRequestedPerNode(int hits, long[] activeDocumentsPerNode) throws IOException {
+        invokers.clear();
+        List<Node> nodes = new ArrayList<>();
+        for (int i = 0; i < activeDocumentsPerNode.length; i++) {
+            Node node = new Node("test", i, "host" + i, 0, false);
+            node.setWorking(true);
+            node.setActiveDocuments(activeDocumentsPerNode[i]);
+            nodes.add(node);
+        }
+        Group group = new Group(0, nodes);
+        group.aggregateNodeValues();
+        try (SearchInvoker invoker = createInterleavedInvoker(group, nodes.size())) {
+            for (int i = 0; i < nodes.size(); i++)
+                expectedEvents.add(new Event(null, 0, i));
+            query.setHits(hits);
+            invoker.search(query, 1.0);
+            assertTrue(expectedEvents.isEmpty(), "All test scenario events processed");
+            return ((MockInvoker) invokers.get(0)).hitsRequested;
+        }
+    }
+
+    private static long[] repeat(int count, long value) {
+        long[] values = new long[count];
+        Arrays.fill(values, value);
+        return values;
+    }
+
+    private static long[] concat(long[] first, long[] second) {
+        long[] values = Arrays.copyOf(first, first.length + second.length);
+        System.arraycopy(second, 0, values, first.length, second.length);
+        return values;
     }
 
     @Test
