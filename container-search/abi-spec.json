@@ -951,6 +951,21 @@
       "public static final com.yahoo.prelude.query.Limit POSITIVE_INFINITY"
     ]
   },
+  "com.yahoo.prelude.query.MapMatchItem" : {
+    "superClass" : "com.yahoo.prelude.query.SameElementItem",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, com.yahoo.prelude.query.Item, com.yahoo.prelude.query.Item)",
+      "protected void adding(com.yahoo.prelude.query.Item)"
+    ],
+    "fields" : [
+      "public final com.yahoo.prelude.query.Item keyItem",
+      "public final com.yahoo.prelude.query.Item valueItem"
+    ]
+  },
   "com.yahoo.prelude.query.MarkerWordItem" : {
     "superClass" : "com.yahoo.prelude.query.WordItem",
     "interfaces" : [ ],
