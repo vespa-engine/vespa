@@ -17,6 +17,9 @@ on:
       - '**/*.sh'
       - '**/*.bats'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: BATS Tests

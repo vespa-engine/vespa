@@ -23,6 +23,9 @@ on:
 env:
   DRY_RUN: ${{ (inputs.dry-run || github.event_name == 'pull_request') && 'true' || '' }}
 
+permissions:
+  contents: read
+
 jobs:
   mirror-copr-rpms-to-archive:
     runs-on: ubuntu-latest
