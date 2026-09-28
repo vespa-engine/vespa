@@ -228,6 +228,23 @@ const Chunk& WriteableFileChunk::get_chunk(uint32_t chunk) const {
     }
 }
 
+uint32_t WriteableFileChunk::getNumChunks() const {
+    std::unique_lock lock(_lock, std::defer_lock);
+    if (!frozen()) {
+        lock.lock();
+    }
+    return _chunkInfo.size();
+}
+
+FileChunk::ChunkInfo WriteableFileChunk::get_chunk_info(uint32_t chunk_id) const {
+    std::unique_lock lock(_lock, std::defer_lock);
+    if (!frozen()) {
+        lock.lock();
+    }
+    assert(chunk_id < _chunkInfo.size());
+    return _chunkInfo[chunk_id];
+}
+
 void WriteableFileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor& visitor) const {
     if (count == 0) {
         return;
@@ -523,8 +540,9 @@ void WriteableFileChunk::fileWriter(const uint32_t firstChunkId) {
             updateChunkInfo(chunks, cmetaV);
             LOG(spam, "bucket spread = '%3.2f'", getBucketSpread());
             guard = std::unique_lock(_writeMonitor);
-            if (done)
+            if (done) {
                 break;
+            }
         }
     }
     LOG(debug, "Stopping the filewriter with startchunkid = %d and ending chunkid = %d done=%d", firstChunkId,
@@ -732,8 +750,9 @@ void WriteableFileChunk::readDataHeader() {
         try {
             FileHeader::FileReader fr(_dataFile);
             uint32_t               header2Len = FileHeader::readSize(fr);
-            if (header2Len <= fSize)
+            if (header2Len <= fSize) {
                 e.throwSelf(); // header not truncated
+            }
         } catch (IllegalHeaderException& e2) {
         }
         if (fSize > 0) {
@@ -815,11 +834,13 @@ bool WriteableFileChunk::needFlushPendingChunks(uint64_t serialNum, uint64_t dat
 bool WriteableFileChunk::needFlushPendingChunks(const unique_lock& guard, uint64_t serialNum, uint64_t datFileLen) {
     (void)guard;
     assert(guard.mutex() == &_lock && guard.owns_lock());
-    if (_pendingChunks.empty())
+    if (_pendingChunks.empty()) {
         return false;
+    }
     const PendingChunk& pc = *_pendingChunks.front();
-    if (pc.getLastSerial() > serialNum)
+    if (pc.getLastSerial() > serialNum) {
         return false;
+    }
     bool datWritten = datFileLen >= pc.getDataOffset() + pc.getDataLen();
     if (pc.getLastSerial() < serialNum) {
         assert(datWritten);
@@ -866,8 +887,9 @@ vespalib::system_time WriteableFileChunk::unconditionallyFlushPendingChunks(cons
         std::unique_lock guard(_lock);
         lastSerial = _lastPersistedSerialNum.load(std::memory_order_relaxed);
         for (;;) {
-            if (!needFlushPendingChunks(guard, serialNum, datFileLen))
+            if (!needFlushPendingChunks(guard, serialNum, datFileLen)) {
                 break;
+            }
             std::shared_ptr<PendingChunk> pcsp = std::move(_pendingChunks.front());
             _pendingChunks.pop_front();
             const PendingChunk& pc(*pcsp);
