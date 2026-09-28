@@ -89,6 +89,7 @@ import com.yahoo.prelude.query.LabelWrapperItem;
 import com.yahoo.language.Language;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.GeoLocationItem;
+import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
@@ -703,6 +704,24 @@ public class VespaSerializer {
             return false;
         }
 
+    }
+
+    private static class MapMatchSerializer extends Serializer<MapMatchItem> {
+        @Override
+        void onExit(StringBuilder destination, MapMatchItem item) { }
+        @Override
+        boolean serialize(StringBuilder destination, MapMatchItem item, Scope scope) {
+            serializeField(item, scope, destination);
+            destination.append(SAME_ELEMENT);
+            destination.append('(');
+            for (int i = 0; i < item.getItemCount(); ++i) {
+                if (i > 0)
+                    destination.append(", ");
+                VespaSerializer.serialize(item.getItem(i), Scope.SAME_ELEMENT, destination);
+            }
+            destination.append(')');
+            return false;
+        }
     }
 
     private static class SameElementSerializer extends Serializer<SameElementItem> {
@@ -1411,6 +1430,7 @@ public class VespaSerializer {
         dispatchBuilder.put(BoolItem.class, new BoolSerializer());
         dispatchBuilder.put(TrueItem.class, new TrueSerializer());
         dispatchBuilder.put(FalseItem.class, new FalseSerializer());
+        dispatchBuilder.put(MapMatchItem.class, new MapMatchSerializer());
         dispatchBuilder.put(MarkerWordItem.class, new WordSerializer()); // gotcha
         dispatchBuilder.put(NearItem.class, new NearSerializer());
         dispatchBuilder.put(NearestNeighborItem.class, new NearestNeighborSerializer());
