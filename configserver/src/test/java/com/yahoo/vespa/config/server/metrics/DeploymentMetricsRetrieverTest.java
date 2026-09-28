@@ -12,8 +12,6 @@ import com.yahoo.config.provision.NodeSuspensionProvider;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 
 import java.net.URI;
@@ -40,7 +38,7 @@ public class DeploymentMetricsRetrieverTest {
                                                   null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
         DeploymentMetricsRetriever clusterMetricsRetriever =
-                new DeploymentMetricsRetriever(mockMetricsRetriever, NodeSuspensionProvider.EMPTY, new InMemoryFlagSource());
+                new DeploymentMetricsRetriever(mockMetricsRetriever, NodeSuspensionProvider.EMPTY);
         clusterMetricsRetriever.getMetrics(application);
 
         assertEquals(2, mockMetricsRetriever.hosts.size()); // Verify that logserver was ignored
@@ -54,26 +52,10 @@ public class DeploymentMetricsRetrieverTest {
                                                   null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
 
         DeploymentMetricsRetriever clusterMetricsRetriever =
-                new DeploymentMetricsRetriever(mockMetricsRetriever, NodeSuspensionProvider.EMPTY, new InMemoryFlagSource());
+                new DeploymentMetricsRetriever(mockMetricsRetriever, NodeSuspensionProvider.EMPTY);
         clusterMetricsRetriever.getMetrics(application);
 
         assertTrue(mockMetricsRetriever.hosts.stream().allMatch(uri -> uri.getQuery().equals("consumer=cluster-deployment-metrics")));
-    }
-
-    @Test
-    public void consumerCanBeOverriddenByFlag() {
-        MockModel mockModel = new MockModel(mockHosts());
-        MockDeploymentMetricsRetriever mockMetricsRetriever = new MockDeploymentMetricsRetriever();
-        Application application = new Application(mockModel, null, 0,
-                                                  null, null, ApplicationId.fromSerializedForm("tenant:app:instance"));
-
-        InMemoryFlagSource flagSource = new InMemoryFlagSource()
-                .withStringFlag(Flags.DEPLOYMENT_METRICS_CONSUMER.id(), "Vespa");
-        DeploymentMetricsRetriever clusterMetricsRetriever =
-                new DeploymentMetricsRetriever(mockMetricsRetriever, NodeSuspensionProvider.EMPTY, flagSource);
-        clusterMetricsRetriever.getMetrics(application);
-
-        assertTrue(mockMetricsRetriever.hosts.stream().allMatch(uri -> uri.getQuery().equals("consumer=Vespa")));
     }
 
     @Test
@@ -86,7 +68,7 @@ public class DeploymentMetricsRetrieverTest {
 
         NodeSuspensionProvider suspensionProvider = id -> Set.of("host1");
         DeploymentMetricsRetriever retriever =
-                new DeploymentMetricsRetriever(mockMetricsRetriever, suspensionProvider, new InMemoryFlagSource());
+                new DeploymentMetricsRetriever(mockMetricsRetriever, suspensionProvider);
         retriever.getMetrics(application);
 
         assertEquals(1, mockMetricsRetriever.hosts.size()); // logserver (host3) and suspended host1 are ignored
@@ -104,7 +86,7 @@ public class DeploymentMetricsRetrieverTest {
 
         NodeSuspensionProvider suspensionProvider = id -> Set.of();
         DeploymentMetricsRetriever retriever =
-                new DeploymentMetricsRetriever(mockMetricsRetriever, suspensionProvider, new InMemoryFlagSource());
+                new DeploymentMetricsRetriever(mockMetricsRetriever, suspensionProvider);
         retriever.getMetrics(application);
         // With an empty suspension set, behavior should be the same as without a provider: only logserver is ignored
         assertEquals(2, mockMetricsRetriever.hosts.size());
