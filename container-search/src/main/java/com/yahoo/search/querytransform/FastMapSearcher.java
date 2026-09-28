@@ -5,9 +5,11 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.ExactStringItem;
+import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
+import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.StringRangeItem;
@@ -27,7 +29,8 @@ import java.util.regex.Pattern;
 
 /**
  * When a field (a map, or an array of struct) has fast map search enabled, this class transforms
- * sameElement queries on that field to target the fast map attribute.
+ * map lookups naming its lookup field, such as myMap.myLookup{"key"} = 42, to target the fast map attribute.
+ * Such a lookup is a {@link MapMatchItem} on the field name followed by a dot and the lookup name.
  * <p>
  * A rewritten query no longer searches the field itself, so anything which depends on the sameElement
  * matching the original field, such as matched-elements-only summaries and match features on its
@@ -59,28 +62,26 @@ public class FastMapSearcher extends Searcher {
                 query.getModel().getQueryTree().setRoot(possibleNewRoot);
             }
             if (hasRewritten) {
-                query.trace("rewrote sameElement to fast-map lookup", true, 2);
+                query.trace("rewrote map lookup to fast-map lookup", true, 2);
             }
         }
 
         /**
-         * Rewrite sameElement for fast map search.
+         * Rewrite map lookups for fast map search.
          */
         private Item rewriteFastMapSearchVisit(Item item, SchemaInfo.Session session) {
             if (item == null) {
                 return null;
             }
 
-            // handle sameelement rewrite
-            if (item instanceof SameElementItem sameElementItem) {
-                Field.FastMapSearchFields fastMap = fastMapSearch(sameElementItem.getFieldName(), session);
-                if (fastMap != null) {
-                    TermItem rewritten = tryMakeFastMapItem(sameElementItem, fastMap);
-                    if (rewritten != null) {
-                        hasRewritten = true;
-                        return rewritten;
-                    }
+            // handle map lookup rewrite
+            if (item instanceof MapMatchItem mapMatchItem) {
+                Item rewritten = tryRewriteMapMatch(mapMatchItem, session);
+                if (rewritten != null) {
+                    hasRewritten = true;
+                    return rewritten;
                 }
+                return item;
             }
 
             // recursively try rewrite children.
@@ -100,25 +101,58 @@ public class FastMapSearcher extends Searcher {
     }
 
     /**
-     * Returns the single fast map lookup term equivalent to the given sameElement,
-     * or null if the sameElement cannot be expressed as one. A single value becomes a
-     * word lookup, a range becomes a lexical range, both on the synthetic attribute.
+     * Returns the rewrite of the given map lookup, or null if it does not name the lookup field of a field
+     * with fast map search. The rewrite is a single term on the fast map attribute if the lookup can be
+     * expressed as one, and otherwise the equivalent sameElement on the field itself.
      */
-    private TermItem tryMakeFastMapItem(SameElementItem sameElementItem, Field.FastMapSearchFields fastMap) {
-        if (!sameElementItem.getElementFilter().isEmpty()) {
-            return null; // element filter used for arrays.
-        }
-
-        if (sameElementItem.getItemCount() != 2) {
+    private Item tryRewriteMapMatch(MapMatchItem mapMatchItem, SchemaInfo.Session session) {
+        String name = mapMatchItem.getFieldName();
+        int dot = name.lastIndexOf('.');
+        if (dot <= 0 || dot == name.length() - 1) {
             return null;
         }
+        String fieldName = name.substring(0, dot);
+        String lookupName = name.substring(dot + 1);
+        Field.FastMapSearchFields fastMap = fastMapSearch(fieldName, session);
+        if (fastMap == null || ! fastMap.lookupName().equals(lookupName)) {
+            return null;
+        }
+        // The key and value are read from the children rather than the keyItem and valueItem fields,
+        // which are not updated when the item is cloned.
+        if (mapMatchItem.getItemCount() != 2) {
+            return null;
+        }
+        Item keyItem = mapMatchItem.getItem(0);
+        Item valueItem = mapMatchItem.getItem(1);
+        TermItem lookup = tryMakeFastMapItem(keyItem, valueItem, fastMap, FastMapSearch.toLookupFieldName(fieldName, lookupName));
+        if (lookup != null) {
+            return lookup;
+        }
+        return toSameElement(keyItem, valueItem, fieldName, fastMap);
+    }
 
-        // resolve which is key and which is value.
-        Item first = sameElementItem.getItem(0);
-        Item second = sameElementItem.getItem(1);
-        TermItem keyItem = termWithIndex(fastMap.keyField(), first, second);
-        TermItem valueItem = termWithIndex(fastMap.valueField(), first, second);
-        if (keyItem == null || valueItem == null) {
+    /** Returns the sameElement on the given field equivalent to a map lookup of the given key and value on its lookup field. */
+    private static SameElementItem toSameElement(Item keyItem, Item valueItem, String fieldName, Field.FastMapSearchFields fastMap) {
+        SameElementItem sameElement = new SameElementItem(fieldName);
+        sameElement.addItem(withIndex(keyItem.clone(), fastMap.keyField()));
+        sameElement.addItem(withIndex(valueItem.clone(), fastMap.valueField()));
+        return sameElement;
+    }
+
+    private static Item withIndex(Item item, String indexName) {
+        if (item instanceof IndexedItem indexed) {
+            indexed.setIndexName(indexName);
+        }
+        return item;
+    }
+
+    /**
+     * Returns the single fast map lookup term equivalent to a map lookup of the given key and value,
+     * or null if it cannot be expressed as one. A single value becomes a
+     * word lookup, a range becomes a lexical range, both on the given lookup attribute.
+     */
+    private TermItem tryMakeFastMapItem(Item keyTerm, Item valueTerm, Field.FastMapSearchFields fastMap, String lookupFieldName) {
+        if ( ! (keyTerm instanceof TermItem keyItem) || ! (valueTerm instanceof TermItem valueItem)) {
             return null;
         }
 
@@ -127,15 +161,13 @@ public class FastMapSearcher extends Searcher {
             return null;
         }
 
-        String fieldName = sameElementItem.getFieldName();
-
         if (fastMap.valueType().kind() == Field.Type.Kind.STRING) {
             var key = getString(keyItem);
             var value = getString(valueItem);
             if (key == null || value == null) {
                 return null;
             }
-            return makeWord(key, value, fieldName);
+            return makeWord(key, value, lookupFieldName);
         }
 
         if (fastMap.valueType().kind() == Field.Type.Kind.INT) {
@@ -145,9 +177,9 @@ public class FastMapSearcher extends Searcher {
             }
             var value = getInteger(valueItem);
             if (value != null) {
-                return makeWord(key, value, fieldName);
+                return makeWord(key, value, lookupFieldName);
             }
-            return makeIntRange(key, valueItem, fieldName);
+            return makeIntRange(key, valueItem, lookupFieldName);
         }
 
         if (fastMap.valueType().kind() == Field.Type.Kind.LONG) {
@@ -157,9 +189,9 @@ public class FastMapSearcher extends Searcher {
             }
             var value = getLong(valueItem);
             if (value != null) {
-                return makeWord(key, value, fieldName);
+                return makeWord(key, value, lookupFieldName);
             }
-            return makeLongRange(key, valueItem, fieldName);
+            return makeLongRange(key, valueItem, lookupFieldName);
         }
 
         if (fastMap.valueType().kind() == Field.Type.Kind.FLOAT || fastMap.valueType().kind() == Field.Type.Kind.DOUBLE) {
@@ -167,20 +199,9 @@ public class FastMapSearcher extends Searcher {
             if (key == null) {
                 return null;
             }
-            return makeFloatingPointItem(key, valueItem, fieldName, fastMap.valueType().kind() == Field.Type.Kind.FLOAT);
+            return makeFloatingPointItem(key, valueItem, lookupFieldName, fastMap.valueType().kind() == Field.Type.Kind.FLOAT);
         }
 
-        return null;
-    }
-
-    /** Returns the first of the two items which is a term with the given index name, or null. */
-    private static TermItem termWithIndex(String indexName, Item first, Item second) {
-        if (first instanceof TermItem term && indexName.equals(term.getIndexName())) {
-            return term;
-        }
-        if (second instanceof TermItem term && indexName.equals(term.getIndexName())) {
-            return term;
-        }
         return null;
     }
 
@@ -230,16 +251,16 @@ public class FastMapSearcher extends Searcher {
     }
 
     /** Package-private for unit testing. */
-    WordItem makeWord(String key, String value, String fieldName) {
+    WordItem makeWord(String key, String value, String lookupFieldName) {
         return new WordItem(FastMapSearch.toKeyValueTerm(key, value),
-                            FastMapSearch.toKeyValueFieldName(fieldName), false);
+                            lookupFieldName, false);
     }
 
     /**
      * Returns the lexical range over the synthetic attribute equivalent to the given numeric
      * range on the value of one map key, or null if it cannot be expressed as one.
      */
-    StringRangeItem makeIntRange(String key, TermItem valueItem, String fieldName) {
+    StringRangeItem makeIntRange(String key, TermItem valueItem, String lookupFieldName) {
         if (!(valueItem instanceof IntItem intItem)) {
             return null;
         }
@@ -253,7 +274,7 @@ public class FastMapSearcher extends Searcher {
         return new StringRangeItem(FastMapSearch.toKeyValue8Term(key, from), fromLimit.isInclusive(),
                                    FastMapSearch.toKeyValue8Term(key, to), toLimit.isInclusive(),
                                    intItem.getHitLimit(),
-                                   FastMapSearch.toKeyValueFieldName(fieldName), false, null);
+                                   lookupFieldName, false, null);
     }
 
     /**
@@ -273,16 +294,16 @@ public class FastMapSearcher extends Searcher {
     }
 
     /** Package-private for unit testing. */
-    WordItem makeWord(String key, Integer value, String fieldName) {
+    WordItem makeWord(String key, Integer value, String lookupFieldName) {
         return new WordItem(FastMapSearch.toKeyValue8Term(key, value),
-                            FastMapSearch.toKeyValueFieldName(fieldName), false);
+                            lookupFieldName, false);
     }
 
     /**
      * Returns the lexical range over the synthetic attribute equivalent to the given numeric
      * range on the long value of one map key, or null if it cannot be expressed as one.
      */
-    StringRangeItem makeLongRange(String key, TermItem valueItem, String fieldName) {
+    StringRangeItem makeLongRange(String key, TermItem valueItem, String lookupFieldName) {
         if (!(valueItem instanceof IntItem intItem)) {
             return null;
         }
@@ -296,7 +317,7 @@ public class FastMapSearcher extends Searcher {
         return new StringRangeItem(FastMapSearch.toKeyValue16Term(key, from), fromLimit.isInclusive(),
                                    FastMapSearch.toKeyValue16Term(key, to), toLimit.isInclusive(),
                                    intItem.getHitLimit(),
-                                   FastMapSearch.toKeyValueFieldName(fieldName), false, null);
+                                   lookupFieldName, false, null);
     }
 
     /**
@@ -321,9 +342,9 @@ public class FastMapSearcher extends Searcher {
     }
 
     /** Package-private for unit testing. */
-    WordItem makeWord(String key, Long value, String fieldName) {
+    WordItem makeWord(String key, Long value, String lookupFieldName) {
         return new WordItem(FastMapSearch.toKeyValue16Term(key, value),
-                            FastMapSearch.toKeyValueFieldName(fieldName), false);
+                            lookupFieldName, false);
     }
 
     /**
@@ -337,7 +358,7 @@ public class FastMapSearcher extends Searcher {
      *
      * Package-private for unit testing.
      */
-    TermItem makeFloatingPointItem(String key, TermItem valueItem, String fieldName, boolean isFloat) {
+    TermItem makeFloatingPointItem(String key, TermItem valueItem, String lookupFieldName, boolean isFloat) {
         Limit fromLimit;
         Limit toLimit;
         int hitLimit = 0;
@@ -362,14 +383,13 @@ public class FastMapSearcher extends Searcher {
         if (Double.isNaN(from) || Double.isNaN(to)) {
             return null; // matches nothing in the backend: fall back to the regular sameElement
         }
-        String fieldNameOfKeyValue = FastMapSearch.toKeyValueFieldName(fieldName);
         if (fromInclusive && toInclusive && Double.doubleToRawLongBits(from) == Double.doubleToRawLongBits(to)) {
-            return new WordItem(toKeyValueTerm(key, from, isFloat), fieldNameOfKeyValue, false);
+            return new WordItem(toKeyValueTerm(key, from, isFloat), lookupFieldName, false);
         }
         return new StringRangeItem(toKeyValueTerm(key, from, isFloat), fromInclusive,
                                    toKeyValueTerm(key, to, isFloat), toInclusive,
                                    hitLimit,
-                                   fieldNameOfKeyValue, false, null);
+                                   lookupFieldName, false, null);
     }
 
     /**

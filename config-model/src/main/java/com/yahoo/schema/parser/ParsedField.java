@@ -26,7 +26,7 @@ public class ParsedField extends ParsedBlock {
     private int overrideId = 0;
     private boolean isLiteral = false;
     private boolean isNormal = false;
-    private boolean fastMapSearch = false;
+    private String fastMapSearchName = null;
     private String fastMapKeyField = null;
     private String fastMapValueField = null;
     private Integer weight;
@@ -58,7 +58,7 @@ public class ParsedField extends ParsedBlock {
     boolean hasFilter() { return this.isFilter; }
     boolean hasLiteral() { return this.isLiteral; }
     boolean hasNormal() { return this.isNormal; }
-    boolean getFastMapSearch() { return this.fastMapSearch; }
+    String getFastMapSearchName() { return this.fastMapSearchName; }
     String getFastMapKeyField() { return this.fastMapKeyField; }
     String getFastMapValueField() { return this.fastMapValueField; }
     boolean hasIdOverride() { return overrideId != 0; }
@@ -132,14 +132,18 @@ public class ParsedField extends ParsedBlock {
     }
 
     public void setBolding(boolean value) { this.hasBolding = value; }
-    public void setFastMapSearch(boolean value) { this.fastMapSearch = value; }
+    public void setFastMapSearchName(String value) {
+        if (this.fastMapSearchName != null)
+            throw new IllegalArgumentException("'fast-search map field' is given more than once in field '" + name() + "'.");
+        this.fastMapSearchName = value;
+    }
     public void setFastMapKeyField(String value) { this.fastMapKeyField = setOnce("key", this.fastMapKeyField, value); }
     public void setFastMapValueField(String value) { this.fastMapValueField = setOnce("value", this.fastMapValueField, value); }
     public void setFilter(boolean value) { this.isFilter = value; }
 
     private String setOnce(String setting, String current, String value) {
         if (current != null)
-            throw new IllegalArgumentException("'" + setting + "' is given more than once in 'map' of field '" + name() + "'.");
+            throw new IllegalArgumentException("'" + setting + "' is given more than once in 'fast-search map field' of field '" + name() + "'.");
         return value;
     }
 

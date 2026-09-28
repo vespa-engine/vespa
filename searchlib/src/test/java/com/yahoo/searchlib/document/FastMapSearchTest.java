@@ -17,7 +17,7 @@ public class FastMapSearchTest {
 
     @Test
     public void testToKeyValueFieldName() {
-        assertEquals("myMap$keyvalue", FastMapSearch.toKeyValueFieldName("myMap"));
+        assertEquals("myMap$myLookup", FastMapSearch.toLookupFieldName("myMap", "myLookup"));
     }
 
     @Test

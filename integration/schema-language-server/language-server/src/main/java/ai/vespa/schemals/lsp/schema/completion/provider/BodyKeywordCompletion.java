@@ -42,7 +42,7 @@ import ai.vespa.schemals.parser.ast.indexInsideField;
 import ai.vespa.schemals.parser.ast.indexOutsideDoc;
 import ai.vespa.schemals.parser.ast.INDEX;
 import ai.vespa.schemals.parser.ast.linguisticsElm;
-import ai.vespa.schemals.parser.ast.mapElm;
+import ai.vespa.schemals.parser.ast.fastSearchMapElm;
 import ai.vespa.schemals.parser.ast.onnxModel;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.PROFILE;
@@ -238,8 +238,6 @@ public class BodyKeywordCompletion implements CompletionProvider {
 
         put(weightedsetElm.class, FixedKeywordBodies.WEIGHTEDSET.completionItems());
 
-        put(mapElm.class, FixedKeywordBodies.MAP.completionItems());
-
         put(hnswIndex.class, FixedKeywordBodies.HNSW.completionItems());
 
         put(dictionaryElm.class, FixedKeywordBodies.DICTIONARY.completionItems());
@@ -273,29 +271,30 @@ public class BodyKeywordCompletion implements CompletionProvider {
     }
 
     /**
-     * The config model only accepts 'map: fast-search' on maps whose key and value types are among these,
+     * The config model only accepts 'fast-search map field' on maps whose key and value types are among these,
      * see CreateFastMapSearch and ConvertParsedFields in config-model.
      */
     private static final Set<String> FAST_MAP_SEARCH_KEY_TYPES = Set.of("string", "int", "long");
     private static final Set<String> FAST_MAP_SEARCH_VALUE_TYPES = Set.of("string", "int", "long", "float", "double");
 
-    /** Snippets for the map settings block, only offered in fields where fast map search is allowed. */
-    private static final List<CompletionItem> mapFieldSnippets = withDocumentation(List.of(
-        FixedKeywordBodies.MAP.getColonSnippet(),
-        FixedKeywordBodies.MAP.getBodySnippet()
-    ));
+    private static final String FAST_SEARCH_MAP_FIELD = "fast-search map field";
+
+    /** Snippet for the fast-search map field statement, only offered in map fields where fast map search is allowed. */
+    private static final List<CompletionItem> mapFieldSnippets = List.of(
+        CompletionUtils.constructSnippet(FAST_SEARCH_MAP_FIELD, FAST_SEARCH_MAP_FIELD + ": $0", FAST_SEARCH_MAP_FIELD + ":")
+    );
 
     /**
-     * Snippet for the map settings block in an array of struct field, where the struct fields holding
-     * the key and the value must be given, so the one line 'map: fast-search' form is not offered.
+     * Snippet for the fast-search map field statement in an array of struct field, where the struct fields
+     * holding the key and the value must be given in its block.
      */
-    private static final List<CompletionItem> arrayOfStructMapFieldSnippets = withDocumentation(List.of(
-        CompletionUtils.constructSnippet("map", "map {\n\tkey: $1\n\tvalue: $2\n\tfast-search\n}", "map {}")
-    ));
+    private static final List<CompletionItem> arrayOfStructMapFieldSnippets = List.of(
+        CompletionUtils.constructSnippet(FAST_SEARCH_MAP_FIELD, FAST_SEARCH_MAP_FIELD + ": $1 {\n\tkey: $2\n\tvalue: $3\n}",
+                                         FAST_SEARCH_MAP_FIELD + ": {}")
+    );
 
-    /** Items inside the map settings block of an array of struct field. */
+    /** Items inside the fast-search map field block of an array of struct field. */
     private static final List<CompletionItem> arrayOfStructMapBodySnippets = List.of(
-        CompletionUtils.constructBasic("fast-search"),
         CompletionUtils.constructSnippet("key", "key: $0", "key:"),
         CompletionUtils.constructSnippet("value", "value: $0", "value:")
     );
@@ -321,7 +320,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
     }
 
     /**
-     * Returns true if the given field element has a map type on which 'map: fast-search' can be set.
+     * Returns true if the given field element has a map type on which 'fast-search map field' can be set.
      */
     private static boolean supportsFastMapSearch(Node fieldNode) {
         ParsedType type = fieldType(fieldNode);
@@ -333,8 +332,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
     }
 
     /**
-     * Returns true if the given field element is an array of struct, on which 'map' with 'key', 'value' and
-     * 'fast-search' can be set. A struct is referenced by name, which is not resolved to a struct at this point,
+     * Returns true if the given field element is an array of struct, on which 'fast-search map field' with
+     * 'key' and 'value' can be set. A struct is referenced by name, which is not resolved to a struct at this point,
      * so any array of a type which is not built in is taken to be an array of struct.
      */
     private static boolean isArrayOfStruct(Node fieldNode) {
@@ -418,6 +417,15 @@ public class BodyKeywordCompletion implements CompletionProvider {
 
         if (searchNode.isASTInstance(linguisticsElm.class)) return linguisticsCompletionItems(searchNode, searchPos);
 
+        if (searchNode.isASTInstance(fastSearchMapElm.class)) {
+            Node fieldNode = searchNode.getParent();
+            while (fieldNode != null && !fieldNode.isASTInstance(fieldElm.class)) {
+                fieldNode = fieldNode.getParent();
+            }
+            // The key and value of a map are always named key and value, so there is nothing to suggest.
+            return (fieldNode != null && isArrayOfStruct(fieldNode)) ? arrayOfStructMapBodySnippets : List.of();
+        }
+
         List<CompletionItem> result = bodyKeywordSnippets.get(searchNode.getASTClass());
         if (result == null) return List.of();
 
@@ -430,15 +438,6 @@ public class BodyKeywordCompletion implements CompletionProvider {
             List<CompletionItem> withMap = new ArrayList<>(result);
             withMap.addAll(arrayOfStructMapFieldSnippets);
             return withMap;
-        }
-        if (searchNode.isASTInstance(mapElm.class)) {
-            Node fieldNode = searchNode.getParent();
-            while (fieldNode != null && !fieldNode.isASTInstance(fieldElm.class)) {
-                fieldNode = fieldNode.getParent();
-            }
-            if (fieldNode != null && isArrayOfStruct(fieldNode)) {
-                return arrayOfStructMapBodySnippets;
-            }
         }
         return result;
     }

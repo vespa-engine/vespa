@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests the 'map: fast-search' setting on a field, which is gated by the fast-map-search feature flag.
+ * Tests the 'fast-search map field' setting on a field, which is gated by the fast-map-search feature flag.
  *
  * @author johsol
  */
@@ -32,17 +32,42 @@ public class MapFastSearchTestCase {
 
     @Test
     void requireFastSearchIsSetWhenFlagEnabled() throws ParseException {
-        assertTrue(fastMapSearchOf("field m type map<string, string> { map: fast-search }", true));
+        assertTrue(fastMapSearchOf("field m type map<string, string> { fast-search map field: lookup }", true));
     }
 
     @Test
-    void requireFastSearchSpecifiedAsBlock() throws ParseException {
+    void requireFastSearchSpecifiedWithBlock() throws ParseException {
         String field = joinLines("field m type map<string, string> {",
-                                 "  map {",
-                                 "    fast-search",
+                                 "  fast-search map field: lookup {",
                                  "  }",
                                  "}");
         assertTrue(fastMapSearchOf(field, true));
+        assertEquals("lookup", fieldIn(build(getSd(field), true), "m").getFastMapSearch().lookupName());
+    }
+
+    @Test
+    void requireOldSyntaxIsAParseError() {
+        assertThrows(ParseException.class,
+                     () -> build(getSd("field m type map<string, string> { map: fast-search }"), true));
+        assertThrows(ParseException.class,
+                     () -> build(getSdWithEntry("string", "string", joinLines("field m type array<entry> {",
+                                                                              "  map {",
+                                                                              "    key: mykey",
+                                                                              "    value: myvalue",
+                                                                              "    fast-search",
+                                                                              "  }",
+                                                                              "}")), true));
+    }
+
+    @Test
+    void requireRepeatedFastSearchMapFieldIsAParseError() {
+        var exception = assertThrows(ParseException.class,
+                                     () -> build(getSd(joinLines("field m type map<string, string> {",
+                                                                 "  fast-search map field: lookup",
+                                                                 "  fast-search map field: other",
+                                                                 "}")), true));
+        assertTrue(exception.getMessage().contains("'fast-search map field' is given more than once in field 'm'."),
+                   "Unexpected message: " + exception.getMessage());
     }
 
     @Test
@@ -54,7 +79,7 @@ public class MapFastSearchTestCase {
     @Test
     void requireFastMapAndPlainMapCanCoexist() throws ParseException {
         String fields = joinLines("field plain type map<string, string> { }",
-                                  "field fast type map<string, string> { map: fast-search }");
+                                  "field fast type map<string, string> { fast-search map field: lookup }");
         var schema = build(getSd(fields), true);
         assertFalse(fieldIn(schema, "plain").hasFastMapSearch());
         assertTrue(fieldIn(schema, "fast").hasFastMapSearch());
@@ -62,37 +87,37 @@ public class MapFastSearchTestCase {
 
     @Test
     void requireFastMapRejectedForNonMaps() throws ParseException {
-        assertRejected("field m type int { map: fast-search }", true,
-                       "For schema 'test', field 'm': 'map: fast-search' requires a map or an array of struct field, but the type is int.");
-        assertRejected("field m type array<string> { map: fast-search }", true,
-                       "For schema 'test', field 'm': 'map: fast-search' requires a map or an array of struct field, but the type is Array<string>.");
-        assertRejected("field m type weightedset<string> { map: fast-search }", true,
-                       "For schema 'test', field 'm': 'map: fast-search' requires a map or an array of struct field, but the type is WeightedSet<string>.");
+        assertRejected("field m type int { fast-search map field: lookup }", true,
+                       "For schema 'test', field 'm': 'fast-search map field' requires a map or an array of struct field, but the type is int.");
+        assertRejected("field m type array<string> { fast-search map field: lookup }", true,
+                       "For schema 'test', field 'm': 'fast-search map field' requires a map or an array of struct field, but the type is Array<string>.");
+        assertRejected("field m type weightedset<string> { fast-search map field: lookup }", true,
+                       "For schema 'test', field 'm': 'fast-search map field' requires a map or an array of struct field, but the type is WeightedSet<string>.");
     }
 
     @Test
     void requireFastMapRejectedForUnsupportedKeyAndValueTypes() throws ParseException {
-        assertRejected("field m type map<double, string> { map: fast-search }", true,
-                       "For schema 'test', field 'm': 'map: fast-search' requires key to be of type string, int or long, but the type is double.");
-        assertRejected("field m type map<string, bool> { map: fast-search }", true,
-                       "For schema 'test', field 'm': 'map: fast-search' requires value to be of type string, int, long, float or double, but the type is bool.");
+        assertRejected("field m type map<double, string> { fast-search map field: lookup }", true,
+                       "For schema 'test', field 'm': 'fast-search map field' requires key to be of type string, int or long, but the type is double.");
+        assertRejected("field m type map<string, bool> { fast-search map field: lookup }", true,
+                       "For schema 'test', field 'm': 'fast-search map field' requires value to be of type string, int, long, float or double, but the type is bool.");
     }
 
     @Test
     void requireFastMapAcceptsSupportedKeyAndValueTypes() throws ParseException {
-        assertTrue(fastMapSearchOf("field m type map<int, string> { map: fast-search }", true));
-        assertTrue(fastMapSearchOf("field m type map<string, int> { map: fast-search }", true));
-        assertTrue(fastMapSearchOf("field m type map<long, string> { map: fast-search }", true));
-        assertTrue(fastMapSearchOf("field m type map<string, long> { map: fast-search }", true));
-        assertTrue(fastMapSearchOf("field m type map<string, float> { map: fast-search }", true));
-        assertTrue(fastMapSearchOf("field m type map<string, double> { map: fast-search }", true));
+        assertTrue(fastMapSearchOf("field m type map<int, string> { fast-search map field: lookup }", true));
+        assertTrue(fastMapSearchOf("field m type map<string, int> { fast-search map field: lookup }", true));
+        assertTrue(fastMapSearchOf("field m type map<long, string> { fast-search map field: lookup }", true));
+        assertTrue(fastMapSearchOf("field m type map<string, long> { fast-search map field: lookup }", true));
+        assertTrue(fastMapSearchOf("field m type map<string, float> { fast-search map field: lookup }", true));
+        assertTrue(fastMapSearchOf("field m type map<string, double> { fast-search map field: lookup }", true));
     }
 
     @Test
     void requireFastMapFieldsAreListedInIlscriptsConfig() throws ParseException {
         String fields = joinLines("field plain type map<string, string> { }",
-                                  "field fast type map<string, string> { map: fast-search }",
-                                  "field alsoFast type map<string, int> { map: fast-search }");
+                                  "field fast type map<string, string> { fast-search map field: lookup }",
+                                  "field alsoFast type map<string, int> { fast-search map field: lookup }");
         var config = ilscriptsConfigOf(build(getSd(fields), true));
         assertEquals(1, config.ilscript().size());
         var complexFields = config.ilscript(0).complexfield();
@@ -113,100 +138,95 @@ public class MapFastSearchTestCase {
 
     @Test
     void requireMapKeyAndValueMayBeNamedButNotChanged() throws ParseException {
-        var field = fieldIn(build(getSd(fieldWithMap("map<string, string>", "key: key", "value: value", "fast-search")), true), "m");
-        assertEquals(FastMapSearchFields.forMap(field.getDataType()), field.getFastMapSearch());
-        assertRejected(fieldWithMap("map<string, string>", "key: k", "fast-search"), true,
-                       "For schema 'test', field 'm': 'map: fast-search' on a map requires key to be 'key', but got 'k'.");
+        var field = fieldIn(build(getSd(fieldWithLookup("map<string, string>", "key: key", "value: value")), true), "m");
+        assertEquals(FastMapSearchFields.forMap(field.getDataType(), "lookup"), field.getFastMapSearch());
+        assertRejected(fieldWithLookup("map<string, string>", "key: k"), true,
+                       "For schema 'test', field 'm': 'fast-search map field' on a map requires key to be 'key', but got 'k'.");
     }
 
     @Test
     void requireFastSearchOnArrayOfStruct() throws ParseException {
         for (String valueType : new String[] { "string", "int", "long" }) {
             var field = fieldIn(build(getSdWithEntry("string", valueType,
-                                                     fieldWithMap("array<entry>", "key: mykey", "value: myvalue", "fast-search")),
+                                                     fieldWithLookup("array<entry>", "key: mykey", "value: myvalue")),
                                       true), "m");
             assertTrue(field.hasFastMapSearch());
-            assertEquals(FastMapSearchFields.forArrayOfStruct(field.getDataType(), "mykey", "myvalue"), field.getFastMapSearch());
+            assertEquals(FastMapSearchFields.forArrayOfStruct(field.getDataType(), "lookup", "mykey", "myvalue"), field.getFastMapSearch());
         }
     }
 
     @Test
     void requireFastSearchOnArrayOfStructRejectedWhenFlagDisabled() {
-        assertRejectedWithEntry("string", "string", fieldWithMap("array<entry>", "key: mykey", "value: myvalue", "fast-search"), false,
-                                "For schema 'test', field 'm': 'map: fast-search' is an unfinished feature that " +
+        assertRejectedWithEntry("string", "string", fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"), false,
+                                "For schema 'test', field 'm': 'fast-search map field' is an unfinished feature that " +
                                 "will not be enabled yet. Please remove this property from the field.");
     }
 
     @Test
     void requireFastSearchOnArrayOfStructRejectedWithoutKeyAndValue() {
-        String expected = "For schema 'test', field 'm': 'map: fast-search' on an array of struct requires " +
-                          "'key' and 'value' in 'map' to name the struct fields to use.";
-        assertRejectedWithEntry("string", "string", "field m type array<entry> { map: fast-search }", true, expected);
-        assertRejectedWithEntry("string", "string", fieldWithMap("array<entry>", "key: mykey", "fast-search"), true, expected);
-        assertRejectedWithEntry("string", "string", fieldWithMap("array<entry>", "value: myvalue", "fast-search"), true, expected);
+        String expected = "For schema 'test', field 'm': 'fast-search map field' on an array of struct requires " +
+                          "'key' and 'value' in its block to name the struct fields to use.";
+        assertRejectedWithEntry("string", "string", "field m type array<entry> { fast-search map field: lookup }", true, expected);
+        assertRejectedWithEntry("string", "string", fieldWithLookup("array<entry>", "key: mykey"), true, expected);
+        assertRejectedWithEntry("string", "string", fieldWithLookup("array<entry>", "value: myvalue"), true, expected);
     }
 
     @Test
     void requireFastSearchOnArrayOfStructRejectedForUnknownStructFields() {
-        assertRejectedWithEntry("string", "string", fieldWithMap("array<entry>", "key: nokey", "value: myvalue", "fast-search"), true,
-                                "For schema 'test', field 'm': 'map: fast-search' requires key 'nokey' to be a field in the struct.");
-        assertRejectedWithEntry("string", "string", fieldWithMap("array<entry>", "key: mykey", "value: novalue", "fast-search"), true,
-                                "For schema 'test', field 'm': 'map: fast-search' requires value 'novalue' to be a field in the struct.");
+        assertRejectedWithEntry("string", "string", fieldWithLookup("array<entry>", "key: nokey", "value: myvalue"), true,
+                                "For schema 'test', field 'm': 'fast-search map field' requires key 'nokey' to be a field in the struct.");
+        assertRejectedWithEntry("string", "string", fieldWithLookup("array<entry>", "key: mykey", "value: novalue"), true,
+                                "For schema 'test', field 'm': 'fast-search map field' requires value 'novalue' to be a field in the struct.");
     }
 
     @Test
     void requireFastSearchOnArrayOfStructRejectedForSameKeyAndValue() {
-        assertRejectedWithEntry("string", "string", fieldWithMap("array<entry>", "key: mykey", "value: mykey", "fast-search"), true,
-                                "For schema 'test', field 'm': 'map: fast-search' requires 'key' and 'value' to be different struct fields.");
+        assertRejectedWithEntry("string", "string", fieldWithLookup("array<entry>", "key: mykey", "value: mykey"), true,
+                                "For schema 'test', field 'm': 'fast-search map field' requires 'key' and 'value' to be different struct fields.");
     }
 
     @Test
     void requireFastSearchOnArrayOfStructRejectedForUnsupportedTypes() {
-        assertRejectedWithEntry("double", "string", fieldWithMap("array<entry>", "key: mykey", "value: myvalue", "fast-search"), true,
-                                "For schema 'test', field 'm': 'map: fast-search' requires mykey to be of type string, int or long, but the type is double.");
-        assertRejectedWithEntry("string", "bool", fieldWithMap("array<entry>", "key: mykey", "value: myvalue", "fast-search"), true,
-                                "For schema 'test', field 'm': 'map: fast-search' requires myvalue to be of type string, int, long, float or double, but the type is bool.");
-    }
-
-    @Test
-    void requireKeyAndValueRejectedWithoutFastSearch() {
-        assertRejectedWithEntry("string", "string", fieldWithMap("array<entry>", "key: mykey", "value: myvalue"), true,
-                                "For schema 'test', field 'm': 'key' and 'value' in 'map' are only supported together with 'fast-search'.");
+        assertRejectedWithEntry("double", "string", fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"), true,
+                                "For schema 'test', field 'm': 'fast-search map field' requires mykey to be of type string, int or long, but the type is double.");
+        assertRejectedWithEntry("string", "bool", fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"), true,
+                                "For schema 'test', field 'm': 'fast-search map field' requires myvalue to be of type string, int, long, float or double, but the type is bool.");
     }
 
     @Test
     void requireUnknownMapSettingIsAParseError() {
         assertThrows(ParseException.class,
-                     () -> build(getSdWithEntry("string", "string", fieldWithMap("array<entry>", "foo: mykey", "fast-search")), true));
+                     () -> build(getSdWithEntry("string", "string", fieldWithLookup("array<entry>", "foo: mykey")), true));
     }
 
     @Test
     void requireRepeatedKeyOrValueIsAParseError() {
         var exception = assertThrows(ParseException.class,
                                      () -> build(getSdWithEntry("string", "string",
-                                                                fieldWithMap("array<entry>", "key: mykey", "value: myvalue",
-                                                                             "key: myvalue", "fast-search")), true));
-        assertTrue(exception.getMessage().contains("'key' is given more than once in 'map' of field 'm'."),
+                                                                fieldWithLookup("array<entry>", "key: mykey", "value: myvalue",
+                                                                             "key: myvalue")), true));
+        assertTrue(exception.getMessage().contains("'key' is given more than once in 'fast-search map field' of field 'm'."),
                    "Unexpected message: " + exception.getMessage());
         exception = assertThrows(ParseException.class,
                                  () -> build(getSdWithEntry("string", "string",
-                                                            fieldWithMap("array<entry>", "key: mykey", "value: myvalue",
-                                                                         "value: myvalue", "fast-search")), true));
-        assertTrue(exception.getMessage().contains("'value' is given more than once in 'map' of field 'm'."),
+                                                            fieldWithLookup("array<entry>", "key: mykey", "value: myvalue",
+                                                                         "value: myvalue")), true));
+        assertTrue(exception.getMessage().contains("'value' is given more than once in 'fast-search map field' of field 'm'."),
                    "Unexpected message: " + exception.getMessage());
     }
 
     @Test
     void requireFastMapFieldsAreExportedInSchemaInfo() throws ParseException {
         String fields = joinLines("field plain type map<string, string> { }",
-                                  "field fastmap type map<string, int> { map: fast-search }",
-                                  namedFieldWithMap("fastarray", "array<entry>", "key: mykey", "value: myvalue", "fast-search"));
+                                  "field fastmap type map<string, int> { fast-search map field: lookup }",
+                                  namedFieldWithLookup("fastarray", "array<entry>", "key: mykey", "value: myvalue"));
         var schema = build(getSdWithEntry("string", "long", fields), true);
         var config = schemaInfoConfigOf(schema).schema(0);
         assertTrue(fieldConfig(config, "plain").fastMapSearchFields().isEmpty());
 
         var fastMap = fieldConfig(config, "fastmap").fastMapSearchFields();
         assertEquals(1, fastMap.size());
+        assertEquals("lookup", fastMap.get(0).lookupName());
         assertEquals("key", fastMap.get(0).keyField());
         assertEquals("string", fastMap.get(0).keyType());
         assertEquals("value", fastMap.get(0).valueField());
@@ -214,6 +234,7 @@ public class MapFastSearchTestCase {
 
         var fastArray = fieldConfig(config, "fastarray").fastMapSearchFields();
         assertEquals(1, fastArray.size());
+        assertEquals("lookup", fastArray.get(0).lookupName());
         assertEquals("mykey", fastArray.get(0).keyField());
         assertEquals("string", fastArray.get(0).keyType());
         assertEquals("myvalue", fastArray.get(0).valueField());
@@ -223,7 +244,7 @@ public class MapFastSearchTestCase {
     @Test
     void requireFastArrayOfStructIsListedInIlscriptsConfig() throws ParseException {
         var config = ilscriptsConfigOf(build(getSdWithEntry("string", "string",
-                                                            fieldWithMap("array<entry>", "key: mykey", "value: myvalue", "fast-search")),
+                                                            fieldWithLookup("array<entry>", "key: mykey", "value: myvalue")),
                                              true));
         var complexFields = config.ilscript(0).complexfield();
         assertEquals(1, complexFields.size());
@@ -274,15 +295,18 @@ public class MapFastSearchTestCase {
         return builder.getSchema();
     }
 
-    /** Returns a field named m of the given type, with a map block holding the given settings, one per line. */
-    private static String fieldWithMap(String type, String ... mapSettings) {
-        return namedFieldWithMap("m", type, mapSettings);
+    /**
+     * Returns a field named m of the given type, with a 'fast-search map field: lookup' block holding the
+     * given settings, one per line.
+     */
+    private static String fieldWithLookup(String type, String ... mapSettings) {
+        return namedFieldWithLookup("m", type, mapSettings);
     }
 
-    private static String namedFieldWithMap(String name, String type, String ... mapSettings) {
+    private static String namedFieldWithLookup(String name, String type, String ... mapSettings) {
         List<String> lines = new ArrayList<>();
         lines.add("field " + name + " type " + type + " {");
-        lines.add("  map {");
+        lines.add("  fast-search map field: lookup {");
         for (String setting : mapSettings)
             lines.add("    " + setting);
         lines.add("  }");
