@@ -10,6 +10,7 @@ import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.FalseItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.search.Query;
@@ -47,6 +48,10 @@ public class RangeQueryOptimizer extends Searcher {
     /** Recursively performs the range optimization on this query tree and returns whether at least one optimization was done */
     private boolean optimize(Item item, IndexFacts.Session indexFacts) {
         if ( ! (item instanceof CompositeItem composite)) return false;
+
+        // already OK
+        if (item instanceof MapMatchItem)
+            return false;
 
         boolean optimized = false;
         for (Iterator<Item> i = composite.getItemIterator(); i.hasNext(); )

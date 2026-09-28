@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import com.yahoo.search.Query;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -8,10 +9,12 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MapMatchItemTestCase {
 
@@ -24,19 +27,32 @@ public class MapMatchItemTestCase {
         assertSame(value, mapMatch.valueItem());
         assertSame(key, mapMatch.getItem(0));
         assertSame(value, mapMatch.getItem(1));
+        assertSame(mapMatch, key.getParent());
+        assertSame(mapMatch, value.getParent());
         assertEquals("mymap:{key:foo value:42}", mapMatch.toString());
+    }
+
+    @Test
+    void testChildrenSearchFieldsInsideTheMap() {
+        var mapMatch = mapMatch();
+        assertEquals("mymap", mapMatch.getFieldName());
+        assertEquals("mymap.key", ((HasIndexItem) mapMatch.keyItem()).getFieldName());
+        assertEquals("mymap.value", ((HasIndexItem) mapMatch.valueItem()).getFieldName());
+
+        // Setting the index name renames the map field, not the children
+        mapMatch.setIndexName("othermap");
+        assertEquals("othermap:{key:foo value:42}", mapMatch.toString());
+        assertEquals("othermap.key", ((HasIndexItem) mapMatch.keyItem()).getFieldName());
     }
 
     @Test
     void testCloneHasItsOwnKeyAndValue() {
         var mapMatch = new MapMatchItem("mymap", new WordItem("foo", "key"), new IntItem("42", "value"));
-        var copy = (MapMatchItem) mapMatch.clone();
+        var copy = mapMatch.clone();
 
         assertEquals(mapMatch, copy);
         assertNotSame(mapMatch.keyItem(), copy.keyItem());
         assertNotSame(mapMatch.valueItem(), copy.valueItem());
-        assertSame(copy.getItem(0), copy.keyItem());
-        assertSame(copy.getItem(1), copy.valueItem());
         assertSame(copy, copy.keyItem().getParent());
         assertSame(copy, copy.valueItem().getParent());
 
@@ -48,28 +64,18 @@ public class MapMatchItemTestCase {
 
     @Test
     void testCloneCannotGetExtraChildren() {
-        var copy = (MapMatchItem) new MapMatchItem("mymap", new WordItem("foo", "key"), new WordItem("bar", "value")).clone();
-        assertThrows(IllegalArgumentException.class, () -> copy.addItem(new WordItem("baz", "other")));
+        var copy = mapMatch().clone();
+        assertThrows(UnsupportedOperationException.class, () -> copy.addItem(new WordItem("baz", "other")));
+        assertThrows(UnsupportedOperationException.class, () -> copy.getItemIterator().add(new WordItem("baz", "other")));
     }
 
     @Test
     void testChildrenCannotBeAdded() {
         var mapMatch = mapMatch();
-        assertThrows(IllegalArgumentException.class, () -> mapMatch.addItem(new WordItem("baz", "other")));
-        assertThrows(IllegalArgumentException.class, () -> mapMatch.addItem(0, new WordItem("baz", "other")));
+        assertThrows(UnsupportedOperationException.class, () -> mapMatch.addItem(new WordItem("baz", "other")));
+        assertThrows(UnsupportedOperationException.class, () -> mapMatch.addItem(0, new WordItem("baz", "other")));
         assertThrows(UnsupportedOperationException.class, () -> mapMatch.getItemIterator().add(new WordItem("baz", "other")));
-        assertUnchanged(mapMatch);
-    }
-
-    @Test
-    void testChildrenCannotBeReplaced() {
-        var mapMatch = mapMatch();
-        assertThrows(UnsupportedOperationException.class, () -> mapMatch.setItem(0, new WordItem("baz", "key")));
-        assertThrows(UnsupportedOperationException.class, () -> mapMatch.setItem(1, new WordItem("baz", "value")));
-        var iterator = mapMatch.getItemIterator();
-        iterator.next();
-        assertThrows(UnsupportedOperationException.class, () -> iterator.set(new WordItem("baz", "key")));
-        assertUnchanged(mapMatch);
+        assertEquals(mapMatch(), mapMatch);
     }
 
     @Test
@@ -80,7 +86,50 @@ public class MapMatchItemTestCase {
         var iterator = mapMatch.getItemIterator();
         iterator.next();
         assertThrows(UnsupportedOperationException.class, iterator::remove);
-        assertUnchanged(mapMatch);
+        assertEquals(mapMatch(), mapMatch);
+    }
+
+    /** Query rewriters, such as normalizing, may replace the key and value in place. */
+    @Test
+    void testChildrenCanBeReplaced() {
+        var mapMatch = mapMatch();
+        var key = new WordItem("bar", "key");
+        mapMatch.setItem(0, key);
+        assertSame(key, mapMatch.keyItem());
+        assertSame(mapMatch, key.getParent());
+
+        var value = new IntItem("43", "value");
+        var iterator = mapMatch.getItemIterator();
+        iterator.next();
+        iterator.next();
+        iterator.set(value);
+        assertSame(value, mapMatch.valueItem());
+        assertSame(mapMatch, value.getParent());
+        assertEquals("mymap:{key:bar value:43}", mapMatch.toString());
+    }
+
+    @Test
+    void testIsNotASameElement() {
+        Item mapMatch = mapMatch();
+        assertFalse(mapMatch instanceof SameElementItem);
+    }
+
+    /** The key and value are ranked as terms, so they get unique ids and their labels reach the backend. */
+    @Test
+    void testChildrenAreTagged() {
+        var mapMatch = mapMatch();
+        mapMatch.keyItem().setLabel("my_key");
+        var query = new Query();
+        query.getModel().getQueryTree().setRoot(mapMatch);
+        query.prepare();
+
+        var key = (TaggableItem) mapMatch.keyItem();
+        var value = (TaggableItem) mapMatch.valueItem();
+        assertTrue(key.getUniqueID() > 0);
+        assertTrue(value.getUniqueID() > 0);
+        assertNotEquals(key.getUniqueID(), value.getUniqueID());
+        assertEquals(String.valueOf(key.getUniqueID()),
+                     query.getRanking().getProperties().get("vespa.label.my_key.id").get(0));
     }
 
     @Test
@@ -105,6 +154,15 @@ public class MapMatchItemTestCase {
         assertEquals(sameElement().getItemType(), mapMatch().getItemType());
         assertArrayEquals(encode(sameElement()), encode(mapMatch()));
         assertEquals(ToProtobuf.convertFromQuery(sameElement()), ToProtobuf.convertFromQuery(mapMatch()));
+
+        // Including its settings
+        var sameElement = sameElement();
+        sameElement.setWeight(150);
+        sameElement.setRanked(false);
+        var mapMatch = mapMatch();
+        mapMatch.setWeight(150);
+        mapMatch.setRanked(false);
+        assertArrayEquals(encode(sameElement), encode(mapMatch));
     }
 
     private static MapMatchItem mapMatch() {
@@ -116,13 +174,6 @@ public class MapMatchItemTestCase {
         sameElement.addItem(new WordItem("foo", "key"));
         sameElement.addItem(new IntItem("42", "value"));
         return sameElement;
-    }
-
-    private static void assertUnchanged(MapMatchItem mapMatch) {
-        assertEquals(2, mapMatch.getItemCount());
-        assertEquals("mymap:{key:foo value:42}", mapMatch.toString());
-        assertSame(mapMatch, mapMatch.keyItem().getParent());
-        assertSame(mapMatch, mapMatch.valueItem().getParent());
     }
 
     private static byte[] encode(Item item) {

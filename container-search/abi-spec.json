@@ -952,8 +952,10 @@
     ]
   },
   "com.yahoo.prelude.query.MapMatchItem" : {
-    "superClass" : "com.yahoo.prelude.query.SameElementItem",
-    "interfaces" : [ ],
+    "superClass" : "com.yahoo.prelude.query.NonReducibleCompositeItem",
+    "interfaces" : [
+      "com.yahoo.prelude.query.HasIndexItem"
+    ],
     "attributes" : [
       "public"
     ],
@@ -961,11 +963,27 @@
       "public void <init>(java.lang.String, com.yahoo.prelude.query.Item, com.yahoo.prelude.query.Item)",
       "public com.yahoo.prelude.query.Item keyItem()",
       "public com.yahoo.prelude.query.Item valueItem()",
-      "protected void adding(com.yahoo.prelude.query.Item)",
-      "public com.yahoo.prelude.query.Item setItem(int, com.yahoo.prelude.query.Item)",
+      "public java.lang.String getFieldName()",
+      "public java.lang.String getIndexName()",
+      "public void setIndexName(java.lang.String)",
+      "public int getNumWords()",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public void addItem(com.yahoo.prelude.query.Item)",
+      "public void addItem(int, com.yahoo.prelude.query.Item)",
       "public com.yahoo.prelude.query.Item removeItem(int)",
       "public boolean removeItem(com.yahoo.prelude.query.Item)",
-      "public java.util.ListIterator getItemIterator()"
+      "public java.util.ListIterator getItemIterator()",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "protected void appendHeadingString(java.lang.StringBuilder)",
+      "protected void appendBodyString(java.lang.StringBuilder)",
+      "public com.yahoo.prelude.query.MapMatchItem clone()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
+      "public bridge synthetic com.yahoo.prelude.query.CompositeItem clone()",
+      "public bridge synthetic com.yahoo.prelude.query.Item clone()",
+      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [ ]
   },

@@ -499,15 +499,15 @@ public class FastMapSearcherTest {
         return query.getModel().getQueryTree().getRoot();
     }
 
-    private static void assertRewritten(String expected, SameElementItem sameElement) {
-        Query query = queryWith(sameElement);
+    private static void assertRewritten(String expected, Item item) {
+        Query query = queryWith(item);
         new FastMapSearcher().search(query, execution());
         assertEquals(expected, query.getModel().getQueryTree().getRoot().toString());
     }
 
-    private static void assertUntouched(SameElementItem sameElement) {
-        String original = sameElement.toString();
-        Query query = queryWith(sameElement);
+    private static void assertUntouched(Item item) {
+        String original = item.toString();
+        Query query = queryWith(item);
         new FastMapSearcher().search(query, execution());
         assertEquals(original, query.getModel().getQueryTree().getRoot().toString());
     }

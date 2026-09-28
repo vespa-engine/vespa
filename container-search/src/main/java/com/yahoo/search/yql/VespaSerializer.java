@@ -715,11 +715,9 @@ public class VespaSerializer {
             serializeField(item, scope, destination);
             destination.append(MAP_MATCH);
             destination.append('(');
-            for (int i = 0; i < item.getItemCount(); ++i) {
-                if (i > 0)
-                    destination.append(", ");
-                VespaSerializer.serialize(item.getItem(i), Scope.SAME_ELEMENT, destination);
-            }
+            VespaSerializer.serialize(item.keyItem(), Scope.SAME_ELEMENT, destination);
+            destination.append(", ");
+            VespaSerializer.serialize(item.valueItem(), Scope.SAME_ELEMENT, destination);
             destination.append(')');
             return false;
         }
