@@ -8,18 +8,20 @@ package com.yahoo.prelude.query;
  */
 public class MapMatchItem extends SameElementItem {
 
-    public final Item keyItem;
-    public final Item valueItem;
     private boolean frozen = false;
 
     public MapMatchItem(String fieldName, Item keyItem, Item valueItem) {
         super(fieldName);
-        this.keyItem = keyItem;
-        this.valueItem = valueItem;
         addItem(keyItem);
         addItem(valueItem);
         frozen = true;
     }
+
+    /** Returns the item matching the key. */
+    public Item keyItem() { return getItem(0); }
+
+    /** Returns the item matching the value. */
+    public Item valueItem() { return getItem(1); }
 
     @Override
     protected void adding(Item item) {
@@ -28,4 +30,10 @@ public class MapMatchItem extends SameElementItem {
             throw new IllegalArgumentException("cannot add extra children to MapMatchItem");
         }
     }
+
+    @Override
+    public Item setItem(int index, Item item) {
+        throw new UnsupportedOperationException("cannot replace children of MapMatchItem");
+    }
+
 }

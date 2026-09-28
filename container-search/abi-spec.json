@@ -959,12 +959,12 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String, com.yahoo.prelude.query.Item, com.yahoo.prelude.query.Item)",
-      "protected void adding(com.yahoo.prelude.query.Item)"
+      "public com.yahoo.prelude.query.Item keyItem()",
+      "public com.yahoo.prelude.query.Item valueItem()",
+      "protected void adding(com.yahoo.prelude.query.Item)",
+      "public com.yahoo.prelude.query.Item setItem(int, com.yahoo.prelude.query.Item)"
     ],
-    "fields" : [
-      "public final com.yahoo.prelude.query.Item keyItem",
-      "public final com.yahoo.prelude.query.Item valueItem"
-    ]
+    "fields" : [ ]
   },
   "com.yahoo.prelude.query.MarkerWordItem" : {
     "superClass" : "com.yahoo.prelude.query.WordItem",

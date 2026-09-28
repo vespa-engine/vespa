@@ -25,6 +25,7 @@ import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
 import static com.yahoo.search.yql.YqlParser.LABEL;
 import static com.yahoo.search.yql.YqlParser.LABELED;
+import static com.yahoo.search.yql.YqlParser.MAP_MATCH;
 import static com.yahoo.search.yql.YqlParser.USER_INPUT_LANGUAGE;
 import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.NEAR;
@@ -712,7 +713,7 @@ public class VespaSerializer {
         @Override
         boolean serialize(StringBuilder destination, MapMatchItem item, Scope scope) {
             serializeField(item, scope, destination);
-            destination.append(SAME_ELEMENT);
+            destination.append(MAP_MATCH);
             destination.append('(');
             for (int i = 0; i < item.getItemCount(); ++i) {
                 if (i > 0)

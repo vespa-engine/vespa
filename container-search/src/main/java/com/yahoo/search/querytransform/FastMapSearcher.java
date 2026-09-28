@@ -117,13 +117,8 @@ public class FastMapSearcher extends Searcher {
         if (fastMap == null || ! fastMap.lookupName().equals(lookupName)) {
             return null;
         }
-        // The key and value are read from the children rather than the keyItem and valueItem fields,
-        // which are not updated when the item is cloned.
-        if (mapMatchItem.getItemCount() != 2) {
-            return null;
-        }
-        Item keyItem = mapMatchItem.getItem(0);
-        Item valueItem = mapMatchItem.getItem(1);
+        Item keyItem = mapMatchItem.keyItem();
+        Item valueItem = mapMatchItem.valueItem();
         TermItem lookup = tryMakeFastMapItem(keyItem, valueItem, fastMap, FastMapSearch.toLookupFieldName(fieldName, lookupName));
         if (lookup != null) {
             return lookup;

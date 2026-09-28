@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
@@ -358,7 +359,25 @@ public class VespaSerializerTestCase {
         parseAndConfirm("doubles contains ({elementFilter:[0]} sameElement(1.5))");
 
         // Map sugar children keep their key/value indexes
-        parseAndConfirm("my_map contains sameElement(key contains \"foo\", value = 10)", "my_map{\"foo\"} = 10");
+        parseAndConfirm("my_map contains mapMatch(key contains \"foo\", value = 10)", "my_map{\"foo\"} = 10");
+    }
+
+    @Test
+    void testMapMatch() {
+        // The map access sugar serializes as mapMatch
+        parseAndConfirm("my_map contains mapMatch(key contains \"foo\", value contains \"bar\")", "my_map{\"foo\"} contains \"bar\"");
+        parseAndConfirm("my_map contains mapMatch(key contains \"foo\", value = 10)", "my_map{\"foo\"} = 10");
+        parseAndConfirm("my_map contains mapMatch(key = 7, value contains \"bar\")", "my_map{7} contains \"bar\"");
+        parseAndConfirm("my_map contains mapMatch(key contains \"foo\", range(value, 5, 10))", "range(my_map{\"foo\"}, 5, 10)");
+        parseAndConfirm("my_map.lookup contains mapMatch(key contains \"foo\", value = 10)", "my_map.lookup{\"foo\"} = 10");
+
+        // The serialized form parses back to itself, as a MapMatchItem
+        parseAndConfirm("my_map contains mapMatch(key contains \"foo\", value contains \"bar\")");
+        parseAndConfirm("my_map contains mapMatch(key contains \"foo\", value = 10)");
+        parseAndConfirm("my_map contains mapMatch(key contains \"foo\", range(value, 5, 10))");
+        parseAndConfirm("my_map contains mapMatch(key contains \"foo\", value contains ({prefix: true}\"ba\"))");
+        QueryTree tree = parser.parse(new Parsable().setQuery(SELECT + "my_map contains mapMatch(key contains \"foo\", value = 10);"));
+        assertEquals(MapMatchItem.class, tree.getRoot().getClass());
     }
 
     @Test
