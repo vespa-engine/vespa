@@ -259,13 +259,14 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
         DeployLogger deployLogger = deployState.getDeployLogger();
         RankProfileRegistry rankProfileRegistry = deployState.rankProfileRegistry();
         QueryProfiles queryProfiles = deployState.getQueryProfiles();
+        boolean enableLandlock = deployState.getProperties().featureFlags().enableLandlock();
         List <Future<ConvertedModel>> futureModels = new ArrayList<>();
         if ( ! importedModels.isEmpty()) { // models/ directory is available
             for (ImportedMlModel model : importedModels) {
                 // Due to automatic naming not guaranteeing unique names, there must be a 1-1 between OnnxModels and global RankProfiles.
                 RankProfile profile = new RankProfile(model.name(), null, applicationPackage,
                                                       deployLogger, rankProfileRegistry);
-                addOnnxModelInfoFromSource(model, profile);
+                addOnnxModelInfoFromSource(model, profile, enableLandlock);
                 rankProfileRegistry.add(profile);
                 futureModels.add(deployState.getExecutor().submit(() -> {
                     ConvertedModel convertedModel = ConvertedModel.fromSource(applicationPackage, new ModelName(model.name()),
@@ -283,7 +284,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
                 // Due to automatic naming not guaranteeing unique names, there must be a 1-1 between OnnxModels and global RankProfiles.
                 RankProfile profile = new RankProfile(modelName, null, applicationPackage,
                                                       deployLogger, rankProfileRegistry);
-                addOnnxModelInfoFromStore(modelName, profile);
+                addOnnxModelInfoFromStore(modelName, profile, enableLandlock);
                 rankProfileRegistry.add(profile);
                 futureModels.add(deployState.getExecutor().submit(() -> {
                     ConvertedModel convertedModel = ConvertedModel.fromStore(applicationPackage, new ModelName(modelName), modelName, profile);
@@ -302,30 +303,30 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
         new Processing(deployState.getProperties()).processRankProfiles(deployLogger, rankProfileRegistry, queryProfiles, true, false);
     }
 
-    private void addOnnxModelInfoFromSource(ImportedMlModel model, RankProfile profile) {
+    private void addOnnxModelInfoFromSource(ImportedMlModel model, RankProfile profile, boolean enableLandlock) {
         if (model.modelType() == ImportedMlModel.ModelType.ONNX) {
             String path = model.source();
             String applicationPath = this.applicationPackage.getFileReference(Path.fromString("")).toString();
             if (path.startsWith(applicationPath)) {
                 path = path.substring(applicationPath.length() + 1);
             }
-            addOnnxModelInfo(model.name(), path, profile);
+            addOnnxModelInfo(model.name(), path, profile, enableLandlock);
         }
     }
 
-    private void addOnnxModelInfoFromStore(String modelName, RankProfile profile) {
+    private void addOnnxModelInfoFromStore(String modelName, RankProfile profile, boolean enableLandlock) {
         String path = ApplicationPackage.MODELS_DIR.append(modelName + ".onnx").toString();
-        addOnnxModelInfo(modelName, path, profile);
+        addOnnxModelInfo(modelName, path, profile, enableLandlock);
     }
 
-    private void addOnnxModelInfo(String name, String path, RankProfile profile) {
+    private void addOnnxModelInfo(String name, String path, RankProfile profile, boolean enableLandlock) {
         boolean modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
         if ( ! modelExists) {
             path = ApplicationPackage.MODELS_DIR.append(path).toString();
             modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
         }
         if (modelExists) {
-            OnnxModelInfo onnxModelInfo = OnnxModelInfo.load(path, this.applicationPackage);
+            OnnxModelInfo onnxModelInfo = OnnxModelInfo.load(path, this.applicationPackage, enableLandlock);
             if (onnxModelInfo.getModelPath() != null) {
                 OnnxModel onnxModel = new OnnxModel(name, onnxModelInfo.getModelPath());
                 onnxModel.setModelInfo(onnxModelInfo);
