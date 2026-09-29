@@ -2,8 +2,8 @@
 
 #include "verify_ranksetup.h"
 
-#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/landlock.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -41,21 +41,10 @@ ns_log::Logger::LogLevel toLogLevel(search::fef::Level level) {
     abort();
 }
 
-bool maybe_setup_landlock_from_env() {
-    auto rules = vespalib::Landlock::from_env();
-    if (rules) {
-        auto status = vespalib::Landlock::landlock_self(*rules);
-        if (status && *status == false) {
-            return false;
-        } // else: either landlocked OK or not supported at all by platform
-    } // else: no landlock enforcement configured
-    return true;
-}
-
 } // namespace
 
 int App::main(int argc, char** argv) {
-    if (!maybe_setup_landlock_from_env()) {
+    if (!vespalib::Landlock::maybe_setup_from_env()) {
         return landlock_failure();
     }
 

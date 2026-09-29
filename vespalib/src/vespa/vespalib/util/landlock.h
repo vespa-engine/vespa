@@ -101,6 +101,21 @@ public:
      * landlocking was present.
      */
     static std::optional<AccessRules> from_env();
+
+    /*
+     * Iff Landlock is configured via environment variables ( via`from_env()`), sandboxes the
+     * process according to the provided rule sets (via `landlock_self()`).
+     *
+     * See `from_env()` and `landlock_self()` for semantics.
+     *
+     * Returns true if _either_:
+     *  - Landlock was requested by environment variables and landlocking succeeded, or
+     *  - Landlock was _not requested by the environment, or
+     *  - Landlock is not supported by the underlying platform
+     *
+     * Returns false iff Landlock was requested but Landlock init failed.
+     */
+    [[nodiscard]] static bool maybe_setup_from_env();
 };
 
 } // namespace vespalib

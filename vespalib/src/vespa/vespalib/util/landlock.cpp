@@ -243,6 +243,17 @@ std::optional<Landlock::AccessRules> Landlock::from_env() {
     return access;
 }
 
+bool Landlock::maybe_setup_from_env() {
+    auto rules = from_env();
+    if (rules) {
+        auto status = landlock_self(*rules);
+        if (status && *status == false) {
+            return false;
+        } // else: either landlocked OK or not supported at all by platform
+    } // else: no landlock enforcement configured
+    return true;
+}
+
 } // namespace vespalib
 
 #else // VESPA_HAS_LANDLOCK
@@ -257,6 +268,10 @@ std::optional<bool> Landlock::landlock_self(const AccessRules&) {
 
 std::optional<Landlock::AccessRules> Landlock::from_env() {
     return std::nullopt;
+}
+
+bool Landlock::maybe_setup_from_env() {
+    return true;
 }
 
 } // namespace vespalib
