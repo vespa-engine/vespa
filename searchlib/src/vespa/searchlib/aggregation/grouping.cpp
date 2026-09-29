@@ -210,7 +210,7 @@ void Grouping::preAggregate(bool isOrdered) {
 void Grouping::aggregate(DocId from, DocId to) {
     preAggregate(false);
     if (to > from) {
-        for (DocId i = from; i < i + getMaxN(to - from); i++) {
+        for (DocId i = from, m = i + getMaxN(to - from); i < m; i++) {
             aggregate(i, 0.0);
         }
     }
