@@ -27,7 +27,7 @@ public class Group {
     private volatile boolean hasFullCoverage = true;
     private volatile long activeDocuments = 0;
     private volatile long targetActiveDocuments = 0;
-    private volatile int nodesAtMaxContentShare = 0;
+    private volatile double maxContentShare = 1.0;
     private volatile boolean isBalanced = true;
 
     public Group(int id, List<Node> nodes) {
@@ -91,7 +91,7 @@ public class Group {
         activeDocuments = activeDocs;
         targetActiveDocuments = workingNodes.stream().mapToLong(Node::getTargetActiveDocuments).sum();
         long maxNodeActiveDocs = workingNodes.stream().mapToLong(Node::getActiveDocuments).max().orElse(0);
-        nodesAtMaxContentShare = maxNodeActiveDocs == 0 ? 0 : (int)(activeDocs / maxNodeActiveDocs);
+        maxContentShare = activeDocs == 0 ? 1.0 : (double)maxNodeActiveDocs / activeDocs;
         int numWorkingNodes = workingNodes.size();
         if (numWorkingNodes > 1) {
             long average = activeDocs / numWorkingNodes;
@@ -132,11 +132,11 @@ public class Group {
     public boolean isBalanced() { return isBalanced; }
 
     /**
-     * Returns the number of nodes this group would have if every node held as many active documents as the
-     * working node holding the most, rounded down. This is at most the number of working nodes, and less when
-     * content is skewed. Returns 0 if we have not yet received active document counts from all nodes.
+     * Returns the share of the active documents in this group held by the working node holding the most.
+     * This is 1/(working nodes) when content is perfectly balanced, and larger when it is skewed.
+     * Returns 1 if we have not yet received active document counts from all nodes.
      */
-    public int nodesAtMaxContentShare() { return nodesAtMaxContentShare; }
+    public double maxContentShare() { return maxContentShare; }
 
     /** Returns whether this group has too few documents per node to expect it to be balanced */
     public boolean isSparse() {
