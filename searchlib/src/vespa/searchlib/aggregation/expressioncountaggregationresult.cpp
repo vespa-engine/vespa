@@ -22,8 +22,8 @@ template <int BucketBits, typename HashT> int calculateRank(const Sketch<BucketB
     if (sketch.getClassId() == SparseSketch<BucketBits, HashT>::classId) {
         return static_cast<const SparseSketch<BucketBits, HashT>&>(sketch).getSize();
     }
-    auto normal = static_cast<const NormalSketch<BucketBits, HashT>&>(sketch);
-    int  rank = 0;
+    const auto& normal = static_cast<const NormalSketch<BucketBits, HashT>&>(sketch);
+    int         rank = 0;
     for (size_t i = 0; i < sketch.BUCKET_COUNT; ++i) {
         rank += normal.bucket[i];
     }
