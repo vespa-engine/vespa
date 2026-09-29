@@ -164,7 +164,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         // When content is skewed, estimate as if every node held as much as the largest node,
         // which asks each node for at least as many hits as the largest one needs
         int estimateNodes = group.isBalanced() ? invokers.size()
-                                               : Math.min(invokers.size(), group.nodesAtMaxContentShare());
+                                               : Math.min(invokers.size(), (int)(1 / group.maxContentShare()));
         if ( ! group.isSparse()) {
             Double topkProbabilityOverrride = query.properties().getDouble(Dispatcher.topKProbability);
             q = (topkProbabilityOverrride != null)
