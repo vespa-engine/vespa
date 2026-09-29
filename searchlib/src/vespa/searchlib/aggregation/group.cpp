@@ -85,9 +85,9 @@ Group* Group::Value::groupSingle(const ResultNode& selectResult, HitRank rank, c
         assert(getChildrenSize() == 0);
         _childInfo._childMap = new GroupHash(1, GroupHasher(&_children), GroupEqual(&_children));
     }
-    GroupHash&  childMap = *_childInfo._childMap;
-    Group*      group = nullptr;
-    const auto& found = childMap.find(selectResult);
+    GroupHash& childMap = *_childInfo._childMap;
+    Group*     group = nullptr;
+    auto       found = childMap.find(selectResult);
     if (found == childMap.end()) { // group not present in child map
         if (level.allowMoreGroups(childMap.size())) {
             group = new Group(level.getGroupPrototype());
@@ -718,7 +718,7 @@ void Group::Value::partialCopy(const Value& rhs) {
     for (size_t i = 0; i < totalAggrSize; i++) {
         _aggregationResults[i] = rhs._aggregationResults[i];
     }
-    for (size_t i(0); i < getAggrSize(); i++) {
+    for (size_t i = 0; i < getAggrSize(); i++) {
         getAggr(i)->reset();
     }
     setAggrSize(rhs.getAggrSize());
