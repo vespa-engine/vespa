@@ -1047,7 +1047,8 @@ public class SessionRepository {
                                           tenantName,
                                           sessionId,
                                           configserverConfig,
-                                          fileDistributionFactory.createFileManager(getSessionAppDir(sessionId), Optional.empty()),
+                                          fileDistributionFactory.createFileManager(getSessionAppDir(sessionId),
+                                                  () -> SessionZooKeeperClient.readApplicationId(curator, tenantName, sessionId)),
                                           maxNodeSize);
     }
 
