@@ -8,7 +8,7 @@
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchlib/attribute/search_context.h>
 #include <vespa/searchlib/query/query_term_simple.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <cstring>
 
@@ -28,7 +28,7 @@ namespace search::attribute {
 class ArrayBoolAttribute : public ArrayBoolAttributeAccess {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
-    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using RefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
 
     RefVector      _ref_vector;
     RawBufferStore _raw_store;

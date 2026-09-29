@@ -21,7 +21,7 @@ namespace {
  * Functor class to write metadata for a single lid. Note that during
  * a background save with active feeding, timestamp, bucket used bits
  * and size might reflect future values due to missing snapshot
- * properties in RcuVector. Size might also reflect a mix between
+ * properties in TypeStableVector. Size might also reflect a mix between
  * current and future value due to non-atomic access.
  */
 class WriteMetadata {

@@ -4,7 +4,7 @@
 
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/util/address_space.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <functional>
 
@@ -22,7 +22,7 @@ public:
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
-    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using RefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
 
 protected:
     std::shared_ptr<vespalib::alloc::MemoryAllocator> _memory_allocator;

@@ -79,8 +79,9 @@ void SimpleIndex<Posting, Key, DocId>::deserialize(vespalib::DataBuffer&        
     std::vector<vespalib::btree::BTreeKeyData<DocId, Posting>> postings;
     for (size_t i = 0; i < size; ++i) {
         uint32_t posting_size = buffer.readInt32();
-        if (!posting_size)
+        if (!posting_size) {
             continue;
+        }
         postings.clear();
         Key key = buffer.readInt64();
         for (size_t j = 0; j < posting_size; ++j) {
@@ -168,8 +169,9 @@ void SimpleIndex<Posting, Key, DocId>::removeFromVectorPostingList(vespalib::dat
 template <typename Posting, typename Key, typename DocId>
 void SimpleIndex<Posting, Key, DocId>::pruneBelowThresholdVectors() {
     //  Check if it is time to prune any vector postings
-    if (++_insert_remove_counter % _config.vector_prune_frequency > 0)
+    if (++_insert_remove_counter % _config.vector_prune_frequency > 0) {
         return;
+    }
 
     for (auto posting_it = _vector_posting_lists.begin(); posting_it.valid();) {
         Key  key = posting_it.getKey();
@@ -194,8 +196,9 @@ void SimpleIndex<Posting, Key, DocId>::promoteOverThresholdVectors() {
 template <typename Posting, typename Key, typename DocId>
 void SimpleIndex<Posting, Key, DocId>::logVector(const char* action, Key key, size_t document_count, double ratio,
                                                  size_t vector_length) const {
-    if (!simpleindex::log_enabled())
+    if (!simpleindex::log_enabled()) {
         return;
+    }
     auto msg = vespalib::make_string("%s vector for key '%016" PRIx64 "' with length %zu. Contains %zu documents "
                                      "(doc id limit %u, committed doc id limit %u, ratio %f, "
                                      "vector count %zu)",
@@ -210,7 +213,7 @@ void SimpleIndex<Posting, Key, DocId>::createVectorIfOverThreshold(vespalib::dat
     size_t   size = getDocumentCount(ref);
     double   ratio = getDocumentRatio(size, doc_id_limit);
     if (shouldCreateVectorPosting(size, ratio)) {
-        auto vector = new vespalib::RcuVectorBase<Posting>(_config.grow_strategy, _generation_holder);
+        auto vector = new vespalib::TypeStableVectorBase<Posting>(_config.grow_strategy, _generation_holder);
         vector->unsafe_resize(doc_id_limit);
         _btree_posting_lists.foreach_unfrozen(ref, [&](DocId d, const Posting& p) { (*vector)[d] = p; });
         _vector_posting_lists.insert(key, std::shared_ptr<PostingVector>(vector));

@@ -67,14 +67,13 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     mmap_file_allocator.cpp
     mmap_file_allocator_factory.cpp
     monitored_refcount.cpp
-    normalize_class_name.cpp
     nice.cpp
+    normalize_class_name.cpp
     printable.cpp
     priority_queue.cpp
     process_memory_stats.cpp
     programoptions.cpp
     random.cpp
-    rcuvector.cpp
     ref_counted.cpp
     regexp.cpp
     relative_frequency_sketch.cpp
@@ -109,8 +108,9 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     time.cpp
     transient_memory_tracker.cpp
     transient_vector_snapshot.cpp
-    unordered_u32_set.cpp
+    type_stable_vector.cpp
     typed_data_layout.cpp
+    unordered_u32_set.cpp
     unwind_message.cpp
     valgrind.cpp
     xmlserializable.cpp

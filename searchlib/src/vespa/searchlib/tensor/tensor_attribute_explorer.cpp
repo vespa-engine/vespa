@@ -8,7 +8,7 @@
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 using vespalib::slime::ObjectInserter;
 
@@ -22,7 +22,8 @@ const std::string TENSOR_STORE_NAME("tensor_store");
 } // namespace
 
 TensorAttributeExplorer::TensorAttributeExplorer(
-    uint64_t compact_generation, const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
+    uint64_t                                                                   compact_generation,
+    const vespalib::TypeStableVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
     const TensorStore& tensor_store, const NearestNeighborIndex* index)
     : _compact_generation(compact_generation), _ref_vector(ref_vector), _tensor_store(tensor_store), _index(index) {
 }

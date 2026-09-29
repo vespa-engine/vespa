@@ -7,8 +7,8 @@
 namespace search::attribute {
 
 EntryRefVectorSnapshot
-make_entry_ref_vector_snapshot(const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
-                               uint32_t                                                            size) {
+make_entry_ref_vector_snapshot(const vespalib::TypeStableVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
+                               uint32_t                                                                   size) {
     assert(size <= ref_vector.get_size());
     auto* source = &ref_vector.get_elem_ref(0);
     return EntryRefVectorSnapshot({source, size});
