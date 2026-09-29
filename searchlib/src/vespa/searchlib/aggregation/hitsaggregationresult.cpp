@@ -29,26 +29,23 @@ HitsAggregationResult::HitsAggregationResult(const HitsAggregationResult&) = def
 HitsAggregationResult& HitsAggregationResult::operator=(const HitsAggregationResult&) = default;
 HitsAggregationResult::~HitsAggregationResult() = default;
 
-void HitsAggregationResult::onPrepare(const ResultNode& result) {
-    (void)result;
+void HitsAggregationResult::onPrepare(const ResultNode&) {
 }
 
 void HitsAggregationResult::onMerge(const AggregationResult& b) {
-    const auto& rhs = (const HitsAggregationResult&)b;
+    const auto& rhs = static_cast<const HitsAggregationResult&>(b);
     _hits.onMerge(rhs._hits);
 }
 
-void HitsAggregationResult::onAggregate(const ResultNode& result, DocId docId, HitRank rank) {
-    (void)result;
+void HitsAggregationResult::onAggregate(const ResultNode&, DocId docId, HitRank rank) {
     if (!_isOrdered || (_hits.size() < _maxHits)) {
         _hits.addHit(FS4Hit(docId, rank), _maxHits);
     }
 }
 
-void HitsAggregationResult::onAggregate(const ResultNode& result, const document::Document& doc, HitRank rank) {
-    (void)result;
+void HitsAggregationResult::onAggregate(const ResultNode&, const document::Document& doc, HitRank rank) {
     LOG(spam, "Filling vdshit for %s hits=%lu, maxHits=%u", doc.getId().toString().c_str(),
-        (unsigned long)_hits.size(), _maxHits);
+        static_cast<unsigned long>(_hits.size()), _maxHits);
     if (!_isOrdered || (_hits.size() < _maxHits)) {
         VdsHit                   hit(doc.getId().toString(), rank);
         vespalib::ConstBufferRef docsum(_summaryGenerator->fillSummary(0, _summaryClass));
@@ -59,8 +56,7 @@ void HitsAggregationResult::onAggregate(const ResultNode& result, const document
     }
 }
 
-void HitsAggregationResult::onAggregate(const ResultNode& result) {
-    (void)result;
+void HitsAggregationResult::onAggregate(const ResultNode&) {
     LOG_ABORT("should not reach here");
 }
 

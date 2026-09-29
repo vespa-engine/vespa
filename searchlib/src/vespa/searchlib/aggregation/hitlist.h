@@ -17,18 +17,9 @@ private:
     std::vector<FS4Hit> _fs4hits;
     std::vector<VdsHit> _vdshits;
 
-    int64_t onGetInteger(size_t index) const override {
-        (void)index;
-        return 0;
-    }
-    double onGetFloat(size_t index) const override {
-        (void)index;
-        return 0.0;
-    }
-    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
-        (void)index;
-        return buf;
-    }
+    int64_t onGetInteger(size_t) const override { return 0; }
+    double onGetFloat(size_t) const override { return 0.0; }
+    ConstBufferRef onGetString(size_t, BufferRef buf) const override { return buf; }
     std::string_view friendly_type_name() const noexcept override { return "<hitlist>"; }
     size_t hash() const override { return 0; }
     void set(const ResultNode& rhs) override;
