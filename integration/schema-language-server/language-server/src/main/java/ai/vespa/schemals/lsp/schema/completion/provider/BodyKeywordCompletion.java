@@ -276,7 +276,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
      * The config model only accepts 'fast-search map field' on maps whose key and value types are among these,
      * see CreateFastMapSearch and ConvertParsedFields in config-model.
      */
-    private static final Set<String> FAST_MAP_SEARCH_KEY_TYPES = Set.of("string", "int", "long");
+    private static final Set<String> FAST_MAP_SEARCH_KEY_TYPES = Set.of("string");
     private static final Set<String> FAST_MAP_SEARCH_VALUE_TYPES = Set.of("string", "int", "long", "float", "double");
 
     private static final String FAST_SEARCH_MAP_FIELD = "fast-search map field";

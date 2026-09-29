@@ -2,15 +2,19 @@
 package com.yahoo.search.querytransform;
 
 import com.yahoo.component.chain.Chain;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.PrefixItem;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.TermItem;
@@ -32,6 +36,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -127,6 +132,112 @@ public class FastMapSearcherTest {
                      result.getQuery().getModel().getQueryTree().getRoot().toString());
     }
 
+    /**
+     * A string key or value has the matching settings of the lookup attribute in the index info,
+     * so that the parser keeps it as one term, as it is matched as a whole.
+     */
+    @Test
+    public void requireMultiwordAndPunctuatedKeysAndValuesKeptAsOneTerm() {
+        var sd = new SearchDefinition("test");
+        for (String map : List.of("mymap", "intvaluemap")) {
+            sd.addCommand(map, "multivalue");
+            sd.addCommand(map + ".lookup", "multivalue");
+            for (String command : List.of("lowercase", "multivalue", "attribute", "fast-search", "string", "word", "type string"))
+                sd.addCommand(map + ".lookup.key", command);
+        }
+        for (String command : List.of("lowercase", "multivalue", "attribute", "fast-search", "string", "word", "type string"))
+            sd.addCommand("mymap.lookup.value", command);
+        for (String command : List.of("multivalue", "numerical", "integer", "type int"))
+            sd.addCommand("intvaluemap.lookup.value", command);
+        var indexFacts = new IndexFacts(new IndexModel(sd));
+
+        assertEquals("mymap$lookup:new york" + FastMapSearch.keyValueSeparator() + "big apple",
+                     searchYqlTree("mymap.lookup{\"new york\"} contains \"big apple\"", indexFacts));
+        assertEquals("mymap$lookup:foo!" + FastMapSearch.keyValueSeparator() + "bar!",
+                     searchYqlTree("mymap.lookup{\"foo!\"} contains \"bar!\"", indexFacts));
+        assertEquals("intvaluemap$lookup:" + FastMapSearch.toKeyValue8Term("new york", 42),
+                     searchYqlTree("intvaluemap.lookup{\"new york\"} = 42", indexFacts));
+        assertEquals("intvaluemap$lookup:" + FastMapSearch.toKeyValue8Term("foo!", 42),
+                     searchYqlTree("intvaluemap.lookup{\"foo!\"} = 42", indexFacts));
+    }
+
+    @Test
+    public void requireOtherUseOfLookupFieldRejected() {
+        assertLookupFieldUseRejected(new WordItem("x", "mymap.lookup"));
+        assertLookupFieldUseRejected(new WordItem("x", "mymap.lookup.key"));
+        assertLookupFieldUseRejected(new WordItem("x", "mymap.lookup.value"));
+        assertLookupFieldUseRejected(new PrefixItem("x", "myarray.lookup.key"));
+        assertLookupFieldUseRejected(sameElement("mymap.lookup"));
+        assertLookupFieldUseRejected(sameElement("mymap", new WordItem("foo", "lookup.key"), new WordItem("bar", "value")));
+        AndItem and = new AndItem();
+        and.addItem(new WordItem("other", "title"));
+        and.addItem(new WordItem("x", "mymap.lookup"));
+        assertLookupFieldUseRejected(and);
+
+        var exception = assertThrows(IllegalInputException.class, () -> rewrittenYql("mymap.lookup contains \"x\""));
+        assertEquals("'mymap.lookup' can only be searched by a map lookup, as in mymap.lookup{\"key\"} = value, but got mymap.lookup:x",
+                     exception.getMessage());
+        assertThrows(IllegalInputException.class, () -> rewrittenYql("mymap.lookup.key contains \"x\""));
+        assertThrows(IllegalInputException.class,
+                     () -> rewrittenYql("mymap.lookup contains sameElement(key contains \"foo\", value contains \"bar\")"));
+
+        // Other names are not lookup fields
+        assertUntouched(new WordItem("x", "mymap.key"));
+        assertUntouched(new WordItem("x", "mymap.lookupx"));
+        assertUntouched(new WordItem("x", "othermap.lookup"));
+        assertUntouched(new WordItem("x", "mymap.lookup.other"));
+    }
+
+    @Test
+    public void requireLookupResolvedAcrossSchemas() {
+        var withLookup = new Schema.Builder("withlookup")
+                .add(new Field.Builder("mymap", "map<string,string>").setFastMapSearch("lookup").build())
+                .build();
+        var sameLookup = new Schema.Builder("samelookup")
+                .add(new Field.Builder("mymap", "map<string,string>").setFastMapSearch("lookup").build())
+                .build();
+        var withoutLookup = new Schema.Builder("withoutlookup")
+                .add(new Field.Builder("mymap", "map<string,string>").build())
+                .build();
+        var otherLookup = new Schema.Builder("otherlookup")
+                .add(new Field.Builder("mymap", "map<string,string>").setFastMapSearch("other").build())
+                .build();
+        var otherType = new Schema.Builder("othertype")
+                .add(new Field.Builder("mymap", "map<string,int>").setFastMapSearch("lookup").build())
+                .build();
+        var withoutField = new Schema.Builder("withoutfield")
+                .add(new Field.Builder("title", "string").build())
+                .build();
+        String expected = "mymap$lookup:foo" + FastMapSearch.keyValueSeparator() + "bar";
+
+        assertEquals(expected, rewritten(mapMatch("mymap"), withLookup, sameLookup).toString());
+        assertEquals(expected, rewritten(mapMatch("mymap"), withoutField, withLookup).toString());
+
+        var exception = assertThrows(IllegalInputException.class,
+                                     () -> rewritten(mapMatch("mymap"), withoutLookup, withLookup));
+        assertEquals("Lookup 'mymap.lookup' is not defined for field 'mymap' in schema 'withoutlookup', " +
+                     "but is in schema 'withlookup'. Restrict the query to the schemas which have it",
+                     exception.getMessage());
+        exception = assertThrows(IllegalInputException.class,
+                                 () -> rewritten(mapMatch("mymap"), otherLookup, withLookup, sameLookup));
+        assertEquals("Lookup 'mymap.lookup' is not defined for field 'mymap' in schema 'otherlookup', " +
+                     "but is in schemas 'samelookup', 'withlookup'. Restrict the query to the schemas which have it",
+                     exception.getMessage());
+        exception = assertThrows(IllegalInputException.class,
+                                 () -> rewritten(mapMatch("mymap"), withLookup, otherType));
+        assertEquals("Lookup 'mymap.lookup' has different key or value types in schemas 'othertype', 'withlookup'. " +
+                     "Restrict the query to schemas where it is the same",
+                     exception.getMessage());
+
+        // A lookup field in one schema is not searchable directly in any
+        assertThrows(IllegalInputException.class,
+                     () -> rewritten(new WordItem("x", "mymap.lookup"), withoutLookup, withLookup));
+
+        // Without any lookup fields, nothing is changed
+        var plain = new MapMatchItem("mymap.lookup", new WordItem("foo", "key"), new WordItem("bar", "value"));
+        assertEquals(plain.toString(), rewritten(plain, withoutLookup, withoutField).toString());
+    }
+
     @Test
     public void requireMapLookupRewrittenForFastArrayOfStructField() {
         // A map lookup has a key and a value, whatever the struct fields holding them are named
@@ -144,9 +255,8 @@ public class FastMapSearcherTest {
         // Untouched when the field does not have fast map search
         assertUntouched(mapMatch("otherarray"));
 
-        // Falls back to a sameElement on the struct fields of the array
-        assertFallback("myarray:{mykey:fo* myvalue:bar}",
-                       mapMatch("myarray", new PrefixItem("fo", "key"), new WordItem("bar", "value")));
+        // A lookup which is not a single term is rejected
+        assertRejected(mapMatch("myarray", new PrefixItem("fo", "key"), new WordItem("bar", "value")));
     }
 
     @Test
@@ -185,35 +295,39 @@ public class FastMapSearcherTest {
     }
 
     @Test
-    public void requireFallbackKeepsTheSettingsOfTheMapLookup() {
-        var mapMatch = mapMatch("intvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value"));
-        mapMatch.setWeight(150);
-        mapMatch.setRanked(false);
-        mapMatch.setLabel("my_lookup");
-        var sameElement = (SameElementItem) rewritten(mapMatch);
-        assertEquals(150, sameElement.getWeight());
-        assertFalse(sameElement.isRanked());
-        assertEquals("my_lookup", sameElement.getLabel());
-        assertEquals("intvaluemap:{key:foo value:bar}!150", sameElement.toString());
-    }
-
-    @Test
-    public void requireFallbackWhenTermsDoNotMatchOneEntry() {
+    public void requireRejectedWhenTermsDoNotMatchOneEntry() {
         // Not parseable as an int for an int-valued map
-        assertFallback(mapMatch("intvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value")));
+        assertRejected(mapMatch("intvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value")));
 
         // Beyond the int range for an int-valued map
-        assertFallback(mapMatch("intvaluemap", new WordItem("foo", "key"), new IntItem(Long.toString(1L << 32), "value")));
+        assertRejected(mapMatch("intvaluemap", new WordItem("foo", "key"), new IntItem(Long.toString(1L << 32), "value")));
 
         // Not parseable as a long for a long-valued map
-        assertFallback(mapMatch("longvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value")));
-        assertFallback(mapMatch("longvaluemap", new WordItem("foo", "key"), new IntItem("99999999999999999999", "value")));
+        assertRejected(mapMatch("longvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value")));
+        assertRejected(mapMatch("longvaluemap", new WordItem("foo", "key"), new IntItem("99999999999999999999", "value")));
 
-        // A prefix term matches more than one string
-        assertFallback(mapMatch("mymap", new PrefixItem("fo", "key"), new WordItem("bar", "value")));
+        // A prefix, fuzzy or regex term matches more than one string
+        assertRejected(mapMatch("mymap", new PrefixItem("fo", "key"), new WordItem("bar", "value")));
+        assertRejected(mapMatch("mymap", new WordItem("foo", "key"), new PrefixItem("ba", "value")));
+        assertRejected(mapMatch("mymap", new WordItem("foo", "key"), new FuzzyItem("value", true, "bar", 2, 0, false)));
+        assertRejected(mapMatch("mymap", new WordItem("foo", "key"), new RegExpItem("value", true, "b.*")));
 
-        // Only string keys are supported
-        assertFallback(mapMatch("intkeymap", new IntItem("1", "key"), new WordItem("bar", "value")));
+        // A key or value which is not a term
+        var phrase = new PhraseItem();
+        phrase.setIndexName("value");
+        phrase.addItem(new WordItem("big", "value"));
+        phrase.addItem(new WordItem("apple", "value"));
+        assertRejected(new MapMatchItem("mymap.lookup", new WordItem("foo", "key"), phrase));
+
+        // A fractional bound on an int value
+        assertRejected(mapMatch("intvaluemap", new WordItem("foo", "key"), intRange(new Limit(1.5, true), new Limit(10, true))));
+
+        // The error says what is supported
+        var exception = assertThrows(IllegalInputException.class,
+                                     () -> rewritten(mapMatch("intvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value"))));
+        assertEquals("Lookup 'intvaluemap.lookup' requires a single word as key, and a single integer or an integer range " +
+                     "as value, but got intvaluemap.lookup:{key:foo value:bar}",
+                     exception.getMessage());
     }
 
     @Test
@@ -270,14 +384,14 @@ public class FastMapSearcherTest {
     }
 
     @Test
-    public void requireFallbackForRangesWhichAreNotPlainIntRanges() {
+    public void requireRejectedForRangesWhichAreNotPlainIntRanges() {
         var searcher = new FastMapSearcher();
 
         // A fractional endpoint has no exact int encoding.
         assertNull(searcher.makeIntRange("foo", intRange(new Limit(1.5, true), new Limit(10, true)), "intvaluemap$lookup"));
 
-        // A range on a string-valued map is not an IntItem, and falls back to sameElement.
-        assertFallback(mapMatch("mymap", new WordItem("foo", "key"),
+        // A range on a string-valued map is not an IntItem, and is rejected.
+        assertRejected(mapMatch("mymap", new WordItem("foo", "key"),
                                 new StringRangeItem("a", true, "z", true, "value", false, null)));
     }
 
@@ -343,7 +457,7 @@ public class FastMapSearcherTest {
     }
 
     @Test
-    public void requireFallbackForRangesWhichAreNotPlainLongRanges() {
+    public void requireRejectedForRangesWhichAreNotPlainLongRanges() {
         var searcher = new FastMapSearcher();
 
         // A fractional endpoint has no exact long encoding.
@@ -475,16 +589,16 @@ public class FastMapSearcherTest {
     }
 
     @Test
-    public void requireFallbackForUnsupportedFloatingPointTerms() {
+    public void requireRejectedForUnsupportedFloatingPointTerms() {
         var searcher = new FastMapSearcher();
 
         // Not a number
-        assertFallback(mapMatch("floatvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value")));
-        assertFallback(mapMatch("doublevaluemap", new WordItem("foo", "key"), new WordItem("NaN", "value")));
+        assertRejected(mapMatch("floatvaluemap", new WordItem("foo", "key"), new WordItem("bar", "value")));
+        assertRejected(mapMatch("doublevaluemap", new WordItem("foo", "key"), new WordItem("NaN", "value")));
         assertNull(searcher.makeFloatingPointItem("foo", intRange(new Limit(Double.NaN, true), new Limit(1.0, true)), "doublevaluemap$lookup", false));
 
         // A prefix term matches more than one string
-        assertFallback(mapMatch("doublevaluemap", new WordItem("foo", "key"), new PrefixItem("1", "value")));
+        assertRejected(mapMatch("doublevaluemap", new WordItem("foo", "key"), new PrefixItem("1", "value")));
     }
 
     private static String floatingPointTerm(String key, double value, boolean isFloat) {
@@ -495,15 +609,22 @@ public class FastMapSearcherTest {
         return new IntItem(from, to, "value");
     }
 
-    /** Asserts that the given map lookup on the lookup field becomes a sameElement on the map field itself. */
-    private static void assertFallback(MapMatchItem mapMatch) {
-        String original = mapMatch.toString();
-        assertFallback(original.replaceFirst("^(\\w+)\\.lookup:", "$1:"), mapMatch);
+    /** Asserts that the given map lookup on the lookup field is rejected, as it cannot become a single term. */
+    private static void assertRejected(MapMatchItem mapMatch) {
+        var exception = assertThrows(IllegalInputException.class, () -> rewritten(mapMatch), mapMatch.toString());
+        assertTrue(exception.getMessage().startsWith("Lookup '" + mapMatch.getFieldName() + "' requires "), exception.getMessage());
     }
 
-    private static void assertFallback(String expected, MapMatchItem mapMatch) {
-        assertRewritten(expected, mapMatch);
-        assertEquals(SameElementItem.class, rewritten(mapMatch).getClass());
+    private static void assertLookupFieldUseRejected(Item item) {
+        var exception = assertThrows(IllegalInputException.class, () -> rewritten(item), item.toString());
+        assertTrue(exception.getMessage().contains("can only be searched by a map lookup"), exception.getMessage());
+    }
+
+    private static Item rewritten(Item item, Schema ... schemas) {
+        Query query = queryWith(item.clone());
+        var schemaInfo = new SchemaInfo(List.of(schemas), List.of());
+        new FastMapSearcher().search(query, new Execution(Execution.Context.createContextStub(schemaInfo)));
+        return query.getModel().getQueryTree().getRoot();
     }
 
     private static Item rewritten(Item item) {
@@ -529,7 +650,6 @@ public class FastMapSearcherTest {
         var schema = new Schema.Builder("test")
                 .add(new Field.Builder("mymap", "map<string,string>").setFastMapSearch("lookup").build())
                 .add(new Field.Builder("intvaluemap", "map<string,int>").setFastMapSearch("lookup").build())
-                .add(new Field.Builder("intkeymap", "map<int,string>").setFastMapSearch("lookup").build())
                 .add(new Field.Builder("longvaluemap", "map<string,long>").setFastMapSearch("lookup").build())
                 .add(new Field.Builder("floatvaluemap", "map<string,float>").setFastMapSearch("lookup").build())
                 .add(new Field.Builder("doublevaluemap", "map<string,double>").setFastMapSearch("lookup").build())
@@ -572,6 +692,12 @@ public class FastMapSearcherTest {
         Query query = new Query("?yql=" + URLEncoder.encode("select * from sources * where " + where, StandardCharsets.UTF_8));
         var context = Execution.Context.createContextStub(null, indexFacts, execution().context().schemaInfo(), null);
         return new Execution(new Chain<>(new MinimalQueryInserter(), new FastMapSearcher()), context).search(query);
+    }
+
+    private static String searchYqlTree(String where, IndexFacts indexFacts) {
+        var result = searchYql(where, indexFacts);
+        assertNull(result.hits().getError(), where);
+        return result.getQuery().getModel().getQueryTree().getRoot().toString();
     }
 
     /** Returns the query tree after parsing the given YQL where clause and running the searcher. */

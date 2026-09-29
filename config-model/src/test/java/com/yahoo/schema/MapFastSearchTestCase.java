@@ -100,16 +100,18 @@ public class MapFastSearchTestCase {
     @Test
     void requireFastMapRejectedForUnsupportedKeyAndValueTypes() throws ParseException {
         assertRejected("field m type map<double, string> { fast-search map field: lookup }", true,
-                       "For schema 'test', field 'm': 'fast-search map field' requires key to be of type string, int or long, but the type is double.");
+                       "For schema 'test', field 'm': 'fast-search map field' requires key to be of type string, but the type is double.");
+        assertRejected("field m type map<int, string> { fast-search map field: lookup }", true,
+                       "For schema 'test', field 'm': 'fast-search map field' requires key to be of type string, but the type is int.");
+        assertRejected("field m type map<long, string> { fast-search map field: lookup }", true,
+                       "For schema 'test', field 'm': 'fast-search map field' requires key to be of type string, but the type is long.");
         assertRejected("field m type map<string, bool> { fast-search map field: lookup }", true,
                        "For schema 'test', field 'm': 'fast-search map field' requires value to be of type string, int, long, float or double, but the type is bool.");
     }
 
     @Test
     void requireFastMapAcceptsSupportedKeyAndValueTypes() throws ParseException {
-        assertTrue(fastMapSearchOf("field m type map<int, string> { fast-search map field: lookup }", true));
         assertTrue(fastMapSearchOf("field m type map<string, int> { fast-search map field: lookup }", true));
-        assertTrue(fastMapSearchOf("field m type map<long, string> { fast-search map field: lookup }", true));
         assertTrue(fastMapSearchOf("field m type map<string, long> { fast-search map field: lookup }", true));
         assertTrue(fastMapSearchOf("field m type map<string, float> { fast-search map field: lookup }", true));
         assertTrue(fastMapSearchOf("field m type map<string, double> { fast-search map field: lookup }", true));
@@ -190,7 +192,9 @@ public class MapFastSearchTestCase {
     @Test
     void requireFastSearchOnArrayOfStructRejectedForUnsupportedTypes() {
         assertRejectedWithEntry("double", "string", fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"), true,
-                                "For schema 'test', field 'm': 'fast-search map field' requires mykey to be of type string, int or long, but the type is double.");
+                                "For schema 'test', field 'm': 'fast-search map field' requires mykey to be of type string, but the type is double.");
+        assertRejectedWithEntry("int", "string", fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"), true,
+                                "For schema 'test', field 'm': 'fast-search map field' requires mykey to be of type string, but the type is int.");
         assertRejectedWithEntry("string", "bool", fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"), true,
                                 "For schema 'test', field 'm': 'fast-search map field' requires myvalue to be of type string, int, long, float or double, but the type is bool.");
     }
@@ -254,27 +258,56 @@ public class MapFastSearchTestCase {
         assertEquals(IlscriptsConfig.Ilscript.Complexfield.Why.FAST_MAP_SEARCH, complexFields.get(0).why());
     }
 
-    /** The lookup field and its key and value are given the index settings of the field and its key and value. */
+    /**
+     * The lookup field is given the index settings of the field. A string key or value is given the matching settings
+     * of the lookup attribute, so that it is kept as one term, and a numeric value the settings of its struct field.
+     */
     @Test
     void requireLookupFieldsAreListedInIndexInfo() throws ParseException {
         String fields = joinLines("field fastmap type map<string, int> {",
                                   "  fast-search map field: lookup",
-                                  "  struct-field key { indexing: attribute }",
                                   "  struct-field value { indexing: attribute }",
                                   "}",
+                                  "field stringmap type map<string, string> { fast-search map field: lookup }",
                                   namedFieldWithLookup("fastarray", "array<entry>", "key: mykey", "value: myvalue"));
         var indexInfo = indexInfoOf(build(getSdWithEntry("string", "long", fields), true));
 
-        assertFalse(commandsOf(indexInfo, "fastmap.key").isEmpty());
         assertEquals(commandsOf(indexInfo, "fastmap"), commandsOf(indexInfo, "fastmap.lookup"));
-        assertEquals(commandsOf(indexInfo, "fastmap.key"), commandsOf(indexInfo, "fastmap.lookup.key"));
+        assertEquals(lookupAttributeCommands(indexInfo, "fastmap$lookup"), commandsOf(indexInfo, "fastmap.lookup.key"));
+        assertFalse(commandsOf(indexInfo, "fastmap.value").isEmpty());
         assertEquals(commandsOf(indexInfo, "fastmap.value"), commandsOf(indexInfo, "fastmap.lookup.value"));
-        assertTrue(commandsOf(indexInfo, "fastmap.lookup.key").contains("lowercase"));
 
-        assertFalse(commandsOf(indexInfo, "fastarray.mykey").isEmpty());
+        assertEquals(lookupAttributeCommands(indexInfo, "stringmap$lookup"), commandsOf(indexInfo, "stringmap.lookup.key"));
+        assertEquals(lookupAttributeCommands(indexInfo, "stringmap$lookup"), commandsOf(indexInfo, "stringmap.lookup.value"));
+
         assertEquals(commandsOf(indexInfo, "fastarray"), commandsOf(indexInfo, "fastarray.lookup"));
-        assertEquals(commandsOf(indexInfo, "fastarray.mykey"), commandsOf(indexInfo, "fastarray.lookup.key"));
+        assertEquals(lookupAttributeCommands(indexInfo, "fastarray$lookup"), commandsOf(indexInfo, "fastarray.lookup.key"));
         assertEquals(commandsOf(indexInfo, "fastarray.myvalue"), commandsOf(indexInfo, "fastarray.lookup.value"));
+    }
+
+    /** Returns the commands of the given lookup attribute, with its type replaced by the type of a string key or value. */
+    private static List<String> lookupAttributeCommands(IndexInfoConfig indexInfo, String lookupAttribute) {
+        var commands = new ArrayList<>(commandsOf(indexInfo, lookupAttribute));
+        assertTrue(commands.containsAll(List.of("attribute", "word", "type Array<string>")), commands.toString());
+        commands.remove("type Array<string>");
+        commands.add("type string");
+        return commands;
+    }
+
+    /** The lookup name is split from the field name at the last dot in queries, and is part of an attribute name. */
+    @Test
+    void requireLookupNameIsAPlainIdentifier() throws ParseException {
+        for (String name : List.of("a.b", "1a", "a.b.c")) {
+            assertRejected("field m type map<string, string> { fast-search map field: " + name + " }", true,
+                           "For schema 'test', field 'm': 'fast-search map field' must be a letter or underscore followed by " +
+                           "letters, digits or underscores, but got '" + name + "'.");
+        }
+        for (String name : List.of("a$b", "a-b")) {
+            assertThrows(ParseException.class,
+                         () -> build(getSd("field m type map<string, string> { fast-search map field: " + name + " }"), true),
+                         name);
+        }
+        assertTrue(fastMapSearchOf("field m type map<string, string> { fast-search map field: _my_Lookup2 }", true));
     }
 
     @Test

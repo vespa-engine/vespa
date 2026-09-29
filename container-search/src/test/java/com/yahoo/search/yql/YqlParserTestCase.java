@@ -849,6 +849,15 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testMapAccessWithCompositeValue() {
+        assertParse("select * from sources * where my_map{'foo'} contains phrase('new', 'york')",
+                    "my_map:{key:foo value:\"new york\"}");
+        MapMatchItem mapMatch = assertInstanceOf(MapMatchItem.class,
+                                                 parse("select * from sources * where my_map{'foo'} contains phrase('new', 'york')").getRoot());
+        assertInstanceOf(PhraseItem.class, mapMatch.valueItem());
+    }
+
+    @Test
     void testMapMatchRequiresOneKeyAndOneValue() {
         assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo')",
                         new IllegalArgumentException("mapMatch requires both a key and a value item"));
