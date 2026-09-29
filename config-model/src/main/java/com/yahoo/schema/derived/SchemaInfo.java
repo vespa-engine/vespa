@@ -24,11 +24,13 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Information about a schema.
@@ -103,7 +105,10 @@ public final class SchemaInfo extends Derived {
     }
 
     private void addFieldsConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {
+        // Extra fields which are attributes are also added to the document type, so they are listed twice
+        Set<String> added = new HashSet<>();
         for (var field : schema.allFieldsList()) {
+            if ( ! added.add(field.getName())) continue;
             addFieldConfig(field, schemaBuilder);
             for (var index : field.getIndices().values()) {
                 if ( ! index.getName().equals(field.getName())) // additional index
