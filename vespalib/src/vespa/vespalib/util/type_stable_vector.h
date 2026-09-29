@@ -12,12 +12,12 @@
 
 namespace vespalib {
 
-template <typename T> class RcuVectorHeld : public GenerationHeldBase {
+template <typename T> class TypeStableVectorHeld : public GenerationHeldBase {
     T _data;
 
 public:
-    RcuVectorHeld(size_t size, T&& data) noexcept;
-    ~RcuVectorHeld() override;
+    TypeStableVectorHeld(size_t size, T&& data) noexcept;
+    ~TypeStableVectorHeld() override;
 };
 
 /**
@@ -28,7 +28,7 @@ public:
  * generation of the vector, and initiating removing of old underlying
  * data vectors.
  **/
-template <typename T> class RcuVectorBase {
+template <typename T> class TypeStableVectorBase {
 private:
     static_assert(std::is_trivially_destructible<T>::value, "Value type must be trivially destructible");
 
@@ -63,10 +63,10 @@ public:
      * New capacity is calculated based on old capacity and grow parameters:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
-    RcuVectorBase(GrowStrategy growStrategy, GenerationHolderType& genHolder,
-                  const Alloc& initialAlloc = Alloc::alloc());
+    TypeStableVectorBase(GrowStrategy growStrategy, GenerationHolderType& genHolder,
+                         const Alloc& initialAlloc = Alloc::alloc());
 
-    virtual ~RcuVectorBase();
+    virtual ~TypeStableVectorBase();
 
     /**
      * Return whether all capacity has been used.  If true the next
@@ -153,16 +153,16 @@ public:
     ArrayType create_replacement_vector() const { return _data.create(); }
 };
 
-template <typename T> class RcuVector final : public RcuVectorBase<T> {
+template <typename T> class TypeStableVector final : public TypeStableVectorBase<T> {
 private:
-    using GenerationHolderType = typename RcuVectorBase<T>::GenerationHolderType;
+    using GenerationHolderType = typename TypeStableVectorBase<T>::GenerationHolderType;
     Generation           _generation;
     GenerationHolderType _genHolderStore;
 
     void onReallocation() override;
 
 public:
-    RcuVector();
+    TypeStableVector();
 
     /**
      * Construct a new vector with the given initial capacity and grow
@@ -171,8 +171,8 @@ public:
      * New capacity is calculated based on old capacity and grow parameters:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
-    explicit RcuVector(GrowStrategy growStrategy);
-    ~RcuVector() override;
+    explicit TypeStableVector(GrowStrategy growStrategy);
+    ~TypeStableVector() override;
 
     Generation getGeneration() const noexcept { return _generation; }
     void setGeneration(Generation generation) noexcept { _generation = generation; }

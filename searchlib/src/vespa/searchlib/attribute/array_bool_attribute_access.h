@@ -13,7 +13,7 @@ namespace search::attribute {
  * implemented in terms of a virtual get_bools() function.
  *
  * Subclasses implement get_bools() with their own storage strategy:
- * - ArrayBoolAttribute: indexed search (RcuVector + RawBufferStore)
+ * - ArrayBoolAttribute: indexed search (TypeStableVector + RawBufferStore)
  * - ArrayBoolExtAttribute: streaming search (flat vectors, IExtendAttribute)
  */
 class ArrayBoolAttributeAccess : public AttributeVector, public IMultiValueAttribute {

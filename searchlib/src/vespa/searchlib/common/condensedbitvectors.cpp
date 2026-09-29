@@ -80,7 +80,7 @@ private:
      */
     size_t getSize() override { return _v.size(); }
     void adjustDocIdLimit(uint32_t docId) override;
-    vespalib::RcuVectorBase<T> _v;
+    vespalib::TypeStableVectorBase<T> _v;
 };
 
 template <typename T>

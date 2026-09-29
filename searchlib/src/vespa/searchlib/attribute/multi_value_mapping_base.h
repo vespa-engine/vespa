@@ -22,7 +22,7 @@ public:
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
-    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using RefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
 
 protected:
     std::shared_ptr<vespalib::alloc::MemoryAllocator> _memory_allocator;

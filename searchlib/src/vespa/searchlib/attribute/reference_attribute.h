@@ -33,7 +33,7 @@ public:
     using EntryRef = vespalib::datastore::EntryRef;
     using GlobalId = document::GlobalId;
     using ReferenceStore = vespalib::datastore::UniqueStore<Reference>;
-    using ReferenceStoreIndices = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using ReferenceStoreIndices = vespalib::TypeStableVectorBase<AtomicEntryRef>;
     // Class used to map from target lid to source lids
     using ReverseMapping =
         vespalib::btree::BTreeStore<uint32_t, vespalib::btree::BTreeNoLeafData, vespalib::btree::NoAggregated,

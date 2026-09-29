@@ -10,7 +10,7 @@ template class DataStoreT<EntryRefT<22>>;
 
 }
 
-template class vespalib::RcuVector<vespalib::datastore::EntryRef>;
-template class vespalib::RcuVectorBase<vespalib::datastore::EntryRef>;
-template class vespalib::RcuVector<vespalib::datastore::AtomicEntryRef>;
-template class vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>;
+template class vespalib::TypeStableVector<vespalib::datastore::EntryRef>;
+template class vespalib::TypeStableVectorBase<vespalib::datastore::EntryRef>;
+template class vespalib::TypeStableVector<vespalib::datastore::AtomicEntryRef>;
+template class vespalib::TypeStableVectorBase<vespalib::datastore::AtomicEntryRef>;

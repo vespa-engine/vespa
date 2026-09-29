@@ -72,8 +72,9 @@ void load_mips_max_distance(const GenericHeader& header, DistanceFunctionFactory
 
 bool has_link_to(std::span<const uint32_t> links, uint32_t id) {
     for (uint32_t link : links) {
-        if (link == id)
+        if (link == id) {
             return true;
+        }
     }
     return false;
 }
@@ -270,8 +271,9 @@ void HnswIndex<type>::remove_link_to(uint32_t remove_from, uint32_t remove_id, u
     auto      old_links = _graph.get_link_array(remove_from, level);
     new_links.reserve(old_links.size());
     for (uint32_t id : old_links) {
-        if (id != remove_id)
+        if (id != remove_id) {
             new_links.push_back(id);
+        }
     }
     _graph.set_link_array(remove_from, level, new_links);
 }
@@ -823,8 +825,9 @@ template <HnswIndexType type> void HnswIndex<type>::mutual_reconnect(const LinkA
     for (uint32_t i = 0; i + 1 < cluster.size(); ++i) {
         uint32_t   n_id_1 = cluster[i];
         TypedCells n_cells_1 = get_vector(n_id_1);
-        if (n_cells_1.non_existing_attribute_value()) [[unlikely]]
+        if (n_cells_1.non_existing_attribute_value()) [[unlikely]] {
             continue;
+        }
         LinkArrayRef                           n_list_1 = _graph.get_link_array(n_id_1, level);
         std::unique_ptr<BoundDistanceFunction> df = _distance_ff->for_insertion_vector(n_cells_1);
         for (uint32_t j = i + 1; j < cluster.size(); ++j) {
@@ -843,12 +846,14 @@ template <HnswIndexType type> void HnswIndex<type>::mutual_reconnect(const LinkA
     vespalib::hash_set<uint32_t> already_added;
     for (const PairDist& pair : pairs) {
         LinkArrayRef old_links_1 = _graph.get_link_array(pair.id_first, level);
-        if (old_links_1.size() >= max_links_for_level(level))
+        if (old_links_1.size() >= max_links_for_level(level)) {
             continue;
+        }
 
         LinkArrayRef old_links_2 = _graph.get_link_array(pair.id_second, level);
-        if (old_links_2.size() >= max_links_for_level(level))
+        if (old_links_2.size() >= max_links_for_level(level)) {
             continue;
+        }
 
         if ((old_links_1.empty() || old_links_2.empty()) ||
             (!already_added.contains(pair.id_first) && !already_added.contains(pair.id_second)))
@@ -894,7 +899,7 @@ template <HnswIndexType type> void HnswIndex<type>::remove_document(uint32_t doc
 }
 
 template <HnswIndexType type> void HnswIndex<type>::assign_generation(Generation current_gen) {
-    // Note: RcuVector transfers hold lists as part of reallocation based on current generation.
+    // Note: TypeStableVector transfers hold lists as part of reallocation based on current generation.
     //       We need to set the next generation here, as it is incremented on a higher level right after this call.
     _graph.nodes.setGeneration(current_gen + 1);
     _graph.levels_store.assign_generation(current_gen);

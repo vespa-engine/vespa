@@ -30,7 +30,7 @@ class TensorStore;
 class TensorAttributeLoader {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using GenerationHandler = vespalib::GenerationHandler;
-    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using RefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
     TensorAttribute&      _attr;
     GenerationHandler&    _generation_handler;
     RefVector&            _ref_vector;

@@ -23,7 +23,7 @@ class RawBufferStore;
  */
 class SingleRawAttributeLoader {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
-    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using RefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
 
     AttributeVector& _attr;
     RefVector&       _ref_vector;

@@ -46,12 +46,12 @@ vespalib::BitSpan decode_bools(std::span<const char> raw) noexcept {
 }
 
 class ArrayBoolReadView : public IArrayBoolReadView {
-    const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& _ref_vector;
-    const RawBufferStore&                                               _raw_store;
-    uint32_t                                                            _committed_doc_id_limit;
+    const vespalib::TypeStableVectorBase<vespalib::datastore::AtomicEntryRef>& _ref_vector;
+    const RawBufferStore&                                                      _raw_store;
+    uint32_t                                                                   _committed_doc_id_limit;
 
 public:
-    ArrayBoolReadView(const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
+    ArrayBoolReadView(const vespalib::TypeStableVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
                       const RawBufferStore& raw_store, uint32_t committed_doc_id_limit)
         : _ref_vector(ref_vector), _raw_store(raw_store), _committed_doc_id_limit(committed_doc_id_limit) {}
 

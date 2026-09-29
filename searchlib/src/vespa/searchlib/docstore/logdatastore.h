@@ -209,7 +209,7 @@ private:
     void compactWorst(uint64_t syncToken, bool compactDiskBloat);
     void compactFile(FileId chunkId);
 
-    using LidInfoVector = vespalib::RcuVector<uint64_t>;
+    using LidInfoVector = vespalib::TypeStableVector<uint64_t>;
     using FileChunkVector = std::vector<FileChunk::UP>;
 
     void updateLidMap(uint32_t lastFileChunkDocIdLimit);

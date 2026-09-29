@@ -8,7 +8,7 @@ namespace vespalib::datastore {
 class AtomicEntryRef;
 }
 namespace vespalib {
-template <typename T> class RcuVectorBase;
+template <typename T> class TypeStableVectorBase;
 }
 
 namespace search::tensor {
@@ -20,14 +20,14 @@ class TensorStore;
  * Class used to explore the state of a tensor attribute vector.
  */
 class TensorAttributeExplorer : public vespalib::StateExplorer {
-    uint64_t                                                            _compact_generation;
-    const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& _ref_vector;
-    const TensorStore&                                                  _tensor_store;
-    const NearestNeighborIndex*                                         _index;
+    uint64_t                                                                   _compact_generation;
+    const vespalib::TypeStableVectorBase<vespalib::datastore::AtomicEntryRef>& _ref_vector;
+    const TensorStore&                                                         _tensor_store;
+    const NearestNeighborIndex*                                                _index;
 
 public:
-    TensorAttributeExplorer(uint64_t                                                            compact_generation,
-                            const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
+    TensorAttributeExplorer(uint64_t compact_generation,
+                            const vespalib::TypeStableVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
                             const TensorStore& tensor_store, const NearestNeighborIndex* index);
     ~TensorAttributeExplorer() override;
 

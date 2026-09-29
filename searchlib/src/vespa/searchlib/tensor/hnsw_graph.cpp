@@ -134,10 +134,10 @@ template struct HnswGraph<HnswIndexType::MULTI>;
 
 namespace vespalib {
 
-template class RcuVectorBase<search::tensor::HnswSimpleNode>;
-template class RcuVector<search::tensor::HnswSimpleNode>;
-template class RcuVectorBase<search::tensor::HnswNode>;
-template class RcuVector<search::tensor::HnswNode>;
+template class TypeStableVectorBase<search::tensor::HnswSimpleNode>;
+template class TypeStableVector<search::tensor::HnswSimpleNode>;
+template class TypeStableVectorBase<search::tensor::HnswNode>;
+template class TypeStableVector<search::tensor::HnswNode>;
 
 } // namespace vespalib
 

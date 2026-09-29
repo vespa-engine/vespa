@@ -20,7 +20,7 @@ using EntryRefVectorSnapshot = vespalib::TransientVectorSnapshot<vespalib::datas
  * The function must be called from the attribute write thread.
  */
 EntryRefVectorSnapshot
-make_entry_ref_vector_snapshot(const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
-                               uint32_t                                                            size);
+make_entry_ref_vector_snapshot(const vespalib::TypeStableVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
+                               uint32_t                                                                   size);
 
 } // namespace search::attribute

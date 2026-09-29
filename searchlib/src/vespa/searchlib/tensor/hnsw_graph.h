@@ -35,7 +35,7 @@ template <HnswIndexType type> struct HnswGraph {
 
     // Provides mapping from document id -> node reference.
     // The reference is used to lookup the node data in LevelArrayStore.
-    using NodeVector = vespalib::RcuVector<NodeType>;
+    using NodeVector = vespalib::TypeStableVector<NodeType>;
     using LevelsRef = vespalib::datastore::EntryRef;
 
     // This stores the level arrays for all nodes.

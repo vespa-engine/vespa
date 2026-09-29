@@ -76,7 +76,7 @@ struct SimpleIndexConfig {
 };
 
 template <typename Posting, typename Key, typename DocId> class PostingVectorIterator {
-    using PostingVector = vespalib::RcuVectorBase<Posting>;
+    using PostingVector = vespalib::TypeStableVectorBase<Posting>;
 
     const Posting* const _vector;
     const size_t         _size;
@@ -131,7 +131,7 @@ public:
     using BTreeStore = vespalib::btree::BTreeStore<DocId, Posting, vespalib::btree::NoAggregated, std::less<DocId>,
                                                    vespalib::btree::BTreeDefaultTraits>;
     using BTreeIterator = typename BTreeStore::ConstIterator;
-    using PostingVector = vespalib::RcuVectorBase<Posting>;
+    using PostingVector = vespalib::TypeStableVectorBase<Posting>;
     using VectorStore = vespalib::btree::BTree<Key, std::shared_ptr<PostingVector>, vespalib::btree::NoAggregated>;
     using VectorIterator = PostingVectorIterator<Posting, Key, DocId>;
 

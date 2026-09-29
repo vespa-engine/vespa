@@ -28,7 +28,7 @@ namespace search::attribute {
 class ArrayBoolAttribute : public ArrayBoolAttributeAccess {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
-    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using RefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
 
     RefVector      _ref_vector;
     RawBufferStore _raw_store;

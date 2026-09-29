@@ -68,7 +68,7 @@ private:
         void set_store_full_document_id(bool value) noexcept { _dms._store_full_document_id = value; }
     };
     // maps from lid -> metadata
-    using MetadataStore = vespalib::RcuVectorBase<RawDocumentMetadata>;
+    using MetadataStore = vespalib::TypeStableVectorBase<RawDocumentMetadata>;
     using KeyComp = documentmetastore::LidGidKeyComparator;
     using OperationListenerSP = std::shared_ptr<documentmetastore::OperationListener>;
     using BucketDBOwnerSP = std::shared_ptr<bucketdb::BucketDBOwner>;

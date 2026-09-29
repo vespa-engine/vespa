@@ -31,7 +31,7 @@ class TensorAttribute : public NotImplementedAttribute, public ITensorAttribute 
 protected:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = TensorStore::EntryRef;
-    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using RefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
 
     RefVector                                _refVector;   // docId -> ref in data store for serialized tensor
     TensorStore&                             _tensorStore; // data store for serialized tensors
