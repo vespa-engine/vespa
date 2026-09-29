@@ -59,7 +59,7 @@ public class StringFieldValue extends FieldValue implements DataSource {
     public static final int classId = registerClass(Ids.document + 15, StringFieldValue.class);
     private String value;
     private Map<String, SpanTree> spanTrees = null;
-    private SimpleIndexingAnnotations simpleAnnotations = null;  // Used when USE_SIMPLE_ANNOTATIONS is true
+    private SimpleIndexingAnnotations simpleAnnotations = null;  // Used when possible
 
     /** Creates a new StringFieldValue holding an empty String. */
     public StringFieldValue() {
