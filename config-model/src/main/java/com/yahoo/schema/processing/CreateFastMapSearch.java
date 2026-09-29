@@ -28,6 +28,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ParenthesisExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ToStringExpression;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 
@@ -116,12 +117,18 @@ public class CreateFastMapSearch extends Processor {
 
     /**
      * Returns whether the synthetic attribute of the given map field is matched cased. Key and value share one
-     * term, so a string value must be matched like the key. A numeric value is hex encoded, and so is matched the
-     * same way whichever casing the term has.
+     * term, so a string value must be matched like a string key. A numeric key is in decimal, and a numeric value
+     * hex encoded, so they are matched the same way whichever casing the term has. With a numeric key, the attribute
+     * therefore follows the casing of a string value. Casing on a numeric key is ignored, with a warning,
+     * as for any non-string field.
      */
     private boolean isCasedKeyValue(SDField inputField, FastMapSearchFields fastMapFields, boolean validate) {
+        boolean stringValue = fastMapFields.valueType() == DataType.STRING;
+        if (fastMapFields.keyType() != DataType.STRING) {
+            return stringValue && isCased(inputField, fastMapFields.valueField());
+        }
         boolean casedKey = isCased(inputField, fastMapFields.keyField());
-        if (fastMapFields.valueType() != DataType.STRING) {
+        if ( ! stringValue) {
             return casedKey;
         }
         boolean casedValue = isCased(inputField, fastMapFields.valueField());
@@ -140,8 +147,9 @@ public class CreateFastMapSearch extends Processor {
     }
 
     /**
-     * Builds "input mapField | for_each { get_field KEY . separator . VALUE_EXP } | attribute",
+     * Builds "input mapField | for_each { KEY_EXP . separator . VALUE_EXP } | attribute",
      * where KEY and VALUE are $key and $value for a map, and the key and value struct fields for an array of struct,
+     * KEY_EXP is "(get_field KEY | to_string)" if the key type is int or long, and "get_field KEY" otherwise,
      * and VALUE_EXP is
      * "(get_field VALUE | exhex8encode)" if the value type is int,
      * "(get_field VALUE | exhex16encode)" if the value type is long,
@@ -161,10 +169,22 @@ public class CreateFastMapSearch extends Processor {
                                 // Iterable<Expression>, so passing it directly would flatten it into a pipeline.
                                 new StatementExpression(new Expression[] {
                                         new CatExpression(
-                                                new GetFieldExpression(keyName),
+                                                keyExpression(keyName, fastMapFields.keyType()),
                                                 new ConstantExpression(new StringFieldValue(FastMapSearch.keyValueSeparator())),
                                                 valueExpression(valueName, fastMapFields.valueType())) })),
                         new AttributeExpression(fieldName)));
+    }
+
+    /**
+     * Builds "(get_field KEY | to_string)" if the key type is int or long, giving the decimal form of the key,
+     * and "get_field KEY" otherwise.
+     */
+    private static Expression keyExpression(String keyName, DataType keyType) {
+        var field = new GetFieldExpression(keyName);
+        if (keyType == DataType.INT || keyType == DataType.LONG) {
+            return new ParenthesisExpression(new StatementExpression(field, new ToStringExpression()));
+        }
+        return field;
     }
 
     /**

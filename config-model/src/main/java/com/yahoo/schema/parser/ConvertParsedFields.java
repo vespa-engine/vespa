@@ -305,23 +305,29 @@ public class ConvertParsedFields {
         field.setFastMapSearch(fastMapFields);
     }
 
-    /** Validates the type of the key or value. Only string keys are supported by the query rewrite so far. */
+    /** Validates the type of the key or value. */
     private void validateFastMapSubtype(Schema schema, SDField field, DataType type, String subField, String keyOrValue) {
         if (type == null) {
             throw fastMapSearchError(schema, field, "'fast-search map field' requires " + keyOrValue + " '" + subField +
                                                     "' to be a field in the struct.");
         }
         boolean isKey = keyOrValue.equals("key");
-        if (isKey ? ! type.equals(DataType.STRING) : ! isSupportedFastMapValueType(type)) {
+        if (isKey ? ! isSupportedFastMapKeyType(type) : ! isSupportedFastMapValueType(type)) {
             throw new IllegalArgumentException(
                     String.format(
                             "For schema '%s', field '%s': 'fast-search map field' requires %s to be of type %s, but the type is %s.",
                             schema.getName(),
                             field.getName(),
                             subField,
-                            isKey ? "string" : "string, int, long, float or double",
+                            isKey ? "string, int or long" : "string, int, long, float or double",
                             type.getName()));
         }
+    }
+
+    private boolean isSupportedFastMapKeyType(DataType dataType) {
+        return dataType.equals(DataType.STRING)
+                || dataType.equals(DataType.INT)
+                || dataType.equals(DataType.LONG);
     }
 
     private boolean isSupportedFastMapValueType(DataType dataType) {

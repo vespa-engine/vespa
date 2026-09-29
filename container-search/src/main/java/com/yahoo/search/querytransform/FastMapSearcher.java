@@ -173,11 +173,20 @@ public class FastMapSearcher extends Searcher {
         Item valueItem = mapMatchItem.valueItem();
         TermItem lookup = tryMakeFastMapItem(keyItem, valueItem, fastMap, FastMapSearch.toLookupFieldName(fieldName, lookupName));
         if (lookup == null) {
-            throw new IllegalInputException("Lookup '" + name + "' requires a single word as key, and " +
+            throw new IllegalInputException("Lookup '" + name + "' requires " + describeSupportedKeys(fastMap.keyType()) +
+                                            " as key, and " +
                                             describeSupportedValues(fastMap.valueType()) +
                                             " as value, but got " + mapMatchItem);
         }
         return lookup;
+    }
+
+    private static String describeSupportedKeys(Field.Type keyType) {
+        return switch (keyType.kind()) {
+            case INT -> "a single int";
+            case LONG -> "a single long";
+            default -> "a single word";
+        };
     }
 
     private static String describeSupportedValues(Field.Type valueType) {
@@ -198,21 +207,20 @@ public class FastMapSearcher extends Searcher {
             return null;
         }
 
-        // The config model only allows string keys.
+        var key = getKey(keyItem, fastMap.keyType());
+        if (key == null) {
+            return null;
+        }
+
         if (fastMap.valueType().kind() == Field.Type.Kind.STRING) {
-            var key = getString(keyItem);
             var value = getString(valueItem);
-            if (key == null || value == null) {
+            if (value == null) {
                 return null;
             }
             return makeWord(key, value, lookupFieldName);
         }
 
         if (fastMap.valueType().kind() == Field.Type.Kind.INT) {
-            var key = getString(keyItem);
-            if (key == null) {
-                return null;
-            }
             var value = getInteger(valueItem);
             if (value != null) {
                 return makeWord(key, value, lookupFieldName);
@@ -221,10 +229,6 @@ public class FastMapSearcher extends Searcher {
         }
 
         if (fastMap.valueType().kind() == Field.Type.Kind.LONG) {
-            var key = getString(keyItem);
-            if (key == null) {
-                return null;
-            }
             var value = getLong(valueItem);
             if (value != null) {
                 return makeWord(key, value, lookupFieldName);
@@ -233,18 +237,48 @@ public class FastMapSearcher extends Searcher {
         }
 
         if (fastMap.valueType().kind() == Field.Type.Kind.FLOAT || fastMap.valueType().kind() == Field.Type.Kind.DOUBLE) {
-            var key = getString(keyItem);
-            if (key == null) {
-                return null;
-            }
             return makeFloatingPointItem(key, valueItem, lookupFieldName, fastMap.valueType().kind() == Field.Type.Kind.FLOAT);
         }
 
         return null;
     }
 
-    /** Gets value as string or null. */
-    private String getString(TermItem term) {
+    /**
+     * Returns the key as it is in the fast map attribute, or null if the given term is not a single key.
+     * An int or long key is in decimal, as given by to_string when indexing.
+     */
+    private String getKey(TermItem term, Field.Type keyType) {
+        return switch (keyType.kind()) {
+            case STRING -> getString(term);
+            case INT -> getIntegerKey(term, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            case LONG -> getIntegerKey(term, Long.MIN_VALUE, Long.MAX_VALUE);
+            default -> throw new IllegalStateException("Fast map search with key type " + keyType + " is not supported");
+        };
+    }
+
+    private static final Pattern integerKey = Pattern.compile("-?[0-9]+");
+
+    /**
+     * Returns the decimal form of the given numeric or word term, or null unless it is a plain integer
+     * (ASCII digits with an optional minus sign) between min and max. Leading zeros are dropped,
+     * as the key is written to the attribute without them.
+     */
+    private static String getIntegerKey(TermItem term, long min, long max) {
+        String number = (term instanceof IntItem intItem) ? intItem.getNumber() : getString(term);
+        if (number == null || ! integerKey.matcher(number).matches()) {
+            return null; // not a plain integer, such as a range expression
+        }
+        long key;
+        try {
+            key = Long.parseLong(number);
+        } catch (NumberFormatException e) {
+            return null; // outside the long range
+        }
+        return (key < min || key > max) ? null : Long.toString(key);
+    }
+
+    /** Returns the word of a word or exact string term (which is a word item), or null if the term is neither. */
+    private static String getString(TermItem term) {
         if (term.getClass() == WordItem.class || term instanceof ExactStringItem) {
             return ((WordItem) term).getWord();
         }

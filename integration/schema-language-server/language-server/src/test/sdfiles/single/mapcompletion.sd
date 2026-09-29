@@ -24,7 +24,7 @@ schema mapcompletion {
             indexing: summary
             fast-search map field: lookup
         }
-        field block_form type map<string, int> {
+        field block_form type map<int, int> {
             indexing: summary
             fast-search map field: lookup {
 
@@ -51,6 +51,10 @@ schema mapcompletion {
             fast-search map field: lookup {
 
             }
+        }
+        field int_keys type map<int, string> {
+            indexing: summary
+
         }
     }
 }
