@@ -13,18 +13,27 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
 import net.jpountz.xxhash.XXHash64;
 import net.jpountz.xxhash.XXHashFactory;
+
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -108,7 +117,25 @@ public class FileDirectory extends AbstractComponent {
 
     public File getRoot() { return root; }
 
-    private Long computeHash(File file) throws IOException {
+    public enum HashScheme {
+        LEGACY, SHA256;
+
+        static HashScheme fromReference(FileReference reference) {
+            String value = reference.value();
+            if (value.matches("[0-9a-f]{1,16}")) return LEGACY;
+            if (value.matches("[0-9a-f]{64}")) return SHA256;
+            throw new IllegalArgumentException("Unrecognized file reference: " + value);
+        }
+    }
+
+    private String computeHash(File file, HashScheme scheme) throws IOException {
+        return switch (scheme) {
+            case LEGACY -> Long.toHexString(computeLegacyHash(file));
+            case SHA256 -> computeSha256(file);
+        };
+    }
+
+    private Long computeLegacyHash(File file) throws IOException {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         if (file.isDirectory()) {
             return Files.walk(file.toPath(), 100).map(path -> {
@@ -130,16 +157,60 @@ public class FileDirectory extends AbstractComponent {
         return hasher.hash(ByteBuffer.wrap(wholeFile), hasher.hash(ByteBuffer.wrap(Utf8.toBytes(file.getName())), 0));
     }
 
-    public FileReference addFile(File source) throws IOException {
-        return addFile(source, Optional.empty());
+    private String computeSha256(File file) throws IOException {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            try (var output = new DataOutputStream(new DigestOutputStream(OutputStream.nullOutputStream(), digest))) {
+                hash(file, output, 0);
+            }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
     }
 
-    public FileReference addFile(File source, Optional<ApplicationId> owner) throws IOException {
-        Long hash = computeHash(source);
-        FileReference fileReference = fileReferenceFromHash(hash);
+    // Hash names and contents together so that renames and changes to directory structure change the reference.
+    // Types, lengths and child counts make the encoding unambiguous; sorting makes it independent of traversal order.
+    private void hash(File file, DataOutputStream output, int depth) throws IOException {
+        if (depth > 100)
+            throw new IOException("File reference exceeds the maximum directory depth: " + file);
 
+        boolean directory = file.isDirectory();
+        output.writeByte(directory ? 'd' : 'f');
+        byte[] name = Utf8.toBytes(file.getName());
+        output.writeInt(name.length);
+        output.write(name);
+        if (directory) {
+            File[] children = file.listFiles();
+            if (children == null)
+                throw new IOException("Could not list directory: " + file);
+            Arrays.sort(children, Comparator.comparing(File::getName));
+            output.writeInt(children.length);
+            for (File child : children)
+                hash(child, output, depth + 1);
+        } else {
+            byte[] content;
+            try {
+                content = IOUtils.readFileBytes(file);
+            } catch (IOException e) {
+                if (depth == 0) throw e;
+                // Callers may ignore FileNotFoundException for a missing resource.
+                // A failed read inside a directory must still fail the entire resource.
+                throw new IOException("Could not read file in directory resource: " + file, e);
+            }
+            output.writeLong(content.length);
+            output.write(content);
+        }
+    }
+
+    public FileReference addFile(File source, HashScheme scheme) throws IOException {
+        return addFile(source, Optional.empty(), scheme);
+    }
+
+    public FileReference addFile(File source, Optional<ApplicationId> owner, HashScheme scheme) throws IOException {
+        FileReference fileReference = new FileReference(computeHash(source, scheme));
         try (Lock lock = locks.lock(fileReference)) {
-            return addFile(source, fileReference, hash, owner);
+            return addFile(source, fileReference, owner);
         }
     }
 
@@ -165,13 +236,12 @@ public class FileDirectory extends AbstractComponent {
     }
 
     // Check if we should add file, it might already exist
-    private boolean shouldAddFile(File source, Long hashOfFileToBeAdded, Optional<ApplicationId> owner) throws IOException {
-        FileReference fileReference = fileReferenceFromHash(hashOfFileToBeAdded);
+    private boolean shouldAddFile(File source, FileReference fileReference, Optional<ApplicationId> owner) throws IOException {
         File destinationDir = destinationDir(fileReference);
         if ( ! destinationDir.exists()) return true;
 
         File existingFile = destinationDir.toPath().resolve(source.getName()).toFile();
-        if ( ! existingFile.exists() || ! computeHash(existingFile).equals(hashOfFileToBeAdded)) {
+        if ( ! existingFile.exists() || ! computeHash(existingFile, HashScheme.fromReference(fileReference)).equals(fileReference.value())) {
             log.log(WARNING, "Directory for file reference '" + fileReference.value() + "'" + ownerSuffix(owner) +
                     " has content that does not match its hash, deleting everything in " +
                     destinationDir.getAbsolutePath());
@@ -189,13 +259,9 @@ public class FileDirectory extends AbstractComponent {
         return new File(root, fileReference.value());
     }
 
-    private FileReference fileReferenceFromHash(Long hash) {
-        return new FileReference(Long.toHexString(hash));
-    }
-
-    // Pre-condition: Destination dir does not exist
-    private FileReference addFile(File source, FileReference reference, Long hash, Optional<ApplicationId> owner) throws IOException {
-        if ( ! shouldAddFile(source, hash, owner)) return reference;
+    // Writes source to the destination directory unless it is already there.
+    private FileReference addFile(File source, FileReference reference, Optional<ApplicationId> owner) throws IOException {
+        if ( ! shouldAddFile(source, reference, owner)) return reference;
 
         ensureRootExist();
         Path tempDestinationDir = uncheck(() -> Files.createTempDirectory(root.toPath(), "writing"));
