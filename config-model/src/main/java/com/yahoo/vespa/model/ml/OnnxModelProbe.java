@@ -12,6 +12,7 @@ import com.yahoo.config.model.api.OnnxMemoryStats;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.vespa.model.Landlock;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -32,7 +33,8 @@ public class OnnxModelProbe {
 
     private static final String binary = "vespa-analyze-onnx-model";
 
-    static TensorType probeModel(ApplicationPackage app, Path modelPath, String outputName, Map<String, TensorType> inputTypes) {
+    static TensorType probeModel(ApplicationPackage app, Path modelPath, String outputName,
+                                 Map<String, TensorType> inputTypes, boolean enableLandlock) {
         TensorType outputType = TensorType.empty;
         String contextKey = createContextKey(outputName, inputTypes);
 
@@ -42,8 +44,10 @@ public class OnnxModelProbe {
 
             // Otherwise, run vespa-analyze-onnx-model if the model is available
             if (outputType.equals(TensorType.empty) && app.getFile(modelPath).exists()) {
-                String jsonInput = createJsonInput(app.getFileReference(modelPath).getAbsolutePath(), inputTypes);
-                var jsonOutput = callVespaAnalyzeOnnxModel(jsonInput);
+                String modelAbsolutePath = app.getFileReference(modelPath).getAbsolutePath();
+                String jsonInput = createJsonInput(modelAbsolutePath, inputTypes);
+                var env = Landlock.createEnv(enableLandlock, modelAbsolutePath);
+                var jsonOutput = callVespaAnalyzeOnnxModel(jsonInput, env);
                 outputType = outputTypeFromJson(jsonOutput, outputName);
                 writeMemoryStats(app, modelPath, OnnxMemoryStats.fromJson(jsonOutput));
                 if ( ! outputType.equals(TensorType.empty)) {
@@ -129,10 +133,11 @@ public class OnnxModelProbe {
         return out.toString(java.nio.charset.StandardCharsets.UTF_8);
     }
 
-    private static JsonNode callVespaAnalyzeOnnxModel(String jsonInput) throws IOException, InterruptedException {
+    private static JsonNode callVespaAnalyzeOnnxModel(String jsonInput, Map<String, String> env) throws IOException, InterruptedException {
         StringBuilder output = new StringBuilder();
 
         ProcessBuilder processBuilder = new ProcessBuilder(binary, "--probe-types");
+        processBuilder.environment().putAll(env);
         processBuilder.redirectError(ProcessBuilder.Redirect.DISCARD);
         Process process = processBuilder.start();
 

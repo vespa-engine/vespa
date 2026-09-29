@@ -3,6 +3,7 @@
 package com.yahoo.schema.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfileRegistry;
@@ -22,18 +23,26 @@ import com.yahoo.vespa.model.ml.OnnxModelInfo;
  */
 public class OnnxModelTypeResolver extends Processor {
 
+    private boolean enableLandlock = false;
+
     public OnnxModelTypeResolver(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
+    }
+
+    @Override
+    public void process(boolean validate, boolean documentsOnly, ModelContext.Properties properties) {
+        enableLandlock = properties == null ? false : properties.featureFlags().enableLandlock();
+        process(validate, documentsOnly);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if (documentsOnly) return;
         for (OnnxModel onnxModel : schema.declaredOnnxModels().values())
-            onnxModel.setModelInfo(OnnxModelInfo.load(onnxModel.getFileName(), schema.applicationPackage()));
+            onnxModel.setModelInfo(OnnxModelInfo.load(onnxModel.getFileName(), schema.applicationPackage(), enableLandlock));
         for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {
             for (OnnxModel onnxModel : profile.declaredOnnxModels().values())
-                onnxModel.setModelInfo(OnnxModelInfo.load(onnxModel.getFileName(), schema.applicationPackage()));
+                onnxModel.setModelInfo(OnnxModelInfo.load(onnxModel.getFileName(), schema.applicationPackage(), enableLandlock));
         }
     }
 

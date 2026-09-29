@@ -29,7 +29,7 @@ public class OnnxModelProbeTest {
                     "input2", TensorType.fromSpec("tensor<float>(d0[1],d1[2])"));
             TensorType expected = TensorType.fromSpec("tensor<float>(d0[1],d1[2],d2[2])");
 
-            TensorType outputType = OnnxModelProbe.probeModel(app, modelPath, output, inputTypes);
+            TensorType outputType = OnnxModelProbe.probeModel(app, modelPath, output, inputTypes, false);
 
             // if 'vespa-analyze-onnx-model' was unavailable, specifically cache expected type
             if (outputType.equals(TensorType.empty)) {
@@ -43,7 +43,7 @@ public class OnnxModelProbeTest {
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                     storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             app = FilesApplicationPackage.fromDir(storedAppDir.toFile(), Map.of());
-            outputType = OnnxModelProbe.probeModel(app, modelPath, output, inputTypes);
+            outputType = OnnxModelProbe.probeModel(app, modelPath, output, inputTypes, false);
             assertEquals(outputType, expected);
 
         } finally {

@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.model.Landlock;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.SearchCluster;
@@ -199,13 +200,7 @@ public class RankSetupValidator implements Validator {
     }
 
     static Map<String, String> createEnvForEnablingLandlock(Context context, String schemaDir) {
-        if (!context.deployState().featureFlags().enableLandlock()) {
-            return Map.of();
-        }
-
-        return Map.of("VESPA_ENABLE_LANDLOCK", "true",
-                      // All with read-only access
-                     "VESPA_LANDLOCK_PATHS", "/dev,ro:/sys,ro:/proc/self,ro:" + schemaDir + ",ro");
+        return Landlock.createEnv(context.deployState().featureFlags().enableLandlock(), schemaDir);
     }
 
     private void validateWarn(Exception e, DeployLogger deployLogger) {
