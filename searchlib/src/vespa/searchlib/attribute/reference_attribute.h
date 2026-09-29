@@ -9,7 +9,7 @@
 
 #include <vespa/vespalib/datastore/unique_store.h>
 #include <vespa/vespalib/stllike/allocator.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace search {
 class IGidToLidMapperFactory;

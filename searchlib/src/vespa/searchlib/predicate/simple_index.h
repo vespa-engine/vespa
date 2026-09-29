@@ -6,7 +6,7 @@
 
 #include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <optional>
 

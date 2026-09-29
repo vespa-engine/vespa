@@ -5,7 +5,7 @@
 #include "raw_attribute.h"
 #include "raw_buffer_store.h"
 
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace search::attribute {
 

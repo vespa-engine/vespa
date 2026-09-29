@@ -2,7 +2,7 @@
 #include "condensedbitvectors.h"
 
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <cassert>
 

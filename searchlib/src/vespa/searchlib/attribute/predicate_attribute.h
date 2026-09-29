@@ -5,7 +5,7 @@
 #include "not_implemented_attribute.h"
 
 #include <vespa/searchlib/predicate/common.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace document {
 class PredicateFieldValue;

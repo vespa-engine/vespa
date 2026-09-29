@@ -4,8 +4,8 @@
 
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/entryref.h>
-#include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/vespalib/util/transient_vector_snapshot.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace search::attribute {
 

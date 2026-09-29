@@ -5,7 +5,7 @@
 #include "hnsw_index.h"
 
 #include <vespa/vespalib/datastore/array_store.hpp>
-#include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/type_stable_vector.hpp>
 
 namespace search::tensor {
 

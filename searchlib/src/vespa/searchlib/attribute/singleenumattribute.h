@@ -4,7 +4,7 @@
 
 #include "enumattribute.h"
 
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace search {
 

@@ -15,7 +15,7 @@
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/generationhandler.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <set>
 

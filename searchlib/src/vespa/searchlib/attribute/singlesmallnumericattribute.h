@@ -6,7 +6,7 @@
 #include "search_context.h"
 
 #include <vespa/vespalib/util/atomic.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <limits>
 

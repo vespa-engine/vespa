@@ -11,7 +11,7 @@
 
 #include <vespa/document/update/tensor_update.h>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <atomic>
 

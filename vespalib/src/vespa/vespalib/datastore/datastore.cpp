@@ -2,7 +2,7 @@
 
 #include "datastore.hpp"
 
-#include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/type_stable_vector.hpp>
 
 namespace vespalib::datastore {
 

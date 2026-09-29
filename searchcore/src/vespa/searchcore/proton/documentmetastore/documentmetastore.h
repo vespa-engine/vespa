@@ -14,7 +14,7 @@
 #include <vespa/searchlib/docstore/ibucketizer.h>
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace proton::bucketdb {
 class SplitBucketSession;

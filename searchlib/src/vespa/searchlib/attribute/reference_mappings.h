@@ -4,7 +4,7 @@
 
 #include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <atomic>
 

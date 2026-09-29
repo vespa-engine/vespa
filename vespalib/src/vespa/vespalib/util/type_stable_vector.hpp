@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "rcuvector.h"
+#include "type_stable_vector.h"
 
 #include <vespa/vespalib/util/array.hpp>
 
