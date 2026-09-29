@@ -223,7 +223,7 @@ void DocumentMetaStore::insert(GidToLidMapKey key, const RawDocumentMetadata& me
     ensureSpace(lid);
     _metadataStore[lid] = metadata;
     _gidToLidMap.insert(_gid_to_lid_map_write_itr, key, BTreeNoLeafData());
-    // flush writes to meta store rcu vector before new entry is visible
+    // flush writes to meta store type stable vector before new entry is visible
     // from frozen root or lid based scan
     std::atomic_thread_fence(std::memory_order_release);
     _lidAlloc.registerLid(lid);

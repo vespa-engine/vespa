@@ -89,7 +89,7 @@ template <typename T> void TypeStableVectorBase<T>::shrink(size_t newSize) {
             tmpData[i] = _data[i];
         }
         std::atomic_thread_fence(std::memory_order_release);
-        // Users of RCU vector must ensure that no readers use old size
+        // Users of type stable vector must ensure that no readers use old size
         // after swap.  Attribute vectors uses _committedDocIdLimit for this.
         tmpData.swap(_data); // atomic switch of underlying data
         size_t holdSize = tmpData.capacity() * sizeof(T);

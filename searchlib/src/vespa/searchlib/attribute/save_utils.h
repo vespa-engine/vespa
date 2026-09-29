@@ -12,7 +12,7 @@ namespace search::attribute {
 using EntryRefVectorSnapshot = vespalib::TransientVectorSnapshot<vespalib::datastore::EntryRef>;
 
 /*
- * Create a vector of entry refs from an rcu vector containing atomic
+ * Create a vector of entry refs from an type stable vector containing atomic
  * entry refs. The new vector can be used by a flush thread while
  * saving an attribute vector as long as the proper generation guard
  * is also held.

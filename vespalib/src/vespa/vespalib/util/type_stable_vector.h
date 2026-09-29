@@ -21,9 +21,10 @@ public:
 };
 
 /**
- * Vector class for elements of type T using the read-copy-update
- * mechanism to ensure that reader threads will have a consistent view
- * of the vector while the update thread is inserting new elements.
+ * Vector class for elements of type T that ensures reader threads
+ * will have a consistent view of the vector while the update thread is
+ * inserting new elements.
+ *
  * The update thread is also responsible for updating the current
  * generation of the vector, and initiating removing of old underlying
  * data vectors.
@@ -140,7 +141,7 @@ public:
 
     /*
      * Readers holding a generation guard can call make_read_view() to
-     * get a read view to the rcu vector. Array bound (read_size) must
+     * get a read view to the type stable vector. Array bound (read_size) must
      * be specified by reader, cf. committed docid limit in attribute vectors.
      */
     std::span<const T> make_read_view(size_t read_size) const noexcept {
