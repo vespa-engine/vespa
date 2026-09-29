@@ -42,7 +42,7 @@ public class ImportedFieldsResolver extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         schema.temporaryImportedFields().get().fields().forEach((name, field) -> resolveImportedField(field, validate));
         schema.setImportedFields(new ImportedFields(importedFields));
     }

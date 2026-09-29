@@ -56,14 +56,12 @@ public abstract class Processor {
      * @param validate true to throw exceptions on validation errors, false to make the best possible effort
      *                 at completing processing without throwing an exception.
      *                 If we are not validating, emitting warnings have no effect and can (but must not) be skipped.
-     * @param documentsOnly true to skip processing (including validation, regardless of the validate setting)
-     *                      of aspects not relating to document definitions (e.g. rank profiles)
      */
-    public abstract void process(boolean validate, boolean documentsOnly);
+    public abstract void process(boolean validate);
 
     /** As above, possibly with properties from a context.  Override if needed. */
-    public void process(boolean validate, boolean documentsOnly, ModelContext.Properties properties) {
-        process(validate, documentsOnly);
+    public void process(boolean validate, ModelContext.Properties properties) {
+        process(validate);
     }
 
     /**

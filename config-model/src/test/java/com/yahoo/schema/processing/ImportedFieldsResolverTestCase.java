@@ -142,7 +142,7 @@ public class ImportedFieldsResolverTestCase {
         private static ImportedFields resolve(Schema schema) {
             assertNotNull(schema.temporaryImportedFields().get());
             assertFalse(schema.importedFields().isPresent());
-            new ImportedFieldsResolver(schema, null, null, null).process(true, false);
+            new ImportedFieldsResolver(schema, null, null, null).process(true);
             assertNotNull(schema.importedFields().get());
             return schema.importedFields().get();
         }

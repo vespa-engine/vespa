@@ -22,7 +22,7 @@ public class OptimizeIlscript extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         for (SDField field : schema.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();
             if (script == null) continue;

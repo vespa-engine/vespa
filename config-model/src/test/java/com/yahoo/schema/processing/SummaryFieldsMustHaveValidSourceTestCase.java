@@ -53,7 +53,7 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTest
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/documentidinsummary.sd");
         BaseDeployLogger deployLogger = new BaseDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        new SummaryFieldsMustHaveValidSource(schema, deployLogger, rankProfileRegistry, new QueryProfiles()).process(true, false);
+        new SummaryFieldsMustHaveValidSource(schema, deployLogger, rankProfileRegistry, new QueryProfiles()).process(true);
         assertEquals("documentid", schema.getSummary("withid").getSummaryField("w").getSingleSource());
     }
 

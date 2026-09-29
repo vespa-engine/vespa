@@ -25,7 +25,7 @@ public class DictionaryProcessor extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         for (SDField field : schema.allConcreteFieldsWithSubFields()) {
             Attribute attribute = field.getAttribute();
             if (attribute == null) continue;

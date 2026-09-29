@@ -39,7 +39,7 @@ public class ValidateFieldTypesTest {
             schema.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, DataType.STRING, schema));
 
             ValidateFieldTypes validator = new ValidateFieldTypes(schema, null, null, null);
-            validator.process(true, false);
+            validator.process(true);
         });
         assertTrue(exception.getMessage().contains("For schema '" + DOCUMENT_NAME + "', field '" + IMPORTED_FIELD_NAME + "': Incompatible types. " +
                 "Expected int for summary field '" + IMPORTED_FIELD_NAME + "', got string."));

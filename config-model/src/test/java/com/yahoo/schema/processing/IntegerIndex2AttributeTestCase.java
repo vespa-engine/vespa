@@ -25,7 +25,7 @@ public class IntegerIndex2AttributeTestCase extends AbstractSchemaTestCase {
     @Test
     void testIntegerIndex2Attribute() throws IOException, ParseException {
         Schema schema = ApplicationBuilder.buildFromFile("src/test/examples/integerindex2attribute.sd");
-        new IntegerIndex2Attribute(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
+        new IntegerIndex2Attribute(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true);
 
         SDField f;
         f = schema.getConcreteField("s1");

@@ -30,14 +30,13 @@ public class OnnxModelTypeResolver extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly, ModelContext.Properties properties) {
+    public void process(boolean validate, ModelContext.Properties properties) {
         enableLandlock = properties == null ? false : properties.featureFlags().enableLandlock();
-        process(validate, documentsOnly);
+        process(validate);
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
-        if (documentsOnly) return;
+    public void process(boolean validate) {
         for (OnnxModel onnxModel : schema.declaredOnnxModels().values())
             onnxModel.setModelInfo(OnnxModelInfo.load(onnxModel.getFileName(), schema.applicationPackage(), enableLandlock));
         for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {

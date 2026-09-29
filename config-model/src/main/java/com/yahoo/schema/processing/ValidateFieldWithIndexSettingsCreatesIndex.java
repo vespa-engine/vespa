@@ -21,7 +21,7 @@ public class ValidateFieldWithIndexSettingsCreatesIndex extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         if ( ! validate) return;
 
         Matching defaultMatching = new Matching();

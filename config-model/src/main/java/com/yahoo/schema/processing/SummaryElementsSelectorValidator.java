@@ -31,7 +31,7 @@ public class SummaryElementsSelectorValidator extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         for (var entry : schema.getSummaries().entrySet()) {
             var summary = entry.getValue();
             for (var field : summary.getSummaryFields().values()) {

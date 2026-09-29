@@ -18,8 +18,8 @@ public class TokensTransformValidator extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
-        if (!validate || documentsOnly) {
+    public void process(boolean validate) {
+        if (!validate) {
             return;
         }
         for (var summary : schema.getSummaries().values()) {

@@ -36,8 +36,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
-        if (documentsOnly) return;
+    public void process(boolean validate) {
 
         processAttributeFields();
         processImportedFields();

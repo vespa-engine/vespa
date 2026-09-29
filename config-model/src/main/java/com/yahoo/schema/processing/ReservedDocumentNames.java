@@ -28,7 +28,7 @@ public class ReservedDocumentNames extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         if ( ! validate) return;
 
         String docName = schema.getDocument().getName();

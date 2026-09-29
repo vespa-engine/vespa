@@ -129,7 +129,7 @@ public class DocumentGenMojo extends AbstractMojo {
 
     private ApplicationBuilder buildSearches(File sdDir) {
         File[] sdFiles = sdDir.listFiles((dir, name) -> name.endsWith(".sd"));
-        ApplicationBuilder builder = new ApplicationBuilder(true);
+        ApplicationBuilder builder = new ApplicationBuilder();
         for (File f : sdFiles) {
             try {
                 long modTime = f.lastModified();

@@ -16,7 +16,7 @@ public class ValidateFieldTypesDocumentsOnly extends ValidateFieldTypes {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         if ( ! validate) return;
 
         String searchName = schema.getName();

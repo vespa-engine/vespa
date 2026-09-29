@@ -230,12 +230,12 @@ public class AdjustPositionSummaryFieldsTestCase {
         }
 
         private static void resolve(Schema schema) {
-            new CreatePositionZCurve(schema, null, null, null).process(true, false);
+            new CreatePositionZCurve(schema, null, null, null).process(true);
             assertNotNull(schema.temporaryImportedFields().get());
             assertFalse(schema.importedFields().isPresent());
-            new ImportedFieldsResolver(schema, null, null, null).process(true, false);
+            new ImportedFieldsResolver(schema, null, null, null).process(true);
             assertNotNull(schema.importedFields().get());
-            new AdjustPositionSummaryFields(schema, null, null, null).process(true, false);
+            new AdjustPositionSummaryFields(schema, null, null, null).process(true);
         }
     }
 }

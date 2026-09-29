@@ -45,7 +45,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
 
         new Processing(new TestProperties())
                 .process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
-                         true, false, Set.of());
+                         true, Set.of());
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
 
         // Check attribute fields

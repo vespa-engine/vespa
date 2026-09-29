@@ -27,12 +27,12 @@ public class AdjustPositionSummaryFields extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly, ModelContext.Properties properties) {
-        process(validate, documentsOnly);
+    public void process(boolean validate, ModelContext.Properties properties) {
+        process(validate);
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         for (DocumentSummary summary : schema.getSummaries().values()) {
             scanSummary(summary);
         }

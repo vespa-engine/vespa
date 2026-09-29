@@ -30,7 +30,7 @@ public class AdjustSummaryTransforms extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         for (var summary : schema.getSummaries().values()) {
             for (var summaryField : summary.getSummaryFields().values()) {
                 makeDocumentIdTransformIfAppropriate(summaryField);

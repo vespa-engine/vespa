@@ -30,7 +30,7 @@ public class AddDataTypeAndTransformToSummaryOfImportedFields extends Processor 
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         schema.allImportedFields()
               .forEach(this::setTransform);
     }

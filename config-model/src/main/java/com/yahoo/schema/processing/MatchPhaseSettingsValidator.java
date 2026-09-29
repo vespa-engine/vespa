@@ -20,9 +20,8 @@ public class MatchPhaseSettingsValidator extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         if ( ! validate) return;
-        if (documentsOnly) return;
 
         for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(schema)) {
             RankProfile.MatchPhaseSettings settings = rankProfile.getMatchPhase();

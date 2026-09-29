@@ -19,9 +19,8 @@ public class RankProfileValidator extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         if (!validate) return;
-        if (documentsOnly) return;
 
         rankProfileRegistry.rankProfilesOf(schema).forEach(profile -> validate(profile));
     }

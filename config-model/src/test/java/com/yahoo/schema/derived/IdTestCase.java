@@ -36,7 +36,7 @@ public class IdTestCase extends AbstractExportingTestCase {
 
         new Processing(new TestProperties())
                 .process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(),
-                         true, false, Set.of());
+                         true, Set.of());
 
         assertNull(document.getField("uri"));
         assertNull(document.getField("Uri"));

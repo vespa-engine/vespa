@@ -31,7 +31,6 @@ public class ConvertSchemaCollection {
     private final DeployLogger deployLogger;
     private final ModelContext.Properties properties;
     private final RankProfileRegistry rankProfileRegistry;
-    private final boolean documentsOnly;
 
     // for unit test
     ConvertSchemaCollection(IntermediateCollection input,
@@ -42,8 +41,7 @@ public class ConvertSchemaCollection {
              new MockFileRegistry(),
              new BaseDeployLogger(),
              new TestProperties(),
-             new RankProfileRegistry(),
-             true);
+             new RankProfileRegistry());
     }
 
     public ConvertSchemaCollection(IntermediateCollection input,
@@ -52,8 +50,7 @@ public class ConvertSchemaCollection {
                                    FileRegistry fileRegistry,
                                    DeployLogger deployLogger,
                                    ModelContext.Properties properties,
-                                   RankProfileRegistry rankProfileRegistry,
-                                   boolean documentsOnly)
+                                   RankProfileRegistry rankProfileRegistry)
     {
         this.input = input;
         this.docMan = documentTypeManager;
@@ -62,7 +59,6 @@ public class ConvertSchemaCollection {
         this.deployLogger = deployLogger;
         this.properties = properties;
         this.rankProfileRegistry = rankProfileRegistry;
-        this.documentsOnly = documentsOnly;
 
         input.resolveInternalConnections();
         order();
@@ -110,8 +106,7 @@ public class ConvertSchemaCollection {
                                                  fileRegistry,
                                                  deployLogger,
                                                  properties,
-                                                 rankProfileRegistry,
-                                                 documentsOnly);
+                                                 rankProfileRegistry);
         return converter.convertToSchemas();
     }
 

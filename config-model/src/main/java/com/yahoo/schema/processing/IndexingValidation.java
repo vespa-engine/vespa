@@ -30,7 +30,7 @@ public class IndexingValidation extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         TypeContext context = new TypeContext(new SchemaFieldTypes(schema));
         for (SDField field : schema.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();

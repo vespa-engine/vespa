@@ -37,7 +37,6 @@ public class Application {
                        RankProfileRegistry rankProfileRegistry,
                        QueryProfiles queryProfiles,
                        ModelContext.Properties properties,
-                       boolean documentsOnly,
                        boolean validate,
                        Set<Class<? extends Processor>> processorsToSkip,
                        DeployLogger logger) {
@@ -79,7 +78,6 @@ public class Application {
                                                rankProfileRegistry,
                                                queryProfiles,
                                                validate,
-                                               documentsOnly,
                                                processorsToSkip);
         }
 

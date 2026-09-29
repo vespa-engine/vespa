@@ -30,7 +30,7 @@ public class TextMatch extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         for (SDField field : schema.allConcreteFields()) {
             if (field.getMatching().getType() != MatchType.TEXT) continue;
 

@@ -177,7 +177,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         field.parseIndexingScript(schema.getName(), "{ attribute | summary }");
         new Processing(new TestProperties())
                 .process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(),
-                         true, false, Set.of());
+                         true, Set.of());
 
         var summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         var fields = summary.fields().values().iterator();

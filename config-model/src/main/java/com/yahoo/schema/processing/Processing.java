@@ -108,8 +108,8 @@ public class Processing {
                 RankingExpressionTypeResolver::new);
     }
 
-    private void runProcessor(Processor processor, boolean validate, boolean documentsOnly) {
-        processor.process(validate, documentsOnly, properties);
+    private void runProcessor(Processor processor, boolean validate) {
+        processor.process(validate, properties);
     }
 
     /**
@@ -123,14 +123,14 @@ public class Processing {
      * @param processorsToSkip a set of processor classes we should not invoke in this. Useful for testing.
      */
     public void process(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
-                        QueryProfiles queryProfiles, boolean validate, boolean documentsOnly,
+                        QueryProfiles queryProfiles, boolean validate,
                         Set<Class<? extends Processor>> processorsToSkip)
     {
         Collection<ProcessorFactory> factories = processors();
         factories.stream()
                 .map(factory -> factory.create(schema, deployLogger, rankProfileRegistry, queryProfiles))
                 .filter(processor -> ! processorsToSkip.contains(processor.getClass()))
-                .forEach(processor -> runProcessor(processor, validate, documentsOnly));
+                .forEach(processor -> runProcessor(processor, validate));
     }
 
     /**
@@ -141,11 +141,11 @@ public class Processing {
      * @param queryProfiles the query profiles contained in the application this search is part of
      */
     public void processRankProfiles(DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
-                                    QueryProfiles queryProfiles, boolean validate, boolean documentsOnly) {
+                                    QueryProfiles queryProfiles, boolean validate) {
         Collection<ProcessorFactory> factories = rankProfileProcessors();
         factories.stream()
                  .map(factory -> factory.create(null, deployLogger, rankProfileRegistry, queryProfiles))
-                 .forEach(processor -> runProcessor(processor, validate, documentsOnly));
+                 .forEach(processor -> runProcessor(processor, validate));
     }
 
     @FunctionalInterface

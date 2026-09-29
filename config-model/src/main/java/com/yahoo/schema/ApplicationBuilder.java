@@ -51,8 +51,6 @@ public class ApplicationBuilder {
     private final FileRegistry fileRegistry;
     private final DeployLogger deployLogger;
     private final ModelContext.Properties properties;
-    /** True to build the document aspect only, skipping instantiation of rank profiles */
-    private final boolean documentsOnly;
 
     private Application application;
 
@@ -71,11 +69,6 @@ public class ApplicationBuilder {
     /** For testing only */
     public ApplicationBuilder(DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
         this(MockApplicationPackage.createEmpty(), deployLogger, rankProfileRegistry);
-    }
-
-    /** Used for generating documents for typed access to document fields in Java */
-    public ApplicationBuilder(boolean documentsOnly) {
-        this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry(), documentsOnly);
     }
 
     /** For testing only */
@@ -115,24 +108,13 @@ public class ApplicationBuilder {
                               ModelContext.Properties properties,
                               RankProfileRegistry rankProfileRegistry,
                               QueryProfileRegistry queryProfileRegistry) {
-        this(app, fileRegistry, deployLogger, properties, rankProfileRegistry, queryProfileRegistry, false);
-    }
-
-    private ApplicationBuilder(ApplicationPackage applicationPackage,
-                               FileRegistry fileRegistry,
-                               DeployLogger deployLogger,
-                               ModelContext.Properties properties,
-                               RankProfileRegistry rankProfileRegistry,
-                               QueryProfileRegistry queryProfileRegistry,
-                               boolean documentsOnly) {
         this.mediator = new IntermediateCollection(deployLogger);
-        this.applicationPackage = applicationPackage;
+        this.applicationPackage = app;
         this.rankProfileRegistry = rankProfileRegistry;
         this.queryProfileRegistry = queryProfileRegistry;
         this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
         this.properties = properties;
-        this.documentsOnly = documentsOnly;
         var list = new ArrayList<>(applicationPackage.getSchemas());
         list.sort(Comparator.comparing(NamedReader::getName));
         for (NamedReader reader : list) {
@@ -219,8 +201,7 @@ public class ApplicationBuilder {
                                                     fileRegistry,
                                                     deployLogger,
                                                     properties,
-                                                    rankProfileRegistry,
-                                                    documentsOnly);
+                                                    rankProfileRegistry);
         for (var schema : converter.convertToSchemas())
             add(schema);
         application = new Application(applicationPackage,
@@ -228,7 +209,6 @@ public class ApplicationBuilder {
                                       rankProfileRegistry,
                                       new QueryProfiles(queryProfileRegistry, deployLogger),
                                       properties,
-                                      documentsOnly,
                                       validate,
                                       processorsToSkip,
                                       deployLogger);

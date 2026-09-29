@@ -61,7 +61,7 @@ public class SummaryStructFieldSelectValidator extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         if (!validate) return;
 
         for (var summary : schema.getSummaries().values()) {

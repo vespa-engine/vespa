@@ -47,7 +47,6 @@ public class ConvertParsedSchemas {
     private final DeployLogger deployLogger;
     private final ModelContext.Properties properties;
     private final RankProfileRegistry rankProfileRegistry;
-    private final boolean documentsOnly;
     private final ConvertParsedTypes typeConverter;
 
     public ConvertParsedSchemas(List<ParsedSchema> orderedInput,
@@ -56,8 +55,7 @@ public class ConvertParsedSchemas {
                                 FileRegistry fileRegistry,
                                 DeployLogger deployLogger,
                                 ModelContext.Properties properties,
-                                RankProfileRegistry rankProfileRegistry,
-                                boolean documentsOnly)
+                                RankProfileRegistry rankProfileRegistry)
     {
         this.orderedInput = orderedInput;
         this.docMan = documentTypeManager;
@@ -66,7 +64,6 @@ public class ConvertParsedSchemas {
         this.deployLogger = deployLogger;
         this.properties = properties;
         this.rankProfileRegistry = rankProfileRegistry;
-        this.documentsOnly = documentsOnly;
         this.typeConverter = new ConvertParsedTypes(orderedInput, docMan, deployLogger);
     }
 
@@ -300,9 +297,6 @@ public class ConvertParsedSchemas {
         }
         for (var fieldSet : parsed.getFieldSets()) {
             convertFieldSet(schema, fieldSet);
-        }
-        if (documentsOnly) {
-            return; // skip ranking-only content, not used for document type generation
         }
         for (var constant : parsed.getConstants())
             schema.add(constant);

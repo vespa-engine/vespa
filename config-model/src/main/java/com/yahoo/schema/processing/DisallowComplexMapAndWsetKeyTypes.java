@@ -25,7 +25,7 @@ public class DisallowComplexMapAndWsetKeyTypes extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         if ( ! validate) return;
 
     	// TODO also traverse struct types to search for bad map or wset types.

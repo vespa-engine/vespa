@@ -24,7 +24,7 @@ public class BuiltInFieldSets extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         addDocumentFieldSet();
         addSearchFieldSet();
         // "Hook" the field sets on search onto the document types, since we will include them

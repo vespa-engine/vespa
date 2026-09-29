@@ -20,7 +20,7 @@ public class SetRankTypeEmptyOnFilters extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         for (SDField field : schema.allConcreteFields()) {
             if (field.getRanking().isFilter()) {
                 field.setRankType(RankType.EMPTY);

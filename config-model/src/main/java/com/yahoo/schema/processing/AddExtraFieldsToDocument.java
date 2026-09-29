@@ -25,7 +25,7 @@ public class AddExtraFieldsToDocument extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         SDDocumentType document = schema.getDocument();
         if (document != null) {
             for (SDField field : schema.extraFieldList()) {

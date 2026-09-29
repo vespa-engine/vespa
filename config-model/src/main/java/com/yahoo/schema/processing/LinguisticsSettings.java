@@ -31,8 +31,7 @@ public class LinguisticsSettings extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
-        if (documentsOnly) return;
+    public void process(boolean validate) {
         // Struct fields are not visited: a linguistics block is only accepted in a field body,
         // and its settings are not propagated to the struct fields of that field
         for (SDField field : schema.allConcreteFields()) {

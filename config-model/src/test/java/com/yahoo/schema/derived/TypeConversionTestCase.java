@@ -38,7 +38,7 @@ public class TypeConversionTestCase extends AbstractSchemaTestCase {
 
         new Processing(new TestProperties())
                 .process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
-                         true, false, Set.of());
+                         true, Set.of());
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
         IndexInfo indexInfo = derived.getIndexInfo();
         assertFalse(indexInfo.hasCommand("default", "compact-to-term"));

@@ -26,8 +26,7 @@ public class FilterFieldNames extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
-        if (documentsOnly) return;
+    public void process(boolean validate) {
 
         for (SDField f : schema.allConcreteFields()) {
             if (f.getRanking().isFilter()) {

@@ -41,8 +41,7 @@ public class OnnxModelConfigGenerator extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
-        if (documentsOnly) return;
+    public void process(boolean validate) {
         for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {
             if (profile.getFirstPhaseRanking() != null) {
                 process(profile.getFirstPhaseRanking().getRoot(),  profile);

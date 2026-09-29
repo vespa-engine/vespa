@@ -44,8 +44,7 @@ public class RankingExpressionTypeResolver extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
-        if (documentsOnly) return;
+    public void process(boolean validate) {
 
         Set<Reference> warnedAbout = new HashSet<>();
         for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {

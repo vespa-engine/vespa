@@ -16,7 +16,7 @@ public class MutableAttributes extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         for (SDField field : schema.allConcreteFields()) {
             if ( ! field.isExtraField() && field.getAttributes().containsKey(field.getName())) {
                 if (field.getAttributes().get(field.getName()).isMutable()) {

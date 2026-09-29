@@ -22,7 +22,7 @@ public class IndexingValues extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         if ( ! validate) return;
 
         for (Field field : schema.getDocument().fieldSet()) {

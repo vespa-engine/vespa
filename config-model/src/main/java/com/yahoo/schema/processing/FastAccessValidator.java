@@ -21,7 +21,7 @@ public class FastAccessValidator extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         if ( ! validate) return;
 
         String invalidAttributes = schema.allFields()

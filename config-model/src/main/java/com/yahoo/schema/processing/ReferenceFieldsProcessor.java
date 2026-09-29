@@ -30,7 +30,7 @@ public class ReferenceFieldsProcessor extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         clearSummaryAttributeAspectForConcreteFields();
         clearSummaryAttributeAspectForExplicitSummaryFields();
     }

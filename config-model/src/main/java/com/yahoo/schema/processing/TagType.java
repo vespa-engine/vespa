@@ -27,7 +27,7 @@ public class TagType extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         for (SDField field : schema.allConcreteFields()) {
             if (field.getDataType() instanceof WeightedSetDataType && ((WeightedSetDataType)field.getDataType()).isTag())
                 implementTagType(field);

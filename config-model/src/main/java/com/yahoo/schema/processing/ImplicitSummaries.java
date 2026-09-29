@@ -27,7 +27,7 @@ public class ImplicitSummaries extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         DocumentSummary defaultSummary = schema.getSummariesInThis().get("default");
         if (defaultSummary == null) {
             defaultSummary = new DocumentSummary("default", schema);

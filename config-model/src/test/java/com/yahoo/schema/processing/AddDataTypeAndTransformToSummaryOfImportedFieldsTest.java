@@ -40,7 +40,7 @@ public class AddDataTypeAndTransformToSummaryOfImportedFieldsTest {
 
         AddDataTypeAndTransformToSummaryOfImportedFields processor = new AddDataTypeAndTransformToSummaryOfImportedFields(
                 schema, null, null, null);
-        processor.process(true, false);
+        processor.process(true);
         SummaryField summaryField = schema.getSummaries().get(SUMMARY_NAME).getSummaryField(IMPORTED_FIELD_NAME);
         SummaryTransform actualTransform = summaryField.getTransform();
         assertEquals(SummaryTransform.ATTRIBUTE, actualTransform);

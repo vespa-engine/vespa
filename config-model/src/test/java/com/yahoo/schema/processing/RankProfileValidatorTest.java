@@ -27,11 +27,11 @@ public class RankProfileValidatorTest {
 
     @Test
     public void testMaxHitsValidation() {
-        maxHitsValidatorFixture(OptionalLong.empty(),      OptionalLong.empty()).process(true, false);
-        maxHitsValidatorFixture(OptionalLong.of(10), OptionalLong.empty()).process(true, false);
-        maxHitsValidatorFixture(OptionalLong.empty(),      OptionalLong.of(100)).process(true, false);
+        maxHitsValidatorFixture(OptionalLong.empty(),      OptionalLong.empty()).process(true);
+        maxHitsValidatorFixture(OptionalLong.of(10), OptionalLong.empty()).process(true);
+        maxHitsValidatorFixture(OptionalLong.empty(),      OptionalLong.of(100)).process(true);
         try {
-            maxHitsValidatorFixture(OptionalLong.of(10), OptionalLong.of(100)).process(true, false);
+            maxHitsValidatorFixture(OptionalLong.of(10), OptionalLong.of(100)).process(true);
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
@@ -42,11 +42,11 @@ public class RankProfileValidatorTest {
 
     @Test
     public void testRerankCountValidation() {
-        rerankCountValidatorFixture(OptionalInt.empty(), OptionalInt.empty()).process(true, false);
-        rerankCountValidatorFixture(OptionalInt.of(10),  OptionalInt.empty()).process(true, false);
-        rerankCountValidatorFixture(OptionalInt.empty(), OptionalInt.of(100)).process(true, false);
+        rerankCountValidatorFixture(OptionalInt.empty(), OptionalInt.empty()).process(true);
+        rerankCountValidatorFixture(OptionalInt.of(10),  OptionalInt.empty()).process(true);
+        rerankCountValidatorFixture(OptionalInt.empty(), OptionalInt.of(100)).process(true);
         try {
-            rerankCountValidatorFixture(OptionalInt.of(10), OptionalInt.of(100)).process(true, false);
+            rerankCountValidatorFixture(OptionalInt.of(10), OptionalInt.of(100)).process(true);
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
@@ -57,11 +57,11 @@ public class RankProfileValidatorTest {
 
     @Test
     public void testKeepRankCountValidation() {
-        keepRankCountValidatorFixture(OptionalInt.empty(), OptionalInt.empty()).process(true, false);
-        keepRankCountValidatorFixture(OptionalInt.of(10),  OptionalInt.empty()).process(true, false);
-        keepRankCountValidatorFixture(OptionalInt.empty(), OptionalInt.of(100)).process(true, false);
+        keepRankCountValidatorFixture(OptionalInt.empty(), OptionalInt.empty()).process(true);
+        keepRankCountValidatorFixture(OptionalInt.of(10),  OptionalInt.empty()).process(true);
+        keepRankCountValidatorFixture(OptionalInt.empty(), OptionalInt.of(100)).process(true);
         try {
-            keepRankCountValidatorFixture(OptionalInt.of(10), OptionalInt.of(100)).process(true, false);
+            keepRankCountValidatorFixture(OptionalInt.of(10), OptionalInt.of(100)).process(true);
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {

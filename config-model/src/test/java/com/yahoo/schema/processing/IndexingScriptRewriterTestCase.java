@@ -187,7 +187,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
         schema.addDocument(sdoc);
         new Processing(new TestProperties())
                 .process(schema, new BaseDeployLogger(), new RankProfileRegistry(),
-                         new QueryProfiles(), true, false, Set.of());
+                         new QueryProfiles(), true, Set.of());
         return unprocessedField.getIndexingScript();
     }
 

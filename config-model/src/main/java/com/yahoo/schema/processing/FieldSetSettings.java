@@ -43,7 +43,7 @@ public class FieldSetSettings extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         for (FieldSet fieldSet : schema.fieldSets().userFieldSets().values()) {
             if (validate)
                 checkFieldNames(schema, fieldSet);

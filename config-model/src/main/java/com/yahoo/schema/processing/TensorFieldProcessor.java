@@ -24,7 +24,7 @@ public class TensorFieldProcessor extends Processor {
     }
 
     @Override
-    public void process(boolean validate, boolean documentsOnly) {
+    public void process(boolean validate) {
         for (var field : schema.allConcreteFields()) {
             if ( field.getDataType() instanceof TensorDataType ) {
                 if (validate) {

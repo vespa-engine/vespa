@@ -49,7 +49,7 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         SDField field;
         Attribute attribute;
 
-        new MakeAliases(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles()).process(true, false);
+        new MakeAliases(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles()).process(true);
 
         // First field
         field = (SDField) document.getField("title");
