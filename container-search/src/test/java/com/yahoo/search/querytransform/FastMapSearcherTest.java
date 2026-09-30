@@ -7,6 +7,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
@@ -257,6 +258,76 @@ public class FastMapSearcherTest {
 
         // A lookup which is not a single term is rejected
         assertRejected(mapMatch("myarray", new PrefixItem("fo", "key"), new WordItem("bar", "value")));
+    }
+
+    @Test
+    public void requireIntegerKeyRewrittenToItsDecimalForm() {
+        var exact = new ExactStringItem("42");
+        exact.setIndexName("key");
+        for (TermItem key : List.of(new IntItem("42", "key"), new IntItem(42, "key"), new WordItem("42", "key"), exact,
+                                    new WordItem("042", "key"), new IntItem("0042", "key")))
+            assertRewritten(intKeyTerm("42"), intKeyLookup(key));
+        assertRewritten(intKeyTerm("-7"), intKeyLookup(new IntItem("-7", "key")));
+        assertRewritten(intKeyTerm("0"), intKeyLookup(new WordItem("-0", "key")));
+
+        // The int range limits the key of an int map, but not of a long map
+        assertRewritten(intKeyTerm(Integer.toString(Integer.MIN_VALUE)), intKeyLookup(new IntItem(Integer.MIN_VALUE, "key")));
+        assertRewritten(intKeyTerm(Integer.toString(Integer.MAX_VALUE)), intKeyLookup(new IntItem(Integer.MAX_VALUE, "key")));
+        assertRejected(intKeyLookup(new IntItem(1L << 31, "key")));
+        assertRejected(intKeyLookup(new IntItem((long) Integer.MIN_VALUE - 1, "key")));
+        for (long key : new long[] { 1L << 31, Long.MAX_VALUE, Long.MIN_VALUE })
+            assertRewritten("longkeymap$lookup:" + FastMapSearch.toKeyValue8Term(Long.toString(key), 3),
+                            mapMatch("longkeymap", new IntItem(key, "key"), new IntItem("3", "value")));
+        assertRejected(mapMatch("longkeymap", new IntItem("9223372036854775808", "key"), new IntItem("3", "value")));
+
+        // Array of struct with an int key
+        assertRewritten("intkeyarray$lookup:" + FastMapSearch.toKeyValueTerm("42", "bar"),
+                        mapMatch("intkeyarray", new IntItem("42", "key"), new WordItem("bar", "value")));
+    }
+
+    /** An integer key must be a plain integer: ranges, even of a single integer, and other number forms are rejected. */
+    @Test
+    public void requireIntegerKeyWhichIsNotAPlainIntegerRejected() {
+        for (TermItem key : List.of(new WordItem("foo", "key"), new WordItem("1.5", "key"),
+                                    new WordItem("42.0", "key"), new WordItem(" 42", "key"), new WordItem("+42", "key"),
+                                    new WordItem("\u0664\u0662", "key"), // Arabic-Indic digits 42
+                                    new WordItem("0x2A", "key"), new WordItem("1e2", "key"), new WordItem("[42;42]", "key"),
+                                    new IntItem("1.5", "key"), new IntItem("42.0", "key"),
+                                    new IntItem("[42;42]", "key"), new IntItem("<41;43>", "key"), new IntItem("[41.5;42.5]", "key"),
+                                    new IntItem("[1;2]", "key"), new IntItem(">5", "key"), new IntItem("[;5]", "key"),
+                                    new IntItem("[42;42;10]", "key"),
+                                    new IntItem(new Limit(Double.NaN, true), new Limit(Double.NaN, true), "key"),
+                                    new PrefixItem("4", "key")))
+            assertRejected(intKeyLookup(key));
+
+        var exception = assertThrows(IllegalInputException.class, () -> rewritten(intKeyLookup(new WordItem("foo", "key"))));
+        assertEquals("Lookup 'intkeymap.lookup' requires a single int as key, and a single word " +
+                     "as value, but got intkeymap.lookup:{key:foo value:bar}",
+                     exception.getMessage());
+        exception = assertThrows(IllegalInputException.class,
+                                 () -> rewritten(mapMatch("longkeymap", new WordItem("foo", "key"), new IntItem("3", "value"))));
+        assertEquals("Lookup 'longkeymap.lookup' requires a single long as key, and a single integer or an integer range " +
+                     "as value, but got longkeymap.lookup:{key:foo value:3}",
+                     exception.getMessage());
+    }
+
+    @Test
+    public void requireIntegerKeyWithFloatingPointValueRewritten() {
+        assertRewritten("intkeyfloatmap$lookup:" + FastMapSearch.toKeyValueFloatTerm("42", 1.5f),
+                        mapMatch("intkeyfloatmap", new IntItem("42", "key"), new WordItem("1.5", "value")));
+        assertRewritten("longkeydoublemap$lookup:" + FastMapSearch.toKeyValueDoubleTerm("5000000000", 1.5),
+                        mapMatch("longkeydoublemap", new IntItem(5000000000L, "key"), new WordItem("1.5", "value")));
+    }
+
+    @Test
+    public void requireYqlMapLookupWithIntegerKeyRewritten() {
+        assertEquals(intKeyTerm("42"), rewrittenYql("intkeymap.lookup{42} contains \"bar\""));
+        assertEquals(intKeyTerm("42"), rewrittenYql("intkeymap.lookup{\"42\"} contains \"bar\""));
+        assertEquals("longkeymap$lookup:" + FastMapSearch.toKeyValue8Term("5000000000", 3),
+                     rewrittenYql("longkeymap.lookup{5000000000} = 3"));
+        assertEquals("STRING_RANGE longkeymap$lookup:[\"" + FastMapSearch.toKeyValue8Term("1", 5) + "\";\""
+                     + FastMapSearch.toKeyValue8Term("1", 10) + "\"]",
+                     rewrittenYql("range(longkeymap.lookup{1}, 5, 10)"));
     }
 
     @Test
@@ -653,10 +724,15 @@ public class FastMapSearcherTest {
                 .add(new Field.Builder("longvaluemap", "map<string,long>").setFastMapSearch("lookup").build())
                 .add(new Field.Builder("floatvaluemap", "map<string,float>").setFastMapSearch("lookup").build())
                 .add(new Field.Builder("doublevaluemap", "map<string,double>").setFastMapSearch("lookup").build())
+                .add(new Field.Builder("intkeymap", "map<int,string>").setFastMapSearch("lookup").build())
+                .add(new Field.Builder("longkeymap", "map<long,int>").setFastMapSearch("lookup").build())
+                .add(new Field.Builder("intkeyfloatmap", "map<int,float>").setFastMapSearch("lookup").build())
+                .add(new Field.Builder("longkeydoublemap", "map<long,double>").setFastMapSearch("lookup").build())
                 .add(new Field.Builder("othermap", "map<string,string>").build())
                 .add(new Field.Builder("myarray", "array<entry>").setFastMapSearch(arrayFields("string")).build())
                 .add(new Field.Builder("intvaluearray", "array<intentry>").setFastMapSearch(arrayFields("int")).build())
                 .add(new Field.Builder("longvaluearray", "array<longentry>").setFastMapSearch(arrayFields("long")).build())
+                .add(new Field.Builder("intkeyarray", "array<intkeyentry>").setFastMapSearch(arrayFields("int", "string")).build())
                 .add(new Field.Builder("otherarray", "array<entry>").build())
                 .build();
         var schemaInfo = new SchemaInfo(List.of(schema), List.of());
@@ -664,7 +740,21 @@ public class FastMapSearcherTest {
     }
 
     private static Field.FastMapSearchFields arrayFields(String valueType) {
-        return new Field.FastMapSearchFields("lookup", "mykey", Field.Type.from("string"), "myvalue", Field.Type.from(valueType));
+        return arrayFields("string", valueType);
+    }
+
+    private static Field.FastMapSearchFields arrayFields(String keyType, String valueType) {
+        return new Field.FastMapSearchFields("lookup", "mykey", Field.Type.from(keyType), "myvalue", Field.Type.from(valueType));
+    }
+
+    /** Returns a lookup of the given key with value "bar" in the map<int,string> intkeymap. */
+    private static MapMatchItem intKeyLookup(TermItem key) {
+        return mapMatch("intkeymap", key, new WordItem("bar", "value"));
+    }
+
+    /** Returns the term which a lookup of the given key with value "bar" in intkeymap is rewritten to. */
+    private static String intKeyTerm(String key) {
+        return "intkeymap$lookup:" + FastMapSearch.toKeyValueTerm(key, "bar");
     }
 
     private static MapMatchItem mapMatch(String field) {

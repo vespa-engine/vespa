@@ -1,16 +1,41 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.processing;
 
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
+import com.yahoo.document.FieldPath;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.StructDataType;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
 import com.yahoo.language.process.ProcessingException;
 import com.yahoo.schema.ApplicationBuilder;
+import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.SDField;
+import com.yahoo.schema.derived.TestableDeployLogger;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchlib.document.FastMapSearch;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.FieldValues;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -138,6 +163,67 @@ public class CreateFastMapSearchTest {
 
         String script = schema.getConcreteField("foo$lookup").getIndexingScript().toString();
         assertEquals("{ input foo | for_each { get_field $key . \"\\x7f\" . (get_field $value | exhex16doubleencode) } | attribute \"foo$lookup\"; }", script);
+    }
+
+    @Test
+    void requireKeyValueAttributeHasCorrectIndexingScriptForIntegerKeys() throws ParseException {
+        assertEquals("{ input foo | for_each { (get_field $key | to_string) . \"\\x7f\" . get_field $value } | attribute \"foo$lookup\"; }",
+                     build(fastSearchMap("foo", "int", "string")).getConcreteField("foo$lookup").getIndexingScript().toString());
+        assertEquals("{ input foo | for_each { (get_field $key | to_string) . \"\\x7f\" . (get_field $value | exhex8encode) } | attribute \"foo$lookup\"; }",
+                     build(fastSearchMap("foo", "long", "int")).getConcreteField("foo$lookup").getIndexingScript().toString());
+        assertEquals("{ input foo | for_each { (get_field mykey | to_string) . \"\\x7f\" . get_field myvalue } | attribute \"foo$lookup\"; }",
+                     build(fastSearchArray("foo", "int", "string")).getConcreteField("foo$lookup").getIndexingScript().toString());
+    }
+
+    /**
+     * An integer key has no casing, so the attribute follows the casing of a string value, and casing on the key
+     * is ignored with the usual warning for non-string fields.
+     */
+    @Test
+    void requireKeyValueAttributeWithIntegerKeyFollowsTheValueCasing() throws ParseException {
+        Attribute attribute = keyValueAttribute(build(casedFastSearchMap("foo", "int", "string", false, true)), "foo");
+        assertEquals(Case.CASED, attribute.getCase());
+        assertEquals(Case.CASED, attribute.getDictionary().getMatch());
+
+        var logger = new TestableDeployLogger();
+        assertEquals(Case.UNCASED, keyValueAttribute(build(casedFastSearchMap("foo", "int", "string", true, false), logger), "foo").getCase());
+        assertEquals(List.of("For schema 'test', field 'foo.key': 'match: cased' is only used for string fields, ignoring it."),
+                     logger.warnings);
+
+        logger = new TestableDeployLogger();
+        assertEquals(Case.UNCASED, keyValueAttribute(build(fastSearchMap("foo", "int", "string"), logger), "foo").getCase());
+        assertEquals(List.of(), logger.warnings);
+        assertEquals(Case.UNCASED, keyValueAttribute(build(fastSearchMap("foo", "long", "int")), "foo").getCase());
+    }
+
+    /**
+     * Runs the generated indexing script, and checks that the attribute holds the same terms as the
+     * query rewrite in FastMapSearcher makes with the same FastMapSearch methods.
+     */
+    @Test
+    void requireGeneratedScriptWritesIntegerKeysInDecimal() throws ParseException {
+        var intMap = build(fastSearchMap("foo", "int", "string"));
+        var intValue = new MapFieldValue<IntegerFieldValue, StringFieldValue>((MapDataType) mapType(intMap, "foo"));
+        intValue.put(new IntegerFieldValue(42), new StringFieldValue("bar"));
+        intValue.put(new IntegerFieldValue(-7), new StringFieldValue("baz"));
+        assertEquals(List.of(FastMapSearch.toKeyValueTerm("-7", "baz"), FastMapSearch.toKeyValueTerm("42", "bar")),
+                     indexedLookupValues(intMap, "foo", intValue));
+
+        var longMap = build(fastSearchMap("foo", "long", "int"));
+        var longValue = new MapFieldValue<LongFieldValue, IntegerFieldValue>((MapDataType) mapType(longMap, "foo"));
+        longValue.put(new LongFieldValue(5000000000L), new IntegerFieldValue(3));
+        assertEquals(List.of(FastMapSearch.toKeyValue8Term("5000000000", 3)),
+                     indexedLookupValues(longMap, "foo", longValue));
+
+        // An element without a key is not written to the attribute
+        var intArray = build(fastSearchArray("foo", "int", "string"));
+        var arrayType = (ArrayDataType) mapType(intArray, "foo");
+        var structType = (StructDataType) arrayType.getNestedType();
+        var arrayValue = new Array<Struct>(arrayType);
+        arrayValue.add(entry(structType, 42, "bar"));
+        arrayValue.add(entry(structType, null, "baz"));
+        assertEquals(List.of(FastMapSearch.toKeyValueTerm("42", "bar")),
+                     indexedLookupValues(intArray, "foo", arrayValue));
     }
 
     @Test
@@ -283,7 +369,11 @@ public class CreateFastMapSearchTest {
     }
 
     private static String casedFastSearchMap(String name, String valueType, boolean casedKey, boolean casedValue) {
-        return joinLines("field " + name + " type map<string, " + valueType + "> {",
+        return casedFastSearchMap(name, "string", valueType, casedKey, casedValue);
+    }
+
+    private static String casedFastSearchMap(String name, String keyType, String valueType, boolean casedKey, boolean casedValue) {
+        return joinLines("field " + name + " type map<" + keyType + ", " + valueType + "> {",
                          "  indexing: summary",
                          "  fast-search map field: lookup",
                          "  struct-field key {",
@@ -347,8 +437,51 @@ public class CreateFastMapSearchTest {
                          "}");
     }
 
+    private static Struct entry(StructDataType structType, Integer key, String value) {
+        var entry = new Struct(structType);
+        if (key != null) {
+            entry.setFieldValue("mykey", new IntegerFieldValue(key));
+        }
+        entry.setFieldValue("myvalue", new StringFieldValue(value));
+        return entry;
+    }
+
+    private static DataType mapType(Schema schema, String mapName) {
+        return schema.getConcreteField(mapName).getDataType();
+    }
+
+    /** Runs the indexing script of the lookup attribute of the given map, and returns the values it writes, sorted. */
+    @SuppressWarnings("unchecked")
+    private static List<String> indexedLookupValues(Schema schema, String mapName, FieldValue mapValue) {
+        String lookupName = mapName + "$lookup";
+        var values = new FieldValues() {
+            final Map<String, FieldValue> output = new HashMap<>();
+            @Override public DataType getFieldType(String fieldName, Expression expression) {
+                return fieldName.equals(mapName) ? mapType(schema, mapName) : DataType.getArray(DataType.STRING);
+            }
+            @Override public FieldValue getInputValue(String fieldName) { return fieldName.equals(mapName) ? mapValue : null; }
+            @Override public FieldValue getInputValue(FieldPath fieldPath) { return getInputValue(fieldPath.toString()); }
+            @Override public FieldValues setOutputValue(String fieldName, FieldValue value, Expression expression) {
+                output.put(fieldName, value);
+                return this;
+            }
+            @Override public boolean isComplete() { return false; }
+        };
+        ScriptExpression script = schema.getConcreteField(lookupName).getIndexingScript();
+        script.resolve(values);
+        script.execute(values);
+        var written = (Array<StringFieldValue>) values.output.get(lookupName);
+        return written.stream().map(StringFieldValue::getString).sorted().toList();
+    }
+
     private static Schema build(String fields) throws ParseException {
-        var builder = new ApplicationBuilder(new TestProperties().fastMapSearch(true));
+        return build(fields, new TestableDeployLogger());
+    }
+
+    private static Schema build(String fields, DeployLogger logger) throws ParseException {
+        var builder = new ApplicationBuilder(MockApplicationPackage.createEmpty(), new MockFileRegistry(), logger,
+                                             new TestProperties().fastMapSearch(true),
+                                             new RankProfileRegistry(), new QueryProfileRegistry());
         builder.addSchema(joinLines("schema test {",
                                     "  document test {",
                                     fields,

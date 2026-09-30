@@ -152,7 +152,7 @@ public class LSPTest {
 
     /**
      * 'fast-search map field' is only accepted by the config model on maps with
-     * string keys and string, int, long, float or double values,
+     * string, int or long keys and string, int, long, float or double values,
      * or on arrays of struct, so {@link BodyKeywordCompletion} should only suggest it in
      * such fields.
      */
@@ -197,6 +197,8 @@ public class LSPTest {
         assertEquals(List.of("key", "value"),
                      completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(51, 16)),
                      "key and value should be suggested inside the fast-search map field block of an array of struct field.");
+        assertTrue(completionLabelsAt(scheduler, schemaIndex, messageHandler, document, new Position(56, 12)).contains("fast-search map field"),
+                   "fast-search map field should be suggested in a map<int, string> field.");
     }
 
     /**
