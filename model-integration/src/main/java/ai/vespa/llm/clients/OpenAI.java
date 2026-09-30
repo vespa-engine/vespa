@@ -43,6 +43,7 @@ public class OpenAI extends ConfigurableLanguageModel {
     private static final String DEFAULT_API_KEY = "<YOUR_API_KEY>";
     
     private final Map<String, String> configOptions;
+    private final boolean jsonSchemaStrict;
     
     // Instance-level reused clients with separate caching for each client type
     // Using package-private access for testing
@@ -59,6 +60,7 @@ public class OpenAI extends ConfigurableLanguageModel {
         super(config, secretStore);
         
         configOptions = new HashMap<>();
+        jsonSchemaStrict = config.jsonSchemaStrict();
 
         if (!config.model().isBlank()) {
             configOptions.put(InferenceParameters.OPTION_MODEL, config.model());
@@ -229,11 +231,12 @@ public class OpenAI extends ConfigurableLanguageModel {
                         .putAllAdditionalProperties(additionalProps)
                         .build();
                 
-                var jsonFormat = ResponseFormatJsonSchema.builder()
-                    .jsonSchema(ResponseFormatJsonSchema.JsonSchema.builder()
+                var jsonSchema = ResponseFormatJsonSchema.JsonSchema.builder()
                         .name("structured-output")
-                        .schema(schema)
-                        .build())
+                        .schema(schema);
+                if (jsonSchemaStrict) jsonSchema.strict(true);
+                var jsonFormat = ResponseFormatJsonSchema.builder()
+                    .jsonSchema(jsonSchema.build())
                     .build();
                 
                 builder.responseFormat(jsonFormat);

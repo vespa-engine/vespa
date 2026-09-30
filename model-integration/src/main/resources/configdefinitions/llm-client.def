@@ -26,3 +26,7 @@ maxTokens int default=-1
 # OpenAI-compatible API accepts "none"). Passed through to the API as-is.
 # Empty means use default for the API.
 reasoningEffort string default=""
+
+# Whether to ask the API to follow the JSON schema of structured output exactly ("strict" mode in OpenAI).
+# The schema must then meet the API's requirements, e.g. additionalProperties false and all properties required.
+jsonSchemaStrict bool default=false
