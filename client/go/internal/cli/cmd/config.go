@@ -275,10 +275,8 @@ By default, this command prints the effective configuration for the current
 application, i.e. it takes into account any local configuration located in
 [working-directory]/.vespa.
 
-When showing local configuration, either because --local is given or because
-default_config_scope is set to "local" and local configuration is present, the
-options set locally are shown first, followed by the effective values of the
-remaining options, which are inherited from global configuration or defaults.
+When showing local configuration, options not set locally are listed after the
+local ones, with their inherited values.
 `,
 		Example: `$ vespa config get
 $ vespa config get target
@@ -309,14 +307,13 @@ $ vespa config get --global`,
 			if localArg {
 				scope = "local"
 			}
-			cli.printHelpfulInfo(fmt.Sprintf("Got %s config from %s", scope, filepath.Join(config.homeDir, configFile)))
+			cli.printHelpfulInfo(fmt.Sprintf("Got %s config from %s", scope, color.CyanString(filepath.Join(config.homeDir, configFile))))
 			if len(args) == 0 { // Print all values
 				for _, option := range config.list(!localArg) {
 					config.printOption(option)
 				}
 				if localArg {
-					// Show the effective value of options not set locally, as these are inherited from global config
-					// (or defaults)
+					// Show effective values of options not set locally
 					var inherited []string
 					for _, option := range cli.config.list(true) {
 						if _, ok := config.getNonEmpty(option); !ok {
@@ -324,7 +321,7 @@ $ vespa config get --global`,
 						}
 					}
 					if len(inherited) > 0 {
-						cli.printHelpfulInfo(fmt.Sprintf("\nInherited from global config at %s", filepath.Join(cli.config.homeDir, configFile)))
+						cli.printHelpfulInfo("\nInherited from global config at " + color.CyanString(filepath.Join(cli.config.homeDir, configFile)))
 						for _, option := range inherited {
 							cli.config.printOption(option)
 						}
