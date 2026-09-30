@@ -65,7 +65,9 @@ public class FastMapSearcher extends Searcher {
         Set<String> names = new HashSet<>();
         for (Schema schema : session.schemas()) {
             for (Field field : schema.fields().values()) {
-                field.fastMapSearch().ifPresent(fastMap -> names.add(field.name() + "." + fastMap.lookupName()));
+                for (var fastMap : field.fastMapSearches()) {
+                    names.add(field.name() + "." + fastMap.lookupName());
+                }
             }
         }
         return names;
@@ -514,7 +516,7 @@ public class FastMapSearcher extends Searcher {
         boolean differs = false;
         for (Schema schema : session.schemas()) {
             if ( ! (schema.fieldInfo(fieldName).orElse(null) instanceof Field field)) continue;
-            var fastMap = field.fastMapSearch().filter(f -> f.lookupName().equals(lookupName)).orElse(null);
+            var fastMap = field.fastMapSearch(lookupName).orElse(null);
             if (fastMap == null) {
                 withoutLookup.add(schema.name());
                 continue;

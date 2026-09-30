@@ -9268,8 +9268,8 @@
       "public com.yahoo.search.schema.Field$Builder setAttribute(boolean)",
       "public com.yahoo.search.schema.Field$Builder setIndex(boolean)",
       "public com.yahoo.search.schema.Field$Builder setBitPacked(boolean)",
-      "public com.yahoo.search.schema.Field$Builder setFastMapSearch(java.lang.String)",
-      "public com.yahoo.search.schema.Field$Builder setFastMapSearch(com.yahoo.search.schema.Field$FastMapSearchFields)",
+      "public com.yahoo.search.schema.Field$Builder addFastMapSearch(java.lang.String)",
+      "public com.yahoo.search.schema.Field$Builder addFastMapSearch(com.yahoo.search.schema.Field$FastMapSearchFields)",
       "public com.yahoo.search.schema.Field build()"
     ],
     "fields" : [ ]
@@ -9391,7 +9391,8 @@
       "public boolean isAttribute()",
       "public boolean isIndex()",
       "public boolean hasFastMapSearch()",
-      "public java.util.Optional fastMapSearch()",
+      "public java.util.List fastMapSearches()",
+      "public java.util.Optional fastMapSearch(java.lang.String)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"

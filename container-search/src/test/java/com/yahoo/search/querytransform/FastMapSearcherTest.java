@@ -189,22 +189,37 @@ public class FastMapSearcherTest {
         assertUntouched(new WordItem("x", "mymap.lookup.other"));
     }
 
+    /** Each lookup of a field is rewritten to its own attribute, with its own key and value types. */
+    @Test
+    public void requireEachLookupOfAFieldIsRewritten() {
+        assertEquals("twolookups$lookup:foo" + FastMapSearch.keyValueSeparator() + "bar",
+                     rewrittenYql("twolookups.lookup{\"foo\"} = \"bar\""));
+        assertEquals("twolookups$reversed:" + FastMapSearch.toKeyValue8Term("bar", 42),
+                     rewrittenYql("twolookups.reversed{\"bar\"} = 42"));
+        assertRewritten("twolookups$reversed:" + FastMapSearch.toKeyValue8Term("bar", 42),
+                        new MapMatchItem("twolookups.reversed", new WordItem("bar", "key"), new IntItem(42, "value")));
+        assertRejected(new MapMatchItem("twolookups.reversed", new WordItem("bar", "key"), new WordItem("x", "value")));
+        assertLookupFieldUseRejected(new WordItem("x", "twolookups.reversed"));
+        assertLookupFieldUseRejected(new WordItem("x", "twolookups.reversed.key"));
+        assertUntouched(new WordItem("x", "twolookups.other"));
+    }
+
     @Test
     public void requireLookupResolvedAcrossSchemas() {
         var withLookup = new Schema.Builder("withlookup")
-                .add(new Field.Builder("mymap", "map<string,string>").setFastMapSearch("lookup").build())
+                .add(new Field.Builder("mymap", "map<string,string>").addFastMapSearch("lookup").build())
                 .build();
         var sameLookup = new Schema.Builder("samelookup")
-                .add(new Field.Builder("mymap", "map<string,string>").setFastMapSearch("lookup").build())
+                .add(new Field.Builder("mymap", "map<string,string>").addFastMapSearch("lookup").build())
                 .build();
         var withoutLookup = new Schema.Builder("withoutlookup")
                 .add(new Field.Builder("mymap", "map<string,string>").build())
                 .build();
         var otherLookup = new Schema.Builder("otherlookup")
-                .add(new Field.Builder("mymap", "map<string,string>").setFastMapSearch("other").build())
+                .add(new Field.Builder("mymap", "map<string,string>").addFastMapSearch("other").build())
                 .build();
         var otherType = new Schema.Builder("othertype")
-                .add(new Field.Builder("mymap", "map<string,int>").setFastMapSearch("lookup").build())
+                .add(new Field.Builder("mymap", "map<string,int>").addFastMapSearch("lookup").build())
                 .build();
         var withoutField = new Schema.Builder("withoutfield")
                 .add(new Field.Builder("title", "string").build())
@@ -719,20 +734,24 @@ public class FastMapSearcherTest {
 
     private static Execution execution() {
         var schema = new Schema.Builder("test")
-                .add(new Field.Builder("mymap", "map<string,string>").setFastMapSearch("lookup").build())
-                .add(new Field.Builder("intvaluemap", "map<string,int>").setFastMapSearch("lookup").build())
-                .add(new Field.Builder("longvaluemap", "map<string,long>").setFastMapSearch("lookup").build())
-                .add(new Field.Builder("floatvaluemap", "map<string,float>").setFastMapSearch("lookup").build())
-                .add(new Field.Builder("doublevaluemap", "map<string,double>").setFastMapSearch("lookup").build())
-                .add(new Field.Builder("intkeymap", "map<int,string>").setFastMapSearch("lookup").build())
-                .add(new Field.Builder("longkeymap", "map<long,int>").setFastMapSearch("lookup").build())
-                .add(new Field.Builder("intkeyfloatmap", "map<int,float>").setFastMapSearch("lookup").build())
-                .add(new Field.Builder("longkeydoublemap", "map<long,double>").setFastMapSearch("lookup").build())
+                .add(new Field.Builder("mymap", "map<string,string>").addFastMapSearch("lookup").build())
+                .add(new Field.Builder("intvaluemap", "map<string,int>").addFastMapSearch("lookup").build())
+                .add(new Field.Builder("longvaluemap", "map<string,long>").addFastMapSearch("lookup").build())
+                .add(new Field.Builder("floatvaluemap", "map<string,float>").addFastMapSearch("lookup").build())
+                .add(new Field.Builder("doublevaluemap", "map<string,double>").addFastMapSearch("lookup").build())
+                .add(new Field.Builder("intkeymap", "map<int,string>").addFastMapSearch("lookup").build())
+                .add(new Field.Builder("longkeymap", "map<long,int>").addFastMapSearch("lookup").build())
+                .add(new Field.Builder("intkeyfloatmap", "map<int,float>").addFastMapSearch("lookup").build())
+                .add(new Field.Builder("longkeydoublemap", "map<long,double>").addFastMapSearch("lookup").build())
                 .add(new Field.Builder("othermap", "map<string,string>").build())
-                .add(new Field.Builder("myarray", "array<entry>").setFastMapSearch(arrayFields("string")).build())
-                .add(new Field.Builder("intvaluearray", "array<intentry>").setFastMapSearch(arrayFields("int")).build())
-                .add(new Field.Builder("longvaluearray", "array<longentry>").setFastMapSearch(arrayFields("long")).build())
-                .add(new Field.Builder("intkeyarray", "array<intkeyentry>").setFastMapSearch(arrayFields("int", "string")).build())
+                .add(new Field.Builder("myarray", "array<entry>").addFastMapSearch(arrayFields("string")).build())
+                .add(new Field.Builder("intvaluearray", "array<intentry>").addFastMapSearch(arrayFields("int")).build())
+                .add(new Field.Builder("longvaluearray", "array<longentry>").addFastMapSearch(arrayFields("long")).build())
+                .add(new Field.Builder("intkeyarray", "array<intkeyentry>").addFastMapSearch(arrayFields("int", "string")).build())
+                .add(new Field.Builder("twolookups", "array<entry>")
+                             .addFastMapSearch(arrayFields("string"))
+                             .addFastMapSearch(new Field.FastMapSearchFields("reversed", "myvalue", Field.Type.from("string"), "mykey", Field.Type.from("int")))
+                             .build())
                 .add(new Field.Builder("otherarray", "array<entry>").build())
                 .build();
         var schemaInfo = new SchemaInfo(List.of(schema), List.of());
