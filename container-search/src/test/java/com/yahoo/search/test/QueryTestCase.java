@@ -669,6 +669,75 @@ public class QueryTestCase {
     }
 
     @Test
+    void profiling_parameters_are_resolved_with_query_profile() {
+        var q = new Query("?query=foo&" +
+                          "trace.profiling.matching.depth=3&" +
+                          "trace.profiling.firstPhaseRanking.depth=5&" +
+                          "trace.profiling.secondPhaseRanking.depth=-7",
+                          new QueryProfile("test").compile(null));
+        assertProfilingDepths(q, 3, 5, -7);
+    }
+
+    @Test
+    void profiling_parameters_are_resolved_with_typed_query_profile() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfileType type = new QueryProfileType("mytype");
+        type.inherited().add(registry.getType("native"));
+        QueryProfile profile = new QueryProfile("default");
+        profile.setType(type);
+        registry.register(profile);
+        registry.getTypeRegistry().register(type);
+        var q = new Query("?query=foo&" +
+                          "trace.profiling.matching.depth=3&" +
+                          "trace.profiling.firstPhaseRanking.depth=5&" +
+                          "trace.profiling.secondPhaseRanking.depth=-7",
+                          registry.compile().findQueryProfile("default"));
+        assertProfilingDepths(q, 3, 5, -7);
+    }
+
+    @Test
+    void profiling_parameters_are_resolved_from_query_profile() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.set("trace.profiling.matching.depth", 3, null);
+        profile.set("trace.profiling.firstPhaseRanking.depth", 5, null);
+        profile.set("trace.profiling.secondPhaseRanking.depth", -7, null);
+        var q = new Query("?query=foo", profile.compile(null));
+        assertProfilingDepths(q, 3, 5, -7);
+    }
+
+    @Test
+    void profiling_parameter_overrides_profile_depth_with_query_profile() {
+        var q = new Query("?query=foo&trace.profileDepth=5&trace.profiling.matching.depth=2",
+                          new QueryProfile("test").compile(null));
+        assertEquals(5, q.getTrace().getProfileDepth());
+        assertProfilingDepths(q, 2, 5, 5);
+
+        QueryProfile profile = new QueryProfile("test");
+        profile.set("trace.profiling.matching.depth", 2, null);
+        q = new Query("?query=foo&trace.profileDepth=5", profile.compile(null));
+        assertEquals(5, q.getTrace().getProfileDepth());
+        assertProfilingDepths(q, 2, 5, 5);
+    }
+
+    @Test
+    void invalid_profiling_parameter_is_rejected_with_query_profile() {
+        try {
+            new Query("?query=foo&trace.profiling.matching.depth=abc", new QueryProfile("test").compile(null));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Could not set 'trace.profiling.matching.depth': 'abc' is not a valid integer",
+                         Exceptions.toMessageString(e));
+        }
+    }
+
+    private static void assertProfilingDepths(Query query, int matching, int firstPhaseRanking, int secondPhaseRanking) {
+        assertEquals(matching, query.getTrace().getProfiling().getMatching().getDepth());
+        assertEquals(firstPhaseRanking, query.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
+        assertEquals(secondPhaseRanking, query.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+    }
+
+    @Test
     void globalphase_parameters_are_resolved() {
         var q = new Query("?query=foo");
         assertNull(q.getRanking().getGlobalPhase().getRerankCount());

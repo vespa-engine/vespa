@@ -16,14 +16,20 @@ public class ProfilingParams {
     public static final String PROFILING_PARAMS = "profilingParams";
     public static final String DEPTH = "depth";
 
-    private static final QueryProfileType argumentType;
+    private static final QueryProfileType argumentType = createArgumentType(PROFILING_PARAMS);
 
-    static {
-        argumentType = new QueryProfileType(PROFILING_PARAMS);
-        argumentType.setStrict(true);
-        argumentType.setBuiltin(true);
-        argumentType.addField(new FieldDescription(DEPTH, "integer"));
-        argumentType.freeze();
+    /**
+     * Creates the type of the profiling parameters of one part.
+     * Each part needs its own type, and its id must equal the field name of the part,
+     * because query profile property paths are built from the type ids of nested fields.
+     */
+    static QueryProfileType createArgumentType(String name) {
+        QueryProfileType type = new QueryProfileType(name);
+        type.setStrict(true);
+        type.setBuiltin(true);
+        type.addField(new FieldDescription(DEPTH, "integer"));
+        type.freeze();
+        return type;
     }
 
     public static QueryProfileType getArgumentType() { return argumentType; }

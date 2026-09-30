@@ -49,6 +49,8 @@ public class Trace implements Cloneable {
         argumentType.addField(new FieldDescription(PROFILE, "boolean", "profile"));
         argumentType.addField(new FieldDescription(LEVEL, "integer", "tracelevel traceLevel"));
         argumentType.addField(new FieldDescription(EXPLAIN_LEVEL, "integer", "explainlevel explainLevel"));
+        // Must be added before PROFILING: With a query profile, fields are set in this order,
+        // so a depth set for a single part overrides the one set here for all parts
         argumentType.addField(new FieldDescription(PROFILE_DEPTH, "integer"));
         argumentType.addField(new FieldDescription(TIMESTAMPS, "boolean"));
         argumentType.addField(new FieldDescription(QUERY, "boolean"));
