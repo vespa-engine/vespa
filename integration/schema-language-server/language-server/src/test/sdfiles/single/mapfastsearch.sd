@@ -23,5 +23,16 @@ schema mapfastsearch {
                 value: myvalue
             }
         }
+        field several_lookups type array<entry> {
+            indexing: summary
+            fast-search map field: lookup {
+                key: mykey
+                value: myvalue
+            }
+            fast-search map field: reversed {
+                key: myvalue
+                value: mykey
+            }
+        }
     }
 }
