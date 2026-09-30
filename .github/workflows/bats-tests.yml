@@ -17,6 +17,9 @@ on:
       - '**/*.sh'
       - '**/*.bats'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: BATS Tests
@@ -25,6 +28,8 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
