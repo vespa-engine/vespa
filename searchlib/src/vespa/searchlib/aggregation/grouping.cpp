@@ -25,13 +25,6 @@ using namespace search::expression;
 using search::aggregation::Group;
 using search::aggregation::Grouping;
 using search::aggregation::GroupingLevel;
-using search::expression::AttributeNode;
-using search::expression::EnumResultNode;
-using search::expression::EnumResultNodeVector;
-using search::expression::ExpressionNode;
-using search::expression::ExpressionTree;
-using search::expression::ResultNode;
-using search::expression::StringResultNode;
 using vespalib::Deserializer;
 using vespalib::Serializer;
 
