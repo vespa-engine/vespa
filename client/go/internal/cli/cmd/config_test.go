@@ -106,8 +106,17 @@ func TestLocalConfig(t *testing.T) {
 	assertConfigCommand(t, configHome, "instance = foo\n", "config", "get", "instance")
 	assertConfigCommand(t, configHome, "instance = bar\n", "config", "get", "--instance", "bar", "instance") // flag overrides local config
 
-	// get --local prints only options set in local config
-	assertConfigCommand(t, configHome, "instance = foo\n", "config", "get", "--local")
+	// get --local prints options set in local config first, then the ones inherited from global config
+	assertConfigCommand(t, configHome, `instance = foo
+application = <unset>
+cluster = <unset>
+color = auto
+debug = false
+default_config_scope = <unset>
+quiet = false
+target = cloud
+zone = <unset>
+`, "config", "get", "--local")
 
 	// get reads global option if unset locally
 	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "target")
@@ -258,7 +267,16 @@ func TestDefaultConfigScope(t *testing.T) {
 	assertConfigCommand(t, configHome, successSetLocal(rootDir, "instance", "foo"), "config", "set", "--local", "instance", "foo")
 
 	// config get defaults to local when default_config_scope=local and inside an app package
-	assertConfigCommand(t, configHome, "instance = foo\ntarget = cloud\n", "config", "get")
+	assertConfigCommand(t, configHome, `instance = foo
+target = cloud
+application = <unset>
+cluster = <unset>
+color = auto
+debug = false
+default_config_scope = local
+quiet = false
+zone = <unset>
+`, "config", "get")
 
 	// config get --global shows global config even when default_config_scope=local
 	assertConfigCommand(t, configHome, "default_config_scope = <unset>\n", "config", "get", "default_config_scope")

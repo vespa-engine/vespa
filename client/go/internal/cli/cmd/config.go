@@ -275,8 +275,10 @@ By default, this command prints the effective configuration for the current
 application, i.e. it takes into account any local configuration located in
 [working-directory]/.vespa.
 
-When default_config_scope is set to "local", this command shows only local
-configuration by default, if any local configuration is present.
+When showing local configuration, either because --local is given or because
+default_config_scope is set to "local" and local configuration is present, the
+options set locally are shown first, followed by the effective values of the
+remaining options, which are inherited from global configuration or defaults.
 `,
 		Example: `$ vespa config get
 $ vespa config get target
@@ -312,13 +314,29 @@ $ vespa config get --global`,
 				for _, option := range config.list(!localArg) {
 					config.printOption(option)
 				}
+				if localArg {
+					// Show the effective value of options not set locally, as these are inherited from global config
+					// (or defaults)
+					var inherited []string
+					for _, option := range cli.config.list(true) {
+						if _, ok := config.getNonEmpty(option); !ok {
+							inherited = append(inherited, option)
+						}
+					}
+					if len(inherited) > 0 {
+						cli.printHelpfulInfo(fmt.Sprintf("\nInherited from global config at %s", filepath.Join(cli.config.homeDir, configFile)))
+						for _, option := range inherited {
+							cli.config.printOption(option)
+						}
+					}
+				}
 			} else {
 				return config.printOption(args[0])
 			}
 			return nil
 		},
 	}
-	cmd.Flags().BoolVarP(&localArg, "local", "l", false, "Show only local configuration, if any")
+	cmd.Flags().BoolVarP(&localArg, "local", "l", false, "Show local configuration, if any, followed by options inherited from global configuration")
 	cmd.Flags().BoolVarP(&globalArg, "global", "g", false, "Show global configuration, overriding default_config_scope")
 	return cmd
 }
