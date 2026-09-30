@@ -91,7 +91,7 @@ public class IndexInfo extends Derived {
         }
         // Must follow, as the lookup fields get the settings of the fields they look up in
         for (ImmutableSDField field : schema.allConcreteFields()) {
-            deriveFastMapLookupField(field);
+            deriveFastMapLookupFields(field);
         }
 
         // Commands for summary fields
@@ -124,9 +124,13 @@ public class IndexInfo extends Derived {
      * splitting it into several terms. A numeric value gets the settings of its struct field, so that it
      * is parsed as a number or range.
      */
-    private void deriveFastMapLookupField(ImmutableSDField field) {
-        var fastMap = field.getFastMapSearch();
-        if (fastMap == null) return;
+    private void deriveFastMapLookupFields(ImmutableSDField field) {
+        for (FastMapSearchFields fastMap : field.getFastMapSearches()) {
+            deriveFastMapLookupField(field, fastMap);
+        }
+    }
+
+    private void deriveFastMapLookupField(ImmutableSDField field, FastMapSearchFields fastMap) {
         String lookupField = field.getName() + "." + fastMap.lookupName();
         String lookupAttribute = FastMapSearch.toLookupFieldName(field.getName(), fastMap.lookupName());
         copyIndexCommands(field.getName(), lookupField, command -> true);

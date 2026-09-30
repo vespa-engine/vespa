@@ -44,7 +44,7 @@ public class MapFastSearchTestCase {
                                  "  }",
                                  "}");
         assertTrue(fastMapSearchOf(field, true));
-        assertEquals("lookup", fieldIn(build(getSd(field), true), "m").getFastMapSearch().lookupName());
+        assertEquals("lookup", fieldIn(build(getSd(field), true), "m").getFastMapSearches().get(0).lookupName());
     }
 
     @Test
@@ -62,14 +62,32 @@ public class MapFastSearchTestCase {
     }
 
     @Test
-    void requireRepeatedFastSearchMapFieldIsAParseError() {
+    void requireRepeatedLookupNameIsAParseError() {
         var exception = assertThrows(ParseException.class,
                                      () -> build(getSd(joinLines("field m type map<string, string> {",
                                                                  "  fast-search map field: lookup",
-                                                                 "  fast-search map field: other",
+                                                                 "  fast-search map field: lookup",
                                                                  "}")), true));
-        assertTrue(exception.getMessage().contains("'fast-search map field' is given more than once in field 'm'."),
+        assertTrue(exception.getMessage().contains("'fast-search map field: lookup' is given more than once in field 'm'."),
                    "Unexpected message: " + exception.getMessage());
+    }
+
+    @Test
+    void requireMultipleLookupsOnAnArrayOfStruct() throws ParseException {
+        var field = fieldIn(build(getSd(joinLines("struct entry {",
+                                                  "  field a type string { }",
+                                                  "  field b type int { }",
+                                                  "  field c type long { }",
+                                                  "}",
+                                                  "field m type array<entry> {",
+                                                  "  fast-search map field: by_a { key: a value: b }",
+                                                  "  fast-search map field: by_b { key: b value: c }",
+                                                  "  fast-search map field: reversed { key: b value: a }",
+                                                  "}")), true), "m");
+        assertEquals(List.of(FastMapSearchFields.forArrayOfStruct(field.getDataType(), "by_a", "a", "b"),
+                             FastMapSearchFields.forArrayOfStruct(field.getDataType(), "by_b", "b", "c"),
+                             FastMapSearchFields.forArrayOfStruct(field.getDataType(), "reversed", "b", "a")),
+                     field.getFastMapSearches());
     }
 
     @Test
@@ -141,7 +159,7 @@ public class MapFastSearchTestCase {
     @Test
     void requireMapKeyAndValueMayBeNamedButNotChanged() throws ParseException {
         var field = fieldIn(build(getSd(fieldWithLookup("map<string, string>", "key: key", "value: value")), true), "m");
-        assertEquals(FastMapSearchFields.forMap(field.getDataType(), "lookup"), field.getFastMapSearch());
+        assertEquals(List.of(FastMapSearchFields.forMap(field.getDataType(), "lookup")), field.getFastMapSearches());
         assertRejected(fieldWithLookup("map<string, string>", "key: k"), true,
                        "For schema 'test', field 'm': 'fast-search map field' on a map requires key to be 'key', but got 'k'.");
     }
@@ -153,7 +171,8 @@ public class MapFastSearchTestCase {
                                                      fieldWithLookup("array<entry>", "key: mykey", "value: myvalue")),
                                       true), "m");
             assertTrue(field.hasFastMapSearch());
-            assertEquals(FastMapSearchFields.forArrayOfStruct(field.getDataType(), "lookup", "mykey", "myvalue"), field.getFastMapSearch());
+            assertEquals(List.of(FastMapSearchFields.forArrayOfStruct(field.getDataType(), "lookup", "mykey", "myvalue")),
+                         field.getFastMapSearches());
         }
     }
 
@@ -221,7 +240,11 @@ public class MapFastSearchTestCase {
     void requireFastMapFieldsAreExportedInSchemaInfo() throws ParseException {
         String fields = joinLines("field plain type map<string, string> { }",
                                   "field fastmap type map<string, int> { fast-search map field: lookup }",
-                                  namedFieldWithLookup("fastarray", "array<entry>", "key: mykey", "value: myvalue"));
+                                  namedFieldWithLookup("fastarray", "array<entry>", "key: mykey", "value: myvalue"),
+                                  "field twolookups type array<entry> {",
+                                  "  fast-search map field: lookup { key: mykey value: myvalue }",
+                                  "  fast-search map field: reversed { key: myvalue value: mykey }",
+                                  "}");
         var schema = build(getSdWithEntry("string", "long", fields), true);
         var config = schemaInfoConfigOf(schema).schema(0);
         assertTrue(fieldConfig(config, "plain").fastMapSearchFields().isEmpty());
@@ -241,6 +264,17 @@ public class MapFastSearchTestCase {
         assertEquals("string", fastArray.get(0).keyType());
         assertEquals("myvalue", fastArray.get(0).valueField());
         assertEquals("long", fastArray.get(0).valueType());
+
+        var twoLookups = fieldConfig(config, "twolookups").fastMapSearchFields();
+        assertEquals(2, twoLookups.size());
+        assertEquals("lookup", twoLookups.get(0).lookupName());
+        assertEquals("mykey", twoLookups.get(0).keyField());
+        assertEquals("myvalue", twoLookups.get(0).valueField());
+        assertEquals("reversed", twoLookups.get(1).lookupName());
+        assertEquals("myvalue", twoLookups.get(1).keyField());
+        assertEquals("long", twoLookups.get(1).keyType());
+        assertEquals("mykey", twoLookups.get(1).valueField());
+        assertEquals("string", twoLookups.get(1).valueType());
     }
 
     @Test
@@ -265,7 +299,12 @@ public class MapFastSearchTestCase {
                                   "  struct-field value { indexing: attribute }",
                                   "}",
                                   "field stringmap type map<string, string> { fast-search map field: lookup }",
-                                  namedFieldWithLookup("fastarray", "array<entry>", "key: mykey", "value: myvalue"));
+                                  namedFieldWithLookup("fastarray", "array<entry>", "key: mykey", "value: myvalue"),
+                                  "field twolookups type array<entry> {",
+                                  "  fast-search map field: lookup { key: mykey value: myvalue }",
+                                  "  fast-search map field: reversed { key: myvalue value: mykey }",
+                                  "  struct-field myvalue { indexing: attribute }",
+                                  "}");
         var indexInfo = indexInfoOf(build(getSdWithEntry("string", "long", fields), true));
 
         assertEquals(commandsOf(indexInfo, "fastmap"), commandsOf(indexInfo, "fastmap.lookup"));
@@ -279,6 +318,13 @@ public class MapFastSearchTestCase {
         assertEquals(commandsOf(indexInfo, "fastarray"), commandsOf(indexInfo, "fastarray.lookup"));
         assertEquals(lookupAttributeCommands(indexInfo, "fastarray$lookup"), commandsOf(indexInfo, "fastarray.lookup.key"));
         assertEquals(commandsOf(indexInfo, "fastarray.myvalue"), commandsOf(indexInfo, "fastarray.lookup.value"));
+
+        assertEquals(commandsOf(indexInfo, "twolookups"), commandsOf(indexInfo, "twolookups.lookup"));
+        assertEquals(commandsOf(indexInfo, "twolookups"), commandsOf(indexInfo, "twolookups.reversed"));
+        assertEquals(lookupAttributeCommands(indexInfo, "twolookups$lookup"), commandsOf(indexInfo, "twolookups.lookup.key"));
+        assertEquals(commandsOf(indexInfo, "twolookups.myvalue"), commandsOf(indexInfo, "twolookups.lookup.value"));
+        assertEquals(commandsOf(indexInfo, "twolookups.myvalue"), commandsOf(indexInfo, "twolookups.reversed.key"));
+        assertEquals(lookupAttributeCommands(indexInfo, "twolookups$reversed"), commandsOf(indexInfo, "twolookups.reversed.value"));
     }
 
     /** Returns the commands of the given lookup attribute, with its type replaced by the type of a string key or value. */

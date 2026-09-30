@@ -132,8 +132,7 @@ public final class SchemaInfo extends Derived {
         fieldBuilder.attribute(field.doesAttributing());
         fieldBuilder.index(field.doesIndexing());
         fieldBuilder.bitPacked(field.doesBitPacking());
-        var fastMapFields = field.getFastMapSearch();
-        if (fastMapFields != null) {
+        for (var fastMapFields : field.getFastMapSearches()) {
             fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
                                                      .lookupName(fastMapFields.lookupName())
                                                      .keyField(fastMapFields.keyField())
