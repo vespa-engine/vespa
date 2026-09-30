@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.querytransform;
 
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.processing.IllegalInputException;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 /**
@@ -50,18 +52,31 @@ import java.util.regex.Pattern;
 @After(PhaseNames.TRANSFORMED_QUERY)
 public class FastMapSearcher extends Searcher {
 
+    private final boolean active;
+
+    FastMapSearcher() {
+        this.active = true;
+    }
+
+    @Inject
+    public FastMapSearcher(SchemaInfo schemaInfo) {
+        // check if there is any lookups in any schema in any source
+        var session = schemaInfo.newSession(Set.of(), Set.of());
+        this.active = ! findLookups(session).isEmpty();
+    }
+
     @Override
     public Result search(Query query, Execution execution) {
-        var session = execution.context().schemaInfo().newSession(query);
-        var lookupNames = lookupNames(session);
-        if ( ! lookupNames.isEmpty()) {
+        if (active) {
+            var session = execution.context().schemaInfo().newSession(query);
+            var lookupNames = findLookups(session);
             new Rewriter(session, lookupNames).rewriteFastMapSearch(query);
         }
         return execution.search(query);
     }
 
     /** Returns the names of the lookup fields, as in field.lookupName, of the fields in the schemas of the given session. */
-    private static Set<String> lookupNames(SchemaInfo.Session session) {
+    private static Set<String> findLookups(SchemaInfo.Session session) {
         Set<String> names = new HashSet<>();
         for (Schema schema : session.schemas()) {
             for (Field field : schema.fields().values()) {
@@ -76,12 +91,12 @@ public class FastMapSearcher extends Searcher {
     private class Rewriter {
 
         private final SchemaInfo.Session session;
-        private final Set<String> lookupNames;
+        private final Set<String> knownLookups;
         private boolean hasRewritten = false;
 
         Rewriter(SchemaInfo.Session session, Set<String> lookupNames) {
             this.session = session;
-            this.lookupNames = lookupNames;
+            this.knownLookups = lookupNames;
         }
 
         /** Entry point for rewriting a query */
@@ -106,10 +121,12 @@ public class FastMapSearcher extends Searcher {
 
             // handle map lookup rewrite. Its children are relative to it, and are handled by the rewrite.
             if (item instanceof MapMatchItem mapMatchItem) {
-                Item rewritten = tryRewriteMapMatch(mapMatchItem, session);
-                if (rewritten != null) {
-                    hasRewritten = true;
-                    return rewritten;
+                if (knownLookups.contains(mapMatchItem.getFieldName())) {
+                    Item rewritten = tryRewriteMapMatch(mapMatchItem, session);
+                    if (rewritten != null) {
+                        hasRewritten = true;
+                        return rewritten;
+                    }
                 }
                 rejectLookupFieldUse(mapMatchItem);
                 return item;
@@ -140,11 +157,11 @@ public class FastMapSearcher extends Searcher {
             String lookupName = name;
             if (name.endsWith("." + YqlParser.KEY_FIELD_NAME) || name.endsWith("." + YqlParser.VALUE_FIELD_NAME)) {
                 String withoutSuffix = name.substring(0, name.lastIndexOf('.'));
-                if (lookupNames.contains(withoutSuffix)) {
+                if (knownLookups.contains(withoutSuffix)) {
                     lookupName = withoutSuffix;
                 }
             }
-            if (lookupNames.contains(lookupName)) {
+            if (knownLookups.contains(lookupName)) {
                 throw new IllegalInputException("'" + name + "' can only be searched by a map lookup, as in " +
                                                 lookupName + "{\"key\"} = value, but got " + item);
             }

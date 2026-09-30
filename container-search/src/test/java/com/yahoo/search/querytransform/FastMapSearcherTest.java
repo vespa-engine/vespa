@@ -63,6 +63,46 @@ public class FastMapSearcherTest {
     }
 
     @Test
+    public void requireSearcherInactiveWhenNoSchemaHasFastMapLookups() {
+        var withoutLookups = new Schema.Builder("plain")
+                .add(new Field.Builder("mymap", "map<string,string>").build())
+                .build();
+        var searcher = new FastMapSearcher(new SchemaInfo(List.of(withoutLookups), List.of()));
+
+        // Neither rewritten nor rejected, even if the query is executed with schemas which have lookups
+        var mapMatch = mapMatch("mymap");
+        String original = mapMatch.toString();
+        Query query = queryWith(mapMatch);
+        searcher.search(query, execution());
+        assertEquals(original, query.getModel().getQueryTree().getRoot().toString());
+
+        query = queryWith(new WordItem("foo", "mymap.lookup"));
+        searcher.search(query, execution());
+        assertEquals("mymap.lookup:foo", query.getModel().getQueryTree().getRoot().toString());
+
+        // Also inactive with no schemas at all
+        query = queryWith(mapMatch("mymap"));
+        new FastMapSearcher(SchemaInfo.empty()).search(query, execution());
+        assertEquals(original, query.getModel().getQueryTree().getRoot().toString());
+    }
+
+    @Test
+    public void requireSearcherActiveWhenAnySchemaHasFastMapLookups() {
+        var withoutLookups = new Schema.Builder("plain")
+                .add(new Field.Builder("othermap", "map<string,string>").build())
+                .build();
+        var searcher = new FastMapSearcher(new SchemaInfo(List.of(withoutLookups, schemaInfo().schemas().get("test")), List.of()));
+
+        Query query = queryWith(mapMatch("mymap"));
+        searcher.search(query, execution());
+        assertEquals("mymap$lookup:foo" + FastMapSearch.keyValueSeparator() + "bar",
+                     query.getModel().getQueryTree().getRoot().toString());
+
+        assertThrows(IllegalInputException.class,
+                     () -> searcher.search(queryWith(new WordItem("foo", "mymap.lookup")), execution()));
+    }
+
+    @Test
     public void requireMapLookupRewrittenForFastMapField() {
         var execution = execution();
 
@@ -733,6 +773,10 @@ public class FastMapSearcherTest {
     }
 
     private static Execution execution() {
+        return new Execution(Execution.Context.createContextStub(schemaInfo()));
+    }
+
+    private static SchemaInfo schemaInfo() {
         var schema = new Schema.Builder("test")
                 .add(new Field.Builder("mymap", "map<string,string>").addFastMapSearch("lookup").build())
                 .add(new Field.Builder("intvaluemap", "map<string,int>").addFastMapSearch("lookup").build())
@@ -754,8 +798,7 @@ public class FastMapSearcherTest {
                              .build())
                 .add(new Field.Builder("otherarray", "array<entry>").build())
                 .build();
-        var schemaInfo = new SchemaInfo(List.of(schema), List.of());
-        return new Execution(Execution.Context.createContextStub(schemaInfo));
+        return new SchemaInfo(List.of(schema), List.of());
     }
 
     private static Field.FastMapSearchFields arrayFields(String valueType) {
