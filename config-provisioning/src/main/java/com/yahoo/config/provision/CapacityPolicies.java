@@ -61,12 +61,17 @@ public class CapacityPolicies {
         this.cpuCap = cpuCap;
     }
 
+    // TODO: Remove after October 2026 (move body to the method below)
     public Capacity applyOn(Capacity capacity, boolean exclusive) {
         var min = applyOn(capacity.minResources(), capacity, exclusive);
         var max = applyOn(capacity.maxResources(), capacity, exclusive);
         var groupSize = capacity.groupSize().fromAtMost(max.nodes() / min.groups())
-                                            .toAtLeast(min.nodes() / max.groups());
+                                .toAtLeast(min.nodes() / max.groups());
         return capacity.withLimits(min, max, groupSize);
+    }
+
+    public Capacity applyOn(ClusterSpec cluster) {
+        return applyOn(cluster.capacity(), cluster.isExclusive());
     }
 
     private ClusterResources applyOn(ClusterResources resources, Capacity capacity, boolean exclusive) {
@@ -231,9 +236,9 @@ public class CapacityPolicies {
     }
 
     /** Returns whether the nodes requested can share physical host with other applications */
-    public ClusterSpec decideExclusivity(Capacity capacity, ClusterSpec requestedCluster) {
-        if ( ! capacity.cloudAccount().isUnspecified()) return requestedCluster.withExclusivity(true); // Implicit exclusive
-        boolean exclusive = requestedCluster.isExclusive() && (capacity.isRequired() || zone.environment() == Environment.prod);
+    public ClusterSpec decideExclusivity(ClusterSpec requestedCluster) {
+        if ( ! requestedCluster.capacity().cloudAccount().isUnspecified()) return requestedCluster.withExclusivity(true); // Implicit exclusive
+        boolean exclusive = requestedCluster.isExclusive() && (requestedCluster.capacity().isRequired() || zone.environment() == Environment.prod);
         return requestedCluster.withExclusivity(exclusive);
     }
 
