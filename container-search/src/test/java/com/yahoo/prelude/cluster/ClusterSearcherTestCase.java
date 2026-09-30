@@ -111,6 +111,23 @@ public class ClusterSearcherTestCase {
                     assertEquals(Set.of("type2", "type3"), resolve(cluster1, "&sources=cluster1&restrict=type2,type3"));
                     assertEquals(Set.of("type2"), resolve(cluster1, "&sources=cluster2&restrict=type2"));
                 }
+                { // excluded sources naming schemas
+                    assertEquals(Set.of("type2", "type3"), resolve(cluster1, "&sources=-type1"));
+                    assertEquals(Set.of("type3"), resolve(cluster1, "&sources=-type1,-type2"));
+                    assertEquals(Set.of("type1", "type3"), resolve(cluster1, "&sources=cluster1,-type2"));
+                    assertEquals(Set.of(), resolve(cluster1, "&sources=type2,-type2"));
+                    assertEquals(Set.of("type2"), resolve(cluster1, "&restrict=type1,type2&sources=-type1"));
+                    assertEquals(Set.of("type1", "type2", "type3"), resolve(cluster1, "&sources=-type4")); // schema in another cluster
+                }
+                { // excluded sources naming a schema within this cluster (named 'testScenario' in tests)
+                    assertEquals(Set.of("type2", "type3"), resolve(cluster1, "&sources=-testScenario.type1"));
+                    assertEquals(Set.of("type3"), resolve(cluster1, "&sources=-testScenario.type1,-type2"));
+                    assertEquals(Set.of("type1", "type2", "type3"), resolve(cluster1, "&sources=-otherCluster.type1"));
+                }
+                { // excluded sources naming clusters are handled by the federation searcher, not here
+                    assertEquals(Set.of("type1", "type2", "type3"), resolve(cluster1, "&sources=-cluster1"));
+                    assertEquals(Set.of("type1", "type2", "type3"), resolve(cluster1, "&sources=-cluster2"));
+                }
             } finally {
                 type1.deconstruct();
             }
