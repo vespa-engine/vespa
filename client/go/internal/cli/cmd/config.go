@@ -275,8 +275,8 @@ By default, this command prints the effective configuration for the current
 application, i.e. it takes into account any local configuration located in
 [working-directory]/.vespa.
 
-When default_config_scope is set to "local", this command shows only local
-configuration by default, if any local configuration is present.
+When showing local configuration, options not set locally are listed after the
+local ones, with their inherited values.
 `,
 		Example: `$ vespa config get
 $ vespa config get target
@@ -307,10 +307,25 @@ $ vespa config get --global`,
 			if localArg {
 				scope = "local"
 			}
-			cli.printHelpfulInfo(fmt.Sprintf("Got %s config from %s", scope, filepath.Join(config.homeDir, configFile)))
+			cli.printHelpfulInfo(fmt.Sprintf("Got %s config from %s", scope, color.CyanString(filepath.Join(config.homeDir, configFile))))
 			if len(args) == 0 { // Print all values
 				for _, option := range config.list(!localArg) {
 					config.printOption(option)
+				}
+				if localArg {
+					// Show effective values of options not set locally
+					var inherited []string
+					for _, option := range cli.config.list(true) {
+						if _, ok := config.getNonEmpty(option); !ok {
+							inherited = append(inherited, option)
+						}
+					}
+					if len(inherited) > 0 {
+						cli.printHelpfulInfo("\nInherited from global config at " + color.CyanString(filepath.Join(cli.config.homeDir, configFile)))
+						for _, option := range inherited {
+							cli.config.printOption(option)
+						}
+					}
 				}
 			} else {
 				return config.printOption(args[0])
@@ -318,7 +333,7 @@ $ vespa config get --global`,
 			return nil
 		},
 	}
-	cmd.Flags().BoolVarP(&localArg, "local", "l", false, "Show only local configuration, if any")
+	cmd.Flags().BoolVarP(&localArg, "local", "l", false, "Show local configuration, if any, followed by options inherited from global configuration")
 	cmd.Flags().BoolVarP(&globalArg, "global", "g", false, "Show global configuration, overriding default_config_scope")
 	return cmd
 }
