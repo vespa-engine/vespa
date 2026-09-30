@@ -7,7 +7,7 @@ import com.yahoo.search.schema.Schema;
 /**
  * Representation of a document database realizing a schema in a content cluster.
  *
- * @author geirst
+ * @author Geir Storli
  */
 public class DocumentDatabase {
 

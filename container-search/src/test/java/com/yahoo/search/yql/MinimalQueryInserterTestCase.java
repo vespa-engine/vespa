@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -248,6 +249,52 @@ public class MinimalQueryInserterTestCase {
         assertTrue(query.getModel().getSources().contains("sourceA"));
         assertTrue(query.getModel().getSources().contains("sourceB"));
         assertTrue(query.getModel().getSources().contains("abc"));
+    }
+
+    /** Runs a query with the given sources parameter and YQL sources clause, and returns the query */
+    private Query searchWithSources(String sourcesParameter, String yqlSources) {
+        String yql = "select * from " + yqlSources + " where title contains \"madonna\"";
+        Query query = new Query("search/?sources=" + encode(sourcesParameter) + "&yql=" + encode(yql));
+        execution.search(query);
+        return query;
+    }
+
+    private void assertSources(Set<String> expectedSources, Set<String> expectedExcludedSources, Query query) {
+        assertEquals(expectedSources, query.getModel().getSources(), "sources");
+        assertEquals(expectedExcludedSources, query.getModel().getExcludedSources(), "excluded sources");
+    }
+
+    @Test
+    void testExcludedSourcesSurviveSearchFromAllSources() {
+        assertSources(Set.of(), Set.of("abc"), searchWithSources("-abc", "sources *"));
+    }
+
+    @Test
+    void testExcludedSourcesAreNotAffectedBySearchFromSomeSources() {
+        assertSources(Set.of("def", "sourceA"), Set.of("abc"), searchWithSources("-abc,def", "sources sourceA"));
+    }
+
+    @Test
+    void testSourceSelectedExplicitlyInYqlOverridesExclusion() {
+        assertSources(Set.of("sourceA"), Set.of("sourceB"), searchWithSources("-sourceA,-sourceB", "sourceA"));
+    }
+
+    @Test
+    void testOnlyNamedYqlSourcesOverrideExclusions() {
+        assertSources(Set.of("sourceA", "sourceB"), Set.of("sourceC"),
+                      searchWithSources("-sourceA,-sourceB,-sourceC", "sources sourceA, sourceB"));
+    }
+
+    @Test
+    void testClusterSchemaSourceSelectedInYqlOverridesClusterExclusion() {
+        assertSources(Set.of("cluster1.music"), Set.of("cluster12"),
+                      searchWithSources("-cluster1,-cluster12", "sources cluster1.music"));
+    }
+
+    @Test
+    void testClusterSchemaSourceSelectedInYqlDoesNotOverrideExclusionOfClusterWithSameNamePrefix() {
+        assertSources(Set.of("cluster12.music"), Set.of("cluster1"),
+                      searchWithSources("-cluster1", "sources cluster12.music"));
     }
 
     @Test

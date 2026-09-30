@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 /**
  * Superclass for backend searchers.
  *
- * @author baldersheim
+ * @author Henning Baldersheim
  */
 public abstract class VespaBackend {
 

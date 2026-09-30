@@ -4,6 +4,7 @@ package com.yahoo.search.query.test;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.Model;
+import com.yahoo.search.query.profile.QueryProfile;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,9 +13,12 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -110,6 +114,85 @@ public class ModelTestCase {
         assertEquals(sra, srb);
         srb.setRestrict("music,cheese");
         assertNotSame(sra, srb);
+    }
+
+    @Test
+    void testExcludedSources() {
+        Model model = new Model(new Query());
+        model.setSources(" -content-chunks , content-multichunk,- other ");
+        assertEquals(Set.of("content-multichunk"), model.getSources());
+        assertEquals(new LinkedHashSet<>(List.of("content-chunks", "other")), model.getExcludedSources());
+    }
+
+    @Test
+    void testOnlyExcludedSources() {
+        Model model = new Model(new Query());
+        model.setSources("-content-chunks");
+        assertTrue(model.getSources().isEmpty());
+        assertEquals(Set.of("content-chunks"), model.getExcludedSources());
+    }
+
+    @Test
+    void testSetSourcesReplacesBothSets() {
+        Model model = new Model(new Query());
+        model.setSources("a,-b");
+        model.setSources("c");
+        assertEquals(Set.of("c"), model.getSources());
+        assertTrue(model.getExcludedSources().isEmpty());
+        model.setSources("-d");
+        assertTrue(model.getSources().isEmpty());
+        assertEquals(Set.of("d"), model.getExcludedSources());
+    }
+
+    @Test
+    void testExcludedSourceWithoutName() {
+        Model model = new Model(new Query());
+        assertThrows(IllegalArgumentException.class, () -> model.setSources("a,-"));
+        assertThrows(IllegalArgumentException.class, () -> model.setSources("- "));
+    }
+
+    @Test
+    void testExcludedSourcesAreCloned() {
+        Query query = new Query();
+        Model model = new Model(query);
+        model.setSources("a,-b");
+        Model clone = model.cloneFor(query);
+        assertNotSame(model.getExcludedSources(), clone.getExcludedSources());
+        assertEquals(Set.of("b"), clone.getExcludedSources());
+        assertEquals(model, clone);
+    }
+
+    @Test
+    void testExcludedSourcesAffectEquality() {
+        Query q = new Query();
+        Model a = new Model(q);
+        a.setSources("cluster1,-cluster2");
+        Model b = new Model(q);
+        b.setSources("cluster1");
+        assertNotEquals(a, b);
+        assertNotEquals(a.hashCode(), b.hashCode());
+        b.setSources("cluster1, -cluster2");
+        assertEquals(a, b);
+    }
+
+    @Test
+    void testExcludedSourcesFromQueryParameters() {
+        Query query = new Query("?query=test&model.sources=news,-archive");
+        assertEquals(Set.of("news"), query.getModel().getSources());
+        assertEquals(Set.of("archive"), query.getModel().getExcludedSources());
+
+        query = new Query("?query=test&sources=-archive");
+        assertTrue(query.getModel().getSources().isEmpty());
+        assertEquals(Set.of("archive"), query.getModel().getExcludedSources());
+    }
+
+    @Test
+    void testExcludedSourcesFromQueryProfile() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.set("model.sources", "-archive", null);
+        Query query = new Query("?query=test", profile.compile(null));
+        assertTrue(query.getModel().getSources().isEmpty());
+        assertEquals(Set.of("archive"), query.getModel().getExcludedSources());
     }
 
     @Test

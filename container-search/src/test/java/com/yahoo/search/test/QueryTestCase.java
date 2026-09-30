@@ -502,6 +502,16 @@ public class QueryTestCase {
     }
 
     @Test
+    void testExcludedSourcesAreNotInYqlRepresentation() {
+        Query q = new Query("?query=test&type=all&model.sources=-cluster2");
+        assertEquals("select * from sources * where default contains \"test\"", q.yqlRepresentation());
+        assertTrue(q.toDetailString().contains("excludedSources=[cluster2]"), q.toDetailString());
+
+        q = new Query("?query=test&type=all&model.sources=cluster1,-cluster2");
+        assertEquals("select * from cluster1 where default contains \"test\"", q.yqlRepresentation());
+    }
+
+    @Test
     void testDefaultIndexAlias() {
         SearchDefinition test = new SearchDefinition("test");
         Index year = new Index("year");
