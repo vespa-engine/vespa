@@ -14,7 +14,7 @@ namespace search::attribute {
 
 template <typename Matcher>
 StringSearchContextT<Matcher>::StringSearchContextT(const AttributeVector& to_be_searched, Matcher&& matcher)
-    : SearchContext(to_be_searched), Matcher(std::move(matcher)) {
+    : SearchContext(to_be_searched), _matcher(std::move(matcher)) {
 }
 
 template <typename Matcher>
@@ -25,19 +25,19 @@ StringSearchContextT<Matcher>::~StringSearchContextT() = default;
 
 template <typename Matcher>
 const QueryTermUCS4* StringSearchContextT<Matcher>::queryTerm() const {
-    return this->get_query_term_ptr();
+    return _matcher.get_query_term_ptr();
 }
 
 template <typename Matcher>
 bool StringSearchContextT<Matcher>::valid() const {
-    return Matcher::isValid();
+    return _matcher.isValid();
 }
 
 template <typename Matcher>
 void StringSearchContextT<Matcher>::set_and_setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store,
                                                                EnumHintSearchContext&         enum_hint_sc) {
     _plsc = &enum_hint_sc;
-    this->setup_enum_hint_sc(enum_store, enum_hint_sc);
+    _matcher.setup_enum_hint_sc(enum_store, enum_hint_sc);
 }
 
 } // namespace search::attribute

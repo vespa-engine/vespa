@@ -22,9 +22,13 @@ class EnumHintSearchContext;
  * handling a query term on a string attribute vector.
  */
 template <typename Matcher>
-class StringSearchContextT : public SearchContext, public Matcher {
+class StringSearchContextT : public SearchContext {
+    Matcher _matcher;
+
 protected:
     using MatcherType = Matcher;
+
+    const Matcher& matcher() const noexcept { return _matcher; }
 
 public:
     StringSearchContextT(const AttributeVector& to_be_searched, Matcher&& matcher);

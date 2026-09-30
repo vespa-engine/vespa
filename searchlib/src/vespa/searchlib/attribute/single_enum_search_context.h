@@ -35,14 +35,14 @@ public:
             return -1;
         T v = _enum_store.get_value(_enum_indices[docId].load_acquire());
         weight = 1;
-        return this->match(v) ? 0 : -1;
+        return this->matcher().match(v) ? 0 : -1;
     }
 
     int32_t find(DocId docId, int32_t elemId) const {
         if (elemId != 0)
             return -1;
         T v = _enum_store.get_value(_enum_indices[docId].load_acquire());
-        return this->match(v) ? 0 : -1;
+        return this->matcher().match(v) ? 0 : -1;
     }
 
     std::unique_ptr<queryeval::SearchIterator> createFilterIterator(fef::TermFieldMatchData* matchData,

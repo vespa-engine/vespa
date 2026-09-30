@@ -42,7 +42,7 @@ public:
         uint32_t    valueShift = (docId & _valueShiftMask) << _valueShiftShift;
         T           v = (vespalib::atomic::load_ref_relaxed(word) >> valueShift) & _valueMask;
         weight = 1;
-        return match(v) ? 0 : -1;
+        return matcher().match(v) ? 0 : -1;
     }
 
     int32_t find(DocId docId, int32_t elemId) const {
@@ -51,7 +51,7 @@ public:
         const Word& word = _wordData[docId >> _wordShift];
         uint32_t    valueShift = (docId & _valueShiftMask) << _valueShiftShift;
         T           v = (vespalib::atomic::load_ref_relaxed(word) >> valueShift) & _valueMask;
-        return match(v) ? 0 : -1;
+        return matcher().match(v) ? 0 : -1;
     }
 
     std::unique_ptr<queryeval::SearchIterator> createFilterIterator(fef::TermFieldMatchData* matchData,
