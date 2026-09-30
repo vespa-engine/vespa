@@ -1070,31 +1070,33 @@ void weightedsetBody(ParsedType type) : { }
 /**
  * This rule consumes a fast-search map field statement of a field element, which names the lookup
  * field of a map, or of an array of struct used as a map, with the key and value fields given in a block.
+ * A field may have several, with different lookup names.
  *
  * @param field The field to modify.
  */
 void fastSearchMap(ParsedField field) :
 {
     String name;
+    ParsedField.ParsedFastMapSearch fastMapSearch;
 }
 {
     <FAST_SEARCH> <MAP> <FIELD> <COLON> name = identifier()
     {
         try {
-            field.setFastMapSearchName(name);
+            fastMapSearch = field.addFastMapSearch(name);
         } catch (IllegalArgumentException e) {
             throw new ParseException(e.getMessage());
         }
     }
-    [ LOOKAHEAD((<NL>)* <LBRACE>) lbrace() (fastSearchMapBody(field) (<NL>)*)* <RBRACE> ]
+    [ LOOKAHEAD((<NL>)* <LBRACE>) lbrace() (fastSearchMapBody(fastMapSearch) (<NL>)*)* <RBRACE> ]
 }
 
 /**
  * This rule consumes one body item of a fast-search map field block.
  *
- * @param field The field to modify.
+ * @param fastMapSearch The fast-search map field to modify.
  */
-void fastSearchMapBody(ParsedField field) :
+void fastSearchMapBody(ParsedField.ParsedFastMapSearch fastMapSearch) :
 {
     String name;
     String structFieldName;
@@ -1103,8 +1105,8 @@ void fastSearchMapBody(ParsedField field) :
     name = identifier() <COLON> structFieldName = identifier()
     {
         try {
-            if (name.equals("key")) field.setFastMapKeyField(structFieldName);
-            else if (name.equals("value")) field.setFastMapValueField(structFieldName);
+            if (name.equals("key")) fastMapSearch.setKeyField(structFieldName);
+            else if (name.equals("value")) fastMapSearch.setValueField(structFieldName);
             else throw new ParseException("Expected 'key' or 'value' in 'fast-search map field', but got '" + name + "'.");
         } catch (IllegalArgumentException e) {
             throw new ParseException(e.getMessage());

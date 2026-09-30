@@ -33,6 +33,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,7 +55,7 @@ public class SDField extends Field implements ImmutableSDField {
     private boolean indexStructureField = false;
 
     /** Whether a synthetic key+value field should be built (with fast search structure) */
-    private FastMapSearchFields fastMapSearch = null;
+    private final List<FastMapSearchFields> fastMapSearches = new ArrayList<>();
 
     /** The indexing statements to be applied to this value during indexing */
     private ScriptExpression indexingScript = new ScriptExpression();
@@ -510,20 +511,20 @@ public class SDField extends Field implements ImmutableSDField {
         this.indexStructureField = indexStructureField;
     }
 
-    /** Returns whether a fast search structure should be built for the synthetic key value field */
+    /** Returns whether a fast search structure should be built for at least one synthetic key value field */
     @Override
     public boolean hasFastMapSearch() {
-        return fastMapSearch != null;
+        return ! fastMapSearches.isEmpty();
     }
 
-    /** Returns the key and value fields of this field if it has fast map search, and null otherwise */
+    /** Returns the key and value fields of each fast map search of this field, or an empty list if it has none */
     @Override
-    public FastMapSearchFields getFastMapSearch() {
-        return fastMapSearch;
+    public List<FastMapSearchFields> getFastMapSearches() {
+        return List.copyOf(fastMapSearches);
     }
 
-    public void setFastMapSearch(FastMapSearchFields fastMapSearch) {
-        this.fastMapSearch = fastMapSearch;
+    public void addFastMapSearch(FastMapSearchFields fastMapSearch) {
+        this.fastMapSearches.add(fastMapSearch);
     }
 
     @Override

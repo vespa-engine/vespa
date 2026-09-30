@@ -33,7 +33,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 
 /**
- * Adds a "fieldName$lookupName" attribute to maps, and arrays of struct used as maps, with a 'fast-search map field'.
+ * Adds a "fieldName$lookupName" attribute to maps, and arrays of struct used as maps, for each 'fast-search map field'.
  *
  * The attribute holds one string per map entry or array element, on the form key + separator + value,
  * so that a key-value pair can be matched with a single lexical lookup.
@@ -61,40 +61,39 @@ public class CreateFastMapSearch extends Processor {
         }
 
         for (SDField field : schema.allConcreteFields()) {
-            if (!shouldCreateFastMapAttribute(field)) {
-                continue;
-            }
+            for (FastMapSearchFields fastMapFields : field.getFastMapSearches()) {
+                if (!shouldCreateFastMapAttribute(fastMapFields)) {
+                    continue;
+                }
 
-            String fieldName = FastMapSearch.toLookupFieldName(field.getName(), field.getFastMapSearch().lookupName());
-            // Inheritance: there is a parent that has already made the attribute.
-            var existing = schema.getConcreteField(fieldName);
-            if (existing != null && existing.isInternalField()) {
-                continue;
-            }
+                String fieldName = FastMapSearch.toLookupFieldName(field.getName(), fastMapFields.lookupName());
+                // Inheritance: there is a parent that has already made the attribute.
+                var existing = schema.getConcreteField(fieldName);
+                if (existing != null && existing.isInternalField()) {
+                    continue;
+                }
 
-            SDField keyValueField = createFastMapField(field, fieldName, validate);
-            schema.addExtraField(keyValueField);
-            schema.fieldSets().addBuiltInFieldSetItem(BuiltInFieldSets.INTERNAL_FIELDSET_NAME, keyValueField.getName());
+                SDField keyValueField = createFastMapField(field, fastMapFields, fieldName, validate);
+                schema.addExtraField(keyValueField);
+                schema.fieldSets().addBuiltInFieldSetItem(BuiltInFieldSets.INTERNAL_FIELDSET_NAME, keyValueField.getName());
+            }
         }
     }
 
-    /** Returns whether a fast map attribute should be created for the given field. */
-    private boolean shouldCreateFastMapAttribute(SDField field) {
-        return field.hasFastMapSearch() &&
-               (field.getFastMapSearch().isMap() || field.getFastMapSearch().isArrayOfStruct());
+    /** Returns whether a fast map attribute should be created for the given fast map search. */
+    private boolean shouldCreateFastMapAttribute(FastMapSearchFields fastMapFields) {
+        return fastMapFields.isMap() || fastMapFields.isArrayOfStruct();
     }
 
     /**
      * Creates a synthetic attribute for a map, or an array of struct, with fast search. The attribute has data
      * type array of strings since we will do lexical search on the key-value pairs of the map.
      */
-    private SDField createFastMapField(SDField inputField, String fieldName, boolean validate) {
+    private SDField createFastMapField(SDField inputField, FastMapSearchFields fastMapFields, String fieldName, boolean validate) {
         if (validate && (schema.getConcreteField(fieldName) != null || schema.getAttribute(fieldName) != null)) {
             throw newProcessException(schema.getName(), inputField.getName(),
                                       "Incompatible map attribute '" + fieldName + "' already created.");
         }
-
-        FastMapSearchFields fastMapFields = inputField.getFastMapSearch();
 
         SDField field = new SDField(repo, fieldName, DataType.getArray(DataType.STRING));
         Attribute attribute = new Attribute(fieldName, Attribute.Type.STRING, Attribute.CollectionType.ARRAY);

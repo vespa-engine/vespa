@@ -304,6 +304,24 @@ public class CreateFastMapSearchTest {
         }
     }
 
+    /** Each lookup of a field gets its own attribute, with its own key and value. */
+    @Test
+    void requireOneKeyValueFieldPerLookup() throws ParseException {
+        var schema = build(joinLines(entryStruct("string", "int"),
+                                     "field foo type array<entry> {",
+                                     "  indexing: summary",
+                                     "  fast-search map field: lookup { key: mykey value: myvalue }",
+                                     "  fast-search map field: reversed { key: myvalue value: mykey }",
+                                     "}"));
+
+        assertEquals("{ input foo | for_each { get_field mykey . \"\\x7f\" . (get_field myvalue | exhex8encode) } | attribute \"foo$lookup\"; }",
+                     schema.getConcreteField("foo$lookup").getIndexingScript().toString());
+        assertEquals("{ input foo | for_each { (get_field myvalue | to_string) . \"\\x7f\" . get_field mykey } | attribute \"foo$reversed\"; }",
+                     schema.getConcreteField("foo$reversed").getIndexingScript().toString());
+        assertNotNull(keyValueAttribute(schema, "foo"));
+        assertNotNull(schema.getConcreteField("foo$reversed").getAttributes().get("foo$reversed"));
+    }
+
     /**
      * The dollar is what keeps the synthetic name out of reach of schema authors.
      */

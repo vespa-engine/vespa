@@ -20,5 +20,16 @@ schema mapfastsearchbad {
                 value: myvalue
             }
         }
+        field repeated_lookup type array<entry> {
+            indexing: summary
+            fast-search map field: lookup {
+                key: mykey
+                value: myvalue
+            }
+            fast-search map field: lookup {
+                key: myvalue
+                value: mykey
+            }
+        }
     }
 }

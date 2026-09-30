@@ -255,30 +255,30 @@ public class ConvertParsedFields {
         if (parsed.hasNormal()) {
             field.getRanking().setNormal(true);
         }
-        if (parsed.getFastMapSearchName() != null) {
-            convertFastMapSearch(schema, field, parsed);
+        for (var parsedFastMapSearch : parsed.getFastMapSearches()) {
+            convertFastMapSearch(schema, field, parsedFastMapSearch);
         }
     }
 
     /** A lookup name is queried as field.lookupName and is part of the fieldName$lookupName attribute name. */
     private static final Pattern validLookupName = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
 
-    private void convertFastMapSearch(Schema schema, SDField field, ParsedField parsed) {
-        String lookupName = parsed.getFastMapSearchName();
+    private void convertFastMapSearch(Schema schema, SDField field, ParsedField.ParsedFastMapSearch parsed) {
+        String lookupName = parsed.lookupName();
         FastMapSearchFields fastMapFields;
         if (field.getDataType() instanceof MapDataType) {
-            validateMapFieldName(schema, field, parsed.getFastMapKeyField(), FastMapSearchFields.MAP_KEY);
-            validateMapFieldName(schema, field, parsed.getFastMapValueField(), FastMapSearchFields.MAP_VALUE);
+            validateMapFieldName(schema, field, parsed.keyField(), FastMapSearchFields.MAP_KEY);
+            validateMapFieldName(schema, field, parsed.valueField(), FastMapSearchFields.MAP_VALUE);
             fastMapFields = FastMapSearchFields.forMap(field.getDataType(), lookupName);
         } else if (FastMapSearchFields.isArrayOfStruct(field.getDataType())) {
-            if (parsed.getFastMapKeyField() == null || parsed.getFastMapValueField() == null) {
+            if (parsed.keyField() == null || parsed.valueField() == null) {
                 throw fastMapSearchError(schema, field, "'fast-search map field' on an array of struct requires " +
                                                         "'key' and 'value' in its block to name the struct fields to use.");
             }
-            if (parsed.getFastMapKeyField().equals(parsed.getFastMapValueField())) {
+            if (parsed.keyField().equals(parsed.valueField())) {
                 throw fastMapSearchError(schema, field, "'fast-search map field' requires 'key' and 'value' to be different struct fields.");
             }
-            fastMapFields = FastMapSearchFields.forArrayOfStruct(field.getDataType(), lookupName, parsed.getFastMapKeyField(), parsed.getFastMapValueField());
+            fastMapFields = FastMapSearchFields.forArrayOfStruct(field.getDataType(), lookupName, parsed.keyField(), parsed.valueField());
         } else {
             throw fastMapSearchError(schema, field, "'fast-search map field' requires a map or an array of struct field, " +
                                                     "but the type is " + field.getDataType().getName() + ".");
@@ -298,11 +298,18 @@ public class ConvertParsedFields {
         }
         validateFastMapSubtype(schema, field, fastMapFields.keyType(), fastMapFields.keyField(), "key");
         validateFastMapSubtype(schema, field, fastMapFields.valueType(), fastMapFields.valueField(), "value");
+        for (FastMapSearchFields other : field.getFastMapSearches()) {
+            if (other.keyField().equals(fastMapFields.keyField()) && other.valueField().equals(fastMapFields.valueField())) {
+                throw fastMapSearchError(schema, field, "'fast-search map field: " + lookupName + "' has the same key and value as " +
+                                                        "'fast-search map field: " + other.lookupName() + "'.");
+            }
+        }
+        // error on duplicates
         if (!properties.featureFlags().fastMapSearch()) {
             throw fastMapSearchError(schema, field, "'fast-search map field' is an unfinished feature that " +
                                                     "will not be enabled yet. Please remove this property from the field.");
         }
-        field.setFastMapSearch(fastMapFields);
+        field.addFastMapSearch(fastMapFields);
     }
 
     /** Validates the type of the key or value. */

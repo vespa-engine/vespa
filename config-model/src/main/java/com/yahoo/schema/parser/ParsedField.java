@@ -26,9 +26,7 @@ public class ParsedField extends ParsedBlock {
     private int overrideId = 0;
     private boolean isLiteral = false;
     private boolean isNormal = false;
-    private String fastMapSearchName = null;
-    private String fastMapKeyField = null;
-    private String fastMapValueField = null;
+    private final List<ParsedFastMapSearch> fastMapSearches = new ArrayList<>();
     private Integer weight;
     private String normalizing = null;
     private String searchLinguisticsProfile;
@@ -58,9 +56,7 @@ public class ParsedField extends ParsedBlock {
     boolean hasFilter() { return this.isFilter; }
     boolean hasLiteral() { return this.isLiteral; }
     boolean hasNormal() { return this.isNormal; }
-    String getFastMapSearchName() { return this.fastMapSearchName; }
-    String getFastMapKeyField() { return this.fastMapKeyField; }
-    String getFastMapValueField() { return this.fastMapValueField; }
+    List<ParsedFastMapSearch> getFastMapSearches() { return List.copyOf(fastMapSearches); }
     boolean hasIdOverride() { return overrideId != 0; }
     int idOverride() { return overrideId; }
     List<DictionaryOption> getDictionaryOptions() { return List.copyOf(dictionaryOptions); }
@@ -132,20 +128,20 @@ public class ParsedField extends ParsedBlock {
     }
 
     public void setBolding(boolean value) { this.hasBolding = value; }
-    public void setFastMapSearchName(String value) {
-        if (this.fastMapSearchName != null)
-            throw new IllegalArgumentException("'fast-search map field' is given more than once in field '" + name() + "'.");
-        this.fastMapSearchName = value;
-    }
-    public void setFastMapKeyField(String value) { this.fastMapKeyField = setOnce("key", this.fastMapKeyField, value); }
-    public void setFastMapValueField(String value) { this.fastMapValueField = setOnce("value", this.fastMapValueField, value); }
-    public void setFilter(boolean value) { this.isFilter = value; }
 
-    private String setOnce(String setting, String current, String value) {
-        if (current != null)
-            throw new IllegalArgumentException("'" + setting + "' is given more than once in 'fast-search map field' of field '" + name() + "'.");
-        return value;
+    /** Adds a 'fast-search map field' with the given lookup name, and returns it so that its key and value may be set. */
+    public ParsedFastMapSearch addFastMapSearch(String lookupName) {
+        for (ParsedFastMapSearch existing : fastMapSearches) {
+            if (existing.lookupName().equals(lookupName)) {
+                throw new IllegalArgumentException("'fast-search map field: " + lookupName + "' is given more than once in field '" + name() + "'.");
+            }
+        }
+        var fastMapSearch = new ParsedFastMapSearch(name(), lookupName);
+        fastMapSearches.add(fastMapSearch);
+        return fastMapSearch;
     }
+
+    public void setFilter(boolean value) { this.isFilter = value; }
 
     public void setId(int id) { this.overrideId = id; }
     public void setLiteral(boolean value) { this.isLiteral = value; }
@@ -192,6 +188,35 @@ public class ParsedField extends ParsedBlock {
         String fieldName = structField.name();
         verifyThat(! structFields.containsKey(fieldName), "already has struct-field", fieldName);
         structFields.put(fieldName, structField);
+    }
+
+    /** A 'fast-search map field' of a field: its lookup name, and the key and value struct fields, if given. */
+    public static class ParsedFastMapSearch {
+
+        private final String fieldName;
+        private final String lookupName;
+        private String keyField = null;
+        private String valueField = null;
+
+        ParsedFastMapSearch(String fieldName, String lookupName) {
+            this.fieldName = fieldName;
+            this.lookupName = lookupName;
+        }
+
+        public String lookupName() { return lookupName; }
+        String keyField() { return keyField; }
+        String valueField() { return valueField; }
+
+        public void setKeyField(String value) { this.keyField = setOnce("key", this.keyField, value); }
+        public void setValueField(String value) { this.valueField = setOnce("value", this.valueField, value); }
+
+        private String setOnce(String setting, String current, String value) {
+            if (current != null) {
+                throw new IllegalArgumentException("'" + setting + "' is given more than once in 'fast-search map field' of field '" + fieldName + "'.");
+            }
+            return value;
+        }
+
     }
 
 }

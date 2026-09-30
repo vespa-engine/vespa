@@ -6,6 +6,8 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,12 +39,23 @@ public class SchemaInfoTest {
                                                                                                    .lookupName("arraylookup")
                                                                                                    .keyField("mykey").keyType("string")
                                                                                                    .valueField("myvalue").valueType("long")));
+        schemaConfig.field(new SchemaInfoConfig.Schema.Field.Builder().name("twolookups").type("array<entry>")
+                                                                      .index(false).attribute(false).bitPacked(false)
+                                                                      .fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
+                                                                                                   .lookupName("lookup")
+                                                                                                   .keyField("mykey").keyType("string")
+                                                                                                   .valueField("myvalue").valueType("long"))
+                                                                      .fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
+                                                                                                   .lookupName("reversed")
+                                                                                                   .keyField("myvalue").keyType("long")
+                                                                                                   .valueField("mykey").valueType("string")));
         var schema = SchemaInfoConfigurer.toSchemas(new SchemaInfoConfig.Builder().schema(schemaConfig).build()).get(0);
 
         assertFalse(schema.fields().get("plain").hasFastMapSearch());
-        assertTrue(schema.fields().get("plain").fastMapSearch().isEmpty());
+        assertTrue(schema.fields().get("plain").fastMapSearches().isEmpty());
+        assertTrue(schema.fields().get("plain").fastMapSearch("maplookup").isEmpty());
 
-        var fastMap = schema.fields().get("fastmap").fastMapSearch().orElseThrow();
+        var fastMap = schema.fields().get("fastmap").fastMapSearch("maplookup").orElseThrow();
         assertEquals("maplookup", fastMap.lookupName());
         assertEquals("key", fastMap.keyField());
         assertEquals(Field.Type.Kind.STRING, fastMap.keyType().kind());
@@ -50,7 +63,8 @@ public class SchemaInfoTest {
         assertEquals(Field.Type.Kind.INT, fastMap.valueType().kind());
 
         assertTrue(schema.fields().get("fastarray").hasFastMapSearch());
-        var fastArray = schema.fields().get("fastarray").fastMapSearch().orElseThrow();
+        var fastArray = schema.fields().get("fastarray").fastMapSearch("arraylookup").orElseThrow();
+        assertTrue(schema.fields().get("fastarray").fastMapSearch("other").isEmpty());
         assertEquals("arraylookup", fastArray.lookupName());
         assertEquals("mykey", fastArray.keyField());
         assertEquals(Field.Type.Kind.STRING, fastArray.keyType().kind());
@@ -59,6 +73,24 @@ public class SchemaInfoTest {
         assertEquals(new Field.FastMapSearchFields("arraylookup", "mykey", Field.Type.from("string"), "myvalue", Field.Type.from("long")),
                      fastArray);
         assertEquals(Field.FastMapSearchFields.of("maplookup", (Field.MapFieldType)Field.Type.from("map<string,int>")), fastMap);
+
+        var twoLookups = schema.fields().get("twolookups");
+        assertEquals(List.of(new Field.FastMapSearchFields("lookup", "mykey", Field.Type.from("string"), "myvalue", Field.Type.from("long")),
+                             new Field.FastMapSearchFields("reversed", "myvalue", Field.Type.from("long"), "mykey", Field.Type.from("string"))),
+                     twoLookups.fastMapSearches());
+        assertEquals("reversed", twoLookups.fastMapSearch("reversed").orElseThrow().lookupName());
+    }
+
+    @Test
+    void testRepeatedLookupNameIsRejected() {
+        var builder = new Field.Builder("m", "map<string,string>").addFastMapSearch("lookup");
+        try {
+            builder.addFastMapSearch("lookup");
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Field m already has a fast map search named 'lookup'", e.getMessage());
+        }
     }
 
     @Test

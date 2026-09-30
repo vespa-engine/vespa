@@ -3,8 +3,10 @@ package com.yahoo.search.schema;
 
 import com.yahoo.tensor.TensorType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -21,7 +23,7 @@ public class Field implements FieldInfo {
     private final boolean isAttribute;
     private final boolean isIndex;
     private final boolean bitPacked;
-    private final FastMapSearchFields fastMapSearch;
+    private final List<FastMapSearchFields> fastMapSearches;
     private final Set<String> aliases;
 
     public Field(Builder builder) {
@@ -30,7 +32,7 @@ public class Field implements FieldInfo {
         this.isAttribute = builder.isAttribute;
         this.isIndex = builder.isIndex;
         this.bitPacked = builder.isBitPacked;
-        this.fastMapSearch = builder.fastMapSearch;
+        this.fastMapSearches = List.copyOf(builder.fastMapSearches);
         this.aliases = Set.copyOf(builder.aliases);
     }
 
@@ -52,12 +54,17 @@ public class Field implements FieldInfo {
 
     @Override
     public boolean hasFastMapSearch() {
-        return fastMapSearch != null;
+        return ! fastMapSearches.isEmpty();
     }
 
-    /** Returns the key and value fields used by fast map search, if this field has fast map search enabled. */
-    public Optional<FastMapSearchFields> fastMapSearch() {
-        return Optional.ofNullable(fastMapSearch);
+    /** Returns the key and value fields of each fast map search of this field, or an empty list if it has none. */
+    public List<FastMapSearchFields> fastMapSearches() {
+        return fastMapSearches;
+    }
+
+    /** Returns the key and value fields of the fast map search with the given lookup name, if this field has it. */
+    public Optional<FastMapSearchFields> fastMapSearch(String lookupName) {
+        return fastMapSearches.stream().filter(fastMap -> fastMap.lookupName().equals(lookupName)).findFirst();
     }
 
     @Override
@@ -67,14 +74,14 @@ public class Field implements FieldInfo {
         if ( ! this.type.equals(other.type)) return false;
         if ( this.isAttribute != other.isAttribute) return false;
         if ( this.isIndex != other.isIndex) return false;
-        if ( ! Objects.equals(this.fastMapSearch, other.fastMapSearch)) return false;
+        if ( ! this.fastMapSearches.equals(other.fastMapSearches)) return false;
         if ( ! this.aliases.equals(other.aliases)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, isAttribute, isIndex, fastMapSearch, aliases);
+        return Objects.hash(name, type, isAttribute, isIndex, fastMapSearches, aliases);
     }
 
     @Override
@@ -256,7 +263,7 @@ public class Field implements FieldInfo {
         private boolean isAttribute;
         private boolean isIndex;
         private boolean isBitPacked;
-        private FastMapSearchFields fastMapSearch;
+        private final List<FastMapSearchFields> fastMapSearches = new ArrayList<>();
 
         public Builder(String name, String typeString) {
             this.name = name;
@@ -283,24 +290,23 @@ public class Field implements FieldInfo {
             return this;
         }
 
-        /**
-         * Enables fast map search with the given lookup field name on this field, which must be a map,
-         * or disables it if the name is null.
-         */
-        public Builder setFastMapSearch(String lookupName) {
-            if (lookupName == null) {
-                this.fastMapSearch = null;
-            } else if (type instanceof MapFieldType mapType) {
-                this.fastMapSearch = FastMapSearchFields.of(lookupName, mapType);
-            } else {
-                throw new IllegalArgumentException("Fast map search on " + name + " requires the key and value " +
-                                                   "fields, since it is not a map but " + type);
+        /** Adds a fast map search with the given lookup field name to this field, which must be a map. */
+        public Builder addFastMapSearch(String lookupName) {
+            if (type instanceof MapFieldType mapType) {
+                return addFastMapSearch(FastMapSearchFields.of(lookupName, mapType));
             }
-            return this;
+            throw new IllegalArgumentException("Fast map search on " + name + " requires the key and value " +
+                                               "fields, since it is not a map but " + type);
         }
 
-        public Builder setFastMapSearch(FastMapSearchFields fastMapSearch) {
-            this.fastMapSearch = fastMapSearch;
+        /** Adds a fast map search to this field. A field may have several, with different lookup names. */
+        public Builder addFastMapSearch(FastMapSearchFields fastMapSearch) {
+            Objects.requireNonNull(fastMapSearch);
+            if (fastMapSearches.stream().anyMatch(other -> other.lookupName().equals(fastMapSearch.lookupName()))) {
+                throw new IllegalArgumentException("Field " + name + " already has a fast map search named '" +
+                                                   fastMapSearch.lookupName() + "'");
+            }
+            this.fastMapSearches.add(fastMapSearch);
             return this;
         }
 
