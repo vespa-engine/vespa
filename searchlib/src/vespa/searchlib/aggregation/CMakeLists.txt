@@ -17,7 +17,6 @@ vespa_add_library(searchlib_aggregation OBJECT
     maxaggregationresult.cpp
     minaggregationresult.cpp
     quantile_aggregation_result.cpp
-    rawrank.cpp
     standarddeviationaggregationresult.cpp
     sumaggregationresult.cpp
     vdshit.cpp

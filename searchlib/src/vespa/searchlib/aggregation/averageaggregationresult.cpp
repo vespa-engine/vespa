@@ -40,7 +40,7 @@ void AverageAggregationResult::initForUnitTest(const ResultNode& result) {
 }
 
 void AverageAggregationResult::onMerge(const AggregationResult& b) {
-    const auto& avg(static_cast<const AverageAggregationResult&>(b));
+    const auto& avg = static_cast<const AverageAggregationResult&>(b);
     _sum->add(*avg._sum);
     _count += avg._count;
 }
