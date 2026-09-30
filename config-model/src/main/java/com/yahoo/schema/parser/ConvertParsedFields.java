@@ -298,6 +298,12 @@ public class ConvertParsedFields {
         }
         validateFastMapSubtype(schema, field, fastMapFields.keyType(), fastMapFields.keyField(), "key");
         validateFastMapSubtype(schema, field, fastMapFields.valueType(), fastMapFields.valueField(), "value");
+        for (FastMapSearchFields other : field.getFastMapSearches()) {
+            if (other.keyField().equals(fastMapFields.keyField()) && other.valueField().equals(fastMapFields.valueField())) {
+                throw fastMapSearchError(schema, field, "'fast-search map field: " + lookupName + "' has the same key and value as " +
+                                                        "'fast-search map field: " + other.lookupName() + "'.");
+            }
+        }
         // error on duplicates
         if (!properties.featureFlags().fastMapSearch()) {
             throw fastMapSearchError(schema, field, "'fast-search map field' is an unfinished feature that " +

@@ -72,6 +72,24 @@ public class MapFastSearchTestCase {
                    "Unexpected message: " + exception.getMessage());
     }
 
+    /** A map has one key and one value, so a second lookup on it can only repeat the first. */
+    @Test
+    void requireLookupsWithTheSameKeyAndValueAreRejected() throws ParseException {
+        assertRejected(joinLines("field m type map<string, string> {",
+                                 "  fast-search map field: lookup",
+                                 "  fast-search map field: other",
+                                 "}"), true,
+                       "For schema 'test', field 'm': 'fast-search map field: other' has the same key and value as " +
+                       "'fast-search map field: lookup'.");
+        assertRejectedWithEntry("string", "string",
+                                joinLines("field m type array<entry> {",
+                                          "  fast-search map field: lookup { key: mykey value: myvalue }",
+                                          "  fast-search map field: other { key: mykey value: myvalue }",
+                                          "}"), true,
+                                "For schema 'test', field 'm': 'fast-search map field: other' has the same key and value as " +
+                                "'fast-search map field: lookup'.");
+    }
+
     @Test
     void requireMultipleLookupsOnAnArrayOfStruct() throws ParseException {
         var field = fieldIn(build(getSd(joinLines("struct entry {",
