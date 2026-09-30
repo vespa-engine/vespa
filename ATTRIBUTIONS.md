@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-09-28
+Last updated: 2026-09-30
 
 ---
 
@@ -174,7 +174,7 @@ Last updated: 2026-09-28
 
 ---
 
-## brace-expansion 2.1.4 — MIT
+## brace-expansion 2.1.7 — MIT
 
 - Homepage: <https://github.com/juliangruber/brace-expansion>
 - Copyright 2013 Julian Gruber <julian@juliangruber.com>
