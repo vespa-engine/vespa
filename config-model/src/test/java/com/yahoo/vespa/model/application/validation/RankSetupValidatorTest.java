@@ -57,7 +57,7 @@ public class RankSetupValidatorTest {
         Map<String, String> env = RankSetupValidator.createEnvForEnablingLandlock(context, schemaDir);
 
         assertEquals("true", env.get("VESPA_ENABLE_LANDLOCK"));
-        assertEquals("/dev,ro:/sys,ro:/proc/self,ro:" + schemaDir + ",ro", env.get("VESPA_LANDLOCK_PATHS"));
+        assertEquals("/dev,ro:/sys,ro:/proc/self,ro:/proc/cpuinfo,ro:" + schemaDir + ",ro", env.get("VESPA_LANDLOCK_PATHS"));
     }
 
     @Test

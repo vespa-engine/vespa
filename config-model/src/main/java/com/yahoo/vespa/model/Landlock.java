@@ -18,7 +18,7 @@ public class Landlock {
             return Map.of();
         }
 
-        StringBuilder paths = new StringBuilder("/dev,ro:/sys,ro:/proc/self,ro");
+        StringBuilder paths = new StringBuilder("/dev,ro:/sys,ro:/proc/self,ro:/proc/cpuinfo,ro");
         for (String path : readOnlyPaths) {
             paths.append(":").append(path).append(",ro");
         }
