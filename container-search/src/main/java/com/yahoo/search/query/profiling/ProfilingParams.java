@@ -32,6 +32,12 @@ public class ProfilingParams {
         return type;
     }
 
+    /**
+     * @deprecated the returned type is named {@value #PROFILING_PARAMS} and must not be used when
+     * registering a part-specific field. Each part needs its own type, whose id equals the part
+     * field name; call {@code createArgumentType(String)} instead.
+     */
+    @Deprecated // TODO: Remove on Vespa 9
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     private int depth = 0;
