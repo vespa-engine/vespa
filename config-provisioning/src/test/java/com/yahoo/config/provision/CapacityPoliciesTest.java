@@ -4,6 +4,8 @@ package com.yahoo.config.provision;
 import com.yahoo.component.Version;
 import org.junit.jupiter.api.Test;
 
+import java.util.stream.IntStream;
+
 import static com.yahoo.config.provision.NodeResources.Architecture.arm64;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -189,7 +191,7 @@ public class CapacityPoliciesTest {
         var cluster = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), capacity, Version.emptyVersion)
                                  .exclusive(false)
                                  .build();
-        var result = capacityPolicies.applyOn(capacity, false);
+        var result = capacityPolicies.applyOn(cluster);
 
         assertEquals(0.1, result.minResources().nodeResources().vcpu(), 0.01, "CPU should be capped to 0.1 in dev when cpuCapInDev is false");
         assertEquals(0.1, result.minResources().nodeResources().bandwidthGbps(), 0.01, "Bandwidth should be capped to 0.1 in dev when cpuCapInDev is false");
@@ -206,7 +208,7 @@ public class CapacityPoliciesTest {
         var cluster = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), capacity, Version.emptyVersion)
                                  .exclusive(false)
                                  .build();
-        var result = capacityPolicies.applyOn(capacity, false);
+        var result = capacityPolicies.applyOn(cluster);
 
         assertEquals(4, result.minResources().nodeResources().vcpu(), 0.01, "CPU should not be capped in dev when cpuCapInDev is true");
         assertEquals(0.1, result.minResources().nodeResources().bandwidthGbps(), 0.01, "Bandwidth should still be capped to 0.1 in dev");
@@ -229,6 +231,41 @@ public class CapacityPoliciesTest {
 
         assertEquals(128, specifiedResources.memoryGiB(), 0.01);
         assertEquals(300, specifiedResources.diskGb(), 0.01, "Explicitly specified disk should be preserved even when insufficient");
+    }
+
+    @Test
+    void testDevDownscalesToOneNodePerAvailabilityZone() {
+        var container = new DevCluster(ClusterSpec.Type.container, 6, 1);
+        assertEquals(1, container.inZones(1).nodes());
+        assertEquals(2, container.inZones(2).nodes());
+        assertEquals(3, container.inZones(3).nodes());
+        assertEquals(1, container.inZones(3).groups());
+
+        var content = new DevCluster(ClusterSpec.Type.content, 12, 4);
+        assertEquals(1, content.inZones(1).nodes());
+        assertEquals(1, content.inZones(1).groups());
+        assertEquals(2, content.inZones(2).nodes());
+        assertEquals(2, content.inZones(2).groups());
+        assertEquals(4, content.inZones(4).nodes());
+        assertEquals(4, content.inZones(4).groups());
+    }
+
+    private static class DevCluster {
+
+        private final CapacityPolicies policies = new CapacityPolicies(devZone, new Exclusivity(devZone, SharedHosts.empty()),
+                ApplicationId.defaultId(), new CapacityPolicies.Tuning(arm64, 0.0, 0));
+        private final ClusterSpec cluster;
+
+        DevCluster(ClusterSpec.Type type, int nodes, int groups) {
+            var capacity = Capacity.from(new ClusterResources(nodes, groups, new NodeResources(4, 16, 50, 0.3)));
+            cluster = ClusterSpec.builder(type, ClusterSpec.Id.from("cluster1"), capacity, new Version("8")).build();
+        }
+
+        ClusterResources inZones(int count) {
+            var zones = IntStream.rangeClosed(1, count).mapToObj(i -> AzName.from("az" + i)).toList();
+            return policies.applyOn(cluster.withAvailabilityZones(zones)).minResources();
+        }
+
     }
 
 }
