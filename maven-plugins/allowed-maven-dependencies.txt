@@ -11,7 +11,7 @@ com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.ve
 com.google.guava:failureaccess:${failureaccess.vespa.version}
 com.google.guava:guava:${guava.vespa.version}
 com.google.inject:guice:5.1.0:classes
-com.google.j2objc:j2objc-annotations:${j2objc-annotations.vespa.version}
+com.google.j2objc:j2objc-annotations:3.0.0
 commons-codec:commons-codec:${commons-codec.vespa.version}
 commons-io:commons-io:${commons-io.vespa.version}
 javax.inject:javax.inject:${javax.inject.vespa.version}
