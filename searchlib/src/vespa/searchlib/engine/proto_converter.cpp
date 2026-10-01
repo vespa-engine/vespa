@@ -103,6 +103,9 @@ void ProtoConverter::search_request_from_proto(const ProtoSearchRequest& proto, 
     if (int32_t value = proto.profiling().second_phase().depth(); value != 0) {
         request.trace().second_phase_profile_depth(value);
     }
+    if (int32_t value = proto.profiling().sort_features().depth(); value != 0) {
+        request.trace().sort_features_profile_depth(value);
+    }
     request.sortSpec = make_sort_spec(proto.sorting());
     request.sessionId.assign(proto.session_key().begin(), proto.session_key().end());
     request.propertiesMap.lookupCreate(MapNames::MATCH).add("documentdb.searchdoctype", proto.document_type());

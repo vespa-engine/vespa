@@ -33,6 +33,7 @@ message Profiling {
     ProfilingParams match = 1;
     ProfilingParams first_phase = 2;
     ProfilingParams second_phase = 3;
+    ProfilingParams sort_features = 4;
 }
 
 message ProfilingParams {

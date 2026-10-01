@@ -77,6 +77,7 @@ private:
     std::unique_ptr<vespalib::ExecutionProfiler> match_profiler;
     std::unique_ptr<vespalib::ExecutionProfiler> first_phase_profiler;
     std::unique_ptr<vespalib::ExecutionProfiler> second_phase_profiler;
+    std::unique_ptr<vespalib::ExecutionProfiler> sort_features_profiler;
     UniqueIssues                                 my_issues;
 
     class Context {

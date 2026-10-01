@@ -143,15 +143,21 @@ public:
         _second_phase_profile_depth = depth;
         return *this;
     }
+    Trace& sort_features_profile_depth(int32_t depth) {
+        _sort_features_profile_depth = depth;
+        return *this;
+    }
     Trace& profile_depth(int32_t depth) {
         match_profile_depth(depth);
         first_phase_profile_depth(depth);
         second_phase_profile_depth(depth);
+        sort_features_profile_depth(depth);
         return *this;
     }
     int32_t match_profile_depth() const { return _match_profile_depth; }
     int32_t first_phase_profile_depth() const { return _first_phase_profile_depth; }
     int32_t second_phase_profile_depth() const { return _second_phase_profile_depth; }
+    int32_t sort_features_profile_depth() const { return _sort_features_profile_depth; }
     Trace make_trace() const { return Trace(*this, ctor_tag()); }
     std::unique_ptr<Trace> make_trace_up() const { return std::make_unique<Trace>(*this, ctor_tag()); }
     LazyTraceInserter make_inserter(vespalib::StaticStringView name) { return {*this, name}; }
@@ -186,6 +192,7 @@ private:
     int32_t                                  _match_profile_depth;
     int32_t                                  _first_phase_profile_depth;
     int32_t                                  _second_phase_profile_depth;
+    int32_t                                  _sort_features_profile_depth;
 };
 
 } // namespace search::engine
