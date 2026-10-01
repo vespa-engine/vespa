@@ -2637,4 +2637,61 @@ public class DeploymentSpecTest {
                      regionalZone.availabilityZones());
     }
 
+    @Test
+    public void devAvailabilityZones() {
+        String r =
+                """
+                <deployment version='1.0'>
+                  <instance id='default'>
+                    <prod>
+                      <region name='gcp-us-central1'>
+                        <availability-zone>us-central1-a</availability-zone>
+                        <availability-zone>us-central1-b</availability-zone>
+                      </region>
+                    </prod>
+                  </instance>
+                  <dev>
+                    <region name='gcp-us-central1'>
+                      <availability-zone>us-central1-c</availability-zone>
+                    </region>
+                    <region name='aws-us-east-1'>
+                      <availability-zone>use1-az1</availability-zone>
+                    </region>
+                  </dev>
+                </deployment>
+                """;
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(Map.of(RegionName.from("gcp-us-central1"), List.of(AzName.from("us-central1-c")),
+                            RegionName.from("aws-us-east-1"), List.of(AzName.from("use1-az1"))),
+                     spec.devSpec().availabilityZones());
+        assertEquals(List.of(AzName.from("us-central1-a"), AzName.from("us-central1-b")),
+                     spec.requireInstance("default").zones().get(0).availabilityZones());
+
+        assertEquals("At least one <availability-zone> must be specified for region 'gcp-us-central1' in <dev>",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("""
+                                                               <deployment version='1.0'>
+                                                                 <dev>
+                                                                   <region name='gcp-us-central1'/>
+                                                                 </dev>
+                                                               </deployment>
+                                                               """))
+                             .getMessage());
+        assertEquals("Region 'gcp-us-central1' is declared multiple times in <dev>",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("""
+                                                               <deployment version='1.0'>
+                                                                 <dev>
+                                                                   <region name='gcp-us-central1'>
+                                                                     <availability-zone>us-central1-a</availability-zone>
+                                                                   </region>
+                                                                   <region name='gcp-us-central1'>
+                                                                     <availability-zone>us-central1-b</availability-zone>
+                                                                   </region>
+                                                                 </dev>
+                                                               </deployment>
+                                                               """))
+                             .getMessage());
+    }
+
 }

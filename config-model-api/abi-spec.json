@@ -414,7 +414,8 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.provision.Tags, com.yahoo.config.provision.CloudResourceTags, java.util.Map)",
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.provision.Tags, com.yahoo.config.provision.CloudResourceTags, java.util.Map, java.util.Map)",
+      "public java.util.Map availabilityZones()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -576,6 +577,7 @@
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Zone, com.yahoo.config.provision.ClusterSpec$Id, boolean)",
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId, com.yahoo.config.provision.ClusterSpec$Id, boolean)",
       "public java.util.List availabilityZones(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Zone)",
+      "public com.yahoo.config.application.api.DeploymentSpec$DevSpec devSpec()",
       "public java.lang.String xmlForm()",
       "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",
