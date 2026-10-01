@@ -63,7 +63,8 @@ Trace::Trace(const Trace& parent, ctor_tag)
       _level(parent._level),
       _match_profile_depth(parent._match_profile_depth),
       _first_phase_profile_depth(parent._first_phase_profile_depth),
-      _second_phase_profile_depth(parent._second_phase_profile_depth) {
+      _second_phase_profile_depth(parent._second_phase_profile_depth),
+      _sort_features_profile_depth(parent._sort_features_profile_depth) {
 }
 
 Trace::Trace(const RelativeTime& relativeTime, uint32_t level)
@@ -74,7 +75,8 @@ Trace::Trace(const RelativeTime& relativeTime, uint32_t level)
       _level(level),
       _match_profile_depth(0),
       _first_phase_profile_depth(0),
-      _second_phase_profile_depth(0) {
+      _second_phase_profile_depth(0),
+      _sort_features_profile_depth(0) {
 }
 
 void Trace::start(int level, bool useUTC) {
