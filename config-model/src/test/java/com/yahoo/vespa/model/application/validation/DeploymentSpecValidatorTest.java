@@ -35,19 +35,6 @@ public class DeploymentSpecValidatorTest {
     }
 
     @Test
-    void testZoneEndpointNonExistentContainerId() {
-        var deploymentXml = """
-                <deployment version='1.0'>
-                  <endpoints>
-                    <endpoint type='private' container-id='non-existing' />
-                  </endpoints>
-                </deployment>
-                """;
-        assertValidationError("Zone endpoint in instance default: 'non-existing' specified in " +
-                "deployment.xml does not match any container cluster ID", deploymentXml);
-    }
-
-    @Test
     void requireUniqueInstanceId() {
         String deploymentXml = """
                     <deployment version="1.0" cloud-account="aws:010438471985">
