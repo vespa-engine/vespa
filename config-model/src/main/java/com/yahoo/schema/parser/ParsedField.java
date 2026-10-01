@@ -129,11 +129,11 @@ public class ParsedField extends ParsedBlock {
 
     public void setBolding(boolean value) { this.hasBolding = value; }
 
-    /** Adds a 'fast-search map field' with the given lookup name, and returns it so that its key and value may be set. */
+    /** Adds a 'fast-search-map-field' with the given lookup name, and returns it so that its key and value may be set. */
     public ParsedFastMapSearch addFastMapSearch(String lookupName) {
         for (ParsedFastMapSearch existing : fastMapSearches) {
             if (existing.lookupName().equals(lookupName)) {
-                throw new IllegalArgumentException("'fast-search map field: " + lookupName + "' is given more than once in field '" + name() + "'.");
+                throw new IllegalArgumentException("'fast-search-map-field " + lookupName + "' is given more than once in field '" + name() + "'.");
             }
         }
         var fastMapSearch = new ParsedFastMapSearch(name(), lookupName);
@@ -190,7 +190,7 @@ public class ParsedField extends ParsedBlock {
         structFields.put(fieldName, structField);
     }
 
-    /** A 'fast-search map field' of a field: its lookup name, and the key and value struct fields, if given. */
+    /** A 'fast-search-map-field' of a field: its lookup name, and the key and value struct fields, if given. */
     public static class ParsedFastMapSearch {
 
         private final String fieldName;
@@ -212,7 +212,7 @@ public class ParsedField extends ParsedBlock {
 
         private String setOnce(String setting, String current, String value) {
             if (current != null) {
-                throw new IllegalArgumentException("'" + setting + "' is given more than once in 'fast-search map field' of field '" + fieldName + "'.");
+                throw new IllegalArgumentException("'" + setting + "' is given more than once in 'fast-search-map-field' of field '" + fieldName + "'.");
             }
             return value;
         }

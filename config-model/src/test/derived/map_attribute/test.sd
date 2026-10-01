@@ -18,7 +18,7 @@ schema test {
       }
     }  
     field fast_map type map<string, int> {
-      fast-search map field: fast_lookup
+      fast-search-map-field fast_lookup
     }
   }
 }

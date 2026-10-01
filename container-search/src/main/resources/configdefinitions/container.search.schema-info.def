@@ -11,9 +11,9 @@ schema[].field[].alias[] string
 schema[].field[].attribute bool
 schema[].field[].index bool
 schema[].field[].bitPacked bool
-## Present (with a single entry) if this field has fast map search, i.e. does 'fast-search map field',
+## Present (with a single entry) if this field has fast map search, i.e. does 'fast-search-map-field',
 ## either on a map, or on an array of struct with the key and value struct fields given here
-## The name given to the lookup field in 'fast-search map field'
+## The name given to the lookup field in 'fast-search-map-field'
 schema[].field[].fastMapSearchFields[].lookupName string default=""
 schema[].field[].fastMapSearchFields[].keyField string default="key"
 schema[].field[].fastMapSearchFields[].keyType string

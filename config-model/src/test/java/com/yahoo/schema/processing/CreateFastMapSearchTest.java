@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Tests the synthetic key-value attribute created for map fields with 'fast-search map field'.
+ * Tests the synthetic key-value attribute created for map fields with 'fast-search-map-field'.
  *
  * @author johsol
  */
@@ -310,8 +310,8 @@ public class CreateFastMapSearchTest {
         var schema = build(joinLines(entryStruct("string", "int"),
                                      "field foo type array<entry> {",
                                      "  indexing: summary",
-                                     "  fast-search map field: lookup { key: mykey value: myvalue }",
-                                     "  fast-search map field: reversed { key: myvalue value: mykey }",
+                                     "  fast-search-map-field lookup { key: mykey value: myvalue }",
+                                     "  fast-search-map-field reversed { key: myvalue value: mykey }",
                                      "}"));
 
         assertEquals("{ input foo | for_each { get_field mykey . \"\\x7f\" . (get_field myvalue | exhex8encode) } | attribute \"foo$lookup\"; }",
@@ -393,7 +393,7 @@ public class CreateFastMapSearchTest {
     private static String casedFastSearchMap(String name, String keyType, String valueType, boolean casedKey, boolean casedValue) {
         return joinLines("field " + name + " type map<" + keyType + ", " + valueType + "> {",
                          "  indexing: summary",
-                         "  fast-search map field: lookup",
+                         "  fast-search-map-field lookup",
                          "  struct-field key {",
                          "    indexing: attribute",
                          "    match: " + (casedKey ? "cased" : "uncased"),
@@ -416,7 +416,7 @@ public class CreateFastMapSearchTest {
         return joinLines(entryStruct(keyType, valueType),
                          "field " + name + " type array<entry> {",
                          "  indexing: summary",
-                         "  fast-search map field: lookup {",
+                         "  fast-search-map-field lookup {",
                          "    key: mykey",
                          "    value: myvalue",
                          "  }",
@@ -427,7 +427,7 @@ public class CreateFastMapSearchTest {
         return joinLines(entryStruct("string", "string"),
                          "field " + name + " type array<entry> {",
                          "  indexing: summary",
-                         "  fast-search map field: lookup {",
+                         "  fast-search-map-field lookup {",
                          "    key: mykey",
                          "    value: myvalue",
                          "  }",
@@ -451,7 +451,7 @@ public class CreateFastMapSearchTest {
     private static String fastSearchMap(String name, String keyType, String valueType) {
         return joinLines("field " + name + " type map<" + keyType + ", " + valueType + "> {",
                          "  indexing: summary",
-                         "  fast-search map field: lookup",
+                         "  fast-search-map-field lookup",
                          "}");
     }
 

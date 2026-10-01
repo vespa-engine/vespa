@@ -6,7 +6,7 @@ schema mapfastsearchbad {
         }
         field unknown_setting type array<entry> {
             indexing: summary
-            fast-search map field: lookup {
+            fast-search-map-field lookup {
                 foo: mykey
                 key: mykey
                 value: myvalue
@@ -14,7 +14,7 @@ schema mapfastsearchbad {
         }
         field repeated_key type array<entry> {
             indexing: summary
-            fast-search map field: lookup {
+            fast-search-map-field lookup {
                 key: mykey
                 key: myvalue
                 value: myvalue
@@ -22,11 +22,11 @@ schema mapfastsearchbad {
         }
         field repeated_lookup type array<entry> {
             indexing: summary
-            fast-search map field: lookup {
+            fast-search-map-field lookup {
                 key: mykey
                 value: myvalue
             }
-            fast-search map field: lookup {
+            fast-search-map-field lookup {
                 key: myvalue
                 value: mykey
             }

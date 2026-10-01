@@ -33,7 +33,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 
 /**
- * Adds a "fieldName$lookupName" attribute to maps, and arrays of struct used as maps, for each 'fast-search map field'.
+ * Adds a "fieldName$lookupName" attribute to maps, and arrays of struct used as maps, for each 'fast-search-map-field'.
  *
  * The attribute holds one string per map entry or array element, on the form key + separator + value,
  * so that a key-value pair can be matched with a single lexical lookup.
