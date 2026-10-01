@@ -19,7 +19,7 @@ public interface FieldInfo {
     /** Returns whether this field is index(es), i.e. does indexing: index. */
     boolean isIndex();
 
-    /** Returns whether this field has fast map search enabled, i.e. has a 'fast-search map field'. */
+    /** Returns whether this field has fast map search enabled, i.e. has a 'fast-search-map-field'. */
     boolean hasFastMapSearch();
 
 }

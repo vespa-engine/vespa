@@ -94,7 +94,6 @@ class SchemaSemanticTokenConfig {
         add(TokenType.LINGUISTICS);
         add(TokenType.LOWER_BOUND);
         add(TokenType.MACRO);
-        add(TokenType.MAP);
         add(TokenType.MATCH);
         add(TokenType.MATCH_FEATURES);
         add(TokenType.MATCH_PHASE);
@@ -144,6 +143,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.DISTANCE_METRIC);
         add(TokenType.FAST_ACCESS);
         add(TokenType.FAST_SEARCH);
+        add(TokenType.FAST_SEARCH_MAP_FIELD);
         add(TokenType.FAST_RANK);
         add(TokenType.PAGED);
         add(TokenType.MUTABLE);

@@ -533,6 +533,7 @@ TOKEN :
 | < PAGED: "paged" >
 | < FAST_RANK: "fast-rank" >
 | < FAST_SEARCH: "fast-search" >
+| < FAST_SEARCH_MAP_FIELD: "fast-search-map-field" >
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
@@ -1408,7 +1409,7 @@ void weightedsetBody(ParsedType type) : { }
 ;
 
 /**
- * This rule consumes a fast-search map field statement of a field element, which names the lookup
+ * This rule consumes a fast-search-map-field statement of a field element, which names the lookup
  * field of a map, or of an array of struct used as a map, with the key and value fields given in a block.
  *
  * @param field The field to modify.
@@ -1419,7 +1420,7 @@ void fastSearchMapElm(ParsedField field) :
     Token nameToken;
     ParsedField.ParsedFastMapSearch fastMapSearch = null;
 }
-    <FAST_SEARCH> <MAP> <FIELD> <COLON> name = identifierStr()
+    <FAST_SEARCH_MAP_FIELD> name = identifierStr()
     {
         nameToken = lastConsumedToken;
         try {
@@ -1432,9 +1433,9 @@ void fastSearchMapElm(ParsedField field) :
 ;
 
 /**
- * This rule consumes one body item of a fast-search map field block.
+ * This rule consumes one body item of a fast-search-map-field block.
  *
- * @param fastMapSearch The fast-search map field to modify, or null if it was rejected.
+ * @param fastMapSearch The fast-search-map-field to modify, or null if it was rejected.
  */
 void fastSearchMapBody(ParsedField.ParsedFastMapSearch fastMapSearch) :
 {
@@ -1447,7 +1448,7 @@ void fastSearchMapBody(ParsedField.ParsedFastMapSearch fastMapSearch) :
         try {
             if ( ! name.equals("key") && ! name.equals("value")) {
                 nameToken.addIllegalArgumentException(new IllegalArgumentException(
-                        "Expected 'key' or 'value' in 'fast-search map field', but got '" + name + "'."));
+                        "Expected 'key' or 'value' in 'fast-search-map-field', but got '" + name + "'."));
             } else if (fastMapSearch != null) {
                 if (name.equals("key")) fastMapSearch.setKeyField(structFieldName);
                 else fastMapSearch.setValueField(structFieldName);
@@ -3665,6 +3666,7 @@ String identifierWithDashStr :
     | <FAST_ACCESS>
     | <FAST_RANK>
     | <FAST_SEARCH>
+    | <FAST_SEARCH_MAP_FIELD>
     | <FILTER_FIRST_EXPLORATION>
     | <FILTER_FIRST_THRESHOLD>
     | <FILTER_THRESHOLD>

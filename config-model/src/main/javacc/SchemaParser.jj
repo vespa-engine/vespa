@@ -276,6 +276,7 @@ TOKEN :
 | < PAGED: "paged" >
 | < FAST_RANK: "fast-rank" >
 | < FAST_SEARCH: "fast-search" >
+| < FAST_SEARCH_MAP_FIELD: "fast-search-map-field" >
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
@@ -1068,7 +1069,7 @@ void weightedsetBody(ParsedType type) : { }
 }
 
 /**
- * This rule consumes a fast-search map field statement of a field element, which names the lookup
+ * This rule consumes a fast-search-map-field statement of a field element, which names the lookup
  * field of a map, or of an array of struct used as a map, with the key and value fields given in a block.
  * A field may have several, with different lookup names.
  *
@@ -1080,7 +1081,7 @@ void fastSearchMap(ParsedField field) :
     ParsedField.ParsedFastMapSearch fastMapSearch;
 }
 {
-    <FAST_SEARCH> <MAP> <FIELD> <COLON> name = identifier()
+    <FAST_SEARCH_MAP_FIELD> name = identifier()
     {
         try {
             fastMapSearch = field.addFastMapSearch(name);
@@ -1092,9 +1093,9 @@ void fastSearchMap(ParsedField field) :
 }
 
 /**
- * This rule consumes one body item of a fast-search map field block.
+ * This rule consumes one body item of a fast-search-map-field block.
  *
- * @param fastMapSearch The fast-search map field to modify.
+ * @param fastMapSearch The fast-search-map-field to modify.
  */
 void fastSearchMapBody(ParsedField.ParsedFastMapSearch fastMapSearch) :
 {
@@ -1107,7 +1108,7 @@ void fastSearchMapBody(ParsedField.ParsedFastMapSearch fastMapSearch) :
         try {
             if (name.equals("key")) fastMapSearch.setKeyField(structFieldName);
             else if (name.equals("value")) fastMapSearch.setValueField(structFieldName);
-            else throw new ParseException("Expected 'key' or 'value' in 'fast-search map field', but got '" + name + "'.");
+            else throw new ParseException("Expected 'key' or 'value' in 'fast-search-map-field', but got '" + name + "'.");
         } catch (IllegalArgumentException e) {
             throw new ParseException(e.getMessage());
         }
@@ -3102,6 +3103,7 @@ String identifierWithDash() :
     | <FAST_ACCESS>
     | <FAST_RANK>
     | <FAST_SEARCH>
+    | <FAST_SEARCH_MAP_FIELD>
     | <FILTER_FIRST_EXPLORATION>
     | <FILTER_FIRST_THRESHOLD>
     | <FILTER_THRESHOLD>

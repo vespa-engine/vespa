@@ -36,7 +36,6 @@ import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.documentIdElm;
 import ai.vespa.schemals.parser.ast.fieldRankType;
 import ai.vespa.schemals.parser.ast.integerElm;
-import ai.vespa.schemals.parser.ast.fastSearchMapElm;
 import ai.vespa.schemals.parser.ast.matchItem;
 import ai.vespa.schemals.parser.ast.matchType;
 import ai.vespa.schemals.parser.ast.quotedString;
@@ -142,7 +141,7 @@ public class SchemaSemanticTokens {
                 tokenType = CommonSemanticTokens.getType(SemanticTokenTypes.Property); 
                 modifier = SemanticTokenModifiers.Readonly;
             }
-            if (tokenType == null && !isMapTypeConstructor(node)) {
+            if (tokenType == null) {
                 tokenType = schemaTokenTypeMap.get(schemaType);
             }
 
@@ -186,19 +185,6 @@ public class SchemaSemanticTokens {
 
 
         return ret;
-    }
-
-    /**
-     * 'map' is both a type constructor, as in map&lt;string, int&gt;, and a keyword, as in
-     * 'fast-search map field: name'. In a type it is already colored by the dataType handling above,
-     * so it should only get the keyword color when it is part of a fast-search map field statement.
-     */
-    private static boolean isMapTypeConstructor(SchemaNode node) {
-        if (node.getSchemaType() != TokenType.MAP) {
-            return false;
-        }
-        Node parent = node.getParent();
-        return parent == null || !parent.isASTInstance(fastSearchMapElm.class);
     }
 
     private static final Set<Class<?>> enumLikeItems = new HashSet<>() {{

@@ -127,7 +127,7 @@ public class ScriptManagerTestCase {
             fail("Expected exception");
         }
         catch (InvalidInputException e) {
-            assertEquals("Field 'myMap' has 'fast-search map field', which does not support field path updates " +
+            assertEquals("Field 'myMap' has 'fast-search-map-field', which does not support field path updates " +
                          "into the field. Assign the whole field instead.",
                          e.getMessage());
         }
@@ -178,7 +178,7 @@ public class ScriptManagerTestCase {
             fail("Expected exception");
         }
         catch (InvalidInputException e) {
-            assertEquals("Field 'myArray' has 'fast-search map field', which does not support updating or removing " +
+            assertEquals("Field 'myArray' has 'fast-search-map-field', which does not support updating or removing " +
                          "single array elements. Assign the whole field instead.",
                          e.getMessage());
         }
@@ -212,7 +212,7 @@ public class ScriptManagerTestCase {
         return new DocumentUpdate(docType, "id:ns:myDocumentType::");
     }
 
-    /** Runs the given update through a script manager configured with 'fast-search map field' on 'myMap' and 'myArray'. */
+    /** Runs the given update through a script manager configured with 'fast-search-map-field' on 'myMap' and 'myArray'. */
     private static void executeWithFastMapSearch(DocumentUpdate update) {
         DocumentType docType = update.getDocumentType();
         var typeMgr = new DocumentTypeManager();

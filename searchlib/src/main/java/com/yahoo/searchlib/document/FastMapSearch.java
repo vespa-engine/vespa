@@ -24,7 +24,7 @@ public class FastMapSearch {
 
     /**
      * The synthetic attribute is named &lt;field&gt;$&lt;lookupName&gt;, where the lookup name is the one
-     * given in 'fast-search map field'. The dollar sign makes the name an illegal identifier, preventing it
+     * given in 'fast-search-map-field'. The dollar sign makes the name an illegal identifier, preventing it
      * from being declared as a schema field, while still allowing it to be referenced as a quoted attribute name.
      * A dot is avoided, as it would make the attribute look like a struct field attribute of the field.
      */
