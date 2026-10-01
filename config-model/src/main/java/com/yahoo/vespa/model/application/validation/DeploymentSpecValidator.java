@@ -4,8 +4,6 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.container.ContainerModel;
 
@@ -31,15 +29,11 @@ public class DeploymentSpecValidator implements Validator {
         Reader deploymentReader = deployment.get();
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(deploymentReader);
         List<ContainerModel> containers = context.model().getRoot().configModelRepo().getModels(ContainerModel.class);
-        Zone zone = context.deployState().zone();
         requireUniqueInstanceIds(context, deploymentSpec.instances());
         for (DeploymentInstanceSpec instance : deploymentSpec.instances()) {
             instance.endpoints().forEach(endpoint -> {
                 requireClusterId(context, containers, instance.name(),
                                  "Endpoint '" + endpoint.endpointId() + "'", endpoint.containerId());
-            });
-            instance.zoneEndpoints(ZoneId.from(zone.environment(), zone.region())).keySet().forEach(cluster -> {
-                requireClusterId(context, containers, instance.name(), "Zone endpoint", cluster.value());
             });
         }
     }
