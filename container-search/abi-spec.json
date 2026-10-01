@@ -6403,22 +6403,6 @@
       "public static final java.lang.String ID"
     ]
   },
-  "com.yahoo.search.query.parser.ParameterResolver" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods" : [
-      "public abstract java.lang.String get(java.lang.String)",
-      "public static com.yahoo.search.query.parser.ParameterResolver of(com.yahoo.processing.request.Properties)",
-      "public static com.yahoo.search.query.parser.ParameterResolver of(java.util.Map)",
-      "public static com.yahoo.search.query.parser.ParameterResolver empty()"
-    ],
-    "fields" : [ ]
-  },
   "com.yahoo.search.query.parser.Parsable" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],

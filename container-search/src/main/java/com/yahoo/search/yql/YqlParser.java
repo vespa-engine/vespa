@@ -101,7 +101,6 @@ import com.yahoo.search.query.Sorting.LowerCaseSorter;
 import com.yahoo.search.query.Sorting.Order;
 import com.yahoo.search.query.Sorting.RawSorter;
 import com.yahoo.search.query.Sorting.UcaSorter;
-import com.yahoo.search.query.parser.ParameterResolver;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;

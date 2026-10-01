@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.query.parser;
+package com.yahoo.search.yql;
 
 import com.yahoo.processing.request.Properties;
 
@@ -14,7 +14,7 @@ import java.util.Objects;
  * @author johsol
  */
 @FunctionalInterface
-public interface ParameterResolver {
+interface ParameterResolver {
 
     /** Returns the value of the named parameter, or null if it is not set. */
     String get(String name);
