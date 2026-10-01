@@ -4,8 +4,11 @@ package com.yahoo.config.model.application.provider;
 import com.yahoo.config.application.ConfigDefinitionDir;
 import com.yahoo.config.application.XmlPreProcessor;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.zone.ZoneInfo;
 import com.yahoo.io.IOUtils;
@@ -22,6 +25,7 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.Files;
@@ -82,35 +86,64 @@ class ApplicationPackagePreprocessor {
     private void preprocess(File appDir, File dir, ZoneInfo zone) throws IOException {
         validateServicesFile();
         IOUtils.copyDirectory(appDir, dir, - 1,
-                              (__, name) -> ! List.of(FilesApplicationPackage.preprocessed,
-                                                      ApplicationPackage.SERVICES,
-                                                      ApplicationPackage.HOSTS,
-                                                      ApplicationPackage.CONFIG_DEFINITIONS_DIR).contains(name));
+                              (parent, name) -> ! (List.of(FilesApplicationPackage.preprocessed,
+                                                           ApplicationPackage.SERVICES,
+                                                           ApplicationPackage.HOSTS,
+                                                           ApplicationPackage.CONFIG_DEFINITIONS_DIR).contains(name)
+                                                   || (parent.equals(appDir) && name.equals(ApplicationPackage.DEPLOYMENT_FILE.getName()))));
+        Tags tags = tags(zone);
         preprocessXML(FilesApplicationPackage.fileUnder(dir, Path.fromString(ApplicationPackage.SERVICES)),
-                      applicationPackage.applicationFile(ApplicationPackage.SERVICES), zone);
+                      applicationPackage.applicationFile(ApplicationPackage.SERVICES), zone, tags);
         preprocessXML(FilesApplicationPackage.fileUnder(dir, Path.fromString(ApplicationPackage.HOSTS)),
-                      applicationPackage.applicationFile(ApplicationPackage.HOSTS), zone);
+                      applicationPackage.applicationFile(ApplicationPackage.HOSTS), zone, tags);
+        preprocessXML(FilesApplicationPackage.fileUnder(dir, ApplicationPackage.DEPLOYMENT_FILE),
+                      applicationPackage.applicationFile(ApplicationPackage.DEPLOYMENT_FILE), zone, tags);
     }
 
-    private void preprocessXML(File destination, File inputXml, ZoneInfo zone) throws IOException {
+    /**
+     * Returns the tags to use when preprocessing. Tags are declared in deployment.xml, which is itself
+     * preprocessed, so first preprocess deployment.xml without tags to be able to read them.
+     */
+    private Tags tags(ZoneInfo zone) {
+        File deploymentXml = applicationPackage.applicationFile(ApplicationPackage.DEPLOYMENT_FILE);
+        if ( ! deploymentXml.exists()) return Tags.empty();
+
+        Document document = preprocessXML(deploymentXml, zone, Tags.empty());
+        StringWriter xml = new StringWriter();
+        try {
+            transformerFactory.newTransformer().transform(new DOMSource(document), new StreamResult(xml));
+        } catch (TransformerException e) {
+            throw new RuntimeException("Error preprocessing " + deploymentXml.getPath() + ": " + e.getMessage(), e);
+        }
+        DeploymentSpec spec = new DeploymentSpecXmlReader(false).read(xml.toString());
+        return spec.tags(applicationPackage.getMetaData().getApplicationId().instance(), zone.environment());
+    }
+
+    private void preprocessXML(File destination, File inputXml, ZoneInfo zone, Tags tags) throws IOException {
         if ( ! inputXml.exists()) return;
+
+        Document document = preprocessXML(inputXml, zone, tags);
+        try (FileOutputStream outputStream = new FileOutputStream(destination)) {
+            transformerFactory.newTransformer().transform(new DOMSource(document), new StreamResult(outputStream));
+        } catch (TransformerException e) {
+            throw new RuntimeException("Error preprocessing " + inputXml.getPath() + ": " + e.getMessage(), e);
+        }
+    }
+
+    private Document preprocessXML(File inputXml, ZoneInfo zone, Tags tags) {
         try {
             ApplicationName application = applicationPackage.getMetaData().getApplicationId().application();
             InstanceName instance = applicationPackage.getMetaData().getApplicationId().instance();
-            Document document = new XmlPreProcessor(applicationPackage.getAppDir(),
-                                                    inputXml,
-                                                    application,
-                                                    instance,
-                                                    zone.environment(),
-                                                    zone.region(),
-                                                    zone.cloud(),
-                                                    applicationPackage.getDeploymentSpec().tags(instance, zone.environment()))
-                                        .run();
-
-            try (FileOutputStream outputStream = new FileOutputStream(destination)) {
-                transformerFactory.newTransformer().transform(new DOMSource(document), new StreamResult(outputStream));
-            }
-        } catch (TransformerException | ParserConfigurationException | SAXException e) {
+            return new XmlPreProcessor(applicationPackage.getAppDir(),
+                                       inputXml,
+                                       application,
+                                       instance,
+                                       zone.environment(),
+                                       zone.region(),
+                                       zone.cloud(),
+                                       tags)
+                    .run();
+        } catch (IOException | TransformerException | ParserConfigurationException | SAXException e) {
             throw new RuntimeException("Error preprocessing " + inputXml.getPath() + ": " + e.getMessage(), e);
         }
     }

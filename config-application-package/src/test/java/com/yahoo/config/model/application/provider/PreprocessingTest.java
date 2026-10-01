@@ -1,16 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.application.provider;
 
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.config.provision.zone.ZoneInfo;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bratseth
@@ -94,6 +99,36 @@ public class PreprocessingTest {
                                         </admin>
                                       </services>""";
         tester.assertServices(expectedProdServices);
+    }
+
+    @Test
+    public void testDeploymentXmlPreprocessing() {
+        var tester = new PreprocessingTester("src/test/resources/multienv-deployment", temporaryFolder);
+
+        var usEast = tester.preprocess(new ZoneInfo(CloudName.AWS, SystemName.Public, Environment.prod, RegionName.from("us-east")));
+        String expectedUsEastDeployment = """
+                                          <!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+                                          <deployment version='1.0' xmlns:deploy="vespa" xmlns:preprocess="properties">
+                                            <instance id='default' cloud-account='aws:222222222222'>
+                                              <prod>
+                                                <region>us-east</region>
+                                                <region>us-west</region>
+                                              </prod>
+                                            </instance>
+                                          </deployment>""";
+        tester.assertDeployment(expectedUsEastDeployment);
+        assertEquals("aws:222222222222",
+                     cloudAccount(usEast, "us-east"));
+
+        var usWest = tester.preprocess(new ZoneInfo(CloudName.AWS, SystemName.Public, Environment.prod, RegionName.from("us-west")));
+        assertEquals("aws:111111111111",
+                     cloudAccount(usWest, "us-west"));
+    }
+
+    private static String cloudAccount(ApplicationPackage application, String region) {
+        return application.getDeploymentSpec()
+                          .cloudAccount(CloudName.AWS, InstanceName.defaultName(), ZoneId.from(Environment.prod, RegionName.from(region)))
+                          .value();
     }
 
 }
