@@ -1293,9 +1293,9 @@ public class YqlParserTestCase {
         assertEquals("GEO_LOCATION mypos:(2,17123456,42123456,90133,0,1,0,3185582897)", qt.toString());
         parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
         parser.setUserQuery(query);
-        var ex = assertThrows(IllegalStateException.class,
+        var ex = assertThrows(IllegalInputException.class,
             () -> parse("select * from sources * where geoLocation(mypos, @mylatitude, @bad, @myradius);"));
-        assertTrue(ex.getMessage().contains("missing"));
+        assertEquals("Input 'bad' is not set", ex.getMessage());
     }
 
     @Test
@@ -1931,6 +1931,13 @@ public class YqlParserTestCase {
         parser.setUserQuery(createUserQuery());
         query = parse("select * from sources * where string in ('a','b', @foostring)");
         assertStringInItem("string", new String[]{"a","b","might","this", "work"}, query);
+
+        parser.setUserQuery(createUserQuery());
+        assertParseFail("select * from sources * where field in (42, @missing)",
+                new IllegalInputException("Input 'missing' is not set"));
+        parser.setUserQuery(createUserQuery());
+        assertParseFail("select * from sources * where string in ('a', @missing)",
+                new IllegalInputException("Input 'missing' is not set"));
         parser.setUserQuery(null);
 
         query = parse("select * from sources * where {ranked:false}string in ('a','b')");

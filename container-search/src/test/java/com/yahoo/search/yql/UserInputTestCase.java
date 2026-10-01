@@ -472,6 +472,40 @@ public class UserInputTestCase {
         assertEquals("select foo from bar where fieldName contains equiv(\"A\", \"B\")", query.yqlRepresentation());
     }
 
+    /** A referenced value is substituted verbatim and never parsed as YQL. */
+    @Test
+    void testReferenceValueIsNotParsedAsYql() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("pattern", "foo\" or true or myfield matches \"bar");
+        builder.setParameter("yql", "select * from sources * where myfield matches @pattern");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where myfield matches \"foo\\\" or true or myfield matches \\\"bar\"",
+                     query.yqlRepresentation());
+    }
+
+    @Test
+    void testMissingReferenceInContains() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where foo contains @missing");
+        assertQueryFails(builder, "Could not create query from YQL: Input 'missing' is not set");
+    }
+
+    @Test
+    void testMissingReferenceInComparison() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where year > @missing");
+        assertQueryFails(builder, "Could not create query from YQL: Input 'missing' is not set");
+    }
+
+    @Test
+    void testMissingReferenceInContinuation() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql",
+                "select * from sources * where myfield contains 'token'" +
+                        "| {'continuations':[@missing] }all(group(f) each(output(count())))");
+        assertQueryFails(builder, "Could not create query from YQL: Input 'missing' is not set");
+    }
+
     private Query searchAndAssertNoErrors(URIBuilder builder) {
         Query query = new Query(builder.toString());
         Result r = execution.search(query);
@@ -544,6 +578,12 @@ public class UserInputTestCase {
     private void assertQueryFails(URIBuilder builder) {
         Result r = execution.search(new Query(builder.toString()));
         assertEquals(INVALID_QUERY_PARAMETER.code, r.hits().getError().getCode());
+    }
+
+    private void assertQueryFails(URIBuilder builder, String expectedDetailedMessage) {
+        Result r = execution.search(new Query(builder.toString()));
+        assertEquals(INVALID_QUERY_PARAMETER.code, r.hits().getError().getCode());
+        assertEquals(expectedDetailedMessage, r.hits().getError().getDetailedMessage());
     }
 
     @Test

@@ -264,6 +264,7 @@ public class YqlParser implements Parser {
     private Integer offset;
     private Integer timeout;
     private Query userQuery;
+    private ParameterResolver parameters;
     private Parsable currentlyParsing;
     private IndexFacts.Session indexFactsSession;
     private IndexNameExpander indexNameExpander = new IndexNameExpander();
@@ -343,6 +344,7 @@ public class YqlParser implements Parser {
         Item root = convertExpression(filterExpression, null);
         connectItems();
         userQuery = null;
+        parameters = null;
         return new QueryTree(root);
     }
 
@@ -658,20 +660,27 @@ public class YqlParser implements Parser {
         return nonTaggableLeafStyleSettings(ast, item);
     }
 
-    private String derefVar(OperatorNode<ExpressionOperator> ast) {
-        Preconditions.checkState(ast.getOperator() == ExpressionOperator.VARREF, "derefVar() only accepts VARREF");
-        Preconditions.checkState(userQuery != null, "Query properties are not available");
-        String propName = ast.getArgument(0, String.class);
-        String prop = userQuery.properties().getString(propName);
-        Preconditions.checkState(prop != null, "Error, missing query property: " + propName);
-        return prop;
+    /** Returns the value of the query parameter referenced by the given VARREF node, which must be set. */
+    private String resolveParameter(OperatorNode<?> varref) {
+        String value = resolveOptionalParameter(varref);
+        if (value == null) {
+            throw new IllegalInputException("Input '" + varref.getArgument(0, String.class) + "' is not set");
+        }
+        return value;
+    }
+
+    /** Returns the value of the query parameter referenced by the given VARREF node, or null if it is not set. */
+    private String resolveOptionalParameter(OperatorNode<?> varref) {
+        assertHasOperator(varref, ExpressionOperator.VARREF);
+        Preconditions.checkState(parameters != null, "Query properties are not available");
+        return parameters.get(varref.getArgument(0, String.class));
     }
 
     private Object fetchLiteralOrRef(OperatorNode<ExpressionOperator> ast) {
         return switch (ast.getOperator()) {
             case LITERAL -> ast.getArgument(0);
             case READ_FIELD -> ast.getArgument(1); // TODO: Should probably remove this option
-            case VARREF -> derefVar(ast);
+            case VARREF -> resolveParameter(ast);
             default -> throw newUnexpectedArgumentException(ast.getOperator(),
                     ExpressionOperator.LITERAL, ExpressionOperator.READ_FIELD, ExpressionOperator.VARREF);
         };
@@ -881,11 +890,7 @@ public class YqlParser implements Parser {
                     String tokenValue = value.getArgument(0, String.class);
                     out.addToken(tokenValue);
                 }
-                case VARREF -> {
-                    Preconditions.checkState(userQuery != null, "Query properties are not available");
-                    String varRef = value.getArgument(0, String.class);
-                    ParameterListParser.addStringTokensFromString(userQuery.properties().getString(varRef), out);
-                }
+                case VARREF -> ParameterListParser.addStringTokensFromString(resolveParameter(value), out);
                 default -> throw newUnexpectedArgumentException(value.getOperator(),
                         ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
             }
@@ -905,11 +910,7 @@ public class YqlParser implements Parser {
                     Long tokenValue = (numberTokenValue instanceof Integer) ? numberTokenValue.longValue() : Long.class.cast(numberTokenValue);
                     out.addToken(tokenValue);
                 }
-                case VARREF -> {
-                    Preconditions.checkState(userQuery != null, "Query properties are not available");
-                    String varRef = value.getArgument(0, String.class);
-                    ParameterListParser.addNumericTokensFromString(userQuery.properties().getString(varRef), out);
-                }
+                case VARREF -> ParameterListParser.addNumericTokensFromString(resolveParameter(value), out);
                 default -> throw newUnexpectedArgumentException(value.getOperator(),
                         ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
             }
@@ -1317,15 +1318,7 @@ public class YqlParser implements Parser {
     private String getStringContents(OperatorNode<ExpressionOperator> operator) {
         return switch (operator.getOperator()) {
             case LITERAL -> operator.getArgument(0, String.class);
-            case VARREF -> {
-                Preconditions.checkState(userQuery != null,
-                        "properties must be available when trying to fetch user input");
-                String key = operator.getArgument(0, String.class);
-                String value = userQuery.properties().getString(key);
-                if (value == null)
-                    throw new IllegalInputException("Input '" + key + "' is not set");
-                yield value;
-            }
+            case VARREF -> resolveParameter(operator);
             default -> throw newUnexpectedArgumentException(operator.getOperator(),
                     ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
         };
@@ -1390,9 +1383,7 @@ public class YqlParser implements Parser {
 
     private String dereference(Object constantOrVarref) {
         if (constantOrVarref instanceof OperatorNode<?> varref) {
-            Preconditions.checkState(userQuery != null,
-                                     "properties must be available when trying to fetch user input");
-            return userQuery.properties().getString(varref.getArgument(0, String.class));
+            return resolveParameter(varref);
         }
         else {
             return constantOrVarref.toString();
@@ -1604,11 +1595,7 @@ public class YqlParser implements Parser {
             ast = ast.getArgument(0);
         }
         return switch (ast.getOperator()) {
-            case VARREF -> {
-                Preconditions.checkState(userQuery != null,
-                        "properties must be available when trying to fetch user input");
-                yield negative + userQuery.properties().getString(ast.getArgument(0, String.class));
-            }
+            case VARREF -> negative + resolveParameter(ast);
             case LITERAL -> negative + ast.getArgument(0).toString();
             default -> throw new IllegalArgumentException("Expected VARREF or LITERAL, got " + ast.getOperator());
         };
@@ -2364,7 +2351,10 @@ public class YqlParser implements Parser {
     public void setQueryParser(boolean queryParser) { this.queryParser = queryParser; }
 
     @Beta
-    public void setUserQuery(Query userQuery) { this.userQuery = userQuery; }
+    public void setUserQuery(Query userQuery) {
+        this.userQuery = userQuery;
+        this.parameters = userQuery == null ? null : ParameterResolver.of(userQuery.properties());
+    }
 
     @Beta
     public Set<String> getYqlSummaryFields() { return yqlSummaryFields; }
@@ -2446,13 +2436,12 @@ public class YqlParser implements Parser {
             case MAP -> addStringItems(ast, out);
             case ARRAY -> addLongItems(ast, out);
             case VARREF -> {
-                Preconditions.checkState(userQuery != null, "Query properties are not available");
-                String name = ast.getArgument(0, String.class);
-                String value = userQuery.properties().getString(name);
-                if (value != null)
+                String value = resolveOptionalParameter(ast);
+                if (value != null) {
                     ParameterListParser.addItemsFromString(value, out);
-                else
-                    addItemsFromSubProperties(name, out);
+                } else {
+                    addItemsFromSubProperties(ast.getArgument(0, String.class), out);
+                }
             }
             default -> throw newUnexpectedArgumentException(ast.getOperator(),
                                                             ExpressionOperator.ARRAY, ExpressionOperator.MAP);
@@ -2648,9 +2637,7 @@ public class YqlParser implements Parser {
                                                                        && considerParents && i.hasNext();) {
             OperatorNode<?> node = i.next();
             if (node.getOperator() == ExpressionOperator.VARREF) {
-                Preconditions.checkState(userQuery != null,
-                                         "properties must be available when trying to fetch user input");
-                value = userQuery.properties().getString(ast.getArgument(0, String.class));
+                value = resolveOptionalParameter(node);
             }
             else {
                 value = node.getAnnotation(key);
