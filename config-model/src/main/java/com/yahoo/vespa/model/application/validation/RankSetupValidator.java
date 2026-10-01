@@ -21,6 +21,7 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.config.search.vsm.VsmfieldsConfig;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.model.Landlock;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.SearchCluster;
@@ -29,12 +30,16 @@ import com.yahoo.yolean.Exceptions;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,7 +49,7 @@ import static com.yahoo.config.text.StringUtilities.escape;
  * Validates rank setup for all content clusters (rank-profiles, index-schema, attributes configs), validation is done
  * by running the binary 'vespa-verify-ranksetup-bin'
  *
- * @author vegardh
+ * @author Vegard Havdal
  */
 public class RankSetupValidator implements Validator {
 
@@ -72,7 +77,7 @@ public class RankSetupValidator implements Validator {
                     String schemaDir = clusterDir + schemaName + "/";
                     writeConfigs(schemaDir, docDb);
                     writeExtraVerifyRankSetupConfig(schemaDir, docDb);
-                    if (!validate(context, "dir:" + schemaDir, sc, schemaName, cfgDir, docDb.getDerivedConfiguration().isStreaming())) {
+                    if (!validate(context, schemaDir, sc, schemaName, cfgDir, docDb)) {
                         return;
                     }
                 }
@@ -85,11 +90,12 @@ public class RankSetupValidator implements Validator {
         }
     }
 
-    private boolean validate(Context context, String configId, SearchCluster searchCluster, String schema, File tempDir, boolean isStreaming) {
+    private boolean validate(Context context, String schemaDir, SearchCluster searchCluster,
+                             String schema, File tempDir, DocumentDatabase docDb) {
         Instant start = Instant.now();
         try {
-            log.log(Level.FINE, () -> Text.format("Validating schema '%s' for cluster %s with config id %s", schema, searchCluster, configId));
-            boolean ret = execValidate(context, configId, searchCluster, schema, isStreaming);
+            log.log(Level.FINE, () -> Text.format("Validating schema '%s' for cluster %s with schema dir %s", schema, searchCluster, schemaDir));
+            boolean ret = execValidate(context, schemaDir, searchCluster, schema, docDb);
             if (!ret) {
                 // Give up, don't log same error msg repeatedly
                 deleteTempDir(tempDir);
@@ -143,7 +149,7 @@ public class RankSetupValidator implements Validator {
 
     void writeExtraVerifyRankSetupConfig(List<String> config, Collection<? extends DistributableResource> resources) {
         for (DistributableResource model : resources) {
-            String modelPath = getFileRepositoryPath(model.getFilePath().getName(), model.getFileReference());
+            String modelPath = getFileRepositoryPathAsString(model.getFilePath().getName(), model.getFileReference());
             int index = config.size() / 2;
             // Escape values the same way the canonical config serializer does (see StringNode.toString).
             config.add(Text.format("file[%d].ref \"%s\"", index, escape(model.getFileReference())));
@@ -164,20 +170,27 @@ public class RankSetupValidator implements Validator {
         IOUtils.writeFile(dir + "verify-ranksetup.cfg", configContent, false);
     }
 
-    public static String getFileRepositoryPath(String name, String fileReference) {
-        ConfigserverConfig cfg = new ConfigserverConfig(new ConfigserverConfig.Builder());  // assume defaults
+    public static Path getFileRepositoryPath(String name, String fileReference) {
+        ConfigserverConfig cfg = new ConfigserverConfig(new ConfigserverConfig.Builder()); // assume defaults
         String fileRefDir = Defaults.getDefaults().underVespaHome(cfg.fileReferencesDir());
-        return Paths.get(fileRefDir, fileReference, name).toString();
+        return Paths.get(fileRefDir, fileReference, name);
+    }
+
+    public static String getFileRepositoryPathParent(String name, String fileReference) {
+        return getFileRepositoryPath(name, fileReference).getParent().toString();
+    }
+
+    public static String getFileRepositoryPathAsString(String name, String fileReference) {
+        return getFileRepositoryPath(name, fileReference).toString();
     }
 
     private static void writeConfig(String dir, String configName, ConfigInstance config) throws IOException {
         IOUtils.writeFile(dir + configName, StringUtilities.implodeMultiline(ConfigInstance.serialize(config)), false);
     }
 
-    private boolean execValidate(Context context, String configId, SearchCluster sc, String sdName, boolean isStreaming) {
-        String command = Text.format((isStreaming ? "%s %s -S" : "%s %s"), binaryName, configId);
+    private boolean execValidate(Context context, String schemaDir, SearchCluster sc, String sdName, DocumentDatabase docDb) {
         try {
-            Pair<Integer, String> ret = new ProcessExecuter(true).exec(command);
+            Pair<Integer, String> ret = execute(context, schemaDir, docDb);
             Integer exitCode = ret.getFirst();
             String output = ret.getSecond();
             if (exitCode != 0) {
@@ -188,6 +201,38 @@ public class RankSetupValidator implements Validator {
             return false;
         }
         return true;
+    }
+
+    private Pair<Integer, String> execute(Context context, String schemaDir, DocumentDatabase docDb) throws IOException {
+        var env = createEnvForEnablingLandlock(context, schemaDir, docDb);
+        var isStreaming = docDb.getDerivedConfiguration().isStreaming();
+        var configId = "dir:" + schemaDir;
+        String command = Text.format((isStreaming ? "%s %s -S" : "%s %s"), binaryName, configId);
+        return new ProcessExecuter(true).exec(command, env);
+    }
+
+    static Map<String, String> createEnvForEnablingLandlock(Context context, String schemaDir) {
+        return createEnvForEnablingLandlock(context, schemaDir, null);
+    }
+
+    private static Map<String, String> createEnvForEnablingLandlock(Context context, String schemaDir, DocumentDatabase docDb) {
+        Set<String> modelPaths = new HashSet<>();
+        modelPaths.add(schemaDir);
+
+        if (docDb != null) {
+            var config = docDb.getDerivedConfiguration();
+            config.getRankProfileList()
+                  .getOnnxModels()
+                  .asMap()
+                  .values().
+                  forEach(model -> modelPaths.add(getFileRepositoryPathParent(model.getFilePath().getName(), model.getFileReference())));
+            config.getSchema()
+                  .rankExpressionFiles()
+                  .expressions().
+                  forEach(model -> modelPaths.add(getFileRepositoryPathParent(model.getFilePath().getName(), model.getFileReference())));
+        }
+
+        return Landlock.createEnv(context.deployState().featureFlags().enableLandlock(), modelPaths.toArray(new String[0]));
     }
 
     private void validateWarn(Exception e, DeployLogger deployLogger) {

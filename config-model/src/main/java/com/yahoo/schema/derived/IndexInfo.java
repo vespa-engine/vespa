@@ -13,6 +13,8 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.BooleanIndexDefinition;
 import com.yahoo.schema.document.Case;
+import com.yahoo.schema.document.FastMapSearchFields;
+import com.yahoo.searchlib.document.FastMapSearch;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
@@ -25,9 +27,11 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.search.config.IndexInfoConfig;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Per-index commands which should be applied to queries prior to searching
@@ -85,6 +89,10 @@ public class IndexInfo extends Derived {
         for (Index index : schema.getExplicitIndices()) {
             derive(index, schema);
         }
+        // Must follow, as the lookup fields get the settings of the fields they look up in
+        for (ImmutableSDField field : schema.allConcreteFields()) {
+            deriveFastMapLookupFields(field);
+        }
 
         // Commands for summary fields
         // TODO: Move to schemainfo and implement differently
@@ -102,6 +110,53 @@ public class IndexInfo extends Derived {
                                 "ngram " + (sourceField.getMatching().getGramSize().orElse(NGramMatch.DEFAULT_GRAM_SIZE)));
 
             }
+        }
+    }
+
+    /**
+     * A map, or array of struct, with fast map search is queried as field.lookupName, as in
+     * field.lookupName{"key"} = value, with key and value relative to it. These names are made known to
+     * the query parser, which is the only use of them: FastMapSearcher rewrites a lookup to a term on the
+     * fieldName$lookupName attribute, and rejects any other query on them.
+     * <p>
+     * The lookup field gets the settings of the field itself. A string key or value is matched as a whole
+     * in the attribute, so it gets the matching settings of the attribute, which keep the parser from
+     * splitting it into several terms. A numeric value gets the settings of its struct field, so that it
+     * is parsed as a number or range.
+     */
+    private void deriveFastMapLookupFields(ImmutableSDField field) {
+        for (FastMapSearchFields fastMap : field.getFastMapSearches()) {
+            deriveFastMapLookupField(field, fastMap);
+        }
+    }
+
+    private void deriveFastMapLookupField(ImmutableSDField field, FastMapSearchFields fastMap) {
+        String lookupField = field.getName() + "." + fastMap.lookupName();
+        String lookupAttribute = FastMapSearch.toLookupFieldName(field.getName(), fastMap.lookupName());
+        copyIndexCommands(field.getName(), lookupField, command -> true);
+        deriveFastMapLookupSubField(field.getName() + "." + fastMap.keyField(), lookupField + "." + FastMapSearchFields.MAP_KEY,
+                                    fastMap.keyType(), lookupAttribute);
+        deriveFastMapLookupSubField(field.getName() + "." + fastMap.valueField(), lookupField + "." + FastMapSearchFields.MAP_VALUE,
+                                    fastMap.valueType(), lookupAttribute);
+    }
+
+    private void deriveFastMapLookupSubField(String structField, String lookupSubField, DataType type, String lookupAttribute) {
+        if (type.equals(DataType.STRING)) {
+            copyIndexCommands(lookupAttribute, lookupSubField, command -> ! isTypeCommand(command));
+            copyIndexCommands(structField, lookupSubField, IndexInfo::isTypeCommand);
+        } else {
+            copyIndexCommands(structField, lookupSubField, command -> true);
+        }
+    }
+
+    private static boolean isTypeCommand(String command) {
+        return command.startsWith("type ");
+    }
+
+    private void copyIndexCommands(String fromIndex, String toIndex, Predicate<String> include) {
+        for (IndexCommand command : List.copyOf(commands)) {
+            if (command.index().equals(fromIndex) && include.test(command.command()))
+                addIndexCommand(toIndex, command.command());
         }
     }
 

@@ -332,7 +332,7 @@ void FileChunk::appendTo(vespalib::Executor& executor, const IGetLid& db, IWrite
     size_t inflight_bytes = 0;         // Current inflight compressed data, is more when decompressed
     size_t max_inflight_bytes = 32_Mi; // Max inflight compressed data
     for (size_t chunkId(0); chunkId < numChunks; chunkId++) {
-        uint32_t chunk_size = _chunkInfo[chunkId].getSize();
+        uint32_t chunk_size = get_chunk_info(chunkId).getSize();
         while (!queue.empty() && (queue.size() >= limit || inflight_bytes + chunk_size > max_inflight_bytes ||
                                   queue.front().is_ready()))
         {
@@ -344,7 +344,7 @@ void FileChunk::appendTo(vespalib::Executor& executor, const IGetLid& db, IWrite
         std::promise<Chunk::UP> promisedChunk;
         FutureChunk             futureChunk(promisedChunk.get_future(), chunk_size);
         auto task = vespalib::makeLambdaTask([promise = std::move(promisedChunk), chunkId, this]() mutable {
-            const ChunkInfo& cInfo(_chunkInfo[chunkId]);
+            const ChunkInfo cInfo(get_chunk_info(chunkId));
             try {
                 vespalib::DataBuffer whole(0ul, ALIGNMENT);
                 FileRandRead::FSP    keepAlive(_file->read(cInfo.getOffset(), whole, cInfo.getSize()));
@@ -494,6 +494,11 @@ void FileChunk::verify(bool reportOnly) const {
 
 uint32_t FileChunk::getNumChunks() const {
     return _chunkInfo.size();
+}
+
+FileChunk::ChunkInfo FileChunk::get_chunk_info(uint32_t chunk_id) const {
+    assert(chunk_id < _chunkInfo.size());
+    return _chunkInfo[chunk_id];
 }
 
 size_t FileChunk::getDiskFootprint() const {

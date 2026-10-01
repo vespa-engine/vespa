@@ -5,7 +5,7 @@
 #include "hnsw_index.h"
 
 #include <vespa/vespalib/datastore/array_store.hpp>
-#include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/type_stable_vector.hpp>
 
 namespace search::tensor {
 
@@ -134,10 +134,10 @@ template struct HnswGraph<HnswIndexType::MULTI>;
 
 namespace vespalib {
 
-template class RcuVectorBase<search::tensor::HnswSimpleNode>;
-template class RcuVector<search::tensor::HnswSimpleNode>;
-template class RcuVectorBase<search::tensor::HnswNode>;
-template class RcuVector<search::tensor::HnswNode>;
+template class TypeStableVectorBase<search::tensor::HnswSimpleNode>;
+template class TypeStableVector<search::tensor::HnswSimpleNode>;
+template class TypeStableVectorBase<search::tensor::HnswNode>;
+template class TypeStableVector<search::tensor::HnswNode>;
 
 } // namespace vespalib
 

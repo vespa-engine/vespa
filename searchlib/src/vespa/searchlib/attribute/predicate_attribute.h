@@ -5,7 +5,7 @@
 #include "not_implemented_attribute.h"
 
 #include <vespa/searchlib/predicate/common.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace document {
 class PredicateFieldValue;
@@ -40,7 +40,7 @@ public:
     using MinFeature = uint8_t;
     using MinFeatureHandle = std::pair<const MinFeature*, size_t>;
     using IntervalRange = uint16_t;
-    using IntervalRangeVector = vespalib::RcuVectorBase<IntervalRange>;
+    using IntervalRangeVector = vespalib::TypeStableVectorBase<IntervalRange>;
 
     PredicateAttribute(const std::string& base_file_name);
     PredicateAttribute(const std::string& base_file_name, const Config& config);
@@ -87,7 +87,7 @@ private:
     int64_t                                    _lower_bound;
     int64_t                                    _upper_bound;
 
-    using MinFeatureVector = vespalib::RcuVectorBase<uint8_t>;
+    using MinFeatureVector = vespalib::TypeStableVectorBase<uint8_t>;
     MinFeatureVector _min_feature;
 
     IntervalRangeVector _interval_range_vector;

@@ -45,7 +45,7 @@ uint32_t HnswNodeidMapping::allocate_id() {
 
 HnswNodeidMapping::HnswNodeidMapping()
     : _refs(1),
-      _grow_strategy(16, 1.0, 0, 0), // These are the same parameters as the default in rcuvector.h
+      _grow_strategy(16, 1.0, 0, 0), // These are the same parameters as the default in type_stable_vector.hpp
       _nodeid_limit(1),              // Starting with nodeid=1 matches that we also start with docid=1.
       _nodeids(NodeidStore::optimizedConfigForHugePage(max_type_id, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
                                                        vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE,

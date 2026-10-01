@@ -87,6 +87,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean failWhenConfiguringIndexedMapOfArray = true;
     private boolean fastMapSearch = false;
     private boolean commerceDiscovery = false;
+    private boolean enableLandlock = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -150,6 +151,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
     @Override public boolean fastMapSearch() { return fastMapSearch; }
     @Override public boolean commerceDiscovery() { return commerceDiscovery; }
+    @Override public boolean enableLandlock() { return enableLandlock; }
 
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -388,6 +390,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties commerceDiscovery(boolean value) {
         this.commerceDiscovery = value;
+        return this;
+    }
+
+    public TestProperties enableLandlock(boolean value) {
+        this.enableLandlock = value;
         return this;
     }
 

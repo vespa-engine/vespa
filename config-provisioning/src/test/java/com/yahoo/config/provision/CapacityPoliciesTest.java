@@ -169,7 +169,10 @@ public class CapacityPoliciesTest {
                                                     new CapacityPolicies.Tuning(arm64, 0.0, 0), 0.0);
         NodeResources requestedResources = new NodeResources(4, 16, 50, 0.3);
         var capacity = Capacity.from(new ClusterResources(2, 1, requestedResources));
-        var result = capacityPolicies.applyOn(capacity, false);
+        var cluster = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), capacity, Version.emptyVersion)
+                                 .exclusive(false)
+                                 .build();
+        var result = capacityPolicies.applyOn(cluster);
 
         assertEquals(0.1, result.minResources().nodeResources().vcpu(), 0.01, "CPU should be capped to 0.1 in dev when cpuCapInDev is false");
         assertEquals(0.1, result.minResources().nodeResources().bandwidthGbps(), 0.01, "Bandwidth should be capped to 0.1 in dev when cpuCapInDev is false");
@@ -183,6 +186,9 @@ public class CapacityPoliciesTest {
                                                     new CapacityPolicies.Tuning(arm64, 0.0, 0), cpuCap);
         NodeResources requestedResources = new NodeResources(4, 16, 50, 0.3);
         var capacity = Capacity.from(new ClusterResources(2, 1, requestedResources));
+        var cluster = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), capacity, Version.emptyVersion)
+                                 .exclusive(false)
+                                 .build();
         var result = capacityPolicies.applyOn(capacity, false);
 
         assertEquals(0.1, result.minResources().nodeResources().vcpu(), 0.01, "CPU should be capped to 0.1 in dev when cpuCapInDev is false");
@@ -197,6 +203,9 @@ public class CapacityPoliciesTest {
                                                     new CapacityPolicies.Tuning(arm64, 0.0, 0), cpuCap);
         NodeResources requestedResources = new NodeResources(4, 16, 50, 0.3);
         var capacity = Capacity.from(new ClusterResources(2, 1, requestedResources));
+        var cluster = ClusterSpec.builder(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), capacity, Version.emptyVersion)
+                                 .exclusive(false)
+                                 .build();
         var result = capacityPolicies.applyOn(capacity, false);
 
         assertEquals(4, result.minResources().nodeResources().vcpu(), 0.01, "CPU should not be capped in dev when cpuCapInDev is true");

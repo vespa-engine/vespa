@@ -18,6 +18,9 @@ class IAttributeContext;
 
 namespace search::aggregation {
 
+/**
+ * Recursively checks modifier predicate on expression tree and applies modifier function.
+ */
 class AttributeNodeReplacer : public vespalib::ObjectOperation, public vespalib::ObjectPredicate {
 protected:
     using ExpressionNodeUP = std::unique_ptr<expression::ExpressionNode>;
@@ -29,11 +32,19 @@ private:
     virtual ExpressionNodeUP getReplacementNode(const expression::AttributeNode& attributeNode) = 0;
 };
 
+/**
+ * Rewrites attribute, interpolated lookup and zcurve nodes to document accessor nodes.
+ * This is how grouping supports streaming search.
+ */
 class Attribute2DocumentAccessor : public AttributeNodeReplacer {
 protected:
     ExpressionNodeUP getReplacementNode(const expression::AttributeNode& attributeNode) override;
 };
 
+/**
+ * Rewrites attribute nodes to document field if the field that is references that does
+ * not have an attribute.
+ */
 class NonAttribute2DocumentAccessor : public Attribute2DocumentAccessor {
 public:
     explicit NonAttribute2DocumentAccessor(const attribute::IAttributeContext& attrCtx) noexcept

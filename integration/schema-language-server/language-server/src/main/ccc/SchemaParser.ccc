@@ -1225,7 +1225,7 @@ void fieldBodyElm(ParsedField field) : { }
        summaryToElm(field) |
        weightElm(field) |
        weightedsetElm(field.getType()) |
-       mapElm(field)
+       fastSearchMapElm(field)
     )
 ;
 
@@ -1408,38 +1408,54 @@ void weightedsetBody(ParsedType type) : { }
 ;
 
 /**
- * This rule consumes a map statement of a field element.
+ * This rule consumes a fast-search map field statement of a field element, which names the lookup
+ * field of a map, or of an array of struct used as a map, with the key and value fields given in a block.
  *
  * @param field The field to modify.
  */
-void mapElm(ParsedField field) : { }
-    <MAP> ( (<COLON> mapBody(field))
-                | (openLbrace() (mapBody(field) | <NL>)* <RBRACE>) )
+void fastSearchMapElm(ParsedField field) :
+{
+    String name;
+    Token nameToken;
+    ParsedField.ParsedFastMapSearch fastMapSearch = null;
+}
+    <FAST_SEARCH> <MAP> <FIELD> <COLON> name = identifierStr()
+    {
+        nameToken = lastConsumedToken;
+        try {
+            fastMapSearch = field.addFastMapSearch(name);
+        } catch (IllegalArgumentException e) {
+            nameToken.addIllegalArgumentException(e);
+        }
+    }
+    [ SCAN((<NL>)* <LBRACE>) => openLbrace() (fastSearchMapBody(fastMapSearch) | <NL>)* <RBRACE> ]
 ;
 
 /**
- * This rule consumes one body item of a map block.
+ * This rule consumes one body item of a fast-search map field block.
  *
- * @param field The field to modify.
+ * @param fastMapSearch The fast-search map field to modify, or null if it was rejected.
  */
-void mapBody(ParsedField field) :
+void fastSearchMapBody(ParsedField.ParsedFastMapSearch fastMapSearch) :
 {
     String name;
     Token nameToken;
     String structFieldName;
 }
-    ( <FAST_SEARCH> { field.setFastMapSearch(true); }
-    | name = identifierStr() { nameToken = lastConsumedToken; } <COLON> structFieldName = identifierStr()
-      {
-          try {
-              if (name.equals("key")) field.setFastMapKeyField(structFieldName);
-              else if (name.equals("value")) field.setFastMapValueField(structFieldName);
-              else nameToken.addIllegalArgumentException(new IllegalArgumentException(
-                       "Expected 'fast-search', 'key' or 'value' in map, but got '" + name + "'."));
-          } catch (IllegalArgumentException e) {
-              nameToken.addIllegalArgumentException(e);
-          }
-      } )
+    name = identifierStr() { nameToken = lastConsumedToken; } <COLON> structFieldName = identifierStr()
+    {
+        try {
+            if ( ! name.equals("key") && ! name.equals("value")) {
+                nameToken.addIllegalArgumentException(new IllegalArgumentException(
+                        "Expected 'key' or 'value' in 'fast-search map field', but got '" + name + "'."));
+            } else if (fastMapSearch != null) {
+                if (name.equals("key")) fastMapSearch.setKeyField(structFieldName);
+                else fastMapSearch.setValueField(structFieldName);
+            }
+        } catch (IllegalArgumentException e) {
+            nameToken.addIllegalArgumentException(e);
+        }
+    }
 ;
 
 /**

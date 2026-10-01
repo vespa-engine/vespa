@@ -2,12 +2,12 @@
 
 #include "attribute_node_replacer.h"
 
-#include "grouping.h"
-
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchlib/aggregation/aggregationresult.h>
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
+#include <vespa/searchlib/expression/expressiontree.h>
 #include <vespa/searchlib/expression/interpolated_document_field_lookup_node.h>
 #include <vespa/searchlib/expression/interpolatedlookupfunctionnode.h>
 #include <vespa/searchlib/expression/multiargfunctionnode.h>
@@ -24,8 +24,9 @@ bool AttributeNodeReplacer::check(const vespalib::Identifiable& obj) const {
 }
 
 void AttributeNodeReplacer::replaceRecurse(ExpressionNode* exp, std::function<void(ExpressionNodeUP)>&& modifier) {
-    if (exp == nullptr)
+    if (exp == nullptr) {
         return;
+    }
     if (exp->inherits(AttributeNode::classId)) {
         auto replacementNode = getReplacementNode(static_cast<const AttributeNode&>(*exp));
         if (replacementNode) {
@@ -38,20 +39,21 @@ void AttributeNodeReplacer::replaceRecurse(ExpressionNode* exp, std::function<vo
 
 void AttributeNodeReplacer::execute(vespalib::Identifiable& obj) {
     if (obj.getClass().inherits(ExpressionTree::classId)) {
-        auto& g(static_cast<ExpressionTree&>(obj));
-        replaceRecurse(g.getRoot(),
-                       [&g](ExpressionNodeUP replacement) noexcept { g.changeRoot(std::move(replacement)); });
+        auto& tree = static_cast<ExpressionTree&>(obj);
+        replaceRecurse(tree.getRoot(),
+                       [&tree](ExpressionNodeUP replacement) noexcept { tree.changeRoot(std::move(replacement)); });
     } else if (obj.getClass().inherits(AggregationResult::classId)) {
-        auto& a(static_cast<AggregationResult&>(obj));
-        replaceRecurse(a.getExpression(),
-                       [&a](ExpressionNodeUP replacement) { a.setExpression(std::move(replacement)); });
+        auto& result = static_cast<AggregationResult&>(obj);
+        replaceRecurse(result.getExpression(),
+                       [&result](ExpressionNodeUP replacement) { result.setExpression(std::move(replacement)); });
         // Matching this object stops the selection from descending on its own, so visit the members
         // explicitly to reach any additional expression trees held by the aggregation result.
-        a.selectMembers(*this, *this);
+        result.selectMembers(*this, *this);
     } else if (obj.getClass().inherits(MultiArgFunctionNode::classId)) {
-        MultiArgFunctionNode::ExpressionNodeVector& v(static_cast<MultiArgFunctionNode&>(obj).expressionNodeVector());
-        for (auto& e : v) {
-            replaceRecurse(e.get(), [&e](ExpressionNodeUP replacement) noexcept { e = std::move(replacement); });
+        auto& vec = static_cast<MultiArgFunctionNode&>(obj).expressionNodeVector();
+        for (auto& expr : vec) {
+            replaceRecurse(expr.get(),
+                           [&expr](ExpressionNodeUP replacement) noexcept { expr = std::move(replacement); });
         }
     }
 }

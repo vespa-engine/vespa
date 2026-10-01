@@ -13,6 +13,9 @@ on:
   schedule:
    - cron: '0 6 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   delete-old-cloudsmith-artifacts:
     runs-on: ubuntu-latest
@@ -31,7 +34,9 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Delete old artifacts
         run: |

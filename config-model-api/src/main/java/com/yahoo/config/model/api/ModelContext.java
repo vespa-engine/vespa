@@ -115,7 +115,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default double logserverNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean useSimpleAnnotations() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean sendOldQueryStack() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
@@ -129,11 +128,10 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"toregge"}) default double searchNodeReservedMemoryFactor() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forceDisableOnnxModelOptimization() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean failWhenConfiguringIndexedMapOfArray() { return true; }
-        @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.740") default boolean protonLogWarningOnDiskCapacityChange() { return true; }
-        @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.740") default boolean protonResampleDiskCapacity() { return true; }
         @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}) default boolean fastMapSearch() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.755") default boolean relaxStrictlyIncreasingClusterStateVersions() { return true; }
         @ModelFeatureFlag(owners = {"sebasabe"}) default boolean commerceDiscovery() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum", "vekterli"}) default boolean enableLandlock() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

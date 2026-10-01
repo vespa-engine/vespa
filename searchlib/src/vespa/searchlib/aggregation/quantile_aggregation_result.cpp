@@ -41,12 +41,10 @@ void QuantileAggregationResult::visitMembers(vespalib::ObjectVisitor& visitor) c
     visit(visitor, "extension", _extension);
 }
 
-void QuantileAggregationResult::onPrepare(const ResultNode& result) {
-    (void)result;
+void QuantileAggregationResult::onPrepare(const ResultNode&) {
 }
 
-void QuantileAggregationResult::initForUnitTest(const ResultNode& result) {
-    (void)result;
+void QuantileAggregationResult::initForUnitTest(const ResultNode&) {
     LOG(warning, "initForUnitTest was called. Should not happen for QuantileAggregationResult.");
 }
 
@@ -56,9 +54,9 @@ void QuantileAggregationResult::onMerge(const AggregationResult& b) {
 
 void QuantileAggregationResult::onAggregate(const ResultNode& result) {
     if (result.isMultiValue()) {
-        auto& rv = dynamic_cast<const ResultNodeVector&>(result);
-        for (size_t i = 0; i < rv.size(); ++i) {
-            _sketch.update(rv.get(i).getFloat());
+        const auto& rv = static_cast<const ResultNodeVector&>(result);
+        for (const auto& elem : rv) {
+            _sketch.update(elem.getFloat());
         }
     } else {
         _sketch.update(result.getFloat());

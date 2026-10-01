@@ -17,12 +17,10 @@ import java.util.TreeMap;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
-import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
-import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 
@@ -63,15 +61,6 @@ public class Flags {
             List.of("hmusum"), "2020-12-02", "2026-12-01",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
-            INSTANCE_ID);
-
-    public static final UnboundStringFlag DEPLOYMENT_METRICS_CONSUMER = defineStringFlag(
-            "deployment-metrics-consumer", "cluster-deployment-metrics",
-            List.of("hmusum"), "2026-07-10", "2026-12-01",
-            "Selects which metrics-proxy consumer the config server uses when fetching " +
-            "metrics for cluster deployment metrics aggregation. Valid values: Vespa, cluster-deployment-metrics",
-            "Takes effect on next metrics retrieval",
-            value -> Set.of("Vespa", "cluster-deployment-metrics").contains(value),
             INSTANCE_ID);
 
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
@@ -173,13 +162,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag USE_SIMPLE_ANNOTATIONS = defineFeatureFlag(
-            "use-simple-annotations", true,
-            List.of("arnej"), "2025-11-13", "2026-12-31",
-            "Enable lightweight annotation representation for StringFieldValue",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
             List.of("glebashnik"), "2025-04-25", "2026-12-01",
@@ -259,6 +241,13 @@ public class Flags {
             List.of("gjoranv"), "2026-09-09", "2027-03-08",
             "Temporary percentage of applications selected for rollout, from 0 to 100",
             "Takes effect on the next prepare. Lowering the percentage can restore previous behavior.",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag ENABLE_LANDLOCK = defineFeatureFlag(
+            "enable-landlock", false,
+            List.of("hmusum", "vekterli"), "2026-09-25", "2027-03-08",
+            "Whether to set env variables enabling Landlock for sandboxing.",
+            "Takes effect on the next deployment.",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

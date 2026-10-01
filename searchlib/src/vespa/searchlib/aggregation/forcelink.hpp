@@ -7,7 +7,6 @@ void forcelink_file_searchlib_aggregation_aggregation();
 void forcelink_file_searchlib_aggregation_hitlist();
 void forcelink_file_searchlib_aggregation_fs4hit();
 void forcelink_file_searchlib_aggregation_group();
-void forcelink_file_searchlib_aggregation_rawrank();
 void forcelink_file_searchlib_aggregation_hit();
 void forcelink_file_searchlib_aggregation_vdshit();
 void forcelink_file_searchlib_aggregation_hitsaggregationresult();
@@ -20,7 +19,6 @@ void forcelink_searchlib_aggregation() {
     forcelink_file_searchlib_aggregation_hitlist();
     forcelink_file_searchlib_aggregation_fs4hit();
     forcelink_file_searchlib_aggregation_group();
-    forcelink_file_searchlib_aggregation_rawrank();
     forcelink_file_searchlib_aggregation_hit();
     forcelink_file_searchlib_aggregation_vdshit();
     forcelink_file_searchlib_aggregation_hitsaggregationresult();

@@ -68,13 +68,13 @@ void HitList::postMerge(uint32_t maxHits) {
 }
 
 Serializer& HitList::onSerialize(Serializer& os) const {
-    os << (uint32_t)(_fs4hits.size() + _vdshits.size());
-    for (uint32_t i(0); i < _fs4hits.size(); i++) {
+    os << static_cast<uint32_t>(_fs4hits.size() + _vdshits.size());
+    for (uint32_t i = 0; i < _fs4hits.size(); i++) {
         HitCP hit(const_cast<FS4Hit*>(&_fs4hits[i]));
         os << hit;
         hit.release();
     }
-    for (uint32_t i(0); i < _vdshits.size(); i++) {
+    for (uint32_t i = 0; i < _vdshits.size(); i++) {
         HitCP hit(const_cast<VdsHit*>(&_vdshits[i]));
         os << hit;
         hit.release();
@@ -83,10 +83,10 @@ Serializer& HitList::onSerialize(Serializer& os) const {
 }
 
 Deserializer& HitList::onDeserialize(Deserializer& is) {
-    uint32_t count(0);
+    uint32_t count = 0;
 
     is >> count;
-    for (uint32_t i(0); i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         HitCP hit;
         is >> hit;
         if (hit->inherits(FS4Hit::classId)) {
@@ -109,16 +109,15 @@ void HitList::visitMembers(vespalib::ObjectVisitor& visitor) const {
 }
 
 void HitList::selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) {
-    for (uint32_t i(0); i < _fs4hits.size(); ++i) {
+    for (uint32_t i = 0; i < _fs4hits.size(); ++i) {
         _fs4hits[i].select(predicate, operation);
     }
-    for (uint32_t i(0); i < _vdshits.size(); ++i) {
+    for (uint32_t i = 0; i < _vdshits.size(); ++i) {
         _vdshits[i].select(predicate, operation);
     }
 }
 
-void HitList::set(const ResultNode& rhs) {
-    (void)rhs;
+void HitList::set(const ResultNode&) {
     throw std::runtime_error("HitList::set(const ResultNode & rhs) not implemented.");
 }
 

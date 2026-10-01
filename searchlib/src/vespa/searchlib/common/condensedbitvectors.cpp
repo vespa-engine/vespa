@@ -2,7 +2,7 @@
 #include "condensedbitvectors.h"
 
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <cassert>
 
@@ -80,7 +80,7 @@ private:
      */
     size_t getSize() override { return _v.size(); }
     void adjustDocIdLimit(uint32_t docId) override;
-    vespalib::RcuVectorBase<T> _v;
+    vespalib::TypeStableVectorBase<T> _v;
 };
 
 template <typename T>

@@ -55,7 +55,7 @@ public class QuotaValidator implements Validator {
         for (var clusterId : context.model().allClusters()) {
             if (adminClusterIds(context.model()).contains(clusterId)) continue;
             var cluster = context.model().provisioned().clusters().get(clusterId);
-            maxSpend += capacityPolicies.applyOn(cluster.capacity(), cluster.isExclusive()).maxResources().cost();
+            maxSpend += capacityPolicies.applyOn(cluster).maxResources().cost();
         }
 
         var actualSpend = context.model().allocatedHosts().getHosts().stream()

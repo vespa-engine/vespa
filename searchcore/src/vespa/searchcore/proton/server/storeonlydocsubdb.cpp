@@ -177,6 +177,7 @@ void StoreOnlyDocSubDB::onReplayDone() {
     _dms->compactLidSpace(docIdLimit);
     _dms->unblockShrinkLidSpace();
     _dms->shrinkLidSpace();
+    flush_document_summary(false);
     auto&              docStore = _rSummaryMgr->getBackingStore();
     std::promise<void> promise;
     auto               future = promise.get_future();
@@ -501,7 +502,7 @@ MatchingStats StoreOnlyDocSubDB::getMatcherStats(const std::string& rankProfile)
     return {};
 }
 
-void StoreOnlyDocSubDB::close() {
+void StoreOnlyDocSubDB::flush_document_summary(bool sync_tls) {
     assert(_writeService.master().isCurrentThread());
     search::IDocumentStore& store(_rSummaryMgr->getBackingStore());
     auto                    summaryFlush = std::make_shared<SummaryFlushTarget>(store, _writeService.summary());
@@ -509,9 +510,15 @@ void StoreOnlyDocSubDB::close() {
         summaryFlush->initFlush(store.tentativeLastSyncToken(), std::make_shared<search::FlushToken>());
     if (summaryFlushTask) {
         SerialNum syncToken = summaryFlushTask->getFlushSerial();
-        _tlSyncer.sync(syncToken);
+        if (sync_tls) {
+            _tlSyncer.sync(syncToken);
+        }
         summaryFlushTask->run();
     }
+}
+
+void StoreOnlyDocSubDB::close() {
+    flush_document_summary(true);
 }
 
 std::shared_ptr<IDocumentDBReference> StoreOnlyDocSubDB::getDocumentDBReference() {

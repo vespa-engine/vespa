@@ -161,14 +161,18 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private void topKOptimize(Query query, Group group) {
         int neededHits = query.getHits() + query.getOffset();
         int q = neededHits;
-        if (group.isBalanced() && !group.isSparse()) {
+        // When content is skewed, estimate as if every node held as much as the largest node,
+        // which asks each node for at least as many hits as the largest one needs
+        int estimateNodes = group.isBalanced() ? invokers.size()
+                                               : Math.min(invokers.size(), (int)(1 / group.maxContentShare()));
+        if ( ! group.isSparse()) {
             Double topkProbabilityOverrride = query.properties().getDouble(Dispatcher.topKProbability);
             q = (topkProbabilityOverrride != null)
-                ? estimateHitsToFetch(neededHits, invokers.size(), topkProbabilityOverrride)
-                : estimateHitsToFetch(neededHits, invokers.size());
+                ? estimateHitsToFetch(neededHits, estimateNodes, topkProbabilityOverrride)
+                : estimateHitsToFetch(neededHits, estimateNodes);
         }
         if (q < neededHits) {
-            query.trace("Only fetching " + q + " of " + neededHits + " hits per node (TopK probability for " + invokers.size() + " nodes)", 1);
+            query.trace("Only fetching " + q + " of " + neededHits + " hits per node (TopK probability for " + estimateNodes + " nodes)", 1);
         }
         query.setHits(q);
         query.setOffset(0);

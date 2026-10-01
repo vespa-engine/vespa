@@ -4,7 +4,6 @@
 # NOTE: All new test classes should be added here.
 vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     SOURCES
-    gtest_runner.cpp
     bfloat16_test.cpp
     bit_packer_test.cpp
     bit_span_test.cpp
@@ -20,10 +19,11 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     file_area_freelist_test.cpp
     generation_hold_list_test.cpp
     generationhandler_test.cpp
+    gtest_runner.cpp
+    issue_test.cpp
     json.cpp
     landlock_test.cpp
     logic_test.cpp
-    issue_test.cpp
     memory_trap_test.cpp
     mmap_file_allocator_factory_test.cpp
     mmap_file_allocator_test.cpp
@@ -32,7 +32,6 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     printabletest.cpp
     ptrholder.cpp
     random_test.cpp
-    rcuvector_test.cpp
     ref_counted_test.cpp
     relative_frequency_sketch_test.cpp
     require_test.cpp
@@ -43,6 +42,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     string_escape_test.cpp
     time_test.cpp
     transient_memory_tracker_test.cpp
+    type_stable_vector_test.cpp
     typed_data_layout_test.cpp
     typify_test.cpp
     unordered_u32_set_test.cpp

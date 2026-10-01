@@ -37,6 +37,7 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
 
     @Override
     protected void appendHeadingString(StringBuilder buffer) { }
+
     @Override
     protected void appendBodyString(StringBuilder buffer) {
         buffer.append(fieldName);

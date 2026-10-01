@@ -27,6 +27,7 @@ public class Group {
     private volatile boolean hasFullCoverage = true;
     private volatile long activeDocuments = 0;
     private volatile long targetActiveDocuments = 0;
+    private volatile double maxContentShare = 1.0;
     private volatile boolean isBalanced = true;
 
     public Group(int id, List<Node> nodes) {
@@ -89,6 +90,8 @@ public class Group {
         long activeDocs = calculateActiveDocs(workingNodes);
         activeDocuments = activeDocs;
         targetActiveDocuments = workingNodes.stream().mapToLong(Node::getTargetActiveDocuments).sum();
+        long maxNodeActiveDocs = workingNodes.stream().mapToLong(Node::getActiveDocuments).max().orElse(0);
+        maxContentShare = activeDocs == 0 ? 1.0 : (double)maxNodeActiveDocs / activeDocs;
         int numWorkingNodes = workingNodes.size();
         if (numWorkingNodes > 1) {
             long average = activeDocs / numWorkingNodes;
@@ -99,7 +102,7 @@ public class Group {
                     log.info("Content in " + this + ", with " + numWorkingNodes + "/" + nodes.size() + " working nodes, is " +
                              (balanced ? "" : "not ") + "well balanced. Current deviation: " + skew * 100 / activeDocs +
                              "%. Active documents: " + activeDocs + ", skew: " + skew + ", average: " + average +
-                             (balanced ? "" : ". Top-k summary fetch optimization is deactivated."));
+                             (balanced ? "" : ". Top-k hit estimation assumes every node holds as much as the largest node."));
                 isBalanced = balanced;
             }
         } else {
@@ -127,6 +130,13 @@ public class Group {
 
     /** Returns whether the nodes in the group have about the same number of documents */
     public boolean isBalanced() { return isBalanced; }
+
+    /**
+     * Returns the share of the active documents in this group held by the working node holding the most.
+     * This is 1/(working nodes) when content is perfectly balanced, and larger when it is skewed.
+     * Returns 1 if we have not yet received active document counts from all nodes.
+     */
+    public double maxContentShare() { return maxContentShare; }
 
     /** Returns whether this group has too few documents per node to expect it to be balanced */
     public boolean isSparse() {

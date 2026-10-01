@@ -7,7 +7,7 @@
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
-#include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/type_stable_vector.hpp>
 
 namespace search::attribute {
 

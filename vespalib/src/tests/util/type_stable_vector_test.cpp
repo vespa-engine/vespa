@@ -5,12 +5,12 @@
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
-#include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/type_stable_vector.hpp>
 
 #include <random>
 #include <thread>
@@ -48,9 +48,9 @@ GrowStrategy growStrategy(size_t initial, float factor, size_t delta, size_t min
     return GrowStrategy(initial, factor, delta, minimal);
 }
 
-TEST(RcuVectorTest, basic) {
+TEST(TypeStableVectorTest, basic) {
     { // insert
-        RcuVector<int32_t> v(growStrategy(4, 0, 4));
+        TypeStableVector<int32_t> v(growStrategy(4, 0, 4));
         for (int32_t i = 0; i < 100; ++i) {
             v.push_back(i);
             EXPECT_EQ(i, v[i]);
@@ -66,9 +66,9 @@ TEST(RcuVectorTest, basic) {
     }
 }
 
-TEST(RcuVectorTest, resize) {
+TEST(TypeStableVectorTest, resize) {
     { // resize percent
-        RcuVector<int32_t> v(growStrategy(2, 0.50, 0));
+        TypeStableVector<int32_t> v(growStrategy(2, 0.50, 0));
         EXPECT_EQ(2u, v.capacity());
         v.push_back(0);
         EXPECT_EQ(2u, v.capacity());
@@ -80,7 +80,7 @@ TEST(RcuVectorTest, resize) {
         EXPECT_TRUE(v.isFull());
     }
     { // resize delta
-        RcuVector<int32_t> v(growStrategy(1, 0, 3));
+        TypeStableVector<int32_t> v(growStrategy(1, 0, 3));
         EXPECT_EQ(1u, v.capacity());
         v.push_back(0);
         EXPECT_EQ(1u, v.capacity());
@@ -90,7 +90,7 @@ TEST(RcuVectorTest, resize) {
         EXPECT_TRUE(!v.isFull());
     }
     { // resize both
-        RcuVector<int32_t> v(growStrategy(2, 2.0, 3));
+        TypeStableVector<int32_t> v(growStrategy(2, 2.0, 3));
         EXPECT_EQ(2u, v.capacity());
         v.push_back(0);
         EXPECT_EQ(2u, v.capacity());
@@ -102,14 +102,14 @@ TEST(RcuVectorTest, resize) {
         EXPECT_TRUE(!v.isFull());
     }
     { // reserve
-        RcuVector<int32_t> v(growStrategy(2, 0, 0));
+        TypeStableVector<int32_t> v(growStrategy(2, 0, 0));
         EXPECT_EQ(2u, v.capacity());
         v.unsafe_reserve(8);
         EXPECT_EQ(8u, v.capacity());
     }
     { // explicit resize
-        GenerationHolder      g;
-        RcuVectorBase<int8_t> v(growStrategy(16, 1.0, 0), g);
+        GenerationHolder             g;
+        TypeStableVectorBase<int8_t> v(growStrategy(16, 1.0, 0), g);
         v.push_back(1);
         v.push_back(2);
         g.assign_generation(Generation(0));
@@ -133,8 +133,8 @@ TEST(RcuVectorTest, resize) {
     }
 }
 
-TEST(RcuVectorTest, generation_handling) {
-    RcuVector<int32_t> v(growStrategy(2, 0, 2));
+TEST(TypeStableVectorTest, generation_handling) {
+    TypeStableVector<int32_t> v(growStrategy(2, 0, 2));
     v.push_back(0);
     v.push_back(10);
     EXPECT_EQ(0u, v.getMemoryUsage().allocatedBytesOnHold());
@@ -155,8 +155,8 @@ TEST(RcuVectorTest, generation_handling) {
     EXPECT_EQ(24u, v.getMemoryUsage().allocatedBytesOnHold());
 }
 
-TEST(RcuVectorTest, reserve) {
-    RcuVector<int32_t> v(growStrategy(2, 0, 2));
+TEST(TypeStableVectorTest, reserve) {
+    TypeStableVector<int32_t> v(growStrategy(2, 0, 2));
     EXPECT_EQ(2u, v.capacity());
     EXPECT_EQ(0u, v.size());
     v.push_back(0);
@@ -178,8 +178,8 @@ TEST(RcuVectorTest, reserve) {
     EXPECT_EQ(8u + 32u * 4u, v.getMemoryUsage().allocatedBytesOnHold());
 }
 
-TEST(RcuVectorTest, memory_usage) {
-    RcuVector<int8_t> v(growStrategy(2, 0, 2));
+TEST(TypeStableVectorTest, memory_usage) {
+    TypeStableVector<int8_t> v(growStrategy(2, 0, 2));
     EXPECT_TRUE(assertUsage(MemoryUsage(2, 0, 0, 0), v.getMemoryUsage()));
     v.push_back(0);
     EXPECT_TRUE(assertUsage(MemoryUsage(2, 1, 0, 0), v.getMemoryUsage()));
@@ -196,10 +196,10 @@ TEST(RcuVectorTest, memory_usage) {
 }
 
 void verify_shrink_with_buffer_copying(size_t initial_size, size_t absolute_minimum) {
-    const size_t          minimal_capacity = std::max(4ul, absolute_minimum);
-    const size_t          initial_capacity = std::max(initial_size, minimal_capacity);
-    GenerationHolder      g;
-    RcuVectorBase<int8_t> v(growStrategy(initial_size, 1.0, 0, absolute_minimum), g);
+    const size_t                 minimal_capacity = std::max(4ul, absolute_minimum);
+    const size_t                 initial_capacity = std::max(initial_size, minimal_capacity);
+    GenerationHolder             g;
+    TypeStableVectorBase<int8_t> v(growStrategy(initial_size, 1.0, 0, absolute_minimum), g);
     v.push_back(1);
     v.push_back(2);
     v.push_back(3);
@@ -233,18 +233,18 @@ void verify_shrink_with_buffer_copying(size_t initial_size, size_t absolute_mini
     EXPECT_TRUE(assertUsage(MemoryUsage(minimal_capacity, 2, 0, 0), mu));
 }
 
-TEST(RcuVectorTest, shrink_with_buffer_copying) {
+TEST(TypeStableVectorTest, shrink_with_buffer_copying) {
     verify_shrink_with_buffer_copying(16, 8);
     verify_shrink_with_buffer_copying(0, 8);
     verify_shrink_with_buffer_copying(0, 0);
 }
 
 struct ShrinkFixture {
-    GenerationHolder   g;
-    size_t             initial_capacity;
-    size_t             initial_size;
-    RcuVectorBase<int> vec;
-    int*               oldPtr;
+    GenerationHolder          g;
+    size_t                    initial_capacity;
+    size_t                    initial_size;
+    TypeStableVectorBase<int> vec;
+    int*                      oldPtr;
     ShrinkFixture()
         : g(),
           initial_capacity(4 * page_ints()),
@@ -264,7 +264,7 @@ struct ShrinkFixture {
     static size_t page_ints() { return round_up_to_page_size(1) / sizeof(int); }
 };
 
-TEST(RcuVectorTest, shrink_does_not_increase_allocated_memory) {
+TEST(TypeStableVectorTest, shrink_does_not_increase_allocated_memory) {
     ShrinkFixture f;
     size_t        shrink_size = f.initial_capacity * 2 / 3 + 2;
     f.vec.shrink(shrink_size);
@@ -274,7 +274,7 @@ TEST(RcuVectorTest, shrink_does_not_increase_allocated_memory) {
     f.assertEmptyHoldList();
 }
 
-TEST(RcuVectorTest, shrink_can_shrink_mmap_allocation) {
+TEST(TypeStableVectorTest, shrink_can_shrink_mmap_allocation) {
     ShrinkFixture f;
     f.vec.shrink(2 * f.page_ints());
     EXPECT_EQ(2 * f.page_ints(), f.vec.size());
@@ -283,9 +283,9 @@ TEST(RcuVectorTest, shrink_can_shrink_mmap_allocation) {
     f.assertEmptyHoldList();
 }
 
-TEST(RcuVectorTest, small_expand) {
-    GenerationHolder      g;
-    RcuVectorBase<int8_t> v(growStrategy(1, 0.50, 0), g);
+TEST(TypeStableVectorTest, small_expand) {
+    GenerationHolder             g;
+    TypeStableVectorBase<int8_t> v(growStrategy(1, 0.50, 0), g);
     EXPECT_EQ(1u, v.capacity());
     EXPECT_EQ(0u, v.size());
     v.push_back(1);
@@ -318,7 +318,7 @@ FixtureBase::FixtureBase()
 FixtureBase::~FixtureBase() = default;
 
 struct Fixture : public FixtureBase {
-    RcuVectorBase<int> arr;
+    TypeStableVectorBase<int> arr;
 
     Fixture();
     ~Fixture();
@@ -334,14 +334,14 @@ Fixture::Fixture() : FixtureBase(), arr(growStrategy(16, 1.0, 0), g, initial_all
 
 Fixture::~Fixture() = default;
 
-TEST(RcuVectorTest, memory_allocator_can_be_set) {
+TEST(TypeStableVectorTest, memory_allocator_can_be_set) {
     Fixture f;
     EXPECT_EQ(AllocStats(2, 0), f.stats);
     f.assign_and_reclaim(Generation(1), Generation(2));
     EXPECT_EQ(AllocStats(2, 1), f.stats);
 }
 
-TEST(RcuVectorTest, memory_allocator_is_preserved_across_reset) {
+TEST(TypeStableVectorTest, memory_allocator_is_preserved_across_reset) {
     Fixture f;
     f.arr.reset();
     f.arr.reserve(100);
@@ -350,7 +350,7 @@ TEST(RcuVectorTest, memory_allocator_is_preserved_across_reset) {
     EXPECT_EQ(AllocStats(4, 3), f.stats);
 }
 
-TEST(RcuVectorTest, created_replacement_vector_uses_same_memory_allocator) {
+TEST(TypeStableVectorTest, created_replacement_vector_uses_same_memory_allocator) {
     Fixture f;
     auto    arr2 = f.arr.create_replacement_vector();
     EXPECT_EQ(AllocStats(2, 0), f.stats);
@@ -360,7 +360,7 @@ TEST(RcuVectorTest, created_replacement_vector_uses_same_memory_allocator) {
     EXPECT_EQ(AllocStats(3, 1), f.stats);
 }
 
-TEST(RcuVectorTest, ensure_size_and_shrink_use_same_memory_allocator) {
+TEST(TypeStableVectorTest, ensure_size_and_shrink_use_same_memory_allocator) {
     Fixture f;
     f.arr.ensure_size(2000);
     EXPECT_EQ(AllocStats(3, 0), f.stats);
@@ -384,12 +384,12 @@ public:
 
 struct StressFixture : public FixtureBase {
     using AtomicIntWrapper = AtomicValueWrapper<int>;
-    RcuVectorBase<AtomicIntWrapper> arr;
-    std::atomic<bool>               stop_read;
-    uint32_t                        read_area;
-    GenerationHandler               generation_handler;
-    vespalib::ThreadStackExecutor   writer;  // 1 write thread
-    vespalib::ThreadStackExecutor   readers; // multiple reader threads
+    TypeStableVectorBase<AtomicIntWrapper> arr;
+    std::atomic<bool>                      stop_read;
+    uint32_t                               read_area;
+    GenerationHandler                      generation_handler;
+    vespalib::ThreadStackExecutor          writer;  // 1 write thread
+    vespalib::ThreadStackExecutor          readers; // multiple reader threads
     StressFixture();
     ~StressFixture();
     void commit();
@@ -472,7 +472,7 @@ void StressFixture::run_test(uint32_t cnt, uint32_t num_readers) {
     EXPECT_LE((cnt / 1000) * 2, stats.alloc_cnt);
 }
 
-TEST(RcuVectorTest, single_writer_four_readers) {
+TEST(TypeStableVectorTest, single_writer_four_readers) {
     StressFixture f;
     f.run_test(20000, 4);
 }

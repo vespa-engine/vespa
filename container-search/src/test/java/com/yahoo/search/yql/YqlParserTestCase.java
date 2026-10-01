@@ -17,6 +17,7 @@ import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
@@ -723,13 +724,13 @@ public class YqlParserTestCase {
         assertParse("select * from sources * where my_map{'foo'} = 10",
                     "my_map:{key:foo value:10}");
         assertInstanceOf(IntItem.class,
-                         ((SameElementItem) parse("select * from sources * where my_map{'foo'} = 10").getRoot()).getItem(1));
+                         ((MapMatchItem) parse("select * from sources * where my_map{'foo'} = 10").getRoot()).valueItem());
 
         // Negative numeric values are also numeric equality terms, with the sign preserved.
         assertParse("select * from sources * where my_map{'foo'} = -10",
                     "my_map:{key:foo value:-10}");
         IntItem negativeValue = assertInstanceOf(IntItem.class,
-                         ((SameElementItem) parse("select * from sources * where my_map{'foo'} = -10").getRoot()).getItem(1));
+                         ((MapMatchItem) parse("select * from sources * where my_map{'foo'} = -10").getRoot()).valueItem());
         assertEquals("-10", negativeValue.getNumber());
         assertCanonicalParse("select * from sources * where my_map{'foo'} = -10",
                              "my_map:{key:foo value:-10}");
@@ -742,7 +743,7 @@ public class YqlParserTestCase {
         assertParse("select * from sources * where my_map{-1} contains 'bar'",
                     "my_map:{key:-1 value:bar}");
         IntItem negativeKey = assertInstanceOf(IntItem.class,
-                         ((SameElementItem) parse("select * from sources * where my_map{-1} contains 'bar'").getRoot()).getItem(0));
+                         ((MapMatchItem) parse("select * from sources * where my_map{-1} contains 'bar'").getRoot()).keyItem());
         assertEquals("-1", negativeKey.getNumber());
         assertCanonicalParse("select * from sources * where my_map{-1} = -10",
                              "my_map:{key:-1 value:-10}");
@@ -755,21 +756,21 @@ public class YqlParserTestCase {
         assertParse("select * from sources * where my_map{- 1} = - 1.5",
                     "my_map:{key:-1 value:-1.5}");
         assertInstanceOf(IntItem.class,
-                         ((SameElementItem) parse("select * from sources * where my_map{- 1} = - 10").getRoot()).getItem(0));
+                         ((MapMatchItem) parse("select * from sources * where my_map{- 1} = - 10").getRoot()).keyItem());
         assertInstanceOf(IntItem.class,
-                         ((SameElementItem) parse("select * from sources * where my_map{- 1} = - 10").getRoot()).getItem(1));
+                         ((MapMatchItem) parse("select * from sources * where my_map{- 1} = - 10").getRoot()).valueItem());
 
         // Numeric keys become numeric equality terms, for maps with numeric key types.
         assertParse("select * from sources * where my_map{1} contains 'bar'",
                     "my_map:{key:1 value:bar}");
         assertInstanceOf(IntItem.class,
-                         ((SameElementItem) parse("select * from sources * where my_map{1} contains 'bar'").getRoot()).getItem(0));
+                         ((MapMatchItem) parse("select * from sources * where my_map{1} contains 'bar'").getRoot()).keyItem());
 
         // Boolean values have no typed item form and become word terms.
         assertParse("select * from sources * where my_map{'foo'} = true",
                     "my_map:{key:foo value:true}");
         assertInstanceOf(WordItem.class,
-                         ((SameElementItem) parse("select * from sources * where my_map{'foo'} = true").getRoot()).getItem(1));
+                         ((MapMatchItem) parse("select * from sources * where my_map{'foo'} = true").getRoot()).valueItem());
 
         // The rewritten tree serializes and re-parses to the same tree.
         assertCanonicalParse("select * from sources * where my_map{'foo'} contains 'bar'",
@@ -787,13 +788,12 @@ public class YqlParserTestCase {
         assertParse("select * from sources * where range(my_map{'foo'}, 40, 50)",
                     "my_map:{key:foo value:[40;50]}");
 
-        SameElementItem se = (SameElementItem) parse("select * from sources * where range(my_map{'foo'}, 40, 50)").getRoot();
-        assertEquals("my_map", se.getFieldName());
-        assertEquals(2, se.getItemCount());
-        WordItem key = assertInstanceOf(WordItem.class, se.getItem(0));
+        MapMatchItem mapMatch = (MapMatchItem) parse("select * from sources * where range(my_map{'foo'}, 40, 50)").getRoot();
+        assertEquals("my_map", mapMatch.getFieldName());
+        WordItem key = assertInstanceOf(WordItem.class, mapMatch.keyItem());
         assertEquals("foo", key.getWord());
         assertEquals("key", key.getIndexName());
-        IntItem value = assertInstanceOf(IntItem.class, se.getItem(1));
+        IntItem value = assertInstanceOf(IntItem.class, mapMatch.valueItem());
         assertEquals("value", value.getIndexName());
 
         // The bounds annotation applies to the rewritten range.
@@ -814,11 +814,63 @@ public class YqlParserTestCase {
         assertParse("select * from sources * where range(my_map{1}, 40, 50)",
                     "my_map:{key:1 value:[40;50]}");
         assertInstanceOf(IntItem.class,
-                         ((SameElementItem) parse("select * from sources * where range(my_map{1}, 40, 50)").getRoot()).getItem(0));
+                         ((MapMatchItem) parse("select * from sources * where range(my_map{1}, 40, 50)").getRoot()).keyItem());
 
         // The rewritten tree serializes and re-parses to the same tree.
         assertCanonicalParse("select * from sources * where range(my_map{'foo'}, 40, 50)",
                              "my_map:{key:foo value:[40;50]}");
+    }
+
+    @Test
+    void testMapAccessProducesMapMatch() {
+        for (String where : List.of("my_map{'foo'} contains 'bar'", "my_map{'foo'} = 10", "range(my_map{'foo'}, 40, 50)",
+                                    "my_map contains mapMatch(key contains 'foo', value contains 'bar')",
+                                    "my_map contains mapMatch(value contains 'bar', key contains 'foo')")) {
+            MapMatchItem mapMatch = assertInstanceOf(MapMatchItem.class, parse("select * from sources * where " + where).getRoot(), where);
+            assertEquals("my_map", mapMatch.getFieldName(), where);
+            assertEquals("key", ((IndexedItem) mapMatch.keyItem()).getIndexName(), where);
+            assertEquals("foo", ((WordItem) mapMatch.keyItem()).getWord(), where);
+            assertEquals("value", ((IndexedItem) mapMatch.valueItem()).getIndexName(), where);
+        }
+
+        // The key and value are the first and second child, whatever order they are given in
+        assertParse("select * from sources * where my_map contains mapMatch(value contains 'bar', key contains 'foo')",
+                    "my_map:{key:foo value:bar}");
+
+        // A dotted field name, as for the lookup field of a map with fast search, is kept as is
+        MapMatchItem lookup = assertInstanceOf(MapMatchItem.class,
+                                               parse("select * from sources * where my_map.lookup{'foo'} = 10").getRoot());
+        assertEquals("my_map.lookup", lookup.getFieldName());
+        assertEquals("my_map.lookup:{key:foo value:10}", lookup.toString());
+
+        // A plain sameElement is not a map lookup
+        assertEquals(SameElementItem.class,
+                     parse("select * from sources * where my_map contains sameElement(key contains 'foo', value contains 'bar')").getRoot().getClass());
+    }
+
+    @Test
+    void testMapAccessWithCompositeValue() {
+        assertParse("select * from sources * where my_map{'foo'} contains phrase('new', 'york')",
+                    "my_map:{key:foo value:\"new york\"}");
+        MapMatchItem mapMatch = assertInstanceOf(MapMatchItem.class,
+                                                 parse("select * from sources * where my_map{'foo'} contains phrase('new', 'york')").getRoot());
+        assertInstanceOf(PhraseItem.class, mapMatch.valueItem());
+    }
+
+    @Test
+    void testMapMatchRequiresOneKeyAndOneValue() {
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo')",
+                        new IllegalArgumentException("mapMatch requires both a key and a value item"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(value contains 'bar')",
+                        new IllegalArgumentException("mapMatch requires both a key and a value item"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', key contains 'baz', value contains 'bar')",
+                        new IllegalArgumentException("unknown or extra item inside mapMatch: key:baz"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', value contains 'bar', value contains 'baz')",
+                        new IllegalArgumentException("unknown or extra item inside mapMatch: value:baz"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', other contains 'bar')",
+                        new IllegalArgumentException("unknown or extra item inside mapMatch: other:bar"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', value contains 'bar' and value contains 'baz')",
+                        new IllegalArgumentException("bad item type inside mapMatch: AND value:bar value:baz"));
     }
 
     @Test

@@ -13,7 +13,8 @@ template <typename BaseSC, typename AttrT, typename DataT>
 StringRangePostingSearchContext<BaseSC, AttrT, DataT>::StringRangePostingSearchContext(BaseSC&&     base_sc,
                                                                                        bool         use_bit_vector,
                                                                                        const AttrT& to_be_searched)
-    : Parent(std::move(base_sc), use_bit_vector, to_be_searched), _range_spec(this->get_string_range_spec()) {
+    : Parent(std::move(base_sc), use_bit_vector, to_be_searched),
+      _range_spec(this->matcher().get_string_range_spec()) {
     if (this->valid() && _range_spec) {
         // In both ends, an open (exclusive) boundary uses a less-or-equal comparator while closed
         // (inclusive) boundary uses an ordinary less-than variant.  It works like this:

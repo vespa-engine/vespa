@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace search {
 class AttributeVector;
@@ -23,7 +23,7 @@ class RawBufferStore;
  */
 class SingleRawAttributeLoader {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
-    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using RefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
 
     AttributeVector& _attr;
     RefVector&       _ref_vector;

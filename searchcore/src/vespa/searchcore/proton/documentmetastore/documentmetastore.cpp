@@ -34,7 +34,7 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
-#include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/type_stable_vector.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.documentmetastore");
@@ -223,7 +223,7 @@ void DocumentMetaStore::insert(GidToLidMapKey key, const RawDocumentMetadata& me
     ensureSpace(lid);
     _metadataStore[lid] = metadata;
     _gidToLidMap.insert(_gid_to_lid_map_write_itr, key, BTreeNoLeafData());
-    // flush writes to meta store rcu vector before new entry is visible
+    // flush writes to meta store type stable vector before new entry is visible
     // from frozen root or lid based scan
     std::atomic_thread_fence(std::memory_order_release);
     _lidAlloc.registerLid(lid);
@@ -467,8 +467,9 @@ void unloadBucket(bucketdb::BucketDBOwner& db, const BucketId& id, const BucketS
 
 void DocumentMetaStore::unload() {
     TreeType::Iterator itr = _gidToLidMap.begin();
-    if (!itr.valid())
+    if (!itr.valid()) {
         return;
+    }
     BucketId    prev;
     BucketState prevDelta;
     for (; itr.valid(); ++itr) {
@@ -870,8 +871,9 @@ void DocumentMetaStore::getMetadata(const BucketId& bucketId, search::DocumentMe
         DocId lid = itr.getKey().get_lid();
         if (validLid(lid)) {
             const RawDocumentMetadata& rawData = getRawMetadata(lid);
-            if (bucketId.getUsedBits() != rawData.getBucketUsedBits())
+            if (bucketId.getUsedBits() != rawData.getBucketUsedBits()) {
                 continue; // Wrong bucket (due to overlapping buckets)
+            }
             Timestamp        timestamp(rawData.getTimestamp());
             auto             docid_ref = rawData.acquire_docid_ref();
             std::string_view docid;
@@ -963,8 +965,9 @@ void DocumentMetaStore::getLids(const BucketId& bucketId, std::vector<DocId>& li
         const RawDocumentMetadata& metadata = getRawMetadata(lid);
         uint8_t                    bucketUsedBits = metadata.getBucketUsedBits();
         assert(BucketId::validUsedBits(bucketUsedBits));
-        if (bucketUsedBits != bucketId.getUsedBits())
+        if (bucketUsedBits != bucketId.getUsedBits()) {
             continue; // Skip document belonging to overlapping bucket
+        }
         lids.push_back(lid);
     }
 }

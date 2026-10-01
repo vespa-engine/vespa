@@ -4,7 +4,7 @@
 
 #include "enumattribute.h"
 
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace search {
 
@@ -19,7 +19,7 @@ class ReaderBase;
 class SingleValueEnumAttributeBase {
 protected:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
-    using AtomicEntryRefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using AtomicEntryRefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
     using DocId = AttributeVector::DocId;
     using EntryRef = vespalib::datastore::EntryRef;
     using EnumHandle = AttributeVector::EnumHandle;

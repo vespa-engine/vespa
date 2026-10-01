@@ -248,7 +248,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public double logserverNodeMemory() { return flag(PermanentFlags.LOGSERVER_NODE_MEMORY).value(); }
         @Override public double clusterControllerNodeMemory() { return flag(PermanentFlags.CLUSTER_CONTROLLER_NODE_MEMORY).value(); }
         @Override public boolean useLegacyWandQueryParsing() { return flag(Flags.USE_LEGACY_WAND_QUERY_PARSING).value(); }
-        @Override public boolean useSimpleAnnotations() { return flag(Flags.USE_SIMPLE_ANNOTATIONS).value(); }
         @Override public boolean forwardAllLogLevels() { return flag(PermanentFlags.FORWARD_ALL_LOG_LEVELS).value(); }
         @Override public long zookeeperPreAllocSize() { return flag(PermanentFlags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB).value(); }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return flag(PermanentFlags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY).value(); }
@@ -263,6 +262,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean failWhenConfiguringIndexedMapOfArray() { return flag(Flags.FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY).value(); }
         @Override public boolean fastMapSearch() { return flag(Flags.FAST_MAP_SEARCH).value(); }
         @Override public boolean commerceDiscovery() { return flag(Flags.COMMERCE_DISCOVERY).value(); }
+        @Override public boolean enableLandlock() { return flag(Flags.ENABLE_LANDLOCK).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();

@@ -22,11 +22,11 @@ schema mapcompletion {
         }
         field short_form type map<string, string> {
             indexing: summary
-            map: fast-search
+            fast-search map field: lookup
         }
         field block_form type map<int, int> {
             indexing: summary
-            map {
+            fast-search map field: lookup {
 
             }
         }
@@ -48,9 +48,13 @@ schema mapcompletion {
         }
         field entry_block type array<entry> {
             indexing: summary
-            map {
+            fast-search map field: lookup {
 
             }
+        }
+        field int_keys type map<int, string> {
+            indexing: summary
+
         }
     }
 }

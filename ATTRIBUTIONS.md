@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-09-24
+Last updated: 2026-09-30
 
 ---
 
@@ -174,7 +174,7 @@ Last updated: 2026-09-24
 
 ---
 
-## brace-expansion 2.1.4 — MIT
+## brace-expansion 2.1.7 — MIT
 
 - Homepage: <https://github.com/juliangruber/brace-expansion>
 - Copyright 2013 Julian Gruber <julian@juliangruber.com>
@@ -767,11 +767,10 @@ Last updated: 2026-09-24
 
 ---
 
-## micromark-util-types 2.0.2 — MIT
+## micromark-util-types 2.0.3 — MIT
 
 - Homepage: <https://github.com/micromark/micromark/tree/main#readme>
 - Copyright Titus Wormer
-- Copyright 2020 Titus Wormer <tituswormer@gmail.com>
 - Copyright Titus Wormer <tituswormer@gmail.com>
 
 ---

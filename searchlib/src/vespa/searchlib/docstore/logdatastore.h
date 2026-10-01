@@ -15,7 +15,7 @@
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/generationhandler.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <set>
 
@@ -209,7 +209,7 @@ private:
     void compactWorst(uint64_t syncToken, bool compactDiskBloat);
     void compactFile(FileId chunkId);
 
-    using LidInfoVector = vespalib::RcuVector<uint64_t>;
+    using LidInfoVector = vespalib::TypeStableVector<uint64_t>;
     using FileChunkVector = std::vector<FileChunk::UP>;
 
     void updateLidMap(uint32_t lastFileChunkDocIdLimit);

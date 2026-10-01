@@ -21,7 +21,6 @@ import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
-import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterHosts;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DeploymentConfigStore;
@@ -29,14 +28,12 @@ import com.yahoo.config.provision.EndpointsChecker;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.EndpointsChecker.HealthCheckerProvider;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.NodeSuspensionProvider;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -210,7 +207,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new ActiveTokenFingerprintsClient(),
              flagSource,
              new DeploymentMetricsRetriever(new ClusterDeploymentMetricsRetriever(),
-                     nodeSuspensionProvider(nodeSuspensionProviders), flagSource));
+                     nodeSuspensionProvider(nodeSuspensionProviders)));
     }
 
     private static NodeSuspensionProvider nodeSuspensionProvider(ComponentRegistry<NodeSuspensionProvider> registry) {
@@ -368,7 +365,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              __ -> activeTokens,
                                              flagSource,
                                              new DeploymentMetricsRetriever(new ClusterDeploymentMetricsRetriever(),
-                                                     NodeSuspensionProvider.EMPTY, flagSource));
+                                                                            NodeSuspensionProvider.EMPTY));
         }
 
     }

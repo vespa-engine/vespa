@@ -25,6 +25,7 @@ import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
 import static com.yahoo.search.yql.YqlParser.LABEL;
 import static com.yahoo.search.yql.YqlParser.LABELED;
+import static com.yahoo.search.yql.YqlParser.MAP_MATCH;
 import static com.yahoo.search.yql.YqlParser.USER_INPUT_LANGUAGE;
 import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.NEAR;
@@ -89,6 +90,7 @@ import com.yahoo.prelude.query.LabelWrapperItem;
 import com.yahoo.language.Language;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.GeoLocationItem;
+import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
@@ -703,6 +705,22 @@ public class VespaSerializer {
             return false;
         }
 
+    }
+
+    private static class MapMatchSerializer extends Serializer<MapMatchItem> {
+        @Override
+        void onExit(StringBuilder destination, MapMatchItem item) { }
+        @Override
+        boolean serialize(StringBuilder destination, MapMatchItem item, Scope scope) {
+            serializeField(item, scope, destination);
+            destination.append(MAP_MATCH);
+            destination.append('(');
+            VespaSerializer.serialize(item.keyItem(), Scope.SAME_ELEMENT, destination);
+            destination.append(", ");
+            VespaSerializer.serialize(item.valueItem(), Scope.SAME_ELEMENT, destination);
+            destination.append(')');
+            return false;
+        }
     }
 
     private static class SameElementSerializer extends Serializer<SameElementItem> {
@@ -1411,6 +1429,7 @@ public class VespaSerializer {
         dispatchBuilder.put(BoolItem.class, new BoolSerializer());
         dispatchBuilder.put(TrueItem.class, new TrueSerializer());
         dispatchBuilder.put(FalseItem.class, new FalseSerializer());
+        dispatchBuilder.put(MapMatchItem.class, new MapMatchSerializer());
         dispatchBuilder.put(MarkerWordItem.class, new WordSerializer()); // gotcha
         dispatchBuilder.put(NearItem.class, new NearSerializer());
         dispatchBuilder.put(NearestNeighborItem.class, new NearestNeighborSerializer());

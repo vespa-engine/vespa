@@ -41,15 +41,17 @@ import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FalseItem;
 import com.yahoo.prelude.query.FuzzyItem;
-import com.yahoo.prelude.query.ExactStringItem;
+import com.yahoo.prelude.query.GeoLocationItem;
+import com.yahoo.prelude.query.HasIndexItem;
 import com.yahoo.prelude.query.IntItem;
+import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Items;
 import com.yahoo.prelude.query.LabelWrapperItem;
-import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
-import com.yahoo.prelude.query.GeoLocationItem;
+import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NotItem;
@@ -160,6 +162,8 @@ public class YqlParser implements Parser {
     private static final String NON_EMPTY = "nonEmpty";
     public static final String START_ANCHOR = "startAnchor";
     public static final String END_ANCHOR = "endAnchor";
+    public static final String KEY_FIELD_NAME = "key";
+    public static final String VALUE_FIELD_NAME = "value";
 
     public static final String SORTING_FUNCTION = "function";
     public static final String SORTING_LOCALE = "locale";
@@ -216,6 +220,7 @@ public class YqlParser implements Parser {
     public static final String RANK = "rank";
     public static final String RANKED = "ranked";
     public static final String SAME_ELEMENT = "sameElement";
+    public static final String MAP_MATCH = "mapMatch";
     public static final String SCORE_THRESHOLD = "scoreThreshold";
     public static final String SIGNIFICANCE = "significance";
     public static final String STEM = "stem";
@@ -486,15 +491,15 @@ public class YqlParser implements Parser {
             throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL);
         }
 
-        OperatorNode<ExpressionOperator> keyMatch = makeMapComponentMatch("key", key);
-        OperatorNode<ExpressionOperator> valueMatch = makeMapComponentMatch("value", value);
-        OperatorNode<ExpressionOperator> sameElement = OperatorNode.create(
+        OperatorNode<ExpressionOperator> keyMatch = makeMapComponentMatch(KEY_FIELD_NAME, key);
+        OperatorNode<ExpressionOperator> valueMatch = makeMapComponentMatch(VALUE_FIELD_NAME, value);
+        OperatorNode<ExpressionOperator> mapMatch = OperatorNode.create(
                 ast.getLocation(),
                 ExpressionOperator.CALL,
-                List.of(SAME_ELEMENT),
+                List.of(MAP_MATCH),
                 List.of(keyMatch, valueMatch));
 
-        return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, sameElement);
+        return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, mapMatch);
     }
 
     /**
@@ -528,16 +533,16 @@ public class YqlParser implements Parser {
             throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL);
         }
 
-        var valueField = OperatorNode.create(mapRef.getLocation(), ExpressionOperator.READ_FIELD, "", "value");
+        var valueField = OperatorNode.create(mapRef.getLocation(), ExpressionOperator.READ_FIELD, "", VALUE_FIELD_NAME);
         var valueRange = OperatorNode.create(ast.getLocation(), ExpressionOperator.CALL,
                                              List.of(RANGE),
                                              List.of(valueField, args.get(1), args.get(2)));
-        OperatorNode<ExpressionOperator> sameElement =
+        OperatorNode<ExpressionOperator> mapMatch =
                 OperatorNode.create(ast.getLocation(), ExpressionOperator.CALL,
-                                    List.of(SAME_ELEMENT),
-                                    List.of(makeMapComponentMatch("key", key), valueRange));
+                                    List.of(MAP_MATCH),
+                                    List.of(makeMapComponentMatch(KEY_FIELD_NAME, key), valueRange));
 
-        return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, sameElement);
+        return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, mapMatch);
     }
 
     /**
@@ -949,6 +954,36 @@ public class YqlParser implements Parser {
             swapIndexCreator(prev); // Also on a failed term, as this parser may be used again
         }
         return sameElement;
+    }
+
+    private Item instantiateMapMatch(String field, OperatorNode<ExpressionOperator> ast) {
+        assertHasFunctionName(ast, MAP_MATCH);
+        Item keyItem = null, valueItem = null;
+        // All terms below mapMatch are implicitly relative to its field.
+        IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
+        try {
+            for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
+                var item = convertExpression(term, field);
+                if (item instanceof HasIndexItem indexedItem) {
+                    if (indexedItem.getIndexName().equals(KEY_FIELD_NAME) && keyItem == null) {
+                        keyItem = item;
+                    } else if (indexedItem.getIndexName().equals(VALUE_FIELD_NAME) && valueItem == null) {
+                        valueItem = item;
+                    } else {
+                        throw new IllegalArgumentException("unknown or extra item inside " + MAP_MATCH + ": " + item);
+                    }
+                } else {
+                    throw new IllegalArgumentException("bad item type inside " + MAP_MATCH + ": " + item);
+                }
+            }
+        }
+        finally {
+            swapIndexCreator(prev); // Also on a failed term, as this parser may be used again
+        }
+        if (keyItem == null || valueItem == null) {
+            throw new IllegalArgumentException(MAP_MATCH + " requires both a " + KEY_FIELD_NAME + " and a " + VALUE_FIELD_NAME + " item");
+        }
+        return new MapMatchItem(field, keyItem, valueItem);
     }
 
     /** Extract custom annotations for same element */
@@ -1868,6 +1903,7 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(names.size() == 1, "Expected 1 name, got %s.", names.size());
         return switch (names.get(0)) {
             case SAME_ELEMENT -> instantiateSameElementItem(field, ast);
+            case MAP_MATCH -> instantiateMapMatch(field, ast);
             case PHRASE -> instantiatePhraseItem(field, ast);
             case NEAR -> instantiateNearItem(field, ast);
             case ONEAR -> instantiateONearItem(field, ast);
@@ -1877,7 +1913,7 @@ public class YqlParser implements Parser {
             case FUZZY -> instantiateFuzzyItem(field, ast);
             case TEXT -> buildText(field, ast);
             default ->
-                    throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT, TEXT, URI, FUZZY);
+                    throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, MAP_MATCH, SAME_ELEMENT, TEXT, URI, FUZZY);
         };
     }
 
