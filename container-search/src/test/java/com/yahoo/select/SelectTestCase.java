@@ -28,6 +28,7 @@ import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.GroupingRequest;
@@ -41,6 +42,7 @@ import com.yahoo.search.grouping.request.MinAggregator;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.query.SelectParser;
+import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
@@ -1194,6 +1196,25 @@ public class SelectTestCase {
         query.getSelect().setGroupingString("[ { \"all\" : { \"group\" : \"time.dayofmonth(a)\", \"each\" : { \"output\" : \"count()\" } } } ]");
         assertEquals(1, query.getSelect().getGrouping().size());
         assertEquals("all(group(time.dayofmonth(a)) each(output(count())))", query.getSelect().getGrouping().get(0).getRootOperation().toString());
+    }
+
+    /** Parameters referenced in select.grouping are resolved when the query is complete, not in request parameter order. */
+    @Test
+    void testGroupingParametersAreResolvedRegardlessOfRequestParameterOrder() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"filter\" : \"regex(@pattern, a)\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        var requestMap = new java.util.LinkedHashMap<String, String>();
+        requestMap.put("select.grouping", grouping);
+        requestMap.put("pattern", "ba.*");
+        Query query = new Query(HttpRequest.createTestRequest("?", com.yahoo.jdisc.http.HttpRequest.Method.GET), requestMap, null);
+        assertEquals(1, query.getSelect().getGrouping().size());
+        assertEquals("all(group(a) filter(regex(\"ba.*\", a)) each(output(count())))",
+                     query.getSelect().getGrouping().get(0).getRootOperation().toString());
+
+        var missing = new java.util.LinkedHashMap<String, String>();
+        missing.put("select.grouping", grouping);
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> new Query(HttpRequest.createTestRequest("?", com.yahoo.jdisc.http.HttpRequest.Method.GET), missing, null));
+        assertTrue(Exceptions.toMessageString(e).contains("Input 'pattern' is not set"), Exceptions.toMessageString(e));
     }
 
     @Test

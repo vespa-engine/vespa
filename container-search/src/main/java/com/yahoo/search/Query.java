@@ -410,6 +410,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
 
         properties().setParentQuery(this);
+        select.getGrouping(); // parses any select.grouping now that all properties it may reference are set
         trace.traceProperties();
     }
 

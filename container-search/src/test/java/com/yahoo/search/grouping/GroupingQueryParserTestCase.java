@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping;
 
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.request.AllOperation;
 import com.yahoo.search.grouping.request.EachOperation;
@@ -15,6 +16,7 @@ import java.util.TimeZone;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -99,6 +101,24 @@ public class GroupingQueryParserTestCase {
         TimeZone time = req.getTimeZone();
         assertNotNull(time);
         assertEquals(TimeZone.getTimeZone("utc"), time);
+    }
+
+    @Test
+    void requireThatParametersAreResolvedFromQueryProperties() {
+        Query query = new Query();
+        query.properties().set(GroupingQueryParser.PARAM_REQUEST,
+                               "all(group(foo) filter(regex(@pattern, foo)) each(output(count())))");
+        query.properties().set("pattern", "ba.*");
+        new Execution(new GroupingQueryParser(), Execution.Context.createContextStub()).search(query);
+        assertEquals("all(group(foo) filter(regex(\"ba.*\", foo)) each(output(count())))",
+                     query.getSelect().getGrouping().get(0).getRootOperation().toString());
+
+        Query missing = new Query();
+        missing.properties().set(GroupingQueryParser.PARAM_REQUEST,
+                                 "all(group(foo) filter(regex(@pattern, foo)) each(output(count())))");
+        var e = assertThrows(IllegalInputException.class,
+                             () -> new Execution(new GroupingQueryParser(), Execution.Context.createContextStub()).search(missing));
+        assertEquals("Input 'pattern' is not set", e.getCause().getMessage());
     }
 
     private static List<GroupingRequest> executeQuery(String request, String continuation, String timeZone) {
