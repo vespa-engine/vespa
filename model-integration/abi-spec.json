@@ -37,6 +37,7 @@
       "public ai.vespa.llm.clients.LlmClientConfig$Builder temperature(double)",
       "public ai.vespa.llm.clients.LlmClientConfig$Builder maxTokens(int)",
       "public ai.vespa.llm.clients.LlmClientConfig$Builder reasoningEffort(java.lang.String)",
+      "public ai.vespa.llm.clients.LlmClientConfig$Builder jsonSchemaStrict(boolean)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -80,7 +81,8 @@
       "public java.lang.String model()",
       "public double temperature()",
       "public int maxTokens()",
-      "public java.lang.String reasoningEffort()"
+      "public java.lang.String reasoningEffort()",
+      "public boolean jsonSchemaStrict()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",

@@ -97,6 +97,28 @@ public class OpenAITest {
     }
 
     @Test
+    public void testJsonSchemaStrictOption() {
+        var prompt = StringPrompt.from("hello");
+        var schema = "{\"type\": \"object\", \"properties\": {\"answer\": {\"type\": \"string\"}}, " +
+                     "\"required\": [\"answer\"], \"additionalProperties\": false}";
+        var options = new InferenceParameters(Map.of(InferenceParameters.OPTION_JSON_SCHEMA, schema)::get);
+
+        // Not set: strict is not sent to the API
+        var openai = new OpenAI(new LlmClientConfig.Builder().apiKeySecretName("openai").build(), new MockSecrets());
+        var jsonSchema = openai.getChatCompletionCreateParams(options, prompt)
+                .responseFormat().orElseThrow().asJsonSchema().jsonSchema();
+        assertTrue(jsonSchema.strict().isEmpty());
+
+        // Set in component config
+        var strictOpenai = new OpenAI(
+                new LlmClientConfig.Builder().apiKeySecretName("openai").jsonSchemaStrict(true).build(),
+                new MockSecrets());
+        jsonSchema = strictOpenai.getChatCompletionCreateParams(options, prompt)
+                .responseFormat().orElseThrow().asJsonSchema().jsonSchema();
+        assertEquals(true, jsonSchema.strict().orElseThrow());
+    }
+
+    @Test
     public void testClientCaching() {
         // Create OpenAI instance
         var config = new LlmClientConfig.Builder()
