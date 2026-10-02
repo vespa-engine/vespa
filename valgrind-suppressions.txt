@@ -887,3 +887,27 @@
    fun:OPENSSL_strlcat
    ...
 }
+{
+   for vespa-openssl on EL9/EL10 (optimized string scanning in namemap)
+   Memcheck:Cond
+   fun:ossl_namemap_name2num
+   obj:*/libcrypto.so*
+   obj:*/libcrypto.so*
+   ...
+}
+{
+   for vespa-openssl on EL9/EL10 (optimized string scanning in namemap)
+   Memcheck:Cond
+   fun:namemap_add_name
+   obj:*/libcrypto.so*
+   obj:*/libcrypto.so*
+   ...
+}
+{
+   for vespa-openssl on EL9/EL10 (optimized string scanning in namemap)
+   Memcheck:Cond
+   fun:ossl_namemap_name2num
+   obj:*/libcrypto.so*
+   obj:*/libssl.so*
+   ...
+}
