@@ -40,6 +40,8 @@ public class Select implements Cloneable {
 
     private String where;
     private String grouping;
+    /** Whether the grouping string has been set but not yet parsed into grouping requests */
+    private boolean groupingPending = false;
     private String groupingExpressionString;
     private String fields = "";
 
@@ -106,6 +108,17 @@ public class Select implements Cloneable {
     public void setGroupingString(String grouping) {
         groupingRequests.clear();
         this.grouping = grouping;
+        // Parsing is deferred until the grouping is first accessed, as parameter references (@name) in the grouping
+        // must be resolved against the complete query properties, and this may be called while the properties of
+        // the query are still being set from the request
+        this.groupingPending = true;
+    }
+
+    private void parsePendingGrouping() {
+        if ( ! groupingPending) {
+            return;
+        }
+        groupingPending = false; // before parsing, as GroupingRequest.newInstance adds to the list returned by getGrouping()
         SelectParser parser = (SelectParser) ParserFactory.newInstance(Query.Type.SELECT, new ParserEnvironment());
         for (VespaGroupingStep step : parser.getGroupingSteps(grouping, parent.properties()::getString)) {
             GroupingRequest.newInstance(parent)
@@ -161,7 +174,10 @@ public class Select implements Cloneable {
      * Returns the query's {@link GroupingRequest} as a mutable list. Changing this directly changes the grouping
      * operations which will be performed by this query.
      */
-    public List<GroupingRequest> getGrouping() { return groupingRequests; }
+    public List<GroupingRequest> getGrouping() {
+        parsePendingGrouping();
+        return groupingRequests;
+    }
 
     @Override
     public String toString() {
@@ -170,10 +186,12 @@ public class Select implements Cloneable {
 
     @Override
     public Object clone() {
+        parsePendingGrouping();
         return new Select(where, grouping, groupingExpressionString, parent, groupingRequests, fields);
     }
 
     public Select cloneFor(Query parent)  {
+        parsePendingGrouping();
         return new Select(where, grouping, groupingExpressionString, parent, groupingRequests, fields);
     }
 
