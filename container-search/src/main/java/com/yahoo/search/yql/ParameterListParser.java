@@ -5,7 +5,9 @@ import com.yahoo.prelude.query.NumericInItem;
 import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.WeightedSetItem;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Parser of parameter lists on the form {key:value, key:value} or [[key,value], [key,value], ...],
@@ -13,7 +15,7 @@ import java.util.Arrays;
  *
  * @author bratseth
  */
-class ParameterListParser {
+public class ParameterListParser {
 
     public static void addItemsFromString(String string, WeightedSetItem out) {
         var s = new ParsableString(string);
@@ -68,6 +70,17 @@ class ParameterListParser {
         if (string == null) {
             return;
         }
+        for (String token : stringTokens(string)) {
+            out.addToken(token);
+        }
+    }
+
+    /**
+     * Parses a list of string tokens on the form value, value, ... where each value is optionally quoted,
+     * and the list is optionally enclosed in [ ].
+     */
+    public static List<String> stringTokens(String string) {
+        List<String> tokens = new ArrayList<>();
         var s = new ParsableString(string);
         boolean array = s.passOptional('['); // A JSON array: ["a", "b"]
         while (!s.atEnd() && !(array && s.peek() == ']')) {
@@ -83,11 +96,12 @@ class ParameterListParser {
             else {
                 token = s.stringTo(array ? s.positionOrEnd(',', ']') : s.positionOrEnd(',')).trim();
             }
-            out.addToken(token);
+            tokens.add(token);
             s.passOptional(',');
         }
         if (array)
             s.pass(']');
+        return tokens;
     }
 
     public static void addNumericTokensFromString(String string, NumericInItem out) {

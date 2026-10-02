@@ -6,6 +6,7 @@ import com.yahoo.search.grouping.request.AttributeMapLookupValue;
 import com.yahoo.search.grouping.request.EachOperation;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.grouping.request.LongValue;
+import com.yahoo.search.Query;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
@@ -14,11 +15,13 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -679,6 +682,78 @@ public class GroupingParserTestCase {
     }
 
     @Test
+    void testParameterSubstitution() {
+        Map<String, String> parameters = Map.ofEntries(
+                Map.entry("pattern", "(stringinparentheses)?"),
+                Map.entry("injection", "foo or regex(bar, baz)"),
+                Map.entry("lo", "1990"),
+                Map.entry("hi", "2012.5"),
+                Map.entry("n", "7"),
+                Map.entry("max", "3"),
+                Map.entry("label", "mylabel"),
+                Map.entry("my-param_1", "9"),
+                Map.entry("_x", "1"),
+                Map.entry("list", "x, 'y z', \"w\""),
+                Map.entry("array", "[\"x\", \"y\"]"));
+        assertAll("parameters in string positions",
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) filter(regex(@pattern, foo)) each(output(count())))",
+                        "all(group(foo) filter(regex(\"(stringinparentheses)?\", foo)) each(output(count())))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) filter(regex(@injection, foo)) each(output(count())))",
+                        "all(group(foo) filter(regex(\"foo or regex(bar, baz)\", foo)) each(output(count())))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) each(output(count())) as(@label))",
+                        "all(group(foo) each(output(count())) as(mylabel))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(@label) filter(regex(@pattern, foo)) each(output(count())) as(@label))",
+                        "all(group(\"mylabel\") filter(regex(\"(stringinparentheses)?\", foo)) each(output(count())) as(mylabel))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(@n) each(output(count())))",
+                        "all(group(\"7\") each(output(count())))"));
+        assertAll("parameters in number positions",
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) filter(range(@lo, @hi, foo)) each(output(count())))",
+                        "all(group(foo) filter(range(1990, 2012.5, foo, true, false)) each(output(count())))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) max(@n) precision(@n) each(output(count())))",
+                        "all(group(foo) max(7) precision(7) each(output(count())))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) max(@max) each(output(count())))",
+                        "all(group(foo) max(3) each(output(count())))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) max(@my-param_1) precision(@_x) each(output(count())))",
+                        "all(group(foo) max(9) precision(1) each(output(count())))"));
+        assertAll("parameters in in() are lists",
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) filter(in(foo, \"bar\", @list)) each(output(count())))",
+                        "all(group(foo) filter(in(foo, \"bar\", \"x\", \"y z\", \"w\")) each(output(count())))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) filter(in(foo, @array)) each(output(count())))",
+                        "all(group(foo) filter(in(foo, \"x\", \"y\")) each(output(count())))"));
+
+        assertEquals("Input 'missing' is not set",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) filter(regex(@missing, foo)) each(output(count())))",
+                                                                     parameters::get)).getMessage());
+        assertEquals("Input 'label' must be a number, but was 'mylabel'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) max(@label) each(output(count())))",
+                                                                     parameters::get)).getMessage());
+        assertEquals("Input 'nan' must be a number, but was 'NaN'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) max(@nan) each(output(count())))",
+                                                                     Map.of("nan", "NaN")::get)).getMessage());
+        assertIllegalArgument("all(group(foo) filter(regex(@pattern, foo)) each(output(count())))",
+                              "Parameter '@pattern' cannot be resolved as no query properties are available");
+        assertIllegalArgument("all(group(foo) each(output(count())) as(@ label))",
+                              "Lexical error at line 1, column 43.  Encountered: \" \" (32), after : \"@\"");
+        // bucket bounds do not accept parameters, as a string value would silently give a string bucket
+        assertIllegalArgument("all(group(predefined(foo, bucket(@lo, @hi))) each(output(count())))",
+                              "Encountered \" <PARAMETER> \"@lo\"\" at line 1, column 34.");
+    }
+
+    @Test
     void testQuantiles() {
         assertAll("quantiles with single number",
                 () -> assertParse("all(group(foo) each(output(quantiles([0.5], bar))))"),
@@ -726,6 +801,25 @@ public class GroupingParserTestCase {
         // make sure that yql+ is capable of handling request
         assertYqlParsable(request, expectedOperations);
         return operations;
+    }
+
+    /**
+     * Asserts that the request parses to the expected operation when the given parameters are available,
+     * that the result parses again without parameters (as substituted values are literals), and that the
+     * parameters are passed through the yql+ grouping pipe.
+     */
+    private static void assertParseWithParameters(Map<String, String> parameters, String request, String expected) {
+        GroupingOperation operation = GroupingOperation.fromString(request, parameters::get);
+        operation.resolveLevel(1);
+        assertEquals(expected, operation.toString());
+        assertEquals(expected, GroupingOperation.fromString(operation.toString()).toString());
+
+        Query query = new Query();
+        parameters.forEach((name, value) -> query.properties().set(name, value));
+        YqlParser parser = new YqlParser(new ParserEnvironment());
+        parser.setUserQuery(query);
+        parser.parse(new Parsable().setQuery("select foo from bar where baz contains 'baz' | " + request));
+        assertEquals(expected, parser.getGroupingSteps().get(0).getOperation().toString());
     }
 
     private static void assertYqlParsable(String request, String... expectedOperations) {

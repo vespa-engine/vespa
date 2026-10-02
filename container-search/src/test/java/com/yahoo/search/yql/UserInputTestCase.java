@@ -463,6 +463,27 @@ public class UserInputTestCase {
     }
 
     @Test
+    void testReferenceInGrouping() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("pattern", "ba.*");
+        builder.setParameter("yql",
+                "select * from sources * where myfield contains 'token'" +
+                        "| all(group(f) filter(regex(@pattern, f)) each(output(count())))");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where myfield contains \"token\" | all(group(f) filter(regex(\"ba.*\", f)) each(output(count())))",
+                     query.yqlRepresentation());
+    }
+
+    @Test
+    void testMissingReferenceInGrouping() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql",
+                "select * from sources * where myfield contains 'token'" +
+                        "| all(group(f) filter(regex(@pattern, f)) each(output(count())))");
+        assertQueryFails(builder, "Could not create query from YQL: Input 'pattern' is not set");
+    }
+
+    @Test
     void testReferenceInEquiv() {
         URIBuilder builder = searchUri();
         builder.setParameter("term", "A");

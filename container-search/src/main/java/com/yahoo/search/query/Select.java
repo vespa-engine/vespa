@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * The parameters defining the where-clause and grouping of a query
  *
- * @author henrhoi
+ * @author Henrik Høiness
  */
 public class Select implements Cloneable {
 
@@ -107,7 +107,7 @@ public class Select implements Cloneable {
         groupingRequests.clear();
         this.grouping = grouping;
         SelectParser parser = (SelectParser) ParserFactory.newInstance(Query.Type.SELECT, new ParserEnvironment());
-        for (VespaGroupingStep step : parser.getGroupingSteps(grouping)) {
+        for (VespaGroupingStep step : parser.getGroupingSteps(grouping, parent.properties()::getString)) {
             GroupingRequest.newInstance(parent)
                     .setRootOperation(step.getOperation())
                     .continuations().addAll(step.continuations());

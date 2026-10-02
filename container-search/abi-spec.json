@@ -3402,7 +3402,9 @@
       "public java.lang.String toString()",
       "public static java.lang.String getLevelDesc(int)",
       "public static com.yahoo.search.grouping.request.GroupingOperation fromString(java.lang.String)",
+      "public static com.yahoo.search.grouping.request.GroupingOperation fromString(java.lang.String, java.util.function.Function)",
       "public static java.util.List fromStringAsList(java.lang.String)",
+      "public static java.util.List fromStringAsList(java.lang.String, java.util.function.Function)",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingNode setLabel(java.lang.String)"
     ],
     "fields" : [
@@ -6113,7 +6115,8 @@
       "public void <init>(com.yahoo.search.query.parser.ParserEnvironment)",
       "public com.yahoo.search.query.QueryTree parse(com.yahoo.search.query.parser.Parsable)",
       "public java.util.Set getSelectSummaryFields()",
-      "public java.util.List getGroupingSteps(java.lang.String)"
+      "public java.util.List getGroupingSteps(java.lang.String)",
+      "public java.util.List getGroupingSteps(java.lang.String, java.util.function.Function)"
     ],
     "fields" : [ ]
   },

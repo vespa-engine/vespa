@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * A single node in a grouping operation tree. You may manually construct this tree, or you may
@@ -594,7 +595,21 @@ public abstract class GroupingOperation extends GroupingNode {
      * @throws IllegalArgumentException thrown if the string could not be parsed as a single operation
      */
     public static GroupingOperation fromString(String str) {
-        List<GroupingOperation> lst = fromStringAsList(str);
+        return fromString(str, null);
+    }
+
+    /**
+     * Convenience method to call {@link #fromStringAsList(String, Function)} and assert that the list contains
+     * exactly one grouping operation.
+     *
+     * @param str the string to parse
+     * @param parameters resolves parameter references on the form @name to their values, see
+     *                   {@link #fromStringAsList(String, Function)}
+     * @return a grouping operation that corresponds to the string
+     * @throws IllegalArgumentException thrown if the string could not be parsed as a single operation
+     */
+    public static GroupingOperation fromString(String str, Function<String, String> parameters) {
+        List<GroupingOperation> lst = fromStringAsList(str, parameters);
         if (lst.size() != 1) {
             throw new IllegalArgumentException("Expected 1 operation, got " + lst.size() + ".");
         }
@@ -610,12 +625,30 @@ public abstract class GroupingOperation extends GroupingNode {
      * @throws IllegalArgumentException thrown if the string could not be parsed
      */
     public static List<GroupingOperation> fromStringAsList(String string) {
+        return fromStringAsList(string, null);
+    }
+
+    /**
+     * Parses the given string as a list of grouping operations, resolving parameter references on the form @name
+     * using the given function. The value of a parameter is substituted verbatim where the reference appears, it is
+     * never parsed as grouping syntax. This method never returns null, it either returns a list of valid grouping
+     * requests or it throws an exception.
+     *
+     * @param string the string to parse
+     * @param parameters returns the value of a parameter given its name, or null if it is not set.
+     *                   If this is null, any parameter reference in the string is an error.
+     * @return a list of grouping operations that corresponds to the string
+     * @throws IllegalArgumentException thrown if the string could not be parsed
+     */
+    public static List<GroupingOperation> fromStringAsList(String string, Function<String, String> parameters) {
         if (string == null || string.trim().isEmpty()) {
             return List.of();
         }
         GroupingParserInput input = new GroupingParserInput(string);
         try {
-            return new GroupingParser(input).requestList();
+            GroupingParser parser = new GroupingParser(input);
+            parser.setParameters(parameters);
+            return parser.requestList();
         } catch (ParseException | TokenMgrException e) {
             throw new IllegalArgumentException(input.formatException(e.getMessage()), e);
         }

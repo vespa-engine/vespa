@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.yahoo.api.annotations.Beta;
@@ -1366,7 +1367,8 @@ public class YqlParser implements Parser {
         OperatorNode<?> ast = toScan;
         while (ast.getOperator() == SequenceOperator.PIPE) {
             OperatorNode<ExpressionOperator> groupingAst = ast.<List<OperatorNode<ExpressionOperator>>> getArgument(2).get(0);
-            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingAst.getArgument(0));
+            Function<String, String> groupingParameters = parameters == null ? null : parameters::get;
+            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingAst.getArgument(0), groupingParameters);
             VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
             List<Object> continuations = getAnnotation(groupingAst, "continuations", List.class,
                                                        List.of(), "grouping continuations");
