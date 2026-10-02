@@ -25,6 +25,17 @@ source /etc/profile.d/enable-gcc-toolset.sh
 
 PATH=/opt/vespa-deps/bin:$PATH
 
+ccdir=$(ccache -p | awk '$2 == "cache_dir" { print $NF }' | grep . || echo "$HOME/.ccache")
+csfile="${ccdir}/cleared-after-2026-10-02"
+if ! [ -f "${csfile}" ]; then
+    echo "Clearing CCACHE in ${ccdir}; marking action completed in ${csfile}"
+    ccache -C
+    mkdir -p "${ccdir}"
+    echo "Cleared at $(date)" > "${csfile}"
+fi
+unset ccdir
+unset csfile
+
 VESPA_CMAKE_SANITIZERS_OPTION=""
 VESPA_CMAKE_CCACHE_OPTION=""
 if [[ $VESPA_USE_SANITIZER != null ]]; then
