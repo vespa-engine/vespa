@@ -58,6 +58,12 @@ public:
     EntryRef store_encoded_tensor(vespalib::nbostream& encoded) override;
     std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const override;
     bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const override;
+    std::span<const char> get_raw_memory(EntryRef ref) const noexcept override {
+        if (!ref.valid()) {
+            return {};
+        }
+        return _array_store.get(ref);
+    }
     vespalib::eval::TypedCells get_empty_subspace() const noexcept { return _ops.get_empty_subspace(); }
     VectorBundle get_vectors(EntryRef ref) const noexcept {
         if (!ref.valid()) {

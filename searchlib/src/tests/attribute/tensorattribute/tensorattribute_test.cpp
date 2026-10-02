@@ -39,6 +39,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <gmock/gmock.h>
+#include <unistd.h>
 
 #include <filesystem>
 
@@ -706,6 +707,7 @@ struct Fixture {
     void testOnHoldAccounting();
     void test_populate_address_space_usage();
     void test_mmap_file_allocator();
+    void test_prefetch_docs();
 };
 
 Fixture::Fixture(const std::string& typeSpec, FixtureTraits traits)
@@ -987,6 +989,30 @@ void Fixture::test_mmap_file_allocator() {
     }
 }
 
+void Fixture::test_prefetch_docs() {
+    SCOPED_TRACE("test_prefetch_docs");
+    using DocIds = std::vector<uint32_t>;
+    ensureSpace(4);
+    if (_denseTensors) {
+        set_tensor(2, expDenseTensor3());
+    } else {
+        set_tensor(2, TensorSpec(sparseSpec).add({{"x", ""}, {"y", ""}}, 11));
+    }
+    const search::attribute::IAttributeVector& attr = *_attr;
+    EXPECT_EQ(0u, attr.prefetch_docs(DocIds{}));
+    // docs without tensor, and docs beyond the docid limit, are ignored
+    EXPECT_EQ(0u, attr.prefetch_docs(DocIds{1, 3, 100}));
+    auto bytes = attr.prefetch_docs(DocIds{1, 2, 3, 100});
+    if (_traits.use_mmap_file_allocator) {
+        size_t page_size = getpagesize();
+        EXPECT_LT(0u, bytes);
+        EXPECT_EQ(0u, bytes % page_size);
+    } else {
+        // not paged, nothing to prefetch
+        EXPECT_EQ(0u, bytes);
+    }
+}
+
 template <class MakeFixture> void testAll(MakeFixture&& f) {
     f()->test_tensor_quantization_config();
     f()->testEmptyAttribute();
@@ -999,6 +1025,7 @@ template <class MakeFixture> void testAll(MakeFixture&& f) {
     f()->testOnHoldAccounting();
     f()->test_populate_address_space_usage();
     f()->test_mmap_file_allocator();
+    f()->test_prefetch_docs();
 }
 
 TEST(TensorAttributeTest, Test_sparse_tensors_with_generic_tensor_attribute) {

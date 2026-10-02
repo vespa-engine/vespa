@@ -142,6 +142,8 @@ class MatchToolsFactory {
 private:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     using IAttributeContext = search::attribute::IAttributeContext;
+    using IAttributeVector = search::attribute::IAttributeVector;
+    using AttributeVectors = std::vector<const IAttributeVector*>;
     using IObjectStore = search::fef::IObjectStore;
     using CreateBlueprintParams = search::queryeval::CreateBlueprintParams;
     using MatchDataLayout = search::fef::MatchDataLayout;
@@ -167,6 +169,7 @@ private:
     const search::IDocumentMetaStore&  _metaStore;
     HandleRecorder::HandleMap          _needed_handles;
     std::vector<std::string>           _sort_public_names;
+    AttributeVectors                   _second_phase_prefetch_attributes;
 
     std::unique_ptr<AttributeOperationTask> createTask(std::string_view attribute, std::string_view operation) const;
 
@@ -206,6 +209,10 @@ public:
     std::unique_ptr<AttributeOperationTask> createOnFirstPhaseTask() const;
     std::unique_ptr<AttributeOperationTask> createOnSecondPhaseTask() const;
     std::unique_ptr<AttributeOperationTask> createOnSummaryTask() const;
+    // Attributes to prefetch for the hits before second phase rank is calculated.
+    std::span<const IAttributeVector* const> second_phase_prefetch_attributes() const noexcept {
+        return _second_phase_prefetch_attributes;
+    }
 
     const Query& query() const { return _query; }
     const RequestContext& get_request_context() const { return _requestContext; }

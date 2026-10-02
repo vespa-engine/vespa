@@ -113,6 +113,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     unordered_u32_set.cpp
     unwind_message.cpp
     valgrind.cpp
+    will_need_advisor.cpp
     xmlserializable.cpp
     xmlstream.cpp
     zstdcompressor.cpp

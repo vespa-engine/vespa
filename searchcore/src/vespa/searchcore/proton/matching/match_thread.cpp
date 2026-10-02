@@ -341,7 +341,11 @@ void MatchThread::secondPhase(MatchTools& tools, HitCollector& hits) {
     }
     if (!my_work.empty()) {
         tools.setup_second_phase(second_phase_profiler.get());
-        DocumentScorer scorer(tools.rank_program(), tools.search());
+        auto prefetch_attributes = matchToolsFactory.second_phase_prefetch_attributes();
+        if (!prefetch_attributes.empty()) {
+            trace->addEvent(5, "Prefetch attributes for second phase rerank");
+        }
+        DocumentScorer scorer(tools.rank_program(), tools.search(), prefetch_attributes);
         scorer.score(my_work);
     }
     thread_stats.docsReRanked(my_work.size());

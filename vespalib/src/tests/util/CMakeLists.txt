@@ -46,6 +46,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     typed_data_layout_test.cpp
     typify_test.cpp
     unordered_u32_set_test.cpp
+    will_need_advisor_test.cpp
     xmlserializabletest.cpp
     xoshiro_test.cpp
     DEPENDS

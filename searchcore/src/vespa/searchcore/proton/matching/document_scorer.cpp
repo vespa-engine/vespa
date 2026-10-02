@@ -2,10 +2,12 @@
 
 #include "document_scorer.h"
 
+#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/fef/rank_program.h>
 
 #include <algorithm>
 #include <cassert>
+#include <vector>
 
 using search::feature_t;
 using search::fef::FeatureResolver;
@@ -25,8 +27,22 @@ LazyValue extractScoreFeature(const RankProgram& rankProgram) {
 
 } // namespace
 
-DocumentScorer::DocumentScorer(RankProgram& rankProgram, SearchIterator& searchItr)
-    : _searchItr(searchItr), _scoreFeature(extractScoreFeature(rankProgram)) {
+DocumentScorer::DocumentScorer(RankProgram& rankProgram, SearchIterator& searchItr,
+                               PrefetchAttributes prefetch_attributes)
+    : _searchItr(searchItr),
+      _scoreFeature(extractScoreFeature(rankProgram)),
+      _prefetch_attributes(prefetch_attributes) {
+}
+
+void DocumentScorer::prefetch(const TaggedHits& hits) const {
+    std::vector<uint32_t> docids;
+    docids.reserve(hits.size());
+    for (const auto& hit : hits) {
+        docids.push_back(hit.first.first);
+    }
+    for (const auto* attr : _prefetch_attributes) {
+        attr->prefetch_docs(docids);
+    }
 }
 
 void DocumentScorer::score(TaggedHits& hits) {
@@ -35,6 +51,9 @@ void DocumentScorer::score(TaggedHits& hits) {
     }
     auto sort_on_docid = [](const TaggedHit& a, const TaggedHit& b) { return (a.first.first < b.first.first); };
     std::sort(hits.begin(), hits.end(), sort_on_docid);
+    if (!_prefetch_attributes.empty()) {
+        prefetch(hits);
+    }
     _searchItr.initRange(hits.front().first.first, hits.back().first.first + 1);
     for (auto& hit : hits) {
         hit.first.second = doScore(hit.first.first);
