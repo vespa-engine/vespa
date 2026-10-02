@@ -37,13 +37,13 @@ IFlushTarget::Task::UP callInitFlush(IFlushTarget* target, IFlushTarget::SerialN
 }
 } // namespace
 
-IFlushTarget::Task::UP ThreadedFlushTarget::initFlush(SerialNum                            currentSerial,
-                                                      std::shared_ptr<search::IFlushToken> flush_token) {
+void ThreadedFlushTarget::init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
+                                     TaskPromise task_promise) {
     std::promise<Task::UP> promise;
     std::future<Task::UP>  future = promise.get_future();
     _executor.execute(makeLambdaTask(
         [&]() { promise.set_value(callInitFlush(_target.get(), currentSerial, &_getSerialNum, flush_token)); }));
-    return future.get();
+    task_promise.set_value(future.get());
 }
 
 } // namespace proton

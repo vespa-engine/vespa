@@ -89,12 +89,13 @@ SerialNum SummaryGCTarget::getFlushedSerialNum() const {
     return _docStore.tentativeLastSyncToken();
 }
 
-IFlushTarget::Task::UP SummaryGCTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) {
+void SummaryGCTarget::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
+                                 TaskPromise task_promise) {
     std::promise<Task::UP> promise;
     std::future<Task::UP>  future = promise.get_future();
     _summaryService.execute(makeLambdaTask(
         [this, &promise, currentSerial]() { promise.set_value(create(_docStore, _lastStats, currentSerial)); }));
-    return future.get();
+    task_promise.set_value(future.get());
 }
 
 bool SummaryGCTarget::can_flush(SerialNum) const noexcept {

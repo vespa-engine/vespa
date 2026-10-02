@@ -61,7 +61,8 @@ public:
                                      SerialNum flushedSerialNum, vespalib::Executor& summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
     ~ShrinkSummaryLidSpaceFlushTarget() override;
-    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
+                    TaskPromise task_promise) override;
 };
 
 ShrinkSummaryLidSpaceFlushTarget::ShrinkSummaryLidSpaceFlushTarget(const std::string& name, Type type,
@@ -75,13 +76,14 @@ ShrinkSummaryLidSpaceFlushTarget::ShrinkSummaryLidSpaceFlushTarget(const std::st
 
 ShrinkSummaryLidSpaceFlushTarget::~ShrinkSummaryLidSpaceFlushTarget() = default;
 
-IFlushTarget::Task::UP ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum                            currentSerial,
-                                                                   std::shared_ptr<search::IFlushToken> flush_token) {
+void ShrinkSummaryLidSpaceFlushTarget::init_flush(SerialNum                            currentSerial,
+                                                  std::shared_ptr<search::IFlushToken> flush_token,
+                                                  TaskPromise                          task_promise) {
     std::promise<Task::UP> promise;
     std::future<Task::UP>  future = promise.get_future();
     _summaryService.execute(makeLambdaTask(
         [&]() { promise.set_value(ShrinkLidSpaceFlushTarget::initFlush(currentSerial, flush_token)); }));
-    return future.get();
+    task_promise.set_value(future.get());
 }
 
 } // namespace

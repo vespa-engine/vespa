@@ -27,7 +27,8 @@ public:
     Time getLastFlushTime() const override;
     bool needUrgentFlush() const override;
 
-    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
+                    TaskPromise task_promise) override;
     [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override;

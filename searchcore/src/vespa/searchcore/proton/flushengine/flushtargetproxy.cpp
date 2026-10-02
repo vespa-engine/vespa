@@ -19,9 +19,9 @@ FlushTargetProxy::FlushTargetProxy(const IFlushTarget::SP& target, const std::st
 
 FlushTargetProxy::~FlushTargetProxy() = default;
 
-IFlushTarget::Task::UP FlushTargetProxy::initFlush(SerialNum                            currentSerial,
-                                                   std::shared_ptr<search::IFlushToken> flush_token) {
-    return _target->initFlush(currentSerial, std::move(flush_token));
+void FlushTargetProxy::init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
+                                  TaskPromise task_promise) {
+    _target->init_flush(currentSerial, std::move(flush_token), std::move(task_promise));
 }
 
 bool FlushTargetProxy::can_flush(SerialNum current_serial) const noexcept {
