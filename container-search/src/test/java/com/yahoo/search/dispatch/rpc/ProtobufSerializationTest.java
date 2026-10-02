@@ -11,6 +11,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.InvokerResult;
 import com.yahoo.search.dispatch.LeanHit;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import org.junit.jupiter.api.Test;
@@ -162,6 +163,17 @@ public class ProtobufSerializationTest {
     void only_set_profiling_parameters_are_serialized_in_search_request() {
         var q = new Query("?query=test&trace.level=1&" +
                 "trace.profiling.matching.depth=3");
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
+        assertEquals(3, req.getProfiling().getMatch().getDepth());
+        assertFalse(req.getProfiling().hasFirstPhase());
+        assertFalse(req.getProfiling().hasSecondPhase());
+    }
+
+    @Test
+    void profiling_parameters_are_serialized_when_query_profile_is_used() {
+        var q = new Query("?query=test&trace.level=1&" +
+                          "trace.profiling.matching.depth=3",
+                          new QueryProfile("test").compile(null));
         var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
         assertEquals(3, req.getProfiling().getMatch().getDepth());
         assertFalse(req.getProfiling().hasFirstPhase());

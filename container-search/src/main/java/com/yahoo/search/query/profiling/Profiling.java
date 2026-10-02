@@ -25,9 +25,9 @@ public class Profiling implements Cloneable {
         argumentType = new QueryProfileType(Trace.PROFILING);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
-        argumentType.addField(new FieldDescription(MATCHING, new QueryProfileFieldType(ProfilingParams.getArgumentType())));
-        argumentType.addField(new FieldDescription(FIRST_PHASE_RANKING, new QueryProfileFieldType(ProfilingParams.getArgumentType())));
-        argumentType.addField(new FieldDescription(SECOND_PHASE_RANKING, new QueryProfileFieldType(ProfilingParams.getArgumentType())));
+        argumentType.addField(new FieldDescription(MATCHING, new QueryProfileFieldType(ProfilingParams.createArgumentType(MATCHING))));
+        argumentType.addField(new FieldDescription(FIRST_PHASE_RANKING, new QueryProfileFieldType(ProfilingParams.createArgumentType(FIRST_PHASE_RANKING))));
+        argumentType.addField(new FieldDescription(SECOND_PHASE_RANKING, new QueryProfileFieldType(ProfilingParams.createArgumentType(SECOND_PHASE_RANKING))));
         argumentType.freeze();
     }
 
