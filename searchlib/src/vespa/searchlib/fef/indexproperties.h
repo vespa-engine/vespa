@@ -63,6 +63,23 @@ struct SecondPhase {
     static std::string lookup(const Properties& props);
 };
 
+/**
+ * Property for the names of (paged) attributes to prefetch before second phase rank is
+ * calculated for the reranked hits. Prefetching starts asynchronous reads of the memory
+ * holding the values for all hits at once, instead of taking one synchronous page fault per
+ * hit while ranking. Only useful for attributes with the 'paged' setting that are read by
+ * the second phase expression.
+ *
+ * Multiple values, as well as comma or whitespace separated names, are accepted. Duplicates
+ * are removed. Empty (default) disables prefetching.
+ **/
+struct SecondPhasePrefetchAttributes {
+    static const std::string              NAME;
+    static const std::vector<std::string> DEFAULT_VALUE;
+    static std::vector<std::string> lookup(const Properties& props);
+    static std::vector<std::string> lookup(const Properties& props, const std::vector<std::string>& defaultValue);
+};
+
 } // namespace rank
 
 namespace feature_rename {
