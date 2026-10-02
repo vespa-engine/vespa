@@ -56,4 +56,8 @@ public class PreprocessingTester {
         TestBase.assertDocument(expectedHosts, lastProcessed.getHosts());
     }
 
+    public void assertDeployment(String expectedDeployment) {
+        TestBase.assertDocument(expectedDeployment, lastProcessed.getDeployment().orElseThrow());
+    }
+
 }
