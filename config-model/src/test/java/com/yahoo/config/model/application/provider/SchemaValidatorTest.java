@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -63,6 +64,20 @@ public class SchemaValidatorTest {
     void testCommerceDiscoveryIsAccepted() throws IOException {
         SchemaValidator validator = createValidator();
         validator.validate(new StringReader(servicesWithCommerceDiscovery));
+    }
+
+    @Test
+    void testCommerceDiscoveryVersionIsMajorDotMinor() throws IOException {
+        SchemaValidator validator = createValidator();
+        String original = "<commerce-discovery version='1.0'>";
+
+        // version must be major.minor
+        String majorDotMinor = servicesWithCommerceDiscovery.replace(original, "<commerce-discovery version='12.34'>");
+        assertDoesNotThrow(() -> validator.validate(new StringReader(majorDotMinor)));
+
+        // major.minor.micro is rejected
+        String majorDotMinorDotMicro = servicesWithCommerceDiscovery.replace(original, "<commerce-discovery version='1.0.0'>");
+        assertThrows(RuntimeException.class, () -> validator.validate(new StringReader(majorDotMinorDotMicro)));
     }
 
     @Test
