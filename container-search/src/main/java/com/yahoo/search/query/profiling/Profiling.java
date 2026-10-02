@@ -18,6 +18,7 @@ public class Profiling implements Cloneable {
     public static final String MATCHING = "matching";
     public static final String FIRST_PHASE_RANKING = "firstPhaseRanking";
     public static final String SECOND_PHASE_RANKING = "secondPhaseRanking";
+    public static final String SORT_FEATURES = "sortFeatures";
 
     private static final QueryProfileType argumentType;
 
@@ -28,6 +29,7 @@ public class Profiling implements Cloneable {
         argumentType.addField(new FieldDescription(MATCHING, new QueryProfileFieldType(ProfilingParams.createArgumentType(MATCHING))));
         argumentType.addField(new FieldDescription(FIRST_PHASE_RANKING, new QueryProfileFieldType(ProfilingParams.createArgumentType(FIRST_PHASE_RANKING))));
         argumentType.addField(new FieldDescription(SECOND_PHASE_RANKING, new QueryProfileFieldType(ProfilingParams.createArgumentType(SECOND_PHASE_RANKING))));
+        argumentType.addField(new FieldDescription(SORT_FEATURES, new QueryProfileFieldType(ProfilingParams.createArgumentType(SORT_FEATURES))));
         argumentType.freeze();
     }
 
@@ -36,6 +38,7 @@ public class Profiling implements Cloneable {
     private final ProfilingParams matching = new ProfilingParams();
     private final ProfilingParams firstPhaseRanking = new ProfilingParams();
     private final ProfilingParams secondPhaseRanking = new ProfilingParams();
+    private final ProfilingParams sortFeatures = new ProfilingParams();
 
     public ProfilingParams getMatching() {
         return matching;
@@ -47,6 +50,10 @@ public class Profiling implements Cloneable {
 
     public ProfilingParams getSecondPhaseRanking() {
         return secondPhaseRanking;
+    }
+
+    public ProfilingParams getSortFeatures() {
+        return sortFeatures;
     }
 
     @Override
@@ -65,11 +72,12 @@ public class Profiling implements Cloneable {
         Profiling profiling = (Profiling) o;
         return Objects.equals(matching, profiling.matching) &&
                 Objects.equals(firstPhaseRanking, profiling.firstPhaseRanking) &&
-                Objects.equals(secondPhaseRanking, profiling.secondPhaseRanking);
+                Objects.equals(secondPhaseRanking, profiling.secondPhaseRanking) &&
+                Objects.equals(sortFeatures, profiling.sortFeatures);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(matching, firstPhaseRanking, secondPhaseRanking);
+        return Objects.hash(matching, firstPhaseRanking, secondPhaseRanking, sortFeatures);
     }
 }

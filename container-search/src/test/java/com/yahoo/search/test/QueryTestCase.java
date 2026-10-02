@@ -654,6 +654,7 @@ public class QueryTestCase {
         assertEquals(2, q.getTrace().getProfiling().getMatching().getDepth());
         assertEquals(2, q.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
         assertEquals(2, q.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+        assertEquals(2, q.getTrace().getProfiling().getSortFeatures().getDepth());
     }
 
     @Test
@@ -661,11 +662,13 @@ public class QueryTestCase {
         var q = new Query("?query=foo&" +
                 "trace.profiling.matching.depth=3&" +
                 "trace.profiling.firstPhaseRanking.depth=5&" +
-                "trace.profiling.secondPhaseRanking.depth=-7");
+                "trace.profiling.secondPhaseRanking.depth=-7&" +
+                "trace.profiling.sortFeatures.depth=4");
         assertEquals(0, q.getTrace().getProfileDepth());
         assertEquals(3, q.getTrace().getProfiling().getMatching().getDepth());
         assertEquals(5, q.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
         assertEquals(-7, q.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+        assertEquals(4, q.getTrace().getProfiling().getSortFeatures().getDepth());
     }
 
     @Test
@@ -673,9 +676,10 @@ public class QueryTestCase {
         var q = new Query("?query=foo&" +
                           "trace.profiling.matching.depth=3&" +
                           "trace.profiling.firstPhaseRanking.depth=5&" +
-                          "trace.profiling.secondPhaseRanking.depth=-7",
+                          "trace.profiling.secondPhaseRanking.depth=-7&" +
+                          "trace.profiling.sortFeatures.depth=4",
                           new QueryProfile("test").compile(null));
-        assertProfilingDepths(q, 3, 5, -7);
+        assertProfilingDepths(q, 3, 5, -7, 4);
     }
 
     @Test
@@ -690,9 +694,10 @@ public class QueryTestCase {
         var q = new Query("?query=foo&" +
                           "trace.profiling.matching.depth=3&" +
                           "trace.profiling.firstPhaseRanking.depth=5&" +
-                          "trace.profiling.secondPhaseRanking.depth=-7",
+                          "trace.profiling.secondPhaseRanking.depth=-7&" +
+                          "trace.profiling.sortFeatures.depth=4",
                           registry.compile().findQueryProfile("default"));
-        assertProfilingDepths(q, 3, 5, -7);
+        assertProfilingDepths(q, 3, 5, -7, 4);
     }
 
     @Test
@@ -701,8 +706,9 @@ public class QueryTestCase {
         profile.set("trace.profiling.matching.depth", 3, null);
         profile.set("trace.profiling.firstPhaseRanking.depth", 5, null);
         profile.set("trace.profiling.secondPhaseRanking.depth", -7, null);
+        profile.set("trace.profiling.sortFeatures.depth", 4, null);
         var q = new Query("?query=foo", profile.compile(null));
-        assertProfilingDepths(q, 3, 5, -7);
+        assertProfilingDepths(q, 3, 5, -7, 4);
     }
 
     @Test
@@ -710,13 +716,41 @@ public class QueryTestCase {
         var q = new Query("?query=foo&trace.profileDepth=5&trace.profiling.matching.depth=2",
                           new QueryProfile("test").compile(null));
         assertEquals(5, q.getTrace().getProfileDepth());
-        assertProfilingDepths(q, 2, 5, 5);
+        assertProfilingDepths(q, 2, 5, 5, 5);
 
         QueryProfile profile = new QueryProfile("test");
         profile.set("trace.profiling.matching.depth", 2, null);
         q = new Query("?query=foo&trace.profileDepth=5", profile.compile(null));
         assertEquals(5, q.getTrace().getProfileDepth());
-        assertProfilingDepths(q, 2, 5, 5);
+        assertProfilingDepths(q, 2, 5, 5, 5);
+
+        q = new Query("?query=foo&trace.profileDepth=5&trace.profiling.sortFeatures.depth=2",
+                      new QueryProfile("test").compile(null));
+        assertEquals(5, q.getTrace().getProfileDepth());
+        assertProfilingDepths(q, 5, 5, 5, 2);
+    }
+
+    @Test
+    void setting_profile_depth_overwrites_profiling_parameters() {
+        var q = new Query("?query=foo&trace.profiling.sortFeatures.depth=2");
+        assertProfilingDepths(q, 0, 0, 0, 2);
+        q.getTrace().setProfileDepth(3);
+        assertEquals(3, q.getTrace().getProfileDepth());
+        assertProfilingDepths(q, 3, 3, 3, 3);
+        q.getTrace().setProfileDepth(0);
+        assertEquals(0, q.getTrace().getProfileDepth());
+        assertProfilingDepths(q, 0, 0, 0, 0);
+
+        QueryProfile profile = new QueryProfile("test");
+        profile.set("trace.profiling.sortFeatures.depth", 2, null);
+        q = new Query("?query=foo", profile.compile(null));
+        assertProfilingDepths(q, 0, 0, 0, 2);
+        q.getTrace().setProfileDepth(3);
+        assertEquals(3, q.getTrace().getProfileDepth());
+        assertProfilingDepths(q, 3, 3, 3, 3);
+        q.getTrace().setProfileDepth(0);
+        assertEquals(0, q.getTrace().getProfileDepth());
+        assertProfilingDepths(q, 0, 0, 0, 0);
     }
 
     @Test
@@ -731,10 +765,12 @@ public class QueryTestCase {
         }
     }
 
-    private static void assertProfilingDepths(Query query, int matching, int firstPhaseRanking, int secondPhaseRanking) {
+    private static void assertProfilingDepths(Query query, int matching, int firstPhaseRanking, int secondPhaseRanking,
+                                              int sortFeatures) {
         assertEquals(matching, query.getTrace().getProfiling().getMatching().getDepth());
         assertEquals(firstPhaseRanking, query.getTrace().getProfiling().getFirstPhaseRanking().getDepth());
         assertEquals(secondPhaseRanking, query.getTrace().getProfiling().getSecondPhaseRanking().getDepth());
+        assertEquals(sortFeatures, query.getTrace().getProfiling().getSortFeatures().getDepth());
     }
 
     @Test
