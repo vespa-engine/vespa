@@ -147,21 +147,27 @@ public class VespaModelFactoryTest {
         };
     }
 
-    /** Self-hosted has no builder for the element; the error must say Vespa Cloud is required. */
+    /** Without a builder, self-hosted must be told Vespa Cloud is required, and hosted that the version is unknown. */
     @Test
     void commerceDiscoveryWithoutABuilderFailsWithATailoredMessage() {
         var services = """
                 <services version="1.0">
-                    <commerce-discovery version="1.0"/>
+                    <commerce-discovery version="1.1"/>
                 </services>""";
-        Throwable exception = assertThrows(IllegalArgumentException.class, () ->
-                VespaModelFactory.createTestFactory().createModel(new MockModelContext() {
-                    @Override
-                    public ApplicationPackage applicationPackage() {
-                        return new MockApplicationPackage.Builder().withServices(services).build();
-                    }
-                }));
-        assertTrue(exception.getMessage().contains("requires Vespa Cloud"), exception.getMessage());
+        for (boolean hostedVespa : new boolean[] { false, true }) {
+            String message = assertThrows(IllegalArgumentException.class, () ->
+                    VespaModelFactory.createTestFactory().createModel(new MockModelContext() {
+                        @Override
+                        public ApplicationPackage applicationPackage() {
+                            return new MockApplicationPackage.Builder().withServices(services).build();
+                        }
+                        @Override
+                        public Properties properties() { return new TestProperties().setHostedVespa(hostedVespa); }
+                    })).getMessage();
+            String expected = hostedVespa ? "<commerce-discovery version=\"1.1\"> is not available on Vespa"
+                                          : "<commerce-discovery> requires Vespa Cloud";
+            assertTrue(message.contains(expected), message);
+        }
     }
 
     /** Lock in feature flag and hosted as gating for the provider for now. */
