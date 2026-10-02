@@ -7365,6 +7365,7 @@
       "public com.yahoo.search.query.profiling.ProfilingParams getMatching()",
       "public com.yahoo.search.query.profiling.ProfilingParams getFirstPhaseRanking()",
       "public com.yahoo.search.query.profiling.ProfilingParams getSecondPhaseRanking()",
+      "public com.yahoo.search.query.profiling.ProfilingParams getSortFeatures()",
       "public com.yahoo.search.query.profiling.ProfilingParams clone()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -7373,7 +7374,8 @@
     "fields" : [
       "public static final java.lang.String MATCHING",
       "public static final java.lang.String FIRST_PHASE_RANKING",
-      "public static final java.lang.String SECOND_PHASE_RANKING"
+      "public static final java.lang.String SECOND_PHASE_RANKING",
+      "public static final java.lang.String SORT_FEATURES"
     ]
   },
   "com.yahoo.search.query.profiling.ProfilingParams" : {
