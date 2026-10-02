@@ -47,7 +47,7 @@ public:
                         const IFlushTarget::SP& target, const std::string& prefix);
 
     void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
-                    std::promise<std::unique_ptr<Task>> task_promise) override;
+                    TaskPromise task_promise) override;
 };
 
 } // namespace proton
