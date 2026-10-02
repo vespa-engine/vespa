@@ -412,7 +412,7 @@ export PATH="%{_prefix}-deps/bin:$PATH"
        %{?_cmake_extra_opts} \
        .
 
-make %{_smp_mflags}
+make --no-print-directory %{_smp_mflags}
 VERSION=%{version} CI=true make -C client/go install-all
 %endif
 
@@ -425,7 +425,7 @@ export JAVA_HOME=/usr/lib/jvm/java-%{_vespa_java_version}-openjdk
 %endif
 export PATH="$JAVA_HOME/bin:$PATH"
 LC_CTYPE=C.UTF-8 %{_mvn_cmd} --batch-mode -nsu -T 1C verify
-make test ARGS="--output-on-failure %{_smp_mflags}"
+make --no-print-directory test ARGS="--output-on-failure %{_smp_mflags}"
 %endif
 
 %install
@@ -437,7 +437,7 @@ cp -r %{installdir} %{buildroot}
 find %{buildroot} -exec file {} \; | grep ': ELF ' | cut -d: -f1 | xargs --no-run-if-empty -n1 /usr/lib/rpm/debugedit -b %{source_base} -d %{_builddir}/%{name}-%{version}
 %endif
 %else
-make install DESTDIR=%{buildroot}
+make --no-print-directory install DESTDIR=%{buildroot}
 cp client/go/bin/vespa %{buildroot}%{_prefix}/bin/vespa
 mkdir -p %{buildroot}/usr/share
 cp -a client/go/share/* %{buildroot}/usr/share
