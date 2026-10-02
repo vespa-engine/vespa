@@ -79,6 +79,12 @@ public:
     bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const override;
     const DenseTensorStore* as_dense() const override;
     DenseTensorStore* as_dense() override;
+    std::span<const char> get_raw_memory(EntryRef ref) const noexcept override {
+        if (!ref.valid()) {
+            return {};
+        }
+        return {static_cast<const char*>(getRawBuffer(ref)), getBufSize()};
+    }
 
     vespalib::eval::TypedCells get_typed_cells(EntryRef ref) const noexcept {
         if (!ref.valid()) [[unlikely]] {
