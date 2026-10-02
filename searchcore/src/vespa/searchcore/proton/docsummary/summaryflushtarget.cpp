@@ -61,12 +61,14 @@ SerialNum SummaryFlushTarget::getFlushedSerialNum() const {
 IFlushTarget::Task::UP SummaryFlushTarget::internalInitFlush(SerialNum currentSerial) {
     return std::make_unique<Flusher>(_docStore, _lastStats, currentSerial);
 }
-IFlushTarget::Task::UP SummaryFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) {
+
+void SummaryFlushTarget::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
+                                    TaskPromise task_promise) {
     // Called by document db executor
     std::promise<Task::UP> promise;
     std::future<Task::UP>  future = promise.get_future();
     _summaryService.execute(vespalib::makeLambdaTask([&]() { promise.set_value(internalInitFlush(currentSerial)); }));
-    return future.get();
+    task_promise.set_value(future.get());
 }
 
 bool SummaryFlushTarget::can_flush(SerialNum current_serial) const noexcept {

@@ -46,7 +46,8 @@ public:
     ThreadedFlushTarget(vespalib::Executor& executor, const IGetSerialNum& getSerialNum,
                         const IFlushTarget::SP& target, const std::string& prefix);
 
-    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
+                    std::promise<std::unique_ptr<Task>> task_promise) override;
 };
 
 } // namespace proton

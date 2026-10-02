@@ -80,12 +80,14 @@ public:
     WrappedFlushTarget(const IFlushTarget::SP& target, SimpleHandler& handler)
         : FlushTargetProxy(target), _handler(handler) {}
 
-    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override {
+    void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
+                    TaskPromise task_promise) override {
         Task::UP task(_target->initFlush(currentSerial, std::move(flush_token)));
         if (task) {
-            return std::make_unique<WrappedFlushTask>(std::move(task), _handler);
+            task_promise.set_value(std::make_unique<WrappedFlushTask>(std::move(task), _handler));
+        } else {
+            task_promise.set_value({});
         }
-        return task;
     }
 
     [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override {
@@ -269,11 +271,12 @@ public:
         return _flushedSerial.load(std::memory_order_relaxed);
     }
 
-    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) override {
+    void init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
+                    TaskPromise task_promise) override {
         LOG(info, "SimpleTarget(%s)::initFlush(%" PRIu64 ")", getName().c_str(), currentSerial);
         _currentSerial = currentSerial;
         _initDone.countDown();
-        return std::move(_task);
+        task_promise.set_value(std::move(_task));
     }
 
     [[nodiscard]] bool can_flush(SerialNum) const noexcept override { return true; }
