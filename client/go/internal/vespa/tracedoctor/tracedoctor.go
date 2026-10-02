@@ -110,6 +110,9 @@ func (ctx *Context) analyzeThread(trace protonTrace, thread threadTrace, peer *t
 		overview = append(overview, peer.extractSummary())
 	}
 	matchThreadSummaryPrompt(ctx, out)
+	if anyThreadHasSortFeatures(overview...) {
+		sortFeaturesTaskPrompt(ctx, out)
+	}
 	renderThreadSummaries(out, overview...)
 	out.fmt("looking into thread #%d\n", thread.id)
 	matchThreadTimelinePrompt(ctx, out)
@@ -129,6 +132,11 @@ func (ctx *Context) analyzeThread(trace protonTrace, thread threadTrace, peer *t
 		secondPhaseProfilingPrompt(ctx, out)
 		secondPhasePerf.render(out)
 	}
+	if sortFeaturesPerf := thread.sortFeaturesPerf(); sortFeaturesPerf.impact() != 0.0 {
+		out.fmt("sort feature profiling for thread #%d (total time was %.3f ms)\n", thread.id, thread.sortFeaturesTimeMs())
+		sortFeaturesProfilingPrompt(ctx, out)
+		sortFeaturesPerf.render(out)
+	}
 }
 
 func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out *output) {
@@ -137,6 +145,9 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 		overview = append(overview, peer.extractSummary())
 	}
 	protonSummaryPrompt(ctx, out)
+	if anyNodeHasSortFeatures(overview...) {
+		sortFeaturesTaskPrompt(ctx, out)
+	}
 	renderProtonSummaries(out, overview...)
 	out.fmt("looking into node %s\n", trace.desc())
 	protonTimelinePrompt(ctx, out)

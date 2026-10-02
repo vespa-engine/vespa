@@ -3,6 +3,7 @@
 package tracedoctor
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -429,4 +430,132 @@ func TestFindValueWhenNotFound(t *testing.T) {
 	var value = emptyProtonTrace().findValueByTag("query_setup_stats")
 	assert.NotNil(t, value)
 	assert.False(t, value.Valid())
+}
+
+func (f testFactory) profilingEntry(tag string, totalMs float64, roots ...perfSample) slime.Value {
+	return slime.MakeObject(func(obj slime.Value) {
+		obj.Set("tag", slime.String(tag))
+		obj.Set("total_time_ms", slime.Double(totalMs))
+		if len(roots) > 0 {
+			obj.Set("roots", slime.MakeArray(func(arr slime.Value) {
+				for _, root := range roots {
+					arr.Add(root.source)
+				}
+			}))
+		}
+	})
+}
+
+func (f testFactory) threadTraceWithEntries(id int, entries ...slime.Value) threadTrace {
+	return threadTrace{
+		id: id,
+		source: slime.MakeObject(func(obj slime.Value) {
+			obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+				for _, entry := range entries {
+					arr.Add(entry)
+				}
+			}))
+		}),
+	}
+}
+
+func (f testFactory) protonTraceWithThreads(threads ...threadTrace) protonTrace {
+	return protonTrace{source: slime.MakeObject(func(obj slime.Value) {
+		obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+			arr.Add(slime.MakeObject(func(obj slime.Value) {
+				obj.Set("tag", slime.String("query_execution"))
+				obj.Set("threads", slime.MakeArray(func(arr slime.Value) {
+					for _, thread := range threads {
+						arr.Add(thread.source)
+					}
+				}))
+			}))
+		}))
+	})}
+}
+
+// thread #0 matches for longer but finds no hits, so its sort entry has no samples;
+// thread #1 evaluates two sort keys that both compute attribute(stock)
+func (f testFactory) sortFeaturesProtonTrace(withSort bool) protonTrace {
+	thread0 := []slime.Value{f.profilingEntry("match_profiling", 10)}
+	thread1 := []slime.Value{f.profilingEntry("match_profiling", 1)}
+	if withSort {
+		hasStock := f.treeSample("function has_stock", 6, 80, 60)
+		hasStock.source.Set("children", slime.MakeArray(func(arr slime.Value) {
+			arr.Add(f.treeSample("attribute(stock)", 6, 20, 20).source)
+		}))
+		thread0 = append(thread0, f.profilingEntry("sort_features_profiling", 0))
+		thread1 = append(thread1, f.profilingEntry("sort_features_profiling", 100,
+			hasStock, f.treeSample("attribute(stock)", 6, 20, 20)))
+	}
+	return f.protonTraceWithThreads(
+		f.threadTraceWithEntries(0, thread0...),
+		f.threadTraceWithEntries(1, thread1...))
+}
+
+func TestSortFeaturesProfilingExtract(t *testing.T) {
+	proton := testFactory{}.sortFeaturesProtonTrace(true)
+	threads := proton.findThreadTraces()
+	assert.Equal(t, 2, len(threads))
+	assert.Equal(t, 0.0, threads[0].sortFeaturesTimeMs())
+	assert.Equal(t, 100.0, threads[1].sortFeaturesTimeMs())
+	assert.True(t, threads[0].hasSortFeaturesProfiling())
+	assert.True(t, threads[1].hasSortFeaturesProfiling())
+	assert.Equal(t, 10.0, threads[0].profTimeMs())
+	assert.Equal(t, 101.0, threads[1].profTimeMs())
+
+	// sort time makes thread #1 the slowest, although it matched for less time
+	slowest, _ := selectSlowestThread(append([]threadTrace(nil), threads...))
+	assert.Equal(t, 1, slowest.id)
+
+	summary := threads[1].extractSummary()
+	assert.Equal(t, 100.0, summary.sortFeaturesMs)
+	assert.True(t, summary.hasSortFeatures)
+	node := proton.extractSummary()
+	assert.Equal(t, 100.0, node.sortFeaturesMs)
+	assert.True(t, node.hasSortFeatures)
+
+	assert.Equal(t, 0.0, threads[0].sortFeaturesPerf().impact())
+	perf := threads[1].sortFeaturesPerf()
+	assert.Equal(t, 100.0, perf.impact())
+	assert.Equal(t, 2, len(perf.entries))
+	assert.Equal(t, int64(6), perf.entries["function has_stock"].count)
+	assert.Equal(t, 60.0, perf.entries["function has_stock"].selfTimeMs)
+	assert.Equal(t, int64(12), perf.entries["attribute(stock)"].count)
+	assert.Equal(t, 40.0, perf.entries["attribute(stock)"].selfTimeMs)
+}
+
+func TestSortFeaturesProfilingAbsent(t *testing.T) {
+	proton := testFactory{}.sortFeaturesProtonTrace(false)
+	threads := proton.findThreadTraces()
+	for _, thread := range threads {
+		assert.Equal(t, 0.0, thread.sortFeaturesTimeMs())
+		assert.False(t, thread.hasSortFeaturesProfiling())
+		assert.False(t, thread.extractSummary().hasSortFeatures)
+	}
+	slowest, _ := selectSlowestThread(append([]threadTrace(nil), threads...))
+	assert.Equal(t, 0, slowest.id)
+	node := proton.extractSummary()
+	assert.Equal(t, 0.0, node.sortFeaturesMs)
+	assert.False(t, node.hasSortFeatures)
+}
+
+func TestSortFeaturesSummaryRows(t *testing.T) {
+	f := testFactory{}
+	render := func(fill func(out *output)) string {
+		var buf bytes.Buffer
+		fill(&output{out: &buf})
+		return buf.String()
+	}
+	// the row follows the presence of the entry, not its time
+	plain := f.threadTraceWithEntries(0, f.profilingEntry("match_profiling", 5))
+	idle := f.threadTraceWithEntries(1, f.profilingEntry("match_profiling", 1), f.profilingEntry("sort_features_profiling", 0))
+	plainThread, idleThread := plain.extractSummary(), idle.extractSummary()
+	assert.NotContains(t, render(func(out *output) { renderThreadSummaries(out, plainThread) }), "sort features")
+	assert.Contains(t, render(func(out *output) { renderThreadSummaries(out, plainThread, idleThread) }), "sort features")
+
+	plainNode := f.protonTraceWithThreads(plain).extractSummary()
+	idleNode := f.protonTraceWithThreads(idle).extractSummary()
+	assert.NotContains(t, render(func(out *output) { renderProtonSummaries(out, plainNode) }), "sort features")
+	assert.Contains(t, render(func(out *output) { renderProtonSummaries(out, plainNode, idleNode) }), "sort features")
 }
