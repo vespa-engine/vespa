@@ -13,4 +13,4 @@ permissions:
 
 jobs:
   codeowners:
-    uses: vespa-engine/gh-actions/.github/workflows/sync-codeowners.yml@main
+    uses: vespa-engine/gh-actions/.github/workflows/sync-codeowners.yml@b9b3093fe531392b08e7a71ffa8bcd88cb529bc3 # main
