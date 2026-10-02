@@ -541,7 +541,7 @@ public abstract class GroupingOperation extends GroupingNode {
                 ret.append(exp);
                 String label = exp.getLabel();
                 if (label != null) {
-                    ret.append(" as(").append(label).append(")");
+                    ret.append(" as(").append(asLabelImage(label)).append(")");
                 }
                 if (i < len - 1) {
                     ret.append(", ");
@@ -565,9 +565,17 @@ public abstract class GroupingOperation extends GroupingNode {
         ret.append(")");
         String label = getLabel();
         if (label != null) {
-            ret.append(" as(").append(label).append(")");
+            ret.append(" as(").append(asLabelImage(label)).append(")");
         }
         return ret.toString();
+    }
+
+    /** Returns a label as it must be written in a grouping request: unquoted if it is an identifier, quoted otherwise */
+    private static String asLabelImage(String label) {
+        if (label.matches("[A-Za-z][A-Za-z0-9_@]*")) {
+            return label;
+        }
+        return GroupingExpression.asImage(label);
     }
 
     /**

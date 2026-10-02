@@ -669,6 +669,12 @@ public class GroupingParserTestCase {
         assertIllegalArgument("all(group(foo) filter(in(foo, sum(bar))) each(output(count())))",
                 "Encountered \" \"(\" \"(\"\" at line 1, column 34.");
 
+        assertAll("labels which are not identifiers are quoted",
+                () -> assertParse("all(group(foo) each(output(count() as(\"my label\"))) as(\"my label\"))"),
+                () -> assertParse("all(group(foo) each(output(count() as('my label'))) as('my label'))",
+                                  "all(group(foo) each(output(count() as(\"my label\"))) as(\"my label\"))"),
+                () -> assertParse("all(group(foo) each(output(count() as(\"a\\\"b\"))))"));
+
         assertAll("filter with alias",
                 () -> assertParse(
                         "all(group($myalias=foo) filter(regex(\".*mysubstring.*\", $myalias)) each(output(count())))",
@@ -691,6 +697,8 @@ public class GroupingParserTestCase {
                 Map.entry("n", "7"),
                 Map.entry("max", "3"),
                 Map.entry("label", "mylabel"),
+                Map.entry("quoted", "a\"b\\.c"),
+                Map.entry("spaced", "my label"),
                 Map.entry("my-param_1", "9"),
                 Map.entry("_x", "1"),
                 Map.entry("list", "x, 'y z', \"w\""),
@@ -711,6 +719,16 @@ public class GroupingParserTestCase {
                 () -> assertParseWithParameters(parameters,
                         "all(group(@n) each(output(count())))",
                         "all(group(\"7\") each(output(count())))"));
+        assertAll("substituted strings are quoted and escaped when rendered",
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) filter(regex(@quoted, foo)) each(output(count())))",
+                        "all(group(foo) filter(regex(\"a\\\"b\\\\.c\", foo)) each(output(count())))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) filter(in(foo, @quoted, @spaced)) each(output(count())))",
+                        "all(group(foo) filter(in(foo, \"a\\\"b\\\\.c\", \"my label\")) each(output(count())))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(@spaced) each(output(count() as(@spaced))) as(@spaced))",
+                        "all(group(\"my label\") each(output(count() as(\"my label\"))) as(\"my label\"))"));
         assertAll("parameters in number positions",
                 () -> assertParseWithParameters(parameters,
                         "all(group(foo) filter(range(@lo, @hi, foo)) each(output(count())))",
