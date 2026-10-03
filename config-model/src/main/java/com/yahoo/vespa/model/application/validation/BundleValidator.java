@@ -7,7 +7,6 @@ import org.w3c.dom.Document;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,19 +29,19 @@ public class BundleValidator extends AbstractBundleValidator {
     protected void validateManifest(JarContext reporter, JarFile jar, Manifest mf) {
         // Check for required OSGI headers
         Attributes attributes = mf.getMainAttributes();
-        HashSet<String> mfAttributes = new HashSet<>();
-        for (Map.Entry<Object,Object> entry : attributes.entrySet()) {
-            mfAttributes.add(entry.getKey().toString());
-        }
         List<String> requiredOSGIHeaders = List.of(
                 "Bundle-ManifestVersion", "Bundle-Name", "Bundle-SymbolicName", "Bundle-Version");
         for (String header : requiredOSGIHeaders) {
-            if (!mfAttributes.contains(header)) {
+            String value = attributes.getValue(header);
+            if (value == null) {
                 reporter.illegal("Required OSGI header '" + header + "' was not found in manifest in '" + filename(jar) + "'");
+            } else if (value.isBlank()) {
+                reporter.illegal("Required OSGI header '" + header + "' is blank in manifest in '" + filename(jar) + "'");
             }
         }
 
-        if (attributes.getValue("Bundle-Version").endsWith(".SNAPSHOT")) {
+        String bundleVersion = attributes.getValue("Bundle-Version");
+        if (bundleVersion != null && bundleVersion.endsWith(".SNAPSHOT")) {
             log(reporter.deployState(), Level.WARNING,
                     "Deploying snapshot bundle " + filename(jar) + ".\nTo use this bundle, you must include the " +
                             "qualifier 'SNAPSHOT' in the version specification in services.xml.");
