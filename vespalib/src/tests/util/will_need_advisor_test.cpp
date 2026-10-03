@@ -5,13 +5,15 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/will_need_advisor.h>
 
+#include <sys/mman.h>
 #include <unistd.h>
 
 #include <cstring>
-#include <filesystem>
 
 using vespalib::alloc::MmapFileAllocator;
+using vespalib::alloc::PtrAndSize;
 using vespalib::alloc::WillNeedAdvisor;
+using Method = WillNeedAdvisor::Method;
 using Range = WillNeedAdvisor::Range;
 using Ranges = std::vector<Range>;
 
@@ -19,10 +21,23 @@ namespace {
 
 constexpr size_t ps = 4096;
 
-Ranges merged(Ranges ranges) {
-    WillNeedAdvisor::merge_page_ranges(ranges, ps);
+Ranges merged(Ranges ranges, size_t max_range_size = WillNeedAdvisor::default_max_range_size) {
+    WillNeedAdvisor::merge_page_ranges(ranges, ps, max_range_size);
     return ranges;
 }
+
+const size_t page_size = getpagesize();
+
+// File backed memory, as used by paged attributes. The allocator removes its directory when destroyed.
+struct FileBackedMemory {
+    MmapFileAllocator allocator;
+    PtrAndSize        buf;
+    explicit FileBackedMemory(size_t size) : allocator("will-need-advisor-dir"), buf(allocator.alloc(size)) {
+        memset(buf.get(), 1, buf.size());
+    }
+    ~FileBackedMemory() { allocator.free(buf); }
+    char* page(size_t idx) const { return static_cast<char*>(buf.get()) + idx * page_size; }
+};
 
 } // namespace
 
@@ -45,6 +60,14 @@ TEST(WillNeedAdvisorTest, ranges_are_sorted_and_overlapping_or_adjacent_ranges_a
     EXPECT_EQ(Ranges({{0, 8 * ps}}), merged({{0, 8 * ps}, {2 * ps, 3 * ps}}));
 }
 
+TEST(WillNeedAdvisorTest, long_ranges_are_split_into_chunks) {
+    EXPECT_EQ(Ranges({{0, 32 * ps}, {32 * ps, 64 * ps}, {64 * ps, 75 * ps}, {100 * ps, 101 * ps}}),
+              merged({{0, 75 * ps}, {100 * ps, 100 * ps + 1}}));
+    EXPECT_EQ(Ranges({{0, 2 * ps}, {2 * ps, 3 * ps}}), merged({{0, 3 * ps}}, 2 * ps + 100));
+    // chunks are at least one page
+    EXPECT_EQ(Ranges({{0, ps}, {ps, 2 * ps}}), merged({{0, 2 * ps}}, 10));
+}
+
 TEST(WillNeedAdvisorTest, empty_ranges_are_ignored) {
     WillNeedAdvisor advisor;
     char            buf[16];
@@ -54,29 +77,58 @@ TEST(WillNeedAdvisorTest, empty_ranges_are_ignored) {
     auto result = advisor.advise();
     EXPECT_EQ(0u, result.ranges);
     EXPECT_EQ(0u, result.bytes);
+    EXPECT_EQ(0u, result.syscalls);
 }
 
-TEST(WillNeedAdvisorTest, file_backed_memory_can_be_advised) {
-    std::string basedir("will-need-advisor-dir");
-    {
-        MmapFileAllocator allocator(basedir);
-        auto              buf = allocator.alloc(1_Mi);
-        ASSERT_NE(nullptr, buf.get());
-        memset(buf.get(), 1, buf.size());
-        auto            page_size = static_cast<size_t>(getpagesize());
-        auto*           data = static_cast<char*>(buf.get());
-        WillNeedAdvisor advisor;
-        advisor.add(data + 10 * page_size + 3, 100);
-        advisor.add(data + 11 * page_size, 1);
-        advisor.add(data + 100 * page_size, 2 * page_size);
-        auto result = advisor.advise();
-        EXPECT_EQ(2u, result.ranges);
-        EXPECT_EQ(4 * page_size, result.bytes);
-        EXPECT_TRUE(advisor.empty());
-        // advising again is a no-op
-        result = advisor.advise();
-        EXPECT_EQ(0u, result.ranges);
-        allocator.free(buf);
+TEST(WillNeedAdvisorTest, file_backed_memory_can_be_advised_per_range) {
+    FileBackedMemory mem(1_Mi);
+    WillNeedAdvisor  advisor;
+    advisor.add(mem.page(10) + 3, 100);
+    advisor.add(mem.page(11), 1);
+    advisor.add(mem.page(100), 2 * page_size);
+    auto result = advisor.advise(Method::PER_RANGE);
+    EXPECT_EQ(2u, result.ranges);
+    EXPECT_EQ(4 * page_size, result.bytes);
+    EXPECT_EQ(2u, result.syscalls);
+    EXPECT_TRUE(advisor.empty());
+    // advising again is a no-op
+    result = advisor.advise();
+    EXPECT_EQ(0u, result.ranges);
+}
+
+TEST(WillNeedAdvisorTest, file_backed_memory_can_be_advised_batched) {
+    FileBackedMemory mem(1_Mi);
+    WillNeedAdvisor  advisor;
+    for (size_t i = 0; i < 10; ++i) {
+        advisor.add(mem.page(10 * i + 5), 10);
     }
-    std::filesystem::remove_all(std::filesystem::path(basedir));
+    auto result = advisor.advise(Method::BATCHED);
+    EXPECT_EQ(10u, result.ranges);
+    EXPECT_EQ(10 * page_size, result.bytes);
+    if (WillNeedAdvisor::batching_disabled()) {
+        fprintf(stderr, "process_madvise is not usable here, fell back to madvise per range\n");
+        EXPECT_LE(10u, result.syscalls);
+    } else {
+        EXPECT_EQ(1u, result.syscalls);
+    }
+}
+
+TEST(WillNeedAdvisorTest, failing_ranges_are_not_counted) {
+    FileBackedMemory mem(1_Mi);
+    // reserve and release an address range, so it is (very likely) unmapped
+    void* hole = mmap(nullptr, 4 * page_size, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    ASSERT_NE(MAP_FAILED, hole);
+    ASSERT_EQ(0, munmap(hole, 4 * page_size));
+    for (auto method : {Method::PER_RANGE, Method::BATCHED}) {
+        bool            batching_was_disabled = WillNeedAdvisor::batching_disabled();
+        WillNeedAdvisor advisor;
+        advisor.add(mem.page(1), 1);
+        advisor.add(hole, 1);
+        advisor.add(mem.page(3), 1);
+        auto result = advisor.advise(method);
+        EXPECT_EQ(2u, result.ranges);
+        EXPECT_EQ(2 * page_size, result.bytes);
+        // a failing range must not disable batching for the process
+        EXPECT_EQ(batching_was_disabled, WillNeedAdvisor::batching_disabled());
+    }
 }
