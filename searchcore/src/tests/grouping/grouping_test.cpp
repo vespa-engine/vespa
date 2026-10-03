@@ -2,6 +2,7 @@
 
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchcore/grouping/grouping_pass_details.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchcore/grouping/groupingsession.h>
@@ -15,6 +16,8 @@
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/searchlib/expression/integerresultnode.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
+#include <vespa/vespalib/data/slime/json_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/testclock.h>
 
@@ -488,6 +491,107 @@ TEST(GroupingTest, testSessionWithRootLevelAggregationResultAcrossPasses) {
     EXPECT_EQ(3, static_cast<const MinAggregationResult&>(rootMin).getMin().getInteger());
 }
 
+TEST(GroupingTest, test_pass_details) {
+    DoomFixture f1;
+    MyWorld     world;
+    Grouping    request;
+    request.setId(7)
+        .setFirstLevel(0)
+        .setLastLevel(0)
+        .addLevel(createGL(MU<AttributeNode>("attr1"), MU<AttributeNode>("attr2")))
+        .addLevel(createGL(MU<AttributeNode>("attr2"), MU<AttributeNode>("attr3")));
+    request.levels()[0].setMaxGroups(2).setPresicion(5);
+
+    auto            r = std::make_shared<Grouping>(request);
+    GroupingContext initContext(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+    initContext.addGrouping(r);
+    SessionId              id("foo");
+    GroupingSession        session(id, initContext, world.attributeContext, &world.documentType);
+    std::vector<RankedHit> hits(3);
+    for (uint32_t i = 0; i < hits.size(); ++i) {
+        hits[i]._docId = i + 1;
+    }
+    session.getGroupingManager().groupInRelevanceOrder(7, hits);
+
+    GroupingPassTrace trace;
+    auto&             details = trace.groupings;
+    session.continueExecution(initContext, &trace);
+    ASSERT_EQ(1u, details.size());
+    {
+        const auto& d = details[0];
+        EXPECT_EQ(7u, d.id);
+        EXPECT_EQ(0u, d.first_level);
+        EXPECT_EQ(0u, d.last_level);
+        EXPECT_TRUE(d.from_session);
+        EXPECT_FALSE(d.session_done);
+        ASSERT_EQ(2u, d.levels.size());
+        EXPECT_EQ(2, d.levels[0].max_groups);
+        EXPECT_EQ(5, d.levels[0].precision);
+        EXPECT_EQ(3u, d.levels[0].session_groups);
+        EXPECT_EQ(3u, d.levels[1].session_groups);
+        EXPECT_EQ(3u, d.levels[0].groups);
+        EXPECT_EQ(0u, d.levels[1].groups);
+    }
+
+    // Second pass keeps two of the three level 0 groups returned above and asks for the level 1
+    // groups below them. The session prunes its full result down to what was kept.
+    GroupingContext context2(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+    auto            r2 = std::make_shared<Grouping>(request);
+    r2->setFirstLevel(1).setLastLevel(1);
+    Group root;
+    for (uint32_t i = 0; i < 2; ++i) {
+        root.addChild(r->getRoot().getChild(i));
+    }
+    r2->setRoot(root);
+    context2.addGrouping(r2);
+    details.clear();
+    session.continueExecution(context2, &trace);
+    ASSERT_FALSE(session.finished());
+    ASSERT_EQ(1u, details.size());
+    {
+        const auto& d = details[0];
+        EXPECT_TRUE(d.from_session);
+        EXPECT_FALSE(d.session_done);
+        EXPECT_EQ(3u, d.levels[0].session_groups);
+        EXPECT_EQ(3u, d.levels[1].session_groups);
+        EXPECT_EQ(2u, d.levels[0].groups);
+        EXPECT_EQ(2u, d.levels[1].groups);
+    }
+
+    // Last pass, the session only has the groups kept by the previous pass left.
+    GroupingContext context3(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+    auto            r3 = std::make_shared<Grouping>(*r2);
+    r3->setFirstLevel(2).setLastLevel(2);
+    context3.addGrouping(r3);
+    details.clear();
+    session.continueExecution(context3, &trace);
+    ASSERT_TRUE(session.finished());
+    ASSERT_EQ(1u, details.size());
+    {
+        const auto& d = details[0];
+        EXPECT_TRUE(d.from_session);
+        EXPECT_TRUE(d.session_done);
+        EXPECT_EQ(2u, d.levels[0].session_groups);
+        EXPECT_EQ(2u, d.levels[1].session_groups);
+        EXPECT_EQ(2u, d.levels[0].groups);
+        EXPECT_EQ(2u, d.levels[1].groups);
+    }
+
+    // Timing is not deterministic
+    details[0].time_ms = 0.0;
+    trace.serialize_ms = 0.0;
+    vespalib::Slime slime;
+    trace.as_slime(slime.setObject());
+    vespalib::Slime expected;
+    vespalib::slime::JsonFormat::decode(
+        R"({"serialize_ms":0.0,"groupings":[{"id":7,"first_level":2,"last_level":2,"top_n":-1,"summary_hits":0,)"
+        R"("from_session":true,"session_done":true,"time_ms":0.0,"levels":[)"
+        R"({"max_groups":2,"precision":5,"groups":2,"session_groups":2},)"
+        R"({"max_groups":-1,"precision":-1,"groups":2,"session_groups":2}]}]})",
+        expected);
+    EXPECT_EQ(expected, slime) << slime.toString();
+}
+
 TEST(GroupingTest, testEmptySessionId) {
     DoomFixture         f1;
     MyWorld             world;
@@ -513,9 +617,21 @@ TEST(GroupingTest, testEmptySessionId) {
     EXPECT_EQ(id, session.getSessionId());
     ASSERT_TRUE(!session.getGroupingManager().empty());
     ASSERT_TRUE(session.finished() && session.getSessionId().empty());
-    session.continueExecution(initContext);
+    GroupingPassTrace trace;
+    session.continueExecution(initContext, &trace);
     ASSERT_TRUE(session.finished());
     ASSERT_TRUE(r1->getRoot().getChildrenSize() > 0);
+
+    // Without a session id the grouping was aggregated directly into the request.
+    ASSERT_EQ(1u, trace.groupings.size());
+    const auto& d = trace.groupings[0];
+    EXPECT_FALSE(d.from_session);
+    EXPECT_EQ(1u, d.levels[0].groups);
+    vespalib::Slime slime;
+    d.as_slime(slime.setObject());
+    EXPECT_FALSE(slime.get()["session_done"].valid());
+    EXPECT_FALSE(slime.get()["time_ms"].valid());
+    EXPECT_FALSE(slime.get()["levels"][0]["session_groups"].valid());
 }
 
 TEST(GroupingTest, testSessionManager) {
