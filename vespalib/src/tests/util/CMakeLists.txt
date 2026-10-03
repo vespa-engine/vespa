@@ -70,3 +70,15 @@ vespa_add_test(
     COMMAND vespalib_util_unordered_u32_set_benchmark_app
     BENCHMARK
 )
+
+vespa_add_executable(vespalib_util_will_need_advisor_benchmark_app TEST
+    SOURCES
+    will_need_advisor_benchmark.cpp
+    DEPENDS
+    vespalib
+)
+vespa_add_test(
+    NAME    vespalib_util_will_need_advisor_benchmark_app
+    COMMAND vespalib_util_will_need_advisor_benchmark_app
+    BENCHMARK
+)

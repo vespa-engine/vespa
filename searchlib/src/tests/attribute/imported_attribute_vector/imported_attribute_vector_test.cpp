@@ -466,6 +466,12 @@ struct MockAttributeVector : NotImplementedAttribute {
 
     MockAttributeVector() : NotImplementedAttribute("mock") {}
 
+    mutable std::vector<uint32_t> _prefetched;
+    PrefetchResult prefetch_docs(std::span<const DocId> docids) const override {
+        _prefetched.assign(docids.begin(), docids.end());
+        return {docids.size(), 100 * docids.size()};
+    }
+
     bool is_sortable() const noexcept override { return true; }
     std::unique_ptr<ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
                                                            common::sortspec::MissingPolicy policy,
@@ -591,6 +597,16 @@ TEST(ImportedAttributeVectorTest, imported_sparse_tensor) {
 TEST(ImportedAttributeVectorTest, imported_dense_tensor) {
     TensorAttrFixture f(true);
     f.assertTensors();
+}
+
+TEST(ImportedAttributeVectorTest, prefetch_docs_is_forwarded_with_remapped_lids) {
+    SerializeFixture<SingleStringAttrFixture> f;
+    // child lid 2 -> parent lid 3, child lid 4 -> parent lid 7, child lids 1 and 5 have no reference,
+    // and child lid 100 is beyond the docid limit
+    auto result = f.get_imported_attr()->prefetch_docs(std::vector<uint32_t>{1, 2, 4, 5, 100});
+    EXPECT_EQ(std::vector<uint32_t>({3, 7}), f.mock_target->_prefetched);
+    EXPECT_EQ(2u, result.ranges);
+    EXPECT_EQ(200u, result.bytes);
 }
 
 } // namespace search::attribute

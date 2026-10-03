@@ -993,23 +993,31 @@ void Fixture::test_prefetch_docs() {
     SCOPED_TRACE("test_prefetch_docs");
     using DocIds = std::vector<uint32_t>;
     ensureSpace(4);
-    if (_denseTensors) {
-        set_tensor(2, expDenseTensor3());
-    } else {
-        set_tensor(2, TensorSpec(sparseSpec).add({{"x", ""}, {"y", ""}}, 11));
+    // Small tensors stored right after each other, i.e. in the same page.
+    for (uint32_t docid : {2, 3}) {
+        if (_denseTensors) {
+            set_tensor(docid, expDenseTensor3());
+        } else {
+            set_tensor(docid, TensorSpec(sparseSpec).add({{"x", ""}, {"y", ""}}, 11));
+        }
     }
     const search::attribute::IAttributeVector& attr = *_attr;
-    EXPECT_EQ(0u, attr.prefetch_docs(DocIds{}));
+    EXPECT_EQ(0u, attr.prefetch_docs(DocIds{}).bytes);
     // docs without tensor, and docs beyond the docid limit, are ignored
-    EXPECT_EQ(0u, attr.prefetch_docs(DocIds{1, 3, 100}));
-    auto bytes = attr.prefetch_docs(DocIds{1, 2, 3, 100});
+    EXPECT_EQ(0u, attr.prefetch_docs(DocIds{1, 4, 100}).bytes);
+    auto single = attr.prefetch_docs(DocIds{2});
+    auto both = attr.prefetch_docs(DocIds{1, 2, 3, 4, 100});
     if (_traits.use_mmap_file_allocator) {
         size_t page_size = getpagesize();
-        EXPECT_LT(0u, bytes);
-        EXPECT_EQ(0u, bytes % page_size);
+        EXPECT_EQ(1u, single.ranges);
+        EXPECT_EQ(page_size, single.bytes);
+        // the two tensors share a page, which is advised once
+        EXPECT_EQ(1u, both.ranges);
+        EXPECT_EQ(page_size, both.bytes);
     } else {
         // not paged, nothing to prefetch
-        EXPECT_EQ(0u, bytes);
+        EXPECT_EQ(0u, single.bytes);
+        EXPECT_EQ(0u, both.bytes);
     }
 }
 

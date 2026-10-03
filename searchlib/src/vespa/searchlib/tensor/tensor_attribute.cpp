@@ -279,10 +279,10 @@ bool TensorAttribute::supports_get_serialized_tensor_ref() const {
     return false;
 }
 
-size_t TensorAttribute::prefetch_docs(std::span<const DocId> docids) const {
+TensorAttribute::PrefetchResult TensorAttribute::prefetch_docs(std::span<const DocId> docids) const {
     if (!get_memory_allocator()) {
         // Not paged, tensors are already in memory.
-        return 0;
+        return {};
     }
     vespalib::alloc::WillNeedAdvisor advisor;
     advisor.reserve(docids.size());
@@ -293,7 +293,8 @@ size_t TensorAttribute::prefetch_docs(std::span<const DocId> docids) const {
             advisor.add(memory.data(), memory.size());
         }
     }
-    return advisor.advise().bytes;
+    auto result = advisor.advise();
+    return {result.ranges, result.bytes};
 }
 
 const vespalib::eval::ValueType& TensorAttribute::getTensorType() const {

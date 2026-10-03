@@ -89,10 +89,10 @@ class PrefetchProbeAttribute : public SingleInt32ExtAttribute {
 
 public:
     using SingleInt32ExtAttribute::SingleInt32ExtAttribute;
-    size_t prefetch_docs(std::span<const DocId> docids) const override {
+    PrefetchResult prefetch_docs(std::span<const DocId> docids) const override {
         std::lock_guard guard(_lock);
         _calls.emplace_back(docids.begin(), docids.end());
-        return 0;
+        return {};
     }
     // Returns the prefetched docids from all calls (sorted), and forgets them.
     std::vector<uint32_t> take_prefetched() {
