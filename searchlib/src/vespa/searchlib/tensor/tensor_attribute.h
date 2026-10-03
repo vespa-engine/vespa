@@ -100,7 +100,7 @@ public:
     bool supports_extract_cells_ref() const override { return false; }
     bool supports_get_tensor_ref() const override { return false; }
     bool supports_get_serialized_tensor_ref() const override;
-    size_t prefetch_docs(std::span<const DocId> docids) const override;
+    PrefetchResult prefetch_docs(std::span<const DocId> docids) const override;
     const vespalib::eval::ValueType& getTensorType() const override;
     DistanceFunctionFactory& distance_function_factory() const override;
     const NearestNeighborIndex* nearest_neighbor_index() const override;

@@ -279,6 +279,18 @@ bool ImportedAttributeVectorReadGuard::isUndefined(DocId doc) const {
     return _target_attribute.isUndefined(getTargetLid(doc));
 }
 
+IAttributeVector::PrefetchResult
+ImportedAttributeVectorReadGuard::prefetch_docs(std::span<const DocId> docids) const {
+    std::vector<DocId> target_docids;
+    target_docids.reserve(docids.size());
+    for (DocId docid : docids) {
+        if (uint32_t target_lid = getTargetLid(docid); target_lid != 0) {
+            target_docids.push_back(target_lid);
+        }
+    }
+    return _target_attribute.prefetch_docs(target_docids);
+}
+
 bool ImportedAttributeVectorReadGuard::is_sortable() const noexcept {
     return _target_attribute.is_sortable();
 }

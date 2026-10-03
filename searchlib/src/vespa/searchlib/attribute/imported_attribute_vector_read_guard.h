@@ -74,6 +74,7 @@ public:
     uint32_t getCommittedDocIdLimit() const override;
     bool isImported() const override;
     bool isUndefined(DocId doc) const override;
+    PrefetchResult prefetch_docs(std::span<const DocId> docids) const override;
     template <typename MultiValueType>
     const IMultiValueReadView<MultiValueType>* make_read_view_helper(MultiValueTag<MultiValueType> tag,
                                                                      vespalib::Stash&              stash) const;
