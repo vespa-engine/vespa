@@ -361,7 +361,7 @@ public class PermanentFlags {
     }
 
     public static <T> UnboundCodecFlag<T> defineCodecFlag(String flagId, T defaultValue, String description, String modificationEffect,
-                                                          UnboundCodecFlag.Codec<T> codec, Predicate<T> validator, Dimension... dimensions) {
+                                                          Codec<T> codec, Predicate<T> validator, Dimension... dimensions) {
         return Flags.defineCodecFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, codec, validator, dimensions);
     }
 

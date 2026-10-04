@@ -112,7 +112,7 @@ public class FlagsTest {
     void testCodec() {
         UnboundCodecFlag<Duration> flag = Flags.defineCodecFlag("expiry", Duration.ofHours(1), List.of("owner"),
                                                                 "1970-01-01", "2100-01-01", "desc", "mod",
-                                                                UnboundCodecFlag.Codec.DURATION, any -> true);
+                                                                Codec.forDuration, any -> true);
         testGeneric(flag, Duration.ofHours(3));
     }
 

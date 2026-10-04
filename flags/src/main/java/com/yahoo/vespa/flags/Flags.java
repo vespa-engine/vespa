@@ -292,7 +292,7 @@ public class Flags {
 
     public static <T> UnboundCodecFlag<T> defineCodecFlag(String flagId, T defaultValue, List<String> owners,
                                                           String createdAt, String expiresAt, String description,
-                                                          String modificationEffect, UnboundCodecFlag.Codec<T> codec,
+                                                          String modificationEffect, Codec<T> codec,
                                                           Predicate<T> validator, Dimension... dimensions) {
         TypedUnboundFlagFactory<T, UnboundCodecFlag<T>> factory = (FlagId flagId_, T defaultValue_, FetchVector defaultFetchVector_) ->
                 new UnboundCodecFlag<T>(flagId_, defaultValue_, defaultFetchVector_, codec, validator);
