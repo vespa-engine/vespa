@@ -128,7 +128,7 @@
         <maven-xml-impl.vespa.version>4.0.0-beta-5</maven-xml-impl.vespa.version>
         <mcp-sdk.vespa.version>0.18.4</mcp-sdk.vespa.version>
         <micrometer.vespa.version>1.17.1</micrometer.vespa.version>
-        <mockito.vespa.version>5.23.0</mockito.vespa.version>
+        <mockito.vespa.version>5.24.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.1</mojo-executor.vespa.version>
         <netty.vespa.version>4.2.18.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.84.Final</netty-tcnative.vespa.version>
