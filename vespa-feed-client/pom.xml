@@ -16,11 +16,6 @@
   <dependencies>
     <!-- compile scope -->
     <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>annotations</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk18on</artifactId>
       <scope>compile</scope>
