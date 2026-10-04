@@ -12,7 +12,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 
@@ -250,14 +249,12 @@ public class Flags {
             "Takes effect on the next deployment.",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
                                                        String modificationEffect, Dimension... dimensions) {
         return define(UnboundBooleanFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundStringFlag defineStringFlag(String flagId, String defaultValue, List<String> owners,
                                                      String createdAt, String expiresAt, String description,
                                                      String modificationEffect, Dimension... dimensions) {
@@ -267,7 +264,6 @@ public class Flags {
                                 dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundStringFlag defineStringFlag(String flagId, String defaultValue, List<String> owners,
                                                      String createdAt, String expiresAt, String description,
                                                      String modificationEffect, Predicate<String> validator,
@@ -276,28 +272,33 @@ public class Flags {
                       flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundIntFlag defineIntFlag(String flagId, int defaultValue, List<String> owners,
                                                String createdAt, String expiresAt, String description,
                                                String modificationEffect, Dimension... dimensions) {
         return define(UnboundIntFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundLongFlag defineLongFlag(String flagId, long defaultValue, List<String> owners,
                                                  String createdAt, String expiresAt, String description,
                                                  String modificationEffect, Dimension... dimensions) {
         return define(UnboundLongFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundDoubleFlag defineDoubleFlag(String flagId, double defaultValue, List<String> owners,
                                                      String createdAt, String expiresAt, String description,
                                                      String modificationEffect, Dimension... dimensions) {
         return define(UnboundDoubleFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    public static <T> UnboundCodecFlag<T> defineCodecFlag(String flagId, T defaultValue, List<String> owners,
+                                                          String createdAt, String expiresAt, String description,
+                                                          String modificationEffect, UnboundCodecFlag.Codec<T> codec,
+                                                          Predicate<T> validator, Dimension... dimensions) {
+        TypedUnboundFlagFactory<T, UnboundCodecFlag<T>> factory = (FlagId flagId_, T defaultValue_, FetchVector defaultFetchVector_) ->
+                new UnboundCodecFlag<T>(flagId_, defaultValue_, defaultFetchVector_, codec, validator);
+        return define(factory, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
+    }
+
     public static <T> UnboundJacksonFlag<T> defineJacksonFlag(String flagId, T defaultValue, Class<T> jacksonClass, List<String> owners,
                                                               String createdAt, String expiresAt, String description,
                                                               String modificationEffect, Predicate<T> validator, Dimension... dimensions) {
@@ -305,7 +306,6 @@ public class Flags {
                       flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static <T> UnboundListFlag<T> defineListFlag(String flagId, List<T> defaultValue, Class<T> elementClass,
                                                         List<String> owners, String createdAt, String expiresAt,
                                                         String description, String modificationEffect, Dimension... dimensions) {
@@ -313,7 +313,6 @@ public class Flags {
                 flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static <T> UnboundListFlag<T> defineListFlag(String flagId, List<T> defaultValue, Class<T> elementClass,
                                                         List<String> owners, String createdAt, String expiresAt,
                                                         String description, String modificationEffect,

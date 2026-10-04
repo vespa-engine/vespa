@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -105,6 +106,14 @@ public class FlagsTest {
     @Test
     void testList() {
         testGeneric(Flags.defineListFlag("list-id", List.of("a"), String.class, List.of("owner"), "1970-01-01", "2100-01-01", "desc", "mod"), List.of("a", "b", "c"));
+    }
+
+    @Test
+    void testCodec() {
+        UnboundCodecFlag<Duration> flag = Flags.defineCodecFlag("expiry", Duration.ofHours(1), List.of("owner"),
+                                                                "1970-01-01", "2100-01-01", "desc", "mod",
+                                                                UnboundCodecFlag.Codec.DURATION, any -> true);
+        testGeneric(flag, Duration.ofHours(3));
     }
 
     @Test
