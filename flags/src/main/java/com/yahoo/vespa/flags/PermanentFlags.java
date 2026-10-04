@@ -360,6 +360,11 @@ public class PermanentFlags {
         return Flags.defineDoubleFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
+    public static <T> UnboundCodecFlag<T> defineCodecFlag(String flagId, T defaultValue, String description, String modificationEffect,
+                                                          UnboundCodecFlag.Codec<T> codec, Predicate<T> validator, Dimension... dimensions) {
+        return Flags.defineCodecFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, codec, validator, dimensions);
+    }
+
     public static <T> UnboundJacksonFlag<T> defineJacksonFlag(
             String flagId, T defaultValue, Class<T> jacksonClass,  String description, String modificationEffect, Predicate<T> validator, Dimension... dimensions) {
         return Flags.defineJacksonFlag(flagId, defaultValue, jacksonClass, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, validator, dimensions);

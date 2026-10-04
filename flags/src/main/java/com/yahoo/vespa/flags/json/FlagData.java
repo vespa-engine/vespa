@@ -130,11 +130,20 @@ public class FlagData {
         return wireFlagData;
     }
 
-    /** E.g. verify all RawFlag can be deserialized. */
+    /** E.g. verify all RawFlag can be deserialized, throwing IllegalArgumentException if not. */
     public void validate(Deserializer<?> deserializer) {
         rules.stream()
              .flatMap(rule -> rule.getValueToApply().map(Stream::of).orElse(null))
-             .forEach(deserializer::deserialize);
+             .forEach(value -> {
+                 try {
+                     deserializer.deserialize(value);
+                 } catch (IllegalArgumentException e) {
+                     throw e;
+                 } catch (RuntimeException e) {
+                     // Ensures FlagsHandler returns 4xx
+                     throw new IllegalArgumentException("Failed to deserialize value of flag " + id, e);
+                 }
+             });
 
     }
 
