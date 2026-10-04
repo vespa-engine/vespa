@@ -510,6 +510,7 @@ SearchIterator::UP WeakAndBlueprint::createFilterSearchImpl(FilterConstraint con
 }
 
 void WeakAndBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept {
+    IntermediateBlueprint::set_matching_phase(matching_phase);
     _matching_phase = matching_phase;
     if (matching_phase != MatchingPhase::FIRST_PHASE) {
         /*
