@@ -46,13 +46,26 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
                 "<search>123</search>",
                 "<persearch>34</persearch>",
                 "<summary>456</summary>",
+                "<resultprocessing>12</resultprocessing>",
                 "</requestthreads>"));
         assertEquals(123, t.searchNode.threads.numSearchThreads.longValue());
         assertEquals(456, t.searchNode.threads.numSummaryThreads.longValue());
+        assertEquals(12, t.searchNode.threads.numResultProcessingThreads.longValue());
         ProtonConfig cfg = getProtonCfg(t);
         assertEquals(cfg.numsearcherthreads(), 123);
         assertEquals(cfg.numthreadspersearch(), 34);
         assertEquals(cfg.numsummarythreads(), 456);
+        assertEquals(cfg.search().memory().limiter().maxthreads(), 12);
+    }
+
+    @Test
+    void requireThatResultProcessingThreadsIsUnlimitedByDefault() {
+        Tuning t = createTuning(parseXml("<requestthreads>",
+                "<search>123</search>",
+                "</requestthreads>"));
+        assertNull(t.searchNode.threads.numResultProcessingThreads);
+        ProtonConfig cfg = getProtonCfg(t);
+        assertEquals(cfg.search().memory().limiter().maxthreads(), 0);
     }
 
     @Test

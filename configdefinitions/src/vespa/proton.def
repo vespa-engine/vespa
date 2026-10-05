@@ -184,16 +184,19 @@ search.mmap.options[] enum {POPULATE, HUGETLB} restart
 ## Advise to give to os when memory mapping disk index posting list files used for search.
 search.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=SEQUENTIAL restart
 
-## Max number of threads allowed to handle large queries concurrently
-## Positive number means there is a limit, 0 or negative means no limit.
-## TODO Check if ever used in config.
+## Max number of match threads allowed to do memory-heavy result processing
+## concurrently. Positive number means there is a limit, 0 or negative means no limit.
+## Queries sorting on feature values always take one unit per match thread
+## (capped at this max) for the whole query, regardless of mincoverage and minhits.
 search.memory.limiter.maxthreads int default=0
 
-## Minimum coverage of corpus to postprocess before applying above concurrency limit.
-search.memory.limiter.mincoverage double default=1.0
+## For other sorting or grouping queries, a match thread is limited only when
+## the fraction of its docid range that matched exceeds this value.
+## 1.0 or more disables limiting of such queries.
+search.memory.limiter.mincoverage double default=0.05
 
-## Minimum number of hits to postprocess before applying above concurrency limit.
-## Both must be covered before applying limiter.
+## For other sorting or grouping queries, a match thread is limited only when
+## it has more hits than this. Both this and mincoverage must be exceeded.
 search.memory.limiter.minhits int default=1000000
 
 ## Control of grouping session manager entries
