@@ -44,9 +44,12 @@
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/testclock.h>
 
+#include <atomic>
+#include <chrono>
 #include <initializer_list>
 #include <map>
 #include <string_view>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("matching_test");
@@ -77,6 +80,18 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 
 constexpr uint32_t NUM_DOCS = 1000;
+
+// poll until pred is true; false if it did not happen within a generous deadline
+template <typename Pred> bool wait_until(Pred pred) {
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+    while (!pred()) {
+        if (std::chrono::steady_clock::now() > deadline) {
+            return false;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return true;
+}
 
 class MatchingTestSharedState {
     std::unique_ptr<vespalib::SimpleThreadBundle> _thread_bundle;
@@ -1188,6 +1203,54 @@ TEST_F(MatchingTest, require_that_feature_sort_orders_hits_without_activating_ra
         EXPECT_FALSE(reply->sortIndex.empty());
         EXPECT_FALSE(reply->sortData.empty());
     }
+}
+
+TEST_F(MatchingTest, require_that_feature_sort_takes_query_token_covering_all_threads) {
+    for (size_t threads : {1, 3, 8}) {
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.setup_sort_feature_by_a1();
+        world.basicResults();
+        world.queryLimiter.configure(4, 1.0, std::numeric_limits<uint32_t>::max());
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        request->sortSpec = "-feature(by_a1)";
+        // hold all capacity; the query must wait for it before matching
+        auto            blocker = world.queryLimiter.getQueryToken(vespalib::Doom::never(), 4);
+        SearchReply::UP reply;
+        std::thread     thread([&] { reply = world.performSearch(*request, threads); });
+        EXPECT_TRUE(wait_until([&] { return world.queryLimiter.num_waiting() > 0; }));
+        EXPECT_EQ(4, world.queryLimiter.active_threads());
+        blocker.reset();
+        thread.join();
+        ASSERT_EQ(9u, reply->hits.size());
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+        EXPECT_EQ(0, world.queryLimiter.active_threads());
+    }
+}
+
+TEST_F(MatchingTest, require_that_attribute_sort_does_not_take_query_token) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.basicResults();
+    // per-thread tokens are never needed with this min hits
+    world.queryLimiter.configure(4, 1.0, std::numeric_limits<uint32_t>::max());
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "+a1";
+    auto              blocker = world.queryLimiter.getQueryToken(vespalib::Doom::never(), 4);
+    std::atomic<bool> done(false);
+    SearchReply::UP   reply;
+    std::thread       thread([&] {
+        reply = world.performSearch(*request, 3);
+        done = true;
+    });
+    // a query token taken by mistake would queue behind the blocker until doom
+    EXPECT_TRUE(wait_until([&] { return done || world.queryLimiter.num_waiting() > 0; }));
+    EXPECT_EQ(0u, world.queryLimiter.num_waiting());
+    EXPECT_EQ(4, world.queryLimiter.active_threads());
+    blocker.reset();
+    thread.join();
+    EXPECT_TRUE(done);
+    ASSERT_EQ(9u, reply->hits.size());
 }
 
 TEST_F(MatchingTest, require_that_duplicate_feature_sort_clauses_share_an_ordinal) {

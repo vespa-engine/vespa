@@ -486,7 +486,7 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
 MatchThread::MatchThread(size_t thread_id_in, size_t num_threads_in, const MatchParams& mp,
                          const MatchToolsFactory& mtf, IMatchLoopCommunicator& com, DocidRangeScheduler& sched,
                          ResultProcessor& rp, vespalib::DualMergeDirector& md, uint32_t distributionKey,
-                         const Trace& parent_trace)
+                         const Trace& parent_trace, bool query_token_held_in, double query_token_wait_s_in)
     : thread_id(thread_id_in),
       num_threads(num_threads_in),
       matchParams(mp),
@@ -502,6 +502,8 @@ MatchThread::MatchThread(size_t thread_id_in, size_t num_threads_in, const Match
       total_time_s(0.0),
       match_time_s(0.0),
       wait_time_s(0.0),
+      query_token_held(query_token_held_in),
+      query_token_wait_s(query_token_wait_s_in),
       match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores()),
       trace(parent_trace.make_trace_up()),
       match_profiler(),
@@ -542,12 +544,21 @@ void MatchThread::run() {
     resultContext =
         resultProcessor.createThreadContext(matchTools->getDoom(), thread_id, _distributionKey, sort_store);
     {
-        trace->addEvent(5, "Wait for result processing token");
-        WaitTimer               get_token_timer(wait_time_s);
-        QueryLimiter::Token::UP processToken(matchTools->getQueryLimiter().getToken(
-            matchTools->getDoom(), scheduler.total_size(thread_id), result->getNumHits(),
-            resultContext->sort->hasSortData(), bool(resultContext->grouping)));
-        get_token_timer.done();
+        /**
+         * The token must not be held while waiting for other threads in the
+         * bundle, since they may be waiting for a token themselves. When the
+         * match master holds a token for the whole query, no per-thread token
+         * is needed.
+         */
+        QueryLimiter::Token::UP processToken;
+        if (!query_token_held) {
+            trace->addEvent(5, "Wait for result processing token");
+            WaitTimer get_token_timer(wait_time_s);
+            processToken = matchTools->getQueryLimiter().getToken(
+                matchTools->getDoom(), scheduler.total_size(thread_id), result->getNumHits(),
+                resultContext->sort->hasSortData(), bool(resultContext->grouping));
+            get_token_timer.done();
+        }
         // The recorded values are of no use once we are past the hard deadline or
         // when the selected sorter does not read them; releasing them here frees
         // the storage before the sorter allocates its own scratch. Otherwise the
@@ -563,7 +574,7 @@ void MatchThread::run() {
         processResult(matchTools->getDoom(), std::move(result), *resultContext);
     }
     total_time_s = vespalib::to_s(total_time.elapsed());
-    thread_stats.active_time(total_time_s - wait_time_s).wait_time(wait_time_s);
+    thread_stats.active_time(total_time_s - wait_time_s).wait_time(wait_time_s + query_token_wait_s);
     trace->addEvent(4, "Start thread merge");
     mergeDirector.dualMerge(thread_id, *resultContext->result, resultContext->groupingSource);
     trace->addEvent(4, "MatchThread::run Done");
