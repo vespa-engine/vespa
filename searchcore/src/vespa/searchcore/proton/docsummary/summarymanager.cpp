@@ -81,8 +81,9 @@ void ShrinkSummaryLidSpaceFlushTarget::init_flush(SerialNum                     
                                                   TaskPromise                          task_promise) {
     std::promise<Task::UP> promise;
     std::future<Task::UP>  future = promise.get_future();
-    _summaryService.execute(makeLambdaTask(
-        [&]() { promise.set_value(ShrinkLidSpaceFlushTarget::initFlush(currentSerial, flush_token)); }));
+    _summaryService.execute(makeLambdaTask([&, promise(std::move(promise))]() mutable {
+        ShrinkLidSpaceFlushTarget::init_flush(currentSerial, flush_token, std::move(promise));
+    }));
     task_promise.set_value(future.get());
 }
 
