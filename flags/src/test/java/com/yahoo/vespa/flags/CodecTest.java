@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author Håkon Hallingstad
  */
-class UnboundCodecFlagTest {
+class CodecTest {
     @Test
     void testDuration() {
         verify("PT2H30M", Duration.ofHours(2).plus(Duration.ofMinutes(30)));
@@ -18,11 +18,11 @@ class UnboundCodecFlagTest {
     }
 
     private void verify(String serialized, Duration duration) {
-        verify(serialized, duration, UnboundCodecFlag.Codec.DURATION);
+        verify(serialized, duration, Codec.forDuration);
     }
 
     /** This assumes equals() can be invoked on T. */
-    private static <T> void verify(String serialized, T value, UnboundCodecFlag.Codec<T> codec) {
+    private static <T> void verify(String serialized, T value, Codec<T> codec) {
         assertEquals(serialized, codec.encode(value));
         assertEquals(value, codec.decode(serialized));
     }
