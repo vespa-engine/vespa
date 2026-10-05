@@ -2,7 +2,7 @@
 CommerceDiscovery = CommerceDiscoveryV1
 
 CommerceDiscoveryV1 = element commerce-discovery {
-   attribute version { "1.0" } &
+   attribute version { xsd:string { pattern = "[0-9]+\.[0-9]+" } } &
    CommerceDiscoveryProduct? &
    CommerceDiscoveryCategory? &
    element variant-presentation { empty }? &
