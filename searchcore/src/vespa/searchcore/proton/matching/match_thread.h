@@ -72,6 +72,7 @@ private:
     double                                       total_time_s;
     double                                       match_time_s;
     double                                       wait_time_s;
+    double                                       grouping_aggregate_time_s;
     bool                                         match_with_ranking;
     std::unique_ptr<Trace>                       trace;
     std::unique_ptr<vespalib::ExecutionProfiler> match_profiler;
