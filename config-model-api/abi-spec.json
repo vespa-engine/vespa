@@ -1542,6 +1542,8 @@
       "public double searchNodeReservedMemoryFactor()",
       "public boolean forceDisableOnnxModelOptimization()",
       "public boolean failWhenConfiguringIndexedMapOfArray()",
+      "public boolean protonLogWarningOnDiskCapacityChange()",
+      "public boolean protonResampleDiskCapacity()",
       "public boolean fastMapSearch()",
       "public boolean relaxStrictlyIncreasingClusterStateVersions()",
       "public boolean commerceDiscovery()",
