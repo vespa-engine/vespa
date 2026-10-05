@@ -402,6 +402,7 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         ("struct myStruct {", "myStruct", None, "declarations"),
         ("rank-profile prof {", "prof", "entity.name.function.vespa", "declarations"),
         ("function fn(x)", "fn", "entity.name.function.vespa", "declarations"),
+        ("function fn(x)", "(", "punctuation.section.parens.begin.vespa", "declarations"),
         ("annotation myAnnotation {", "myAnnotation", None, "declarations"),
         ("document-summary ds {", "ds", "entity.name.type.vespa", "declarations"),
         ("fieldset fs {", "fs", None, "declarations"),

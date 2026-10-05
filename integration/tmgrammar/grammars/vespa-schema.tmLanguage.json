@@ -357,8 +357,8 @@
           }
         },
         {
-          "match": "\\b(function)\\s+(?:(inline)\\s+)?([a-zA-Z_]\\w*)\\s*(\\([^)]*\\))",
-          "captures": {
+          "begin": "\\b(function)\\s+(?:(inline)\\s+)?([a-zA-Z_]\\w*)\\s*(\\()",
+          "beginCaptures": {
             "1": {
               "name": "keyword.declaration.vespa"
             },
@@ -369,9 +369,25 @@
               "name": "entity.name.function.vespa"
             },
             "4": {
-              "name": "variable.parameter.vespa"
+              "name": "punctuation.section.parens.begin.vespa"
             }
-          }
+          },
+          "end": "\\)",
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.parens.end.vespa"
+            }
+          },
+          "patterns": [
+            {
+              "match": "[a-zA-Z_]\\w*",
+              "name": "variable.parameter.vespa"
+            },
+            {
+              "match": ",",
+              "name": "punctuation.separator.comma.vespa"
+            }
+          ]
         },
         {
           "match": "\\b(annotation)\\s+([a-zA-Z_]\\w*)(?:\\s+(inherits)\\s+([a-zA-Z_]\\w*))?",
