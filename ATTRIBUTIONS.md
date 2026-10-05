@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-09-30
+Last updated: 2026-10-05
 
 ---
 
@@ -222,13 +222,13 @@ Last updated: 2026-09-30
 
 ---
 
-## concurrent-ruby 1.3.7 — MIT
+## concurrent-ruby 1.3.8 — MIT
 
 - Homepage: <http://www.concurrent-ruby.com>
 
 ---
 
-## concurrent-ruby 1.3.7 — Ruby
+## concurrent-ruby 1.3.8 — Ruby
 
 - Homepage: <http://www.concurrent-ruby.com>
 
@@ -506,7 +506,7 @@ Last updated: 2026-09-30
 
 ---
 
-## google-protobuf 4.35.0 — BSD 3
+## google-protobuf 4.36.2 — BSD 3
 
 - Homepage: <https://developers.google.com/protocol-buffers>
 
@@ -585,7 +585,7 @@ Last updated: 2026-09-30
 
 ---
 
-## i18n 1.14.8 — MIT
+## i18n 1.15.2 — MIT
 
 - Homepage: <https://github.com/ruby-i18n/i18n>
 - Copyright 2008 The Ruby I18n team
@@ -621,14 +621,14 @@ Last updated: 2026-09-30
 
 ---
 
-## jekyll-feed 0.17.0 — MIT
+## jekyll-feed 0.18.0 — MIT
 
 - Homepage: <https://github.com/jekyll/jekyll-feed>
 - Copyright 2015 Ben Balter and jekyll-feed contributors
 
 ---
 
-## jekyll-redirect-from 0.16.0 — MIT
+## jekyll-redirect-from 0.17.0 — MIT
 
 - Homepage: <https://github.com/jekyll/jekyll-redirect-from>
 - Copyright 2013 Parker Moore and jekyll-redirect-from contributors
@@ -655,14 +655,14 @@ Last updated: 2026-09-30
 
 ---
 
-## json 2.19.9 — BSD 2
+## json 2.21.2 — BSD 2
 
 - Homepage: <https://github.com/ruby/json>
 - Copyright 1993-2013 Yukihiro Matsumoto
 
 ---
 
-## json 2.19.9 — Ruby
+## json 2.21.2 — Ruby
 
 - Homepage: <https://github.com/ruby/json>
 - Copyright 1993-2013 Yukihiro Matsumoto
@@ -699,7 +699,7 @@ Last updated: 2026-09-30
 
 ---
 
-## listen 3.10.0 — MIT
+## listen 3.10.1 — MIT
 
 - Homepage: <https://github.com/guard/listen>
 - Copyright 2013 Thibaud Guillaume-Gentil
@@ -998,7 +998,7 @@ Last updated: 2026-09-30
 
 ---
 
-## sass-embedded 1.100.0 — MIT
+## sass-embedded 1.105.1 — MIT
 
 - Homepage: <https://github.com/sass-contrib/sass-embedded-host-ruby>
 
