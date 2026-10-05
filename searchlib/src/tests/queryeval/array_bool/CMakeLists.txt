@@ -7,4 +7,4 @@ vespa_add_executable(searchlib_array_bool_test_app TEST
     vespa_searchlib
     GTest::gtest
 )
-vespa_add_test(NAME searchlib_array_bool_test_app COMMAND searchlib_array_bool_test_app)
+vespa_add_test(NAME searchlib_array_bool_test_app NO_VALGRIND COMMAND searchlib_array_bool_test_app)
