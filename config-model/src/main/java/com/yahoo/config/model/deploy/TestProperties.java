@@ -74,7 +74,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private CloudAccount cloudAccount = CloudAccount.unspecified();
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
-    private boolean logserverOtelCol = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private final Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
@@ -136,7 +135,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public CloudAccount getCloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
-    @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
     @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
@@ -320,11 +318,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setDataplaneTokens(Collection<DataplaneToken> tokens) {
         this.dataplaneTokens = List.copyOf(tokens);
-        return this;
-    }
-
-    public TestProperties setLogserverOtelCol(boolean logserverOtelCol) {
-        this.logserverOtelCol = logserverOtelCol;
         return this;
     }
 

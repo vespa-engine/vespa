@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -13,7 +12,6 @@ import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.LogserverContainer;
 import com.yahoo.vespa.model.admin.LogserverContainerCluster;
 import com.yahoo.vespa.model.admin.Slobrok;
-import com.yahoo.vespa.model.admin.otel.OpenTelemetryCollector;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerModel;
 import org.w3c.dom.Element;
@@ -123,17 +121,9 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         logServerCluster.addContainer(container);
         admin.addAndInitializeService(deployState, hostResource, container);
         admin.setLogserverContainerCluster(logServerCluster);
-        if (deployState.featureFlags().logserverOtelCol())
-            addOtelcol(admin, deployState, hostResource);
         context.getConfigModelRepoAdder().add(logserverClusterModel);
     }
 
-
-    private void addOtelcol(TreeConfigProducer<?> parent, DeployState deployState, HostResource hostResource) {
-        var otelcol = new OpenTelemetryCollector(parent, deployState);
-        otelcol.setHostResource(hostResource);
-        otelcol.initService(deployState);
-    }
 
     private Collection<HostResource> allocateHosts(HostSystem hostSystem, String clusterId, NodesSpecification nodesSpecification) {
         return nodesSpecification.provision(hostSystem, 

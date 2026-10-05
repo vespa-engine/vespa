@@ -147,13 +147,6 @@ public class Flags {
             __ -> true,
             APPLICATION, INSTANCE_ID);
 
-    public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
-            "logserver-otelcol-agent", false,
-            List.of("olaa"), "2024-04-03", "2026-10-01",
-            "Whether logserver container should run otel agent",
-            "Takes effect at redeployment",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
-
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
             List.of("arnej"), "2023-07-26", "2027-01-01",

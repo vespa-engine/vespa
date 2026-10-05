@@ -108,7 +108,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
-        @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
+        @ModelFeatureFlag(owners = {"olaa"}, removeAfter = "8.768") default boolean logserverOtelCol() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default SharedHosts sharedHosts() { return SharedHosts.empty(); }
         @ModelFeatureFlag(owners = {"bragehk"}) default boolean tokenAuthForDeploy() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default Architecture adminClusterArchitecture() { return Architecture.x86_64; }
