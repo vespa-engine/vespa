@@ -167,7 +167,7 @@ class JettyRequestContentReader {
                             log.log(Level.FINE, t, () -> "Failed to write chunk to content channel");
                         }
                     });
-                    metricReporter.successfulWrite(bytesRemaining);
+                    metricReporter.successfulRead(bytesRemaining);
                 } catch (Throwable t) {
                     chunkReleaser.complete(null);
                     log.log(Level.FINE, t, () -> "Failed to invoke content channel write");

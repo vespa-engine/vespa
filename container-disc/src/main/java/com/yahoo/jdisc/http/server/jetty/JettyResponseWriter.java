@@ -164,12 +164,14 @@ class JettyResponseWriter implements ResponseHandler {
                 }
 
                 canWrite = false;
+                // Jetty consumes the buffer, so its size must be captured before the write
+                int bytesToSend = task.buf != null ? task.buf.remaining() : 0;
                 jettyResponse.write(task.buf == null, Objects.requireNonNullElse(task.buf, EMPTY_BUFFER), new Callback() {
                     @Override
                     public void succeeded() {
                         if (task.buf == null) responseCompletion.complete(null);
                         completeAndFinishTask(task.handler, CompletionHandler::completed);
-                        if (task.buf != null) metricReporter.successfulWrite(task.buf.remaining());
+                        if (task.buf != null) metricReporter.successfulWrite(bytesToSend);
                     }
 
                     @Override
