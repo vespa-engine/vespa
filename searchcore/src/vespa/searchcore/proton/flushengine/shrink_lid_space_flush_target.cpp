@@ -64,17 +64,17 @@ IFlushTarget::Time ShrinkLidSpaceFlushTarget::getLastFlushTime() const {
     return vespalib::system_time(vespalib::system_clock::duration(ticks));
 }
 
-IFlushTarget::Task::UP ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSerial,
-                                                            std::shared_ptr<search::IFlushToken>) {
+void ShrinkLidSpaceFlushTarget::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
+                                           TaskPromise task_promise) {
     if (currentSerial < _flushedSerialNum.load(std::memory_order_relaxed)) {
         set_last_flush_time(vespalib::system_clock::now());
-        return IFlushTarget::Task::UP();
+        task_promise.set_value({});
     } else if (!_target->canShrinkLidSpace()) {
         set_flushed_serial_num(currentSerial);
         set_last_flush_time(vespalib::system_clock::now());
-        return IFlushTarget::Task::UP();
+        task_promise.set_value({});
     } else {
-        return std::make_unique<Flusher>(*this, currentSerial);
+        task_promise.set_value(std::make_unique<Flusher>(*this, currentSerial));
     }
 }
 
