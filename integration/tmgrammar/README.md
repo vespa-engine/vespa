@@ -154,6 +154,8 @@ To update the grammar after Vespa parser changes:
 2. `uv run tools/test_tmgrammar.py` to validate
 3. Review changes in the playground
 
+The [tmgrammar workflow](../../.github/workflows/tmgrammar.yml) runs both scripts on pull requests that touch the grammar or its sources, and fails if the checked-in grammar differs from the generated one.
+
 ## License
 
 Apache 2.0 -- see the top-level [LICENSE](../../LICENSE) file.

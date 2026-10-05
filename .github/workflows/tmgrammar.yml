@@ -1,0 +1,45 @@
+name: Vespa Schema TextMate grammar
+
+# The grammar in integration/tmgrammar/grammars/ is generated from the schema language server's
+# CongoCC grammars and token configuration. Fail when the checked-in grammar no longer matches
+# what the generator produces, so that parser changes and the grammar are updated together.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'integration/tmgrammar/**'
+      - 'integration/schema-language-server/language-server/src/main/ccc/**'
+      - 'integration/schema-language-server/language-server/src/main/java/ai/vespa/schemals/lsp/schema/semantictokens/**'
+      - 'integration/schema-language-server/language-server/src/main/java/ai/vespa/schemals/schemadocument/resolvers/RankExpression/BuiltInFunctions.java'
+      - 'integration/schema-language-server/language-server/src/test/sdfiles/**'
+      - '.github/workflows/tmgrammar.yml'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+    working-directory: integration/tmgrammar
+
+jobs:
+  check:
+    name: Check generated grammar
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check that the grammar is up to date
+        run: |
+          python3 tools/generate_tmgrammar.py > /dev/null
+          if ! git diff --exit-code -- grammars/; then
+            echo "::error::grammars/vespa-schema.tmLanguage.json is out of date. Run 'uv run tools/generate_tmgrammar.py' in integration/tmgrammar and commit the result."
+            exit 1
+          fi
+
+      - name: Test the grammar
+        run: python3 tools/test_tmgrammar.py
