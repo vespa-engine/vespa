@@ -628,15 +628,21 @@ def build_grammar(
         },
     })
 
-    # function [inline] NAME(args)
+    # function [inline] NAME(args) – like the LSP, color the parameter names but not the parentheses
     declaration_patterns.append({
-        "match": r"\b(function)\s+(?:(inline)\s+)?(" + _IDENT + r")\s*(\([^)]*\))",
-        "captures": {
+        "begin": r"\b(function)\s+(?:(inline)\s+)?(" + _IDENT + r")\s*(\()",
+        "beginCaptures": {
             "1": {"name": "keyword.declaration.vespa"},
             "2": {"name": "storage.modifier.vespa"},
             "3": {"name": "entity.name.function.vespa"},
-            "4": {"name": "variable.parameter.vespa"},
+            "4": {"name": "punctuation.section.parens.begin.vespa"},
         },
+        "end": r"\)",
+        "endCaptures": {"0": {"name": "punctuation.section.parens.end.vespa"}},
+        "patterns": [
+            {"match": _IDENT, "name": "variable.parameter.vespa"},
+            {"match": ",", "name": "punctuation.separator.comma.vespa"},
+        ],
     })
 
     # annotation NAME [inherits PARENT] – LSP leaves name uncolored
