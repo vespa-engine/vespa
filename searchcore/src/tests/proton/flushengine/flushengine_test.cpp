@@ -273,7 +273,7 @@ public:
 
     void init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                     TaskPromise task_promise) override {
-        LOG(info, "SimpleTarget(%s)::initFlush(%" PRIu64 ")", getName().c_str(), currentSerial);
+        LOG(info, "SimpleTarget(%s)::init_flush(%" PRIu64 ")", getName().c_str(), currentSerial);
         _currentSerial = currentSerial;
         _initDone.countDown();
         task_promise.set_value(std::move(_task));

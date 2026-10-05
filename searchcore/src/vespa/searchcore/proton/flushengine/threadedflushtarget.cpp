@@ -25,25 +25,27 @@ ThreadedFlushTarget::ThreadedFlushTarget(vespalib::Executor& executor, const IGe
 }
 
 namespace {
-IFlushTarget::Task::UP callInitFlush(IFlushTarget* target, IFlushTarget::SerialNum serial,
-                                     const IGetSerialNum*                 getSerialNum,
-                                     std::shared_ptr<search::IFlushToken> flush_token) {
+void call_init_flush(IFlushTarget* target, IFlushTarget::SerialNum serial, const IGetSerialNum* getSerialNum,
+                     std::shared_ptr<search::IFlushToken> flush_token,
+                     IFlushTarget::TaskPromise            target_task_promise) {
     // Serial number from flush engine might have become stale, obtain
     // a fresh serial number now.
     (void)serial;
     search::SerialNum freshSerial = getSerialNum->getSerialNum();
     assert(freshSerial >= serial);
-    return target->initFlush(freshSerial, std::move(flush_token));
+    target->init_flush(freshSerial, std::move(flush_token), std::move(target_task_promise));
 }
 } // namespace
 
 void ThreadedFlushTarget::init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
                                      TaskPromise task_promise) {
-    std::promise<Task::UP> promise;
-    std::future<Task::UP>  future = promise.get_future();
-    _executor.execute(makeLambdaTask(
-        [&]() { promise.set_value(callInitFlush(_target.get(), currentSerial, &_getSerialNum, flush_token)); }));
-    task_promise.set_value(future.get());
+    // Normally called by flush engine main thread
+    TaskPromise target_task_promise;
+    auto        future_target_task = target_task_promise.get_future();
+    _executor.execute(makeLambdaTask([&, target_task_promise(std::move(target_task_promise))]() mutable {
+        call_init_flush(_target.get(), currentSerial, &_getSerialNum, flush_token, std::move(target_task_promise));
+    }));
+    task_promise.set_value(future_target_task.get());
 }
 
 } // namespace proton
