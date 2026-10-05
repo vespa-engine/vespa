@@ -31,8 +31,8 @@ public:
     bool needUrgentFlush() const override { return _target->needUrgentFlush(); }
     double get_replay_operation_cost() const override { return _target->get_replay_operation_cost(); }
     Priority getPriority() const override { return _target->getPriority(); }
-    void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
-                    TaskPromise task_promise) override;
+    searchcorespi::FlushTask::UP initFlush(SerialNum                            currentSerial,
+                                           std::shared_ptr<search::IFlushToken> flush_token) override;
     [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     searchcorespi::FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
 

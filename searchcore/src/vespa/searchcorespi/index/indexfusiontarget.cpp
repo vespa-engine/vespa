@@ -87,10 +87,9 @@ IFlushTarget::SerialNum IndexFusionTarget::getFlushedSerialNum() const {
     return _indexMaintainer.getCurrentSerialNum();
 }
 
-void IndexFusionTarget::init_flush(SerialNum serialNum, std::shared_ptr<search::IFlushToken> flush_token,
-                                   TaskPromise task_promise) {
-    task_promise.set_value(
-        std::make_unique<Fusioner>(_indexMaintainer, _lastStats, serialNum, std::move(flush_token)));
+IFlushTarget::Task::UP IndexFusionTarget::initFlush(SerialNum                            serialNum,
+                                                    std::shared_ptr<search::IFlushToken> flush_token) {
+    return std::make_unique<Fusioner>(_indexMaintainer, _lastStats, serialNum, std::move(flush_token));
 }
 
 bool IndexFusionTarget::can_flush(SerialNum) const noexcept {

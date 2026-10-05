@@ -57,8 +57,9 @@ public:
     Priority getPriority() const override { return _priority; }
     double get_replay_operation_cost() const override { return _replay_operation_cost; }
 
-    void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
-                    TaskPromise task_promise) override;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override {
+        return _target->initFlush(currentSerial, std::move(flush_token));
+    }
     [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
 

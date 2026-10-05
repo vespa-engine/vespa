@@ -65,8 +65,7 @@ public:
     DiskGain getApproxDiskGain() const override;
     Time getLastFlushTime() const override;
     SerialNum getFlushedSerialNum() const override;
-    void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
-                    TaskPromise task_promise) override;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
 

@@ -23,11 +23,6 @@ CachedFlushTarget::CachedFlushTarget(const IFlushTarget::SP& target)
 
 CachedFlushTarget::~CachedFlushTarget() = default;
 
-void CachedFlushTarget::init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
-                                   TaskPromise task_promise) {
-    _target->init_flush(currentSerial, std::move(flush_token), std::move(task_promise));
-}
-
 bool CachedFlushTarget::can_flush(SerialNum current_serial) const noexcept {
     return _target->can_flush(current_serial);
 }

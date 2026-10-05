@@ -213,14 +213,13 @@ IFlushTarget::Task::UP FlushableAttribute::internalInitFlush(SerialNum currentSe
     return std::make_unique<Flusher>(*this, syncToken, std::move(writer));
 }
 
-void FlushableAttribute::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
-                                    TaskPromise task_promise) {
+IFlushTarget::Task::UP FlushableAttribute::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) {
     // Called by document db executor
     std::promise<IFlushTarget::Task::UP> promise;
     std::future<IFlushTarget::Task::UP>  future = promise.get_future();
     _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(_attr->getNamePrefix()),
                                   [&]() { promise.set_value(internalInitFlush(currentSerial)); });
-    task_promise.set_value(future.get());
+    return future.get();
 }
 
 bool FlushableAttribute::can_flush(SerialNum current_serial) const noexcept {

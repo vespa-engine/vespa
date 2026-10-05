@@ -41,15 +41,13 @@ struct MyFlushTarget : public test::DummyFlushTarget {
           _initGate() {}
 
     // Implements searchcorespi::IFlushTarget
-    void init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
-                    TaskPromise task_promise) override {
+    FlushTask::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) override {
         if (currentSerial > 0) {
             _initFlushSerial = currentSerial;
             _initGate.await(5s);
-            task_promise.set_value(std::make_unique<MyFlushTask>(_execGate));
-            return;
+            return std::make_unique<MyFlushTask>(_execGate);
         }
-        task_promise.set_value({});
+        return FlushTask::UP();
     }
     [[nodiscard]] bool can_flush(SerialNum) const noexcept override { return true; }
 };

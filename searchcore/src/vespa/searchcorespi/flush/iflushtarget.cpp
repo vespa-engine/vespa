@@ -2,8 +2,6 @@
 
 #include "iflushtarget.h"
 
-#include <future>
-
 namespace searchcorespi {
 
 IFlushTarget::IFlushTarget(const std::string& name) noexcept : IFlushTarget(name, Type::OTHER, Component::OTHER) {
@@ -14,14 +12,6 @@ IFlushTarget::IFlushTarget(const std::string& name, const Type& type, const Comp
 }
 
 IFlushTarget::~IFlushTarget() = default;
-
-std::unique_ptr<FlushTask> IFlushTarget::initFlush(SerialNum                            currentSerial,
-                                                   std::shared_ptr<search::IFlushToken> flush_token) {
-    TaskPromise task_promise;
-    auto        future_task = task_promise.get_future();
-    init_flush(currentSerial, std::move(flush_token), std::move(task_promise));
-    return future_task.get();
-}
 
 LeafFlushTarget::LeafFlushTarget(const std::string& name, const Type& type, const Component& component) noexcept
     : IFlushTarget(name, type, component) {
