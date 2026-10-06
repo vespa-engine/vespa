@@ -127,8 +127,8 @@ template <class NodeTypes> typename NodeTypes::Or* createOr() {
 }
 
 template <class NodeTypes>
-typename NodeTypes::WeakAnd* createWeakAnd(uint32_t targetNumHits, const std::string& view) {
-    return new typename NodeTypes::WeakAnd(targetNumHits, view);
+typename NodeTypes::WeakAnd* createWeakAnd(uint32_t targetNumHits) {
+    return new typename NodeTypes::WeakAnd(targetNumHits);
 }
 template <class NodeTypes> typename NodeTypes::Equiv* createEquiv(int32_t id, Weight weight) {
     return new typename NodeTypes::Equiv(id, weight);
@@ -294,8 +294,8 @@ public:
                                child_count);
     }
     typename NodeTypes::Or& addOr(int child_count) { return addIntermediate(createOr<NodeTypes>(), child_count); }
-    typename NodeTypes::WeakAnd& addWeakAnd(int child_count, uint32_t targetNumHits, const string& view) {
-        return addIntermediate(createWeakAnd<NodeTypes>(targetNumHits, view), child_count);
+    typename NodeTypes::WeakAnd& addWeakAnd(int child_count, uint32_t targetNumHits) {
+        return addIntermediate(createWeakAnd<NodeTypes>(targetNumHits), child_count);
     }
     typename NodeTypes::Equiv& addEquiv(int child_count, int32_t id, Weight weight) {
         return addIntermediate(createEquiv<NodeTypes>(id, weight), child_count);

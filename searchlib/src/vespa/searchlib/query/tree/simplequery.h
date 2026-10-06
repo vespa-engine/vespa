@@ -39,7 +39,7 @@ struct SimpleOr : Or {
     ~SimpleOr() override;
 };
 struct SimpleWeakAnd : WeakAnd {
-    SimpleWeakAnd(uint32_t targetNumHits, std::string view) : WeakAnd(targetNumHits, std::string(std::move(view))) {}
+    SimpleWeakAnd(uint32_t targetNumHits) : WeakAnd(targetNumHits) {}
     ~SimpleWeakAnd() override;
 };
 struct SimpleEquiv : Equiv {

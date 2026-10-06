@@ -103,7 +103,6 @@ private:
 
     void visit(WeakAnd& node) override {
         auto* item = _item_stack.back()->mutable_item_weak_and();
-        item->set_index(node.getView());
         item->set_target_num_hits(node.getTargetNumHits());
         visitNodes(node.getChildren());
     }

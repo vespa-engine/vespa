@@ -50,7 +50,7 @@ private:
     }
 
     void visit(WeakAnd& node) override {
-        _builder.addWeakAnd(node.getChildren().size(), node.getTargetNumHits(), node.getView());
+        _builder.addWeakAnd(node.getChildren().size(), node.getTargetNumHits());
         visitNodes(node.getChildren());
     }
 
