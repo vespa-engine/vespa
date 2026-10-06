@@ -2016,7 +2016,7 @@ TEST_F(MatchingTest, require_that_elementwise_matches_reports_matching_elements_
         return spec_from_value(*SimpleValue::from_stream(buf));
     };
     // doc 20 has my.a1 matching elements {2,3} and my.f1 matching elements {1,2}; only element 2 matches both
-    EXPECT_EQ(decode("elementwise(matches(my),x)"), TensorSpec("tensor(x{})").add({{"x", "2"}}, 1.0));
+    EXPECT_EQ(decode("elementwise(matches(my),x)"), TensorSpec("tensor<float>(x{})").add({{"x", "2"}}, 1.0));
 }
 
 TEST_F(MatchingTest, require_that_invalid_queries_are_handled) {
