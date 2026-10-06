@@ -27,43 +27,39 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     @Deprecated
     public static final int defaultN = defaultTargetHits;  // TODO Vespa 9: Remove
 
-    private Integer targetHits;
+    private Integer targetHits = null;
     private Integer totalTargetHits = null;
-    private String index;
 
-    public WeakAndItem() {
-        this("", null);
-    }
+    public WeakAndItem() {}
 
-    public WeakAndItem(String index) {
-        this(index, null);
-    }
+    @Deprecated
+    public WeakAndItem(String unusedIndex) {}
 
     // For binary compatibility on Vespa 8. TODO: Remove on Vespa 9.
     @Deprecated
     public WeakAndItem(int targetHits) {
-        this("", Integer.valueOf(targetHits));
+        this(Integer.valueOf(targetHits));
     }
 
     public WeakAndItem(Integer targetHits) {
-        this("", targetHits);
+        this.targetHits = targetHits;
     }
 
     // For binary compatibility on Vespa 8. TODO: Remove on Vespa 9.
     @Deprecated
-    public WeakAndItem(String index, int targetHits) {
-        this(index, Integer.valueOf(targetHits));
+    public WeakAndItem(String unusedIndex, int targetHits) {
+        this(Integer.valueOf(targetHits));
     }
 
     /**
      * Make a WeakAnd item with no children.
      *
-     * @param index the default field to search. This can be overridden in each child.
+     * @param unusedIndex the default field to search. This can be overridden in each child.
      * @param targetHits the target minimum number of hits to produce per content node
      */
-    public WeakAndItem(String index, Integer targetHits) {
-        this.index = (index == null) ? "" : index;
-        this.targetHits = targetHits;
+    @Deprecated
+    public WeakAndItem(String unusedIndex, Integer targetHits) {
+        this(targetHits);
     }
 
     @Override
@@ -73,18 +69,18 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     public String getName() { return "WEAKAND"; }
 
     /**
-     * Sets the default index name to apply to all child items of this.
-     * Not used at the moment (as far as we know).
+     * Apply indexName to all child items of this.
+     * Used from NGramSearcher.
      */
     @Override
     public void setIndexName(String index) {
         String toSet = (index == null) ? "" : index;
         super.setIndexName(toSet);
-        this.index = toSet;
     }
 
-    /** Returns the index name set for this, or null if none. */
-    public String getIndexName() { return index; }
+    /** Returns the index name set for this (always ""). */
+    @Deprecated
+    public String getIndexName() { return ""; }
 
     /** Appends the heading of this string - <code>[getName()]([limit]) </code> */
     @Override
@@ -143,11 +139,11 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
         super.encodeThis(buffer, context);
         IntegerCompressor.putCompressedPositiveNumber(resolveTargetHits(context), buffer);
-        putString(index, buffer);
+        putString("", buffer);
     }
 
     private WeakAndItem foldSegments() {
-        var result = new WeakAndItem(this.index);
+        var result = new WeakAndItem();
         result.setTargetHits(this.targetHits);
         result.setTotalTargetHits(this.totalTargetHits);
         for (var child : items()) {
@@ -192,7 +188,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     }
 
     @Override
-    public int hashCode() { return Objects.hash(super.hashCode(), targetHits, totalTargetHits, index); }
+    public int hashCode() { return Objects.hash(super.hashCode(), targetHits, totalTargetHits); }
 
     /** Returns whether this item is of the same class and contains the same state as the given item. */
     @Override
@@ -201,14 +197,13 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
         WeakAndItem other = (WeakAndItem) object; // Ensured by superclass
         if ( ! Objects.equals(this.targetHits, other.targetHits)) return false;
         if ( ! Objects.equals(this.totalTargetHits, other.totalTargetHits)) return false;
-        if ( ! Objects.equals(this.index, other.index)) return false;
         return true;
     }
 
     @Override
     SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
         var builder = SearchProtocol.ItemWeakAnd.newBuilder();
-        builder.setIndex(index);
+        builder.setIndex("");
         builder.setTargetNumHits(resolveTargetHits(context));
         for (var child : items()) {
             builder.addChildren(child.toProtobuf(context));
