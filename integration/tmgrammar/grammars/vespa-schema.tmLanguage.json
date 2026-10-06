@@ -489,7 +489,7 @@
         },
         {
           "name": "entity.name.function.indexing.vespa",
-          "match": "\\b(to_epoch_second|base64decode|base64encode|get_language|set_language|get_field|hexdecode|hexencode|lowercase|normalize|substring|to_double|to_string|hostname|to_array|to_float|tokenize|flatten|get_var|set_var|to_bool|to_byte|to_long|to_wset|to_int|to_pos|chunk|embed|input|ngram|split|echo|hash|join|trim|now)\\b"
+          "match": "\\b(exhex16doubleencode|exhex8floatencode|to_epoch_second|exhex16encode|base64decode|base64encode|exhex8encode|get_language|set_language|documentid|get_field|get_value|hexdecode|hexencode|lowercase|normalize|pack_bits|substring|to_double|to_string|to_tensor|binarize|generate|hostname|to_array|to_float|tokenize|flatten|get_var|set_var|to_bool|to_byte|to_long|to_wset|random|to_int|to_pos|to_uri|chunk|embed|input|ngram|split|echo|hash|join|trim|now)\\b"
         },
         {
           "name": "keyword.operator.pipe.indexing.vespa",

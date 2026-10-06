@@ -260,6 +260,10 @@ class SchemaSemanticTokenConfig {
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.BASE64_DECODE);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.BASE64_ENCODE);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.ECHO);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.EXHEX8_ENCODE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.EXHEX16_ENCODE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.EXHEX8_FLOAT_ENCODE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.EXHEX16_DOUBLE_ENCODE);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.FLATTEN);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.GET_FIELD);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.GET_LANGUAGE);
@@ -293,6 +297,14 @@ class SchemaSemanticTokenConfig {
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.CHUNK);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.HASH);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_EPOCH_SECOND);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.BINARIZE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.DOCUMENT_ID);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.GENERATE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.GET_VALUE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.PACK_BITS);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.RANDOM);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_TENSOR);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_URI);
     }};
 
     static final Set<ai.vespa.schemals.parser.indexinglanguage.Token.TokenType> indexingLanguageOutputs = new HashSet<>() {{
