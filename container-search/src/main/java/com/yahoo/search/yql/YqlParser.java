@@ -469,11 +469,12 @@ public class YqlParser implements Parser {
     /**
      * Recognizes and rewrites from:
      *      field{'key'} contains 'value'   (string values)
-     *      field{'key'} = value            (numeric values)
+     *      field{'key'} = value            (numeric and boolean values)
      * to:
      *      field contains sameElement(key contains 'key', value contains value)
      * where a numeric key or value becomes an equality match (key = 'key', value = value)
-     * instead of a contains match, preserving its type.
+     * instead of a contains match, preserving its type. As for plain fields, '=' requires a
+     * number or boolean value, and 'contains' does not accept one.
      * <p>
      * Expected input: CONTAINS( MAPREF ( field_name, key ), value ) or EQ( MAPREF ( field_name, key ), value )
      */
@@ -492,6 +493,14 @@ public class YqlParser implements Parser {
         OperatorNode<ExpressionOperator> key = lhs.getArgument(1);
         if (key.getOperator() != ExpressionOperator.LITERAL && !isNumberLiteral(key)) {
             throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL);
+        }
+        if (ast.getOperator() == ExpressionOperator.EQ && !isNumberLiteral(value) && !isBooleanLiteral(value)) {
+            throw new IllegalArgumentException("Expected a number or boolean value for '=' on map field '" + fetchFieldName(field) +
+                                               "', got " + describeMapValue(value) + ". Use 'contains' for string values.");
+        }
+        if (ast.getOperator() == ExpressionOperator.CONTAINS && (isNumberLiteral(value) || isBooleanLiteral(value))) {
+            throw new IllegalArgumentException("Expected a string value for 'contains' on map field '" + fetchFieldName(field) +
+                                               "', got " + describeMapValue(value) + ". Use '=' for number and boolean values.");
         }
 
         OperatorNode<ExpressionOperator> keyMatch = makeMapComponentMatch(KEY_FIELD_NAME, key);
@@ -551,12 +560,13 @@ public class YqlParser implements Parser {
     /**
      * Builds the match condition for the key or value component of a map entry.
      * The map access sugar has no operator per component, so the literal's type must decide
-     * it here: numeric literals become equality matches (numeric terms), everything else
-     * becomes contains matches, on string form since contains requires a string literal.
+     * it here: numeric and boolean literals become equality matches (numeric and boolean terms,
+     * as for field = value), everything else becomes contains matches, on string form since
+     * contains requires a string literal.
      */
     private static OperatorNode<ExpressionOperator> makeMapComponentMatch(String component, OperatorNode<ExpressionOperator> term) {
         var componentField = OperatorNode.create(term.getLocation(), ExpressionOperator.READ_FIELD, "", component);
-        if (isNumberLiteral(term)) {
+        if (isNumberLiteral(term) || isBooleanLiteral(term)) {
             return OperatorNode.create(term.getLocation(), ExpressionOperator.EQ, componentField, term);
         }
         return OperatorNode.create(term.getLocation(), ExpressionOperator.CONTAINS, componentField, toLiteralString(term));
@@ -568,6 +578,23 @@ public class YqlParser implements Parser {
             return isNumberLiteral(ast.getArgument(0));
         }
         return ast.getOperator() == ExpressionOperator.LITERAL && ast.getArgument(0) instanceof Number;
+    }
+
+    /** Returns true if ast is a boolean literal. */
+    private static boolean isBooleanLiteral(OperatorNode<ExpressionOperator> ast) {
+        return ast.getOperator() == ExpressionOperator.LITERAL && ast.getArgument(0) instanceof Boolean;
+    }
+
+    /** Returns a description of a map access value for error messages: the literal itself, or else its operator. */
+    private static String describeMapValue(OperatorNode<ExpressionOperator> ast) {
+        if (ast.getOperator() == ExpressionOperator.NEGATE && isNumberLiteral(ast)) {
+            return "-" + describeMapValue(ast.getArgument(0));
+        }
+        if (ast.getOperator() == ExpressionOperator.LITERAL) {
+            Object literal = ast.getArgument(0);
+            return literal instanceof String ? "'" + literal + "'" : literal.toString();
+        }
+        return ast.getOperator().toString();
     }
 
     /** Converts non-string literals which have no typed item form, such as booleans, to string literals. */

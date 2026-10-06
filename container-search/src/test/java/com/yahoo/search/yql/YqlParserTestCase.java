@@ -766,11 +766,22 @@ public class YqlParserTestCase {
         assertInstanceOf(IntItem.class,
                          ((MapMatchItem) parse("select * from sources * where my_map{1} contains 'bar'").getRoot()).keyItem());
 
-        // Boolean values have no typed item form and become word terms.
+        // Boolean values become boolean terms, as for field = true, for maps with a bool value type.
         assertParse("select * from sources * where my_map{'foo'} = true",
                     "my_map:{key:foo value:true}");
-        assertInstanceOf(WordItem.class,
+        assertInstanceOf(BoolItem.class,
                          ((MapMatchItem) parse("select * from sources * where my_map{'foo'} = true").getRoot()).valueItem());
+        BoolItem falseValue = assertInstanceOf(BoolItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{1} = false").getRoot()).valueItem());
+        assertFalse(falseValue.value());
+
+        // Boolean keys become boolean terms too, for maps with a bool key type.
+        assertParse("select * from sources * where my_map{true} contains 'bar'",
+                    "my_map:{key:true value:bar}");
+        assertInstanceOf(BoolItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{true} contains 'bar'").getRoot()).keyItem());
+        assertInstanceOf(BoolItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{false} = 10").getRoot()).keyItem());
 
         // The rewritten tree serializes and re-parses to the same tree.
         assertCanonicalParse("select * from sources * where my_map{'foo'} contains 'bar'",
@@ -779,6 +790,33 @@ public class YqlParserTestCase {
                              "my_map:{key:foo value:10}");
         assertCanonicalParse("select * from sources * where my_map{'foo'} = true",
                              "my_map:{key:foo value:true}");
+        assertCanonicalParse("select * from sources * where my_map{true} contains 'bar'",
+                             "my_map:{key:true value:bar}");
+    }
+
+    @Test
+    void testMapAccessValueTypeMustMatchOperator() {
+        // As for plain fields, 'contains' takes a string value ...
+        assertParseFail("select * from sources * where my_map{'foo'} contains 10",
+                        new IllegalArgumentException("Expected a string value for 'contains' on map field 'my_map', got 10. " +
+                                                     "Use '=' for number and boolean values."));
+        assertParseFail("select * from sources * where my_map{'foo'} contains -1.5",
+                        new IllegalArgumentException("Expected a string value for 'contains' on map field 'my_map', got -1.5. " +
+                                                     "Use '=' for number and boolean values."));
+        assertParseFail("select * from sources * where my_map{'foo'} contains true",
+                        new IllegalArgumentException("Expected a string value for 'contains' on map field 'my_map', got true. " +
+                                                     "Use '=' for number and boolean values."));
+
+        // ... and '=' a number or boolean value.
+        assertParseFail("select * from sources * where my_map{'foo'} = 'bar'",
+                        new IllegalArgumentException("Expected a number or boolean value for '=' on map field 'my_map', got 'bar'. " +
+                                                     "Use 'contains' for string values."));
+        assertParseFail("select * from sources * where my_map{'foo'} = phrase('new', 'york')",
+                        new IllegalArgumentException("Expected a number or boolean value for '=' on map field 'my_map', got CALL. " +
+                                                     "Use 'contains' for string values."));
+        assertParseFail("select * from sources * where my_map.lookup{'foo'} = 'bar'",
+                        new IllegalArgumentException("Expected a number or boolean value for '=' on map field 'my_map.lookup', got 'bar'. " +
+                                                     "Use 'contains' for string values."));
     }
 
     @Test
