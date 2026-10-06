@@ -23,6 +23,8 @@ public:
 
 ShrinkLidSpaceFlushTarget::Flusher::Flusher(ShrinkLidSpaceFlushTarget& target, SerialNum flushSerialNum)
     : FlushTask(), _target(target), _flushSerialNum(flushSerialNum) {
+    // Called by document db executor for document meta store and attribute vectors.
+    // Called by summary executor for docstore (via derived class ShrinkSummaryLidSpaceFlushTarget)
     _target._target->shrinkLidSpace();
 }
 
@@ -66,6 +68,8 @@ IFlushTarget::Time ShrinkLidSpaceFlushTarget::getLastFlushTime() const {
 
 void ShrinkLidSpaceFlushTarget::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                                            TaskPromise task_promise) {
+    // Called by document db executor for document meta store and attribute vectors.
+    // Called by summary executor for docstore (via derived class ShrinkSummaryLidSpaceFlushTarget)
     if (currentSerial < _flushedSerialNum.load(std::memory_order_relaxed)) {
         set_last_flush_time(vespalib::system_clock::now());
         task_promise.set_value({});

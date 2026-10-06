@@ -196,31 +196,35 @@ IFlushTarget::Time FlushableAttribute::getLastFlushTime() const {
     return _attrDir->getLastFlushTime();
 }
 
-IFlushTarget::Task::UP FlushableAttribute::internalInitFlush(SerialNum currentSerial) {
+void FlushableAttribute::internal_init_flush(SerialNum currentSerial, TaskPromise task_promise) {
     // Called by attribute field writer thread while document db executor waits
     _attr->reclaim_unused_memory();
     SerialNum syncToken = std::max(currentSerial, _attr->getStatus().getLastSyncToken());
     auto      writer = _attrDir->tryGetWriter();
     if (!writer) {
-        return Task::UP();
+        task_promise.set_value({});
+        return;
     }
     if (syncToken <= getFlushedSerialNum()) {
         writer->setLastFlushTime(vespalib::system_clock::now());
         LOG(debug, "No attribute vector to flush. Update flush time to current: lastFlushTime(%f)",
             vespalib::to_s(getLastFlushTime().time_since_epoch()));
-        return Task::UP();
+        task_promise.set_value({});
+        return;
     }
-    return std::make_unique<Flusher>(*this, syncToken, std::move(writer));
+    task_promise.set_value(std::make_unique<Flusher>(*this, syncToken, std::move(writer)));
 }
 
 void FlushableAttribute::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                                     TaskPromise task_promise) {
     // Called by document db executor
-    std::promise<IFlushTarget::Task::UP> promise;
-    std::future<IFlushTarget::Task::UP>  future = promise.get_future();
+    TaskPromise proxied_task_promise;
+    auto        future_task = proxied_task_promise.get_future();
     _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(_attr->getNamePrefix()),
-                                  [&]() { promise.set_value(internalInitFlush(currentSerial)); });
-    task_promise.set_value(future.get());
+                                  [&, proxied_task_promise(std::move(proxied_task_promise))]() mutable {
+                                      internal_init_flush(currentSerial, std::move(proxied_task_promise));
+                                  });
+    task_promise.set_value(future_task.get());
 }
 
 bool FlushableAttribute::can_flush(SerialNum current_serial) const noexcept {

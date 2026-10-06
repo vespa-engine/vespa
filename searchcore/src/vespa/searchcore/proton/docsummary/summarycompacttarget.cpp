@@ -91,11 +91,14 @@ SerialNum SummaryGCTarget::getFlushedSerialNum() const {
 
 void SummaryGCTarget::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                                  TaskPromise task_promise) {
-    std::promise<Task::UP> promise;
-    std::future<Task::UP>  future = promise.get_future();
-    _summaryService.execute(makeLambdaTask(
-        [this, &promise, currentSerial]() { promise.set_value(create(_docStore, _lastStats, currentSerial)); }));
-    task_promise.set_value(future.get());
+    // Called by document db executor
+    TaskPromise proxied_task_promise;
+    auto        future_task = proxied_task_promise.get_future();
+    _summaryService.execute(
+        makeLambdaTask([this, currentSerial, proxied_task_promise(std::move(proxied_task_promise))]() mutable {
+            create(_docStore, _lastStats, currentSerial, std::move(proxied_task_promise));
+        }));
+    task_promise.set_value(future_task.get());
 }
 
 bool SummaryGCTarget::can_flush(SerialNum) const noexcept {
@@ -122,8 +125,10 @@ size_t SummaryCompactBloatTarget::getBloat(const search::IDocumentStore& docStor
     return docStore.getDiskBloat();
 }
 
-FlushTask::UP SummaryCompactBloatTarget::create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial) {
-    return std::make_unique<CompactBloat>(docStore, stats, currSerial);
+void SummaryCompactBloatTarget::create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial,
+                                       TaskPromise task_promise) {
+    // called by summary executor
+    task_promise.set_value(std::make_unique<CompactBloat>(docStore, stats, currSerial));
 }
 
 SummaryCompactSpreadTarget::SummaryCompactSpreadTarget(vespalib::Executor& summaryService, IDocumentStore& docStore)
@@ -134,8 +139,10 @@ size_t SummaryCompactSpreadTarget::getBloat(const search::IDocumentStore& docSto
     return docStore.getMaxSpreadAsBloat();
 }
 
-FlushTask::UP SummaryCompactSpreadTarget::create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial) {
-    return std::make_unique<CompactSpread>(docStore, stats, currSerial);
+void SummaryCompactSpreadTarget::create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial,
+                                        TaskPromise task_promise) {
+    // called by summary executor
+    task_promise.set_value(std::make_unique<CompactSpread>(docStore, stats, currSerial));
 }
 
 } // namespace proton
