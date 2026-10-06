@@ -17,14 +17,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openai.client.OpenAIClient;
 import com.openai.client.OpenAIClientAsync;
 import com.openai.core.JsonValue;
+import com.openai.errors.OpenAIException;
+import com.openai.errors.OpenAIInvalidDataException;
+import com.openai.errors.OpenAIIoException;
+import com.openai.errors.OpenAIServiceException;
+import com.openai.errors.SseException;
+import com.openai.models.chat.completions.ChatCompletionChunk;
 import com.openai.models.ResponseFormatJsonSchema;
 import com.openai.models.ReasoningEffort;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.io.InterruptedIOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
@@ -32,6 +44,8 @@ import java.util.function.Consumer;
  * Uses Official OpenAI java client (https://github.com/openai/openai-java)
  * Supports basic completion and structured JSON output. Extensible to support Embedding, Tool Calling and Moderations.
  * Will reuse clients for Completions using same endpoint and API key to reduce connection overhead for multiple requests to the same endpoint with the same API key.
+ * Failures from the OpenAI SDK are reported as {@link LanguageModelException} with an HTTP-like status code,
+ * see toLanguageModelException for the mapping.
  * @author lesters
  * @author glebashnik
  * @author thomasht86
@@ -132,63 +146,133 @@ public class OpenAI extends ConfigurableLanguageModel {
 
     @Override
     public List<Completion> complete(Prompt prompt, InferenceParameters parameters) {
-        var preparedParameters = prepareParameters(parameters);
-        String apiKey = preparedParameters.getApiKey().orElse(DEFAULT_API_KEY);
-        String endpoint = preparedParameters.getEndpoint().orElse(DEFAULT_ENDPOINT);
-        
-        OpenAIClient client = getSyncClient(apiKey, endpoint);
-        
-        ChatCompletionCreateParams createParams = getChatCompletionCreateParams(preparedParameters, prompt);
-        
-        return client.chat().completions().create(createParams).choices().stream()
-                .flatMap(choice -> choice.message().content().stream()
-                    .map(content -> new Completion(content, mapFinishReason(choice.finishReason().toString())))
-                )
-                .toList();
+        try {
+            var preparedParameters = prepareParameters(parameters);
+            String apiKey = preparedParameters.getApiKey().orElse(DEFAULT_API_KEY);
+            String endpoint = preparedParameters.getEndpoint().orElse(DEFAULT_ENDPOINT);
+            ChatCompletionCreateParams createParams = getChatCompletionCreateParams(preparedParameters, prompt);
+            OpenAIClient client = getSyncClient(apiKey, endpoint);
+
+            List<Completion> completions = new ArrayList<>();
+            for (var choice : client.chat().completions().create(createParams).choices()) {
+                var finishReason = mapFinishReason(choice.finishReason().toString());
+                if (finishReason == Completion.FinishReason.error)
+                    throw new LanguageModelException(502, endpoint + " reported an error generating the completion");
+                choice.message().content().ifPresent(content -> completions.add(new Completion(content, finishReason)));
+            }
+            return completions;
+        } catch (OpenAIException | IllegalArgumentException e) {
+            throw toLanguageModelException(e);
+        }
     }
 
     @Override
     public CompletableFuture<Completion.FinishReason> completeAsync(
             Prompt prompt, InferenceParameters parameters, Consumer<Completion> consumer) {
-        var preparedParameters = prepareParameters(parameters);
-        String apiKey = preparedParameters.getApiKey().orElse(DEFAULT_API_KEY);
-        String endpoint = preparedParameters.getEndpoint().orElse(DEFAULT_ENDPOINT);
-        
-        OpenAIClientAsync client = getAsyncClient(apiKey, endpoint);
-                
-        ChatCompletionCreateParams createParams = getChatCompletionCreateParams(preparedParameters, prompt);
-        
-        final Completion.FinishReason[] lastFinishReasonHolder = new Completion.FinishReason[]{Completion.FinishReason.stop};
         CompletableFuture<Completion.FinishReason> future = new CompletableFuture<>();
-                
-        // Use streaming API
-        client.chat()
-                .completions()
-                .createStreaming(createParams)
-                .subscribe(completion -> completion.choices().stream()
-                    .flatMap(choice -> {
-                        // Capture the finish reason if present
-                        choice.finishReason().ifPresent(fr -> {
-                            lastFinishReasonHolder[0] = mapFinishReason(fr.toString());
-                        });
-                        // Process delta content
-                        return choice.delta().content().stream()
-                            .map(content -> new Completion(content, 
-                                choice.finishReason().map(fr -> mapFinishReason(fr.toString())).orElse(Completion.FinishReason.none)
-                            ));
-                    })
-                    .forEach(consumer))
-                .onCompleteFuture()
-              .thenAccept(unused -> {
-                  // When the stream completes, resolve the future with the last known finish reason
-                  future.complete(lastFinishReasonHolder[0]);
-              })
-              .exceptionally(e -> {
-                  future.completeExceptionally(e);
-                  return null;
-              });
-        
+        // Set when the provider sends a finish reason. Stays null if the stream ends before that,
+        // e.g. because the connection was cut, in which case the answer is incomplete.
+        AtomicReference<Completion.FinishReason> finishReason = new AtomicReference<>();
+        // Set if the consumer throws. The SDK wraps such exceptions as its own, so they are kept here
+        // to be reported as they are instead of as failures of the request.
+        AtomicReference<RuntimeException> consumerException = new AtomicReference<>();
+
+        // Every failure is reported through the returned future, nothing is thrown from this method.
+        try {
+            var preparedParameters = prepareParameters(parameters);
+            String apiKey = preparedParameters.getApiKey().orElse(DEFAULT_API_KEY);
+            String endpoint = preparedParameters.getEndpoint().orElse(DEFAULT_ENDPOINT);
+            ChatCompletionCreateParams createParams = getChatCompletionCreateParams(preparedParameters, prompt);
+            OpenAIClientAsync client = getAsyncClient(apiKey, endpoint);
+
+            client.chat()
+                    .completions()
+                    .createStreaming(createParams)
+                    .subscribe(chunk -> handleChunk(chunk, finishReason, consumer, consumerException))
+                    .onCompleteFuture()
+                    .whenComplete((unused, error) -> {
+                        if (consumerException.get() != null) {
+                            future.completeExceptionally(consumerException.get());
+                        } else if (error != null) {
+                            Throwable cause = unwrap(error);
+                            future.completeExceptionally(
+                                    cause instanceof OpenAIException ? toLanguageModelException(cause) : cause);
+                        } else if (finishReason.get() == null) {
+                            future.completeExceptionally(new LanguageModelException(502,
+                                    "Stream from " + endpoint + " ended before a finish reason was received"));
+                        } else if (finishReason.get() == Completion.FinishReason.error) {
+                            future.completeExceptionally(new LanguageModelException(502,
+                                    endpoint + " reported an error generating the completion"));
+                        } else {
+                            future.complete(finishReason.get());
+                        }
+                    });
+        } catch (OpenAIException | IllegalArgumentException e) {
+            future.completeExceptionally(toLanguageModelException(e));
+        } catch (RuntimeException e) {
+            future.completeExceptionally(e);
+        }
         return future;
+    }
+
+    private void handleChunk(ChatCompletionChunk chunk,
+                             AtomicReference<Completion.FinishReason> finishReason,
+                             Consumer<Completion> consumer,
+                             AtomicReference<RuntimeException> consumerException) {
+        for (var choice : chunk.choices()) {
+            var choiceFinishReason = choice.finishReason().map(fr -> mapFinishReason(fr.toString()));
+            choiceFinishReason.ifPresent(finishReason::set);
+            var content = choice.delta().content();
+            if (content.isEmpty()) continue;
+            try {
+                consumer.accept(new Completion(content.get(), choiceFinishReason.orElse(Completion.FinishReason.none)));
+            } catch (RuntimeException e) {
+                consumerException.set(e);
+                throw e;  // Stops the stream
+            }
+        }
+    }
+
+    /**
+     * Maps an exception from the OpenAI SDK, or an IllegalArgumentException from building the client or request,
+     * to a LanguageModelException with a status code:
+     * <ul>
+     *   <li>the status returned by the provider for HTTP errors (401, 429, 5xx, ...)</li>
+     *   <li>502 for an error event in a stream or a response that could not be parsed</li>
+     *   <li>503 if the provider could not be reached, 504 if it timed out</li>
+     *   <li>400 for an invalid endpoint or request</li>
+     * </ul>
+     * The original exception is kept as the cause, and its message is used as-is so that it is
+     * not repeated when the messages of the cause chain are rendered.
+     */
+    static LanguageModelException toLanguageModelException(Throwable e) {
+        String message = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+        if (e instanceof SseException)
+            return new LanguageModelException(502, message, e);
+        if (e instanceof OpenAIServiceException serviceException) {
+            int status = serviceException.statusCode();
+            return new LanguageModelException(status >= 400 ? status : 502, message, e);
+        }
+        if (e instanceof OpenAIInvalidDataException)
+            return new LanguageModelException(502, message, e);
+        if (e instanceof OpenAIIoException)
+            return new LanguageModelException(isTimeout(e) ? 504 : 503, message, e);
+        if (e instanceof IllegalArgumentException)
+            return new LanguageModelException(400, message, e);
+        return new LanguageModelException(500, message, e);
+    }
+
+    private static boolean isTimeout(Throwable e) {
+        for (Throwable cause = e.getCause(); cause != null && cause != cause.getCause(); cause = cause.getCause()) {
+            if (cause instanceof InterruptedIOException || cause instanceof TimeoutException) return true;
+        }
+        return false;
+    }
+
+    private static Throwable unwrap(Throwable e) {
+        while ((e instanceof CompletionException || e instanceof ExecutionException) && e.getCause() != null)
+            e = e.getCause();
+        return e;
     }
 
     // Package-private for testing
@@ -259,7 +343,7 @@ public class OpenAI extends ConfigurableLanguageModel {
             case "tool_calls" -> Completion.FinishReason.tool_calls; 
             case "function_call" -> Completion.FinishReason.function_call; 
             case "none" -> Completion.FinishReason.none;
-            case "error" -> throw new IllegalStateException("OpenAI-client returned finish_reason=error");
+            case "error" -> Completion.FinishReason.error;
             default -> Completion.FinishReason.other;
         };
     }
