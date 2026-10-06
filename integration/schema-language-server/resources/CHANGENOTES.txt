@@ -1,5 +1,5 @@
-- Added support for the 'linguistics' field block, including the 'tokens' setting.
-- Added the 'to_tensor' and 'exhex8encode' indexing expressions.
-- Added the 'matches_for_labels' rank feature.
-- Added support for 'sort-features' in rank profiles.
-- Added support for 'fast-search' on map fields and 'struct-field' selection in document summaries.
+- Added support for the final fast map search syntax, 'fast-search-map-field <name>', on maps and arrays of struct, including float and double map values.
+- Added the 'exhex8floatencode' and 'exhex16doubleencode' indexing expressions, and completion and highlighting for all 'exhex' expressions.
+- Fixed indexing expression completions offering names that do not parse, and added completion and highlighting for more indexing expressions.
+- Added the attribute 'quantization' block, and the 'argmax' and 'argmin' aggregators and the 'in' filter in grouping.
+- Fixed a duplicated word in a diagnostic message.
