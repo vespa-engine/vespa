@@ -233,7 +233,7 @@ public class FastMapSearcherTest {
     @Test
     public void requireEachLookupOfAFieldIsRewritten() {
         assertEquals("twolookups$lookup:foo" + FastMapSearch.keyValueSeparator() + "bar",
-                     rewrittenYql("twolookups.lookup{\"foo\"} = \"bar\""));
+                     rewrittenYql("twolookups.lookup{\"foo\"} contains \"bar\""));
         assertEquals("twolookups$reversed:" + FastMapSearch.toKeyValue8Term("bar", 42),
                      rewrittenYql("twolookups.reversed{\"bar\"} = 42"));
         assertRewritten("twolookups$reversed:" + FastMapSearch.toKeyValue8Term("bar", 42),

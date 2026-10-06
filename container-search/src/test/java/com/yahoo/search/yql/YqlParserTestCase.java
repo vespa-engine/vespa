@@ -782,6 +782,31 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testMapAccessValueTypeMustMatchOperator() {
+        // As for plain fields, 'contains' takes a string value ...
+        assertParseFail("select * from sources * where my_map{'foo'} contains 10",
+                        new IllegalArgumentException("Expected a string value for 'contains' on map field 'my_map', got 10. " +
+                                                     "Use '=' for number and boolean values."));
+        assertParseFail("select * from sources * where my_map{'foo'} contains -1.5",
+                        new IllegalArgumentException("Expected a string value for 'contains' on map field 'my_map', got -1.5. " +
+                                                     "Use '=' for number and boolean values."));
+        assertParseFail("select * from sources * where my_map{'foo'} contains true",
+                        new IllegalArgumentException("Expected a string value for 'contains' on map field 'my_map', got true. " +
+                                                     "Use '=' for number and boolean values."));
+
+        // ... and '=' a number or boolean value.
+        assertParseFail("select * from sources * where my_map{'foo'} = 'bar'",
+                        new IllegalArgumentException("Expected a number or boolean value for '=' on map field 'my_map', got 'bar'. " +
+                                                     "Use 'contains' for string values."));
+        assertParseFail("select * from sources * where my_map{'foo'} = phrase('new', 'york')",
+                        new IllegalArgumentException("Expected a number or boolean value for '=' on map field 'my_map', got CALL. " +
+                                                     "Use 'contains' for string values."));
+        assertParseFail("select * from sources * where my_map.lookup{'foo'} = 'bar'",
+                        new IllegalArgumentException("Expected a number or boolean value for '=' on map field 'my_map.lookup', got 'bar'. " +
+                                                     "Use 'contains' for string values."));
+    }
+
+    @Test
     void testMapRangeRewritesToSameElement() {
         // range(my_map{'foo'}, 40, 50) should rewrite to
         // my_map contains sameElement(key contains 'foo', range(value, 40, 50))
