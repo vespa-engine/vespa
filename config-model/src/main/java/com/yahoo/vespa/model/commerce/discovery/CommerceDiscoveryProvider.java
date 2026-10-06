@@ -1,22 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.config.model.api;
+package com.yahoo.vespa.model.commerce.discovery;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.AdditionalContent;
 
 /**
  * Provides the platform-owned Vespa Commerce Discovery content. Consulted for every application
  * built in hosted Vespa when the {@code commerce-discovery} feature flag is enabled for the
  * application — whether the application uses the {@code <commerce-discovery>} services.xml
  * element is not checked by the caller. Provider implementations must detect it from the
- * application package. At most one provider may be registered.
+ * application package.
+ *
+ * <p>At most one provider may be registered per config model version, and it must provide that
+ * version's content.</p>
  *
  * @author sebasabe
- * @deprecated use {@code com.yahoo.vespa.model.commerce.discovery.CommerceDiscoveryProvider} in config-model.
  */
-// TODO: Remove when no config model version older than the one introducing
-//       com.yahoo.vespa.model.commerce.discovery.CommerceDiscoveryProvider is in use. Kept for compatibility with
-//       older config model versions. Do not implement it.
-@Deprecated
 public interface CommerceDiscoveryProvider {
 
     /**

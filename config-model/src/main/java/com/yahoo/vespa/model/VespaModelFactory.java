@@ -14,7 +14,6 @@ import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
-import com.yahoo.config.model.api.CommerceDiscoveryProvider;
 import com.yahoo.config.model.api.ConfigModelPlugin;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
@@ -32,6 +31,7 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.Validator;
+import com.yahoo.vespa.model.commerce.discovery.CommerceDiscoveryProvider;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -79,7 +79,7 @@ public class VespaModelFactory implements ModelFactory {
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
         this.sidecarProvider = sidecarProviders.allComponents().stream().findFirst();
         if (commerceDiscoveryProviders.allComponents().size() > 1)
-            throw new IllegalStateException("At most one commerce discovery provider may be registered, got " +
+            throw new IllegalStateException("At most one commerce discovery provider may be registered per config model, got " +
                                             commerceDiscoveryProviders.allComponents());
         this.commerceDiscoveryProvider = commerceDiscoveryProviders.allComponents().stream().findFirst();
         this.modelImporters = List.of(
