@@ -37,7 +37,8 @@ protected:
 
 private:
     virtual size_t getBloat(const IDocumentStore& docStore) const = 0;
-    virtual Task::UP create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial) = 0;
+    virtual void create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial,
+                        TaskPromise task_promise) = 0;
 
     vespalib::Executor& _summaryService;
     IDocumentStore&     _docStore;
@@ -50,7 +51,7 @@ private:
 class SummaryCompactBloatTarget : public SummaryGCTarget {
 private:
     size_t getBloat(const search::IDocumentStore& docStore) const override;
-    Task::UP create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial) override;
+    void create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial, TaskPromise task_promise) override;
 
 public:
     SummaryCompactBloatTarget(vespalib::Executor& summaryService, IDocumentStore& docStore);
@@ -63,7 +64,7 @@ public:
 class SummaryCompactSpreadTarget : public SummaryGCTarget {
 private:
     size_t getBloat(const search::IDocumentStore& docStore) const override;
-    Task::UP create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial) override;
+    void create(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial, TaskPromise task_promise) override;
 
 public:
     SummaryCompactSpreadTarget(vespalib::Executor& summaryService, IDocumentStore& docStore);

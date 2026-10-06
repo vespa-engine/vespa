@@ -58,17 +58,21 @@ SerialNum SummaryFlushTarget::getFlushedSerialNum() const {
     return _docStore.lastSyncToken();
 }
 
-IFlushTarget::Task::UP SummaryFlushTarget::internalInitFlush(SerialNum currentSerial) {
-    return std::make_unique<Flusher>(_docStore, _lastStats, currentSerial);
+void SummaryFlushTarget::internal_init_flush(SerialNum currentSerial, TaskPromise task_promise) {
+    // called by summary executor
+    task_promise.set_value(std::make_unique<Flusher>(_docStore, _lastStats, currentSerial));
 }
 
 void SummaryFlushTarget::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                                     TaskPromise task_promise) {
     // Called by document db executor
-    std::promise<Task::UP> promise;
-    std::future<Task::UP>  future = promise.get_future();
-    _summaryService.execute(vespalib::makeLambdaTask([&]() { promise.set_value(internalInitFlush(currentSerial)); }));
-    task_promise.set_value(future.get());
+    TaskPromise proxied_task_promise;
+    auto        future_task = proxied_task_promise.get_future();
+    _summaryService.execute(
+        vespalib::makeLambdaTask([&, proxied_task_promise(std::move(proxied_task_promise))]() mutable {
+            internal_init_flush(currentSerial, std::move(proxied_task_promise));
+        }));
+    task_promise.set_value(future_task.get());
 }
 
 bool SummaryFlushTarget::can_flush(SerialNum current_serial) const noexcept {

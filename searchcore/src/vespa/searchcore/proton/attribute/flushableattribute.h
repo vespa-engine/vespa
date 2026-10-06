@@ -47,7 +47,7 @@ private:
     double                                   _replay_operation_cost;
     bool                                     _paged;
 
-    Task::UP internalInitFlush(SerialNum currentSerial);
+    void internal_init_flush(SerialNum currentSerial, TaskPromise task_promise);
 
 public:
     using SP = std::shared_ptr<FlushableAttribute>;
