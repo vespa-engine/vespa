@@ -687,7 +687,8 @@ TEST(FlushEngineTest, require_that_updated_targets_are_not_skipped) {
 TEST(FlushEngineTest, require_that_threaded_target_works) {
     SimpleExecutor     executor;
     SimpleGetSerialNum getSerialNum;
-    auto target = std::make_shared<ThreadedFlushTarget>(executor, getSerialNum, std::make_shared<SimpleTarget>());
+    auto               target =
+        std::make_shared<ThreadedFlushTarget>(executor, getSerialNum, std::make_shared<SimpleTarget>(), "0.ready");
 
     EXPECT_FALSE(executor._done.await(SHORT_TIMEOUT));
     EXPECT_TRUE(target->initFlush(0, std::make_shared<search::FlushToken>()));
