@@ -170,14 +170,10 @@ public class OpenAI extends ConfigurableLanguageModel {
     public CompletableFuture<Completion.FinishReason> completeAsync(
             Prompt prompt, InferenceParameters parameters, Consumer<Completion> consumer) {
         CompletableFuture<Completion.FinishReason> future = new CompletableFuture<>();
-        // Set when the provider sends a finish reason. Stays null if the stream ends before that,
-        // e.g. because the connection was cut, in which case the answer is incomplete.
         AtomicReference<Completion.FinishReason> finishReason = new AtomicReference<>();
-        // Set if the consumer throws. The SDK wraps such exceptions as its own, so they are kept here
-        // to be reported as they are instead of as failures of the request.
+        // The SDK wraps exceptions from the consumer as its own, so they are kept here to be reported as they are
         AtomicReference<RuntimeException> consumerException = new AtomicReference<>();
 
-        // Every failure is reported through the returned future, nothing is thrown from this method.
         try {
             var preparedParameters = prepareParameters(parameters);
             String apiKey = preparedParameters.getApiKey().orElse(DEFAULT_API_KEY);
@@ -234,16 +230,9 @@ public class OpenAI extends ConfigurableLanguageModel {
     }
 
     /**
-     * Maps an exception from the OpenAI SDK, or an IllegalArgumentException from building the client or request,
-     * to a LanguageModelException with a status code:
-     * <ul>
-     *   <li>the status returned by the provider for HTTP errors (401, 429, 5xx, ...)</li>
-     *   <li>502 for an error event in a stream or a response that could not be parsed</li>
-     *   <li>503 if the provider could not be reached, 504 if it timed out</li>
-     *   <li>400 for an invalid endpoint or request</li>
-     * </ul>
-     * The original exception is kept as the cause, and its message is used as-is so that it is
-     * not repeated when the messages of the cause chain are rendered.
+     * Maps an exception from the OpenAI SDK, or from building the client or request, to a LanguageModelException
+     * with a status code. The original exception is kept as the cause, and its message is used as-is so that
+     * it is not repeated when the messages of the cause chain are rendered.
      */
     static LanguageModelException toLanguageModelException(Throwable e) {
         String message = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();

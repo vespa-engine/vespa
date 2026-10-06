@@ -191,7 +191,6 @@ public class OpenAITest {
         // Override with null API key
         var parameters = new InferenceParameters(null, key -> null);
         
-        // The provider's 401 is reported as a LanguageModelException with the same code
         var exception = org.junit.jupiter.api.Assertions.assertThrows(
                 LanguageModelException.class,
                 () -> openai.complete(prompt, parameters)
@@ -215,8 +214,6 @@ public class OpenAITest {
         CompletableFuture<Completion.FinishReason> future = 
                 openai.completeAsync(prompt, parameters, completion -> result.append(completion.text()));
         
-        // Verify the future completed exceptionally with a LanguageModelException carrying the provider's 401.
-        // CompletableFuture.join wraps the exception in a CompletionException.
         CompletionException exception = org.junit.jupiter.api.Assertions.assertThrows(
             CompletionException.class,
                 () -> future.join()
@@ -246,7 +243,6 @@ public class OpenAITest {
                 () -> openai.complete(prompt, parameters)
         );
         
-        // Verify the exception has the provider's status code and message, and keeps the SDK exception as cause
         assertEquals(401, exception.code());
         assertTrue(exception.getMessage().contains("Incorrect API key provided"));
         assertTrue(exception.getCause() instanceof UnauthorizedException);
@@ -266,7 +262,6 @@ public class OpenAITest {
         var parameters = new InferenceParameters(API_KEY, key -> null);
         parameters.setEndpoint(endpoint);
         
-        // An unreachable endpoint is reported as 503 with the SDK's IO exception as cause
         LanguageModelException exception = org.junit.jupiter.api.Assertions.assertThrows(
             LanguageModelException.class,
                 () -> openai.complete(prompt, parameters)

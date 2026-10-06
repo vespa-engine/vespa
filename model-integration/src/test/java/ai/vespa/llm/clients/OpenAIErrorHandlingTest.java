@@ -128,7 +128,6 @@ public class OpenAIErrorHandlingTest {
 
     @Test
     public void testStreamEndingWithoutFinishReason() {
-        // The connection was cut, or the provider stopped sending, before the completion was finished
         server.enqueue(sse(chunk("Hello", null)));
         var completions = new ArrayList<Completion>();
         var future = openai().completeAsync(prompt(), parameters(), completions::add);
@@ -139,7 +138,7 @@ public class OpenAIErrorHandlingTest {
 
     @Test
     public void testFinishReasonErrorInStream() {
-        // The content is delivered with the finish reason, and the future fails since callers may ignore the finish reason
+        // The future fails since callers may ignore the finish reason of the completions
         server.enqueue(sse(chunk("Hel", null), chunk("lo", "error"), "[DONE]"));
         var completions = new ArrayList<Completion>();
         var future = openai().completeAsync(prompt(), parameters(), completions::add);
@@ -147,7 +146,7 @@ public class OpenAIErrorHandlingTest {
         assertEquals(Completion.FinishReason.none, completions.get(0).finishReason());
         assertEquals(Completion.FinishReason.error, completions.get(1).finishReason());
 
-        // Also when the error chunk has no content, which is the usual shape
+        // Also when the error chunk has no content, which is the usual shape of such a chunk
         server.enqueue(sse(chunk("Hello", null), chunk(null, "error"), "[DONE]"));
         completions.clear();
         assertFailsWith(openai().completeAsync(prompt(), parameters(), completions::add), 502, null);
@@ -193,7 +192,6 @@ public class OpenAIErrorHandlingTest {
         server.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE));
         assertSyncFails(504, OpenAIIoException.class);
 
-        // Connection timeouts and refused connections are also distinguished when wrapped by the SDK
         assertEquals(504, OpenAI.toLanguageModelException(new OpenAIIoException("timeout", new SocketTimeoutException())).code());
         assertEquals(503, OpenAI.toLanguageModelException(new OpenAIIoException("refused", new ConnectException())).code());
     }
@@ -202,7 +200,6 @@ public class OpenAIErrorHandlingTest {
     public void testInvalidEndpoint() {
         var openai = openai("not a url");
         assertFailsWith(() -> openai.complete(prompt(), parameters()), 400, IllegalArgumentException.class);
-        // completeAsync must not throw, but report the failure through the future
         assertFailsWith(openai.completeAsync(prompt(), parameters(), completion -> {}), 400, IllegalArgumentException.class);
     }
 
@@ -214,7 +211,6 @@ public class OpenAIErrorHandlingTest {
 
     @Test
     public void testConsumerExceptionIsPassedThrough() {
-        // Exceptions from the consumer are not failures of the request, and are not wrapped
         server.enqueue(sse(chunk("Hello", null), chunk(null, "stop"), "[DONE]"));
         var consumerException = new IllegalArgumentException("Consumer failed");
         var future = openai().completeAsync(prompt(), parameters(), completion -> { throw consumerException; });
@@ -267,7 +263,7 @@ public class OpenAIErrorHandlingTest {
     /**
      * Creates a client without the SDK's retries and with a short timeout, to keep the tests fast.
      * The SDK closes a client, and fails its in-flight requests, when the client is garbage collected,
-     * so the client is kept reachable from this test for the duration of the test, like the component keeps its clients.
+     * so the client is kept reachable from this test, like the component keeps its clients in fields.
      */
     private OpenAI openai(String endpoint) {
         var config = new LlmClientConfig.Builder().apiKeySecretName("openai").endpoint(endpoint).build();
