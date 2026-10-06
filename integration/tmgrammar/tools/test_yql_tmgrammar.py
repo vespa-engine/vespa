@@ -197,6 +197,15 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         ("select * from doc where true | all(group(predefined(foo, bucket[1, 2>, bucket(3, 4>)) each(output(count())))\nselect * from doc", "select", 2, "keyword.control.yql"),
         ("select * from doc where true | all(group(predefined(foo, bucket<0, 100))) each(output(count())))\nselect * from doc", "select", 2, "keyword.control.yql"),
         ("select * from doc where true | all(group(predefined(foo, bucket<0, 100))) each(output(count())))", "each", 1, "keyword.control.yql"),
+        # Unary minus before a name or call, and names containing "-"
+        ("select * from doc where -price < 0 and !(-userQuery())", "price", 1, "variable.other.yql"),
+        ("select * from doc where -price < 0 and !(-userQuery())", "userQuery", 1, "entity.name.function.yql"),
+        ("select * from doc where my-field contains 'x' and from-date > 1", "my-field", 1, "variable.other.yql"),
+        ("select * from doc where my-field contains 'x' and from-date > 1", "from-date", 1, "variable.other.yql"),
+        # Query parameters in grouping
+        ("select * from doc where true | all(group(f) filter(regex(@pattern, f)) each(output(sum(@my-param_1))))", "pattern", 1, "variable.other.yql"),
+        ("select * from doc where true | all(group(f) filter(regex(@pattern, f)) each(output(sum(@my-param_1))))", "@", 1, "entity.name.function.yql"),
+        ("select * from doc where true | all(group(f) filter(regex(@pattern, f)) each(output(sum(@my-param_1))))", "my-param_1", 1, "variable.other.yql"),
     ]
     errors = []
     for text, target, occurrence, expected in checks:

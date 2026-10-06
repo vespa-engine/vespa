@@ -46,8 +46,10 @@ LSP_TO_TM = {
 }
 
 IDENT = r"[a-zA-Z_][\w-]*"
-# YQL identifiers may contain "-", so words are delimited by lookarounds rather than \b.
-WORD_START = r"(?<![\w-])"
+# YQL identifiers may contain "-", so words end at the first character that is neither a word
+# character nor "-". A word may start right after "-", as in -price: names containing "-" are
+# matched from their first character, so no rule starts inside one.
+WORD_START = r"(?<!\w)"
 WORD_END = r"(?![\w-])"
 # Grouping identifiers may contain "@" but not "-", which is the minus operator there.
 GROUPING_IDENT = r"[a-zA-Z][\w@]*"
@@ -245,6 +247,8 @@ def build_grammar() -> dict:
             {"include": "#string"},
             {"include": "#grouping-bucket"},
             {"include": "#grouping-parens"},
+            # Query parameters are substituted in grouping too, e.g. filter(regex(@pattern, f)).
+            {"include": "#parameter"},
             {"name": scope("Number"), "match": rf"{GROUPING_START}-?inf{GROUPING_END}"},
             # INTEGER and FLOAT in GroupingParser.ccc: decimal, hex or octal with an optional l/L, and
             # floats with an optional f/F/d/D.

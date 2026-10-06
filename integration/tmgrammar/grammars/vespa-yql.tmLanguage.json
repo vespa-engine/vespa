@@ -142,13 +142,13 @@
     },
     "keyword": {
       "name": "keyword.control.yql",
-      "match": "(?i:(?<![\\w-])(not\\s+matches|contains|not\\s+like|order\\s+by|matches|sources|timeout|offset|select|limit|where|desc|from|like|asc)(?![\\w-]))"
+      "match": "(?i:(?<!\\w)(not\\s+matches|contains|not\\s+like|order\\s+by|matches|sources|timeout|offset|select|limit|where|desc|from|like|asc)(?![\\w-]))"
     },
     "operator": {
       "patterns": [
         {
           "name": "keyword.operator.yql",
-          "match": "(?i:(?<![\\w-])(not\\s+in|and|in|or)(?![\\w-]))"
+          "match": "(?i:(?<!\\w)(not\\s+in|and|in|or)(?![\\w-]))"
         },
         {
           "name": "keyword.operator.yql",
@@ -158,15 +158,15 @@
     },
     "constant": {
       "name": "support.type.yql",
-      "match": "(?i:(?<![\\w-])(false|true)(?![\\w-]))"
+      "match": "(?i:(?<!\\w)(false|true)(?![\\w-]))"
     },
     "function-call": {
       "name": "entity.name.function.yql",
-      "match": "(?<![\\w-])[a-zA-Z_][\\w-]*(?=\\s*\\()"
+      "match": "(?<!\\w)[a-zA-Z_][\\w-]*(?=\\s*\\()"
     },
     "identifier": {
       "name": "variable.other.yql",
-      "match": "(?<![\\w-])[a-zA-Z_][\\w-]*"
+      "match": "(?<!\\w)[a-zA-Z_][\\w-]*"
     },
     "grouping": {
       "name": "meta.grouping.yql",
@@ -232,6 +232,9 @@
         },
         {
           "include": "#grouping-parens"
+        },
+        {
+          "include": "#parameter"
         },
         {
           "name": "constant.numeric.yql",
