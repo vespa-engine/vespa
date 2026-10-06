@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 /**
  * When a field (a map, or an array of struct) has fast map search enabled, this class transforms
@@ -275,25 +274,21 @@ public class FastMapSearcher extends Searcher {
         };
     }
 
-    private static final Pattern integerKey = Pattern.compile("-?[0-9]+");
-
     /**
-     * Returns the decimal form of the given numeric or word term, or null unless it is a plain integer
-     * (ASCII digits with an optional minus sign) between min and max. Leading zeros are dropped,
-     * as the key is written to the attribute without them.
+     * Returns the decimal form of the given numeric or word term, or null unless it is an integer
+     * between min and max. The key is normalized as it is written to the attribute, without leading zeros or plus sign.
      */
     private static String getIntegerKey(TermItem term, long min, long max) {
         String number = (term instanceof IntItem intItem) ? intItem.getNumber() : getString(term);
-        if (number == null || ! integerKey.matcher(number).matches()) {
-            return null; // not a plain integer, such as a range expression
+        if (number == null) {
+            return null;
         }
-        long key;
         try {
-            key = Long.parseLong(number);
+            long key = Long.parseLong(number);
+            return (key < min || key > max) ? null : Long.toString(key);
         } catch (NumberFormatException e) {
-            return null; // outside the long range
+            return null; // not an integer, such as a range expression, or outside the long range
         }
-        return (key < min || key > max) ? null : Long.toString(key);
     }
 
     /** Returns the word of a word or exact string term (which is a word item), or null if the term is neither. */
@@ -508,15 +503,13 @@ public class FastMapSearcher extends Searcher {
                        : FastMapSearch.toKeyValueDoubleTerm(key, value);
     }
 
-    private static final Pattern decimalNumber = Pattern.compile("[+-]?(\\d+\\.?\\d*|\\.\\d+)([eE][+-]?\\d+)?");
-
-    /** Returns the given word as a double if it is a plain decimal number, and null otherwise. */
+    /** Returns the given word as a double if it is a number, and null otherwise. */
     private static Double parseDecimal(String word) {
-        String trimmed = word.trim();
-        if ( ! decimalNumber.matcher(trimmed).matches()) {
+        try {
+            return Double.parseDouble(word);
+        } catch (NumberFormatException e) {
             return null; // a range expression, or not a number
         }
-        return Double.parseDouble(trimmed);
     }
 
     /**
