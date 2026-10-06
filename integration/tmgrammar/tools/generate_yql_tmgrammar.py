@@ -219,6 +219,16 @@ def build_grammar() -> dict:
             "end": r"(?=;)|^(?=\s*(?i:select)(?![\w-]))",
             "patterns": [{"include": "#grouping-expression"}],
         },
+        # A bucket range opens with (, [ or < and closes with ), ] or >, in any combination
+        # (bucketElm in GroupingParser.ccc), so it cannot be tracked like other parentheses.
+        "grouping-bucket": {
+            "begin": rf"{GROUPING_START}({re.escape(grouping_tokens['BUCKET'])})\s*([(\[<])",
+            "end": r"[)\]>]",
+            "beginCaptures": {"1": {"name": scope(grouping_map.get("BUCKET", "Macro"))},
+                              "2": {"name": "punctuation.section.brackets.begin.yql"}},
+            "endCaptures": {"0": {"name": "punctuation.section.brackets.end.yql"}},
+            "patterns": [{"include": "#grouping-expression"}],
+        },
         # Parentheses are tracked so that the end of grouping above only applies outside them: an
         # attribute named select may start a line inside an expression.
         "grouping-parens": {
@@ -233,6 +243,7 @@ def build_grammar() -> dict:
         "grouping-expression": {"patterns": [
             {"include": "#comment"},
             {"include": "#string"},
+            {"include": "#grouping-bucket"},
             {"include": "#grouping-parens"},
             {"name": scope("Number"), "match": rf"{GROUPING_START}-?inf{GROUPING_END}"},
             # INTEGER and FLOAT in GroupingParser.ccc: decimal, hex or octal with an optional l/L, and

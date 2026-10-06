@@ -178,6 +178,28 @@
         }
       ]
     },
+    "grouping-bucket": {
+      "begin": "(?<![\\w@])(bucket)\\s*([(\\[<])",
+      "end": "[)\\]>]",
+      "beginCaptures": {
+        "1": {
+          "name": "entity.name.function.yql"
+        },
+        "2": {
+          "name": "punctuation.section.brackets.begin.yql"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.brackets.end.yql"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#grouping-expression"
+        }
+      ]
+    },
     "grouping-parens": {
       "begin": "\\(",
       "end": "\\)",
@@ -204,6 +226,9 @@
         },
         {
           "include": "#string"
+        },
+        {
+          "include": "#grouping-bucket"
         },
         {
           "include": "#grouping-parens"

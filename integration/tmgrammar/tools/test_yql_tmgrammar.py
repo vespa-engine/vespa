@@ -193,6 +193,10 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         ("select * from doc where true | all(group(\n  select\n) # comment\n each(output(count())))", "select", 2, "variable.other.yql"),
         ("select * from doc where true | all(group(\n  select\n) # comment\n each(output(count())))", " comment", 1, "comment.line.number-sign.yql"),
         ("select * from doc where true | all(group(\n  select\n) # comment\n each(output(count())))", "each", 1, "keyword.control.yql"),
+        # Bucket ranges may mix delimiters, and the query after them is YQL again
+        ("select * from doc where true | all(group(predefined(foo, bucket[1, 2>, bucket(3, 4>)) each(output(count())))\nselect * from doc", "select", 2, "keyword.control.yql"),
+        ("select * from doc where true | all(group(predefined(foo, bucket<0, 100))) each(output(count())))\nselect * from doc", "select", 2, "keyword.control.yql"),
+        ("select * from doc where true | all(group(predefined(foo, bucket<0, 100))) each(output(count())))", "each", 1, "keyword.control.yql"),
     ]
     errors = []
     for text, target, occurrence, expected in checks:
