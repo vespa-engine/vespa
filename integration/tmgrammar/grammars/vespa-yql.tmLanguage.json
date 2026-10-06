@@ -1,0 +1,270 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Vespa YQL",
+  "scopeName": "source.vespaYQL",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#grouping"
+    },
+    {
+      "include": "#parameter"
+    },
+    {
+      "include": "#number"
+    },
+    {
+      "include": "#keyword"
+    },
+    {
+      "include": "#operator"
+    },
+    {
+      "include": "#constant"
+    },
+    {
+      "include": "#function-call"
+    },
+    {
+      "include": "#identifier"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.yql",
+          "match": "(//).*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.comment.yql"
+            }
+          }
+        },
+        {
+          "include": "#comment-block"
+        }
+      ]
+    },
+    "comment-block": {
+      "name": "comment.block.yql",
+      "begin": "/\\*",
+      "end": "\\*/",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.begin.yql"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.comment.end.yql"
+        }
+      }
+    },
+    "string": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.yql",
+          "begin": "\"",
+          "end": "\"",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.yql"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.yql"
+            }
+          },
+          "patterns": [
+            {
+              "name": "constant.character.escape.yql",
+              "match": "\\\\(?:u[0-9a-fA-F]{4}|.)"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.yql",
+          "begin": "'",
+          "end": "'",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.begin.yql"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.definition.string.end.yql"
+            }
+          },
+          "patterns": [
+            {
+              "name": "constant.character.escape.yql",
+              "match": "\\\\(?:u[0-9a-fA-F]{4}|.)"
+            }
+          ]
+        }
+      ]
+    },
+    "number": {
+      "patterns": [
+        {
+          "name": "constant.numeric.yql",
+          "match": "(?<![\\w.-])-?(?:\\d+\\.\\d*|\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?[lL]?(?![\\w.])"
+        }
+      ]
+    },
+    "parameter": {
+      "match": "(@)([a-zA-Z_][\\w-]*)",
+      "captures": {
+        "1": {
+          "name": "entity.name.function.yql"
+        },
+        "2": {
+          "name": "variable.other.yql"
+        }
+      }
+    },
+    "keyword": {
+      "name": "keyword.control.yql",
+      "match": "(?i:(?<![\\w-])(not\\s+matches|contains|not\\s+like|order\\s+by|matches|sources|timeout|offset|select|limit|where|desc|from|like|asc)(?![\\w-]))"
+    },
+    "operator": {
+      "patterns": [
+        {
+          "name": "keyword.operator.yql",
+          "match": "(?i:(?<![\\w-])(not\\s+in|and|in|or)(?![\\w-]))"
+        },
+        {
+          "name": "keyword.operator.yql",
+          "match": "!=|<=|>=|!|%|\\*|\\+|\\-|/|<|=|>"
+        }
+      ]
+    },
+    "constant": {
+      "name": "support.type.yql",
+      "match": "(?i:(?<![\\w-])(false|true)(?![\\w-]))"
+    },
+    "function-call": {
+      "name": "entity.name.function.yql",
+      "match": "(?<![\\w-])[a-zA-Z_][\\w-]*(?=\\s*\\()"
+    },
+    "identifier": {
+      "name": "variable.other.yql",
+      "match": "(?<![\\w-])[a-zA-Z_][\\w-]*"
+    },
+    "grouping": {
+      "name": "meta.grouping.yql",
+      "begin": "\\|",
+      "end": "(?=;)|^(?=\\s*(?i:select)(?![\\w-]))",
+      "patterns": [
+        {
+          "include": "#grouping-expression"
+        }
+      ]
+    },
+    "grouping-expression": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.yql",
+          "match": "(//).*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.comment.yql"
+            }
+          }
+        },
+        {
+          "name": "comment.line.number-sign.yql",
+          "match": "(#).*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.comment.yql"
+            }
+          }
+        },
+        {
+          "include": "#comment-block"
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "name": "constant.numeric.yql",
+          "match": "(?<![\\w@])-?inf(?![\\w@])"
+        },
+        {
+          "name": "constant.numeric.yql",
+          "match": "(?<![\\w.@])(?:\\d+\\.\\d*|\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?[lL]?(?![\\w.@])"
+        },
+        {
+          "match": "(?<![\\w@])(time)(\\.)(secondofminute|minuteofhour|monthofyear|dayofmonth|dayofweek|dayofyear|hourofday|date|year)(?![\\w@])",
+          "captures": {
+            "1": {
+              "name": "support.class.yql"
+            },
+            "3": {
+              "name": "entity.name.function.yql"
+            }
+          }
+        },
+        {
+          "match": "(?<![\\w@])(math)(\\.)(acosh|asinh|atanh|floor|hypot|log10|log1p|acos|asin|atan|cbrt|cosh|sinh|sqrt|tanh|cos|exp|log|pow|sin|tan)(?![\\w@])",
+          "captures": {
+            "1": {
+              "name": "support.class.yql"
+            },
+            "3": {
+              "name": "entity.name.function.yql"
+            }
+          }
+        },
+        {
+          "match": "(?<![\\w@])(zcurve)(\\.)(x|y)(?![\\w@])",
+          "captures": {
+            "1": {
+              "name": "support.class.yql"
+            },
+            "3": {
+              "name": "entity.name.function.yql"
+            }
+          }
+        },
+        {
+          "name": "keyword.control.yql",
+          "match": "(?<![\\w@])(each|all|as|at)(?![\\w@])"
+        },
+        {
+          "name": "keyword.operator.yql",
+          "match": "(?<![\\w@])(istrue|and|not|or)(?![\\w@])"
+        },
+        {
+          "name": "support.type.yql",
+          "match": "(?<![\\w@])(false|true)(?![\\w@])"
+        },
+        {
+          "name": "entity.name.function.yql",
+          "match": "(?<![\\w@])(interpolatedlookup|normalizesubject|docidnsspecific|fixedwidth|predefined|attribute|debugwait|precision|quantiles|relevance|accuracy|todouble|tostring|reverse|summary|bucket|filter|output|stddev|strcat|strlen|tolong|xorbit|alias|count|group|order|range|regex|toraw|where|hint|size|sort|add|avg|cat|max|md5|min|mod|mul|neg|now|sub|sum|uca|xor)(?![\\w@])"
+        },
+        {
+          "name": "entity.name.function.yql",
+          "match": "(?<![\\w@])[a-zA-Z][\\w@]*(?=\\s*\\()"
+        },
+        {
+          "name": "variable.other.yql",
+          "match": "(?<![\\w@])[a-zA-Z][\\w@]*"
+        },
+        {
+          "name": "keyword.operator.yql",
+          "match": "%|\\*|\\+|\\-|/|<|=|>"
+        }
+      ]
+    }
+  }
+}
