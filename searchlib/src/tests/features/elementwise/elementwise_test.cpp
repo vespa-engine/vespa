@@ -132,7 +132,8 @@ TEST_F(ElementwiseBlueprintTest, blueprint_setup_succeeds_for_index_field) {
 }
 
 TEST_F(ElementwiseBlueprintTest, matches_blueprint_setup_succeeds_for_array_of_struct_or_map_field) {
-    expect_matches_setup_succeed({"matches(va)", "x"}, "tensor(x{})");
+    expect_matches_setup_succeed({"matches(va)", "x"}, "tensor<float>(x{})");
+    expect_matches_setup_succeed({"matches(va)", "x", "double"}, "tensor(x{})");
     expect_matches_setup_succeed({"matches(va)", "x", "float"}, "tensor<float>(x{})");
     expect_matches_setup_succeed({"matches(va)", "y", "int8"}, "tensor<int8>(y{})");
     expect_matches_setup_succeed({"matches(va)", "x", "bfloat16"}, "tensor<bfloat16>(x{})");

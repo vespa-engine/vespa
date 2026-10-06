@@ -380,6 +380,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 throw new IllegalArgumentException(reference + " must have two or three arguments");
             if (arg2 != null) {
                 cellType = TensorType.Value.fromId(arg2.toString());
+            } else if (isElementwiseMatches(arg0)) {
+                cellType = TensorType.Value.FLOAT;
             }
             validateElementwiseMatches(arg0);
         }
@@ -454,10 +456,14 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         return Optional.of(new TensorType.Builder(cellType).mapped(dimension).build());
     }
 
+    private static boolean isElementwiseMatches(ExpressionNode arg0) {
+        return arg0 instanceof ReferenceNode arg0ref && arg0ref.reference().name().equals("matches");
+    }
+
     /** Validates that elementwise(matches(field),...) refers to an array of struct or map field */
     private void validateElementwiseMatches(ExpressionNode arg0) {
-        if ( ! (arg0 instanceof ReferenceNode arg0ref && arg0ref.reference().name().equals("matches"))) return;
-        var matches = arg0ref.reference();
+        if ( ! isElementwiseMatches(arg0)) return;
+        var matches = ((ReferenceNode)arg0).reference();
         if (matches.arguments().size() != 1 || matches.output() != null)
             throw new IllegalArgumentException("matches must have exactly one argument, naming " +
                                                "an array of struct or map field");
