@@ -3,6 +3,7 @@
 #include "summarymanager.h"
 
 #include "documentstoreadapter.h"
+#include "shrink_summary_lid_space_flush_target.h"
 #include "summarycompacttarget.h"
 #include "summaryflushtarget.h"
 
@@ -11,7 +12,6 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/juniper/rpinterface.h>
-#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_factory.h>
 #include <vespa/searchsummary/docsummary/i_query_term_filter.h>
 #include <vespa/searchsummary/docsummary/query_term_filter_factory.h>
@@ -27,6 +27,7 @@ LOG_SETUP(".proton.docsummary.summarymanager");
 using namespace config;
 using namespace document;
 using namespace search::docsummary;
+
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
 using vespalib::compression::CompressionConfig;
@@ -35,7 +36,6 @@ using search::DocumentStore;
 using search::IDocumentStore;
 using search::LogDocumentStore;
 using search::WriteableFileChunk;
-using vespalib::makeLambdaTask;
 
 using search::TuneFileSummary;
 using search::common::FileHeaderContext;
@@ -50,41 +50,6 @@ std::unique_ptr<StructFieldsMapper> make_struct_fields_mapper(const search::attr
     auto mapper = std::make_unique<StructFieldsMapper>();
     mapper->setup(ctx);
     return mapper;
-}
-
-class ShrinkSummaryLidSpaceFlushTarget : public ShrinkLidSpaceFlushTarget {
-    using ICompactableLidSpace = search::common::ICompactableLidSpace;
-    vespalib::Executor& _summaryService;
-
-public:
-    ShrinkSummaryLidSpaceFlushTarget(const std::string& name, Type type, Component component,
-                                     SerialNum flushedSerialNum, vespalib::Executor& summaryService,
-                                     std::shared_ptr<ICompactableLidSpace> target);
-    ~ShrinkSummaryLidSpaceFlushTarget() override;
-    void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
-                    TaskPromise task_promise) override;
-};
-
-ShrinkSummaryLidSpaceFlushTarget::ShrinkSummaryLidSpaceFlushTarget(const std::string& name, Type type,
-                                                                   Component component, SerialNum flushedSerialNum,
-                                                                   vespalib::Executor& summaryService,
-                                                                   std::shared_ptr<ICompactableLidSpace> target)
-    : ShrinkLidSpaceFlushTarget(name, type, component, flushedSerialNum, vespalib::system_clock::now(),
-                                std::move(target)),
-      _summaryService(summaryService) {
-}
-
-ShrinkSummaryLidSpaceFlushTarget::~ShrinkSummaryLidSpaceFlushTarget() = default;
-
-void ShrinkSummaryLidSpaceFlushTarget::init_flush(SerialNum                            currentSerial,
-                                                  std::shared_ptr<search::IFlushToken> flush_token,
-                                                  TaskPromise                          task_promise) {
-    std::promise<Task::UP> promise;
-    std::future<Task::UP>  future = promise.get_future();
-    _summaryService.execute(makeLambdaTask([&, promise(std::move(promise))]() mutable {
-        ShrinkLidSpaceFlushTarget::init_flush(currentSerial, flush_token, std::move(promise));
-    }));
-    task_promise.set_value(future.get());
 }
 
 } // namespace

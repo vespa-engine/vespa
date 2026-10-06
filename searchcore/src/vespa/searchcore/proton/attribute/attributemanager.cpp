@@ -11,10 +11,10 @@
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
+#include "shrink_attribute_lid_space_flush_target.h"
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
-#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
@@ -22,7 +22,6 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/flush_token.h>
-#include <vespa/searchlib/common/threaded_compactable_lid_space.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -46,7 +45,6 @@ using search::attribute::BasicType;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::common::FileHeaderContext;
-using search::common::ThreadedCompactableLidSpace;
 using searchcorespi::IFlushTarget;
 using searchcorespi::common::ResourceUsage;
 using searchcorespi::common::TransientResourceUsage;
@@ -78,15 +76,13 @@ std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
 
-    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(
-        attr, executor, executor.getExecutorIdFromName(attr->getNamePrefix()));
     const std::string& name = attr->getName();
     auto               dir = diskLayout.createAttributeDir(name);
     search::SerialNum  shrinkSerialNum = estimateShrinkSerialNum(*attr);
-    return std::make_shared<ShrinkLidSpaceFlushTarget>("attribute.shrink." + name, Type::GC, Component::ATTRIBUTE,
-                                                       shrinkSerialNum, dir->getLastFlushTime(), shrinkwrap);
+    return std::make_shared<ShrinkAttributeLidSpaceFlushTarget>(
+        name, Type::GC, Component::ATTRIBUTE, shrinkSerialNum, attr, executor,
+        executor.getExecutorIdFromName(attr->getNamePrefix()));
 }
-
 } // namespace
 
 AttributeManager::AttributeWrap::AttributeWrap(AttributeVectorSP a, bool isExtra_)
