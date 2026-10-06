@@ -51,7 +51,7 @@ public class InPredicate extends FilterExpression {
     @Override
     public String toString() {
         return "in(" + expression + ", " + args.stream()
-                .map(arg -> "\"" + arg + "\"")
+                .map(GroupingExpression::asImage)
                 .collect(Collectors.joining(", ")) + ")";
     }
 

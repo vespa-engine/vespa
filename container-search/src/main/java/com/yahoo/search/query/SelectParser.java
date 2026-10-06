@@ -80,6 +80,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.PREFIX_LENGTH;
@@ -329,11 +330,19 @@ public class SelectParser implements Parser {
         };
     }
 
-    public List<VespaGroupingStep> getGroupingSteps(String grouping){
+    public List<VespaGroupingStep> getGroupingSteps(String grouping) {
+        return getGroupingSteps(grouping, null);
+    }
+
+    /**
+     * Returns the grouping steps of the given JSON grouping, resolving parameter references on the form @name
+     * using the given function, see {@link GroupingOperation#fromStringAsList(String, Function)}.
+     */
+    public List<VespaGroupingStep> getGroupingSteps(String grouping, Function<String, String> parameters) {
         List<VespaGroupingStep> groupingSteps = new ArrayList<>();
         List<String> groupingOperations = toGroupingRequests(grouping);
         for (String groupingString : groupingOperations) {
-            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingString);
+            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingString, parameters);
             VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
             groupingSteps.add(groupingStep);
         }

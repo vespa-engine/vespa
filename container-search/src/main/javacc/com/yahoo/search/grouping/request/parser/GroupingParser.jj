@@ -28,11 +28,53 @@ import java.util.ArrayList;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.function.Function;
 import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.search.grouping.request.*;
+import com.yahoo.search.yql.ParameterListParser;
 
 @SuppressWarnings({ "ConstantIfStatement", "UnnecessarySemicolon", "Convert2Diamond", "FinalPrivateMethod" })
 public class GroupingParser {
+
+    private Function<String, String> parameters = null;
+
+    /**
+     * Sets the function used to resolve parameter references on the form @name to their values.
+     * The function returns null for a parameter which is not set. If no function is set, any parameter reference
+     * is an error. Values are substituted verbatim and are never parsed as grouping syntax.
+     */
+    public void setParameters(Function<String, String> parameters) {
+        this.parameters = parameters;
+    }
+
+    private String resolveParameter(String name) throws ParseException {
+        if (parameters == null) {
+            throw new ParseException("Parameter '@" + name + "' cannot be resolved as no query properties are available");
+        }
+        String value = parameters.apply(name);
+        if (value == null) {
+            throw new ParseException("Input '" + name + "' is not set");
+        }
+        return value;
+    }
+
+    private static Number resolveParameterNumber(String name, String value) throws ParseException {
+        String str = value.trim();
+        try {
+            return Long.valueOf(str);
+        } catch (NumberFormatException e) {
+            // not an integer, try as a double below
+        }
+        try {
+            Double number = Double.valueOf(str);
+            if (number.isNaN() || number.isInfinite()) {
+                throw new NumberFormatException();
+            }
+            return number;
+        } catch (NumberFormatException e) {
+            throw new ParseException("Input '" + name + "' must be a number, but was '" + value + "'");
+        }
+    }
 
     private static Number resolveNumber(String str) {
         if (str.indexOf('.') >= 0) {
@@ -64,6 +106,8 @@ TOKEN :
 // NOTE: Whenever you add a new token, you need to also add it do the identifier() rule at the bottom of this grammar.
 // NOTE: Failure to do so will cause the token image to become a reserved word. To prevent regression on this, add the
 // NOTE: new token to the GroupingParserTestCase#requireThatTokenImagesAreNotReservedWords() test.
+// NOTE: A parameter reference (@name) is a single token, with the same name rules as an identifier in YQL.
+// NOTE: Its value is resolved from query properties, see parameter().
 //
 TOKEN :
 {
@@ -71,6 +115,7 @@ TOKEN :
     <SCOLON: ";"> |
     <COMMA: ","> |
     <DOLLAR: "$"> |
+    <PARAMETER: "@" ["A"-"Z","a"-"z","_"] (["A"-"Z","a"-"z","0"-"9","_","-"])*> |
     <DOT: "."> |
     <EQ: "="> |
     <INFIX_ADD: "+"> |
@@ -386,7 +431,8 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = attributeFunction()           |
                    exp = avgExpression(grp)            |
                    exp = catFunction(grp)              |
-                   exp = constantValue()               |
+                   exp = literalConstantValue()        |
+                   exp = parameterStringValue()        |
                    exp = countAggregator()             |
                    exp = debugWaitFunction(grp)        |
                    exp = divFunction(grp)              |
@@ -545,6 +591,24 @@ ConstantValue constantValue() :
 {
     ( num = number() )
     { return num instanceof Double ? new DoubleValue((Double)num) : new LongValue((Long)num); }
+}
+
+ConstantValue literalConstantValue() :
+{
+    Number num;
+}
+{
+    ( num = literalNumber() )
+    { return num instanceof Double ? new DoubleValue((Double)num) : new LongValue((Long)num); }
+}
+
+StringValue parameterStringValue() :
+{
+    String str;
+}
+{
+    ( str = parameter() )
+    { return new StringValue(str); }
 }
 
 ConstantValue constantValueSigned() :
@@ -813,7 +877,7 @@ StringValue stringValueUnquoted() :
     String str;
 }
 {
-    ( str = string() )
+    ( str = literalString() )
     { return new StringValue(str); }
 }
 
@@ -1067,7 +1131,10 @@ InPredicate inPredicate(GroupingOperation grp) :
     List<String> args = new ArrayList<String>();
 }
 {
-    <IN> lbrace() exp = exp(grp) ( comma() arg = string() { args.add(arg); } )+ rbrace()
+    <IN> lbrace() exp = exp(grp)
+    ( comma() ( ( arg = literalString() { args.add(arg); } ) |
+                ( arg = parameterName() { args.addAll(ParameterListParser.stringTokens(resolveParameter(arg))); } ) ) )+
+    rbrace()
     { return new InPredicate(exp, args); }
 }
 
@@ -1140,11 +1207,29 @@ Number signedNumber() :
 
 Number number() :
 {
+    Number num;
+}
+{
+    ( num = literalNumber() | num = parameterNumber() )
+    { return num; }
+}
+
+Number literalNumber() :
+{
     String str;
 }
 {
     ( ( <INTEGER> | <FLOAT> ) { str = token.image; } space() )
     { return resolveNumber(str); }
+}
+
+Number parameterNumber() :
+{
+    String name;
+}
+{
+    ( name = parameterName() )
+    { return resolveParameterNumber(name, resolveParameter(name)); }
 }
 
 BooleanValue booleanValue() :
@@ -1168,8 +1253,35 @@ String string() :
     String ret;
 }
 {
+    ( ret = literalString() | ret = parameter() )
+    { return ret; }
+}
+
+String literalString() :
+{
+    String ret;
+}
+{
     ( ret = identifier() | ( <STRING> { ret = UnicodeUtilities.unquote(token.image); } space() ) )
     { return ret; }
+}
+
+String parameterName() :
+{
+    String name;
+}
+{
+    ( <PARAMETER> { name = token.image.substring(1); } space() )
+    { return name; }
+}
+
+String parameter() :
+{
+    String name;
+}
+{
+    ( name = parameterName() )
+    { return resolveParameter(name); }
 }
 
 String identifier() :
