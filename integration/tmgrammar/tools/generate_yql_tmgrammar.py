@@ -175,8 +175,12 @@ def build_grammar() -> dict:
     grouping_symbol_operators = [lit for lit in grouping_literals("Operator") if not lit.isalpha()]
 
     repository = {
+        # Line comments start with // or #, as in the query parser (yqlplus.g4). The LSP's YQL grammar
+        # only has //.
         "comment": {"patterns": [
             {"name": "comment.line.double-slash.yql", "match": r"(//).*$",
+             "captures": {"1": {"name": "punctuation.definition.comment.yql"}}},
+            {"name": "comment.line.number-sign.yql", "match": r"(#).*$",
              "captures": {"1": {"name": "punctuation.definition.comment.yql"}}},
             {"include": "#comment-block"},
         ]},
@@ -215,17 +219,26 @@ def build_grammar() -> dict:
             "end": r"(?=;)|^(?=\s*(?i:select)(?![\w-]))",
             "patterns": [{"include": "#grouping-expression"}],
         },
+        # Parentheses are tracked so that the end of grouping above only applies outside them: an
+        # attribute named select may start a line inside an expression.
+        "grouping-parens": {
+            "begin": r"\(",
+            "end": r"\)",
+            "beginCaptures": {"0": {"name": "punctuation.section.parens.begin.yql"}},
+            "endCaptures": {"0": {"name": "punctuation.section.parens.end.yql"}},
+            "patterns": [{"include": "#grouping-expression"}],
+        },
         # The grouping language has its own comments, identifiers and numbers: # also starts a comment,
         # and "-" is always an operator, so a number may follow it directly, as in 1-2.
         "grouping-expression": {"patterns": [
-            {"name": "comment.line.double-slash.yql", "match": r"(//).*$",
-             "captures": {"1": {"name": "punctuation.definition.comment.yql"}}},
-            {"name": "comment.line.number-sign.yql", "match": r"(#).*$",
-             "captures": {"1": {"name": "punctuation.definition.comment.yql"}}},
-            {"include": "#comment-block"},
+            {"include": "#comment"},
             {"include": "#string"},
+            {"include": "#grouping-parens"},
             {"name": scope("Number"), "match": rf"{GROUPING_START}-?inf{GROUPING_END}"},
-            {"name": scope("Number"), "match": r"(?<![\w.@])(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?[lL]?(?![\w.@])"},
+            # INTEGER and FLOAT in GroupingParser.ccc: decimal, hex or octal with an optional l/L, and
+            # floats with an optional f/F/d/D.
+            {"name": scope("Number"),
+             "match": r"(?<![\w.@])(?:0[xX][0-9a-fA-F]+[lL]?|\d+(?:\.\d*)?(?:[eE][+-]?\d+)?[fFdD]|\d+\.\d*(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+[lL]?)(?![\w.@])"},
             {"match": rf"{GROUPING_START}(time)(\.)({'|'.join(sorted(time_methods, key=lambda w: (-len(w), w)))}){GROUPING_END}",
              "captures": {"1": {"name": scope("Class")}, "3": {"name": scope("Method")}}},
             {"match": rf"{GROUPING_START}(math)(\.)({'|'.join(sorted(math_methods, key=lambda w: (-len(w), w)))}){GROUPING_END}",

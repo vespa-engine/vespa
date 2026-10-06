@@ -183,6 +183,16 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         ("select * from doc where true | all(group(a) each(output(sum(foo-bar))))", "foo", 1, "variable.other.yql"),
         ("select * from doc where true | all(group(a) each(output(sum(foo-bar))))", "-", 1, "keyword.operator.yql"),
         ("select * from doc where true | all(group(1-2))", "2", 1, "constant.numeric.yql"),
+        ("select * from doc where true | all(group(a) max(1.5f) precision(2.0D) each(output(sum(0x1F))))", "1.5f", 1, "constant.numeric.yql"),
+        ("select * from doc where true | all(group(a) max(1.5f) precision(2.0D) each(output(sum(0x1F))))", "2.0D", 1, "constant.numeric.yql"),
+        ("select * from doc where true | all(group(a) max(1.5f) precision(2.0D) each(output(sum(0x1F))))", "0x1F", 1, "constant.numeric.yql"),
+        # YQL has # comments, as in the query parser
+        ("select foo from bar where # false | x\n true", " false | x", 1, "comment.line.number-sign.yql"),
+        ("select foo from bar where # false | x\n true", "true", 1, "support.type.yql"),
+        # A line starting with select inside grouping parentheses does not end grouping
+        ("select * from doc where true | all(group(\n  select\n) # comment\n each(output(count())))", "select", 2, "variable.other.yql"),
+        ("select * from doc where true | all(group(\n  select\n) # comment\n each(output(count())))", " comment", 1, "comment.line.number-sign.yql"),
+        ("select * from doc where true | all(group(\n  select\n) # comment\n each(output(count())))", "each", 1, "keyword.control.yql"),
     ]
     errors = []
     for text, target, occurrence, expected in checks:

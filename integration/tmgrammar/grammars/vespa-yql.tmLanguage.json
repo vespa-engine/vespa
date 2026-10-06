@@ -47,6 +47,15 @@
           }
         },
         {
+          "name": "comment.line.number-sign.yql",
+          "match": "(#).*$",
+          "captures": {
+            "1": {
+              "name": "punctuation.definition.comment.yql"
+            }
+          }
+        },
+        {
           "include": "#comment-block"
         }
       ]
@@ -169,31 +178,35 @@
         }
       ]
     },
+    "grouping-parens": {
+      "begin": "\\(",
+      "end": "\\)",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.parens.begin.yql"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.parens.end.yql"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#grouping-expression"
+        }
+      ]
+    },
     "grouping-expression": {
       "patterns": [
         {
-          "name": "comment.line.double-slash.yql",
-          "match": "(//).*$",
-          "captures": {
-            "1": {
-              "name": "punctuation.definition.comment.yql"
-            }
-          }
-        },
-        {
-          "name": "comment.line.number-sign.yql",
-          "match": "(#).*$",
-          "captures": {
-            "1": {
-              "name": "punctuation.definition.comment.yql"
-            }
-          }
-        },
-        {
-          "include": "#comment-block"
+          "include": "#comment"
         },
         {
           "include": "#string"
+        },
+        {
+          "include": "#grouping-parens"
         },
         {
           "name": "constant.numeric.yql",
@@ -201,7 +214,7 @@
         },
         {
           "name": "constant.numeric.yql",
-          "match": "(?<![\\w.@])(?:\\d+\\.\\d*|\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?[lL]?(?![\\w.@])"
+          "match": "(?<![\\w.@])(?:0[xX][0-9a-fA-F]+[lL]?|\\d+(?:\\.\\d*)?(?:[eE][+-]?\\d+)?[fFdD]|\\d+\\.\\d*(?:[eE][+-]?\\d+)?|\\d+[eE][+-]?\\d+|\\d+[lL]?)(?![\\w.@])"
         },
         {
           "match": "(?<![\\w@])(time)(\\.)(secondofminute|minuteofhour|monthofyear|dayofmonth|dayofweek|dayofyear|hourofday|date|year)(?![\\w@])",
