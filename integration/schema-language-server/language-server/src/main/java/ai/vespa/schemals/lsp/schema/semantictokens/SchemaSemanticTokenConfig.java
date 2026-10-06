@@ -260,6 +260,10 @@ class SchemaSemanticTokenConfig {
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.BASE64_DECODE);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.BASE64_ENCODE);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.ECHO);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.EXHEX8_ENCODE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.EXHEX16_ENCODE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.EXHEX8_FLOAT_ENCODE);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.EXHEX16_DOUBLE_ENCODE);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.FLATTEN);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.GET_FIELD);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.GET_LANGUAGE);
