@@ -315,11 +315,6 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                                 .setStringValue("0")
                                 .build())
                 .putParameters(
-                        "enable_mem_pattern",
-                        ModelParameter.newBuilder()
-                                .setStringValue("0")
-                                .build())
-                .putParameters(
                         "intra_op_thread_count",
                         ModelParameter.newBuilder()
                                 .setStringValue(intraOpThreadCountValue)
