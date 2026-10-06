@@ -196,6 +196,9 @@ public:
      * query rather than order the hits some other way.
      **/
     [[nodiscard]] bool prepare_and_install_sort_features(const std::vector<std::string>& public_names);
+    // true if match threads will record sort feature values
+    bool has_sort_features() const noexcept { return !_sort_public_names.empty(); }
+    QueryLimiter& query_limiter() const noexcept { return _queryLimiter; }
     bool should_diversify() const { return _diversityParams.enabled(); }
     std::unique_ptr<IDiversifier> createDiversifier(uint32_t heapSize) const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
