@@ -152,11 +152,13 @@ public class ProtobufSerializationTest {
         var q = new Query("?query=test&trace.level=1&" +
                 "trace.profiling.matching.depth=3&" +
                 "trace.profiling.firstPhaseRanking.depth=5&" +
-                "trace.profiling.secondPhaseRanking.depth=-7");
+                "trace.profiling.secondPhaseRanking.depth=-7&" +
+                "trace.profiling.sortFeatures.depth=-4");
         var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
         assertEquals(3, req.getProfiling().getMatch().getDepth());
         assertEquals(5, req.getProfiling().getFirstPhase().getDepth());
         assertEquals(-7, req.getProfiling().getSecondPhase().getDepth());
+        assertEquals(-4, req.getProfiling().getSortFeatures().getDepth());
     }
 
     @Test
@@ -167,6 +169,7 @@ public class ProtobufSerializationTest {
         assertEquals(3, req.getProfiling().getMatch().getDepth());
         assertFalse(req.getProfiling().hasFirstPhase());
         assertFalse(req.getProfiling().hasSecondPhase());
+        assertFalse(req.getProfiling().hasSortFeatures());
     }
 
     @Test
@@ -178,6 +181,32 @@ public class ProtobufSerializationTest {
         assertEquals(3, req.getProfiling().getMatch().getDepth());
         assertFalse(req.getProfiling().hasFirstPhase());
         assertFalse(req.getProfiling().hasSecondPhase());
+        assertFalse(req.getProfiling().hasSortFeatures());
+    }
+
+    @Test
+    void sort_features_profiling_is_serialized_when_query_profile_is_used() {
+        var q = new Query("?query=test&trace.level=1&" +
+                          "trace.profiling.sortFeatures.depth=3",
+                          new QueryProfile("test").compile(null));
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
+        assertEquals(3, req.getProfiling().getSortFeatures().getDepth());
+        assertFalse(req.getProfiling().hasMatch());
+        assertFalse(req.getProfiling().hasFirstPhase());
+        assertFalse(req.getProfiling().hasSecondPhase());
+    }
+
+    @Test
+    void clearing_profile_depth_omits_profiling_from_search_request() {
+        var q = new Query("?query=test&trace.level=1&" +
+                "trace.profiling.sortFeatures.depth=2");
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
+        assertEquals(2, req.getProfiling().getSortFeatures().getDepth());
+
+        q.getTrace().setProfileDepth(0);
+        req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
+        assertFalse(req.hasProfiling());
+        assertEquals(0, req.getProfileDepth());
     }
 
     @Test
