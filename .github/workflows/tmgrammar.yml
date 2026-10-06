@@ -1,8 +1,8 @@
-name: Vespa Schema TextMate grammar
+name: Vespa TextMate grammars
 
-# The grammar in integration/tmgrammar/grammars/ is generated from the schema language server's
-# CongoCC grammars and token configuration. Fail when the checked-in grammar no longer matches
-# what the generator produces, so that parser changes and the grammar are updated together.
+# The grammars in integration/tmgrammar/grammars/ are generated from the schema language server's
+# CongoCC grammars and token configuration. Fail when a checked-in grammar no longer matches
+# what its generator produces, so that parser changes and the grammars are updated together.
 
 on:
   workflow_dispatch:
@@ -11,6 +11,7 @@ on:
       - 'integration/tmgrammar/**'
       - 'integration/schema-language-server/language-server/src/main/ccc/**'
       - 'integration/schema-language-server/language-server/src/main/java/ai/vespa/schemals/lsp/schema/semantictokens/**'
+      - 'integration/schema-language-server/language-server/src/main/java/ai/vespa/schemals/lsp/yqlplus/semantictokens/**'
       - 'integration/schema-language-server/language-server/src/main/java/ai/vespa/schemals/schemadocument/resolvers/RankExpression/BuiltInFunctions.java'
       - 'integration/schema-language-server/language-server/src/test/sdfiles/**'
       - '.github/workflows/tmgrammar.yml'
@@ -25,7 +26,7 @@ defaults:
 
 jobs:
   check:
-    name: Check generated grammar
+    name: Check generated grammars
     runs-on: ubuntu-latest
 
     steps:
@@ -33,13 +34,19 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check that the grammar is up to date
+      - name: Check that the grammars are up to date
         run: |
           python3 tools/generate_tmgrammar.py > /dev/null
-          if ! git diff --exit-code -- grammars/; then
-            echo "::error::grammars/vespa-schema.tmLanguage.json is out of date. Run 'uv run tools/generate_tmgrammar.py' in integration/tmgrammar and commit the result."
+          python3 tools/generate_yql_tmgrammar.py > /dev/null
+          if [ -n "$(git status --porcelain -- grammars/)" ]; then
+            git status --short -- grammars/
+            git diff -- grammars/
+            echo "::error::A grammar in grammars/ is out of date. Run 'uv run tools/generate_tmgrammar.py' and 'uv run tools/generate_yql_tmgrammar.py' in integration/tmgrammar and commit the result."
             exit 1
           fi
 
-      - name: Test the grammar
+      - name: Test the schema grammar
         run: python3 tools/test_tmgrammar.py
+
+      - name: Test the YQL grammar
+        run: python3 tools/test_yql_tmgrammar.py

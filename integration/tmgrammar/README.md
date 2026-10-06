@@ -1,10 +1,10 @@
 # tmgrammar
 
-TextMate grammar for the [Vespa](https://vespa.ai) schema language (`.sd` files), plus tooling to generate, test, and compare it against the Java LSP's semantic tokens.
+TextMate grammars for the [Vespa](https://vespa.ai) schema language (`.sd` files) and YQL (`.yql` files), plus tooling to generate, test, and compare them against the Java LSP's semantic tokens.
 
 ## Usage
 
-The grammar file is [`grammars/vespa-schema.tmLanguage.json`](grammars/vespa-schema.tmLanguage.json). You can use it directly in any tool that supports TextMate grammars:
+The grammar files are [`grammars/vespa-schema.tmLanguage.json`](grammars/vespa-schema.tmLanguage.json) and [`grammars/vespa-yql.tmLanguage.json`](grammars/vespa-yql.tmLanguage.json). You can use them directly in any tool that supports TextMate grammars:
 
 ### Shiki (docs, blogs, static sites)
 
@@ -53,6 +53,10 @@ Source files are read directly from the vespa repo tree:
 - `integration/schema-language-server/language-server/src/main/java/ai/vespa/schemals/` -- Java config files
 - `integration/schema-language-server/language-server/src/test/sdfiles/` -- test `.sd` files
 
+### YQL
+
+The YQL grammar is generated the same way by `tools/generate_yql_tmgrammar.py`, from `yqlplus/YQLPlus.ccc` and `grouping/GroupingParser.ccc`, classified by `YQLPlusSemanticTokenConfig.java` and `VespaGroupingSemanticTokenConfig.java`. It differs from the LSP in two ways, for readability where the LSP is not running: a name followed by `(` (`nearestNeighbor`, `userQuery`, `group`) is colored as a function, and `=` and `!=` are colored as operators like `<` and `>`. YQL keywords are case-insensitive, as in the query parser; the grouping language after `|` is case-sensitive.
+
 ## Development
 
 All commands below assume you are in the `integration/tmgrammar/` directory.
@@ -66,12 +70,14 @@ All commands below assume you are in the `integration/tmgrammar/` directory.
 
 ```bash
 uv run tools/generate_tmgrammar.py
+uv run tools/generate_yql_tmgrammar.py
 ```
 
 ### Run grammar tests
 
 ```bash
 uv run tools/test_tmgrammar.py
+uv run tools/test_yql_tmgrammar.py
 ```
 
 ### Compare with Java LSP tokens
@@ -126,10 +132,13 @@ node audit-colors.mjs --file spotcheck.sd                     # specific file
 ```
 integration/tmgrammar/
   grammars/
-    vespa-schema.tmLanguage.json   # THE OUTPUT -- generated TextMate grammar
+    vespa-schema.tmLanguage.json   # THE OUTPUT -- generated TextMate grammar for schemas
+    vespa-yql.tmLanguage.json      # Generated TextMate grammar for YQL
   tools/                           # Build and validation pipeline
     generate_tmgrammar.py          #   Generator: reads .ccc grammars + Java config, writes grammars/
     test_tmgrammar.py              #   Validates keyword completeness, structure, scopes, .sd parsing
+    generate_yql_tmgrammar.py      #   Generator for the YQL grammar
+    test_yql_tmgrammar.py          #   Validates the YQL grammar: keywords, structure, scopes
     compare_tokens.py              #   Structural diff: Java LSP token types vs TM scope assignments
     tm_tokenize.mjs                #   Tokenizes .sd files with the real vscode-textmate engine
     run_comparison.sh              #   Convenience wrapper: tokenize + compare in one step
@@ -148,13 +157,13 @@ integration/schema-language-server/language-server/src/test/java/ai/vespa/schema
 
 ## Contributing
 
-To update the grammar after Vespa parser changes:
+To update the grammars after Vespa parser changes:
 
-1. `uv run tools/generate_tmgrammar.py` to regenerate
-2. `uv run tools/test_tmgrammar.py` to validate
+1. `uv run tools/generate_tmgrammar.py` and `uv run tools/generate_yql_tmgrammar.py` to regenerate
+2. `uv run tools/test_tmgrammar.py` and `uv run tools/test_yql_tmgrammar.py` to validate
 3. Review changes in the playground
 
-The [tmgrammar workflow](../../.github/workflows/tmgrammar.yml) runs both scripts on pull requests that touch the grammar or its sources, and fails if the checked-in grammar differs from the generated one.
+The [tmgrammar workflow](../../.github/workflows/tmgrammar.yml) runs these scripts on pull requests that touch the grammars or their sources, and fails if a checked-in grammar differs from the generated one.
 
 ## License
 
