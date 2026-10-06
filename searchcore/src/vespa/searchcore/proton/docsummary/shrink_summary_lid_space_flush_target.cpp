@@ -22,6 +22,7 @@ ShrinkSummaryLidSpaceFlushTarget::~ShrinkSummaryLidSpaceFlushTarget() = default;
 void ShrinkSummaryLidSpaceFlushTarget::init_flush(SerialNum                            currentSerial,
                                                   std::shared_ptr<search::IFlushToken> flush_token,
                                                   TaskPromise                          task_promise) {
+    // Called by document db executor.
     TaskPromise proxied_task_promise;
     auto        future_flush_task = proxied_task_promise.get_future();
     _summaryService.execute(makeLambdaTask([this, currentSerial, flush_token(std::move(flush_token)),
