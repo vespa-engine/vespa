@@ -491,10 +491,22 @@ public class YqlParser implements Parser {
 
         OperatorNode<ExpressionOperator> field = lhs.getArgument(0);
         OperatorNode<ExpressionOperator> key = lhs.getArgument(1);
-        if (key.getOperator() != ExpressionOperator.LITERAL && !isNumberLiteral(key)) {
-            throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL);
+        assertMapKey(key);
+        if (ast.getOperator() == ExpressionOperator.EQ && value.getOperator() == ExpressionOperator.VARREF) {
+            String parameterValue = resolveParameter(value);
+            if (isRangeText(parameterValue)) {
+                String fieldName = fetchFieldName(field);
+                throw new IllegalArgumentException("Expected a number or boolean value for '=' on map field '" + fieldName +
+                                                   "', got range '" + parameterValue + "' from parameter '" + value.getArgument(0) +
+                                                   "'. Use range(" + fieldName + "{" + describeMapValue(key) + "}, lower, upper) for ranges.");
+            }
+            if (!isNumberText(parameterValue) && !isBooleanText(parameterValue)) {
+                throw new IllegalArgumentException("Expected a number or boolean value for '=' on map field '" + fetchFieldName(field) +
+                                                   "', got '" + parameterValue + "' from parameter '" + value.getArgument(0) +
+                                                   "'. Use 'contains' for string values.");
+            }
         }
-        if (ast.getOperator() == ExpressionOperator.EQ && !isNumberLiteral(value) && !isBooleanLiteral(value)) {
+        else if (ast.getOperator() == ExpressionOperator.EQ && !isNumberLiteral(value) && !isBooleanLiteral(value)) {
             throw new IllegalArgumentException("Expected a number or boolean value for '=' on map field '" + fetchFieldName(field) +
                                                "', got " + describeMapValue(value) + ". Use 'contains' for string values.");
         }
@@ -504,7 +516,9 @@ public class YqlParser implements Parser {
         }
 
         OperatorNode<ExpressionOperator> keyMatch = makeMapComponentMatch(KEY_FIELD_NAME, key);
-        OperatorNode<ExpressionOperator> valueMatch = makeMapComponentMatch(VALUE_FIELD_NAME, value);
+        OperatorNode<ExpressionOperator> valueMatch = ast.getOperator() == ExpressionOperator.EQ
+                                                      ? makeMapComponentEquality(VALUE_FIELD_NAME, value)
+                                                      : makeMapComponentMatch(VALUE_FIELD_NAME, value);
         OperatorNode<ExpressionOperator> mapMatch = OperatorNode.create(
                 ast.getLocation(),
                 ExpressionOperator.CALL,
@@ -541,9 +555,7 @@ public class YqlParser implements Parser {
         OperatorNode<ExpressionOperator> mapRef = args.get(0);
         OperatorNode<ExpressionOperator> field = mapRef.getArgument(0);
         OperatorNode<ExpressionOperator> key = mapRef.getArgument(1);
-        if (key.getOperator() != ExpressionOperator.LITERAL && !isNumberLiteral(key)) {
-            throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL);
-        }
+        assertMapKey(key);
 
         var valueField = OperatorNode.create(mapRef.getLocation(), ExpressionOperator.READ_FIELD, "", VALUE_FIELD_NAME);
         var valueRange = OperatorNode.create(ast.getLocation(), ExpressionOperator.CALL,
@@ -565,11 +577,57 @@ public class YqlParser implements Parser {
      * contains requires a string literal.
      */
     private static OperatorNode<ExpressionOperator> makeMapComponentMatch(String component, OperatorNode<ExpressionOperator> term) {
-        var componentField = OperatorNode.create(term.getLocation(), ExpressionOperator.READ_FIELD, "", component);
         if (isNumberLiteral(term) || isBooleanLiteral(term)) {
-            return OperatorNode.create(term.getLocation(), ExpressionOperator.EQ, componentField, term);
+            return makeMapComponentEquality(component, term);
         }
+        var componentField = OperatorNode.create(term.getLocation(), ExpressionOperator.READ_FIELD, "", component);
         return OperatorNode.create(term.getLocation(), ExpressionOperator.CONTAINS, componentField, toLiteralString(term));
+    }
+
+    /** Builds an equality match for the key or value component of a map entry, as for field = value. */
+    private static OperatorNode<ExpressionOperator> makeMapComponentEquality(String component, OperatorNode<ExpressionOperator> term) {
+        var componentField = OperatorNode.create(term.getLocation(), ExpressionOperator.READ_FIELD, "", component);
+        return OperatorNode.create(term.getLocation(), ExpressionOperator.EQ, componentField, term);
+    }
+
+    /** Throws if the given key of a map access is not a literal or a parameter. */
+    private static void assertMapKey(OperatorNode<ExpressionOperator> key) {
+        if (key.getOperator() != ExpressionOperator.LITERAL && key.getOperator() != ExpressionOperator.VARREF && !isNumberLiteral(key)) {
+            throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
+        }
+    }
+
+    /** Returns true if the given text is a single number, as parsed by {@link IntItem}. */
+    private static boolean isNumberText(String text) {
+        String trimmed = text.trim();
+        try {
+            if (trimmed.contains(".")) {
+                Double.valueOf(trimmed);
+            } else {
+                new BigInteger(trimmed);
+            }
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    /** Returns true if the given text is a range rather than a single number, as parsed by {@link IntItem}. */
+    private static boolean isRangeText(String text) {
+        if (isNumberText(text)) {
+            return false;
+        }
+        try {
+            new IntItem(text);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /** Returns true if the given text is a boolean, as parsed by field = value. */
+    private static boolean isBooleanText(String text) {
+        return text.equals("true") || text.equals("false");
     }
 
     /** Returns true if ast is a number literal. */
@@ -585,7 +643,7 @@ public class YqlParser implements Parser {
         return ast.getOperator() == ExpressionOperator.LITERAL && ast.getArgument(0) instanceof Boolean;
     }
 
-    /** Returns a description of a map access value for error messages: the literal itself, or else its operator. */
+    /** Returns a description of a map access key or value for error messages: the literal or parameter, or else its operator. */
     private static String describeMapValue(OperatorNode<ExpressionOperator> ast) {
         if (ast.getOperator() == ExpressionOperator.NEGATE && isNumberLiteral(ast)) {
             return "-" + describeMapValue(ast.getArgument(0));
@@ -593,6 +651,9 @@ public class YqlParser implements Parser {
         if (ast.getOperator() == ExpressionOperator.LITERAL) {
             Object literal = ast.getArgument(0);
             return literal instanceof String ? "'" + literal + "'" : literal.toString();
+        }
+        if (ast.getOperator() == ExpressionOperator.VARREF) {
+            return "@" + ast.getArgument(0);
         }
         return ast.getOperator().toString();
     }

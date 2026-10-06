@@ -383,6 +383,16 @@ public class FastMapSearcherTest {
                      rewrittenYql("range(longkeymap.lookup{1}, 5, 10)"));
     }
 
+    /** Parameters give the same lookup terms as the literals they hold. */
+    @Test
+    public void requireYqlMapLookupWithParametersRewritten() {
+        assertEquals("mymap$lookup:foo" + FastMapSearch.keyValueSeparator() + "bar",
+                     rewrittenYql("mymap.lookup{@key} contains @value", "&key=foo&value=bar"));
+        assertEquals("intvaluemap$lookup:" + FastMapSearch.toKeyValue8Term("foo", 42),
+                     rewrittenYql("intvaluemap.lookup{@key} = @value", "&key=foo&value=42"));
+        assertEquals(intKeyTerm("42"), rewrittenYql("intkeymap.lookup{@key} contains \"bar\"", "&key=42"));
+    }
+
     @Test
     public void requireIntValueEncodedInExcessHex() {
         String expected = "intvaluemap$lookup:" + FastMapSearch.toKeyValue8Term("foo", 10);
@@ -874,7 +884,12 @@ public class FastMapSearcherTest {
 
     /** Returns the query tree after parsing the given YQL where clause and running the searcher. */
     private static String rewrittenYql(String where) {
-        Query query = new Query("?yql=" + URLEncoder.encode("select * from sources * where " + where, StandardCharsets.UTF_8));
+        return rewrittenYql(where, "");
+    }
+
+    /** As rewrittenYql(where), with the given URL encoded request parameters, such as "&amp;key=foo", added. */
+    private static String rewrittenYql(String where, String parameters) {
+        Query query = new Query("?yql=" + URLEncoder.encode("select * from sources * where " + where, StandardCharsets.UTF_8) + parameters);
         new Execution(new Chain<>(new MinimalQueryInserter(), new FastMapSearcher()), execution().context()).search(query);
         return query.getModel().getQueryTree().getRoot().toString();
     }
