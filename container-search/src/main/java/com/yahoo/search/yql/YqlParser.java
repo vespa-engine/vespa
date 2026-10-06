@@ -559,12 +559,13 @@ public class YqlParser implements Parser {
     /**
      * Builds the match condition for the key or value component of a map entry.
      * The map access sugar has no operator per component, so the literal's type must decide
-     * it here: numeric literals become equality matches (numeric terms), everything else
-     * becomes contains matches, on string form since contains requires a string literal.
+     * it here: numeric and boolean literals become equality matches (numeric and boolean terms,
+     * as for field = value), everything else becomes contains matches, on string form since
+     * contains requires a string literal.
      */
     private static OperatorNode<ExpressionOperator> makeMapComponentMatch(String component, OperatorNode<ExpressionOperator> term) {
         var componentField = OperatorNode.create(term.getLocation(), ExpressionOperator.READ_FIELD, "", component);
-        if (isNumberLiteral(term)) {
+        if (isNumberLiteral(term) || isBooleanLiteral(term)) {
             return OperatorNode.create(term.getLocation(), ExpressionOperator.EQ, componentField, term);
         }
         return OperatorNode.create(term.getLocation(), ExpressionOperator.CONTAINS, componentField, toLiteralString(term));
