@@ -183,6 +183,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_NODE_ALLOCATION_FAILURE.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_DEPLOYMENT_FAILURE.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_ERROR.count());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_FAILED_RUNS.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_FAILING_UPGRADES.min());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_FAILURE_PERCENTAGE.max());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_NODE_COUNT_BY_OS_VERSION.max());

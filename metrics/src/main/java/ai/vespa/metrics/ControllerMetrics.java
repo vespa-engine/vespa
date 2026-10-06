@@ -25,6 +25,7 @@ public enum ControllerMetrics implements VespaMetrics {
     DEPLOYMENT_CANCEL("deployment.cancel", Unit.DEPLOYMENT, "Deployments that were canceled"),
     DEPLOYMENT_SUCCESS("deployment.success", Unit.DEPLOYMENT, "Successful deployments"),
     DEPLOYMENT_QUOTA_EXCEEDED("deployment.quotaExceeded", Unit.DEPLOYMENT, "Deployments stopped due to exceeding quota"),
+    DEPLOYMENT_FAILED_RUNS("deployment.failedRuns", Unit.DEPLOYMENT, "The number of failed deployment job runs, by run status"),
     BILLING_TENANTS("billing.tenants", Unit.TENANT, "Billing tenants"),
     DEPLOYMENT_FAILURE_PERCENTAGE("deployment.failurePercentage", Unit.PERCENTAGE, "Deployment: Failure percentage"),
     DEPLOYMENT_DURATION("deployment.duration", Unit.SECOND, "Deployment duration"),
