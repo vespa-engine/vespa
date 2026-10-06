@@ -26,6 +26,7 @@
 #include <vespa/vespalib/quant/eden.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/will_need_advisor.h>
 
 #include <algorithm>
 
@@ -276,6 +277,24 @@ SerializedTensorRef TensorAttribute::get_serialized_tensor_ref(uint32_t) const {
 
 bool TensorAttribute::supports_get_serialized_tensor_ref() const {
     return false;
+}
+
+TensorAttribute::PrefetchResult TensorAttribute::prefetch_docs(std::span<const DocId> docids) const {
+    if (!get_memory_allocator()) {
+        // Not paged, tensors are already in memory.
+        return {};
+    }
+    vespalib::alloc::WillNeedAdvisor advisor;
+    advisor.reserve(docids.size());
+    const DocId docid_limit = getCommittedDocIdLimit();
+    for (DocId docid : docids) {
+        if (docid < docid_limit) {
+            auto memory = _tensorStore.get_raw_memory(acquire_entry_ref(docid));
+            advisor.add(memory.data(), memory.size());
+        }
+    }
+    auto result = advisor.advise();
+    return {result.ranges, result.bytes};
 }
 
 const vespalib::eval::ValueType& TensorAttribute::getTensorType() const {

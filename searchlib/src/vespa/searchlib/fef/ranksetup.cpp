@@ -41,6 +41,7 @@ RankSetup::RankSetup(const BlueprintFactory& factory, const IIndexEnvironment& i
       _dumpResolver(std::make_shared<BlueprintResolver>(factory, indexEnv)),
       _firstPhaseRankFeature(),
       _secondPhaseRankFeature(),
+      _second_phase_prefetch_attributes(),
       _degradationAttribute(),
       _termwise_limit(1.0),
       _numThreads(0),
@@ -96,6 +97,7 @@ RankSetup::~RankSetup() = default;
 void RankSetup::configure() {
     setFirstPhaseRank(rank::FirstPhase::lookup(_indexEnv.getProperties()));
     setSecondPhaseRank(rank::SecondPhase::lookup(_indexEnv.getProperties()));
+    set_second_phase_prefetch_attributes(rank::SecondPhasePrefetchAttributes::lookup(_indexEnv.getProperties()));
     for (const auto& feature : match::Feature::lookup(_indexEnv.getProperties())) {
         add_match_feature(feature);
     }

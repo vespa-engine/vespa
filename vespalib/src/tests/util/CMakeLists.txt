@@ -46,6 +46,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     typed_data_layout_test.cpp
     typify_test.cpp
     unordered_u32_set_test.cpp
+    will_need_advisor_test.cpp
     xmlserializabletest.cpp
     xoshiro_test.cpp
     DEPENDS
@@ -67,5 +68,17 @@ vespa_add_target_external_dependency(vespalib_util_unordered_u32_set_benchmark_a
 vespa_add_test(
     NAME    vespalib_util_unordered_u32_set_benchmark_app
     COMMAND vespalib_util_unordered_u32_set_benchmark_app
+    BENCHMARK
+)
+
+vespa_add_executable(vespalib_util_will_need_advisor_benchmark_app TEST
+    SOURCES
+    will_need_advisor_benchmark.cpp
+    DEPENDS
+    vespalib
+)
+vespa_add_test(
+    NAME    vespalib_util_will_need_advisor_benchmark_app
+    COMMAND vespalib_util_will_need_advisor_benchmark_app
     BENCHMARK
 )

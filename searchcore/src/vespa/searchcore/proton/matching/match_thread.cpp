@@ -18,6 +18,7 @@
 #include <vespa/searchlib/queryeval/profiled_iterator.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <optional>
 
@@ -341,8 +342,18 @@ void MatchThread::secondPhase(MatchTools& tools, HitCollector& hits) {
     }
     if (!my_work.empty()) {
         tools.setup_second_phase(second_phase_profiler.get());
-        DocumentScorer scorer(tools.rank_program(), tools.search());
+        auto           prefetch_attributes = matchToolsFactory.second_phase_prefetch_attributes();
+        DocumentScorer scorer(tools.rank_program(), tools.search(), prefetch_attributes);
         scorer.score(my_work);
+        const auto& prefetch_stats = scorer.prefetch_stats();
+        for (size_t i = 0; i < prefetch_stats.size(); ++i) {
+            const auto& stats = prefetch_stats[i];
+            auto        msg =
+                vespalib::make_string("Prefetched attribute '%s' for %zu hits: %zu bytes in %zu ranges, %.3f ms",
+                                      prefetch_attributes[i]->getName().c_str(), my_work.size(), stats.result.bytes,
+                                      stats.result.ranges, vespalib::count_ns(stats.time) / 1e6);
+            trace->addEvent(4, msg);
+        }
     }
     thread_stats.docsReRanked(my_work.size());
     trace->addEvent(5, "Synchronize before rank scaling");

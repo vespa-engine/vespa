@@ -21,6 +21,7 @@
 #include <vespa/searchlib/queryeval/wand/wand_parts.h>
 #include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
 #include <cassert>
@@ -247,7 +248,8 @@ MatchToolsFactory::MatchToolsFactory(
       _object_store(nullptr),
       _metaStore(metaStore),
       _needed_handles(),
-      _sort_public_names() {
+      _sort_public_names(),
+      _second_phase_prefetch_attributes() {
     if (doom.soft_doom()) {
         return;
     }
@@ -301,6 +303,19 @@ MatchToolsFactory::MatchToolsFactory(
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         _object_store = &_queryEnv.getObjectStore();
+        if (!_rankSetup.getSecondPhaseRank().empty()) {
+            auto names = rank::SecondPhasePrefetchAttributes::lookup(
+                rankProperties, _rankSetup.get_second_phase_prefetch_attributes());
+            for (const auto& name : names) {
+                if (const auto* attr = attributeContext.getAttribute(name)) {
+                    _second_phase_prefetch_attributes.push_back(attr);
+                }
+            }
+            if (!names.empty()) {
+                trace.addEvent(5, vespalib::make_string("Prefetch %zu of %zu configured attributes in second phase",
+                                                        _second_phase_prefetch_attributes.size(), names.size()));
+            }
+        }
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
         std::string attribute = DegradationAttribute::lookup(rankProperties, _rankSetup.getDegradationAttribute());
         DegradationParams degradationParams = extractDegradationParams(_rankSetup, attribute, rankProperties);

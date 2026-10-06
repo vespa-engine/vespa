@@ -44,8 +44,10 @@
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/testclock.h>
 
+#include <algorithm>
 #include <initializer_list>
 #include <map>
+#include <mutex>
 #include <string_view>
 
 #include <vespa/log/log.h>
@@ -78,10 +80,39 @@ using vespalib::eval::TensorSpec;
 
 constexpr uint32_t NUM_DOCS = 1000;
 
+/*
+ * Attribute that records the documents it is asked to prefetch.
+ */
+class PrefetchProbeAttribute : public SingleInt32ExtAttribute {
+    mutable std::mutex                         _lock;
+    mutable std::vector<std::vector<uint32_t>> _calls;
+
+public:
+    using SingleInt32ExtAttribute::SingleInt32ExtAttribute;
+    PrefetchResult prefetch_docs(std::span<const DocId> docids) const override {
+        std::lock_guard guard(_lock);
+        _calls.emplace_back(docids.begin(), docids.end());
+        return {};
+    }
+    // Returns the prefetched docids from all calls (sorted), and forgets them.
+    std::vector<uint32_t> take_prefetched() {
+        std::lock_guard       guard(_lock);
+        std::vector<uint32_t> result;
+        for (const auto& call : _calls) {
+            EXPECT_TRUE(std::is_sorted(call.begin(), call.end()));
+            result.insert(result.end(), call.begin(), call.end());
+        }
+        _calls.clear();
+        std::sort(result.begin(), result.end());
+        return result;
+    }
+};
+
 class MatchingTestSharedState {
     std::unique_ptr<vespalib::SimpleThreadBundle> _thread_bundle;
     std::unique_ptr<MockAttributeContext>         _attribute_context;
     std::unique_ptr<DocumentMetaStore>            _meta_store;
+    PrefetchProbeAttribute*                       _a2;
 
 public:
     static constexpr size_t max_threads = 75;
@@ -90,9 +121,14 @@ public:
     vespalib::ThreadBundle& thread_bundle();
     IAttributeContext& attribute_context();
     const proton::IDocumentMetaStore& meta_store();
+    PrefetchProbeAttribute& a2() {
+        attribute_context();
+        return *_a2;
+    }
 };
 
-MatchingTestSharedState::MatchingTestSharedState() : _thread_bundle(), _attribute_context(), _meta_store() {
+MatchingTestSharedState::MatchingTestSharedState()
+    : _thread_bundle(), _attribute_context(), _meta_store(), _a2(nullptr) {
 }
 
 MatchingTestSharedState::~MatchingTestSharedState() = default;
@@ -119,13 +155,14 @@ IAttributeContext& MatchingTestSharedState::attribute_context() {
             _attribute_context->add(attr);
         }
         {
-            auto                   attr = std::make_shared<SingleInt32ExtAttribute>("a2");
+            auto                   attr = std::make_shared<PrefetchProbeAttribute>("a2");
             AttributeVector::DocId docid(0);
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
                 attr->add(i * 2, docid); // value = docid * 2
             }
             assert(docid + 1 == NUM_DOCS);
+            _a2 = attr.get();
             _attribute_context->add(attr);
         }
         {
@@ -1066,6 +1103,79 @@ TEST_F(MatchingTest, require_that_reranking_is_performed_with_multi_threaded_mat
         EXPECT_EQ(500.0, reply->hits[4].metric);
         EXPECT_GT(world.matchingStats.matchTimeAvg(), 0.0000001);
         EXPECT_GT(world.matchingStats.rerankTimeAvg(), 0.0000001);
+    }
+}
+
+TEST_F(MatchingTest, require_that_attributes_are_prefetched_for_reranked_hits_when_configured) {
+    using DocIds = std::vector<uint32_t>;
+    auto& a2 = shared_state().a2();
+    a2.take_prefetched();
+    for (size_t threads : {1, 2, 5}) {
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.setupSecondPhaseRanking();
+        world.config.add(indexproperties::rank::SecondPhasePrefetchAttributes::NAME, "a2,not_an_attribute");
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        SearchReply::UP   reply = world.performSearch(*request, threads);
+        EXPECT_EQ(3u, world.matchingStats.docsReRanked());
+        ASSERT_EQ(9u, reply->hits.size());
+        EXPECT_EQ(1800.0, reply->hits[0].metric);
+        EXPECT_EQ(DocIds({700, 800, 900}), a2.take_prefetched());
+    }
+}
+
+TEST_F(MatchingTest, require_that_attributes_are_not_prefetched_unless_configured) {
+    using DocIds = std::vector<uint32_t>;
+    auto& a2 = shared_state().a2();
+    a2.take_prefetched();
+    {
+        // second phase without prefetch
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.setupSecondPhaseRanking();
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        SearchReply::UP   reply = world.performSearch(*request, 1);
+        EXPECT_EQ(3u, world.matchingStats.docsReRanked());
+        EXPECT_EQ(DocIds(), a2.take_prefetched());
+    }
+    {
+        // prefetch disabled by an empty query override
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.setupSecondPhaseRanking();
+        world.config.add(indexproperties::rank::SecondPhasePrefetchAttributes::NAME, "a2");
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        request->propertiesMap.lookupCreate(MapNames::RANK)
+            .add(indexproperties::rank::SecondPhasePrefetchAttributes::NAME, "");
+        SearchReply::UP reply = world.performSearch(*request, 1);
+        EXPECT_EQ(3u, world.matchingStats.docsReRanked());
+        EXPECT_EQ(DocIds(), a2.take_prefetched());
+    }
+    {
+        // prefetch enabled by a query override
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.setupSecondPhaseRanking();
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        request->propertiesMap.lookupCreate(MapNames::RANK)
+            .add(indexproperties::rank::SecondPhasePrefetchAttributes::NAME, "a2");
+        SearchReply::UP reply = world.performSearch(*request, 1);
+        EXPECT_EQ(DocIds({700, 800, 900}), a2.take_prefetched());
+    }
+    {
+        // no second phase
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.config.add(indexproperties::rank::SecondPhasePrefetchAttributes::NAME, "a2");
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        SearchReply::UP   reply = world.performSearch(*request, 1);
+        EXPECT_EQ(0u, world.matchingStats.docsReRanked());
+        EXPECT_EQ(DocIds(), a2.take_prefetched());
     }
 }
 
