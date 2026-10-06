@@ -46,7 +46,7 @@ org.apache.maven:maven-repository-metadata:${maven-core.vespa.version}
 org.apache.maven:maven-resolver-provider:${maven-core.vespa.version}
 org.apache.maven:maven-settings-builder:${maven-core.vespa.version}
 org.apache.maven:maven-settings:${maven-core.vespa.version}
-org.apache.maven:maven-xml:${maven-api.vespa.version}
+org.apache.maven:maven-xml:4.0.0-rc-6
 org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
 org.codehaus.plexus:plexus-archiver:${plexus-archiver.vespa.version}
 org.codehaus.plexus:plexus-cipher:2.0
