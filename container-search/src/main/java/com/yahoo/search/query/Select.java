@@ -114,7 +114,15 @@ public class Select implements Cloneable {
         this.groupingPending = true;
     }
 
-    private void parsePendingGrouping() {
+    /**
+     * Parses the grouping string set by {@link #setGroupingString(String)} into grouping requests, if this has not
+     * already been done. Parameter references (@name) in the grouping are resolved against the properties of the
+     * parent query at the time this is called, so this should be called once all properties of the query are set.
+     * {@link Query} does this at the end of construction from a request. Accessing the grouping also calls this.
+     *
+     * @throws IllegalArgumentException if the grouping cannot be parsed, or references a parameter which is not set
+     */
+    public void resolveGrouping() {
         if ( ! groupingPending) {
             return;
         }
@@ -175,7 +183,7 @@ public class Select implements Cloneable {
      * operations which will be performed by this query.
      */
     public List<GroupingRequest> getGrouping() {
-        parsePendingGrouping();
+        resolveGrouping();
         return groupingRequests;
     }
 
@@ -186,12 +194,12 @@ public class Select implements Cloneable {
 
     @Override
     public Object clone() {
-        parsePendingGrouping();
+        resolveGrouping();
         return new Select(where, grouping, groupingExpressionString, parent, groupingRequests, fields);
     }
 
     public Select cloneFor(Query parent)  {
-        parsePendingGrouping();
+        resolveGrouping();
         return new Select(where, grouping, groupingExpressionString, parent, groupingRequests, fields);
     }
 

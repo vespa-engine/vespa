@@ -6092,6 +6092,7 @@
       "public java.lang.String getGroupingExpressionString()",
       "public java.lang.String getGroupingString()",
       "public java.util.List getGrouping()",
+      "public void resolveGrouping()",
       "public java.lang.String toString()",
       "public java.lang.Object clone()",
       "public com.yahoo.search.query.Select cloneFor(com.yahoo.search.Query)"
