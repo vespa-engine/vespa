@@ -31,15 +31,13 @@ public:
 
 class WeakAnd : public QueryNodeMixin<WeakAnd, Intermediate> {
     uint32_t    _targetNumHits;
-    std::string _view;
 
 public:
     virtual ~WeakAnd() = 0;
 
-    WeakAnd(uint32_t targetNumHits, std::string view) : _targetNumHits(targetNumHits), _view(std::move(view)) {}
+    WeakAnd(uint32_t targetNumHits) : _targetNumHits(targetNumHits) {}
 
     uint32_t getTargetNumHits() const { return _targetNumHits; }
-    const std::string& getView() const { return _view; }
 };
 
 //-----------------------------------------------------------------------------

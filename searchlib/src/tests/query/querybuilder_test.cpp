@@ -96,7 +96,7 @@ template <class NodeTypes> Node::UP createQueryTree() {
         }
         builder.addRangeTerm(range, view[9], id[9], weight[9]);
         builder.addLocationTerm(location, view[10], id[10], weight[10]);
-        builder.addWeakAnd(2, 123, view[0]);
+        builder.addWeakAnd(2, 123);
         {
             builder.addStringTerm(str[4], view[4], id[4], weight[4]);
             builder.addStringTerm(str[5], view[5], id[5], weight[5]);
@@ -422,7 +422,7 @@ struct MyONear : ONear {
 };
 
 struct MyWeakAnd : WeakAnd {
-    MyWeakAnd(uint32_t minHits, const string& v) : WeakAnd(minHits, v) {}
+    MyWeakAnd(uint32_t minHits) : WeakAnd(minHits) {}
     ~MyWeakAnd() override;
 };
 

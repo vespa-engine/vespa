@@ -136,7 +136,7 @@ class QueryNodeConverter : public QueryVisitor {
     void visit(Or& node) override { createIntermediate(node, ParseItem::ITEM_OR); }
 
     void visit(WeakAnd& node) override {
-        createIntermediateX(node, ParseItem::ITEM_WEAK_AND, node.getTargetNumHits(), node.getView());
+        createIntermediateX(node, ParseItem::ITEM_WEAK_AND, node.getTargetNumHits(), "");
     }
 
     void visit(Equiv& node) override { createIntermediate(node, ParseItem::ITEM_EQUIV); }

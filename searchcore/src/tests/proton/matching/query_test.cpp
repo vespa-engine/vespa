@@ -811,7 +811,7 @@ TEST(QueryTest, requireThatNoDocsGiveZeroDocFrequency) {
 TEST(QueryTest, requireThatWeakAndBlueprintsAreCreatedCorrectly) {
     using search::queryeval::WeakAndBlueprint;
 
-    ProtonWeakAnd wand(123, "view");
+    ProtonWeakAnd wand(123);
     wand.append(Node::UP(new ProtonStringTerm("foo", field, 0, Weight(3))));
     wand.append(Node::UP(new ProtonStringTerm("bar", field, 0, Weight(7))));
 
@@ -1221,7 +1221,7 @@ TEST(QueryTest, normal_term_doesnt_need_ranking) {
 
 TEST(QueryTest, weak_and_term_needs_ranking) {
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addWeakAnd(1, 10, "f1");
+    builder.addWeakAnd(1, 10);
     builder.addStringTerm("xyz", "f1", 1, Weight(1));
     EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
 }
