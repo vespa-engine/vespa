@@ -160,7 +160,7 @@ org.apache.maven:maven-profile:2.2.1
 org.apache.maven:maven-project:2.2.1
 org.apache.maven:maven-repository-metadata:${maven-core.vespa.version}
 org.apache.maven:maven-settings:${maven-core.vespa.version}
-org.apache.maven:maven-xml:${maven-api.vespa.version}
+org.apache.maven:maven-xml:4.0.0-rc-6
 org.apache.opennlp:opennlp-tools:${opennlp.vespa.version}
 org.apache.velocity:velocity-engine-core:${velocity.vespa.version}
 org.apache.yetus:audience-annotations:0.12.0
