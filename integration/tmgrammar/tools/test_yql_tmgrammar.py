@@ -21,8 +21,53 @@ import re
 import sys
 
 from generate_yql_tmgrammar import (GROUPING_CCC, GROUPING_CFG, OUTPUT, YQL_CCC, YQL_CFG, parse_class_config,
-                                    parse_yql_tokens, production_tokens)
-from generate_tmgrammar import parse_ccc_tokens
+                                    parse_grouping_tokens, parse_yql_tokens, production_tokens)
+
+GROUPING = "select * from doc where true | "
+
+# Query → [(text, expected scope without ".yql", occurrence of the text if not the first)]
+SPOT_CHECKS = {
+    "select id from music where ({targetHits: 10}nearestNeighbor(embedding, q)) and year >= 2000 order by year desc": [
+        ("select", "keyword.control"), ("music", "variable.other"), ("targetHits", "variable.other"),
+        ("10", "constant.numeric"), ("nearestNeighbor", "entity.name.function"), ("and", "keyword.operator"),
+        (">=", "keyword.operator"), ("order by", "keyword.control")],
+    'SELECT * FROM sources * WHERE title CONTAINS "a"': [
+        ("SELECT", "keyword.control"), ("CONTAINS", "keyword.control")],
+    "select * from doc where a contains @query": [("@", "entity.name.function"), ("query", "variable.other")],
+    "select * from doc where a != 1 and b not in (1, 2)": [("!=", "keyword.operator"), ("not in", "keyword.operator")],
+    "select * from doc where title contains 'x' // comment": [(" comment", "comment.line.double-slash")],
+    # Comments start with // or #, as in the query parser
+    "select foo from bar where # false | x\n true": [
+        (" false | x", "comment.line.number-sign"), ("true", "support.type")],
+    # Unary minus before a name or call, and names containing "-"
+    "select * from doc where -price < 0 and !(-userQuery()) and my-field contains 'x' and from-date > 1": [
+        ("price", "variable.other"), ("userQuery", "entity.name.function"), ("my-field", "variable.other"),
+        ("from-date", "variable.other")],
+    # Grouping, and a query after it, which is YQL again
+    GROUPING + "all(group(artist) max(5) each(output(count(), avg(math.sqrt(price)))))\nselect * from doc where a": [
+        ("true", "support.type"), ("all", "keyword.control"), ("group", "entity.name.function"),
+        ("each", "keyword.control"), ("count", "entity.name.function"), ("math", "support.class"),
+        ("sqrt", "entity.name.function"), ("select", "keyword.control", 2)],
+    # Grouping has # comments, "-" as an operator, numbers right after operators, and its own number syntax
+    GROUPING + "all(group(a) # it's a comment": [(" it's a comment", "comment.line.number-sign")],
+    GROUPING + "all(group(1-2) order(-count()) each(output(sum(foo-bar))))": [
+        ("2", "constant.numeric"), ("count", "entity.name.function"), ("foo", "variable.other"),
+        ("-", "keyword.operator", 3)],
+    GROUPING + "all(group(a) max(1.5f) precision(2.0D) each(output(sum(0x1F))))": [
+        ("1.5f", "constant.numeric"), ("2.0D", "constant.numeric"), ("0x1F", "constant.numeric")],
+    # A line starting with select inside grouping parentheses does not end grouping
+    GROUPING + "all(group(\n  select\n) # comment\n each(output(count())))": [
+        ("select", "variable.other", 2), (" comment", "comment.line.number-sign"), ("each", "keyword.control")],
+    # Bucket ranges may mix delimiters, and the query after them is YQL again. Kept apart, since a range
+    # left open and one closed too early would cancel out.
+    GROUPING + "all(group(predefined(foo, bucket[1, 2>, bucket(3, 4>)) each(output(count())))\nselect * from doc": [
+        ("select", "keyword.control", 2)],
+    GROUPING + "all(group(predefined(foo, bucket<0, 100))) each(output(count())))\nselect * from doc": [
+        ("each", "keyword.control"), ("select", "keyword.control", 2)],
+    # Query parameters in grouping
+    GROUPING + "all(group(f) filter(regex(@pattern, f)) each(output(sum(@my-param_1))))": [
+        ("@", "entity.name.function"), ("pattern", "variable.other"), ("my-param_1", "variable.other")],
+}
 
 
 # ---------------------------------------------------------------------------
@@ -33,9 +78,8 @@ def _rules(grammar: dict, patterns: list) -> list:
     out = []
     for p in patterns:
         if "include" in p:
-            entry = grammar["repository"][p["include"].lstrip("#")]
-            out.extend(_rules(grammar, entry["patterns"]) if "patterns" in entry and "begin" not in entry else [entry])
-        elif "patterns" in p and "match" not in p and "begin" not in p:
+            p = grammar["repository"][p["include"].lstrip("#")]
+        if "patterns" in p and "match" not in p and "begin" not in p:
             out.extend(_rules(grammar, p["patterns"]))
         else:
             out.append(p)
@@ -44,19 +88,16 @@ def _rules(grammar: dict, patterns: list) -> list:
 
 def tokenize(grammar: dict, text: str) -> list[tuple[str, str | None]]:
     """(text, innermost scope) for each piece; text no rule matches gets the enclosing rule's name."""
-    result = []
-    stack = []  # open begin/end rules
+    result, stack = [], []  # stack: open begin/end rules
 
     def emit(m, name, captures):
         pos = m.start()
         for idx, cap in sorted(captures.items(), key=lambda c: m.start(int(c[0]))):
             s, e = m.span(int(idx))
-            if s < pos or s == e:
-                continue
-            if s > pos:
-                result.append((m.string[pos:s], name))
-            result.append((m.string[s:e], cap.get("name") or name))
-            pos = e
+            if s >= pos and s < e:
+                result.extend([(m.string[pos:s], name)] if s > pos else [])
+                result.append((m.string[s:e], cap.get("name") or name))
+                pos = e
         if m.end() > pos:
             result.append((m.string[pos:m.end()], name))
 
@@ -64,40 +105,25 @@ def tokenize(grammar: dict, text: str) -> list[tuple[str, str | None]]:
         pos = 0
         while pos <= len(line):
             enclosing = stack[-1].get("name") if stack else None
-            rules = _rules(grammar, stack[-1].get("patterns", []) if stack else grammar["patterns"])
-            candidates = []
-            if stack and (m := re.compile(stack[-1]["end"]).search(line, pos)):
-                candidates.append((m.start(), 0, "end", stack[-1], m))
-            for i, rule in enumerate(rules):
+            candidates = [(m.start(), 0, "end", stack[-1], m)
+                          for m in [stack and re.compile(stack[-1]["end"]).search(line, pos)] if m]
+            for i, rule in enumerate(_rules(grammar, stack[-1].get("patterns", []) if stack else grammar["patterns"])):
                 if m := re.compile(rule.get("match") or rule["begin"]).search(line, pos):
                     candidates.append((m.start(), i + 1, "begin" if "begin" in rule else "match", rule, m))
             if not candidates:
-                if pos < len(line):
-                    result.append((line[pos:], enclosing))
+                result.extend([(line[pos:], enclosing)] if pos < len(line) else [])
                 break
-            start, _, kind, rule, m = min(candidates, key=lambda c: (c[0], c[1]))
+            start, _, kind, rule, m = min(candidates, key=lambda c: c[:2])
             if start > pos:
                 result.append((line[pos:start], enclosing))
             if kind == "end":
                 emit(m, enclosing, rule.get("endCaptures", {}))
                 stack.pop()
-            elif kind == "begin":
-                emit(m, rule.get("name") or enclosing, rule.get("beginCaptures", {}))
-                stack.append(rule)
             else:
-                emit(m, rule.get("name") or enclosing, rule.get("captures", {}))
+                emit(m, rule.get("name") or enclosing, rule.get("beginCaptures" if kind == "begin" else "captures", {}))
+                stack += [rule] if kind == "begin" else []
             pos = m.end()
     return result
-
-
-def scope_of(grammar: dict, text: str, target: str, occurrence: int = 1) -> str | None:
-    seen = 0
-    for piece, scope in tokenize(grammar, text):
-        if piece == target:
-            seen += 1
-            if seen == occurrence:
-                return scope
-    return "(not found)"
 
 
 # ---------------------------------------------------------------------------
@@ -105,44 +131,35 @@ def scope_of(grammar: dict, text: str, target: str, occurrence: int = 1) -> str 
 # ---------------------------------------------------------------------------
 
 def test_keyword_completeness(grammar: dict) -> tuple[bool, list[str]]:
-    errors = []
     text = json.dumps(grammar)
-    yql_tokens = parse_yql_tokens(YQL_CCC)
-    keywords, yql_map = parse_class_config(YQL_CFG)
-    expected = set(keywords) | {t for cls in yql_map for t in (production_tokens(YQL_CCC, cls) or [cls])}
-    for name in sorted(expected):
-        literal = yql_tokens.get(name)
-        if literal and re.fullmatch(r"[a-z ]+", literal) and re.escape(literal).replace(r"\ ", r"\\s+") not in text:
-            errors.append(f"  yql/{name}: {literal!r} classified in Java but missing from grammar")
-    grouping = {t.name: t.literal for t in parse_ccc_tokens(GROUPING_CCC, "grouping")}
-    _, grouping_map = parse_class_config(GROUPING_CFG)
-    for name in sorted(grouping_map):
-        literal = grouping.get(name)
-        if literal and literal.isalpha() and literal not in text:
-            errors.append(f"  grouping/{name}: {literal!r} classified in Java but missing from grammar")
+    yql_tokens, grouping_tokens = parse_yql_tokens(YQL_CCC), parse_grouping_tokens(GROUPING_CCC)
+    keywords, yql_map, _ = parse_class_config(YQL_CFG)
+    _, grouping_map, _ = parse_class_config(GROUPING_CFG)
+    yql = {n: yql_tokens.get(n) for n in keywords | {t for c in yql_map for t in production_tokens(YQL_CCC, c) or [c]}}
+    errors = [f"  yql/{n}: {lit!r} classified in Java but missing from grammar" for n, lit in sorted(yql.items())
+              if lit and re.fullmatch(r"[a-z ]+", lit) and re.escape(lit).replace(r"\ ", r"\\s+") not in text]
+    errors += [f"  grouping/{n}: {grouping_tokens[n]!r} classified in Java but missing from grammar"
+               for n in sorted(grouping_map) if grouping_tokens.get(n, "").isalpha() and grouping_tokens[n] not in text]
     return not errors, errors
 
 
 def test_structural_validity(grammar: dict) -> tuple[bool, list[str]]:
-    errors = []
-    for field in ("scopeName", "name", "patterns", "repository"):
-        if field not in grammar:
-            errors.append(f"  Missing required field: {field}")
+    required = ("scopeName", "name", "patterns", "repository")
+    errors = [f"  Missing required field: {f}" for f in required if f not in grammar]
 
     def walk(node):
-        if isinstance(node, dict):
-            if "include" in node and node["include"].lstrip("#") not in grammar.get("repository", {}):
+        if isinstance(node, list):
+            for value in node:
+                walk(value)
+        elif isinstance(node, dict):
+            if node.get("include", "#").lstrip("#") not in {"", *grammar.get("repository", {})}:
                 errors.append(f"  Unresolved include: {node['include']}")
             for key in ("match", "begin", "end"):
-                if key in node:
-                    try:
-                        re.compile(node[key])
-                    except re.error as e:
-                        errors.append(f"  Invalid regex in {key}: {node[key]!r}: {e}")
+                try:
+                    re.compile(node.get(key, ""))
+                except re.error as e:
+                    errors.append(f"  Invalid regex in {key}: {node[key]!r}: {e}")
             for value in node.values():
-                walk(value)
-        elif isinstance(node, list):
-            for value in node:
                 walk(value)
 
     walk(grammar)
@@ -150,90 +167,30 @@ def test_structural_validity(grammar: dict) -> tuple[bool, list[str]]:
 
 
 def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
-    query = 'select id from music where ({targetHits: 10}nearestNeighbor(embedding, q)) and year >= 2000 order by year desc'
-    grouping = 'select * from music where true | all(group(artist) max(5) each(output(count(), avg(math.sqrt(price)))))'
-    checks = [
-        (query, "select", 1, "keyword.control.yql"),
-        (query, "music", 1, "variable.other.yql"),
-        (query, "targetHits", 1, "variable.other.yql"),
-        (query, "10", 1, "constant.numeric.yql"),
-        (query, "nearestNeighbor", 1, "entity.name.function.yql"),
-        (query, "and", 1, "keyword.operator.yql"),
-        (query, ">=", 1, "keyword.operator.yql"),
-        (query, "order by", 1, "keyword.control.yql"),
-        ('SELECT * FROM sources * WHERE title CONTAINS "a"', "SELECT", 1, "keyword.control.yql"),
-        ('SELECT * FROM sources * WHERE title CONTAINS "a"', "CONTAINS", 1, "keyword.control.yql"),
-        ('select * from doc where a contains @query', "@", 1, "entity.name.function.yql"),
-        ('select * from doc where a contains @query', "query", 1, "variable.other.yql"),
-        ('select * from doc where a != 1 and b = 2', "!=", 1, "keyword.operator.yql"),
-        ('select * from doc where a not in (1, 2)', "not in", 1, "keyword.operator.yql"),
-        ("select * from doc where title contains 'x' // comment", " comment", 1, "comment.line.double-slash.yql"),
-        (grouping, "true", 1, "support.type.yql"),
-        (grouping, "all", 1, "keyword.control.yql"),
-        (grouping, "group", 1, "entity.name.function.yql"),
-        (grouping, "each", 1, "keyword.control.yql"),
-        (grouping, "count", 1, "entity.name.function.yql"),
-        (grouping, "math", 1, "support.class.yql"),
-        (grouping, "sqrt", 1, "entity.name.function.yql"),
-        # A query after a grouping expression is YQL again
-        (grouping + "\nselect * from doc where a", "select", 2, "keyword.control.yql"),
-        # Grouping has # comments, "-" as an operator, and numbers right after operators
-        ("select * from doc where true | all(group(a) # it's a comment", " it's a comment", 1, "comment.line.number-sign.yql"),
-        ("select * from doc where true | all(group(a) order(-count()))", "count", 1, "entity.name.function.yql"),
-        ("select * from doc where true | all(group(a) each(output(sum(foo-bar))))", "foo", 1, "variable.other.yql"),
-        ("select * from doc where true | all(group(a) each(output(sum(foo-bar))))", "-", 1, "keyword.operator.yql"),
-        ("select * from doc where true | all(group(1-2))", "2", 1, "constant.numeric.yql"),
-        ("select * from doc where true | all(group(a) max(1.5f) precision(2.0D) each(output(sum(0x1F))))", "1.5f", 1, "constant.numeric.yql"),
-        ("select * from doc where true | all(group(a) max(1.5f) precision(2.0D) each(output(sum(0x1F))))", "2.0D", 1, "constant.numeric.yql"),
-        ("select * from doc where true | all(group(a) max(1.5f) precision(2.0D) each(output(sum(0x1F))))", "0x1F", 1, "constant.numeric.yql"),
-        # YQL has # comments, as in the query parser
-        ("select foo from bar where # false | x\n true", " false | x", 1, "comment.line.number-sign.yql"),
-        ("select foo from bar where # false | x\n true", "true", 1, "support.type.yql"),
-        # A line starting with select inside grouping parentheses does not end grouping
-        ("select * from doc where true | all(group(\n  select\n) # comment\n each(output(count())))", "select", 2, "variable.other.yql"),
-        ("select * from doc where true | all(group(\n  select\n) # comment\n each(output(count())))", " comment", 1, "comment.line.number-sign.yql"),
-        ("select * from doc where true | all(group(\n  select\n) # comment\n each(output(count())))", "each", 1, "keyword.control.yql"),
-        # Bucket ranges may mix delimiters, and the query after them is YQL again
-        ("select * from doc where true | all(group(predefined(foo, bucket[1, 2>, bucket(3, 4>)) each(output(count())))\nselect * from doc", "select", 2, "keyword.control.yql"),
-        ("select * from doc where true | all(group(predefined(foo, bucket<0, 100))) each(output(count())))\nselect * from doc", "select", 2, "keyword.control.yql"),
-        ("select * from doc where true | all(group(predefined(foo, bucket<0, 100))) each(output(count())))", "each", 1, "keyword.control.yql"),
-        # Unary minus before a name or call, and names containing "-"
-        ("select * from doc where -price < 0 and !(-userQuery())", "price", 1, "variable.other.yql"),
-        ("select * from doc where -price < 0 and !(-userQuery())", "userQuery", 1, "entity.name.function.yql"),
-        ("select * from doc where my-field contains 'x' and from-date > 1", "my-field", 1, "variable.other.yql"),
-        ("select * from doc where my-field contains 'x' and from-date > 1", "from-date", 1, "variable.other.yql"),
-        # Query parameters in grouping
-        ("select * from doc where true | all(group(f) filter(regex(@pattern, f)) each(output(sum(@my-param_1))))", "pattern", 1, "variable.other.yql"),
-        ("select * from doc where true | all(group(f) filter(regex(@pattern, f)) each(output(sum(@my-param_1))))", "@", 1, "entity.name.function.yql"),
-        ("select * from doc where true | all(group(f) filter(regex(@pattern, f)) each(output(sum(@my-param_1))))", "my-param_1", 1, "variable.other.yql"),
-    ]
     errors = []
-    for text, target, occurrence, expected in checks:
-        actual = scope_of(grammar, text, target, occurrence)
-        if actual != expected:
-            errors.append(f"  {target!r} in {text[:60]!r}: expected {expected}, got {actual}")
+    for query, checks in SPOT_CHECKS.items():
+        scopes = [scope for piece, scope in tokenize(grammar, query)]
+        pieces = [piece for piece, scope in tokenize(grammar, query)]
+        for target, expected, *occurrence in checks:
+            matches = [i for i, piece in enumerate(pieces) if piece == target]
+            n = occurrence[0] if occurrence else 1
+            actual = scopes[matches[n - 1]] if len(matches) >= n else "(not found)"
+            if actual != expected + ".yql":
+                errors.append(f"  {target!r} in {query[:60]!r}: expected {expected}.yql, got {actual}")
     return not errors, errors
 
 
 def main() -> int:
     if not OUTPUT.exists():
-        print(f"FAIL: Grammar file not found: {OUTPUT}")
-        print("      Run: uv run tools/generate_yql_tmgrammar.py")
+        print(f"FAIL: Grammar file not found: {OUTPUT}\n      Run: uv run tools/generate_yql_tmgrammar.py")
         return 1
-
     grammar = json.loads(OUTPUT.read_text())
-
     all_passed = True
-    tests = [
-        ("Test 1: Keyword completeness", test_keyword_completeness),
-        ("Test 2: Structural validity", test_structural_validity),
-        ("Test 3: Scope spot-checks", test_scope_spotchecks),
-    ]
-    for name, test_fn in tests:
-        passed, messages = test_fn(grammar)
-        print(f"{'PASS' if passed else 'FAIL'}: {name}")
-        for msg in messages:
-            print(msg)
+    for name, test in (("Test 1: Keyword completeness", test_keyword_completeness),
+                       ("Test 2: Structural validity", test_structural_validity),
+                       ("Test 3: Scope spot-checks", test_scope_spotchecks)):
+        passed, messages = test(grammar)
+        print(f"{'PASS' if passed else 'FAIL'}: {name}", *messages, sep="\n")
         all_passed = all_passed and passed
     return 0 if all_passed else 1
 
