@@ -242,7 +242,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public int rpcEventsBeforeWakeup() { return flag(Flags.RPC_EVENTS_BEFORE_WAKEUP).value(); }
         @Override public String unknownConfigDefinition() { return flag(PermanentFlags.UNKNOWN_CONFIG_DEFINITION).value(); }
         @Override public boolean sortBlueprintsByCost() { return flag(PermanentFlags.SORT_BLUEPRINTS_BY_COST).value(); }
-        @Override public boolean logserverOtelCol() { return flag(Flags.LOGSERVER_OTELCOL_AGENT).value(); }
         @Override public SharedHosts sharedHosts() { return flag(PermanentFlags.SHARED_HOST).value(); }
         @Override public Architecture adminClusterArchitecture() { return Architecture.valueOf(flag(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE).value()); }
         @Override public double logserverNodeMemory() { return flag(PermanentFlags.LOGSERVER_NODE_MEMORY).value(); }
