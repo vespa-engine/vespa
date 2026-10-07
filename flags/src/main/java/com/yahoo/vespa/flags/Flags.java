@@ -288,7 +288,7 @@ public class Flags {
                                                           String modificationEffect, Codec<T> codec,
                                                           Predicate<T> validator, Dimension... dimensions) {
         TypedUnboundFlagFactory<T, UnboundCodecFlag<T>> factory = (FlagId flagId_, T defaultValue_, FetchVector defaultFetchVector_) ->
-                new UnboundCodecFlag<T>(flagId_, defaultValue_, defaultFetchVector_, codec, validator);
+                new UnboundCodecFlag<T>(flagId_, defaultValue_, defaultFetchVector_, codec.toFlagSerializer(validator));
         return define(factory, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 

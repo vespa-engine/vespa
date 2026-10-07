@@ -2,11 +2,13 @@
 package com.yahoo.vespa.flags.json;
 
 import com.yahoo.text.JSON;
+import com.yahoo.vespa.flags.Codec;
 import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.JsonNodeRawFlag;
 import com.yahoo.vespa.flags.RawFlag;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -16,6 +18,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -477,4 +480,24 @@ public class FlagDataTest {
         }
 
     }
+
+    @Test
+    void validate_names_the_invalid_value_and_the_cause() {
+        FlagData data = FlagData.deserialize("""
+                                             {
+                                                 "id": "lb-inactive-expiry",
+                                                 "rules": [{"value":"PT3D"}]
+                                             }""");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                                                  () -> data.validate(Codec.forDuration.deserializer()));
+        assertEquals("Failed to deserialize value of flag lb-inactive-expiry: Failed to parse 'PT3D' to java.time.Duration: Text cannot be parsed to a Duration",
+                     Exceptions.toMessageString(e));
+
+        FlagData.deserialize("""
+                             {
+                                 "id": "lb-inactive-expiry",
+                                 "rules": [{"value":"P3D"}]
+                             }""").validate(Codec.forDuration.deserializer());
+    }
+
 }
