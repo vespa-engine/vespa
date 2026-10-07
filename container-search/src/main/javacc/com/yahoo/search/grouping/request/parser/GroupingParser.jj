@@ -67,6 +67,18 @@ public class GroupingParser {
         return (int)bits;
     }
 
+    /**
+     * Resolves a parameter used as a list of values, on the same format as a list parameter in YQL.
+     */
+    private List<String> resolveParameterList(String name) throws ParseException {
+        String value = resolveParameter(name);
+        try {
+            return ParameterListParser.stringTokens(value);
+        } catch (IllegalArgumentException e) {
+            throw new ParseException("Input '" + name + "' is not a valid list: " + e.getMessage());
+        }
+    }
+
     private static Number resolveParameterNumber(String name, String value) throws ParseException {
         String str = value.trim();
         try {
@@ -1142,7 +1154,7 @@ InPredicate inPredicate(GroupingOperation grp) :
 {
     <IN> lbrace() exp = exp(grp)
     ( comma() ( ( arg = literalString() { args.add(arg); } ) |
-                ( arg = parameterName() { args.addAll(ParameterListParser.stringTokens(resolveParameter(arg))); } ) ) )+
+                ( arg = parameterName() { args.addAll(resolveParameterList(arg)); } ) ) )+
     rbrace()
     { return new InPredicate(exp, args); }
 }

@@ -20,7 +20,7 @@ public class InPredicate extends FilterExpression {
 
     public InPredicate(GroupingExpression expression, List<String> args) {
         if (args == null || args.isEmpty()) {
-            throw new IllegalArgumentException("InPredicate requires args to contain at least one element.");
+            throw new IllegalArgumentException("In predicate requires at least one argument, but none were provided");
         }
         validateExpression(expression);
         this.expression = expression;

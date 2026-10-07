@@ -677,6 +677,8 @@ public class GroupingParserTestCase {
                 "In predicate cannot be used with an aggregator");
         assertIllegalArgument("all(group(foo) filter(in(foo, sum(bar))) each(output(count())))",
                 "Encountered \" \"(\" \"(\"\" at line 1, column 34.");
+        assertIllegalArgument("all(group(foo) filter(in(foo)) each(output(count())))",
+                "Encountered \" \")\" \")\"\" at line 1, column 29.");
 
         assertAll("labels which are not identifiers are quoted",
                 () -> assertParse("all(group(foo) each(output(count() as(\"my label\"))) as(\"my label\"))"),
@@ -727,6 +729,8 @@ public class GroupingParserTestCase {
                 Map.entry("lo", "1990"),
                 Map.entry("hi", "2012.5"),
                 Map.entry("negative", "-5"),
+                Map.entry("empty", ""),
+                Map.entry("unterminated", "[\"x\", \"y\""),
                 Map.entry("n", "7"),
                 Map.entry("max", "3"),
                 Map.entry("label", "mylabel"),
@@ -784,7 +788,18 @@ public class GroupingParserTestCase {
                         "all(group(foo) filter(in(foo, \"bar\", \"x\", \"y z\", \"w\")) each(output(count())))"),
                 () -> assertParseWithParameters(parameters,
                         "all(group(foo) filter(in(foo, @array)) each(output(count())))",
-                        "all(group(foo) filter(in(foo, \"x\", \"y\")) each(output(count())))"));
+                        "all(group(foo) filter(in(foo, \"x\", \"y\")) each(output(count())))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) filter(in(foo, \"bar\", @empty, @array)) each(output(count())))",
+                        "all(group(foo) filter(in(foo, \"bar\", \"x\", \"y\")) each(output(count())))"));
+        assertEquals("Input 'unterminated' is not a valid list: Expected ']' at position 8 but reached the end",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) filter(in(foo, @unterminated)) each(output(count())))",
+                                                                     parameters::get)).getMessage());
+        assertEquals("In predicate requires at least one argument, but none were provided",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) filter(in(foo, @empty)) each(output(count())))",
+                                                                     parameters::get)).getMessage());
 
         assertEquals("Input 'missing' is not set",
                      assertThrows(IllegalArgumentException.class,
