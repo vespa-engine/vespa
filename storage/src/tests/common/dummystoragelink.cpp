@@ -122,12 +122,14 @@ void DummyStorageLink::waitForMessage(const api::MessageType& type, int timeout)
     std::unique_lock                            lock(_waitMonitor);
     while (true) {
         for (uint32_t i = 0; i < _commands.size(); ++i) {
-            if (_commands[i]->getType() == type)
+            if (_commands[i]->getType() == type) {
                 return;
+            }
         }
         for (uint32_t i = 0; i < _replies.size(); ++i) {
-            if (_replies[i]->getType() == type)
+            if (_replies[i]->getType() == type) {
                 return;
+            }
         }
         if (timeout != 0 && clock.getMonotonicTime() > endTime) {
             std::ostringstream ost;

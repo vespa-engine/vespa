@@ -48,8 +48,9 @@ Trinary ClusterState::shouldBeReady(const Bucket& b) const {
     _distribution->getIdealNodes(lib::NodeType::STORAGE, *_state, b.getBucketId(), idealNodes, "uim",
                                  _distribution->getReadyCopies());
     for (uint16_t node : idealNodes) {
-        if (node == _nodeIndex)
+        if (node == _nodeIndex) {
             return Trinary::True;
+        }
     }
     return Trinary::False;
 }

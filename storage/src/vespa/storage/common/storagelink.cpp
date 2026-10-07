@@ -219,15 +219,17 @@ void StorageLink::sendUp(const std::shared_ptr<StorageMessage>& msg) {
 
 void StorageLink::printChain(std::ostream& out, std::string indent) const {
     out << indent << "StorageChain(" << size();
-    if (!isTop())
+    if (!isTop()) {
         out << ", not top";
+    }
     out << ")";
     const StorageLink* lastlink = _up;
     for (const StorageLink* link = this; link != nullptr; link = link->_down.get()) {
         out << "\n";
         link->print(out, false, indent + "  ");
-        if (link->_up != lastlink)
+        if (link->_up != lastlink) {
             out << ", broken linkage";
+        }
         lastlink = link;
     }
 }

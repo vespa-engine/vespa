@@ -67,10 +67,12 @@ public:
             bool operator()(EntryPtr a, EntryPtr b) const noexcept {
                 const auto& [keyA, entryA] = *a;
                 const auto& [keyB, entryB] = *b;
-                if (cmp(entryA, entryB))
+                if (cmp(entryA, entryB)) {
                     return true;
-                if (cmp(entryB, entryA))
+                }
+                if (cmp(entryB, entryA)) {
                     return false;
+                }
                 return keyA < keyB;
             }
             template <typename T> bool operator()(EntryPtr a, const T& b) const noexcept {

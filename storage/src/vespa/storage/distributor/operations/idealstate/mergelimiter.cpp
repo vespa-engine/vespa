@@ -97,8 +97,9 @@ public:
         return trusted;
     }
     bool extractNext(MergeMetadata& data, uint32_t& last) {
-        if (_groups.empty())
+        if (_groups.empty()) {
             return false;
+        }
         if (++last >= _groups.size()) {
             last = 0;
         }
@@ -147,16 +148,18 @@ void addNodes(uint32_t max, Statistics& stats, MergeLimiter::NodeArray& result) 
     uint32_t last = -1;
     for (uint32_t i = 0; i < max; ++i) {
         MergeMetadata data;
-        if (!stats.extractNext(data, last))
+        if (!stats.extractNext(data, last)) {
             return;
+        }
         result.push_back(data);
     }
 }
 
 struct SourceOnlyOrder {
     bool operator()(const MergeMetadata& m1, const MergeMetadata& m2) {
-        if (m1._sourceOnly == m2._sourceOnly)
+        if (m1._sourceOnly == m2._sourceOnly) {
             return false;
+        }
         return m2._sourceOnly;
     }
 };

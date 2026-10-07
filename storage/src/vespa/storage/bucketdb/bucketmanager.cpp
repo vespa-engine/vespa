@@ -472,8 +472,9 @@ void BucketManager::leaveQueueProtectedSection(ScopedQueueDispatchGuard& queueGu
 }
 
 bool BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpace, BucketInfoRequestList& reqs) {
-    if (reqs.empty())
+    if (reqs.empty()) {
         return false;
+    }
 
     ScopedQueueDispatchGuard queueGuard(*this);
 

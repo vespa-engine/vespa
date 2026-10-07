@@ -228,8 +228,9 @@ namespace {
  */
 bool applyDiffNeedLocalData(const std::vector<api::ApplyBucketDiffCommand::Entry>& diff, uint8_t nodeIndex,
                             bool forwards) {
-    if (!forwards && nodeIndex == 0)
+    if (!forwards && nodeIndex == 0) {
         return false;
+    }
     uint32_t result = 1 << nodeIndex;
     uint32_t mask = 3 << (forwards ? nodeIndex : nodeIndex - 1);
     for (const auto& e : diff) {
@@ -504,8 +505,9 @@ void MergeHandler::applyDiffLocally(const spi::Bucket& bucket, std::vector<api::
         }
         if ((e._entry._hasMask & nodeMask) != 0) {
             ++i;
-            if (!e.filled())
+            if (!e.filled()) {
                 continue;
+            }
             notNeededByteCount += e._headerBlob.size() + e._bodyBlob.size();
             continue;
         }
@@ -548,8 +550,9 @@ void MergeHandler::applyDiffLocally(const spi::Bucket& bucket, std::vector<api::
     for (; i < diff.size(); ++i) {
         api::ApplyBucketDiffCommand::Entry& e(diff[i]);
         if ((e._entry._hasMask & nodeMask) != 0) {
-            if (!e.filled())
+            if (!e.filled()) {
                 continue;
+            }
             notNeededByteCount += e._headerBlob.size() + e._bodyBlob.size();
             continue;
         }
@@ -879,8 +882,9 @@ namespace {
 
 uint8_t findOwnIndex(const std::vector<api::MergeBucketCommand::Node>& nodeList, uint16_t us) {
     for (uint32_t i = 0, n = nodeList.size(); i < n; ++i) {
-        if (nodeList[i].index == us)
+        if (nodeList[i].index == us) {
             return i;
+        }
     }
     throw vespalib::IllegalStateException("Got GetBucketDiff cmd on node not in nodelist in command", VESPA_STRLOC);
 }

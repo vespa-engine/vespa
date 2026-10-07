@@ -25,10 +25,12 @@ StorageCommand::~StorageCommand() = default;
 
 void StorageCommand::print(std::ostream& out, bool, const std::string&) const {
     out << "StorageCommand(" << getType().getName();
-    if (getPriority() != NORMAL)
+    if (getPriority() != NORMAL) {
         out << ", priority = " << static_cast<int>(getPriority());
-    if (_sourceIndex != 0xFFFF)
+    }
+    if (_sourceIndex != 0xFFFF) {
         out << ", source = " << _sourceIndex;
+    }
     out << ", timeout = " << vespalib::count_ms(_timeout) << " ms";
     out << ")";
 }

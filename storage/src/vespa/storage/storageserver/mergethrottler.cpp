@@ -162,8 +162,9 @@ uint16_t MergeThrottler::MergeNodeSequence::getNextNodeInChain() const noexcept 
 }
 
 bool MergeThrottler::MergeNodeSequence::isChainCompleted() const noexcept {
-    if (_cmd.getChain().size() != _sortedNodes.size())
+    if (_cmd.getChain().size() != _sortedNodes.size()) {
         return false;
+    }
 
     if (_use_unordered_forwarding) {
         return true; // Expect chain to be correct if size matches node sequence size. TODO can't we always do this?
@@ -1135,8 +1136,9 @@ void MergeThrottler::handleOutdatedMerges(const api::SetSystemStateCommand& cmd)
     std::unique_lock      guard(_messageLock);
     ThreadRendezvousGuard rzGuard(*this, guard, _messageCond);
 
-    if (_closing)
+    if (_closing) {
         return; // Shutting down anyway.
+    }
 
     // No other code than this function and onFlush() should ever take both the
     // message monitor and state lock at the same time, and onFlush() should

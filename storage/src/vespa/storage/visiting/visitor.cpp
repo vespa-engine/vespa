@@ -183,8 +183,9 @@ Visitor::~Visitor() {
 
 void Visitor::sendMessage(documentapi::DocumentMessage::UP cmd) {
     assert(cmd);
-    if (!isRunning())
+    if (!isRunning()) {
         return;
+    }
     cmd->setRoute(*_dataDestination);
 
     cmd->setPriority(_documentPriority);
@@ -234,8 +235,9 @@ void Visitor::sendDocumentApiMessage(VisitorTarget::MessageMeta& msgMeta) {
 
 void Visitor::sendInfoMessage(documentapi::VisitorInfoMessage::UP cmd) {
     assert(cmd);
-    if (!isRunning())
+    if (!isRunning()) {
         return;
+    }
 
     if (!_controlDestination->toString().empty()) {
         cmd->setRoute(*_controlDestination);
@@ -476,8 +478,9 @@ void Visitor::attach(std::shared_ptr<api::CreateVisitorCommand> initiatingCmd, c
     // In case there was no messages to resend we need to call
     // continueVisitor to provoke it to resume.
     for (uint32_t i = 0; i < _visitorOptions._maxParallelOneBucket; ++i) {
-        if (!continueVisitor())
+        if (!continueVisitor()) {
             return;
+        }
     }
 }
 

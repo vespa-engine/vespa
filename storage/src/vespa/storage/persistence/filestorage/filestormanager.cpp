@@ -716,8 +716,9 @@ void FileStorManager::sendReply(const std::shared_ptr<api::StorageReply>& reply)
     if (reply->getType() == api::MessageType::INTERNAL_REPLY) {
         std::shared_ptr<api::InternalReply> rep(std::dynamic_pointer_cast<api::InternalReply>(reply));
         assert(rep.get());
-        if (onInternalReply(rep))
+        if (onInternalReply(rep)) {
             return;
+        }
     }
 
     // Currently we need to dispatch due to replies sent by remapQueue
@@ -732,8 +733,9 @@ void FileStorManager::sendReplyDirectly(const std::shared_ptr<api::StorageReply>
     if (reply->getType() == api::MessageType::INTERNAL_REPLY) {
         std::shared_ptr<api::InternalReply> rep(std::dynamic_pointer_cast<api::InternalReply>(reply));
         assert(rep);
-        if (onInternalReply(rep))
+        if (onInternalReply(rep)) {
             return;
+        }
     }
     sendUp(reply);
 }
