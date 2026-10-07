@@ -123,8 +123,9 @@ void SearchableFeedView::performIndexRemove(SerialNum serialNum, const LidVector
 
 void SearchableFeedView::removeIndexedFields(SerialNum serialNum, const LidVector& lidsToRemove,
                                              const OnWriteDoneType& onWriteDone) {
-    if (!hasIndexedFields())
+    if (!hasIndexedFields()) {
         return;
+    }
 
     _writeService.index().execute(makeLambdaTask([this, serialNum, lidsToRemove, onWriteDone]() {
         performIndexRemove(serialNum, lidsToRemove, onWriteDone);

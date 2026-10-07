@@ -39,8 +39,9 @@ DocStoreValidator::DocStoreValidator(IDocumentMetaStore&                        
 DocStoreValidator::~DocStoreValidator() = default;
 
 void DocStoreValidator::visit(uint32_t lid, const std::shared_ptr<document::Document>& doc, size_t) {
-    if (lid == 0 || lid >= _docIdLimit)
+    if (lid == 0 || lid >= _docIdLimit) {
         return;
+    }
     ++_visitCount;
     if (!_dms.validLid(lid)) {
         _orphans->setBit(lid);
@@ -73,8 +74,9 @@ void DocStoreValidator::visit(uint32_t lid, const std::shared_ptr<document::Docu
 }
 
 void DocStoreValidator::visit(uint32_t lid) {
-    if (lid == 0 || lid >= _docIdLimit)
+    if (lid == 0 || lid >= _docIdLimit) {
         return;
+    }
     ++_visitEmptyCount;
     if (!_dms.validLid(lid)) {
         _orphans->clearBit(lid);

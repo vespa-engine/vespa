@@ -111,8 +111,9 @@ void ProtonConfigFetcher::fetchConfigs() {
     bool configured = false;
     while (!configured) {
         ConfigSnapshot bootstrapSnapshot = _retriever.getBootstrapConfigs(5000ms);
-        if (_retriever.isClosed())
+        if (_retriever.isClosed()) {
             return;
+        }
         LOG(debug, "Fetching snapshot");
         if (!bootstrapSnapshot.empty()) {
             _bootstrapConfigManager.update(bootstrapSnapshot);
@@ -159,8 +160,9 @@ int64_t ProtonConfigFetcher::getGeneration() const {
 void ProtonConfigFetcher::start() {
     fetchConfigs();
     lock_guard guard(_mutex);
-    if (_running)
+    if (_running) {
         return;
+    }
     _running = true;
     _thread = std::thread([this]() { run(); });
 }

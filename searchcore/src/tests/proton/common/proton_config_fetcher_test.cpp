@@ -195,8 +195,9 @@ struct ProtonConfigOwner : public proton::IProtonConfigurer {
     bool waitUntilConfigured(vespalib::duration timeout) const {
         vespalib::Timer timer;
         while (timer.elapsed() < timeout) {
-            if (getConfigured())
+            if (getConfigured()) {
                 return true;
+            }
             std::this_thread::sleep_for(100ms);
         }
         return getConfigured();

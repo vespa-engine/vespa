@@ -669,8 +669,9 @@ void PersistenceEngine::destroyIterators() {
         IteratorId id;
         {
             std::lock_guard<std::mutex> guard(_iterators_lock);
-            if (_iterators.empty())
+            if (_iterators.empty()) {
                 break;
+            }
             id = _iterators.begin()->first;
         }
         Result res(destroyIterator(id));
@@ -698,8 +699,9 @@ PersistenceEngine::ClusterState::SP PersistenceEngine::savedClusterState(BucketS
 
 void PersistenceEngine::propagateSavedClusterState(BucketSpace bucketSpace, IPersistenceHandler& handler) {
     ClusterState::SP clusterState(savedClusterState(bucketSpace));
-    if (!clusterState)
+    if (!clusterState) {
         return;
+    }
     // Propagate saved cluster state.
     // TODO: Fix race with new cluster state setting.
     auto                 catchResult = std::make_unique<storage::spi::CatchResult>();

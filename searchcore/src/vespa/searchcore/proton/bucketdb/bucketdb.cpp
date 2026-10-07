@@ -173,8 +173,9 @@ void BucketDB::checkEmpty() const {
 
 void BucketDB::setBucketState(BucketId bucketId, bool active) {
     BucketState& state = _map[bucketId];
-    if (active == state.isActive())
+    if (active == state.isActive()) {
         return;
+    }
     state.setActive(active);
     if (active) {
         addActive(state.getDocumentCount());

@@ -183,11 +183,13 @@ private:
 
 void BucketMoveJob::failOperation(std::shared_ptr<BucketMoveJob> job, BucketId bucketId) {
     auto& master = job->_master;
-    if (job->stopped())
+    if (job->stopped()) {
         return;
+    }
     master.execute(makeLambdaTask([job = std::move(job), bucketId]() {
-        if (job->stopped())
+        if (job->stopped()) {
             return;
+        }
         job->considerBucket(job->_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
     }));
 }
@@ -197,8 +199,9 @@ void BucketMoveJob::startMove(BucketMover& mover, size_t maxDocsToMove) {
     if (done) {
         mover.setAllScheduled();
     }
-    if (keys.empty())
+    if (keys.empty()) {
         return;
+    }
     mover.updateLastValidGid(keys.back()._gid);
     Bucket spiBucket(document::Bucket(_bucketSpace, mover.getBucket()));
     auto bucketTask = std::make_unique<StartMove>(shared_from_this(), std::move(keys), getLimiter().beginOperation());
@@ -207,16 +210,19 @@ void BucketMoveJob::startMove(BucketMover& mover, size_t maxDocsToMove) {
 
 void BucketMoveJob::prepareMove(std::shared_ptr<BucketMoveJob> job, BucketMover::MoveKeys keys,
                                 IDestructorCallbackSP onDone) {
-    if (job->stopped())
+    if (job->stopped()) {
         return; // TODO Remove once lidtracker is no longer in use.
+    }
     auto  moveOps = keys.createMoveOperations();
     auto& master = job->_master;
-    if (job->stopped())
+    if (job->stopped()) {
         return;
+    }
     master.execute(
         makeLambdaTask([job = std::move(job), moveOps = std::move(moveOps), onDone = std::move(onDone)]() mutable {
-            if (job->stopped())
+            if (job->stopped()) {
                 return;
+            }
             job->completeMove(std::move(moveOps), std::move(onDone));
         }));
 }
@@ -325,8 +331,9 @@ std::shared_ptr<BucketMover> BucketMoveJob::greedyCreateMover() {
 
 void BucketMoveJob::moveDocs(size_t maxDocsToMove) {
     backFillMovers();
-    if (_movers.empty())
+    if (_movers.empty()) {
         return;
+    }
 
     // Select mover
     size_t index = _iterateCount++ % _movers.size();

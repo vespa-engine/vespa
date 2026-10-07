@@ -115,8 +115,9 @@ void BucketState::modify(const GlobalId& gid, const Timestamp& oldTimestamp, uin
 }
 
 bool BucketState::empty() const {
-    if (getReadyCount() != 0 || getRemovedCount() != 0 || getNotReadyCount() != 0)
+    if (getReadyCount() != 0 || getRemovedCount() != 0 || getNotReadyCount() != 0) {
         return false;
+    }
     assert((_checksumType == ChecksumAggregator::ChecksumType::LEGACY) ? (_ch._legacy == 0) : (_ch._xxh64 == 0));
     for (uint32_t i = 0; i < COUNTS; ++i) {
         assert(_docSizes[i] == 0);
@@ -162,8 +163,9 @@ BucketState& BucketState::operator-=(const BucketState& rhs) {
 }
 
 void BucketState::applyDelta(BucketState* src, BucketState* dst) const {
-    if (empty())
+    if (empty()) {
         return;
+    }
     assert(src);
     assert(dst);
     *src -= *this;

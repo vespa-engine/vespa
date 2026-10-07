@@ -263,16 +263,20 @@ void Proton::ProtonFileHeaderContext::setClusterName(const std::string& clusterN
     }
     // Derive cluster name from base dir.
     size_t cpos(baseDir.rfind('/'));
-    if (cpos == std::string::npos)
+    if (cpos == std::string::npos) {
         return;
+    }
     size_t rpos(baseDir.rfind('/', cpos - 1));
-    if (rpos == std::string::npos)
+    if (rpos == std::string::npos) {
         return;
+    }
     size_t clpos(baseDir.rfind('/', rpos - 1));
-    if (clpos == std::string::npos)
+    if (clpos == std::string::npos) {
         return;
-    if (baseDir.substr(clpos + 1, 8) != "cluster.")
+    }
+    if (baseDir.substr(clpos + 1, 8) != "cluster.") {
         return;
+    }
     _cluster = baseDir.substr(clpos + 9, rpos - clpos - 9);
 }
 

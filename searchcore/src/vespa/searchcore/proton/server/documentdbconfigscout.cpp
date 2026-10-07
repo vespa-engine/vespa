@@ -14,8 +14,9 @@ std::shared_ptr<DocumentDBConfig> DocumentDBConfigScout::scout(const std::shared
                                                                const DocumentDBConfig&                  liveConfig) {
     AttributesConfigScout             acScout(liveConfig.getAttributesConfig());
     std::shared_ptr<AttributesConfig> ac(acScout.adjust(config->getAttributesConfig()));
-    if (*ac == config->getAttributesConfig())
+    if (*ac == config->getAttributesConfig()) {
         return config; // no change
+    }
     return config->newFromAttributesConfig(ac);
 }
 

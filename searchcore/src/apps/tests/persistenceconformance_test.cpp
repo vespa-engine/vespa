@@ -250,8 +250,9 @@ protected:
     virtual ~DocDBRepoHolder() = default;
 
     void close() {
-        if (_docDbRepo)
+        if (_docDbRepo) {
             _docDbRepo->close();
+        }
     }
 };
 
@@ -275,8 +276,9 @@ public:
     }
 
     void addHandlers(const std::string& docType) {
-        if (!_docDbRepo)
+        if (!_docDbRepo) {
             return;
+        }
         const DocumentDBMap& docDbs = _docDbRepo->getDocDbs();
         for (const auto& dbEntry : docDbs) {
             if (!docType.empty() && docType != dbEntry.first.getName()) {
@@ -289,8 +291,9 @@ public:
     }
 
     void removeHandlers() {
-        if (!_docDbRepo)
+        if (!_docDbRepo) {
             return;
+        }
         const DocumentDBMap& docDbs = _docDbRepo->getDocDbs();
         for (const auto& dbEntry : docDbs) {
             IPersistenceHandler::SP proxy(removeHandler(getWLock(), dbEntry.second->getBucketSpace(), dbEntry.first));

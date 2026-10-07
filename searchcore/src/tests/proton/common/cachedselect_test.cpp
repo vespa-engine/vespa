@@ -126,14 +126,18 @@ Document::UP makeDoc(const DocumentTypeRepo& repo, const string& docId, const st
                      int32_t aa, int32_t ab) {
     const DocumentType* docType = repo.getDocumentType("test");
     auto                doc = std::make_unique<Document>(repo, *docType, DocumentId(docId));
-    if (ia != "null")
+    if (ia != "null") {
         doc->setValue("ia", StringFieldValue(ia));
-    if (ib != "null")
+    }
+    if (ib != "null") {
         doc->setValue("ib", StringFieldValue(ib));
-    if (aa != noIntVal)
+    }
+    if (aa != noIntVal) {
         doc->setValue("aa", IntFieldValue(aa));
-    if (ab != noIntVal)
+    }
+    if (ab != noIntVal) {
         doc->setValue("ab", IntFieldValue(ab));
+    }
     return doc;
 }
 
@@ -735,17 +739,21 @@ TEST(CachedSelectTest, Test_performance_when_using_attributes) {
     vespalib::Timer sw;
     for (i = 0; i < loopcnt; ++i) {
         ctx._lid = 1u;
-        if (sel->contains(ctx) != Result::False)
+        if (sel->contains(ctx) != Result::False) {
             break;
+        }
         ctx._lid = 2u;
-        if (sel->contains(ctx) != Result::True)
+        if (sel->contains(ctx) != Result::True) {
             break;
+        }
         ctx._lid = 3u;
-        if (sel->contains(ctx) != Result::Invalid)
+        if (sel->contains(ctx) != Result::Invalid) {
             break;
+        }
         ctx._lid = 4u;
-        if (sel->contains(ctx) != Result::Invalid)
+        if (sel->contains(ctx) != Result::Invalid) {
             break;
+        }
     }
     vespalib::duration elapsed = sw.elapsed();
     EXPECT_EQ(loopcnt, i);

@@ -136,8 +136,9 @@ LidReuseDelayerTest::~LidReuseDelayerTest() {
 }
 
 void LidReuseDelayerTest::cycleLids(const std::vector<uint32_t>& lids, vespalib::IDestructorCallback::SP onDone) {
-    if (lids.empty())
+    if (lids.empty()) {
         return;
+    }
     _writeService.index().execute(makeLambdaTask([this, lids, onDone]() {
         (void)onDone;
         performCycleLids(lids, onDone);

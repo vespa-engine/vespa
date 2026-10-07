@@ -179,8 +179,9 @@ void IndexMaintainer::updateActiveFusionPrunedSchema(const Schema& schema) {
             activeFusionSchema = _activeFusionSchema;
             activeFusionPrunedSchema = _activeFusionPrunedSchema;
         }
-        if (!activeFusionSchema)
+        if (!activeFusionSchema) {
             return; // No active fusion
+        }
         if (!activeFusionPrunedSchema) {
             auto newSchema = Schema::intersect(*activeFusionSchema, schema);
             newActiveFusionPrunedSchema = std::move(newSchema);
@@ -819,8 +820,9 @@ string IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IF
     FusionSpec spec;
     {
         LockGuard guard(_fusion_lock);
-        if (!canRunFusion(_fusion_spec))
+        if (!canRunFusion(_fusion_spec)) {
             return "";
+        }
         spec = _fusion_spec;
         _fusion_spec.flush_ids.clear();
     }

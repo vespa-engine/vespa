@@ -92,8 +92,9 @@ uint32_t find_document_db_index(const BootstrapConfig::SP& bootstrapConfig, cons
     uint32_t index;
     for (index = 0; index < proton.documentdb.size(); ++index) {
         const DdbConfig& ddbConfig = proton.documentdb[index];
-        if (doc_type_name == ddbConfig.inputdoctypename)
+        if (doc_type_name == ddbConfig.inputdoctypename) {
             break;
+        }
     }
 
     return index;
@@ -367,8 +368,9 @@ DocumentDBConfig::SP DocumentDBConfigManager::getConfig() const {
 
 void DocumentDBConfigManager::forwardConfig(const BootstrapConfig::SP& config) {
     {
-        if (!_ignoreForwardedConfig && config->getGeneration() < _bootstrapConfig->getGeneration())
+        if (!_ignoreForwardedConfig && config->getGeneration() < _bootstrapConfig->getGeneration()) {
             return; // Enforce time direction
+        }
         _bootstrapConfig = config;
         _ignoreForwardedConfig = false;
     }
@@ -383,8 +385,9 @@ DocumentDBConfigHelper::~DocumentDBConfigHelper() = default;
 
 bool DocumentDBConfigHelper::nextGeneration(FNET_Transport& transport, vespalib::duration timeout) {
     ConfigSnapshot snapshot(_retriever->getBootstrapConfigs(timeout));
-    if (snapshot.empty())
+    if (snapshot.empty()) {
         return false;
+    }
     _mgr.update(transport, snapshot);
     return true;
 }
