@@ -153,7 +153,7 @@ printf '\n\n'
 section "Compilation errors" "$WORK_DIR/compile" "$MAX_LINES"
 section "Failing tests" "$WORK_DIR/tests" "$MAX_LINES"
 section "Maven" "$WORK_DIR/maven" "$MAX_LINES"
-collapsed_section "Test failure details" "$WORK_DIR/test-details" "$MAX_DETAIL_LINES"
+section "Test failure details" "$WORK_DIR/test-details" "$MAX_DETAIL_LINES"
 
 if [[ -s $WORK_DIR/compile || -s $WORK_DIR/tests || -s $WORK_DIR/maven ]]; then
     collapsed_section "Last $MAX_LINES lines of the log" "$WORK_DIR/tail" "$MAX_LINES"
