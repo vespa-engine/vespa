@@ -34,6 +34,7 @@ import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Runs the embedders through the Triton runtime with padding buckets, and checks that they embed the same
@@ -78,6 +79,22 @@ class TritonPaddedEmbeddingTest {
         }
     }
 
+    /** With runtime pooling, Vespa pads the inputs and Triton pools them. The padding must stay out of the embedding. */
+    @Test
+    void huggingFaceEmbedsTheSameThroughTritonWithPaddingAndPooling() {
+        assumeTrue(tritonContainer.supportsPooling(), "Needs a Vespa Triton image that supports pooling");
+        for (var pooling : HuggingFaceEmbedderConfig.PoolingStrategy.Enum.values()) {
+            if (pooling == HuggingFaceEmbedderConfig.PoolingStrategy.Enum.none) continue; // Needs a model output without tokens
+            var config = new HuggingFaceEmbedderConfig.Builder()
+                    .tokenizerPath(ModelReference.valueOf(TOKENIZER))
+                    .transformerModel(ModelReference.valueOf(MASKED_MODEL))
+                    .poolingStrategy(pooling)
+                    .build();
+            assertEmbedsTheSame(runtime -> new HuggingFaceEmbedder(runtime, Embedder.Runtime.testInstance(), config, onnxConfig(runtime), new ModelPaths()),
+                                List.of("tensor<float>(x[16])", "tensor<int8>(x[2])"), "schema.indexing", TEXT, true);
+        }
+    }
+
     @Test
     void bertBaseEmbedsTheSameThroughTritonWithPadding() {
         var config = new BertBaseEmbedderConfig.Builder()
@@ -119,7 +136,12 @@ class TritonPaddedEmbeddingTest {
 
     /** Embeds with the Triton runtime, padded, and with the embedded runtime, and compares. */
     private static void assertEmbedsTheSame(Function<OnnxRuntime, Embedder> embedderOf, List<String> types, String context, String text) {
-        var triton = new RecordingTritonRuntime();
+        assertEmbedsTheSame(embedderOf, types, context, text, false);
+    }
+
+    /** Embeds with the Triton runtime, padded, and pooled by Triton if asked, then with the embedded runtime, and compares. */
+    private static void assertEmbedsTheSame(Function<OnnxRuntime, Embedder> embedderOf, List<String> types, String context, String text, boolean pooling) {
+        var triton = new RecordingTritonRuntime(pooling);
         try {
             var padded = embedderOf.apply(triton);
             var unpadded = embedderOf.apply(EmbeddedOnnxRuntime.createTestInstance());
@@ -130,6 +152,7 @@ class TritonPaddedEmbeddingTest {
             }
             assertEquals(1, triton.evaluators.size());
             assertTrue(triton.evaluators.get(0) instanceof OnnxPadder, "Padding should be verified and in use");
+            assertEquals(pooling, triton.evaluators.get(0).runtimePooling().isPresent(), "Pooled by Triton when asked, through the padding");
         } finally {
             triton.deconstruct();
         }
@@ -156,11 +179,12 @@ class TritonPaddedEmbeddingTest {
 
         final List<OnnxEvaluator> evaluators = new ArrayList<>();
 
-        RecordingTritonRuntime() {
+        RecordingTritonRuntime(boolean pooling) {
             super(new TritonConfig.Builder()
                           .target(tritonContainer.getGrpcEndpoint())
                           .modelControlMode(TritonConfig.ModelControlMode.EXPLICIT)
                           .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
+                          .onnxPooling(pooling)
                           .build());
         }
 

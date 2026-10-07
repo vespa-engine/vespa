@@ -2,6 +2,9 @@
 package ai.vespa.embedding;
 
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.OnnxPoolingOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.modelintegration.utils.ModelPathHelper;
 import com.yahoo.config.ModelReference;
@@ -21,8 +24,13 @@ import com.yahoo.tensor.Tensors;
 import org.junit.Test;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertNotEquals;
@@ -268,6 +276,108 @@ public class HuggingFaceEmbedderTest {
         )));
 
         return huggingFaceEmbedder;
+    }
+
+    // --- runtime pooling: the embedder asks for it per strategy, and uses an output the runtime pooled as is
+
+    private static final TensorType TOKEN_EMBEDDINGS = TensorType.fromSpec("tensor<float>(d0[],d1[],d2[4])");
+    private static final TensorType POOLED_EMBEDDINGS = TensorType.fromSpec("tensor<float>(d0[],d1[4])");
+
+    @Test
+    public void testRuntimePoolingIsRequestedForEveryStrategyButNone() {
+        var mean = HuggingFaceEmbedderConfig.PoolingStrategy.Enum.mean;
+        assertEquals(Optional.of(new OnnxPoolingOptions("mean", "last_hidden_state", "attention_mask")),
+                     HuggingFaceEmbedder.runtimePooling(configWithPooling(mean)));
+        assertEquals("cls",
+                     HuggingFaceEmbedder.runtimePooling(configWithPooling(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.cls)).orElseThrow().strategy());
+        assertEquals("last",
+                     HuggingFaceEmbedder.runtimePooling(configWithPooling(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.last)).orElseThrow().strategy());
+        assertEquals(Optional.empty(), HuggingFaceEmbedder.runtimePooling(configWithPooling(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.none)));
+    }
+
+    @Test
+    public void testEmbedderAsksTheRuntimeForThePooling() {
+        String modelPath = "src/test/models/onnx/transformer/embedding_model.onnx";
+        assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
+        var config = new HuggingFaceEmbedderConfig.Builder()
+                .tokenizerPath(ModelReference.valueOf("src/test/models/onnx/transformer/real_tokenizer.json"))
+                .transformerModel(ModelReference.valueOf(modelPath))
+                .poolingStrategy(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.mean)
+                .build();
+        var requested = new ArrayList<OnnxEvaluatorOptions>();
+        OnnxRuntime recording = (path, options) -> {
+            requested.add(options);
+            return OnnxRuntime.testInstance().evaluatorOf(path, options);
+        };
+        var embedder = new HuggingFaceEmbedder(recording, Embedder.Runtime.testInstance(), config,
+                                               new OnnxEvaluatorConfig.Builder().build(), new MockModelPathHelper());
+        try {
+            assertEquals(List.of(Optional.of(new OnnxPoolingOptions("mean", "last_hidden_state", "attention_mask"))),
+                         requested.stream().map(OnnxEvaluatorOptions::runtimePooling).toList());
+        } finally {
+            embedder.deconstruct();
+        }
+    }
+
+    @Test
+    public void testRuntimePoolingUsesTheConfiguredNames() {
+        var config = new HuggingFaceEmbedderConfig.Builder(configWithPooling(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.mean))
+                .transformerOutput("token_embeddings")
+                .transformerAttentionMask("mask")
+                .build();
+        assertEquals(Optional.of(new OnnxPoolingOptions("mean", "token_embeddings", "mask")),
+                     HuggingFaceEmbedder.runtimePooling(config));
+    }
+
+    @Test
+    public void testOutputPooledByTheRuntimeIsUsedAsIs() {
+        var config = configWithPooling(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.mean);
+        var analysis = HuggingFaceEmbedder.analyze(evaluatorWithOutput(POOLED_EMBEDDINGS, HuggingFaceEmbedder.runtimePooling(config)), config);
+        assertEquals(PoolingStrategy.NONE, analysis.poolingStrategy());
+        assertEquals(2, analysis.outputDimensions());
+    }
+
+    @Test
+    public void testOutputNotPooledByTheRuntimeIsPooledByTheEmbedder() {
+        var config = configWithPooling(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.mean);
+        var analysis = HuggingFaceEmbedder.analyze(evaluatorWithOutput(TOKEN_EMBEDDINGS, Optional.empty()), config);
+        assertEquals(PoolingStrategy.MEAN, analysis.poolingStrategy());
+        assertEquals(3, analysis.outputDimensions());
+    }
+
+    @Test
+    public void testRuntimePoolingRequiresTwoOutputDimensions() {
+        var config = configWithPooling(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.cls);
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> HuggingFaceEmbedder.analyze(evaluatorWithOutput(TOKEN_EMBEDDINGS, HuggingFaceEmbedder.runtimePooling(config)), config));
+        assertEquals("Expected 2 output dimensions for 'last_hidden_state' pooled by the ONNX runtime, " +
+                     "but got type: " + TOKEN_EMBEDDINGS + ". The runtime did not apply the pooling it was asked for.",
+                     exception.getMessage());
+    }
+
+    private static HuggingFaceEmbedderConfig configWithPooling(HuggingFaceEmbedderConfig.PoolingStrategy.Enum strategy) {
+        return new HuggingFaceEmbedderConfig.Builder()
+                .tokenizerPath(ModelReference.valueOf("tokenizer.json"))
+                .transformerModel(ModelReference.valueOf("model.onnx"))
+                .poolingStrategy(strategy)
+                .build();
+    }
+
+    /** Returns an evaluator of a model with the usual three inputs and one output of the given type, with the given runtime pooling */
+    private static OnnxEvaluator evaluatorWithOutput(TensorType outputType, Optional<OnnxPoolingOptions> pooling) {
+        var tokens = TensorType.fromSpec("tensor<float>(d0[],d1[])");
+        var inputs = Map.of("input_ids", tokens, "attention_mask", tokens, "token_type_ids", tokens);
+        var outputs = Map.of("last_hidden_state", outputType);
+        return new OnnxEvaluator() {
+            @Override public Tensor evaluate(Map<String, Tensor> in, String output, Duration timeout) { throw new UnsupportedOperationException(); }
+            @Override public Map<String, Tensor> evaluate(Map<String, Tensor> in, Duration timeout) { throw new UnsupportedOperationException(); }
+            @Override public Map<String, IdAndType> getInputs() { throw new UnsupportedOperationException(); }
+            @Override public Map<String, IdAndType> getOutputs() { throw new UnsupportedOperationException(); }
+            @Override public Map<String, TensorType> getInputInfo() { return inputs; }
+            @Override public Map<String, TensorType> getOutputInfo() { return outputs; }
+            @Override public Optional<OnnxPoolingOptions> runtimePooling() { return pooling; }
+            @Override public void close() { }
+        };
     }
 
     public static Tensor expandBitTensor(Tensor packed) {

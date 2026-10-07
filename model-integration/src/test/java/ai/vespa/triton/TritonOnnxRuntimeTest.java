@@ -277,7 +277,7 @@ class TritonOnnxRuntimeTest {
     void failed_unload_keeps_files_for_startup_cleanup() {
         var opts = optsBuilder.setModelConfigOverride(Optional.of(
                 Path.of("src/test/triton/config_with_model_config_override_input.pbtxt"))).build();
-        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts, false);
+        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts, false, Optional.empty());
         var runtimeClient = spy(createClient());
         var runtime = new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT, false), runtimeClient);
 
@@ -337,7 +337,7 @@ class TritonOnnxRuntimeTest {
     // The model name of a runtime with separate sessions
     private static String modelName(String modelPath, OnnxEvaluatorOptions opts) {
         var resolvedOpts = TritonOnnxRuntime.resolveInstanceCount(opts, false);
-        return TritonOnnxRuntime.generateModelName(modelPath, resolvedOpts, false);
+        return TritonOnnxRuntime.generateModelName(modelPath, resolvedOpts, false, Optional.empty());
     }
 
     // expectedConfigPath == null means we expect an error during model loading
@@ -351,7 +351,7 @@ class TritonOnnxRuntimeTest {
         var testModelFilePath = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
         var resolvedOpts = evalOpts.modelConfigOverride().isPresent()
                 ? evalOpts : TritonOnnxRuntime.resolveInstanceCount(evalOpts, shareSession);
-        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, resolvedOpts, shareSession);
+        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, resolvedOpts, shareSession, Optional.empty());
         var modelFilePath = Text.format("%s/1/model.onnx", modelName);
         var modelConfigPath = Text.format("%s/config.pbtxt", modelName);
         var runtime = createRuntime(shareSession);

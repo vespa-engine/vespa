@@ -2,6 +2,7 @@
 package ai.vespa.triton;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxPoolingOptions;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -9,6 +10,7 @@ import com.yahoo.tensor.TensorType;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,6 +27,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     private final ResourceReference modelReference;
     private final TritonOnnxClient tritonClient;
     private final boolean isExplicitControl;
+    private final Optional<OnnxPoolingOptions> runtimePooling;
 
     private TritonOnnxClient.ModelMetadata modelMetadata;
 
@@ -32,11 +35,13 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
             String modelName,
             ResourceReference modelReference,
             TritonOnnxClient tritonClient,
-            boolean isExplicitControl) {
+            boolean isExplicitControl,
+            Optional<OnnxPoolingOptions> runtimePooling) {
         this.modelName = modelName;
         this.modelReference = modelReference;
         this.tritonClient = tritonClient;
         this.isExplicitControl = isExplicitControl;
+        this.runtimePooling = runtimePooling;
         modelMetadata = tritonClient.getModelMetadata(modelName);
     }
 
@@ -86,6 +91,11 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     @Override
     public Map<String, TensorType> getOutputInfo() {
         return modelMetadata.outputs;
+    }
+
+    @Override
+    public Optional<OnnxPoolingOptions> runtimePooling() {
+        return runtimePooling;
     }
 
     @Override

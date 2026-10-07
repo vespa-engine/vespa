@@ -55,6 +55,11 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
         return System.getProperty(IMAGE_NAME_PROPERTY) != null;
     }
 
+    // Only Vespa's Triton images, given with the image override, support pooling in the ONNX Runtime backend.
+    public boolean supportsPooling() {
+        return System.getProperty(IMAGE_NAME_PROPERTY) != null;
+    }
+
     public String getGrpcEndpoint() {
         return getHost() + ":" + getMappedPort(GRPC_PORT);
     }

@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
  * requests of different lengths have the same input shapes and a batching runtime can combine them into one
  * inference call.
  * Padding is zeros after the real tokens, so padded tokens have a zero attention mask and a model that respects
- * the mask gives the same output for the real tokens. Outputs indexed by position are cut back to the real length,
- * so callers never see the padding.
+ * the mask gives the same output for the real tokens. The padder unpads outputs indexed by position to the real
+ * length, so callers never see the padding.
  * Sequence inputs are the inputs of shape [batch, sequence], among them the attention mask named in the
  * {@link OnnxPadderOptions}, and sequence outputs the outputs with an unbound second dimension. An input longer
  * than the largest bucket is not padded.
@@ -63,20 +63,20 @@ public final class OnnxPadder implements OnnxEvaluator {
 
     private final OnnxEvaluator evaluator;
     private final int[] buckets; // Sorted and distinct
-    private final Set<String> sequenceInputs;
+    private final Set<String> inputNamesToPad;
     private final String maskName;
     /** Refined at verification to the outputs whose second dimension is the sequence length */
-    private volatile Set<String> sequenceOutputs;
+    private volatile Set<String> outputNamesToUnpad;
     private final String modelName;
     private boolean warnedAboutLengths = false;
 
-    private OnnxPadder(OnnxEvaluator evaluator, int[] buckets, Set<String> sequenceInputs, String maskName,
-                            Set<String> sequenceOutputs, String modelName) {
+    private OnnxPadder(OnnxEvaluator evaluator, int[] buckets, Set<String> inputNamesToPad, String maskName,
+                            Set<String> outputNamesToUnpad, String modelName) {
         this.evaluator = evaluator;
         this.buckets = buckets;
-        this.sequenceInputs = sequenceInputs;
+        this.inputNamesToPad = inputNamesToPad;
         this.maskName = maskName;
-        this.sequenceOutputs = sequenceOutputs;
+        this.outputNamesToUnpad = outputNamesToUnpad;
         this.modelName = modelName;
     }
 
@@ -95,25 +95,28 @@ public final class OnnxPadder implements OnnxEvaluator {
      */
     static Optional<OnnxPadder> padderOf(OnnxPadderOptions options, OnnxEvaluator evaluator, String modelName) {
         var inputTypes = evaluator.getInputInfo();
-        var sequenceInputs = inputTypes.entrySet().stream()
+        var inputNamesToPad = inputTypes.entrySet().stream()
                                        .filter(input -> isSequenceType(input.getValue(), 2))
                                        .map(Map.Entry::getKey)
                                        .collect(Collectors.toUnmodifiableSet());
         var mask = options.attentionMaskName();
-        if ( ! sequenceInputs.contains(mask)) {
+        if ( ! inputNamesToPad.contains(mask)) {
             log.warning("Not padding inputs of " + modelName + ": it has no attention mask input '" + mask +
                         "' of shape [batch, sequence], so it would attend to the padding. Inputs: " + inputTypes);
             return Optional.empty();
         }
-        if (sequenceInputs.size() != inputTypes.size()) {
+        if (inputNamesToPad.size() != inputTypes.size()) {
             log.warning("Not padding inputs of " + modelName + ": cannot make a sample to verify that padding does not " +
                         "change its output, since not all inputs are sequences of shape [batch, sequence]: " + inputTypes);
             return Optional.empty();
         }
 
-        var sequenceOutputs = evaluator.getOutputInfo().entrySet().stream()
+        // The runtime pools this output to [batch, embedding]. It is not a sequence, whatever its size.
+        var pooledOutputName = evaluator.runtimePooling().map(OnnxPoolingOptions::outputName).orElse(null);
+        var outputNamesToUnpad = evaluator.getOutputInfo().entrySet().stream()
                                        .filter(output -> isSequenceType(output.getValue(), Integer.MAX_VALUE))
                                        .map(Map.Entry::getKey)
+                                       .filter(name -> ! name.equals(pooledOutputName))
                                        .collect(Collectors.toUnmodifiableSet());
 
         var buckets = options.buckets().stream().mapToInt(Integer::intValue).toArray(); // Sorted and distinct
@@ -122,7 +125,7 @@ public final class OnnxPadder implements OnnxEvaluator {
             return Optional.empty();
         }
 
-        return Optional.of(new OnnxPadder(evaluator, buckets, sequenceInputs, mask, sequenceOutputs, modelName));
+        return Optional.of(new OnnxPadder(evaluator, buckets, inputNamesToPad, mask, outputNamesToUnpad, modelName));
     }
 
     /**
@@ -171,6 +174,7 @@ public final class OnnxPadder implements OnnxEvaluator {
     @Override public Map<String, IdAndType> getOutputs() { return evaluator.getOutputs(); }
     @Override public Map<String, TensorType> getInputInfo() { return evaluator.getInputInfo(); }
     @Override public Map<String, TensorType> getOutputInfo() { return evaluator.getOutputInfo(); }
+    @Override public Optional<OnnxPoolingOptions> runtimePooling() { return evaluator.runtimePooling(); }
     @Override public void close() { evaluator.close(); }
 
     /**
@@ -185,9 +189,9 @@ public final class OnnxPadder implements OnnxEvaluator {
         Map<String, Tensor> unpaddedOutputs, paddedOutputs;
         try {
             unpaddedOutputs = evaluator.evaluate(sample);
-            // An output typed with an unbound second dimension that is not the sequence length is not cut
-            sequenceOutputs = unpaddedOutputs.entrySet().stream()
-                                             .filter(output -> sequenceOutputs.contains(output.getKey()))
+            // Do not unpad an output whose unbound second dimension is not the sequence length
+            outputNamesToUnpad = unpaddedOutputs.entrySet().stream()
+                                             .filter(output -> outputNamesToUnpad.contains(output.getKey()))
                                              .filter(output -> ((IndexedTensor) output.getValue()).shape()[1] == length)
                                              .map(Map.Entry::getKey)
                                              .collect(Collectors.toUnmodifiableSet());
@@ -204,7 +208,7 @@ public final class OnnxPadder implements OnnxEvaluator {
                         "and must not be dynamically quantized.");
             return false;
         }
-        log.info("Padding inputs of " + modelName + " to " + this + ", cutting outputs " + sequenceOutputs +
+        log.info("Padding inputs of " + modelName + " to " + this + ", unpadding outputs " + outputNamesToUnpad +
                  " back, verified not to change its output");
         return true;
     }
@@ -213,7 +217,7 @@ public final class OnnxPadder implements OnnxEvaluator {
     private Map<String, Tensor> sampleInputs(int length) {
         var type = new TensorType.Builder(TensorType.Value.FLOAT).indexed("d0", 1).indexed("d1", length).build();
         var inputs = new HashMap<String, Tensor>();
-        for (var name : sequenceInputs) {
+        for (var name : inputNamesToPad) {
             var builder = (IndexedTensor.BoundBuilder) Tensor.Builder.of(type, DimensionSizes.of(type));
             if (name.equals(maskName))
                 for (int i = 0; i < length; i++) builder.cellByDirectIndex(i, 1);
@@ -241,7 +245,7 @@ public final class OnnxPadder implements OnnxEvaluator {
         if ( ! inputs.containsKey(maskName)) return PaddingInfo.none(0);
         int length = -1;
         for (var input : inputs.entrySet()) {
-            if ( ! sequenceInputs.contains(input.getKey())) continue;
+            if ( ! inputNamesToPad.contains(input.getKey())) continue;
             if ( ! (input.getValue() instanceof IndexedTensor tensor)) return PaddingInfo.none(0); // Rejected by the evaluator
             int inputLength = (int) tensor.shape()[1];
             if (length >= 0 && inputLength != length) {
@@ -259,7 +263,7 @@ public final class OnnxPadder implements OnnxEvaluator {
         warnedAboutLengths = true;
         log.warning("Not padding inputs of " + modelName + " with different lengths: " +
                     inputs.entrySet().stream()
-                          .filter(i -> sequenceInputs.contains(i.getKey()))
+                          .filter(i -> inputNamesToPad.contains(i.getKey()))
                           .map(i -> i.getKey() + " " + i.getValue().type())
                           .collect(Collectors.joining(", ")));
     }
@@ -269,7 +273,7 @@ public final class OnnxPadder implements OnnxEvaluator {
         if ( ! paddingInfo.isPadded()) return inputs;
         var padded = new HashMap<String, Tensor>(inputs);
         for (var input : inputs.entrySet()) {
-            if (sequenceInputs.contains(input.getKey()))
+            if (inputNamesToPad.contains(input.getKey()))
                 padded.put(input.getKey(), pad((IndexedTensor) input.getValue(), paddingInfo));
         }
         return padded;
@@ -290,7 +294,7 @@ public final class OnnxPadder implements OnnxEvaluator {
         return builder.build();
     }
 
-    /** Returns the outputs with the sequence outputs of the padded length cut back to the real length */
+    /** Unpads the sequence outputs of the padded length to the real length */
     private Map<String, Tensor> unpad(Map<String, Tensor> outputs, PaddingInfo paddingInfo) {
         if ( ! paddingInfo.isPadded()) return outputs;
         var unpadded = new HashMap<String, Tensor>(outputs);
@@ -298,9 +302,9 @@ public final class OnnxPadder implements OnnxEvaluator {
         return unpadded;
     }
 
-    /** Returns the output cut back to the real length if it is a sequence output of the padded length, else as is */
+    /** Unpads the output to the real length if it is a sequence output of the padded length. Otherwise returns it as is. */
     private Tensor unpad(String name, Tensor output, PaddingInfo paddingInfo) {
-        if ( ! paddingInfo.isPadded() || ! sequenceOutputs.contains(name)
+        if ( ! paddingInfo.isPadded() || ! outputNamesToUnpad.contains(name)
             || ! (output instanceof IndexedTensor tensor)
             || tensor.shape().length < 2 || tensor.shape()[1] != paddingInfo.paddedLength())
             return output;
