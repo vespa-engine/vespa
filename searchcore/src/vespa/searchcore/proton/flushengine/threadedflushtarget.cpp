@@ -15,11 +15,6 @@ using vespalib::makeLambdaTask;
 namespace proton {
 
 ThreadedFlushTarget::ThreadedFlushTarget(vespalib::Executor& executor, const IGetSerialNum& getSerialNum,
-                                         const IFlushTarget::SP& target)
-    : FlushTargetProxy(target), _executor(executor), _getSerialNum(getSerialNum) {
-}
-
-ThreadedFlushTarget::ThreadedFlushTarget(vespalib::Executor& executor, const IGetSerialNum& getSerialNum,
                                          const IFlushTarget::SP& target, const std::string& prefix)
     : FlushTargetProxy(target, prefix), _executor(executor), _getSerialNum(getSerialNum) {
 }
@@ -28,8 +23,10 @@ namespace {
 void call_init_flush(IFlushTarget* target, IFlushTarget::SerialNum serial, const IGetSerialNum* getSerialNum,
                      std::shared_ptr<search::IFlushToken> flush_token,
                      IFlushTarget::TaskPromise            target_task_promise) {
-    // Serial number from flush engine might have become stale, obtain
-    // a fresh serial number now.
+    /*
+     * Called by document db executor
+     * Serial number from flush engine might have become stale, obtain a fresh serial number now.
+     */
     (void)serial;
     search::SerialNum freshSerial = getSerialNum->getSerialNum();
     assert(freshSerial >= serial);
@@ -39,13 +36,12 @@ void call_init_flush(IFlushTarget* target, IFlushTarget::SerialNum serial, const
 
 void ThreadedFlushTarget::init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
                                      TaskPromise task_promise) {
-    // Normally called by flush engine main thread
-    TaskPromise target_task_promise;
-    auto        future_target_task = target_task_promise.get_future();
-    _executor.execute(makeLambdaTask([&, target_task_promise(std::move(target_task_promise))]() mutable {
-        call_init_flush(_target.get(), currentSerial, &_getSerialNum, flush_token, std::move(target_task_promise));
-    }));
-    task_promise.set_value(future_target_task.get());
+    // Called by flush engine main thread via initFlush shim
+    _executor.execute(makeLambdaTask(
+        [this, currentSerial, flush_token(std::move(flush_token)), task_promise(std::move(task_promise))]() mutable {
+            call_init_flush(_target.get(), currentSerial, &_getSerialNum, std::move(flush_token),
+                            std::move(task_promise));
+        }));
 }
 
 } // namespace proton

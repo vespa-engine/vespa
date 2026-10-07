@@ -12,9 +12,9 @@ namespace proton {
 class IGetSerialNum;
 
 /**
- * Implements a flush target that runs initFlush() as a task in the given
- * executor. This is used by the DocumentDB to ensure that initFlush() in the
- * underlying flush targets are run in the updater thread.
+ * Implements a flush target that runs init_flush() as a task in the given executor, which must be the document db
+ * executor. This is used by the DocumentDB to ensure that init_flush() picks up an updated serial number while in the
+ * document db executor. The underlying flush targets must forward init_flush() to the updater thread on their own.
  */
 class ThreadedFlushTarget : public FlushTargetProxy {
 private:
@@ -24,22 +24,9 @@ private:
 
 public:
     /**
-     * Constructs a new instance of this class. If the argument executor is
-     * the same as the one calling initFlush() on this object, make sure
-     * that it has more than 1 thread to avoid a deadlock.
+     * Constructs a new instance of this class.
      *
-     * @param executor The executor to submit the task to.
-     * @param target   The target to decorate.
-     */
-    ThreadedFlushTarget(vespalib::Executor& executor, const IGetSerialNum& getSerialNum,
-                        const IFlushTarget::SP& target);
-
-    /**
-     * Constructs a new instance of this class. If the argument executor is
-     * the same as the one calling initFlush() on this object, make sure
-     * that it has more than 1 thread to avoid a deadlock.
-     *
-     * @param executor The executor to submit the task to.
+     * @param executor The executor to submit the task to. Must be document db executor.
      * @param target   The target to decorate.
      * @param prefix   The prefix to prepend to the target
      */
