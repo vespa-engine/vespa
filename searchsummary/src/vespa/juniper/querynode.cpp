@@ -55,8 +55,9 @@ QueryTerm::~QueryTerm() {
 
 QueryNode::QueryNode(int arity, int threshold, int weight)
     : QueryExpr(weight, arity), _children(nullptr), _threshold(threshold), _limit(0), _nchild(0), _node_idx(-1) {
-    if (arity > 0)
+    if (arity > 0) {
         _children = new QueryExpr*[arity];
+    }
 }
 
 QueryNode::QueryNode(QueryNode* n)
@@ -70,8 +71,9 @@ QueryNode::QueryNode(QueryNode* n)
 }
 
 QueryNode::~QueryNode() {
-    for (int i = 0; i < _nchild; i++)
+    for (int i = 0; i < _nchild; i++) {
         delete _children[i];
+    }
     delete[] _children;
     _nchild = 0;
 }
@@ -87,8 +89,9 @@ QueryNode* QueryTerm::AddChild(QueryExpr*) {
     LOG(warning, "stack inconsistency, attempt to add children to a terminal node");
 
     QueryNode* node = _parent;
-    while (node && node->Complete())
+    while (node && node->Complete()) {
         node = node->_parent;
+    }
     return node;
 }
 
@@ -103,12 +106,15 @@ QueryNode* QueryNode::AddChild(QueryExpr* child) {
             child->_childno = _nchild;
             _children[_nchild++] = child;
             if (child->_arity > 0) // we know this is a QueryNode from the arity info
+            {
                 return static_cast<QueryNode*>(child);
+            }
         }
     }
     QueryNode* node = this;
-    while (node && node->Complete())
+    while (node && node->Complete()) {
         node = node->_parent;
+    }
     return node;
 }
 
@@ -120,26 +126,29 @@ void QueryExpr::ComputeThreshold() {
 void QueryNode::ComputeThreshold() {
     bool no_threshold = false;
     int  th = 0;
-    if (_options & (X_OR | X_ANY))
+    if (_options & (X_OR | X_ANY)) {
         th = 0xfffffff;
-    else if (!(_options & X_AND))
+    } else if (!(_options & X_AND)) {
         no_threshold = true;
+    }
 
     for (int i = 0; i < _nchild; i++) {
         QueryExpr* qe = _children[i];
         qe->ComputeThreshold();
         if (!no_threshold) {
             int w = qe->_weight;
-            if (_options | X_AND)
+            if (_options | X_AND) {
                 th += w;
-            else
+            } else {
                 th = std::min(th, w);
+            }
         }
         // Propagate any X_CONSTR and X_CHKVAL bit upwards
         _options |= (qe->_options & (X_CONSTR | X_CHKVAL));
     }
-    if ((!no_threshold) && _threshold < 0)
+    if ((!no_threshold) && _threshold < 0) {
         _threshold = th;
+    }
 }
 
 void QueryTerm::Dump(std::string& out) {
@@ -149,24 +158,31 @@ void QueryTerm::Dump(std::string& out) {
 
 void QueryNode::Dump(std::string& out) {
     out.append(vespalib::make_string("Node<a:%d", _arity));
-    if (_options & X_ORDERED)
+    if (_options & X_ORDERED) {
         out.append(",o");
-    if (_options & X_NOT)
+    }
+    if (_options & X_NOT) {
         out.append("!");
-    if (_options & X_LIMIT)
+    }
+    if (_options & X_LIMIT) {
         out.append(vespalib::make_string(",l:%d", _limit));
-    if (_options & X_EXACT)
+    }
+    if (_options & X_EXACT) {
         out.append(",e");
-    if (_options & X_CHKVAL)
+    }
+    if (_options & X_CHKVAL) {
         out.append(",v");
-    else if (_options & X_CONSTR)
+    } else if (_options & X_CONSTR) {
         out.append(",z");
-    if (_options & X_COMPLETE)
+    }
+    if (_options & X_COMPLETE) {
         out.append(",c");
+    }
     out.append(">[");
     for (int i = 0; i < _nchild; i++) {
-        if (i < _nchild && i > 0)
+        if (i < _nchild && i > 0) {
             out.append(",");
+        }
         _children[i]->Dump(out);
     }
     out.append("]");
@@ -179,8 +195,9 @@ bool QueryNode::StackComplete() {
 
 bool QueryNode::Complex() {
     for (int i = 0; i < _nchild; i++) {
-        if (_children[i]->_arity > 1)
+        if (_children[i]->_arity > 1) {
             return true;
+        }
     }
     return false;
 }
@@ -189,8 +206,9 @@ int QueryNode::MaxArity() {
     int max_arity = _arity;
     for (int i = 0; i < _nchild; i++) {
         int ma = _children[i]->MaxArity();
-        if (ma > max_arity)
+        if (ma > max_arity) {
             max_arity = ma;
+        }
     }
     return max_arity;
 }
@@ -199,11 +217,13 @@ int QueryNode::MaxArity() {
  *  with arity 1 or non-terms with arity 0
  */
 void SimplifyStack(QueryExpr*& orig_stack) {
-    if (!orig_stack)
+    if (!orig_stack) {
         return;
+    }
     QueryNode* node = orig_stack->AsNode();
-    if (!node)
+    if (!node) {
         return; // Leaf node - no simplifications possible
+    }
 
     int compact = 0;
     int i;
@@ -219,11 +239,13 @@ void SimplifyStack(QueryExpr*& orig_stack) {
             // Get rid of children # >2 for RANK/ANDNOT
             delete node->_children[i];
             node->_children[i] = nullptr;
-        } else
+        } else {
             SimplifyStack(node->_children[i]);
+        }
 
-        if (node->_children[i] == nullptr)
+        if (node->_children[i] == nullptr) {
             compact++;
+        }
     }
     if (compact > 0) {
         node->_nchild = 0;
@@ -267,7 +289,8 @@ void QueryTerm::Accept(IQueryExprVisitor& v) {
 void QueryNode::Accept(IQueryExprVisitor& v) {
     int i;
     v.VisitQueryNode(this);
-    for (i = 0; i < _arity; i++)
+    for (i = 0; i < _arity; i++) {
         _children[i]->Accept(v);
+    }
     v.RevisitQueryNode(this);
 }

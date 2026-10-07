@@ -52,21 +52,24 @@ public:
     // revisit on return:
     void RevisitQueryNode(QueryNode* n) override {
         QueryNode* qn = _caller.top();
-        if (n->_parent)
+        if (n->_parent) {
             _caller.pop();
+        }
         _mo.add_nonterm(qn);
     }
 
     QueryExpr* NewQuery() {
-        if (_caller.empty())
+        if (_caller.empty()) {
             return nullptr;
+        }
         return _caller.top();
     }
 
 private:
     void update(QueryExpr* e) {
-        if (!_caller.empty())
+        if (!_caller.empty()) {
             _caller.top()->AddChild(e);
+        }
     }
 
     std::stack<QueryNode*> _caller; // Recursion emulator..
@@ -88,8 +91,9 @@ MatchObject::~MatchObject() {
 
 bool MatchObject::Match(MatchObject::iterator& mi, Token& token, unsigned& options) {
     QueryTerm* q = mi.first_match(token);
-    if (!q)
+    if (!q) {
         return false;
+    }
     options = 0;
     q->total_match_cnt++;
     if (q->ucs4_len == static_cast<size_t>(token.curlen)) {
@@ -133,34 +137,40 @@ QueryTerm* match_iterator::first() {
 
         // If exact match is desired by this subexpression,
         // only have effect if exact match
-        if (q->Exact() && _len > q->len())
+        if (q->Exact() && _len > q->len()) {
             continue;
+        }
 
         if (q->is_wildcard()) {
-            if (fast::util::wildcard_match(_term, q->ucs4_term()) == false)
+            if (fast::util::wildcard_match(_term, q->ucs4_term()) == false) {
                 continue;
+            }
             return q;
         }
 
-        if (_len < q->ucs4_len)
+        if (_len < q->ucs4_len) {
             continue;
+        }
         // allow prefix match iff prefix query term or
         // rest < _stem_extend and length > stem_min
         if (!q->is_prefix()) {
             size_t stem_extend = (q->ucs4_len <= _stem_min ? 0 : _stemext);
-            if (_len > q->ucs4_len + stem_extend)
+            if (_len > q->ucs4_len + stem_extend) {
                 continue;
+            }
         }
-        if (juniper::strncmp(_term, q->ucs4_term(), q->ucs4_len) != 0)
+        if (juniper::strncmp(_term, q->ucs4_term(), q->ucs4_len) != 0) {
             continue;
+        }
         return q;
     }
     return nullptr;
 }
 
 QueryTerm* match_iterator::next_reduce_match() {
-    if (!_reduce_matches)
+    if (!_reduce_matches) {
         return nullptr;
+    }
     if (_reduce_matches_it != _reduce_matches->end()) {
         QueryTerm* t = *_reduce_matches_it;
         ++_reduce_matches_it;
@@ -244,10 +254,12 @@ QueryTerm* match_iterator::first_match(Token& token) {
 
 /** Return the current element without advancing iterator pointers */
 QueryTerm* match_iterator::current() {
-    if (_el)
+    if (_el) {
         return _el->GetItem();
-    if (!_reduce_matches)
+    }
+    if (!_reduce_matches) {
         return nullptr;
+    }
     if (_reduce_matches_it != _reduce_matches->end()) {
         QueryTerm* t = *_reduce_matches_it;
         return t;
@@ -260,7 +272,8 @@ QueryTerm* match_iterator::next() {
     if (_el) {
         _el = _el->GetNext();
         return first();
-    } else if (_reduce_matches)
+    } else if (_reduce_matches) {
         return next_reduce_match();
+    }
     return nullptr;
 }

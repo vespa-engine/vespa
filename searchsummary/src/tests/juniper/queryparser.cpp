@@ -85,8 +85,9 @@ QueryParser::QueryParser(const char* query_string)
     if (_tokenizer.MoreTokens()) {
         next();
         _exp = ParseExpr();
-        if (ParseError())
+        if (ParseError()) {
             return;
+        }
     } else {
         _exp = nullptr;
         _parse_errno = 1;
@@ -99,8 +100,9 @@ QueryParser::QueryParser(const char* query_string)
 }
 
 void QueryParser::next() {
-    if (_reached_end)
+    if (_reached_end) {
         _parse_errno = 3;
+    }
     if (!_tokenizer.MoreTokens()) {
         _reached_end = true;
         return;
@@ -121,8 +123,9 @@ bool QueryParser::match(const char* s, bool required) {
 
 bool QueryParser::Traverse(IQueryVisitor* v) const {
     const_cast<QueryParser*>(this)->_v = v;
-    if (_exp)
+    if (_exp) {
         trav(_exp.get());
+    }
     return true;
 }
 
@@ -138,22 +141,23 @@ void QueryParser::trav(QueryItem* e_abstract) const {
     if (e->arity() == 0) {
         _v->visitKeyword(e, e->_name, e->_prefix, false);
     }
-    if (e->_name.compare("AND") == 0)
+    if (e->_name.compare("AND") == 0) {
         _v->VisitAND(e, e->arity());
-    else if (e->_name.compare("OR") == 0)
+    } else if (e->_name.compare("OR") == 0) {
         _v->VisitOR(e, e->arity());
-    else if (e->_name.compare("ANDNOT") == 0)
+    } else if (e->_name.compare("ANDNOT") == 0) {
         _v->VisitANDNOT(e, e->arity());
-    else if (e->_name.compare("RANK") == 0)
+    } else if (e->_name.compare("RANK") == 0) {
         _v->VisitRANK(e, e->arity());
-    else if (e->_name.compare("PHRASE") == 0)
+    } else if (e->_name.compare("PHRASE") == 0) {
         _v->VisitPHRASE(e, e->arity());
-    else if (e->_name.compare("NEAR") == 0)
+    } else if (e->_name.compare("NEAR") == 0) {
         _v->VisitNEAR(e, e->arity(), e->_p1);
-    else if (e->_name.compare("WITHIN") == 0)
+    } else if (e->_name.compare("WITHIN") == 0) {
         _v->VisitWITHIN(e, e->arity(), e->_p1);
-    else if (e->_name.compare("ONEAR") == 0)
+    } else if (e->_name.compare("ONEAR") == 0) {
         _v->VisitWITHIN(e, e->arity(), e->_p1);
+    }
 
     for (auto& child : e->_child) {
         trav(child.get());
@@ -163,16 +167,18 @@ void QueryParser::trav(QueryItem* e_abstract) const {
 std::unique_ptr<QueryItem> QueryParser::ParseExpr() {
     int  p1 = -1;
     auto it = _op_to_type.find(_curtok);
-    if (it == _op_to_type.end())
+    if (it == _op_to_type.end()) {
         return ParseIndexTerm();
+    }
     std::string op = _curtok;
     switch (it->second) {
     case TOK_NORM_OP:
         break;
     case TOK_PARAM1_OP:
         next();
-        if (!match("/", true))
+        if (!match("/", true)) {
             return nullptr;
+        }
         next();
         p1 = atoi(_curtok.c_str());
         LOG(debug, "constraint operator %s - value %d", op.c_str(), p1);
@@ -181,12 +187,14 @@ std::unique_ptr<QueryItem> QueryParser::ParseExpr() {
         LOG_ABORT("should not reach here");
     }
     next();
-    if (!match("(", true))
+    if (!match("(", true)) {
         return nullptr;
+    }
     auto e = std::make_unique<QueryParserQueryItem>(op.c_str(), p1);
     do {
-        if (ParseError())
+        if (ParseError()) {
             return nullptr;
+        }
         next();
         auto ep = ParseExpr();
         if (!ep) {
@@ -212,15 +220,17 @@ std::unique_ptr<QueryItem> QueryParser::ParseIndexTerm() {
             e->_index = t;
         }
         return e;
-    } else
+    } else {
         return CheckPrefix(t);
+    }
 }
 
 std::unique_ptr<QueryParserQueryItem> QueryParser::CheckPrefix(std::string& kw) {
     std::string::size_type pos = kw.find_first_of("*?");
     bool                   prefix = pos == kw.size() - 1 && kw[pos] == '*';
-    if (prefix)
+    if (prefix) {
         kw.erase(pos);
+    }
     auto e = std::make_unique<QueryParserQueryItem>(kw.c_str());
     e->_prefix = pos != std::string::npos;
     return e;

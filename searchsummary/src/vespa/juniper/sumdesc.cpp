@@ -209,8 +209,9 @@ int complete_word(const unsigned char* start, ssize_t length, const unsigned cha
             // since we are then supposed to be pointing to the first
             // char not in the word while going backwards we stop at
             // the start character of the word!
-            if (increment > 0)
+            if (increment > 0) {
                 moved += cur_move;
+            }
             break; // Found first blank/word char..
         }
         moved += cur_move;
@@ -220,8 +221,9 @@ int complete_word(const unsigned char* start, ssize_t length, const unsigned cha
         }
     }
     // Adjust for getting to the start of the start character:
-    if (start_off)
+    if (start_off) {
         moved += increment > 0 ? -start_off : start_off;
+    }
 
     LOG(spam, "complete_word: %s %d bytes", (whitespace_elim ? "ws cut" : (increment > 0 ? "appended" : "prepended")),
         moved);
@@ -266,8 +268,9 @@ SummaryDesc::SummaryDesc(Matcher* matcher, ssize_t length, ssize_t min_length, i
     }
 
     /* Adjust to sensible values */
-    if (_surround_len < MIN_SURROUND_LEN)
+    if (_surround_len < MIN_SURROUND_LEN) {
         _surround_len = MIN_SURROUND_LEN;
+    }
 
     /* decide what amount of matches to use (stored in _clist) */
     _match_elems = find_matches();
@@ -300,8 +303,9 @@ void SummaryDesc::locate_accidential_matches() {
         print_list::iterator nit = pit;
         bool                 more = (++nit != _plist.end());
 
-        if (d->_highlight)
+        if (d->_highlight) {
             continue; // Ignore already found keywords..
+        }
 
         /* Now investigate if there are other matches than the best
          * ones that goes within the selected print context
@@ -310,8 +314,9 @@ void SummaryDesc::locate_accidential_matches() {
         /* Advance occurrence iterator until *kit (keyword occurrence)
          * overlap d (current descriptor) or is past d
          */
-        while (kit != _occ.end() && (*kit)->startpos() + (*kit)->tokenlen <= d->_pos)
+        while (kit != _occ.end() && (*kit)->startpos() + (*kit)->tokenlen <= d->_pos) {
             ++kit;
+        }
 
         if (_matcher->UsesValid()) {
             /* If there are subphrases or other restricting subqueries
@@ -320,11 +325,14 @@ void SummaryDesc::locate_accidential_matches() {
              */
             while (kit != _occ.end() && !(*kit)->valid() &&
                    (*kit)->startpos() + (*kit)->tokenlen <= d->_pos + d->_len)
+            {
                 ++kit;
+            }
         }
 
-        if (kit == _occ.end())
+        if (kit == _occ.end()) {
             return;
+        }
 
         /* Turn "token cut at start" into "token contained in" case */
         if ((*kit)->startpos() < d->_pos) {
@@ -337,8 +345,9 @@ void SummaryDesc::locate_accidential_matches() {
         /* Split descriptors each time a new occurrence is found
          * within current descriptor */
         for (; kit != _occ.end() && (*kit)->startpos() + (*kit)->tokenlen <= d->_pos + d->_len; ++kit) {
-            if (_matcher->UsesValid() && !(*kit)->valid())
+            if (_matcher->UsesValid() && !(*kit)->valid()) {
                 continue;
+            }
             /* simple split - occurrence contained in (but maybe at
              * start of) descriptor */
             off_t kpos = (*kit)->startpos();
@@ -350,8 +359,9 @@ void SummaryDesc::locate_accidential_matches() {
                 static_cast<int64_t>(d->_pos), static_cast<int64_t>(start_len), static_cast<int64_t>(kpos),
                 static_cast<int64_t>(klen), static_cast<int64_t>(kpos + klen), static_cast<int64_t>(end_len));
 
-            if (start_len > 0)
+            if (start_len > 0) {
                 _plist.insert(pit, highlight_desc(d->_pos, start_len, false));
+            }
 
             // new keyword
             print_list::iterator kwit = _plist.insert(pit, highlight_desc(kpos, klen, true));
@@ -372,8 +382,9 @@ void SummaryDesc::locate_accidential_matches() {
                 d = &(*kwit);
             }
         }
-        if (kit == _occ.end())
+        if (kit == _occ.end()) {
             return;
+        }
 
         /* Handle cut end occurrence separately */
         off_t d_end = d->_pos + d->_len;
@@ -401,11 +412,13 @@ void SummaryDesc::locate_accidential_matches() {
             /* Insert new desc after the just processed one */
             pit = _plist.insert(++pit, highlight_desc(kpos, klen, true));
             ++kit;
-            if (kit == _occ.end())
+            if (kit == _occ.end()) {
                 return;
+            }
         }
-        if (pit == _plist.end())
+        if (pit == _plist.end()) {
             break;
+        }
     } // end for (pit..)
 }
 
@@ -420,8 +433,9 @@ int SummaryDesc::find_matches() {
 
     // Find enough proper matches (without overlap)
     for (MatchCandidate* m : _match_results) {
-        if (overlap(m))
+        if (overlap(m)) {
             continue;
+        }
 
         ssize_t size = m->size();
 
@@ -433,8 +447,9 @@ int SummaryDesc::find_matches() {
 
         /* Adjust length in case of lack of prefix context */
         int pre = m->starttoken() - m->ctxt_startpos();
-        if (pre < _surround_len)
+        if (pre < _surround_len) {
             adjust_len += _surround_len - pre;
+        }
 
         match_len += size;
 
@@ -448,8 +463,9 @@ int SummaryDesc::find_matches() {
         match_elems += m->elems();
 
         _est_len = match_len - adjust_len + (2 * (_surround_len) + MIN_CONTINUATION) * match_count;
-        if (_est_len >= (int)_min_length && match_count >= _max_matches)
+        if (_est_len >= (int)_min_length && match_count >= _max_matches) {
             break;
+        }
     }
     LOG(spam, "QHL: %d matches, raw len %d, estimated len %d, elements %d", match_count, match_len, _est_len,
         match_elems);
@@ -487,8 +503,9 @@ int SummaryDesc::complete_extended_token(const unsigned char* start, ssize_t len
         moved += complete_word(start, length, ptr, increment);
 
         // Ensure that there is a quick way out of this at the end:
-        if (start >= ptr || start + length <= ptr || ptr == old_ptr)
+        if (start >= ptr || start + length <= ptr || ptr == old_ptr) {
             return moved;
+        }
 
         // If we end up at the same place as last iteration, we need
         // to bail (done above) to avoid an infinite loop.
@@ -502,8 +519,9 @@ int SummaryDesc::complete_extended_token(const unsigned char* start, ssize_t len
         // "real" break:
         if (increment < 0) {
             prelen = Fast_UnicodeUtil::UTF8move(start, length, preptr, increment);
-            if (!prelen)
+            if (!prelen) {
                 return moved;
+            }
         } else {
             prelen = 0;
         }
@@ -518,8 +536,9 @@ int SummaryDesc::complete_extended_token(const unsigned char* start, ssize_t len
 
         // Read the character before/after the connector character:
         int addlen = Fast_UnicodeUtil::UTF8move(start, length, preptr, increment);
-        if (!addlen)
+        if (!addlen) {
             return moved; // Not possible to extend anything here
+        }
 
         // Only a single connector character that connects word
         // characters should lead us to include more words in the
@@ -543,8 +562,9 @@ int SummaryDesc::complete_extended_token(const unsigned char* start, ssize_t len
         // we have to move forward once here:
         if (increment > 0) {
             addlen = Fast_UnicodeUtil::UTF8move(start, length, preptr, increment);
-            if (!addlen)
+            if (!addlen) {
                 return moved;
+            }
             moved += addlen;
         }
         ptr = preptr;
@@ -572,8 +592,9 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
     juniper::Appender a(sumconf);
 
     int reserve_len = static_cast<int>(_est_len * 1.1);
-    if (reserve_len)
+    if (reserve_len) {
         s.reserve(reserve_len);
+    }
     print_list::iterator it = _plist.begin();
     print_list::iterator nit = it;
 
@@ -588,8 +609,9 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
      *  build up the result string
      */
     for (; it != _plist.end(); ++it) {
-        if (nit != _plist.end())
+        if (nit != _plist.end()) {
             ++nit;
+        }
         highlight_desc& d = *it;
         off_t           next_pos = (nit == _plist.end() ? 0x7fffffff : (*nit)._pos);
 
@@ -617,8 +639,9 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
             start_cont = true;
             s.insert(s.end(), sumconf->dots().begin(), sumconf->dots().end());
         }
-        if (d._highlight)
+        if (d._highlight) {
             s.insert(s.end(), sumconf->highlight_on().begin(), sumconf->highlight_on().end());
+        }
 
         /* Point to current startpoint to check for split
          * word/starting space tokens (only if previous segment is not
@@ -675,8 +698,9 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
         }
         prev_end = pos + len;
     }
-    if (s.size() > 0 && prev_end < (int)_document_length)
+    if (s.size() > 0 && prev_end < (int)_document_length) {
         s.insert(s.end(), sumconf->dots().begin(), sumconf->dots().end());
+    }
     LOG(debug, "get_summary: Length of summary %ld bytes %ld chars", s.size(), a.charLen());
     _sumconf = nullptr; // Not valid after this call.
     char_size = a.charLen();
@@ -835,8 +859,9 @@ void SummaryDesc::build_highlight_descs() {
             int max_len = k->startpos() - pos;
             // the same occurrence may appear twice in a match, in
             // which case length will be < 0
-            if (max_len < 0)
+            if (max_len < 0) {
                 continue;
+            }
 
             if (pos == 0) {
                 // Adding initial segment:
@@ -892,8 +917,9 @@ void SummaryDesc::build_fulldoc_desc() {
 }
 
 void SummaryDesc::add_desc(off_t pos, ssize_t len, bool highlight) {
-    if (len == 0)
+    if (len == 0) {
         return;
+    }
     JD_INVAR(JD_DUMP, len > 0, return,
              LOG(info, "add_desc len %ld, %s", static_cast<long>(len), (highlight ? "highlight" : ""));
              assert(false));

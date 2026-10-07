@@ -26,8 +26,9 @@ MatchCandidate::MatchCandidate(QueryExpr* m, MatchElement** elms, off_t ctxt_sta
       _overlap(0),
       _refcnt(1),
       _klist() {
-    for (int i = 0; i < _elems; i++)
+    for (int i = 0; i < _elems; i++) {
         element[i] = nullptr;
+    }
 
     if (LOG_WOULD_LOG(debug)) {
         std::string s;
@@ -44,24 +45,29 @@ void MatchCandidate::dump(std::string& s) {
     int i;
     s.append("MC<");
     for (i = 0; i < _elems; i++) {
-        if (i > 0)
+        if (i > 0) {
             s.append(";");
+        }
         _match->AsNode()->_children[i]->Dump(s);
         s.append(":");
         if (element[i]) {
             s.append(vespalib::make_string("%" PRId64, static_cast<int64_t>(element[i]->starttoken())));
-            if (element[i]->starttoken() + 1 < element[i]->endtoken())
+            if (element[i]->starttoken() + 1 < element[i]->endtoken()) {
                 s.append(vespalib::make_string("-%" PRId64, static_cast<int64_t>(element[i]->endtoken())));
-        } else
+            }
+        } else {
             s.append("<nil>");
+        }
     }
     s.append(">");
 }
 
 void MatchCandidate::set_valid() {
-    for (int j = 0; j < _elems; j++)
-        if (element[j])
+    for (int j = 0; j < _elems; j++) {
+        if (element[j]) {
             element[j]->set_valid();
+        }
+    }
     _valid = true;
 }
 
@@ -70,19 +76,22 @@ void MatchCandidate::make_keylist() {
 }
 
 void MatchCandidate::add_to_keylist(keylist& kl) {
-    if (kl.size() > 0)
+    if (kl.size() > 0) {
         return; // already made list
+    }
     for (int i = 0; i < _elems; i++) {
         MatchElement* me = element[i];
-        if (me)
+        if (me) {
             me->add_to_keylist(kl);
+        }
     }
 }
 
 MatchCandidate::accept_state MatchCandidate::accept(MatchElement* k, QueryExpr* mexp) {
     if (element[mexp->_childno]) {
-        if (_overlap)
+        if (_overlap) {
             return M_OVERLAP;
+        }
         return M_EXISTS;
     } else {
         if (order()) {
@@ -125,18 +134,22 @@ MatchCandidate::accept_state MatchCandidate::accept(MatchElement* k, QueryExpr* 
 
 int MatchCandidate::weight(MatchElement* me, QueryExpr* mexp) {
     QueryTerm* texp = mexp->AsTerm();
-    if (texp)
+    if (texp) {
         return mexp->_weight;
+    }
     MatchCandidate* m = static_cast<MatchCandidate*>(me);
     return m->weight();
 }
 
 bool MatchCandidate::complete() {
-    if (_nelems < _elems)
+    if (_nelems < _elems) {
         return false;
-    for (int i = 0; i < _elems; i++)
-        if (!element[i]->complete())
+    }
+    for (int i = 0; i < _elems; i++) {
+        if (!element[i]->complete()) {
             return false;
+        }
+    }
     return true;
 }
 
@@ -147,8 +160,9 @@ void MatchCandidate::log(std::string& logobj) {
             snprintf(buf, sizeof(buf), "<td align=left>%" PRId64 "</td>",
                      static_cast<int64_t>(element[i]->starttoken()));
             logobj.append(buf);
-        } else
+        } else {
             logobj.append("<td></td>");
+        }
     }
     snprintf(buf, sizeof(buf), "<td align=right>%d</td><td align=right>%d</td>", word_distance(), rank());
     logobj.append(buf);
@@ -156,12 +170,14 @@ void MatchCandidate::log(std::string& logobj) {
 
 // Check optional WITHIN(limit) constraints:
 bool MatchCandidate::matches_limit() {
-    if (!match()->HasLimit())
+    if (!match()->HasLimit()) {
         return true;
+    }
 
     // completeness check:
-    if (!complete())
+    if (!complete()) {
         return false;
+    }
 
     int    limit = match()->Limit();
     size_t elem_word_len = element[0]->word_length();
@@ -169,13 +185,15 @@ bool MatchCandidate::matches_limit() {
         int prev_term = i - 1;
         elem_word_len += element[i]->word_length();
         // Order check:
-        if (order() && element[prev_term]->starttoken() >= element[i]->starttoken())
+        if (order() && element[prev_term]->starttoken() >= element[i]->starttoken()) {
             return false;
+        }
     }
 
     // Then check that within total limit:
-    if (((int)word_length() - (int)elem_word_len) > limit * (_elems - 1))
+    if (((int)word_length() - (int)elem_word_len) > limit * (_elems - 1)) {
         return false;
+    }
     return true;
 }
 
