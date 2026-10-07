@@ -168,8 +168,9 @@ public:
      * @param needbytes required size of free part.
      **/
     void EnsureFree(uint32_t needbytes) {
-        if (needbytes > GetFreeLen())
+        if (needbytes > GetFreeLen()) {
             Pack(needbytes);
+        }
     }
 
     /**

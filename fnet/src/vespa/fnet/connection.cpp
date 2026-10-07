@@ -35,8 +35,9 @@ public:
     void WaitFree() {
         std::unique_lock<std::mutex> guard(_lock);
         _waiting = true;
-        while (!_done)
+        while (!_done) {
             _cond.wait(guard);
+        }
         _waiting = false;
     }
 
@@ -352,8 +353,9 @@ bool FNET_Connection::Write() {
         // fill output buffer
 
         while (_output.GetDataLen() < chunk_size) {
-            if (_myQueue.IsEmpty_NoLock())
+            if (_myQueue.IsEmpty_NoLock()) {
                 break;
+            }
 
             packet = _myQueue.DequeuePacket_NoLock(&context);
             if (packet->IsRegularPacket()) { // ignore non-regular packets
@@ -416,8 +418,9 @@ bool FNET_Connection::Write() {
     bool writePending = (_writeWork > 0);
 
     guard.unlock();
-    if (!writePending)
+    if (!writePending) {
         EnableWriteEvent(false);
+    }
 
     return !broken;
 }

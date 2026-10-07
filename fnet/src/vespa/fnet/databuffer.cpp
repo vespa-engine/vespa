@@ -6,8 +6,9 @@
 
 FNET_DataBuffer::FNET_DataBuffer(uint32_t len)
     : _bufstart(nullptr), _bufend(nullptr), _datapt(nullptr), _freept(nullptr) {
-    if (len > 0 && len < 256)
+    if (len > 0 && len < 256) {
         len = 256;
+    }
 
     if (len > 0) {
         Alloc::alloc(len).swap(_ownedBuf);
@@ -66,8 +67,9 @@ void FNET_DataBuffer::Pack(uint32_t needbytes) {
         if (bufsize < 256) {
             bufsize = 256;
         }
-        while (bufsize - GetDataLen() < needbytes)
+        while (bufsize - GetDataLen() < needbytes) {
             bufsize *= 2;
+        }
 
         Alloc newBuf(Alloc::alloc(bufsize));
         if (_datapt != nullptr) [[likely]] {
@@ -86,8 +88,9 @@ void FNET_DataBuffer::Pack(uint32_t needbytes) {
 }
 
 bool FNET_DataBuffer::Equals(FNET_DataBuffer* other) {
-    if (GetDataLen() != other->GetDataLen())
+    if (GetDataLen() != other->GetDataLen()) {
         return false;
+    }
     return memcmp(GetData(), other->GetData(), GetDataLen()) == 0;
 }
 
@@ -97,10 +100,12 @@ void FNET_DataBuffer::HexDump() {
     uint32_t i = 0;
     while (pt < _freept) {
         printf("%x ", (unsigned char)*pt++);
-        if ((++i % 16) == 0)
+        if ((++i % 16) == 0) {
             printf("\n");
+        }
     }
-    if ((i % 16) != 0)
+    if ((i % 16) != 0) {
         printf("\n");
+    }
     printf("*** FNET_DataBuffer HexDump END ***\n");
 }
