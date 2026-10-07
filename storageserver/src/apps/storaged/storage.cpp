@@ -47,7 +47,7 @@ Process::UP createProcess(std::string_view configId) {
                                                                                         uri.getContext());
     if (serverConfig->isDistributor) {
         return std::make_unique<DistributorProcess>(uri);
-    } else
+    } else {
         switch (serverConfig->persistenceProvider.type) {
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::STORAGE:
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::DUMMY:
@@ -55,6 +55,7 @@ Process::UP createProcess(std::string_view configId) {
         default:
             throw vespalib::IllegalStateException("Unknown persistence provider.", VESPA_STRLOC);
         }
+    }
 }
 
 } // End of anonymous namespace

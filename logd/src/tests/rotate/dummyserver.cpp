@@ -36,13 +36,15 @@ int main(int /*argc*/, char** /*argv*/) {
     sockaddr_storage cli_addr;
     socklen_t        clilen = sizeof(cli_addr);
     int              newsockfd = accept(handle.get(), (struct sockaddr*)&cli_addr, &clilen);
-    if (newsockfd < 0)
+    if (newsockfd < 0) {
         error("ERROR on accept");
+    }
     char buffer[1024];
     while (true) {
         ssize_t n = read(newsockfd, buffer, sizeof(buffer));
-        if (n < 0)
+        if (n < 0) {
             error("ERROR reading from socket");
+        }
         struct timespec t;
         t.tv_sec = 0;
         t.tv_nsec = 200000000;
