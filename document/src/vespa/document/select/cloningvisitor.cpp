@@ -181,13 +181,15 @@ void CloningVisitor::visitInvalidValueNode(const InvalidValueNode& expr) {
 }
 
 void CloningVisitor::setNodeParentheses(int priority) {
-    if (_priority < priority)
+    if (_priority < priority) {
         _node->setParentheses();
+    }
 }
 
 void CloningVisitor::setValueNodeParentheses(int priority) {
-    if (_priority < priority)
+    if (_priority < priority) {
         _valueNode->setParentheses();
+    }
 }
 
 void CloningVisitor::setArithmeticValueNode(const ArithmeticValueNode& expr, std::unique_ptr<ValueNode> lhs,

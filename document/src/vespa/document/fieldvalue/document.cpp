@@ -156,8 +156,9 @@ Document& Document::operator=(Document&& rhs) noexcept {
 }
 
 Document& Document::operator=(const Document& rhs) {
-    if (this == &rhs)
+    if (this == &rhs) {
         return *this;
+    }
     assert(!_cache && !rhs._cache);
     _id = rhs._id;
     _fields = rhs._fields;

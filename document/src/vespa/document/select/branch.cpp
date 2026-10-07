@@ -22,13 +22,15 @@ void And::visit(Visitor& v) const {
 }
 
 void And::print(std::ostream& out, bool verbose, const std::string& indent) const {
-    if (_parentheses)
+    if (_parentheses) {
         out << '(';
+    }
     _left->print(out, verbose, indent);
     out << " " << _name << " ";
     _right->print(out, verbose, indent);
-    if (_parentheses)
+    if (_parentheses) {
         out << ')';
+    }
 }
 
 namespace {
@@ -61,13 +63,15 @@ void Or::visit(Visitor& v) const {
 }
 
 void Or::print(std::ostream& out, bool verbose, const std::string& indent) const {
-    if (_parentheses)
+    if (_parentheses) {
         out << '(';
+    }
     _left->print(out, verbose, indent);
     out << " " << _name << " ";
     _right->print(out, verbose, indent);
-    if (_parentheses)
+    if (_parentheses) {
         out << ')';
+    }
 }
 
 namespace {
@@ -97,12 +101,14 @@ void Not::visit(Visitor& v) const {
 }
 
 void Not::print(std::ostream& out, bool verbose, const std::string& indent) const {
-    if (_parentheses)
+    if (_parentheses) {
         out << '(';
+    }
     out << _name << " ";
     _child->print(out, verbose, indent);
-    if (_parentheses)
+    if (_parentheses) {
         out << ')';
+    }
 }
 
 namespace {

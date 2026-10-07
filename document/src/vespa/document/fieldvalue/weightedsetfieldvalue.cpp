@@ -119,8 +119,9 @@ FieldValue& WeightedSetFieldValue::assign(const FieldValue& value) {
 
 int WeightedSetFieldValue::compare(const FieldValue& other) const {
     int diff = CollectionFieldValue::compare(other);
-    if (diff != 0)
+    if (diff != 0) {
         return diff;
+    }
 
     const WeightedSetFieldValue& wset(dynamic_cast<const WeightedSetFieldValue&>(other));
     return _map.compare(wset._map);
@@ -147,8 +148,9 @@ void WeightedSetFieldValue::print(std::ostream& out, bool verbose, const std::st
         const IntFieldValue& fv = static_cast<const IntFieldValue&>(*entry.second);
         out << " - weight " << fv.getValue();
     }
-    if (_map.size() > 0)
+    if (_map.size() > 0) {
         out << "\n" << indent;
+    }
     out << ")";
 }
 

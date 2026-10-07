@@ -23,11 +23,13 @@ void Constant::visit(Visitor& v) const {
 }
 
 void Constant::print(std::ostream& out, bool, const std::string&) const {
-    if (_parentheses)
+    if (_parentheses) {
         out << '(';
+    }
     out << _name;
-    if (_parentheses)
+    if (_parentheses) {
         out << ')';
+    }
 }
 
 } // namespace document::select

@@ -222,8 +222,9 @@ FieldValue& MapFieldValue::assign(const FieldValue& value) {
 
 int MapFieldValue::compare(const FieldValue& other) const {
     int diff = FieldValue::compare(other);
-    if (diff != 0)
+    if (diff != 0) {
         return diff;
+    }
 
     const MapFieldValue& o(dynamic_cast<const MapFieldValue&>(other));
 
@@ -261,8 +262,9 @@ void MapFieldValue::print(std::ostream& out, bool verbose, const std::string& in
         out << " - ";
         item.second->print(out, verbose, indent + "  ");
     }
-    if (size() > 0)
+    if (size() > 0) {
         out << "\n" << indent;
+    }
     out << ")";
 }
 

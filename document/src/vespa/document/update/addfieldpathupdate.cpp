@@ -59,8 +59,9 @@ ModificationStatus AddIteratorHandler::doModify(FieldValue& fv) {
 } // namespace
 
 bool AddFieldPathUpdate::operator==(const FieldPathUpdate& other) const {
-    if (!FieldPathUpdate::operator==(other))
+    if (!FieldPathUpdate::operator==(other)) {
         return false;
+    }
     const auto& addOther = static_cast<const AddFieldPathUpdate&>(other);
     return *addOther._values == *_values;
 }

@@ -52,11 +52,13 @@ void InvalidValueNode::visit(Visitor& visitor) const {
 void InvalidValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
     (void)indent;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << '(';
+    }
     out << _name;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << ')';
+    }
 }
 
 NullValueNode::NullValueNode() = default;
@@ -68,11 +70,13 @@ void NullValueNode::visit(Visitor& visitor) const {
 void NullValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
     (void)indent;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << '(';
+    }
     out << "null";
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << ')';
+    }
 }
 
 StringValueNode::StringValueNode(std::string_view val) : _value(val) {
@@ -85,11 +89,13 @@ void StringValueNode::visit(Visitor& visitor) const {
 void StringValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
     (void)indent;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << '(';
+    }
     out << "\"" << StringUtil::escape(_value) << "\"";
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << ')';
+    }
 }
 
 void IntegerValueNode::visit(Visitor& visitor) const {
@@ -99,11 +105,13 @@ void IntegerValueNode::visit(Visitor& visitor) const {
 void IntegerValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
     (void)indent;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << '(';
+    }
     out << _value;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << ')';
+    }
 }
 
 void BoolValueNode::visit(Visitor& visitor) const {
@@ -112,11 +120,13 @@ void BoolValueNode::visit(Visitor& visitor) const {
 
 void BoolValueNode::print(std::ostream& out, [[maybe_unused]] bool verbose,
                           [[maybe_unused]] const std::string& indent) const {
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << '(';
+    }
     out << bool_value_str();
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << ')';
+    }
 }
 
 int64_t CurrentTimeValueNode::getValue() const {
@@ -146,11 +156,13 @@ void VariableValueNode::visit(Visitor& visitor) const {
 void VariableValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
     (void)indent;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << '(';
+    }
     out << "$" << _value;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << ')';
+    }
 }
 
 void FloatValueNode::visit(Visitor& visitor) const {
@@ -160,11 +172,13 @@ void FloatValueNode::visit(Visitor& visitor) const {
 void FloatValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
     (void)indent;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << '(';
+    }
     out << _value;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << ')';
+    }
 }
 
 FieldValueNode::FieldValueNode(const std::string& doctype, const std::string& fieldExpression)
@@ -419,11 +433,13 @@ void FieldValueNode::visit(Visitor& visitor) const {
 void FieldValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
     (void)indent;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << '(';
+    }
     out << _doctype << "." << _fieldExpression;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << ')';
+    }
 }
 
 std::unique_ptr<Value> FieldValueNode::traceValue(const Context& context, std::ostream& out) const {
@@ -473,7 +489,7 @@ IdValueNode::IdValueNode(const BucketIdFactory& bucketIdFactory, std::string_vie
       _type(ALL),
       _widthBits(widthBits),
       _divisionBits(divisionBits) {
-    if (type.length() > 2)
+    if (type.length() > 2) {
         switch (type[0]) {
         case 'b':
             _type = BUCKET;
@@ -504,6 +520,7 @@ IdValueNode::IdValueNode(const BucketIdFactory& bucketIdFactory, std::string_vie
             break;
             break;
         }
+    }
 }
 
 std::unique_ptr<Value> IdValueNode::getValue(const Context& context) const {
@@ -639,14 +656,16 @@ void IdValueNode::visit(Visitor& visitor) const {
 void IdValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
     (void)indent;
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << '(';
+    }
     out << _id;
     if (_type != ALL) {
         out << '.' << _typestring;
     }
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << ')';
+    }
 }
 
 namespace {
@@ -692,8 +711,9 @@ std::unique_ptr<Value> FunctionValueNode::getValue(std::unique_ptr<Value> val) c
             return std::make_unique<IntegerValue>(hash(&ffval, sizeof(ffval)), false);
         } else if (_function == ABS) {
             FloatValue::ValueType ffval = fval.getValue();
-            if (ffval < 0)
+            if (ffval < 0) {
                 ffval *= -1;
+            }
             return std::make_unique<FloatValue>(ffval);
         }
         break;
@@ -705,8 +725,9 @@ std::unique_ptr<Value> FunctionValueNode::getValue(std::unique_ptr<Value> val) c
             return std::make_unique<IntegerValue>(hash(&iival, sizeof(iival)), false);
         } else if (_function == ABS) {
             IntegerValue::ValueType iival = ival.getValue();
-            if (iival < 0)
+            if (iival < 0) {
                 iival *= -1;
+            }
             return std::make_unique<IntegerValue>(iival, false);
         }
         break;
@@ -755,8 +776,9 @@ std::unique_ptr<Value> FunctionValueNode::traceValue(std::unique_ptr<Value> val,
             return result;
         } else if (_function == ABS) {
             FloatValue::ValueType ffval = fval.getValue();
-            if (ffval < 0)
+            if (ffval < 0) {
                 ffval *= -1;
+            }
             out << "Performed abs on float " << fval.getValue() << " -> " << ffval << "\n";
             return std::make_unique<FloatValue>(ffval);
         }
@@ -771,8 +793,9 @@ std::unique_ptr<Value> FunctionValueNode::traceValue(std::unique_ptr<Value> val,
             return result;
         } else if (_function == ABS) {
             IntegerValue::ValueType iival = ival.getValue();
-            if (iival < 0)
+            if (iival < 0) {
                 iival *= -1;
+            }
             out << "Performed abs on integer " << ival.getValue() << " -> " << iival << "\n";
             return std::make_unique<IntegerValue>(iival, false);
         }
@@ -801,12 +824,14 @@ void FunctionValueNode::visit(Visitor& visitor) const {
 }
 
 void FunctionValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << '(';
+    }
     _source->print(out, verbose, indent);
     out << '.' << _funcname << "()";
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << ')';
+    }
 }
 
 ArithmeticValueNode::ArithmeticValueNode(std::unique_ptr<ValueNode> left, std::string_view op,
@@ -815,7 +840,7 @@ ArithmeticValueNode::ArithmeticValueNode(std::unique_ptr<ValueNode> left, std::s
       _operator(),
       _left(std::move(left)),
       _right(std::move(right)) {
-    if (op.size() == 1)
+    if (op.size() == 1) {
         switch (op[0]) {
         case '+':
             _operator = ADD;
@@ -833,6 +858,7 @@ ArithmeticValueNode::ArithmeticValueNode(std::unique_ptr<ValueNode> left, std::s
             _operator = MOD;
             return;
         }
+    }
     throw ParsingFailedException("Arithmetic operator '" + std::string(op) + "' does not exist.", VESPA_STRLOC);
 }
 
@@ -1021,8 +1047,9 @@ void ArithmeticValueNode::visit(Visitor& visitor) const {
 }
 
 void ArithmeticValueNode::print(std::ostream& out, bool verbose, const std::string& indent) const {
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << '(';
+    }
     _left->print(out, verbose, indent);
     switch (_operator) {
     case ADD:
@@ -1042,8 +1069,9 @@ void ArithmeticValueNode::print(std::ostream& out, bool verbose, const std::stri
         break;
     }
     _right->print(out, verbose, indent);
-    if (hadParentheses())
+    if (hadParentheses()) {
         out << ')';
+    }
 }
 
 FieldExprNode::~FieldExprNode() = default;

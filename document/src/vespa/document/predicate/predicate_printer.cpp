@@ -50,11 +50,13 @@ void PredicatePrinter::visitFeatureRange(const Inspector& in) {
     bool has_min = in[Predicate::RANGE_MIN].valid();
     bool has_max = in[Predicate::RANGE_MAX].valid();
     *_out << " in [";
-    if (has_min)
+    if (has_min) {
         *_out << in[Predicate::RANGE_MIN].asLong();
+    }
     *_out << "..";
-    if (has_max)
+    if (has_max) {
         *_out << in[Predicate::RANGE_MAX].asLong();
+    }
     *_out << "]";
 }
 
@@ -66,8 +68,9 @@ void PredicatePrinter::visitNegation(const Inspector& in) {
 }
 
 void PredicatePrinter::visitConjunction(const Inspector& in) {
-    if (_negated)
+    if (_negated) {
         *_out << "not ";
+    }
     _negated = false;
     *_out << "(";
     for (size_t i = 0; i < in[Predicate::CHILDREN].children(); ++i) {
@@ -80,8 +83,9 @@ void PredicatePrinter::visitConjunction(const Inspector& in) {
 }
 
 void PredicatePrinter::visitDisjunction(const Inspector& in) {
-    if (_negated)
+    if (_negated) {
         *_out << "not ";
+    }
     _negated = false;
     *_out << "(";
     for (size_t i = 0; i < in[Predicate::CHILDREN].children(); ++i) {
