@@ -130,15 +130,8 @@
       ]
     },
     "parameter": {
-      "match": "(@)([a-zA-Z_][\\w-]*)",
-      "captures": {
-        "1": {
-          "name": "entity.name.function.yql"
-        },
-        "2": {
-          "name": "variable.other.yql"
-        }
-      }
+      "name": "variable.parameter.yql",
+      "match": "@[a-zA-Z_][\\w-]*"
     },
     "keyword": {
       "name": "keyword.control.yql",
@@ -147,7 +140,7 @@
     "operator": {
       "patterns": [
         {
-          "name": "keyword.operator.yql",
+          "name": "keyword.operator.wordlike.yql",
           "match": "(?i:(?<!\\w)(not\\s+in|and|in|or)(?![\\w-]))"
         },
         {
@@ -170,7 +163,7 @@
     },
     "grouping": {
       "name": "meta.grouping.yql",
-      "begin": "\\|",
+      "begin": "\\||^(?=\\s*(?:each|all)\\s*\\()",
       "end": "(?=;)|^(?=\\s*(?i:select)(?![\\w-]))",
       "patterns": [
         {
@@ -282,8 +275,8 @@
           "match": "(?<![\\w@])(each|all|as|at)(?![\\w@])"
         },
         {
-          "name": "keyword.operator.yql",
-          "match": "(?<![\\w@])(istrue|and|not|or)(?![\\w@])"
+          "name": "keyword.operator.wordlike.yql",
+          "match": "(?<![\\w@])(istrue|and|not|in|or)(?![\\w@])"
         },
         {
           "name": "support.type.yql",
@@ -291,7 +284,7 @@
         },
         {
           "name": "entity.name.function.yql",
-          "match": "(?<![\\w@])(interpolatedlookup|normalizesubject|docidnsspecific|fixedwidth|predefined|attribute|debugwait|precision|quantiles|relevance|accuracy|todouble|tostring|reverse|summary|bucket|filter|output|stddev|strcat|strlen|tolong|xorbit|alias|count|group|order|range|regex|toraw|where|hint|size|sort|add|avg|cat|max|md5|min|mod|mul|neg|now|sub|sum|uca|xor)(?![\\w@])"
+          "match": "(?<![\\w@])(interpolatedlookup|normalizesubject|docidnsspecific|fixedwidth|predefined|attribute|debugwait|precision|quantiles|relevance|accuracy|todouble|tostring|reverse|summary|argmax|argmin|bucket|filter|output|stddev|strcat|strlen|tolong|xorbit|alias|count|group|order|range|regex|toraw|where|hint|size|sort|add|avg|cat|max|md5|min|mod|mul|neg|now|sub|sum|uca|xor)(?![\\w@])"
         },
         {
           "name": "entity.name.function.yql",
