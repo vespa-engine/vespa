@@ -15,8 +15,9 @@ namespace config {
 
 ConfigSetSource::ConfigSetSource(std::shared_ptr<IConfigHolder> holder, const ConfigKey& key, BuilderMapSP builderMap)
     : _holder(std::move(holder)), _key(key), _generation(1), _builderMap(std::move(builderMap)) {
-    if (!validRequest(key))
+    if (!validRequest(key)) {
         throw ConfigRuntimeException("Invalid subscribe for key " + key.toString() + ", not builder found");
+    }
 }
 
 ConfigSetSource::~ConfigSetSource() = default;
@@ -53,8 +54,9 @@ void ConfigSetSource::close() {
 }
 
 bool ConfigSetSource::validRequest(const ConfigKey& key) {
-    if (_builderMap->find(key) == _builderMap->end())
+    if (_builderMap->find(key) == _builderMap->end()) {
         return false;
+    }
     BuilderMap::const_iterator it(_builderMap->find(key));
     ConfigInstance*            instance = it->second;
     return (key.getDefName().compare(instance->defName()) == 0 &&
