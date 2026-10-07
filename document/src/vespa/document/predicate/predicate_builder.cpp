@@ -4,9 +4,8 @@
 
 #include "predicate.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/slime/inspector.h>
-
-#include <cassert>
 
 using vespalib::slime::Inspector;
 
@@ -51,7 +50,7 @@ void PredicateBuilder::visitFalse(const Inspector&) {
 
 std::unique_ptr<PredicateNode> PredicateBuilder::build(const vespalib::slime::Inspector& i) {
     visit(i);
-    assert(_nodes.size() == 1);
+    CHECK(_nodes.size() == 1);
     return std::unique_ptr<PredicateNode>(_nodes.front());
 }
 

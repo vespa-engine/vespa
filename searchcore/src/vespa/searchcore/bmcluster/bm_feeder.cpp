@@ -10,6 +10,7 @@
 #include "i_bm_feed_handler.h"
 #include "pending_tracker.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/document/fieldset/fieldsets.h>
@@ -20,7 +21,6 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
-#include <cassert>
 #include <chrono>
 
 #include <vespa/log/log.h>
@@ -98,7 +98,7 @@ uint32_t BmFeeder::feed_task(uint32_t max_pending, BmRange range, const vespalib
         feed_operation(i, is, time_bias, pending_tracker);
         ++op_count;
     }
-    assert(is.empty() || _stop.load(std::memory_order_relaxed));
+    CHECK(is.empty() || _stop.load(std::memory_order_relaxed));
     pending_tracker.drain();
     return op_count;
 }

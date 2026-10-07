@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributor_stripe_test_util.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/common/reindexing_constants.h>
@@ -74,7 +75,7 @@ struct VisitorOperationTest : Test, DistributorStripeTestUtil {
         std::ostringstream ost;
 
         auto* cvc = dynamic_cast<CreateVisitorCommand*>(_sender.command(idx).get());
-        assert(cvc != nullptr);
+        CHECK(cvc != nullptr);
 
         ost << *cvc << " Buckets: [ ";
         for (uint32_t i = 0; i < cvc->getBuckets().size(); ++i) {
@@ -903,7 +904,7 @@ std::unique_ptr<VisitorOperation> VisitorOperationTest::startOperationWith2Stora
 
     op->start(_sender);
 
-    assert(_sender.getCommands(true) == "Visitor Create => 0,Visitor Create => 1");
+    CHECK(_sender.getCommands(true) == "Visitor Create => 0,Visitor Create => 1");
     return op;
 }
 

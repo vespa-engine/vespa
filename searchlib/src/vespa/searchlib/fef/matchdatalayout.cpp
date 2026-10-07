@@ -2,9 +2,8 @@
 
 #include "matchdatalayout.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/backtrace.h>
-
-#include <cassert>
 
 namespace search::fef {
 
@@ -18,7 +17,7 @@ MatchData::UP MatchDataLayout::createMatchData() const {
     auto                                              ah = layout.reserve_array<TermFieldMatchData>(_fieldIds.size());
     auto                                              md = layout.create_data();
     auto                                              array = md->resolve_array<TermFieldMatchData>(ah);
-    assert(array.size() == _fieldIds.size());
+    CHECK(array.size() == _fieldIds.size());
     for (size_t i = 0; i < _fieldIds.size(); ++i) {
         array[i].setFieldId(_fieldIds[i]);
     }

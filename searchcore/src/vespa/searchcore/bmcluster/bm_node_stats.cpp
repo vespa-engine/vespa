@@ -2,7 +2,7 @@
 
 #include "bm_node_stats.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search::bmcluster {
 
@@ -43,7 +43,7 @@ bool BmNodeStats::operator==(const BmNodeStats& rhs) const {
 }
 
 void BmNodeStats::set_document_db_stats(const BmDocumentDbStats& document_db) {
-    assert(!_document_db);
+    CHECK(!_document_db);
     _document_db = document_db;
 }
 
@@ -52,7 +52,7 @@ void BmNodeStats::merge_bucket_stats(const BmBucketsStats& buckets) {
 }
 
 void BmNodeStats::set_merge_stats(const BmMergeStats& merges) {
-    assert(!_merges);
+    CHECK(!_merges);
     _merges = merges;
 }
 

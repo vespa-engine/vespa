@@ -2,10 +2,9 @@
 
 #include "single_bool_attribute_saver.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/searchlib/util/bufferwriter.h>
-
-#include <cassert>
 
 using vespalib::GenerationGuard;
 
@@ -20,9 +19,9 @@ SingleBoolAttributeSaver::~SingleBoolAttributeSaver() = default;
 
 bool SingleBoolAttributeSaver::onSave(IAttributeSaveTarget& saveTarget) {
     std::unique_ptr<search::BufferWriter> writer(saveTarget.datWriter().allocBufferWriter());
-    assert(!saveTarget.getEnumerated());
+    CHECK(!saveTarget.getEnumerated());
     const auto& bv = _bv_snapshot.bitvector();
-    assert(bv.getStartIndex() == 0);
+    CHECK(bv.getStartIndex() == 0);
     uint32_t bits = bv.size();
     writer->write(&bits, sizeof(bits));
     auto entry_size = bv.legacy_num_bytes_with_single_guard_bit(bits);

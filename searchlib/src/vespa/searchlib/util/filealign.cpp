@@ -2,10 +2,9 @@
 
 #include "filealign.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file_interface.h>
 #include <vespa/vespalib/util/size_literals.h>
-
-#include <cassert>
 
 namespace search {
 
@@ -45,20 +44,20 @@ FileAlign::~FileAlign() = default;
 size_t FileAlign::adjustSize(int64_t offset, size_t size) const {
     if (_directio && (offset & (_directIOFileAlign - 1)) != 0) {
         // Align end of IO to direct IO boundary
-        assert(offset % _elemSize == 0);
+        CHECK(offset % _elemSize == 0);
         size_t maxSize = _minDirectIOSize - (offset % _minDirectIOSize);
         if (size > maxSize) {
             size = maxSize;
         }
     } else if ((offset & (_preferredFileAlign - 1)) != 0) {
         // Align end of IO to preferred boundary
-        assert(offset % _elemSize == 0);
+        CHECK(offset % _elemSize == 0);
         size_t tailLen = (offset + size) % _minAlignedSize;
         if (tailLen < size) {
             size -= tailLen;
         }
     }
-    assert(size % _elemSize == 0);
+    CHECK(size % _elemSize == 0);
     return size;
 }
 

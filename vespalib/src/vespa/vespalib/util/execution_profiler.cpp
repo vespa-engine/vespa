@@ -2,13 +2,12 @@
 
 #include "execution_profiler.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/tls_linkage.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
-
-#include <cassert>
 
 namespace vespalib {
 
@@ -106,14 +105,14 @@ public:
         auto [pos, was_new] = edges.insert(std::make_pair(task, _nodes.size()));
         NodeId node = pos->second; // extending _nodes might invalidate lookup result
         if (was_new) {
-            assert(node == _nodes.size());
+            CHECK(node == _nodes.size());
             _nodes.emplace_back(task);
         }
-        assert(node < _nodes.size());
+        CHECK(node < _nodes.size());
         _state.emplace_back(node);
     }
     void track_complete() override {
-        assert(!_state.empty());
+        CHECK(!_state.empty());
         auto& node = _nodes[_state.back().node];
         auto  elapsed = steady_clock::now() - _state.back().start;
         ++node.count;
@@ -187,7 +186,7 @@ public:
         _state.emplace_back(task);
     }
     void track_complete() override {
-        assert(!_state.empty());
+        CHECK(!_state.empty());
         auto& state = _state.back();
         auto& node = _nodes[state.task];
         auto  elapsed = steady_clock::now() - state.start;
@@ -237,16 +236,16 @@ ExecutionProfiler::TaskId ExecutionProfiler::resolve(const std::string& name) {
     }
     auto [pos, was_new] = _name_map.insert(std::make_pair(name, _names.size()));
     if (was_new) {
-        assert(pos->second == _names.size());
+        CHECK(pos->second == _names.size());
         _names.push_back(name);
     }
-    assert(pos->second < _names.size());
+    CHECK(pos->second < _names.size());
     return pos->second;
 }
 
 void ExecutionProfiler::set_name(TaskId task, const std::string& name) {
     size_t idx = task;
-    assert(idx < _names.size());
+    CHECK(idx < _names.size());
     if (!_names[idx].empty() || name.empty()) {
         // set_name may only change an unnamed task to a named one
         return;

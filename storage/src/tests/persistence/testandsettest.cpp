@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // @author Vegard Sjonfjell
+#include <vespa/check_require.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -496,10 +497,10 @@ document::Document::SP TestAndSetTest::createTestDocument() {
 document::Document::SP TestAndSetTest::retrieveTestDocument() {
     auto get = std::make_shared<api::GetCommand>(BUCKET, testDocId, document::AllFields::NAME);
     auto tracker = _persistenceHandler->simpleMessageHandler().handleGet(*get, createTracker(get, BUCKET));
-    assert(tracker->getResult() == api::ReturnCode::Result::OK);
+    CHECK(tracker->getResult() == api::ReturnCode::Result::OK);
 
     auto& reply = dynamic_cast<api::GetReply&>(tracker->getReply());
-    assert(reply.wasFound());
+    CHECK(reply.wasFound());
 
     return reply.getDocument();
 }

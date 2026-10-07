@@ -5,6 +5,7 @@
 #include "ipersistenceengineowner.h"
 #include "transport_latch.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -632,8 +633,8 @@ BucketIdListResult PersistenceEngine::getModifiedBuckets(BucketSpace bucketSpace
 Result PersistenceEngine::split(const Bucket& source, const Bucket& target1, const Bucket& target2) {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "split(%s, %s, %s)", source.toString().c_str(), target1.toString().c_str(), target2.toString().c_str());
-    assert(source.getBucketSpace() == target1.getBucketSpace());
-    assert(source.getBucketSpace() == target2.getBucketSpace());
+    CHECK(source.getBucketSpace() == target1.getBucketSpace());
+    CHECK(source.getBucketSpace() == target2.getBucketSpace());
     auto           snap = getHandlerSnapshot(rguard, source.getBucketSpace());
     TransportLatch latch(snap.size());
     for (; snap.handlers().valid(); snap.handlers().next()) {
@@ -647,8 +648,8 @@ Result PersistenceEngine::split(const Bucket& source, const Bucket& target1, con
 Result PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Bucket& target) {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "join(%s, %s, %s)", source1.toString().c_str(), source2.toString().c_str(), target.toString().c_str());
-    assert(source1.getBucketSpace() == target.getBucketSpace());
-    assert(source2.getBucketSpace() == target.getBucketSpace());
+    CHECK(source1.getBucketSpace() == target.getBucketSpace());
+    CHECK(source2.getBucketSpace() == target.getBucketSpace());
     auto           snap = getHandlerSnapshot(rguard, target.getBucketSpace());
     TransportLatch latch(snap.size());
     for (; snap.handlers().valid(); snap.handlers().next()) {
@@ -792,7 +793,7 @@ private:
 
 std::unique_ptr<vespalib::IDestructorCallback>
 PersistenceEngine::register_executor(std::shared_ptr<BucketExecutor> executor) {
-    assert(_bucket_executor.expired());
+    CHECK(_bucket_executor.expired());
     _bucket_executor = executor;
     return std::make_unique<ExecutorRegistration>(executor);
 }

@@ -4,9 +4,9 @@
 
 #include "pending_tracker.h"
 
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search::bmcluster {
 
@@ -15,7 +15,7 @@ PendingTrackerHash::PendingTrackerHash() : _mutex(), _pending() {
 
 PendingTrackerHash::~PendingTrackerHash() {
     std::lock_guard lock(_mutex);
-    assert(_pending.empty());
+    CHECK(_pending.empty());
 }
 
 void PendingTrackerHash::retain(uint64_t msg_id, PendingTracker& tracker) {

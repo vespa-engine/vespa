@@ -10,6 +10,7 @@
 #include "tensor_spec.h"
 #include "value_codec.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 
 namespace vespalib::eval {
@@ -42,33 +43,33 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
 
     void make_reduce(const Node&, Aggr aggr, const std::vector<std::string>& dimensions) {
-        assert(stack.size() >= 1);
+        CHECK(stack.size() >= 1);
         const auto& a = stack.back().get();
         stack.back() = tensor_function::reduce(a, aggr, dimensions, stash);
     }
 
     void make_map(const Node&, operation::op1_t function) {
-        assert(stack.size() >= 1);
+        CHECK(stack.size() >= 1);
         const auto& a = stack.back().get();
         stack.back() = tensor_function::map(a, function, stash);
     }
 
     void make_map_subspaces(const TensorMapSubspaces& node) {
-        assert(stack.size() >= 1);
+        CHECK(stack.size() >= 1);
         const auto& a = stack.back().get();
         stack.back() =
             tensor_function::map_subspaces(a, node.lambda(), types.export_types(node.lambda().root()), stash);
     }
 
     void make_filter_subspaces(const TensorFilterSubspaces& node) {
-        assert(stack.size() >= 1);
+        CHECK(stack.size() >= 1);
         const auto& a = stack.back().get();
         stack.back() =
             tensor_function::filter_subspaces(a, node.lambda(), types.export_types(node.lambda().root()), stash);
     }
 
     void make_join(const Node&, operation::op2_t function) {
-        assert(stack.size() >= 2);
+        CHECK(stack.size() >= 2);
         const auto& b = stack.back().get();
         stack.pop_back();
         const auto& a = stack.back().get();
@@ -76,7 +77,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
 
     void make_merge(const Node&, operation::op2_t function) {
-        assert(stack.size() >= 2);
+        CHECK(stack.size() >= 2);
         const auto& b = stack.back().get();
         stack.pop_back();
         const auto& a = stack.back().get();
@@ -84,7 +85,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
 
     void make_concat(const Node&, const std::string& dimension) {
-        assert(stack.size() >= 2);
+        CHECK(stack.size() >= 2);
         const auto& b = stack.back().get();
         stack.pop_back();
         const auto& a = stack.back().get();
@@ -92,13 +93,13 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
 
     void make_cell_cast(const Node&, CellType cell_type) {
-        assert(stack.size() >= 1);
+        CHECK(stack.size() >= 1);
         const auto& a = stack.back().get();
         stack.back() = tensor_function::cell_cast(a, cell_type, stash);
     }
 
     void make_cell_order(const Node&, CellOrder cell_order) {
-        assert(stack.size() >= 1);
+        CHECK(stack.size() >= 1);
         const auto& a = stack.back().get();
         stack.back() = tensor_function::cell_order(a, cell_order, stash);
     }
@@ -122,7 +123,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
 
     void make_create(const TensorCreate& node) {
-        assert(stack.size() >= node.num_children());
+        CHECK(stack.size() >= node.num_children());
         std::map<TensorSpec::Address, TensorFunction::CREF> spec;
         for (size_t idx = node.num_children(); idx-- > 0;) {
             spec.emplace(node.get_child_address(idx), stack.back());
@@ -145,7 +146,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
 
     void make_peek(const TensorPeek& node) {
-        assert(stack.size() >= node.num_children());
+        CHECK(stack.size() >= node.num_children());
         const TensorFunction& param = stack[stack.size() - node.num_children()];
         std::map<std::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> spec;
         for (auto pos = node.dim_list().rbegin(); pos != node.dim_list().rend(); ++pos) {
@@ -154,7 +155,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
                 stack.pop_back();
             } else {
                 size_t dim_idx = param.result_type().dimension_index(pos->first);
-                assert(dim_idx != ValueType::Dimension::npos);
+                CHECK(dim_idx != ValueType::Dimension::npos);
                 const auto& param_dim = param.result_type().dimensions()[dim_idx];
                 if (param_dim.is_mapped()) {
                     spec.emplace(pos->first, pos->second.label);
@@ -167,13 +168,13 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
 
     void make_rename(const Node&, const std::vector<std::string>& from, const std::vector<std::string>& to) {
-        assert(stack.size() >= 1);
+        CHECK(stack.size() >= 1);
         const auto& a = stack.back().get();
         stack.back() = tensor_function::rename(a, from, to, stash);
     }
 
     void make_if(const Node&) {
-        assert(stack.size() >= 3);
+        CHECK(stack.size() >= 3);
         const auto& c = stack.back().get();
         stack.pop_back();
         const auto& b = stack.back().get();
@@ -295,7 +296,7 @@ const TensorFunction& make_tensor_function(const ValueBuilderFactory& factory, c
                                            const NodeTypes& types, Stash& stash) {
     TensorFunctionBuilder builder(stash, factory, types);
     root.traverse(builder);
-    assert(builder.stack.size() == 1);
+    CHECK(builder.stack.size() == 1);
     return builder.stack[0];
 }
 

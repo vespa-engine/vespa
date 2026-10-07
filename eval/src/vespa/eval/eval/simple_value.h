@@ -4,6 +4,7 @@
 
 #include "value_builder_factory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 
 #include <map>
@@ -70,11 +71,11 @@ public:
     std::span<T> add_subspace(std::span<const string_id> addr) override;
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         if (num_mapped_dims() == 0) {
-            assert(size() == 1);
+            CHECK(size() == 1);
         }
-        assert(_cells.size() == (size() * subspace_size()));
+        CHECK(_cells.size() == (size() * subspace_size()));
         ValueBuilder<T>* me = this;
-        assert(me == self.get());
+        CHECK(me == self.get());
         self.release();
         return std::unique_ptr<Value>(this);
     }

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_context.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -13,7 +14,6 @@
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-#include <cassert>
 #include <future>
 
 #include <vespa/log/log.h>
@@ -78,7 +78,7 @@ protected:
     AttributeVector::SP getTargetAttribute(const std::string& importedName) const {
         auto readable_target_attr = repo.get(importedName)->getTargetAttribute();
         auto target_attr = std::dynamic_pointer_cast<AttributeVector>(readable_target_attr);
-        assert(target_attr);
+        CHECK(target_attr);
         return target_attr;
     }
     void clearContext() { ctx.reset(); }

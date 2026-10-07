@@ -4,8 +4,6 @@
 
 #include <vespa/vespalib/data/slime/slime.h>
 
-#include <cassert>
-
 using vespalib::Slime;
 using vespalib::slime::Inspector;
 using vespalib::slime::NixValue;

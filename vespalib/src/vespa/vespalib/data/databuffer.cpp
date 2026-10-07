@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "databuffer.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
 #include <cstdio>
 
@@ -20,7 +22,7 @@ DataBuffer::DataBuffer(size_t len, size_t alignment, const Alloc& initial) noexc
       _datapt(nullptr),
       _freept(nullptr),
       _buffer(initial.create(0)) {
-    assert(_alignment > 0);
+    CHECK(_alignment > 0);
     if (len > 0) {
         // avoid very small buffers for performance reasons:
         size_t bufsize = std::max(256ul, roundUp2inN(len + (_alignment - 1)));
@@ -31,27 +33,27 @@ DataBuffer::DataBuffer(size_t len, size_t alignment, const Alloc& initial) noexc
         _datapt = _bufstart + padbefore(alignment, _bufstart);
         _freept = _datapt;
         _bufend = _bufstart + bufsize;
-        assert(_bufstart != nullptr);
+        CHECK(_bufstart != nullptr);
     }
 }
 
 DataBuffer::~DataBuffer() = default;
 
 void DataBuffer::moveFreeToData(size_t len) {
-    assert(getFreeLen() >= len);
+    CHECK(getFreeLen() >= len);
     _freept += len;
 }
 
 void DataBuffer::moveDeadToData(size_t len) {
-    assert(getDeadLen() >= len);
+    CHECK(getDeadLen() >= len);
     _datapt -= len;
     if (_bufstart != _externalBuf) {
-        assert(getDeadLen() >= padbefore(_alignment, _bufstart)); // Do not move ahead of alignment.
+        CHECK(getDeadLen() >= padbefore(_alignment, _bufstart)); // Do not move ahead of alignment.
     }
 }
 
 void DataBuffer::moveDataToFree(size_t len) {
-    assert(getDataLen() >= len);
+    CHECK(getDataLen() >= len);
     _freept -= len;
 }
 
@@ -142,7 +144,7 @@ void DataBuffer::swap(DataBuffer& other) {
 }
 
 vespalib::alloc::Alloc DataBuffer::stealBuffer() && {
-    assert(!referencesExternalData());
+    CHECK(!referencesExternalData());
     _externalBuf = nullptr;
     _bufstart = nullptr;
     _bufend = nullptr;

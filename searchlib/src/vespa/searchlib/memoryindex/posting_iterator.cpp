@@ -2,6 +2,7 @@
 
 #include "posting_iterator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/iterators.h>
 
@@ -117,9 +118,9 @@ void PostingIterator<interleaved_features, unpack_normal_features, unpack_interl
         _matchData[0]->clear_hidden_from_ranking();
         return;
     }
-    assert(docId == getDocId());
-    assert(_itr.valid());
-    assert(docId == _itr.getKey());
+    CHECK(docId == getDocId());
+    CHECK(_itr.valid());
+    CHECK(docId == _itr.getKey());
     if (unpack_normal_features) {
         vespalib::datastore::EntryRef featureRef(_itr.getData().get_features());
         _feature_store.setupForUnpackFeatures(featureRef, _feature_decoder);
@@ -140,7 +141,7 @@ template <bool interleaved_features>
 queryeval::SearchIterator::UP
 make_search_iterator(typename FieldIndex<interleaved_features>::PostingList::ConstIterator itr,
                      const FeatureStore& feature_store, uint32_t field_id, fef::TermFieldMatchDataArray match_data) {
-    assert(match_data.size() == 1);
+    CHECK(match_data.size() == 1);
     auto* tfmd = match_data[0];
     if (tfmd->needs_normal_features()) {
         if (tfmd->needs_interleaved_features()) {

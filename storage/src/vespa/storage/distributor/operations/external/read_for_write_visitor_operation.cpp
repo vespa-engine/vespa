@@ -4,12 +4,11 @@
 
 #include "visitoroperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/distributor/distributormessagesender.h>
 #include <vespa/storage/distributor/operationowner.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/uuid_generator.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operations.external.read_for_write_visitor");
@@ -36,13 +35,13 @@ void ReadForWriteVisitorOperationStarter::onClose(DistributorStripeMessageSender
 
 void ReadForWriteVisitorOperationStarter::onStart(DistributorStripeMessageSender& sender) {
     if (_visitor_op->verify_command_and_expand_buckets(sender)) {
-        assert(!_visitor_op->has_sent_reply());
+        CHECK(!_visitor_op->has_sent_reply());
         auto maybe_bucket = _visitor_op->first_bucket_to_visit();
         if (!maybe_bucket) {
             LOG(debug, "No buckets found to visit, tagging visitor complete");
             // No buckets to be found, start op to trigger immediate reply.
             _visitor_op->start(sender, _startTime);
-            assert(_visitor_op->has_sent_reply());
+            CHECK(_visitor_op->has_sent_reply());
             return;
         }
         if (bucket_has_pending_merge(*maybe_bucket, sender.getPendingMessageTracker())) {
@@ -75,7 +74,7 @@ void ReadForWriteVisitorOperationStarter::onStart(DistributorStripeMessageSender
             }));
     } else {
         LOG(debug, "Failed verification of visitor, responding immediately");
-        assert(_visitor_op->has_sent_reply());
+        CHECK(_visitor_op->has_sent_reply());
     }
 }
 

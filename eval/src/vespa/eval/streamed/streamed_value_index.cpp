@@ -4,6 +4,7 @@
 
 #include "streamed_value_utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/visit_ranges.h>
@@ -32,7 +33,7 @@ struct StreamedFilterView : Value::Index::View {
         for (auto ptr : addr) {
             to_match.push_back(*ptr);
         }
-        assert(view_dims.size() == to_match.size());
+        CHECK(view_dims.size() == to_match.size());
     }
 
     bool next_result(std::span<string_id* const> addr_out, size_t& idx_out) override {
@@ -48,8 +49,8 @@ struct StreamedFilterView : Value::Index::View {
                     *addr_out[out_idx++] = block.address[dim];
                 }
             }
-            assert(out_idx == addr_out.size());
-            assert(vdm_idx == view_dims.size());
+            CHECK(out_idx == addr_out.size());
+            CHECK(vdm_idx == view_dims.size());
             if (matches) {
                 return true;
             }
@@ -65,14 +66,14 @@ struct StreamedIterationView : Value::Index::View {
 
     void lookup(std::span<const string_id* const> addr) override {
         label_blocks.reset();
-        assert(addr.size() == 0);
+        CHECK(addr.size() == 0);
     }
 
     bool next_result(std::span<string_id* const> addr_out, size_t& idx_out) override {
         if (auto block = label_blocks.next_block()) {
             idx_out = block.subspace_index;
             size_t i = 0;
-            assert(addr_out.size() == block.address.size());
+            CHECK(addr_out.size() == block.address.size());
             for (auto ptr : addr_out) {
                 *ptr = block.address[i++];
             }

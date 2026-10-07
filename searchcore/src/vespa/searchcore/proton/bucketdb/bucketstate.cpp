@@ -4,9 +4,9 @@
 
 #include "checksumaggregators.h"
 
-#include <xxhash.h>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <xxhash.h>
 
 namespace proton::bucketdb {
 
@@ -58,7 +58,7 @@ BucketState::BucketChecksum BucketState::addChecksum(BucketChecksum a, BucketChe
 }
 
 void BucketState::add(const GlobalId& gid, const Timestamp& timestamp, uint32_t docSize, SubDbType subDbType) {
-    assert(subDbType < SubDbType::COUNT);
+    CHECK(subDbType < SubDbType::COUNT);
     if (subDbType != SubDbType::REMOVED) {
         switch (_checksumType) {
         case ChecksumAggregator::ChecksumType::LEGACY:
@@ -75,10 +75,10 @@ void BucketState::add(const GlobalId& gid, const Timestamp& timestamp, uint32_t 
 }
 
 void BucketState::remove(const GlobalId& gid, const Timestamp& timestamp, uint32_t docSize, SubDbType subDbType) {
-    assert(subDbType < SubDbType::COUNT);
+    CHECK(subDbType < SubDbType::COUNT);
     uint32_t subDbTypeIdx = toIdx(subDbType);
-    assert(_docCount[subDbTypeIdx] > 0);
-    assert(_docSizes[subDbTypeIdx] >= docSize);
+    CHECK(_docCount[subDbTypeIdx] > 0);
+    CHECK(_docSizes[subDbTypeIdx] >= docSize);
     if (subDbType != SubDbType::REMOVED) {
         switch (_checksumType) {
         case ChecksumAggregator::ChecksumType::LEGACY:
@@ -95,10 +95,10 @@ void BucketState::remove(const GlobalId& gid, const Timestamp& timestamp, uint32
 
 void BucketState::modify(const GlobalId& gid, const Timestamp& oldTimestamp, uint32_t oldDocSize,
                          const Timestamp& newTimestamp, uint32_t newDocSize, SubDbType subDbType) {
-    assert(subDbType < SubDbType::COUNT);
+    CHECK(subDbType < SubDbType::COUNT);
     uint32_t subDbTypeIdx = toIdx(subDbType);
-    assert(_docCount[subDbTypeIdx] > 0);
-    assert(_docSizes[subDbTypeIdx] >= oldDocSize);
+    CHECK(_docCount[subDbTypeIdx] > 0);
+    CHECK(_docSizes[subDbTypeIdx] >= oldDocSize);
     if (subDbType != SubDbType::REMOVED) {
         switch (_checksumType) {
         case ChecksumAggregator::ChecksumType::LEGACY:
@@ -118,9 +118,9 @@ bool BucketState::empty() const {
     if (getReadyCount() != 0 || getRemovedCount() != 0 || getNotReadyCount() != 0) {
         return false;
     }
-    assert((_checksumType == ChecksumAggregator::ChecksumType::LEGACY) ? (_ch._legacy == 0) : (_ch._xxh64 == 0));
+    CHECK((_checksumType == ChecksumAggregator::ChecksumType::LEGACY) ? (_ch._legacy == 0) : (_ch._xxh64 == 0));
     for (uint32_t i = 0; i < COUNTS; ++i) {
-        assert(_docSizes[i] == 0);
+        CHECK(_docSizes[i] == 0);
     }
     return true;
 }
@@ -144,8 +144,8 @@ BucketState& BucketState::operator+=(const BucketState& rhs) {
 
 BucketState& BucketState::operator-=(const BucketState& rhs) {
     for (uint32_t i = 0; i < COUNTS; ++i) {
-        assert(_docCount[i] >= rhs._docCount[i]);
-        assert(_docSizes[i] >= rhs._docSizes[i]);
+        CHECK(_docCount[i] >= rhs._docCount[i]);
+        CHECK(_docSizes[i] >= rhs._docSizes[i]);
     }
     for (uint32_t i = 0; i < COUNTS; ++i) {
         _docCount[i] -= rhs._docCount[i];
@@ -166,8 +166,8 @@ void BucketState::applyDelta(BucketState* src, BucketState* dst) const {
     if (empty()) {
         return;
     }
-    assert(src);
-    assert(dst);
+    CHECK(src);
+    CHECK(dst);
     *src -= *this;
     *dst += *this;
 }

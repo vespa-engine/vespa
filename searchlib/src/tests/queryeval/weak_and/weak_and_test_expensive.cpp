@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "wand_bench_setup.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace rise;
@@ -26,7 +27,7 @@ void checkWandHits(WandFactory& vespa, WandFactory& rise, uint32_t step, uint32_
     s2->seek(1);
     while (!s1->isAtEnd() && !s2->isAtEnd()) {
         if (s1->getDocId() != s2->getDocId()) {
-            assert(true);
+            CHECK(true);
         }
         ASSERT_EQ(s1->getDocId(), s2->getDocId());
         if ((filter == 0) || ((s1->getDocId() % filter) != 0)) {

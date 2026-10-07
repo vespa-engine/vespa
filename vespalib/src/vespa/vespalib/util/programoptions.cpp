@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "programoptions.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -326,7 +326,7 @@ void ProgramOptions::parseArgument(OptionParser& opt, uint32_t& pos) {
     LOG(debug, "Parsing argument %s. Pos is %u.", opt.getArgName().c_str(), pos);
     std::vector<std::string> arguments;
     for (; arguments.size() != opt._argCount; ++pos) {
-        assert(pos < static_cast<uint32_t>(_argc));
+        CHECK(pos < static_cast<uint32_t>(_argc));
         arguments.push_back(_argv[pos]);
     }
     opt.set(arguments);

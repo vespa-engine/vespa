@@ -6,11 +6,11 @@
 #include "index_disk_dir_state.h"
 #include "indexdisklayout.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/util/directory_traverse.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 
-#include <cassert>
 #include <vector>
 
 using search::DiskSpaceCalculator;
@@ -52,7 +52,7 @@ void DiskIndexes::remove_from_sum(const IndexDiskDirState& state) {
 void DiskIndexes::setActive(const string& index, uint64_t size_on_disk,
                             std::chrono::steady_clock::duration flush_duration) {
     auto index_disk_dir = IndexDiskLayout::get_index_disk_dir(index);
-    assert(index_disk_dir.valid());
+    CHECK(index_disk_dir.valid());
     std::lock_guard lock(_lock);
     auto            insres = _active.insert(std::make_pair(index_disk_dir, IndexDiskDirState()));
     auto&           state = insres.first->second;
@@ -100,10 +100,10 @@ void DiskIndexes::setActive(const string& index, uint64_t size_on_disk,
 
 void DiskIndexes::notActive(const string& index) {
     auto index_disk_dir = IndexDiskLayout::get_index_disk_dir(index);
-    assert(index_disk_dir.valid());
+    CHECK(index_disk_dir.valid());
     std::lock_guard lock(_lock);
     auto            it = _active.find(index_disk_dir);
-    assert(it != _active.end());
+    CHECK(it != _active.end());
     auto& state = it->second;
     if (state.deactivate()) {
         remove_from_sum(state);

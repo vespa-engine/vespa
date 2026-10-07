@@ -4,10 +4,9 @@
 
 #include "ibucketstatechangedhandler.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/util/lambdatask.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.buckethandler");
@@ -67,7 +66,7 @@ BucketHandler::BucketHandler(vespalib::Executor& executor)
 }
 
 BucketHandler::~BucketHandler() {
-    assert(_changedHandlers.empty());
+    CHECK(_changedHandlers.empty());
 }
 
 void BucketHandler::setReadyBucketHandler(documentmetastore::IBucketHandler& ready) {

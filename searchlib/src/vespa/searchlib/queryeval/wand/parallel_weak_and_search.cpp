@@ -2,6 +2,7 @@
 
 #include "parallel_weak_and_search.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/monitoring_dump_iterator.h>
@@ -215,7 +216,7 @@ SearchIterator::UP ParallelWeakAndSearch::create(search::fef::TermFieldMatchData
                                                  const std::vector<IDirectPostingStore::LookupResult>& dict_entries,
                                                  const IDocidWithWeightPostingStore& attr, bool strict,
                                                  bool readonly_scores_heap) {
-    assert(weights.size() == dict_entries.size());
+    CHECK(weights.size() == dict_entries.size());
     if (!wand::should_monitor_wand()) {
         wand::VectorizedAttributeTerms terms(weights, dict_entries, attr, wand::DotProductScorer(),
                                              matchParams.docIdLimit);
@@ -230,7 +231,7 @@ SearchIterator::UP ParallelWeakAndSearch::create(search::fef::TermFieldMatchData
             handles.push_back(layout.allocTermField(tfmd.getFieldId()));
         }
         fef::MatchData::UP childrenMatchData = layout.createMatchData();
-        assert(childrenMatchData->getNumTermFields() == dict_entries.size());
+        CHECK(childrenMatchData->getNumTermFields() == dict_entries.size());
         wand::Terms terms;
         terms.reserve(dict_entries.size());
         for (size_t i = 0; i < dict_entries.size(); ++i) {

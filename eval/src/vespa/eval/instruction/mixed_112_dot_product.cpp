@@ -2,6 +2,7 @@
 
 #include "mixed_112_dot_product.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/visit_stuff.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/typify.h>
@@ -159,8 +160,8 @@ struct InputState {
         if (!mapped->is_mapped()) {
             std::swap(mapped, indexed);
         }
-        assert(mapped->is_mapped());
-        assert(indexed->is_indexed());
+        CHECK(mapped->is_mapped());
+        CHECK(indexed->is_indexed());
         return ((*mapped == sparse->result_type().dimensions()[0]) &&
                 (*indexed == dense->result_type().dimensions()[0]));
     }

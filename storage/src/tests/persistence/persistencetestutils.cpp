@@ -2,6 +2,7 @@
 
 #include "persistencetestutils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -80,7 +81,7 @@ void PersistenceTestUtils::MockBucketLocks::lock(document::Bucket bucket) {
 void PersistenceTestUtils::MockBucketLocks::unlock(document::Bucket bucket) {
     std::unique_lock<std::mutex> guard(_mutex);
     auto                         itr = _locked_buckets.find(bucket);
-    assert(itr != _locked_buckets.end());
+    CHECK(itr != _locked_buckets.end());
     _locked_buckets.erase(itr);
     _cv.notify_all();
 }

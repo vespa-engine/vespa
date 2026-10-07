@@ -8,7 +8,7 @@
 #include "frtconfigrequestfactory.h"
 #include "frtconfigresponse.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.frt.frtsource");
@@ -78,14 +78,14 @@ void FRTSource::getConfig() {
 void FRTSource::erase(FRT_RPCRequest* request) {
     std::lock_guard guard(_lock);
     auto            num_erased = _inflight.erase(request);
-    assert(1u == num_erased);
+    CHECK(1u == num_erased);
     _cond.notify_all();
 }
 
 std::shared_ptr<FRTConfigRequest> FRTSource::find(FRT_RPCRequest* request) {
     std::lock_guard guard(_lock);
     auto            found = _inflight.find(request);
-    assert(found != _inflight.end());
+    CHECK(found != _inflight.end());
     return found->second;
 }
 

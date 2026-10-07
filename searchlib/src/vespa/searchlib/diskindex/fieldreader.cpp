@@ -7,6 +7,8 @@
 #include "pagedict4file.h"
 #include "zcposocc.h"
 
+#include <vespa/check_require.h>
+
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -55,8 +57,8 @@ void FieldReader::readCounts() {
     _oldposoccfile->read_word_and_counts(_word, counts);
     if (_oldWordNum != noWordNumHigh()) {
         _wordNum = _wordNumMapper.map(_oldWordNum);
-        assert(_wordNum != noWordNum());
-        assert(_wordNum != noWordNumHigh());
+        CHECK(_wordNum != noWordNum());
+        CHECK(_wordNum != noWordNumHigh());
         _residue = counts._numDocs;
     } else {
         _wordNum = _oldWordNum;
@@ -73,7 +75,7 @@ void FieldReader::read() {
         while (_residue == 0) {
             readCounts();
             if (_wordNum == noWordNumHigh()) {
-                assert(_residue == 0);
+                CHECK(_residue == 0);
                 _docIdAndFeatures.set_doc_id(NO_DOC);
                 return;
             }
@@ -171,7 +173,7 @@ const FieldLengthInfo& FieldReader::get_field_length_info() const {
 std::unique_ptr<FieldReader> FieldReader::allocFieldReader(const SchemaUtil::IndexIterator&    index,
                                                            const Schema&                       oldSchema,
                                                            std::shared_ptr<FieldLengthScanner> field_length_scanner) {
-    assert(index.isValid());
+    CHECK(index.isValid());
     if (index.hasMatchingOldFields(oldSchema)) {
         if (!index.use_interleaved_features() || index.has_matching_use_interleaved_features(oldSchema)) {
             return std::make_unique<FieldReader>(); // The common case
@@ -210,7 +212,7 @@ FieldReaderStripInfo::FieldReaderStripInfo(const IndexIterator&                i
       _field_length_scanner(std::move(field_length_scanner)) {
     PosOccFieldsParams fieldsParams;
     fieldsParams.setSchemaParams(index.getSchema(), index.getIndex());
-    assert(fieldsParams.getNumFields() > 0);
+    CHECK(fieldsParams.getNumFields() > 0);
     const PosOccFieldParams& fieldParams = fieldsParams.getFieldParams()[0];
     _hasElements = fieldParams._hasElements;
     _hasElementWeights = fieldParams._hasElementWeights;
@@ -253,7 +255,7 @@ void FieldReaderStripInfo::scan_element_lengths(uint32_t scan_chunk) {
             break;
         }
         DocIdAndFeatures& features = _docIdAndFeatures;
-        assert(!features.has_raw_data());
+        CHECK(!features.has_raw_data());
         _field_length_scanner->scan_features(features);
         --scan_chunk;
     }
@@ -266,16 +268,16 @@ void FieldReaderStripInfo::read() {
         if (_wordNum == noWordNumHigh()) {
             return;
         }
-        assert(!features.has_raw_data());
+        CHECK(!features.has_raw_data());
         uint32_t numElements = features.elements().size();
-        assert(numElements > 0);
+        CHECK(numElements > 0);
         auto element = features.elements().begin();
         if (_hasElements) {
             if (!_hasElementWeights) {
                 for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++element) {
                     element->setWeight(1);
                 }
-                assert(element == features.elements().end());
+                CHECK(element == features.elements().end());
             }
         } else {
             if (element->getElementId() != 0) {

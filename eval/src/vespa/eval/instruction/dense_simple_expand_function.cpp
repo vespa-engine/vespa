@@ -2,6 +2,7 @@
 
 #include "dense_simple_expand_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
@@ -107,8 +108,8 @@ const TensorFunction& DenseSimpleExpandFunction::optimize(const TensorFunction& 
         const TensorFunction& rhs = join->rhs();
         if (lhs.result_type().is_dense() && rhs.result_type().is_dense()) {
             if (std::optional<Inner> inner = detect_simple_expand(lhs, rhs)) {
-                assert(expr.result_type().dense_subspace_size() ==
-                       (lhs.result_type().dense_subspace_size() * rhs.result_type().dense_subspace_size()));
+                CHECK(expr.result_type().dense_subspace_size() ==
+                      (lhs.result_type().dense_subspace_size() * rhs.result_type().dense_subspace_size()));
                 return stash.create<DenseSimpleExpandFunction>(join->result_type(), lhs, rhs, join->function(),
                                                                inner.value());
             }

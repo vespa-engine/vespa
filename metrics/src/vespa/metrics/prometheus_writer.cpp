@@ -6,13 +6,13 @@
 #include "metricsnapshot.h"
 #include "valuemetric.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/small_vector.h>
 
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 
 VESPALIB_HASH_SET_INSTANTIATE(std::string_view);
@@ -193,7 +193,7 @@ bool PrometheusWriter::visitMetricSet(const MetricSet& set, bool) {
 
 void PrometheusWriter::doneVisitingMetricSet(const MetricSet& set) {
     if (set.getOwner()) {
-        assert(!_path.empty());
+        CHECK(!_path.empty());
         _path.pop_back();
     }
 }
@@ -223,7 +223,7 @@ void PrometheusWriter::render_path_as_metric_name_prefix(asciistream& out, std::
 
 void PrometheusWriter::render_label_pairs(asciistream& out, std::span<const std::string_view> labels) {
     if (!labels.empty()) {
-        assert((labels.size() % 2) == 0);
+        CHECK((labels.size() % 2) == 0);
         out << '{';
         for (size_t i = 0; i < labels.size(); i += 2) {
             if (i > 0) {

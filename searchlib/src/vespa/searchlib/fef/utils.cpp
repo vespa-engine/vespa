@@ -4,10 +4,10 @@
 
 #include "rank_program.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
-#include <cassert>
 #include <vector>
 
 using vespalib::FeatureSet;
@@ -16,15 +16,15 @@ namespace search::fef {
 
 feature_t Utils::getScoreFeature(const RankProgram& rankProgram, uint32_t docid) {
     FeatureResolver resolver(rankProgram.get_seeds(false));
-    assert(resolver.num_features() == 1u);
-    assert(!resolver.is_object(0));
+    CHECK(resolver.num_features() == 1u);
+    CHECK(!resolver.is_object(0));
     return resolver.resolve(0).as_number(docid);
 }
 
 vespalib::eval::Value::CREF Utils::getObjectFeature(const RankProgram& rankProgram, uint32_t docid) {
     FeatureResolver resolver(rankProgram.get_seeds(false));
-    assert(resolver.num_features() == 1u);
-    assert(resolver.is_object(0));
+    CHECK(resolver.num_features() == 1u);
+    CHECK(resolver.is_object(0));
     return resolver.resolve(0).as_object(docid);
 }
 

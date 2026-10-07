@@ -2,7 +2,7 @@
 
 #include "index_disk_dir_state.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace searchcorespi::index {
 
@@ -18,7 +18,7 @@ bool IndexDiskDirState::activate(uint64_t                            size_on_dis
 }
 
 bool IndexDiskDirState::deactivate() noexcept {
-    assert(_active_count > 0u);
+    CHECK(_active_count > 0u);
     --_active_count;
     return _active_count == 0u;
 }

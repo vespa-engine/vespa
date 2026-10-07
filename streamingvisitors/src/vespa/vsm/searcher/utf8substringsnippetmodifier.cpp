@@ -1,10 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "utf8substringsnippetmodifier.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/juniper/juniper_separators.h>
-
-#include <cassert>
 
 using search::byte;
 using search::streaming::QueryTerm;
@@ -66,7 +65,7 @@ size_t UTF8SubstringSnippetModifier::matchTerms(const FieldRef& f, const size_t 
                 ;
         }
     }
-    assert(_readPtr <= (f.data() + f.size()));
+    CHECK(_readPtr <= (f.data() + f.size()));
     // copy remaining
     size_t toCopy = f.size() - (_readPtr - f.data());
     copyToModified(toCopy);

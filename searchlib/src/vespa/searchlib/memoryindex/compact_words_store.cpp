@@ -2,6 +2,8 @@
 
 #include "compact_words_store.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
@@ -85,7 +87,7 @@ vespalib::datastore::EntryRef CompactWordsStore::Store::insert(const Builder& bu
     auto      result = _store.rawAllocator<uint32_t>(_typeId).alloc(serializedSize);
     uint32_t* begin = result.data;
     uint32_t* end = serialize(builder, begin);
-    assert(size_t(end - begin) == serializedSize);
+    CHECK(size_t(end - begin) == serializedSize);
     (void)end;
     return result.ref;
 }

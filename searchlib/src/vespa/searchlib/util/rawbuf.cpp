@@ -2,7 +2,8 @@
 
 #include "rawbuf.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstdlib>
 
 namespace search {
@@ -44,7 +45,7 @@ void RawBuf::preAlloc(size_t len) {
     }
     if (_bufEnd - _bufStart < len + _bufFillPos - _bufDrainPos) {
         expandBuf(len);
-        assert(_bufEnd - _bufStart >= len + _bufFillPos - _bufDrainPos);
+        CHECK(_bufEnd - _bufStart >= len + _bufFillPos - _bufDrainPos);
         curfree = _bufEnd - _bufFillPos;
         if (curfree >= len) {
             return;
@@ -53,12 +54,12 @@ void RawBuf::preAlloc(size_t len) {
     memmove(_bufStart, _bufDrainPos, _bufFillPos - _bufDrainPos);
     _bufFillPos -= (_bufDrainPos - _bufStart);
     _bufDrainPos = _bufStart;
-    assert(static_cast<size_t>(_bufEnd - _bufFillPos) >= len);
+    CHECK(static_cast<size_t>(_bufEnd - _bufFillPos) >= len);
 }
 
 void RawBuf::ensureSizeInternal(size_t size) {
     expandBuf(size);
-    assert(static_cast<size_t>(_bufEnd - _bufFillPos) >= size);
+    CHECK(static_cast<size_t>(_bufEnd - _bufFillPos) >= size);
 }
 
 } // namespace search

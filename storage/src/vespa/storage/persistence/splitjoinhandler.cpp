@@ -7,6 +7,7 @@
 #include "persistenceutil.h"
 #include "splitbitdetector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storageapi/message/bucket.h>
 
@@ -58,7 +59,7 @@ MessageTracker::UP SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& 
     }
     // If we get here, we're splitting data in two.
     // (Possibly in special case where a target will be unused)
-    assert(targetInfo.success());
+    CHECK(targetInfo.success());
     document::Bucket target1(spiBucket.getBucketSpace(), targetInfo.getTarget1());
     document::Bucket target2(spiBucket.getBucketSpace(), targetInfo.getTarget2());
 
@@ -86,7 +87,7 @@ MessageTracker::UP SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& 
     std::vector<TargetInfo> targets;
     for (uint32_t i = 0; i < 2; i++) {
         const document::Bucket& target(i == 0 ? target1 : target2);
-        assert(target.getBucketId().getRawId() != 0);
+        CHECK(target.getBucketId().getRawId() != 0);
         targets.emplace_back(_env.getBucketDatabase(target.getBucketSpace())
                                  .get(target.getBucketId(), "PersistenceThread::handleSplitBucket - Target",
                                       StorBucketDatabase::CREATE_IF_NONEXISTING),

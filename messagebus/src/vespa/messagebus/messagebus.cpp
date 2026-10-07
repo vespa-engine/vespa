@@ -8,6 +8,7 @@
 #include "protocolrepository.h"
 #include "sendproxy.h"
 
+#include <vespa/check_require.h>
 #include <vespa/messagebus/network/inetwork.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/gate.h>
@@ -199,7 +200,7 @@ DestinationSession::UP MessageBus::createDestinationSession(const DestinationSes
 
 void MessageBus::register_session(IMessageHandler& session, const string& session_name, bool broadcast_name) {
     std::lock_guard guard(_lock);
-    assert(!_sessions.contains(session_name));
+    CHECK(!_sessions.contains(session_name));
     _sessions[session_name] = &session;
     if (broadcast_name) {
         _network.registerSession(session_name);

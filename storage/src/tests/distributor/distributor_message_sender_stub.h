@@ -4,11 +4,11 @@
 
 #include "dummy_cluster_context.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/distributor/distributormessagesender.h>
 
 #include <tests/common/message_sender_stub.h>
 
-#include <cassert>
 #include <string>
 
 namespace storage {
@@ -28,12 +28,12 @@ public:
     const std::vector<std::shared_ptr<api::StorageReply>>& replies() const noexcept { return _stub_impl.replies; };
 
     const std::shared_ptr<api::StorageCommand>& command(size_t idx) noexcept {
-        assert(idx < commands().size());
+        CHECK(idx < commands().size());
         return commands()[idx];
     }
 
     const std::shared_ptr<api::StorageReply>& reply(size_t idx) noexcept {
-        assert(idx < replies().size());
+        CHECK(idx < replies().size());
         return replies()[idx];
     }
 
@@ -64,12 +64,12 @@ public:
     const ClusterContext& cluster_context() const override { return dummy_cluster_context; }
 
     distributor::PendingMessageTracker& getPendingMessageTracker() override {
-        assert(_pending_message_tracker);
+        CHECK(_pending_message_tracker);
         return *_pending_message_tracker;
     }
 
     const distributor::PendingMessageTracker& getPendingMessageTracker() const override {
-        assert(_pending_message_tracker);
+        CHECK(_pending_message_tracker);
         return *_pending_message_tracker;
     }
 
@@ -78,12 +78,12 @@ public:
     }
 
     const distributor::OperationSequencer& operation_sequencer() const noexcept override {
-        assert(_operation_sequencer);
+        CHECK(_operation_sequencer);
         return *_operation_sequencer;
     }
 
     distributor::OperationSequencer& operation_sequencer() noexcept override {
-        assert(_operation_sequencer);
+        CHECK(_operation_sequencer);
         return *_operation_sequencer;
     }
 

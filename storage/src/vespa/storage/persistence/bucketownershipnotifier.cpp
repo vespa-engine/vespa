@@ -2,6 +2,7 @@
 
 #include "bucketownershipnotifier.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -19,11 +20,11 @@ namespace storage {
 uint16_t BucketOwnershipNotifier::getOwnerDistributorForBucket(const document::Bucket& bucket) const {
     try {
         const auto state_bundle = _component.getStateUpdater().getClusterStateBundle();
-        assert(state_bundle && state_bundle->has_distribution_config());
+        CHECK(state_bundle && state_bundle->has_distribution_config());
         const auto* distribution =
             state_bundle->distribution_config_bundle()->bucket_space_distribution_or_nullptr_raw(
                 bucket.getBucketSpace());
-        assert(distribution);
+        CHECK(distribution);
         const auto& clusterState = *state_bundle->getDerivedClusterState(bucket.getBucketSpace());
         return (distribution->getIdealDistributorNode(clusterState, bucket.getBucketId()));
         // If we get exceptions there aren't any distributors, so they'll have

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -21,9 +22,9 @@ void encode_log_response(const ProtoConverter::ProtoLogResponse& src, FRT_Values
 
 bool decode_log_request(FRT_Values& src, ProtoConverter::ProtoLogRequest& dst) {
     uint8_t encoding = src[0]._intval8;
-    assert(encoding == 0);
+    CHECK(encoding == 0);
     uint32_t uncompressed_size = src[1]._intval32;
-    assert(uncompressed_size == src[2]._data._len);
+    CHECK(uncompressed_size == src[2]._data._len);
     return dst.ParseFromArray(src[2]._data._buf, src[2]._data._len);
 }
 

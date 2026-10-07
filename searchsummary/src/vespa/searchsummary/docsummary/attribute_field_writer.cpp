@@ -2,14 +2,13 @@
 
 #include "attribute_field_writer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/i_array_bool_read_view.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/stash.h>
-
-#include <cassert>
 
 using search::attribute::BasicType;
 using search::attribute::getUndefined;
@@ -211,7 +210,7 @@ AttributeFieldWriter& AttributeFieldWriter::create(vespalib::Memory fieldName, c
             return stash.create<WriteStringField>(fieldName, attr, stash);
         }
     default:
-        assert(false);
+        CHECK(false);
     }
 }
 

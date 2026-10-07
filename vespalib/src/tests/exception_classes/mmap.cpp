@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/alloc.h>
 
 #include <sys/resource.h>
 
-#include <cassert>
 #include <cstdlib>
 #include <cstring>
 #include <vector>
@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
     rlimit virtualLimit;
     virtualLimit.rlim_cur = virt;
     virtualLimit.rlim_max = virt;
-    assert(setrlimit(RLIMIT_AS, &virtualLimit) == 0);
+    CHECK(setrlimit(RLIMIT_AS, &virtualLimit) == 0);
     std::vector<Alloc> mappings;
     for (size_t i(0); i < numBlocks; i++) {
         mappings.emplace_back(Alloc::allocMMap(blockSize));

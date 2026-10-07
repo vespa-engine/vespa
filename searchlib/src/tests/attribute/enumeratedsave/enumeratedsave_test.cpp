@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -519,7 +520,7 @@ void EnumeratedSaveTest::compare(AttributePtr& a, AttributePtr& b) {
 
 template <typename VectorType> VectorType& EnumeratedSaveTest::as(AttributePtr& v) {
     VectorType* res = dynamic_cast<VectorType*>(v.get());
-    assert(res != nullptr);
+    CHECK(res != nullptr);
     return *res;
 }
 

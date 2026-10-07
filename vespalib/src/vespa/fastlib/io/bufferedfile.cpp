@@ -2,10 +2,10 @@
 
 #include "bufferedfile.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/util/error.h>
 
-#include <cassert>
 #include <cinttypes>
 #include <cstring>
 
@@ -262,7 +262,7 @@ vespalib::Memory Fast_BufferedFile::obtain() {
 }
 
 vespalib::Input& Fast_BufferedFile::evict(size_t bytes) {
-    assert(_bufi + bytes <= _bufe);
+    CHECK(_bufi + bytes <= _bufe);
     _bufi += bytes;
     return *this;
 }
@@ -279,7 +279,7 @@ void Fast_BufferedFile::ReadOpenExisting(const char* name) {
     ok &= _file->OpenReadOnlyExisting(true, name);
     if (!ok) {
         fprintf(stderr, "ERROR opening %s for read: %s\n", _file->GetFileName(), getLastErrorString().c_str());
-        assert(ok);
+        CHECK(ok);
     }
     _openFlags = FASTOS_FILE_OPEN_READ;
     // CASTWARN
@@ -293,7 +293,7 @@ void Fast_BufferedFile::ReadOpen(const char* name) {
     ok &= _file->OpenReadOnly(name);
     if (!ok) {
         fprintf(stderr, "ERROR opening %s for read: %s\n", _file->GetFileName(), getLastErrorString().c_str());
-        assert(ok);
+        CHECK(ok);
     }
     if (_file->IsOpened()) {
         // CASTWARN
@@ -311,7 +311,7 @@ void Fast_BufferedFile::WriteOpen(const char* name) {
     ok &= _file->OpenWriteOnly(name);
     if (!ok) {
         fprintf(stderr, "ERROR opening %s for write: %s\n", _file->GetFileName(), getLastErrorString().c_str());
-        assert(ok);
+        CHECK(ok);
     }
     _filepos = 0;
     ResetBuf();
@@ -356,7 +356,7 @@ Fast_BufferedFile::Fast_BufferedFile(FastOS_FileInterface* file, size_t bufferSi
 
 Fast_BufferedFile::~Fast_BufferedFile() {
     bool close_ok = Close();
-    assert(close_ok);
+    CHECK(close_ok);
 }
 
 void Fast_BufferedFile::ResetBuf() {

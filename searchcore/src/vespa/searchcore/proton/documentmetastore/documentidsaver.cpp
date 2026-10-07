@@ -4,6 +4,7 @@
 
 #include "documentmetastoresaver.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/dynamic_array_buffer_type.h>
@@ -31,7 +32,7 @@ public:
 
     void operator()(documentmetastore::GidToLidMapKey key) {
         auto lid = key.get_lid();
-        assert(lid < _metadata_view.size());
+        CHECK(lid < _metadata_view.size());
         const RawDocumentMetadata& metadata = _metadata_view[lid];
         auto                       docid_ref = metadata.acquire_docid_ref();
         // We do not check if the docid_ref is valid
@@ -39,8 +40,8 @@ public:
         // loading If the docid_ref became invalid due to a remove, this does not matter If it was due to a move, the
         // document ID will be filled in again by the move
         auto span = _docid_store.get(docid_ref);
-        assert(span.size() <= std::numeric_limits<uint32_t>::max()); // Document ids have a maximum length of 0x10000,
-                                                                     // so 4 bytes are enough
+        CHECK(span.size() <= std::numeric_limits<uint32_t>::max()); // Document ids have a maximum length of 0x10000,
+                                                                    // so 4 bytes are enough
         uint32_t size = span.size();
         _writer.write(&size, sizeof(size));
         _writer.write(span.data(), size);

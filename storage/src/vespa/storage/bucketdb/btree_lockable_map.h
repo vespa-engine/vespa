@@ -9,7 +9,6 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/time.h>
 
-#include <cassert>
 #include <condition_variable>
 #include <iosfwd>
 #include <map>

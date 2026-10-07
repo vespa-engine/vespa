@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -42,7 +43,7 @@ public:
     void encode32(uint32_t num) { internal_encode(num); }
 
     void encode42(uint64_t num) {
-        assert(num <= encode42_max);
+        CHECK(num <= encode42_max);
         internal_encode(num);
     }
 };

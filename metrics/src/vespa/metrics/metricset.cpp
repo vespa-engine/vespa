@@ -4,13 +4,13 @@
 
 #include "memoryconsumption.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <list>
 #include <ostream>
 #include <string>
@@ -52,11 +52,11 @@ const Metric* MetricSet::getMetricInternal(string_view name) const {
 }
 
 int64_t MetricSet::getLongValue(string_view) const {
-    assert(false);
+    CHECK(false);
     return 0;
 }
 double MetricSet::getDoubleValue(string_view) const {
-    assert(false);
+    CHECK(false);
     return 0;
 }
 
@@ -157,7 +157,7 @@ void MetricSet::unregisterMetric(Metric& metric) {
             break;
         }
     }
-    assert(found); // We check above for existence.
+    CHECK(found); // We check above for existence.
     (void)found;
     metric.setRegistered(nullptr);
     tagRegistrationAltered();

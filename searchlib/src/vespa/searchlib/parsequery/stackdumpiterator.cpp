@@ -2,13 +2,13 @@
 
 #include "stackdumpiterator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/query/tree/integer_term_vector.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/vespalib/objects/nbo.h>
 #include <vespa/vespalib/util/compress.h>
 
-#include <cassert>
 #include <cstring>
 
 using search::query::IntegerTermVector;
@@ -39,7 +39,7 @@ uint64_t SimpleQueryStackDumpIterator::readCompressedPositiveInt(const char*& p)
     }
     uint64_t tmp;
     p += vespalib::compress::Integer::decompressPositive(tmp, p);
-    assert(p <= _bufEnd);
+    CHECK(p <= _bufEnd);
     return tmp;
 }
 
@@ -49,7 +49,7 @@ int64_t SimpleQueryStackDumpIterator::readCompressedInt(const char*& p) {
     }
     int64_t tmp;
     p += vespalib::compress::Integer::decompress(tmp, p);
-    assert(p <= _bufEnd);
+    CHECK(p <= _bufEnd);
     return tmp;
 }
 

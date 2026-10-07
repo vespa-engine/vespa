@@ -2,7 +2,7 @@
 
 #include "docid_range_scheduler.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton::matching {
 
@@ -58,12 +58,12 @@ size_t AdaptiveDocidRangeScheduler::take_idle(const Guard&) {
     size_t thread_id = _idle.back();
     _idle.pop_back();
     _num_idle.store(_idle.size(), std::memory_order_relaxed);
-    assert(_workers[thread_id].is_idle);
+    CHECK(_workers[thread_id].is_idle);
     return thread_id;
 }
 
 void AdaptiveDocidRangeScheduler::make_idle(const Guard&, size_t thread_id) {
-    assert(!_workers[thread_id].is_idle);
+    CHECK(!_workers[thread_id].is_idle);
     _workers[thread_id].is_idle = true;
     _idle.push_back(thread_id);
     _num_idle.store(_idle.size(), std::memory_order_relaxed);

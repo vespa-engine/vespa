@@ -13,6 +13,7 @@
 #include "tls_stats_factory.h"
 #include "tls_stats_map.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/util/cpu_usage.h>
@@ -129,9 +130,9 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
 FlushEngine::~FlushEngine() {
     close();
     // All flushes should be completely accounted for
-    assert(_flushing_strategies.size() == 1u);
-    assert(_flushing_strategies.begin()->first == _strategy_id);
-    assert(_flushing_strategies.begin()->second == 1u);
+    CHECK(_flushing_strategies.size() == 1u);
+    CHECK(_flushing_strategies.begin()->first == _strategy_id);
+    CHECK(_flushing_strategies.begin()->second == 1u);
 }
 
 FlushEngine& FlushEngine::start() {
@@ -286,12 +287,12 @@ void FlushEngine::prune_flushing_strategies(std::vector<uint32_t> strategy_ids_f
     std::unique_lock guard(_lock);
     for (auto id : strategy_ids_for_finished_flushes) {
         auto it = _flushing_strategies.find(id);
-        assert(it != _flushing_strategies.end());
-        assert(it->second > 0u);
+        CHECK(it != _flushing_strategies.end());
+        CHECK(it->second > 0u);
         --(it->second);
     }
     bool erased = false;
-    assert(!_flushing_strategies.empty());
+    CHECK(!_flushing_strategies.empty());
     for (;;) {
         auto it = _flushing_strategies.begin();
         if (it->second != 0) {
@@ -299,7 +300,7 @@ void FlushEngine::prune_flushing_strategies(std::vector<uint32_t> strategy_ids_f
         }
         _flushing_strategies.erase(it);
         erased = true;
-        assert(!_flushing_strategies.empty());
+        CHECK(!_flushing_strategies.empty());
     }
     auto lowest_strategy_id = _flushing_strategies.begin()->first;
     if (erased) {
@@ -330,14 +331,14 @@ void FlushEngine::maybe_apply_changed_strategy(std::vector<uint32_t>&        str
     _flush_history->set_strategy(std::move(strategy_name), _strategy_id, priority_strategy);
     std::lock_guard guard(_lock);
     auto            it = _flushing_strategies.lower_bound(_strategy_id);
-    assert(it == _flushing_strategies.end());
+    CHECK(it == _flushing_strategies.end());
     _flushing_strategies.emplace_hint(it, _strategy_id, 1u);
 }
 
 void FlushEngine::mark_active_strategy(uint32_t strategy_id, std::lock_guard<std::mutex>&) {
     auto it = _flushing_strategies.lower_bound(strategy_id);
-    assert(it != _flushing_strategies.end());
-    assert(it->second > 0u);
+    CHECK(it != _flushing_strategies.end());
+    CHECK(it->second > 0u);
     ++(it->second);
 }
 
@@ -520,13 +521,13 @@ void FlushEngine::flushDone(const FlushContext& ctx, uint32_t taskId) {
     uint32_t              strategy_id = 0;
     {
         auto itr = _flushing.find(taskId);
-        assert(itr != _flushing.end());
+        CHECK(itr != _flushing.end());
         strategy_id = itr->second._strategy_id;
         _flush_history->flush_done(taskId);
         _flushing.erase(itr);
     }
-    assert(ctx.getHandler());
-    assert(strategy_id != 0);
+    CHECK(ctx.getHandler());
+    CHECK(strategy_id != 0);
     if (_handlers.hasHandler(ctx.getHandler())) {
         // Handover, prune will call prune_done()
         auto ins_res = _pendingPrune.emplace(ctx.getHandler(), PendingPrunes::mapped_type());

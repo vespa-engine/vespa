@@ -2,8 +2,6 @@
 
 #include "bitvectorkeyscope.h"
 
-#include <cassert>
-
 using search::diskindex::BitVectorKeyScope;
 
 namespace search::diskindex {

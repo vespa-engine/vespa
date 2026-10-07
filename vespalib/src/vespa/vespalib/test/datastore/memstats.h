@@ -2,9 +2,8 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/memoryusage.h>
-
-#include <cassert>
 
 namespace vespalib::datastore::test {
 
@@ -36,12 +35,12 @@ struct MemStats {
         return *this;
     }
     MemStats& decUsed(size_t val) {
-        assert(_used >= val);
+        CHECK(_used >= val);
         _used -= val;
         return *this;
     }
     MemStats& decHold(size_t val) {
-        assert(_hold >= val);
+        CHECK(_hold >= val);
         _hold -= val;
         return *this;
     }

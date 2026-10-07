@@ -11,6 +11,7 @@
 #include "transport.h"
 #include "transport_thread.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/socket_spec.h>
 
@@ -69,7 +70,7 @@ struct DoHandshakeWork : vespalib::Executor::Task {
 };
 
 DoHandshakeWork::~DoHandshakeWork() {
-    assert(conn == nullptr);
+    CHECK(conn == nullptr);
 }
 
 } // namespace
@@ -219,7 +220,7 @@ bool FNET_Connection::handshake() {
     case vespalib::CryptoSocket::HandshakeResult::DONE: {
         LOG(debug, "Connection(%s): handshake done with peer %s", GetSpec(), GetPeerSpec().c_str());
         _auth_context = _socket->make_auth_context();
-        assert(_auth_context);
+        CHECK(_auth_context);
         EnableReadEvent(true);
         EnableWriteEvent(writePendingAfterConnect());
         _flags._framed = (_socket->min_read_buffer_size() > 1);
@@ -246,7 +247,7 @@ bool FNET_Connection::handshake() {
     case vespalib::CryptoSocket::HandshakeResult::NEED_WORK:
         EnableReadEvent(false);
         EnableWriteEvent(false);
-        assert(!_flags._handshake_work_pending);
+        CHECK(!_flags._handshake_work_pending);
         _flags._handshake_work_pending = true;
         Owner()->owner().post_or_perform(std::make_unique<DoHandshakeWork>(this, _socket.get()));
     }
@@ -450,7 +451,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread* owner, FNET_IPacketStream
       _output(0),
       _channels(),
       _callbackTarget(nullptr) {
-    assert(_socket && (_socket->get_fd() >= 0));
+    CHECK(_socket && (_socket->get_fd() >= 0));
     _num_connections.fetch_add(1, std::memory_order_relaxed);
 }
 
@@ -479,7 +480,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread* owner, FNET_IPacketStream
 }
 
 FNET_Connection::~FNET_Connection() {
-    assert(!_resolve_handler);
+    CHECK(!_resolve_handler);
     _num_connections.fetch_sub(1, std::memory_order_relaxed);
 }
 
@@ -512,7 +513,7 @@ bool FNET_Connection::handle_add_event() {
 }
 
 bool FNET_Connection::handle_handshake_act() {
-    assert(_flags._handshake_work_pending);
+    CHECK(_flags._handshake_work_pending);
     _flags._handshake_work_pending = false;
     return ((GetState() == FNET_CONNECTING) && handshake());
 }
@@ -570,7 +571,7 @@ void FNET_Connection::CloseAndFreeChannel(FNET_Channel* channel) {
 bool FNET_Connection::PostPacket(FNET_Packet* packet, uint32_t chid) {
     uint32_t writeWork;
 
-    assert(packet != nullptr);
+    CHECK(packet != nullptr);
     std::unique_lock<std::mutex> guard(_ioc_lock);
     if (GetState() >= FNET_CLOSING) {
         if (_flags._discarding) {
@@ -660,6 +661,6 @@ std::string FNET_Connection::GetPeerSpec() const {
 }
 
 const vespalib::net::ConnectionAuthContext& FNET_Connection::auth_context() const noexcept {
-    assert(_auth_context);
+    CHECK(_auth_context);
     return *_auth_context;
 }

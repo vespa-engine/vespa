@@ -4,6 +4,7 @@
 
 #include "gbdt.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/basic_nodes.h>
 #include <vespa/eval/eval/call_nodes.h>
 #include <vespa/eval/eval/operator_nodes.h>
@@ -134,9 +135,9 @@ void encode_less(const nodes::Less& less, const nodes::Node& left_child, const n
                  std::vector<uint32_t>& model_out) {
     size_t meta_idx = model_out.size();
     auto   symbol = nodes::as<nodes::Symbol>(less.lhs());
-    assert(symbol);
+    CHECK(symbol);
     model_out.push_back(uint32_t(symbol->id()) << 12);
-    assert(less.rhs().is_const_double());
+    CHECK(less.rhs().is_const_double());
     encode_const(less.rhs().get_const_double_value(), model_out);
     size_t skip_idx = model_out.size();
     model_out.push_back(0); // left child size placeholder
@@ -150,7 +151,7 @@ void encode_in(const nodes::In& in, const nodes::Node& left_child, const nodes::
                std::vector<uint32_t>& model_out) {
     size_t meta_idx = model_out.size();
     auto   symbol = nodes::as<nodes::Symbol>(in.child());
-    assert(symbol);
+    CHECK(symbol);
     model_out.push_back(uint32_t(symbol->id()) << 12);
     size_t set_size_idx = model_out.size();
     model_out.push_back(in.num_entries());
@@ -168,11 +169,11 @@ void encode_inverted(const nodes::Not& inverted, const nodes::Node& left_child, 
                      std::vector<uint32_t>& model_out) {
     size_t meta_idx = model_out.size();
     auto   ge = nodes::as<nodes::GreaterEqual>(inverted.child());
-    assert(ge);
+    CHECK(ge);
     auto symbol = nodes::as<nodes::Symbol>(ge->lhs());
-    assert(symbol);
+    CHECK(symbol);
     model_out.push_back(uint32_t(symbol->id()) << 12);
-    assert(ge->rhs().is_const_double());
+    CHECK(ge->rhs().is_const_double());
     encode_const(ge->rhs().get_const_double_value(), model_out);
     size_t skip_idx = model_out.size();
     model_out.push_back(0); // left child size placeholder
@@ -195,12 +196,12 @@ uint32_t encode_node(const nodes::Node& node_in, std::vector<uint32_t>& model_ou
             encode_in(*in, if_node->true_expr(), if_node->false_expr(), model_out);
             return IN;
         } else {
-            assert(inverted);
+            CHECK(inverted);
             encode_inverted(*inverted, if_node->true_expr(), if_node->false_expr(), model_out);
             return INVERTED;
         }
     } else {
-        assert(node_in.is_const_double());
+        CHECK(node_in.is_const_double());
         encode_const(node_in.get_const_double_value(), model_out);
         return LEAF;
     }

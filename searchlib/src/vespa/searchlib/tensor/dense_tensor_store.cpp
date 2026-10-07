@@ -4,6 +4,7 @@
 
 #include "subspace_type.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/datastore/compacting_buffers.h>
 #include <vespa/vespalib/datastore/compaction_context.h>
@@ -141,10 +142,10 @@ std::unique_ptr<ICompactionContext> DenseTensorStore::start_compact(const Compac
 }
 
 EntryRef DenseTensorStore::store_tensor(const Value& tensor) {
-    assert(tensor.type() == _type);
+    CHECK(tensor.type() == _type);
     auto cells = tensor.cells();
-    assert(cells.size == getNumCells());
-    assert(cells.type == _type.cell_type());
+    CHECK(cells.size == getNumCells());
+    CHECK(cells.type == _type.cell_type());
     auto raw = allocRawBuffer();
     memcpy(raw.data, cells.data, getBufSize());
     return raw.ref;

@@ -1,9 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/polymorphicarrays.h>
-
-#include <cassert>
 
 using namespace vespalib;
 
@@ -12,10 +11,10 @@ public:
     virtual ~A() = default;
     virtual void assign(const A& rhs) {
         (void)rhs;
-        assert(false);
+        CHECK(false);
     } // Required by the primitive array.
     virtual A* clone() const {
-        assert(false);
+        CHECK(false);
         return nullptr;
     } // Required for the complex array.
 

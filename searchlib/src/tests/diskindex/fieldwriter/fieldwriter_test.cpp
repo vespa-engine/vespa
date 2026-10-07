@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/diskindex/fieldreader.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
@@ -293,15 +294,15 @@ FileChecksum::FileChecksum(const std::string& file_name) : _digest(), _digest_le
         remainder -= thistime;
     }
     EVP_DigestFinal_ex(md_ctx.get(), &_digest[0], &_digest_len);
-    assert(_digest_len > 0u && _digest_len <= EVP_MAX_MD_SIZE);
+    CHECK(_digest_len > 0u && _digest_len <= EVP_MAX_MD_SIZE);
 }
 
 void compare_files(const std::string& file_name_prefix, const std::string& file_name_suffix) {
     FileChecksum baseline_checksum(file_name_prefix + file_name_suffix);
     FileChecksum cooked_fusion_checksum(file_name_prefix + "x" + file_name_suffix);
     FileChecksum raw_fusion_checksum(file_name_prefix + "xx" + file_name_suffix);
-    assert(baseline_checksum == cooked_fusion_checksum);
-    assert(baseline_checksum == raw_fusion_checksum);
+    CHECK(baseline_checksum == cooked_fusion_checksum);
+    CHECK(baseline_checksum == raw_fusion_checksum);
 }
 
 std::vector<std::string> suffixes = {"boolocc.bdat",    "boolocc.idx",      "posocc.dat.compressed",
@@ -365,8 +366,8 @@ void readField(FakeWordSet& wordSet, uint32_t docIdLimit, const std::string& nam
     }
 
     auto field_length_info = istate._fieldReader->get_field_length_info();
-    assert(4.5 == field_length_info.get_average_field_length());
-    assert(42u == field_length_info.get_num_samples());
+    CHECK(4.5 == field_length_info.get_average_field_length());
+    CHECK(42u == field_length_info.get_num_samples());
 
     TermFieldMatchData mdfield1;
 
@@ -409,18 +410,18 @@ uint32_t randReadField(FakeWordSet& wordSet, const std::string& namepref, bool d
 
     TuneFileRandRead tuneFileRandRead;
     bool             openCntRes = dictFile->open(cname, tuneFileRandRead);
-    assert(openCntRes);
+    CHECK(openCntRes);
     (void)openCntRes;
     std::string cWord;
 
     std::string pname = dirprefix + namepref + "posocc.dat";
     pname += ".compressed";
     bool openPostingRes = postingFile->open(pname, tuneFileRandRead);
-    assert(openPostingRes);
+    CHECK(openPostingRes);
     (void)openPostingRes;
     auto field_length_info = postingFile->get_field_length_info();
-    assert(4.5 == field_length_info.get_average_field_length());
-    assert(42u == field_length_info.get_num_samples());
+    CHECK(4.5 == field_length_info.get_average_field_length());
+    CHECK(42u == field_length_info.get_num_samples());
 
     uint32_t rare_word_iterators = 0;
     for (int loop = 0; loop < 1; ++loop) {
@@ -430,7 +431,7 @@ uint32_t randReadField(FakeWordSet& wordSet, const std::string& namepref, bool d
                 PostingListOffsetAndCounts offsetAndCounts;
                 uint64_t                   checkWordNum;
                 dictFile->lookup(makeWordString(wordNum), checkWordNum, offsetAndCounts);
-                assert(wordNum == checkWordNum);
+                CHECK(wordNum == checkWordNum);
 
                 DictionaryLookupResult lookup_result;
                 lookup_result.wordNum = wordNum;
@@ -521,7 +522,7 @@ void testFieldWriterVariant(FakeWordSet& wordSet, uint32_t doc_id_limit, const s
     readField(wordSet, doc_id_limit, file_name_prefix, dynamic_k, encode_interleaved_features, verbose);
     auto rare_word_iterators =
         randReadField(wordSet, file_name_prefix, dynamic_k, encode_interleaved_features, verbose);
-    assert((rare_word_iterators > 0) == (features_size_flush_bits > force_features_size_flush));
+    CHECK((rare_word_iterators > 0) == (features_size_flush_bits > force_features_size_flush));
     fusionField(wordSet.getNumWords(), doc_id_limit, file_name_prefix, file_name_prefix + "x", false, dynamic_k,
                 encode_interleaved_features);
     fusionField(wordSet.getNumWords(), doc_id_limit, file_name_prefix, file_name_prefix + "xx", true, dynamic_k,

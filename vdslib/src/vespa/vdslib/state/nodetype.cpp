@@ -2,10 +2,10 @@
 
 #include "nodetype.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <cassert>
 #include <ostream>
 #include <string>
 
@@ -35,7 +35,7 @@ const NodeType& NodeType::get(Type type) noexcept {
     case Type::DISTRIBUTOR:
         return DISTRIBUTOR;
     case Type::UNKNOWN:
-        assert(type != Type::UNKNOWN);
+        CHECK(type != Type::UNKNOWN);
     }
     abort();
 }

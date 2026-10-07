@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
@@ -690,7 +691,7 @@ SearchIterator::UP create_wand(bool use_dww, TermFieldMatchData& tfmd, const Mat
         handles.push_back(layout.allocTermField(tfmd.getFieldId()));
     }
     MatchData::UP childrenMatchData = layout.createMatchData();
-    assert(childrenMatchData->getNumTermFields() == dict_entries.size());
+    CHECK(childrenMatchData->getNumTermFields() == dict_entries.size());
     wand::Terms terms;
     for (size_t i = 0; i < dict_entries.size(); ++i) {
         terms.push_back(
@@ -698,7 +699,7 @@ SearchIterator::UP create_wand(bool use_dww, TermFieldMatchData& tfmd, const Mat
                                                          dict_entries[i]),
                        weights[i], dict_entries[i].posting_size, childrenMatchData->resolveTermField(handles[i])));
     }
-    assert(terms.size() == dict_entries.size());
+    CHECK(terms.size() == dict_entries.size());
     return SearchIterator::UP(ParallelWeakAndSearch::create(
         terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict, false));
 }

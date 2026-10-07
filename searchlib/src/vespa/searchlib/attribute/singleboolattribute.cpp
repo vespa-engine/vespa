@@ -10,6 +10,7 @@
 #include "single_bool_attribute_saver.h"
 #include "valuemodifier.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/query/query_term_simple.h>
@@ -52,7 +53,7 @@ bool SingleBoolAttribute::addDoc(DocId& doc) {
     DocId docIdLimit = getNumDocs() + 1;
     ensureRoom(docIdLimit);
     bool incGen = _bv.extend(docIdLimit);
-    assert(!incGen);
+    CHECK(!incGen);
     incNumDocs();
     doc = getNumDocs() - 1;
     updateUncommittedDocIdLimit(doc);
@@ -203,7 +204,7 @@ bool SingleBoolAttribute::onLoad(vespalib::Executor*) {
         _bv.extend(numDocs);
         auto    entry_size = BitVector::legacy_num_bytes_with_single_guard_bit(numDocs);
         ssize_t bytesRead = attrReader.getReader().read(_bv.writer().getStart(), entry_size);
-        assert(bytesRead == entry_size);
+        CHECK(bytesRead == entry_size);
         _bv.fixup_after_load();
         setNumDocs(numDocs);
         setCommittedDocIdLimit(numDocs);
@@ -220,8 +221,8 @@ std::unique_ptr<AttributeSaver> SingleBoolAttribute::onInitSave(std::string_view
 }
 
 void SingleBoolAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool) {
-    assert(lidLow <= lidLimit);
-    assert(lidLimit <= getNumDocs());
+    CHECK(lidLow <= lidLimit);
+    CHECK(lidLimit <= getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
         if (getFast(lid) != 0) {
             clearDoc(lid);
@@ -231,7 +232,7 @@ void SingleBoolAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool) {
 
 void SingleBoolAttribute::onShrinkLidSpace() {
     uint32_t committedDocIdLimit = getCommittedDocIdLimit();
-    assert(committedDocIdLimit < getNumDocs());
+    CHECK(committedDocIdLimit < getNumDocs());
     _bv.shrink(committedDocIdLimit);
     setNumDocs(committedDocIdLimit);
 }

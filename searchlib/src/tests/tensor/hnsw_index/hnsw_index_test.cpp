@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
@@ -93,7 +94,7 @@ public:
     }
     VectorBundle get_vectors(uint32_t docid) const noexcept override {
         ArrayRef ref(_vectors[docid]);
-        assert((ref.size() % _subspace_type.size()) == 0);
+        CHECK((ref.size() % _subspace_type.size()) == 0);
         uint32_t subspaces = ref.size() / _subspace_type.size();
         return {ref.data(), subspaces, _subspace_type};
     }
@@ -939,7 +940,7 @@ template <class ResultGraph, HnswIndexType type> ResultGraph make_graph_helper(H
     using LinkArrayRef = typename HnswGraph<type>::LinkArrayRef;
     auto&       graph = index.get_graph();
     ResultGraph result(graph.size());
-    assert(!graph.get_levels_ref(0).valid());
+    CHECK(!graph.get_levels_ref(0).valid());
     for (uint32_t doc_id = 1; doc_id < graph.size(); ++doc_id) {
         auto& node = result[doc_id];
         auto  levels_ref = graph.get_levels_ref(doc_id);

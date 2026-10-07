@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
@@ -29,7 +30,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <algorithm>
-#include <cassert>
 #include <list>
 #include <memory>
 
@@ -316,7 +316,7 @@ public:
                                                  bool want_true, bool expose_match_data_for_same_element = true)
         : SameElementBlueprintSearchBuilder(tattr, element_filter, want_true, expose_match_data_for_same_element),
           _replacement(_blueprint->get_replacement()) {
-        assert(_replacement);
+        CHECK(_replacement);
     }
     ~SameElementBlueprintReplacementSearchBuilder() override;
     std::unique_ptr<SearchIterator> create_search(bool strict) const override {
@@ -905,7 +905,7 @@ public:
 template <typename B>
 Verifier<B>::Verifier(size_t array_length, const std::vector<uint32_t>& element_filter, bool want_true)
     : _test_attribute(), _builder(_test_attribute, element_filter, want_true) {
-    assert(!element_filter.empty());
+    CHECK(!element_filter.empty());
     size_t element_filter_index = 0;
 
     auto   expected_docids = getExpectedDocIds();

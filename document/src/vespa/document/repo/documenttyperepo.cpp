@@ -2,6 +2,7 @@
 
 #include "documenttyperepo.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/annotationreferencedatatype.h>
@@ -16,7 +17,6 @@
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-#include <cassert>
 #include <fstream>
 #include <set>
 
@@ -189,7 +189,7 @@ AnnotationType* AnnotationTypeRepo::addAnnotationType(AnnotationType::UP type) {
 
 void AnnotationTypeRepo::setAnnotationDataType(int32_t id, const DataType& d) {
     AnnotationType* annotation_type = _annotation_types[id];
-    assert(annotation_type);
+    CHECK(annotation_type);
     if (!annotation_type->getDataType()) {
         annotation_type->setDataType(d);
     } else if (!annotation_type->getDataType()->equals(d)) {

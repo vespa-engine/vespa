@@ -2,9 +2,8 @@
 
 #include "splitbucketoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 using document::BucketId;
 using document::DocumentTypeRepo;
@@ -23,20 +22,20 @@ SplitBucketOperation::SplitBucketOperation(const document::BucketId& source, con
 
 void SplitBucketOperation::serialize(vespalib::nbostream& os) const {
     {
-        assert(_source.valid());
-        assert(_target1.valid() || _target2.valid());
+        CHECK(_source.valid());
+        CHECK(_target1.valid() || _target2.valid());
         if (_target1.valid()) {
-            assert(_source.getUsedBits() < _target1.getUsedBits());
-            assert(_source.contains(_target1));
+            CHECK(_source.getUsedBits() < _target1.getUsedBits());
+            CHECK(_source.contains(_target1));
         }
         if (_target2.valid()) {
-            assert(_source.getUsedBits() < _target2.getUsedBits());
-            assert(_source.contains(_target2));
+            CHECK(_source.getUsedBits() < _target2.getUsedBits());
+            CHECK(_source.contains(_target2));
         }
         if (_target1.valid() && _target2.valid()) {
-            assert(_target1 != _target2);
-            assert(!_target1.contains(_target2));
-            assert(!_target2.contains(_target1));
+            CHECK(_target1 != _target2);
+            CHECK(!_target1.contains(_target2));
+            CHECK(!_target2.contains(_target1));
         }
     }
     os << _source;

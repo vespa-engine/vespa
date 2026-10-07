@@ -2,7 +2,8 @@
 
 #include "sortdata.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstring>
 
 namespace search {
@@ -26,7 +27,7 @@ bool SortData::Equals(uint32_t hitcnt, const uint32_t* sortIndex_1, const char* 
             return false;
         }
     }
-    assert((sortIndex_1[hitcnt] - sortIndex_1[0]) == (sortIndex_2[hitcnt] - sortIndex_2[0]));
+    CHECK((sortIndex_1[hitcnt] - sortIndex_1[0]) == (sortIndex_2[hitcnt] - sortIndex_2[0]));
     return (memcmp(sortData_1 + sortIndex_1[0], sortData_2 + sortIndex_2[0], sortIndex_1[hitcnt] - sortIndex_1[0]) ==
             0);
 }
@@ -40,7 +41,7 @@ void SortData::Copy(uint32_t hitcnt, uint32_t* sortIndex_dst, char* sortData_dst
     for (uint32_t i = 1; i <= hitcnt; i++) {
         sortIndex_dst[i] = sortIndex_src[i] + diff;
     }
-    assert((sortIndex_dst[hitcnt] - sortIndex_dst[0]) == (sortIndex_src[hitcnt] - sortIndex_src[0]));
+    CHECK((sortIndex_dst[hitcnt] - sortIndex_dst[0]) == (sortIndex_src[hitcnt] - sortIndex_src[0]));
     memcpy(sortData_dst + sortIndex_dst[0], sortData_src + sortIndex_src[0],
            sortIndex_dst[hitcnt] - sortIndex_dst[0]);
 }

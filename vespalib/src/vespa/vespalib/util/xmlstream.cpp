@@ -4,11 +4,11 @@
 
 #include "string_escape.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <vector>
 
 namespace vespalib::xml {
@@ -261,7 +261,7 @@ void XmlOutputStream::flush(bool endTag) {
                 break;
             }
             default:
-                assert(false);
+                CHECK(false);
             }
         }
         _cachedContent.clear();

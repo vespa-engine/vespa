@@ -2,6 +2,7 @@
 
 #include "generic_peek.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/nested_loop.h>
 #include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/eval/eval/wrap_param.h>
@@ -11,7 +12,6 @@
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 
-#include <cassert>
 #include <map>
 
 using namespace vespalib::eval::tensor_function;
@@ -50,7 +50,7 @@ struct DimSpec {
         if (label.is_mapped()) {
             return {DimType::LABEL_STR, Handle(label.name), 0};
         } else {
-            assert(label.is_indexed());
+            CHECK(label.is_indexed());
             return {DimType::LABEL_IDX, Handle(), label.index};
         }
     }
@@ -58,15 +58,15 @@ struct DimSpec {
     bool has_child() const { return (dim_type == DimType::CHILD_IDX); }
     bool has_label() const { return (dim_type != DimType::CHILD_IDX); }
     size_t get_child_idx() const {
-        assert(dim_type == DimType::CHILD_IDX);
+        CHECK(dim_type == DimType::CHILD_IDX);
         return idx;
     }
     string_id get_label_name() const {
-        assert(dim_type == DimType::LABEL_STR);
+        CHECK(dim_type == DimType::LABEL_STR);
         return str.id();
     }
     size_t get_label_index() const {
-        assert(dim_type == DimType::LABEL_IDX);
+        CHECK(dim_type == DimType::LABEL_IDX);
         return idx;
     }
 };
@@ -95,7 +95,7 @@ struct ExtractedSpecs {
                                     if (a.is_indexed() == indexed) {
                                         dimensions.push_back(a);
                                         const auto& [spec_dim_name, child_or_label] = b;
-                                        assert(a.name == spec_dim_name);
+                                        CHECK(a.name == spec_dim_name);
                                         if (std::holds_alternative<size_t>(child_or_label)) {
                                             specs[a.name] = DimSpec::from_child(std::get<size_t>(child_or_label));
                                         } else {
@@ -117,7 +117,7 @@ struct DenseSizes {
 
     DenseSizes(const std::vector<ValueType::Dimension>& dims) : size(), stride(dims.size()), cur_size(1) {
         for (const auto& dim : dims) {
-            assert(dim.is_indexed());
+            CHECK(dim.is_indexed());
             size.push_back(dim.size);
         }
         for (size_t i = size.size(); i-- > 0;) {
@@ -157,9 +157,9 @@ struct DensePlan {
                 if (pos->second.has_child()) {
                     children.push_back(Child{pos->second.get_child_idx(), sizes.stride[i], sizes.size[i]});
                 } else {
-                    assert(pos->second.has_label());
+                    CHECK(pos->second.has_label());
                     size_t label_index = pos->second.get_label_index();
-                    assert(label_index < sizes.size[i]);
+                    CHECK(label_index < sizes.size[i]);
                     verbatim_offset += label_index * sizes.stride[i];
                 }
             }
@@ -242,7 +242,7 @@ struct SparsePlan {
                 view_addr.push_back(dim.get_label_name());
             }
         }
-        assert(view_addr.size() == view_dims.size());
+        CHECK(view_addr.size() == view_dims.size());
         return SparseState(std::move(handles), std::move(view_addr), out_mapped_dims);
     }
 };
@@ -262,8 +262,8 @@ struct PeekParam {
           sparse_plan(input_type, spec_in),
           num_children(count_children(spec_in)),
           factory(factory_in) {
-        assert(dense_plan.in_dense_size == input_type.dense_subspace_size());
-        assert(dense_plan.out_dense_size == res_type.dense_subspace_size());
+        CHECK(dense_plan.in_dense_size == input_type.dense_subspace_size());
+        CHECK(dense_plan.out_dense_size == res_type.dense_subspace_size());
     }
 };
 

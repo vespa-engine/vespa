@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "simplemaintenancescanner.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 
-#include <cassert>
 #include <ostream>
 
 namespace storage::distributor {
@@ -90,7 +90,7 @@ void SimpleMaintenanceScanner::prioritizeBucket(const document::Bucket& bucket) 
     MaintenancePriorityAndType pri(_priorityGenerator.prioritize(bucket, _pendingMaintenance.perNodeStats));
     if (pri.requiresMaintenance()) {
         _bucketPriorityDb.setPriority(PrioritizedBucket(bucket, pri.getPriority().getPriority()));
-        assert(pri.getType() != MaintenanceOperation::OPERATION_COUNT);
+        CHECK(pri.getType() != MaintenanceOperation::OPERATION_COUNT);
         ++_pendingMaintenance.global.pending[pri.getType()];
     }
 }

@@ -2,9 +2,8 @@
 
 #include "joinbucketsoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 using document::BucketId;
 using document::DocumentTypeRepo;
@@ -23,15 +22,15 @@ JoinBucketsOperation::JoinBucketsOperation(const document::BucketId& source1, co
 
 void JoinBucketsOperation::serialize(vespalib::nbostream& os) const {
     {
-        assert(_source1.valid() || _source2.valid());
-        assert(_target.valid());
+        CHECK(_source1.valid() || _source2.valid());
+        CHECK(_target.valid());
         if (_source1.valid()) {
-            assert(_source1.getUsedBits() > _target.getUsedBits());
-            assert(_target.contains(_source1));
+            CHECK(_source1.getUsedBits() > _target.getUsedBits());
+            CHECK(_target.contains(_source1));
         }
         if (_source2.valid()) {
-            assert(_source2.getUsedBits() > _target.getUsedBits());
-            assert(_target.contains(_source2));
+            CHECK(_source2.getUsedBits() > _target.getUsedBits());
+            CHECK(_target.contains(_source2));
         }
     }
     os << _source1;

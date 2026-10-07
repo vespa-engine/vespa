@@ -4,12 +4,11 @@
 
 #include "utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stash.h>
-
-#include <cassert>
 
 using namespace search::fef;
 
@@ -19,10 +18,10 @@ TermFieldMdExecutor::TermFieldMdExecutor(const fef::IQueryEnvironment& env, uint
     : _terms(), _md(nullptr) {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         const fef::ITermData* td = env.getTerm(i);
-        assert(td != nullptr);
+        CHECK(td != nullptr);
         const fef::ITermFieldData* tfd = td->lookupField(fieldId);
         if (tfd != nullptr) {
-            assert(tfd->getHandle() != fef::IllegalHandle);
+            CHECK(tfd->getHandle() != fef::IllegalHandle);
             _terms.push_back(std::make_pair(tfd->getHandle(), td->getWeight()));
         }
     }
@@ -76,7 +75,7 @@ Blueprint::UP TermFieldMdBlueprint::createInstance() const {
 
 bool TermFieldMdBlueprint::setup(const IIndexEnvironment&, const ParameterList& params) {
     _field = params[0].asField();
-    assert(_field != nullptr);
+    CHECK(_field != nullptr);
 
     describeOutput("score", "The term field match score");
     describeOutput("terms", "The number of ranked terms searching this field");

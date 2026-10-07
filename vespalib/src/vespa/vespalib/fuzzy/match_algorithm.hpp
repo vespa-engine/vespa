@@ -5,10 +5,10 @@
 #include "levenshtein_dfa.h"
 #include "unicode_utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
 
-#include <cassert>
 #include <concepts>
 
 namespace vespalib::fuzzy {
@@ -198,7 +198,7 @@ template <uint8_t MaxEdits> struct MatchAlgorithm {
             } else {
                 // Can never match; find the successor
                 successor_out.resize(n_prefix_chars); // Always <= successor_out.size()
-                assert(matcher.valid_state(last_state_with_higher_out));
+                CHECK(matcher.valid_state(last_state_with_higher_out));
                 backtrack_and_emit_greater_suffix(matcher, last_state_with_higher_out, char_after_prefix,
                                                   successor_out);
                 return MatchResult::make_mismatch(max_edits());
@@ -306,7 +306,7 @@ template <uint8_t MaxEdits> struct MatchAlgorithm {
         }
         const auto first_highest_edge =
             matcher.lowest_higher_explicit_out_edge(last_state_with_higher_out, input_at_branch);
-        assert(matcher.valid_edge(first_highest_edge));
+        CHECK(matcher.valid_edge(first_highest_edge));
         append_utf32_char(successor, matcher.edge_to_u32char(first_highest_edge));
         emit_smallest_matching_suffix(matcher, matcher.edge_to_state(last_state_with_higher_out, first_highest_edge),
                                       successor);
@@ -363,7 +363,7 @@ template <uint8_t MaxEdits> struct MatchAlgorithm {
                 state = wildcard_state;
             } else {
                 const auto smallest_out_edge = matcher.smallest_explicit_out_edge(state);
-                assert(matcher.valid_edge(smallest_out_edge));
+                CHECK(matcher.valid_edge(smallest_out_edge));
                 append_utf32_char(str, matcher.edge_to_u32char(smallest_out_edge));
                 state = matcher.edge_to_state(state, smallest_out_edge);
             }

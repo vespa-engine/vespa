@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -172,7 +173,7 @@ struct OrSetup {
         }
     }
     SearchIterator::UP make_or(Impl impl, bool optimize) {
-        assert(!child_hits.empty());
+        CHECK(!child_hits.empty());
         if ((child_hits.size() == 1) && unwrap_single_child) {
             // use child directly if there is only one
             return make_leaf(0);

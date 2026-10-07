@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config-attributes.h>
 #include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
 #include <vespa/searchcore/proton/attribute/attribute_load_memory_calculator.h>
@@ -45,7 +46,7 @@ std::shared_ptr<AttributeVector> build_attribute_vector(const std::string&      
     for (uint32_t wanted_doc_id = 1; wanted_doc_id <= docs; ++wanted_doc_id) {
         uint32_t doc_id = 0;
         attribute_vector->addDoc(doc_id);
-        assert(doc_id == wanted_doc_id);
+        CHECK(doc_id == wanted_doc_id);
         attribute_vector->clearDoc(doc_id);
         auto& integer_attribute_vector = dynamic_cast<search::IntegerAttribute&>(*attribute_vector);
         integer_attribute_vector.append(doc_id, 10, 1);

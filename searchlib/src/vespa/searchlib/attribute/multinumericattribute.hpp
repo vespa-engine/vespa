@@ -11,6 +11,7 @@
 #include "string_to_number.h"
 #include "valuemodifier.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/query/query_term_simple.h>
@@ -110,7 +111,7 @@ template <typename B, typename M> bool MultiValueNumericAttribute<B, M>::onLoadE
     this->_mvMapping.reserve(numDocs + 1);
 
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
-    assert((udatBuffer->size() % sizeof(T)) == 0);
+    CHECK((udatBuffer->size() % sizeof(T)) == 0);
     this->set_size_on_disk(attrReader.size_on_disk() + udatBuffer->size_on_disk());
     this->set_last_flush_duration(attrReader.flush_duration());
     std::span<const T> map(reinterpret_cast<const T*>(udatBuffer->buffer()), udatBuffer->size() / sizeof(T));

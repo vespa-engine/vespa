@@ -6,9 +6,8 @@
 #include "btreenodeallocator.h"
 #include "btreetraits.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/datastore/entry_comparator_wrapper.h>
-
-#include <cassert>
 
 namespace vespalib::btree {
 
@@ -64,12 +63,12 @@ public:
     DataType& getWData() noexcept { return getWNode()->getWData(getIdx()); }
     bool valid() const noexcept { return _nodeAndIdx != 0; }
     void adjustLeftVictimKilled() noexcept {
-        assert(getIdx() > 0);
+        CHECK(getIdx() > 0);
         decIdx();
     }
 
     void adjustSteal(uint32_t stolen) noexcept {
-        assert(getIdx() + stolen < getNode()->validSlots());
+        CHECK(getIdx() + stolen < getNode()->validSlots());
         setIdx(getIdx() + stolen);
     }
 
@@ -404,8 +403,8 @@ public:
             foreach_key_range_start(_pathSize, func);
             return;
         }
-        assert(_pathSize == end_itr._pathSize);
-        assert(_allocator == end_itr._allocator);
+        CHECK(_pathSize == end_itr._pathSize);
+        CHECK(_allocator == end_itr._allocator);
         uint32_t level = _pathSize;
         if (level > 0u) {
             /**
@@ -768,7 +767,7 @@ private:
     void removeLast(BTreeNode::Ref rootRef);
 
     void adjustSteal(uint32_t level, bool leftVictimKilled, uint32_t stolen) {
-        assert(_pathSize > level);
+        CHECK(_pathSize > level);
         if (leftVictimKilled) {
             _path[level].adjustLeftVictimKilled();
         }

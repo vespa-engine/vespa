@@ -4,6 +4,7 @@
 
 #include "parallel_weak_and_search.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/queryeval/flow_tuning.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
@@ -68,13 +69,13 @@ FlowStats ParallelWeakAndBlueprint::calculate_flow_stats(uint32_t docid_limit) c
 
 SearchIterator::UP
 ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const {
-    assert(tfmda.size() == 1);
+    CHECK(tfmda.size() == 1);
     fef::MatchData::UP childrenMatchData = _layout.createMatchData();
     wand::Terms        terms;
     terms.reserve(_terms.size());
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State& childState = _terms[i]->getState();
-        assert(childState.numFields() == 1);
+        CHECK(childState.numFields() == 1);
         // TODO: pass ownership with unique_ptr
         terms.emplace_back(_terms[i]->createSearch(*childrenMatchData).release(), _weights[i],
                            childState.estimate().estHits, childState.field(0).resolve(*childrenMatchData));

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/attribute/posting_iterator_pack.h>
 #include <vespa/searchlib/features/bm25_utils.h>
@@ -405,7 +406,7 @@ template <typename FutureHeap, typename PastHeap> void DualHeap<FutureHeap, Past
     }
     _past = _present;
     _trash = _past;
-    assert(_future == _space.data()); // space has not moved
+    CHECK(_future == _space.data()); // space has not moved
 }
 
 template <typename FutureHeap, typename PastHeap> std::string DualHeap<FutureHeap, PastHeap>::stringify() const {

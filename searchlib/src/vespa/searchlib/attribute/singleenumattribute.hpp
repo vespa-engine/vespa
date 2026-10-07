@@ -10,6 +10,7 @@
 #include "singleenumattributesaver.h"
 #include "valuemodifier.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/datastore/unique_store_remapper.h>
 
 namespace search {
@@ -240,8 +241,8 @@ template <typename B> void SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, 
     if (!findDefaultEnumRes) {
         e = EnumHandle();
     }
-    assert(lidLow <= lidLimit);
-    assert(lidLimit <= this->getNumDocs());
+    CHECK(lidLow <= lidLimit);
+    CHECK(lidLimit <= this->getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
         if (_enumIndices[lid].load_relaxed() != vespalib::datastore::EntryRef(e)) {
             this->clearDoc(lid);
@@ -252,9 +253,9 @@ template <typename B> void SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, 
 template <typename B> void SingleValueEnumAttribute<B>::onShrinkLidSpace() {
     EnumHandle e(0);
     bool       findDefaultEnumRes(this->findEnum(this->getDefaultEnumTypeValue(), e));
-    assert(findDefaultEnumRes);
+    CHECK(findDefaultEnumRes);
     uint32_t committedDocIdLimit = this->getCommittedDocIdLimit();
-    assert(_enumIndices.size() >= committedDocIdLimit);
+    CHECK(_enumIndices.size() >= committedDocIdLimit);
     attribute::IPostingListAttributeBase* pab = this->getIPostingListAttributeBase();
     if (pab != nullptr) {
         pab->clearPostings(e, committedDocIdLimit, _enumIndices.size());
@@ -262,9 +263,9 @@ template <typename B> void SingleValueEnumAttribute<B>::onShrinkLidSpace() {
     uint32_t shrink_docs = _enumIndices.size() - committedDocIdLimit;
     if (shrink_docs > 0u) {
         vespalib::datastore::EntryRef default_value_ref(e);
-        assert(default_value_ref.valid());
+        CHECK(default_value_ref.valid());
         uint32_t default_value_ref_count = this->_enumStore.get_ref_count(default_value_ref);
-        assert(default_value_ref_count >= shrink_docs);
+        CHECK(default_value_ref_count >= shrink_docs);
         this->_enumStore.set_ref_count(default_value_ref, default_value_ref_count - shrink_docs);
         IEnumStore::IndexList possibly_unused;
         possibly_unused.push_back(default_value_ref);

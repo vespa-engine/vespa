@@ -5,6 +5,7 @@
 #include "single_raw_attribute_loader.h"
 #include "single_raw_attribute_saver.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/util/file_settings.h>
@@ -99,7 +100,7 @@ std::span<const char> SingleRawAttribute::get_raw(DocId docid) const {
 
 void SingleRawAttribute::set_raw(DocId docid, std::span<const char> raw) {
     auto ref = _raw_store.set(raw);
-    assert(docid < _ref_vector.size());
+    CHECK(docid < _ref_vector.size());
     updateUncommittedDocIdLimit(docid);
     auto&    elem_ref = _ref_vector[docid];
     EntryRef old_ref(elem_ref.load_relaxed());

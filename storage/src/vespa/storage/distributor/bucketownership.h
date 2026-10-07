@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace storage::lib {
 class ClusterState;
@@ -29,7 +29,7 @@ public:
      * Precondition: isOwned() == false
      */
     const lib::ClusterState& getNonOwnedState() noexcept {
-        assert(!isOwned());
+        CHECK(!isOwned());
         return *_checkedState;
     }
 

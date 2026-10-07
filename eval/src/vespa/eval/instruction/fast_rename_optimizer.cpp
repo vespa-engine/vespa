@@ -4,6 +4,7 @@
 
 #include "replace_type_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 
 #include <optional>
@@ -14,7 +15,7 @@ using namespace tensor_function;
 
 bool FastRenameOptimizer::is_stable_rename(const ValueType& from_type, const ValueType& to_type,
                                            const std::vector<std::string>& from, const std::vector<std::string>& to) {
-    assert(from.size() == to.size());
+    CHECK(from.size() == to.size());
     auto get_from_idx = [&](const std::string& to_name) {
         for (size_t i = 0; i < to.size(); ++i) {
             if (to[i] == to_name) {
@@ -28,15 +29,15 @@ bool FastRenameOptimizer::is_stable_rename(const ValueType& from_type, const Val
     const auto&           from_dims = from_type.dimensions();
     for (const auto& to_dim : to_type.dimensions()) {
         size_t from_idx = get_from_idx(to_dim.name);
-        assert(from_idx != ValueType::Dimension::npos);
+        CHECK(from_idx != ValueType::Dimension::npos);
         if (to_dim.is_mapped()) {
-            assert(from_dims[from_idx].is_mapped());
+            CHECK(from_dims[from_idx].is_mapped());
             if (prev_mapped && (prev_mapped.value() > from_idx)) {
                 return false;
             }
             prev_mapped = from_idx;
         } else if (!to_dim.is_trivial()) {
-            assert(from_dims[from_idx].is_indexed());
+            CHECK(from_dims[from_idx].is_indexed());
             if (prev_indexed && (prev_indexed.value() > from_idx)) {
                 return false;
             }
@@ -51,7 +52,7 @@ const TensorFunction& FastRenameOptimizer::optimize(const TensorFunction& expr, 
         const ValueType& from_type = rename->child().result_type();
         const ValueType& to_type = expr.result_type();
         if (is_stable_rename(from_type, to_type, rename->from(), rename->to())) {
-            assert(to_type.cell_type() == from_type.cell_type());
+            CHECK(to_type.cell_type() == from_type.cell_type());
             return ReplaceTypeFunction::create_compact(to_type, rename->child(), stash);
         }
     }

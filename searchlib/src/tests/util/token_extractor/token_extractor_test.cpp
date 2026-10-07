@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/newconfigbuilder.h>
@@ -37,7 +38,7 @@ std::unique_ptr<Document> make_corrupted_document(DocBuilder& b, size_t wordOffs
     std::vector<char> raw;
     raw.resize(stream.size());
     stream.read(&raw[0], stream.size());
-    assert(wordOffset < corrupt_word.size());
+    CHECK(wordOffset < corrupt_word.size());
     for (size_t i = 0; i + corrupt_word.size() <= raw.size(); ++i) {
         if (memcmp(&raw[i], corrupt_word.c_str(), corrupt_word.size()) == 0) {
             raw[i + wordOffset] = '\0';

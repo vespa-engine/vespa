@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/time.h>
 
@@ -95,7 +96,7 @@ struct UsePipe : State {
     int pipefd[2];
     UsePipe() {
         int res = pipe(pipefd);
-        assert(res == 0);
+        CHECK(res == 0);
     }
     ~UsePipe() {
         close(pipefd[0]);
@@ -105,18 +106,18 @@ struct UsePipe : State {
         set_wakeup();
         char                     token = 'T';
         [[maybe_unused]] ssize_t res = write(pipefd[1], &token, 1);
-        // assert(res == 1);
+        // CHECK(res == 1);
     }
     void stop() {
         set_stop();
         char                     token = 'T';
         [[maybe_unused]] ssize_t res = write(pipefd[1], &token, 1);
-        // assert(res == 1);
+        // CHECK(res == 1);
     }
     void wait() {
         char                     token_trash[128];
         [[maybe_unused]] ssize_t res = read(pipefd[0], token_trash, sizeof(token_trash));
-        // assert(res == 1);
+        // CHECK(res == 1);
     }
 };
 
@@ -132,7 +133,7 @@ struct UseAtomic : State {
     }
     void wait() {
         value.wait(0);
-        // assert(!is_ready());
+        // CHECK(!is_ready());
     }
 };
 #endif

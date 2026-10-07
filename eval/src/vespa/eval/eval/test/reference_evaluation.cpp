@@ -4,6 +4,7 @@
 
 #include "reference_operations.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/node_traverser.h>
 #include <vespa/eval/eval/node_visitor.h>
 #include <vespa/eval/eval/operation.h>
@@ -40,7 +41,7 @@ struct EvalNode : public NodeVisitor {
     void eval_const(TensorSpec spec) { result = spec.normalize(); }
 
     void eval_param(size_t idx) {
-        assert(idx < params.size());
+        CHECK(idx < params.size());
         result = params[idx].normalize();
     }
 
@@ -99,7 +100,7 @@ struct EvalNode : public NodeVisitor {
                 lambda_params.push_back(num(idx));
             }
             for (size_t param : node.bindings()) {
-                assert(param < params.size());
+                CHECK(param < params.size());
                 lambda_params.push_back(params[param]);
             }
             return ReferenceEvaluation::eval(node.lambda(), lambda_params).as_double();

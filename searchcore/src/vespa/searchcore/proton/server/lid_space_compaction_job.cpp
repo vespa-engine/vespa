@@ -10,6 +10,7 @@
 #include "maintenance_job_token_source.h"
 #include "remove_operations_rate_tracker.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/persistence/spi/bucket_tasks.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
@@ -19,8 +20,6 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/lambdatask.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.lidspace.compactionjob");
@@ -49,14 +48,14 @@ public:
              IDestructorCallback::SP opsTracker)
         : _job(std::move(job)), _meta(meta), _opsTracker(std::move(opsTracker)) {}
     void run(const Bucket& bucket, IDestructorCallback::SP onDone) override {
-        assert(bucket.getBucketId() == _meta.bucketId);
+        CHECK(bucket.getBucketId() == _meta.bucketId);
         using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallback::SP, IDestructorCallback::SP>>;
         CompactionJob::moveDocument(
             std::move(_job), _meta,
             std::make_shared<DoneContext>(std::make_pair(std::move(_opsTracker), std::move(onDone))));
     }
     void fail(const Bucket& bucket) override {
-        assert(bucket.getBucketId() == _meta.bucketId);
+        CHECK(bucket.getBucketId() == _meta.bucketId);
         auto& master = _job->_master;
         if (_job->stopped()) {
             return;
@@ -189,7 +188,7 @@ std::shared_ptr<CompactionJob> CompactionJob::create(
                           node_retired_or_maintenance, bucketSpace, maintenance_job_token_source),
         [&master](auto job) {
             auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
-            assert(!failed);
+            CHECK(!failed);
         });
 }
 
@@ -251,7 +250,7 @@ bool CompactionJob::run() {
     } else if (_shouldCompactLidSpace) {
         compactLidSpace(stats);
     } else if (hasTooMuchLidBloat(stats)) {
-        assert(!_scanItr);
+        CHECK(!_scanItr);
         EventLogger::lidSpaceCompactionStart(_handler->getName(), stats.getLidBloat(), _cfg.getAllowedLidBloat(),
                                              stats.getLidBloatFactor(), _cfg.getAllowedLidBloatFactor(),
                                              stats.getLidLimit(), stats.getLowestFreeLid());

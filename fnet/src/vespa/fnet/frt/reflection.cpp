@@ -6,6 +6,8 @@
 #include "supervisor.h"
 #include "values.h"
 
+#include <vespa/check_require.h>
+
 FRT_Method::FRT_Method(const char* name, const char* paramSpec, const char* returnSpec, FRT_METHOD_PT method,
                        FRT_Invokable* handler)
     : _hashNext(nullptr),
@@ -86,7 +88,7 @@ void FRT_ReflectionManager::DumpMethodList(FRT_Values* target) {
         target->SetString(&args[idx], method->GetParamSpec());
         target->SetString(&ret[idx], method->GetReturnSpec());
     }
-    assert(idx == _numMethods);
+    CHECK(idx == _numMethods);
 }
 
 //------------------------------------------------------------------------

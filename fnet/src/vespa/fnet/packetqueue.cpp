@@ -4,7 +4,8 @@
 
 #include "packet.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <chrono>
 #include <cstring>
 
@@ -17,7 +18,7 @@ void FNET_PacketQueue_NoLock::ExpandBuf(uint32_t needentries) {
         _bufsize *= 2;
     }
     _QElem* newbuf = static_cast<_QElem*>(malloc(sizeof(_QElem) * _bufsize));
-    assert(newbuf != nullptr);
+    CHECK(newbuf != nullptr);
     if (_bufused == 0) { // EMPTY
         // BUFFER: |....................|
         // USED:   |....................|
@@ -48,7 +49,7 @@ void FNET_PacketQueue_NoLock::ExpandBuf(uint32_t needentries) {
 FNET_PacketQueue_NoLock::FNET_PacketQueue_NoLock(uint32_t len, HP_RetCode hpRetCode)
     : _buf(nullptr), _bufsize(len), _bufused(0), _in_pos(0), _out_pos(0), _hpRetCode(hpRetCode) {
     _buf = static_cast<_QElem*>(malloc(sizeof(_QElem) * len));
-    assert(_buf != nullptr);
+    CHECK(_buf != nullptr);
 }
 
 FNET_PacketQueue_NoLock::~FNET_PacketQueue_NoLock() {
@@ -75,7 +76,7 @@ void FNET_PacketQueue_NoLock::QueuePacket_NoLock(FNET_Packet* packet, FNET_Conte
 }
 
 FNET_Packet* FNET_PacketQueue_NoLock::DequeuePacket_NoLock(FNET_Context* context) {
-    assert(context != nullptr);
+    CHECK(context != nullptr);
     FNET_Packet* packet = nullptr;
     if (_bufused > 0) {
         packet = _buf[_out_pos]._packet;
@@ -104,7 +105,7 @@ uint32_t FNET_PacketQueue_NoLock::FlushPackets_NoLock(FNET_PacketQueue_NoLock* t
             _out_pos = 0; // wrap around.
         }
     }
-    assert(_out_pos == _in_pos);
+    CHECK(_out_pos == _in_pos);
 
     return cnt;
 }
@@ -116,7 +117,7 @@ void FNET_PacketQueue_NoLock::DiscardPackets_NoLock() {
             _out_pos = 0; // wrap around
         }
     }
-    assert(_out_pos == _in_pos);
+    CHECK(_out_pos == _in_pos);
 }
 
 void FNET_PacketQueue_NoLock::Print(uint32_t indent) {
@@ -153,7 +154,7 @@ FNET_IPacketHandler::HP_RetCode FNET_PacketQueue::HandlePacket(FNET_Packet* pack
 }
 
 void FNET_PacketQueue::QueuePacket(FNET_Packet* packet, FNET_Context context) {
-    assert(packet != nullptr);
+    CHECK(packet != nullptr);
     std::lock_guard<std::mutex> guard(_lock);
     EnsureFree();
     _buf[_in_pos]._packet = packet; // insert packet ref.

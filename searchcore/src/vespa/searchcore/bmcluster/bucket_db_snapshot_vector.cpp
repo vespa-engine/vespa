@@ -2,13 +2,12 @@
 
 #include "bucket_db_snapshot_vector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
-
-#include <cassert>
 
 using document::BucketSpace;
 using document::FixedBucketSpaces;
@@ -49,7 +48,7 @@ uint32_t BucketDbSnapshotVector::count_moved_documents(const BucketDbSnapshotVec
     for (const auto bucket_space : bucket_spaces) {
         auto& bs_snapshots = _snapshots.find(bucket_space)->second;
         auto& old_bs_snapshots = old._snapshots.find(bucket_space)->second;
-        assert(bs_snapshots.size() == old_bs_snapshots.size());
+        CHECK(bs_snapshots.size() == old_bs_snapshots.size());
         for (uint32_t node_idx = 0; node_idx < bs_snapshots.size(); ++node_idx) {
             moved_documents += bs_snapshots[node_idx].count_new_documents(old_bs_snapshots[node_idx]);
         }

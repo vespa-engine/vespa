@@ -12,6 +12,7 @@
 #include "tensor_attribute_loader.h"
 #include "tensor_attribute_saver.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/eval/eval/fast_value.h>
@@ -213,7 +214,7 @@ void TensorAttribute::checkTensorType(const vespalib::eval::Value& tensor) const
 }
 
 void TensorAttribute::setTensorRef(DocId docId, EntryRef ref) {
-    assert(docId < _refVector.size());
+    CHECK(docId < _refVector.size());
     updateUncommittedDocIdLimit(docId);
     auto&    elem_ref = _refVector[docId];
     EntryRef oldRef(elem_ref.load_relaxed());
@@ -226,7 +227,7 @@ void TensorAttribute::setTensorRef(DocId docId, EntryRef ref) {
 void TensorAttribute::internal_set_tensor(DocId docid, const Value& tensor) {
     consider_remove_from_index(docid);
     EntryRef ref = _tensorStore.store_tensor(tensor);
-    assert(ref.valid());
+    CHECK(ref.valid());
     setTensorRef(docid, ref);
 }
 
@@ -308,8 +309,8 @@ std::unique_ptr<vespalib::StateExplorer> TensorAttribute::make_state_explorer() 
 }
 
 void TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool) {
-    assert(lidLow <= lidLimit);
-    assert(lidLimit <= this->getNumDocs());
+    CHECK(lidLow <= lidLimit);
+    CHECK(lidLimit <= this->getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
         AtomicEntryRef& atomic_ref = _refVector[lid];
         EntryRef        ref = atomic_ref.load_relaxed();
@@ -323,7 +324,7 @@ void TensorAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool) {
 void TensorAttribute::onShrinkLidSpace() {
     // Tensors for lids > committedDocIdLimit have been cleared.
     uint32_t committedDocIdLimit = getCommittedDocIdLimit();
-    assert(_refVector.size() >= committedDocIdLimit);
+    CHECK(_refVector.size() >= committedDocIdLimit);
     _refVector.shrink(committedDocIdLimit);
     setNumDocs(committedDocIdLimit);
     if (_index) {
@@ -366,7 +367,7 @@ void TensorAttribute::update_tensor(DocId docId, const document::TensorUpdate& u
     // higher-level TensorUpdate when the tensor is quantized. This is because we'll end
     // up applying the update on the implementation-specific raw quantized int8 representation
     // rather than the (expected) full precision representation, with "exciting" results.
-    assert(!_is_quantized);
+    CHECK(!_is_quantized);
     const vespalib::eval::Value* old_v = nullptr;
     auto                         old_tensor = getTensor(docId);
     if (old_tensor) {
@@ -408,7 +409,7 @@ void TensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Val
             if (!_is_dense) {
                 // but labels might have changed.
                 EntryRef ref = _tensorStore.store_tensor(tensor);
-                assert(ref.valid());
+                CHECK(ref.valid());
                 setTensorRef(docid, ref);
             }
             return;
@@ -516,13 +517,13 @@ void TensorAttribute::reclaim_unused_memory() {
 }
 
 std::unique_ptr<TensorQuantizer> TensorAttribute::make_quantizer() const {
-    assert(_is_quantized);
+    CHECK(_is_quantized);
     return std::make_unique<TensorQuantizerImpl>(unquantized_tensor_type(), getTensorType(),
                                                  *getConfig().quantization_params());
 }
 
 std::unique_ptr<TensorDequantizer> TensorAttribute::make_dequantizer() const {
-    assert(_is_quantized);
+    CHECK(_is_quantized);
     return std::make_unique<TensorQuantizerImpl>(unquantized_tensor_type(), getTensorType(),
                                                  *getConfig().quantization_params());
 }

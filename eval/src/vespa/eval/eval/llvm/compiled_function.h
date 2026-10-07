@@ -4,6 +4,7 @@
 
 #include "llvm_wrapper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/gbdt.h>
 #include <vespa/eval/eval/lazy_params.h>
@@ -53,16 +54,16 @@ public:
     size_t num_params() const { return _num_params; }
     PassParams pass_params() const { return _pass_params; }
     template <size_t NUM_PARAMS> typename expand<NUM_PARAMS>::type get_function() const {
-        assert(_pass_params == PassParams::SEPARATE);
-        assert(_num_params == NUM_PARAMS);
+        CHECK(_pass_params == PassParams::SEPARATE);
+        CHECK(_num_params == NUM_PARAMS);
         return ((typename expand<NUM_PARAMS>::type)_address);
     }
     array_function get_function() const {
-        assert(_pass_params == PassParams::ARRAY);
+        CHECK(_pass_params == PassParams::ARRAY);
         return ((array_function)_address);
     }
     lazy_function get_lazy_function() const {
-        assert(_pass_params == PassParams::LAZY);
+        CHECK(_pass_params == PassParams::LAZY);
         return ((lazy_function)_address);
     }
     const std::vector<gbdt::Forest::UP>& get_forests() const { return _llvm_wrapper.get_forests(); }

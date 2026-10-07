@@ -6,6 +6,7 @@
 #include "benchmark_searchable.h"
 #include "disk_index_builder.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/query/tree/integer_term_vector.h>
 #include <vespa/searchlib/query/tree/node.h>
@@ -62,7 +63,7 @@ std::unique_ptr<BenchmarkSearchable> make_searchable(const FieldConfig& cfg, uin
 
 std::unique_ptr<Node> make_query_node(QueryOperator query_op, const TermVector& terms) {
     if (query_op == QueryOperator::Term) {
-        assert(terms.size() == 1);
+        CHECK(terms.size() == 1);
         return std::make_unique<SimpleStringTerm>(std::to_string(terms[0]), field_name, 0, Weight(1));
     } else if (query_op == QueryOperator::In) {
         auto termv = std::make_unique<IntegerTermVector>(terms.size());
@@ -99,7 +100,7 @@ std::unique_ptr<Node> make_query_node(QueryOperator query_op, const TermVector& 
 
 Blueprint::UP make_leaf_blueprint(const Node& node, BenchmarkSearchable& searchable, uint32_t docid_limit) {
     auto blueprint = searchable.create_blueprint(FieldSpec(field_name, 0, 0), node);
-    assert(blueprint.get());
+    CHECK(blueprint.get());
     blueprint->setDocIdLimit(docid_limit);
     blueprint->update_flow_stats(docid_limit);
     return blueprint;

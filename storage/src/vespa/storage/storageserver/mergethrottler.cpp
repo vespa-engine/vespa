@@ -2,6 +2,7 @@
 
 #include "mergethrottler.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/messagebus/dynamicthrottlepolicy.h>
 #include <vespa/messagebus/error.h>
@@ -17,8 +18,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/config/helper/configfetcher.hpp>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".mergethrottler");
@@ -130,7 +129,7 @@ MergeThrottler::MergeNodeSequence::MergeNodeSequence(const api::MergeBucketComma
     // Sort the node vector so that we can find out if we're the
     // last node in the chain or if we should forward the merge
     std::sort(_sortedNodes.begin(), _sortedNodes.end(), NodeComparator());
-    assert(!_sortedNodes.empty() && (_sortedNodes.size() < UINT16_MAX));
+    CHECK(!_sortedNodes.empty() && (_sortedNodes.size() < UINT16_MAX));
     for (uint16_t i = 0; i < static_cast<uint16_t>(_sortedNodes.size()); ++i) {
         if (_sortedNodes[i].index == _thisIndex) {
             _sortedIndex = i;
@@ -147,16 +146,16 @@ MergeThrottler::MergeNodeSequence::MergeNodeSequence(const api::MergeBucketComma
 }
 
 uint16_t MergeThrottler::MergeNodeSequence::getNextNodeInChain() const noexcept {
-    assert(_cmd.getChain().size() < _sortedNodes.size());
+    CHECK(_cmd.getChain().size() < _sortedNodes.size());
     if (_use_unordered_forwarding) {
         return unordered_nodes()[_cmd.getChain().size() + 1].index;
     }
-    // assert(_sortedNodes[_cmd.getChain().size()].index == _thisIndex);
+    // CHECK(_sortedNodes[_cmd.getChain().size()].index == _thisIndex);
     if (_sortedNodes[_cmd.getChain().size()].index != _thisIndex) {
         // Some added paranoia output
         LOG(error, "For %s;_sortedNodes[%zu].index (%u) != %u", _cmd.toString().c_str(), _cmd.getChain().size(),
             _sortedNodes[_cmd.getChain().size()].index, _thisIndex);
-        assert(!"_sortedNodes[_cmd.getChain().size()].index != _thisIndex) failed");
+        CHECK(!"_sortedNodes[_cmd.getChain().size()].index != _thisIndex) failed");
     }
     return _sortedNodes[_cmd.getChain().size() + 1].index;
 }
@@ -270,10 +269,10 @@ MergeThrottler::~MergeThrottler() {
     closeNextLink();
 
     // Sanity checking to find shutdown bug where not all messages have been flushed
-    assert(_merges.empty());
-    assert(_queue.empty());
-    assert(_messagesUp.empty());
-    assert(_messagesDown.empty());
+    CHECK(_merges.empty());
+    CHECK(_queue.empty());
+    CHECK(_messagesUp.empty());
+    CHECK(_messagesDown.empty());
 }
 
 void MergeThrottler::onOpen() {
@@ -343,7 +342,7 @@ void MergeThrottler::onFlush(bool /*downwards*/) {
             LOG(debug, "Aborted merge since we're flushing: %s", msg->toString().c_str());
             msgGuard.sendUp(reply);
         } else {
-            assert(msg->getType() == api::MessageType::MERGEBUCKET_REPLY);
+            CHECK(msg->getType() == api::MessageType::MERGEBUCKET_REPLY);
             LOG(debug, "Ignored merge reply since we're flushing: %s", msg->toString().c_str());
         }
     }
@@ -377,7 +376,7 @@ void MergeThrottler::forwardCommandToNode(const api::MergeBucketCommand& mergeCm
 
 void MergeThrottler::removeActiveMerge(ActiveMergeMap::iterator mergeIter) {
     LOG(debug, "Removed merge for %s from internal state", mergeIter->first.toString().c_str());
-    assert(_active_merge_memory_used_bytes >= mergeIter->second._estimated_memory_usage);
+    CHECK(_active_merge_memory_used_bytes >= mergeIter->second._estimated_memory_usage);
     _active_merge_memory_used_bytes -= mergeIter->second._estimated_memory_usage;
     _merges.erase(mergeIter);
     update_active_merge_window_size_metric();
@@ -397,7 +396,7 @@ api::StorageMessage::SP MergeThrottler::getNextQueuedMerge() {
 }
 
 const api::MergeBucketCommand& MergeThrottler::peek_merge_queue() const noexcept {
-    assert(!_queue.empty());
+    CHECK(!_queue.empty());
     return dynamic_cast<const api::MergeBucketCommand&>(*_queue.begin()->_msg);
 }
 
@@ -426,7 +425,7 @@ bool MergeThrottler::isMergeAlreadyKnown(const api::StorageMessage::SP& msg) con
 bool MergeThrottler::rejectMergeIfOutdated(const api::StorageMessage::SP& msg, uint32_t rejectLessThanVersion,
                                            MessageGuard& msgGuard) const {
     // Only reject merge commands! never reject replies (for obvious reasons..)
-    assert(msg->getType() == api::MessageType::MERGEBUCKET);
+    CHECK(msg->getType() == api::MessageType::MERGEBUCKET);
 
     auto& cmd = static_cast<const api::MergeBucketCommand&>(*msg);
 
@@ -505,13 +504,13 @@ bool MergeThrottler::attemptProcessNextQueuedMerge(MessageGuard& msgGuard) {
     if (!(canProcessNewMerge() && accepting_merge_is_within_memory_limits(peek_merge_queue()))) {
         // Should never reach a non-sending state when there are
         // no to-be-replied merges that can trigger a new processing
-        assert(!_merges.empty());
+        CHECK(!_merges.empty());
         return false;
     }
 
     // If we get here, there must be something to dequeue.
     api::StorageMessage::SP msg = getNextQueuedMerge();
-    assert(msg);
+    CHECK(msg);
     // In case of resends and whatnot, it's possible for a merge
     // command to be in the queue while another higher priority
     // command for the same bucket sneaks in front of it and gets
@@ -549,7 +548,7 @@ bool MergeThrottler::processQueuedMerges(MessageGuard& msgGuard) {
 void MergeThrottler::handleRendezvous(std::unique_lock<std::mutex>& guard, std::condition_variable& cond) {
     if (_rendezvous != RendezvousState::NONE) {
         LOG(spam, "rendezvous requested by external thread; establishing");
-        assert(_rendezvous == RendezvousState::REQUESTED);
+        CHECK(_rendezvous == RendezvousState::REQUESTED);
         _rendezvous = RendezvousState::ESTABLISHED;
         cond.notify_all();
         while (_rendezvous != RendezvousState::RELEASED) {
@@ -738,14 +737,14 @@ void MergeThrottler::handleMessageDown(const std::shared_ptr<api::StorageMessage
                       _metrics->local);
         }
     } else {
-        assert(msg->getType() == api::MessageType::MERGEBUCKET_REPLY);
+        CHECK(msg->getType() == api::MessageType::MERGEBUCKET_REPLY);
         // Will create new unwind reply and send it back in the chain
         processMergeReply(msg, false, msgGuard);
     }
 }
 
 void MergeThrottler::handleMessageUp(const std::shared_ptr<api::StorageMessage>& msg, MessageGuard& msgGuard) {
-    assert(msg->getType() == api::MessageType::MERGEBUCKET_REPLY);
+    CHECK(msg->getType() == api::MessageType::MERGEBUCKET_REPLY);
     auto& mergeReply = static_cast<const api::MergeBucketReply&>(*msg);
 
     LOG(debug, "Processing %s from persistence layer", mergeReply.toString().c_str());
@@ -806,7 +805,7 @@ void MergeThrottler::processNewMergeCommand(const api::StorageMessage::SP& msg, 
     // and that we can fit it into our window.
     // Register the merge now so that it will contribute to filling up our
     // merge throttling window.
-    assert(_merges.find(mergeCmd.getBucket()) == _merges.end());
+    CHECK(_merges.find(mergeCmd.getBucket()) == _merges.end());
     auto state = _merges.emplace(mergeCmd.getBucket(), ChainedMergeState(msg)).first;
     update_active_merge_window_size_metric();
     _active_merge_memory_used_bytes += mergeCmd.estimated_memory_footprint();
@@ -887,7 +886,7 @@ bool MergeThrottler::processCycledMergeCommand(const api::StorageMessage::SP& ms
     MergeNodeSequence nodeSeq(mergeCmd, _component.getIndex());
 
     auto mergeIter = _merges.find(mergeCmd.getBucket());
-    assert(mergeIter != _merges.end());
+    CHECK(mergeIter != _merges.end());
 
     if (mergeIter->second.isAborted()) {
         LOG(debug,
@@ -904,7 +903,7 @@ bool MergeThrottler::processCycledMergeCommand(const api::StorageMessage::SP& ms
     // Have to check if merge is already executing to remove chance
     // of resend from previous chain link to mess up our internal state
     if (nodeSeq.isChainCompleted() && !mergeIter->second.isExecutingLocally()) {
-        assert(mergeIter->second.getMergeCmd().get() != msg.get());
+        CHECK(mergeIter->second.getMergeCmd().get() != msg.get());
 
         mergeIter->second.setExecutingLocally(true);
         // Have to signal that we're in a cycle in order to do unwinding
@@ -943,14 +942,14 @@ void MergeThrottler::processMergeReply(const std::shared_ptr<api::StorageMessage
     ChainedMergeState& mergeState = mergeIter->second;
 
     if (fromPersistenceLayer) {
-        assert(mergeState.isExecutingLocally());
+        CHECK(mergeState.isExecutingLocally());
         mergeState.setExecutingLocally(false);
         mergeState.setUnwinding(true);
 
         // If we've cycled around, do NOT remove merge entry yet, as it
         // will be removed during the proper chain unwinding
         if (mergeState.isInCycle()) {
-            assert(mergeState.getMergeCmd().get());
+            CHECK(mergeState.getMergeCmd().get());
             LOG(debug, "Not removing %s yet, since we're in a chain cycle", mergeReply.toString().c_str());
             // Next time we encounter the merge, however, it should be removed
             mergeState.setInCycle(false);
@@ -958,7 +957,7 @@ void MergeThrottler::processMergeReply(const std::shared_ptr<api::StorageMessage
         }
     } else {
         if (mergeState.isExecutingLocally()) {
-            assert(mergeState.getMergeCmd().get());
+            CHECK(mergeState.getMergeCmd().get());
             // If we get a reply for a merge that is not from the persistence layer
             // although it's still being processed there, it means the cycle has
             // been broken, e.g by a node going down/being restarted/etc.
@@ -984,11 +983,11 @@ void MergeThrottler::processMergeReply(const std::shared_ptr<api::StorageMessage
     // immediately, or there will be merges forever stuck on nodes earlier
     // in the chain
     if (!fromPersistenceLayer || mergeState.isCycleBroken()) {
-        assert(mergeState.getMergeCmd().get());
+        CHECK(mergeState.getMergeCmd().get());
         if (!mergeState.isCycleBroken()) {
             LOG(spam, "Creating new unwind reply to send back for %s", mergeState.getMergeCmd()->toString().c_str());
         } else {
-            assert(fromPersistenceLayer);
+            CHECK(fromPersistenceLayer);
             LOG(debug, "Creating new (broken cycle) unwind reply to send back for %s",
                 mergeState.getMergeCmd()->toString().c_str());
         }
@@ -1090,7 +1089,7 @@ bool MergeThrottler::onUp(const std::shared_ptr<api::StorageMessage>& msg) {
 
 void MergeThrottler::rendezvousWithWorkerThread(std::unique_lock<std::mutex>& guard, std::condition_variable& cond) {
     LOG(spam, "establishing rendezvous with worker thread");
-    assert(_rendezvous == RendezvousState::NONE);
+    CHECK(_rendezvous == RendezvousState::NONE);
     _rendezvous = RendezvousState::REQUESTED;
     cond.notify_all();
     while (_rendezvous != RendezvousState::ESTABLISHED) {

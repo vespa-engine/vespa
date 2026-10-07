@@ -1,10 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "bucket.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/visit_ranges.h>
-
-#include <assert.h>
 
 #include <map>
 
@@ -71,7 +70,7 @@ void Bucket::merge(const CurrentSamples& samples) {
 }
 
 void Bucket::merge(const Bucket& other) {
-    assert(genCnt < other.genCnt);
+    CHECK(genCnt < other.genCnt);
     genCnt = other.genCnt;
     startTime = std::min(startTime, other.startTime);
     endTime = std::max(endTime, other.endTime);

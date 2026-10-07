@@ -4,10 +4,9 @@
 
 #include "features_size_flush.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistparams.h>
-
-#include <cassert>
 
 using search::index::PostingListCounts;
 using search::index::PostingListParams;
@@ -90,9 +89,9 @@ void DocIdEncoder::write(ZcBuf& zc_buf, const DocIdAndFeatureSize& doc_id_and_fe
     zc_buf.encode32(doc_id_and_feature_size._doc_id - _doc_id - 1);
     _doc_id = doc_id_and_feature_size._doc_id;
     if (encode_interleaved_features) {
-        assert(doc_id_and_feature_size._field_length > 0);
+        CHECK(doc_id_and_feature_size._field_length > 0);
         zc_buf.encode32(doc_id_and_feature_size._field_length - 1);
-        assert(doc_id_and_feature_size._num_occs > 0);
+        CHECK(doc_id_and_feature_size._num_occs > 0);
         zc_buf.encode32(doc_id_and_feature_size._num_occs - 1);
     }
     _doc_id_pos = zc_buf.size();
@@ -102,7 +101,7 @@ void L1SkipEncoder::encode_skip(ZcBuf& zc_buf, const DocIdEncoder& doc_id_encode
     _stride_check = 0;
     // doc id
     uint32_t doc_id_delta = doc_id_encoder.get_doc_id() - _doc_id;
-    assert(static_cast<int32_t>(doc_id_delta) > 0);
+    CHECK(static_cast<int32_t>(doc_id_delta) > 0);
     zc_buf.encode32(doc_id_delta - 1);
     _doc_id = doc_id_encoder.get_doc_id();
     // doc id pos

@@ -7,6 +7,7 @@
 #include "document_inverter_context.h"
 #include "field_index_collection.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
@@ -222,7 +223,7 @@ void MemoryIndex::pruneRemovedFields(const Schema& schema) {
     SchemaUtil::IndexIterator i(_schema);
     for (; i.isValid(); ++i) {
         uint32_t packedIndex = i.getIndex();
-        assert(packedIndex < _hiddenFields.size());
+        CHECK(packedIndex < _hiddenFields.size());
         SchemaUtil::IndexIterator wi(*_prunedSchema, i);
         _hiddenFields[packedIndex] = !wi.isValid();
     }
@@ -245,7 +246,7 @@ namespace {
 
 void fields_to_slime(const std::vector<uint32_t>& field_ids, const Schema& schema, Cursor& array) {
     for (uint32_t field_id : field_ids) {
-        assert(field_id < schema.getIndexFields().size());
+        CHECK(field_id < schema.getIndexFields().size());
         const auto& field = schema.getIndexField(field_id);
         array.addString(field.getName());
     }

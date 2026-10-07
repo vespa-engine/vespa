@@ -4,6 +4,7 @@
 
 #include "fpfactory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/searchlib/diskindex/zc4_posting_header.h>
 #include <vespa/searchlib/diskindex/zc4_posting_params.h>
@@ -136,14 +137,14 @@ template <bool bigEndian> void FakeZcFilterOcc::setupT(const FakeWord& fw) {
         ++d;
     }
     if (_posting_params._encode_features) {
-        assert(p == pe);
+        CHECK(p == pe);
     }
     writer.flush_word();
     _featuresSize = 0;
     _hitDocs = fw._postings.size();
     _compressedBits = e.getWriteOffset();
-    assert(_compressedBits == counts._bitLength);
-    assert(_hitDocs == counts._numDocs);
+    CHECK(_compressedBits == counts._bitLength);
+    CHECK(_hitDocs == counts._numDocs);
     _lastDocId = fw._postings.back()._docId;
     writer.on_close();
 
@@ -164,13 +165,13 @@ template <bool bigEndian> void FakeZcFilterOcc::read_header() {
     _l3SkipSize = header._l3_skip_size;
     _l4SkipSize = header._l4_skip_size;
     _featuresSize = header._features_size;
-    assert(header._num_docs == _hitDocs || header._features_size_flush);
+    CHECK(header._num_docs == _hitDocs || header._features_size_flush);
     if (header._num_docs >= _posting_params._min_skip_docs || header._features_size_flush) {
-        assert(header._last_doc_id > 0);
-        assert(header._last_doc_id <= _lastDocId);
-        assert(_lastDocId == header._last_doc_id || _counts._segments.size() > 1);
+        CHECK(header._last_doc_id > 0);
+        CHECK(header._last_doc_id <= _lastDocId);
+        CHECK(_lastDocId == header._last_doc_id || _counts._segments.size() > 1);
     } else {
-        assert(header._last_doc_id == 0);
+        CHECK(header._last_doc_id == 0);
     }
 }
 
@@ -194,10 +195,10 @@ template <bool bigEndian> void FakeZcFilterOcc::validate_read(const FakeWord& fw
     auto& params = reader.get_posting_params();
     params = _posting_params;
     reader.get_read_context().reference_compressed_buffer(_compressed.first, _compressed.second);
-    assert(decode_context.getReadOffset() == 0u);
+    CHECK(decode_context.getReadOffset() == 0u);
     PostingListCounts counts = _counts;
-    assert(counts._bitLength == _compressedBits);
-    assert(counts._numDocs == _hitDocs);
+    CHECK(counts._bitLength == _compressedBits);
+    CHECK(counts._numDocs == _hitDocs);
     reader.set_word_and_counts(fw.getName(), counts);
     auto                   word_pos_iterator(fw._wordPosFeatures.begin());
     auto                   word_pos_iterator_end(fw._wordPosFeatures.end());
@@ -211,19 +212,19 @@ template <bool bigEndian> void FakeZcFilterOcc::validate_read(const FakeWord& fw
             check_features.clear(doc._docId);
         }
         reader.read_doc_id_and_features(features);
-        assert(features.doc_id() == doc._docId);
-        assert(features.elements().size() == check_features.elements().size());
-        assert(features.word_positions().size() == check_features.word_positions().size());
+        CHECK(features.doc_id() == doc._docId);
+        CHECK(features.elements().size() == check_features.elements().size());
+        CHECK(features.word_positions().size() == check_features.word_positions().size());
         if (_posting_params._encode_interleaved_features) {
-            assert(features.field_length() == doc._collapsedDocWordFeatures._field_len);
-            assert(features.num_occs() == doc._collapsedDocWordFeatures._num_occs);
+            CHECK(features.field_length() == doc._collapsedDocWordFeatures._field_len);
+            CHECK(features.num_occs() == doc._collapsedDocWordFeatures._num_occs);
         }
     }
     if (_posting_params._encode_features) {
-        assert(word_pos_iterator == word_pos_iterator_end);
+        CHECK(word_pos_iterator == word_pos_iterator_end);
     }
     reader.read_doc_id_and_features(features);
-    assert(static_cast<int32_t>(features.doc_id()) == -1);
+    CHECK(static_cast<int32_t>(features.doc_id()) == -1);
 }
 
 FakeZcFilterOcc::~FakeZcFilterOcc() = default;
@@ -326,7 +327,7 @@ void FakeFilterOccZCArrayIterator::initRange(uint32_t begin, uint32_t end) {
     Zc4PostingParams params(force_skip, disable_chunking, _docIdLimit, true, false, false);
     Zc4PostingHeader header;
     header.read(d, params);
-    assert((d.getBitOffset() & 7) == 0);
+    CHECK((d.getBitOffset() & 7) == 0);
     const uint8_t* bcompr = d.getByteCompr();
     _zc_decoder.set_cur(bcompr);
     bcompr += header._doc_ids_size;
@@ -379,7 +380,7 @@ void FakeFilterOccZCArrayIterator::doUnpack(uint32_t docId) {
     if (getUnpacked()) {
         return;
     }
-    assert(docId == getDocId());
+    CHECK(docId == getDocId());
     _matchData[0]->reset(docId);
     setUnpacked();
 }
@@ -585,11 +586,11 @@ template <bool bigEndian>
 std::unique_ptr<SearchIterator>
 FakeZc4SkipPosOcc<bigEndian>::createIterator(const TermFieldMatchDataArray& matchData) const {
     if (matchData.valid()) {
-        assert(_unpack_normal_features == matchData[0]->needs_normal_features());
-        assert(_unpack_interleaved_features == matchData[0]->needs_interleaved_features());
+        CHECK(_unpack_normal_features == matchData[0]->needs_normal_features());
+        CHECK(_unpack_interleaved_features == matchData[0]->needs_interleaved_features());
     } else {
-        assert(!_unpack_normal_features);
-        assert(!_unpack_interleaved_features);
+        CHECK(!_unpack_normal_features);
+        CHECK(!_unpack_interleaved_features);
     }
     return create_zc_posocc_iterator(bigEndian, _counts, Position(_compressed.first, 0), _compressedBits,
                                      _posting_params, _fieldsParams, matchData);

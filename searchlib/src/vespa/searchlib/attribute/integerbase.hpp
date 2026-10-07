@@ -4,6 +4,7 @@
 #include "integerbase.h"
 #include "single_numeric_sort_blob_writer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -20,16 +21,16 @@ IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const std::string& name)
 template <typename T>
 IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const std::string& name, const Config& c)
     : IntegerAttribute(name, c), _defaultValue(ChangeBase::UPDATE, 0, defaultValue()) {
-    assert(c.basicType() == BasicType::fromType(T()));
+    CHECK(c.basicType() == BasicType::fromType(T()));
 }
 
 template <typename T>
 IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const std::string& name, const Config& c,
                                                       const BasicType& realType)
     : IntegerAttribute(name, c), _defaultValue(ChangeBase::UPDATE, 0, 0u) {
-    assert(c.basicType() == realType);
+    CHECK(c.basicType() == realType);
     (void)realType;
-    assert(BasicType::fromType(T()) == BasicType::INT8);
+    CHECK(BasicType::fromType(T()) == BasicType::INT8);
 }
 
 template <typename T> IntegerAttributeTemplate<T>::~IntegerAttributeTemplate() = default;

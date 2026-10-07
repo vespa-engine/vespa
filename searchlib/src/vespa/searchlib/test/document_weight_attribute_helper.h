@@ -1,14 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 
 #include <vespa/searchlib/attribute/multinumericpostattribute.hpp>
-
-#include <cassert>
 
 namespace search::test {
 
@@ -25,8 +24,8 @@ public:
         : _attr(make_attr()),
           _int_attr(dynamic_cast<IntegerAttribute*>(_attr.get())),
           _dww(_attr->as_docid_with_weight_posting_store()) {
-        assert(_int_attr != nullptr);
-        assert(_dww != nullptr);
+        CHECK(_int_attr != nullptr);
+        CHECK(_dww != nullptr);
     }
     ~DocumentWeightAttributeHelper();
 
@@ -36,7 +35,7 @@ public:
             _attr->addDoc(docid);
         }
         _attr->commit();
-        assert((limit - 1) == docid);
+        CHECK((limit - 1) == docid);
     }
 
     void set_doc(uint32_t docid, int64_t key, int32_t weight) {

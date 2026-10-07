@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -73,7 +74,7 @@ public:
     }
 
     std::string make_tree(size_t size) {
-        assert(size > 0);
+        CHECK(size > 0);
         if (size == 1) {
             return make_string("%g", get_real());
         }
@@ -83,7 +84,7 @@ public:
     }
 
     std::string make_forest(size_t num_trees, size_t tree_sizes) {
-        assert(num_trees > 0);
+        CHECK(num_trees > 0);
         std::string forest = make_tree(tree_sizes);
         for (size_t i = 1; i < num_trees; ++i) {
             forest.append("+");

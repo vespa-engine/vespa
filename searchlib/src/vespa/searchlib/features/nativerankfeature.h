@@ -2,11 +2,10 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/fieldtype.h>
 #include <vespa/searchlib/fef/table.h>
-
-#include <cassert>
 
 namespace search::features {
 
@@ -42,7 +41,7 @@ public:
         }
     }
     bool considerField(size_t fieldId) const {
-        assert(fieldId < vector.size());
+        CHECK(fieldId < vector.size());
         return vector[fieldId].field;
     }
 };

@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cinttypes>
 #include <type_traits>
 #include <vector>
@@ -157,7 +157,7 @@ public:
     void addConstKFactory(int kValue, IDecodeFuncFactory factory) __attribute__((noinline));
 
     [[nodiscard]] IDecodeFuncFactory getConstKFactory(int kValue) const {
-        assert(kValue >= 0 && static_cast<unsigned int>(kValue) < _constK.size());
+        CHECK(kValue >= 0 && static_cast<unsigned int>(kValue) < _constK.size());
         return _constK[kValue];
     }
 
@@ -167,7 +167,7 @@ public:
 template <bool bigEndian>
 void DecodeFuncFactories<bigEndian>::addConstKFactory(int kValue, IDecodeFuncFactory factory) {
     (void)kValue;
-    assert(static_cast<unsigned int>(kValue) == _constK.size());
+    CHECK(static_cast<unsigned int>(kValue) == _constK.size());
     _constK.push_back(factory);
 }
 
@@ -246,7 +246,7 @@ namespace {
 void addBoundary(uint64_t boundary, uint64_t maxVal, std::vector<uint64_t>& v) {
     uint64_t low = boundary > 2u ? boundary - 2 : 0;
     uint64_t high = maxVal - 2u < boundary ? maxVal : boundary + 2;
-    assert(low <= high);
+    CHECK(low <= high);
     LOG(info, "low=0x%" PRIx64 ", high=0x%" PRIx64, low, high);
     for (uint64_t i = low; i != high; ++i) {
         v.push_back(i);
@@ -305,7 +305,7 @@ void TestFixtureBase::testBoundaries(int kValue, bool small, std::vector<uint64_
             bits = currPos - prevPos;
             maxSame = EC::maxExpGolombVal(kValue, bits);
         } else {
-            assert(bits <= currPos - prevPos);
+            CHECK(bits <= currPos - prevPos);
             if (bits < currPos - prevPos) {
                 ASSERT_EQ(bits + 2, currPos - prevPos);
                 bits += 2;

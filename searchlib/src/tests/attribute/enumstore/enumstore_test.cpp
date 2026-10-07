@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/enum_store_loaders.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
@@ -521,7 +522,7 @@ public:
     }
 
     void set_ref_count(size_t values_idx, uint32_t ref_count, enumstore::EnumeratedPostingsLoader& loader) const {
-        assert(values_idx < loader.get_enum_indexes().size());
+        CHECK(values_idx < loader.get_enum_indexes().size());
         EnumIndex idx = loader.get_enum_indexes()[values_idx];
         loader.set_ref_count(idx, ref_count);
     }
@@ -650,7 +651,7 @@ void EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::update_posting_idx
 
 template <typename EnumStoreTypeAndDictionaryType>
 EnumIndex EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::insert_value(size_t value_idx) {
-    assert(value_idx < values().size());
+    CHECK(value_idx < values().size());
     auto enum_idx = store.insert(values()[value_idx]);
     EXPECT_TRUE(enum_idx.valid());
     return enum_idx;

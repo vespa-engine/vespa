@@ -2,7 +2,7 @@
 
 #include "simpleconfigurer.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.retriever.simpleconfigurer");
@@ -13,7 +13,7 @@ VESPA_THREAD_STACK_TAG(simple_configurer_thread);
 
 SimpleConfigurer::SimpleConfigurer(SimpleConfigRetriever::UP retriever, SimpleConfigurable* const configurable)
     : _retriever(std::move(retriever)), _configurable(configurable), _thread(), _started(false) {
-    assert(_retriever);
+    CHECK(_retriever);
 }
 
 void SimpleConfigurer::start() {

@@ -7,10 +7,10 @@
 #include "i_proton_configurer.h"
 #include "proton_config_snapshot.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <cassert>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -95,8 +95,8 @@ void ProtonConfigFetcher::reconfigure() {
         lock_guard guard(_mutex);
         for (auto& kv : _dbManagerMap) {
             auto insres = dbConfigs.insert(std::make_pair(kv.first, kv.second->getConfig()));
-            assert(insres.second);
-            assert(insres.first->second->getGeneration() == generation);
+            CHECK(insres.second);
+            CHECK(insres.first->second->getGeneration() == generation);
         }
     }
     auto configSnapshot = std::make_shared<ProtonConfigSnapshot>(bootstrapConfig, std::move(dbConfigs));

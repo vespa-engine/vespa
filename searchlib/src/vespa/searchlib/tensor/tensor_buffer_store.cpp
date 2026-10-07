@@ -2,6 +2,7 @@
 
 #include "tensor_buffer_store.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/streamed/streamed_value_builder_factory.h>
@@ -83,7 +84,7 @@ EntryRef TensorBufferStore::store_tensor(const Value& tensor) {
     auto&    mapper = _array_store.get_mapper();
     auto     type_id = mapper.get_type_id(buffer_size);
     auto     array_size = (type_id != 0) ? mapper.get_array_size(type_id) : buffer_size;
-    assert(array_size >= buffer_size);
+    CHECK(array_size >= buffer_size);
     auto ref = _array_store.allocate(array_size);
     auto buf = _array_store.get_writable(ref);
     _ops.store_tensor(buf, tensor);

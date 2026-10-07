@@ -10,6 +10,7 @@
 #include "multisearch.h"
 #include "unpackinfo.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -214,7 +215,7 @@ public:
         double hit_ratio(uint32_t docid_limit) const noexcept { return abs_to_rel_est(_estimateHits, docid_limit); }
 
         void tree_size(uint32_t value) noexcept {
-            assert(value < 0x100000);
+            CHECK(value < 0x100000);
             _tree_size = value;
         }
         uint32_t tree_size() const noexcept { return _tree_size; }

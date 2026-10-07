@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/quant/eden.h>
@@ -21,7 +22,7 @@ namespace {
 
 // Mean Squared Error (MSE)
 [[nodiscard]] float mse(std::span<const float> expected, std::span<const float> actual) noexcept {
-    assert(expected.size() == actual.size());
+    CHECK(expected.size() == actual.size());
     float sum_err_sq = 0;
     for (size_t i = 0; i < expected.size(); ++i) {
         const float diff = expected[i] - actual[i];
@@ -41,7 +42,7 @@ namespace {
 
 // Simple non-vectorized dot product (sanity check vs. vectorized functions)
 [[nodiscard]] float dot(std::span<const float> a, std::span<const float> b) noexcept {
-    assert(a.size() == b.size());
+    CHECK(a.size() == b.size());
     float d = 0;
     for (size_t i = 0; i < a.size(); ++i) {
         d += a[i] * b[i];
@@ -51,7 +52,7 @@ namespace {
 
 // Simple non-vectorized squared Euclidean distance
 [[nodiscard]] float squared_euclidean_distance(std::span<const float> a, std::span<const float> b) noexcept {
-    assert(a.size() == b.size());
+    CHECK(a.size() == b.size());
     float d = 0;
     for (size_t i = 0; i < a.size(); ++i) {
         const float delta = a[i] - b[i];
@@ -68,7 +69,7 @@ void normalize(std::span<float> v) noexcept {
 }
 
 [[nodiscard]] float extract_scale(std::span<const uint8_t> v) noexcept {
-    assert(v.size() >= 4);
+    CHECK(v.size() >= 4);
     float scale;
     memcpy(&scale, v.data(), sizeof(float));
     return scale;

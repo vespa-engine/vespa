@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
@@ -1401,7 +1402,7 @@ public:
 
     void visitInvalidConstant(const select::InvalidConstant& node) override {
         (void)node;
-        assert(false);
+        CHECK(false);
     }
 
     void visitDocumentType(const select::DocType& node) override { data << "(DOCTYPE " << node << ")"; }

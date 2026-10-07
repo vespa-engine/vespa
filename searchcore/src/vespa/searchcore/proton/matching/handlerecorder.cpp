@@ -2,6 +2,7 @@
 
 #include "handlerecorder.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/tls_linkage.h>
@@ -11,7 +12,6 @@
 #include <vespa/vespalib/util/array_equal.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <cstdlib>
 
 using search::fef::MatchData;
@@ -86,7 +86,7 @@ void HandleRecorder::register_handle(TermFieldHandle handle, MatchDataDetails re
     if (_T_recorder != nullptr) {
         _T_recorder->add(handle, requested_details);
     } else if (_T_assert_all_handles_are_registered) {
-        assert(_T_recorder != nullptr);
+        CHECK(_T_recorder != nullptr);
     }
 }
 

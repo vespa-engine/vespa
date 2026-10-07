@@ -9,6 +9,8 @@
 #include "thread.h"
 #include "threadexecutor.h"
 
+#include <vespa/check_require.h>
+
 #include <functional>
 #include <vector>
 
@@ -31,7 +33,7 @@ private:
         TaggedTask(const TaggedTask& rhs) = delete;
         TaggedTask& operator=(const TaggedTask& rhs) = delete;
         TaggedTask& operator=(TaggedTask&& rhs) {
-            assert(task.get() == nullptr); // no overwrites
+            CHECK(task.get() == nullptr); // no overwrites
             task = std::move(rhs.task);
             token = rhs.token;
             return *this;

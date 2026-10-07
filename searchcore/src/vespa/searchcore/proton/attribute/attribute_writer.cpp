@@ -7,6 +7,7 @@
 #include "ifieldupdatecallback.h"
 #include "imported_attributes_repo.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -112,10 +113,10 @@ void AttributeWriter::WriteContext::add(AttributeVector& attr) {
     }
     if (_fields.back().use_two_phase_put()) {
         // Only support for one field per context when this is true.
-        assert(_fields.size() == 1);
+        CHECK(_fields.size() == 1);
         _use_two_phase_put = true;
     } else {
-        assert(!_use_two_phase_put);
+        CHECK(!_use_two_phase_put);
     }
 }
 
@@ -515,7 +516,7 @@ void CommitTask::run() {
 
 void AttributeWriter::setupWriteContexts() {
     std::vector<FieldContext> fieldContexts;
-    assert(_writeContexts.empty());
+    CHECK(_writeContexts.empty());
     for (auto attr : getWritableAttributes()) {
         fieldContexts.emplace_back(_attributeFieldWriter, attr);
     }
@@ -549,7 +550,7 @@ void AttributeWriter::internalPut(SerialNum serialNum, const Document& doc, Docu
                                   const OnWriteDoneType& onWriteDone) {
     for (const auto& wc : _writeContexts) {
         if (allAttributes && wc.use_two_phase_put()) {
-            assert(wc.getFields().size() == 1);
+            CHECK(wc.getFields().size() == 1);
             wc.consider_build_field_paths(doc);
             auto prepare_task = std::make_unique<PreparePutTask>(serialNum, lid, wc, doc);
             auto complete_task = std::make_unique<CompletePutTask>(*prepare_task, onWriteDone);

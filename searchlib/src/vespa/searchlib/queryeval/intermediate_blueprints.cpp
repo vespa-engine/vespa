@@ -15,6 +15,7 @@
 #include "sourceblendersearch.h"
 #include "termwise_blueprint_helper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/vespalib/util/require.h>
 
@@ -492,8 +493,8 @@ bool WeakAndBlueprint::always_needs_unpack() const {
 SearchIterator::UP WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                                                               search::fef::MatchData&) const {
     WeakAndSearch::Terms terms;
-    assert(sub_searches.size() == childCnt());
-    assert(_weights.size() == childCnt());
+    CHECK(sub_searches.size() == childCnt());
+    CHECK(_weights.size() == childCnt());
     for (size_t i = 0; i < sub_searches.size(); ++i) {
         // TODO: pass ownership with unique_ptr
         terms.emplace_back(sub_searches[i].release(), _weights[i], getChild(i).getState().estimate().estHits);
@@ -784,11 +785,11 @@ void SourceBlenderBlueprint::sort(Children&, InFlow) const {
 SearchIterator::UP SourceBlenderBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
                                                                     search::fef::MatchData&) const {
     SourceBlenderSearch::Children children;
-    assert(sub_searches.size() == childCnt());
+    CHECK(sub_searches.size() == childCnt());
     for (size_t i = 0; i < sub_searches.size(); ++i) {
         // TODO: pass ownership with unique_ptr
         children.emplace_back(sub_searches[i].release(), getChild(i).getSourceId());
-        assert(children.back().sourceId != 0xffffffff);
+        CHECK(children.back().sourceId != 0xffffffff);
     }
     return SourceBlenderSearch::create(_selector.createIterator(), children, strict());
 }

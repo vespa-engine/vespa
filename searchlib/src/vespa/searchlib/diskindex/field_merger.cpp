@@ -9,6 +9,7 @@
 #include "fusion_output_index.h"
 #include "wordnummapper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
@@ -225,7 +226,7 @@ void FieldMerger::allocate_field_length_scanner() {
     if (index.use_interleaved_features()) {
         PosOccFieldsParams fieldsParams;
         fieldsParams.setSchemaParams(index.getSchema(), index.getIndex());
-        assert(fieldsParams.getNumFields() > 0);
+        CHECK(fieldsParams.getNumFields() > 0);
         const PosOccFieldParams& fieldParams = fieldsParams.getFieldParams()[0];
         if (fieldParams._hasElements) {
             for (const auto& old_index : _fusion_out_index.get_old_indexes()) {

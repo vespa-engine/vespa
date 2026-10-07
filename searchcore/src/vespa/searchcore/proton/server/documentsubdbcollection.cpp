@@ -10,6 +10,7 @@
 #include "maintenancecontroller.h"
 #include "searchabledocsubdb.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
@@ -115,7 +116,7 @@ DocumentSubDBCollection::getRetrievers(IDocumentRetriever::ReadConsistency consi
     if (consistency == IDocumentRetriever::ReadConsistency::STRONG) {
         auto wrappedList = std::make_shared<std::vector<IDocumentRetriever::SP>>();
         wrappedList->reserve(list->size());
-        assert(list->size() == 3);
+        CHECK(list->size() == 3);
         wrappedList->push_back(wrapRetriever((*list)[_readySubDbId], getReadySubDB()->getUncommittedLidsTracker()));
         wrappedList->push_back(wrapRetriever((*list)[_remSubDbId], getRemSubDB()->getUncommittedLidsTracker()));
         wrappedList->push_back(
@@ -240,11 +241,11 @@ IFeedView::SP DocumentSubDBCollection::getFeedView() {
         views.push_back(subDb->getFeedView());
     }
     IFeedView::SP newFeedView;
-    assert(!views.empty());
+    CHECK(!views.empty());
     if (views.size() > 1) {
         return std::make_shared<CombiningFeedView>(views, _owner.getBucketSpace(), _calc);
     } else {
-        assert(views.front() != nullptr);
+        CHECK(views.front() != nullptr);
         return views.front();
     }
 }

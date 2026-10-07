@@ -4,16 +4,16 @@
 
 #include "config_hash.h"
 
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace proton {
 
 template <class Elem> ConfigHash<Elem>::ConfigHash(const std::vector<Elem>& config) : _hash() {
     for (const auto& elem : config) {
         auto insres = _hash.insert(std::make_pair(elem.name, &elem));
-        assert(insres.second);
+        CHECK(insres.second);
     }
 }
 

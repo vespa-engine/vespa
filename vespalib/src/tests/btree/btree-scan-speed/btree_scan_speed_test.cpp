@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
@@ -109,8 +110,8 @@ template <typename Traits> void ScanSpeed::work_loop(ScanMethod scan_method) {
         builder.insert(i, 0);
     }
     tree.assign(builder);
-    assert(numEntries == tree.size());
-    assert(tree.isValid());
+    CHECK(numEntries == tree.size());
+    CHECK(tree.isValid());
     std::unique_ptr<ScanOnce> scan_once;
     if (scan_method == ScanMethod::ITERATOR) {
         scan_once = std::make_unique<ScanWithIterator<Tree>>(tree, 4, numEntries - 4);

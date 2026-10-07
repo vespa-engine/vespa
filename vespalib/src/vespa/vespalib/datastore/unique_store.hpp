@@ -12,6 +12,8 @@
 #include "unique_store_remapper.h"
 #include "unique_store_remapper.hpp"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
 #include <atomic>
 
@@ -70,7 +72,7 @@ template <typename EntryT, typename RefT, typename Comparator, typename Allocato
 void UniqueStore<EntryT, RefT, Comparator, Allocator>::remove(EntryRef ref) {
     auto& wrapped_entry = _allocator.get_wrapped(ref);
     auto  ref_count = wrapped_entry.get_ref_count();
-    assert(ref_count > 0u);
+    CHECK(ref_count > 0u);
     wrapped_entry.dec_ref_count();
     if (ref_count == 1u) {
         _dict->remove(_comparator, ref);
@@ -104,9 +106,9 @@ private:
         RefT     iRef(oldRef);
         uint32_t buffer_id = iRef.bufferId();
         auto&    inner_mapping = _mapping[buffer_id];
-        assert(iRef.offset() < inner_mapping.size());
+        CHECK(iRef.offset() < inner_mapping.size());
         EntryRef& mappedRef = inner_mapping[iRef.offset()];
-        assert(!mappedRef.valid());
+        CHECK(!mappedRef.valid());
         EntryRef newRef = _store.move_on_compact(oldRef);
         mappedRef = newRef;
         return newRef;
@@ -129,7 +131,7 @@ public:
     }
 
     void done() override { _compacting_buffers->finish(); }
-    ~CompactionContext() override { assert(_compacting_buffers->empty()); }
+    ~CompactionContext() override { CHECK(_compacting_buffers->empty()); }
 };
 
 } // namespace uniquestore

@@ -6,6 +6,7 @@
 #include "btreenodestore.hpp"
 #include "btreerootbase.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/vespalib/util/array.hpp>
@@ -24,14 +25,14 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::BTreeNodeAll
 
 template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::~BTreeNodeAllocator() {
-    assert(_internalToFreeze.empty());
-    assert(_leafToFreeze.empty());
-    assert(_treeToFreeze.empty());
-    assert(_internalHoldUntilFreeze.empty());
-    assert(_leafHoldUntilFreeze.empty());
+    CHECK(_internalToFreeze.empty());
+    CHECK(_leafToFreeze.empty());
+    CHECK(_treeToFreeze.empty());
+    CHECK(_internalHoldUntilFreeze.empty());
+    CHECK(_leafHoldUntilFreeze.empty());
     auto stats = _nodeStore.getMemStats();
-    assert(stats._usedBytes == stats._deadBytes);
-    assert(stats._holdBytes == 0);
+    CHECK(stats._usedBytes == stats._deadBytes);
+    CHECK(stats._holdBytes == 0);
     (void)stats;
 }
 
@@ -40,7 +41,7 @@ typename BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::Int
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::allocInternalNode(uint8_t level) {
     if (_internalHoldUntilFreeze.empty()) {
         InternalNodeTypeRefPair nodeRef = _nodeStore.allocInternalNode();
-        assert(nodeRef.ref.valid());
+        CHECK(nodeRef.ref.valid());
         _internalToFreeze.push_back(nodeRef.ref);
         nodeRef.data->setLevel(level);
         return nodeRef;
@@ -48,7 +49,7 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::allocInterna
     BTreeNode::Ref nodeRef = _internalHoldUntilFreeze.back();
     _internalHoldUntilFreeze.pop_back();
     InternalNodeType* node = mapInternalRef(nodeRef);
-    assert(!node->getFrozen());
+    CHECK(!node->getFrozen());
     node->setLevel(level);
     return InternalNodeTypeRefPair(nodeRef, node);
 }
@@ -64,7 +65,7 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::allocLeafNod
     BTreeNode::Ref nodeRef = _leafHoldUntilFreeze.back();
     _leafHoldUntilFreeze.pop_back();
     LeafNodeType* node = mapLeafRef(nodeRef);
-    assert(!node->getFrozen());
+    CHECK(!node->getFrozen());
     return LeafNodeTypeRefPair(nodeRef, node);
 }
 
@@ -74,9 +75,9 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::thawNode(BTr
                                                                              InternalNodeType* node) {
     if (_internalHoldUntilFreeze.empty()) {
         InternalNodeTypeRefPair retNodeRef = _nodeStore.allocInternalNodeCopy(*node);
-        assert(retNodeRef.data->getFrozen());
+        CHECK(retNodeRef.data->getFrozen());
         retNodeRef.data->unFreeze();
-        assert(retNodeRef.ref.valid());
+        CHECK(retNodeRef.ref.valid());
         _internalToFreeze.push_back(retNodeRef.ref);
         holdNode(nodeRef, node);
         return retNodeRef;
@@ -84,9 +85,9 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::thawNode(BTr
     BTreeNode::Ref    retNodeRef = _internalHoldUntilFreeze.back();
     InternalNodeType* retNode = mapInternalRef(retNodeRef);
     _internalHoldUntilFreeze.pop_back();
-    assert(!retNode->getFrozen());
+    CHECK(!retNode->getFrozen());
     *retNode = static_cast<const InternalNodeType&>(*node);
-    assert(retNode->getFrozen());
+    CHECK(retNode->getFrozen());
     retNode->unFreeze();
     holdNode(nodeRef, node);
     return InternalNodeTypeRefPair(retNodeRef, retNode);
@@ -98,7 +99,7 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::thawNode(BTr
                                                                              LeafNodeType*  node) {
     if (_leafHoldUntilFreeze.empty()) {
         LeafNodeTypeRefPair retNodeRef = _nodeStore.allocLeafNodeCopy(*node);
-        assert(retNodeRef.data->getFrozen());
+        CHECK(retNodeRef.data->getFrozen());
         retNodeRef.data->unFreeze();
         _leafToFreeze.push_back(retNodeRef.ref);
         holdNode(nodeRef, node);
@@ -107,9 +108,9 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::thawNode(BTr
     BTreeNode::Ref retNodeRef = _leafHoldUntilFreeze.back();
     LeafNodeType*  retNode = mapLeafRef(retNodeRef);
     _leafHoldUntilFreeze.pop_back();
-    assert(!retNode->getFrozen());
+    CHECK(!retNode->getFrozen());
     *retNode = static_cast<const LeafNodeType&>(*node);
-    assert(retNode->getFrozen());
+    CHECK(retNode->getFrozen());
     retNode->unFreeze();
     holdNode(nodeRef, node);
     return LeafNodeTypeRefPair(retNodeRef, retNode);
@@ -149,14 +150,14 @@ void BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::freeze(
     if (!_internalToFreeze.empty() || !_leafToFreeze.empty()) {
         {
             for (auto& i : _internalToFreeze) {
-                assert(i.valid());
+                CHECK(i.valid());
                 mapInternalRef(i)->freeze();
             }
             _internalToFreeze.clear();
         }
         {
             for (auto& i : _leafToFreeze) {
-                assert(i.valid());
+                CHECK(i.valid());
                 mapLeafRef(i)->freeze();
             }
             _leafToFreeze.clear();
@@ -176,20 +177,20 @@ void BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::freeze(
 
     {
         for (auto& i : _internalHoldUntilFreeze) {
-            assert(!isLeafRef(i));
+            CHECK(!isLeafRef(i));
             InternalNodeType* inode = mapInternalRef(i);
             (void)inode;
-            assert(inode->getFrozen());
+            CHECK(inode->getFrozen());
             _nodeStore.hold_entry(i);
         }
         _internalHoldUntilFreeze.clear();
     }
     {
         for (auto& i : _leafHoldUntilFreeze) {
-            assert(isLeafRef(i));
+            CHECK(isLeafRef(i));
             LeafNodeType* lnode = mapLeafRef(i);
             (void)lnode;
-            assert(lnode->getFrozen());
+            CHECK(lnode->getFrozen());
             _nodeStore.hold_entry(i);
         }
         _leafHoldUntilFreeze.clear();
@@ -221,7 +222,7 @@ typename BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::Int
 BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::moveInternalNode(const InternalNodeType* node) {
     InternalNodeTypeRefPair iPair;
     iPair = _nodeStore.allocNewInternalNodeCopy(*node);
-    assert(iPair.ref.valid());
+    CHECK(iPair.ref.valid());
     _internalToFreeze.push_back(iPair.ref);
     return iPair;
 }

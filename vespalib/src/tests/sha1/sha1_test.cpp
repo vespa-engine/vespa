@@ -2,10 +2,10 @@
 
 #include "rfc_sha1.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/sha1.h>
 
-#include <cassert>
 #include <string>
 
 using namespace vespalib;
@@ -70,11 +70,11 @@ struct Data {
         Sha1     sha;
         uint32_t ofs = 0;
         for (auto chunk : chunks) {
-            assert(ofs + chunk <= max());
+            CHECK(ofs + chunk <= max());
             sha.process(buf + ofs, chunk);
             ofs += chunk;
         }
-        assert(ofs == max());
+        CHECK(ofs == max());
         sha.get_digest(result.buf);
         return result;
     }

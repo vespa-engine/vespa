@@ -9,6 +9,7 @@
 #include "storagemetricsset.h"
 #include "storagenodecontext.h"
 
+#include <vespa/check_require.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/statusmetricconsumer.h>
@@ -165,7 +166,7 @@ void StorageNode::initialize(const NodeStateReporter& nodeStateReporter) {
     _chain = std::move(*_chain_builder).build();
     _chain_builder.reset();
 
-    assert(_communicationManager != nullptr);
+    CHECK(_communicationManager != nullptr);
     _communicationManager->updateBucketSpacesConfig(bucket_spaces_config());
 
     perform_post_chain_creation_init_steps();
@@ -186,7 +187,7 @@ void StorageNode::initialize(const NodeStateReporter& nodeStateReporter) {
     initializeStatusWebServer();
 
     if (server_config().writePidFileOnStartup) {
-        assert(!_rootFolder.empty());
+        CHECK(!_rootFolder.empty());
         // Write pid file as the last thing we do. If we fail initialization
         // due to an exception we won't run shutdown. Thus we won't remove the
         // pid file if something throws after writing it in initialization.
@@ -229,7 +230,7 @@ void StorageNode::handleLiveConfigUpdate(const InitialGuard& initGuard) {
     (void)initGuard;
     std::lock_guard configLockGuard(_configLock);
 
-    assert(_chain);
+    CHECK(_chain);
     // If we get here, initialize is done running. We have to handle changes
     // we want to handle.
 
@@ -253,7 +254,7 @@ void StorageNode::handleLiveConfigUpdate(const InitialGuard& initGuard) {
         _deadLockDetector->enableShutdown(server_config().enableDeadLockDetector);
         _deadLockDetector->setProcessSlack(vespalib::from_s(server_config().deadLockDetectorTimeoutSlack));
         _deadLockDetector->setWaitSlack(vespalib::from_s(server_config().deadLockDetectorTimeoutSlack));
-        assert(_state_manager_ptr);
+        CHECK(_state_manager_ptr);
         _state_manager_ptr->set_require_strictly_increasing_cluster_state_versions(
             server_config().requireStrictlyIncreasingClusterStateVersions);
     }
@@ -513,7 +514,7 @@ StorageNode::ConfigWrapper<ConfigT>::ConfigWrapper(std::unique_ptr<ConfigT> init
 template <typename ConfigT> StorageNode::ConfigWrapper<ConfigT>::~ConfigWrapper() = default;
 
 template <typename ConfigT> void StorageNode::ConfigWrapper<ConfigT>::promote_staging_to_active() noexcept {
-    assert(staging);
+    CHECK(staging);
     active = std::move(staging);
 }
 

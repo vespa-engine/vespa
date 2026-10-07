@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/fiddle.h>
 #include <vespa/vespalib/util/priority_queue.h>
@@ -23,8 +24,8 @@ struct Area {
     const ZCurve::Point max;
     Area(const Area& rhs) = default;
     Area(int32_t min_x, int32_t min_y, int32_t max_x, int32_t max_y) : min(min_x, min_y), max(max_x, max_y) {
-        assert((min_x <= max_x) && ((min_x < 0) == (max_x < 0)));
-        assert((min_y <= max_y) && ((min_y < 0) == (max_y < 0)));
+        CHECK((min_x <= max_x) && ((min_x < 0) == (max_x < 0)));
+        CHECK((min_y <= max_y) && ((min_y < 0) == (max_y < 0)));
     }
     Area& operator=(Area&& rhs) {
         new ((void*)this) Area(rhs);
@@ -60,7 +61,7 @@ public:
     }
 
     Area get() {
-        assert(!_queue.empty());
+        CHECK(!_queue.empty());
         Area area(_queue.front());
         _queue.pop_front();
         _total_estimate -= area.estimate();
@@ -89,8 +90,8 @@ private:
 
 public:
     ZAreaSplitter(int min_x, int min_y, int max_x, int max_y) : _queue() {
-        assert(min_x <= max_x);
-        assert(min_y <= max_y);
+        CHECK(min_x <= max_x);
+        CHECK(min_y <= max_y);
         bool cross_x = (min_x < 0) != (max_x < 0);
         bool cross_y = (min_y < 0) != (max_y < 0);
         if (cross_x) {
@@ -127,7 +128,7 @@ public:
             _queue.put(Area(area.min.x, area.min.y, x_first_max, area.max.y));
             _queue.put(Area(x_last_min, area.min.y, area.max.x, area.max.y));
         } else {
-            assert(y_bits > 0);
+            CHECK(y_bits > 0);
             _queue.put(Area(area.min.x, area.min.y, area.max.x, y_first_max));
             _queue.put(Area(area.min.x, y_last_min, area.max.x, area.max.y));
         }

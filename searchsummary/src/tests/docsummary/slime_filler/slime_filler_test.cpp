@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/referencedatatype.h>
@@ -210,7 +211,7 @@ SlimeFillerTest::~SlimeFillerTest() = default;
 
 const DataType& SlimeFillerTest::get_data_type(const std::string& name) const {
     const DataType* type = _repo->getDataType(*_document_type, name);
-    assert(type != nullptr);
+    CHECK(type != nullptr);
     return *type;
 }
 

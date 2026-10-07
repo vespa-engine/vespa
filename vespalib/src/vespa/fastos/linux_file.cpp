@@ -12,6 +12,7 @@
 
 #include "file_rw_ops.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/error.h>
 
 #include <dirent.h>
@@ -19,7 +20,6 @@
 #include <unistd.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cstdio>
 #include <cstring>
 #include <sstream>
@@ -41,7 +41,7 @@ FastOS_Linux_File::FastOS_Linux_File(const char* filename)
 
 FastOS_Linux_File::~FastOS_Linux_File() {
     bool ok = Close();
-    assert(ok);
+    CHECK(ok);
 }
 
 #define DIRECTIOPOSSIBLE(buf, len, off)                                                    \
@@ -351,13 +351,13 @@ bool FastOS_Linux_File::Open(unsigned int openFlags, const char* filename) {
                 rc = (posix_fadvise(_filedes, 0, 0, fadviseOptions) == 0);
                 if (!rc) {
                     bool close_ok = Close();
-                    assert(close_ok);
+                    CHECK(close_ok);
                 }
             }
         }
         if (rc) {
             bool sync_ok = Sync();
-            assert(sync_ok);
+            CHECK(sync_ok);
             _cachedSize = getSize();
             _filePointer = 0;
         }
@@ -367,7 +367,7 @@ bool FastOS_Linux_File::Open(unsigned int openFlags, const char* filename) {
             rc = (posix_fadvise(_filedes, 0, 0, getFAdviseOptions()) == 0);
             if (!rc) {
                 bool close_ok = Close();
-                assert(close_ok);
+                CHECK(close_ok);
             }
         }
     }

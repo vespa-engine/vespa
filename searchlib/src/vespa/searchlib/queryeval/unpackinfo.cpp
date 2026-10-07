@@ -2,10 +2,10 @@
 
 #include "unpackinfo.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <algorithm>
-#include <cassert>
 
 namespace search::queryeval {
 
@@ -60,7 +60,7 @@ UnpackInfo& UnpackInfo::remove(size_t index) {
     if (found_index) {
         --_size;
     }
-    assert(wp == _size);
+    CHECK(wp == _size);
     return *this;
 }
 

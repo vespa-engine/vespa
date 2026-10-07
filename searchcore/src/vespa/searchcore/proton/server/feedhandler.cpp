@@ -8,6 +8,7 @@
 #include "i_feed_handler_owner.h"
 #include "ifeedview.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -24,7 +25,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
-#include <cassert>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -136,7 +136,7 @@ DaisyChainedFeedToken::~DaisyChainedFeedToken() = default;
 } // namespace
 
 void FeedHandler::doHandleOperation(FeedToken token, FeedOperation::UP op) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     // Since _feedState is only modified in the master thread we can skip the lock here.
     _feedState->handleOperation(std::move(token), std::move(op));
 }
@@ -224,8 +224,8 @@ void FeedHandler::performRemove(FeedToken token, RemoveOperation& op) {
         return;
     }
     if (op.getPrevDbDocumentId().valid()) {
-        assert(op.getValidNewOrPrevDbdId());
-        assert(op.notMovingLidInSameSubDb());
+        CHECK(op.getValidNewOrPrevDbdId());
+        CHECK(op.notMovingLidInSameSubDb());
         appendOperation(op, token);
         if (token) {
             bool documentWasFound = !op.getPrevMarkedAsRemoved();
@@ -233,7 +233,7 @@ void FeedHandler::performRemove(FeedToken token, RemoveOperation& op) {
         }
         _activeFeedView->handleRemove(std::move(token), op);
     } else if (op.hasDocType() && op.getValidDbdId()) {
-        assert(op.getDocType() == _docTypeName.getName());
+        CHECK(op.getDocType() == _docTypeName.getName());
         appendOperation(op, token);
         if (token) {
             token->setResult(make_unique<RemoveResult>(false), false);
@@ -275,14 +275,14 @@ void FeedHandler::performJoin(FeedToken token, JoinBucketsOperation& op) {
 }
 
 void FeedHandler::performEof() {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     _activeFeedView->forceCommitAndWait(CommitParam(load_relaxed(_serialNum), CommitParam::UpdateStats::SKIP));
     LOG(debug, "Visiting done for transaction log domain '%s', eof received", _tlsMgr.getDomainName().c_str());
     // Replay must be complete
     if (_replay_end_serial_num != load_relaxed(_serialNum)) {
         LOG(warning, "Expected replay end serial number %" PRIu64 ", got serial number %" PRIu64,
             _replay_end_serial_num, load_relaxed(_serialNum));
-        assert(_replay_end_serial_num == load_relaxed(_serialNum));
+        CHECK(_replay_end_serial_num == load_relaxed(_serialNum));
     }
     _owner.onTransactionLogReplayDone();
     _tlsMgr.replayDone();
@@ -291,7 +291,7 @@ void FeedHandler::performEof() {
 }
 
 void FeedHandler::performFlushDone(SerialNum flushedSerial) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     // XXX: flushedSerial can go backwards when attribute vectors are
     // resurrected.  This can be avoided if resurrected attribute vectors
     // pretends to have been flushed at resurrect time.
@@ -411,8 +411,8 @@ void FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial, SerialNu
                                        ConfigStore&                                        config_store,
                                        std::shared_ptr<vespalib::SharedOperationThrottler> shared_replay_throttler) {
     (void)newestFlushedSerial;
-    assert(_activeFeedView);
-    assert(_bucketDBHandler);
+    CHECK(_activeFeedView);
+    CHECK(_bucketDBHandler);
     auto state =
         make_shared<ReplayTransactionLogState>(getDocTypeName(), _activeFeedView, *_bucketDBHandler, _replayConfig,
                                                config_store, std::move(shared_replay_throttler), *this);
@@ -420,7 +420,7 @@ void FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial, SerialNu
     // Resurrected attribute vector might cause oldestFlushedSerial to
     // be lower than _prunedSerialNum, so don't warn for now.
     (void)oldestFlushedSerial;
-    assert(_replay_end_serial_num >= newestFlushedSerial);
+    CHECK(_replay_end_serial_num >= newestFlushedSerial);
 
     TransactionLogManager::prepareReplay(_tlsMgr.getClient(), _docTypeName.getName(), flushedIndexMgrSerial,
                                          flushedSummaryMgrSerial, config_store);
@@ -579,7 +579,7 @@ void FeedHandler::performOperation(FeedToken token, FeedOperation::UP op) {
         performCreateBucket(std::move(token), static_cast<CreateBucketOperation&>(*op));
         return;
     default:
-        assert(!"Illegal operation type");
+        CHECK(!"Illegal operation type");
     }
 }
 
@@ -598,23 +598,23 @@ void FeedHandler::handleOperation(FeedToken token, FeedOperation::UP op) {
 
 IDocumentMoveHandler::MoveResult FeedHandler::handleMove(MoveOperation&                    op,
                                                          vespalib::IDestructorCallback::SP moveDoneCtx) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     if (!_activeFeedView->isMoveStillValid(op)) {
         return MoveResult::FAILURE;
     }
 
     op.set_prepare_serial_num(inc_prepare_serial_num());
     _activeFeedView->prepareMove(op);
-    assert(op.getValidDbdId());
-    assert(op.getValidPrevDbdId());
-    assert(op.getSubDbId() != op.getPrevSubDbId());
+    CHECK(op.getValidDbdId());
+    CHECK(op.getValidPrevDbdId());
+    CHECK(op.getSubDbId() != op.getPrevSubDbId());
     appendOperation(op, moveDoneCtx);
     _activeFeedView->handleMove(op, std::move(moveDoneCtx));
     return MoveResult::SUCCESS;
 }
 
 void FeedHandler::heartBeat() {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     _heart_beat_time.store(vespalib::steady_clock::now());
     _activeFeedView->heartBeat(load_relaxed(_serialNum), vespalib::IDestructorCallback::SP());
 }

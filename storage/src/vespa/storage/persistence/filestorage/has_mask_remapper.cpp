@@ -2,9 +2,8 @@
 
 #include "has_mask_remapper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-
-#include <cassert>
 
 namespace storage {
 
@@ -21,7 +20,7 @@ HasMaskRemapper::HasMaskRemapper(const std::vector<api::MergeBucketCommand::Node
         _mask_remap.reserve(nodes.size());
         for (const auto& node : nodes) {
             mask = node_index_to_mask[node.index];
-            assert(mask != 0u);
+            CHECK(mask != 0u);
             _mask_remap.push_back(mask);
             _all_remapped |= mask;
         }

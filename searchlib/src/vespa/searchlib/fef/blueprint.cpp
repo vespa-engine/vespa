@@ -4,21 +4,21 @@
 
 #include "parametervalidator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <string>
 
 namespace search::fef {
 
 std::optional<FeatureType> Blueprint::defineInput(const std::string& inName, AcceptInput accept) {
-    assert(_dependency_handler != nullptr);
+    CHECK(_dependency_handler != nullptr);
     return _dependency_handler->resolve_input(inName, accept);
 }
 
 void Blueprint::describeOutput(const std::string& outName, std::string_view desc, FeatureType type) {
     (void)desc;
-    assert(_dependency_handler != nullptr);
+    CHECK(_dependency_handler != nullptr);
     _dependency_handler->define_output(outName, std::move(type));
 }
 
@@ -31,7 +31,7 @@ bool Blueprint::fail(const char* format, ...) {
 }
 
 bool Blueprint::fail(const std::string& msg) {
-    assert(_dependency_handler != nullptr);
+    CHECK(_dependency_handler != nullptr);
     _dependency_handler->fail(msg);
     return false;
 }

@@ -2,12 +2,12 @@
 
 #include "redundancygroupdistribution.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <algorithm>
-#include <cassert>
 #include <ostream>
 #include <string>
 
@@ -90,7 +90,7 @@ RedundancyGroupDistribution::RedundancyGroupDistribution(const RedundancyGroupDi
     // Lastly sort, so the most copies will end up first in ideal state
     std::sort(_values.begin(), _values.end());
     std::reverse(_values.begin(), _values.end());
-    assert(_values.front() >= _values.back());
+    CHECK(_values.front() >= _values.back());
 }
 
 RedundancyGroupDistribution::~RedundancyGroupDistribution() = default;

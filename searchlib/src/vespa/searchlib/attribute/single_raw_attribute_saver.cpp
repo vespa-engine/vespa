@@ -5,6 +5,7 @@
 #include "raw_buffer_store.h"
 #include "raw_buffer_store_writer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 
@@ -33,7 +34,7 @@ void SingleRawAttributeSaver::save_raw_store(BufferWriter& writer) const {
 
 bool SingleRawAttributeSaver::onSave(IAttributeSaveTarget& saveTarget) {
     std::unique_ptr<search::BufferWriter> writer(saveTarget.datWriter().allocBufferWriter());
-    assert(!saveTarget.getEnumerated());
+    CHECK(!saveTarget.getEnumerated());
     save_raw_store(*writer);
     return true;
 }

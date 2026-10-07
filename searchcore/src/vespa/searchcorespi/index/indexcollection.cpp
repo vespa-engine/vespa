@@ -4,6 +4,7 @@
 
 #include "indexsearchablevisitor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
@@ -33,7 +34,7 @@ IndexCollection::IndexCollection(const ISourceSelector::SP& selector, const ISea
 IndexCollection::~IndexCollection() = default;
 
 void IndexCollection::setSource(uint32_t docId) {
-    assert(valid());
+    CHECK(valid());
     _source_selector->setSource(docId, getCurrentIndex());
 }
 

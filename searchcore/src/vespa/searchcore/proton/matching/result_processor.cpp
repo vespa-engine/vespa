@@ -5,6 +5,7 @@
 #include "partial_result.h"
 #include "sessionmanager.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
@@ -57,7 +58,7 @@ ResultProcessor::Context::~Context() = default;
 
 void ResultProcessor::GroupingSource::merge(Source& s) {
     auto& rhs = dynamic_cast<GroupingSource&>(s);
-    assert((ctx == nullptr) == (rhs.ctx == nullptr));
+    CHECK((ctx == nullptr) == (rhs.ctx == nullptr));
     if (ctx != nullptr) {
         search::grouping::GroupingManager man(*ctx);
         man.merge(*rhs.ctx);
@@ -170,7 +171,7 @@ ResultProcessor::Result::UP ResultProcessor::makeReply(PartialResultUP full_resu
             sortOffset += sr.second;
         }
         r.sortIndex[hitcnt] = sortOffset;
-        assert(sortOffset == sortDataSize);
+        CHECK(sortOffset == sortDataSize);
     }
     numFs4Hits += reply->hits.size();
     return std::make_unique<Result>(std::move(reply), numFs4Hits);

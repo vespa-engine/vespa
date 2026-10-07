@@ -4,8 +4,9 @@
 
 #include "match_data_filters.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 #include <limits>
 
 namespace search::fef {
@@ -55,7 +56,7 @@ TermFieldMatchData::~TermFieldMatchData() {
 }
 
 TermFieldMatchData::MutablePositionsIterator TermFieldMatchData::populate_fixed() {
-    assert(!allocated());
+    CHECK(!allocated());
     if (_sz == 0) {
         new (_data._position) TermFieldMatchDataPosition();
         _sz = 1;
@@ -67,7 +68,7 @@ TermFieldMatchData& TermFieldMatchData::setFieldId(uint32_t fieldId) {
     if (fieldId == IllegalFieldId) {
         fieldId = ILLEGAL_FIELD_ID;
     } else {
-        assert(fieldId < ILLEGAL_FIELD_ID);
+        CHECK(fieldId < ILLEGAL_FIELD_ID);
     }
     _fieldId = fieldId;
     return *this;
@@ -104,8 +105,8 @@ constexpr size_t INITIAL_ELEMS = 1024 / sizeof(TermFieldMatchDataPosition);
 } // namespace
 
 void TermFieldMatchData::resizePositionVector(size_t sz) {
-    assert(allocated());
-    assert(sz >= _sz);
+    CHECK(allocated());
+    CHECK(sz >= _sz);
     size_t                      newSize(std::min(MAX_ELEMS, std::max(1ul, sz)));
     TermFieldMatchDataPosition* n = new TermFieldMatchDataPosition[newSize];
     for (size_t i(0); i < _data._positions._allocated; i++) {
@@ -117,8 +118,8 @@ void TermFieldMatchData::resizePositionVector(size_t sz) {
 }
 
 void TermFieldMatchData::allocateVector() {
-    assert(_sz < 2);
-    assert(!allocated());
+    CHECK(_sz < 2);
+    CHECK(!allocated());
     size_t                      newSize = INITIAL_ELEMS;
     TermFieldMatchDataPosition* n = new TermFieldMatchDataPosition[newSize];
     if (_sz > 0) {
@@ -134,7 +135,7 @@ void TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDat
     if (__builtin_expect(_sz >= MAX_ELEMS, false)) {
         return;
     }
-    assert(allocated());
+    CHECK(allocated());
     if (__builtin_expect(_sz >= _data._positions._allocated, false)) {
         resizePositionVector(_sz * 2);
     }

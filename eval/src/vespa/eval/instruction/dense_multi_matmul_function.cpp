@@ -8,8 +8,6 @@
 
 #include <cblas.h>
 
-#include <cassert>
-
 namespace vespalib::eval {
 
 using namespace tensor_function;

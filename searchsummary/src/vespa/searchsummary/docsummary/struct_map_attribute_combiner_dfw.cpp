@@ -14,8 +14,6 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/stash.h>
 
-#include <cassert>
-
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::common::ElementIds;

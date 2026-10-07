@@ -4,6 +4,7 @@
 
 #include "storagemetricsset.h"
 
+#include <vespa/check_require.h>
 #include <vespa/defaults.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/metrics/jsonwriter.h>
@@ -236,7 +237,7 @@ void StateManager::setReportedNodeState(const lib::NodeState& state) {
     std::lock_guard lock(_stateLock);
     if (!_grabbedExternalLock) {
         LOG(error, "Cannot set reported node state without first having grabbed external lock");
-        assert(false);
+        CHECK(false);
     }
     LOG(debug, "Adjusting reported node state to %s -> %s", _nodeState->toString().c_str(), state.toString().c_str());
     _nextNodeState = std::make_shared<lib::NodeState>(state);
@@ -264,7 +265,7 @@ void StateManager::notifyStateListeners() {
                 break; // No change
             }
             if (_nextNodeState) {
-                assert(_nextNodeState->getState() != State::INITIALIZING);
+                CHECK(_nextNodeState->getState() != State::INITIALIZING);
                 newState = _nextNodeState;
                 _nodeState = _nextNodeState;
                 _nextNodeState.reset();

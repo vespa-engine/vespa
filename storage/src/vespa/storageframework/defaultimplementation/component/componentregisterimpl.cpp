@@ -2,12 +2,11 @@
 
 #include "componentregisterimpl.h"
 
+#include <vespa/check_require.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-#include <cassert>
 
 namespace storage::framework::defaultimplementation {
 
@@ -49,7 +48,7 @@ void ComponentRegisterImpl::setMetricManager(metrics::MetricManager& mm) {
     std::vector<ManagedComponent*> components;
     {
         std::lock_guard lock(_componentLock);
-        assert(_metricManager == nullptr);
+        CHECK(_metricManager == nullptr);
         components = _components;
         _metricManager = &mm;
     }
@@ -64,7 +63,7 @@ void ComponentRegisterImpl::setMetricManager(metrics::MetricManager& mm) {
 
 void ComponentRegisterImpl::setClock(Clock& c) {
     std::lock_guard lock(_componentLock);
-    assert(_clock == nullptr);
+    CHECK(_clock == nullptr);
     _clock = &c;
     for (auto* component : _components) {
         component->setClock(c);
@@ -73,7 +72,7 @@ void ComponentRegisterImpl::setClock(Clock& c) {
 
 void ComponentRegisterImpl::setThreadPool(ThreadPool& tp) {
     std::lock_guard lock(_componentLock);
-    assert(_threadPool == nullptr);
+    CHECK(_threadPool == nullptr);
     _threadPool = &tp;
     for (auto* component : _components) {
         component->setThreadPool(tp);
@@ -128,7 +127,7 @@ void ComponentRegisterImpl::registerUpdateHook(std::string_view name, MetricUpda
 
 void ComponentRegisterImpl::registerShutdownListener(ShutdownListener& listener) {
     std::lock_guard lock(_componentLock);
-    assert(_shutdownListener == nullptr);
+    CHECK(_shutdownListener == nullptr);
     _shutdownListener = &listener;
 }
 

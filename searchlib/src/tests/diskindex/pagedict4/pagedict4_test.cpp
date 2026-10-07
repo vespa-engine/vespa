@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
@@ -211,8 +212,8 @@ static void makeWords(std::vector<WordCounts>& v, vespalib::Rand48& rnd, uint32_
     uint64_t accNumDocs = 0;
     for (std::vector<WordCounts>::iterator i = v.begin(), ie = v.end(); i != ie; ++i) {
         WordIndexCounts* f = &i->_counts;
-        assert(f->_numDocs > 0);
-        assert(f->_bitLength > 0);
+        CHECK(f->_numDocs > 0);
+        CHECK(f->_bitLength > 0);
         f->_fileOffset = fileOffset;
         f->_accNumDocs = accNumDocs;
         fileOffset += f->_bitLength;
@@ -226,7 +227,7 @@ void makeCounts(PostingListCounts& counts, const WordCounts& i, uint32_t chunkSi
     c._bitLength = j->_bitLength;
     c._numDocs = j->_numDocs;
     c._segments.clear();
-    assert(j->_numDocs > 0);
+    CHECK(j->_numDocs > 0);
     uint32_t numChunks = (j->_numDocs + chunkSize - 1) / chunkSize;
     if (numChunks > 1) {
         uint32_t chunkBits = j->_bitLength / numChunks;
@@ -251,17 +252,17 @@ void checkCounts(const std::string& word, const PostingListCounts& counts, const
     PostingListCounts answer;
 
     makeCounts(answer, i, chunkSize);
-    assert(word == i._word);
+    CHECK(word == i._word);
     (void)word;
     (void)fileOffset;
     const WordIndexCounts* j = &i._counts;
     (void)j;
-    assert(counts._bitLength == j->_bitLength);
-    assert(counts._numDocs == j->_numDocs);
-    assert(fileOffset._fileOffset == j->_fileOffset);
-    assert(fileOffset._accNumDocs == j->_accNumDocs);
-    assert(counts._segments == answer._segments);
-    assert(counts == answer);
+    CHECK(counts._bitLength == j->_bitLength);
+    CHECK(counts._numDocs == j->_numDocs);
+    CHECK(fileOffset._fileOffset == j->_fileOffset);
+    CHECK(fileOffset._accNumDocs == j->_accNumDocs);
+    CHECK(counts._segments == answer._segments);
+    CHECK(counts == answer);
     (void)counts;
 }
 
@@ -303,11 +304,11 @@ void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<
             counts.clear();
             r.readCounts(word, checkWordNum, counts);
             checkCounts(word, counts, checkOffset, *i, chunkSize);
-            assert(checkWordNum == wordNum);
+            CHECK(checkWordNum == wordNum);
             checkOffset._fileOffset += counts._bitLength;
             checkOffset._accNumDocs += counts._numDocs;
         }
-        assert(r._decoders.pd.getReadOffset() == w._buffers._p.get_file_bit_size());
+        CHECK(r._decoders.pd.getReadOffset() == w._buffers._p.get_file_bit_size());
         LOG(info, "%s: words seqRead test OK", logname.c_str());
     }
 
@@ -319,10 +320,10 @@ void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<
         for (std::vector<WordCounts>::const_iterator i = myrand.begin(), ie = myrand.end(); i != ie; ++i, ++wordNum) {
             checkWordNum = 0;
             bool res = rr.lookup(i->_word, checkWordNum, counts, checkOffset);
-            assert(res);
+            CHECK(res);
             (void)res;
             checkCounts(i->_word, counts, checkOffset, *i, chunkSize);
-            assert(checkWordNum == wordNum);
+            CHECK(checkWordNum == wordNum);
         }
         LOG(info, "%s: word randRead test OK", logname.c_str());
     }
@@ -346,7 +347,7 @@ void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<
         params.set("minChunkDocs", chunkSize);
         dw->setParams(params);
         bool openres = dw->open("fakedict", tuneFileWrite, fileHeaderContext);
-        assert(openres);
+        CHECK(openres);
         (void)openres;
 
         for (std::vector<WordCounts>::const_iterator i = myrand.begin(), ie = myrand.end(); i != ie; ++i) {
@@ -354,7 +355,7 @@ void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<
             dw->writeWord(i->_word, counts);
         }
         bool closeres = dw->close();
-        assert(closeres);
+        CHECK(closeres);
         (void)closeres;
 
         LOG(info, "%s: pagedict4 written", logname.c_str());
@@ -371,7 +372,7 @@ void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<
         search::TuneFileSeqRead tuneFileRead;
 
         bool openres = dr->open("fakedict", tuneFileRead);
-        assert(openres);
+        CHECK(openres);
         (void)openres;
         std::string       lastWord;
         std::string       checkWord;
@@ -385,18 +386,18 @@ void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<
             checkWord.clear();
             checkWordNum = 0;
             dr->readWord(checkWord, checkWordNum, rCounts);
-            assert(rCounts == wCounts);
-            assert(wordNum == checkWordNum);
-            assert(checkWord == i->_word);
+            CHECK(rCounts == wCounts);
+            CHECK(wordNum == checkWordNum);
+            CHECK(checkWord == i->_word);
         }
 
         checkWord = "bad";
         checkWordNum = 5;
         dr->readWord(checkWord, checkWordNum, rCounts);
-        assert(checkWord.empty());
-        assert(checkWordNum == DictionaryFileSeqRead::noWordNumHigh());
+        CHECK(checkWord.empty());
+        CHECK(checkWordNum == DictionaryFileSeqRead::noWordNumHigh());
         bool closeres = dr->close();
-        assert(closeres);
+        CHECK(closeres);
         (void)closeres;
 
         LOG(info, "%s: pagedict4 seqverify OK", logname.c_str());
@@ -412,7 +413,7 @@ void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<
         }
         search::TuneFileRandRead tuneFileRead;
         bool                     openres = drr->open("fakedict", tuneFileRead);
-        assert(openres);
+        CHECK(openres);
         (void)openres;
         std::string       lastWord;
         std::string       checkWord;
@@ -434,14 +435,14 @@ void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<
             rCounts.clear();
             rOffset = 0;
             bool lres = drr->lookup(i->_word, checkWordNum, rOffsetAndCounts);
-            assert(lres);
+            CHECK(lres);
             (void)lres;
-            assert((rOffsetAndCounts._counts._bitLength == 0) == (rOffsetAndCounts._counts._numDocs == 0));
+            CHECK((rOffsetAndCounts._counts._bitLength == 0) == (rOffsetAndCounts._counts._numDocs == 0));
             rOffset = rOffsetAndCounts._offset;
             rCounts = rOffsetAndCounts._counts;
-            assert(rCounts == wCounts);
-            assert(wordNum == checkWordNum);
-            assert(rOffset == wOffset);
+            CHECK(rCounts == wCounts);
+            CHECK(wordNum == checkWordNum);
+            CHECK(rOffset == wOffset);
 
             wOffset += wCounts._bitLength;
             lastWord = i->_word;
@@ -450,18 +451,18 @@ void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<
             missWord.append(1, '\1');
             checkWordNum = 0;
             lres = drr->lookup(missWord, checkWordNum, rOffsetAndCounts);
-            assert(!lres);
-            assert(checkWordNum == wordNum + 1);
+            CHECK(!lres);
+            CHECK(checkWordNum == wordNum + 1);
         }
 
         checkWordNum = 0;
         std::string notfoundword = "Thiswordhasbetternotbeindictionary";
         bool        lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
-        assert(!lres);
+        CHECK(!lres);
         checkWordNum = 0;
         notfoundword = lastWord + "somethingmore";
         lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
-        assert(!lres);
+        CHECK(!lres);
         (void)lres;
         LOG(info, "Lookup beyond dict EOF gave wordnum %d", (int)checkWordNum);
 
@@ -470,16 +471,16 @@ void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<
                 checkWordNum = 0;
                 notfoundword = "";
                 lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
-                assert(!lres);
-                assert(checkWordNum == 1);
+                CHECK(!lres);
+                CHECK(checkWordNum == 1);
             }
             if (!myrand.empty()) {
                 checkWordNum = 0;
                 notfoundword = myrand.front()._word;
                 notfoundword.append(1, '\1');
                 lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
-                assert(!lres);
-                assert(checkWordNum == 2);
+                CHECK(!lres);
+                CHECK(checkWordNum == 2);
             }
         }
         if (lastWordForcedCommon && !myrand.empty()) {
@@ -488,18 +489,18 @@ void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<
                 notfoundword = myrand[myrand.size() - 2]._word;
                 notfoundword.append(1, '\1');
                 lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
-                assert(!lres);
-                assert(checkWordNum == myrand.size());
+                CHECK(!lres);
+                CHECK(checkWordNum == myrand.size());
             }
             checkWordNum = 0;
             notfoundword = myrand[myrand.size() - 1]._word;
             notfoundword.append(1, '\1');
             lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
-            assert(!lres);
-            assert(checkWordNum == myrand.size() + 1);
+            CHECK(!lres);
+            CHECK(checkWordNum == myrand.size() + 1);
         }
         bool closeres = drr->close();
-        assert(closeres);
+        CHECK(closeres);
         (void)closeres;
         LOG(info, "%s: pagedict4 randverify OK", logname.c_str());
     }

@@ -2,6 +2,7 @@
 
 #include "rankprocessor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/simpletermfielddata.h>
@@ -58,7 +59,7 @@ std::string getIndexName(const std::string& indexName, const std::string& expand
 
 search::fef::LazyValue getFeature(const RankProgram& rankProgram) {
     search::fef::FeatureResolver resolver(rankProgram.get_seeds());
-    assert(resolver.num_features() == 1u);
+    CHECK(resolver.num_features() == 1u);
     return resolver.resolve(0);
 }
 
@@ -239,7 +240,7 @@ void RankProcessor::runRankProgram(uint32_t docId) {
 namespace {
 
 void copyTermFieldMatchData(const std::vector<search::fef::TermFieldMatchData>& src, MatchData& dst) {
-    assert(src.size() == dst.getNumTermFields());
+    CHECK(src.size() == dst.getNumTermFields());
     for (search::fef::TermFieldHandle handle = 0; handle < dst.getNumTermFields(); ++handle) {
         (*dst.resolveTermField(handle)) = src[handle];
     }

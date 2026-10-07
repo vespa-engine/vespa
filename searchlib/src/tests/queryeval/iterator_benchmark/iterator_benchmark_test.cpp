@@ -7,6 +7,7 @@
 #include "data_pond_utils.h"
 #include "intermediate_blueprint_factory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -42,7 +43,7 @@ std::optional<double> in_flow_filter = std::nullopt;
 
 double estimate_actual_cost(Blueprint& bp, InFlow in_flow) {
     if (in_flow.strict()) {
-        assert(bp.strict());
+        CHECK(bp.strict());
         return bp.strict_cost();
     } else if (bp.strict()) {
         auto stats = FlowStats::from(flow::DefaultAdapter(), &bp);
@@ -260,7 +261,7 @@ void sort_blueprint(Blueprint& blueprint, InFlow in_flow, uint32_t docid_limit, 
 MatchLoopContext make_match_loop_context(BenchmarkBlueprintFactory& factory, InFlow in_flow, uint32_t docid_limit,
                                          PlanningAlgo algo, BenchmarkTimer& fetch_postings_timer) {
     auto blueprint = factory.make_blueprint();
-    assert(blueprint);
+    CHECK(blueprint);
     sort_blueprint(*blueprint, in_flow, docid_limit, to_sort_options(algo));
     fetch_postings_timer.before();
     blueprint->fetchPostings(ExecuteInfo::create(in_flow.rate(), ExecuteInfo::FULL));
@@ -269,7 +270,7 @@ MatchLoopContext make_match_loop_context(BenchmarkBlueprintFactory& factory, InF
     //       This is OK as long as we don't do unpacking and only use 1 thread.
     auto md = MatchData::makeTestInstance(1, 1);
     auto itr = blueprint->createSearch(*md);
-    assert(itr);
+    CHECK(itr);
     return {std::move(blueprint), std::move(md), std::move(itr)};
 }
 
@@ -320,10 +321,10 @@ BenchmarkResult non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t d
     // The following loop simulates a filter that is evaluated before the iterator.
     // The filter returns 'filter_hit_ratio' amount of the document corpus.
     const int32_t num_docs = docid_limit - 1;
-    assert(num_docs > 0);
+    CHECK(num_docs > 0);
     auto num_matches = static_cast<uint32_t>(num_docs * filter_hit_ratio);
-    assert(num_matches > 0 && "Trying to run non-strict search over 0 matches. "
-                              "Probably misconfigured benchmark setup.");
+    CHECK(num_matches > 0 && "Trying to run non-strict search over 0 matches. "
+                             "Probably misconfigured benchmark setup.");
     MatchLoopContext ctx;
     while (timer.has_budget()) {
         ctx = make_match_loop_context(factory, InFlow(force_strict, filter_hit_ratio), docid_limit, algo,
@@ -345,7 +346,7 @@ BenchmarkResult non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t d
         }
         timer.after();
     }
-    assert(seeks == num_matches);
+    CHECK(seeks == num_matches);
     FlowStats flow(ctx.blueprint->estimate(), ctx.blueprint->cost(), ctx.blueprint->strict_cost());
     double    actual_cost = estimate_actual_cost(*ctx.blueprint, InFlow(filter_hit_ratio));
     return {timer.min_time() * 1000.0,
@@ -433,7 +434,7 @@ double find_crossover(const char* type, const char* a, const char* b, const auto
 
 void sample_at(const char* type, const auto& calculate_at, const std::vector<double>& values,
                const std::vector<const char*>& names) {
-    assert(values.size() == names.size());
+    CHECK(values.size() == names.size());
     for (size_t i = 0; i < values.size(); ++i) {
         double      x = values[i];
         const char* x_name = names[i];
@@ -665,7 +666,7 @@ std::string render_field(const Record& rec, const std::string& field) {
     } else if (rec.has_field<std::string>(field)) {
         return rec.get<std::string>(field);
     } else {
-        assert(false && "render_field: Unhandled data type.");
+        CHECK(false && "render_field: Unhandled data type.");
         return "Unhandled data type";
     }
 }
@@ -790,8 +791,8 @@ void add_factory_run_to_pond(DataPond& pond, const BenchmarkCaseSetup& setup, co
 }
 
 BenchmarkCaseResult run_benchmark(const BenchmarkCaseSetup& setup) {
-    assert(setup.factory);
-    assert(setup.docid_limit > 0);
+    CHECK(setup.factory);
+    CHECK(setup.docid_limit > 0);
     BenchmarkCaseResult result;
     std::cout << "-------- run_benchmark: " << setup.group << " --------" << std::endl;
     print_result_header();
@@ -1507,7 +1508,7 @@ struct Args {
     }
 
     bool flag(const std::string& name) {
-        assert(i < argc);
+        CHECK(i < argc);
         return name == argv[i];
     }
 
@@ -1520,7 +1521,7 @@ struct Args {
     }
 
     bool arg_double(const std::string& name) {
-        assert(i < argc);
+        CHECK(i < argc);
         if (!flag(name)) {
             return false;
         }
@@ -1544,7 +1545,7 @@ struct Args {
     }
 
     bool arg_string(const std::string& name) {
-        assert(i < argc);
+        CHECK(i < argc);
         if (!flag(name)) {
             return false;
         }

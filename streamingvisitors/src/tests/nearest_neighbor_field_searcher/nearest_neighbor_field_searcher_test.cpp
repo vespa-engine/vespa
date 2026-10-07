@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/fieldpath.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
@@ -42,7 +43,7 @@ struct MockQuery {
     }
     ~MockQuery() {}
     NearestNeighborQueryNode& get(size_t idx) const {
-        assert(idx < nodes.size());
+        CHECK(idx < nodes.size());
         return *nodes[idx];
     }
     void reset() {

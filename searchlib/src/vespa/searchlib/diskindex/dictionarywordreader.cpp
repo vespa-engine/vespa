@@ -2,6 +2,7 @@
 
 #include "dictionarywordreader.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/vespalib/util/error.h>
@@ -51,9 +52,9 @@ void DictionaryWordReader::close() {
         LOG(error, "Error closing input dictionary");
     }
     bool sync_ok = _old2newwordfile->Sync();
-    assert(sync_ok);
+    CHECK(sync_ok);
     bool close_ok = _old2newwordfile->Close();
-    assert(close_ok);
+    CHECK(close_ok);
 }
 
 } // namespace search::diskindex

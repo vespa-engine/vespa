@@ -4,7 +4,7 @@
 
 #include "dynamic_array_buffer_type.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::datastore {
 
@@ -81,7 +81,7 @@ void DynamicArrayBufferType<ElemT>::clean_hold(void* buffer, size_t offset, Entr
     for (uint32_t entry_idx = 0; entry_idx < num_entries; ++entry_idx) {
         auto e = get_entry(buffer, offset + entry_idx);
         auto array_size = get_dynamic_array_size(e);
-        assert(array_size <= max_array_size);
+        CHECK(array_size <= max_array_size);
         for (uint32_t elem_idx = 0; elem_idx < array_size; ++elem_idx) {
             *e = empty;
             ++e;

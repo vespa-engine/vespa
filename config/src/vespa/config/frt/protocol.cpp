@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "protocol.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <lz4.h>
 
-#include <cassert>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -74,7 +74,7 @@ DecompressedData decompress_lz4(const char* input, uint32_t inputLen, int uncomp
         memcpy(copy.get(), memory.get(), sz);
         memory = std::move(copy);
     }
-    assert(sz >= 0);
+    CHECK(sz >= 0);
     return DecompressedData(std::move(memory), static_cast<uint32_t>(sz));
 }
 

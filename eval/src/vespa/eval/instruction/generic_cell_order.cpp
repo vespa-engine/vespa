@@ -2,6 +2,7 @@
 
 #include "generic_cell_order.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
@@ -9,7 +10,6 @@
 #include <vespa/vespalib/util/typify.h>
 
 #include <algorithm>
-#include <cassert>
 #include <numeric>
 
 using namespace vespalib::eval::tensor_function;
@@ -60,7 +60,7 @@ struct SelectGenericCellOrderOp {
 InterpretedFunction::Instruction GenericCellOrder::make_instruction(const ValueType& result_type,
                                                                     const ValueType& input_type, CellOrder cell_order,
                                                                     Stash& stash) {
-    assert(result_type == input_type.map());
+    CHECK(result_type == input_type.map());
     auto& param = stash.create<ValueType>(result_type);
     auto  op = typify_invoke<1, TypifyCellMeta, SelectGenericCellOrderOp>(input_type.cell_meta(), cell_order);
     return {op, wrap_param<ValueType>(param)};

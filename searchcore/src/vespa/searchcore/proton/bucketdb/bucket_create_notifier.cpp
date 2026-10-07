@@ -4,8 +4,9 @@
 
 #include "i_bucket_create_listener.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 
 using document::BucketId;
 
@@ -15,7 +16,7 @@ BucketCreateNotifier::BucketCreateNotifier() : _listeners() {
 }
 
 BucketCreateNotifier::~BucketCreateNotifier() {
-    assert(_listeners.empty());
+    CHECK(_listeners.empty());
 }
 
 void BucketCreateNotifier::notifyCreateBucket(const Guard& guard, const BucketId& bucket) {

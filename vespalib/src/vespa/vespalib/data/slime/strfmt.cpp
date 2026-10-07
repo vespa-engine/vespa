@@ -2,10 +2,10 @@
 
 #include "strfmt.h"
 
+#include <vespa/check_require.h>
+
 #include <stdarg.h>
 #include <stdio.h>
-
-#include <cassert>
 
 namespace vespalib::slime {
 
@@ -19,7 +19,7 @@ std::string strfmt(const char* fmt, ...) {
         size = vsnprintf(&ret[0], ret.size(), fmt, ap);
         va_end(ap);
     } while (size >= (int)ret.size());
-    assert(size >= 0);
+    CHECK(size >= 0);
     ret.resize(size);
     return ret;
 }

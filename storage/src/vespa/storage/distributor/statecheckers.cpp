@@ -5,6 +5,7 @@
 #include "activecopy.h"
 #include "node_supported_features_repo.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
@@ -368,7 +369,7 @@ StateChecker::Result JoinBucketsStateChecker::check(const Context& c) const {
     }
 
     document::Bucket joinedBucket(computeJoinBucket(c));
-    assert(joinedBucket.getBucketId().getUsedBits() < c.getBucketId().getUsedBits());
+    CHECK(joinedBucket.getBucketId().getUsedBits() < c.getBucketId().getUsedBits());
 
     std::vector<document::BucketId> sourceBuckets;
     if (c.getSiblingEntry().valid()) {
@@ -395,7 +396,7 @@ bool SplitInconsistentStateChecker::isLeastSplitBucket(const document::BucketId&
                                                        const std::vector<BucketDatabase::Entry>& entries) {
     // Figure out if any other buckets are less split than the current one.
     for (const auto& e : entries) {
-        assert(e.valid());
+        CHECK(e.valid());
 
         if (e.getBucketId().getUsedBits() < bucket.getUsedBits()) {
             return false;
@@ -694,7 +695,7 @@ StateChecker::Result SynchronizeAndMoveStateChecker::check(const Context& c) con
         return Result::noMaintenanceNeeded();
     }
 
-    assert(c.entry()->getNodeCount() > 0);
+    CHECK(c.entry()->getNodeCount() > 0);
 
     MergeNodes result(c.entry());
     result += checkForNodesMissingFromIdealState(c);
@@ -767,7 +768,7 @@ uint32_t DeleteExtraCopiesStateChecker::numberOfIdealCopiesPresent(const Context
 void DeleteExtraCopiesStateChecker::removeRedundantEmptyOrConsistentCopies(const Context&         c,
                                                                            std::vector<uint16_t>& removedCopies,
                                                                            vespalib::asciistream& reasons) {
-    assert(removedCopies.empty());
+    CHECK(removedCopies.empty());
     const bool     copiesAreConsistent = c.entry()->validAndConsistent();
     const uint32_t cnt = c.entry()->getNodeCount();
     // Always keep all ideal copies

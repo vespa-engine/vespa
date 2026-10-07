@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "valuefeature.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
@@ -318,7 +319,7 @@ fef::FeatureExecutor& createAttributeExecutor(uint32_t numOutputs, const IAttrib
     }
     CollectionType collectionType = attribute->getCollectionType();
     if (collectionType == CollectionType::WSET) {
-        assert(numOutputs == 4);
+        CHECK(numOutputs == 4);
         bool useKey = !extraParam.empty();
         if (useKey) {
             if (attribute->isStringType()) {
@@ -339,10 +340,10 @@ fef::FeatureExecutor& createAttributeExecutor(uint32_t numOutputs, const IAttrib
         if (collectionType == CollectionType::SINGLE) {
             if (attribute->isIntegerType()) {
                 if (basicType == BasicType::BOOL) {
-                    assert(numOutputs == 1);
+                    CHECK(numOutputs == 1);
                     return stash.create<BoolAttributeExecutor>(*attribute);
                 } else {
-                    assert(numOutputs == 4);
+                    CHECK(numOutputs == 4);
                     if (basicType == BasicType::INT8) {
                         SingleValueExecutorCreator<IntegerAttributeTemplate<int8_t>> creator;
                         if (creator.handle(attribute)) {
@@ -360,7 +361,7 @@ fef::FeatureExecutor& createAttributeExecutor(uint32_t numOutputs, const IAttrib
                     }
                 }
             } else if (attribute->isFloatingPointType()) {
-                assert(numOutputs == 4);
+                CHECK(numOutputs == 4);
                 if (basicType == BasicType::DOUBLE) {
                     SingleValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
                     if (creator.handle(attribute)) {
@@ -374,7 +375,7 @@ fef::FeatureExecutor& createAttributeExecutor(uint32_t numOutputs, const IAttrib
                 }
             }
         }
-        assert(numOutputs == 4);
+        CHECK(numOutputs == 4);
         uint32_t idx = 0;
         if (!extraParam.empty()) {
             idx = util::strToNum<uint32_t>(extraParam);

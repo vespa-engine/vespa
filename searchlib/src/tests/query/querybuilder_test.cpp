@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for querybuilder.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/query/proto_tree_converter.h>
@@ -132,7 +133,7 @@ template <class NodeTypes> Node::UP createQueryTree() {
         builder.addFuzzyTerm(str[5], view[5], id[5], weight[5], 3, 1, false);
     }
     Node::UP node = builder.build();
-    assert(node.get());
+    CHECK(node.get());
     return node;
 }
 
@@ -184,7 +185,7 @@ bool checkTerm(const Term* term, const typename Term::Type& t, const string& f, 
 
 template <class NodeType> NodeType* as_node(Node* node) {
     auto* result = dynamic_cast<NodeType*>(node);
-    assert(result != nullptr);
+    CHECK(result != nullptr);
     return result;
 }
 
@@ -212,7 +213,7 @@ template <class NodeTypes> void checkQueryTreeTypes(Node* node, bool skip_negati
     using FalseNode = typename NodeTypes::FalseQueryNode;
     using FuzzyTerm = typename NodeTypes::FuzzyTerm;
 
-    assert(node);
+    CHECK(node);
     auto* and_node = as_node<And>(node);
     EXPECT_EQ(13u, and_node->getChildren().size());
 

@@ -8,6 +8,7 @@
 #include "singlenumericpostattribute.h"
 #include "singlestringpostattribute.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 
@@ -19,8 +20,8 @@ namespace search {
 using attribute::BasicType;
 
 AttributeVector::SP AttributeFactory::createSingleFastSearch(std::string name, const Config& info) {
-    assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
-    assert(info.fastSearch());
+    CHECK(info.collectionType().type() == attribute::CollectionType::SINGLE);
+    CHECK(info.fastSearch());
     switch (info.basicType().type()) {
     case BasicType::BOOL:
         return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy(), info.paged());

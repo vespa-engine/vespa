@@ -2,8 +2,9 @@
 
 #include "mergelimiter.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operations.idealstate.merge_limiter");
@@ -11,7 +12,7 @@ LOG_SETUP(".distributor.operations.idealstate.merge_limiter");
 namespace storage::distributor {
 
 MergeLimiter::MergeLimiter(uint16_t maxNodes) : _maxNodes(maxNodes) {
-    assert(maxNodes > 1);
+    CHECK(maxNodes > 1);
     LOG(spam, "Limiter initialized with %u nodes.", uint32_t(maxNodes));
 }
 

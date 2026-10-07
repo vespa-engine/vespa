@@ -4,12 +4,11 @@
 
 #include "configstore.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.transactionlogmanager");
@@ -71,7 +70,7 @@ void TransactionLogManager::prepareReplay(TransLogClient& client, const std::str
     SerialNum oldestConfigSerial = config_store.getOldestSerialNum();
     SerialNum from = flushedIndexMgrSerial;
     SerialNum to = flushedSummaryMgrSerial;
-    assert(oldestConfigSerial != 0);
+    CHECK(oldestConfigSerial != 0);
     from = std::max(from, oldestConfigSerial);
     if (from < to) {
         SerialNum serialBegin = 0;
@@ -98,7 +97,7 @@ std::shared_ptr<TlsReplayProgress> TransactionLogManager::make_replay_progress(S
 }
 
 void TransactionLogManager::startReplay(SerialNum first, SerialNum syncToken, Callback& callback) {
-    assert(!_visitor);
+    CHECK(!_visitor);
     _visitor = createTlcVisitor(callback);
     if (!_visitor) {
         throw IllegalStateException(make_string("Could not create visitor for "
@@ -120,7 +119,7 @@ void TransactionLogManager::startReplay(SerialNum first, SerialNum syncToken, Ca
 }
 
 void TransactionLogManager::replayDone() {
-    assert(_visitor);
+    CHECK(_visitor);
     LOG(debug, "Transaction log replayed for domain '%s'", getDomainName().c_str());
     changeReplayDone();
     LOG(debug, "Broadcasted replay done for domain '%s'", getDomainName().c_str());

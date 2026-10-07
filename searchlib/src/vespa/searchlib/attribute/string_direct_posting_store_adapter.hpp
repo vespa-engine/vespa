@@ -5,6 +5,8 @@
 #include "direct_posting_store_adapter.hpp"
 #include "string_direct_posting_store_adapter.h"
 
+#include <vespa/check_require.h>
+
 namespace search::attribute {
 
 template <typename ParentType, typename PostingStoreType, typename EnumStoreType>
@@ -21,7 +23,7 @@ StringDirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::lo
     std::string_view keyAsString = key.asString();
     // Assert the unfortunate assumption of the comparators.
     // Should be lifted once they take the length too.
-    assert(keyAsString.data()[keyAsString.size()] == '\0');
+    CHECK(keyAsString.data()[keyAsString.size()] == '\0');
     auto comp = this->_enum_store.string_lookup_comparator(keyAsString.data());
     auto find_result = this->_dict.find_posting_list(comp, dictionary_snapshot);
     if (find_result.first.valid()) {

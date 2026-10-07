@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 
-#include <cassert>
 #include <fstream>
 #include <iostream>
 
@@ -22,7 +22,7 @@ ucs4_t getUCS4Char(const char* src) {
 }
 
 int main(int argc, char** argv) {
-    assert(argc == 3);
+    CHECK(argc == 3);
     (void)argc;
     std::ifstream            input(argv[1]);
     std::ifstream            ref(argv[2]);

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -18,7 +19,7 @@ void writeHeader(const FileHeader& header, const std::string& fileName) {
 std::string readFile(const std::string& fileName) {
     FastOS_File file;
     bool        success = file.OpenReadOnly(fileName.c_str());
-    assert(success);
+    CHECK(success);
 
     char     buf[4_Ki];
     uint32_t len = file.Read(buf, sizeof(buf));

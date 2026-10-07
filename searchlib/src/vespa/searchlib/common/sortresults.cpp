@@ -4,13 +4,13 @@
 
 #include "sort.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/issue.h>
 
-#include <cassert>
 #include <cmath>
 
 using vespalib::Issue;
@@ -373,7 +373,7 @@ bool FastS_SortSpec::bind_numeric_provider(INumericSortValueProvider* provider) 
     _numeric_provider = provider;
     auto spec = _sortSpec.begin();
     for (auto& vec : _vectors) {
-        assert(spec != _sortSpec.end());
+        CHECK(spec != _sortSpec.end());
         if (spec->_is_rank_feature) {
             uint32_t ordinal =
                 (provider != nullptr) ? provider->ordinal(spec->_field) : INumericSortValueProvider::invalid_ordinal;

@@ -3,13 +3,13 @@
 
 #include "read_guard.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/time.h>
 
-#include <cassert>
 #include <functional>
 #include <iosfwd>
 #include <map>
@@ -109,7 +109,7 @@ public:
         const char* _owner;
 
         LockId() noexcept : _key(0), _owner("none - empty token") {}
-        LockId(key_type key, const char* owner) noexcept : _key(key), _owner(owner) { assert(_owner); }
+        LockId(key_type key, const char* owner) noexcept : _key(key), _owner(owner) { CHECK(_owner); }
 
         size_t hash() const noexcept { return _key; }
         size_t operator%(size_t val) const noexcept { return _key % val; }
@@ -203,22 +203,22 @@ template <typename ValueT> std::ostream& operator<<(std::ostream& os, const Abst
 template <typename ValueT> AbstractBucketMap<ValueT>::WrappedEntry::~WrappedEntry() = default;
 
 template <typename ValueT> void AbstractBucketMap<ValueT>::WrappedEntry::write() {
-    assert(_lockKeeper.locked());
-    assert(_value.verifyLegal());
+    CHECK(_lockKeeper.locked());
+    CHECK(_value.verifyLegal());
     bool b;
     _lockKeeper.map().insert(_lockKeeper.key(), _value, _clientId, true, b);
     _lockKeeper.unlock();
 }
 
 template <typename ValueT> void AbstractBucketMap<ValueT>::WrappedEntry::remove() {
-    assert(_lockKeeper.locked());
-    assert(_exists);
+    CHECK(_lockKeeper.locked());
+    CHECK(_exists);
     _lockKeeper.map().erase(_lockKeeper.key(), _clientId, true);
     _lockKeeper.unlock();
 }
 
 template <typename ValueT> void AbstractBucketMap<ValueT>::WrappedEntry::unlock() {
-    assert(_lockKeeper.locked());
+    CHECK(_lockKeeper.locked());
     _lockKeeper.unlock();
 }
 

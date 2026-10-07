@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config/common/configsystem.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -33,9 +34,9 @@ private:
 public:
     App() : _frt(), _target(nullptr), _req(nullptr) {}
     ~App() {
-        assert(!_frt);
-        assert(_target == nullptr);
-        assert(_req == nullptr);
+        CHECK(!_frt);
+        CHECK(_target == nullptr);
+        CHECK(_req == nullptr);
     }
 
     int usage(const char* self) {

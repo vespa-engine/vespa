@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -313,7 +314,7 @@ void MyDB::add_tensor_doc(uint32_t lid, const string& doc_id, bool dense_attr_pr
 
 const Document& MyDB::getDoc(uint32_t lid) const {
     auto it = _lidToDocSP.find(lid);
-    assert(it != _lidToDocSP.end());
+    CHECK(it != _lidToDocSP.end());
     return *it->second;
 }
 
@@ -359,7 +360,7 @@ CachedSelect::SP TestFixture::testParse(const string& selection, const string& d
     CachedSelect::SP res(new CachedSelect);
 
     const DocumentType* docType = repo.getDocumentType(docTypeName);
-    assert(docType != nullptr);
+    CHECK(docType != nullptr);
     auto emptyDoc = std::make_unique<Document>(repo, *docType, DocumentId());
 
     res->set(selection, docTypeName, *emptyDoc, repo, &_amgr, _hasFields, _has_document_ids);

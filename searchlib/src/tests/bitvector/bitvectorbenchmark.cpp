@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvector.h>
 
 #include <benchmark/benchmark.h>
 
-#include <cassert>
 #include <memory>
 #include <random>
 #include <string>
@@ -63,7 +63,7 @@ BENCHMARK_DEFINE_F(BitVectorBenchmark, count_speed)(benchmark::State& state) {
     for (auto _ : state) {
         _bv[0]->invalidateCachedCount();
         unsigned int cnt = _bv[0]->countTrueBits();
-        assert(cnt == _bvc[0]);
+        CHECK(cnt == _bvc[0]);
         benchmark::DoNotOptimize(cnt);
     }
     state.SetItemsProcessed(state.range() * state.iterations());
@@ -72,7 +72,7 @@ BENCHMARK_DEFINE_F(BitVectorBenchmark, count_speed)(benchmark::State& state) {
 template <typename BitFn> void do_benchmark_fn_in_state_bit_range(benchmark::State& state, BitFn bit_fn) {
     std::minstd_rand prng;
     prng.seed(1);
-    assert(state.range() > 0);
+    CHECK(state.range() > 0);
     std::uniform_int_distribution<size_t> dist(0, state.range() - 1); // closed interval
     for (auto _ : state) {
         auto result = bit_fn(dist(prng));

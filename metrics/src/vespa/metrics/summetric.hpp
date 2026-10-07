@@ -5,11 +5,11 @@
 #include "metricset.h"
 #include "summetric.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <algorithm>
-#include <cassert>
 #include <ostream>
 
 namespace metrics {
@@ -202,7 +202,7 @@ template <typename AddendMetric> void SumMetric<AddendMetric>::addMetricToSum(co
     metrics[metrics.size() - 1] = &metric;
     _metricsToSum.swap(metrics);
     // Ensure we don't use extra memory
-    assert(_metricsToSum.capacity() == _metricsToSum.size());
+    CHECK(_metricsToSum.capacity() == _metricsToSum.size());
 }
 
 template <typename AddendMetric> void SumMetric<AddendMetric>::removeMetricFromSum(const AddendMetric& metric) {

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
@@ -11,8 +12,6 @@
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/imported_attribute_fixture.h>
 #include <vespa/vespalib/gtest/gtest.h>
-
-#include <cassert>
 
 using search::attribute::IAttributeVector;
 using search::common::sortspec::MissingPolicy;
@@ -560,7 +559,7 @@ struct TensorAttrFixture : Fixture {
     Value::UP getTensor(DocId docId) {
         auto                    imp_attr = this->get_imported_attr();
         const ITensorAttribute* tensorAttr = imp_attr->asTensorAttribute();
-        assert(tensorAttr != nullptr);
+        CHECK(tensorAttr != nullptr);
         return tensorAttr->getTensor(docId);
     }
     void assertNoTensor(DocId docId) {

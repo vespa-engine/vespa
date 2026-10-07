@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -106,7 +107,7 @@ document::BucketId ChangedBucketOwnershipHandlerTest::nextOwnedBucket(uint16_t  
         }
         ++idx;
     }
-    assert(!"should never get here");
+    CHECK(!"should never get here");
 }
 
 std::vector<document::BucketId> ChangedBucketOwnershipHandlerTest::insertBuckets(uint32_t                 numBuckets,

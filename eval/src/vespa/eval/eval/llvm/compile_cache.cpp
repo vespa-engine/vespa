@@ -2,6 +2,7 @@
 
 #include "compile_cache.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/key_gen.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 
@@ -53,7 +54,7 @@ CompileCache::Token::UP CompileCache::compile(const Function& function, PassPara
             token = std::make_unique<Token>(pos, Token::ctor_tag());
         } else {
             auto res = _cached.emplace(std::move(key), Value::ctor_tag());
-            assert(res.second);
+            CHECK(res.second);
             token = std::make_unique<Token>(res.first, Token::ctor_tag());
             task = std::make_unique<CompileTask>(function, pass_params, res.first->second.result);
             task = CpuUsage::wrap(std::move(task), CpuUsage::Category::SETUP);

@@ -4,6 +4,7 @@
 
 #include "messages.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/select/bodyfielddetector.h>
 #include <vespa/document/select/parser.h>
@@ -353,7 +354,7 @@ void validateDocumentSelection(const document::DocumentTypeRepo& repo, const doc
 
 bool VisitorThread::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>& cmd) {
     metrics::MetricTimer visitorTimer;
-    assert(_currentlyRunningVisitor == _visitors.end());
+    CHECK(_currentlyRunningVisitor == _visitors.end());
     ReturnCode                              result(ReturnCode::OK);
     std::unique_ptr<document::select::Node> docSelection;
     std::unique_ptr<mbus::Route>            controlAddress;
@@ -448,7 +449,7 @@ bool VisitorThread::onCreateVisitor(const std::shared_ptr<api::CreateVisitorComm
             // added visitor to internal structs we'll end up calling
             // close() twice.
             LOG(error, "Got exception we can't handle: %s", e.what());
-            assert(false);
+            CHECK(false);
         }
         _metrics.createdVisitors.inc(1);
         visitorTimer.stop(_metrics.averageVisitorCreationTime);
@@ -513,7 +514,7 @@ bool VisitorThread::onInternalReply(const std::shared_ptr<api::InternalReply>& r
     switch (r->getType()) {
     case GetIterReply::ID: {
         auto reply = std::dynamic_pointer_cast<GetIterReply>(r);
-        assert(reply.get());
+        CHECK(reply.get());
         _currentlyRunningVisitor->second->onGetIterReply(reply, _metrics);
         if (_currentlyRunningVisitor->second->isCompleted()) {
             LOG(debug, "onGetIterReply(%s): Visitor completed.",
@@ -524,7 +525,7 @@ bool VisitorThread::onInternalReply(const std::shared_ptr<api::InternalReply>& r
     }
     case CreateIteratorReply::ID: {
         auto reply = std::dynamic_pointer_cast<CreateIteratorReply>(r);
-        assert(reply.get());
+        CHECK(reply.get());
         _currentlyRunningVisitor->second->onCreateIteratorReply(reply, _metrics);
         break;
     }

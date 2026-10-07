@@ -5,6 +5,7 @@
 #include "document_meta_store_versions.h"
 #include "documentidsaver.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 
@@ -44,13 +45,13 @@ public:
 
     void operator()(documentmetastore::GidToLidMapKey key) {
         auto lid = key.get_lid();
-        assert(lid < _metadataView.size());
+        CHECK(lid < _metadataView.size());
         const RawDocumentMetadata& metadata = _metadataView[lid];
         const GlobalId&            gid = metadata.getGid();
         // 6 bits used for bucket bits
         uint8_t bucketUsedBits = metadata.getBucketUsedBits();
-        assert(BucketId::validUsedBits(bucketUsedBits));
-        assert((bucketUsedBits >> BucketId::CountBits) == 0);
+        CHECK(BucketId::validUsedBits(bucketUsedBits));
+        CHECK((bucketUsedBits >> BucketId::CountBits) == 0);
         Timestamp             timestamp = metadata.getTimestamp();
         search::BufferWriter& datWriter(_datWriter);
         datWriter.write(&lid, sizeof(lid));
@@ -61,7 +62,7 @@ public:
             if (_write_doc_size32) {
                 datWriter.write(&docSize, sizeof(docSize));
             } else {
-                assert(docSize < (1u << 24));
+                CHECK(docSize < (1u << 24));
                 uint8_t  docSizeLow = docSize;
                 uint16_t docSizeHigh = docSize >> 8;
                 datWriter.write(&docSizeLow, sizeof(docSizeLow));

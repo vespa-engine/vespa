@@ -2,7 +2,7 @@
 
 #include "uri_field.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search::index {
 
@@ -70,7 +70,7 @@ void UriField::markUsed(UsedFieldsMap& usedFields, uint32_t field) {
     if (field == Schema::UNKNOWN_FIELD_ID) {
         return;
     }
-    assert(usedFields.size() > field);
+    CHECK(usedFields.size() > field);
     usedFields[field] = true;
 }
 

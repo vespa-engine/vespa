@@ -4,6 +4,7 @@
 
 #include "i_field_index_insert_listener.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -61,8 +62,8 @@ template <bool interleaved_features> void OrderedFieldIndexInserter<interleaved_
 
 template <bool interleaved_features> void OrderedFieldIndexInserter<interleaved_features>::flush() {
     flushWord();
-    assert(_adds_offset == _adds.size());
-    assert(_removes_offset == _removes.size());
+    CHECK(_adds_offset == _adds.size());
+    CHECK(_removes_offset == _removes.size());
     if (!_adds.empty()) {
         _fieldIndex.add_features_guard_bytes();
     }
@@ -85,8 +86,8 @@ template <bool interleaved_features> void OrderedFieldIndexInserter<interleaved_
             DictionaryTree&               dTree(_fieldIndex.getDictionaryTree());
             dTree.insert(_dItr, insertKey, vespalib::datastore::AtomicEntryRef());
         }
-        assert(_dItr.valid());
-        assert(word == wordStore.getWord(_dItr.getKey()._wordRef));
+        CHECK(_dItr.valid());
+        CHECK(word == wordStore.getWord(_dItr.getKey()._wordRef));
         for (auto& add_entry : adds) {
             _listener.insert(_dItr.getKey()._wordRef, add_entry._key);
         }
@@ -100,8 +101,8 @@ template <bool interleaved_features> void OrderedFieldIndexInserter<interleaved_
         adds_offset += adds.size();
         removes_offset += removes.size();
     }
-    assert(adds_offset == _adds.size());
-    assert(removes_offset == _removes.size());
+    CHECK(adds_offset == _adds.size());
+    CHECK(removes_offset == _removes.size());
     _removes_offset = 0;
     _adds_offset = 0;
     _adds.clear();
@@ -118,7 +119,7 @@ template <bool interleaved_features>
 void OrderedFieldIndexInserter<interleaved_features>::setNextWord(const std::string_view word) {
     flushWord();
     // TODO: Adjust here if zero length words should be legal.
-    assert(_word < word);
+    CHECK(_word < word);
     _word = word;
     _prevDocId = noDocId;
     _prevAdd = false;
@@ -126,9 +127,9 @@ void OrderedFieldIndexInserter<interleaved_features>::setNextWord(const std::str
 
 template <bool interleaved_features>
 void OrderedFieldIndexInserter<interleaved_features>::add(uint32_t docId, const index::DocIdAndFeatures& features) {
-    assert(docId != noDocId);
-    assert(_prevDocId == noDocId || _prevDocId < docId || (_prevDocId == docId && !_prevAdd));
-    assert(features.num_occs() <= features.field_length());
+    CHECK(docId != noDocId);
+    CHECK(_prevDocId == noDocId || _prevDocId < docId || (_prevDocId == docId && !_prevAdd));
+    CHECK(features.num_occs() <= features.field_length());
     vespalib::datastore::EntryRef featureRef = _fieldIndex.addFeatures(features);
     _adds.push_back(PostingListKeyDataType(
         docId, PostingListEntryType(featureRef, cap_u16(features.num_occs()), cap_u16(features.field_length()))));
@@ -137,15 +138,15 @@ void OrderedFieldIndexInserter<interleaved_features>::add(uint32_t docId, const 
 }
 
 template <bool interleaved_features> void OrderedFieldIndexInserter<interleaved_features>::remove(uint32_t docId) {
-    assert(docId != noDocId);
-    assert(_prevDocId == noDocId || _prevDocId < docId);
+    CHECK(docId != noDocId);
+    CHECK(_prevDocId == noDocId || _prevDocId < docId);
     _removes.push_back(docId);
     _prevDocId = docId;
     _prevAdd = false;
 }
 
 template <bool interleaved_features> void OrderedFieldIndexInserter<interleaved_features>::rewind() {
-    assert(_removes.empty() && _adds.empty());
+    CHECK(_removes.empty() && _adds.empty());
     _word = "";
     _prevDocId = noDocId;
     _prevAdd = false;

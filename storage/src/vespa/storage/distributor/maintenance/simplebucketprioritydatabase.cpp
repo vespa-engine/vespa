@@ -2,9 +2,10 @@
 
 #include "simplebucketprioritydatabase.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-#include <cassert>
 #include <ostream>
 #include <sstream>
 
@@ -29,11 +30,11 @@ void SimpleBucketPriorityDatabase::setPriority(const PrioritizedBucket& bucket) 
     if (bucket.requiresMaintenance()) {
         auto pri_insert_res =
             _pri_fifo_buckets.emplace(PriFifoCompositeKey(bucket.getPriority(), _fifo_seq_num), bucket.getBucket());
-        assert(pri_insert_res.second);
+        CHECK(pri_insert_res.second);
         ++_fifo_seq_num;
         auto inv_insert_res =
             _bucket_to_pri_iterators.insert(std::make_pair(bucket.getBucket(), pri_insert_res.first));
-        assert(inv_insert_res.second);
+        CHECK(inv_insert_res.second);
     }
 }
 
@@ -50,7 +51,7 @@ bool SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::equal(
 }
 
 PrioritizedBucket SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::dereference() const noexcept {
-    assert(_pri_fifo_iter != _pri_fifo_end);
+    CHECK(_pri_fifo_iter != _pri_fifo_end);
     return {_pri_fifo_iter->second, _pri_fifo_iter->first._pri};
 }
 

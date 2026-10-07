@@ -4,12 +4,11 @@
 
 #include "bucket.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
-#include <cassert>
 
 using vespalib::Trinary;
 
@@ -37,8 +36,8 @@ ClusterState::ClusterState(const ClusterState& other) = default;
 ClusterState::~ClusterState() = default;
 
 Trinary ClusterState::shouldBeReady(const Bucket& b) const {
-    assert(_distribution);
-    assert(_state);
+    CHECK(_distribution);
+    CHECK(_state);
 
     if (b.getBucketId().getUsedBits() < _state->getDistributionBitCount()) {
         return Trinary::Undefined;

@@ -14,7 +14,6 @@
 #include <vespa/vespalib/util/stash.h>
 
 #include <algorithm>
-#include <cassert>
 
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;

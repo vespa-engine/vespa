@@ -2,6 +2,7 @@
 
 #include "generic_lambda.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/vespalib/util/small_vector.h>
@@ -55,7 +56,7 @@ struct CompiledParams {
           bindings(lambda.bindings()),
           num_cells(result_type.dense_subspace_size()),
           token(CompileCache::compile(lambda.lambda(), PassParams::ARRAY)) {
-        assert(lambda.lambda().num_params() == (result_type.dimensions().size() + bindings.size()));
+        CHECK(lambda.lambda().num_params() == (result_type.dimensions().size() + bindings.size()));
     }
 };
 
@@ -91,7 +92,7 @@ struct InterpretedParams {
           bindings(lambda.bindings()),
           num_cells(result_type.dense_subspace_size()),
           fun(factory, lambda.lambda().root(), lambda.types()) {
-        assert(lambda.lambda().num_params() == (result_type.dimensions().size() + bindings.size()));
+        CHECK(lambda.lambda().num_params() == (result_type.dimensions().size() + bindings.size()));
     }
 };
 
@@ -119,7 +120,7 @@ struct MyInterpretedLambdaOp {
 Instruction GenericLambda::make_instruction(const tensor_function::Lambda& lambda_in,
                                             const ValueBuilderFactory& factory, Stash& stash) {
     const ValueType& result_type = lambda_in.result_type();
-    assert(result_type.count_mapped_dimensions() == 0);
+    CHECK(result_type.count_mapped_dimensions() == 0);
     if (!CompiledFunction::detect_issues(lambda_in.lambda()) && lambda_in.types().all_types_are_double()) {
         // can do compiled version
         CompiledParams& params = stash.create<CompiledParams>(lambda_in);

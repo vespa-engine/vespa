@@ -2,6 +2,7 @@
 
 #include "bucketdatabasetest.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/bucketdb/btree_bucket_database.h>
 #include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/vespalib/util/time.h>
@@ -108,18 +109,18 @@ TEST_F(BTreeReadGuardTest, multithreaded_read_guards_observe_stable_snapshots) {
             }
             ++read_counter;
             // Use plain assertions to avoid any implicit thread/lock interactions with gtest
-            assert(entries.size() == 1);
+            CHECK(entries.size() == 1);
             const auto& entry = entries[0];
-            assert(entry.getBucketId() == bucket);
-            assert(entry->getNodeCount() == 3);
+            CHECK(entry.getBucketId() == bucket);
+            CHECK(entry->getNodeCount() == 3);
             // We reuse the same write counter as GC timestamp and checksum/doc count/size across
             // all stored bucket infos in a given bucket.
             const auto expected_stable_val = entry->getLastGarbageCollectionTime();
             for (uint16_t i = 0; i < 3; ++i) {
                 const auto& info = entry->getNodeRef(i);
-                assert(info.getChecksum() == expected_stable_val);
-                assert(info.getDocumentCount() == expected_stable_val);
-                assert(info.getTotalDocumentSize() == expected_stable_val);
+                CHECK(info.getChecksum() == expected_stable_val);
+                CHECK(info.getDocumentCount() == expected_stable_val);
+                CHECK(info.getTotalDocumentSize() == expected_stable_val);
             }
         }
     });

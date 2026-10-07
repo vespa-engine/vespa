@@ -11,6 +11,7 @@
 #include "numeric_sort_blob_writer.h"
 #include "string_to_number.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/util/stash.h>
@@ -62,7 +63,7 @@ bool MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase& attrRead
     uint32_t numDocs = attrReader.getNumIdx() - 1;
     uint64_t numValues = attrReader.getNumValues();
     uint64_t enumCount = attrReader.getEnumCount();
-    assert(numValues == enumCount);
+    CHECK(numValues == enumCount);
     (void)enumCount;
 
     this->setNumDocs(numDocs);

@@ -7,6 +7,7 @@
 #include "persistenceutil.h"
 #include "testandsethelper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/persistence/spi/catchresult.h>
@@ -36,7 +37,7 @@ public:
     void addResultHandler(const spi::ResultHandler* resultHandler) {
         // Only handles a single handler now,
         // Can be extended if necessary later on
-        assert(_resultHandler == nullptr);
+        CHECK(_resultHandler == nullptr);
         _resultHandler = resultHandler;
     }
 

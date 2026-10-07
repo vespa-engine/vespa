@@ -2,6 +2,7 @@
 
 #include "attribute_updater.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/forcelink.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/literalfieldvalue.h>
@@ -193,7 +194,7 @@ void AttributeUpdater::handleUpdateT(V& vec, Accessor, uint32_t lid, const Value
 template <> void AttributeUpdater::handleUpdate(PredicateAttribute& vec, uint32_t lid, const ValueUpdate& upd) {
     LOG(spam, "handleValueUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
     ValueUpdate::ValueUpdateType op = upd.getType();
-    assert(!vec.hasMultiValue());
+    CHECK(!vec.hasMultiValue());
     if (op == ValueUpdate::Assign) {
         const AssignValueUpdate& assign(static_cast<const AssignValueUpdate&>(upd));
         if (assign.hasValue()) {
@@ -216,7 +217,7 @@ template <> void AttributeUpdater::handleUpdate(TensorAttribute& vec, uint32_t l
         return;
     }
     ValueUpdate::ValueUpdateType op = upd.getType();
-    assert(!vec.hasMultiValue());
+    CHECK(!vec.hasMultiValue());
     if (op == ValueUpdate::Assign) {
         const AssignValueUpdate& assign(static_cast<const AssignValueUpdate&>(upd));
         if (assign.hasValue()) {
@@ -241,7 +242,7 @@ template <> void AttributeUpdater::handleUpdate(TensorAttribute& vec, uint32_t l
 template <> void AttributeUpdater::handleUpdate(ReferenceAttribute& vec, uint32_t lid, const ValueUpdate& upd) {
     LOG(spam, "handleUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
     ValueUpdate::ValueUpdateType op = upd.getType();
-    assert(!vec.hasMultiValue());
+    CHECK(!vec.hasMultiValue());
     if (op == ValueUpdate::Assign) {
         const AssignValueUpdate& assign(static_cast<const AssignValueUpdate&>(upd));
         if (assign.hasValue()) {
@@ -258,7 +259,7 @@ template <> void AttributeUpdater::handleUpdate(ReferenceAttribute& vec, uint32_
 template <> void AttributeUpdater::handleUpdate(SingleRawAttribute& vec, uint32_t lid, const ValueUpdate& upd) {
     LOG(spam, "handleUpdate(%s, %u): %s", vec.getName().c_str(), lid, toString(upd).c_str());
     ValueUpdate::ValueUpdateType op = upd.getType();
-    assert(!vec.hasMultiValue());
+    CHECK(!vec.hasMultiValue());
     if (op == ValueUpdate::Assign) {
         const AssignValueUpdate& assign(static_cast<const AssignValueUpdate&>(upd));
         if (assign.hasValue()) {
@@ -613,7 +614,7 @@ void complete_set_tensor(TensorAttribute& attr, uint32_t docid, const FieldValue
             attr.complete_set_tensor(docid, *tensor, std::move(prepare_result));
         } else {
             auto* quantized_wrapper = dynamic_cast<QuantizedPrepareResultWrapper*>(prepare_result.get());
-            assert(quantized_wrapper != nullptr);
+            CHECK(quantized_wrapper != nullptr);
             attr.complete_set_tensor(docid, quantized_wrapper->quantized_tensor(),
                                      quantized_wrapper->steal_nested_prepare());
         }

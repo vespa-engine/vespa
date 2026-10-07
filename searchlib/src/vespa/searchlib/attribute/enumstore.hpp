@@ -5,6 +5,7 @@
 #include "enumcomparator.h"
 #include "enumstore.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
@@ -136,7 +137,7 @@ template <class EntryT> void EnumStoreT<EntryT>::write_value(BufferWriter& write
 
 template <class EntryT> bool EnumStoreT<EntryT>::is_folded_change(Index idx1, Index idx2) const {
     const auto& cmp = get_lookup_source();
-    assert(!cmp.less(idx2, idx1));
+    CHECK(!cmp.less(idx2, idx1));
     return cmp.less(idx1, idx2);
 }
 

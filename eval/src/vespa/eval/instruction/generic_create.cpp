@@ -2,14 +2,13 @@
 
 #include "generic_create.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
 
 #include <vespa/eval/eval/fast_value.hpp>
-
-#include <cassert>
 
 using namespace vespalib::eval::tensor_function;
 
@@ -53,17 +52,17 @@ struct CreateParam {
             auto                dim = res_type.dimensions().begin();
             auto                binding = entry.first.begin();
             for (; dim != res_type.dimensions().end(); ++dim, ++binding) {
-                assert(binding != entry.first.end());
-                assert(dim->name == binding->first);
-                assert(dim->is_mapped() == binding->second.is_mapped());
+                CHECK(binding != entry.first.end());
+                CHECK(dim->name == binding->first);
+                CHECK(dim->is_mapped() == binding->second.is_mapped());
                 if (dim->is_mapped()) {
                     sparse_key.push_back(Handle(binding->second.name));
                 } else {
-                    assert(binding->second.index < dim->size);
+                    CHECK(binding->second.index < dim->size);
                     dense_key = (dense_key * dim->size) + binding->second.index;
                 }
             }
-            assert(binding == entry.first.end());
+            CHECK(binding == entry.first.end());
             // note: reverse order of children on stack
             size_t stack_idx = last_child - entry.second;
             indexes(sparse_key)[dense_key] = stack_idx;

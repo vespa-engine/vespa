@@ -4,8 +4,9 @@
 
 #include "btreenode.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 
 namespace vespalib::btree {
 
@@ -59,8 +60,8 @@ uint32_t BTreeNodeT<KeyT, NumSlots>::upper_bound(uint32_t sidx, const KeyT& key,
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::insert(uint32_t idx, const KeyT& key, const DataT& data) noexcept {
-    assert(validSlots() < NodeType::maxSlots());
-    assert(!getFrozen());
+    CHECK(validSlots() < NodeType::maxSlots());
+    CHECK(!getFrozen());
     for (uint32_t i = validSlots(); i > idx; --i) {
         _keys[i] = _keys[i - 1];
         setData(i, getData(i - 1));
@@ -73,8 +74,8 @@ void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::insert(uint32_t idx, const KeyT&
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::splitInsert(NodeType* splitNode, uint32_t idx, const KeyT& key,
                                                             const DataT& data) noexcept {
-    assert(!getFrozen());
-    assert(!splitNode->getFrozen());
+    CHECK(!getFrozen());
+    CHECK(!splitNode->getFrozen());
     SplitInsertHelper sih(idx, validSlots());
     splitNode->_validSlots = validSlots() - sih.getMedian();
     for (uint32_t i = sih.getMedian(); i < validSlots(); ++i) {
@@ -92,7 +93,7 @@ void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::splitInsert(NodeType* splitNode,
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::remove(uint32_t idx) noexcept {
-    assert(!getFrozen());
+    CHECK(!getFrozen());
     for (uint32_t i = idx + 1; i < validSlots(); ++i) {
         _keys[i - 1] = _keys[i];
         setData(i - 1, getData(i));
@@ -104,8 +105,8 @@ void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::remove(uint32_t idx) noexcept {
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::stealAllFromLeftNode(const NodeType* victim) noexcept {
-    assert(validSlots() + victim->validSlots() <= NodeType::maxSlots());
-    assert(!getFrozen());
+    CHECK(validSlots() + victim->validSlots() <= NodeType::maxSlots());
+    CHECK(!getFrozen());
     for (int i = validSlots() - 1; i >= 0; --i) {
         _keys[i + victim->validSlots()] = _keys[i];
         setData(i + victim->validSlots(), getData(i));
@@ -119,8 +120,8 @@ void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::stealAllFromLeftNode(const NodeT
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::stealAllFromRightNode(const NodeType* victim) noexcept {
-    assert(validSlots() + victim->validSlots() <= NodeType::maxSlots());
-    assert(!getFrozen());
+    CHECK(validSlots() + victim->validSlots() <= NodeType::maxSlots());
+    CHECK(!getFrozen());
     for (uint32_t i = 0; i < victim->validSlots(); ++i) {
         _keys[validSlots() + i] = victim->_keys[i];
         setData(validSlots() + i, victim->getData(i));
@@ -130,9 +131,9 @@ void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::stealAllFromRightNode(const Node
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::stealSomeFromLeftNode(NodeType* victim) noexcept {
-    assert(validSlots() + victim->validSlots() >= NodeType::minSlots());
-    assert(!getFrozen());
-    assert(!victim->getFrozen());
+    CHECK(validSlots() + victim->validSlots() >= NodeType::minSlots());
+    CHECK(!getFrozen());
+    CHECK(!victim->getFrozen());
     uint32_t median = (validSlots() + victim->validSlots() + 1) / 2;
     uint32_t steal = median - validSlots();
     _validSlots += steal;
@@ -150,9 +151,9 @@ void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::stealSomeFromLeftNode(NodeType* 
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::stealSomeFromRightNode(NodeType* victim) noexcept {
-    assert(validSlots() + victim->validSlots() >= NodeType::minSlots());
-    assert(!getFrozen());
-    assert(!victim->getFrozen());
+    CHECK(validSlots() + victim->validSlots() >= NodeType::minSlots());
+    CHECK(!getFrozen());
+    CHECK(!victim->getFrozen());
     uint32_t median = (validSlots() + victim->validSlots() + 1) / 2;
     uint32_t steal = median - validSlots();
     for (uint32_t i = 0; i < steal; ++i) {
@@ -170,10 +171,10 @@ void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::stealSomeFromRightNode(NodeType*
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanRange(uint32_t from, uint32_t to) noexcept {
-    assert(from < to);
-    assert(to <= validSlots());
-    assert(validSlots() <= NodeType::maxSlots());
-    assert(!getFrozen());
+    CHECK(from < to);
+    CHECK(to <= validSlots());
+    CHECK(validSlots() <= NodeType::maxSlots());
+    CHECK(!getFrozen());
     KeyT emptyKey = KeyT();
     for (KeyT *k = _keys + from, *ke = _keys + to; k != ke; ++k) {
         *k = emptyKey;
@@ -195,8 +196,8 @@ void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::clean() noexcept {
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanFrozen() noexcept {
-    assert(validSlots() <= NodeType::maxSlots());
-    assert(getFrozen());
+    CHECK(validSlots() <= NodeType::maxSlots());
+    CHECK(getFrozen());
     if (validSlots() == 0) {
         return;
     }
@@ -216,8 +217,8 @@ template <typename NodeAllocatorType>
 void BTreeInternalNode<KeyT, AggrT, NumSlots>::splitInsert(BTreeInternalNode* splitNode, uint32_t idx,
                                                            const KeyT& key, const BTreeNode::Ref& data,
                                                            NodeAllocatorType& allocator) noexcept {
-    assert(!getFrozen());
-    assert(!splitNode->getFrozen());
+    CHECK(!getFrozen());
+    CHECK(!splitNode->getFrozen());
     SplitInsertHelper sih(idx, validSlots());
     splitNode->_validSlots = validSlots() - sih.getMedian();
     uint32_t splitLeaves = 0;
@@ -256,8 +257,8 @@ template <typename KeyT, typename AggrT, uint32_t NumSlots>
 template <typename NodeAllocatorType>
 uint32_t BTreeInternalNode<KeyT, AggrT, NumSlots>::countValidLeaves(uint32_t start, uint32_t end,
                                                                     NodeAllocatorType& allocator) noexcept {
-    assert(start <= end);
-    assert(end <= validSlots());
+    CHECK(start <= end);
+    CHECK(end <= validSlots());
     uint32_t leaves = 0;
     for (uint32_t i = start; i < end; ++i) {
         leaves += allocator.validLeaves(getChild(i));
@@ -356,7 +357,7 @@ void BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach(NodeStoreType& store, Fun
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::BTreeLeafNode(const KeyDataType* smallArray, uint32_t arraySize) noexcept
     : ParentType(LEAF_LEVEL) {
-    assert(arraySize <= BTreeLeafNode::maxSlots());
+    CHECK(arraySize <= BTreeLeafNode::maxSlots());
     _validSlots = arraySize;
     for (uint32_t idx = 0; idx < arraySize; ++idx) {
         _keys[idx] = smallArray[idx]._key;

@@ -6,10 +6,10 @@
 #include "near_search_flags.h"
 #include "near_search_utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/priority_queue.h>
 
-#include <cassert>
 #include <map>
 
 #include <vespa/log/log.h>
@@ -84,7 +84,7 @@ NearSearchBase::NearSearchBase(Children terms, const TermFieldMatchDataArray& da
       _match_spans(),
       _unpacked_docid(beginId()) {
     // we need at least one positive term
-    assert(getChildren().size() > _num_negative_terms);
+    CHECK(getChildren().size() > _num_negative_terms);
 }
 
 NearSearchBase::~NearSearchBase() = default;
@@ -420,7 +420,7 @@ bool NearSearch::match(uint32_t docId) {
 
 void NearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids) {
     // Retrieve the elements that matched
-    assert(element_ids.empty());
+    CHECK(element_ids.empty());
     ElementIdMatchResult match_result(element_ids);
     for (auto& matcher : _matchers) {
         matcher.match(docId, match_result);
@@ -430,7 +430,7 @@ void NearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element_
 
 void NearSearch::get_match_spans(uint32_t docid, std::vector<MatchSpan>& match_spans) {
     // Retrieve spans that matched
-    assert(match_spans.empty());
+    CHECK(match_spans.empty());
     SpanMatchResult match_result(match_spans);
     for (auto& matcher : _matchers) {
         matcher.match(docid, match_result);
@@ -585,7 +585,7 @@ bool ONearSearch::match(uint32_t docId) {
 
 void ONearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element_ids) {
     // Retrieve the elements that matched
-    assert(element_ids.empty());
+    CHECK(element_ids.empty());
     ElementIdMatchResult match_result(element_ids);
     for (auto& matcher : _matchers) {
         matcher.match(docId, match_result);
@@ -595,7 +595,7 @@ void ONearSearch::get_element_ids(uint32_t docId, std::vector<uint32_t>& element
 
 void ONearSearch::get_match_spans(uint32_t docid, std::vector<MatchSpan>& match_spans) {
     // Retrieve spans that matched
-    assert(match_spans.empty());
+    CHECK(match_spans.empty());
     SpanMatchResult match_result(match_spans);
     for (auto& matcher : _matchers) {
         matcher.match(docid, match_result);

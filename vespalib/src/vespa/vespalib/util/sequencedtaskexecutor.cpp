@@ -5,13 +5,12 @@
 #include "adaptive_sequenced_executor.h"
 #include "singleexecutor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/hashtable.h>
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-
-#include <cassert>
 
 namespace vespalib {
 
@@ -101,7 +100,7 @@ SequencedTaskExecutor::SequencedTaskExecutor(std::vector<std::unique_ptr<vespali
                              MAGIC),
       _mutex(),
       _nextId(0) {
-    assert(getNumExecutors() < 256);
+    CHECK(getNumExecutors() < 256);
 
     for (size_t i(0); i < getNumExecutors() * NUM_PERFECT_PER_EXECUTOR; i++) {
         _component2IdPerfect[i] = INVALID_KEY;
@@ -115,9 +114,9 @@ void SequencedTaskExecutor::setTaskLimit(uint32_t taskLimit) {
 }
 
 void SequencedTaskExecutor::executeTask(ExecutorId id, vespalib::Executor::Task::UP task) {
-    assert(id.getId() < _executors.size());
+    CHECK(id.getId() < _executors.size());
     auto rejectedTask = _executors[id.getId()]->execute(std::move(task));
-    assert(!rejectedTask);
+    CHECK(!rejectedTask);
 }
 
 void SequencedTaskExecutor::sync_all() {

@@ -5,6 +5,7 @@
 #include "dense_cell_range_function.h"
 #include "dense_lambda_peek_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/basic_nodes.h>
 #include <vespa/eval/eval/call_nodes.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
@@ -169,8 +170,8 @@ const TensorFunction& DenseLambdaPeekOptimizer::optimize(const TensorFunction& e
             const ValueType& dst_type = lambda->result_type();
             const ValueType& src_type = lambda->types().get_type(peek->param());
             if (src_type.is_dense()) {
-                assert(lambda->bindings().size() == 1);
-                assert(src_type.dimensions().size() == peek->dim_list().size());
+                CHECK(lambda->bindings().size() == 1);
+                CHECK(src_type.dimensions().size() == peek->dim_list().size());
                 size_t       param_idx = lambda->bindings()[0];
                 PeekAnalyzer analyzer(dst_type, src_type, peek->dim_list());
                 auto         result = analyzer.analyze_indexes();

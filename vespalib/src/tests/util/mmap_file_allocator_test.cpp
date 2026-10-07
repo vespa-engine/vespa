@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/mmap_file_allocator.h>
 
@@ -93,8 +94,8 @@ TEST_P(MmapFileAllocatorTest, mmap_file_allocator_works) {
 TEST_P(MmapFileAllocatorTest, reuse_file_offset_works) {
     constexpr size_t size_300 = 300;
     constexpr size_t size_600 = 600;
-    assert(hello.size() + 1 <= size_300);
-    assert(world.size() + 1 <= size_600);
+    CHECK(hello.size() + 1 <= size_300);
+    CHECK(world.size() + 1 <= size_600);
     {
         MyAlloc buf(_allocator, _allocator.alloc(size_300));
         memcpy(buf.data, hello.c_str(), hello.size() + 1);

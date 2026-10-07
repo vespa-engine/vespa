@@ -6,8 +6,6 @@
 
 #include <vespa/fnet/info.h>
 
-#include <cassert>
-
 FRT_RPCRequest::FRT_RPCRequest()
     : _stash(),
       _context(),

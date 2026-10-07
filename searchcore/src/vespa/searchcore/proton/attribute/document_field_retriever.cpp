@@ -2,6 +2,7 @@
 
 #include "document_field_retriever.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
@@ -140,7 +141,7 @@ void set_raw_value(DocumentIdT lid, Document& doc, const document::Field& field,
 
 void setTensorValue(DocumentIdT lid, Document& doc, const document::Field& field, const IAttributeVector& attr) {
     const auto& tensorAttribute = static_cast<const TensorAttribute&>(attr);
-    assert(!tensorAttribute.is_quantized()); // Should never populate document fields from lossy, quantized attribute
+    CHECK(!tensorAttribute.is_quantized()); // Should never populate document fields from lossy, quantized attribute
     auto tensor = tensorAttribute.getTensor(lid);
     if (tensor) {
         auto tensorField = field.createValue();

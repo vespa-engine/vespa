@@ -9,6 +9,7 @@
 #include "queryenvironmentbuilder.h"
 #include "rankresult.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/weight.h>
@@ -187,7 +188,7 @@ struct FtIndex {
         return *this;
     }
     FtIndex& element(const std::string& content, int32_t weight = 1) {
-        assert(!cursor.empty());
+        CHECK(!cursor.empty());
         index[cursor].push_back(Element(weight, FtUtil::tokenize(content, " ")));
         return *this;
     }

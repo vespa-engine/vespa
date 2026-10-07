@@ -4,7 +4,7 @@
 
 #include "btreebuilder.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::btree {
 
@@ -44,7 +44,7 @@ BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::~BTreeB
 
 template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
 void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::recursiveDelete(NodeRef node) {
-    assert(_allocator.isValidRef(node));
+    CHECK(_allocator.isValidRef(node));
     if (_allocator.isLeafRef(node)) {
         _allocator.holdNode(node, _allocator.mapLeafRef(node));
         _numLeafNodes--;
@@ -68,8 +68,8 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::no
 
     if (_inodes.size() == 0) {
         if (leafNode->validSlots() == 0) {
-            assert(_numLeafNodes == 1);
-            assert(_numInserts == 0);
+            CHECK(_numLeafNodes == 1);
+            CHECK(_numInserts == 0);
             _allocator.holdNode(_leaf.ref, _leaf.data);
             _numLeafNodes--;
             _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType*>(nullptr));
@@ -77,7 +77,7 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::no
         if constexpr (AggrCalcT::hasAggregated()) {
             Aggregator::recalc(*leafNode, _aggrCalc);
         }
-        assert(_numInserts == leafNode->validSlots());
+        CHECK(_numInserts == leafNode->validSlots());
         return;
     }
 
@@ -88,8 +88,8 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::no
     for (level = 0; level < _inodes.size(); level++) {
         InternalNodeType* inode = _inodes[level].data;
         NodeRef           lcRef(inode->get_last_child_relaxed());
-        assert(NodeAllocatorType::isValidRef(lcRef));
-        assert((level == 0) == _allocator.isLeafRef(lcRef));
+        CHECK(NodeAllocatorType::isValidRef(lcRef));
+        CHECK((level == 0) == _allocator.isLeafRef(lcRef));
         inode->incValidLeaves(_allocator.validLeaves(inode->get_last_child_relaxed()));
         inode->update(inode->validSlots() - 1,
                       level == 0 ? _allocator.mapLeafRef(lcRef)->getLastKey()
@@ -109,11 +109,11 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::no
         InternalNodeType* inode = _inodes[level].data;
         if (inode->validSlots() < 2) {
             /* Use last child of left to rightmost node on level */
-            assert(level + 1 < _inodes.size());
+            CHECK(level + 1 < _inodes.size());
             iRef = leftInodes[level];
             inode = _allocator.mapInternalRef(iRef);
-            assert(inode != nullptr);
-            assert(inode->validSlots() >= 1);
+            CHECK(inode != nullptr);
+            CHECK(inode->validSlots() >= 1);
             child = inode->get_last_child_relaxed();
         } else {
             /* Use next to last child of rightmost node on level */
@@ -123,11 +123,11 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::no
             break;
         }
         level--;
-        assert(!_allocator.isLeafRef(child));
+        CHECK(!_allocator.isLeafRef(child));
         leftInodes[level] = child;
     }
     /* Remember left to rightmost leaf node */
-    assert(_allocator.isLeafRef(child));
+    CHECK(_allocator.isLeafRef(child));
     leftLeaf = _allocator.mapLeafRef(child);
 
     /* Check fanout on rightmost leaf node */
@@ -187,7 +187,7 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::no
     for (level = 0; level + 1 < _inodes.size(); level++) {
         InternalNodeType* inode = _inodes[level].data;
         NodeRef           leftInodeRef = leftInodes[level];
-        assert(NodeAllocatorType::isValidRef(leftInodeRef));
+        CHECK(NodeAllocatorType::isValidRef(leftInodeRef));
         InternalNodeType* leftInode = _allocator.mapInternalRef(leftInodeRef);
 
         InternalNodeType* pnode = _inodes[level + 1].data;
@@ -243,10 +243,10 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::no
         }
     }
     /* Check fanout on root node */
-    assert(level < _inodes.size());
+    CHECK(level < _inodes.size());
     InternalNodeType* inode = _inodes[level].data;
-    assert(inode != nullptr);
-    assert(inode->validSlots() >= 1);
+    CHECK(inode != nullptr);
+    CHECK(inode->validSlots() >= 1);
     if (inode->validSlots() == 1) {
         /* Remove top level from proposed tree since fanout is 1 */
         NodeRef iRef = _inodes[level].ref;
@@ -255,9 +255,9 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::no
         _numInternalNodes--;
     }
     if (!_inodes.empty()) {
-        assert(_numInserts == _inodes.back().data->validLeaves());
+        CHECK(_numInserts == _inodes.back().data->validLeaves());
     } else {
-        assert(_numInserts == _leaf.data->validLeaves());
+        CHECK(_numInserts == _leaf.data->validLeaves());
     }
 }
 
@@ -293,7 +293,7 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::al
             break;
         }
         inode = _inodes[level].data;
-        assert(inode->validSlots() > 0);
+        CHECK(inode->validSlots() > 0);
         NodeRef lcRef(inode->get_last_child_relaxed());
         inode->incValidLeaves(_allocator.validLeaves(lcRef));
         inode->update(inode->validSlots() - 1,
@@ -316,9 +316,9 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::al
         break;
     }
     while (level > 0) {
-        assert(inode->validSlots() > 0);
+        CHECK(inode->validSlots() > 0);
         child = inode->get_last_child_relaxed();
-        assert(!_allocator.isLeafRef(child));
+        CHECK(!_allocator.isLeafRef(child));
         inode = _allocator.mapInternalRef(child);
         level--;
         _inodes[level] = InternalNodeTypeRefPair(child, inode);
@@ -374,16 +374,16 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::cl
         _inodes.clear();
     }
     if (NodeAllocatorType::isValidRef(_leaf.ref)) {
-        assert(_leaf.data != nullptr);
-        assert(_numLeafNodes == 1);
+        CHECK(_leaf.data != nullptr);
+        CHECK(_numLeafNodes == 1);
         _allocator.holdNode(_leaf.ref, _leaf.data);
         --_numLeafNodes;
         _leaf = LeafNodeTypeRefPair(NodeRef(), static_cast<LeafNodeType*>(nullptr));
     } else {
-        assert(_leaf.data == nullptr);
+        CHECK(_leaf.data == nullptr);
     }
-    assert(_numLeafNodes == 0);
-    assert(_numInternalNodes == 0);
+    CHECK(_numLeafNodes == 0);
+    CHECK(_numInternalNodes == 0);
 }
 
 } // namespace vespalib::btree

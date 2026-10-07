@@ -7,6 +7,7 @@
 #include "partial_result.h"
 #include "sort_feature_store.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
@@ -50,7 +51,7 @@ struct SimpleStrategy {
 
 LazyValue get_score_feature(const RankProgram& rankProgram) {
     FeatureResolver resolver(rankProgram.get_seeds());
-    assert(resolver.num_features() == 1u);
+    CHECK(resolver.num_features() == 1u);
     return resolver.resolve(0);
 }
 

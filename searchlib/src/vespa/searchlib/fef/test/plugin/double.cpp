@@ -2,17 +2,16 @@
 
 #include "double.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stash.h>
 
-#include <cassert>
-
 namespace search::fef::test {
 
 void DoubleExecutor::execute(uint32_t) {
-    assert(inputs().size() == _cnt);
-    assert(outputs().size() == _cnt);
+    CHECK(inputs().size() == _cnt);
+    CHECK(outputs().size() == _cnt);
     for (uint32_t i = 0; i < _cnt; ++i) {
         outputs().set_number(i, inputs().get_number(i) * 2);
     }

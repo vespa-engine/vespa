@@ -4,6 +4,7 @@
 
 #include "structuredcache.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -16,7 +17,6 @@
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-#include <cassert>
 #include <sstream>
 
 using vespalib::IllegalArgumentException;
@@ -146,7 +146,7 @@ Document::Document(Document&&) noexcept = default;
 Document::~Document() noexcept = default;
 
 Document& Document::operator=(Document&& rhs) noexcept {
-    assert(!_cache && !rhs._cache);
+    CHECK(!_cache && !rhs._cache);
     _id = std::move(rhs._id);
     _fields = std::move(rhs._fields);
     _backingBuffer = std::move(rhs._backingBuffer);
@@ -159,7 +159,7 @@ Document& Document::operator=(const Document& rhs) {
     if (this == &rhs) {
         return *this;
     }
-    assert(!_cache && !rhs._cache);
+    CHECK(!_cache && !rhs._cache);
     _id = rhs._id;
     _fields = rhs._fields;
     _lastModified = rhs._lastModified;

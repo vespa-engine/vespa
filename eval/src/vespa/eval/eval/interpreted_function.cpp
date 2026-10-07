@@ -9,6 +9,7 @@
 #include "optimize_tensor_function.h"
 #include "tensor_nodes.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/llvm/addr_to_symbol.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
@@ -108,7 +109,7 @@ const Value& InterpretedFunction::eval(Context& ctx, const LazyParams& params) c
     while (state.program_offset < _program.size()) {
         _program[state.program_offset++].perform(state);
     }
-    assert(state.stack.size() == 1);
+    CHECK(state.stack.size() == 1);
     return state.stack.back();
 }
 
@@ -124,7 +125,7 @@ const Value& InterpretedFunction::eval(ProfiledContext& pctx, const LazyParams& 
         ++pctx.cost[pos].first;                    // Profiling
         pctx.cost[pos].second += (after - before); // Profiling
     }
-    assert(state.stack.size() == 1);
+    CHECK(state.stack.size() == 1);
     return state.stack.back();
 }
 
@@ -172,7 +173,7 @@ const Value& InterpretedFunction::EvalSingle::eval(const std::vector<Value::CREF
     _state.stash.clear();
     _state.stack = stack;
     _op.perform(_state);
-    assert(_state.stack.size() == 1);
+    CHECK(_state.stack.size() == 1);
     return _state.stack.back();
 }
 

@@ -7,6 +7,7 @@
 #include "juniper_separators.h"
 #include "juniperdebug.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/util/casts.h>
 
@@ -239,7 +240,7 @@ SummaryDesc::highlight_desc::highlight_desc(off_t pos, ssize_t len, bool highlig
     : _pos(pos), _len(len), _highlight(highlight) {
     LOG(spam, "-- new desc: pos %" PRId64 " len %ld %s", static_cast<int64_t>(_pos), _len,
         (highlight ? "(highlight)" : ""));
-    assert(pos >= 0);
+    CHECK(pos >= 0);
 }
 
 SummaryDesc::SummaryDesc(Matcher* matcher, ssize_t length, ssize_t min_length, int max_matches, int surround_len)
@@ -439,9 +440,9 @@ int SummaryDesc::find_matches() {
 
         ssize_t size = m->size();
 
-        assert(size >= 0);
+        CHECK(size >= 0);
         m->make_keylist();
-        assert(m->_klist.size() > 0);
+        CHECK(m->_klist.size() > 0);
 
         _clist.insert(m);
 
@@ -458,7 +459,7 @@ int SummaryDesc::find_matches() {
             m->dump(s);
             LOG(spam, "MatchCandidate(%s) size %ld, tot.len %d", s.c_str(), size, match_len);
         }
-        assert(match_len > 0);
+        CHECK(match_len > 0);
         match_count++;
         match_elems += m->elems();
 
@@ -736,7 +737,7 @@ int SummaryDesc::recompute_estimate(int len_per_elem) {
 
     cand_list::iterator cit = _clist.begin();
     /* prefix */
-    assert(cit != _clist.end());
+    CHECK(cit != _clist.end());
 
     bool            prefix = true;
     MatchCandidate* m = *cit;
@@ -922,6 +923,6 @@ void SummaryDesc::add_desc(off_t pos, ssize_t len, bool highlight) {
     }
     JD_INVAR(JD_DUMP, len > 0, return,
              LOG(info, "add_desc len %ld, %s", static_cast<long>(len), (highlight ? "highlight" : ""));
-             assert(false));
+             CHECK(false));
     _plist.emplace_back(pos, len, highlight);
 }

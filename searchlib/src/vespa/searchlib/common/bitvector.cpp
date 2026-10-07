@@ -6,6 +6,7 @@
 #include "partialbitvector.h"
 #include "read_stats.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file_interface.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
@@ -16,7 +17,6 @@
 #include <vespa/vespalib/util/thread_bundle.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cstdlib>
 
 #include <vespa/log/log.h>
@@ -72,8 +72,8 @@ void BitVector::parallelOr(vespalib::ThreadBundle& thread_bundle, std::span<BitV
         }
     } else {
         for (const BitVector* bv : vectors) {
-            assert(bv->getStartIndex() == 0u);
-            assert(bv->size() == size);
+            CHECK(bv->getStartIndex() == 0u);
+            CHECK(bv->size() == size);
         }
         std::vector<BitVector::OrParts> parts;
         parts.reserve(max_threads);
@@ -100,12 +100,12 @@ void BitVector::parallelOr(vespalib::ThreadBundle& thread_bundle, std::span<BitV
 }
 
 Alloc BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc) {
-    assert(capacity >= end);
+    CHECK(capacity >= end);
     uint32_t words = numActiveWords(start, capacity);
     words += (-words & (getAlignment() / sizeof(Word) - 1)); // Pad to required alignment
     const size_t sz(words * sizeof(Word));
     Alloc        alloc = (init_alloc != nullptr) ? init_alloc->create(sz) : Alloc::alloc(sz, MMAP_LIMIT);
-    assert(alloc.size() / sizeof(Word) >= words);
+    CHECK(alloc.size() / sizeof(Word) >= words);
     // Clear padding
     size_t usedBytes = numActiveBytes(start, end);
     memset(static_cast<char*>(alloc.get()) + usedBytes, 0, alloc.size() - usedBytes);
@@ -147,7 +147,7 @@ void BitVector::initialize_from(const BitVector& org) {
 
 BitVector::BitVector(void* buf, Index start, Index end) noexcept
     : _words(static_cast<Word*>(buf) - wordNum(start)), _startOffset(start), _sz(end), _numTrueBits(invalidCount()) {
-    assert((reinterpret_cast<size_t>(_words) & (sizeof(Word) - 1ul)) == 0);
+    CHECK((reinterpret_cast<size_t>(_words) & (sizeof(Word) - 1ul)) == 0);
 }
 
 void BitVector::init(void* buf, Index start, Index end) {
@@ -204,7 +204,7 @@ void BitVector::clearInterval(Index start, Index end) {
 }
 
 void BitVector::store(Word& word, Word value) {
-    assert(!_enable_range_check || ((&word >= getActiveStart()) && (&word < (getActiveStart() + numActiveWords()))));
+    CHECK(!_enable_range_check || ((&word >= getActiveStart()) && (&word < (getActiveStart() + numActiveWords()))));
     return store_unchecked(word, value);
 }
 
@@ -469,7 +469,7 @@ std::unique_ptr<const BitVector> BitVector::create(Index numberOfElements, FastO
         size_t padbefore, padafter;
         size_t vectorsize = getFileBytes(numberOfElements);
         file.DirectIOPadding(offset, entry_size, padbefore, padafter);
-        assert((padbefore & (getAlignment() - 1)) == 0);
+        CHECK((padbefore & (getAlignment() - 1)) == 0);
         AllocatedBitVector::Alloc alloc = Alloc::alloc(padbefore + std::max(entry_size + padafter, vectorsize),
                                                        MMAP_LIMIT, FileSettings::DIRECTIO_ALIGNMENT);
         void*                     alignedBuffer = alloc.get();
@@ -478,7 +478,7 @@ std::unique_ptr<const BitVector> BitVector::create(Index numberOfElements, FastO
         bv =
             std::make_unique<AllocatedBitVector>(numberOfElements, std::move(alloc), padbefore, entry_size, doccount);
         // Check guard bit for getNextTrueBit()
-        assert(bv->testBit(bv->size()));
+        CHECK(bv->testBit(bv->size()));
     }
     return bv;
 }
@@ -515,7 +515,7 @@ MMappedBitVector::MMappedBitVector(Index numberOfElements, FastOS_FileInterface&
 
 void MMappedBitVector::read(Index numberOfElements, FastOS_FileInterface& file, int64_t offset, Index doccount) {
     void* mapptr = file.MemoryMapPtr(offset);
-    assert(mapptr != nullptr);
+    CHECK(mapptr != nullptr);
     if (mapptr != nullptr) {
         init(mapptr, 0, numberOfElements);
     }
@@ -530,9 +530,9 @@ nbostream& operator<<(nbostream& out, const BitVector& bv) {
     uint64_t size = bv.size();
     uint64_t cachedHits = bv.countTrueBits();
     uint64_t fileBytes = bv.getFileBytes();
-    assert(size <= std::numeric_limits<BitVector::Index>::max());
-    assert(cachedHits <= size || !bv.isValidCount(cachedHits));
-    assert(bv.testBit(size));
+    CHECK(size <= std::numeric_limits<BitVector::Index>::max());
+    CHECK(cachedHits <= size || !bv.isValidCount(cachedHits));
+    CHECK(bv.testBit(size));
     out << size << cachedHits << fileBytes;
     out.write(bv.getStart(), bv.getFileBytes());
     return out;
@@ -543,8 +543,8 @@ nbostream& operator>>(nbostream& in, AllocatedBitVector& bv) {
     uint64_t cachedHits;
     uint64_t fileBytes;
     in >> size >> cachedHits >> fileBytes;
-    assert(size <= std::numeric_limits<BitVector::Index>::max());
-    assert(cachedHits <= size || !bv.isValidCount(cachedHits));
+    CHECK(size <= std::numeric_limits<BitVector::Index>::max());
+    CHECK(cachedHits <= size || !bv.isValidCount(cachedHits));
     if (bv.size() != size) {
         bv.resize(size);
     }
@@ -560,7 +560,7 @@ nbostream& operator>>(nbostream& in, AllocatedBitVector& bv) {
         std::vector<char> dummy(skip_size);
         in.read(dummy.data(), skip_size);
     }
-    assert(bv.testBit(size));
+    CHECK(bv.testBit(size));
     bv.setTrueBits(cachedHits);
     bv.fixup_after_load();
     return in;

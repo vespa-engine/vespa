@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/diskindex/fieldreader.h>
@@ -153,19 +154,19 @@ public:
 
     const DocWordFeature& getDocWordFeature(const Randomizer& r) const {
         if (r.isExtra()) {
-            assert(r.extraIdx() < _extraPostings.size());
+            CHECK(r.extraIdx() < _extraPostings.size());
             return _extraPostings[r.extraIdx()];
         }
-        assert(static_cast<uint32_t>(r._ref) < _postings.size());
+        CHECK(static_cast<uint32_t>(r._ref) < _postings.size());
         return _postings[r._ref];
     }
 
     const DocWordPosFeature* getDocWordPosFeature(const Randomizer& r, const DocWordFeature& d) const {
         if (r.isExtra()) {
-            assert(d._accPositions + d._positions <= _extraWordPosFeatures.size());
+            CHECK(d._accPositions + d._positions <= _extraWordPosFeatures.size());
             return &_extraWordPosFeatures[d._accPositions];
         }
-        assert(d._accPositions + d._positions <= _wordPosFeatures.size());
+        CHECK(d._accPositions + d._positions <= _wordPosFeatures.size());
         return &_wordPosFeatures[d._accPositions];
     }
 

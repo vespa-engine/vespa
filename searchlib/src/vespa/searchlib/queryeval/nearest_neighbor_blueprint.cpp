@@ -7,6 +7,7 @@
 #include "nns_index_iterator.h"
 #include "queryeval_stats.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
@@ -233,7 +234,7 @@ double NearestNeighborBlueprint::sort(InFlow in_flow) {
 
 std::unique_ptr<SearchIterator>
 NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const {
-    assert(tfmda.size() == 1);
+    CHECK(tfmda.size() == 1);
     fef::TermFieldMatchData& tfmd = *tfmda[0]; // always search in only one field
     switch (_algorithm) {
     case Algorithm::INDEX_TOP_K_WITH_FILTER:

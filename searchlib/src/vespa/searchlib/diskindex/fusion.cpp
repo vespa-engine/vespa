@@ -6,6 +6,7 @@
 #include "field_mergers_state.h"
 #include "fusion_input_index.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
@@ -34,7 +35,7 @@ namespace {
 
 std::vector<FusionInputIndex> createInputIndexes(const std::vector<std::string>& sources,
                                                  const SelectorArray&            selector) {
-    assert(sources.size() <= 255); // due to source selector data type
+    CHECK(sources.size() <= 255); // due to source selector data type
     std::vector<FusionInputIndex> indexes;
     indexes.reserve(sources.size());
     uint32_t i = 0;

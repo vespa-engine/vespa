@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/socket_utils.h>
@@ -11,8 +12,6 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-
-#include <cassert>
 
 using namespace vespalib;
 using namespace vespalib::portal;
@@ -27,7 +26,7 @@ struct SocketPair {
         main.reset(sockets[0]);
         other.reset(sockets[1]);
         // make main socket both readable and writable
-        assert(other.write("x", 1) == 1);
+        CHECK(other.write("x", 1) == 1);
     }
     ~SocketPair();
 };

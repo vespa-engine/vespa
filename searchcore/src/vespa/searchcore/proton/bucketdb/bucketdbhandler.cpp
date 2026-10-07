@@ -5,6 +5,7 @@
 #include "joinbucketssession.h"
 #include "splitbucketsession.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 
 #include <algorithm>
@@ -23,20 +24,20 @@ void BucketDBHandler::addDocumentMetaStore(IDocumentMetaStore* dms, search::Seri
 void BucketDBHandler::handleSplit(search::SerialNum serialNum, const BucketId& source, const BucketId& target1,
                                   const BucketId& target2) {
     // Called by writer thread
-    assert(source.valid());
-    assert(target1.valid() || target2.valid());
+    CHECK(source.valid());
+    CHECK(target1.valid() || target2.valid());
     if (target1.valid()) {
-        assert(source.getUsedBits() < target1.getUsedBits());
-        assert(source.contains(target1));
+        CHECK(source.getUsedBits() < target1.getUsedBits());
+        CHECK(source.contains(target1));
     }
     if (target2.valid()) {
-        assert(source.getUsedBits() < target2.getUsedBits());
-        assert(source.contains(target2));
+        CHECK(source.getUsedBits() < target2.getUsedBits());
+        CHECK(source.contains(target2));
     }
     if (target1.valid() && target2.valid()) {
-        assert(target1 != target2);
-        assert(!target1.contains(target2));
-        assert(!target2.contains(target1));
+        CHECK(target1 != target2);
+        CHECK(!target1.contains(target2));
+        CHECK(!target2.contains(target1));
     }
     SplitBucketSession session(_bucketDB, _bucketCreateNotifier, source, target1, target2);
     session.setup();

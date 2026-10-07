@@ -4,7 +4,7 @@
 
 #include "transient_bitvector_snapshot.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 /////////////////////////////////
 namespace search {
@@ -27,14 +27,14 @@ GrowableBitVector::GrowableBitVector(BitWord::Index newSize, BitWord::Index newC
     : _stored(std::make_unique<AllocatedBitVector>(newSize, newCapacity, nullptr, init_alloc, true)),
       _self(_stored.get()),
       _generationHolder(generationHolder) {
-    assert(newSize <= newCapacity);
+    CHECK(newSize <= newCapacity);
 }
 
 GrowableBitVector::~GrowableBitVector() = default;
 
 TransientBitVectorSnapshot GrowableBitVector::make_snapshot(BitWord::Index new_size) {
     AllocatedBitVector& self = *_stored;
-    assert(new_size <= self.size());
+    CHECK(new_size <= self.size());
     return TransientBitVectorSnapshot(new_size, self);
 }
 
@@ -47,7 +47,7 @@ void GrowableBitVector::fixup_after_load() {
 
 GenerationHeldBase::UP GrowableBitVector::grow(BitWord::Index newSize, BitWord::Index newCapacity) {
     AllocatedBitVector& self = *_stored;
-    assert(newCapacity >= newSize);
+    CHECK(newCapacity >= newSize);
     if (newCapacity != self.capacity()) {
         auto tbv = std::make_unique<AllocatedBitVector>(newSize, newCapacity, &self, &self._alloc, true);
         auto to_hold = std::make_unique<GenerationHeldAllocatedBitVector>(std::move(_stored));
@@ -70,7 +70,7 @@ GenerationHeldBase::UP GrowableBitVector::grow(BitWord::Index newSize, BitWord::
 
 bool GrowableBitVector::reserve(BitWord::Index newCapacity) {
     BitWord::Index oldCapacity = _stored->capacity();
-    assert(newCapacity >= oldCapacity);
+    CHECK(newCapacity >= oldCapacity);
     if (newCapacity == oldCapacity) {
         return false;
     }
@@ -87,7 +87,7 @@ bool GrowableBitVector::hold(GenerationHeldBase::UP v) {
 
 bool GrowableBitVector::shrink(BitWord::Index newCapacity) {
     BitWord::Index oldCapacity = _stored->capacity();
-    assert(newCapacity <= oldCapacity);
+    CHECK(newCapacity <= oldCapacity);
     (void)oldCapacity;
     return hold(grow(newCapacity, std::max(_stored->capacity(), newCapacity)));
 }

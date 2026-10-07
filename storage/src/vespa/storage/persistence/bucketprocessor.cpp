@@ -2,12 +2,12 @@
 
 #include "bucketprocessor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-#include <cassert>
 #include <stdexcept>
 
 namespace storage {
@@ -22,7 +22,7 @@ private:
 public:
     IteratorGuard(spi::PersistenceProvider& spi, spi::IteratorId iteratorId) : _spi(spi), _iteratorId(iteratorId) {}
     ~IteratorGuard() {
-        assert(_iteratorId != 0);
+        CHECK(_iteratorId != 0);
         _spi.destroyIterator(_iteratorId);
     }
     spi::IteratorId getIteratorId() const { return _iteratorId; }

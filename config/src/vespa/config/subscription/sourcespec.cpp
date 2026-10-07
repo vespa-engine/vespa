@@ -3,6 +3,7 @@
 
 #include "configinstancespec.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/file/filesourcefactory.h>
 #include <vespa/config/frt/frtconnectionpool.h>
@@ -15,8 +16,6 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/size_literals.h>
-
-#include <cassert>
 
 namespace config {
 
@@ -132,7 +131,7 @@ std::unique_ptr<SourceFactory> ConfigSet::createSourceFactory(const TimingValues
 }
 
 void ConfigSet::addBuilder(const std::string& configId, ConfigInstance* builder) {
-    assert(builder != nullptr);
+    CHECK(builder != nullptr);
     BuilderMap&     builderMap(*_builderMap);
     const ConfigKey key(configId, builder->defName(), builder->defNamespace(), builder->defMd5());
     builderMap[key] = builder;

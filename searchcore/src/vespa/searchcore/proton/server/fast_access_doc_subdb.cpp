@@ -9,6 +9,7 @@
 #include "i_document_subdb_owner.h"
 #include "reconfig_params.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
@@ -137,7 +138,7 @@ IReprocessingTask::UP FastAccessDocSubDB::createReprocessingTask(
     IReprocessingInitializer&                                initializer,
     const std::shared_ptr<const document::DocumentTypeRepo>& docTypeRepo) const {
     uint32_t docIdLimit = _metaStoreCtx->get().getCommittedDocIdLimit();
-    assert(docIdLimit > 0);
+    CHECK(docIdLimit > 0);
     return std::make_unique<ReprocessDocumentsTask>(initializer, getSummaryManager(), docTypeRepo, getSubDbName(),
                                                     docIdLimit);
 }
@@ -253,7 +254,7 @@ void FastAccessDocSubDB::onReplayDone() {
     Parent::onReplayDone();
     // Normalize attribute vector sizes
     uint32_t docIdLimit = _metaStoreCtx->get().getCommittedDocIdLimit();
-    assert(docIdLimit > 0);
+    CHECK(docIdLimit > 0);
     _docIdLimit.set(docIdLimit);
     IFeedView::SP        feedView = _iFeedView.get();
     IAttributeWriter::SP attrWriter = static_cast<FastAccessFeedView&>(*feedView).getAttributeWriter();

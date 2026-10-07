@@ -5,11 +5,11 @@
 #include "floatresultnode.h"
 #include "resultvector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/geo_gcd.h>
 #include <vespa/vespalib/geo/zcurve.h>
 
 #include <algorithm>
-#include <cassert>
 #include <limits>
 
 using vespalib::Deserializer;
@@ -59,7 +59,7 @@ double calculate_distance_km(int64_t zcurve, const GeoGcd& geo_gcd) {
 } // namespace
 
 void GeoDistanceFunctionNode::onExecute() const {
-    assert(getNumArgs() == 3 && "Expect 3 arguments: position attribute, lat, lon");
+    CHECK(getNumArgs() == 3 && "Expect 3 arguments: position attribute, lat, lon");
 
     for (size_t i = 0; i < 3; i++) {
         getArg(i).execute();

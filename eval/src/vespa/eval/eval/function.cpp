@@ -9,6 +9,7 @@
 #include "operator_nodes.h"
 #include "tensor_nodes.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -73,7 +74,7 @@ public:
 struct ExplicitParams : Params {
     explicit ExplicitParams(const std::vector<std::string>& params_in) {
         for (const auto& param : params_in) {
-            assert(lookup(param) == UNDEF);
+            CHECK(lookup(param) == UNDEF);
             lookup_add(param);
         }
     }
@@ -85,7 +86,7 @@ struct ImplicitParams : Params {
     ImplicitParams() = default;
     explicit ImplicitParams(const std::vector<std::string>& params_in) {
         for (const auto& param : params_in) {
-            assert(lookup(param) == UNDEF);
+            CHECK(lookup(param) == UNDEF);
             lookup_add(param);
         }
     }
@@ -141,12 +142,12 @@ public:
     }
 
     ResolveContext& resolver() {
-        assert(!_resolve_stack.empty());
+        CHECK(!_resolve_stack.empty());
         return _resolve_stack.back();
     }
 
     const ResolveContext& resolver() const {
-        assert(!_resolve_stack.empty());
+        CHECK(!_resolve_stack.empty());
         return _resolve_stack.back();
     }
 
@@ -159,9 +160,9 @@ public:
     }
 
     void pop_resolve_context() {
-        assert(!_resolve_stack.empty());
+        CHECK(!_resolve_stack.empty());
         _resolve_stack.pop_back();
-        assert(!_resolve_stack.empty());
+        CHECK(!_resolve_stack.empty());
     }
 
     void fail(const std::string& msg) {
@@ -309,7 +310,7 @@ public:
         _operator_stack.push_back(std::move(node));
     }
     Operator_UP pop_operator() {
-        assert(!_operator_stack.empty());
+        CHECK(!_operator_stack.empty());
         Operator_UP node = std::move(_operator_stack.back());
         _operator_stack.pop_back();
         return node;
@@ -1129,7 +1130,7 @@ bool Function::unwrap(std::string_view input, std::string& wrapper, std::string&
         error = "could not match closing ')'";
         return false;
     }
-    assert(body_end >= body_begin);
+    CHECK(body_end >= body_begin);
     wrapper = std::string_view(input.data() + wrapper_begin, wrapper_end - wrapper_begin);
     body = std::string_view(input.data() + body_begin, body_end - body_begin);
     return true;

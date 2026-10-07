@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/docstore/logdatastore.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
@@ -65,7 +66,7 @@ void BenchmarkDataStoreApp::read(size_t numReads, size_t perChunk, const IDataSt
     vespalib::DataBuffer buf;
     std::minstd_rand     rng;
     const size_t         docIdLimit(dataStore->getDocIdLimit());
-    assert(docIdLimit > 0);
+    CHECK(docIdLimit > 0);
     rng.seed(getpid());
     int32_t rnd(0);
     for (size_t i(0); i < numReads; i++) {

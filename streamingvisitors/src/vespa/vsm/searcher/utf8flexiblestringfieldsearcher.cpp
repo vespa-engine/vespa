@@ -3,11 +3,11 @@
 
 #include "vespa/searchlib/attribute/string_range_search_helper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/query/streaming/fuzzy_term.h>
 #include <vespa/searchlib/query/streaming/regexp_term.h>
 
 #include <algorithm>
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.searcher.utf8flexiblestringfieldsearcher");
@@ -32,7 +32,7 @@ size_t UTF8FlexibleStringFieldSearcher::matchTerms(const FieldRef& f, const size
 
 size_t UTF8FlexibleStringFieldSearcher::match_regexp(const FieldRef& f, search::streaming::QueryTerm& qt) {
     auto* regexp_term = qt.as_regexp_term();
-    assert(regexp_term != nullptr);
+    CHECK(regexp_term != nullptr);
     if (regexp_term->regexp().partial_match({f.data(), f.size()})) {
         addHit(qt, 0);
     }
@@ -41,7 +41,7 @@ size_t UTF8FlexibleStringFieldSearcher::match_regexp(const FieldRef& f, search::
 
 size_t UTF8FlexibleStringFieldSearcher::match_fuzzy(const FieldRef& f, search::streaming::QueryTerm& qt) {
     auto* fuzzy_term = qt.as_fuzzy_term();
-    assert(fuzzy_term != nullptr);
+    CHECK(fuzzy_term != nullptr);
     // TODO delegate to matchTermExact if max edits == 0?
     //  - needs to avoid folding to have consistent normalization semantics
     if (fuzzy_term->is_match({f.data(), f.size()})) {

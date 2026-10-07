@@ -2,11 +2,11 @@
 
 #include "storagelink.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/vespalib/util/backtrace.h>
 
-#include <cassert>
 #include <sstream>
 
 #include <vespa/log/bufferedlogger.h>
@@ -38,9 +38,9 @@ void StorageLink::push_back(StorageLink::UP link) {
     if (getState() != CREATED) {
         LOG(error, "Attempted to alter chain by adding link %s after link %s while state is %s",
             link->toString().c_str(), toString().c_str(), stateToString(getState()));
-        assert(false);
+        CHECK(false);
     }
-    assert(link);
+    CHECK(link);
     if (isBottom()) {
         link->_up = this;
         _down = std::move(link);
@@ -58,7 +58,7 @@ void StorageLink::open() {
         if (link->getState() != CREATED) {
             LOG(error, "During open(), link %s should be in CREATED state, not in state %s.", toString().c_str(),
                 stateToString(link->getState()));
-            assert(false);
+            CHECK(false);
         }
         link->_state = OPENED;
         if (!link->_down) {
@@ -107,7 +107,7 @@ void StorageLink::flush() {
     if (getState() != CLOSING) {
         LOG(error, "During flush(), link %s should be in CLOSING state, not in state %s.", toString().c_str(),
             stateToString(getState()));
-        assert(false);
+        CHECK(false);
     }
     // First flush down to get all requests out of the system.
     _state = FLUSHINGDOWN;
@@ -147,9 +147,9 @@ void StorageLink::sendDown(const StorageMessage::SP& msg) {
     default:
         LOG(error, "Link %s trying to send %s down while in state %s. Stacktrace: %s", toString().c_str(),
             msg->toString().c_str(), stateToString(getState()), vespalib::getStackTrace(0).c_str());
-        assert(false);
+        CHECK(false);
     }
-    assert(msg);
+    CHECK(msg);
     LOG(spam, "Storage Link %s to handle %s", toString().c_str(), msg->toString().c_str());
     if (isBottom()) {
         LOG(spam, "Storage link %s at bottom of chain got message %s.", toString().c_str(), msg->toString().c_str());
@@ -192,9 +192,9 @@ void StorageLink::sendUp(const std::shared_ptr<StorageMessage>& msg) {
     default:
         LOG(error, "Link %s trying to send %s up while in state %s. Stacktrace: %s", toString().c_str(),
             msg->toString(true).c_str(), stateToString(getState()), vespalib::getStackTrace(0).c_str());
-        assert(false);
+        CHECK(false);
     }
-    assert(msg);
+    CHECK(msg);
     if (isTop()) {
         std::ostringstream ost;
         ost << "Unhandled message at top of chain " << *msg << ".";

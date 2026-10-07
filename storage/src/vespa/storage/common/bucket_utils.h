@@ -2,10 +2,9 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/bucket_limits.h>
-
-#include <cassert>
 
 namespace storage {
 
@@ -18,7 +17,7 @@ inline uint64_t get_super_bucket_key(const document::BucketId& bucket_id) noexce
     if (bucket_id == document::BucketId(0)) {
         return 0;
     }
-    assert(bucket_id.getUsedBits() >= spi::BucketLimits::MinUsedBits);
+    CHECK(bucket_id.getUsedBits() >= spi::BucketLimits::MinUsedBits);
     // Since bucket keys have count-bits at the LSB positions, we want to look at the MSBs instead.
     return (bucket_id.toKey() >> (64 - spi::BucketLimits::MinUsedBits));
 }

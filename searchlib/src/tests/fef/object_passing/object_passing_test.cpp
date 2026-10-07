@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
@@ -64,7 +65,7 @@ struct ProxyBlueprint : Blueprint {
         return Blueprint::UP(new ProxyBlueprint(name, accept_input, object_output));
     }
     bool setup(const IIndexEnvironment&, const std::vector<std::string>& params) override {
-        assert(params.size() == 1);
+        CHECK(params.size() == 1);
         if (auto input = defineInput(params[0], accept_input)) {
             object_input = input.value().is_object();
             describeOutput("value", "the value",
@@ -96,7 +97,7 @@ struct ObjectPassingTest : public ::testing::Test {
         BlueprintResolver::SP resolver(new BlueprintResolver(factory, indexEnv));
         resolver->addSeed(feature);
         bool retval = resolver->compile();
-        assert(retval);
+        CHECK(retval);
         MatchDataLayout  mdl;
         MatchData::UP    md = mdl.createMatchData();
         QueryEnvironment queryEnv(&indexEnv);

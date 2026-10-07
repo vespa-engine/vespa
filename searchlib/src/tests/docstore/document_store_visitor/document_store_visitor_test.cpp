@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -106,7 +107,7 @@ public:
 
 void MyVisitor::visit(uint32_t lid, const std::shared_ptr<Document>& doc, size_t) {
     ++_visitCount;
-    assert(lid < _docIdLimit);
+    CHECK(lid < _docIdLimit);
     Document::UP expDoc(makeDoc(_repo, lid, _before));
     EXPECT_TRUE(*expDoc == *doc);
     _valid->setBitAndMaintainCount(lid);
@@ -114,7 +115,7 @@ void MyVisitor::visit(uint32_t lid, const std::shared_ptr<Document>& doc, size_t
 
 void MyVisitor::visit(uint32_t lid) {
     ++_visitRmCount;
-    assert(lid < _docIdLimit);
+    CHECK(lid < _docIdLimit);
     _valid->clearBitAndMaintainCount(lid);
 }
 
@@ -127,7 +128,7 @@ public:
 
 void MyRewriteVisitor::visit(uint32_t lid, const std::shared_ptr<Document>& doc, size_t) {
     ++_visitCount;
-    assert(lid < _docIdLimit);
+    CHECK(lid < _docIdLimit);
     Document::UP expDoc(makeDoc(_repo, lid, _before));
     EXPECT_TRUE(*expDoc == *doc);
     _valid->setBitAndMaintainCount(lid);
@@ -235,14 +236,14 @@ void DocumentStoreVisitorTest::setDocIdLimit(uint32_t docIdLimit) {
 
 void DocumentStoreVisitorTest::put(const Document& doc, uint32_t lid) {
     ++_syncToken;
-    assert(lid < _docIdLimit);
+    CHECK(lid < _docIdLimit);
     _store->write(_syncToken, lid, doc);
     _valid->setBitAndMaintainCount(lid);
 }
 
 void DocumentStoreVisitorTest::remove(uint32_t lid) {
     ++_syncToken;
-    assert(lid < _docIdLimit);
+    CHECK(lid < _docIdLimit);
     _store->remove(_syncToken, lid);
     _valid->clearBitAndMaintainCount(lid);
 }

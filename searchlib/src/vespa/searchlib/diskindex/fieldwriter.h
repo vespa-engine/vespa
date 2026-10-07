@@ -3,12 +3,11 @@
 
 #include "bitvectorfile.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/postinglistfile.h>
-
-#include <cassert>
 
 namespace search::index {
 class Schema;
@@ -39,8 +38,8 @@ public:
     void newWord(std::string_view word);
 
     void add(const DocIdAndFeatures& features) {
-        assert(features.doc_id() < _docIdLimit);
-        assert(features.doc_id() > _prevDocId);
+        CHECK(features.doc_id() < _docIdLimit);
+        CHECK(features.doc_id() > _prevDocId);
         _posoccfile->writeDocIdAndFeatures(features);
         _bvc.add(features.doc_id());
         _prevDocId = features.doc_id();

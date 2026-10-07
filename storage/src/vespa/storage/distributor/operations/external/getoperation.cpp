@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "getoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
@@ -10,8 +11,6 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operations.external.get");
@@ -133,7 +132,7 @@ void GetOperation::onStart(DistributorStripeMessageSender& sender) {
 
 void GetOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg) {
     auto* getreply = dynamic_cast<api::GetReply*>(msg.get());
-    assert(getreply != nullptr);
+    CHECK(getreply != nullptr);
 
     LOG(debug, "Received %s", msg->toString(true).c_str());
 
@@ -161,7 +160,7 @@ void GetOperation::onReceive(DistributorStripeMessageSender& sender, const std::
                         getreply->getLastModifiedTimestamp() > _newest_replica->timestamp)
                     {
                         _returnCode = getreply->getResult();
-                        assert(response.second[i].to_node != UINT16_MAX);
+                        CHECK(response.second[i].to_node != UINT16_MAX);
                         _newest_replica =
                             NewestReplica::of(getreply->getLastModifiedTimestamp(), bucket_id, send_state.to_node,
                                               getreply->is_tombstone(), getreply->condition_matched());

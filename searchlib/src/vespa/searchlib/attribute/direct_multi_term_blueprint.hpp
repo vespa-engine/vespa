@@ -6,6 +6,7 @@
 #include "direct_posting_store_flow_stats_adapter.h"
 #include "multi_term_or_filter_search.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
@@ -156,8 +157,8 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(
         return combine_iterators(std::move(multi_term), std::move(bitvectors), strict);
     } else {
         // In this case we should only have btree iterators.
-        assert(btree_iterators.size() == _terms.size());
-        assert(weights.index() == 0);
+        CHECK(btree_iterators.size() == _terms.size());
+        CHECK(weights.index() == 0);
         return SearchType::create(tfmd, field_is_filter, std::get<0>(weights).get(), std::move(btree_iterators));
     }
 }
@@ -165,15 +166,15 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(
 template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<queryeval::SearchIterator> DirectMultiTermBlueprint<PostingStoreType, SearchType>::createLeafSearch(
     const fef::TermFieldMatchDataArray& tfmda) const {
-    assert(tfmda.size() == 1);
-    assert(getState().numFields() == 1);
+    CHECK(tfmda.size() == 1);
+    CHECK(getState().numFields() == 1);
     return create_search_helper<SearchType::filter_search, true>(tfmda, strict());
 }
 
 template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
 DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearchImpl(FilterConstraint) const {
-    assert(getState().numFields() == 1);
+    CHECK(getState().numFields() == 1);
     auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());
     wrapper->wrap(create_search_helper<true, false>(wrapper->tfmda(), strict()));
     return wrapper;

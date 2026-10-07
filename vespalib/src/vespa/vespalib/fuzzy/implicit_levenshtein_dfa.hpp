@@ -6,7 +6,6 @@
 #include "match_algorithm.hpp"
 #include "sparse_state.h"
 
-#include <cassert>
 #include <stdexcept>
 
 namespace vespalib::fuzzy {

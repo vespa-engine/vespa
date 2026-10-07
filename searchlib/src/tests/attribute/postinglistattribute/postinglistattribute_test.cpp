@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute.h>
@@ -264,7 +265,7 @@ template <> void PostingListAttributeTest::populate<StringAttribute>(StringAttri
 
 template <typename VectorType> VectorType& PostingListAttributeTest::as(AttributePtr& v) {
     VectorType* res = dynamic_cast<VectorType*>(v.get());
-    assert(res != nullptr);
+    CHECK(res != nullptr);
     return *res;
 }
 

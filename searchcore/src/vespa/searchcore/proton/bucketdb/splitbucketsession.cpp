@@ -5,7 +5,7 @@
 #include "bucketdeltapair.h"
 #include "i_bucket_create_notifier.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton::bucketdb {
 
@@ -52,7 +52,7 @@ void SplitBucketSession::applyDelta(const BucketState& delta, BucketState* src, 
     if (delta.empty()) {
         return;
     }
-    assert(dstBucket.valid());
+    CHECK(dstBucket.valid());
     BucketState* dst = _bucketDB->getBucketStatePtr(dstBucket);
     delta.applyDelta(src, dst);
 }
@@ -61,8 +61,8 @@ void SplitBucketSession::finish() {
     BucketState* sourceState = nullptr;
     (void)extractInfo(_source, sourceState);
     if (!sourceState) {
-        assert(_target1Delta.empty());
-        assert(_target2Delta.empty());
+        CHECK(_target1Delta.empty());
+        CHECK(_target2Delta.empty());
         return;
     }
     applyDelta(_target1Delta, sourceState, _target1);

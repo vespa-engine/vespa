@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -119,7 +120,7 @@ struct WS {
 WS::WS()
     : layout(), handle(layout.allocTermField(fieldId)), tokens(), field_is_filter(false), term_is_not_needed(false) {
     MatchData::UP tmp = layout.createMatchData();
-    assert(tmp->resolveTermField(handle)->getFieldId() == fieldId);
+    CHECK(tmp->resolveTermField(handle)->getFieldId() == fieldId);
 }
 
 WS::~WS() = default;

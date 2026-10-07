@@ -4,6 +4,7 @@
 
 #include "search_protocol_proto.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/mapnames.h>
 #include <vespa/searchlib/common/proto_to_json.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
@@ -155,7 +156,7 @@ void ProtoConverter::search_reply_to_proto(const SearchReply& reply, ProtoSearch
     proto.set_degraded_by_ann_timeout(reply.coverage.was_degraded_by_ann_timeout());
     proto.set_degraded_by_soft_timeout(reply.coverage.wasDegradedByTimeout());
     bool has_sort_data = !reply.sortIndex.empty();
-    assert(!has_sort_data || (reply.sortIndex.size() == (reply.hits.size() + 1)));
+    CHECK(!has_sort_data || (reply.sortIndex.size() == (reply.hits.size() + 1)));
     if (reply.request) {
         uint32_t asked_offset = reply.request->offset;
         uint32_t asked_hits = reply.request->maxhits;
@@ -172,13 +173,13 @@ void ProtoConverter::search_reply_to_proto(const SearchReply& reply, ProtoSearch
         if (has_sort_data) {
             size_t sort_data_offset = reply.sortIndex[i];
             size_t sort_data_size = (reply.sortIndex[i + 1] - reply.sortIndex[i]);
-            assert((sort_data_offset + sort_data_size) <= reply.sortData.size());
+            CHECK((sort_data_offset + sort_data_size) <= reply.sortData.size());
             hit->set_sort_data(&reply.sortData[sort_data_offset], sort_data_size);
         }
     }
     if (!reply.match_features.values.empty()) {
         size_t num_match_features = reply.match_features.names.size();
-        assert(num_match_features * reply.hits.size() == reply.match_features.values.size());
+        CHECK(num_match_features * reply.hits.size() == reply.match_features.values.size());
         for (const auto& name : reply.match_features.names) {
             proto.add_match_feature_names()->assign(name.data(), name.size());
         }

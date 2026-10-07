@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -24,7 +25,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
-#include <cassert>
 #include <filesystem>
 #include <iomanip>
 #include <random>
@@ -249,18 +249,18 @@ void verifyGrowing(const std::string& dir, const LogDataStore::Config& config, u
 
         for (size_t i(1); i < 10000; i++) {
             long r = rand_gen() % 10000;
-            assert(i > lastSyncToken);
+            CHECK(i > lastSyncToken);
             lastSyncToken = i;
             datastore.write(i, i, &buffer[r], uint8_t(buffer[r]) * 4);
         }
         datastore.flush(datastore.initFlush(lastSyncToken));
         for (size_t i(1); i < 200; i++) {
-            assert(i + 20000 > lastSyncToken);
+            CHECK(i + 20000 > lastSyncToken);
             lastSyncToken = i + 20000;
             datastore.remove(i + 20000, i);
         }
         for (size_t i(201); i < 2000; i += 2) {
-            assert(i + 20000 > lastSyncToken);
+            CHECK(i + 20000 > lastSyncToken);
             lastSyncToken = i + 20000;
             datastore.remove(i + 20000, i);
         }
@@ -497,7 +497,7 @@ Document::UP makeDoc(const DocumentTypeRepo& repo, uint32_t i, bool extra_field,
     DocumentId          id(idstr.view());
     const DocumentType* docType = repo.getDocumentType(doc_type_name);
     Document::UP        doc(new Document(repo, *docType, id));
-    assert(doc.get());
+    CHECK(doc.get());
     asciistream mainstr;
     mainstr << "static text" << i << " body something";
     for (uint32_t j = 0; j < 10 + numReps; ++j) {
@@ -768,7 +768,7 @@ TEST_F(LogDataStoreTest, testWriteRead) {
         SerialNum lastSyncToken(0);
         for (size_t i = 0; i < 100; i++) {
             datastore.write(i + 4, i, a[i % 2].c_str(), a[i % 2].size());
-            assert(i + 4 > lastSyncToken);
+            CHECK(i + 4 > lastSyncToken);
             lastSyncToken = i + 4;
             fetchAndTest(datastore, i, a[i % 2].c_str(), a[i % 2].size());
         }
@@ -889,7 +889,7 @@ LogDataStore::Config getBasicConfig(size_t maxFileSize) {
 }
 
 std::string genData(uint32_t lid, size_t numBytes) {
-    assert(numBytes >= 6);
+    CHECK(numBytes >= 6);
     std::ostringstream oss;
     for (size_t i = 0; i < (numBytes - 6); ++i) {
         oss << 'a';

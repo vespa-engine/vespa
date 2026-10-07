@@ -4,6 +4,7 @@
 #include "explicit_levenshtein_dfa.h"
 #include "match_algorithm.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -56,7 +57,7 @@ template <uint8_t MaxEdits> struct ExplicitDfaMatcher {
     EdgeType smallest_explicit_out_edge(StateType node) const noexcept {
         // Out-edges are pre-ordered in increasing code point order, so the first
         // element is always the smallest possible matching character.
-        assert(!node->match_out_edges().empty());
+        CHECK(!node->match_out_edges().empty());
         return &node->match_out_edges().front();
     }
     bool valid_edge(EdgeType edge) const noexcept { return edge != nullptr; }
@@ -141,7 +142,7 @@ template <typename StateType> struct ExploreState {
             return maybe_explored;
         }
         uint32_t this_node = state_counter;
-        assert(state_counter < UINT32_MAX);
+        CHECK(state_counter < UINT32_MAX);
         ++state_counter;
         return explored_states.insert(std::make_pair(state, std::make_pair(this_node, false)))
             .first; // not yet explored;
@@ -180,7 +181,7 @@ template <typename Traits> class ExplicitLevenshteinDfaBuilderImpl : public DfaS
 public:
     ExplicitLevenshteinDfaBuilderImpl(std::span<const uint32_t> str, bool is_cased, bool is_prefix) noexcept
         : DfaSteppingBase<Traits>(str), _is_cased(is_cased), _is_prefix(is_prefix) {
-        assert(str.size() < UINT32_MAX / max_out_edges_per_node());
+        CHECK(str.size() < UINT32_MAX / max_out_edges_per_node());
     }
 
     [[nodiscard]] static constexpr uint8_t max_out_edges_per_node() noexcept {

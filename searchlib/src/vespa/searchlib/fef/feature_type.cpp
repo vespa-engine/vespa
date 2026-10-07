@@ -2,7 +2,7 @@
 
 #include "feature_type.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search::fef {
 
@@ -19,7 +19,7 @@ FeatureType FeatureType::object(const TYPE& type_in) {
 }
 
 const FeatureType::TYPE& FeatureType::type() const {
-    assert(_type);
+    CHECK(_type);
     return *_type;
 }
 

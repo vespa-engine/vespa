@@ -6,6 +6,7 @@
 #include "search_environment_snapshot.h"
 #include "searchenvironment.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
@@ -172,7 +173,7 @@ AttributeVector::SP createAttribute(const std::string& name, const document::Fie
         search::attribute::Config cfg(search::attribute::BasicType::TENSOR,
                                       search::attribute::CollectionType::SINGLE);
         auto                      tdt = get_tensor_type(fv);
-        assert(tdt != nullptr);
+        CHECK(tdt != nullptr);
         cfg.setTensorType(tdt->getTensorType());
         cfg.set_distance_metric(dm);
         return std::make_shared<search::tensor::TensorExtAttribute>(name, cfg);
@@ -610,7 +611,7 @@ void SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content& c) {
             }
         }
     } else {
-        assert(false && "We got an attribute vector that is of an unknown type");
+        CHECK(false && "We got an attribute vector that is of an unknown type");
     }
 }
 
@@ -802,7 +803,7 @@ SearchVisitor::SyntheticFieldsController::SyntheticFieldsController() : _documen
 void SearchVisitor::SyntheticFieldsController::setup(const StringFieldIdTMap& fieldRegistry,
                                                      const StringFieldIdTMap& /*fieldsInQuery*/) {
     _documentIdFId = fieldRegistry.fieldNo("documentid");
-    assert(_documentIdFId != StringFieldIdTMap::npos);
+    CHECK(_documentIdFId != StringFieldIdTMap::npos);
 }
 
 void SearchVisitor::SyntheticFieldsController::onDocument(StorageDocument&) {
@@ -1060,7 +1061,7 @@ void SearchVisitor::handleDocuments(const document::BucketId&, DocEntryList& ent
     size_t highestFieldNo(_fieldSearchSpecMap.nameIdMap().highestFieldNo());
 
     const document::DocumentType* defaultDocType = _docTypeMapping.getDefaultDocumentType();
-    assert(defaultDocType);
+    CHECK(defaultDocType);
     for (const auto& entry : entries) {
         auto document = std::make_shared<StorageDocument>(entry->releaseDocument(), _fieldPathMap, highestFieldNo);
 
@@ -1166,7 +1167,7 @@ void SearchVisitor::fillAttributeVectors(const std::string& documentId, const St
             }
         } else if (finfoGuard->getName() == "[docid]") {
             _documentIdAttribute.add(documentId.c_str());
-            // assert((_docsumCache.cache().size() + 1) == _documentIdAttribute.getNumDocs());
+            // CHECK((_docsumCache.cache().size() + 1) == _documentIdAttribute.getNumDocs());
         } else if (finfoGuard->getName() == "[rank]") {
             _shouldFillRankAttribute = true;
         }

@@ -2,6 +2,7 @@
 
 #include "mixed_simple_join_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
@@ -94,7 +95,7 @@ void my_simple_join_op(State& state, uint64_t param) {
             }
         }
     }
-    assert(offset == pri_cells.size());
+    CHECK(offset == pri_cells.size());
     state.pop_pop_push(state.stash.create<ValueView>(params.result_type, index, TypedCells(dst_cells)));
 }
 
@@ -145,7 +146,7 @@ Primary select_primary(const TensorFunction& lhs, const TensorFunction& rhs, Cel
 std::optional<Overlap> detect_overlap(const TensorFunction& primary, const TensorFunction& secondary) {
     std::vector<ValueType::Dimension> a = primary.result_type().nontrivial_indexed_dimensions();
     std::vector<ValueType::Dimension> b = secondary.result_type().nontrivial_indexed_dimensions();
-    assert(secondary.result_type().is_dense());
+    CHECK(secondary.result_type().is_dense());
     if (b.size() > a.size()) {
         return std::nullopt;
     } else if (b == a) {
@@ -193,7 +194,7 @@ size_t MixedSimpleJoinFunction::factor() const {
     const TensorFunction& s = (_primary == Primary::LHS) ? rhs() : lhs();
     size_t                a = p.result_type().dense_subspace_size();
     size_t                b = s.result_type().dense_subspace_size();
-    assert((a % b) == 0);
+    CHECK((a % b) == 0);
     return (a / b);
 }
 
@@ -214,7 +215,7 @@ const TensorFunction& MixedSimpleJoinFunction::optimize(const TensorFunction& ex
             std::optional<Overlap> overlap = detect_overlap(lhs, rhs, primary);
             if (overlap.has_value()) {
                 const TensorFunction& ptf = (primary == Primary::LHS) ? lhs : rhs;
-                assert(ptf.result_type().dense_subspace_size() == join->result_type().dense_subspace_size());
+                CHECK(ptf.result_type().dense_subspace_size() == join->result_type().dense_subspace_size());
                 return stash.create<MixedSimpleJoinFunction>(join->result_type(), lhs, rhs, join->function(), primary,
                                                              overlap.value());
             }

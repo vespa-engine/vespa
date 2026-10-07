@@ -2,8 +2,9 @@
 
 #include "array_store_config.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 
 namespace vespalib::datastore {
 
@@ -19,7 +20,7 @@ ArrayStoreConfig::ArrayStoreConfig(const AllocSpecVector& allocSpecs)
 }
 
 const ArrayStoreConfig::AllocSpec& ArrayStoreConfig::spec_for_type_id(uint32_t type_id) const {
-    assert(type_id < _allocSpecs.size());
+    CHECK(type_id < _allocSpecs.size());
     return _allocSpecs[type_id];
 }
 

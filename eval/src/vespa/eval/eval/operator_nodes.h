@@ -4,6 +4,8 @@
 
 #include "basic_nodes.h"
 
+#include <vespa/check_require.h>
+
 #include <cmath>
 #include <map>
 #include <memory>
@@ -44,7 +46,7 @@ public:
     bool is_const_double() const override { return _is_const_double; }
     size_t num_children() const override { return (_lhs && _rhs) ? 2 : 0; }
     const Node& get_child(size_t idx) const override {
-        assert(idx < 2);
+        CHECK(idx < 2);
         return (idx == 0) ? lhs() : rhs();
     }
     void detach_children(NodeHandler& handler) override {
@@ -59,7 +61,7 @@ public:
         if (other.priority() > priority()) {
             return false;
         }
-        assert(order() == other.order());
+        CHECK(order() == other.order());
         return (order() == LEFT);
     }
 

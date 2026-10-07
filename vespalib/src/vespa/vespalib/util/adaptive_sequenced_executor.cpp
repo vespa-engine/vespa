@@ -2,6 +2,8 @@
 
 #include "adaptive_sequenced_executor.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib {
 
 //-----------------------------------------------------------------------------
@@ -10,7 +12,7 @@ AdaptiveSequencedExecutor::Strand::Strand() noexcept : state(State::IDLE), queue
 }
 
 AdaptiveSequencedExecutor::Strand::~Strand() {
-    assert(queue.empty());
+    CHECK(queue.empty());
 }
 
 //-----------------------------------------------------------------------------
@@ -19,8 +21,8 @@ AdaptiveSequencedExecutor::Worker::Worker() : cond(), idleTracker(), state(State
 }
 
 AdaptiveSequencedExecutor::Worker::~Worker() {
-    assert(state == State::DONE);
-    assert(strand == nullptr);
+    CHECK(state == State::DONE);
+    CHECK(strand == nullptr);
 }
 
 //-----------------------------------------------------------------------------
@@ -29,9 +31,9 @@ AdaptiveSequencedExecutor::Self::Self() : cond(), state(State::OPEN), waiting_ta
 }
 
 AdaptiveSequencedExecutor::Self::~Self() {
-    assert(state == State::CLOSED);
-    assert(waiting_tasks == 0);
-    assert(pending_tasks == 0);
+    CHECK(state == State::CLOSED);
+    CHECK(waiting_tasks == 0);
+    CHECK(pending_tasks == 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -77,32 +79,32 @@ void AdaptiveSequencedExecutor::maybe_unblock_self(const std::unique_lock<std::m
 
 void AdaptiveSequencedExecutor::maybe_wake_worker(const std::unique_lock<std::mutex>&) {
     if ((_self.waiting_tasks > _cfg.max_waiting) && (!_worker_stack.empty())) {
-        assert(!_wait_queue.empty());
+        CHECK(!_wait_queue.empty());
         Worker* worker = _worker_stack.back();
         _worker_stack.popBack();
-        assert(worker->state == Worker::State::BLOCKED);
-        assert(worker->strand == nullptr);
+        CHECK(worker->state == Worker::State::BLOCKED);
+        CHECK(worker->strand == nullptr);
         worker->state = Worker::State::RUNNING;
         worker->strand = _wait_queue.front();
         _wait_queue.pop();
-        assert(worker->strand->state == Strand::State::WAITING);
-        assert(!worker->strand->queue.empty());
+        CHECK(worker->strand->state == Strand::State::WAITING);
+        CHECK(!worker->strand->queue.empty());
         worker->strand->state = Strand::State::ACTIVE;
-        assert(_self.waiting_tasks >= worker->strand->queue.size());
+        CHECK(_self.waiting_tasks >= worker->strand->queue.size());
         _self.waiting_tasks -= worker->strand->queue.size();
         worker->cond.notify_one();
     }
 }
 
 bool AdaptiveSequencedExecutor::obtain_strand(Worker& worker, std::unique_lock<std::mutex>& lock) {
-    assert(worker.strand == nullptr);
+    CHECK(worker.strand == nullptr);
     if (!_wait_queue.empty()) {
         worker.strand = _wait_queue.front();
         _wait_queue.pop();
-        assert(worker.strand->state == Strand::State::WAITING);
-        assert(!worker.strand->queue.empty());
+        CHECK(worker.strand->state == Strand::State::WAITING);
+        CHECK(!worker.strand->queue.empty());
         worker.strand->state = Strand::State::ACTIVE;
-        assert(_self.waiting_tasks >= worker.strand->queue.size());
+        CHECK(_self.waiting_tasks >= worker.strand->queue.size());
         _self.waiting_tasks -= worker.strand->queue.size();
     } else if (_self.state == Self::State::CLOSED) {
         worker.state = Worker::State::DONE;
@@ -146,16 +148,16 @@ AdaptiveSequencedExecutor::TaggedTask AdaptiveSequencedExecutor::next_task(Worke
         _barrier.completeEvent(prev_token.value());
     }
     if (exchange_strand(worker, guard)) {
-        assert(worker.state == Worker::State::RUNNING);
-        assert(worker.strand != nullptr);
-        assert(!worker.strand->queue.empty());
+        CHECK(worker.state == Worker::State::RUNNING);
+        CHECK(worker.strand != nullptr);
+        CHECK(!worker.strand->queue.empty());
         task = std::move(worker.strand->queue.front());
         worker.strand->queue.pop();
         _stats.queueSize.add(--_self.pending_tasks);
         maybe_wake_worker(guard);
     } else {
-        assert(worker.state == Worker::State::DONE);
-        assert(worker.strand == nullptr);
+        CHECK(worker.state == Worker::State::DONE);
+        CHECK(worker.strand == nullptr);
     }
     maybe_unblock_self(guard);
     return task;
@@ -191,21 +193,21 @@ AdaptiveSequencedExecutor::~AdaptiveSequencedExecutor() {
     sync_all();
     {
         auto guard = std::unique_lock(_mutex);
-        assert(_self.state == Self::State::OPEN);
+        CHECK(_self.state == Self::State::OPEN);
         _self.state = Self::State::CLOSED;
         while (!_worker_stack.empty()) {
             Worker* worker = _worker_stack.back();
             _worker_stack.popBack();
-            assert(worker->state == Worker::State::BLOCKED);
-            assert(worker->strand == nullptr);
+            CHECK(worker->state == Worker::State::BLOCKED);
+            CHECK(worker->strand == nullptr);
             worker->state = Worker::State::DONE;
             worker->cond.notify_one();
         }
         _self.cond.notify_all();
     }
     _thread_tools->close();
-    assert(_wait_queue.empty());
-    assert(_worker_stack.empty());
+    CHECK(_wait_queue.empty());
+    CHECK(_worker_stack.empty());
 }
 
 ISequencedTaskExecutor::ExecutorId AdaptiveSequencedExecutor::getExecutorId(uint64_t component) const {
@@ -213,10 +215,10 @@ ISequencedTaskExecutor::ExecutorId AdaptiveSequencedExecutor::getExecutorId(uint
 }
 
 void AdaptiveSequencedExecutor::executeTask(ExecutorId id, Task::UP task) {
-    assert(id.getId() < _strands.size());
+    CHECK(id.getId() < _strands.size());
     Strand& strand = _strands[id.getId()];
     auto    guard = std::unique_lock(_mutex);
-    assert(_self.state != Self::State::CLOSED);
+    CHECK(_self.state != Self::State::CLOSED);
     maybe_block_self(guard);
     strand.queue.push(TaggedTask(std::move(task), _barrier.startEvent()));
     _stats.queueSize.add(++_self.pending_tasks);
@@ -230,11 +232,11 @@ void AdaptiveSequencedExecutor::executeTask(ExecutorId id, Task::UP task) {
             _self.waiting_tasks += strand.queue.size();
         } else {
             strand.state = Strand::State::ACTIVE;
-            assert(_wait_queue.empty());
+            CHECK(_wait_queue.empty());
             Worker* worker = _worker_stack.back();
             _worker_stack.popBack();
-            assert(worker->state == Worker::State::BLOCKED);
-            assert(worker->strand == nullptr);
+            CHECK(worker->state == Worker::State::BLOCKED);
+            CHECK(worker->strand == nullptr);
             worker->state = Worker::State::RUNNING;
             worker->strand = &strand;
             worker->cond.notify_one();

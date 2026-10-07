@@ -2,11 +2,11 @@
 
 #include "scheduled_forward_executor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-#include <cassert>
 #include <condition_variable>
 #include <thread>
 
@@ -19,8 +19,8 @@ public:
     State() : _mutex(), _cond(), _handle(), _start_success(0), _start_failed(0), _running(false) {}
     ~State() {
         std::lock_guard guard(_mutex);
-        assert(!_handle);
-        assert(!_running);
+        CHECK(!_handle);
+        CHECK(!_running);
     }
     /// Returns false if it was already running
     bool start() {
@@ -39,7 +39,7 @@ public:
         std::lock_guard guard(_mutex);
         bool            was_running = _running;
         _running = false;
-        assert(was_running);
+        CHECK(was_running);
         _cond.notify_all();
     }
     void setHandle(Handle handle) {
@@ -83,7 +83,7 @@ ScheduledForwardExecutor::ScheduledForwardExecutor(FNET_Transport& transport, Ex
 
 ScheduledForwardExecutor::~ScheduledForwardExecutor() {
     std::lock_guard guard(_lock);
-    assert(_taskList.empty());
+    CHECK(_taskList.empty());
 }
 
 bool ScheduledForwardExecutor::cancel(uint64_t key) {

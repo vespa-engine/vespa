@@ -4,12 +4,11 @@
 
 #include "documentprotocol.h"
 
+#include <vespa/check_require.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/messagebus/emptyreply.h>
-
-#include <cassert>
 
 namespace documentapi {
 
@@ -31,12 +30,12 @@ bool ReplyMerger::Result::isSuccessful() const {
 }
 
 std::unique_ptr<mbus::Reply> ReplyMerger::Result::releaseGeneratedReply() {
-    assert(hasGeneratedReply());
+    CHECK(hasGeneratedReply());
     return std::move(_generatedReply);
 }
 
 uint32_t ReplyMerger::Result::getSuccessfulReplyIndex() const {
-    assert(!hasGeneratedReply());
+    CHECK(!hasGeneratedReply());
     return _successIdx;
 }
 
@@ -111,7 +110,7 @@ std::unique_ptr<mbus::Reply> ReplyMerger::releaseGeneratedErrorReply() {
     if (_error) {
         return std::move(_error);
     } else {
-        assert(_ignored.get());
+        CHECK(_ignored.get());
         return std::move(_ignored);
     }
 }

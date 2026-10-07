@@ -2,7 +2,8 @@
 
 #include "string_term_vector.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <charconv>
 
 namespace search::query {
@@ -20,7 +21,7 @@ void StringTermVector::addTerm(std::string_view term, Weight) {
 
 void StringTermVector::addTerm(int64_t, Weight) {
     // Will/should never happen
-    assert(false);
+    CHECK(false);
 }
 
 void StringTermVector::addTerm(std::string_view term) {

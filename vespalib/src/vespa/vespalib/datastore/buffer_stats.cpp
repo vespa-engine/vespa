@@ -2,7 +2,7 @@
 
 #include "buffer_stats.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::datastore {
 
@@ -41,7 +41,7 @@ void InternalBufferStats::clear() noexcept {
 
 void InternalBufferStats::dec_hold_entries(size_t value) noexcept {
     EntryCount elems = hold_entries();
-    assert(elems >= value);
+    CHECK(elems >= value);
     _hold_entries.store(elems - value, std::memory_order_relaxed);
 }
 

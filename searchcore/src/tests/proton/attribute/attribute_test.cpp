@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config-attributes.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
@@ -786,7 +787,7 @@ public:
     }
     std::unique_ptr<PrepareResult> prepare_set_tensor(uint32_t docid, const Value& tensor) const override {
         ++prepare_set_tensor_cnt;
-        assert(exp_tensor);
+        CHECK(exp_tensor);
         EXPECT_EQ(*exp_tensor, tensor);
         return std::make_unique<MockPrepareResult>(docid, tensor);
     }
@@ -794,9 +795,9 @@ public:
     void complete_set_tensor(DocId docid, const Value& tensor,
                              std::unique_ptr<PrepareResult> prepare_result) override {
         ++complete_set_tensor_cnt;
-        assert(prepare_result);
+        CHECK(prepare_result);
         auto* mock_result = dynamic_cast<MockPrepareResult*>(prepare_result.get());
-        assert(mock_result);
+        CHECK(mock_result);
         EXPECT_EQ(docid, mock_result->docid);
         EXPECT_EQ(tensor, mock_result->tensor);
     }
