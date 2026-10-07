@@ -77,6 +77,15 @@ public class GroupingParser {
         } catch (IllegalArgumentException e) {
             throw new ParseException("Input '" + name + "' is not a valid list: " + e.getMessage());
         }
+
+    /**
+     * Rejects a negative value where the grammar only accepts unsigned literals, but a parameter may be negative
+     */
+    private static Number nonNegative(String clause, Number num) throws ParseException {
+        if (num.doubleValue() < 0) {
+            throw new ParseException(clause + " must be a non-negative number, but got " + num);
+        }
+        return num;
     }
 
     private static Number resolveParameterNumber(String name, String value) throws ParseException {
@@ -359,12 +368,12 @@ void operationBody(GroupingOperation parent) :
             if (maxOperand instanceof InfiniteValue) {
                 parent.setMax(GroupingOperation.UNLIMITED_MAX);
             } else {
-                parent.setMax(((Number)maxOperand.getValue()).intValue());
+                parent.setMax(nonNegative("max", (Number)maxOperand.getValue()).intValue());
             }
       } ) |
       ( <ORDER>     lbrace() lst = expList(parent)                        rbrace() { parent.addOrderBy(lst); }                ) |
       ( <OUTPUT>    lbrace() lst = expList(parent)                        rbrace() { parent.addOutputs(lst); }                ) |
-      ( <PRECISION> lbrace() num = number()                               rbrace() { parent.setPrecision(num.intValue()); }   ) |
+      ( <PRECISION> lbrace() num = number()                               rbrace() { parent.setPrecision(nonNegative("precision", num).intValue()); } ) |
       ( <WHERE>     lbrace() str = where()                                rbrace() { parent.setWhere(str); }                  ) )*
     (                              operation(parent)                                                                            )*
 }
