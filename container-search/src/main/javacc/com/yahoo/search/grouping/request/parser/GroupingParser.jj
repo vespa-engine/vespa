@@ -1111,7 +1111,7 @@ RangePredicate rangePredicate(GroupingOperation grp) :
     BooleanValue upperInclusive = new BooleanValue(false);
 }
 {
-    <RANGE> lbrace() lower = number() comma() upper = number() comma() exp = exp(grp) [ comma()  lowerInclusive = booleanValue() comma() upperInclusive = booleanValue() ] rbrace()
+    <RANGE> lbrace() lower = rangeBound() comma() upper = rangeBound() comma() exp = exp(grp) [ comma()  lowerInclusive = booleanValue() comma() upperInclusive = booleanValue() ] rbrace()
     { return new RangePredicate(lower, upper, exp, lowerInclusive.getValue(), upperInclusive.getValue()); }
 }
 
@@ -1211,6 +1211,16 @@ Number number() :
 }
 {
     ( num = literalNumber() | num = parameterNumber() )
+    { return num; }
+}
+
+// A bound of range(): a number literal which may be negative, or a parameter
+Number rangeBound() :
+{
+    Number num;
+}
+{
+    ( num = signedNumber() | num = parameterNumber() )
     { return num; }
 }
 
