@@ -68,14 +68,18 @@ bool no_overlap_keep_all(bool a, bool b, bool keep) noexcept {
 } // namespace
 
 SparseJoinReducePlan::est_fun_t SparseJoinReducePlan::select_estimate() const {
-    if (check(reduce_all))
+    if (check(reduce_all)) {
         return est_1;
-    if (check(no_overlap_keep_all))
+    }
+    if (check(no_overlap_keep_all)) {
         return est_mul;
-    if (check(keep_a_reduce_b))
+    }
+    if (check(keep_a_reduce_b)) {
         return est_a_or_0;
-    if (check(keep_b_reduce_a))
+    }
+    if (check(keep_b_reduce_a)) {
         return est_b_or_0;
+    }
     return est_min;
 }
 

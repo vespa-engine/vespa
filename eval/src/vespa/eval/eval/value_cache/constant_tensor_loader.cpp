@@ -112,8 +112,9 @@ struct AddressExtractor : ObjectTraverser {
         if (label.empty()) {
             auto got = inspector.toString();
             int  sz = got.size();
-            if (sz > 0)
+            if (sz > 0) {
                 --sz;
+            }
             LOG(error, "missing 'label' in address, got '%.*s'", sz, got.c_str());
             throw std::exception();
         }
