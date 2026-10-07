@@ -58,6 +58,9 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     private static final Logger log = Logger.getLogger(TritonOnnxRuntime.class.getName());
     private static final String MODEL_FILE_NAME = "model.onnx";
 
+    // The attention mask input Triton pools with unless the config names another.
+    private static final String DEFAULT_POOLING_ATTENTION_MASK = "attention_mask";
+
     private final TritonOnnxClient tritonClient;
     private final boolean isModelControlExplicit;
     private final boolean shareSessionBetweenInstances;
@@ -483,12 +486,15 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                         "pooling_output",
                         ModelParameter.newBuilder()
                                 .setStringValue(pooling.outputName())
-                                .build())
-                .putParameters(
-                        "pooling_attention_mask",
-                        ModelParameter.newBuilder()
-                                .setStringValue(pooling.attentionMaskName())
                                 .build());
+
+        // Without the parameter, Triton uses the default attention mask input if the model has it.
+        // Otherwise it attends to all tokens, like the embedders do for a model without a mask input.
+        // A named mask input the model lacks fails the model load.
+        if (pooling.strategy().equals("cls") || pooling.attentionMaskName().equals(DEFAULT_POOLING_ATTENTION_MASK)) return;
+        configBuilder.putParameters(
+                "pooling_attention_mask",
+                ModelParameter.newBuilder().setStringValue(pooling.attentionMaskName()).build());
     }
 
     private String createModelConfigFromFile(Path configPath, String modelName) {

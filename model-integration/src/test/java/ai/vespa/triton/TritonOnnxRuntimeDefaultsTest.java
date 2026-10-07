@@ -419,13 +419,33 @@ class TritonOnnxRuntimeDefaultsTest {
             var name = TritonOnnxRuntime.generateModelName(
                     MODEL_PATH, resolveInstanceCount(options, SEPARATE_SESSIONS), SEPARATE_SESSIONS, Optional.of(MEAN_POOLING));
             var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
-            assertEquals(Map.of("pooling_strategy", "mean",
-                                "pooling_output", "last_hidden_state",
-                                "pooling_attention_mask", "attention_mask"),
+            // The config leaves the default mask input to Triton, which also handles a model without it.
+            assertEquals(Map.of("pooling_strategy", "mean", "pooling_output", "last_hidden_state"),
                          poolingParameters(config));
         } finally {
             runtime.deconstruct();
         }
+    }
+
+    @Test
+    void pooling_parameters_name_only_a_non_default_mask_used_by_the_strategy() {
+        assertEquals(Map.of("pooling_strategy", "mean", "pooling_output", "token_embeddings",
+                            "pooling_attention_mask", "mask"),
+                     poolingParameters("mean", "token_embeddings", "mask"));
+        assertEquals(Map.of("pooling_strategy", "last", "pooling_output", "last_hidden_state",
+                            "pooling_attention_mask", "mask"),
+                     poolingParameters("last", "last_hidden_state", "mask"));
+        assertEquals(Map.of("pooling_strategy", "last", "pooling_output", "last_hidden_state"),
+                     poolingParameters("last", "last_hidden_state", "attention_mask"));
+        // CLS pooling does not use the mask.
+        assertEquals(Map.of("pooling_strategy", "cls", "pooling_output", "last_hidden_state"),
+                     poolingParameters("cls", "last_hidden_state", "mask"));
+    }
+
+    private static Map<String, String> poolingParameters(String strategy, String output, String mask) {
+        var builder = ModelConfig.newBuilder();
+        TritonOnnxRuntime.addPoolingParameters(builder, new OnnxPoolingOptions(strategy, output, mask));
+        return poolingParameters(builder.build());
     }
 
     @Test
