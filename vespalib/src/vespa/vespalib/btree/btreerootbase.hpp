@@ -37,10 +37,11 @@ BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::operator=(const B
 template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::freeze(NodeAllocatorType& allocator) {
     if (NodeAllocatorType::isValidRef(_root)) {
-        if (allocator.isLeafRef(_root))
+        if (allocator.isLeafRef(_root)) {
             assert(allocator.mapLeafRef(_root)->getFrozen());
-        else
+        } else {
             assert(allocator.mapInternalRef(_root)->getFrozen());
+        }
     }
     _frozenRoot.store(_root.ref(), std::memory_order_release);
 }

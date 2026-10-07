@@ -58,14 +58,17 @@ void VersionSpecification::initialize() {
 
 void VersionSpecification::verifySanity() {
 
-    if (_major < UNSPECIFIED)
+    if (_major < UNSPECIFIED) {
         throw IllegalArgumentException("Negative major in " + _stringValue);
+    }
 
-    if (_minor < UNSPECIFIED)
+    if (_minor < UNSPECIFIED) {
         throw IllegalArgumentException("Negative minor in " + _stringValue);
+    }
 
-    if (_micro < UNSPECIFIED)
+    if (_micro < UNSPECIFIED) {
         throw IllegalArgumentException("Negative micro in " + _stringValue);
+    }
 
     if (!_qualifier.empty()) {
         for (size_t i = 0; i < _qualifier.length(); i++) {
@@ -106,52 +109,65 @@ VersionSpecification::VersionSpecification(const string& versionString)
     if (!versionString.empty()) {
         StringTokenizer components(versionString, ".", ""); // Split on dot
 
-        if (components.size() > 0)
+        if (components.size() > 0) {
             _major = parseInteger(components[0]);
-        if (components.size() > 1)
+        }
+        if (components.size() > 1) {
             _minor = parseInteger(components[1]);
-        if (components.size() > 2)
+        }
+        if (components.size() > 2) {
             _micro = parseInteger(components[2]);
-        if (components.size() > 3)
+        }
+        if (components.size() > 3) {
             _qualifier = components[3];
-        if (components.size() > 4)
+        }
+        if (components.size() > 4) {
             throw IllegalArgumentException("too many dot-separated components in version string");
+        }
     }
     initialize();
 }
 
 bool VersionSpecification::equals(const VersionSpecification& other) const {
-    if (_major != other._major)
+    if (_major != other._major) {
         return false;
-    if (_minor != other._minor)
+    }
+    if (_minor != other._minor) {
         return false;
-    if (_micro != other._micro)
+    }
+    if (_micro != other._micro) {
         return false;
-    if (_qualifier != other._qualifier)
+    }
+    if (_qualifier != other._qualifier) {
         return false;
+    }
 
     return true;
 }
 
 int VersionSpecification::compareTo(const VersionSpecification& other) const {
     int result = _major - other._major;
-    if (result != 0)
+    if (result != 0) {
         return result;
+    }
 
     result = _minor - other._minor;
-    if (result != 0)
+    if (result != 0) {
         return result;
+    }
 
     result = _micro - other._micro;
-    if (result != 0)
+    if (result != 0) {
         return result;
+    }
 
     return _qualifier.compare(other._qualifier);
 }
 
 bool VersionSpecification::matches(int spec, int v) {
-    if (spec == VersionSpecification::UNSPECIFIED)
+    if (spec == VersionSpecification::UNSPECIFIED) {
         return true;
+    }
     return (spec == v);
 }
 

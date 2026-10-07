@@ -276,8 +276,9 @@ void DataStoreBase::holdBuffer(uint32_t bufferId) {
 
 void DataStoreBase::enableFreeLists() {
     for_each_buffer([this](BufferState& state) {
-        if (!state.isActive() || state.getCompacting())
+        if (!state.isActive() || state.getCompacting()) {
             return;
+        }
         state.enable_free_list(_free_lists[state.getTypeId()]);
     });
     _freeListsEnabled = true;
@@ -290,8 +291,9 @@ void DataStoreBase::disableFreeLists() noexcept {
 
 void DataStoreBase::disable_entry_hold_list() {
     for_each_buffer([](BufferState& state) {
-        if (!state.isFree())
+        if (!state.isFree()) {
             state.disable_entry_hold_list();
+        }
     });
     _disable_entry_hold_list = true;
 }

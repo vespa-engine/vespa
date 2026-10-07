@@ -189,8 +189,9 @@ template <typename LeafNodeType> bool BTreeTest::assertLeafNode(const std::strin
     std::stringstream ss;
     ss << "[";
     for (uint32_t i = 0; i < n.validSlots(); ++i) {
-        if (i > 0)
+        if (i > 0) {
             ss << ",";
+        }
         ss << n.getKey(i) << ":" << n.getData(i);
     }
     ss << "]";
@@ -761,8 +762,9 @@ TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree) {
         MyTree::Iterator itre = itr;
         MyTree::Iterator itre2;
         MyTree::Iterator ritr = itr;
-        while (itre.valid())
+        while (itre.valid()) {
             ++itre;
+        }
         if (numEntries > 0) {
             EXPECT_TRUE(ritr.valid());
             EXPECT_EQ(0u, ritr.position());
@@ -1122,10 +1124,12 @@ struct UpdKeyComp {
     mutable size_t _numErrors;
     UpdKeyComp(int remainder) : _remainder(remainder), _numErrors(0) {}
     bool operator()(const int& lhs, const int& rhs) const {
-        if (lhs % 2 != _remainder)
+        if (lhs % 2 != _remainder) {
             ++_numErrors;
-        if (rhs % 2 != _remainder)
+        }
+        if (rhs % 2 != _remainder) {
             ++_numErrors;
+        }
         return lhs < rhs;
     }
 };
@@ -1310,8 +1314,9 @@ TEST_F(BTreeTest, require_that_apply_works) {
 
     additions.clear();
     removals.clear();
-    for (uint32_t i = 0; i < 20; ++i)
+    for (uint32_t i = 0; i < 20; ++i) {
         additions.push_back(KeyDataType(1000 + i, "big"));
+    }
     removals.push_back(60);
     removals.push_back(1002);
     apply_tree_mutations(s, root, additions, removals);
@@ -1325,10 +1330,12 @@ TEST_F(BTreeTest, require_that_apply_works) {
 
     additions.clear();
     removals.clear();
-    for (uint32_t i = 0; i < 20; ++i)
+    for (uint32_t i = 0; i < 20; ++i) {
         additions.push_back(KeyDataType(1100 + i, "big"));
-    for (uint32_t i = 0; i < 10; ++i)
+    }
+    for (uint32_t i = 0; i < 10; ++i) {
         removals.push_back(1000 + i);
+    }
     apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(30u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));

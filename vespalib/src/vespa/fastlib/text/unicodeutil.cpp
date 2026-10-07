@@ -12,37 +12,42 @@ char* Fast_UnicodeUtil::utf8ncopy(char* dst, const ucs4_t* src, int maxdst, int 
 
     for (const ucs4_t* esrc(src + maxsrc); (src < esrc) && (*src != 0) && (p < edst); src++) {
         ucs4_t i(*src);
-        if (i < 128)
+        if (i < 128) {
             *p++ = i;
-        else if (i < 0x800) {
-            if (p + 1 >= edst)
+        } else if (i < 0x800) {
+            if (p + 1 >= edst) {
                 break;
+            }
             *p++ = (i >> 6) | 0xc0;
             *p++ = (i & 63) | 0x80;
         } else if (i < 0x10000) {
-            if (p + 2 >= edst)
+            if (p + 2 >= edst) {
                 break;
+            }
             *p++ = (i >> 12) | 0xe0;
             *p++ = ((i >> 6) & 63) | 0x80;
             *p++ = (i & 63) | 0x80;
         } else if (i < 0x200000) {
-            if (p + 3 >= edst)
+            if (p + 3 >= edst) {
                 break;
+            }
             *p++ = (i >> 18) | 0xf0;
             *p++ = ((i >> 12) & 63) | 0x80;
             *p++ = ((i >> 6) & 63) | 0x80;
             *p++ = (i & 63) | 0x80;
         } else if (i < 0x4000000) {
-            if (p + 4 >= edst)
+            if (p + 4 >= edst) {
                 break;
+            }
             *p++ = (i >> 24) | 0xf8;
             *p++ = ((i >> 18) & 63) | 0x80;
             *p++ = ((i >> 12) & 63) | 0x80;
             *p++ = ((i >> 6) & 63) | 0x80;
             *p++ = (i & 63) | 0x80;
         } else {
-            if (p + 5 >= edst)
+            if (p + 5 >= edst) {
                 break;
+            }
             *p++ = (i >> 30) | 0xfc;
             *p++ = ((i >> 24) & 63) | 0x80;
             *p++ = ((i >> 18) & 63) | 0x80;
@@ -51,8 +56,9 @@ char* Fast_UnicodeUtil::utf8ncopy(char* dst, const ucs4_t* src, int maxdst, int 
             *p++ = (i & 63) | 0x80;
         }
     }
-    if (p < edst)
+    if (p < edst) {
         *p = 0;
+    }
     return p;
 }
 
@@ -65,10 +71,12 @@ int Fast_UnicodeUtil::utf8cmp(const char* s1, const ucs4_t* s2) noexcept {
         i1 = GetUTF8Char(ps1);
         i2 = *s2++;
     } while (i1 != 0 && i1 == i2);
-    if (i1 > i2)
+    if (i1 > i2) {
         return 1;
-    if (i1 < i2)
+    }
+    if (i1 < i2) {
         return -1;
+    }
     return 0;
 }
 
@@ -87,8 +95,9 @@ ucs4_t* Fast_UnicodeUtil::ucs4copy(ucs4_t* dst, const char* src) noexcept {
 
     p = dst;
     while ((i = GetUTF8Char(psrc)) != 0) {
-        if (i != _BadUTF8Char)
+        if (i != _BadUTF8Char) {
             *p++ = i;
+        }
     }
     *p = 0;
     return p;
@@ -207,36 +216,44 @@ int Fast_UnicodeUtil::UTF8move(unsigned const char* start, size_t length, unsign
 
     if (increment < 0) {
         // Already at start?
-        if (p < start)
+        if (p < start) {
             return -1;
+        }
         if (!offset) {
-            if (p > start + length)
+            if (p > start + length) {
                 return -1;
-        } else if (p == start)
+            }
+        } else if (p == start) {
             return -1;
+        }
 
         // Initially pointing to the first invalid char?
-        if (p == start + length)
+        if (p == start + length) {
             p += increment;
-        else
+        } else {
             offset += increment;
-    } else if (p >= start + length)
+        }
+    } else if (p >= start + length) {
         return -1;
-    else if (UTF8_STARTCHAR(*p))
+    } else if (UTF8_STARTCHAR(*p)) {
         offset += increment;
+    }
 
     for (; p >= start && p < start + length; p += increment) {
         /** Are we at start of a character? (both highest bits or none of them set) */
-        if (UTF8_STARTCHAR(*p))
+        if (UTF8_STARTCHAR(*p)) {
             offset -= increment; // We have "eaten" another character (independent of dir)
-        if (offset == 0)
+        }
+        if (offset == 0) {
             break;
+        }
     }
 
     if (offset != 0) {
         offset -= increment;
-        if (increment < 0)
+        if (increment < 0) {
             p -= increment;
+        }
     }
 
     if (offset == 0) // Enough room to make it..
@@ -244,6 +261,7 @@ int Fast_UnicodeUtil::UTF8move(unsigned const char* start, size_t length, unsign
         int moved = std::abs(p - pos);
         pos = p;
         return moved;
-    } else
+    } else {
         return -1;
+    }
 }

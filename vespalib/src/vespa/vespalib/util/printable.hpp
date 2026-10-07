@@ -17,8 +17,9 @@ void print(const std::vector<T>& v, vespalib::asciistream& out, const AsciiPrint
     bool newLineBetweenEntries = (ost.view().size() > 15);
     out << "[";
     for (size_t i = 0; i < v.size(); ++i) {
-        if (i != 0)
+        if (i != 0) {
             out << ",";
+        }
         if (newLineBetweenEntries) {
             out << "\n" << p.indent(1);
         } else {

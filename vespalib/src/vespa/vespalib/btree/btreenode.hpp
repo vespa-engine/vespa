@@ -175,17 +175,20 @@ void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanRange(uint32_t from, uint32
     assert(validSlots() <= NodeType::maxSlots());
     assert(!getFrozen());
     KeyT emptyKey = KeyT();
-    for (KeyT *k = _keys + from, *ke = _keys + to; k != ke; ++k)
+    for (KeyT *k = _keys + from, *ke = _keys + to; k != ke; ++k) {
         *k = emptyKey;
+    }
     DataT emptyData = DataT();
-    for (uint32_t i = from; i != to; ++i)
+    for (uint32_t i = from; i != to; ++i) {
         setData(i, emptyData);
+    }
 }
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::clean() noexcept {
-    if (validSlots() == 0)
+    if (validSlots() == 0) {
         return;
+    }
     cleanRange(0, validSlots());
     _validSlots = 0;
 }
@@ -194,14 +197,17 @@ template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 void BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>::cleanFrozen() noexcept {
     assert(validSlots() <= NodeType::maxSlots());
     assert(getFrozen());
-    if (validSlots() == 0)
+    if (validSlots() == 0) {
         return;
+    }
     KeyT emptyKey = KeyT();
-    for (KeyT *k = _keys, *ke = _keys + validSlots(); k != ke; ++k)
+    for (KeyT *k = _keys, *ke = _keys + validSlots(); k != ke; ++k) {
         *k = emptyKey;
+    }
     DataT emptyData = DataT();
-    for (uint32_t i = 0, ie = validSlots(); i != ie; ++i)
+    for (uint32_t i = 0, ie = validSlots(); i != ie; ++i) {
         setData(i, emptyData);
+    }
     _validSlots = 0;
 }
 

@@ -169,10 +169,12 @@ int64_t ZCurve::encodeSlow(int32_t x, int32_t y) {
     uint32_t ibit = 1;
     uint64_t obit = 1;
     for (; ibit != 0; ibit <<= 1, obit <<= 2) {
-        if (static_cast<uint32_t>(x) & ibit)
+        if (static_cast<uint32_t>(x) & ibit) {
             res |= obit;
-        if (static_cast<uint32_t>(y) & ibit)
+        }
+        if (static_cast<uint32_t>(y) & ibit) {
             res |= (obit << 1);
+        }
     }
     return static_cast<int64_t>(res);
 }
@@ -183,10 +185,12 @@ void ZCurve::decodeSlow(int64_t enc, int32_t* xp, int32_t* yp) {
     uint64_t ibit = 1;
     uint32_t obit = 1;
     for (; ibit != 0; ibit <<= 2, obit <<= 1) {
-        if ((static_cast<uint64_t>(enc) & ibit) != 0)
+        if ((static_cast<uint64_t>(enc) & ibit) != 0) {
             x |= obit;
-        if ((static_cast<uint64_t>(enc) & (ibit << 1)) != 0)
+        }
+        if ((static_cast<uint64_t>(enc) & (ibit << 1)) != 0) {
             y |= obit;
+        }
     }
     *xp = static_cast<int32_t>(x);
     *yp = static_cast<int32_t>(y);

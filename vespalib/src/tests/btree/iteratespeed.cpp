@@ -57,7 +57,9 @@ void IterateSpeed::workLoop(int loops, bool enableForward, bool enableBackwards,
         (iterateMethod == IterateMethod::BACKWARDS && !enableBackwards) ||
         (iterateMethod == IterateMethod::LAMBDA && !enableLambda) ||
         (leafSlots != 0 && leafSlots != static_cast<int>(Traits::LEAF_SLOTS)))
+    {
         return;
+    }
     vespalib::GenerationHandler g;
     using Tree = BTree<int, int, btree::NoAggregated, std::less<int>, Traits>;
     using Builder = typename Tree::Builder;

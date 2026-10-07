@@ -149,8 +149,9 @@ void BTreeRemover<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::remove(BTre
     if (level > 0 && node->validSlots() == 1) {
         root = itr.removeLevel(root, node);
     }
-    if (steppedBack)
+    if (steppedBack) {
         ++itr;
+    }
 }
 
 } // namespace vespalib::btree

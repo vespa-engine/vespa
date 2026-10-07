@@ -45,8 +45,9 @@ void Fast_NormalizeWordFolder::Initialize() {
         std::lock_guard<std::mutex> initGuard(G_initMutex);
         if (!_isInitialized) {
 
-            for (i = 0; i < 128; i++)
+            for (i = 0; i < 128; i++) {
                 _isWord[i] = Fast_UnicodeUtil::IsWordChar(i);
+            }
             for (i = 0; i < 767; i++) {
                 _foldCase[i] = _lowerCase[i] = Fast_UnicodeUtil::ToLower(i);
             }
@@ -248,12 +249,16 @@ void Fast_NormalizeWordFolder::Initialize() {
             }
 
             // Fullwidth ASCII
-            for (i = 0; i < 0x21; i++)
+            for (i = 0; i < 0x21; i++) {
                 _halfwidth_fullwidthMap[i] = 0x20 + i;
+            }
             for (i = 0x21; i < 0x3B; i++) // full uppercase to half lowercase
+            {
                 _halfwidth_fullwidthMap[i] = 0x40 + i;
-            for (i = 0x3B; i < 0x5F; i++)
+            }
+            for (i = 0x3B; i < 0x5F; i++) {
                 _halfwidth_fullwidthMap[i] = 0x20 + i;
+            }
             // 0xFF00, 0xFF5F -> id
             _halfwidth_fullwidthMap[0x00] = 0xFF00;
             _halfwidth_fullwidthMap[0x5F] = 0xFF5F;
@@ -334,29 +339,34 @@ void Fast_NormalizeWordFolder::Initialize() {
             // Halfwidth Hangul
             _halfwidth_fullwidthMap[0xA0] = 0x3164;
             // fill in 0xFFA1 - 0xFFBE => 0x3131 - 0x314E
-            for (i = 0xA1; i < 0xBF; i++)
+            for (i = 0xA1; i < 0xBF; i++) {
                 _halfwidth_fullwidthMap[i] = 0x3090 + i;
+            }
             _halfwidth_fullwidthMap[0xBF] = 0xFFBF;
             _halfwidth_fullwidthMap[0xC0] = 0xFFC0;
             _halfwidth_fullwidthMap[0xC1] = 0xFFC1;
             // fill in 0xFFC2 - 0xFFC7 => 0x314F - 0x3154
-            for (i = 0xC2; i < 0xC8; i++)
+            for (i = 0xC2; i < 0xC8; i++) {
                 _halfwidth_fullwidthMap[i] = 0x308D + i;
+            }
             _halfwidth_fullwidthMap[0xC8] = 0xFFC8;
             _halfwidth_fullwidthMap[0xC9] = 0xFFC9;
             // fill in 0xFFCA - 0xFFCF => 0x3155 - 0x315A
-            for (i = 0xCA; i < 0xD0; i++)
+            for (i = 0xCA; i < 0xD0; i++) {
                 _halfwidth_fullwidthMap[i] = 0x308B + i;
+            }
             _halfwidth_fullwidthMap[0xD0] = 0xFFD0;
             _halfwidth_fullwidthMap[0xD1] = 0xFFD1;
             // fill in 0xFFD2 - 0xFFD7 => 0x315B - 0x3160
-            for (i = 0xD2; i < 0xD8; i++)
+            for (i = 0xD2; i < 0xD8; i++) {
                 _halfwidth_fullwidthMap[i] = 0x3089 + i;
+            }
             _halfwidth_fullwidthMap[0xD8] = 0xFFD8;
             _halfwidth_fullwidthMap[0xD9] = 0xFFD9;
             // fill in 0xFFDA - 0xFFDC => 0x3161 - 0x3163
-            for (i = 0xDA; i < 0xDD; i++)
+            for (i = 0xDA; i < 0xDD; i++) {
                 _halfwidth_fullwidthMap[i] = 0x3087 + i;
+            }
 
             // Fullwidth symbols
             _halfwidth_fullwidthMap[0xE0] = 0x00A2;
@@ -412,12 +422,14 @@ const char* Fast_NormalizeWordFolder::UCS4Tokenize(const char* buf, const char* 
     while (p < ep) {
         if (*p < 128) {
             c = *p++;
-            if (_isWord[c])
+            if (_isWord[c]) {
                 break;
+            }
         } else {
             c = Fast_UnicodeUtil::GetUTF8Char(p);
-            if (IsWordCharOrIA(c))
+            if (IsWordCharOrIA(c)) {
                 break;
+            }
         }
         prev_p = p;
     }
@@ -462,8 +474,9 @@ const char* Fast_NormalizeWordFolder::UCS4Tokenize(const char* buf, const char* 
         while (p < ep) {
             if (*p < 128) { // Common case, ASCII
                 c = *p;
-                if (!_isWord[c])
+                if (!_isWord[c]) {
                     break;
+                }
                 p++;
             } else {
                 prev_p = p;

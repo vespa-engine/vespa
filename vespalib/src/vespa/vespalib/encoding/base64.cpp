@@ -93,8 +93,9 @@ int Base64::encode(const char* inBuffer, int inLen, char* outBuffer, int outBufL
         outLen += 4;
     }
 
-    if (outLen >= outBufLen)
+    if (outLen >= outBufLen) {
         return -1;
+    }
 
     outBuffer[outLen] = '\0';
 

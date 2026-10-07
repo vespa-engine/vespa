@@ -105,8 +105,9 @@ public:
     static bool isValidRef(BTreeNode::Ref ref) noexcept { return NodeStore::isValidRef(ref); }
 
     bool isLeafRef(BTreeNode::Ref ref) const noexcept {
-        if (!isValidRef(ref))
+        if (!isValidRef(ref)) {
             return false;
+        }
         return _nodeStore.isLeafRef(ref);
     }
 

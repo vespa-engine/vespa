@@ -256,12 +256,14 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::getLastKey(B
 template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 const AggrT& BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::getAggregated(
     BTreeNode::Ref node) const noexcept {
-    if (!node.valid())
+    if (!node.valid()) {
         return LeafNodeType::getEmptyAggregated();
-    if (isLeafRef(node))
+    }
+    if (isLeafRef(node)) {
         return mapLeafRef(node)->getAggregated();
-    else
+    } else {
         return mapInternalRef(node)->getAggregated();
+    }
 }
 
 template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
@@ -275,10 +277,11 @@ std::string BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
     if (!isValidRef(ref)) {
         return "NULL";
     }
-    if (isLeafRef(ref))
+    if (isLeafRef(ref)) {
         return toString(mapLeafRef(ref));
-    else
+    } else {
         return toString(mapInternalRef(ref));
+    }
 }
 
 template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
@@ -292,8 +295,9 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::toString(con
         const auto* lnode = static_cast<const LeafNodeType*>(node);
         ss << "L: keys(" << lnode->validSlots() << ")[";
         for (uint32_t i = 0; i < lnode->validSlots(); ++i) {
-            if (i > 0)
+            if (i > 0) {
                 ss << ",";
+            }
             ss << lnode->getKey(i);
         }
         ss << "]";
@@ -301,8 +305,9 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::toString(con
         const auto* inode = static_cast<const InternalNodeType*>(node);
         ss << "I: validLeaves(" << inode->validLeaves() << "), keys(" << inode->validSlots() << ")[";
         for (uint32_t i = 0; i < inode->validSlots(); ++i) {
-            if (i > 0)
+            if (i > 0) {
                 ss << ",";
+            }
             ss << inode->getKey(i);
         }
         ss << "]";

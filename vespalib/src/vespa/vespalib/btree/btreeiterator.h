@@ -74,8 +74,9 @@ public:
     }
 
     void adjustSplit(bool inRightSplit) noexcept {
-        if (inRightSplit)
+        if (inRightSplit) {
             incIdx();
+        }
     }
 
     bool adjustSplit(bool inRightSplit, const NodeType* splitNode) noexcept {
