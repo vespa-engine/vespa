@@ -1217,6 +1217,32 @@ public class SelectTestCase {
         assertTrue(Exceptions.toMessageString(e).contains("Input 'pattern' is not set"), Exceptions.toMessageString(e));
     }
 
+    /** A grouping which fails to resolve stays pending, so it is not lost and can be resolved once the parameter is set. */
+    @Test
+    void testGroupingWhichFailsToResolveIsNotDiscarded() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\" } } }, " +
+                          "  { \"all\" : { \"group\" : \"b\", \"max\" : \"@max\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        Query query = new Query();
+        query.getSelect().setGroupingString(grouping);
+
+        var e = assertThrows(IllegalArgumentException.class, () -> query.getSelect().getGrouping());
+        assertTrue(Exceptions.toMessageString(e).contains("Input 'max' is not set"), Exceptions.toMessageString(e));
+        // Still failing on repeated access, with the same error, rather than silently returning no grouping
+        e = assertThrows(IllegalArgumentException.class, () -> query.getSelect().getGrouping());
+        assertTrue(Exceptions.toMessageString(e).contains("Input 'max' is not set"), Exceptions.toMessageString(e));
+
+        query.properties().set("max", "3");
+        assertEquals(2, query.getSelect().getGrouping().size());
+        assertEquals("all(group(a) each(output(count())))",
+                     query.getSelect().getGrouping().get(0).getRootOperation().toString());
+        assertEquals("all(group(b) max(3) each(output(count())))",
+                     query.getSelect().getGrouping().get(1).getRootOperation().toString());
+        // Resolved once: not re-resolved on later access
+        query.properties().set("max", "4");
+        assertEquals("all(group(b) max(3) each(output(count())))",
+                     query.getSelect().getGrouping().get(1).getRootOperation().toString());
+    }
+
     @Test
     void testConstructionAndClone() {
         Query query = new Query();
