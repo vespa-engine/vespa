@@ -32,8 +32,9 @@ SimpleConfigurer::~SimpleConfigurer() {
 void SimpleConfigurer::close() {
     if (!_retriever->isClosed()) {
         _retriever->close();
-        if (_started)
+        if (_started) {
             _thread.join();
+        }
     }
 }
 

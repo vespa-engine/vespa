@@ -140,10 +140,11 @@ struct ConfigEncoder : public ArrayTraverser, public ObjectTraverser {
             } else {
                 printPrefix();
                 out.write(' ');
-                if (type.compare("enum") == 0)
+                if (type.compare("enum") == 0) {
                     encodeSTRINGNOQUOTE(inspector["value"].asString());
-                else
+                } else {
                     encodeValue(inspector["value"]);
+                }
                 out.write('\n');
             }
         }
@@ -202,10 +203,11 @@ void ConfigEncoder::entry(size_t index, const Inspector& inspector) {
             out.write(']');
             out.write(' ');
 
-            if (type.compare("enum") == 0)
+            if (type.compare("enum") == 0) {
                 encodeSTRINGNOQUOTE(inspector["value"].asString());
-            else
+            } else {
                 encodeValue(inspector["value"]);
+            }
             out.write('\n');
         }
     }
@@ -237,10 +239,11 @@ void ConfigEncoder::field(const Memory& symbol_name, const Inspector& inspector)
             encodeSTRINGNOQUOTE(symbol_name);
             out.write(' ');
 
-            if (type.compare("enum") == 0)
+            if (type.compare("enum") == 0) {
                 encodeSTRINGNOQUOTE(inspector["value"].asString());
-            else
+            } else {
                 encodeValue(inspector["value"]);
+            }
             out.write('\n');
         }
     }

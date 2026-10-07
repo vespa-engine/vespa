@@ -37,8 +37,9 @@ ModelInspect::ModelInspect(Flags flags, const config::ConfigUri& uri, std::ostre
         std::cerr << e.getMessage() << "\n";
     }
     if (_cfg) {
-        if (_flags.verbose)
+        if (_flags.verbose) {
             std::cerr << "success!\n";
+        }
     } else {
         std::cerr << "FATAL ERROR: failed to get model configuration.\n";
         std::_Exit(1);
@@ -254,8 +255,9 @@ int ModelInspect::listCluster(const std::string cluster) {
             }
         }
     }
-    if (found)
+    if (found) {
         return 0;
+    }
     std::cerr << "no config found for cluster '" << cluster << "'\n";
     return 1;
 }
@@ -281,8 +283,9 @@ int ModelInspect::listService(const std::string svctype) {
             }
         }
     }
-    if (found)
+    if (found) {
         return 0;
+    }
     std::cerr << "no services found with type '" << svctype << "'\n";
     return 1;
 }
@@ -298,8 +301,9 @@ int ModelInspect::listService(const std::string cluster, const std::string svcty
             }
         }
     }
-    if (found)
+    if (found) {
         return 0;
+    }
     std::cerr << "no services found with type '" << svctype << "' in cluster '" << cluster << "'\n";
     return 1;
 }
@@ -315,8 +319,9 @@ int ModelInspect::listConfigId(const std::string configid) {
             }
         }
     }
-    if (found)
+    if (found) {
         return 0;
+    }
     std::cerr << "no services found with configid '" << configid << "'\n";
     return 1;
 }
@@ -334,8 +339,9 @@ int ModelInspect::getIndexOf(const std::string service, const std::string host) 
             }
         }
     }
-    if (found)
+    if (found) {
         return 0;
+    }
     std::cerr << "no service of type '" << service << "' found for host '" << host << "'\n";
     return 1;
 }
