@@ -639,8 +639,9 @@ void NewConfigBuilder::registerStructField(TypeRef struct_idx, const std::string
                 break;
             }
         }
-        if (target_struct)
+        if (target_struct) {
             break;
+        }
     }
 
     assert(target_struct && "Struct not found");

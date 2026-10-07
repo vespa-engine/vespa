@@ -30,8 +30,9 @@ AssignValueUpdate::~AssignValueUpdate() = default;
 static const unsigned char CONTENT_HASVALUE = 0x01;
 
 bool AssignValueUpdate::operator==(const ValueUpdate& other) const {
-    if (other.getType() != Assign)
+    if (other.getType() != Assign) {
         return false;
+    }
     const AssignValueUpdate& o(static_cast<const AssignValueUpdate&>(other));
     if (_value && o._value) {
         return *_value == *o._value;
@@ -56,8 +57,9 @@ void AssignValueUpdate::checkCompatibility(const Field& field) const {
 // Print this update as a human readable string.
 void AssignValueUpdate::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << indent << "AssignValueUpdate(";
-    if (_value)
+    if (_value) {
         _value->print(out, verbose, indent);
+    }
     out << ")";
 }
 

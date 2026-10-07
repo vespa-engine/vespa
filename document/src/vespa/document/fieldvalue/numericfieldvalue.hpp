@@ -34,8 +34,9 @@ template <typename Number> FieldValue& NumericFieldValue<Number>::assign(const F
 
 template <typename Number> int NumericFieldValue<Number>::compare(const FieldValue& other) const {
     int diff = FieldValue::compare(other);
-    if (diff != 0)
+    if (diff != 0) {
         return diff;
+    }
 
     const NumericFieldValue& otherNumber(static_cast<const NumericFieldValue&>(other));
     return (_value == otherNumber._value) ? 0 : (_value - otherNumber._value > 0) ? 1 : -1;

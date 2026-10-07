@@ -193,8 +193,9 @@ void StringUtil::printAsHex(std::ostream& output, const void* source, unsigned i
     printables[columnwidth] = '\0';
     for (unsigned int i = 0; i < size; i += columnwidth) {
         std::ostringstream ost;
-        if (i != 0)
+        if (i != 0) {
             ost << "\n" << indent;
+        }
         ost << std::dec << std::setw(posWidth) << i << ":";
         bool nonNull = false;
         for (unsigned int j = 0; j < columnwidth; ++j) {

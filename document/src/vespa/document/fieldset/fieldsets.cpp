@@ -15,8 +15,9 @@ namespace document {
 namespace {
 
 uint64_t computeHash(const Field::Set& set) {
-    if (set.empty())
+    if (set.empty()) {
         return 0ul;
+    }
 
     vespalib::asciistream os;
     for (const Field* field : set) {

@@ -385,8 +385,9 @@ void verifyFailedParse(const std::string& query, const std::string& error) {
         FAIL() << "Expected exception parsing query '" << query << "'";
     } catch (select::ParsingFailedException& e) {
         std::string message(e.what());
-        if (message.size() > error.size())
+        if (message.size() > error.size()) {
             message = message.substr(0, error.size());
+        }
         std::string failure("Expected: " + error + "\n- Actual  : " + std::string(e.what()));
         EXPECT_EQ(error, message) << failure;
     }

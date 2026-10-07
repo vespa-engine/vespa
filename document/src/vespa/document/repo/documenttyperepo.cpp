@@ -614,8 +614,9 @@ private:
 
     const StructDataType* findStruct(int idx) {
         auto iter = _structs_in_progress.find(idx);
-        if (iter == _structs_in_progress.end())
+        if (iter == _structs_in_progress.end()) {
             return nullptr;
+        }
         const auto& in_progress = iter->second;
         if (in_progress.finished) {
             return in_progress.oldtype;

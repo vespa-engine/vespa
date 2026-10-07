@@ -15,8 +15,9 @@ CollectionDataType::CollectionDataType(std::string_view name, const DataType& ne
 CollectionDataType::~CollectionDataType() = default;
 
 bool CollectionDataType::equals(const DataType& other) const noexcept {
-    if (!DataType::equals(other))
+    if (!DataType::equals(other)) {
         return false;
+    }
     const CollectionDataType* o = other.cast_collection();
     return o && _nestedType->equals(*o->_nestedType);
 }

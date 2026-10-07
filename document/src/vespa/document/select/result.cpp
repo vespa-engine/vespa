@@ -37,12 +37,13 @@ const Result& Result::operator||(const Result& r) const {
 }
 
 void Result::print(std::ostream& out, bool, const std::string&) const {
-    if (this == &Invalid)
+    if (this == &Invalid) {
         out << "Invalid";
-    else if (this == &True)
+    } else if (this == &True) {
         out << "True";
-    else
+    } else {
         out << "False";
+    }
 }
 
 } // namespace document::select
