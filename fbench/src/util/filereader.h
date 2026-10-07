@@ -50,8 +50,9 @@ public:
      * @return the read byte or -1 if EOF was reached or an error occurred.
      **/
     int ReadByte() {
-        if (_bufpos == _bufused)
+        if (_bufpos == _bufused) {
             FillBuffer();
+        }
         return (_bufused > _bufpos) ? (_buf[_bufpos++] & 0x0ff) : -1;
     }
 

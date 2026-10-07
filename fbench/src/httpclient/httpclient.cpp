@@ -77,21 +77,25 @@ ssize_t HTTPClient::ReadLine(char* buf, size_t bufsize) {
     int    lastC = 0;
     int    c = ReadByte();
 
-    if (c == -1)
+    if (c == -1) {
         return -1;
+    }
     while (c != '\n' && c != -1) {
-        if (len + 1 < bufsize)
+        if (len + 1 < bufsize) {
             buf[len] = c;
+        }
         len++;
         lastC = c;
         c = ReadByte();
     }
-    if (lastC == '\r')
+    if (lastC == '\r') {
         len--;
-    if (len < bufsize)
+    }
+    if (len < bufsize) {
         buf[len] = '\0'; // terminate string
-    else if (bufsize > 0)
+    } else if (bufsize > 0) {
         buf[bufsize - 1] = '\0'; // terminate string
+    }
     return len;
 }
 
@@ -165,15 +169,18 @@ bool HTTPClient::Connect(const char* url, bool usePost, const char* content, int
 }
 
 char* HTTPClient::SplitString(char* input, int& argc, char** argv, int maxargs) {
-    for (argc = 0, argv[0] = input; *input != '\0'; input++)
+    for (argc = 0, argv[0] = input; *input != '\0'; input++) {
         if (*input == '\t' || *input == ' ') {
             *input = '\0';
-            if (*(argv[argc]) != '\0' && ++argc >= maxargs)
+            if (*(argv[argc]) != '\0' && ++argc >= maxargs) {
                 return (input + 1); // INCOMPLETE
+            }
             argv[argc] = (input + 1);
         }
-    if (*(argv[argc]) != '\0')
+    }
+    if (*(argv[argc]) != '\0') {
         argc++;
+    }
     return nullptr; // COMPLETE
 }
 
@@ -191,14 +198,16 @@ bool HTTPClient::ReadHTTPHeader(std::string& headerinfo) {
     _keepAliveGiven = false;
 
     // read and split status line
-    if ((lineLen = ReadLine(line, 4_Ki)) <= 0)
+    if ((lineLen = ReadLine(line, 4_Ki)) <= 0) {
         return false;
+    }
     SplitString(line, argc, argv, 32);
 
     // parse status line
     if (argc >= 2) {
-        if (strncmp(argv[0], "HTTP/", 5) != 0)
+        if (strncmp(argv[0], "HTTP/", 5) != 0) {
             return false;
+        }
         _httpVersion = (strncmp(argv[0], "HTTP/1.0", 8) == 0) ? 0 : 1;
         _requestStatus = atoi(argv[1]);
     } else {
@@ -273,24 +282,29 @@ bool HTTPClient::ReadChunkHeader() {
     char c;
     int  i;
 
-    if (_chunkSeq++ > 0 && ReadLine(nullptr, 0) != 0)
+    if (_chunkSeq++ > 0 && ReadLine(nullptr, 0) != 0) {
         return false; // no CRLF(/LF) after data block
+    }
 
     assert(_chunkLeft == 0);
-    if (ReadLine(numStr, 10) <= 0)
+    if (ReadLine(numStr, 10) <= 0) {
         return false; // chunk length not found
+    }
     for (i = 0; i < 10; i++) {
         c = numStr[i];
-        if (c >= 'a' && c <= 'f')
+        if (c >= 'a' && c <= 'f') {
             c = c - 'a' + 10;
-        else if (c >= 'A' && c <= 'F')
+        } else if (c >= 'A' && c <= 'F') {
             c = c - 'A' + 10;
-        else if (c >= '0' && c <= '9')
+        } else if (c >= '0' && c <= '9') {
             c = c - '0';
-        else
+        } else {
             break;
+        }
         if (i >= 8) // can't handle chunks this big
+        {
             return false;
+        }
         _chunkLeft = (_chunkLeft << 4) + c;
     }
 
@@ -300,16 +314,18 @@ bool HTTPClient::ReadChunkHeader() {
     if (_chunkLeft == 0) {
         while ((lineLen = ReadLine(nullptr, 0)) > 0)
             ; // skip trailer
-        if (lineLen < 0)
+        if (lineLen < 0) {
             return false; // data error
+        }
         _dataDone = true; // got last chunk
     }
     return true;
 }
 
 bool HTTPClient::Open(std::string& headerinfo, const char* url, bool usePost, const char* content, int cLen) {
-    if (_isOpen)
+    if (_isOpen) {
         Close();
+    }
 
     ResetBuffer();
     _dataRead = 0;
@@ -358,8 +374,9 @@ ssize_t HTTPClient::ConnCloseReader::Read(HTTPClient& client, void* buf, size_t 
             client.Close();
             return -1;
         }
-        if (readRes == 0)
+        if (readRes == 0) {
             client._dataDone = true;
+        }
         client._dataRead += readRes;
         res += readRes;
     }
@@ -417,8 +434,9 @@ ssize_t HTTPClient::ChunkedReader::Read(HTTPClient& client, void* buf, size_t le
                 client.Close();
                 return -1;
             }
-            if (client._dataDone)
+            if (client._dataDone) {
                 return res;
+            }
         }
         if (client._bufused == client._bufpos) {
             if (client.FillBuffer() <= 0) {
@@ -439,16 +457,19 @@ ssize_t HTTPClient::ChunkedReader::Read(HTTPClient& client, void* buf, size_t le
 }
 
 ssize_t HTTPClient::Read(void* buf, size_t len) {
-    if (!_isOpen)
+    if (!_isOpen) {
         return -1;
-    if (_dataDone)
+    }
+    if (_dataDone) {
         return 0;
+    }
     return _reader->Read(*this, buf, len);
 }
 
 bool HTTPClient::Close() {
-    if (!_isOpen)
+    if (!_isOpen) {
         return true;
+    }
 
     _isOpen = false;
     return (!_keepAlive || _connectionCloseGiven || !_dataDone || (_httpVersion == 0 && !_keepAliveGiven))
