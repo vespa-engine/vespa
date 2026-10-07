@@ -126,9 +126,13 @@ public class Select implements Cloneable {
         if ( ! groupingPending) {
             return;
         }
-        groupingPending = false; // before parsing, as GroupingRequest.newInstance adds to the list returned by getGrouping()
         SelectParser parser = (SelectParser) ParserFactory.newInstance(Query.Type.SELECT, new ParserEnvironment());
-        for (VespaGroupingStep step : parser.getGroupingSteps(grouping, parent.properties()::getString)) {
+        // Parse everything before clearing the pending flag, so a failed parse (e.g. a parameter which is not set yet)
+        // leaves the grouping pending and it can be resolved later. The flag must be cleared before adding the
+        // requests, as GroupingRequest.newInstance adds to the list returned by getGrouping().
+        var steps = parser.getGroupingSteps(grouping, parent.properties()::getString);
+        groupingPending = false;
+        for (VespaGroupingStep step : steps) {
             GroupingRequest.newInstance(parent)
                     .setRootOperation(step.getOperation())
                     .continuations().addAll(step.continuations());
