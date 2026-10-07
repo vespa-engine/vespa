@@ -7,6 +7,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.model.api.AdditionalContent;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.model.productdiscovery.ProductDiscoveryProvider;
 import com.yahoo.config.model.MockModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -19,7 +20,6 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.vespa.model.commerce.discovery.CommerceDiscoveryProvider;
 import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
@@ -149,30 +149,33 @@ public class VespaModelFactoryTest {
 
     /** Without a builder, self-hosted must be told Vespa Cloud is required, and hosted that the version is unknown. */
     @Test
-    void commerceDiscoveryWithoutABuilderFailsWithATailoredMessage() {
-        var services = """
-                <services version="1.0">
-                    <commerce-discovery version="1.1"/>
-                </services>""";
-        for (boolean hostedVespa : new boolean[] { false, true }) {
-            String message = assertThrows(IllegalArgumentException.class, () ->
-                    VespaModelFactory.createTestFactory().createModel(new MockModelContext() {
-                        @Override
-                        public ApplicationPackage applicationPackage() {
-                            return new MockApplicationPackage.Builder().withServices(services).build();
-                        }
-                        @Override
-                        public Properties properties() { return new TestProperties().setHostedVespa(hostedVespa); }
-                    })).getMessage();
-            String expected = hostedVespa ? "<commerce-discovery version=\"1.1\"> is not available on Vespa"
-                                          : "<commerce-discovery> requires Vespa Cloud";
-            assertTrue(message.contains(expected), message);
+    void commerceAndProductDiscoveryWithoutABuilderFailWithATailoredMessage() {
+        // TODO (@sebasabe) remove commerce-discovery when no longer in use and rename tests
+        for (String element : List.of("commerce-discovery", "product-discovery")) {
+            var services = """
+                    <services version="1.0">
+                        <%s version="1.1"/>
+                    </services>""".formatted(element);
+            for (boolean hostedVespa : new boolean[] { false, true }) {
+                String message = assertThrows(IllegalArgumentException.class, () ->
+                        VespaModelFactory.createTestFactory().createModel(new MockModelContext() {
+                            @Override
+                            public ApplicationPackage applicationPackage() {
+                                return new MockApplicationPackage.Builder().withServices(services).build();
+                            }
+                            @Override
+                            public Properties properties() { return new TestProperties().setHostedVespa(hostedVespa); }
+                        })).getMessage();
+                String expected = hostedVespa ? "<" + element + " version=\"1.1\"> is not available on Vespa"
+                                              : "<" + element + "> requires Vespa Cloud";
+                assertTrue(message.contains(expected), message);
+            }
         }
     }
 
     /** Lock in feature flag and hosted as gating for the provider for now. */
     @Test
-    void commerceDiscoveryProviderIsConsultedOnlyInHostedVespaWithTheFlagEnabled() {
+    void productDiscoveryProviderIsConsultedOnlyInHostedVespaWithTheFlagEnabled() {
         assertFalse(providerConsulted(false, false));
         assertFalse(providerConsulted(true, false));
         assertFalse(providerConsulted(false, true));
@@ -181,11 +184,11 @@ public class VespaModelFactoryTest {
 
     private boolean providerConsulted(boolean hostedVespa, boolean flagEnabled) {
         AtomicBoolean consulted = new AtomicBoolean(false);
-        CommerceDiscoveryProvider provider = applicationPackage -> {
+        ProductDiscoveryProvider provider = applicationPackage -> {
             consulted.set(true);
             return AdditionalContent.none();
         };
-        var providers = new ComponentRegistry<CommerceDiscoveryProvider>();
+        var providers = new ComponentRegistry<ProductDiscoveryProvider>();
         providers.register(ComponentId.fromString("test-provider"), provider);
         var factory = new VespaModelFactory(new ComponentRegistry<>(), new ComponentRegistry<>(),
                                             new ComponentRegistry<>(), providers, Zone.defaultZone());
