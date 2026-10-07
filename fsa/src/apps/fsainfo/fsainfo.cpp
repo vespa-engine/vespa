@@ -90,11 +90,13 @@ int main(int argc, char** argv) {
             std::cout << "  Data size:         " << header._data_size << " bytes" << std::endl;
             std::cout << "  Data item type:    "
                       << (header._data_type == FSA::DATA_FIXED ? "fixed size" : "variable size") << std::endl;
-            if (header._data_type == FSA::DATA_FIXED)
+            if (header._data_type == FSA::DATA_FIXED) {
                 std::cout << "  Fixed item size:   " << header._fixed_data_size << std::endl;
+            }
             std::cout << "  Perfect hash:      " << (header._has_perfect_hash ? "yes" : "no") << std::endl;
-            if (header._has_perfect_hash)
+            if (header._has_perfect_hash) {
                 std::cout << "  Perfect hash size: " << header._size * sizeof(unsigned int) << " bytes" << std::endl;
+            }
             std::cout << "  Total size:        "
                       << (header._size *
                               (sizeof(unsigned char) + sizeof(unsigned int) * (header._has_perfect_hash ? 2 : 1)) +

@@ -278,8 +278,9 @@ public:
              * @param idx %Segment index.
              */
             void set(unsigned int i, unsigned int j, int idx) {
-                if (i < _size && j < _size)
+                if (i < _size && j < _size) {
                     _map[i * _size + j] = idx;
+                }
             }
 
             /**
@@ -290,8 +291,9 @@ public:
              * @return %Segment index (-1 if segment does not exist).
              */
             int get(unsigned int i, unsigned int j) const {
-                if (i < _size && j < _size)
+                if (i < _size && j < _size) {
                     return _map[i * _size + j];
+                }
                 return -1;
             }
 
@@ -439,8 +441,9 @@ public:
          * @return %Segment string.
          */
         const std::string sgm(unsigned int i) const {
-            if (i < _segments.size())
+            if (i < _segments.size()) {
                 return _text.join(" ", _segments[i].beg(), _segments[i].len());
+            }
             return std::string();
         }
 
@@ -451,8 +454,9 @@ public:
          * @return Beginning of the segment.
          */
         unsigned beg(unsigned int i) const {
-            if (i < _segments.size())
+            if (i < _segments.size()) {
                 return _segments[i].beg();
+            }
             return 0;
         }
 
@@ -463,8 +467,9 @@ public:
          * @return End of the segment.
          */
         unsigned end(unsigned int i) const {
-            if (i < _segments.size())
+            if (i < _segments.size()) {
                 return _segments[i].end();
+            }
             return 0;
         }
 
@@ -475,8 +480,9 @@ public:
          * @return Length of the segment.
          */
         unsigned len(unsigned int i) const {
-            if (i < _segments.size())
+            if (i < _segments.size()) {
                 return _segments[i].len();
+            }
             return 0;
         }
 
@@ -487,8 +493,9 @@ public:
          * @return Connexity of the segment.
          */
         unsigned conn(unsigned int i) const {
-            if (i < _segments.size())
+            if (i < _segments.size()) {
                 return _segments[i].conn();
+            }
             return 0;
         }
 
@@ -500,8 +507,9 @@ public:
          *         Segments object is valid and not modified.
          */
         const Segmenter::Segmentation* segmentation(Segmenter::SegmentationMethod method) {
-            if (method < SEGMENTATION_WEIGHTED || method >= SEGMENTATION_METHODS)
+            if (method < SEGMENTATION_WEIGHTED || method >= SEGMENTATION_METHODS) {
                 method = SEGMENTATION_WEIGHTED;
+            }
             if (_segmentation[method] == nullptr) {
                 buildSegmentation(method);
             }

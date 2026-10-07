@@ -15,14 +15,18 @@ namespace fsa {
 // {{{ Blob::operator<()
 
 bool Blob::operator<(const Blob& b) const {
-    if (_size < b._size)
+    if (_size < b._size) {
         return true;
-    if (_size > b._size)
+    }
+    if (_size > b._size) {
         return false;
-    if (_size == 0)
+    }
+    if (_size == 0) {
         return false;
-    if (memcmp(_data, b._data, _size) < 0)
+    }
+    if (memcmp(_data, b._data, _size) < 0) {
         return true;
+    }
     return false;
 }
 
@@ -30,14 +34,18 @@ bool Blob::operator<(const Blob& b) const {
 // {{{ Blob::operator>()
 
 bool Blob::operator>(const Blob& b) const {
-    if (_size > b._size)
+    if (_size > b._size) {
         return true;
-    if (_size < b._size)
+    }
+    if (_size < b._size) {
         return false;
-    if (_size == 0)
+    }
+    if (_size == 0) {
         return false;
-    if (memcmp(_data, b._data, _size) > 0)
+    }
+    if (memcmp(_data, b._data, _size) > 0) {
         return true;
+    }
     return false;
 }
 
@@ -45,8 +53,9 @@ bool Blob::operator>(const Blob& b) const {
 // {{{ Blob::operator==()
 
 bool Blob::operator==(const Blob& b) const {
-    if (_size == b._size && (_size == 0 || memcmp(_data, b._data, _size) == 0))
+    if (_size == b._size && (_size == 0 || memcmp(_data, b._data, _size) == 0)) {
         return true;
+    }
     return false;
 }
 
