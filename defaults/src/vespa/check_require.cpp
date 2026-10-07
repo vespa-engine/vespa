@@ -7,7 +7,7 @@
 
 namespace vespa::check {
 
-int failed_requirement(const char* assertion, const char* file, int line) {
+void failed_requirement(const char* assertion, const char* file, int line) noexcept {
     fprintf(stderr, "%s:%d: Failed check: '%s'\n", file, line, assertion);
     abort();
 }
