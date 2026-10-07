@@ -58,6 +58,15 @@ public class GroupingParser {
         return value;
     }
 
+    /** Converts a number of bits to an int, failing on values which do not fit rather than wrapping around */
+    private static int toNumBits(String function, Number num, int maxBits) throws ParseException {
+        long bits = num.longValue();
+        if (bits < 1 || bits > maxBits) {
+            throw new ParseException(function + " requires a number of bits between 1 and " + maxBits + ", but got " + num);
+        }
+        return (int)bits;
+    }
+
     private static Number resolveParameterNumber(String name, String value) throws ParseException {
         String str = value.trim();
         try {
@@ -709,7 +718,7 @@ GroupingExpression md5Function(GroupingOperation grp) :
 }
 {
     ( <MD5> lbrace() exp = exp(grp) comma() num = number() rbrace() )
-    { return new Md5Function(exp, num.intValue()); }
+    { return new Md5Function(exp, toNumBits("md5", num, 128)); }
 }
 
 GroupingExpression quantilesExpression(GroupingOperation grp) :
@@ -1076,7 +1085,7 @@ XorBitFunction xorBitFunction(GroupingOperation grp) :
 }
 {
     ( <XORBIT> lbrace() exp = exp(grp) comma() num = number() rbrace() )
-    { return new XorBitFunction(exp, num.intValue()); }
+    { return new XorBitFunction(exp, toNumBits("xorbit", num, 64)); }
 }
 
 FilterExpression filterPrimary(GroupingOperation grp) :
