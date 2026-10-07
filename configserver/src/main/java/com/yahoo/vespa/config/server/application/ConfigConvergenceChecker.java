@@ -387,12 +387,19 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         public final long wantedGeneration;
         public final long currentGeneration;
         public final boolean converged;
+        public final PendingRestarts pendingRestarts; // Pending restarts for services which have converged on the wanted generation, but need a restart to apply changes
 
         public ServiceListResponse(List<Service> services, long wantedGeneration, long currentGeneration, boolean converged) {
+            this(services, wantedGeneration, currentGeneration, converged, PendingRestarts.empty());
+        }
+
+        private ServiceListResponse(List<Service> services, long wantedGeneration, long currentGeneration,
+                                    boolean converged, PendingRestarts pendingRestarts) {
             this.services.addAll(services);
             this.wantedGeneration = wantedGeneration;
             this.currentGeneration = currentGeneration;
             this.converged = converged;
+            this.pendingRestarts = pendingRestarts;
         }
 
         public ServiceListResponse(Map<ServiceInfo, Long> services, long wantedGeneration, long currentGeneration) {
@@ -402,8 +409,10 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                  wantedGeneration, currentGeneration, currentGeneration >= wantedGeneration);
         }
 
-        public ServiceListResponse unconverged() {
-            return new ServiceListResponse(services, wantedGeneration, currentGeneration, false);
+        /** Returns a copy of this with the given pending restarts, not converged if there are any */
+        public ServiceListResponse withPendingRestarts(PendingRestarts pendingRestarts) {
+            return new ServiceListResponse(services, wantedGeneration, currentGeneration,
+                                           converged && pendingRestarts.isEmpty(), pendingRestarts);
         }
 
         public List<Service> services() { return services; }
