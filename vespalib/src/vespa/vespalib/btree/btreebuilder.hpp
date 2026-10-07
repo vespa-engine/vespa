@@ -119,8 +119,9 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::no
             /* Use next to last child of rightmost node on level */
             child = inode->get_child_relaxed(inode->validSlots() - 2);
         }
-        if (level == 0)
+        if (level == 0) {
             break;
+        }
         level--;
         assert(!_allocator.isLeafRef(child));
         leftInodes[level] = child;
@@ -328,8 +329,9 @@ void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::al
 template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
 void BTreeBuilder<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::insert(const KeyT&  key,
                                                                                      const DataT& data) {
-    if (_leaf.data->validSlots() >= LeafNodeType::maxSlots())
+    if (_leaf.data->validSlots() >= LeafNodeType::maxSlots()) {
         allocNewLeafNode();
+    }
     LeafNodeType* leaf = _leaf.data;
     leaf->insert(leaf->validSlots(), key, data);
     ++_numInserts;

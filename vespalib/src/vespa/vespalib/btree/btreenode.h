@@ -88,8 +88,9 @@ public:
         const DataT* rdata = rhs._data;
         DataT*       ldata = _data;
         DataT*       ldatae = _data + validSlots;
-        for (; ldata != ldatae; ++ldata, ++rdata)
+        for (; ldata != ldatae; ++ldata, ++rdata) {
             *ldata = *rdata;
+        }
     }
 
     const DataT& getData(uint32_t idx) const noexcept { return _data[idx]; }
@@ -163,8 +164,9 @@ protected:
         const KeyT* rkeys = rhs._keys;
         KeyT*       lkeys = _keys;
         KeyT*       lkeyse = _keys + _validSlots;
-        for (; lkeys != lkeyse; ++lkeys, ++rkeys)
+        for (; lkeys != lkeyse; ++lkeys, ++rkeys) {
             *lkeys = *rkeys;
+        }
     }
 
     BTreeNodeT& operator=(const BTreeNodeT& rhs) noexcept {
@@ -172,8 +174,9 @@ protected:
         const KeyT* rkeys = rhs._keys;
         KeyT*       lkeys = _keys;
         KeyT*       lkeyse = _keys + _validSlots;
-        for (; lkeys != lkeyse; ++lkeys, ++rkeys)
+        for (; lkeys != lkeyse; ++lkeys, ++rkeys) {
             *lkeys = *rkeys;
+        }
         return *this;
     }
 

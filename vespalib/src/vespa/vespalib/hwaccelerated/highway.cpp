@@ -234,6 +234,7 @@ int32_t mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRI
     const hn::ScalableTag<int8_t> d8;
 #if HWY_TARGET != HWY_NEON
     const hn::Repartition<int32_t, decltype(d8)> d32;
+
     const auto kernel_fn = [d32](auto lhs_i8, auto rhs_i8, auto& accu)
                                VESPA_HWY_LAMBDA { accu = hn::SumOfMulQuadAccumulate(d32, lhs_i8, rhs_i8, accu); };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<8>, HasAccumulatorArity<1>>;

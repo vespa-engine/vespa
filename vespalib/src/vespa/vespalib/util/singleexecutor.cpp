@@ -152,8 +152,9 @@ void SingleExecutor::drain_tasks() {
 }
 
 void SingleExecutor::move_overflow_to_main_q() {
-    if (!_overflow)
+    if (!_overflow) {
         return;
+    }
     Lock guard(_mutex);
     move_overflow_to_main_q(guard);
 }

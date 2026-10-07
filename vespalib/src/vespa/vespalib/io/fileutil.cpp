@@ -53,8 +53,9 @@ File::File(std::string_view filename) : _fd(-1), _filename(filename) {
 }
 
 File::~File() {
-    if (_fd != -1)
+    if (_fd != -1) {
         close();
+    }
 }
 
 namespace {
@@ -94,8 +95,9 @@ void File::open(int flags, bool autoCreateDirectories) {
             << "): " << safeStrerror(errno);
         throw IoException(ost.view(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
-    if (_fd != -1)
+    if (_fd != -1) {
         close();
+    }
     _fd = fd;
     LOG(debug, "open(%s, %d). File opened with file descriptor %d.", _filename.c_str(), flags, fd);
 }

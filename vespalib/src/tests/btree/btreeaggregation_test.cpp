@@ -125,8 +125,9 @@ public:
 
     void erase(uint32_t key) {
         MTree::iterator it(_tree.find(key));
-        if (it == _tree.end())
+        if (it == _tree.end()) {
             return;
+        }
         int32_t          oval = it->second;
         MRTree::iterator rit(_rtree.find(oval));
         assert(rit != _rtree.end());
@@ -664,8 +665,9 @@ TEST_F(BTreeAggregationTest, require_that_we_can_insert_and_remove_from_tree) {
         MyTree::Iterator itre = itr;
         MyTree::Iterator itre2;
         MyTree::Iterator ritr = itr;
-        while (itre.valid())
+        while (itre.valid()) {
             ++itre;
+        }
         if (numEntries > 0) {
             EXPECT_TRUE(ritr.valid());
             EXPECT_EQ(0u, ritr.position());
@@ -847,10 +849,12 @@ struct UpdKeyComp {
     mutable size_t _numErrors;
     UpdKeyComp(int remainder) : _remainder(remainder), _numErrors(0) {}
     bool operator()(const int& lhs, const int& rhs) const {
-        if (lhs % 2 != _remainder)
+        if (lhs % 2 != _remainder) {
             ++_numErrors;
-        if (rhs % 2 != _remainder)
+        }
+        if (rhs % 2 != _remainder) {
             ++_numErrors;
+        }
         return lhs < rhs;
     }
 };

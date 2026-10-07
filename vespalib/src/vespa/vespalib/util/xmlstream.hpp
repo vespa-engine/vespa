@@ -13,8 +13,9 @@ namespace vespalib::xml {
 template <typename T>
 XmlAttribute::XmlAttribute(const std::string& name, T value, uint32_t flags) : _name(name), _value(), _next() {
     std::ostringstream ost;
-    if (flags & HEX)
+    if (flags & HEX) {
         ost << std::hex << "0x";
+    }
     ost << value;
     _value = ost.str();
     if (!isLegalName(name)) {

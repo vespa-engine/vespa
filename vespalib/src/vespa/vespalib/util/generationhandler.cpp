@@ -8,8 +8,9 @@ namespace vespalib {
 
 void GenerationHandler::update_oldest_used_generation() {
     for (;;) {
-        if (_first == _last.load(std::memory_order_relaxed))
+        if (_first == _last.load(std::memory_order_relaxed)) {
             break; // No elements can be freed
+        }
         if (!_first->setInvalid()) {
             break; // First element still in use
         }
@@ -52,8 +53,9 @@ GenerationGuard GenerationHandler::takeGuard() const {
     GenerationGuard guard(_last.load(std::memory_order_acquire));
     for (;;) {
         // Must check valid() after increasing refcount
-        if (guard.valid())
+        if (guard.valid()) {
             break; // Might still be marked invalid, that's OK
+        }
         /*
          * Clashed with writer freeing entry.  Must abandon current
          * guard and try again.
@@ -98,8 +100,9 @@ uint32_t GenerationHandler::getGenerationRefCount(Generation gen) const {
         return 0u;
     }
     for (GenerationHold* hold = _first; hold != nullptr; hold = hold->_next) {
-        if (hold->_generation.load(std::memory_order_relaxed) == gen)
+        if (hold->_generation.load(std::memory_order_relaxed) == gen) {
             return hold->getRefCount();
+        }
     }
     return 0u;
 }

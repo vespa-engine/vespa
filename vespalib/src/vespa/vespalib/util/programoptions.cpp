@@ -68,8 +68,9 @@ ProgramOptions::OptionParser::OptionParser(const std::string& nameList, uint32_t
       _invalidDefault(false),
       _defaultString(),
       _description(desc) {
-    if (nameList == "")
+    if (nameList == "") {
         _names.clear();
+    }
 }
 
 ProgramOptions::OptionParser::OptionParser(const std::string& nameList, uint32_t argCount,
@@ -248,8 +249,9 @@ void ProgramOptions::parse() {
                 }
             }
         }
-        if (!_defaultsSet)
+        if (!_defaultsSet) {
             setDefaults(true);
+        }
         for (uint32_t i = 0; i < _arguments.size(); ++i) {
             OptionParser& opt(*_arguments[i]);
             if (opt._argCount == 0) {
@@ -406,8 +408,9 @@ void ProgramOptions::writeSyntaxPage(std::ostream& out, bool showDefaults) {
         for (uint32_t i = 0; i < _arguments.size(); ++i) {
             OptionParser& opt(*_arguments[i]);
             out << (opt.isRequired() ? " <" : " [") << opt.getArgName();
-            if (opt._argCount == 0)
+            if (opt._argCount == 0) {
                 out << "...";
+            }
             out << (opt.isRequired() ? ">" : "]");
         }
         out << "\n";
@@ -427,8 +430,9 @@ void ProgramOptions::writeSyntaxPage(std::ostream& out, bool showDefaults) {
         }
         // Calculate indent used for extra lines
         std::string indent = "    "; // 1 space indent + " : " in between.
-        for (uint32_t i = 0; i < argSize; ++i)
+        for (uint32_t i = 0; i < argSize; ++i) {
             indent += ' ';
+        }
 
         for (uint32_t i = 0; i < _arguments.size(); ++i) {
             OptionParser& opt(*_arguments[i]);
@@ -463,8 +467,9 @@ void ProgramOptions::writeSyntaxPage(std::ostream& out, bool showDefaults) {
         uint32_t argSize = 10;
         for (uint32_t i = 0; i < _options.size(); ++i) {
             OptionParser& opt(*_options[i]);
-            if (opt.isHeader() || opt.hideFromSyntaxPage())
+            if (opt.isHeader() || opt.hideFromSyntaxPage()) {
                 continue;
+            }
             argSize = std::max(argSize, static_cast<uint32_t>(opt.getOptSyntaxString().size()));
         }
         // If too much space is used in first colo, calculate inset again,
@@ -474,8 +479,9 @@ void ProgramOptions::writeSyntaxPage(std::ostream& out, bool showDefaults) {
             argSize = 10;
             for (uint32_t i = 0; i < _options.size(); ++i) {
                 OptionParser& opt(*_options[i]);
-                if (opt.isHeader() || opt.hideFromSyntaxPage())
+                if (opt.isHeader() || opt.hideFromSyntaxPage()) {
                     continue;
+                }
                 uint32_t size = static_cast<uint32_t>(opt.getOptSyntaxString().size());
                 if (size <= _maxLeftColumnSize) {
                     argSize = std::max(argSize, size);
@@ -483,16 +489,18 @@ void ProgramOptions::writeSyntaxPage(std::ostream& out, bool showDefaults) {
             }
         }
         std::string indent = "   ";
-        for (uint32_t i = 0; i < argSize; ++i)
+        for (uint32_t i = 0; i < argSize; ++i) {
             indent += ' ';
+        }
         for (uint32_t i = 0; i < _options.size(); ++i) {
             OptionParser& opt(*_options[i]);
             if (opt.isHeader()) {
                 out << "\n" << opt._description << ":\n";
                 continue;
             }
-            if (opt.hideFromSyntaxPage())
+            if (opt.hideFromSyntaxPage()) {
                 continue;
+            }
             std::string optStr = opt.getOptSyntaxString();
             out << optStr;
             for (uint32_t j = optStr.size(); j < argSize; ++j) {

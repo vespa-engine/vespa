@@ -145,8 +145,9 @@ void FrozenBTreeTest::fillRandomValues(unsigned int count) {
     _randomValues.clear();
     _randomValues.reserve(count);
     _randomGenerator.srand48(42);
-    for (i = 0; i < count; i++)
+    for (i = 0; i < count; i++) {
         _randomValues.push_back(_randomGenerator.lrand48());
+    }
 
     EXPECT_TRUE(_randomValues.size() == count);
 }
@@ -164,8 +165,9 @@ void FrozenBTreeTest::insertRandomValues(Tree& tree, NodeAllocator& allocator, c
         p = tree.find(*i, allocator);
         if (!p.valid()) {
             DataType val = *i + 42;
-            if (tree.insert(*i, val, allocator))
+            if (tree.insert(*i, val, allocator)) {
                 p = tree.find(*i, allocator);
+            }
         }
         ASSERT_TRUE(p.valid() && p.getKey() == *i && p.getData() == *i + 42);
 #ifdef DEBUG_FROZENBTREEX
@@ -189,8 +191,9 @@ void FrozenBTreeTest::removeRandomValues(Tree& tree, NodeAllocator& allocator, c
 #endif
         p = tree.find(*i, allocator);
         if (p.valid()) {
-            if (tree.remove(*i, allocator))
+            if (tree.remove(*i, allocator)) {
                 p = tree.find(*i, allocator);
+            }
         }
         ASSERT_TRUE(!p.valid());
 #ifdef DEBUG_FROZENBTREEX
@@ -264,10 +267,11 @@ void FrozenBTreeTest::sortRandomValues() {
         if (i == _sortedRandomValues.begin() || *i > prevVal) {
             okcnt++;
             _sortedRandomValues.push_back(*i);
-        } else if (*i == prevVal)
+        } else if (*i == prevVal) {
             okcnt++;
-        else
+        } else {
             LOG_ABORT("should not be reached");
+        }
         prevVal = *i;
     }
     EXPECT_TRUE(okcnt == sorted.size());

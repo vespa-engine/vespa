@@ -121,11 +121,13 @@ void DataBuffer::hexDump() {
     uint32_t i = 0;
     while (pt < _freept) {
         printf("%x ", (unsigned char)*pt++);
-        if ((++i % 16) == 0)
+        if ((++i % 16) == 0) {
             printf("\n");
+        }
     }
-    if ((i % 16) != 0)
+    if ((i % 16) != 0) {
         printf("\n");
+    }
     printf("*** DataBuffer HexDump END ***\n");
 }
 

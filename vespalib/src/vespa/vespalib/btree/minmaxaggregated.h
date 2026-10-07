@@ -24,17 +24,21 @@ public:
     bool operator!=(const MinMaxAggregated& rhs) const { return ((_min != rhs._min) || (_max != rhs._max)); }
 
     void add(int32_t val) {
-        if (_min > val)
+        if (_min > val) {
             _min = val;
-        if (_max < val)
+        }
+        if (_max < val) {
             _max = val;
+        }
     }
 
     void add(const MinMaxAggregated& ca) {
-        if (_min > ca._min)
+        if (_min > ca._min) {
             _min = ca._min;
-        if (_max < ca._max)
+        }
+        if (_max < ca._max) {
             _max = ca._max;
+        }
     }
 
     void add(const MinMaxAggregated& oldca, const MinMaxAggregated& ca) {

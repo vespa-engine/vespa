@@ -60,7 +60,7 @@ TEST(GenericEscapeTest, special_named_control_chars_are_escaped) {
 }
 
 TEST(GenericEscapeTest, non_printable_chars_are_hex_escaped) {
-    std::array<uint8_t, 4> raw_u8 = { 1, 127, 128, 255 };
-    std::string raw(reinterpret_cast<const char*>(raw_u8.data()), raw_u8.size());
+    std::array<uint8_t, 4> raw_u8 = {1, 127, 128, 255};
+    std::string            raw(reinterpret_cast<const char*>(raw_u8.data()), raw_u8.size());
     EXPECT_EQ(escape(raw), R"(\x01\x7f\x80\xff)");
 }

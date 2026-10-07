@@ -17,10 +17,12 @@ namespace {
 
 std::vector<bool> getLegalIdentifierFirstCharacters() {
     std::vector<bool> vec(256, false);
-    for (uint32_t i = 'a'; i <= 'z'; ++i)
+    for (uint32_t i = 'a'; i <= 'z'; ++i) {
         vec[i] = true;
-    for (uint32_t i = 'A'; i <= 'Z'; ++i)
+    }
+    for (uint32_t i = 'A'; i <= 'Z'; ++i) {
         vec[i] = true;
+    }
     vec[':'] = true;
     vec['_'] = true;
     return vec;
@@ -54,8 +56,9 @@ std::vector<bool> binaryChars = getBinaryCharacters();
 
 bool containsBinaryCharacters(const std::string& s) {
     for (int i = 0, n = s.size(); i < n; ++i) {
-        if (binaryChars[static_cast<uint8_t>(s[i])])
+        if (binaryChars[static_cast<uint8_t>(s[i])]) {
             return true;
+        }
     }
     return false;
 }
@@ -66,13 +69,16 @@ void writeBase64Encoded(std::ostream& out, const std::string& s) {
 } // namespace
 
 bool isLegalName(const std::string& name) {
-    if (name.size() == 0)
+    if (name.size() == 0) {
         return false;
-    if (!legalIdentifierFirstChar[static_cast<uint8_t>(name[0])])
+    }
+    if (!legalIdentifierFirstChar[static_cast<uint8_t>(name[0])]) {
         return false;
+    }
     for (int i = 1, n = name.size(); i < n; ++i) {
-        if (!legalIdentifierChars[static_cast<uint8_t>(name[i])])
+        if (!legalIdentifierChars[static_cast<uint8_t>(name[i])]) {
             return false;
+        }
     }
     return true;
 }
@@ -108,8 +114,9 @@ XmlOutputStream::~XmlOutputStream() {
 XmlOutputStream& XmlOutputStream::operator<<(const XmlTag& tag) {
     // std::cerr << "Trying to add tag " << tag.getName() << ". cached tag is "
     //           << (void*) _cachedTag.get() << "\n";
-    if (_cachedTag.get() != nullptr)
+    if (_cachedTag.get() != nullptr) {
         flush(false);
+    }
     _cachedTag.reset(new XmlTag(tag));
     _cachedContentType = XmlContent::AUTO;
     // std::cerr << "Added tag " << _cachedTag->getName() << "\n";
@@ -138,8 +145,9 @@ XmlOutputStream& XmlOutputStream::operator<<(const XmlEndTag&) {
         }
         _wrappedStream << "</" << _tagStack.back() << ">";
         _tagStack.pop_back();
-        if (!_tagStack.empty())
+        if (!_tagStack.empty()) {
             _wrappedStream << '\n';
+        }
         _cachedContentType = XmlContent::ESCAPED;
     }
     return *this;
@@ -291,8 +299,9 @@ XmlAttribute::XmlAttribute(const XmlAttribute& attribute)
 XmlAttribute::XmlAttribute(const std::string& name, const char* value, uint32_t flags)
     : _name(name), _value(), _next() {
     vespalib::asciistream ost;
-    if (flags & HEX)
+    if (flags & HEX) {
         ost << vespalib::hex << "0x";
+    }
     ost << value;
     _value = ost.view();
     if (!isLegalName(name)) {

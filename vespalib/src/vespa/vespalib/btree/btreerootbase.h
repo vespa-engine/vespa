@@ -39,8 +39,9 @@ public:
     void setRoot(BTreeNode::Ref newRoot, NodeAllocatorType& allocator) {
         bool oldFrozen = isFrozen();
         _root = newRoot;
-        if (oldFrozen && !isFrozen())
+        if (oldFrozen && !isFrozen()) {
             allocator.needFreeze(this);
+        }
     }
 
     void prepare_hold() {

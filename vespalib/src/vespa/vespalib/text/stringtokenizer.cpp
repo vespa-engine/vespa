@@ -62,8 +62,9 @@ void parse(TokenList& output, std::string_view source, const AsciiSet& separator
     }
     output.push_back(stripString(source.substr(start), strip));
     // Don't keep a single empty element
-    if (output.size() == 1 && output[0].empty())
+    if (output.size() == 1 && output[0].empty()) {
         output.pop_back();
+    }
 }
 
 } // namespace
@@ -83,8 +84,9 @@ StringTokenizer::~StringTokenizer() = default;
 void StringTokenizer::removeEmptyTokens() {
     size_t emptyCount(0);
     for (const auto& token : _tokens) {
-        if (token.empty())
+        if (token.empty()) {
             emptyCount++;
+        }
     }
     if (emptyCount == 0) {
         return;
@@ -92,8 +94,9 @@ void StringTokenizer::removeEmptyTokens() {
     TokenList tokenlist;
     tokenlist.reserve(_tokens.size() - emptyCount);
     for (const auto& token : _tokens) {
-        if (!token.empty())
+        if (!token.empty()) {
             tokenlist.push_back(token);
+        }
     }
     _tokens.swap(tokenlist);
 }

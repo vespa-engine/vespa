@@ -106,11 +106,13 @@ unsigned int FastOS_UNIX_File::CalcAccessFlags(unsigned int openFlags) {
     }
 
 #if defined(O_SYNC)
-    if ((openFlags & FASTOS_FILE_OPEN_SYNCWRITES) != 0)
+    if ((openFlags & FASTOS_FILE_OPEN_SYNCWRITES) != 0) {
         accessFlags |= O_SYNC;
+    }
 #elif defined(O_FSYNC)
-    if ((openFlags & FASTOS_FILE_OPEN_SYNCWRITES) != 0)
+    if ((openFlags & FASTOS_FILE_OPEN_SYNCWRITES) != 0) {
         accessFlags |= O_FSYNC;
+    }
 #endif
 
 #ifdef __linux__

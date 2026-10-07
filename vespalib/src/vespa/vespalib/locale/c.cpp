@@ -27,8 +27,9 @@ double strtod_au(const char* startp, char** endp) {
     int    was = errno;
     double v = strtod_l(startp, endp, _G_C_Locale.get());
     if (errno == ERANGE) {
-        if ((-1.0 < v) && (v < 1.0))
+        if ((-1.0 < v) && (v < 1.0)) {
             errno = was;
+        }
     }
     return v;
 }
@@ -37,8 +38,9 @@ float strtof_au(const char* startp, char** endp) {
     int   was = errno;
     float v = strtof_l(startp, endp, _G_C_Locale.get());
     if (errno == ERANGE) {
-        if ((-1.0 < v) && (v < 1.0))
+        if ((-1.0 < v) && (v < 1.0)) {
             errno = was;
+        }
     }
     return v;
 }

@@ -119,8 +119,9 @@ void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::erase(const Key&
 
 template <typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator>
 void hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::clear() {
-    if (_count == 0)
+    if (_count == 0) {
         return; // Already empty and properly initialized
+    }
 
     _nodes.clear();
     _count = 0;

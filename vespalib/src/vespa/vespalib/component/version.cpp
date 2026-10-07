@@ -48,14 +48,17 @@ void Version::initialize() {
 }
 
 void Version::verifySanity() {
-    if (_major < 0)
+    if (_major < 0) {
         throw IllegalArgumentException("Negative major in " + _stringValue);
+    }
 
-    if (_minor < 0)
+    if (_minor < 0) {
         throw IllegalArgumentException("Negative minor in " + _stringValue);
+    }
 
-    if (_micro < 0)
+    if (_micro < 0) {
         throw IllegalArgumentException("Negative micro in " + _stringValue);
+    }
 
     if (_qualifier != "") {
         for (size_t i = 0; i < _qualifier.length(); i++) {
@@ -72,8 +75,9 @@ static int parseInteger(std::string_view input) __attribute__((noinline));
 static int parseInteger(std::string_view input) {
     const char*   s = input.data();
     unsigned char firstDigit = s[0];
-    if (!std::isdigit(firstDigit))
+    if (!std::isdigit(firstDigit)) {
         throw IllegalArgumentException("integer must start with a digit");
+    }
     char* ep;
     long  ret = strtol(s, &ep, 10);
     if (ret > INT_MAX || ret < 0) {
@@ -110,30 +114,37 @@ Version::Version(const string& versionString)
 }
 
 bool Version::equals(const Version& other) const {
-    if (_major != other._major)
+    if (_major != other._major) {
         return false;
-    if (_minor != other._minor)
+    }
+    if (_minor != other._minor) {
         return false;
-    if (_micro != other._micro)
+    }
+    if (_micro != other._micro) {
         return false;
-    if (_qualifier != other._qualifier)
+    }
+    if (_qualifier != other._qualifier) {
         return false;
+    }
 
     return true;
 }
 
 int Version::compareTo(const Version& other) const {
     int result = getMajor() - other.getMajor();
-    if (result != 0)
+    if (result != 0) {
         return result;
+    }
 
     result = getMinor() - other.getMinor();
-    if (result != 0)
+    if (result != 0) {
         return result;
+    }
 
     result = getMicro() - other.getMicro();
-    if (result != 0)
+    if (result != 0) {
         return result;
+    }
 
     return getQualifier().compare(other.getQualifier());
 }
