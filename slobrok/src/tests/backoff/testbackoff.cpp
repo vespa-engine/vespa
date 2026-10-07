@@ -30,8 +30,9 @@ TEST(BackoffTest, backoff_test) {
     EXPECT_FALSE(two.shouldWarn());
     for (int i = 1; i < 50; i++) {
         double expect = 0.5 * i;
-        if (expect > 20.0)
+        if (expect > 20.0) {
             expect = 20.0;
+        }
         EXPECT_EQ(expect, two.get());
         if (i == 3 || i == 8 || i == 18) {
             EXPECT_TRUE(two.shouldWarn());
@@ -43,8 +44,9 @@ TEST(BackoffTest, backoff_test) {
     EXPECT_FALSE(two.shouldWarn());
     for (int i = 1; i < 50; i++) {
         double expect = 0.5 * i;
-        if (expect > 20.0)
+        if (expect > 20.0) {
             expect = 20.0;
+        }
         EXPECT_EQ(expect, two.get());
         if (i == 3 || i == 8 || i == 18) {
             EXPECT_TRUE(two.shouldWarn());
