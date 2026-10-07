@@ -606,10 +606,12 @@ void postprocess_calculate_error(DataPond& pond) {
         constexpr double ok_band = 1.4;
         constexpr double under_threshold = ok_band;
         constexpr double over_threshold = 1.0 / ok_band;
-        if (error_ratio > under_threshold)
+        if (error_ratio > under_threshold) {
             return "UNDER";
-        if (error_ratio < over_threshold)
+        }
+        if (error_ratio < over_threshold) {
             return "OVER";
+        }
         return "OK";
     };
 

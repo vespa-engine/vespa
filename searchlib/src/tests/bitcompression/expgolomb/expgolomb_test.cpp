@@ -374,8 +374,9 @@ void TestFixture<bigEndian>::testBoundaries(int kValue, bool small, std::vector<
     e.setupWrite(wc);
     for (auto num : v) {
         e.encodeExpGolomb(num, kValue);
-        if (e._valI >= e._valE)
+        if (e._valI >= e._valE) {
             wc.writeComprBuffer(false);
+        }
     }
     e.flush();
 
@@ -419,8 +420,9 @@ template <bool bigEndian> void TestFixture<bigEndian>::testRandNums(int kValue) 
     e.setupWrite(wc);
     for (auto num : _randNums) {
         e.encodeExpGolomb(num, kValue);
-        if (e._valI >= e._valE)
+        if (e._valI >= e._valE) {
             wc.writeComprBuffer(false);
+        }
     }
     e.flush();
 

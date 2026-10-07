@@ -24,12 +24,15 @@ const char* to_str(search::Normalizing norm) noexcept {
 }
 
 Normalizing requireFold(TermType type, Normalizing normalizing) {
-    if (normalizing == Normalizing::NONE)
+    if (normalizing == Normalizing::NONE) {
         return Normalizing::NONE;
-    if (normalizing == Normalizing::LOWERCASE)
+    }
+    if (normalizing == Normalizing::LOWERCASE) {
         return Normalizing::LOWERCASE;
-    if (type == TermType::EXACTSTRINGTERM)
+    }
+    if (type == TermType::EXACTSTRINGTERM) {
         return Normalizing::LOWERCASE;
+    }
     return ((type == TermType::WORD) || (type == TermType::SUBSTRINGTERM) || (type == TermType::PREFIXTERM) ||
             (type == TermType::SUFFIXTERM))
                ? Normalizing::LOWERCASE_AND_FOLD

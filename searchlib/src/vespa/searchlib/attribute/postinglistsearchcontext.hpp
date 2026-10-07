@@ -35,8 +35,9 @@ template <typename DataT> PostingListSearchContextT<DataT>::~PostingListSearchCo
 
 template <typename DataT> void PostingListSearchContextT<DataT>::lookupSingle() {
     PostingListSearchContext::lookupSingle();
-    if (!_pidx.valid())
+    if (!_pidx.valid()) {
         return;
+    }
     uint32_t typeId = _posting_store.getTypeId(_pidx);
     if (!_posting_store.isSmallArray(typeId)) {
         if (_posting_store.isBitVector(typeId)) {

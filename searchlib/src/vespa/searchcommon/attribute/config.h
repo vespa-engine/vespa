@@ -142,24 +142,24 @@ public:
     std::string type_to_string() const;
 
 private:
-    BasicType                          _basicType;
-    CollectionType                     _type;
-    bool                               _fastSearch : 1;
-    bool                               _isFilter : 1;
-    bool                               _fastAccess : 1;
-    bool                               _mutable : 1;
-    bool                               _paged : 1;
-    DistanceMetric                     _distance_metric;
-    Match                              _match;
-    DictionaryConfig                   _dictionary;
-    uint64_t                           _maxUnCommittedMemory;
-    GrowStrategy                       _growStrategy;
-    CompactionStrategy                 _compactionStrategy;
-    PredicateParams                    _predicateParams;
-    vespalib::eval::ValueType          _tensorType;
-    vespalib::eval::ValueType          _unquantized_tensor_type;
-    std::optional<HnswIndexParams>     _hnsw_index_params;
-    std::optional<QuantizationParams>  _quantization_params;
+    BasicType                         _basicType;
+    CollectionType                    _type;
+    bool                              _fastSearch : 1;
+    bool                              _isFilter : 1;
+    bool                              _fastAccess : 1;
+    bool                              _mutable : 1;
+    bool                              _paged : 1;
+    DistanceMetric                    _distance_metric;
+    Match                             _match;
+    DictionaryConfig                  _dictionary;
+    uint64_t                          _maxUnCommittedMemory;
+    GrowStrategy                      _growStrategy;
+    CompactionStrategy                _compactionStrategy;
+    PredicateParams                   _predicateParams;
+    vespalib::eval::ValueType         _tensorType;
+    vespalib::eval::ValueType         _unquantized_tensor_type;
+    std::optional<HnswIndexParams>    _hnsw_index_params;
+    std::optional<QuantizationParams> _quantization_params;
 };
 
 } // namespace search::attribute

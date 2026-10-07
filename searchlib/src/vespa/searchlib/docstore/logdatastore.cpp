@@ -748,13 +748,15 @@ std::string LogDataStore::ls(const NameIdSet& partList) {
 
 static bool hasNonHeaderData(const std::string& name) {
     FastOS_File file(name.c_str());
-    if (!file.OpenReadOnly())
+    if (!file.OpenReadOnly()) {
         return false;
+    }
     int64_t  fSize(file.getSize());
     uint32_t headerLen = 0;
     uint32_t minHeaderLen = vespalib::GenericHeader::getMinSize();
-    if (fSize < minHeaderLen)
+    if (fSize < minHeaderLen) {
         return false;
+    }
     try {
         vespalib::FileHeader h;
         headerLen = h.readFile(file);

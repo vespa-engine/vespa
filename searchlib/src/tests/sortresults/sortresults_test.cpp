@@ -25,8 +25,9 @@ bool test_sort(unsigned int caseNum, unsigned int n, unsigned int ntop) {
         printf("CASE %03d: [%d/%d] PASS\n", caseNum, ntop, n);
         return true;
     }
-    if (ntop > n)
+    if (ntop > n) {
         ntop = n;
+    }
 
     array = new RankedHit[n];
     assert(array != nullptr);

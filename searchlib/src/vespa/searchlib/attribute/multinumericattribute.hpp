@@ -125,13 +125,15 @@ template <typename B, typename M> bool MultiValueNumericAttribute<B, M>::onLoad(
     PrimitiveReader<MValueType> attrReader(*this);
     bool                        ok(attrReader.getHasLoadData());
 
-    if (!ok)
+    if (!ok) {
         return false;
+    }
 
     this->setCreateSerialNum(attrReader.getCreateSerialNum());
 
-    if (attrReader.getEnumerated())
+    if (attrReader.getEnumerated()) {
         return onLoadEnumerated(attrReader);
+    }
 
     bool   hasWeight(attrReader.hasWeight());
     size_t numDocs = attrReader.getNumIdx() - 1;

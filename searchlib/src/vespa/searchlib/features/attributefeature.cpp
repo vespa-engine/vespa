@@ -345,27 +345,32 @@ fef::FeatureExecutor& createAttributeExecutor(uint32_t numOutputs, const IAttrib
                     assert(numOutputs == 4);
                     if (basicType == BasicType::INT8) {
                         SingleValueExecutorCreator<IntegerAttributeTemplate<int8_t>> creator;
-                        if (creator.handle(attribute))
+                        if (creator.handle(attribute)) {
                             return creator.create(stash);
+                        }
                     } else if (basicType == BasicType::INT32) {
                         SingleValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
-                        if (creator.handle(attribute))
+                        if (creator.handle(attribute)) {
                             return creator.create(stash);
+                        }
                     }
                     SingleValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
-                    if (creator.handle(attribute))
+                    if (creator.handle(attribute)) {
                         return creator.create(stash);
+                    }
                 }
             } else if (attribute->isFloatingPointType()) {
                 assert(numOutputs == 4);
                 if (basicType == BasicType::DOUBLE) {
                     SingleValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
-                    if (creator.handle(attribute))
+                    if (creator.handle(attribute)) {
                         return creator.create(stash);
+                    }
                 } else {
                     SingleValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
-                    if (creator.handle(attribute))
+                    if (creator.handle(attribute)) {
                         return creator.create(stash);
+                    }
                 }
             }
         }
@@ -381,23 +386,27 @@ fef::FeatureExecutor& createAttributeExecutor(uint32_t numOutputs, const IAttrib
         } else if (attribute->isIntegerType()) {
             if (basicType == BasicType::INT32) {
                 ArrayExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
-                if (creator.handle(stash, attribute))
+                if (creator.handle(stash, attribute)) {
                     return creator.create(stash, idx);
+                }
             } else if (basicType == BasicType::INT64) {
                 ArrayExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
-                if (creator.handle(stash, attribute))
+                if (creator.handle(stash, attribute)) {
                     return creator.create(stash, idx);
+                }
             }
             return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
         } else { // FLOAT
             if (basicType == BasicType::DOUBLE) {
                 ArrayExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
-                if (creator.handle(stash, attribute))
+                if (creator.handle(stash, attribute)) {
                     return creator.create(stash, idx);
+                }
             } else {
                 ArrayExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
-                if (creator.handle(stash, attribute))
+                if (creator.handle(stash, attribute)) {
                     return creator.create(stash, idx);
+                }
             }
             return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
         }

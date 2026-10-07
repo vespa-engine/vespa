@@ -25,8 +25,9 @@ void checkWandHits(WandFactory& vespa, WandFactory& rise, uint32_t step, uint32_
     s1->seek(1);
     s2->seek(1);
     while (!s1->isAtEnd() && !s2->isAtEnd()) {
-        if (s1->getDocId() != s2->getDocId())
+        if (s1->getDocId() != s2->getDocId()) {
             assert(true);
+        }
         ASSERT_EQ(s1->getDocId(), s2->getDocId());
         if ((filter == 0) || ((s1->getDocId() % filter) != 0)) {
             s1->unpack(s1->getDocId());

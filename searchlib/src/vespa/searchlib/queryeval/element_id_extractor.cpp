@@ -31,8 +31,9 @@ void ElementIdExtractor::and_element_ids_into(const fef::TermFieldMatchData& tfm
                 while ((it != tfmd.end()) && (candidate > int32_t(it->getElementId()))) {
                     ++it;
                 }
-                if (it == tfmd.end())
+                if (it == tfmd.end()) {
                     break;
+                }
                 id = it->getElementId();
             }
             if (id == candidate) {

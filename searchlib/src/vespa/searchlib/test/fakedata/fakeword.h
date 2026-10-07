@@ -30,8 +30,9 @@ public:
         uint32_t _elementLen;
 
         bool operator<(const DocWordPosFeature& rhs) const noexcept {
-            if (_elementId != rhs._elementId)
+            if (_elementId != rhs._elementId) {
                 return _elementId < rhs._elementId;
+            }
             return _wordPos < rhs._wordPos;
         }
 
@@ -71,8 +72,9 @@ public:
         Randomizer() : _random(0), _ref(0) {}
 
         bool operator<(const Randomizer& rhs) const noexcept {
-            if (_random != rhs._random)
+            if (_random != rhs._random) {
                 return _random < rhs._random;
+            }
             return _ref < rhs._ref;
         }
 
@@ -120,10 +122,12 @@ public:
         bool isValid() const { return _valid; }
 
         bool operator<(const RandomizedReader& rhs) const {
-            if (_r < rhs._r)
+            if (_r < rhs._r) {
                 return true;
-            if (!(_r == rhs._r))
+            }
+            if (!(_r == rhs._r)) {
                 return false;
+            }
             return _wordIdx < rhs._wordIdx;
         }
 

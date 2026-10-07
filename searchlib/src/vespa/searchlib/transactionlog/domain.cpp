@@ -348,8 +348,9 @@ std::unique_ptr<CommitChunk> Domain::grabCurrentChunk(const UniqueLock& guard) {
 
 void Domain::commitChunk(std::unique_ptr<CommitChunk> chunk, const UniqueLock& chunkOrderGuard) {
     assert(chunkOrderGuard.mutex() == &_currentChunkMutex && chunkOrderGuard.owns_lock());
-    if (chunk->getPacket().empty())
+    if (chunk->getPacket().empty()) {
         return;
+    }
     chunk->shrinkPayloadToFit();
     std::promise<SerializedChunk> promise;
     std::future<SerializedChunk>  future = promise.get_future();

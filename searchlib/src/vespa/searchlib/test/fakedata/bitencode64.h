@@ -20,8 +20,9 @@ public:
     void writeComprBuffer() { _cbuf.writeComprBuffer(true); }
 
     void writeComprBufferIfNeeded() {
-        if (this->_valI >= this->_valE)
+        if (this->_valI >= this->_valE) {
             _cbuf.writeComprBuffer(false);
+        }
     }
 
     std::pair<uint64_t*, size_t> grabComprBuffer(vespalib::alloc::Alloc& comprAlloc) {

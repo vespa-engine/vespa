@@ -39,30 +39,34 @@ static FPFactoryMap* fpFactoryMap = nullptr;
  */
 
 FPFactory* getFPFactory(const std::string& name, const Schema& schema) {
-    if (fpFactoryMap == nullptr)
+    if (fpFactoryMap == nullptr) {
         return nullptr;
+    }
 
     auto i = fpFactoryMap->find(name);
 
-    if (i != fpFactoryMap->end())
+    if (i != fpFactoryMap->end()) {
         return i->second(schema);
-    else
+    } else {
         return nullptr;
+    }
 }
 
 std::vector<std::string> getPostingTypes() {
     std::vector<std::string> res;
 
-    if (fpFactoryMap != nullptr)
+    if (fpFactoryMap != nullptr) {
         for (const auto& elem : *fpFactoryMap) {
             res.push_back(elem.first);
         }
+    }
     return res;
 }
 
 FPFactoryInit::FPFactoryInit(const FPFactoryMapEntry& fpFactoryMapEntry) : _key(fpFactoryMapEntry.first) {
-    if (fpFactoryMap == nullptr)
+    if (fpFactoryMap == nullptr) {
         fpFactoryMap = new FPFactoryMap;
+    }
     fpFactoryMap->insert(fpFactoryMapEntry);
 }
 

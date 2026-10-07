@@ -49,8 +49,9 @@ void BucketIndexStore::store(const StoreByBucket::Index& index) {
 }
 
 size_t BucketIndexStore::getBucketCount() const noexcept {
-    if (_where.empty())
+    if (_where.empty()) {
         return 0;
+    }
 
     size_t             count = 0;
     document::BucketId prev = _where.front()._bucketId;

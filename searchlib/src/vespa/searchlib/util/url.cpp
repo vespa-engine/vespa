@@ -142,8 +142,9 @@ URL::URL(const unsigned char* url, size_t len)
       _tokenPos(_url),
       _gotCompleteURL(false) {
     Reset();
-    if (url != nullptr)
+    if (url != nullptr) {
         SetURL(url, len);
+    }
 }
 
 void URL::Reset() {
@@ -196,8 +197,9 @@ void URL::SetURL(const unsigned char* url, size_t length) {
         LOG(warning, "Max link size overflow: len=%lu, max=%d", static_cast<unsigned long>(length), MAX_URL_LEN);
         length = MAX_URL_LEN;
     }
-    if (length == 0)
+    if (length == 0) {
         length = MAX_URL_LEN;
+    }
 
     strncpy(reinterpret_cast<char*>(_url), reinterpret_cast<const char*>(url), length);
     _url[length] = '\0';
@@ -212,15 +214,17 @@ void URL::SetURL(const unsigned char* url, size_t length) {
         strncpy(reinterpret_cast<char*>(_scheme), reinterpret_cast<char*>(_url), len);
         _scheme[len] = '\0';
         _startScheme = _url;
-    } else
+    } else {
         p = _url;
+    }
 
     // get host name
     if ((strncasecmp(reinterpret_cast<char*>(_scheme), "http", 4) == 0 && p[0] == '/' && p[1] == '/') ||
         strncasecmp(reinterpret_cast<char*>(_url), "www.", 4) == 0)
     {
-        if (p[0] == '/' && p[1] == '/')
+        if (p[0] == '/' && p[1] == '/') {
             p += 2;
+        }
         _startHost = p;
         p = ParseURLPart<IsHostChar>(p, _host, sizeof(_host));
 
@@ -263,10 +267,11 @@ void URL::SetURL(const unsigned char* url, size_t length) {
                         solen++;
                         pso--;
                     }
-                    if (*pso != '.')
+                    if (*pso != '.') {
                         solen++;
-                    else
+                    } else {
                         pso++;
+                    }
                     if (solen > 0) {
                         strncpy(reinterpret_cast<char*>(_siteowner), reinterpret_cast<char*>(pso), solen);
                         _siteowner[solen] = '\0';
@@ -293,14 +298,17 @@ void URL::SetURL(const unsigned char* url, size_t length) {
         p = ParseURLPart<IsPathChar>(p, _path, sizeof(_path));
 
         filename = _path;
-        if (IsFileNameChar(*filename))
+        if (IsFileNameChar(*filename)) {
             _pathDepth++;
-        for (ptmp = _path; *ptmp != '\0' && *ptmp != ';'; ptmp++)
+        }
+        for (ptmp = _path; *ptmp != '\0' && *ptmp != ';'; ptmp++) {
             if (*ptmp == '/') {
                 filename = ptmp + 1;
-                if (IsFileNameChar(*filename))
+                if (IsFileNameChar(*filename)) {
                     _pathDepth++;
+                }
             }
+        }
         _startFileName = _startPath + (filename - _path);
         ParseURLPart<IsFileNameChar>(filename, _filename, sizeof(_filename));
 
@@ -351,41 +359,55 @@ const unsigned char* URL::GetToken(URL_CONTEXT& ctx) {
     int i = 0;
 
     // Skip whitespace
-    while (!IsTokenChar(*_tokenPos) && *_tokenPos != '\0')
+    while (!IsTokenChar(*_tokenPos) && *_tokenPos != '\0') {
         _tokenPos++;
+    }
 
-    while (IsTokenChar(*_tokenPos))
+    while (IsTokenChar(*_tokenPos)) {
         _token[i++] = *_tokenPos++;
+    }
     _token[i] = '\0';
 
     ctx = URL_SCHEME;
-    if (_tokenPos > _startHost)
+    if (_tokenPos > _startHost) {
         ctx = URL_HOST;
-    if (_tokenPos > _startDomain)
+    }
+    if (_tokenPos > _startDomain) {
         ctx = URL_DOMAIN;
-    if (_tokenPos > _startMainTld)
+    }
+    if (_tokenPos > _startMainTld) {
         ctx = URL_MAINTLD;
-    if (_tokenPos > _startPort)
+    }
+    if (_tokenPos > _startPort) {
         ctx = URL_PORT;
-    if (_tokenPos > _startPath)
+    }
+    if (_tokenPos > _startPath) {
         ctx = URL_PATH;
-    if (_tokenPos > _startFileName)
+    }
+    if (_tokenPos > _startFileName) {
         ctx = URL_FILENAME;
-    if (_tokenPos > _startExtension)
+    }
+    if (_tokenPos > _startExtension) {
         ctx = URL_EXTENSION;
-    if (_tokenPos > _startParams)
+    }
+    if (_tokenPos > _startParams) {
         ctx = URL_PARAMS;
-    if (_tokenPos > _startQuery)
+    }
+    if (_tokenPos > _startQuery) {
         ctx = URL_QUERY;
-    if (_tokenPos > _startFragment)
+    }
+    if (_tokenPos > _startFragment) {
         ctx = URL_FRAGMENT;
-    if (_tokenPos > _startAddress)
+    }
+    if (_tokenPos > _startAddress) {
         ctx = URL_ADDRESS;
+    }
 
-    if (_token[0] != '\0')
+    if (_token[0] != '\0') {
         return _token;
-    else
+    } else {
         return nullptr;
+    }
 }
 
 const char* URL::ContextName(URL_CONTEXT ctx) {
@@ -422,38 +444,54 @@ const char* URL::ContextName(URL_CONTEXT ctx) {
 void URL::Dump() {
     printf("URL: '%s'\n", _url);
 
-    if (_scheme[0] != '\0')
+    if (_scheme[0] != '\0') {
         printf("  scheme:    '%s'\n", _scheme);
-    if (_host[0] != '\0')
+    }
+    if (_host[0] != '\0') {
         printf("  host:      '%s'\n", _host);
-    if (_domain[0] != '\0')
+    }
+    if (_domain[0] != '\0') {
         printf("  domain: '%s'\n", _domain);
-    if (_siteowner[0] != '\0')
+    }
+    if (_siteowner[0] != '\0') {
         printf("  siteowner: '%s'\n", _siteowner);
-    if (_maintld[0] != '\0')
+    }
+    if (_maintld[0] != '\0') {
         printf("  maintld:   '%s'\n", _maintld);
-    if (_tld[0] != '\0')
+    }
+    if (_tld[0] != '\0') {
         printf("  tld:       '%s'\n", _tld);
-    if (_tldregion[0] != '\0')
+    }
+    if (_tldregion[0] != '\0') {
         printf("  tldregion: '%s'\n", _tldregion);
-    if (_port[0] != '\0')
+    }
+    if (_port[0] != '\0') {
         printf("  port:      '%s'\n", _port);
-    if (_path[0] != '\0')
+    }
+    if (_path[0] != '\0') {
         printf("  path:      '%s'\n", _path);
-    if (_pathDepth != 0)
+    }
+    if (_pathDepth != 0) {
         printf("  pathdepth: '%d'\n", _pathDepth);
-    if (_filename[0] != '\0')
+    }
+    if (_filename[0] != '\0') {
         printf("  filename:  '%s'\n", _filename);
-    if (_extension[0] != '\0')
+    }
+    if (_extension[0] != '\0') {
         printf("  extension: '%s'\n", _extension);
-    if (_params[0] != '\0')
+    }
+    if (_params[0] != '\0') {
         printf("  params:    '%s'\n", _params);
-    if (_query[0] != '\0')
+    }
+    if (_query[0] != '\0') {
         printf("  query:     '%s'\n", _query);
-    if (_fragment[0] != '\0')
+    }
+    if (_fragment[0] != '\0') {
         printf("  fragment:  '%s'\n", _fragment);
-    if (_address[0] != '\0')
+    }
+    if (_address[0] != '\0') {
         printf("  address:   '%s'\n", _address);
+    }
 
     printf("_startScheme:    '%s'\n", _startScheme);
     printf("_startHost:      '%s'\n", _startHost);

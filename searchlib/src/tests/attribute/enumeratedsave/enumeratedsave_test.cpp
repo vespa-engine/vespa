@@ -295,8 +295,9 @@ bool MemAttr::bufEqual(const Buffer& lhs, const Buffer& rhs) const {
     if (!success) {
         return false;
     }
-    if (lhs.get() == nullptr)
+    if (lhs.get() == nullptr) {
         return true;
+    }
     EXPECT_EQ(lhs->getDataLen(), rhs->getDataLen()) << (success = false, "");
     if (!success) {
         return false;
@@ -474,10 +475,12 @@ template <typename T> inline bool equalsHelper(const T& lhs, const T& rhs) {
 }
 
 template <> inline bool equalsHelper<double>(const double& lhs, const double& rhs) {
-    if (std::isnan(lhs))
+    if (std::isnan(lhs)) {
         return std::isnan(rhs);
-    if (std::isnan(rhs))
+    }
+    if (std::isnan(rhs)) {
         return false;
+    }
     return lhs == rhs;
 }
 

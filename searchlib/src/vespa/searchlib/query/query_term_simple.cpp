@@ -26,8 +26,9 @@ constexpr int64_t NEG_MIN_I64 = std::numeric_limits<int64_t>::min();
 constexpr int64_t POS_MAX_I64 = std::numeric_limits<int64_t>::max();
 
 bool isRange(std::string_view s) noexcept {
-    if (s.size() < 2)
+    if (s.size() < 2) {
         return false;
+    }
     // Check for partial range: <value or >value
     if ((s[0] == '<') || (s[0] == '>')) {
         return true;

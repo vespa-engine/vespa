@@ -38,10 +38,12 @@ PostingStoreBase2::~PostingStoreBase2() = default;
 bool PostingStoreBase2::resizeBitVectors(uint32_t newSize, uint32_t newCapacity) {
     assert(newCapacity >= newSize);
     newSize = (newSize + 63) & ~63;
-    if (newSize >= newCapacity)
+    if (newSize >= newCapacity) {
         newSize = newCapacity;
-    if (newSize == _bvSize && newCapacity == _bvCapacity)
+    }
+    if (newSize == _bvSize && newCapacity == _bvCapacity) {
         return false;
+    }
     _minBvDocFreq = std::max(newSize >> 7, 64u);
     _maxBvDocFreq = std::max(newSize >> 6, 128u);
     if (_bvs.empty()) {
@@ -86,8 +88,9 @@ template <typename DataT> bool PostingStore<DataT>::removeSparseBitVectors() {
             assert(tree->size(_allocator) == docFreq);
             (void)tree;
         }
-        if (docFreq < _minBvDocFreq)
+        if (docFreq < _minBvDocFreq) {
             needscan = true;
+        }
         unsigned int oldExtraSize = bv.writer().extraByteSize();
         if (bv.writer().size() > _bvSize) {
             bv.shrink(_bvSize);
@@ -308,8 +311,9 @@ void PostingStore<DataT>::apply(EntryRef& ref, AddIter a, AddIter ae, RemoveIter
     uint32_t clusterSize = getClusterSize(typeId);
     if (clusterSize != 0) {
         wasArray = true;
-        if (applyCluster(ref, clusterSize, a, ae, r, re, CompareT()))
+        if (applyCluster(ref, clusterSize, a, ae, r, re, CompareT())) {
             return;
+        }
         iRef = ref;
         typeId = getTypeId(iRef);
     }
@@ -390,8 +394,9 @@ template <typename DataT> size_t PostingStore<DataT>::internalFrozenSize(uint32_
 
 template <typename DataT>
 typename PostingStore<DataT>::Iterator PostingStore<DataT>::begin(const EntryRef ref) const {
-    if (!ref.valid())
+    if (!ref.valid()) {
         return Iterator();
+    }
     RefType  iRef(ref);
     uint32_t typeId = getTypeId(iRef);
     uint32_t clusterSize = getClusterSize(typeId);
@@ -415,8 +420,9 @@ typename PostingStore<DataT>::Iterator PostingStore<DataT>::begin(const EntryRef
 
 template <typename DataT>
 typename PostingStore<DataT>::ConstIterator PostingStore<DataT>::beginFrozen(const EntryRef ref) const {
-    if (!ref.valid())
+    if (!ref.valid()) {
         return ConstIterator();
+    }
     RefType  iRef(ref);
     uint32_t typeId = getTypeId(iRef);
     uint32_t clusterSize = getClusterSize(typeId);
@@ -470,8 +476,9 @@ void PostingStore<DataT>::beginFrozen(const EntryRef ref, std::vector<ConstItera
 
 template <typename DataT>
 typename PostingStore<DataT>::AggregatedType PostingStore<DataT>::getAggregated(const EntryRef ref) const {
-    if (!ref.valid())
+    if (!ref.valid()) {
         return AggregatedType();
+    }
     RefType  iRef(ref);
     uint32_t typeId = getTypeId(iRef);
     uint32_t clusterSize = getClusterSize(typeId);
@@ -498,8 +505,9 @@ typename PostingStore<DataT>::AggregatedType PostingStore<DataT>::getAggregated(
 }
 
 template <typename DataT> void PostingStore<DataT>::clear(const EntryRef ref) {
-    if (!ref.valid())
+    if (!ref.valid()) {
         return;
+    }
     RefType  iRef(ref);
     uint32_t typeId = getTypeId(iRef);
     uint32_t clusterSize = getClusterSize(typeId);

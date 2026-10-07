@@ -24,20 +24,24 @@ template <typename WeightedIndex> struct CompareValue {
 };
 
 void removeDupAdditions(PostingChange<AttributePosting>::A& additions) {
-    if (additions.empty())
+    if (additions.empty()) {
         return;
-    if (additions.size() == 1)
+    }
+    if (additions.size() == 1) {
         return;
+    }
     std::sort(additions.begin(), additions.end());
     auto i = additions.begin();
     auto ie = additions.end();
     auto d = i;
     for (++i; i != ie; ++i, ++d) {
-        if (d->_key == i->_key)
+        if (d->_key == i->_key) {
             break;
+        }
     }
-    if (i == ie)
+    if (i == ie) {
         return; // no dups found
+    }
     for (++i; i != ie; ++i) {
         if (d->_key != i->_key) {
             ++d;
@@ -48,20 +52,24 @@ void removeDupAdditions(PostingChange<AttributePosting>::A& additions) {
 }
 
 void removeDupAdditions(PostingChange<AttributeWeightPosting>::A& additions) {
-    if (additions.empty())
+    if (additions.empty()) {
         return;
-    if (additions.size() == 1u)
+    }
+    if (additions.size() == 1u) {
         return;
+    }
     std::sort(additions.begin(), additions.end());
     auto i = additions.begin();
     auto ie = additions.end();
     auto d = i;
     for (++i; i != ie; ++i, ++d) {
-        if (d->_key == i->_key)
+        if (d->_key == i->_key) {
             break;
+        }
     }
-    if (i == ie)
+    if (i == ie) {
         return; // no dups found
+    }
     // sum weights together
     d->setData(d->getData() + i->getData());
     for (++i; i != ie; ++i) {
@@ -77,20 +85,24 @@ void removeDupAdditions(PostingChange<AttributeWeightPosting>::A& additions) {
 }
 
 void removeDupRemovals(std::vector<uint32_t>& removals) {
-    if (removals.empty())
+    if (removals.empty()) {
         return;
-    if (removals.size() == 1u)
+    }
+    if (removals.size() == 1u) {
         return;
+    }
     std::sort(removals.begin(), removals.end());
     auto i = removals.begin();
     auto ie = removals.end();
     auto d = i;
     for (++i; i != ie; ++i, ++d) {
-        if (*d == *i)
+        if (*d == *i) {
             break;
+        }
     }
-    if (i == ie)
+    if (i == ie) {
         return; // no dups found
+    }
     for (++i; i != ie; ++i) {
         if (*d != *i) {
             ++d;

@@ -37,8 +37,9 @@ retry:
     int padBeforeUnits =
         static_cast<int>(static_cast<size_t>(fileReadByteOffset) & (fileDirectIOAlign - 1)) / cbuf.getUnitSize();
     // No padding before if at end of file.
-    if (fileReadByteOffset >= fileSize)
+    if (fileReadByteOffset >= fileSize) {
         padBeforeUnits = 0;
+    }
     // Continuation reads starts at aligned boundary.
     assert(remainingUnits == 0 || padBeforeUnits == 0);
 
@@ -48,8 +49,9 @@ retry:
         stopOffset += 8 * cbuf.getUnitBitSize(); // XXX: Magic integer
         // Realign stop offset to direct IO alignment boundary
         uint64_t fileDirectIOBitAlign = static_cast<uint64_t>(fileDirectIOAlign) << 3;
-        if ((stopOffset & (fileDirectIOBitAlign - 1)) != 0)
+        if ((stopOffset & (fileDirectIOBitAlign - 1)) != 0) {
             stopOffset += fileDirectIOBitAlign - (stopOffset & (fileDirectIOBitAlign - 1));
+        }
     }
 
     bool isMore = true;
@@ -73,11 +75,12 @@ retry:
         extraRemainingUnits = 2;
     }
     // Move remaining integers to padding area before start of buffer
-    if (remainingUnits + extraRemainingUnits > 0)
+    if (remainingUnits + extraRemainingUnits > 0) {
         memmove(reinterpret_cast<char*>(cbuf.getComprBuf()) -
                     (remainingUnits + extraRemainingUnits) * cbuf.getUnitSize(),
                 static_cast<const char*>(decodeContext.getUnitPtr()) - extraRemainingUnits * cbuf.getUnitSize(),
                 (remainingUnits + extraRemainingUnits) * cbuf.getUnitSize());
+    }
 
     // Adjust file position to direct IO boundary if needed before read
     if (padBeforeUnits != 0) {
@@ -137,15 +140,17 @@ void ComprFileReadBase::SetPosition(uint64_t newPosition, uint64_t stopOffset, b
 
     oldPosition = decodeContext.getBitPos(bitOffset, fileReadByteOffset);
     assert(oldPosition == decodeContext.getBitPosV());
-    if (newPosition == oldPosition)
+    if (newPosition == oldPosition) {
         return;
+    }
     if (newPosition > oldPosition && newPosition <= (fileReadByteOffset << 3)) {
         size_t skip = newPosition - oldPosition;
         if (skip < 2 * cbuf.getUnitBitSize()) {
             // Cached bits might still be needed, just read and ignore bits
-            if (decodeContext.endOfChunk())
+            if (decodeContext.endOfChunk()) {
                 ReadComprBuffer(stopOffset, readAll, decodeContext, bitOffset, *file, fileReadByteOffset, fileSize,
                                 cbuf);
+            }
             decodeContext.skipBits(skip);
             assert(decodeContext.getBitPos(bitOffset, fileReadByteOffset) == newPosition);
             assert(decodeContext.getBitPosV() == newPosition);
@@ -157,8 +162,9 @@ void ComprFileReadBase::SetPosition(uint64_t newPosition, uint64_t stopOffset, b
         bitOffset = static_cast<int>(static_cast<uint32_t>(newPosition) & (cbuf.getUnitBitSize() - 1));
         // We might now be at end of chunk, read more if needed in order
         // for setupBits() to be safe.
-        if (decodeContext.endOfChunk())
+        if (decodeContext.endOfChunk()) {
             ReadComprBuffer(stopOffset, readAll, decodeContext, bitOffset, *file, fileReadByteOffset, fileSize, cbuf);
+        }
         // Only call SetupBits() if ReadComprBuffer() didn't do it.
         if (bitOffset != -1) {
             decodeContext.setupBits(bitOffset);
@@ -189,16 +195,18 @@ void ComprFileWriteBase::WriteComprBuffer(ComprFileEncodeContext& encodeContext,
 
     int chunkUsedUnits = encodeContext.getUsedUnits(cbuf.getComprBuf());
 
-    if (chunkUsedUnits == 0)
+    if (chunkUsedUnits == 0) {
         return;
+    }
     int chunkSizeNormalMax = encodeContext.getNormalMaxUnits(cbuf.getComprBuf());
     int chunksize = chunkUsedUnits;
     /*
      * Normally, only flush the normal buffer and copy the slack
      * after the buffer to the start of buffer.
      */
-    if (!flushSlack && chunksize > chunkSizeNormalMax)
+    if (!flushSlack && chunksize > chunkSizeNormalMax) {
         chunksize = chunkSizeNormalMax;
+    }
     assert(static_cast<unsigned int>(chunksize) <= cbuf.getComprBufSize() ||
            (flushSlack &&
             static_cast<unsigned int>(chunksize) <= cbuf.getComprBufSize() + ComprBuffer::minimumPadding()));
@@ -208,10 +216,11 @@ void ComprFileWriteBase::WriteComprBuffer(ComprFileEncodeContext& encodeContext,
     assert(remainingUnits == 0 ||
            (!flushSlack && static_cast<unsigned int>(remainingUnits) <= ComprBuffer::minimumPadding()));
     // Copy any slack after buffer to the start of the buffer
-    if (remainingUnits > 0)
+    if (remainingUnits > 0) {
         memmove(cbuf.getComprBuf(),
                 reinterpret_cast<const char*>(cbuf.getComprBuf()) + chunksize * cbuf.getUnitSize(),
                 cbuf.getUnitSize() * remainingUnits);
+    }
 
     fileWriteByteOffset += chunksize * cbuf.getUnitSize();
     encodeContext.afterWrite(cbuf, remainingUnits, fileWriteByteOffset);

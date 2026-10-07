@@ -73,8 +73,9 @@ template <typename B> bool FlagAttributeT<B>::onLoadEnumerated(ReaderBase& attrR
 
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
-    if (numValues > 0)
+    if (numValues > 0) {
         _bitVectorSize = numDocs;
+    }
 
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     assert((udatBuffer->size() % sizeof(TT)) == 0);

@@ -44,8 +44,9 @@ const char* GetTokenString(search::util::URL& url) {
     tokenbuffer[0] = '\0';
 
     while ((token = url.GetToken(ctx)) != nullptr) {
-        if (tokenbuffer[0] != '\0')
+        if (tokenbuffer[0] != '\0') {
             strcat(tokenbuffer, ",");
+        }
         strcat(tokenbuffer, url.ContextName(ctx));
         strcat(tokenbuffer, ":");
         strcat(tokenbuffer, (const char*)token);
@@ -59,13 +60,15 @@ static bool CheckURL(const char* url, const char* scheme, const char* host, cons
                      const char* path, int pathdepth, const char* filename, const char* extension, const char* params,
                      const char* query, const char* fragment, const char* address, const char* tokens,
                      int verbose = 0) {
-    if (verbose > 0)
+    if (verbose > 0) {
         printf("Checking with URL: '%s'\n", url);
+    }
 
     GlobalURL.SetURL((const unsigned char*)url);
 
-    if (verbose > 0)
+    if (verbose > 0) {
         GlobalURL.Dump();
+    }
     //  GlobalURL.Dump();
 
     return CheckString("URL", (const unsigned char*)url, GlobalURL.GetURL()) &&

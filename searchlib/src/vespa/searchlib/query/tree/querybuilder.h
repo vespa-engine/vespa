@@ -44,8 +44,9 @@ class QueryBuilderBase {
         WeightOverride() noexcept : _active(false), _weight(0) {}
         explicit WeightOverride(Weight weight) noexcept : _active(true), _weight(weight) {}
         void adjustWeight(Weight& weight) const {
-            if (_active)
+            if (_active) {
                 weight = _weight;
+            }
         }
     };
     struct NodeInfo {

@@ -54,8 +54,9 @@ void ComprBuffer::allocComprBuf() {
          */
         paddingBefore = paddingAfter + 2 * _unitSize;
 
-        if (paddingBefore < memalign)
+        if (paddingBefore < memalign) {
             paddingBefore = memalign;
+        }
     }
     size_t fullpadding = paddingAfter + paddingBefore;
     size_t allocLen = _comprBufSize * _unitSize + fullpadding;
@@ -73,8 +74,9 @@ void ComprBuffer::allocComprBuf() {
 void ComprBuffer::expandComprBuf(uint32_t overflowUnits) {
     size_t newSize = static_cast<size_t>(_comprBufSize) * 2;
     assert(static_cast<unsigned int>(newSize) == newSize);
-    if (newSize < 16)
+    if (newSize < 16) {
         newSize = 16;
+    }
     size_t paddingAfter = minimumPadding() * _unitSize;
     assert(overflowUnits <= minimumPadding());
     Alloc  newBuf = Alloc::alloc(newSize * _unitSize + paddingAfter);

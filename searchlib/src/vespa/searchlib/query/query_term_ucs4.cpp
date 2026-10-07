@@ -50,8 +50,9 @@ const QueryTermUCS4::ucs4_t* QueryTermUCS4::fillUCS4() {
     {
         std::lock_guard guard(_globalMutex);
         ucs4_t*         prev = _termUCS4.load(std::memory_order_relaxed);
-        if (prev != nullptr)
+        if (prev != nullptr) {
             return prev;
+        }
         _termUCS4.store(ucs4.release(), std::memory_order_relaxed);
     }
     return next;

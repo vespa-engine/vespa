@@ -10,8 +10,9 @@ namespace search::attribute {
 template <typename DataT>
 template <typename FunctionType>
 void PostingStore<DataT>::foreach_frozen_key(EntryRef ref, FunctionType func) const {
-    if (!ref.valid())
+    if (!ref.valid()) {
         return;
+    }
     RefType  iRef(ref);
     uint32_t typeId = getTypeId(iRef);
     uint32_t clusterSize = getClusterSize(typeId);
@@ -50,8 +51,9 @@ void PostingStore<DataT>::foreach_frozen_key(EntryRef ref, FunctionType func) co
 template <typename DataT>
 template <typename FunctionType>
 void PostingStore<DataT>::foreach_frozen(EntryRef ref, FunctionType func) const {
-    if (!ref.valid())
+    if (!ref.valid()) {
         return;
+    }
     RefType  iRef(ref);
     uint32_t typeId = getTypeId(iRef);
     uint32_t clusterSize = getClusterSize(typeId);

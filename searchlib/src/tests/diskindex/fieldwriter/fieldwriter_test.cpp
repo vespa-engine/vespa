@@ -360,8 +360,9 @@ void readField(FakeWordSet& wordSet, uint32_t docIdLimit, const std::string& nam
 
     vespalib::Timer tv;
     istate.open();
-    if (istate._fieldReader->isValid())
+    if (istate._fieldReader->isValid()) {
         istate._fieldReader->read();
+    }
 
     auto field_length_info = istate._fieldReader->get_field_length_info();
     assert(4.5 == field_length_info.get_average_field_length());
@@ -400,10 +401,11 @@ uint32_t randReadField(FakeWordSet& wordSet, const std::string& namepref, bool d
     auto dictFile = std::make_unique<PageDict4RandRead>();
 
     search::index::PostingListFileRandRead* postingFile = nullptr;
-    if (dynamicK)
+    if (dynamicK) {
         postingFile = new search::diskindex::ZcPosOccRandRead;
-    else
+    } else {
         postingFile = new search::diskindex::Zc4PosOccRandRead;
+    }
 
     TuneFileRandRead tuneFileRandRead;
     bool             openCntRes = dictFile->open(cname, tuneFileRandRead);
@@ -494,8 +496,9 @@ void fusionField(uint32_t numWordIds, uint32_t docIdLimit, const std::string& ip
         featureParams.set("cooked", false);
         istate._fieldReader->setFeatureParams(featureParams);
     }
-    if (istate._fieldReader->isValid())
+    if (istate._fieldReader->isValid()) {
         istate._fieldReader->read();
+    }
 
     while (istate._fieldReader->isValid()) {
         istate._fieldReader->write(*ostate._fieldWriter);
@@ -566,8 +569,9 @@ int FieldWriterTest::main(int argc, char** argv) {
         switch (c) {
         case 'c':
             _commonDocFreq = atoi(optarg);
-            if (_commonDocFreq == 0)
+            if (_commonDocFreq == 0) {
                 _commonDocFreq = 1;
+            }
             break;
         case 'd':
             _numDocs = atoi(optarg);

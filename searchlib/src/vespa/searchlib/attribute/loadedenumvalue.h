@@ -32,8 +32,9 @@ public:
     class EnumCompare {
     public:
         bool operator()(const LoadedEnumAttribute& x, const LoadedEnumAttribute& y) const {
-            if (x.getEnum() != y.getEnum())
+            if (x.getEnum() != y.getEnum()) {
                 return x.getEnum() < y.getEnum();
+            }
             return x.getDocId() < y.getDocId();
         }
     };

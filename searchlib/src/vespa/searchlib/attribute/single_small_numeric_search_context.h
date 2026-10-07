@@ -36,8 +36,9 @@ public:
                                     uint32_t value_shift_mask, uint32_t word_shift, uint32_t docid_limit);
 
     int32_t find(DocId docId, int32_t elemId, int32_t& weight) const {
-        if (elemId != 0)
+        if (elemId != 0) {
             return -1;
+        }
         const Word& word = _wordData[docId >> _wordShift];
         uint32_t    valueShift = (docId & _valueShiftMask) << _valueShiftShift;
         T           v = (vespalib::atomic::load_ref_relaxed(word) >> valueShift) & _valueMask;
@@ -46,8 +47,9 @@ public:
     }
 
     int32_t find(DocId docId, int32_t elemId) const {
-        if (elemId != 0)
+        if (elemId != 0) {
             return -1;
+        }
         const Word& word = _wordData[docId >> _wordShift];
         uint32_t    valueShift = (docId & _valueShiftMask) << _valueShiftShift;
         T           v = (vespalib::atomic::load_ref_relaxed(word) >> valueShift) & _valueMask;

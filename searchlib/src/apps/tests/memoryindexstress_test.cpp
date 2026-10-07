@@ -339,8 +339,9 @@ std::string toString(SearchIterator& search) {
     std::ostringstream oss;
     bool               first = true;
     for (search.seek(1); !search.isAtEnd(); search.seek(search.getDocId() + 1)) {
-        if (!first)
+        if (!first) {
             oss << ",";
+        }
         oss << search.getDocId();
         first = false;
     }

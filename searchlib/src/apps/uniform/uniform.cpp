@@ -27,15 +27,17 @@ public:
 };
 
 void UniformApp::clearBits() {
-    for (unsigned int k = 0; k <= MAXK; ++k)
+    for (unsigned int k = 0; k <= MAXK; ++k) {
         _bits[k] = 0;
+    }
     _next = 0;
 }
 
 void UniformApp::reportBits() {
     printf("next=%" PRIu64 " ", _next);
-    for (unsigned int k = 0; k <= MAXK; ++k)
+    for (unsigned int k = 0; k <= MAXK; ++k) {
         printf("b[%u]=%" PRIu64 " ", static_cast<unsigned int>(k), _bits[k]);
+    }
     printf("\n");
 }
 
@@ -61,8 +63,9 @@ int UniformApp::main(int, char**) {
                 minnext = next;
                 minnextk = k;
             }
-            if (_bits[k] < _bits[bestk])
+            if (_bits[k] < _bits[bestk]) {
                 bestk = k;
+            }
             printf("k=%d, bits=%d, next=%" PRIu64 "\n", k, bits, next);
         }
         printf("minnext=%" PRIu64 ", minnextk=%d, bestk=%d\n", minnext, minnextk, bestk);
@@ -92,23 +95,30 @@ int UniformApp::main(int, char**) {
         bestmask = 0;
         uint32_t smallk = 0;
         for (k = 0; k <= MAXK; ++k) {
-            if (_bits[k] < _bits[smallk])
+            if (_bits[k] < _bits[smallk]) {
                 smallk = k;
+            }
         }
-        for (k = 0; k <= MAXK; ++k)
-            if (_bits[k] <= _bits[smallk])
+        for (k = 0; k <= MAXK; ++k) {
+            if (_bits[k] <= _bits[smallk]) {
                 bestmask |= (1 << k);
-        if (bestmask == oldbestmask && _next < (UINT64_C(1) << 30))
+            }
+        }
+        if (bestmask == oldbestmask && _next < (UINT64_C(1) << 30)) {
             continue;
+        }
         reportBits();
         printf("Best k for interval [0..%" PRIu64 ") is", _next);
-        for (k = 0; k <= MAXK; ++k)
-            if (_bits[k] <= _bits[smallk])
+        for (k = 0; k <= MAXK; ++k) {
+            if (_bits[k] <= _bits[smallk]) {
                 printf(" %d", k);
+            }
+        }
         printf("\n");
         oldbestmask = bestmask;
-        if (_next >= (UINT64_C(1) << 30))
+        if (_next >= (UINT64_C(1) << 30)) {
             break;
+        }
         printf("m iter=%d\n", m);
         ++m;
         if (m >= 10000) {

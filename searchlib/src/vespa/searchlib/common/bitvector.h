@@ -338,11 +338,13 @@ private:
     bool hasTrueBitsInternal() const;
     template <typename FunctionType, typename WordConverter>
     void foreach(FunctionType func, WordConverter conv, Index start, Index end) const {
-        if ((end <= start) || (size() == 0))
+        if ((end <= start) || (size() == 0)) {
             return;
+        }
         Index last = std::min(end, size()) - 1;
-        if (start < getStartIndex())
+        if (start < getStartIndex()) {
             start = getStartIndex();
+        }
 
         Index index(wordNum(start));
         Index lastIndex(wordNum(last));

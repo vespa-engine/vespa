@@ -79,8 +79,9 @@ bool SingleValueSmallNumericAttribute::addDoc(DocId& doc) {
         updateUncommittedDocIdLimit(doc);
         if (incGen) {
             this->incGeneration();
-        } else
+        } else {
             this->reclaim_unused_memory();
+        }
     } else {
         B::incNumDocs();
         doc = B::getNumDocs() - 1;

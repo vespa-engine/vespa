@@ -82,15 +82,19 @@ void FakeFilterOccArrayIterator::doSeek(uint32_t docId) {
     const uint32_t* oarr = _arr;
     const uint32_t* oarrEnd = _arrEnd;
 
-    if (getUnpacked())
+    if (getUnpacked()) {
         clearUnpacked();
-    if (oarr >= oarrEnd)
+    }
+    if (oarr >= oarrEnd) {
         goto doneuncompressed;
+    }
     for (;;) {
-        if ((int)*oarr >= (int)docId)
+        if ((int)*oarr >= (int)docId) {
             goto found;
-        if (++oarr >= oarrEnd)
+        }
+        if (++oarr >= oarrEnd) {
             goto doneuncompressed;
+        }
     }
 found:
     _arr = oarr;
