@@ -218,13 +218,10 @@ void FlushableAttribute::internal_init_flush(SerialNum currentSerial, TaskPromis
 void FlushableAttribute::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                                     TaskPromise task_promise) {
     // Called by document db executor
-    TaskPromise proxied_task_promise;
-    auto        future_task = proxied_task_promise.get_future();
     _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(_attr->getNamePrefix()),
-                                  [&, proxied_task_promise(std::move(proxied_task_promise))]() mutable {
-                                      internal_init_flush(currentSerial, std::move(proxied_task_promise));
+                                  [this, currentSerial, task_promise(std::move(task_promise))]() mutable {
+                                      internal_init_flush(currentSerial, std::move(task_promise));
                                   });
-    task_promise.set_value(future_task.get());
 }
 
 bool FlushableAttribute::can_flush(SerialNum current_serial) const noexcept {
