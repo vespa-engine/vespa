@@ -15,6 +15,8 @@ import ai.vespa.schemals.parser.grouping.ast.ADD;
 import ai.vespa.schemals.parser.grouping.ast.ALIAS;
 import ai.vespa.schemals.parser.grouping.ast.ALL;
 import ai.vespa.schemals.parser.grouping.ast.AND;
+import ai.vespa.schemals.parser.grouping.ast.ARGMAX;
+import ai.vespa.schemals.parser.grouping.ast.ARGMIN;
 import ai.vespa.schemals.parser.grouping.ast.AS;
 import ai.vespa.schemals.parser.grouping.ast.ASIN;
 import ai.vespa.schemals.parser.grouping.ast.ASINH;
@@ -42,6 +44,7 @@ import ai.vespa.schemals.parser.grouping.ast.GROUP;
 import ai.vespa.schemals.parser.grouping.ast.GT;
 import ai.vespa.schemals.parser.grouping.ast.HINT;
 import ai.vespa.schemals.parser.grouping.ast.HYPOT;
+import ai.vespa.schemals.parser.grouping.ast.IN;
 import ai.vespa.schemals.parser.grouping.ast.INF;
 import ai.vespa.schemals.parser.grouping.ast.INFIX_ADD;
 import ai.vespa.schemals.parser.grouping.ast.INFIX_DIV;
@@ -115,6 +118,7 @@ import ai.vespa.schemals.parser.grouping.ast.ZCURVE;
 import ai.vespa.schemals.parser.grouping.ast.andFunction;
 import ai.vespa.schemals.parser.grouping.ast.andPredicate;
 import ai.vespa.schemals.parser.grouping.ast.identifierStr;
+import ai.vespa.schemals.parser.grouping.ast.inPredicate;
 import ai.vespa.schemals.parser.grouping.ast.istruePredicate;
 import ai.vespa.schemals.parser.grouping.ast.notPredicate;
 import ai.vespa.schemals.parser.grouping.ast.number;
@@ -202,6 +206,8 @@ class VespaGroupingSemanticToken {
 
         put(ADD.class, simpleExpressions);
         put(ALIAS.class, simpleExpressions); // TODO: Verify that this is a function
+        put(ARGMAX.class, simpleExpressions);
+        put(ARGMIN.class, simpleExpressions);
         put(ATTRIBUTE.class, simpleExpressions);
         put(AVG.class, simpleExpressions);
         put(BUCKET.class, simpleExpressions);
@@ -251,6 +257,7 @@ class VespaGroupingSemanticToken {
         put(new Pair<>(OR.class, orPredicate.class), logicalFilter);
         put(new Pair<>(NOT.class, notPredicate.class), logicalFilter);
         put(new Pair<>(ISTRUE.class, istruePredicate.class), logicalFilter);
+        put(new Pair<>(IN.class, inPredicate.class), logicalFilter);
 
         put(new Pair<>(AND.class, andFunction.class), simpleExpressions);
         put(new Pair<>(OR.class, orFunction.class), simpleExpressions);
