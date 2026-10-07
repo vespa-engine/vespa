@@ -31,7 +31,7 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.Validator;
-import com.yahoo.vespa.model.commerce.discovery.CommerceDiscoveryProvider;
+import com.yahoo.vespa.model.productdiscovery.ProductDiscoveryProvider;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -58,14 +58,14 @@ public class VespaModelFactory implements ModelFactory {
     private final Version version;
     private final List<Validator> additionalValidators;
     private final Optional<SidecarProvider> sidecarProvider;
-    private final Optional<CommerceDiscoveryProvider> commerceDiscoveryProvider;
+    private final Optional<ProductDiscoveryProvider> productDiscoveryProvider;
 
     /** Creates a factory for Vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<Validator> additionalValidators,
                              ComponentRegistry<SidecarProvider> sidecarProviders,
-                             ComponentRegistry<CommerceDiscoveryProvider> commerceDiscoveryProviders,
+                             ComponentRegistry<ProductDiscoveryProvider> productDiscoveryProviders,
                              Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder<?>> modelBuilders = new ArrayList<>();
@@ -78,10 +78,10 @@ public class VespaModelFactory implements ModelFactory {
             throw new IllegalStateException("At most one sidecar provider may be registered, got " + sidecarProviders.allComponents());
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
         this.sidecarProvider = sidecarProviders.allComponents().stream().findFirst();
-        if (commerceDiscoveryProviders.allComponents().size() > 1)
-            throw new IllegalStateException("At most one commerce discovery provider may be registered per config model, got " +
-                                            commerceDiscoveryProviders.allComponents());
-        this.commerceDiscoveryProvider = commerceDiscoveryProviders.allComponents().stream().findFirst();
+        if (productDiscoveryProviders.allComponents().size() > 1)
+            throw new IllegalStateException("At most one product discovery provider may be registered per config model, got " +
+                                            productDiscoveryProviders.allComponents());
+        this.productDiscoveryProvider = productDiscoveryProviders.allComponents().stream().findFirst();
         this.modelImporters = List.of(
                 new VespaImporter(),
                 new OnnxImporter(),
@@ -117,7 +117,7 @@ public class VespaModelFactory implements ModelFactory {
         this.modelImporters = List.of();
         this.additionalValidators = List.of();
         this.sidecarProvider = Optional.empty();
-        this.commerceDiscoveryProvider = Optional.empty();
+        this.productDiscoveryProvider = Optional.empty();
         this.zone = zone;
         this.clock = clock;
     }
@@ -219,7 +219,7 @@ public class VespaModelFactory implements ModelFactory {
             .onnxModelCost(modelContext.onnxModelCost());
         sidecarProvider.ifPresent(builder::sidecarProvider);
         if (modelContext.properties().hostedVespa() && modelContext.properties().featureFlags().commerceDiscovery())
-            commerceDiscoveryProvider.ifPresent(provider ->
+            productDiscoveryProvider.ifPresent(provider ->
                     builder.additionalContent(provider.additionalContent(modelContext.applicationPackage())));
         modelContext.previousModel().ifPresent(builder::previousModel);
         modelContext.reindexing().ifPresent(builder::reindexing);

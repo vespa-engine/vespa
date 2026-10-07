@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,15 +45,20 @@ public class SchemaValidatorTest {
             "  </admin>\n" +
             "</services>\n";
 
-    private static final String servicesWithCommerceDiscovery = "<?xml version='1.0' encoding='utf-8' ?>\n" +
-            "<services>\n" +
-            "  <commerce-discovery version='1.0'>\n" +
-            "    <product document-type='model' namespace='model' id-field='id' />\n" +
-            "    <category id-field='id' />\n" +
-            "    <variant-presentation />\n" +
-            "    <ranking-tags-registry />\n" +
-            "  </commerce-discovery>\n" +
-            "</services>\n";
+    // TODO (@sebasabe) remove the commerce-discovery when no longer in use
+    private static final List<String> DISCOVERY_ELEMENTS = List.of("commerce-discovery", "product-discovery");
+
+    private static String servicesWith(String element) {
+        return "<?xml version='1.0' encoding='utf-8' ?>\n" +
+               "<services>\n" +
+               "  <" + element + " version='1.0'>\n" +
+               "    <product document-type='model' namespace='model' id-field='id' />\n" +
+               "    <category id-field='id' />\n" +
+               "    <variant-presentation />\n" +
+               "    <ranking-tags-registry />\n" +
+               "  </" + element + ">\n" +
+               "</services>\n";
+    }
 
     @Test
     void testXMLParse() throws IOException {
@@ -61,30 +67,41 @@ public class SchemaValidatorTest {
     }
 
     @Test
-    void testCommerceDiscoveryIsAccepted() throws IOException {
+    void testCommerceAndProductDiscoveryAreAccepted() throws IOException {
         SchemaValidator validator = createValidator();
-        validator.validate(new StringReader(servicesWithCommerceDiscovery));
+        for (String element : DISCOVERY_ELEMENTS)
+            validator.validate(new StringReader(servicesWith(element)));
     }
 
     @Test
-    void testCommerceDiscoveryVersionIsMajorDotMinor() throws IOException {
+    void testCommerceAndProductDiscoveryVersionIsMajorDotMinor() throws IOException {
         SchemaValidator validator = createValidator();
-        String original = "<commerce-discovery version='1.0'>";
+        for (String element : DISCOVERY_ELEMENTS) {
+            String original = "<" + element + " version='1.0'>";
 
-        // version must be major.minor
-        String majorDotMinor = servicesWithCommerceDiscovery.replace(original, "<commerce-discovery version='12.34'>");
-        assertDoesNotThrow(() -> validator.validate(new StringReader(majorDotMinor)));
+            // version must be major.minor
+            String majorDotMinor = servicesWith(element).replace(original, "<" + element + " version='1.34'>");
+            assertDoesNotThrow(() -> validator.validate(new StringReader(majorDotMinor)));
 
-        // major.minor.micro is rejected
-        String majorDotMinorDotMicro = servicesWithCommerceDiscovery.replace(original, "<commerce-discovery version='1.0.0'>");
-        assertThrows(RuntimeException.class, () -> validator.validate(new StringReader(majorDotMinorDotMicro)));
+            // major.minor.micro is rejected
+            String majorDotMinorDotMicro = servicesWith(element).replace(original, "<" + element + " version='1.0.0'>");
+            assertThrows(RuntimeException.class, () -> validator.validate(new StringReader(majorDotMinorDotMicro)));
+        }
+    }
+
+    @Test
+    void testProductDiscoveryGrammarOnlyAcceptsItsMajorVersion() throws IOException {
+        SchemaValidator validator = createValidator();
+        String original = "<product-discovery version='1.0'>";
+        assertDoesNotThrow(() -> validator.validate(new StringReader(servicesWith("product-discovery").replace(original, "<product-discovery version='1.34'>"))));
+        assertThrows(RuntimeException.class, () -> validator.validate(new StringReader(servicesWith("product-discovery").replace(original, "<product-discovery version='2.0'>"))));
     }
 
     @Test
     void testUnknownTopLevelElementIsRejected() {
         Throwable exception = assertThrows(RuntimeException.class, () -> {
             SchemaValidator validator = createValidator();
-            validator.validate(new StringReader(servicesWithCommerceDiscovery.replace("commerce-discovery", "commerce-discoverh")));
+            validator.validate(new StringReader(servicesWith("commerce-discoverh")));
         });
         assertTrue(exception.getMessage().contains("element \"commerce-discoverh\" not allowed"));
     }
