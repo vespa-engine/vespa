@@ -476,43 +476,49 @@ public class YqlParser implements Parser {
      * instead of a contains match, preserving its type. As for plain fields, '=' requires a
      * number or boolean value, and 'contains' does not accept one.
      * <p>
-     * Expected input: CONTAINS( MAPREF ( field_name, key ), value ) or EQ( MAPREF ( field_name, key ), value )
+     * The key and value may also be query parameters, referenced as @name. A key parameter is
+     * always matched as a string. A value parameter with '=' must hold a number or boolean,
+     * and is matched as one, while a value parameter with 'contains' is matched as a string.
+     * <p>
+     * Expected input:
+     *   CONTAINS( MAPREF ( field_name, key ), value )
+     * or
+     *   EQ( MAPREF ( field_name, key ), value )
      */
     private OperatorNode<ExpressionOperator> rewriteMapAccess(OperatorNode<ExpressionOperator> ast) {
         if (ast.getOperator() != ExpressionOperator.CONTAINS && ast.getOperator() != ExpressionOperator.EQ) {
             return ast;
         }
 
-        OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
-        OperatorNode<ExpressionOperator> value = ast.getArgument(1);
-        if (lhs.getOperator() != ExpressionOperator.MAPREF) {
+        OperatorNode<ExpressionOperator> mapRef = ast.getArgument(0);
+        if (mapRef.getOperator() != ExpressionOperator.MAPREF) {
             return ast;
         }
 
-        OperatorNode<ExpressionOperator> field = lhs.getArgument(0);
-        OperatorNode<ExpressionOperator> key = lhs.getArgument(1);
+        OperatorNode<ExpressionOperator> field = mapRef.getArgument(0);
+        OperatorNode<ExpressionOperator> key = mapRef.getArgument(1);
+        OperatorNode<ExpressionOperator> value = ast.getArgument(1);
         assertMapKey(key);
-        if (ast.getOperator() == ExpressionOperator.EQ && value.getOperator() == ExpressionOperator.VARREF) {
-            String parameterValue = resolveParameter(value);
-            if (isRangeText(parameterValue)) {
-                String fieldName = fetchFieldName(field);
-                throw new IllegalArgumentException("Expected a number or boolean value for '=' on map field '" + fieldName +
-                                                   "', got range '" + parameterValue + "' from parameter '" + value.getArgument(0) +
-                                                   "'. Use range(" + fieldName + "{" + describeMapValue(key) + "}, lower, upper) for ranges.");
+
+        if (ast.getOperator() == ExpressionOperator.EQ) {
+            if (value.getOperator() == ExpressionOperator.VARREF) {
+                String parameterValue = resolveParameter(value);
+                String fromParameter = "'" + parameterValue + "' from parameter '" + value.getArgument(0) + "'";
+                if (isRangeText(parameterValue)) {
+                    throw newMapValueTypeException(ast.getOperator(), field, "range " + fromParameter,
+                                                   "Use range(" + fetchFieldName(field) + "{" + describeMapValue(key) +
+                                                   "}, lower, upper) for ranges.");
+                }
+                if (!isNumberText(parameterValue) && !isBooleanText(parameterValue)) {
+                    throw newMapValueTypeException(ast.getOperator(), field, fromParameter, "Use 'contains' for string values.");
+                }
             }
-            if (!isNumberText(parameterValue) && !isBooleanText(parameterValue)) {
-                throw new IllegalArgumentException("Expected a number or boolean value for '=' on map field '" + fetchFieldName(field) +
-                                                   "', got '" + parameterValue + "' from parameter '" + value.getArgument(0) +
-                                                   "'. Use 'contains' for string values.");
+            else if (!isNumberLiteral(value) && !isBooleanLiteral(value)) {
+                throw newMapValueTypeException(ast.getOperator(), field, describeMapValue(value), "Use 'contains' for string values.");
             }
-        }
-        else if (ast.getOperator() == ExpressionOperator.EQ && !isNumberLiteral(value) && !isBooleanLiteral(value)) {
-            throw new IllegalArgumentException("Expected a number or boolean value for '=' on map field '" + fetchFieldName(field) +
-                                               "', got " + describeMapValue(value) + ". Use 'contains' for string values.");
         }
         if (ast.getOperator() == ExpressionOperator.CONTAINS && (isNumberLiteral(value) || isBooleanLiteral(value))) {
-            throw new IllegalArgumentException("Expected a string value for 'contains' on map field '" + fetchFieldName(field) +
-                                               "', got " + describeMapValue(value) + ". Use '=' for number and boolean values.");
+            throw newMapValueTypeException(ast.getOperator(), field, describeMapValue(value), "Use '=' for number and boolean values.");
         }
 
         OperatorNode<ExpressionOperator> keyMatch = makeMapComponentMatch(KEY_FIELD_NAME, key);
@@ -588,6 +594,16 @@ public class YqlParser implements Parser {
     private static OperatorNode<ExpressionOperator> makeMapComponentEquality(String component, OperatorNode<ExpressionOperator> term) {
         var componentField = OperatorNode.create(term.getLocation(), ExpressionOperator.READ_FIELD, "", component);
         return OperatorNode.create(term.getLocation(), ExpressionOperator.EQ, componentField, term);
+    }
+
+    /** Returns the exception for a map access value which does not have the type required by the given operator. */
+    private IllegalArgumentException newMapValueTypeException(ExpressionOperator operator,
+                                                              OperatorNode<ExpressionOperator> field,
+                                                              String actual,
+                                                              String hint) {
+        String expected = operator == ExpressionOperator.EQ ? "a number or boolean value for '='" : "a string value for 'contains'";
+        return new IllegalArgumentException("Expected " + expected + " on map field '" + fetchFieldName(field) +
+                                            "', got " + actual + ". " + hint);
     }
 
     /** Throws if the given key of a map access is not a literal or a parameter. */

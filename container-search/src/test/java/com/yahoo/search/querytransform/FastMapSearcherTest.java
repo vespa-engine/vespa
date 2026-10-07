@@ -391,6 +391,9 @@ public class FastMapSearcherTest {
         assertEquals("intvaluemap$lookup:" + FastMapSearch.toKeyValue8Term("foo", 42),
                      rewrittenYql("intvaluemap.lookup{@key} = @value", "&key=foo&value=42"));
         assertEquals(intKeyTerm("42"), rewrittenYql("intkeymap.lookup{@key} contains \"bar\"", "&key=42"));
+        assertEquals("STRING_RANGE intvaluemap$lookup:[\"" + FastMapSearch.toKeyValue8Term("foo", 5) + "\";\""
+                     + FastMapSearch.toKeyValue8Term("foo", 10) + "\"]",
+                     rewrittenYql("range(intvaluemap.lookup{@key}, 5, 10)", "&key=foo"));
     }
 
     @Test
