@@ -6,8 +6,7 @@
 # With --short, prints only one of a fixed set of descriptions, e.g. "Java tests failed", for Factory.
 # This is expected to never include anything from the log.
 #
-# NOTE: Copied between vespa-engine/vespa and vespaai/cloud (the latter without the copyright line). Keep in sync.
-# Tested in vespa-engine/vespa.
+# NOTE: Also used by other builds from their vespa checkout. Keep the arguments and output stable.
 
 set -o errexit
 set -o nounset
