@@ -16,8 +16,9 @@ SlobrokList::SlobrokList() : _lock(), _slobrokSpecs(), _nextSpec(0), _currSpec(1
 bool SlobrokList::contains(const std::string& spec) {
     LockGuard guard(_lock);
     if (_currSpec < _slobrokSpecs.size()) {
-        if (spec == _slobrokSpecs[_currSpec])
+        if (spec == _slobrokSpecs[_currSpec]) {
             return true;
+        }
     }
     for (size_t i = 0; i < _slobrokSpecs.size(); ++i) {
         if (spec == _slobrokSpecs[i]) {
@@ -49,8 +50,9 @@ std::string SlobrokList::logString() {
     }
     std::string v = "[";
     for (size_t i = 0; i < _slobrokSpecs.size(); ++i) {
-        if (i > 0)
+        if (i > 0) {
             v += ", ";
+        }
         v += _slobrokSpecs[i];
     }
     v += "]";
@@ -58,8 +60,9 @@ std::string SlobrokList::logString() {
 }
 
 void SlobrokList::setup(const std::vector<std::string>& specList) {
-    if (specList.size() == 0)
+    if (specList.size() == 0) {
         return;
+    }
     size_t    cfgSz = specList.size();
     LockGuard guard(_lock);
     _slobrokSpecs.clear();
