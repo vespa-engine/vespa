@@ -71,7 +71,7 @@ EOF
   assert_line 'FacetingTest.testEmpty:17 » NullPointer'
   assert_line '**Maven**'
   assert_line --partial 'on project ecommerce-faceting-beta: There are test failures.'
-  assert_line '<summary>Test failure details</summary>'
+  assert_line '**Test failure details**'
   assert_line 'org.opentest4j.AssertionFailedError: expected: <3> but was: <2>'
   assert_line '<summary>Last 40 lines of the log</summary>'
   refute_line '**Compilation errors**'
