@@ -83,8 +83,9 @@ TEST_F(DistributionTest, test_verify_java_distributions) {
             state.setDistributionBitCount(distributionBits);
             RandomGen randomizer(distributionBits);
             for (uint32_t bucketIndex = 0; bucketIndex < 64; ++bucketIndex) {
-                if (bucketIndex >= maxBucket)
+                if (bucketIndex >= maxBucket) {
                     break;
+                }
                 uint64_t bucketId = bucketIndex;
                 // Use random bucket if we dont test all
                 if (maxBucket > 64) {
@@ -130,8 +131,9 @@ public:
     bool contains(const Node& n) const noexcept { return indexOf(n) != 0xffff; }
     uint16_t indexOf(const Node& n) const noexcept {
         for (uint16_t i = 0; i < _idealNodes.size(); ++i) {
-            if (n == _idealNodes[i])
+            if (n == _idealNodes[i]) {
                 return i;
+            }
         }
         return 0xffff;
     }
@@ -148,8 +150,9 @@ IdealNodeList::~IdealNodeList() = default;
 void IdealNodeList::print(std::ostream& out, bool, const std::string&) const {
     out << "[";
     for (uint32_t i = 0; i < _idealNodes.size(); ++i) {
-        if (i != 0)
+        if (i != 0) {
             out << ", ";
+        }
         out << _idealNodes[i];
     }
     out << "]";
@@ -471,10 +474,12 @@ TEST_F(DistributionTest, test_distribution) {
             int min = 0;
             int max = 0;
             for (int i = 0; i < n; i++) {
-                if (_nodeCount[i] < _nodeCount[min])
+                if (_nodeCount[i] < _nodeCount[min]) {
                     min = i;
-                if (_nodeCount[i] > _nodeCount[max])
+                }
+                if (_nodeCount[i] > _nodeCount[max]) {
                     max = i;
+                }
             }
 
             double skew = _nodeCount[max] - _nodeCount[min];

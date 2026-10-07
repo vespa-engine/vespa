@@ -92,15 +92,17 @@ bool Parameters::operator==(const Parameters& other) const {
 
 std::string_view Parameters::get(std::string_view id, std::string_view def) const {
     ParametersMap::const_iterator it = _parameters.find(id);
-    if (it == _parameters.end())
+    if (it == _parameters.end()) {
         return def;
+    }
     return it->second;
 }
 
 bool Parameters::lookup(KeyT id, ValueRef& v) const {
     ParametersMap::const_iterator it = _parameters.find(id);
-    if (it == _parameters.end())
+    if (it == _parameters.end()) {
         return false;
+    }
     v = ValueRef(it->second.c_str(), it->second.size());
     return true;
 }
