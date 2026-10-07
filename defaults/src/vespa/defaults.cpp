@@ -132,11 +132,13 @@ const char* findConfigServers(const char* defServers) {
 }
 
 void findDefaults() {
-    if (initialized.load(std::memory_order_acquire))
+    if (initialized.load(std::memory_order_acquire)) {
         return;
+    }
     std::lock_guard<std::mutex> lock(init_mutex);
-    if (initialized.load(std::memory_order_relaxed))
+    if (initialized.load(std::memory_order_relaxed)) {
         return;
+    }
 
     defaultHome = findVespaHome("/opt/vespa");
     defaultUser = findVespaUser("vespa");
@@ -152,8 +154,9 @@ void findDefaults() {
 }
 
 std::string myPath(const char* argv0) {
-    if (argv0[0] == '/')
+    if (argv0[0] == '/') {
         return argv0;
+    }
 
     const char* pathEnv = getenv("PATH");
     if (pathEnv != nullptr) {

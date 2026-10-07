@@ -60,8 +60,9 @@ bool HitCollector::addHit(vsm::StorageDocument::SP doc, uint32_t docId, const Ma
 }
 
 bool HitCollector::addHitToHeap(uint32_t index) const {
-    if (_heap.capacity() == 0)
+    if (_heap.capacity() == 0) {
         return false;
+    }
     // return true if the given hit is better than the current worst one.
     const Hit& hit = _hits[index];
     return _use_sort_blob ? (hit.cmpSort(_hits[_heap[0]]) < 0) : (hit.cmpRank(_hits[_heap[0]]) < 0);
