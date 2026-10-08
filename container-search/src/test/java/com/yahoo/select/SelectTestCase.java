@@ -53,6 +53,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.yahoo.language.Language;
 
@@ -1038,6 +1039,21 @@ public class SelectTestCase {
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"my label\", \"each\" : { \"output\" : \"count()\" } } } ]";
         GroupingOperation root = parseGrouping(grouping).get(0).getOperation(); // AllOperation
         assertEquals("my label", root.getChildren().get(0).getLabel());
+    }
+
+    @Test
+    void testGroupingLabelOnAllCanBeAParameter() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"@name\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        GroupingOperation root = parser.getGroupingSteps(grouping, Map.<String, String>of("name", "my label")::get).get(0).getOperation();
+        assertEquals("my label", root.getChildren().get(0).getLabel());
+
+        var e = assertThrows(IllegalArgumentException.class, () -> parser.getGroupingSteps(grouping, Map.<String, String>of()::get));
+        assertTrue(e.getMessage().contains("Input 'name' is not set"), e.getMessage());
+
+        // Not a parameter reference: a literal label
+        String literal = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"@1\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        root = parser.getGroupingSteps(literal, Map.<String, String>of()::get).get(0).getOperation();
+        assertEquals("@1", root.getChildren().get(0).getLabel());
     }
 
     @Test

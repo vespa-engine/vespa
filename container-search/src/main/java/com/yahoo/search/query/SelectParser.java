@@ -406,7 +406,7 @@ public class SelectParser implements Parser {
                     if (isOperationBody && "each".equals(name)) {
                         directEachSeen[0] = true;
                         if (label != null) {
-                            b.append(" as(").append(UnicodeUtilities.quote(label, '"')).append(")");
+                            b.append(" as(").append(asLabelImage(label)).append(")");
                         }
                     }
                     b.append(" ");
@@ -424,6 +424,17 @@ public class SelectParser implements Parser {
                 b.append(groupingJson.toString());
                 break;
         }
+    }
+
+    /**
+     * Returns a JSON label as it must be written in the grouping language: a parameter reference (@name) as is,
+     * so it is resolved like a parameter anywhere else in the grouping, and any other label as a quoted string.
+     */
+    private static String asLabelImage(String label) {
+        if (label.matches("@[A-Za-z_][A-Za-z0-9_-]*")) {
+            return label;
+        }
+        return UnicodeUtilities.quote(label, '"');
     }
 
     /** Describes where a misplaced "label" was found (only reached when isOperationBody is false). */
