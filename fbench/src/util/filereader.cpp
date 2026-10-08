@@ -71,22 +71,27 @@ ssize_t FileReader::ReadLine(char* buf, size_t bufsize) {
 
     len = 0;
     c = ReadByte();
-    if (c == -1)
+    if (c == -1) {
         return -1;
+    }
     while (c != -1 && c != '\n' && c != '\r') {
-        if (len < bufsize - 1)
+        if (len < bufsize - 1) {
             buf[len] = c;
+        }
         len++;
         c = ReadByte();
     }
-    if (_bufpos == _bufused)
+    if (_bufpos == _bufused) {
         FillBuffer();
-    if ((_bufused > _bufpos) && ((c == '\n' && _buf[_bufpos] == '\r') || (c == '\r' && _buf[_bufpos] == '\n')))
+    }
+    if ((_bufused > _bufpos) && ((c == '\n' && _buf[_bufpos] == '\r') || (c == '\r' && _buf[_bufpos] == '\n'))) {
         _bufpos++;
-    if (len < bufsize)
+    }
+    if (len < bufsize) {
         buf[len] = '\0'; // terminate string
-    else
+    } else {
         buf[bufsize - 1] = '\0'; // terminate string
+    }
     return len;
 }
 

@@ -182,15 +182,18 @@ void Client::run() {
             return;
         }
     }
-    if (_output)
+    if (_output) {
         _output->write(&FBENCH_DELIMITER[1], strlen(FBENCH_DELIMITER) - 1);
+    }
 
-    if (_args->_ignoreCount == 0)
+    if (_args->_ignoreCount == 0) {
         _masterTimer->Start();
+    }
 
     // Start reading from offset
-    if (_args->_singleQueryFile)
+    if (_args->_singleQueryFile) {
         _reader->SetFilePos(_args->_queryfileOffset);
+    }
 
     UrlReader urlSource(*_reader, *_args);
     size_t    urlNumber = 0;
@@ -241,8 +244,9 @@ void Client::run() {
             auto fetch_status = _http->Fetch(_linebuf.get(), _output.get(), _args->_usePostMode, content, cLen);
             _reqTimer->Stop();
             _status->AddRequestStatus(fetch_status.RequestStatus());
-            if (fetch_status.Ok() && fetch_status.TotalHitCount() == 0)
+            if (fetch_status.Ok() && fetch_status.TotalHitCount() == 0) {
                 ++_status->_zeroHitQueries;
+            }
             if (_output) {
                 if (!fetch_status.Ok()) {
                     _output->write("\nFBENCH: URL FETCH FAILED!\n", strlen("\nFBENCH: URL FETCH FAILED!\n"));
@@ -254,15 +258,18 @@ void Client::run() {
                 }
             }
             if (fetch_status.ResultSize() >= _args->_byteLimit) {
-                if (_args->_ignoreCount == 0)
+                if (_args->_ignoreCount == 0) {
                     _status->ResponseTime(_reqTimer->GetTimespan());
+                }
             } else {
-                if (_args->_ignoreCount == 0)
+                if (_args->_ignoreCount == 0) {
                     _status->RequestFailed();
+                }
             }
         } else {
-            if (_args->_ignoreCount == 0)
+            if (_args->_ignoreCount == 0) {
                 _status->SkippedRequest();
+            }
         }
         _cycleTimer->Stop();
         if (_args->_cycle < 0) {
@@ -271,14 +278,16 @@ void Client::run() {
             if (_cycleTimer->GetRemaining() > 0) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(int(_cycleTimer->GetRemaining())));
             } else {
-                if (_args->_ignoreCount == 0)
+                if (_args->_ignoreCount == 0) {
                     _status->OverTime();
+                }
             }
         }
         if (_args->_ignoreCount > 0) {
             _args->_ignoreCount--;
-            if (_args->_ignoreCount == 0)
+            if (_args->_ignoreCount == 0) {
                 _masterTimer->Start();
+            }
         }
         // Update current time span to calculate Q/s
         _status->SetRealTime(_masterTimer->GetCurrent());

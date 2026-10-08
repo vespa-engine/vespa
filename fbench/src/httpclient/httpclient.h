@@ -156,8 +156,9 @@ protected:
      * @return next byte from the data stream or -1 on EOF/ERROR
      **/
     int ReadByte() {
-        if (_bufpos == _bufused)
+        if (_bufpos == _bufused) {
             FillBuffer();
+        }
         return (_bufused > _bufpos) ? _buf[_bufpos++] & 0x0ff : -1;
     }
 

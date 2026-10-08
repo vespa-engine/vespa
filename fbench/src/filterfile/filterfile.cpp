@@ -102,13 +102,15 @@ int main(int argc, char** argv) {
 
         // find url beginning
         url = strstr(line + startIdx, trigger);
-        if (url == nullptr)
+        if (url == nullptr) {
             continue; // CONTINUE
+        }
 
         // find field end
         tmp = strstr(line + startIdx, endToken);
-        if (tmp == nullptr)
+        if (tmp == nullptr) {
             tmp = strstr(line + startIdx, "\"");
+        }
         endIdx = (tmp != nullptr) ? (tmp - line) : strlen(line);
 
         // find params: scan forward until we pass the '?' separator
@@ -116,8 +118,9 @@ int main(int argc, char** argv) {
         while (idx < endIdx && line[idx++] != '?') {
             // empty body
         }
-        if (idx >= endIdx)
+        if (idx >= endIdx) {
             continue; // CONTINUE
+        }
 
         outIdx = prefixlen;
         state = 0; // expect param name
@@ -134,16 +137,19 @@ int main(int argc, char** argv) {
                 buf[outIdx++] = line[idx];
                 [[fallthrough]];
             case 2:
-                if (line[idx++] == '&')
+                if (line[idx++] == '&') {
                     state = 0;
+                }
                 break;
             }
         }
-        if (!gotQuery)
+        if (!gotQuery) {
             continue; // CONTINUE
+        }
 
-        if (buf[outIdx - 1] == '&')
+        if (buf[outIdx - 1] == '&') {
             outIdx--;
+        }
         buf[outIdx++] = '\n';
         buf[outIdx] = '\0';
         if (!file.write(buf, outIdx)) {
