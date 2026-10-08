@@ -4,6 +4,7 @@
 
 #include "documentmetastore.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
@@ -67,7 +68,7 @@ DocumentMetaStoreFlushTarget::Flusher::Flusher(DocumentMetaStoreFlushTarget& dms
     _flushDir = _writer->getSnapshotDir(syncToken);
     std::string newBaseFileName(_flushDir + "/" + dms.getName());
     _saver = dms.initSave(newBaseFileName);
-    assert(_saver);
+    CHECK(_saver);
 }
 
 DocumentMetaStoreFlushTarget::Flusher::~Flusher() = default;

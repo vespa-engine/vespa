@@ -2,7 +2,7 @@
 
 #include "ann_deadline_configuration.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 using vespalib::Deadline;
 using vespalib::Doom;
@@ -20,7 +20,7 @@ AnnDeadlineConfiguration::AnnDeadlineConfiguration(vespalib::duration timebudget
 
 const vespalib::Deadline AnnDeadlineConfiguration::make_ann_deadline(const vespalib::Doom& doom,
                                                                      uint32_t remaining_searches) const noexcept {
-    assert(remaining_searches > 0);
+    CHECK(remaining_searches > 0);
     vespalib::steady_time now(doom.getTimeNS());
     // ANN might hit the deadline due to a depleted time budget or a timeout,
     // whatever happens first. The timeout might be the ANN-specific timeout

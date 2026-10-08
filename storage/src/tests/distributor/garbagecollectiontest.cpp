@@ -2,6 +2,7 @@
 
 #include "dummy_cluster_context.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
@@ -72,13 +73,13 @@ struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
     static std::shared_ptr<api::RemoveLocationCommand>
     as_remove_location_command(const std::shared_ptr<api::StorageCommand>& cmd) {
         auto msg = std::dynamic_pointer_cast<api::RemoveLocationCommand>(cmd);
-        assert(msg);
+        CHECK(msg);
         return msg;
     }
 
     static std::shared_ptr<api::RemoveLocationReply> make_remove_location_reply(api::StorageCommand& msg) {
         auto reply = std::shared_ptr<api::StorageReply>(msg.makeReply());
-        assert(reply->getType() == api::MessageType::REMOVELOCATION_REPLY);
+        CHECK(reply->getType() == api::MessageType::REMOVELOCATION_REPLY);
         return std::dynamic_pointer_cast<api::RemoveLocationReply>(reply);
     }
 
@@ -86,7 +87,7 @@ struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
     void reply_to_nth_request(GarbageCollectionOperation& op, size_t n, uint32_t bucket_info_checksum,
                               uint32_t n_docs_removed) {
         auto msg = _sender.command(n);
-        assert(msg->getType() == api::MessageType::REMOVELOCATION);
+        CHECK(msg->getType() == api::MessageType::REMOVELOCATION);
         std::shared_ptr<api::StorageReply> reply(msg->makeReply());
         auto&                              gc_reply = dynamic_cast<api::RemoveLocationReply&>(*reply);
         gc_reply.set_documents_removed(n_docs_removed);
@@ -115,7 +116,7 @@ struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
     uint32_t gc_removed_documents_metric() {
         auto metric_base = getIdealStateManager().getMetrics().operations[IdealStateOperation::GARBAGE_COLLECTION];
         auto gc_metrics = std::dynamic_pointer_cast<GcMetricSet>(metric_base);
-        assert(gc_metrics);
+        CHECK(gc_metrics);
         return gc_metrics->documents_removed.getValue();
     }
 

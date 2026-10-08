@@ -4,12 +4,11 @@
 
 #include "element_id_extractor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataposition.h>
 #include <vespa/vespalib/objects/visit.h>
-
-#include <cassert>
 
 namespace search::queryeval {
 
@@ -23,7 +22,7 @@ FakeSearch::FakeSearch(const std::string& tag, const std::string& field, const s
       _unpacked_docid(beginId()),
       _tfmda(std::move(tfmda)),
       _ctx(nullptr) {
-    assert(_tfmda.size() == 1);
+    CHECK(_tfmda.size() == 1);
 }
 
 FakeSearch::~FakeSearch() = default;
@@ -48,9 +47,9 @@ void FakeSearch::doUnpack(uint32_t docid) {
     using Doc = FakeResult::Document;
     using Elem = FakeResult::Element;
 
-    assert(valid());
+    CHECK(valid());
     const Doc& doc = _result.inspect()[_offset];
-    assert(doc.docId == docid);
+    CHECK(doc.docId == docid);
     _tfmda[0]->reset(docid);
     int32_t sum_weight = 0;
     for (uint32_t i = 0; i < doc.elements.size(); ++i) {

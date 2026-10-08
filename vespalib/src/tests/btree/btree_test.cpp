@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
@@ -137,13 +138,13 @@ template <typename ManagerType> void cleanup(GenerationHandler& g, ManagerType& 
 template <typename ManagerType, typename NodeType>
 void cleanup(GenerationHandler& g, ManagerType& m, BTreeNode::Ref n1Ref, NodeType* n1,
              BTreeNode::Ref n2Ref = BTreeNode::Ref(), NodeType* n2 = nullptr) {
-    assert(ManagerType::isValidRef(n1Ref));
+    CHECK(ManagerType::isValidRef(n1Ref));
     m.holdNode(n1Ref, n1);
     if (n2 != nullptr) {
-        assert(ManagerType::isValidRef(n2Ref));
+        CHECK(ManagerType::isValidRef(n2Ref));
         m.holdNode(n2Ref, n2);
     } else {
-        assert(!ManagerType::isValidRef(n2Ref));
+        CHECK(!ManagerType::isValidRef(n2Ref));
     }
     cleanup(g, m);
 }
@@ -686,8 +687,8 @@ void BTreeTest::buildSubTree(const std::vector<LeafPair>& sub, size_t numEntries
         builder.insert(num, str);
     }
     tree.assign(builder);
-    assert(numEntries == tree.size());
-    assert(tree.isValid());
+    CHECK(numEntries == tree.size());
+    CHECK(tree.isValid());
     EXPECT_EQ(numEntries, tree.size());
     EXPECT_TRUE(tree.isValid());
     MyTree::Iterator itr = tree.begin();
@@ -1560,7 +1561,7 @@ class KeyRangeValidator {
 public:
     KeyRangeValidator(std::vector<int>& list, size_t start_pos) : _list(list), _curr_pos(start_pos) {}
     void operator()(int key) {
-        assert(_curr_pos < _list.size());
+        CHECK(_curr_pos < _list.size());
         EXPECT_EQ(key, _list[_curr_pos]);
         ++_curr_pos;
     }

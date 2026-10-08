@@ -4,11 +4,13 @@
 
 #include "flushengine.h"
 
+#include <vespa/check_require.h>
+
 namespace proton {
 
 FlushTask::FlushTask(uint32_t taskId, FlushEngine& engine, std::shared_ptr<FlushContext> ctx)
     : _taskId(taskId), _engine(engine), _context(std::move(ctx)) {
-    assert(_context);
+    CHECK(_context);
 }
 
 FlushTask::~FlushTask() {

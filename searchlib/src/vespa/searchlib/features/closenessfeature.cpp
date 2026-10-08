@@ -5,6 +5,7 @@
 #include "distance_calculator_bundle.h"
 #include "utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/common/datatype.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/properties.h>
@@ -41,7 +42,7 @@ ConvertRawScoreToCloseness::ConvertRawScoreToCloseness(const fef::IQueryEnvironm
 
 void ConvertRawScoreToCloseness::execute(uint32_t docId) {
     feature_t max_closeness = _bundle.min_rawscore();
-    assert(_md);
+    CHECK(_md);
     for (const auto& elem : _bundle.elements()) {
         const TermFieldMatchData* tfmd = _md->resolveTermField(elem.handle);
         if (tfmd->has_ranking_data(docId)) {
@@ -180,7 +181,7 @@ FeatureExecutor& ClosenessBlueprint::createExecutor(const IQueryEnvironment& env
     if (_use_item_label) {
         return stash.create<ConvertRawScoreToCloseness>(env, _arg_string);
     }
-    assert(_use_geo_pos);
+    CHECK(_use_geo_pos);
     return stash.create<ClosenessExecutor>(_maxDistance, _scaleDistance);
 }
 

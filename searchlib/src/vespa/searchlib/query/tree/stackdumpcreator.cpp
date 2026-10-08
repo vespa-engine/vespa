@@ -5,6 +5,7 @@
 #include "intermediatenodes.h"
 #include "termnodes.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/util/rawbuf.h>
@@ -12,7 +13,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 
-#include <cassert>
 #include <vector>
 
 using search::ParseItem;
@@ -55,7 +55,7 @@ class QueryNodeConverter : public QueryVisitor {
 
     void append_type_and_features(ParseItem::ItemType type, uint8_t item_features) {
         uint32_t type_code = static_cast<uint32_t>(type);
-        assert(type_code < ParseItem::item_type_extension_mark + 0x80);
+        CHECK(type_code < ParseItem::item_type_extension_mark + 0x80);
         if (type_code >= ParseItem::item_type_extension_mark) {
             appendByte(ParseItem::item_type_extension_mark | item_features);
             appendByte(type - ParseItem::item_type_extension_mark);

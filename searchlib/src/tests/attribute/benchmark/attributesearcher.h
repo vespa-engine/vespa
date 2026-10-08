@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/search_context.h>
@@ -95,7 +96,7 @@ void AttributeSearcher::buildTermQuery(std::vector<char>& buffer, const std::str
     p += vespalib::compress::Integer::compressPositive(termLen, p);
     memcpy(p, term, termLen);
     p += termLen;
-    assert(p == (&buffer[0] + buffer.size()));
+    CHECK(p == (&buffer[0] + buffer.size()));
 }
 
 template <typename T> class AttributeFindSearcher : public AttributeSearcher {
@@ -138,8 +139,8 @@ public:
     int64_t _max;
     int64_t _range;
     RangeSpec(int64_t min, int64_t max, int64_t range) : _min(min), _max(max), _range(range) {
-        assert(_min < _max);
-        assert(_range <= (_max - _min));
+        CHECK(_min < _max);
+        CHECK(_range <= (_max - _min));
     }
 };
 

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -7,7 +8,6 @@
 
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
-#include <cassert>
 #include <ostream>
 #include <string>
 
@@ -28,7 +28,7 @@ uint16_t getHexVal(char c) {
     } else if (c >= 'A' && c <= 'F') {
         return (c - 'A' + 10);
     }
-    assert(validateHex(c));
+    CHECK(validateHex(c));
     LOG_ABORT("should not be reached");
 }
 

@@ -4,6 +4,7 @@
 
 #include "fpfactory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/queryeval/iterators.h>
 
 using search::fef::TermFieldMatchData;
@@ -131,7 +132,7 @@ void FakeFilterOccArrayIterator::doUnpack(uint32_t docId) {
     if (getUnpacked()) {
         return;
     }
-    assert(docId == getDocId());
+    CHECK(docId == getDocId());
     _matchData[0]->reset(docId);
     setUnpacked();
 }

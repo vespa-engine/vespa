@@ -3,6 +3,7 @@
 
 #include "globals.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -12,7 +13,6 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
 
-#include <cassert>
 #include <sstream>
 #include <string>
 
@@ -116,7 +116,7 @@ bool ClusterState::parse(std::string_view key, std::string_view value, NodeData&
     case 'b':
         if (key == "bits") {
             uint32_t numBits = atoi(value.data());
-            assert(numBits <= 64);
+            CHECK(numBits <= 64);
             _distributionBits = numBits;
             return true;
         }

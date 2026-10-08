@@ -5,6 +5,7 @@
 #include "iteratorhandler.h"
 #include "weightedsetfieldvalue.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/vespalib/util/xmlstream.h>
@@ -12,7 +13,6 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <ostream>
 
 #include <vespa/log/log.h>
@@ -331,7 +331,7 @@ ssize_t MapFieldValue::findIndex(const FieldValue& key) const {
         auto found = _lookupMap->find(key);
         if (found != _lookupMap->end()) {
             uint32_t index = *found;
-            assert(_present[index]);
+            CHECK(_present[index]);
             return index;
         }
     }

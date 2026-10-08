@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/referencedatatype.h>
@@ -22,8 +23,6 @@
 #include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 
-#include <cassert>
-
 #include <vespa/log/log.h>
 LOG_SETUP("document_db_reference_resolver_test");
 
@@ -41,7 +40,7 @@ using vespalib::SequencedTaskExecutor;
 
 const ReferenceAttribute* getReferenceAttribute(const IGidToLidChangeListener& listener) {
     auto mylistener = dynamic_cast<const GidToLidChangeListener*>(&listener);
-    assert(mylistener);
+    CHECK(mylistener);
     return mylistener->getReferenceAttribute().get();
 }
 
@@ -90,7 +89,7 @@ struct MyReferenceRegistry : public IDocumentDBReferenceRegistry {
     ReferenceMap map;
     IDocumentDBReference::SP get(std::string_view name) const override {
         auto itr = map.find(std::string(name));
-        assert(itr != map.end());
+        CHECK(itr != map.end());
         return itr->second;
     }
     IDocumentDBReference::SP tryGet(std::string_view name) const override {
@@ -117,7 +116,7 @@ struct MyAttributeManager : public MockAttributeManager {
     const ReferenceAttribute* getReferenceAttribute(const std::string& name) const {
         AttributeGuard::UP guard = getAttribute(name);
         auto*              result = dynamic_cast<const ReferenceAttribute*>(guard->get());
-        assert(result != nullptr);
+        CHECK(result != nullptr);
         return result;
     }
 };
@@ -168,7 +167,7 @@ ImportedFieldsConfig createImportedFieldsConfig() {
 
 const ImportedAttributeVector& asImportedAttribute(const IAttributeVector& attr) {
     auto* result = dynamic_cast<const ImportedAttributeVector*>(&attr);
-    assert(result != nullptr);
+    CHECK(result != nullptr);
     return *result;
 }
 
@@ -236,7 +235,7 @@ protected:
     MockGidToLidChangeHandler& getGidToLidChangeHandler(const std::string& referencedDocTypeName) {
         auto ireference = registry.get(referencedDocTypeName);
         auto reference = std::dynamic_pointer_cast<MyDocumentDBReference>(ireference);
-        assert(reference);
+        CHECK(reference);
         return reference->getGidToLidChangeHandler();
     }
 

@@ -2,6 +2,8 @@
 
 #include "databuffer.h"
 
+#include <vespa/check_require.h>
+
 #include <cstdio>
 
 FNET_DataBuffer::FNET_DataBuffer(uint32_t len)
@@ -13,7 +15,7 @@ FNET_DataBuffer::FNET_DataBuffer(uint32_t len)
     if (len > 0) {
         Alloc::alloc(len).swap(_ownedBuf);
         _bufstart = static_cast<char*>(_ownedBuf.get());
-        assert(_bufstart != nullptr);
+        CHECK(_bufstart != nullptr);
     } else { // len == 0
         _bufstart = nullptr;
     }
@@ -29,17 +31,17 @@ FNET_DataBuffer::~FNET_DataBuffer() {
 }
 
 void FNET_DataBuffer::FreeToData(uint32_t len) {
-    assert(GetFreeLen() >= len);
+    CHECK(GetFreeLen() >= len);
     _freept += len;
 }
 
 void FNET_DataBuffer::DeadToData(uint32_t len) {
-    assert(GetDeadLen() >= len);
+    CHECK(GetDeadLen() >= len);
     _datapt -= len;
 }
 
 void FNET_DataBuffer::DataToFree(uint32_t len) {
-    assert(GetDataLen() >= len);
+    CHECK(GetDataLen() >= len);
     _freept -= len;
 }
 

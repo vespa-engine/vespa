@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -61,7 +62,7 @@ ConfigFile::ConfigFile() : _name(), _content() {
 
 vespalib::nbostream& ConfigFile::deserialize(vespalib::nbostream& stream) {
     stream >> _name;
-    assert(strchr(_name.c_str(), '/') == nullptr);
+    CHECK(strchr(_name.c_str(), '/') == nullptr);
     int64_t modTime;
     stream >> modTime;
     uint32_t sz;
@@ -108,7 +109,7 @@ struct DummyStreamHandler : public NewConfigOperation::IStreamHandler {
             is >> cf;
             _cfs[cf.getName()] = cf;
         }
-        assert(is.size() == 0);
+        CHECK(is.size() == 0);
     }
 };
 

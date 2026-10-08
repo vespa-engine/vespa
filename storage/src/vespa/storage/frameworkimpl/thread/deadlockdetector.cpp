@@ -4,6 +4,7 @@
 
 #include "htmltable.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storageframework/generic/clock/clock.h>
@@ -33,7 +34,7 @@ DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg, AppKiller:
         _component = _dComponent.get();
     } else {
         auto* slComp(dynamic_cast<ServiceLayerComponentRegister*>(&compReg));
-        assert(slComp != nullptr);
+        CHECK(slComp != nullptr);
         _slComponent = std::make_unique<ServiceLayerComponent>(*slComp, "deadlockdetector");
         _component = _slComponent.get();
     }

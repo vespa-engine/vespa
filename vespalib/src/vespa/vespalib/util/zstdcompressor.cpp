@@ -2,11 +2,10 @@
 
 #include "zstdcompressor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/alloc.h>
 
 #include <zstd.h>
-
-#include <cassert>
 
 using vespalib::alloc::Alloc;
 
@@ -50,7 +49,7 @@ bool ZStdCompressor::process(CompressionConfig config, const void* inputV, size_
     }
     size_t sz =
         ZSTD_compressCCtx(_tlCompressState->get(), outputV, maxOutputLen, inputV, inputLen, config.compressionLevel);
-    assert(!ZSTD_isError(sz));
+    CHECK(!ZSTD_isError(sz));
     outputLenV = sz;
     return !ZSTD_isError(sz);
 }
@@ -60,7 +59,7 @@ bool ZStdCompressor::unprocess(const void* inputV, size_t inputLen, void* output
         _tlDecompressState = std::make_unique<DecompressContext>();
     }
     size_t sz = ZSTD_decompressDCtx(_tlDecompressState->get(), outputV, outputLenV, inputV, inputLen);
-    assert(!ZSTD_isError(sz));
+    CHECK(!ZSTD_isError(sz));
     outputLenV = sz;
     return !ZSTD_isError(sz);
 }

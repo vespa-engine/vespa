@@ -15,6 +15,7 @@
 #include "indexreadutilities.h"
 #include "indexwriteutilities.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
@@ -109,7 +110,7 @@ IndexMaintainer::SetSchemaArgs::~SetSchemaArgs() = default;
 
 void IndexMaintainer::set_id_for_new_memory_index() {
     _current_index_id = _next_id++ - _last_fusion_id;
-    assert(_current_index_id < ISourceSelector::SOURCE_LIMIT);
+    CHECK(_current_index_id < ISourceSelector::SOURCE_LIMIT);
 }
 
 string IndexMaintainer::getFlushDir(uint32_t sourceId) const {
@@ -122,7 +123,7 @@ string IndexMaintainer::getFusionDir(uint32_t sourceId) const {
 
 bool IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection& coll) {
     bool hasReopenedAnything(false);
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     uint32_t count = coll.getSourceCount();
     for (uint32_t i = 0; i < count; ++i) {
         IndexSearchable&  is = coll.getSearchable(i);
@@ -152,7 +153,7 @@ void IndexMaintainer::updateDiskIndexSchema(const std::string& indexDir, const S
 }
 
 void IndexMaintainer::updateIndexSchemas(IIndexCollection& coll, const Schema& schema, SerialNum serialNum) {
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     uint32_t count = coll.getSourceCount();
     for (uint32_t i = 0; i < count; ++i) {
         IndexSearchable&  is = coll.getSearchable(i);
@@ -169,7 +170,7 @@ void IndexMaintainer::updateIndexSchemas(IIndexCollection& coll, const Schema& s
 }
 
 void IndexMaintainer::updateActiveFusionPrunedSchema(const Schema& schema) {
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     for (;;) {
         std::shared_ptr<const Schema> activeFusionSchema;
         std::shared_ptr<const Schema> activeFusionPrunedSchema;
@@ -293,7 +294,7 @@ getLeaf(const LockGuard& newSearchLock, const std::shared_ptr<ISearchableIndexCo
  * Caller must hold _state_lock (SL).
  */
 void IndexMaintainer::replaceSource(uint32_t sourceId, const std::shared_ptr<IndexSearchable>& source) {
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     LockGuard lock(_new_search_lock);
     auto      indexes = createNewSourceCollection(lock);
     indexes->replace(sourceId, source);
@@ -306,7 +307,7 @@ void IndexMaintainer::replaceSource(uint32_t sourceId, const std::shared_ptr<Ind
  */
 void IndexMaintainer::swapInNewIndex(LockGuard& guard, std::shared_ptr<ISearchableIndexCollection> indexes,
                                      IndexSearchable& source) {
-    assert(indexes->valid());
+    CHECK(indexes->valid());
     (void)guard;
     if (_warmupConfig.getDuration() > vespalib::duration::zero()) {
         if (dynamic_cast<const IDiskIndex*>(&source) != nullptr) {
@@ -320,7 +321,7 @@ void IndexMaintainer::swapInNewIndex(LockGuard& guard, std::shared_ptr<ISearchab
     }
     LOG(debug, "Replacing indexcollection :\n%s\nwith\n%s", _source_list->toString().c_str(),
         indexes->toString().c_str());
-    assert(indexes->valid());
+    CHECK(indexes->valid());
     _source_list = std::move(indexes);
 }
 
@@ -328,7 +329,7 @@ void IndexMaintainer::swapInNewIndex(LockGuard& guard, std::shared_ptr<ISearchab
  * Caller must hold _state_lock (SL).
  */
 void IndexMaintainer::appendSource(uint32_t sourceId, const std::shared_ptr<IndexSearchable>& source) {
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     LockGuard lock(_new_search_lock);
     auto      indexes = createNewSourceCollection(lock);
     indexes->append(sourceId, source);
@@ -359,7 +360,7 @@ IndexMaintainer::FlushArgs& IndexMaintainer::FlushArgs::operator=(FlushArgs&&) =
 
 bool IndexMaintainer::doneInitFlush(FlushArgs* args, std::shared_ptr<IMemoryIndex>* new_index) {
     // Called by initFlush via reconfigurer
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     LockGuard state_lock(_state_lock);
     args->old_index = _current_index;
     args->old_absolute_id = get_absolute_id();
@@ -412,7 +413,7 @@ void IndexMaintainer::doFlush(FlushArgs args) {
         flushLastMemoryIndex(args, flushIds);
     }
 
-    assert(!flushIds.empty());
+    CHECK(!flushIds.empty());
     if (args.stats != nullptr) {
         updateFlushStats(args);
     }
@@ -423,8 +424,8 @@ void IndexMaintainer::doFlush(FlushArgs args) {
 void IndexMaintainer::flushFrozenMemoryIndexes(FlushArgs& args, FlushIds& flushIds) {
     // Called by a flush worker thread
     for (FrozenMemoryIndexRef& frozen : args._extraIndexes) {
-        assert(frozen._absoluteId < args.old_absolute_id);
-        assert(flushIds.empty() || flushIds.back() < frozen._absoluteId);
+        CHECK(frozen._absoluteId < args.old_absolute_id);
+        CHECK(flushIds.empty() || flushIds.back() < frozen._absoluteId);
 
         FlushArgs eArgs;
         eArgs.old_index = frozen._index;
@@ -452,7 +453,7 @@ void IndexMaintainer::updateFlushStats(const FlushArgs& args) {
     if (!args._skippedEmptyLast) {
         flushDir = getFlushDir(args.old_absolute_id);
     } else {
-        assert(!args._extraIndexes.empty());
+        CHECK(!args._extraIndexes.empty());
         flushDir = getFlushDir(args._extraIndexes.back()._absoluteId);
     }
     args.stats->setPath(flushDir);
@@ -498,7 +499,7 @@ void IndexMaintainer::reconfigureAfterFlush(FlushArgs& args, std::shared_ptr<IDi
 
 bool IndexMaintainer::doneFlush(FlushArgs* args, std::shared_ptr<IDiskIndex>* disk_index) {
     // Called by doFlush via reconfigurer
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     LockGuard     state_lock(_state_lock);
     IMemoryIndex& memoryIndex = *args->old_index;
     if (args->_changeGens != getChangeGens()) {
@@ -532,7 +533,7 @@ bool IndexMaintainer::canRunFusion(const FusionSpec& spec) const {
 
 bool IndexMaintainer::doneFusion(FusionArgs* args, std::shared_ptr<IDiskIndex>* new_index) {
     // Called by runFusion via reconfigurer
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     LockGuard state_lock(_state_lock);
     if (args->_changeGens != getChangeGens()) {
         return false; // Must retry operation
@@ -574,7 +575,7 @@ bool IndexMaintainer::doneFusion(FusionArgs* args, std::shared_ptr<IDiskIndex>* 
 
 bool IndexMaintainer::makeSureAllRemainingWarmupIsDone(std::shared_ptr<WarmupIndexCollection> keepAlive) {
     // called by warmupDone via reconfigurer, warmupDone() doesn't wait for us
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     std::shared_ptr<ISearchableIndexCollection> warmIndex;
     {
         LockGuard state_lock(_state_lock);
@@ -610,7 +611,7 @@ void IndexMaintainer::warmupDone(std::shared_ptr<WarmupIndexCollection> current)
 
 void IndexMaintainer::doneSetSchema(SetSchemaArgs& args, std::shared_ptr<IMemoryIndex>& newIndex,
                                     SerialNum serial_num) {
-    assert(_ctx.getThreadingService().master().isCurrentThread()); // with idle index executor
+    CHECK(_ctx.getThreadingService().master().isCurrentThread()); // with idle index executor
     LockGuard state_lock(_state_lock);
     using SaveInfo = FixedSourceSelector::SaveInfo;
     args._oldSchema = _schema;          // Delay destruction
@@ -737,12 +738,12 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig& config, const Inde
     }
     uint32_t baseId(_selector->getBaseId());
     if (_last_fusion_id != baseId) {
-        assert(_last_fusion_id > baseId);
+        CHECK(_last_fusion_id > baseId);
         uint32_t      id_diff = _last_fusion_id - baseId;
         ostringstream ost;
         ost << "sourceselector_fusion(" << _last_fusion_id << ")";
         _selector = getSourceSelector().cloneAndSubtract(ost.str(), id_diff);
-        assert(_last_fusion_id == _selector->getBaseId());
+        CHECK(_last_fusion_id == _selector->getBaseId());
     }
     set_id_for_new_memory_index();
     _selector->setDefaultSource(_current_index_id);
@@ -766,7 +767,7 @@ IndexMaintainer::~IndexMaintainer() {
 }
 
 std::unique_ptr<FlushTask> IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats* stats) {
-    assert(_ctx.getThreadingService().master().isCurrentThread()); // while flush engine scheduler thread waits
+    CHECK(_ctx.getThreadingService().master().isCurrentThread()); // while flush engine scheduler thread waits
     {
         LockGuard lock(_index_update_lock);
         set_current_serial_num(std::max(current_serial_num(), serialNum));
@@ -781,7 +782,7 @@ std::unique_ptr<FlushTask> IndexMaintainer::initFlush(SerialNum serialNum, searc
     auto configure =
         makeLambdaConfigure([this, argsP = &args, indexP = &new_index]() { return doneInitFlush(argsP, indexP); });
     bool success = _ctx.getReconfigurer().reconfigure(std::move(configure));
-    assert(success);
+    CHECK(success);
     (void)success;
     if (args._skippedEmptyLast && args._extraIndexes.empty()) {
         // No memory index to flush, it was empty
@@ -1015,7 +1016,7 @@ uint32_t IndexMaintainer::getNumFrozenMemoryIndexes() const {
 
 void IndexMaintainer::putDocument(uint32_t lid, const Document& doc, SerialNum serialNum,
                                   const OnWriteDoneType& on_write_done) {
-    assert(_ctx.getThreadingService().index().isCurrentThread());
+    CHECK(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     try {
         _current_index->insertDocument(lid, doc, on_write_done);
@@ -1031,7 +1032,7 @@ void IndexMaintainer::putDocument(uint32_t lid, const Document& doc, SerialNum s
 }
 
 void IndexMaintainer::removeDocuments(LidVector lids, SerialNum serialNum) {
-    assert(_ctx.getThreadingService().index().isCurrentThread());
+    CHECK(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     for (uint32_t lid : lids) {
         _selector->setSource(lid, _current_index_id);
@@ -1043,7 +1044,7 @@ void IndexMaintainer::removeDocuments(LidVector lids, SerialNum serialNum) {
 }
 
 void IndexMaintainer::commit_and_wait() {
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     vespalib::Gate gate;
     _ctx.getThreadingService().index().execute(makeLambdaTask([this, &gate]() { commit(gate); }));
     // Ensure that all index thread tasks accessing memory index have completed.
@@ -1052,26 +1053,26 @@ void IndexMaintainer::commit_and_wait() {
 
 void IndexMaintainer::commit(vespalib::Gate& gate) {
     // only triggered via commit_and_wait()
-    assert(_ctx.getThreadingService().index().isCurrentThread());
+    CHECK(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     _current_index->commit(std::make_shared<vespalib::GateCallback>(gate), current_serial_num());
 }
 
 void IndexMaintainer::commit(SerialNum serialNum, const OnWriteDoneType& onWriteDone) {
-    assert(_ctx.getThreadingService().index().isCurrentThread());
+    CHECK(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     set_current_serial_num(serialNum);
     _current_index->commit(onWriteDone, serialNum);
 }
 
 void IndexMaintainer::heartBeat(SerialNum serialNum) {
-    assert(_ctx.getThreadingService().index().isCurrentThread());
+    CHECK(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     set_current_serial_num(serialNum);
 }
 
 void IndexMaintainer::compactLidSpace(uint32_t lidLimit, SerialNum serialNum) {
-    assert(_ctx.getThreadingService().index().isCurrentThread());
+    CHECK(_ctx.getThreadingService().index().isCurrentThread());
     LOG(info, "compactLidSpace(%u, %" PRIu64 ")", lidLimit, serialNum);
     LockGuard lock(_index_update_lock);
     set_current_serial_num(serialNum);
@@ -1088,7 +1089,7 @@ IFlushTarget::List IndexMaintainer::getFlushTargets() {
 }
 
 void IndexMaintainer::setSchema(const Schema& schema, SerialNum serialNum) {
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     pruneRemovedFields(schema, serialNum);
     auto          new_index(_operations.createMemoryIndex(schema, *_current_index, current_serial_num()));
     SetSchemaArgs args;
@@ -1103,7 +1104,7 @@ void IndexMaintainer::setSchema(const Schema& schema, SerialNum serialNum) {
 }
 
 void IndexMaintainer::pruneRemovedFields(const Schema& schema, SerialNum serialNum) {
-    assert(_ctx.getThreadingService().master().isCurrentThread());
+    CHECK(_ctx.getThreadingService().master().isCurrentThread());
     std::shared_ptr<ISearchableIndexCollection> new_source_list;
     auto                                        coll = getSourceCollection();
     updateIndexSchemas(*coll, schema, serialNum);

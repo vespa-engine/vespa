@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "top_level_distributor_test_util.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -172,7 +173,7 @@ void TopLevelDistributorTestUtil::add_ideal_nodes(const lib::ClusterState& state
     }
 
     std::vector<uint16_t> res;
-    assert(_component.get());
+    CHECK(_component.get());
     _component->getDistribution()->getIdealNodes(lib::NodeType::STORAGE, state, id, res, "uim");
 
     for (uint32_t i = 0; i < res.size(); ++i) {
@@ -187,7 +188,7 @@ void TopLevelDistributorTestUtil::add_ideal_nodes(const lib::ClusterState& state
 void TopLevelDistributorTestUtil::add_ideal_nodes(const document::BucketId& id) {
     // TODO STRIPE good way of getting current active cluster state on top-level distributor
     // We assume that all stripes have the same cluster state internally, so just use the first.
-    assert(_distributor->_stripes[0]);
+    CHECK(_distributor->_stripes[0]);
     const auto& bundle = _distributor->_stripes[0]->getClusterStateBundle();
     add_ideal_nodes(*bundle.getBaselineClusterState(), id);
 }
@@ -238,12 +239,12 @@ TopLevelBucketDBUpdater& TopLevelDistributorTestUtil::bucket_db_updater() {
 }
 
 const IdealStateMetricSet& TopLevelDistributorTestUtil::total_ideal_state_metrics() const {
-    assert(_distributor->_ideal_state_total_metrics);
+    CHECK(_distributor->_ideal_state_total_metrics);
     return *_distributor->_ideal_state_total_metrics;
 }
 
 const DistributorMetricSet& TopLevelDistributorTestUtil::total_distributor_metrics() const {
-    assert(_distributor->_total_metrics);
+    CHECK(_distributor->_total_metrics);
     return *_distributor->_total_metrics;
 }
 
@@ -303,24 +304,24 @@ framework::MetricUpdateHook& TopLevelDistributorTestUtil::distributor_metric_upd
 }
 
 BucketDatabase& TopLevelDistributorTestUtil::stripe_bucket_database(uint16_t stripe_idx) {
-    assert(stripe_idx < _distributor->_stripes.size());
+    CHECK(stripe_idx < _distributor->_stripes.size());
     return _distributor->_stripes[stripe_idx]->getBucketSpaceRepo().get(makeBucketSpace()).getBucketDatabase();
 }
 
 BucketDatabase& TopLevelDistributorTestUtil::stripe_bucket_database(uint16_t              stripe_idx,
                                                                     document::BucketSpace space) {
-    assert(stripe_idx < _distributor->_stripes.size());
+    CHECK(stripe_idx < _distributor->_stripes.size());
     return _distributor->_stripes[stripe_idx]->getBucketSpaceRepo().get(space).getBucketDatabase();
 }
 
 const BucketDatabase& TopLevelDistributorTestUtil::stripe_bucket_database(uint16_t stripe_idx) const {
-    assert(stripe_idx < _distributor->_stripes.size());
+    CHECK(stripe_idx < _distributor->_stripes.size());
     return _distributor->_stripes[stripe_idx]->getBucketSpaceRepo().get(makeBucketSpace()).getBucketDatabase();
 }
 
 const BucketDatabase& TopLevelDistributorTestUtil::stripe_bucket_database(uint16_t              stripe_idx,
                                                                           document::BucketSpace space) const {
-    assert(stripe_idx < _distributor->_stripes.size());
+    CHECK(stripe_idx < _distributor->_stripes.size());
     return _distributor->_stripes[stripe_idx]->getBucketSpaceRepo().get(space).getBucketDatabase();
 }
 
@@ -369,11 +370,11 @@ void TopLevelDistributorTestUtil::enable_next_distribution_if_changed() {
 
 const lib::ClusterStateBundle& TopLevelDistributorTestUtil::current_cluster_state_bundle() const {
     // We assume that all stripes have the same cluster state internally, so just use the first.
-    assert(_distributor->_stripes[0]);
+    CHECK(_distributor->_stripes[0]);
     const auto& bundle = _distributor->_stripes[0]->getClusterStateBundle();
     // ... but sanity-check just to make sure...
     for (size_t i = 1; i < _num_distributor_stripes; ++i) {
-        assert(_distributor->_stripes[i]->getClusterStateBundle() == bundle);
+        CHECK(_distributor->_stripes[i]->getClusterStateBundle() == bundle);
     }
     return bundle;
 }

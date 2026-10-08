@@ -1,14 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "openssl_crypto_impl.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/util/casts.h>
 
 #include <openssl/bn.h>
 #include <openssl/rand.h>
 #include <openssl/x509v3.h>
-
-#include <cassert>
 
 namespace vespalib::crypto::openssl_impl {
 
@@ -46,7 +45,7 @@ using X509NamePtr = std::unique_ptr<::X509_NAME, X509NameDeleter>;
 
 std::string bio_to_string(BIO& bio) {
     int written = BIO_pending(&bio);
-    assert(written >= 0);
+    CHECK(written >= 0);
     std::string pem_str(written, '\0');
     if (::BIO_read(&bio, &pem_str[0], written) != written) {
         throw CryptoException("BIO_read did not copy all PEM data");
@@ -179,7 +178,7 @@ void set_name_entry_if_non_empty(::X509_NAME& name, const char* field, std::stri
     if (entry.empty()) {
         return;
     }
-    assert(entry.size() <= INT_MAX);
+    CHECK(entry.size() <= INT_MAX);
     auto* entry_buf = char_p_cast<unsigned char>(entry.data());
     auto  entry_len = static_cast<int>(entry.size());
     if (::X509_NAME_add_entry_by_txt(&name, field, MBSTRING_UTF8, entry_buf, entry_len, -1, 0) != 1) {

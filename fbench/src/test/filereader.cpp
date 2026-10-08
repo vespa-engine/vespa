@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
+
 #include <string.h>
 #include <util/filereader.h>
-
-#include <cassert>
 
 int main(int argc, char** argv) {
     (void)argc;
@@ -81,15 +81,15 @@ int main(int argc, char** argv) {
     printf("'filereader_messy.txt' except that all line separators have\n");
     printf("been replaced by a single '\\n' character (hex 0a).\n");
     FileReader verify;
-    assert(verify.Open("filereader_messy.txt"));
-    assert(verify.ReadLine(buf, buflen - 1) == ssize_t(strlen(l1) - 1));
-    assert(memcmp(l1, buf, strlen(l1) - 1) == 0);
-    assert(verify.ReadLine(buf, buflen - 1) == ssize_t(strlen(l2) - 1));
-    assert(memcmp(l2, buf, strlen(l2) - 1) == 0);
+    CHECK(verify.Open("filereader_messy.txt"));
+    CHECK(verify.ReadLine(buf, buflen - 1) == ssize_t(strlen(l1) - 1));
+    CHECK(memcmp(l1, buf, strlen(l1) - 1) == 0);
+    CHECK(verify.ReadLine(buf, buflen - 1) == ssize_t(strlen(l2) - 1));
+    CHECK(memcmp(l2, buf, strlen(l2) - 1) == 0);
     while ((res = verify.ReadLine(buf, buflen - 1)) >= 0) {
         printf("len=%d, content:>%s<\n", res, buf);
     }
     verify.Reset();
-    assert(verify.ReadLine(buf, buflen - 1) == ssize_t(strlen(l1) - 1));
-    assert(memcmp(l1, buf, strlen(l1) - 1) == 0);
+    CHECK(verify.ReadLine(buf, buflen - 1) == ssize_t(strlen(l1) - 1));
+    CHECK(memcmp(l1, buf, strlen(l1) - 1) == 0);
 }

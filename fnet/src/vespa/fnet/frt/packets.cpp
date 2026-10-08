@@ -4,6 +4,7 @@
 
 #include "rpcrequest.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/databuffer.h>
 #include <vespa/fnet/info.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -39,7 +40,7 @@ void FRT_RPCRequestPacket::Encode(FNET_DataBuffer* dst) {
         dst->WriteBytesFast(_req->GetMethodName(), _req->GetMethodNameLen());
         _req->GetParams()->EncodeCopy(dst);
     } else {
-        assert(packet_endian == FNET_Info::ENDIAN_BIG);
+        CHECK(packet_endian == FNET_Info::ENDIAN_BIG);
         dst->WriteInt32Fast(_req->GetMethodNameLen());
         dst->WriteBytesFast(_req->GetMethodName(), _req->GetMethodNameLen());
         _req->GetParams()->EncodeBig(dst);
@@ -103,7 +104,7 @@ void FRT_RPCReplyPacket::Encode(FNET_DataBuffer* dst) {
     if (packet_endian == host_endian) {
         _req->GetReturn()->EncodeCopy(dst);
     } else {
-        assert(packet_endian == FNET_Info::ENDIAN_BIG);
+        CHECK(packet_endian == FNET_Info::ENDIAN_BIG);
         _req->GetReturn()->EncodeBig(dst);
     }
 }
@@ -150,7 +151,7 @@ void FRT_RPCErrorPacket::Encode(FNET_DataBuffer* dst) {
         dst->WriteBytesFast(&tmp, sizeof(tmp));
         dst->WriteBytesFast(_req->GetErrorMessage(), _req->GetErrorMessageLen());
     } else {
-        assert(packet_endian == FNET_Info::ENDIAN_BIG);
+        CHECK(packet_endian == FNET_Info::ENDIAN_BIG);
         dst->WriteInt32Fast(_req->GetErrorCode());
         dst->WriteInt32Fast(_req->GetErrorMessageLen());
         dst->WriteBytesFast(_req->GetErrorMessage(), _req->GetErrorMessageLen());

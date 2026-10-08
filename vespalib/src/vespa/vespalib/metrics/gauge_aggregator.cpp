@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "gauge_aggregator.h"
 
-#include <assert.h>
+#include <vespa/check_require.h>
 
 #include <map>
 
@@ -18,7 +18,7 @@ GaugeAggregator::GaugeAggregator(const Gauge::Measurement& sample)
 }
 
 void GaugeAggregator::merge(const GaugeAggregator& other) {
-    assert(idx == other.idx);
+    CHECK(idx == other.idx);
     minValue = std::min(minValue, other.minValue);
     maxValue = std::max(maxValue, other.maxValue);
     sumValue += other.sumValue;

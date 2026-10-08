@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/fieldset/fieldsets.h>
@@ -281,7 +282,7 @@ std::shared_ptr<TwoPhaseUpdateOperation> TwoPhaseUpdateOperationTest::sendUpdate
     update->setCreateIfNonExistent(options._createIfNonExistent);
 
     document::BucketId id = operation_context().make_split_bit_constrained_bucket_id(update->getId());
-    assert(id == _bucket_id);
+    CHECK(id == _bucket_id);
     document::BucketId id2 = document::BucketId(id.getUsedBits() + 1, id.getRawId());
 
     if (bucketState.length()) {

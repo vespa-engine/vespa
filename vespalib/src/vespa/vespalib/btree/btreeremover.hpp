@@ -5,6 +5,8 @@
 #include "btreeremover.h"
 #include "btreerootbase.hpp"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::btree {
 
 template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
@@ -74,7 +76,7 @@ void BTreeRemoverBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
 void BTreeRemover<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::remove(BTreeNode::Ref& root, Iterator& itr,
                                                                             const AggrCalcT& aggrCalc) {
-    assert(itr.valid());
+    CHECK(itr.valid());
     root = itr.thaw(root);
 
     uint32_t      idx = itr.getLeafNodeIdx();
@@ -122,7 +124,7 @@ void BTreeRemover<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::remove(BTre
         node->decValidLeaves(1);
         if (level == 0) {
             LeafNodeType* sNode = allocator.mapLeafRef(subNode);
-            assert(sNode == lnode);
+            CHECK(sNode == lnode);
             if (!sNode->isAtLeastHalfFull()) {
                 // too few elements in sub node, steal from left or
                 // right sibling

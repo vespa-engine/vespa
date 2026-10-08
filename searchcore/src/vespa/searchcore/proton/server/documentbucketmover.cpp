@@ -6,6 +6,7 @@
 #include "idocumentmovehandler.h"
 #include "maintenancedocumentsubdb.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
@@ -89,7 +90,7 @@ BucketMover::BucketMover(const BucketId& bucket, const MaintenanceDocumentSubDB*
 }
 
 BucketMover::~BucketMover() {
-    assert(inSync());
+    CHECK(inSync());
 }
 
 std::pair<BucketMover::MoveKeys, bool> BucketMover::getKeysToMove(size_t maxDocsToMove) {

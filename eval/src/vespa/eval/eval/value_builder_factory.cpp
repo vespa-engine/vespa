@@ -2,6 +2,8 @@
 
 #include "value_builder_factory.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::eval {
 
 namespace {
@@ -17,7 +19,7 @@ struct CopyValue {
         auto                   builder = factory.create_value_builder<CT>(type, num_mapped, dense_size, idx.size());
         std::vector<string_id> addr(num_mapped);
         if (num_mapped == 0) {
-            assert(idx.size() == 1);
+            CHECK(idx.size() == 1);
             auto array_ref = builder->add_subspace(addr);
             for (size_t i = 0; i < dense_size; ++i) {
                 array_ref[i] = input_cells[i];

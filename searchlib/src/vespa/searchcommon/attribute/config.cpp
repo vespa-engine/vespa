@@ -2,6 +2,7 @@
 
 #include "config.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/tensor/tensor_quantization.h>
 
 namespace search::attribute {
@@ -76,7 +77,7 @@ Config& Config::set_tensor_type_with_quantization(const vespalib::eval::ValueTyp
 }
 
 Config& Config::set_hnsw_index_params(const HnswIndexParams& params) {
-    assert(_distance_metric == params.distance_metric());
+    CHECK(_distance_metric == params.distance_metric());
     _hnsw_index_params = params;
     return *this;
 }

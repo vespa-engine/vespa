@@ -6,6 +6,8 @@
 #include "field_spec.hpp"
 #include "flow_tuning.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
@@ -94,7 +96,7 @@ SearchIterator::UP EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDat
 }
 
 SearchIterator::UP EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray&) const {
-    assert(false); // should not be called
+    CHECK(false); // should not be called
     return {};
 }
 

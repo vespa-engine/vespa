@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -107,7 +108,7 @@ Document::UP makeCorruptDocument(DocBuilder& b, size_t wordOffset) {
     std::vector<char> raw;
     raw.resize(stream.size());
     stream.read(&raw[0], stream.size());
-    assert(wordOffset < corruptWord.size());
+    CHECK(wordOffset < corruptWord.size());
     for (size_t i = 0; i + corruptWord.size() <= raw.size(); ++i) {
         if (memcmp(&raw[i], corruptWord.c_str(), corruptWord.size()) == 0) {
             raw[i + wordOffset] = '\0';

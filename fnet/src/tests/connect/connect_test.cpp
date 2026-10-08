@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/connection.h>
 #include <vespa/fnet/controlpacket.h>
 #include <vespa/fnet/ipackethandler.h>
@@ -13,8 +14,6 @@
 #include <vespa/vespalib/test/time_bomb.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 using namespace vespalib;
 using vespalib::test::Nexus;
@@ -113,7 +112,7 @@ struct TransportFixture : FNET_IPacketHandler {
     }
     HP_RetCode HandlePacket(FNET_Packet* packet, FNET_Context) override {
         EXPECT_TRUE(packet->GetCommand() == FNET_ControlPacket::FNET_CMD_CHANNEL_LOST);
-        assert(packet->GetCommand() == FNET_ControlPacket::FNET_CMD_CHANNEL_LOST);
+        CHECK(packet->GetCommand() == FNET_ControlPacket::FNET_CMD_CHANNEL_LOST);
         conn_lost.countDown();
         packet->Free();
         return FNET_FREE_CHANNEL;
@@ -121,7 +120,7 @@ struct TransportFixture : FNET_IPacketHandler {
     FNET_Connection* connect(const std::string& spec) {
         FNET_Connection* conn = transport.Connect(spec.c_str(), &streamer);
         EXPECT_TRUE(conn != nullptr);
-        assert(conn != nullptr);
+        CHECK(conn != nullptr);
         if (conn->OpenChannel(this, FNET_Context()) == nullptr) {
             conn_lost.countDown();
         }

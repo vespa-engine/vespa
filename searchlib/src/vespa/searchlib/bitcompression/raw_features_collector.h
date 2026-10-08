@@ -4,9 +4,9 @@
 
 #include "compression.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 
-#include <cassert>
 #include <limits>
 
 namespace search::bitcompression {
@@ -51,7 +51,7 @@ public:
          * Due to limitations in search::memoryindex::FeatureStore, the feature bit length for a single
          * (word, docid) pair should never exceed 4Gi.
          */
-        assert(bit_length <= std::numeric_limits<uint32_t>::max());
+        CHECK(bit_length <= std::numeric_limits<uint32_t>::max());
         features.set_bit_length(bit_length);
     }
 };

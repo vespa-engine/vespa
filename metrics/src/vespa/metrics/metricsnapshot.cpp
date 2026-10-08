@@ -3,7 +3,7 @@
 
 #include "metricmanager.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".metrics.snapshot");
@@ -50,7 +50,7 @@ void MetricSnapshot::reset(system_time currentTime) {
 void MetricSnapshot::recreateSnapshot(const MetricSet& metrics, bool copyUnset) {
     std::vector<Metric::UP> newMetrics;
     Metric*                 m = metrics.clone(newMetrics, Metric::INACTIVE, nullptr, copyUnset);
-    assert(m->isMetricSet());
+    CHECK(m->isMetricSet());
     std::unique_ptr<MetricSet> newSnapshot(static_cast<MetricSet*>(m));
     newSnapshot->reset();
     _snapshot->addToSnapshot(*newSnapshot, newMetrics);

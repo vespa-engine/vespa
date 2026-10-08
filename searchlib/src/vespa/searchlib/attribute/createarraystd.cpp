@@ -6,6 +6,8 @@
 #include "multinumericattribute.h"
 #include "multistringattribute.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.create_array_std");
 
@@ -20,7 +22,7 @@ using attribute::BasicType;
 #define CREATEFLOATARRAY(T, fname, info) static_cast<AttributeVector*>(new FLOATARRAY(T)(fname, info))
 
 AttributeVector::SP AttributeFactory::createArrayStd(std::string name, const Config& info) {
-    assert(info.collectionType().type() == attribute::CollectionType::ARRAY);
+    CHECK(info.collectionType().type() == attribute::CollectionType::ARRAY);
     AttributeVector::SP ret;
     switch (info.basicType().type()) {
     case BasicType::BOOL:

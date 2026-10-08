@@ -4,6 +4,7 @@
 
 #include "check_condition.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/activecopy.h>
@@ -64,7 +65,7 @@ void PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTar
     }
     ActiveList active;
     if (setOneActive) {
-        assert(!multipleBuckets);
+        CHECK(!multipleBuckets);
         (void)multipleBuckets;
         BucketDatabase::Entry entry(_bucket_space.getBucketDatabase().get(lastBucket));
         active =

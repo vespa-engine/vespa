@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
@@ -100,7 +101,7 @@ public:
 
 SerialNum EntryGenerator::getRandomSerialNum(SerialNum begin, SerialNum end) {
     // return random number in range [begin, end]
-    assert(begin <= end);
+    CHECK(begin <= end);
     if (begin == end) {
         return SerialNum(begin);
     } else {
@@ -387,7 +388,7 @@ SerialNum VisitorAgent::getNext() {
 }
 
 void VisitorAgent::start(SerialNum from, SerialNum to) {
-    assert(idle());
+    CHECK(idle());
     LOG(info, "VisitorAgent[%u]: start<%" PRIu64 ", %" PRIu64 "]", _id, from, to);
     _from = from;
     _to = to;
@@ -406,7 +407,7 @@ void VisitorAgent::start(SerialNum from, SerialNum to) {
 }
 
 void VisitorAgent::setIdle() {
-    assert(finished());
+    CHECK(finished());
     _visitor.reset();
     setState(IDLE);
 }

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "statbucketoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe_component.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -57,7 +58,7 @@ void StatBucketOperation::onStart(DistributorStripeMessageSender& sender) {
 
 void StatBucketOperation::onReceive(DistributorStripeMessageSender&           sender,
                                     const std::shared_ptr<api::StorageReply>& msg) {
-    assert(msg->getType() == api::MessageType::STATBUCKET_REPLY);
+    CHECK(msg->getType() == api::MessageType::STATBUCKET_REPLY);
     auto& myreply = dynamic_cast<api::StatBucketReply&>(*msg);
     auto  found = _sent.find(msg->getMsgId());
 

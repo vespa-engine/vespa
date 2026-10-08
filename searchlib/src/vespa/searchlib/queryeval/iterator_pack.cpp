@@ -4,9 +4,9 @@
 
 #include "termwise_helper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/matchdata.h>
 
-#include <cassert>
 #include <limits>
 
 namespace search::queryeval {
@@ -26,7 +26,7 @@ SearchIteratorPack::SearchIteratorPack(const std::vector<SearchIterator*>&      
     for (auto child : children) {
         _children.emplace_back(child);
     }
-    assert((_children.size() == _childMatch.size()) || _childMatch.empty());
+    CHECK((_children.size() == _childMatch.size()) || _childMatch.empty());
 }
 
 SearchIteratorPack::SearchIteratorPack(const std::vector<SearchIterator*>& children, MatchDataUP md)

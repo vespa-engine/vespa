@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
@@ -10,7 +11,6 @@
 #include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-#include <cassert>
 #include <iostream>
 
 using document::Annotation;
@@ -74,7 +74,7 @@ std::vector<MyAnnotation> StringFieldBuilderTest::get_annotations(const StringFi
     const auto*                 tree = StringFieldValue::findTree(trees, SPANTREE_NAME);
     if (tree != nullptr) {
         for (auto& ann : *tree) {
-            assert(ann.getType() == *AnnotationType::TERM);
+            CHECK(ann.getType() == *AnnotationType::TERM);
             auto span = dynamic_cast<const Span*>(ann.getSpanNode());
             if (span == nullptr) {
                 continue;

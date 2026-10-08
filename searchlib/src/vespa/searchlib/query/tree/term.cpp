@@ -2,9 +2,8 @@
 
 #include "term.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/classname.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.query.tree.term");
@@ -22,9 +21,9 @@ void Term::setStateFrom(const Term& other) {
     setPositionData(other.usePositionData());
     set_prefix_match(other.prefix_match());
     // too late to copy this state:
-    assert(_view == other.getView());
-    assert(_id == other.getId());
-    assert(_weight == other.getWeight());
+    CHECK(_view == other.getView());
+    CHECK(_id == other.getId());
+    CHECK(_weight == other.getWeight());
 }
 
 queryeval::FieldSpec Term::inner_field_spec(const queryeval::FieldSpec& parentSpec) const {

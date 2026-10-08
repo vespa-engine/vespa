@@ -7,6 +7,7 @@
 #include "sort_feature_store.h"
 #include "tag_needed_handles.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/attribute/diversity.h>
@@ -23,7 +24,6 @@
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
-#include <cassert>
 #include <cstdlib>
 
 using search::SerializedQueryTree;
@@ -327,13 +327,13 @@ MatchToolsFactory::MatchToolsFactory(
 MatchToolsFactory::~MatchToolsFactory() = default;
 
 MatchTools::UP MatchToolsFactory::createMatchTools() const {
-    assert(_valid);
+    CHECK(_valid);
     return std::make_unique<MatchTools>(_queryLimiter, _requestContext.getDoom(), _query, *_match_limiter, _queryEnv,
                                         _mdl, _rankSetup, _featureOverrides, _needed_handles, _sort_public_names);
 }
 
 bool MatchToolsFactory::prepare_and_install_sort_features(const std::vector<std::string>& public_names) {
-    assert(_object_store != nullptr);
+    CHECK(_object_store != nullptr);
     if (!_rankSetup.prepare_sort_shared_state(_queryEnv, *_object_store, public_names)) {
         return false;
     }

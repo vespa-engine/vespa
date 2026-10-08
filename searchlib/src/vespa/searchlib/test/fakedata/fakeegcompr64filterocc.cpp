@@ -6,6 +6,7 @@
 #include "bitencode64.h"
 #include "fpfactory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/queryeval/iterators.h>
 
 #include <cinttypes>
@@ -160,7 +161,7 @@ template <bool bigEndian> void FakeEGCompr64FilterOcc::setupT(const FakeWord& fw
     while (d != de) {
         if (l1SkipCnt >= L1SKIPSTRIDE) {
             uint32_t docIdDelta = lastDocId - lastL1SkipDocId;
-            assert(static_cast<int32_t>(docIdDelta) > 0);
+            CHECK(static_cast<int32_t>(docIdDelta) > 0);
 #if DEBUG_EGCOMPR64FILTEROCC_PRINTF
             uint64_t prevL1SkipPos = l1SkipBits.getWriteOffset();
 #endif
@@ -273,16 +274,16 @@ template <bool bigEndian> void FakeEGCompr64FilterOcc::setupT(const FakeWord& fw
     }
     // Extra partial entries for skip tables to simplify iterator during search
     uint32_t docIdDelta = lastDocId - lastL1SkipDocId;
-    assert(static_cast<int32_t>(docIdDelta) > 0);
+    CHECK(static_cast<int32_t>(docIdDelta) > 0);
     l1SkipBits.encodeExpGolomb(docIdDelta - 1, K_VALUE_FILTEROCC_L1SKIPDELTA_DOCID);
     docIdDelta = lastDocId - lastL2SkipDocId;
-    assert(static_cast<int32_t>(docIdDelta) > 0);
+    CHECK(static_cast<int32_t>(docIdDelta) > 0);
     l2SkipBits.encodeExpGolomb(docIdDelta - 1, K_VALUE_FILTEROCC_L2SKIPDELTA_DOCID);
     docIdDelta = lastDocId - lastL3SkipDocId;
-    assert(static_cast<int32_t>(docIdDelta) > 0);
+    CHECK(static_cast<int32_t>(docIdDelta) > 0);
     l3SkipBits.encodeExpGolomb(docIdDelta - 1, K_VALUE_FILTEROCC_L3SKIPDELTA_DOCID);
     docIdDelta = lastDocId - lastL4SkipDocId;
-    assert(static_cast<int32_t>(docIdDelta) > 0);
+    CHECK(static_cast<int32_t>(docIdDelta) > 0);
     l4SkipBits.encodeExpGolomb(docIdDelta - 1, K_VALUE_FILTEROCC_L4SKIPDELTA_DOCID);
     _hitDocs = fw._postings.size();
     _bitSize = bits.getWriteOffset();
@@ -504,7 +505,7 @@ void FakeFilterOccEGCompressed64ArrayIterator<bigEndian>::initRange(uint32_t beg
     uint32_t myResidue = 0;
     UC64_FILTEROCC_READ_RESIDUE(_docIdBits._val, _docIdBits._valI, _docIdBits._preRead, _docIdBits._cacheInt,
                                 myResidue, EC);
-    assert(myResidue == _residue);
+    CHECK(myResidue == _residue);
     (void)myResidue;
     if (_residue > 0) {
         UC64_FILTEROCC_READ_FIRST_DOC(_docIdBits._val, _docIdBits._valI, _docIdBits._preRead, _docIdBits._cacheInt,
@@ -557,7 +558,7 @@ template <bool bigEndian> void FakeFilterOccEGCompressed64ArrayIterator<bigEndia
     if (getUnpacked()) {
         return;
     }
-    assert(docId == getDocId());
+    CHECK(docId == getDocId());
     _matchData[0]->reset(docId);
     setUnpacked();
 }
@@ -710,7 +711,7 @@ void FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>::initRange(uint32_t be
 
     const bool bigEndian = true;
     UC64_FILTEROCC_DECODECONTEXT;
-    assert(_docIdBits.getOffset() == 0);
+    CHECK(_docIdBits.getOffset() == 0);
     uint32_t docId = 0;
     if (_lastDocId > 0) {
         UC64_FILTEROCC_READ_FIRST_DOC(_docIdBits._val, _docIdBits._valI, _docIdBits._preRead, _docIdBits._cacheInt,
@@ -950,14 +951,14 @@ template <bool doSkip> void FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>
     const bool   bigEndian = true;
     if (doSkip) {
 #if DEBUG_EGCOMPR64FILTEROCC_ASSERT
-        assert(oDocId <= _l1SkipDocId);
-        assert(docId <= _l1SkipDocId);
-        assert(oDocId <= _l2SkipDocId);
-        assert(docId <= _l2SkipDocId);
-        assert(oDocId <= _l3SkipDocId);
-        assert(docId <= _l3SkipDocId);
-        assert(oDocId <= _l4SkipDocId);
-        assert(docId <= _l4SkipDocId);
+        CHECK(oDocId <= _l1SkipDocId);
+        CHECK(docId <= _l1SkipDocId);
+        CHECK(oDocId <= _l2SkipDocId);
+        CHECK(docId <= _l2SkipDocId);
+        CHECK(oDocId <= _l3SkipDocId);
+        CHECK(docId <= _l3SkipDocId);
+        CHECK(oDocId <= _l4SkipDocId);
+        CHECK(docId <= _l4SkipDocId);
 #endif
     }
     UC64_DECODECONTEXT_CONSTRUCTOR(o, this->_docIdBits._);
@@ -965,10 +966,10 @@ template <bool doSkip> void FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>
         if (!doSkip) {
             if (__builtin_expect(oDocId >= _lastDocId, false)) {
 #if DEBUG_ZCFILTEROCC_ASSERT
-                assert(_l1SkipDocId == _lastDocId);
-                assert(_l2SkipDocId == _lastDocId);
-                assert(_l3SkipDocId == _lastDocId);
-                assert(_l4SkipDocId == _lastDocId);
+                CHECK(_l1SkipDocId == _lastDocId);
+                CHECK(_l2SkipDocId == _lastDocId);
+                CHECK(_l3SkipDocId == _lastDocId);
+                CHECK(_l4SkipDocId == _lastDocId);
 #endif
                 oDocId = _l1SkipDocId = _l2SkipDocId = _l3SkipDocId = _l4SkipDocId = search::endDocId;
                 break;
@@ -976,22 +977,22 @@ template <bool doSkip> void FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>
         }
         if (doSkip) {
 #if DEBUG_EGCOMPR64FILTEROCC_ASSERT
-            assert(oDocId <= _l1SkipDocId);
-            assert(oDocId <= _l2SkipDocId);
-            assert(oDocId <= _l3SkipDocId);
-            assert(oDocId <= _l4SkipDocId);
+            CHECK(oDocId <= _l1SkipDocId);
+            CHECK(oDocId <= _l2SkipDocId);
+            CHECK(oDocId <= _l3SkipDocId);
+            CHECK(oDocId <= _l4SkipDocId);
 #endif
         } else if (__builtin_expect(oDocId >= _l1SkipDocId, false)) {
             // Validate L1 Skip information
-            assert(oDocId == _l1SkipDocId);
+            CHECK(oDocId == _l1SkipDocId);
             uint64_t docIdBitsOffset = _docIdBits.getOffset(oCompr, oPreRead);
             UC64_DECODECONTEXT_CONSTRUCTOR(s1, _l1SkipBits._);
             UC64_DECODEEXPGOLOMB_SMALL_APPLY(s1Val, s1Compr, s1PreRead, s1CacheInt,
                                              K_VALUE_FILTEROCC_L1SKIPDELTA_BITPOS, EC, _l1SkipDocIdBitsOffset += 1 +);
-            assert(docIdBitsOffset == _l1SkipDocIdBitsOffset);
+            CHECK(docIdBitsOffset == _l1SkipDocIdBitsOffset);
             if (__builtin_expect(oDocId >= _l2SkipDocId, false)) {
                 // Validate L2 Skip information
-                assert(oDocId == _l2SkipDocId);
+                CHECK(oDocId == _l2SkipDocId);
                 uint64_t l1SkipBitsOffset = _l1SkipBits.getOffset(s1Compr, s1PreRead);
                 UC64_DECODECONTEXT_CONSTRUCTOR(s2, _l2SkipBits._);
                 UC64_DECODEEXPGOLOMB_SMALL_APPLY(s2Val, s2Compr, s2PreRead, s2CacheInt,
@@ -1000,11 +1001,11 @@ template <bool doSkip> void FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>
                 UC64_DECODEEXPGOLOMB_SMALL_APPLY(s2Val, s2Compr, s2PreRead, s2CacheInt,
                                                  K_VALUE_FILTEROCC_L2SKIPDELTA_L1SKIPBITPOS, EC,
                                                  _l2SkipL1SkipBitsOffset += 1 +);
-                assert(docIdBitsOffset == _l2SkipDocIdBitsOffset);
-                assert(l1SkipBitsOffset == _l2SkipL1SkipBitsOffset);
+                CHECK(docIdBitsOffset == _l2SkipDocIdBitsOffset);
+                CHECK(l1SkipBitsOffset == _l2SkipL1SkipBitsOffset);
                 if (__builtin_expect(oDocId >= _l3SkipDocId, false)) {
                     // Validate L3 Skip information
-                    assert(oDocId == _l3SkipDocId);
+                    CHECK(oDocId == _l3SkipDocId);
                     uint64_t l2SkipBitsOffset = _l2SkipBits.getOffset(s2Compr, s2PreRead);
                     UC64_DECODECONTEXT_CONSTRUCTOR(s3, _l3SkipBits._);
                     UC64_DECODEEXPGOLOMB_SMALL_APPLY(s3Val, s3Compr, s3PreRead, s3CacheInt,
@@ -1016,12 +1017,12 @@ template <bool doSkip> void FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>
                     UC64_DECODEEXPGOLOMB_SMALL_APPLY(s3Val, s3Compr, s3PreRead, s3CacheInt,
                                                      K_VALUE_FILTEROCC_L3SKIPDELTA_L2SKIPBITPOS, EC,
                                                      _l3SkipL2SkipBitsOffset += 1 +);
-                    assert(docIdBitsOffset == _l3SkipDocIdBitsOffset);
-                    assert(l1SkipBitsOffset == _l3SkipL1SkipBitsOffset);
-                    assert(l2SkipBitsOffset == _l3SkipL2SkipBitsOffset);
+                    CHECK(docIdBitsOffset == _l3SkipDocIdBitsOffset);
+                    CHECK(l1SkipBitsOffset == _l3SkipL1SkipBitsOffset);
+                    CHECK(l2SkipBitsOffset == _l3SkipL2SkipBitsOffset);
                     if (__builtin_expect(oDocId >= _l4SkipDocId, false)) {
                         // Validate L4 Skip information
-                        assert(oDocId == _l4SkipDocId);
+                        CHECK(oDocId == _l4SkipDocId);
                         uint64_t l3SkipBitsOffset = _l3SkipBits.getOffset(s3Compr, s3PreRead);
                         UC64_DECODECONTEXT_CONSTRUCTOR(s4, _l4SkipBits._);
                         UC64_DECODEEXPGOLOMB_SMALL_APPLY(s4Val, s4Compr, s4PreRead, s4CacheInt,
@@ -1036,13 +1037,13 @@ template <bool doSkip> void FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>
                         UC64_DECODEEXPGOLOMB_SMALL_APPLY(s4Val, s4Compr, s4PreRead, s4CacheInt,
                                                          K_VALUE_FILTEROCC_L4SKIPDELTA_L3SKIPBITPOS, EC,
                                                          _l4SkipL3SkipBitsOffset += 1 +);
-                        assert(docIdBitsOffset == _l4SkipDocIdBitsOffset);
+                        CHECK(docIdBitsOffset == _l4SkipDocIdBitsOffset);
                         (void)docIdBitsOffset;
-                        assert(l1SkipBitsOffset == _l4SkipL1SkipBitsOffset);
+                        CHECK(l1SkipBitsOffset == _l4SkipL1SkipBitsOffset);
                         (void)l1SkipBitsOffset;
-                        assert(l2SkipBitsOffset == _l4SkipL2SkipBitsOffset);
+                        CHECK(l2SkipBitsOffset == _l4SkipL2SkipBitsOffset);
                         (void)l2SkipBitsOffset;
-                        assert(l3SkipBitsOffset == _l4SkipL3SkipBitsOffset);
+                        CHECK(l3SkipBitsOffset == _l4SkipL3SkipBitsOffset);
                         (void)l3SkipBitsOffset;
                         UC64_DECODEEXPGOLOMB_SMALL_APPLY(s4Val, s4Compr, s4PreRead, s4CacheInt,
                                                          K_VALUE_FILTEROCC_L4SKIPDELTA_DOCID, EC,
@@ -1072,7 +1073,7 @@ template <bool doSkip> void FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>
             UC64_DECODEEXPGOLOMB_SMALL_APPLY(s1Val, s1Compr, s1PreRead, s1CacheInt,
                                              K_VALUE_FILTEROCC_L1SKIPDELTA_DOCID, EC, _l1SkipDocId += 1 +);
             UC64_DECODECONTEXT_STORE(s1, _l1SkipBits._);
-            assert(docIdBitsOffset == _l1SkipDocIdBitsOffset);
+            CHECK(docIdBitsOffset == _l1SkipDocIdBitsOffset);
             BitDecode64BE checkDocIdBits(_docIdBits.getComprBase(), _docIdBits.getBitOffsetBase());
             checkDocIdBits.seek(_l1SkipDocIdBitsOffset);
             if (checkDocIdBits._valI != oCompr || checkDocIdBits._val != oVal ||
@@ -1114,7 +1115,7 @@ template <bool doSkip> void FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>
     if (getUnpacked()) {
         return;
     }
-    assert(docId == getDocId());
+    CHECK(docId == getDocId());
     _matchData[0]->reset(docId);
     setUnpacked();
 }
@@ -1127,16 +1128,16 @@ FakeEGCompr64SkipFilterOcc<doSkip>::createIterator(const fef::TermFieldMatchData
     const uint64_t* arr = _compressed.first;
     const bool      bigEndian = true;
     BitDecode64BE   docIdBits(arr, 0);
-    assert(docIdBits.getCompr() == arr);
-    assert(docIdBits.getBitOffset() == 0);
-    assert(docIdBits.getOffset() == 0);
+    CHECK(docIdBits.getCompr() == arr);
+    CHECK(docIdBits.getBitOffset() == 0);
+    CHECK(docIdBits.getOffset() == 0);
 
     using EC = bitcompression::EncodeContext64BE;
 
     uint32_t myResidue = 0;
     UC64_FILTEROCC_READ_RESIDUE(docIdBits._val, docIdBits._valI, docIdBits._preRead, docIdBits._cacheInt, myResidue,
                                 EC);
-    assert(myResidue == _hitDocs);
+    CHECK(myResidue == _hitDocs);
     (void)myResidue;
 
     const uint64_t* l1SkipArr = _l1SkipCompressed.first;

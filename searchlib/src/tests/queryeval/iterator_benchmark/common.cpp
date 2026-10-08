@@ -2,6 +2,7 @@
 
 #include "common.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/util/xoshiro.h>
 
@@ -110,7 +111,7 @@ BitVector::UP random_docids(uint32_t docid_limit, uint32_t count) {
         }
     }
     res->invalidateCachedCount();
-    assert(res->countTrueBits() == count);
+    CHECK(res->countTrueBits() == count);
     return res;
 }
 

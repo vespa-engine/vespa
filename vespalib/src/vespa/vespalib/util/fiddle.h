@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstdint>
 
 namespace vespalib::bits {
@@ -82,7 +83,7 @@ uint32_t leading_zeros(uint32_t value) {
  * @return the number of bits in min and max not part of a common prefix
  **/
 uint32_t split_range(uint32_t min, uint32_t max, uint32_t& first_max, uint32_t& last_min) {
-    assert(max >= min);
+    CHECK(max >= min);
     uint32_t prefix = leading_zeros(min ^ max);
     first_max = mix(min, 0xFFFFffff, prefix + 1);
     last_min = mix(max, 0x00000000, prefix + 1);

@@ -2,6 +2,7 @@
 
 #include "postingstore.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
@@ -36,7 +37,7 @@ PostingStoreBase2::PostingStoreBase2(IEnumStoreDictionary& dictionary, Status& s
 PostingStoreBase2::~PostingStoreBase2() = default;
 
 bool PostingStoreBase2::resizeBitVectors(uint32_t newSize, uint32_t newCapacity) {
-    assert(newCapacity >= newSize);
+    CHECK(newCapacity >= newSize);
     newSize = (newSize + 63) & ~63;
     if (newSize >= newCapacity) {
         newSize = newCapacity;
@@ -77,15 +78,15 @@ template <typename DataT> bool PostingStore<DataT>::removeSparseBitVectors() {
         RefType  iRef = EntryRef(i);
         uint32_t typeId = getTypeId(iRef);
         (void)typeId;
-        assert(isBitVector(typeId));
+        CHECK(isBitVector(typeId));
         BitVectorEntry*    bve = getWBitVectorEntry(iRef);
         GrowableBitVector& bv = *bve->_bv;
         uint32_t           docFreq = bv.writer().countTrueBits();
         if (bve->_tree.valid()) {
             RefType iRef2(bve->_tree);
-            assert(isBTree(iRef2));
+            CHECK(isBTree(iRef2));
             const BTreeType* tree = getTreeEntry(iRef2);
-            assert(tree->size(_allocator) == docFreq);
+            CHECK(tree->size(_allocator) == docFreq);
             (void)tree;
         }
         if (docFreq < _minBvDocFreq) {
@@ -120,18 +121,18 @@ template <typename DataT> bool PostingStore<DataT>::removeSparseBitVectors() {
 template <typename DataT> void PostingStore<DataT>::consider_remove_sparse_bitvector(std::vector<EntryRef>& refs) {
     for (auto& ref : refs) {
         RefType iRef(ref);
-        assert(iRef.valid());
+        CHECK(iRef.valid());
         uint32_t typeId = getTypeId(iRef);
-        assert(isBitVector(typeId));
-        assert(_bvs.find(iRef.ref()) != _bvs.end());
+        CHECK(isBitVector(typeId));
+        CHECK(_bvs.find(iRef.ref()) != _bvs.end());
         BitVectorEntry* bve = getWBitVectorEntry(iRef);
         BitVector&      bv = bve->_bv->writer();
         uint32_t        docFreq = bv.countTrueBits();
         if (bve->_tree.valid()) {
             RefType iRef2(bve->_tree);
-            assert(isBTree(iRef2));
+            CHECK(isBTree(iRef2));
             const BTreeType* tree = getTreeEntry(iRef2);
-            assert(tree->size(_allocator) == docFreq);
+            CHECK(tree->size(_allocator) == docFreq);
             (void)tree;
         }
         if (docFreq < _minBvDocFreq) {
@@ -150,7 +151,7 @@ template <typename DataT> void PostingStore<DataT>::consider_remove_sparse_bitve
 
 template <typename DataT> void PostingStore<DataT>::applyNew(EntryRef& ref, AddIter a, AddIter ae) {
     // No old data
-    assert(!ref.valid());
+    CHECK(!ref.valid());
     size_t   additionSize(ae - a);
     uint32_t clusterSize = additionSize;
     if (clusterSize <= clusterLimit) {
@@ -163,42 +164,42 @@ template <typename DataT> void PostingStore<DataT>::applyNew(EntryRef& ref, AddI
 }
 
 template <typename DataT> void PostingStore<DataT>::makeDegradedTree(EntryRef& ref, const BitVector& bv) {
-    assert(!ref.valid());
+    CHECK(!ref.valid());
     BTreeTypeRefPair tPair(allocBTree());
     BTreeType*       tree = tPair.data;
     Builder&         builder = _builder;
     builder.reuse();
     uint32_t docIdLimit = _bvSize;
-    assert(_bvSize == bv.size());
+    CHECK(_bvSize == bv.size());
     uint32_t docId = bv.getFirstTrueBit();
     while (docId < docIdLimit) {
         builder.insert(docId, bitVectorWeight());
         docId = bv.getNextTrueBit(docId + 1);
     }
     tree->assign(builder, _allocator);
-    assert(tree->size(_allocator) == bv.countTrueBits());
+    CHECK(tree->size(_allocator) == bv.countTrueBits());
     // barrier ?
     ref = tPair.ref;
 }
 
 template <typename DataT> void PostingStore<DataT>::dropBitVector(EntryRef& ref) {
-    assert(ref.valid());
+    CHECK(ref.valid());
     RefType  iRef(ref);
     uint32_t typeId = getTypeId(iRef);
-    assert(isBitVector(typeId));
+    CHECK(isBitVector(typeId));
     (void)typeId;
     BitVectorEntry*    bve = getWBitVectorEntry(iRef);
     GrowableBitVector* bv = bve->_bv.get();
-    assert(bv);
+    CHECK(bv);
     uint32_t docFreq = bv->writer().countTrueBits();
     EntryRef ref2(bve->_tree);
     if (!ref2.valid()) {
         makeDegradedTree(ref2, bv->writer());
     }
-    assert(ref2.valid());
-    assert(isBTree(ref2));
+    CHECK(ref2.valid());
+    CHECK(isBTree(ref2));
     const BTreeType* tree = getTreeEntry(ref2);
-    assert(tree->size(_allocator) == docFreq);
+    CHECK(tree->size(_allocator) == docFreq);
     (void)tree;
     (void)docFreq;
     _bvs.erase(ref.ref());
@@ -209,10 +210,10 @@ template <typename DataT> void PostingStore<DataT>::dropBitVector(EntryRef& ref)
 }
 
 template <typename DataT> void PostingStore<DataT>::makeBitVector(EntryRef& ref) {
-    assert(ref.valid());
+    CHECK(ref.valid());
     RefType  iRef(ref);
     uint32_t typeId = getTypeId(iRef);
-    assert(isBTree(typeId));
+    CHECK(isBTree(typeId));
     (void)typeId;
     vespalib::GenerationHolder& genHolder = _store.getGenerationHolder();
     auto                        bvsp = std::make_shared<GrowableBitVector>(_bvSize, _bvCapacity, genHolder);
@@ -224,11 +225,11 @@ template <typename DataT> void PostingStore<DataT>::makeBitVector(EntryRef& ref)
     (void)expDocFreq;
     for (; it.valid(); ++it) {
         uint32_t docId = it.getKey();
-        assert(docId < docIdLimit);
+        CHECK(docId < docIdLimit);
         bv.setBit(docId);
     }
     bv.invalidateCachedCount();
-    assert(bv.countTrueBits() == expDocFreq);
+    CHECK(bv.countTrueBits() == expDocFreq);
     BitVectorRefPair bPair(allocBitVector());
     BitVectorEntry*  bve = bPair.data;
     if (isFilter()) {
@@ -247,7 +248,7 @@ template <typename DataT> void PostingStore<DataT>::makeBitVector(EntryRef& ref)
 }
 
 template <typename DataT> void PostingStore<DataT>::applyNewBitVector(EntryRef& ref, AddIter aOrg, AddIter ae) {
-    assert(!ref.valid());
+    CHECK(!ref.valid());
     vespalib::GenerationHolder& genHolder = _store.getGenerationHolder();
     auto                        bvsp = std::make_shared<GrowableBitVector>(_bvSize, _bvCapacity, genHolder);
     BitVector&                  bv = bvsp->writer();
@@ -257,11 +258,11 @@ template <typename DataT> void PostingStore<DataT>::applyNewBitVector(EntryRef& 
     (void)expDocFreq;
     for (AddIter a = aOrg; a != ae; ++a) {
         uint32_t docId = a->_key;
-        assert(docId < docIdLimit);
+        CHECK(docId < docIdLimit);
         bv.setBit(docId);
     }
     bv.invalidateCachedCount();
-    assert(bv.countTrueBits() == expDocFreq);
+    CHECK(bv.countTrueBits() == expDocFreq);
     BitVectorRefPair bPair(allocBitVector());
     BitVectorEntry*  bve = bPair.data;
     if (!isFilter()) {
@@ -280,17 +281,17 @@ void PostingStore<DataT>::apply(BitVector& bv, AddIter a, AddIter ae, RemoveIter
     while (a != ae || r != re) {
         if (r != re && (a == ae || *r < a->_key)) {
             // remove
-            assert(*r < bv.size());
+            CHECK(*r < bv.size());
             bv.clearBitAndMaintainCount(*r);
             ++r;
         } else {
             if (r != re && !(a->_key < *r)) {
                 // update or add
-                assert(a->_key < bv.size());
+                CHECK(a->_key < bv.size());
                 bv.setBitAndMaintainCount(a->_key);
                 ++r;
             } else {
-                assert(a->_key < bv.size());
+                CHECK(a->_key < bv.size());
                 bv.setBitAndMaintainCount(a->_key);
             }
             ++a;
@@ -324,12 +325,12 @@ void PostingStore<DataT>::apply(EntryRef& ref, AddIter a, AddIter ae, RemoveIter
         EntryRef        ref2(bve->_tree);
         RefType         iRef2(ref2);
         if (iRef2.valid()) {
-            assert(isBTree(iRef2));
+            CHECK(isBTree(iRef2));
             BTreeType* tree = getWTreeEntry(iRef2);
             applyTree(tree, a, ae, r, re, CompareT());
         }
         BitVector* bv = &bve->_bv->writer();
-        assert(bv);
+        CHECK(bv);
         apply(*bv, a, ae, r, re);
         uint32_t docFreq = bv->countTrueBits();
         if (docFreq < _minBvDocFreq) {
@@ -339,7 +340,7 @@ void PostingStore<DataT>::apply(EntryRef& ref, AddIter a, AddIter ae, RemoveIter
                 typeId = getTypeId(iRef);
                 if (isBTree(typeId)) {
                     BTreeType* tree = getWTreeEntry(iRef);
-                    assert(tree->size(_allocator) == docFreq);
+                    CHECK(tree->size(_allocator) == docFreq);
                     normalizeTree(ref, tree, wasArray);
                 }
             }
@@ -361,7 +362,7 @@ template <typename DataT> size_t PostingStore<DataT>::internalSize(uint32_t type
         const BitVectorEntry* bve = getBitVectorEntry(iRef);
         RefType               iRef2(bve->_tree);
         if (iRef2.valid()) {
-            assert(isBTree(iRef2));
+            CHECK(isBTree(iRef2));
             const BTreeType* tree = getTreeEntry(iRef2);
             return tree->size(_allocator);
         } else {
@@ -379,7 +380,7 @@ template <typename DataT> size_t PostingStore<DataT>::internalFrozenSize(uint32_
         const BitVectorEntry* bve = getBitVectorEntry(iRef);
         RefType               iRef2(bve->_tree);
         if (iRef2.valid()) {
-            assert(isBTree(iRef2));
+            CHECK(isBTree(iRef2));
             const BTreeType* tree = getTreeEntry(iRef2);
             return tree->frozenSize(_allocator);
         } else {
@@ -405,7 +406,7 @@ typename PostingStore<DataT>::Iterator PostingStore<DataT>::begin(const EntryRef
             const BitVectorEntry* bve = getBitVectorEntry(iRef);
             RefType               iRef2(bve->_tree);
             if (iRef2.valid()) {
-                assert(isBTree(iRef2));
+                CHECK(isBTree(iRef2));
                 const BTreeType* tree = getTreeEntry(iRef2);
                 return tree->begin(_allocator);
             }
@@ -431,7 +432,7 @@ typename PostingStore<DataT>::ConstIterator PostingStore<DataT>::beginFrozen(con
             const BitVectorEntry* bve = getBitVectorEntry(iRef);
             RefType               iRef2(bve->_tree);
             if (iRef2.valid()) {
-                assert(isBTree(iRef2));
+                CHECK(isBTree(iRef2));
                 const BTreeType* tree = getTreeEntry(iRef2);
                 return tree->getFrozenView(_allocator).begin();
             }
@@ -458,7 +459,7 @@ void PostingStore<DataT>::beginFrozen(const EntryRef ref, std::vector<ConstItera
             const BitVectorEntry* bve = getBitVectorEntry(iRef);
             RefType               iRef2(bve->_tree);
             if (iRef2.valid()) {
-                assert(isBTree(iRef2));
+                CHECK(isBTree(iRef2));
                 const BTreeType* tree = getTreeEntry(iRef2);
                 tree->getFrozenView(_allocator).begin(where);
                 return;
@@ -487,7 +488,7 @@ typename PostingStore<DataT>::AggregatedType PostingStore<DataT>::getAggregated(
             const BitVectorEntry* bve = getBitVectorEntry(iRef);
             RefType               iRef2(bve->_tree);
             if (iRef2.valid()) {
-                assert(isBTree(iRef2));
+                CHECK(isBTree(iRef2));
                 const BTreeType* tree = getTreeEntry(iRef2);
                 return tree->getAggregated(_allocator);
             }
@@ -516,7 +517,7 @@ template <typename DataT> void PostingStore<DataT>::clear(const EntryRef ref) {
             const BitVectorEntry* bve = getBitVectorEntry(iRef);
             RefType               iRef2(bve->_tree);
             if (iRef2.valid()) {
-                assert(isBTree(iRef2));
+                CHECK(isBTree(iRef2));
                 BTreeType* tree = getWTreeEntry(iRef2);
                 tree->clear(_allocator);
                 _store.hold_entry(iRef2);
@@ -568,20 +569,20 @@ vespalib::MemoryUsage PostingStore<DataT>::update_stat(const CompactionStrategy&
 template <typename DataT> void PostingStore<DataT>::move_btree_nodes(const std::vector<EntryRef>& refs) {
     for (auto ref : refs) {
         RefType iRef(ref);
-        assert(iRef.valid());
+        CHECK(iRef.valid());
         uint32_t typeId = getTypeId(iRef);
         uint32_t clusterSize = getClusterSize(typeId);
-        assert(clusterSize == 0);
+        CHECK(clusterSize == 0);
         if (isBitVector(typeId)) {
             BitVectorEntry* bve = getWBitVectorEntry(iRef);
             RefType         iRef2(bve->_tree);
             if (iRef2.valid()) {
-                assert(isBTree(iRef2));
+                CHECK(isBTree(iRef2));
                 BTreeType* tree = getWTreeEntry(iRef2);
                 tree->move_nodes(_allocator);
             }
         } else {
-            assert(isBTree(typeId));
+            CHECK(isBTree(typeId));
             BTreeType* tree = getWTreeEntry(iRef);
             tree->move_nodes(_allocator);
         }
@@ -591,7 +592,7 @@ template <typename DataT> void PostingStore<DataT>::move_btree_nodes(const std::
 template <typename DataT> void PostingStore<DataT>::move(std::vector<EntryRef>& refs) {
     for (auto& ref : refs) {
         RefType iRef(ref);
-        assert(iRef.valid());
+        CHECK(iRef.valid());
         uint32_t typeId = getTypeId(iRef);
         uint32_t clusterSize = getClusterSize(typeId);
         if (clusterSize == 0) {
@@ -599,7 +600,7 @@ template <typename DataT> void PostingStore<DataT>::move(std::vector<EntryRef>& 
                 BitVectorEntry* bve = getWBitVectorEntry(iRef);
                 RefType         iRef2(bve->_tree);
                 if (iRef2.valid()) {
-                    assert(isBTree(iRef2));
+                    CHECK(isBTree(iRef2));
                     if (_store.getCompacting(iRef2)) {
                         BTreeType* tree = getWTreeEntry(iRef2);
                         auto       ref_and_ptr = allocBTreeCopy(*tree);
@@ -617,15 +618,15 @@ template <typename DataT> void PostingStore<DataT>::move(std::vector<EntryRef>& 
                     ref = new_ref;
                 }
             } else {
-                assert(isBTree(typeId));
-                assert(_store.getCompacting(iRef));
+                CHECK(isBTree(typeId));
+                CHECK(_store.getCompacting(iRef));
                 BTreeType* tree = getWTreeEntry(iRef);
                 auto       ref_and_ptr = allocBTreeCopy(*tree);
                 tree->prepare_hold();
                 ref = ref_and_ptr.ref;
             }
         } else {
-            assert(_store.getCompacting(iRef));
+            CHECK(_store.getCompacting(iRef));
             const KeyDataType* shortArray = getKeyDataEntry(iRef, clusterSize);
             ref = allocKeyDataCopy(shortArray, clusterSize).ref;
         }

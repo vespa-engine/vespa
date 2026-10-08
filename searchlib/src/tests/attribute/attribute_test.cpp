@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
@@ -2115,7 +2116,7 @@ uint32_t get_default_value_ref_count(AttributeVector& attr, int32_t defaultValue
     IAttributeVector::EnumHandle default_value_handle(0);
     if (enum_store.find_enum(defaultValue, default_value_handle)) {
         vespalib::datastore::EntryRef default_value_ref(default_value_handle);
-        assert(default_value_ref.valid());
+        CHECK(default_value_ref.valid());
         return enum_store.get_ref_count(default_value_ref);
     } else {
         return 0u;

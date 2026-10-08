@@ -4,6 +4,7 @@
 
 #include "feedhandler.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
@@ -103,7 +104,7 @@ uint32_t DocStoreValidator::getOrphanCount() const {
 void DocStoreValidator::killOrphans(search::IDocumentStore& store, search::SerialNum serialNum) {
     for (uint32_t lid = 1; lid < _docIdLimit; ++lid) {
         if (_orphans->testBit(lid)) {
-            assert(!_dms.validLid(lid));
+            CHECK(!_dms.validLid(lid));
             store.remove(serialNum, lid);
         }
     }
@@ -111,7 +112,7 @@ void DocStoreValidator::killOrphans(search::IDocumentStore& store, search::Seria
 
 std::shared_ptr<LidVectorContext> DocStoreValidator::getInvalidLids() const {
     auto res = std::make_unique<LidVectorContext>(_docIdLimit);
-    assert(_invalid->size() == _docIdLimit);
+    CHECK(_invalid->size() == _docIdLimit);
     for (search::DocumentIdT lid(_invalid->getFirstTrueBit(1)); lid < _docIdLimit;
          lid = _invalid->getNextTrueBit(lid + 1))
     {
@@ -127,12 +128,12 @@ void DocStoreValidator::performRemoves(FeedHandler& feedHandler, const search::I
     {
         document::GlobalId gid;
         bool               found = _dms.getGid(lid, gid);
-        assert(found);
+        CHECK(found);
         if (found) {
             search::DocumentMetadata metadata = _dms.getMetadata(gid);
-            assert(metadata.valid());
+            CHECK(metadata.valid());
             document::Document::UP document = store.read(lid, repo);
-            assert(document);
+            CHECK(document);
             LOG(info, "Removing document with id %s and lid %u with gid %s in bucket %s",
                 document->getId().toString().c_str(), lid, metadata.gid.toString().c_str(),
                 metadata.bucketId.toString().c_str());
@@ -144,12 +145,12 @@ void DocStoreValidator::performRemoves(FeedHandler& feedHandler, const search::I
 }
 
 void DocStoreValidator::flush_adjusted_document_metastore(search::SerialNum serial_num) const {
-    assert(_dms_flush_target->getFlushedSerialNum() < serial_num);
+    CHECK(_dms_flush_target->getFlushedSerialNum() < serial_num);
     auto task = _dms_flush_target->initFlush(serial_num, std::make_shared<search::FlushToken>());
     if (task) {
         task->run();
     }
-    assert(_dms_flush_target->getFlushedSerialNum() == serial_num);
+    CHECK(_dms_flush_target->getFlushedSerialNum() == serial_num);
 }
 
 void DocStoreValidator::increase_serial_number_if_necessary(FeedHandler& feedHandler) const {

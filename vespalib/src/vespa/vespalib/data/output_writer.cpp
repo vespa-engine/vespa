@@ -4,7 +4,8 @@
 
 #include "output.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstdarg>
 #include <cstdio>
 
@@ -28,14 +29,14 @@ void OutputWriter::printf(const char* fmt, ...) {
     va_start(ap, fmt);
     size = vsnprintf(p, space, fmt, ap);
     va_end(ap);
-    assert(size >= 0);
+    CHECK(size >= 0);
     if (size >= space) {
         space = size + 1;
         p = reserve(space);
         va_start(ap, fmt);
         size = vsnprintf(p, space, fmt, ap);
         va_end(ap);
-        assert((size + 1) == space);
+        CHECK((size + 1) == space);
     }
     commit(size);
 }

@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "bitvectorcache.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <cinttypes>
 #include <cstring>
 #include <mutex>
@@ -130,7 +131,7 @@ void BitVectorCache::populate(Key2Index& newKeys, CondensedBitVector& chunk, con
     for (const auto& e : sorted) {
         KeyMeta& m = *e.second;
         if (index >= chunk.getKeyCapacity()) {
-            assert(!m.isCached());
+            CHECK(!m.isCached());
         } else {
             double percentage(m.cost() * 100.0 / sum);
             accum += percentage;
@@ -140,9 +141,9 @@ void BitVectorCache::populate(Key2Index& newKeys, CondensedBitVector& chunk, con
                 "Populating bitvector %2d with feature %" PRIu64
                 " and %ld bits set. Cost is %8f = %2.2f%%, accumulated cost is %2.2f%%",
                 index, e.first, m.bitCount(), m.cost(), percentage, accum);
-            assert(m.isCached());
-            assert(newKeys[e.first].isCached());
-            assert(&m == &newKeys[e.first]);
+            CHECK(m.isCached());
+            CHECK(newKeys[e.first].isCached());
+            CHECK(&m == &newKeys[e.first]);
             PopulateInterface::Iterator::UP iterator = lookup.lookup(e.first);
             if (iterator) {
                 for (int32_t docId(iterator->getNext()); docId >= 0; docId = iterator->getNext()) {

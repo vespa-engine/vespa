@@ -2,8 +2,9 @@
 
 #include "field_metrics.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 
 namespace proton {
 
@@ -24,7 +25,7 @@ template <typename Entry> void FieldMetrics<Entry>::set_fields(std::vector<std::
         if (itr == _fields.end() || itr->first > field_name) {
             auto entry = std::make_shared<Entry>(field_name);
             auto ins_res = _fields.insert(std::make_pair(field_name, entry));
-            assert(ins_res.second);
+            CHECK(ins_res.second);
             itr = ins_res.first;
             _parent->registerMetric(*entry);
         }

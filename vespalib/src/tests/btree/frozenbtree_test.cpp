@@ -2,6 +2,7 @@
 
 #define DEBUG_FROZENBTREE
 #define LOG_FROZENBTREEXX
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
@@ -85,9 +86,9 @@ FrozenBTreeTest::FrozenBTreeTest()
 FrozenBTreeTest::~FrozenBTreeTest() = default;
 
 void FrozenBTreeTest::allocTree() {
-    assert(_generationHandler == nullptr);
-    assert(_allocator == nullptr);
-    assert(_tree == nullptr);
+    CHECK(_generationHandler == nullptr);
+    CHECK(_allocator == nullptr);
+    CHECK(_tree == nullptr);
     _generationHandler = new GenerationHandler;
     _allocator = new NodeAllocator();
     _tree = new Tree;
@@ -327,7 +328,7 @@ void FrozenBTreeTest::printSubEnumTree(BTreeNode::Ref node, NodeAllocator& alloc
            inode->validSlots());
     for (i = 0; i < inode->validSlots(); i++) {
         subNode = inode->getChild(i);
-        assert(subNode != BTreeNode::Ref());
+        CHECK(subNode != BTreeNode::Ref());
         printSubEnumTree(subNode, allocator, indent + 4);
     }
 }

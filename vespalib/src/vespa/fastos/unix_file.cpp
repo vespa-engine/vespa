@@ -9,6 +9,7 @@
 
 #include "unix_file.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/error.h>
 
 #include <fcntl.h>
@@ -16,7 +17,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cassert>
 #include <sstream>
 #ifdef __APPLE__
 #include <libproc.h>
@@ -42,7 +42,7 @@ FastOS_UNIX_File::FastOS_UNIX_File(const char* filename)
 
 FastOS_UNIX_File::~FastOS_UNIX_File() {
     bool ok = Close();
-    assert(ok);
+    CHECK(ok);
 }
 
 ssize_t FastOS_UNIX_File::Read(void* buffer, size_t len) {
@@ -135,7 +135,7 @@ constexpr int ALWAYS_SUPPORTED_MMAP_FLAGS = ~0;
 #endif
 
 bool FastOS_UNIX_File::Open(unsigned int openFlags, const char* filename) {
-    assert(_filedes == -1);
+    CHECK(_filedes == -1);
 
     if (filename != nullptr) {
         _filename = filename;
@@ -227,7 +227,7 @@ int64_t FastOS_UNIX_File::getSize() const {
     int64_t     fileSize = -1;
     struct stat stbuf{};
 
-    assert(IsOpened());
+    CHECK(IsOpened());
 
     int res = fstat(_filedes, &stbuf);
 
@@ -239,7 +239,7 @@ int64_t FastOS_UNIX_File::getSize() const {
 }
 
 bool FastOS_UNIX_File::Sync() {
-    assert(IsOpened());
+    CHECK(IsOpened());
 
     return _fsyncEnabled ? (fsync(_filedes) == 0) : true;
 }

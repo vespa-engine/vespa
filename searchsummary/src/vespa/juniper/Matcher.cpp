@@ -9,6 +9,8 @@
 #include "result.h"
 #include "sumdesc.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
 #include <cinttypes>
 #include <sstream>
@@ -189,7 +191,7 @@ bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len) {
     // for each subexpression that matches this keyword
     for (; mexp != nullptr; mexp = _match_iter.next()) {
         QueryNode* pexp = mexp->_parent;
-        assert(pexp);
+        CHECK(pexp);
         MatchCandidate* nm = NewCandidate(pexp);
         if (!nm || nm->elems() < 0) {
             LOG(error, "Matcher could not allocate memory for candidate - bailing out");
@@ -333,7 +335,7 @@ void Matcher::handle_end(Token& token) {
 }
 
 void Matcher::dump_matches(int printcount, bool best) {
-    assert(!best); // This functionality removed
+    CHECK(!best); // This functionality removed
     match_candidate_set& m = _matches;
 
     if (!best) {

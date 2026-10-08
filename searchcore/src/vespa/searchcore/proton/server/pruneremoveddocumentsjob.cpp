@@ -4,6 +4,7 @@
 
 #include "ipruneremoveddocumentshandler.h"
 
+#include <vespa/check_require.h>
 #include <vespa/persistence/spi/bucket_tasks.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
@@ -47,7 +48,7 @@ public:
               IDestructorCallback::SP opsTracker)
         : _job(std::move(job)), _lid(lid), _meta(meta), _opsTracker(std::move(opsTracker)) {}
     void run(const Bucket& bucket, IDestructorCallback::SP onDone) override;
-    void fail(const Bucket& bucket) override { assert(bucket.getBucketId() == _meta.getBucketId()); }
+    void fail(const Bucket& bucket) override { CHECK(bucket.getBucketId() == _meta.getBucketId()); }
 
 private:
     std::shared_ptr<PruneRemovedDocumentsJob> _job;
@@ -57,7 +58,7 @@ private:
 };
 
 void PruneRemovedDocumentsJob::PruneTask::run(const Bucket& bucket, IDestructorCallback::SP onDone) {
-    assert(bucket.getBucketId() == _meta.getBucketId());
+    CHECK(bucket.getBucketId() == _meta.getBucketId());
     using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallback::SP, IDestructorCallback::SP>>;
     auto& job = *_job;
     job._master.execute(makeLambdaTask(

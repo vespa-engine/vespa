@@ -6,7 +6,6 @@
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-#include <cassert>
 #include <ostream>
 
 namespace vespalib::net::tls {

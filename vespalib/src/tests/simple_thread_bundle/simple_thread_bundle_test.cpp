@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/util/box.h>
@@ -7,7 +8,6 @@
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/small_vector.h>
 
-#include <cassert>
 #include <forward_list>
 #include <thread>
 
@@ -25,7 +25,7 @@ struct State {
     std::vector<Cnt> cnts;
     State(size_t n) : cnts(n) {}
     std::vector<Runnable*> getTargets(size_t n) {
-        assert(n <= cnts.size());
+        CHECK(n <= cnts.size());
         std::vector<Runnable*> targets;
         for (size_t i = 0; i < n; ++i) {
             targets.push_back(&cnts[i]);

@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "httpclient.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <util/authority.h>
 
-#include <cassert>
 #include <cstring>
 
 #define FETCH_BUFLEN 5120
@@ -286,7 +286,7 @@ bool HTTPClient::ReadChunkHeader() {
         return false; // no CRLF(/LF) after data block
     }
 
-    assert(_chunkLeft == 0);
+    CHECK(_chunkLeft == 0);
     if (ReadLine(numStr, 10) <= 0) {
         return false; // chunk length not found
     }
@@ -404,7 +404,7 @@ ssize_t HTTPClient::ContentLengthReader::Read(HTTPClient& client, void* buf, siz
         readLen = (len - fromBuffer < client._contentLength - client._dataRead)
                       ? len - fromBuffer
                       : client._contentLength - client._dataRead;
-        assert(readLen > 0);
+        CHECK(readLen > 0);
         readRes = client._socket->read(static_cast<char*>(buf) + fromBuffer, readLen);
         if (readRes < 0) {
             client.Close();

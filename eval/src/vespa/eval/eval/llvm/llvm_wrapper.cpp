@@ -2,6 +2,7 @@
 
 #include "llvm_wrapper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/extract_bit.h>
 #include <vespa/eval/eval/hamming_distance.h>
 #include <vespa/eval/eval/node_traverser.h>
@@ -192,7 +193,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         } else if (pass_params == PassParams::ARRAY) {
             param_types.push_back(llvm::PointerType::get(builder.getContext(), 0));
         } else {
-            assert(pass_params == PassParams::LAZY);
+            CHECK(pass_params == PassParams::LAZY);
             param_types.push_back(llvm::PointerType::get(builder.getContext(), 0));
             param_types.push_back(llvm::PointerType::get(builder.getContext(), 0));
         }
@@ -210,18 +211,18 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     //-------------------------------------------------------------------------
 
     llvm::Value* get_param(size_t idx) {
-        assert(idx < num_params);
+        CHECK(idx < num_params);
         if (pass_params == PassParams::SEPARATE) {
-            assert(idx < params.size());
+            CHECK(idx < params.size());
             return params[idx];
         } else if (pass_params == PassParams::ARRAY) {
-            assert(params.size() == 1);
+            CHECK(params.size() == 1);
             llvm::Value* param_array = params[0];
             llvm::Value* addr = builder.CreateGEP(builder.getDoubleTy(), param_array, builder.getInt64(idx));
             return builder.CreateLoad(builder.getDoubleTy(), addr);
         }
-        assert(pass_params == PassParams::LAZY);
-        assert(params.size() == 2);
+        CHECK(pass_params == PassParams::LAZY);
+        CHECK(params.size() == 2);
         return builder.CreateCall(make_resolve_param_fun_t(), params[0], {params[1], builder.getInt64(idx)},
                                   "resolve_param");
     }
@@ -231,29 +232,29 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     void push(llvm::Value* value) { values.push_back(value); }
 
     void discard() {
-        assert(!values.empty());
+        CHECK(!values.empty());
         values.pop_back();
     }
 
     llvm::Value* pop_bool() {
-        assert(!values.empty());
+        CHECK(!values.empty());
         llvm::Value* value = values.back();
         values.pop_back();
         if (value->getType()->isIntegerTy(1)) {
             return value;
         }
-        assert(value->getType()->isDoubleTy());
+        CHECK(value->getType()->isDoubleTy());
         return builder.CreateFCmpUNE(value, llvm::ConstantFP::get(context, llvm::APFloat(0.0)), "as_bool");
     }
 
     llvm::Value* pop_double() {
-        assert(!values.empty());
+        CHECK(!values.empty());
         llvm::Value* value = values.back();
         values.pop_back();
         if (value->getType()->isDoubleTy()) {
             return value;
         }
-        assert(value->getType()->isIntegerTy(1));
+        CHECK(value->getType()->isIntegerTy(1));
         return builder.CreateUIToFP(value, builder.getDoubleTy(), "as_double");
     }
 
@@ -278,7 +279,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         if (pass_params == PassParams::ARRAY) {
             push(builder.CreateCall(eval_fun_t, eval_fun, {ctx, params[0]}, "call_eval"));
         } else {
-            assert(pass_params == PassParams::LAZY);
+            CHECK(pass_params == PassParams::LAZY);
             llvm::FunctionType* proxy_fun_t = make_eval_forest_proxy_fun_t();
             llvm::PointerType*  proxy_funptr_t = llvm::PointerType::get(builder.getContext(), 0);
             llvm::Value* proxy_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)vespalib_eval_forest_proxy),
@@ -324,7 +325,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     void build_forest_fragment(const std::vector<const Node*>& trees) {
         inside_forest = true;
-        assert(!trees.empty());
+        CHECK(!trees.empty());
         llvm::Value* sum = nullptr;
         for (auto tree : trees) {
             tree->traverse(*this);
@@ -337,7 +338,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     llvm::Function* build() {
         builder.CreateRet(pop_double());
-        assert(values.empty());
+        CHECK(values.empty());
         llvm::verifyFunction(*function);
         return function;
     }
@@ -585,7 +586,7 @@ FunctionBuilder::~FunctionBuilder() {
 
 struct InitializeNativeTarget {
     InitializeNativeTarget() {
-        assert(llvm::llvm_is_multithreaded());
+        CHECK(llvm::llvm_is_multithreaded());
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
         llvm::InitializeNativeTargetAsmParser();
@@ -634,7 +635,7 @@ void LLVMWrapper::compile(llvm::raw_ostream* dumpStream) {
                       .setOptLevel(CodeGenOptLevel::Aggressive)
                       .setRelocationModel(llvm::Reloc::Static)
                       .create());
-    assert(_engine && "llvm jit not available for your platform");
+    CHECK(_engine && "llvm jit not available for your platform");
 
     MallocMmapGuard largeAllocsAsMMap(1_Mi);
     _engine->finalizeObject();

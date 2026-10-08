@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
 #include <bit>
-#include <cassert>
 #include <cmath>
 #include <concepts>
 
@@ -58,7 +59,7 @@ template <typename T>
         return v;
     }
     const size_t stages = std::bit_width(n) - 1;
-    assert(std::has_single_bit(n));
+    CHECK(std::has_single_bit(n));
     /*
      * "Given an array of data that is some integer power of 2 in length, you
      *  can step through the array data pairwise. The sum of each pair of array
@@ -136,7 +137,7 @@ void hadamard(T* v, const size_t n) noexcept {
      * |g (1)|    |g+h (1)|    |e+f-g-h (3)|    |a+b-c-d-e-f+g+h (7)|
      * |h (1)|    |g-h (2)|    |e-f-g+h (4)|    |a-b-c+d-e+f+g-h (8)|
      */
-    assert(n == 0 || std::has_single_bit(n));
+    CHECK(n == 0 || std::has_single_bit(n));
     // Gap to next alike term (block size); doubles per iteration
     for (size_t h = 1; h < n; h += h) {
         size_t i = 0;

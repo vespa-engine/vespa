@@ -4,6 +4,7 @@
 #include "parser.h"
 #include "visitor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
@@ -16,7 +17,6 @@
 
 #include <sys/time.h>
 
-#include <cassert>
 #include <iomanip>
 #include <string>
 
@@ -913,7 +913,7 @@ std::unique_ptr<Value> ArithmeticValueNode::getValue(std::unique_ptr<Value> lval
                 }
                 break;
             case MOD:
-                assert(0);
+                CHECK(0);
             }
             return std::make_unique<IntegerValue>(res, false);
         }
@@ -939,7 +939,7 @@ std::unique_ptr<Value> ArithmeticValueNode::getValue(std::unique_ptr<Value> lval
                 }
                 break;
             case MOD:
-                assert(0);
+                CHECK(0);
             }
             return std::make_unique<FloatValue>(res);
         }
@@ -993,7 +993,7 @@ std::unique_ptr<Value> ArithmeticValueNode::traceValue(std::unique_ptr<Value> lv
                 res = ilval.getValue() / irval.getValue();
                 break;
             case MOD:
-                assert(0);
+                CHECK(0);
             }
             auto result = std::make_unique<IntegerValue>(res, false);
             out << "Performed integer operation " << ilval << " " << getOperatorName() << " " << irval << " = "
@@ -1018,7 +1018,7 @@ std::unique_ptr<Value> ArithmeticValueNode::traceValue(std::unique_ptr<Value> lv
                 res = nlval->getCommonValue() / nrval->getCommonValue();
                 break;
             case MOD:
-                assert(0);
+                CHECK(0);
             }
             auto result = std::make_unique<FloatValue>(res);
             out << "Performed float operation " << nlval << " " << getOperatorName() << " " << nrval << " = "

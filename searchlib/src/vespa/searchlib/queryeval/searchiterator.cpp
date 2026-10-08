@@ -2,6 +2,7 @@
 
 #include "searchiterator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
@@ -13,7 +14,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <algorithm>
-#include <cassert>
 
 namespace search::queryeval {
 
@@ -121,7 +121,7 @@ void SearchIterator::transform_children(std::function<SearchIterator::UP(SearchI
 
 void SearchIterator::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) {
     (void)docid;
-    assert(element_ids.empty());
+    CHECK(element_ids.empty());
 }
 
 void SearchIterator::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) {

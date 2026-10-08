@@ -3,6 +3,7 @@
 
 #include "message_fixture.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -31,7 +32,7 @@ template <typename T> struct Unwrap {
     const T*           ptr = nullptr;
     explicit Unwrap(mbus::Routable::UP value_in) : value(std::move(value_in)) {
         ptr = dynamic_cast<T*>(value.get());
-        assert(ptr != nullptr);
+        CHECK(ptr != nullptr);
     }
     const T* operator->() const noexcept { return ptr; }
 };

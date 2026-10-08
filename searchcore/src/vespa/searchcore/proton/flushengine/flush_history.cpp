@@ -4,8 +4,9 @@
 
 #include "flush_history_view.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.flushengine.flush_history");
@@ -115,7 +116,7 @@ void FlushHistory::start_flush(const std::string& handler_name, const std::strin
     auto            name = build_name(handler_name, target_name);
     std::lock_guard guard(_mutex);
     auto            active_it = _active.lower_bound(id);
-    assert(active_it == _active.end() || active_it->first != id);
+    CHECK(active_it == _active.end() || active_it->first != id);
     auto pending_it = _pending.lower_bound(name);
     if (pending_it != _pending.end() && pending_it->first == name) {
         active_it = _active.emplace_hint(active_it, id, pending_it->second);
@@ -136,7 +137,7 @@ void FlushHistory::flush_done(uint32_t id) {
     // Note: flush is still considered active after flush done, until prune is done.
     std::lock_guard guard(_mutex);
     auto            it = _active.lower_bound(id);
-    assert(it != _active.end() && it->first == id);
+    CHECK(it != _active.end() && it->first == id);
     auto now = steady_clock::now();
     it->second.flush_done(now);
 }
@@ -144,7 +145,7 @@ void FlushHistory::flush_done(uint32_t id) {
 void FlushHistory::prune_done(uint32_t id) {
     std::lock_guard guard(_mutex);
     auto            it = _active.lower_bound(id);
-    assert(it != _active.end() && it->first == id);
+    CHECK(it != _active.end() && it->first == id);
     auto strategy_id = it->second.strategy_id();
     _finished.emplace_back(it->second);
     auto now = steady_clock::now();

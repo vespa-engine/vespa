@@ -17,6 +17,7 @@
 #include "throttlingoperationstarter.h"
 #include "top_level_bucket_db_updater.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
@@ -90,7 +91,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg, 
     _ideal_state_component.registerMetric(*_ideal_state_total_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook, 0s);
 
-    assert(num_distributor_stripes == adjusted_num_stripes(num_distributor_stripes));
+    CHECK(num_distributor_stripes == adjusted_num_stripes(num_distributor_stripes));
     _n_stripe_bits = calc_num_stripe_bits(num_distributor_stripes);
     LOG(debug, "Setting up distributor with %u stripes using %u stripe bits", num_distributor_stripes,
         _n_stripe_bits);
@@ -149,12 +150,12 @@ void TopLevelDistributor::onClose() {
     // so only try to flush stripes if a pool is running.
     // TODO STRIPE probably also need to flush when running tests to handle any explicit close-tests.
     if (_stripe_pool.stripe_count() > 0) {
-        assert(_stripe_pool.is_stopped());
+        CHECK(_stripe_pool.is_stopped());
         for (auto& thread : _stripe_pool) {
             thread->stripe().flush_and_close();
         }
     }
-    assert(_bucket_db_updater);
+    CHECK(_bucket_db_updater);
     _bucket_db_updater->flush();
 }
 
@@ -239,7 +240,7 @@ uint32_t TopLevelDistributor::stripe_of_bucket_id(const document::BucketId&  buc
         LOG(error, "Message (%s) has a bucket id (%s) that is not set. Cannot route to stripe",
             msg.toString(true).c_str(), bucket_id.toString().c_str());
     }
-    assert(bucket_id.isSet());
+    CHECK(bucket_id.isSet());
     if (bucket_id.getUsedBits() < spi::BucketLimits::MinUsedBits) {
         if (msg.getType().getId() == api::MessageType::VISITOR_CREATE_ID) {
             // This message will eventually be bounced with api::ReturnCode::WRONG_DISTRIBUTION,
@@ -341,7 +342,7 @@ void TopLevelDistributor::revert_distribution_source_of_truth_to_node_internal_c
 void TopLevelDistributor::propagate_default_distribution_thread_unsafe(
     std::shared_ptr<const lib::Distribution> distribution) {
     // Should only be called at ctor time, at which point the pool is not yet running.
-    assert(_stripe_pool.stripe_count() == 0);
+    CHECK(_stripe_pool.stripe_count() == 0);
     auto new_configs = lib::BucketSpaceDistributionConfigs::from_default_distribution(std::move(distribution));
     for (auto& stripe : _stripes) {
         stripe->update_distribution_config(new_configs);
@@ -410,7 +411,7 @@ void TopLevelDistributor::dispatch_to_main_distributor_thread_queue(const std::s
 }
 
 void TopLevelDistributor::fetch_external_messages() {
-    assert(_fetched_messages.empty());
+    CHECK(_fetched_messages.empty());
     _fetched_messages.swap(_message_queue);
 }
 
@@ -482,10 +483,10 @@ void TopLevelDistributor::un_inhibit_maintenance_if_safe_time_passed() {
 }
 
 void TopLevelDistributor::notify_stripe_wants_to_send_host_info(uint16_t stripe_index) {
-    assert(_done_initializing);
+    CHECK(_done_initializing);
     LOG(debug, "Stripe %u has signalled an intent to send host info out-of-band", stripe_index);
     std::lock_guard lock(_stripe_scan_notify_mutex);
-    assert(stripe_index < _stripe_scan_stats.size());
+    CHECK(stripe_index < _stripe_scan_stats.size());
     auto& stats = _stripe_scan_stats[stripe_index];
     stats.wants_to_send_host_info = true;
     stats.has_reported_in_at_least_once = true;

@@ -1,11 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/inline.h>
 #include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
-
-#include <cassert>
 
 using vespalib::LeftArrayHeap;
 using vespalib::LeftHeap;
@@ -226,7 +225,7 @@ template <typename H, typename D> struct BenchmarkHD : Benchmark {
         for (size_t i = 0; i < loop; ++i) {
             D d(cnt * 2);
             d.init(false);
-            assert((heapSize + cnt) < d.data.size());
+            CHECK((heapSize + cnt) < d.data.size());
             Loops<H>::push(&d.data[0], &d.data[heapSize], d.cmp);
             t.start();
             Loops<H>::fiddle(&d.data[0], &d.data[heapSize], d.cmp, &d.data[cnt], &d.data[cnt * 2], adjust);

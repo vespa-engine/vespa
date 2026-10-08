@@ -6,7 +6,8 @@
 #ifdef __linux__
 #include <malloc.h>
 #endif
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <limits>
 
 namespace vespalib {
@@ -23,7 +24,7 @@ MallocMmapGuard::MallocMmapGuard(size_t mmapLimit) : _threadId(std::this_thread:
 }
 
 MallocMmapGuard::~MallocMmapGuard() {
-    assert(_threadId == std::this_thread::get_id());
+    CHECK(_threadId == std::this_thread::get_id());
 #ifdef __linux__
     if (vespalib::detect_malloc_impl() == vespalib::MallocImpl::VespaMalloc) {
         mallopt(M_MMAP_THRESHOLD, 1_Gi);

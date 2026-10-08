@@ -9,6 +9,8 @@
 #include "fakezcbfilterocc.h"
 #include "fakezcfilterocc.h"
 
+#include <vespa/check_require.h>
+
 namespace search::fakedata {
 
 using index::Schema;
@@ -71,9 +73,9 @@ FPFactoryInit::FPFactoryInit(const FPFactoryMapEntry& fpFactoryMapEntry) : _key(
 }
 
 FPFactoryInit::~FPFactoryInit() {
-    assert(fpFactoryMap != nullptr);
+    CHECK(fpFactoryMap != nullptr);
     size_t eraseRes = fpFactoryMap->erase(_key);
-    assert(eraseRes == 1);
+    CHECK(eraseRes == 1);
     (void)eraseRes;
     if (fpFactoryMap->empty()) {
         delete fpFactoryMap;

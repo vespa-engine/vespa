@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/util/url.h>
 
-#include <cassert>
 #include <cstdio>
 #include <cstring>
 
@@ -13,8 +13,8 @@ void FastS_block_usr2() {
 static search::util::URL GlobalURL;
 
 static bool CheckString(const char* name, const unsigned char* test1, const unsigned char* test2) {
-    assert(test1 != nullptr);
-    assert(test2 != nullptr);
+    CHECK(test1 != nullptr);
+    CHECK(test2 != nullptr);
 
     if (strcmp((const char*)test1, (const char*)test2) != 0) {
         printf("FAILED: %s: '%s' != '%s'!\n", name, test1, test2);

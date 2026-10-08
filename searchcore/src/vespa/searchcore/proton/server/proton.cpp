@@ -24,6 +24,7 @@
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -237,7 +238,7 @@ ResourceUsage ProtonResourceUsageProvider::get_resource_usage() const {
 Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const std::string& creator)
     : _hostName(), _creator(creator), _cluster(), _pid(getpid()) {
     _hostName = vespalib::HostName::get();
-    assert(!_hostName.empty());
+    CHECK(!_hostName.empty());
 }
 
 Proton::ProtonFileHeaderContext::~ProtonFileHeaderContext() = default;
@@ -344,20 +345,20 @@ Proton::Proton(FNET_Transport& transport, const config::ConfigUri& configUri, co
 }
 
 BootstrapConfig::SP Proton::init() {
-    assert(!_initStarted && !_initComplete);
+    CHECK(!_initStarted && !_initComplete);
     _initStarted = true;
     _initialization_status.start_initialization();
     _protonConfigFetcher.start();
     auto configSnapshot = _protonConfigurer.getPendingConfigSnapshot();
-    assert(configSnapshot);
+    CHECK(configSnapshot);
     auto bootstrapConfig = configSnapshot->getBootstrapConfig();
-    assert(bootstrapConfig);
+    CHECK(bootstrapConfig);
 
     return bootstrapConfig;
 }
 
 void Proton::init(const BootstrapConfig::SP& configSnapshot) {
-    assert(_initStarted && !_initComplete);
+    CHECK(_initStarted && !_initComplete);
     const ProtonConfig& protonConfig = configSnapshot->getProtonConfig();
     ensureWritableDir(protonConfig.basedir);
     const vespalib::HwInfo& hwInfo = configSnapshot->getHwInfo();
@@ -546,7 +547,7 @@ Proton::addDocumentDB(const DocTypeName& docTypeName, document::BucketSpace buck
 }
 
 Proton::~Proton() {
-    assert(_initStarted);
+    CHECK(_initStarted);
     if (!_initComplete) {
         LOG(warning, "Initialization of proton was halted. Shutdown sequence has been initiated.");
     }

@@ -3,7 +3,7 @@
 
 #include "trace.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 using namespace vespalib::slime;
 
@@ -18,9 +18,9 @@ SlimeTraceSerializer::SlimeTraceSerializer(Cursor& cursor) : _cursors() {
 }
 
 void SlimeTraceSerializer::visit(const TraceNode& node) {
-    assert(!_cursors.empty());
+    CHECK(!_cursors.empty());
     Cursor* current(_cursors.top());
-    assert(current != nullptr);
+    CHECK(current != nullptr);
     _cursors.pop();
     addTimestamp(*current, node);
     addPayload(*current, node);

@@ -2,6 +2,7 @@
 
 #include "docsumfilter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -13,8 +14,6 @@
 #include <vespa/searchsummary/docsummary/slime_filler_filter.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/issue.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.docsumfilter");
@@ -137,7 +136,7 @@ void SnippetModifierJuniperConverter::convert(const document::StringFieldValue& 
                                               vespalib::slime::Inserter&        inserter) {
     if (_modifier != nullptr) {
         auto fv = _modifier->modify(input, _empty_field_path);
-        assert(fv);
+        CHECK(fv);
         auto& modified_input = dynamic_cast<const document::StringFieldValue&>(*fv);
         _juniper_converter.convert(modified_input.getValueRef(), inserter);
     } else {
@@ -166,7 +165,7 @@ class DocsumStoreVsmDocument : public IDocsumStoreDocument {
     }
     static const ResultClass& get_result_class(const DocsumFilter& docsum_filter) {
         auto result_class = docsum_filter.getTools().getResultClass();
-        assert(result_class != nullptr);
+        CHECK(result_class != nullptr);
         return *result_class;
     }
 
@@ -195,7 +194,7 @@ DocsumStoreFieldValue DocsumStoreVsmDocument::get_field_value(const std::string&
     if (_document != nullptr) {
         auto entry_idx = _result_class.getIndexFromName(field_name);
         if (entry_idx >= 0) {
-            assert((uint32_t)entry_idx < _result_class.getNumEntries());
+            CHECK((uint32_t)entry_idx < _result_class.getNumEntries());
             return _docsum_filter.get_summary_field(entry_idx, _vsm_document);
         }
         try {
@@ -220,7 +219,7 @@ void DocsumStoreVsmDocument::insert_summary_field(const std::string& field_name,
     if (_document != nullptr) {
         auto entry_idx = _result_class.getIndexFromName(field_name);
         if (entry_idx >= 0) {
-            assert((uint32_t)entry_idx < _result_class.getNumEntries());
+            CHECK((uint32_t)entry_idx < _result_class.getNumEntries());
             _docsum_filter.insert_summary_field(entry_idx, _vsm_document, selected_elements, inserter, converter,
                                                 struct_fields_filter);
             return;
@@ -248,7 +247,7 @@ void DocsumStoreVsmDocument::insert_juniper_field(const std::string& field_name,
         FieldModifier* modifier = nullptr;
         auto           entry_idx = _result_class.getIndexFromName(field_name);
         if (entry_idx >= 0) {
-            assert((uint32_t)entry_idx < _result_class.getNumEntries());
+            CHECK((uint32_t)entry_idx < _result_class.getNumEntries());
             if (is_struct_or_multivalue_field_type(*field_value->getDataType())) {
                 modifier = _docsum_filter.get_field_modifier(entry_idx);
             } else {
@@ -315,7 +314,7 @@ void DocsumFilter::init(const FieldMap& fieldMap, const FieldPathMapT& fieldPath
         const std::vector<DocsumTools::FieldSpec>& inputSpecs = _tools->getFieldSpecs();
         if (resClass != nullptr) {
             uint32_t entryCnt = resClass->getNumEntries();
-            assert(entryCnt == inputSpecs.size());
+            CHECK(entryCnt == inputSpecs.size());
             for (uint32_t i = 0; i < entryCnt; ++i) {
                 const ResConfigEntry&         entry = *resClass->getEntry(i);
                 const DocsumTools::FieldSpec& toolsSpec = inputSpecs[i];
@@ -323,7 +322,7 @@ void DocsumFilter::init(const FieldMap& fieldMap, const FieldPathMapT& fieldPath
                 LOG(debug, "About to prepare field spec for summary field '%s'", entry.name().c_str());
                 prepareFieldSpec(_fields.back(), toolsSpec, fieldMap, fieldPathMap);
             }
-            assert(entryCnt == _fields.size());
+            CHECK(entryCnt == _fields.size());
         }
     }
 }

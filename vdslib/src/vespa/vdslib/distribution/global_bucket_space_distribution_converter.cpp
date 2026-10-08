@@ -4,13 +4,13 @@
 
 #include "distribution_config_util.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/config/print/asciiconfigreader.hpp>
 
-#include <cassert>
 #include <map>
 
 namespace storage::lib {
@@ -37,7 +37,7 @@ const Group& find_non_root_group_by_index(const std::string& index, const Group&
     auto* node = &root;
     for (auto idx : path) {
         auto child_iter = node->sub_groups.find(idx);
-        assert(child_iter != node->sub_groups.end());
+        CHECK(child_iter != node->sub_groups.end());
         node = child_iter->second.get();
     }
     return *node;
@@ -66,7 +66,7 @@ bool is_leaf_group(const DistributionConfigBuilder::Group& g) noexcept {
 void insert_new_group_into_tree(std::unique_ptr<Group>                  new_group,
                                 const DistributionConfigBuilder::Group& config_source_group, Group& root) {
     const auto path = lib::DistributionConfigUtil::getGroupPath(config_source_group.index);
-    assert(!path.empty());
+    CHECK(!path.empty());
 
     Group* parent = &root;
     for (size_t i = 0; i < path.size(); ++i) {
@@ -74,10 +74,10 @@ void insert_new_group_into_tree(std::unique_ptr<Group>                  new_grou
         parent->nested_leaf_count += config_source_group.nodes.size(); // Empty if added group is not a leaf.
         auto g_iter = parent->sub_groups.find(idx);
         if (g_iter != parent->sub_groups.end()) {
-            assert(i != path.size() - 1);
+            CHECK(i != path.size() - 1);
             parent = g_iter->second.get();
         } else {
-            assert(i == path.size() - 1); // Only valid case for last item in path.
+            CHECK(i == path.size() - 1); // Only valid case for last item in path.
             parent->sub_groups.emplace(path.back(), std::move(new_group));
         }
     }
@@ -106,7 +106,7 @@ std::unique_ptr<Group> create_group_tree_from_config(const DistributionConfig& s
     std::unique_ptr<Group> root;
     for (auto& g : source.group) {
         auto new_group = std::make_unique<Group>();
-        assert(g.nodes.size() < UINT16_MAX);
+        CHECK(g.nodes.size() < UINT16_MAX);
         new_group->nested_leaf_count = static_cast<uint16_t>(g.nodes.size());
         if (root) {
             insert_new_group_into_tree(std::move(new_group), g, *root);
@@ -134,7 +134,7 @@ std::unique_ptr<Group> create_group_tree_from_config(const DistributionConfig& s
  * implies that the root group is always the first group present in the config.
  */
 void build_global_groups(DistributionConfigBuilder& builder, const DistributionConfig& source) {
-    assert(!source.group.empty()); // TODO gracefully handle empty config?
+    CHECK(!source.group.empty()); // TODO gracefully handle empty config?
     auto root = create_group_tree_from_config(source);
 
     auto       g_iter = source.group.begin();

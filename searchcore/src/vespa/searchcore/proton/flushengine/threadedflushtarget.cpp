@@ -2,10 +2,10 @@
 
 #include "threadedflushtarget.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/server/igetserialnum.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
-#include <cassert>
 #include <future>
 
 using searchcorespi::FlushStats;
@@ -29,7 +29,7 @@ void call_init_flush(IFlushTarget* target, IFlushTarget::SerialNum serial, const
      */
     (void)serial;
     search::SerialNum freshSerial = getSerialNum->getSerialNum();
-    assert(freshSerial >= serial);
+    CHECK(freshSerial >= serial);
     target->init_flush(freshSerial, std::move(flush_token), std::move(target_task_promise));
 }
 } // namespace

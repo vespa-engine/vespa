@@ -4,10 +4,10 @@
 
 #include "hnsw_graph.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 
-#include <cassert>
 #include <limits>
 
 using search::common::CreateAndFreezeTimes;
@@ -53,9 +53,9 @@ HnswIndexSaver<type>::HnswIndexSaver(const HnswGraph<type>& graph)
     _metadata.entry_nodeid = entry.nodeid;
     _metadata.entry_level = entry.level;
     size_t num_nodes = graph.nodes.get_size(); // Called from writer only
-    assert(num_nodes <= (std::numeric_limits<uint32_t>::max() - 1));
+    CHECK(num_nodes <= (std::numeric_limits<uint32_t>::max() - 1));
     size_t link_array_count = count_valid_link_arrays(graph);
-    assert(link_array_count <= std::numeric_limits<uint32_t>::max());
+    CHECK(link_array_count <= std::numeric_limits<uint32_t>::max());
     _metadata.refs.reserve(link_array_count);
     _metadata.nodes.reserve(num_nodes + 1);
     for (size_t i = 0; i < num_nodes; ++i) {

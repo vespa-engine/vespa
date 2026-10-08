@@ -11,6 +11,8 @@
 #include "unique_store_dictionary.h"
 #include "unique_store_hash_dictionary_read_snapshot.hpp"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
@@ -68,7 +70,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::add(const Ent
         if (itr.valid() && !comp.less(EntryRef(), itr.getKey().load_relaxed())) {
             if constexpr (has_hash_dictionary) {
                 auto* result = this->_hash_dict.find(comp, EntryRef());
-                assert(result != nullptr && result->first.load_relaxed() == itr.getKey().load_relaxed());
+                CHECK(result != nullptr && result->first.load_relaxed() == itr.getKey().load_relaxed());
             }
             return UniqueStoreAddResult(itr.getKey().load_relaxed(), false);
         } else {
@@ -77,7 +79,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::add(const Ent
             if constexpr (has_hash_dictionary) {
                 std::function<EntryRef()> insert_hash_entry([newRef]() noexcept -> EntryRef { return newRef; });
                 auto&                     add_result = this->_hash_dict.add(comp, newRef, insert_hash_entry);
-                assert(add_result.first.load_relaxed() == newRef);
+                CHECK(add_result.first.load_relaxed() == newRef);
             }
             return UniqueStoreAddResult(newRef, true);
         }
@@ -89,7 +91,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::add(const Ent
         });
         auto&                     add_result = this->_hash_dict.add(comp, EntryRef(), insert_hash_entry);
         EntryRef                  newRef = add_result.first.load_relaxed();
-        assert(newRef.valid());
+        CHECK(newRef.valid());
         return UniqueStoreAddResult(newRef, inserted);
     }
 }
@@ -101,13 +103,13 @@ EntryRef UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::find
         if (itr.valid() && !comp.less(EntryRef(), itr.getKey().load_relaxed())) {
             if constexpr (has_hash_dictionary) {
                 auto* result = this->_hash_dict.find(comp, EntryRef());
-                assert(result != nullptr && result->first.load_relaxed() == itr.getKey().load_relaxed());
+                CHECK(result != nullptr && result->first.load_relaxed() == itr.getKey().load_relaxed());
             }
             return itr.getKey().load_relaxed();
         } else {
             if constexpr (has_hash_dictionary) {
                 auto* result = this->_hash_dict.find(comp, EntryRef());
-                assert(result == nullptr);
+                CHECK(result == nullptr);
             }
             return EntryRef();
         }
@@ -120,15 +122,15 @@ EntryRef UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::find
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::remove(const EntryComparator& comp,
                                                                                EntryRef               ref) {
-    assert(ref.valid());
+    CHECK(ref.valid());
     if constexpr (has_btree_dictionary) {
         auto itr = this->_btree_dict.lowerBound(AtomicEntryRef(ref), comp);
-        assert(itr.valid() && itr.getKey().load_relaxed() == ref);
+        CHECK(itr.valid() && itr.getKey().load_relaxed() == ref);
         this->_btree_dict.remove(itr);
     }
     if constexpr (has_hash_dictionary) {
         auto* result = this->_hash_dict.remove(comp, ref);
-        assert(result != nullptr && result->first.load_relaxed() == ref);
+        CHECK(result != nullptr && result->first.load_relaxed() == ref);
     }
 }
 
@@ -139,14 +141,14 @@ void UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_key
         auto itr = this->_btree_dict.begin();
         while (itr.valid()) {
             EntryRef oldRef(itr.getKey().load_relaxed());
-            assert(oldRef.valid());
+            CHECK(oldRef.valid());
             if (compacting_buffers.has(oldRef)) {
                 EntryRef newRef(compactable.move_on_compact(oldRef));
                 this->_btree_dict.thaw(itr);
                 itr.writeKey(AtomicEntryRef(newRef));
                 if constexpr (has_hash_dictionary) {
                     auto result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), oldRef);
-                    assert(result != nullptr && result->first.load_relaxed() == oldRef);
+                    CHECK(result != nullptr && result->first.load_relaxed() == oldRef);
                     result->first.store_release(newRef);
                 }
             }
@@ -182,8 +184,8 @@ template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(std::span<const EntryRef> refs,
                                                                               std::span<const uint32_t> ref_counts,
                                                                               std::function<void(EntryRef)> hold) {
-    assert(refs.size() == ref_counts.size());
-    assert(!refs.empty());
+    CHECK(refs.size() == ref_counts.size());
+    CHECK(!refs.empty());
     if constexpr (has_btree_dictionary) {
         using DataType = typename BTreeDictionaryType::DataType;
         typename BTreeDictionaryType::Builder builder(this->_btree_dict.getAllocator());
@@ -203,7 +205,7 @@ void UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(st
                 std::function<EntryRef()> insert_hash_entry([ref]() noexcept -> EntryRef { return ref; });
                 auto&                     add_result =
                     this->_hash_dict.add(this->_hash_dict.get_default_comparator(), ref, insert_hash_entry);
-                assert(add_result.first.load_relaxed() == ref);
+                CHECK(add_result.first.load_relaxed() == ref);
             } else if constexpr (!has_btree_dictionary) {
                 hold(refs[i]);
             }
@@ -226,7 +228,7 @@ void UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(st
             std::function<EntryRef()> insert_hash_entry([ref]() noexcept -> EntryRef { return ref; });
             auto&                     add_result =
                 this->_hash_dict.add(this->_hash_dict.get_default_comparator(), ref, insert_hash_entry);
-            assert(add_result.first.load_relaxed() == ref);
+            CHECK(add_result.first.load_relaxed() == ref);
         }
     }
 }
@@ -234,7 +236,7 @@ void UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(st
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build_with_payload(
     std::span<const EntryRef> refs, std::span<const EntryRef> payloads) {
-    assert(refs.size() == payloads.size());
+    CHECK(refs.size() == payloads.size());
     if constexpr (has_btree_dictionary) {
         using DataType = typename BTreeDictionaryType::DataType;
         typename BTreeDictionaryType::Builder builder(this->_btree_dict.getAllocator());
@@ -253,7 +255,7 @@ void UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build_wi
             std::function<EntryRef()> insert_hash_entry([ref]() noexcept -> EntryRef { return ref; });
             auto&                     add_result =
                 this->_hash_dict.add(this->_hash_dict.get_default_comparator(), ref, insert_hash_entry);
-            assert(add_result.first.load_relaxed() == refs[i]);
+            CHECK(add_result.first.load_relaxed() == refs[i]);
             add_result.second.store_relaxed(payloads[i]);
         }
     }

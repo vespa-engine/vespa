@@ -2,9 +2,8 @@
 
 #include "moveoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
-
-#include <cassert>
 
 using document::BucketId;
 using document::Document;
@@ -28,7 +27,7 @@ MoveOperation::~MoveOperation() = default;
 
 void MoveOperation::serialize(vespalib::nbostream& os) const {
     assertValidBucketId(_doc->getId());
-    assert(movingLidIfInSameSubDb());
+    CHECK(movingLidIfInSameSubDb());
     DocumentOperation::serialize(os);
     size_t oldSize = os.size();
     _doc->serialize(os);

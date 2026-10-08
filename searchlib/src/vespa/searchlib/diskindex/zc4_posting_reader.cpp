@@ -4,9 +4,9 @@
 
 #include "zc4_posting_header.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 
-#include <cassert>
 #include <cinttypes>
 #include <cstdlib>
 
@@ -30,7 +30,7 @@ template <bool bigEndian> void Zc4PostingReader<bigEndian>::read_doc_id_and_feat
     if (_residue == 0) {
         if (_has_more) {
             read_word_start();
-            assert(_residue != 0);
+            CHECK(_residue != 0);
         } else {
             // Don't read past end of posting list.
             features.clear(static_cast<uint32_t>(-1));

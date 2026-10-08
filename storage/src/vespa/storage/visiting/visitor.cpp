@@ -4,6 +4,7 @@
 
 #include "visitormetrics.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/select/node.h>
@@ -18,7 +19,6 @@
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <format>
 #include <sstream>
 #include <unordered_map>
@@ -78,15 +78,15 @@ Visitor::VisitorTarget::insertMessage(std::unique_ptr<documentapi::DocumentMessa
     MessageMeta    value(id, std::move(msg));
     _memoryUsage += value.memoryUsage;
     auto inserted = _messageMeta.insert(std::make_pair(id, std::move(value)));
-    assert(inserted.second);
+    CHECK(inserted.second);
     return inserted.first->second;
 }
 
 Visitor::VisitorTarget::MessageMeta Visitor::VisitorTarget::releaseMetaForMessageId(uint64_t msgId) {
     auto iter = _messageMeta.find(msgId);
-    assert(iter != _messageMeta.end());
+    CHECK(iter != _messageMeta.end());
     MessageMeta meta = std::move(iter->second);
-    assert(_memoryUsage >= meta.memoryUsage);
+    CHECK(_memoryUsage >= meta.memoryUsage);
     _memoryUsage -= meta.memoryUsage;
     _messageMeta.erase(iter);
     return meta;
@@ -96,7 +96,7 @@ void Visitor::VisitorTarget::reinsertMeta(MessageMeta meta) {
     _memoryUsage += meta.memoryUsage;
     auto inserted = _messageMeta.insert(std::make_pair(meta.messageId, std::move(meta)));
     (void)inserted;
-    assert(inserted.second);
+    CHECK(inserted.second);
 }
 
 Visitor::VisitorTarget::MessageMeta& Visitor::VisitorTarget::metaForMessageId(uint64_t msgId) {
@@ -178,11 +178,11 @@ Visitor::Visitor(StorageComponent& component)
 }
 
 Visitor::~Visitor() {
-    assert(_bucketStates.empty());
+    CHECK(_bucketStates.empty());
 }
 
 void Visitor::sendMessage(documentapi::DocumentMessage::UP cmd) {
-    assert(cmd);
+    CHECK(cmd);
     if (!isRunning()) {
         return;
     }
@@ -234,7 +234,7 @@ void Visitor::sendDocumentApiMessage(VisitorTarget::MessageMeta& msgMeta) {
 }
 
 void Visitor::sendInfoMessage(documentapi::VisitorInfoMessage::UP cmd) {
-    assert(cmd);
+    CHECK(cmd);
     if (!isRunning()) {
         return;
     }
@@ -266,7 +266,7 @@ const char* Visitor::getStateName(VisitorState s) {
     case STATE_COMPLETED:
         return "COMPLETED";
     default:
-        assert(!"Unknown visitor state");
+        CHECK(!"Unknown visitor state");
         return nullptr;
     }
 }
@@ -294,7 +294,7 @@ void Visitor::forceClose() {
 }
 
 void Visitor::sendReplyOnce() {
-    assert(_initiatingCmd);
+    CHECK(_initiatingCmd);
     if (!_hasSentReply) {
         std::shared_ptr<api::StorageReply> reply(_initiatingCmd->makeReply());
 
@@ -313,9 +313,9 @@ void Visitor::sendReplyOnce() {
 void Visitor::finalize() {
     if (_state != STATE_COMPLETED) {
         LOG(error, "Attempting to finalize non-completed visitor %s", _id.c_str());
-        assert(false);
+        CHECK(false);
     }
-    assert(_bucketStates.empty());
+    CHECK(_bucketStates.empty());
 
     if (_result.success()) {
         if (_messageSession->pending() > 0) {
@@ -355,7 +355,7 @@ void Visitor::discardAllNoPendingBucketStates() {
 }
 
 void Visitor::fail(const api::ReturnCode& reason, bool overrideExistingError) {
-    assert(_state != STATE_COMPLETED);
+    CHECK(_state != STATE_COMPLETED);
     if (_result.getResult() < reason.getResult() || overrideExistingError) {
         LOG(debug, "Setting result of visitor '%s' to %s", _id.c_str(), reason.toString().c_str());
         _result = reason;
@@ -410,7 +410,7 @@ void Visitor::start(api::VisitorId id, api::StorageMessage::Id cmdId, const std:
                     framework::MicroSecTime toTimestamp, std::unique_ptr<document::select::Node> docSelection,
                     const std::string& docSelectionString, VisitorMessageHandler& handler,
                     VisitorMessageSession::UP messageSession, documentapi::Priority::Value documentPriority) {
-    assert(_state == STATE_NOT_STARTED);
+    CHECK(_state == STATE_NOT_STARTED);
     _visitorId = id;
     _visitorCmdId = cmdId;
     _id = name;
@@ -491,7 +491,7 @@ bool Visitor::addBoundedTrace(uint32_t level, const std::string& message) {
 }
 
 const vdslib::Parameters& Visitor::visitor_parameters() const noexcept {
-    assert(_initiatingCmd);
+    CHECK(_initiatingCmd);
     return _initiatingCmd->getParameters();
 }
 
@@ -518,7 +518,7 @@ void Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics
 
     LOG(spam, "Visitor '%s' reply %s for message ID %" PRIu64, _id.c_str(), reply->toString().c_str(), messageId);
 
-    assert(removed == 1);
+    CHECK(removed == 1);
     (void)removed;
     // Always remove message from target mapping. We will reinsert it if the
     // message needs to be retried.
@@ -566,7 +566,7 @@ void Visitor::handleDocumentApiReply(mbus::Reply::UP reply, VisitorThreadMetrics
             _id.c_str(), returnCode.toString().c_str());
         return;
     }
-    assert(!meta.message);
+    CHECK(!meta.message);
     meta.message.reset(static_cast<documentapi::DocumentMessage*>(message.release()));
     meta.retryCount++;
     const size_t retryCount = meta.retryCount;
@@ -599,7 +599,7 @@ void Visitor::onCreateIteratorReply(const std::shared_ptr<CreateIteratorReply>& 
             break;
         }
     }
-    assert(it != _bucketStates.rend());
+    CHECK(it != _bucketStates.rend());
     BucketIterationState& bucketState(**it);
 
     if (reply->getResult().failed()) {
@@ -639,7 +639,7 @@ void Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply, Visitor
             break;
         }
     }
-    assert(it != _bucketStates.rend());
+    CHECK(it != _bucketStates.rend());
 
     if (reply->getResult().failed() || !isRunning()) {
         // Don't log warnings for BUCKET_NOT_FOUND and BUCKET_DELETED,
@@ -653,7 +653,7 @@ void Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply, Visitor
         }
         fail(reply->getResult());
         BucketIterationState& bucketState(**it);
-        assert(bucketState._pendingIterators > 0);
+        CHECK(bucketState._pendingIterators > 0);
         --bucketState._pendingIterators;
         if (bucketState._pendingIterators == 0) {
             delete *it;
@@ -927,7 +927,7 @@ bool Visitor::getIterators() {
     // Go through buckets found. Take the first that doesn't have requested
     // state and request a new piece.
     for (auto it = _bucketStates.begin(); it != _bucketStates.end();) {
-        assert(*it);
+        CHECK(*it);
         BucketIterationState& bucketState(**it);
         if ((bucketState._pendingIterators >= _visitorOptions._maxParallelOneBucket) ||
             bucketState.hasPendingControlCommand())

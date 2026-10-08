@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
+
 #include <string.h>
 #include <unistd.h>
 #include <util/filereader.h>
 
-#include <cassert>
 #include <iostream>
 
 /**
@@ -81,7 +82,7 @@ int main(int argc, char** argv) {
 
     // filter the input
     char* line = new char[bufsize];
-    assert(line != nullptr);
+    CHECK(line != nullptr);
     int   res;
     char* tmp;
     char* url;
@@ -90,7 +91,7 @@ int main(int argc, char** argv) {
     int   idx;
     int   outIdx;
     char* buf = new char[bufsize];
-    assert(buf != nullptr);
+    CHECK(buf != nullptr);
     int  state; // 0=expect param name, 1=copy, 2=skip
     bool gotQuery;
     memcpy(buf, prefix, prefixlen);

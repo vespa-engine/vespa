@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
@@ -87,14 +88,14 @@ public:
             return std::unique_ptr<attribute::AttributeReadGuard>();
         }
     }
-    void getAttributeList(vector<AttributeGuard>&) const override { assert(!"Not implemented"); }
+    void getAttributeList(vector<AttributeGuard>&) const override { CHECK(!"Not implemented"); }
     IAttributeContext::UP createContext() const override {
-        assert(!"Not implemented");
+        CHECK(!"Not implemented");
         return IAttributeContext::UP();
     }
 
     void asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const override {
-        assert(!"Not implemented");
+        CHECK(!"Not implemented");
     }
 
     std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view) const override {
@@ -111,7 +112,7 @@ bool do_search(const Node& node, IAttributeManager& attribute_manager, bool expe
     AttributeBlueprintFactory    source;
     search::fef::MatchDataLayout mdl;
     Blueprint::UP                result = source.createBlueprint(requestContext, FieldSpec(field, 0, 0), node, mdl);
-    assert(result.get());
+    CHECK(result.get());
     EXPECT_TRUE(mdl.empty());
     EXPECT_TRUE(!result->getState().estimate().empty);
     EXPECT_EQ(DOCID_LIMIT, result->getState().estimate().estHits);
@@ -123,7 +124,7 @@ bool do_search(const Node& node, IAttributeManager& attribute_manager, bool expe
     result->basic_plan(true, DOCID_LIMIT);
     result->fetchPostings(queryeval::ExecuteInfo::FULL);
     SearchIterator::UP iterator = result->createSearch(*md);
-    assert((bool)iterator);
+    CHECK((bool)iterator);
     iterator->initRange(1, DOCID_LIMIT);
     EXPECT_TRUE(!iterator->seek(1));
     EXPECT_TRUE(!iterator->seek(2));
@@ -138,7 +139,7 @@ bool search_for_term(const string& term, IAttributeManager& attribute_manager) {
 
 template <typename ChildType, typename ParentType> ChildType& downcast(ParentType& parent) {
     auto* result = dynamic_cast<ChildType*>(&parent);
-    assert(result != nullptr);
+    CHECK(result != nullptr);
     return *result;
 }
 

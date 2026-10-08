@@ -12,7 +12,6 @@
 
 #include <fcntl.h>
 
-#include <cassert>
 #include <cstdlib>
 #include <cstring>
 #include <sstream>

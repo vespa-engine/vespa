@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
@@ -72,8 +73,8 @@ void IterateSpeed::workLoop(int loops, bool enableForward, bool enableBackwards,
         builder.insert(i, 0);
     }
     tree.assign(builder);
-    assert(numEntries == tree.size());
-    assert(tree.isValid());
+    CHECK(numEntries == tree.size());
+    CHECK(tree.isValid());
     for (int l = 0; l < loops; ++l) {
         vespalib::Timer timer;
         uint64_t        sum = 0;

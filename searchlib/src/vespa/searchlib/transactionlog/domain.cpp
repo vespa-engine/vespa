@@ -5,6 +5,7 @@
 #include "domainpart.h"
 #include "session.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/cpu_usage.h>
@@ -16,7 +17,6 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <algorithm>
-#include <cassert>
 #include <filesystem>
 #include <future>
 #include <thread>
@@ -63,7 +63,7 @@ Domain::Domain(const string& domainName, const string& baseDir, vespalib::Execut
       _baseDir(baseDir),
       _fileHeaderContext(fileHeaderContext),
       _markedDeleted(false) {
-    assert(_config.getEncoding().getCompression() != Encoding::Compression::none);
+    CHECK(_config.getEncoding().getCompression() != Encoding::Compression::none);
     int retval = makeDirectory(_baseDir);
     if (retval != 0) {
         throw runtime_error(fmt("Failed creating basedirectory %s r(%d), e(%d)", _baseDir.c_str(), retval, errno));
@@ -93,7 +93,7 @@ Domain::Domain(const string& domainName, const string& baseDir, vespalib::Execut
 
 Domain& Domain::setConfig(const DomainConfig& cfg) {
     _config = cfg;
-    assert(_config.getEncoding().getCompression() != Encoding::Compression::none);
+    CHECK(_config.getEncoding().getCompression() != Encoding::Compression::none);
     return *this;
 }
 
@@ -102,7 +102,7 @@ void Domain::addPart(SerialNum partId, bool isLastPart) {
     if (dp->size() == 0) {
         // Only last domain part is allowed to be truncated down to
         // empty size.
-        assert(isLastPart);
+        CHECK(isLastPart);
         dp->erase(dp->range().to() + 1);
     } else {
         {
@@ -143,8 +143,8 @@ SerialNum Domain::begin() const {
 }
 
 void Domain::verifyLock(const UniqueLock& guard) const {
-    assert(guard.mutex() == &_partsMutex);
-    assert(guard.owns_lock());
+    CHECK(guard.mutex() == &_partsMutex);
+    CHECK(guard.owns_lock());
 }
 
 SerialNum Domain::begin(const UniqueLock& guard) const {
@@ -296,7 +296,7 @@ DomainPart::SP Domain::optionallyRotateFile(SerialNum serialNum) {
         {
             std::lock_guard guard(_partsMutex);
             _parts[serialNum] = dp;
-            assert(_parts.rbegin()->first == serialNum);
+            CHECK(_parts.rbegin()->first == serialNum);
         }
         vespalib::File::sync(dir());
     }
@@ -340,14 +340,14 @@ void Domain::commitAndTransferResponses(const UniqueLock& guard) {
 }
 
 std::unique_ptr<CommitChunk> Domain::grabCurrentChunk(const UniqueLock& guard) {
-    assert(guard.mutex() == &_currentChunkMutex && guard.owns_lock());
+    CHECK(guard.mutex() == &_currentChunkMutex && guard.owns_lock());
     auto chunk = std::move(_currentChunk);
     _currentChunk = createCommitChunk(_config);
     return chunk;
 }
 
 void Domain::commitChunk(std::unique_ptr<CommitChunk> chunk, const UniqueLock& chunkOrderGuard) {
-    assert(chunkOrderGuard.mutex() == &_currentChunkMutex && chunkOrderGuard.owns_lock());
+    CHECK(chunkOrderGuard.mutex() == &_currentChunkMutex && chunkOrderGuard.owns_lock());
     if (chunk->getPacket().empty()) {
         return;
     }
@@ -395,7 +395,7 @@ bool Domain::erase(SerialNum to) {
 }
 
 int Domain::visit(const Domain::SP& domain, SerialNum from, SerialNum to, std::unique_ptr<Destination> dest) {
-    assert(this == domain.get());
+    CHECK(this == domain.get());
     cleanSessions();
     SerialNumRange  range(from, to);
     auto            session = std::make_shared<Session>(_sessionId++, range, domain, std::move(dest));

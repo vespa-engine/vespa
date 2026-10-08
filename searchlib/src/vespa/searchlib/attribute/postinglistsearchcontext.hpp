@@ -9,6 +9,7 @@
 #include "postinglistsearchcontext.h"
 #include "postingstore.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/common/growablebitvector.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -204,7 +205,7 @@ SearchIterator::UP PostingListSearchContextT<DataT>::createPostingIterator(fef::
     }
     if (_merger.hasArray() || _merger.hasBitVector()) { // synthetic results are available
         if (!_merger.emptyArray()) {
-            assert(_merger.hasArray());
+            CHECK(_merger.hasArray());
             using DocIt = ArrayIterator<Posting>;
             DocIt                    postings;
             std::span<const Posting> array = _merger.getArray();
@@ -220,7 +221,7 @@ SearchIterator::UP PostingListSearchContextT<DataT>::createPostingIterator(fef::
             return std::make_unique<EmptySearch>();
         }
         const BitVector* bv(_merger.getBitVector());
-        assert(bv != nullptr);
+        CHECK(bv != nullptr);
         return BitVectorIterator::create(bv, bv->size(), *matchData, &_baseSearchCtx, strict, false, false);
     }
     if (_uniqueValues == 1) {
@@ -233,7 +234,7 @@ SearchIterator::UP PostingListSearchContextT<DataT>::createPostingIterator(fef::
         }
         if (!_frozenRoot.valid()) {
             uint32_t clusterSize = _posting_store.getClusterSize(_pidx);
-            assert(clusterSize != 0);
+            CHECK(clusterSize != 0);
             using DocIt = DocIdMinMaxIterator<Posting>;
             DocIt          postings;
             const Posting* array = _posting_store.getKeyDataEntry(_pidx, clusterSize);

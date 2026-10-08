@@ -7,6 +7,7 @@
 #include "fast_access_feed_view.h"
 #include "reconfig_params.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -61,8 +62,8 @@ IReprocessingInitializer::UP FastAccessDocSubDBConfigurer::reconfigure(const Doc
 
     const document::DocumentType* newDocType = newConfig.getDocumentType();
     const document::DocumentType* oldDocType = oldConfig.getDocumentType();
-    assert(newDocType != nullptr);
-    assert(oldDocType != nullptr);
+    CHECK(newDocType != nullptr);
+    CHECK(oldDocType != nullptr);
     DocumentTypeInspector inspector(*oldDocType, *newDocType);
     IndexschemaInspector  oldIndexschemaInspector(oldConfig.getIndexschemaConfig());
     return std::make_unique<AttributeReprocessingInitializer>(

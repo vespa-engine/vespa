@@ -4,9 +4,9 @@
 
 #include "attribute_directory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/io/fileutil.h>
 
-#include <cassert>
 #include <filesystem>
 
 namespace proton {
@@ -53,7 +53,7 @@ std::shared_ptr<AttributeDirectory> AttributeDiskLayout::createAttributeDir(cons
     if (itr == _dirs.end()) {
         auto dir = std::make_shared<AttributeDirectory>(shared_from_this(), name);
         auto insres = _dirs.insert(std::make_pair(name, dir));
-        assert(insres.second);
+        CHECK(insres.second);
         return dir;
     } else {
         return itr->second;
@@ -70,8 +70,8 @@ void AttributeDiskLayout::removeAttributeDir(const std::string& name, search::Se
             if (writer->removeDiskDir()) {
                 std::lock_guard<std::shared_mutex> guard(_mutex);
                 auto                               itr = _dirs.find(name);
-                assert(itr != _dirs.end());
-                assert(dir.get() == itr->second.get());
+                CHECK(itr != _dirs.end());
+                CHECK(dir.get() == itr->second.get());
                 _dirs.erase(itr);
                 writer->detach();
             }
@@ -79,7 +79,7 @@ void AttributeDiskLayout::removeAttributeDir(const std::string& name, search::Se
             std::lock_guard<std::shared_mutex> guard(_mutex);
             auto                               itr = _dirs.find(name);
             if (itr != _dirs.end()) {
-                assert(dir.get() != itr->second.get());
+                CHECK(dir.get() != itr->second.get());
             }
         }
     }

@@ -7,6 +7,7 @@
 #include "attributedisklayout.h"
 #include "i_attribute_factory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file_interface.h>
 #include <vespa/searchcommon/attribute/attribute_initialization_status.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -181,7 +182,7 @@ AttributeVector::SP AttributeInitializer::tryLoadAttribute() const {
 }
 
 bool AttributeInitializer::loadAttribute(const AttributeVectorSP& attr, search::SerialNum serialNum) const {
-    assert(attr->hasLoadData());
+    CHECK(attr->hasLoadData());
     vespalib::Timer timer;
     EventLogger::loadAttributeStart(_documentSubDbName, attr->getName());
     auto label = _documentSubDbName + "/" + attr->getName();
@@ -201,7 +202,7 @@ bool AttributeInitializer::loadAttribute(const AttributeVectorSP& attr, search::
 
 void AttributeInitializer::setupEmptyAttribute(AttributeVectorSP& attr, search::SerialNum serialNum,
                                                const AttributeHeader& header) const {
-    assert(_currentSerialNum.has_value());
+    CHECK(_currentSerialNum.has_value());
     if (header.getCreateSerialNum() > _currentSerialNum.value()) {
         logAttributeTooNew(header, _currentSerialNum.value());
     }

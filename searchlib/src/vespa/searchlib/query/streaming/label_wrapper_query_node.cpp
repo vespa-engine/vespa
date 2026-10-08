@@ -4,9 +4,8 @@
 
 #include "query_term_data.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/matchdata.h>
-
-#include <cassert>
 
 namespace search::streaming {
 
@@ -24,7 +23,7 @@ void LabelWrapperQueryNode::unpack_wrapper(uint32_t docid, fef::MatchData& match
     // Holds the reserved "no field" only, and only once set up for ranking.
     if (td.numFields() == 1u) {
         auto* tmd = match_data.resolveTermField(td.field(0u).getHandle());
-        assert(tmd != nullptr);
+        CHECK(tmd != nullptr);
         tmd->setRawScore(docid, _score);
     }
 }

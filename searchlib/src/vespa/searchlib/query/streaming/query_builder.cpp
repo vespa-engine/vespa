@@ -11,6 +11,7 @@
 #include "regexp_term.h"
 #include "same_element_query_node.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/streaming/dot_product_term.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
@@ -355,7 +356,7 @@ std::unique_ptr<QueryNode> QueryBuilder::build_phrase_term(const QueryNodeResult
         queryRep.next();
         auto                       qn = build(phrase.get(), factory, queryRep, false);
         std::unique_ptr<QueryTerm> qt(dynamic_cast<QueryTerm*>(qn.release()));
-        assert(qt);
+        CHECK(qt);
         phrase->add_term(std::move(qt));
     }
     return phrase;
@@ -379,7 +380,7 @@ std::unique_ptr<QueryNode> QueryBuilder::build_equiv_term(const QueryNodeResultF
             continue;
         }
         std::unique_ptr<QueryTerm> qt(dynamic_cast<QueryTerm*>(qn.release()));
-        assert(qt);
+        CHECK(qt);
         eqn->add_term(std::move(qt));
     }
     return eqn;

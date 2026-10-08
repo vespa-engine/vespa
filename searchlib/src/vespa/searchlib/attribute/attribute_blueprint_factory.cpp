@@ -12,6 +12,7 @@
 #include "multi_term_or_filter_search.h"
 #include "predicate_attribute.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/hit_estimate_flow_stats_adapter.h>
 #include <vespa/searchlib/common/location.h>
@@ -166,13 +167,13 @@ public:
     }
 
     SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray& tfmda) const override {
-        assert(tfmda.size() == 1);
+        CHECK(tfmda.size() == 1);
         return _search_context->createIterator(tfmda[0], strict());
     }
 
     SearchIterator::UP createSearchImpl(fef::MatchData& md) const override {
         const State& state = getState();
-        assert(state.numFields() == 1);
+        CHECK(state.numFields() == 1);
         return _search_context->createIterator(state.field(0).resolve(md), strict());
     }
 
@@ -504,7 +505,7 @@ public:
     }
 
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda) const override {
-        assert(tfmda.size() == 1);
+        CHECK(tfmda.size() == 1);
         if (_terms.empty()) {
             return std::make_unique<queryeval::EmptySearch>();
         }

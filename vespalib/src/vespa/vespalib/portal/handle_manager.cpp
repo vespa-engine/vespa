@@ -2,7 +2,7 @@
 
 #include "handle_manager.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::portal {
 
@@ -21,14 +21,14 @@ HandleGuard::~HandleGuard() {
 //-----------------------------------------------------------------------------
 
 HandleManager::Entry::~Entry() {
-    assert(use_cnt == 0);
-    assert(wait_cnt == 0);
+    CHECK(use_cnt == 0);
+    CHECK(wait_cnt == 0);
 }
 
 void HandleManager::unlock(uint64_t handle) {
     std::lock_guard guard(_lock);
     auto            pos = _repo.find(handle);
-    assert(pos != _repo.end());
+    CHECK(pos != _repo.end());
     --pos->second.use_cnt;
     if (pos->second.should_notify()) {
         pos->second.cond.notify_all();

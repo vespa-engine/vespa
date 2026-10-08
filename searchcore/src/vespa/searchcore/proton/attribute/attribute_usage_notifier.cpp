@@ -5,9 +5,9 @@
 #include "i_attribute_usage_and_load_info_listener.h"
 #include "i_attribute_usage_listener.h"
 
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace proton {
 
@@ -114,7 +114,7 @@ void AttributeUsageNotifier::notify_attribute_usage(
     if (itr == _attribute_usage.end()) {
         auto insert_result = _attribute_usage.insert(
             std::make_pair(attribute_usage.document_type(), std::move(attribute_usage_and_load_info)));
-        assert(insert_result.second);
+        CHECK(insert_result.second);
         document_type_added = true;
     } else {
         itr->second = std::move(attribute_usage_and_load_info);

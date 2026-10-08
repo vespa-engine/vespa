@@ -2,6 +2,7 @@
 
 #include "mixed_inner_product_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/value.h>
 
@@ -21,7 +22,7 @@ struct MixedInnerProductParam {
         : res_type(res_type_in),
           vector_size(vec_type.dense_subspace_size()),
           out_subspace_size(res_type.dense_subspace_size()) {
-        assert(vector_size * out_subspace_size == mix_type.dense_subspace_size());
+        CHECK(vector_size * out_subspace_size == mix_type.dense_subspace_size());
     }
 };
 
@@ -43,7 +44,7 @@ void my_mixed_inner_product_op(InterpretedFunction::State& state, uint64_t param
         out = dot_product::apply(m_cp, v_cp, param.vector_size);
         m_cp += param.vector_size;
     }
-    assert(m_cp == m_cells.data() + m_cells.size());
+    CHECK(m_cp == m_cells.data() + m_cells.size());
     state.pop_pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
 }
 

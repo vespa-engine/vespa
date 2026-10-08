@@ -7,6 +7,7 @@
 #include "hamming_distance.h"
 #include "key_gen.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/approx.h>
 
 #include <algorithm>
@@ -159,10 +160,10 @@ double Cube::f(double a) {
 namespace {
 
 template <typename T> void add_op(std::map<std::string, T>& map, const Function& fun, T op) {
-    assert(!fun.has_error());
+    CHECK(!fun.has_error());
     auto key = gen_key(fun, PassParams::SEPARATE);
     auto res = map.emplace(key, op);
-    assert(res.second);
+    CHECK(res.second);
 }
 
 template <typename T> std::optional<T> lookup_op(const std::map<std::string, T>& map, const Function& fun) {

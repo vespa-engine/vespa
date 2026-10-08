@@ -2,12 +2,11 @@
 
 #include "posocc_fields_params.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".posocc_fields_params");
@@ -33,8 +32,8 @@ PosOccFieldsParams& PosOccFieldsParams::operator=(const PosOccFieldsParams& rhs)
 }
 
 void PosOccFieldsParams::assertCachedParamsRef() const {
-    assert(_numFields == _params.size());
-    assert(_fieldParams == (_params.empty() ? nullptr : &_params[0]));
+    CHECK(_numFields == _params.size());
+    CHECK(_fieldParams == (_params.empty() ? nullptr : &_params[0]));
 }
 
 bool PosOccFieldsParams::operator==(const PosOccFieldsParams& rhs) const {
@@ -43,7 +42,7 @@ bool PosOccFieldsParams::operator==(const PosOccFieldsParams& rhs) const {
 
 void PosOccFieldsParams::getParams(PostingListParams& params) const {
     assertCachedParamsRef();
-    assert(_numFields == 1u); // Only single field for now
+    CHECK(_numFields == 1u); // Only single field for now
     params.set("numFields", _numFields);
     // Single posting file index format will have multiple fields in file
     for (uint32_t field = 0; field < _numFields; ++field) {
@@ -55,7 +54,7 @@ void PosOccFieldsParams::setParams(const PostingListParams& params) {
     assertCachedParamsRef();
     uint32_t numFields = _numFields;
     params.get("numFields", numFields);
-    assert(numFields == 1u);
+    CHECK(numFields == 1u);
     _params.resize(numFields);
     cacheParamsRef();
     // Single posting file index format will have multiple fields in file
@@ -67,7 +66,7 @@ void PosOccFieldsParams::setParams(const PostingListParams& params) {
 void PosOccFieldsParams::setSchemaParams(const Schema& schema, const uint32_t indexId) {
     assertCachedParamsRef();
     SchemaUtil::IndexIterator i(schema, indexId);
-    assert(i.isValid());
+    CHECK(i.isValid());
     _params.resize(1u);
     cacheParamsRef();
     const Schema::IndexField& field = schema.getIndexField(indexId);
@@ -81,7 +80,7 @@ void PosOccFieldsParams::readHeader(const vespalib::GenericHeader& header, const
     std::string numFieldsKey(prefix + "numFields");
     assertCachedParamsRef();
     uint32_t numFields = header.getTag(numFieldsKey).asInteger();
-    assert(numFields == 1u);
+    CHECK(numFields == 1u);
     _params.resize(numFields);
     cacheParamsRef();
     // Single posting file index format will have multiple fields in file
@@ -96,7 +95,7 @@ void PosOccFieldsParams::readHeader(const vespalib::GenericHeader& header, const
 void PosOccFieldsParams::writeHeader(vespalib::GenericHeader& header, const std::string& prefix) const {
     std::string numFieldsKey(prefix + "numFields");
     assertCachedParamsRef();
-    assert(_numFields == 1u);
+    CHECK(_numFields == 1u);
     header.putTag(GenericHeader::Tag(numFieldsKey, _numFields));
     // Single posting file index format will have multiple fields in file
     for (uint32_t field = 0; field < _numFields; ++field) {
@@ -108,7 +107,7 @@ void PosOccFieldsParams::writeHeader(vespalib::GenericHeader& header, const std:
 }
 
 void PosOccFieldsParams::set_field_length_info(const index::FieldLengthInfo& field_length_info) {
-    assert(!_params.empty());
+    CHECK(!_params.empty());
     _params.front().set_field_length_info(field_length_info);
 }
 

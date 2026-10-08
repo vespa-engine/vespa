@@ -2,6 +2,7 @@
 
 #include "diskindexwrapper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcorespi/index/indexreadutilities.h>
 #include <vespa/searchcorespi/index/indexsearchablevisitor.h>
 
@@ -16,7 +17,7 @@ DiskIndexWrapper::DiskIndexWrapper(const std::string& indexDir, const TuneFileSe
                                    std::shared_ptr<IPostingListCache> posting_list_cache)
     : _index(indexDir, std::move(posting_list_cache)), _serialNum(0) {
     bool setupIndexOk = _index.setup(tuneFileSearch);
-    assert(setupIndexOk);
+    CHECK(setupIndexOk);
     (void)setupIndexOk;
     _serialNum = IndexReadUtilities::readSerialNum(indexDir);
 }
@@ -24,7 +25,7 @@ DiskIndexWrapper::DiskIndexWrapper(const std::string& indexDir, const TuneFileSe
 DiskIndexWrapper::DiskIndexWrapper(const DiskIndexWrapper& oldIndex, const TuneFileSearch& tuneFileSearch)
     : _index(oldIndex._index.getIndexDir(), oldIndex._index.get_posting_list_cache()), _serialNum(0) {
     bool setupIndexOk = _index.setup(tuneFileSearch, oldIndex._index);
-    assert(setupIndexOk);
+    CHECK(setupIndexOk);
     (void)setupIndexOk;
     _serialNum = oldIndex.getSerialNum();
 }

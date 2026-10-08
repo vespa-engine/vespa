@@ -6,6 +6,7 @@
 #include "metricset.h"
 #include "valuemetric.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config/print/ostreamconfigwriter.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
@@ -15,7 +16,6 @@
 
 #include <vespa/config/subscription/configsubscriber.hpp>
 
-#include <cassert>
 #include <cinttypes>
 #include <set>
 #include <sstream>
@@ -434,7 +434,7 @@ std::vector<MetricManager::SnapSpec> MetricManager::createSnapshotPeriods(const 
 }
 
 void MetricManager::configure(const MetricLockGuard&, std::unique_ptr<Config> config) {
-    assert(config);
+    CHECK(config);
     if (LOG_WOULD_LOG(debug)) {
         std::ostringstream          ost;
         config::OstreamConfigWriter w(ost);

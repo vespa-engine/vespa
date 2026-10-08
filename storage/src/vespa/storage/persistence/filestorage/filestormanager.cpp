@@ -4,6 +4,7 @@
 
 #include "filestorhandlerimpl.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
@@ -173,7 +174,7 @@ size_t computeAllPossibleHandlerThreads(const vespa::config::content::StorFilest
 PersistenceHandler& FileStorManager::createRegisteredHandler(const ServiceLayerComponent& component) {
     std::lock_guard guard(_lock);
     size_t          index = _persistenceHandlers.size();
-    assert(index < _metrics->threads.size());
+    CHECK(index < _metrics->threads.size());
     _persistenceHandlers.push_back(std::make_unique<PersistenceHandler>(
         *_sequencedExecutor, component, _config->bucketMergeChunkSize, false, *_provider, *_filestorHandler,
         *_bucketOwnershipNotifier, *_metrics->threads[index]));
@@ -218,7 +219,7 @@ void FileStorManager::on_configure(const StorFilestorConfig& config) {
         _sequencedExecutor = vespalib::SequencedTaskExecutor::create(
             CpuUsage::wrap(response_executor, CpuUsage::Category::WRITE), numResponseThreads, 10000, true,
             selectSequencer(_config->responseSequencerType));
-        assert(_sequencedExecutor);
+        CHECK(_sequencedExecutor);
         LOG(spam, "Setting up %u persistence threads", numThreads);
         for (uint32_t i = 0; i < numThreads; i++) {
             _threads.push_back(std::make_unique<PersistenceThread>(createRegisteredHandler(_component),
@@ -226,7 +227,7 @@ void FileStorManager::on_configure(const StorFilestorConfig& config) {
         }
         _bucketExecutorRegistration = _provider->register_executor(std::make_shared<BucketExecutorWrapper>(*this));
     } else {
-        assert(_filestorHandler);
+        CHECK(_filestorHandler);
         auto updated_op_dyn_throttle_params =
             dynamic_throttle_params_from_config(config.asyncOperationThrottler, _threads.size());
         const uint32_t num_stripes = std::max(1u, static_cast<uint32_t>(_threads.size()) / 2);
@@ -344,7 +345,7 @@ bool FileStorManager::handlePersistenceMessage(const shared_ptr<api::StorageMess
         errorCode = api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node.");
         break;
     case FileStorHandler::AVAILABLE:
-        assert(false);
+        CHECK(false);
     }
     // If we get here, we failed to schedule message. errorCode says why
     // We need to reply to message (while not having bucket lock)
@@ -515,7 +516,7 @@ StorBucketDatabase::WrappedEntry FileStorManager::ensureConsistentBucket(const d
     StorBucketDatabase::WrappedEntry entry(
         _component.getBucketDatabase(bucket.getBucketSpace())
             .get(bucket.getBucketId(), callerId, StorBucketDatabase::CREATE_IF_NONEXISTING));
-    assert(entry.exists());
+    CHECK(entry.exists());
     if (!_component.getBucketDatabase(bucket.getBucketSpace()).isConsistent(entry)) {
         if (!entry.preExisted()) {
             // Don't create empty bucket if merge isn't allowed to continue.
@@ -715,7 +716,7 @@ void FileStorManager::sendReply(const std::shared_ptr<api::StorageReply>& reply)
 
     if (reply->getType() == api::MessageType::INTERNAL_REPLY) {
         std::shared_ptr<api::InternalReply> rep(std::dynamic_pointer_cast<api::InternalReply>(reply));
-        assert(rep.get());
+        CHECK(rep.get());
         if (onInternalReply(rep)) {
             return;
         }
@@ -732,7 +733,7 @@ void FileStorManager::sendReplyDirectly(const std::shared_ptr<api::StorageReply>
 
     if (reply->getType() == api::MessageType::INTERNAL_REPLY) {
         std::shared_ptr<api::InternalReply> rep(std::dynamic_pointer_cast<api::InternalReply>(reply));
-        assert(rep);
+        CHECK(rep);
         if (onInternalReply(rep)) {
             return;
         }
@@ -848,7 +849,7 @@ void FileStorManager::updateState() {
         BucketSpace         bucketSpace(elem.first);
         ContentBucketSpace& contentBucketSpace = *elem.second;
         auto                state_and_distr = contentBucketSpace.state_and_distribution();
-        assert(state_and_distr->valid());
+        CHECK(state_and_distr->valid());
         const bool node_up_in_space = state_and_distr->cluster_state().getNodeState(node).getState().oneOf("uir");
         if (should_deactivate_buckets(contentBucketSpace, node_up_in_space, in_maintenance)) {
             LOG(debug,
@@ -872,7 +873,7 @@ void FileStorManager::storageDistributionChanged() {
 
 void FileStorManager::propagateClusterStates() {
     auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
-    assert(clusterStateBundle->has_distribution_config());
+    CHECK(clusterStateBundle->has_distribution_config());
     for (const auto& elem : _component.getBucketSpaceRepo()) {
         elem.second->set_state_and_distribution(std::make_shared<ClusterStateAndDistribution>(
             clusterStateBundle->getDerivedClusterState(elem.first),
@@ -900,7 +901,7 @@ void FileStorManager::initialize_bucket_databases_from_provider() {
     for (const auto& elem : _component.getBucketSpaceRepo()) {
         const auto bucket_space = elem.first;
         const auto bucket_result = _provider->listBuckets(bucket_space);
-        assert(!bucket_result.hasError());
+        CHECK(!bucket_result.hasError());
         const auto& buckets = bucket_result.getList();
         LOG(debug, "Fetching bucket info for %zu buckets in space '%s'", buckets.size(),
             bucket_space.toString().c_str());
@@ -911,10 +912,10 @@ void FileStorManager::initialize_bucket_databases_from_provider() {
             // TODO replace with far more efficient bulk insert API
             auto entry = db.get(bucket, "FileStorManager::initialize_bucket_databases_from_provider",
                                 StorBucketDatabase::CREATE_IF_NONEXISTING);
-            assert(!entry.preExisted());
+            CHECK(!entry.preExisted());
             auto spi_bucket = spi::Bucket(document::Bucket(bucket_space, bucket));
             auto provider_result = _provider->getBucketInfo(spi_bucket);
-            assert(!provider_result.hasError());
+            CHECK(!provider_result.hasError());
             entry->setBucketInfo(PersistenceUtil::convertBucketInfo(provider_result.getBucketInfo()));
             entry.write();
         }

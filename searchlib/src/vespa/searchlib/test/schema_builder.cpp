@@ -4,12 +4,11 @@
 
 #include "doc_builder.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/collectiondatatype.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/searchcommon/common/schema.h>
-
-#include <cassert>
 
 using document::DataType;
 using search::index::Schema;
@@ -66,7 +65,7 @@ search::index::schema::CollectionType get_collection_type(const document::DataTy
     if (type.isWeightedSet()) {
         return DstType::WEIGHTEDSET;
     }
-    assert(!type.isMap());
+    CHECK(!type.isMap());
     return DstType::SINGLE;
 }
 
@@ -83,7 +82,7 @@ void SchemaBuilder::add_index(std::string_view field_name, std::optional<bool> i
     auto  ct = get_collection_type(field.getDataType());
     auto& type = get_nested_type(field.getDataType());
     auto  dt = get_data_type(type);
-    assert(dt == search::index::schema::DataType::STRING);
+    CHECK(dt == search::index::schema::DataType::STRING);
     Schema::IndexField index_field(field_name, dt, ct);
     if (interleaved_features.has_value()) {
         index_field.set_interleaved_features(interleaved_features.value());
@@ -121,9 +120,9 @@ void SchemaBuilder::add_attribute(std::string_view field_name) {
     auto&       type = get_nested_type(field.getDataType());
     auto        dt = get_data_type(type);
     std::string tensor_type_spec;
-    assert(type.getId() != DataType::Type::T_URI);
+    CHECK(type.getId() != DataType::Type::T_URI);
     if (type.getId() == DataType::Type::T_TENSOR) {
-        assert(ct == search::index::schema::CollectionType::SINGLE);
+        CHECK(ct == search::index::schema::CollectionType::SINGLE);
         tensor_type_spec = type.cast_tensor()->getTensorType().to_spec();
     }
     Schema::AttributeField attribute_field(field_name, dt, ct, tensor_type_spec);

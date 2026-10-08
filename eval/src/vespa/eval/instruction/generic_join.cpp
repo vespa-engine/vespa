@@ -2,6 +2,7 @@
 
 #include "generic_join.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/eval/eval/wrap_param.h>
@@ -9,8 +10,6 @@
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
-
-#include <cassert>
 
 using namespace vespalib::eval::tensor_function;
 
@@ -89,9 +88,9 @@ void my_mixed_dense_join_op(State& state, uint64_t param_in) {
         }
     }
     if (forward_lhs) {
-        assert(lhs == lhs_cells.data() + lhs_cells.size());
+        CHECK(lhs == lhs_cells.data() + lhs_cells.size());
     } else {
-        assert(rhs == rhs_cells.data() + rhs_cells.size());
+        CHECK(rhs == rhs_cells.data() + rhs_cells.size());
     }
     state.pop_pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
 }
@@ -155,7 +154,7 @@ DenseJoinPlan::DenseJoinPlan(const ValueType& lhs_type, const ValueType& rhs_typ
     Case prev_case = Case::NONE;
     auto update_plan = [&](Case my_case, size_t my_size, size_t in_lhs, size_t in_rhs) {
         if (my_case == prev_case) {
-            assert(!loop_cnt.empty());
+            CHECK(!loop_cnt.empty());
             loop_cnt.back() *= my_size;
         } else {
             loop_cnt.push_back(my_size);
@@ -284,8 +283,8 @@ Instruction GenericJoin::make_instruction(const ValueType& result_type, const Va
                                           const ValueType& rhs_type, join_fun_t function,
                                           const ValueBuilderFactory& factory, Stash& stash) {
     auto& param = stash.create<JoinParam>(result_type, lhs_type, rhs_type, function, factory);
-    assert(result_type == ValueType::join(lhs_type, rhs_type));
-    assert(param.res_type.cell_meta().eq(CellMeta::join(lhs_type.cell_meta(), rhs_type.cell_meta())));
+    CHECK(result_type == ValueType::join(lhs_type, rhs_type));
+    CHECK(param.res_type.cell_meta().eq(CellMeta::join(lhs_type.cell_meta(), rhs_type.cell_meta())));
     auto fun = typify_invoke<3, JoinTypify, SelectGenericJoinOp>(lhs_type.cell_meta(), rhs_type.cell_meta(), function,
                                                                  param);
     return Instruction(fun, wrap_param<JoinParam>(param));

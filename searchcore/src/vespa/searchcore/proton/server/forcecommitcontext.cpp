@@ -4,10 +4,9 @@
 
 #include "forcecommitdonetask.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/common/docid_limit.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
-
-#include <cassert>
 
 namespace proton {
 
@@ -29,7 +28,7 @@ ForceCommitContext::~ForceCommitContext() {
     }
     if (!_task->empty()) {
         vespalib::Executor::Task::UP res = _executor.execute(std::move(_task));
-        assert(!res);
+        CHECK(!res);
     }
 }
 

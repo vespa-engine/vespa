@@ -2,7 +2,7 @@
 
 #include "foregroundtaskexecutor.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 
@@ -15,7 +15,7 @@ ForegroundTaskExecutor::ForegroundTaskExecutor(uint32_t threads) : ISequencedTas
 ForegroundTaskExecutor::~ForegroundTaskExecutor() = default;
 
 void ForegroundTaskExecutor::executeTask(ExecutorId id, Executor::Task::UP task) {
-    assert(id.getId() < getNumExecutors());
+    CHECK(id.getId() < getNumExecutors());
     task->run();
     _accepted++;
 }

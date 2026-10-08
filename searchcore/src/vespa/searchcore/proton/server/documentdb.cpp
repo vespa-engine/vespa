@@ -18,6 +18,7 @@
 #include "replay_throttling_policy.h"
 #include "vespa/config-proton.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/metrics/updatehook.h>
 #include <vespa/searchcommon/attribute/attribute_initialization_status.h>
@@ -197,7 +198,7 @@ DocumentDB::DocumentDB(const std::string& baseDir, DocumentDBConfig::SP configSn
       _calc(),
       _metricsUpdater(_subDBs, _writeService, _jobTrackers, _writeFilter, *_feedHandler),
       _initializationStatus(std::make_shared<DocumentDBInitializationStatus>(_docTypeName.getName(), _state)) {
-    assert(configSnapshot);
+    CHECK(configSnapshot);
 
     LOG(debug, "DocumentDB(%s): Creating database in directory '%s'", _docTypeName.toString().c_str(),
         _baseDir.c_str());
@@ -207,7 +208,7 @@ DocumentDB::DocumentDB(const std::string& baseDir, DocumentDBConfig::SP configSn
     saveInitialConfig(configSnapshot);
     resumeSaveConfig();
     SerialNum configSerial = _config_store->getPrevValidSerial(_feedHandler->getPrunedSerialNum() + 1);
-    assert(configSerial > 0);
+    CHECK(configSerial > 0);
     DocumentDBConfig::SP loaded_config;
     _config_store->loadConfig(*configSnapshot, configSerial, loaded_config);
     // Grab relevant parts from pending config
@@ -296,12 +297,12 @@ void DocumentDB::initManagers() {
 
 void DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot) {
     // Called by executor thread
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     _bucketHandler.setReadyBucketHandler(_subDBs.getReadySubDB()->getDocumentMetaStoreContext().get());
     _subDBs.initViews(*configSnapshot);
     syncFeedView();
     // Check that feed view has been activated.
-    assert(_feedView.get());
+    CHECK(_feedView.get());
     setActiveConfig(std::move(configSnapshot));
     startTransactionLogReplay();
 }
@@ -319,7 +320,7 @@ std::unique_ptr<DocumentDBReconfig> DocumentDB::prepare_reconfig(const DocumentD
 
 void DocumentDB::enterReprocessState() {
     // Called by executor thread
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     if (!_state->enterReprocessState()) {
         return;
     }
@@ -337,7 +338,7 @@ void DocumentDB::enterReprocessState() {
 
 void DocumentDB::enterOnlineState() {
     // Called by executor thread
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     // Ensure that all replayed operations are committed to memory structures
     _feedView.get()->forceCommitAndWait(CommitParam(_feedHandler->getSerialNum(), CommitParam::UpdateStats::SKIP));
 
@@ -361,10 +362,10 @@ void DocumentDB::applySubDBConfig(const DocumentDBConfig& newConfigSnapshot, Ser
     auto registry = _owner.getDocumentDBReferenceRegistry();
     auto oldRepo = _activeConfigSnapshot->getDocumentTypeRepoSP();
     auto oldDocType = oldRepo->getDocumentType(_docTypeName.getName());
-    assert(oldDocType != nullptr);
+    CHECK(oldDocType != nullptr);
     const auto& newRepo = newConfigSnapshot.getDocumentTypeRepoSP();
     auto        newDocType = newRepo->getDocumentType(_docTypeName.getName());
-    assert(newDocType != nullptr);
+    CHECK(newDocType != nullptr);
     DocumentDBReferenceResolver resolver(*registry, *newDocType, newConfigSnapshot.getImportedFieldsConfig(),
                                          *oldDocType, _refCount, _writeService.field_writer(),
                                          _state->getAllowReconfig());
@@ -387,7 +388,7 @@ void DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum seri
     DocumentDBConfig::ComparisonResult cmpres;
     {
         lock_guard guard(_configMutex);
-        assert(_activeConfigSnapshot.get());
+        CHECK(_activeConfigSnapshot.get());
         if (configSnapshot->getDelayedAttributeAspects()) {
             _state->setConfigState(DDBState::ConfigState::NEED_RESTART);
             LOG(info, "DocumentDB(%s): Delaying attribute aspect changes: need restart",
@@ -438,7 +439,7 @@ void DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum seri
         }
         if (_state->getState() == DDBState::State::ONLINE) {
             // Changes applied while online should not trigger reprocessing
-            assert(_subDBs.getReprocessingRunner().empty());
+            CHECK(_subDBs.getReprocessingRunner().empty());
         }
         syncFeedView();
     }
@@ -478,7 +479,7 @@ void DocumentDB::tearDownReferences() {
     auto activeConfig = getActiveConfig();
     auto repo = activeConfig->getDocumentTypeRepoSP();
     auto docType = repo->getDocumentType(_docTypeName.getName());
-    assert(docType != nullptr);
+    CHECK(docType != nullptr);
     DocumentDBReferenceResolver resolver(*registry, *docType, activeConfig->getImportedFieldsConfig(), *docType,
                                          _refCount, _writeService.field_writer(), false);
     _subDBs.tearDownReferences(resolver);
@@ -590,7 +591,7 @@ void DocumentDB::saveInitialConfig(std::shared_ptr<DocumentDBConfig> configSnaps
 
 void DocumentDB::resumeSaveConfig() {
     SerialNum bestSerial = _config_store->getBestSerialNum();
-    assert(bestSerial != 0);
+    CHECK(bestSerial != 0);
     if (bestSerial != _feedHandler->get_replay_end_serial_num() + 1) {
         return;
     }
@@ -598,7 +599,7 @@ void DocumentDB::resumeSaveConfig() {
         _docTypeName.toString().c_str(), bestSerial);
     // proton was interrupted when saving later config.
     SerialNum confSerial = _feedHandler->inc_replay_end_serial_num();
-    assert(confSerial == bestSerial);
+    CHECK(confSerial == bestSerial);
     // resume operation, i.e. save config entry in transaction log
     NewConfigOperation op(confSerial, *_config_store);
     (void)_feedHandler->storeOperationSync(op);
@@ -617,7 +618,7 @@ void DocumentDB::onTransactionLogReplayDone() {
 
 void DocumentDB::onPerformPrune(SerialNum flushedSerial) {
     if (!getAllowPrune()) {
-        assert(_state->getClosed());
+        CHECK(_state->getClosed());
         return;
     }
     _config_store->prune(flushedSerial);
@@ -701,8 +702,8 @@ void DocumentDB::reconfigure(DocumentDBConfig::SP snapshot) {
     // Called by proton executor thread (c.f. ProtonConfigurer::configureDocumentDB)
     _pendingConfigSnapshot.set(snapshot);
     auto active_snapshot = getActiveConfig();
-    assert(active_snapshot);
-    assert(_state->getAllowReconfig());
+    CHECK(active_snapshot);
+    CHECK(_state->getAllowReconfig());
     snapshot = DocumentDBConfig::makeDelayedAttributeAspectConfig(snapshot, *active_snapshot);
     auto prepared_reconfig = prepare_reconfig(*snapshot, std::nullopt);
     masterExecute([this, snapshot, prepared_reconfig = std::move(prepared_reconfig)]() mutable {
@@ -716,7 +717,7 @@ void DocumentDB::reconfigure(DocumentDBConfig::SP snapshot) {
 }
 
 void DocumentDB::enterRedoReprocessState() {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     ReprocessingRunner& runner = _subDBs.getReprocessingRunner();
     if (!runner.empty()) {
         if (!_state->enterRedoReprocessState()) {
@@ -733,7 +734,7 @@ void DocumentDB::enterRedoReprocessState() {
 }
 
 void DocumentDB::enter_doc_store_validation_state() {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     if (!_state->enter_doc_store_validation_state()) {
         return;
     }
@@ -747,7 +748,7 @@ void DocumentDB::enter_doc_store_validation_state() {
 }
 
 void DocumentDB::enterApplyLiveConfigState() {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     // Enable reconfig and queue currently pending config as executor task.
     {
         lock_guard guard(_configMutex);
@@ -820,7 +821,7 @@ int64_t DocumentDB::getActiveGeneration() const {
 }
 
 void DocumentDB::syncFeedView() {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
     _maintenanceController.killJobs();
@@ -866,7 +867,7 @@ void DocumentDB::performStartMaintenance() {
         }
         activeConfig = _activeConfigSnapshot;
     }
-    assert(activeConfig);
+    CHECK(activeConfig);
     if (_maintenanceController.getStopping()) {
         return;
     }
@@ -882,7 +883,7 @@ void DocumentDB::stopMaintenance() {
 void DocumentDB::forwardMaintenanceConfig() {
     // Called by executor thread
     DocumentDBConfig::SP activeConfig = getActiveConfig();
-    assert(activeConfig);
+    CHECK(activeConfig);
     auto maintenanceConfig(activeConfig->getMaintenanceConfigSP());
     if (!_state->getClosed()) {
         if (_maintenanceController.getPaused()) {

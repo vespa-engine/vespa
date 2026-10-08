@@ -2,6 +2,7 @@
 
 #include "sessionmanager.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
@@ -166,8 +167,8 @@ SessionManager::SessionManager(uint32_t maxSize)
 
 SessionManager::~SessionManager() {
     pruneTimedOutSessions(vespalib::steady_time::max());
-    assert(_grouping_cache->empty());
-    assert(_search_map->empty());
+    CHECK(_grouping_cache->empty());
+    CHECK(_search_map->empty());
 }
 
 void SessionManager::insert(search::grouping::GroupingSession::UP session) {

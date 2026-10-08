@@ -2,12 +2,11 @@
 
 #include "bitvectoriterator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/vespalib/objects/visit.h>
-
-#include <cassert>
 
 namespace search {
 
@@ -18,7 +17,7 @@ using vespalib::Trinary;
 BitVectorIterator::BitVectorIterator(const BitVector& bv, uint32_t docIdLimit, TermFieldMatchData& matchData,
                                      const attribute::ISearchContext* search_context)
     : _docIdLimit(std::min(docIdLimit, bv.size())), _bv(bv), _tfmd(matchData), _search_context(search_context) {
-    assert(docIdLimit <= bv.size());
+    CHECK(docIdLimit <= bv.size());
     _tfmd.reset(0);
 }
 

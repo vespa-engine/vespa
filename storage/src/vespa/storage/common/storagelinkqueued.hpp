@@ -4,11 +4,11 @@
 
 #include "storagelinkqueued.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storageframework/generic/component/component.h>
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <chrono>
 #include <sstream>
 
@@ -45,7 +45,7 @@ template <typename Message> StorageLinkQueued::Dispatcher<Message>::~Dispatcher(
 }
 
 template <typename Message> void StorageLinkQueued::Dispatcher<Message>::start() {
-    assert(!_thread);
+    CHECK(!_thread);
     _thread = _component->startThread(*this, 5s, 100ms);
 }
 

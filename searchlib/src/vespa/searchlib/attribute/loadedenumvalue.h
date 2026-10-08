@@ -4,7 +4,8 @@
 
 #include "enum_store_types.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <limits>
 #include <span>
 
@@ -97,8 +98,8 @@ public:
     void save(uint32_t e, uint32_t docId, int32_t weight) {
         (void)docId;
         (void)weight;
-        assert(e < _hist.size());
-        assert(_hist[e] < std::numeric_limits<uint32_t>::max());
+        CHECK(e < _hist.size());
+        CHECK(_hist[e] < std::numeric_limits<uint32_t>::max());
         ++_hist[e];
     }
 };

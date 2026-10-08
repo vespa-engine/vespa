@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/searchlib/common/geo_gcd.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
@@ -66,7 +67,7 @@ template <typename T> void benchmark(size_t iterations, size_t elems, const Dist
 
     double calc_result = run_calc(iterations, b_cells, *df.for_query_vector(a_cells));
     double calc_with_limit_result = run_calc_with_limit(iterations, b_cells, *df.for_query_vector(a_cells));
-    assert(calc_result == calc_with_limit_result);
+    CHECK(calc_result == calc_with_limit_result);
 }
 
 template <typename T> void benchmark(size_t iterations, size_t elems, const std::string& dist_functions) {

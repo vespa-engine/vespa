@@ -2,6 +2,7 @@
 
 #include "changedbucketownershiphandler.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/metrics/metrictimer.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
@@ -110,13 +111,13 @@ ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(
 ChangedBucketOwnershipHandler::OwnershipState::~OwnershipState() = default;
 
 const lib::ClusterState& ChangedBucketOwnershipHandler::OwnershipState::getBaselineState() const {
-    assert(valid());
+    CHECK(valid());
     return *_state->getBaselineClusterState();
 }
 
 uint16_t ChangedBucketOwnershipHandler::OwnershipState::ownerOf(const document::Bucket& bucket) const {
     const auto* distribution = _distributions->bucket_space_distribution_or_nullptr_raw(bucket.getBucketSpace());
-    assert(distribution);
+    CHECK(distribution);
     const auto& derivedState = *_state->getDerivedClusterState(bucket.getBucketSpace());
     try {
         return distribution->getIdealDistributorNode(derivedState, bucket.getBucketId());
@@ -237,7 +238,7 @@ public:
             _owner.setCurrentOwnershipWithStateNoLock(_command->cluster_state_bundle_ptr());
             new_ownership = _owner._currentOwnership;
         }
-        assert(new_ownership->valid());
+        CHECK(new_ownership->valid());
         // If we're going from not having a state to having a state, we per
         // definition cannot possibly have gotten any load that needs aborting,
         // as no such load is allowed through this component when this is the
@@ -282,7 +283,7 @@ bool ChangedBucketOwnershipHandler::onSetSystemState(const std::shared_ptr<api::
     [[maybe_unused]] auto rejected_task =
         _state_sync_executor.execute(std::make_unique<ClusterStateSyncAndApplyTask>(*this, stateCmd));
     // If this fails, we have processed a message _after_ onClose has been called, which should not happen.
-    assert(!rejected_task);
+    CHECK(!rejected_task);
     return true;
 }
 
@@ -347,7 +348,7 @@ bool ChangedBucketOwnershipHandler::sendingDistributorOwnsBucketInCurrentState(c
             "Precondition violation: unable to get bucket from "
             "message: %s",
             e.toString().c_str());
-        assert(false);
+        CHECK(false);
     }
     return false; // Unreachable statement.
 }

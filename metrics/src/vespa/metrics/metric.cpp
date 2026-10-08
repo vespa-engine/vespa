@@ -7,13 +7,13 @@
 #include "metricset.h"
 #include "valuemetric.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <algorithm>
-#include <cassert>
 #include <ostream>
 #include <regex>
 
@@ -182,7 +182,7 @@ Metric* Metric::assignValues(const Metric& m) {
     const_cast<Metric&>(m).addToSnapshot(*this, ownerList);
     // As this should only be called among active metrics, all metrics
     // should exist and owner list should thus always end up empty.
-    assert(ownerList.empty());
+    CHECK(ownerList.empty());
     return this;
 }
 

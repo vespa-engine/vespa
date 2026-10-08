@@ -2,7 +2,7 @@
 
 #include "generationhandler.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 
@@ -15,7 +15,7 @@ void GenerationHandler::update_oldest_used_generation() {
             break; // First element still in use
         }
         GenerationHold* toFree = _first;
-        assert(toFree->_next != nullptr);
+        CHECK(toFree->_next != nullptr);
         _first = toFree->_next;
         toFree->_next = _free;
         _free = toFree;
@@ -38,14 +38,14 @@ GenerationHandler::GenerationHandler()
 
 GenerationHandler::~GenerationHandler() {
     update_oldest_used_generation();
-    assert(_first == _last.load(std::memory_order_relaxed));
+    CHECK(_first == _last.load(std::memory_order_relaxed));
     while (_free != nullptr) {
         GenerationHold* toFree = _free;
         _free = toFree->_next;
         --_numHolds;
         delete toFree;
     }
-    assert(_numHolds == 1);
+    CHECK(_numHolds == 1);
     delete _first;
 }
 

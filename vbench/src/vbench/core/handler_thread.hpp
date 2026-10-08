@@ -1,5 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
+
 namespace vbench {
 
 template <typename T> void HandlerThread<T>::run() {
@@ -11,7 +13,7 @@ template <typename T> void HandlerThread<T>::run() {
         if (_done && _queue.empty()) {
             return;
         }
-        assert(!_queue.empty());
+        CHECK(!_queue.empty());
         std::unique_ptr<T> obj(std::move(_queue.access(0)));
         _queue.pop();
         guard.unlock(); // UNLOCK
@@ -29,7 +31,7 @@ template <typename T> HandlerThread<T>::~HandlerThread() {
     if (!_done) {
         join();
     }
-    assert(_queue.empty());
+    CHECK(_queue.empty());
 }
 
 template <typename T> void HandlerThread<T>::handle(std::unique_ptr<T> obj) {

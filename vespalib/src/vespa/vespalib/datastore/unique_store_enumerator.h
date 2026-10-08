@@ -5,9 +5,8 @@
 #include "i_unique_store_dictionary.h"
 #include "i_unique_store_dictionary_read_snapshot.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/allocator.h>
-
-#include <cassert>
 
 namespace vespalib::datastore {
 
@@ -45,9 +44,9 @@ public:
     uint32_t mapEntryRefToEnumValue(EntryRef ref) const {
         if (ref.valid()) {
             RefType iRef(ref);
-            assert(iRef.bufferId() < _enumValues.size() && iRef.offset() < _enumValues[iRef.bufferId()].size());
+            CHECK(iRef.bufferId() < _enumValues.size() && iRef.offset() < _enumValues[iRef.bufferId()].size());
             uint32_t enumValue = _enumValues[iRef.bufferId()][iRef.offset()];
-            assert(enumValue != 0);
+            CHECK(enumValue != 0);
             return enumValue;
         } else {
             return 0u;

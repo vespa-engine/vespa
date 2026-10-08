@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file_interface.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/diskindex/docidmapper.h>
@@ -328,7 +329,7 @@ bool ShowPostingListSubApp::readWordList(const SchemaUtil::IndexIterator& index)
     wr.readWord(word, wordNum, counts);
     words.push_back(""); // Word number 0 is special here.
     while (wordNum != noWordNumHigh()) {
-        assert(wordNum == words.size());
+        CHECK(wordNum == words.size());
         words.push_back(word);
         wr.readWord(word, wordNum, counts);
     }
@@ -442,8 +443,8 @@ void ShowPostingListSubApp::showTransposedPostingList() {
             prevElementLen = entry._elementLen;
             prevElementWeight = entry._elementWeight;
         }
-        assert(entry._wordNum != 0);
-        assert(entry._wordNum < _wordsv[entry._fieldId].size());
+        CHECK(entry._wordNum != 0);
+        CHECK(entry._wordNum < _wordsv[entry._fieldId].size());
         std::cout << "   pos = " << entry._wordPos << ", word = \"" << _wordsv[entry._fieldId][entry._wordNum]
                   << "\"";
         std::cout << '\n';

@@ -2,13 +2,12 @@
 
 #include "dummyfileheadercontext.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/host_name.h>
 
 #include <unistd.h>
-
-#include <cassert>
 
 namespace search::index {
 
@@ -17,7 +16,7 @@ std::string DummyFileHeaderContext::_creator;
 DummyFileHeaderContext::DummyFileHeaderContext()
     : common::FileHeaderContext(), _disableFileName(false), _hostName(), _pid(getpid()) {
     _hostName = vespalib::HostName::get();
-    assert(!_hostName.empty());
+    CHECK(!_hostName.empty());
 }
 
 DummyFileHeaderContext::~DummyFileHeaderContext() {

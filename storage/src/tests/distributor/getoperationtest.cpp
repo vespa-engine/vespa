@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/fieldset/fieldsets.h>
@@ -82,7 +83,7 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
         ASSERT_EQ(api::MessageType::GET, msg2->getType());
 
         auto* tmp = dynamic_cast<api::GetCommand*>(msg2.get());
-        assert(tmp != nullptr);
+        CHECK(tmp != nullptr);
         document::Document::SP doc;
 
         if (!authorVal.empty()) {
@@ -134,16 +135,16 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
     }
 
     bool last_reply_had_consistent_replicas() {
-        assert(!_sender.replies().empty());
+        CHECK(!_sender.replies().empty());
         auto& msg = *_sender.replies().back();
-        assert(msg.getType() == api::MessageType::GET_REPLY);
+        CHECK(msg.getType() == api::MessageType::GET_REPLY);
         return dynamic_cast<api::GetReply&>(msg).had_consistent_replicas();
     }
 
     bool last_reply_has_document() {
-        assert(!_sender.replies().empty());
+        CHECK(!_sender.replies().empty());
         auto& msg = *_sender.replies().back();
-        assert(msg.getType() == api::MessageType::GET_REPLY);
+        CHECK(msg.getType() == api::MessageType::GET_REPLY);
         return (dynamic_cast<api::GetReply&>(msg).getDocument().get() != nullptr);
     }
 

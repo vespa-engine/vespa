@@ -2,7 +2,7 @@
 
 #include "reactor.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::portal {
 
@@ -96,7 +96,7 @@ Reactor::Reactor(std::function<int()> tick)
 }
 
 Reactor::~Reactor() {
-    assert(_token_cnt == 0);
+    CHECK(_token_cnt == 0);
     _done = true;
     _selector.wakeup();
     _thread.join();

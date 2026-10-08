@@ -2,9 +2,8 @@
 
 #include "createbucketoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 using document::BucketId;
 using document::DocumentTypeRepo;
@@ -20,7 +19,7 @@ CreateBucketOperation::CreateBucketOperation(const BucketId& bucketId)
 }
 
 void CreateBucketOperation::serialize(vespalib::nbostream& os) const {
-    assert(_bucketId.valid());
+    CHECK(_bucketId.valid());
     os << _bucketId;
 }
 

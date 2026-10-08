@@ -2,7 +2,8 @@
 
 #include "schemautil.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <fstream>
 #include <set>
 
@@ -28,7 +29,7 @@ SchemaUtil::IndexSettings SchemaUtil::getIndexSettings(const Schema& schema, con
 }
 
 bool SchemaUtil::IndexIterator::hasOldFields(const Schema& oldSchema) const {
-    assert(isValid());
+    CHECK(isValid());
     const Schema::IndexField& newField = getSchema().getIndexField(getIndex());
     const std::string&        fieldName = newField.getName();
     uint32_t                  oldFieldId = oldSchema.getIndexFieldId(fieldName);
@@ -43,7 +44,7 @@ bool SchemaUtil::IndexIterator::hasOldFields(const Schema& oldSchema) const {
 }
 
 bool SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema& oldSchema) const {
-    assert(isValid());
+    CHECK(isValid());
     const Schema::IndexField& newField = getSchema().getIndexField(getIndex());
     const std::string&        fieldName = newField.getName();
     uint32_t                  oldFieldId = oldSchema.getIndexFieldId(fieldName);
@@ -60,7 +61,7 @@ bool SchemaUtil::IndexIterator::hasMatchingOldFields(const Schema& oldSchema) co
 }
 
 bool SchemaUtil::IndexIterator::has_matching_use_interleaved_features(const Schema& oldSchema) const {
-    assert(isValid());
+    CHECK(isValid());
     const Schema::IndexField& newField = getSchema().getIndexField(getIndex());
     const std::string&        fieldName = newField.getName();
     uint32_t                  oldFieldId = oldSchema.getIndexFieldId(fieldName);

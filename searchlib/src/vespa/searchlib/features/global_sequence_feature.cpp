@@ -2,6 +2,7 @@
 
 #include "global_sequence_feature.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
@@ -35,7 +36,7 @@ void GlobalSequenceBlueprint::visitDumpFeatures(const IIndexEnvironment&, IDumpF
 
 bool GlobalSequenceBlueprint::setup(const IIndexEnvironment& env, const ParameterList&) {
     _distributionKey = env.getDistributionKey();
-    assert(_distributionKey < 0x10000);
+    CHECK(_distributionKey < 0x10000);
     describeOutput("out", "Returns (1 << 48) - ((lid << 16) | distributionKey)");
     return true;
 }

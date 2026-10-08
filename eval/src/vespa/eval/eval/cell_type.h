@@ -4,10 +4,10 @@
 
 #include "int8float.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/bfloat16.h>
 #include <vespa/vespalib/util/typify.h>
 
-#include <cassert>
 #include <cstdlib>
 #include <vector>
 
@@ -65,7 +65,7 @@ struct LimitedCellMeta {
     const CellType cell_type;
     const bool     is_scalar;
     constexpr LimitedCellMetaNotScalar not_scalar() const {
-        assert(!is_scalar);
+        CHECK(!is_scalar);
         return {cell_type};
     }
 };
@@ -83,15 +83,15 @@ struct CellMeta {
     constexpr CellMeta(CellType cell_type_in, bool is_scalar_in) noexcept
         : cell_type(cell_type_in), is_scalar(is_scalar_in) {
         // is_scalar -> double cell type
-        assert(!is_scalar || (cell_type == CellType::DOUBLE));
+        CHECK(!is_scalar || (cell_type == CellType::DOUBLE));
     }
     constexpr bool is_limited() const { return ((cell_type == CellType::DOUBLE) || (cell_type == CellType::FLOAT)); }
     constexpr LimitedCellMeta limit() const {
-        assert(is_limited());
+        CHECK(is_limited());
         return {cell_type, is_scalar};
     }
     constexpr CellMetaNotScalar not_scalar() const {
-        assert(!is_scalar);
+        CHECK(!is_scalar);
         return {cell_type};
     }
 

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/fastos/file.h>
@@ -204,7 +205,7 @@ auto readFile(const std::string& filename) {
     std::vector<char> buf(file.getFileSize());
     off_t             read = file.read(&buf[0], buf.size(), 0);
 
-    assert(read == file.getFileSize());
+    CHECK(read == file.getFileSize());
     return buf;
 }
 

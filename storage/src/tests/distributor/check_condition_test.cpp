@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
@@ -48,7 +49,7 @@ public:
         auto& bucket_space = getDistributorBucketSpace();
         auto  doc_bucket = BucketIdFactory{}.getBucketId(_doc_id);
         auto  bucket = Bucket(FixedBucketSpaces::default_space(), _bucket_id);
-        assert(_bucket_id.contains(doc_bucket));
+        CHECK(_bucket_id.contains(doc_bucket));
         return CheckCondition::create_if_inconsistent_replicas(
             bucket, bucket_space, _doc_id, _tas_cond, node_context(), operation_context(), _metrics, _trace_level);
     }

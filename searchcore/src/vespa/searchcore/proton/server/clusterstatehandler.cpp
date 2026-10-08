@@ -4,6 +4,7 @@
 
 #include "iclusterstatechangedhandler.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
 #include <sstream>
@@ -100,7 +101,7 @@ ClusterStateHandler::ClusterStateHandler(Executor& executor)
 }
 
 ClusterStateHandler::~ClusterStateHandler() {
-    assert(_changedHandlers.empty());
+    CHECK(_changedHandlers.empty());
 }
 
 void ClusterStateHandler::addClusterStateChangedHandler(IClusterStateChangedHandler* handler) {

@@ -2,6 +2,7 @@
 
 #include "sum_max_dot_product_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/value.h>
 
@@ -65,7 +66,7 @@ bool check_params(const ValueType& res_type, const ValueType& query, const Value
             if (query.dimensions()[sum_idx].is_mapped() && document.dimensions()[max_idx].is_mapped() &&
                 query.dimensions()[query_dp_idx].is_indexed() && !query.dimensions()[query_dp_idx].is_trivial())
             {
-                assert(query.dimensions()[query_dp_idx].size == document.dimensions()[document_dp_idx].size);
+                CHECK(query.dimensions()[query_dp_idx].size == document.dimensions()[document_dp_idx].size);
                 return true;
             }
         }
@@ -76,9 +77,9 @@ bool check_params(const ValueType& res_type, const ValueType& query, const Value
 size_t get_dim_size(const ValueType& type, const std::string& dim) {
     size_t npos = ValueType::Dimension::npos;
     size_t idx = type.dimension_index(dim);
-    assert(idx != npos);
-    assert(type.dimensions()[idx].is_indexed());
-    assert(!type.dimensions()[idx].is_trivial());
+    CHECK(idx != npos);
+    CHECK(type.dimensions()[idx].is_indexed());
+    CHECK(!type.dimensions()[idx].is_trivial());
     return type.dimensions()[idx].size;
 }
 

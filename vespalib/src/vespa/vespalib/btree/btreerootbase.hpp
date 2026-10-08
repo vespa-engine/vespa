@@ -4,7 +4,7 @@
 
 #include "btreerootbase.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::btree {
 
@@ -20,9 +20,9 @@ BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::BTreeRootBase(con
 
 template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::~BTreeRootBase() {
-    assert(!_root.valid());
+    CHECK(!_root.valid());
 #if 0
-    assert(!_frozenRoot.valid());
+    CHECK(!_frozenRoot.valid());
 #endif
 }
 
@@ -38,9 +38,9 @@ template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, 
 void BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::freeze(NodeAllocatorType& allocator) {
     if (NodeAllocatorType::isValidRef(_root)) {
         if (allocator.isLeafRef(_root)) {
-            assert(allocator.mapLeafRef(_root)->getFrozen());
+            CHECK(allocator.mapLeafRef(_root)->getFrozen());
         } else {
-            assert(allocator.mapInternalRef(_root)->getFrozen());
+            CHECK(allocator.mapInternalRef(_root)->getFrozen());
         }
     }
     _frozenRoot.store(_root.ref(), std::memory_order_release);
@@ -49,7 +49,7 @@ void BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::freeze(NodeA
 template <typename KeyT, typename DataT, typename AggrT, size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::recursiveDelete(BTreeNode::Ref     node,
                                                                                     NodeAllocatorType& allocator) {
-    assert(allocator.isValidRef(node));
+    CHECK(allocator.isValidRef(node));
     if (!allocator.isLeafRef(node)) {
         InternalNodeType* inode = allocator.mapInternalRef(node);
         for (size_t i = 0; i < inode->validSlots(); ++i) {

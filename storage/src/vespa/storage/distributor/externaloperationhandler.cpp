@@ -9,6 +9,7 @@
 #include "operation_sequencer.h"
 #include "top_level_distributor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/util/feed_reject_helper.h>
@@ -469,7 +470,7 @@ ExternalOperationHandler::try_generate_get_operation(const std::shared_ptr<api::
     }
     // The snapshot is aware of whether stale reads are enabled, so we don't have to check that here.
     const auto* space_repo = snapshot.bucket_space_repo();
-    assert(space_repo != nullptr);
+    CHECK(space_repo != nullptr);
     return std::make_shared<GetOperation>(_node_ctx, space_repo->get(bucket.getBucketSpace()),
                                           snapshot.steal_read_guard(), cmd, metrics, desired_get_read_consistency());
 }

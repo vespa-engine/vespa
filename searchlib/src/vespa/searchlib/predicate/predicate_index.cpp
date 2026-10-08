@@ -7,6 +7,7 @@
 #include "predicate_index_saver.h"
 #include "simple_index_saver.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/util/data_buffer_writer.h>
 
 #include <vespa/vespalib/btree/btree.hpp>
@@ -38,7 +39,7 @@ void PredicateIndex::indexDocumentFeatures(uint32_t                             
         uint64_t    feature = map_entry.first;
         const auto& interval_list = map_entry.second;
         EntryRef    ref = _interval_store.insert(interval_list);
-        assert(ref.valid());
+        CHECK(ref.valid());
         addPosting<IntervalT>(feature, doc_id, ref);
         _cache.set(feature, doc_id, true);
     }
@@ -159,7 +160,7 @@ void removeFromIndex(uint64_t feature, uint32_t doc_id, SimpleIndex<EntryRef>& i
     auto result = index.removeFromPostingList(feature, doc_id);
     if (result.second) { // Posting was removed
         auto ref = result.first;
-        assert(ref.valid());
+        CHECK(ref.valid());
         interval_store.remove(ref);
     }
 }

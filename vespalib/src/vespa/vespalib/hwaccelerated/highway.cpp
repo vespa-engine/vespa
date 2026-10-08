@@ -9,7 +9,6 @@
 #include <hwy/base.h>
 
 #include <algorithm>
-#include <cassert>
 #include <format>
 
 // clang-format off

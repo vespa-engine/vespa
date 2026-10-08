@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -130,7 +131,7 @@ IAttributeContext& MatchingTestSharedState::attribute_context() {
                 attr->addDoc(docid);
                 attr->add(i, docid); // value = docid
             }
-            assert(docid + 1 == NUM_DOCS);
+            CHECK(docid + 1 == NUM_DOCS);
             _attribute_context->add(attr);
         }
         {
@@ -140,7 +141,7 @@ IAttributeContext& MatchingTestSharedState::attribute_context() {
                 attr->addDoc(docid);
                 attr->add(i * 2, docid); // value = docid * 2
             }
-            assert(docid + 1 == NUM_DOCS);
+            CHECK(docid + 1 == NUM_DOCS);
             _attribute_context->add(attr);
         }
         {
@@ -150,7 +151,7 @@ IAttributeContext& MatchingTestSharedState::attribute_context() {
                 attr->addDoc(docid);
                 attr->add(i % 10, docid);
             }
-            assert(docid + 1 == NUM_DOCS);
+            CHECK(docid + 1 == NUM_DOCS);
             _attribute_context->add(attr);
         }
     }
@@ -657,7 +658,7 @@ struct MyWorld {
         SearchSession::OwnershipBundle owned_objects(
             {std::make_unique<MockAttributeContext>(), std::make_unique<FakeSearchContext>()},
             std::make_shared<MySearchHandler>(matcher));
-        assert(threads <= MatchingTestSharedState::max_threads);
+        CHECK(threads <= MatchingTestSharedState::max_threads);
         vespalib::LimitedThreadBundleWrapper threadBundle(shared_state.thread_bundle(), threads);
         SearchReply::UP reply = matcher->match(req, threadBundle, searchContext, attributeContext, *sessionManager,
                                                metaStore, metaStore.getBucketDB(), std::move(owned_objects));

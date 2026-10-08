@@ -4,6 +4,7 @@
 
 #include "field_inverter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
@@ -12,7 +13,6 @@
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <stdexcept>
 
 #include <vespa/log/log.h>
@@ -104,7 +104,7 @@ void UrlFieldInverter::endElement() {
 }
 
 void UrlFieldInverter::processUrlField(const FieldValue& url_field, const Document& doc) {
-    assert(url_field.isA(FieldValue::Type::STRING));
+    CHECK(url_field.isA(FieldValue::Type::STRING));
     const std::string& url_str = static_cast<const StringFieldValue&>(url_field).getValue();
     processUrlOldStyle(url_str, doc);
     return;
@@ -180,7 +180,7 @@ void UrlFieldInverter::processWeightedSetUrlField(const WeightedSetFieldValue& f
     for (const auto& el : field) {
         const FieldValue& key = *el.first;
         const FieldValue& xweight = *el.second;
-        assert(xweight.isA(FieldValue::Type::INT));
+        CHECK(xweight.isA(FieldValue::Type::INT));
         int32_t weight = xweight.getAsInt();
         startElement(weight);
         processUrlField(key, doc);

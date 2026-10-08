@@ -4,8 +4,6 @@
 
 #include "alloc.h"
 
-#include <cassert>
-
 namespace vespalib {
 
 UnorderedU32Set::UnorderedU32Set() : UnorderedU32Set(16) {

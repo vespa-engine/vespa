@@ -5,6 +5,8 @@
 #include "posting_priority_queue.hpp"
 #include "posting_priority_queue_merger.h"
 
+#include <vespa/check_require.h>
+
 namespace search {
 
 template <class Reader, class Writer>
@@ -72,7 +74,7 @@ void PostingPriorityQueueMerger<Reader, Writer>::merge(Writer& writer, const IFl
     if (_vec.empty()) {
         return;
     }
-    assert(_heap_limit > 0u);
+    CHECK(_heap_limit > 0u);
     uint32_t remaining_merge_chunk = _merge_chunk;
     if (_vec.size() >= _heap_limit) {
         void (PostingPriorityQueueMerger::*mergeHeapFunc)(Writer& writer, const IFlushToken& flush_token,
@@ -108,9 +110,9 @@ void PostingPriorityQueueMerger<Reader, Writer>::merge(Writer& writer, const IFl
             }
         }
         for (typename Vector::iterator i = _vec.begin(), ie = _vec.end(); i != ie; ++i) {
-            assert(i->get()->isValid());
+            CHECK(i->get()->isValid());
         }
-        assert(!_vec.empty());
+        CHECK(!_vec.empty());
     }
 }
 

@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/compress.h>
 
-#include <cassert>
 #include <cstring>
 
 /**
@@ -399,7 +399,7 @@ public:
      * @return value of the accessed integer.
      **/
     uint8_t PeekInt8(uint32_t offset) {
-        assert(GetDataLen() >= offset + 1);
+        CHECK(GetDataLen() >= offset + 1);
         return (uint8_t)*(_datapt + offset);
     }
 
@@ -411,7 +411,7 @@ public:
      * @return value of the accessed integer.
      **/
     uint16_t PeekInt16(uint32_t offset) {
-        assert(GetDataLen() >= offset + 2);
+        CHECK(GetDataLen() >= offset + 2);
         unsigned char* tmp = (unsigned char*)(_datapt + offset);
         return (uint16_t)((*tmp << 8) + *(tmp + 1));
     }
@@ -425,7 +425,7 @@ public:
      * @return value of the accessed integer.
      **/
     uint16_t PeekInt16Reverse(uint32_t offset) {
-        assert(GetDataLen() >= offset + 2);
+        CHECK(GetDataLen() >= offset + 2);
         unsigned char* tmp = (unsigned char*)(_datapt + offset);
         return (uint16_t)((*(tmp + 1) << 8) + *tmp);
     }
@@ -438,7 +438,7 @@ public:
      * @return value of the accessed integer.
      **/
     uint32_t PeekInt32(uint32_t offset) {
-        assert(GetDataLen() >= offset + 4);
+        CHECK(GetDataLen() >= offset + 4);
         unsigned char* tmp = (unsigned char*)(_datapt + offset);
         return ((((((uint32_t)(*tmp << 8) + *(tmp + 1)) << 8) + *(tmp + 2)) << 8) + *(tmp + 3));
     }
@@ -452,7 +452,7 @@ public:
      * @return value of the accessed integer.
      **/
     uint32_t PeekInt32Reverse(uint32_t offset) {
-        assert(GetDataLen() >= offset + 4);
+        CHECK(GetDataLen() >= offset + 4);
         unsigned char* tmp = (unsigned char*)(_datapt + offset);
         return ((((((uint32_t)(*(tmp + 3) << 8) + *(tmp + 2)) << 8) + *(tmp + 1)) << 8) + *tmp);
     }
@@ -465,7 +465,7 @@ public:
      * @return value of the accessed integer.
      **/
     uint64_t PeekInt64(uint32_t offset) {
-        assert(GetDataLen() >= offset + 8);
+        CHECK(GetDataLen() >= offset + 8);
         unsigned char* tmp = (unsigned char*)(_datapt + offset);
         return ((((((((((((((uint64_t)(*tmp << 8) + *(tmp + 1)) << 8) + *(tmp + 2)) << 8) + *(tmp + 3)) << 8) +
                       *(tmp + 4))
@@ -486,7 +486,7 @@ public:
      * @return value of the accessed integer.
      **/
     uint64_t PeekInt64Reverse(uint32_t offset) {
-        assert(GetDataLen() >= offset + 8);
+        CHECK(GetDataLen() >= offset + 8);
         unsigned char* tmp = (unsigned char*)(_datapt + offset);
         return ((((((((((((((uint64_t)(*(tmp + 7) << 8) + *(tmp + 6)) << 8) + *(tmp + 5)) << 8) + *(tmp + 4)) << 8) +
                       *(tmp + 3))
@@ -548,7 +548,7 @@ public:
      **/
     void PeekBytes(void* dst, uint32_t len, uint32_t offset) {
         if (len != 0) [[likely]] {
-            assert(_freept >= _datapt + offset + len);
+            CHECK(_freept >= _datapt + offset + len);
             memcpy(dst, _datapt + offset, len);
         }
     }
@@ -573,9 +573,9 @@ public:
      * state.
      **/
     void AssertValid() {
-        assert(_bufstart <= _datapt);
-        assert(_datapt <= _freept);
-        assert(_freept <= _bufend);
+        CHECK(_bufstart <= _datapt);
+        CHECK(_datapt <= _freept);
+        CHECK(_freept <= _bufend);
     }
 
     void resetIfEmpty() {

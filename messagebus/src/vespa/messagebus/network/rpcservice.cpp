@@ -4,6 +4,8 @@
 
 #include "rpcnetwork.h"
 
+#include <vespa/check_require.h>
+
 namespace mbus {
 
 RPCService::RPCService(const Mirror& mirror, const string& pattern) : _serviceName(), _connectionSpec() {
@@ -19,7 +21,7 @@ RPCService::RPCService(const Mirror& mirror, const string& pattern) : _serviceNa
     } else {
         Mirror::SpecList addressList = mirror.lookup(pattern);
         if (!addressList.empty()) {
-            assert(addressList.size() == 1); // TODO URGENT remove assert after a few factory runs.
+            CHECK(addressList.size() == 1); // TODO URGENT remove assert after a few factory runs.
             const auto& entry = addressList.front();
             _serviceName = entry.first;
             _connectionSpec = entry.second;

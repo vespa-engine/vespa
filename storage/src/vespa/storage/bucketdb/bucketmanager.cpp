@@ -4,6 +4,7 @@
 
 #include "minimumusedbitstracker.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
@@ -248,7 +249,7 @@ void BucketManager::updateMetrics() const {
         MetricsUpdater m = getMetrics(space.second->bucketDatabase());
         total.add(m);
         auto bm = _metrics->bucket_spaces.find(space.first);
-        assert(bm != _metrics->bucket_spaces.end());
+        CHECK(bm != _metrics->bucket_spaces.end());
         bm->second->buckets_total.set(m.count.buckets);
         bm->second->entries.set(m.count.entries);
         bm->second->docs.set(m.count.docs);
@@ -306,7 +307,7 @@ void BucketManager::run(framework::ThreadHandle& thread) {
         {
             std::unique_lock guard(_workerLock);
             for (const auto& req : infoReqs) {
-                assert(req.second.empty());
+                CHECK(req.second.empty());
             }
             if (!didWork) {
                 _workerCond.wait_for(guard, 1s);
@@ -423,7 +424,7 @@ bool BucketManager::onRequestBucketInfo(const std::shared_ptr<api::RequestBucket
         }
     } else {
         LOG(error, "We don't support fetching bucket info without bucket list or system state");
-        assert(false);
+        CHECK(false);
     }
     _metrics->simpleBucketInfoRequestSize.addValue(info.size());
     auto reply = std::make_shared<api::RequestBucketInfoReply>(*cmd);
@@ -455,7 +456,7 @@ void BucketManager::enterQueueProtectedSection() {
 void BucketManager::leaveQueueProtectedSection(ScopedQueueDispatchGuard& queueGuard) {
     (void)queueGuard; // Only used to enforce guard is held while calling.
     std::lock_guard guard(_queueProcessingLock);
-    assert(_requestsCurrentlyProcessing > 0);
+    CHECK(_requestsCurrentlyProcessing > 0);
     // Full bucket info fetches may be concurrently interleaved with bucket-
     // specific fetches outside of the processing thread. We only allow queued
     // messages to go through once _all_ of these are done, since we do not
@@ -487,11 +488,11 @@ bool BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucke
     std::map<uint16_t, RBISP> requests;
 
     auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
-    assert(clusterStateBundle && clusterStateBundle->has_distribution_config());
+    CHECK(clusterStateBundle && clusterStateBundle->has_distribution_config());
     auto clusterState = clusterStateBundle->getDerivedClusterState(bucketSpace);
-    assert(clusterState);
+    CHECK(clusterState);
     const auto distribution = clusterStateBundle->bucket_space_distribution_or_nullptr(bucketSpace);
-    assert(distribution);
+    CHECK(distribution);
 
     const auto our_hash = distribution->getNodeGraph().getDistributionConfigHash();
 
@@ -503,7 +504,7 @@ bool BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucke
     std::lock_guard clusterStateGuard(_clusterStateLock);
     for (const auto& req : std::ranges::reverse_view(reqs)) {
         // Currently small requests should not be forwarded to worker thread
-        assert(req->hasSystemState());
+        CHECK(req->hasSystemState());
         const auto their_hash = req->getDistributionHash();
 
         std::ostringstream error;

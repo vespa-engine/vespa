@@ -2,12 +2,11 @@
 
 #include "values.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/databuffer.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte.");
 static_assert(sizeof(float) == sizeof(uint32_t), "float must be same size as uint32_t");
@@ -96,8 +95,8 @@ void FRT_Values::DiscardBlobs() {
         FRT_DataValue*   value = ref->_value;
         if (value == nullptr) {
             uint32_t idx = ref->_idx;
-            assert(_numValues > idx);
-            assert(_typeString[idx] == 'x');
+            CHECK(_numValues > idx);
+            CHECK(_typeString[idx] == 'x');
             value = &_values[idx]._data;
         }
         if ((value->_buf == blob->getData()) && (value->_len == blob->getLen())) {
@@ -123,13 +122,13 @@ void FRT_Values::EnsureFree(uint32_t need) {
 
     char* types = (char*)_stash.alloc(cnt + 1);
     if (_numValues > 0) {
-        assert(_typeString != nullptr);
+        CHECK(_typeString != nullptr);
         memcpy(types, _typeString, _numValues);
     }
     memset(types + _numValues, FRT_VALUE_NONE, cnt + 1 - _numValues);
     FRT_Value* values = (FRT_Value*)(void*)_stash.alloc(cnt * sizeof(FRT_Value));
     if (_numValues > 0) {
-        assert(_values != nullptr);
+        CHECK(_values != nullptr);
         memcpy(values, _values, _numValues * sizeof(FRT_Value));
     }
     _maxValues = cnt;
@@ -452,7 +451,7 @@ uint32_t FRT_Values::GetLength() {
         } break;
 
         default:
-            assert(false);
+            CHECK(false);
         }
     }
     return len;
@@ -1448,7 +1447,7 @@ void FRT_Values::EncodeCopy(FNET_DataBuffer* dst) {
         } break;
 
         default:
-            assert(false);
+            CHECK(false);
         }
     }
 }
@@ -1582,7 +1581,7 @@ void FRT_Values::EncodeBig(FNET_DataBuffer* dst) {
         } break;
 
         default:
-            assert(false);
+            CHECK(false);
         }
     }
 }
@@ -1733,7 +1732,7 @@ void FRT_Values::Print(FRT_Value value, uint32_t type, uint32_t indent) {
     } break;
 
     default:
-        assert(false);
+        CHECK(false);
     }
 }
 

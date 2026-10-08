@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/newconfigbuilder.h>
@@ -804,7 +805,7 @@ TEST_F(IndexManagerTest, require_that_compact_lid_space_works) {
 template <typename IndexType> IndexType* as_index_type(const IIndexCollection& col, uint32_t source_id) {
     auto& searchable = col.getSearchable(source_id);
     auto* result = dynamic_cast<IndexType*>(&searchable);
-    assert(result != nullptr);
+    CHECK(result != nullptr);
     return result;
 }
 

@@ -2,9 +2,8 @@
 
 #include "crypto_codec_adapter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
-
-#include <assert.h>
 
 namespace vespalib::net::tls {
 
@@ -154,7 +153,7 @@ ssize_t CryptoCodecAdapter::flush() {
             _output.evict(res);
             return 1; // progress
         } else {
-            assert(res < 0);
+            CHECK(res < 0);
             return -1; // error
         }
     }

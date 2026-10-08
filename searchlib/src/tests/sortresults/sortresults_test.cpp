@@ -1,9 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/sortresults.h>
-
-#include <cassert>
 
 using search::RankedHit;
 
@@ -30,7 +29,7 @@ bool test_sort(unsigned int caseNum, unsigned int n, unsigned int ntop) {
     }
 
     array = new RankedHit[n];
-    assert(array != nullptr);
+    CHECK(array != nullptr);
 
     for (i = 0; i < n; i++) {
         array[i]._docId = i;

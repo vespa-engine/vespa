@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/attribute/numeric_sort_blob_writer.h>
@@ -37,7 +38,7 @@ template <typename T, bool asc> SortData serialized_numeric(std::optional<unsign
         s[0] = prefix.value();
     }
     auto ret = vespalib::serializeForSort<vespalib::convertForSort<T, asc>>(value, s.data() + plen, s.size() - plen);
-    assert(size_t(ret) == s.size() - plen);
+    CHECK(size_t(ret) == s.size() - plen);
     return s;
 }
 
@@ -161,7 +162,7 @@ template <typename T> SortData sort_data(std::vector<T> values, bool asc) {
 }
 
 SortData switch_sort_order(SortData value) {
-    assert(value.size() >= 1);
+    CHECK(value.size() >= 1);
     std::span<const unsigned char> src(value.data() + 1, value.size() - 1);
     SortData                       s;
     s.reserve(src.size() + 1);

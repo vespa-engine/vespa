@@ -2,6 +2,7 @@
 
 #include "model.cpp"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/gbdt.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
@@ -167,9 +168,9 @@ double expected_path(const ForestParams& params, size_t num_trees) {
 
 void explore_segment(const ForestParams& params, const std::vector<Option>& min_order,
                      const std::vector<Option>& max_order, size_t min_trees, size_t max_trees, Plan& plan_out) {
-    assert(min_trees != max_trees);
+    CHECK(min_trees != max_trees);
     std::vector<Option> options = keep_contested(min_order, max_order);
-    assert(!options.empty());
+    CHECK(!options.empty());
     if (options.size() == 1) {
         plan_out.add(Segment{expected_path(params, min_trees), options[0]});
     } else {

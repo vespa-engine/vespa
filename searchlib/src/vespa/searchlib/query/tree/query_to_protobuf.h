@@ -10,11 +10,10 @@
 #include "weighted_integer_term_vector.h"
 #include "weighted_string_term_vector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <vespa/searchlib/query/numeric_range_spec.h>
-
-#include <cassert>
 
 namespace search::query {
 
@@ -33,7 +32,7 @@ public:
         ProtoQueryTree tree;
         _item_stack.push_back(tree.mutable_root());
         const_cast<Node&>(node).accept(*this);
-        assert(_item_stack.size() == 1);
+        CHECK(_item_stack.size() == 1);
         return tree;
     }
 
@@ -178,7 +177,7 @@ private:
             }
             break;
         case MultiTerm::Type::UNKNOWN:
-            assert(num_terms == 0);
+            CHECK(num_terms == 0);
             break;
         }
     }

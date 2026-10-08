@@ -2,7 +2,7 @@
 
 #include "pendinglidtracker.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton {
 
@@ -30,7 +30,7 @@ ILidCommitState::State PendingLidTrackerBase::waitState(State state, const LidLi
 PendingLidTracker::PendingLidTracker() = default;
 
 PendingLidTracker::~PendingLidTracker() {
-    assert(_pending.empty());
+    CHECK(_pending.empty());
 }
 
 IPendingLidTracker::Token PendingLidTracker::produce(uint32_t lid) {
@@ -41,8 +41,8 @@ IPendingLidTracker::Token PendingLidTracker::produce(uint32_t lid) {
 void PendingLidTracker::consume(uint32_t lid) {
     std::lock_guard guard(_mutex);
     auto            found = _pending.find(lid);
-    assert(found != _pending.end());
-    assert(found->second > 0);
+    CHECK(found != _pending.end());
+    CHECK(found->second > 0);
     if (found->second == 1) {
         _pending.erase(found);
         _cond.notify_all();

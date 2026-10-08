@@ -2,11 +2,10 @@
 
 #include "indexenvironment.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/i_ranking_assets_repo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/vespalib/stllike/hash_set.h>
-
-#include <cassert>
 
 using namespace search::fef;
 
@@ -29,7 +28,7 @@ bool IndexEnvironment::addField(const std::string& name, bool isAttribute,
                                 search::fef::FieldInfo::DataType data_type) {
     // The empty name belongs to the "no field" held first in _fields, which is
     // not registered in _fieldNames and thus escapes the duplicate check below.
-    assert(!name.empty());
+    CHECK(!name.empty());
     if (getFieldByName(name) != nullptr) {
         return false;
     }

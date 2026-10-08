@@ -7,6 +7,7 @@
 #include "search_protocol_proto.h"
 #include "searchapi.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -75,7 +76,7 @@ template <typename MSG> bool decode_message(const FRT_Values& src, MSG& dst) {
     DataBuffer     uncompressed(src[2]._data._buf, src[2]._data._len);
     ConstBufferRef blob(src[2]._data._buf, src[2]._data._len);
     decompress(CompressionConfig::toType(encoding), uncompressed_size, blob, uncompressed, true);
-    assert(uncompressed_size == uncompressed.getDataLen());
+    CHECK(uncompressed_size == uncompressed.getDataLen());
     return dst.ParseFromArray(uncompressed.getData(), uncompressed.getDataLen());
 }
 

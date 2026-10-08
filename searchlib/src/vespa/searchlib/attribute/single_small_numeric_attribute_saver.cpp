@@ -2,10 +2,9 @@
 
 #include "single_small_numeric_attribute_saver.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/searchlib/util/bufferwriter.h>
-
-#include <cassert>
 
 using vespalib::GenerationGuard;
 namespace search::attribute {
@@ -19,7 +18,7 @@ SingleSmallNumericAttributeSaver::~SingleSmallNumericAttributeSaver() = default;
 
 bool SingleSmallNumericAttributeSaver::onSave(IAttributeSaveTarget& saveTarget) {
     std::unique_ptr<search::BufferWriter> writer(saveTarget.datWriter().allocBufferWriter());
-    assert(!saveTarget.getEnumerated());
+    CHECK(!saveTarget.getEnumerated());
     writer->write(&_num_docs, sizeof(_num_docs));
     if (!_word_data.empty()) {
         writer->write(_word_data.data(), sizeof(uint32_t) * _word_data.size());

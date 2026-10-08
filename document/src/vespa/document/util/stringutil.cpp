@@ -10,11 +10,11 @@
 
 #include "stringutil.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <algorithm>
-#include <cassert>
 #include <iomanip>
 #include <sstream>
 #include <vector>
@@ -182,7 +182,7 @@ std::string StringUtil::unescape(std::string_view source) {
 
 void StringUtil::printAsHex(std::ostream& output, const void* source, unsigned int size, unsigned int columnwidth,
                             bool inlinePrintables, const std::string& indent) {
-    assert(columnwidth > 0);
+    CHECK(columnwidth > 0);
     unsigned char wildChar = '.';
     const auto*   start = reinterpret_cast<const unsigned char*>(source);
     uint32_t      posWidth = 1;

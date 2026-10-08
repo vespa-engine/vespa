@@ -4,10 +4,10 @@
 
 #include "queryparser.h"
 
+#include <vespa/check_require.h>
 #include <vespa/juniper/juniperdebug.h>
 #include <vespa/juniper/query_item.h>
 
-#include <cassert>
 #include <cstdlib>
 #include <vector>
 
@@ -137,7 +137,7 @@ QueryParser::~QueryParser() = default;
 
 void QueryParser::trav(QueryItem* e_abstract) const {
     auto e = dynamic_cast<QueryParserQueryItem*>(e_abstract);
-    assert(e != nullptr);
+    CHECK(e != nullptr);
     if (e->arity() == 0) {
         _v->visitKeyword(e, e->_name, e->_prefix, false);
     }

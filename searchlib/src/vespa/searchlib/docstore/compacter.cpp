@@ -4,11 +4,10 @@
 
 #include "logdatastore.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/vespalib/util/array.hpp>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docstore.compacter");
@@ -65,7 +64,7 @@ size_t BucketIndexStore::getBucketCount() const noexcept {
 }
 
 std::unique_ptr<StoreByBucket::IndexIterator> BucketIndexStore::createIterator(uint32_t partitionId) const {
-    assert(_readyForIterate);
+    CHECK(_readyForIterate);
     return std::make_unique<LidIterator>(*this, partitionId);
 }
 

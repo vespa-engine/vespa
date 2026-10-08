@@ -4,8 +4,9 @@
 
 #include "detached_rpc_requests_owner.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 
 #include <vespa/log/log.h>
 
@@ -62,7 +63,7 @@ void SetFlushStrategyRpcHandler::setup() {
 
 std::future<void> SetFlushStrategyRpcHandler::owner_aborted() {
     auto self = shared_from_this();
-    assert(self);
+    CHECK(self);
     LOG(debug, "PrepareRestart2Handler::owner_aborted");
     auto future = _promise.get_future();
     if (set_complete(Completed::owner_aborted)) {
@@ -75,7 +76,7 @@ std::future<void> SetFlushStrategyRpcHandler::owner_aborted() {
 
 void SetFlushStrategyRpcHandler::set_strategy_id(uint32_t strategy_id) {
     auto self = shared_from_this();
-    assert(self);
+    CHECK(self);
     {
         std::lock_guard guard(_lock);
         LOG(debug, "PrepareRestart2Handler::set_strategy_id(%u), _strategy_id=%u, _wait_strategy_id=%u", strategy_id,
@@ -100,7 +101,7 @@ void SetFlushStrategyRpcHandler::set_strategy_id(uint32_t strategy_id) {
 
 void SetFlushStrategyRpcHandler::notifier_closed() {
     auto self = shared_from_this();
-    assert(self);
+    CHECK(self);
     LOG(debug, "PrepareRestart2Handler::notifier_close");
     if (set_complete(Completed::notifier_closed)) {
         Kill();
@@ -111,7 +112,7 @@ void SetFlushStrategyRpcHandler::notifier_closed() {
 
 void SetFlushStrategyRpcHandler::PerformTask() {
     auto self = shared_from_this();
-    assert(self);
+    CHECK(self);
     auto   now = std::chrono::steady_clock::now();
     auto   elapsed = now - _start_time;
     double elapsed_s = duration_cast<std::chrono::duration<double>>(elapsed).count();

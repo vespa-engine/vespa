@@ -5,6 +5,7 @@
 #include "attribute_directory.h"
 #include "attributedisklayout.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
@@ -70,7 +71,7 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute& fattr, SerialNum syncTo
     // Called by attribute field writer executor
     _flushFile = _writer->getSnapshotDir(_syncToken) + "/" + attr.getName();
     _saver = attr.initSave(_flushFile);
-    assert(_saver);
+    CHECK(_saver);
 }
 
 FlushableAttribute::Flusher::~Flusher() = default;
@@ -80,7 +81,7 @@ bool FlushableAttribute::Flusher::saveAttribute() {
     SerialNumFileHeaderContext fileHeaderContext(_fattr._fileHeaderContext, _syncToken);
     bool                       saveSuccess = true;
     auto                       create_time = std::chrono::steady_clock::now();
-    assert(_saver);
+    CHECK(_saver);
     if (_saver->hasGenerationGuard() && _fattr._hwInfo.disk().slow()) {
         saveSuccess = _saver->save(_saveTarget);
         _saver.reset();

@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/config.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <ostream>
 #include <span>
 
@@ -50,7 +50,7 @@ public:
     [[nodiscard]] constexpr uint8_t last_cost() const noexcept { return costs[sz - 1]; }
 
     void append(uint32_t index, uint8_t cost) noexcept {
-        assert(sz < diag(MaxEdits));
+        CHECK(sz < diag(MaxEdits));
         indices[sz] = index;
         costs[sz] = cost;
         ++sz;
@@ -123,7 +123,7 @@ template <uint8_t MaxEdits> struct FixedMaxEditsTransitions {
 
     void add_char(uint32_t u32ch) noexcept {
         if (!has_char(u32ch)) {
-            assert(size < diag(MaxEdits));
+            CHECK(size < diag(MaxEdits));
             out_u32_chars[size] = u32ch;
             ++size;
         }

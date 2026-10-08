@@ -2,13 +2,13 @@
 
 #include "storagemessage.h"
 
+#include <vespa/check_require.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <atomic>
-#include <cassert>
 #include <sstream>
 
 namespace storage::api {
@@ -139,7 +139,7 @@ MessageType::MessageType(std::string_view name, Id id, const MessageType* replyO
     : _name(name), _id(id), _reply(nullptr), _replyOf(replyOf) {
     _codes[id] = this;
     if (_replyOf) {
-        assert(_replyOf->_reply == nullptr);
+        CHECK(_replyOf->_reply == nullptr);
         // Ugly cast to let initialization work
         auto& type = const_cast<MessageType&>(*_replyOf);
         type._reply = this;

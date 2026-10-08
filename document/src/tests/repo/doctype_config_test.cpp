@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for documenttyperepo.
 
+#include <vespa/check_require.h>
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/datatype/annotationreferencedatatype.h>
@@ -75,7 +76,7 @@ private:
         pt.idx = ++_idx;
         pt.name = name;
         doc.primitivetype.push_back(pt);
-        assert(t < _idxOfBuiltins.size());
+        CHECK(t < _idxOfBuiltins.size());
         _idxOfBuiltins[t] = pt.idx;
         LOG(debug, "idx of builtin (%d) = %d", (int)t, pt.idx);
     }
@@ -190,7 +191,7 @@ public:
         if (t == DataType::T_DOCUMENT) {
             return _config.doctype[0].idx;
         }
-        assert(t < _idxOfBuiltins.size());
+        CHECK(t < _idxOfBuiltins.size());
         LOG(debug, "lookup builtin %d -> %d", (int)t, _idxOfBuiltins[t]);
         return _idxOfBuiltins[t];
     }

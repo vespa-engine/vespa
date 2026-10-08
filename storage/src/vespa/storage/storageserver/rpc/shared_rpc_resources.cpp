@@ -3,6 +3,7 @@
 
 #include "rpc_target.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/transport.h>
@@ -12,7 +13,6 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <chrono>
 #include <thread>
 
@@ -102,7 +102,7 @@ void SharedRpcResources::sync_all_threads() {
 }
 
 void SharedRpcResources::shutdown() {
-    assert(!_shutdown);
+    CHECK(!_shutdown);
     if (listen_port() > 0) {
         _slobrok_register->unregisterName(_handle);
         // Give slobrok some time to dispatch unregister RPC

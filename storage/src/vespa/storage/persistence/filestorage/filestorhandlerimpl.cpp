@@ -5,6 +5,7 @@
 #include "filestormetrics.h"
 #include "mergestatus.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/common/statusmessages.h>
@@ -71,7 +72,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(
       _throttle_apply_bucket_diff_ops(false),
       _last_active_operations_stats(),
       _max_feed_op_batch_size(1) {
-    assert(numStripes > 0);
+    CHECK(numStripes > 0);
     _stripes.reserve(numStripes);
     for (size_t i(0); i < numStripes; i++) {
         _stripes.emplace_back(*this, sender);
@@ -138,7 +139,7 @@ void FileStorHandlerImpl::clearMergeStatus(const document::Bucket& bucket, const
     }
     if (code != nullptr) {
         std::shared_ptr<MergeStatus> statusPtr(it->second);
-        assert(statusPtr.get());
+        CHECK(statusPtr.get());
         MergeStatus& status(*statusPtr);
         if (status.reply.get()) {
             status.reply->setResult(*code);
@@ -370,7 +371,7 @@ bool FileStorHandlerImpl::messageTimedOutInQueue(const api::StorageMessage& msg,
 }
 
 std::unique_ptr<api::StorageReply> FileStorHandlerImpl::makeQueueTimeoutReply(api::StorageMessage& msg) {
-    assert(!msg.getType().isReply());
+    CHECK(!msg.getType().isReply());
     std::unique_ptr<api::StorageReply> msgReply = static_cast<api::StorageCommand&>(msg).makeReply();
     msgReply->setResult(api::ReturnCode(api::ReturnCode::TIMEOUT, "Message waited too long in storage queue"));
     return msgReply;
@@ -394,7 +395,7 @@ FileStorHandler::LockedMessageBatch FileStorHandlerImpl::next_message_batch(uint
 }
 
 FileStorHandler::LockedMessage FileStorHandlerImpl::LockedMessageBatch::release_as_single_msg() noexcept {
-    assert(lock && messages.size() == 1);
+    CHECK(lock && messages.size() == 1);
     return {std::move(lock), std::move(messages[0].first), std::move(messages[0].second)};
 }
 
@@ -533,7 +534,7 @@ document::Bucket FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, con
                             returnCode = api::ReturnCode(api::ReturnCode::REJECTED, ost.str());
                         } else {
                             std::ostringstream ost;
-                            assert(targets.size() == 2);
+                            CHECK(targets.size() == 2);
                             ost << "Bucket " << source.getBucketId() << " was split and "
                                 << "neither bucket " << targets[0]->bucket.getBucketId() << " nor "
                                 << targets[1]->bucket.getBucketId() << " fit for this operation. "
@@ -690,7 +691,7 @@ void FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<
 
     // Find all the messages for the given bucket.
     for (BucketIdxView::iterator i = range.first; i != range.second; ++i) {
-        assert(i->_bucket == source.bucket);
+        CHECK(i->_bucket == source.bucket);
         MessageEntry& entry = *i;
         entriesFound.push_back(std::move(entry));
     }
@@ -707,7 +708,7 @@ void FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<
         // If not OK, reply to this message with the following message
         api::ReturnCode      returnCode(api::ReturnCode::OK);
         api::StorageMessage& msg(*entry._command);
-        assert(entry._bucket == source.bucket);
+        CHECK(entry._bucket == source.bucket);
 
         document::Bucket bucket = remapMessage(msg, source.bucket, op, targets, returnCode);
 
@@ -724,9 +725,9 @@ void FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<
         } else {
             entry._bucket = bucket;
             // Move to correct disk queue if needed
-            assert(bucket == source.bucket || std::find_if(targets.begin(), targets.end(), [bucket](auto* e) {
-                                                  return e->bucket == bucket;
-                                              }) != targets.end());
+            CHECK(bucket == source.bucket || std::find_if(targets.begin(), targets.end(), [bucket](auto* e) {
+                                                 return e->bucket == bucket;
+                                             }) != targets.end());
             stripe(bucket).queue_emplace(std::move(entry));
         }
     }
@@ -985,8 +986,8 @@ FileStorHandler::LockedMessageBatch FileStorHandlerImpl::Stripe::next_message_ba
 
 void FileStorHandlerImpl::Stripe::fill_feed_op_batch(monitor_guard& guard, LockedMessageBatch& batch,
                                                      uint32_t max_batch_size, vespalib::steady_time now) {
-    assert(batch.size() == 1);
-    assert(guard.owns_lock());
+    CHECK(batch.size() == 1);
+    CHECK(guard.owns_lock());
     BucketIdxView idx = exposeBucketIdxView();
     auto          bucket_msgs = idx.equal_range(batch.lock->getBucket());
     // Process in FIFO order (_not_ priority order) until we hit the end, a non-batchable operation
@@ -1181,24 +1182,24 @@ void FileStorHandlerImpl::Stripe::release(const document::Bucket& bucket, api::L
                                           api::StorageMessage::Id lockMsgId, bool was_active_maintenance) {
     std::unique_lock guard(*_lock);
     auto             iter = _lockedBuckets.find(bucket);
-    assert(iter != _lockedBuckets.end());
+    CHECK(iter != _lockedBuckets.end());
     auto&             entry = iter->second;
     Clock::time_point start_time;
     bool              wasExclusive = (reqOfReleasedLock == api::LockingRequirements::Exclusive);
 
     if (wasExclusive) {
-        assert(entry._exclusiveLock);
-        assert(entry._exclusiveLock->msgId == lockMsgId);
+        CHECK(entry._exclusiveLock);
+        CHECK(entry._exclusiveLock->msgId == lockMsgId);
         if (was_active_maintenance) {
-            assert(_active_maintenance_ops > 0);
+            CHECK(_active_maintenance_ops > 0);
             --_active_maintenance_ops;
         }
         start_time = entry._exclusiveLock.value().timestamp;
         entry._exclusiveLock.reset();
     } else {
-        assert(!entry._exclusiveLock && !was_active_maintenance);
+        CHECK(!entry._exclusiveLock && !was_active_maintenance);
         auto shared_iter = entry._sharedLocks.find(lockMsgId);
-        assert(shared_iter != entry._sharedLocks.end());
+        CHECK(shared_iter != entry._sharedLocks.end());
         start_time = shared_iter->second.timestamp;
         entry._sharedLocks.erase(shared_iter);
     }
@@ -1218,7 +1219,7 @@ void FileStorHandlerImpl::Stripe::release(const document::Bucket& bucket, api::L
 
 void FileStorHandlerImpl::Stripe::decrease_active_sync_maintenance_counter() noexcept {
     std::unique_lock guard(*_lock);
-    assert(_active_maintenance_ops > 0);
+    CHECK(_active_maintenance_ops > 0);
     const bool may_have_blocked_maintenance =
         (_active_maintenance_ops == _owner._max_active_maintenance_ops_per_stripe);
     --_active_maintenance_ops;
@@ -1231,9 +1232,9 @@ void FileStorHandlerImpl::Stripe::lock(const monitor_guard&, const document::Buc
                                        api::LockingRequirements lockReq, bool count_as_active_maintenance,
                                        const LockEntry& lockEntry) {
     auto& entry = _lockedBuckets[bucket];
-    assert(!entry._exclusiveLock);
+    CHECK(!entry._exclusiveLock);
     if (lockReq == api::LockingRequirements::Exclusive) {
-        assert(entry._sharedLocks.empty());
+        CHECK(entry._sharedLocks.empty());
         if (count_as_active_maintenance) {
             ++_active_maintenance_ops;
         }
@@ -1242,7 +1243,7 @@ void FileStorHandlerImpl::Stripe::lock(const monitor_guard&, const document::Buc
         // TODO use a hash set with a custom comparator/hasher instead...?
         auto inserted = entry._sharedLocks.insert(std::make_pair(lockEntry.msgId, lockEntry));
         (void)inserted;
-        assert(inserted.second);
+        CHECK(inserted.second);
     }
     _active_operations_stats.guard().stats().operation_started();
 }

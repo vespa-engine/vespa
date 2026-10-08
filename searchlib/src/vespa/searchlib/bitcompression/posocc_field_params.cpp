@@ -2,12 +2,11 @@
 
 #include "posocc_field_params.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".posocc_field_params");
@@ -89,7 +88,7 @@ void PosOccFieldParams::setParams(const PostingListParams& params, uint32_t idx)
 }
 
 void PosOccFieldParams::setSchemaParams(const Schema& schema, uint32_t fieldId) {
-    assert(fieldId < schema.getNumIndexFields());
+    CHECK(fieldId < schema.getNumIndexFields());
     const Schema::IndexField& field = schema.getIndexField(fieldId);
     switch (field.getCollectionType()) {
     case schema::CollectionType::SINGLE:

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mock_tickable_stripe.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/time.h>
@@ -57,7 +58,7 @@ struct ParkingInvariantCheckingMockStripe : MockTickableStripe {
 
     bool tick() override {
         std::this_thread::sleep_for(50us);
-        assert(!_is_parked.load());
+        CHECK(!_is_parked.load());
         // Alternate between returning whether or not work was done to trigger
         // both waiting and non-waiting edges. Note that this depends on the
         // ticks_before_wait value being 0.

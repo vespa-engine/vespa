@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "scheduledexecutor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/task.h>
 #include <vespa/fnet/transport.h>
@@ -52,7 +53,7 @@ ScheduledExecutor::ScheduledExecutor(FNET_Transport& transport)
 
 ScheduledExecutor::~ScheduledExecutor() {
     std::lock_guard guard(_lock);
-    assert(_taskList.empty());
+    CHECK(_taskList.empty());
 }
 
 IScheduledExecutor::Handle ScheduledExecutor::scheduleAtFixedRate(Executor::Task::UP task, duration delay,

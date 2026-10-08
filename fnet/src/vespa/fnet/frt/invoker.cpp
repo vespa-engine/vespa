@@ -4,6 +4,7 @@
 
 #include "supervisor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/channel.h>
 
 #include <vespa/log/log.h>
@@ -101,7 +102,7 @@ void FRT_HookInvoker::Invoke() {
     bool detached = false;
     _req->SetDetachedPT(&detached);
     (_hook->GetHandler()->*_hook->GetMethod())(_req);
-    assert(!detached);
+    CHECK(!detached);
     _req->internal_subref();
 }
 

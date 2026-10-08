@@ -5,6 +5,8 @@
 #include "bufferstate.h"
 #include "free_list_allocator.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::datastore {
 
 template <typename EntryT, typename RefT, typename ReclaimerT>
@@ -57,7 +59,7 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(ConstArrayRef array) {
     }
     RefT  ref = free_list.pop_entry();
     auto& state = _store.getBufferState(ref.bufferId());
-    assert(state.getArraySize() == array.size());
+    CHECK(state.getArraySize() == array.size());
     EntryT* buf = _store.template getEntryArray<EntryT>(ref, array.size());
     for (size_t i = 0; i < array.size(); ++i) {
         *(buf + i) = array[i];
@@ -87,7 +89,7 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::alloc_dynamic_array(ConstArrayRef a
         return ParentType::template alloc_dynamic_array<BufferType>(array);
     }
     RefT ref = free_list.pop_entry();
-    assert(_store.getBufferState(ref.bufferId()).getArraySize() >= array.size());
+    CHECK(_store.getBufferState(ref.bufferId()).getArraySize() >= array.size());
     auto    entry_size = _store.get_entry_size(_typeId);
     EntryT* buf = BufferType::get_entry(_store.getBuffer(ref.bufferId()), ref.offset(), entry_size);
     for (size_t i = 0; i < array.size(); ++i) {

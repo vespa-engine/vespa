@@ -1,10 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "dummystoragelink.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-#include <cassert>
 
 namespace storage {
 
@@ -83,7 +82,7 @@ bool DummyStorageLink::onUp(const api::StorageMessage::SP& reply) {
 }
 
 void DummyStorageLink::injectReply(api::StorageReply* reply) {
-    assert(reply);
+    CHECK(reply);
     std::lock_guard guard(_lock);
     _injected.push_back(std::shared_ptr<api::StorageReply>(reply));
 }

@@ -2,12 +2,11 @@
 
 #include "multi_value_mapping_base.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 
 #include <vespa/vespalib/util/array.hpp>
-
-#include <cassert>
 
 namespace search::attribute {
 
@@ -35,13 +34,13 @@ void MultiValueMappingBase::reserve(uint32_t lidLimit) {
 }
 
 void MultiValueMappingBase::shrink(uint32_t docIdLimit) {
-    assert(docIdLimit < _indices.size());
+    CHECK(docIdLimit < _indices.size());
     _indices.shrink(docIdLimit);
 }
 
 void MultiValueMappingBase::clearDocs(uint32_t lidLow, uint32_t lidLimit, std::function<void(uint32_t)> clearDoc) {
-    assert(lidLow <= lidLimit);
-    assert(lidLimit <= _indices.size());
+    CHECK(lidLow <= lidLimit);
+    CHECK(lidLimit <= _indices.size());
     for (uint32_t lid = lidLow; lid < lidLimit; ++lid) {
         if (_indices[lid].load_relaxed().valid()) {
             clearDoc(lid);

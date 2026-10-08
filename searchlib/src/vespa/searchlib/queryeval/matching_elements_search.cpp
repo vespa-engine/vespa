@@ -2,6 +2,7 @@
 
 #include "matching_elements_search.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/attribute/integerbase.h>
@@ -74,7 +75,7 @@ FilterMatchingElementsSearch<BufferType, AttributeType>::FilterMatchingElementsS
     std::span<const IDirectPostingStore::LookupResult> dict_entries)
     : _attr(dynamic_cast<const AttributeType&>(attr)), _field_name(field_name), _content(), _matches() {
     auto dwa = attr.as_docid_with_weight_posting_store();
-    assert(dwa != nullptr);
+    CHECK(dwa != nullptr);
     auto callback = [this](EntryRef folded) { _matches.insert(get_from_enum(_attr, folded)); };
     for (auto& entry : dict_entries) {
         if (entry.enum_idx.valid()) {

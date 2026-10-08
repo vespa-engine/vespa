@@ -5,6 +5,7 @@
 #include "constant_tensor_executor.h"
 #include "distance_calculator_bundle.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
@@ -40,7 +41,7 @@ namespace {
 
 struct SetIdentity {
     template <typename T> static void invoke(void* space, size_t size) {
-        assert(size == sizeof(T));
+        CHECK(size == sizeof(T));
         *(T*)space = 1.0;
     }
 };
@@ -220,7 +221,7 @@ bool ClosestBlueprint::setup(const fef::IIndexEnvironment& env, const fef::Param
         _item_label = params[1].getValue();
     }
     auto fi = env.getFieldByName(_field_name);
-    assert(fi != nullptr);
+    CHECK(fi != nullptr);
     std::string attr_type_spec = type::Attribute::lookup(env.getProperties(), _field_name);
     if (attr_type_spec.empty()) {
         LOG(error, "%s: Field %s lacks a type in index properties", getName().c_str(), _field_name.c_str());
@@ -236,7 +237,7 @@ bool ClosestBlueprint::setup(const fef::IIndexEnvironment& env, const fef::Param
     }
     _output_tensor_type =
         ValueType::make_type(_field_tensor_type.cell_type(), _field_tensor_type.mapped_dimensions());
-    assert(!_output_tensor_type.is_double());
+    CHECK(!_output_tensor_type.is_double());
     FeatureType output_type = FeatureType::object(_output_tensor_type);
     describeOutput("out", "The closest tensor subspace.", output_type);
     _field_id = fi->id();

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "routable_factories_8.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -198,7 +199,7 @@ public:
         }
 
         const auto sz = proto_obj->ByteSizeLong();
-        assert(sz <= INT32_MAX);
+        CHECK(sz <= INT32_MAX);
         auto* buf = reinterpret_cast<uint8_t*>(out.allocate(sz));
         return proto_obj->SerializeWithCachedSizesToArray(buf);
     }
@@ -207,7 +208,7 @@ public:
         ::google::protobuf::Arena arena;
         auto*                     proto_obj = ::google::protobuf::Arena::Create<ProtobufType>(&arena);
         const auto                buf_size = in.getRemaining();
-        assert(buf_size <= INT_MAX);
+        CHECK(buf_size <= INT_MAX);
         bool ok = proto_obj->ParseFromArray(in.getBufferAtPos(), buf_size);
         if (!ok) [[unlikely]] {
             return {}; // Malformed protobuf payload. Caller is expected to log an error.
@@ -454,7 +455,7 @@ namespace {
 
 void set_bucket_id_vector(::google::protobuf::RepeatedPtrField<protobuf::BucketId>& dest,
                           const std::vector<document::BucketId>&                    src) {
-    assert(src.size() <= INT_MAX);
+    CHECK(src.size() <= INT_MAX);
     dest.Reserve(static_cast<int>(src.size()));
     for (const auto& bucket_id : src) {
         set_bucket_id(*dest.Add(), bucket_id);
@@ -473,7 +474,7 @@ get_bucket_id_vector(const ::google::protobuf::RepeatedPtrField<protobuf::Bucket
 
 void set_visitor_params(::google::protobuf::RepeatedPtrField<protobuf::VisitorParameter>& dest,
                         const vdslib::Parameters&                                         src) {
-    assert(src.size() <= INT_MAX);
+    CHECK(src.size() <= INT_MAX);
     dest.Reserve(static_cast<int>(src.size()));
     for (const auto& kv : src) {
         auto* proto_kv = dest.Add();
@@ -625,7 +626,7 @@ void set_search_result(protobuf::SearchResult& dest, const vdslib::SearchResult&
     // We treat these as opaque blobs for now. Should ideally be protobuf as well.
     vespalib::GrowableByteBuffer buf;
     src.serialize(buf);
-    assert(buf.position() <= INT_MAX);
+    CHECK(buf.position() <= INT_MAX);
     dest.set_payload(buf.getBuffer(), buf.position());
 }
 
@@ -633,12 +634,12 @@ void set_document_summary(protobuf::DocumentSummary& dest, const vdslib::Documen
     // We treat these as opaque blobs for now. Should ideally be protobuf as well.
     vespalib::GrowableByteBuffer buf;
     src.serialize(buf);
-    assert(buf.position() <= INT_MAX);
+    CHECK(buf.position() <= INT_MAX);
     dest.set_payload(buf.getBuffer(), buf.position());
 }
 
 document::ByteBuffer wrap_as_buffer(std::string_view buf) {
-    assert(buf.size() <= UINT32_MAX);
+    CHECK(buf.size() <= UINT32_MAX);
     return {buf.data(), static_cast<uint32_t>(buf.size())};
 }
 
@@ -794,7 +795,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_bucket_list_reply_fac
     return make_codec<GetBucketListReply, protobuf::GetBucketListResponse>(
         [](const GetBucketListReply& src, protobuf::GetBucketListResponse& dest) {
             auto* proto_info = dest.mutable_bucket_info();
-            assert(src.getBuckets().size() <= INT_MAX);
+            CHECK(src.getBuckets().size() <= INT_MAX);
             proto_info->Reserve(static_cast<int>(src.getBuckets().size()));
             for (const auto& info : src.getBuckets()) {
                 auto* entry = proto_info->Add();
@@ -833,7 +834,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_bucket_state_message_
 std::shared_ptr<IRoutableFactory> RoutableFactories80::get_bucket_state_reply_factory() {
     return make_codec<GetBucketStateReply, protobuf::GetBucketStateResponse>(
         [](const GetBucketStateReply& src, protobuf::GetBucketStateResponse& dest) {
-            assert(src.getBucketState().size() <= INT_MAX);
+            CHECK(src.getBucketState().size() <= INT_MAX);
             auto* proto_states = dest.mutable_states();
             proto_states->Reserve(static_cast<int>(src.getBucketState().size()));
             for (const auto& state : src.getBucketState()) {

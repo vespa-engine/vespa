@@ -4,6 +4,7 @@
 
 #include "i_store.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 
 namespace proton::documentmetastore {
@@ -15,18 +16,18 @@ LidReuseDelayer::LidReuseDelayer(IThreadingService& writeService, IStore& docume
 }
 
 LidReuseDelayer::~LidReuseDelayer() {
-    assert(_pendingLids.empty());
+    CHECK(_pendingLids.empty());
 }
 
 void LidReuseDelayer::delayReuse(uint32_t lid) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     if (_documentMetaStore.getFreeListActive()) {
         _pendingLids.push_back(lid);
     }
 }
 
 void LidReuseDelayer::delayReuse(const std::vector<uint32_t>& lids) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     if (_documentMetaStore.getFreeListActive() && !lids.empty()) {
         _pendingLids.insert(_pendingLids.end(), lids.cbegin(), lids.cend());
     }
@@ -34,7 +35,7 @@ void LidReuseDelayer::delayReuse(const std::vector<uint32_t>& lids) {
 
 std::vector<uint32_t> LidReuseDelayer::getReuseLids() {
     std::vector<uint32_t> result;
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     result = _pendingLids;
     _pendingLids.clear();
     return result;

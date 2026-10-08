@@ -2,7 +2,7 @@
 
 #include "sync_crypto_socket.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 
@@ -76,7 +76,7 @@ ssize_t SyncCryptoSocket::write(const char* buf, size_t len) {
     size_t written = 0;
     while (written < len) {
         auto write_res = _socket->write(buf + written, len - written);
-        assert(write_res != 0);
+        CHECK(write_res != 0);
         if (write_res > 0) {
             written += write_res;
         } else if (!is_blocked(write_res, errno)) {

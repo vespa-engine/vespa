@@ -4,6 +4,8 @@
 
 #include "temporary_vector_store.h"
 
+#include <vespa/check_require.h>
+
 #include <cmath>
 #include <numbers>
 
@@ -38,8 +40,8 @@ public:
     explicit BoundGeoDistance(TypedCells lhs) : _tmpSpace(lhs.size), _lh_vector(_tmpSpace.storeLhs(lhs)) {}
     double calc(TypedCells rhs) const noexcept override {
         std::span<const double> rhs_vector = _tmpSpace.convertRhs(rhs);
-        assert(2 == _lh_vector.size());
-        assert(2 == rhs_vector.size());
+        CHECK(2 == _lh_vector.size());
+        CHECK(2 == rhs_vector.size());
         // convert to radians:
         double lat_A = _lh_vector[0] * degrees_to_radians;
         double lat_B = rhs_vector[0] * degrees_to_radians;

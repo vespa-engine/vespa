@@ -7,12 +7,12 @@
 #include "compaction_spec.h"
 #include "compaction_strategy.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/vespalib/util/generation_hold_list.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <limits>
 
 #include <vespa/log/log.h>
@@ -119,7 +119,7 @@ bool DataStoreBase::consider_grow_active_buffer(uint32_t type_id, size_t entries
     if (type_handler->get_num_entries_for_new_buffer() == 0u) {
         return false;
     }
-    assert(!getBufferState(buffer_id).getCompacting());
+    CHECK(!getBufferState(buffer_id).getCompacting());
     uint32_t min_buffer_id = buffer_id;
     size_t   min_used = getBufferState(buffer_id).size();
     uint32_t checked_active_buffers = 1u;
@@ -161,9 +161,9 @@ uint32_t DataStoreBase::getFirstFreeBufferId() noexcept {
 }
 
 BufferState& DataStoreBase::getBufferState(uint32_t buffer_id) noexcept {
-    assert(buffer_id < get_bufferid_limit_relaxed());
+    CHECK(buffer_id < get_bufferid_limit_relaxed());
     BufferState* state = _buffers[buffer_id].get_state_relaxed();
-    assert(state != nullptr);
+    CHECK(state != nullptr);
     return *state;
 }
 
@@ -189,7 +189,7 @@ void DataStoreBase::init_primary_buffers() {
     uint32_t numTypes = _primary_buffer_ids.size();
     for (uint32_t typeId = 0; typeId < numTypes; ++typeId) {
         size_t buffer_id = getFirstFreeBufferId();
-        assert(buffer_id <= get_bufferid_limit_relaxed());
+        CHECK(buffer_id <= get_bufferid_limit_relaxed());
         on_active(buffer_id, typeId, 0u);
         _primary_buffer_ids[typeId] = buffer_id;
     }
@@ -197,7 +197,7 @@ void DataStoreBase::init_primary_buffers() {
 
 uint32_t DataStoreBase::addType(BufferTypeBase* typeHandler) {
     uint32_t typeId = _primary_buffer_ids.size();
-    assert(typeId == _typeHandlers.size());
+    CHECK(typeId == _typeHandlers.size());
     typeHandler->clamp_max_entries(_max_entries);
     _primary_buffer_ids.push_back(0);
     _typeHandlers.push_back(typeHandler);
@@ -211,7 +211,7 @@ void DataStoreBase::assign_generation(Generation current_gen) {
 }
 
 void DataStoreBase::doneHoldBuffer(uint32_t bufferId) {
-    assert(_hold_buffer_count > 0);
+    CHECK(_hold_buffer_count > 0);
     --_hold_buffer_count;
     getBufferState(bufferId).onFree(_buffers[bufferId].get_atomic_buffer());
 }
@@ -232,7 +232,7 @@ void DataStoreBase::dropBuffers() {
     for (uint32_t bufferId = 0; bufferId < buffer_id_limit; ++bufferId) {
         BufferAndMeta& buffer = _buffers[bufferId];
         BufferState*   state = buffer.get_state_relaxed();
-        assert(state != nullptr);
+        CHECK(state != nullptr);
         state->dropBuffer(bufferId, buffer.get_atomic_buffer());
     }
     _genHolder.reclaim_all();
@@ -305,7 +305,7 @@ MemoryStats DataStoreBase::getMemStats() const noexcept {
     stats._freeBuffers = (getMaxNumBuffers() - buffer_id_limit);
     for (uint32_t bufferId = 0; bufferId < buffer_id_limit; ++bufferId) {
         const BufferState* bState = _buffers[bufferId].get_state_acquire();
-        assert(bState != nullptr);
+        CHECK(bState != nullptr);
         auto typeHandler = bState->getTypeHandler();
         auto state = bState->getState();
         if ((state == BufferState::State::FREE) || (typeHandler == nullptr)) {
@@ -336,7 +336,7 @@ vespalib::AddressSpace DataStoreBase::getAddressSpaceUsage() const noexcept {
     size_t   limit_entries = size_t(_max_entries) * (getMaxNumBuffers() - buffer_id_limit);
     for (uint32_t bufferId = 0; bufferId < buffer_id_limit; ++bufferId) {
         const BufferState* bState = _buffers[bufferId].get_state_acquire();
-        assert(bState != nullptr);
+        CHECK(bState != nullptr);
         if (bState->isFree()) {
             limit_entries += _max_entries;
         } else if (bState->isActive()) {
@@ -360,8 +360,8 @@ vespalib::AddressSpace DataStoreBase::getAddressSpaceUsage() const noexcept {
 }
 
 void DataStoreBase::on_active(uint32_t bufferId, uint32_t typeId, size_t entries_needed) {
-    assert(typeId < _typeHandlers.size());
-    assert(bufferId <= _bufferIdLimit);
+    CHECK(typeId < _typeHandlers.size());
+    CHECK(bufferId <= _bufferIdLimit);
 
     BufferAndMeta& bufferMeta = _buffers[bufferId];
     BufferState*   state = bufferMeta.get_state_relaxed();
@@ -377,7 +377,7 @@ void DataStoreBase::on_active(uint32_t bufferId, uint32_t typeId, size_t entries
         bufferMeta.set_state(state);
         _bufferIdLimit.store(bufferId + 1, std::memory_order_release);
     }
-    assert(state->isFree());
+    CHECK(state->isFree());
     state->on_active(bufferId, typeId, _typeHandlers[typeId], entries_needed, bufferMeta.get_atomic_buffer());
     bufferMeta.setTypeId(typeId);
     if (_typeHandlers[typeId]->is_dynamic_array_buffer_type()) {
@@ -392,7 +392,7 @@ void DataStoreBase::on_active(uint32_t bufferId, uint32_t typeId, size_t entries
 
 void DataStoreBase::finishCompact(const std::vector<uint32_t>& toHold) {
     for (uint32_t bufferId : toHold) {
-        assert(getBufferState(bufferId).getCompacting());
+        CHECK(getBufferState(bufferId).getCompacting());
         holdBuffer(bufferId);
     }
 }
@@ -418,7 +418,7 @@ void DataStoreBase::markCompacting(uint32_t bufferId) {
     if ((bufferId == buffer_id) || primary_buffer_too_dead(getBufferState(buffer_id))) {
         switch_primary_buffer(typeId, 0u);
     }
-    assert(!state.getCompacting());
+    CHECK(!state.getCompacting());
     state.setCompacting();
     state.disable_entry_hold_list();
     state.disable_free_list();
@@ -440,7 +440,7 @@ DataStoreBase::start_compact_worst_buffers(CompactionSpec            compaction_
     uint32_t free_buffers = getMaxNumBuffers() - buffer_id_limit;
     for (uint32_t bufferId = 0; bufferId < buffer_id_limit; ++bufferId) {
         BufferState* state = _buffers[bufferId].get_state_relaxed();
-        assert(state != nullptr);
+        CHECK(state != nullptr);
         if (state->isFree()) {
             free_buffers++;
         } else if (state->isActive()) {
@@ -473,7 +473,7 @@ DataStoreBase::start_compact_worst_buffers(CompactionSpec            compaction_
 }
 
 void DataStoreBase::inc_hold_buffer_count() noexcept {
-    assert(_hold_buffer_count < std::numeric_limits<uint32_t>::max());
+    CHECK(_hold_buffer_count < std::numeric_limits<uint32_t>::max());
     ++_hold_buffer_count;
 }
 

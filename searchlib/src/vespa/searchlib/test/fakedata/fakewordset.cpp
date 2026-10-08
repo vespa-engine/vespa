@@ -4,6 +4,7 @@
 
 #include "fakeword.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/vespalib/util/time.h>
 
@@ -44,7 +45,7 @@ FakeWordSet::~FakeWordSet() = default;
 void FakeWordSet::setupParams(bool hasElements, bool hasElementWeights) {
     _schema.clear();
 
-    assert(hasElements || !hasElementWeights);
+    CHECK(hasElements || !hasElementWeights);
     Schema::CollectionType collectionType(CollectionType::SINGLE);
     if (hasElements) {
         if (hasElementWeights) {

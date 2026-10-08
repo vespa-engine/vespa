@@ -2,6 +2,7 @@
 
 #include "persistenceutil.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
@@ -32,7 +33,7 @@ DeferredReplySenderStub::~DeferredReplySenderStub() = default;
 AsyncMessageBatch::AsyncMessageBatch(std::shared_ptr<FileStorHandler::BucketLockInterface> bucket_lock,
                                      const PersistenceUtil& env, MessageSender& reply_sender) noexcept
     : _bucket_lock(std::move(bucket_lock)), _env(env), _reply_sender(reply_sender), _deferred_sender_stub() {
-    assert(_bucket_lock);
+    CHECK(_bucket_lock);
 }
 
 AsyncMessageBatch::~AsyncMessageBatch() {
@@ -127,7 +128,7 @@ void MessageTracker::sendReply() {
     if (hasReply()) {
         getReply().getTrace().addChild(_context.steal_trace());
         if (_updateBucketInfo) {
-            assert(_bucketLock);
+            CHECK(_bucketLock);
             if (getReply().getResult().success()) {
                 _env.setBucketInfo(*this, _bucketLock->getBucket());
             }

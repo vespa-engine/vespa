@@ -6,6 +6,7 @@
 #include "predicate_range_expander.h"
 #include "predicate_tree_analyzer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/predicate/predicate.h>
 
 using document::Predicate;
@@ -115,7 +116,7 @@ void PredicateTreeAnnotatorImpl::assignIntervalMarkers(const Inspector& in) {
                 // No need to update/touch curr
             } else if (i == 0) { // First child
                 auto it = _size_map.find(_crumbs.getCrumb());
-                assert(it != _size_map.end());
+                CHECK(it != _size_map.end());
                 uint32_t child_size = it->second;
                 uint32_t next = _left_weight + child_size + 1;
                 _begin = curr;
@@ -124,7 +125,7 @@ void PredicateTreeAnnotatorImpl::assignIntervalMarkers(const Inspector& in) {
                 curr = next;
             } else { // Middle children
                 auto it = _size_map.find(_crumbs.getCrumb());
-                assert(it != _size_map.end());
+                CHECK(it != _size_map.end());
                 uint32_t child_size = it->second;
                 uint32_t next = curr + child_size;
                 _begin = curr;
@@ -225,7 +226,7 @@ void PredicateTreeAnnotator::annotate(const Inspector& in, PredicateTreeAnnotati
     uint32_t              min_feature = static_cast<uint32_t>(analyzer.getMinFeature());
     // Size is as interval range (tree size is lower bound for interval range)
     int size = analyzer.getSize();
-    assert(size <= UINT16_MAX && size > 0);
+    CHECK(size <= UINT16_MAX && size > 0);
     uint16_t interval_range = static_cast<uint16_t>(size);
 
     PredicateTreeAnnotatorImpl annotator(analyzer.getSizeMap(), result, lower, upper, interval_range);

@@ -2,11 +2,11 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_type.h>
 
-#include <cassert>
 #include <functional>
 
 namespace vespalib::eval::test {
@@ -71,7 +71,7 @@ public:
     const std::string& name() const { return _name; }
     size_t size() const { return _size ? _size : _dict.size(); }
     TensorSpec::Label label(size_t idx) const {
-        assert(idx < size());
+        CHECK(idx < size());
         return _size ? TensorSpec::Label{idx} : TensorSpec::Label{_dict[idx]};
     }
 
@@ -118,7 +118,7 @@ public:
     const seq_t& seq() const { return _seq; }
     GenSpec cpy() const { return *this; }
     GenSpec& idx(const std::string& name, size_t size) {
-        assert(size != 0);
+        CHECK(size != 0);
         _dims.emplace_back(name, size);
         return *this;
     }

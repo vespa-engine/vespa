@@ -2,6 +2,8 @@
 
 #include "generic_map_subspaces.h"
 
+#include <vespa/check_require.h>
+
 using namespace vespalib::eval::tensor_function;
 
 namespace vespalib::eval::instruction {
@@ -30,8 +32,8 @@ struct InterpretedParams {
           direct_in(map_subspaces.child().result_type().cell_type() == inner_type.cell_type()),
           direct_out(map_subspaces.types().get_type(map_subspaces.lambda().root()).cell_type() ==
                      result_type.cell_type()) {
-        assert(direct_in || (in_size == 1));
-        assert(direct_out || (out_size == 1));
+        CHECK(direct_in || (in_size == 1));
+        CHECK(direct_out || (out_size == 1));
     }
 };
 

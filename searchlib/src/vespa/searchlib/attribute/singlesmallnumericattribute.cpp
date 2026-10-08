@@ -9,6 +9,7 @@
 #include "single_small_numeric_search_context.h"
 #include "valuemodifier.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/file_settings.h>
@@ -29,9 +30,9 @@ SingleValueSmallNumericAttribute::SingleValueSmallNumericAttribute(const std::st
       _valueShiftMask(valueShiftMask),
       _wordShift(wordShift),
       _wordData(c.getGrowStrategy(), getGenerationHolder()) {
-    assert(_valueMask + 1 == (1u << (1u << valueShiftShift)));
-    assert((_valueShiftMask + 1) * (1u << valueShiftShift) == 8 * sizeof(Word));
-    assert(_valueShiftMask + 1 == (1u << wordShift));
+    CHECK(_valueMask + 1 == (1u << (1u << valueShiftShift)));
+    CHECK((_valueShiftMask + 1) * (1u << valueShiftShift) == 8 * sizeof(Word));
+    CHECK(_valueShiftMask + 1 == (1u << wordShift));
 }
 
 SingleValueSmallNumericAttribute::~SingleValueSmallNumericAttribute() {
@@ -126,7 +127,7 @@ bool SingleValueSmallNumericAttribute::onLoad(vespalib::Executor*) {
         for (uint32_t i = 1; i < sz; ++i) {
             _wordData.push_back(attrReader.getNextData());
         }
-        assert(((numDocs + _valueShiftMask) >> _wordShift) + 1 == sz);
+        CHECK(((numDocs + _valueShiftMask) >> _wordShift) + 1 == sz);
         B::setNumDocs(numDocs);
         B::setCommittedDocIdLimit(numDocs);
         set_size_on_disk(attrReader.size_on_disk());
@@ -155,8 +156,8 @@ SingleValueSmallNumericAttribute::getSearch(std::unique_ptr<QueryTermSimple> qTe
 }
 
 void SingleValueSmallNumericAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool) {
-    assert(lidLow <= lidLimit);
-    assert(lidLimit <= getNumDocs());
+    CHECK(lidLow <= lidLimit);
+    CHECK(lidLimit <= getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
         if (getFast(lid) != 0) {
             clearDoc(lid);
@@ -166,7 +167,7 @@ void SingleValueSmallNumericAttribute::clearDocs(DocId lidLow, DocId lidLimit, b
 
 void SingleValueSmallNumericAttribute::onShrinkLidSpace() {
     uint32_t committedDocIdLimit = getCommittedDocIdLimit();
-    assert(committedDocIdLimit < getNumDocs());
+    CHECK(committedDocIdLimit < getNumDocs());
     const size_t numDocs(committedDocIdLimit);
     const size_t numDataWords((numDocs + _valueShiftMask) >> _wordShift);
     _wordData.shrink(numDataWords);

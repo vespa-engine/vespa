@@ -2,7 +2,8 @@
 
 #include "transient_memory_tracker.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <type_traits>
 
 namespace vespalib {
@@ -46,8 +47,8 @@ void TransientMemoryTracker::set_transient_memory(size_t value, size_t slack) no
 };
 
 void TransientMemoryTracker::set_transient_memory(Lock lock, size_t value) noexcept {
-    assert(lock.mutex() == &_mutex);
-    assert(lock.owns_lock());
+    CHECK(lock.mutex() == &_mutex);
+    CHECK(lock.owns_lock());
     if (value == _transient_memory) {
         return;
     }
@@ -64,8 +65,8 @@ void TransientMemoryTracker::swap(TransientMemoryTracker& rhs) noexcept {
 }
 
 size_t TransientMemoryTracker::get_total_transient_memory(Lock lock) noexcept {
-    assert(lock.mutex() == &_mutex);
-    assert(lock.owns_lock());
+    CHECK(lock.mutex() == &_mutex);
+    CHECK(lock.owns_lock());
     return _total_transient_memory;
 }
 

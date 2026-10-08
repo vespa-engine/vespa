@@ -2,11 +2,11 @@
 
 #include "raw_attribute.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <cassert>
 #include <cstring>
 
 using search::common::sortspec::MissingPolicy;
@@ -107,7 +107,7 @@ template <bool asc> void RawAttributeSortBlobWriter<asc>::set_missing_blob(std::
     _missing_blob.clear();
     _missing_blob.resize(serialized_len);
     auto ret = serialize_for_sort<asc>(value, _missing_blob.data());
-    assert(ret == serialized_len);
+    CHECK(ret == serialized_len);
 }
 
 template <bool asc> long RawAttributeSortBlobWriter<asc>::write(uint32_t docid, void* buf, long available) {
@@ -121,7 +121,7 @@ template <bool asc> long RawAttributeSortBlobWriter<asc>::write(uint32_t docid, 
                 dst[0] = _value_prefix.value();
             }
             auto ret = serialize_for_sort<asc>(raw, dst + vp_len);
-            assert(ret == serialized_len);
+            CHECK(ret == serialized_len);
             return ret + vp_len;
         } else {
             return -1;

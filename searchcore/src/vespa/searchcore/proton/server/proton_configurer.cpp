@@ -9,6 +9,7 @@
 #include "i_proton_disk_layout.h"
 #include "proton_config_snapshot.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -73,7 +74,7 @@ ProtonConfigurer::~ProtonConfigurer() = default;
 
 void ProtonConfigurer::setAllowReconfig(bool allowReconfig) {
     // called by proton app main thread
-    assert(!_executor.isCurrentThread());
+    CHECK(!_executor.isCurrentThread());
     {
         std::lock_guard<std::mutex> guard(_mutex);
         _allowReconfig = allowReconfig;
@@ -100,7 +101,7 @@ std::shared_ptr<ProtonConfigSnapshot> ProtonConfigurer::getActiveConfigSnapshot(
 
 void ProtonConfigurer::reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapshot) {
     // called by proton config fetcher thread
-    assert(!_executor.isCurrentThread());
+    CHECK(!_executor.isCurrentThread());
     std::lock_guard<std::mutex> guard(_mutex);
     _pendingConfigSnapshot = configSnapshot;
     if (_allowReconfig) {
@@ -110,7 +111,7 @@ void ProtonConfigurer::reconfigure(std::shared_ptr<ProtonConfigSnapshot> configS
 
 void ProtonConfigurer::performReconfigure() {
     // called by proton executor thread
-    assert(_executor.isCurrentThread());
+    CHECK(_executor.isCurrentThread());
     auto configSnapshot(getPendingConfigSnapshot());
     applyConfig(configSnapshot, InitializeThreads(), false);
 }
@@ -118,7 +119,7 @@ void ProtonConfigurer::performReconfigure() {
 bool ProtonConfigurer::skipConfig(const ProtonConfigSnapshot* configSnapshot, bool initialConfig) {
     // called by proton executor thread
     std::lock_guard<std::mutex> guard(_mutex);
-    assert(!_activeConfigSnapshot == initialConfig);
+    CHECK(!_activeConfigSnapshot == initialConfig);
     if (_activeConfigSnapshot.get() == configSnapshot) {
         return true; // config snapshot already applied
     }
@@ -131,7 +132,7 @@ bool ProtonConfigurer::skipConfig(const ProtonConfigSnapshot* configSnapshot, bo
 void ProtonConfigurer::applyConfig(std::shared_ptr<ProtonConfigSnapshot> configSnapshot,
                                    InitializeThreads initializeThreads, bool initialConfig) {
     // called by proton executor thread
-    assert(_executor.isCurrentThread());
+    CHECK(_executor.isCurrentThread());
     if (skipConfig(configSnapshot.get(), initialConfig)) {
         return; // config should be skipped
     }
@@ -160,7 +161,7 @@ void ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot& configSna
     const auto& bootstrapConfig = configSnapshot.getBootstrapConfig();
     const auto& documentDBConfigs = configSnapshot.getDocumentDBConfigs();
     auto        cfgitr = documentDBConfigs.find(docTypeName);
-    assert(cfgitr != documentDBConfigs.end());
+    CHECK(cfgitr != documentDBConfigs.end());
     const auto& documentDBConfig = cfgitr->second;
     auto        dbitr(_documentDBs.find(docTypeName));
     if (dbitr == _documentDBs.end()) {
@@ -169,11 +170,11 @@ void ProtonConfigurer::configureDocumentDB(const ProtonConfigSnapshot& configSna
         if (newdb) {
             auto insres = _documentDBs.insert(
                 std::make_pair(docTypeName, std::make_pair(newdb, newdb->getDocumentDBDirectoryHolder())));
-            assert(insres.second);
+            CHECK(insres.second);
         }
     } else {
         auto documentDB = dbitr->second.first.lock();
-        assert(documentDB);
+        CHECK(documentDB);
         auto old_bucket_space = documentDB->getBucketSpace();
         if (bucketSpace != old_bucket_space) {
             const std::string& old_bucket_space_name(document::FixedBucketSpaces::to_string(old_bucket_space));
@@ -224,7 +225,7 @@ void ProtonConfigurer::pruneDocumentDBs(const ProtonConfigSnapshot& configSnapsh
 
 void ProtonConfigurer::applyInitialConfig(InitializeThreads initializeThreads) {
     // called by proton app main thread
-    assert(!_executor.isCurrentThread());
+    CHECK(!_executor.isCurrentThread());
     std::promise<void> promise;
     auto               future = promise.get_future();
     _executor.execute(makeLambdaTask([this, executor = std::move(initializeThreads), &promise]() mutable {

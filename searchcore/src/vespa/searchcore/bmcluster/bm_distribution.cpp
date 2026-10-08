@@ -2,10 +2,9 @@
 
 #include "bm_distribution.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
-#include <cassert>
 
 using storage::lib::ClusterState;
 using storage::lib::ClusterStateBundle;
@@ -99,7 +98,7 @@ uint32_t BmDistribution::get_num_nodes() const {
 uint32_t BmDistribution::get_service_layer_node_idx(const document::Bucket& bucket) const {
     auto cluster_state = _cluster_state_bundle.getDerivedClusterState(bucket.getBucketSpace());
     auto nodes = _distribution.getIdealStorageNodes(*cluster_state, bucket.getBucketId());
-    assert(!nodes.empty());
+    CHECK(!nodes.empty());
     return nodes[0];
 }
 

@@ -2,6 +2,7 @@
 
 #include "attributefilebufferwriter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/databuffer.h>
 
 namespace search {
@@ -9,16 +10,16 @@ namespace search {
 AttributeFileBufferWriter::AttributeFileBufferWriter(IAttributeFileWriter& fileWriter)
     : BufferWriter(), _buf(), _bytesWritten(0), _incompleteBuffers(0), _fileWriter(fileWriter) {
     _buf = _fileWriter.allocBuf(BUFFER_SIZE);
-    assert(_buf->getFreeLen() >= BUFFER_SIZE);
+    CHECK(_buf->getFreeLen() >= BUFFER_SIZE);
     setup(_buf->getFree(), BUFFER_SIZE);
 }
 
 AttributeFileBufferWriter::~AttributeFileBufferWriter() {
-    assert(usedLen() == 0);
+    CHECK(usedLen() == 0);
 }
 
 void AttributeFileBufferWriter::flush() {
-    assert(_incompleteBuffers == 0); // all previous buffers must have been full
+    CHECK(_incompleteBuffers == 0); // all previous buffers must have been full
     size_t nowLen = usedLen();
     if (nowLen != BUFFER_SIZE) {
         // buffer is not full, only allowed for last buffer
@@ -27,9 +28,9 @@ void AttributeFileBufferWriter::flush() {
     if (nowLen == 0) {
         return; // empty buffer
     }
-    assert(_buf->getDataLen() == 0);
+    CHECK(_buf->getDataLen() == 0);
     onFlush(nowLen);
-    assert(_buf->getFreeLen() >= BUFFER_SIZE);
+    CHECK(_buf->getFreeLen() >= BUFFER_SIZE);
     setup(_buf->getFree(), BUFFER_SIZE);
     _bytesWritten += nowLen;
 }

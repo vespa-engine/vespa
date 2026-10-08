@@ -6,6 +6,7 @@
 #include "tensor_spec.h"
 #include "value_builder_factory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
@@ -166,7 +167,7 @@ void decode_mapped_labels(nbostream& input, size_t num_mapped_dims, SmallVector<
 }
 
 template <typename T> void decode_cells(nbostream& input, size_t num_cells, std::span<T> dst) {
-    assert(num_cells == dst.size());
+    CHECK(num_cells == dst.size());
     for (size_t i = 0; i < num_cells; ++i) {
         dst[i] = input.readValue<T>();
     }
@@ -220,18 +221,18 @@ struct CreateValueFromTensorSpec {
             auto   dim = type.dimensions().begin();
             auto   binding = entry.first.begin();
             for (; dim != type.dimensions().end(); ++dim, ++binding) {
-                assert(binding != entry.first.end());
-                assert(dim->name == binding->first);
-                assert(dim->is_mapped() == binding->second.is_mapped());
+                CHECK(binding != entry.first.end());
+                CHECK(dim->name == binding->first);
+                CHECK(dim->is_mapped() == binding->second.is_mapped());
                 if (dim->is_mapped()) {
                     sparse_key.push_back(binding->second.name);
                 } else {
-                    assert(binding->second.index < dim->size);
+                    CHECK(binding->second.index < dim->size);
                     dense_key = (dense_key * dim->size) + binding->second.index;
                 }
             }
-            assert(binding == entry.first.end());
-            assert(dense_key < map.values_per_entry());
+            CHECK(binding == entry.first.end());
+            CHECK(dense_key < map.values_per_entry());
             auto [tag, ignore] = map.lookup_or_add_entry(std::span<const std::string_view>(sparse_key));
             map.get_values(tag)[dense_key] = entry.second;
         }

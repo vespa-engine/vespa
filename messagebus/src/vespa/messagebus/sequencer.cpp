@@ -3,9 +3,8 @@
 
 #include "tracelevel.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 using vespalib::make_string;
 
@@ -79,7 +78,7 @@ void Sequencer::handleReply(Reply::UP reply) {
         std::lock_guard guard(_lock);
         auto            it = _seqMap.find(seq);
         MessageQueue*   que = it->second;
-        assert(it != _seqMap.end());
+        CHECK(it != _seqMap.end());
         if (que == nullptr || que->size() == 0) {
             if (que != nullptr) {
                 delete que;

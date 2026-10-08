@@ -2,9 +2,9 @@
 
 #include "first_phase_rank_lookup.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/objectstore.h>
 
-#include <cassert>
 #include <limits>
 
 using search::fef::AnyWrapper;
@@ -35,7 +35,7 @@ feature_t FirstPhaseRankLookup::lookup(uint32_t docid) const noexcept {
 
 void FirstPhaseRankLookup::add(uint32_t docid, uint32_t rank) {
     auto insres = _map.insert(std::make_pair(docid, rank));
-    assert(insres.second);
+    CHECK(insres.second);
 }
 
 void FirstPhaseRankLookup::make_shared_state(fef::IObjectStore& store) {

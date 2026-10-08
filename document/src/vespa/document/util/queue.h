@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <condition_variable>
 #include <mutex>
 #include <queue>
@@ -25,7 +26,7 @@ public:
 
     ~Semaphore() {
         std::lock_guard guard(_lock);
-        assert(_numWaiters == 0);
+        CHECK(_numWaiters == 0);
     }
 
     bool wait(int ms) {
@@ -43,7 +44,7 @@ public:
             _count--;
             gotSemaphore = true;
         }
-        assert(_count >= 0);
+        CHECK(_count >= 0);
         return gotSemaphore;
     }
 
@@ -55,13 +56,13 @@ public:
             _numWaiters--;
         }
         _count--;
-        assert(_count >= 0);
+        CHECK(_count >= 0);
         return true;
     }
 
     void post() {
         std::unique_lock guard(_lock);
-        assert(_count >= 0);
+        CHECK(_count >= 0);
         _count++;
         if (_numWaiters > 0) {
             _cond.notify_one();

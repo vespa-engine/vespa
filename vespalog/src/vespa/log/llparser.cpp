@@ -5,12 +5,12 @@
 #include "internal.h"
 #include "log-target.h"
 
+#include <vespa/check_require.h>
 #include <vespa/defaults.h>
 
 #include <sys/time.h>
 #include <unistd.h>
 
-#include <cassert>
 #include <cstdlib>
 #include <cstring>
 
@@ -26,7 +26,7 @@ LLParser::LLParser()
       _defLevel(Logger::info),
       _target(Logger::getCurrentTarget()),
       _rejectFilter(RejectFilter::createDefaultFilter()) {
-    assert(_target != nullptr);
+    CHECK(_target != nullptr);
     const char* envServ = getenv("VESPA_SERVICE_NAME");
     if (envServ != nullptr) {
         _defService = envServ;

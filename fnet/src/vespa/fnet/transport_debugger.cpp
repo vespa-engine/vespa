@@ -2,11 +2,10 @@
 
 #include "transport_debugger.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/require.h>
 
 #include <vespa/vespalib/util/rendezvous.hpp>
-
-#include <cassert>
 
 namespace fnet {
 
@@ -26,7 +25,7 @@ TransportDebugger::TransportDebugger() : _time(), _meet() {
 }
 
 TransportDebugger::~TransportDebugger() {
-    assert(!_meet && "error: still attached");
+    CHECK(!_meet && "error: still attached");
 }
 
 void TransportDebugger::attach(std::initializer_list<std::reference_wrapper<FNET_Transport>> list) {

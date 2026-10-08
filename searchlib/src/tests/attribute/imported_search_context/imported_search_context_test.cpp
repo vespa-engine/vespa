@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchlib/attribute/imported_search_context.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -31,7 +32,7 @@ struct Fixture : ImportedAttributeFixture {
     std::unique_ptr<SearchIterator> create_iterator(ImportedSearchContext& ctx, TermFieldMatchData& match,
                                                     bool strict) {
         auto iter = ctx.createIterator(&match, strict);
-        assert(iter.get() != nullptr);
+        CHECK(iter.get() != nullptr);
         iter->initRange(DocId(1), reference_attr->getNumDocs());
         return iter;
     }

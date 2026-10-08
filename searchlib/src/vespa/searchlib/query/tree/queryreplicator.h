@@ -11,7 +11,7 @@
 #include "weighted_integer_term_vector.h"
 #include "weighted_string_term_vector.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search::query {
 
@@ -211,7 +211,7 @@ private:
             return replica;
         }
         case MultiTerm::Type::UNKNOWN:
-            assert(num_terms == 0);
+            CHECK(num_terms == 0);
         }
         return std::make_unique<WeightedStringTermVector>(num_terms);
     }
@@ -227,7 +227,7 @@ private:
             QueryReplicator<NodeTypes> replicator;
             auto                       replicated = replicator.replicate(*child);
             auto*                      string_term = dynamic_cast<StringTerm*>(replicated.release());
-            assert(string_term);
+            CHECK(string_term);
             children.emplace_back(string_term);
         }
         return children;

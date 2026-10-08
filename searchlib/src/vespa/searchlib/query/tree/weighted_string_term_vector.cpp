@@ -2,7 +2,6 @@
 
 #include "weighted_string_term_vector.h"
 
-#include <cassert>
 #include <charconv>
 
 namespace search::query {

@@ -5,7 +5,7 @@
 #include "direct_posting_store_adapter.h"
 #include "i_enum_store_dictionary.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search::attribute {
 
@@ -47,7 +47,7 @@ bool DirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::has
 template <typename ParentType, typename PostingStoreType, typename EnumStoreType>
 void DirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::create(
     vespalib::datastore::EntryRef posting_idx, std::vector<IteratorType>& dst) const {
-    assert(posting_idx.valid());
+    CHECK(posting_idx.valid());
     _posting_store.beginFrozen(posting_idx, dst);
 }
 
@@ -55,7 +55,7 @@ template <typename ParentType, typename PostingStoreType, typename EnumStoreType
 DirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::IteratorType
 DirectPostingStoreAdapter<ParentType, PostingStoreType, EnumStoreType>::create(
     vespalib::datastore::EntryRef posting_idx) const {
-    assert(posting_idx.valid());
+    CHECK(posting_idx.valid());
     return _posting_store.beginFrozen(posting_idx);
 }
 

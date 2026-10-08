@@ -3,6 +3,7 @@
 #include "lz4compressor.h"
 #include "zstdcompressor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -166,7 +167,7 @@ std::span<const std::byte> decompress(CompressionConfig::Type type, std::span<co
     case CompressionConfig::NONE:
     case CompressionConfig::NONE_MULTI:
     case CompressionConfig::UNCOMPRESSABLE:
-        assert(src.size() <= dst.size());
+        CHECK(src.size() <= dst.size());
         memcpy(dst.data(), src.data(), src.size());
         return {dst.data(), src.size()};
     default:

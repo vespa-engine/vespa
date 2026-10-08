@@ -2,6 +2,7 @@
 
 #include "newconfigbuilder.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/positiondatatype.h>
@@ -62,25 +63,25 @@ int32_t NewStruct::hashId(const std::string& name) const {
 }
 
 NewStruct& NewStruct::addField(const std::string& name, TypeRef type) {
-    assert(!_registered && "Cannot modify struct after it's been registered");
+    CHECK(!_registered && "Cannot modify struct after it's been registered");
     _fields.emplace_back(name, type);
     return *this;
 }
 
 NewStruct& NewStruct::addTensorField(const std::string& name, const std::string& spec) {
-    assert(!_registered && "Cannot modify struct after it's been registered");
+    CHECK(!_registered && "Cannot modify struct after it's been registered");
     _tensor_fields.emplace_back(name, spec);
     return *this;
 }
 
 NewStruct& NewStruct::inherit(TypeRef parent_struct) {
-    assert(!_registered && "Cannot modify struct after it's been registered");
+    CHECK(!_registered && "Cannot modify struct after it's been registered");
     _inherits.push_back(parent_struct);
     return *this;
 }
 
 NewStruct& NewStruct::setId(int32_t internalid) {
-    assert(!_registered && "Cannot modify struct after it's been registered");
+    CHECK(!_registered && "Cannot modify struct after it's been registered");
     _internalid = internalid;
     return *this;
 }
@@ -90,7 +91,7 @@ TypeRef NewStruct::ref() {
         // Auto-register when ref() is called
         _builder.registerStruct(*this, _doctype_idx);
     }
-    assert(_registered && "Struct should have been auto-registered");
+    CHECK(_registered && "Struct should have been auto-registered");
     return TypeRef(_idx);
 }
 
@@ -103,7 +104,7 @@ NewArray::NewArray(NewConfigBuilder& builder, TypeRef element_type, int32_t doct
 }
 
 TypeRef NewArray::ref() {
-    assert(_registered && "Array should have been auto-registered");
+    CHECK(_registered && "Array should have been auto-registered");
     return TypeRef(_idx);
 }
 
@@ -120,13 +121,13 @@ NewWset::NewWset(NewConfigBuilder& builder, TypeRef element_type, int32_t doctyp
 }
 
 NewWset& NewWset::removeIfZero() {
-    assert(!_registered && "Cannot modify wset after it's been registered");
+    CHECK(!_registered && "Cannot modify wset after it's been registered");
     _removeifzero = true;
     return *this;
 }
 
 NewWset& NewWset::createIfNonExistent() {
-    assert(!_registered && "Cannot modify wset after it's been registered");
+    CHECK(!_registered && "Cannot modify wset after it's been registered");
     _createifnonexistent = true;
     return *this;
 }
@@ -136,7 +137,7 @@ TypeRef NewWset::ref() {
         // Auto-register when ref() is called
         _builder.registerWset(*this, _doctype_idx);
     }
-    assert(_registered && "Wset should have been auto-registered");
+    CHECK(_registered && "Wset should have been auto-registered");
     return TypeRef(_idx);
 }
 
@@ -154,7 +155,7 @@ NewMap::NewMap(NewConfigBuilder& builder, TypeRef key_type, TypeRef value_type, 
 }
 
 TypeRef NewMap::ref() {
-    assert(_registered && "Map should have been auto-registered");
+    CHECK(_registered && "Map should have been auto-registered");
     return TypeRef(_idx);
 }
 
@@ -166,7 +167,7 @@ NewAnnotationRef::NewAnnotationRef(int32_t annotation_idx) noexcept
 
 TypeRef NewAnnotationRef::ref() {
     if (!_registered) {
-        assert(false && "AnnotationRef must be registered before getting ref");
+        CHECK(false && "AnnotationRef must be registered before getting ref");
     }
     return TypeRef(_idx);
 }
@@ -190,7 +191,7 @@ NewDocTypeRep& NewDocTypeRep::addField(const std::string& name, TypeRef type) {
             break;
         }
     }
-    assert(doc && "Document type not found");
+    CHECK(doc && "Document type not found");
 
     // Find contentstruct
     BStructT* contentstruct = nullptr;
@@ -200,7 +201,7 @@ NewDocTypeRep& NewDocTypeRep::addField(const std::string& name, TypeRef type) {
             break;
         }
     }
-    assert(contentstruct && "Content struct not found");
+    CHECK(contentstruct && "Content struct not found");
 
     // Add field to contentstruct
     auto& f = contentstruct->field.emplace_back();
@@ -221,7 +222,7 @@ NewDocTypeRep& NewDocTypeRep::addTensorField(const std::string& name, const std:
             break;
         }
     }
-    assert(doc && "Document type not found");
+    CHECK(doc && "Document type not found");
 
     // Create tensor type
     auto& tt = doc->tensortype.emplace_back();
@@ -240,7 +241,7 @@ NewDocTypeRep& NewDocTypeRep::inherit(int32_t parent_idx) {
 
 NewDocTypeRep& NewDocTypeRep::inherit(const std::string& parent_name) {
     auto it = _builder._doctype_map.find(parent_name);
-    assert(it != _builder._doctype_map.end() && "Parent document type not found");
+    CHECK(it != _builder._doctype_map.end() && "Parent document type not found");
     return inherit(it->second);
 }
 
@@ -294,7 +295,7 @@ TypeRef NewDocTypeRep::createAnnotationReference(TypeRef annotation_type_idx) {
             break;
         }
     }
-    assert(doc_config && "Document type not found");
+    CHECK(doc_config && "Document type not found");
 
     // Add the annotation to the config if not already there
     bool found = false;
@@ -336,7 +337,7 @@ TypeRef NewDocTypeRep::referenceType(int32_t target_doctype_idx) {
             break;
         }
     }
-    assert(doc && "Document type not found");
+    CHECK(doc && "Document type not found");
 
     // Find the target document type name
     std::string target_doctype_name;
@@ -346,7 +347,7 @@ TypeRef NewDocTypeRep::referenceType(int32_t target_doctype_idx) {
             break;
         }
     }
-    assert(!target_doctype_name.empty() && "Target document type not found");
+    CHECK(!target_doctype_name.empty() && "Target document type not found");
 
     // Create document reference type
     auto& dref = doc->documentref.emplace_back();
@@ -553,12 +554,12 @@ TypeRef NewConfigBuilder::primitiveType(int32_t type_id) {
         return TypeRef(_base_document_idx);
     }
     auto it = _primitive_idx_map.find(type_id);
-    assert(it != _primitive_idx_map.end() && "Unknown primitive type");
+    CHECK(it != _primitive_idx_map.end() && "Unknown primitive type");
     return TypeRef(it->second);
 }
 
 TypeRef NewConfigBuilder::positionType() {
-    assert(_position_type_idx != -1 && "Position type not initialized");
+    CHECK(_position_type_idx != -1 && "Position type not initialized");
     return TypeRef(_position_type_idx);
 }
 
@@ -625,7 +626,7 @@ std::string NewConfigBuilder::getTypeName(TypeRef type_ref) const {
     }
 
     fprintf(stderr, "ERROR getTypeName: idx=%d NOT FOUND!\n", type_ref.idx);
-    assert(false && "Type not found in getTypeName");
+    CHECK(false && "Type not found in getTypeName");
     return ""; // Not found
 }
 
@@ -644,7 +645,7 @@ void NewConfigBuilder::registerStructField(TypeRef struct_idx, const std::string
         }
     }
 
-    assert(target_struct && "Struct not found");
+    CHECK(target_struct && "Struct not found");
 
     // Add field to struct
     auto& f = target_struct->field.emplace_back();
@@ -681,13 +682,13 @@ void NewConfigBuilder::registerStruct(NewStruct& s, int32_t doctype_idx) {
             break;
         }
     }
-    assert(doc && "Document type not found");
+    CHECK(doc && "Document type not found");
 
     // Check if we already have a struct with this name, fail on collisions
     for (const auto& st : doc->structtype) {
         if (st.name == s._name) {
             fprintf(stderr, "ERROR: Struct '%s' already exists in doctype idx=%d\n", s._name.c_str(), doctype_idx);
-            assert(false && "Struct name collision detected");
+            CHECK(false && "Struct name collision detected");
         }
     }
 
@@ -740,7 +741,7 @@ void NewConfigBuilder::registerArray(NewArray& a, int32_t doctype_idx) {
             break;
         }
     }
-    assert(doc && "Document type not found");
+    CHECK(doc && "Document type not found");
 
     // Check if we already have an array with this elementtype to avoid allocating again
     for (const auto& arr : doc->arraytype) {
@@ -779,7 +780,7 @@ void NewConfigBuilder::registerWset(NewWset& w, int32_t doctype_idx) {
             break;
         }
     }
-    assert(doc && "Document type not found");
+    CHECK(doc && "Document type not found");
 
     // Check if we already have a wset with this elementtype, same createifnonexistent and same removeifzero
     for (const auto& wset : doc->wsettype) {
@@ -822,7 +823,7 @@ void NewConfigBuilder::registerMap(NewMap& m, int32_t doctype_idx) {
             break;
         }
     }
-    assert(doc && "Document type not found");
+    CHECK(doc && "Document type not found");
 
     // Check if we already have a map with these key and value types to avoid allocating again
     for (const auto& map : doc->maptype) {
@@ -864,7 +865,7 @@ void NewConfigBuilder::registerAnnotationRef(NewAnnotationRef& ar, int32_t docty
             break;
         }
     }
-    assert(doc && "Document type not found");
+    CHECK(doc && "Document type not found");
 
     // Find the annotation type name
     std::string annotation_name;
@@ -874,7 +875,7 @@ void NewConfigBuilder::registerAnnotationRef(NewAnnotationRef& ar, int32_t docty
             break;
         }
     }
-    assert(!annotation_name.empty() && "Annotation type not found");
+    CHECK(!annotation_name.empty() && "Annotation type not found");
 
     // Allocate idx
     ar._idx = _next_idx++;
@@ -899,7 +900,7 @@ void NewConfigBuilder::finalizeDocType(NewDocTypeRep& doc) {
             break;
         }
     }
-    assert(doc_config && "Document type not found");
+    CHECK(doc_config && "Document type not found");
 
     // Add additional inheritance
     for (auto parent_idx : doc._inherits) {

@@ -2,6 +2,7 @@
 
 #include "nearest_neighbor_field_searcher.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
@@ -42,7 +43,7 @@ std::unique_ptr<TensorExtAttribute> make_attribute(const ValueType&             
     auto     result = std::make_unique<TensorExtAttribute>("nnfs_attr", cfg);
     uint32_t docid;
     result->addDoc(docid);
-    assert(docid == scratch_docid);
+    CHECK(docid == scratch_docid);
     return result;
 }
 

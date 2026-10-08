@@ -5,12 +5,12 @@
 #include "enumattributeresult.h"
 #include "resultvector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcommon/attribute/multi_value_read_view_traits.h>
 #include <vespa/vespalib/util/stash.h>
 
-#include <cassert>
 #include <format>
 
 #include <vespa/log/log.h>
@@ -303,10 +303,10 @@ void AttributeNode::onPrepare(bool preserveAccurateTypes) {
         if (_currentIndex == nullptr) {
             setResultType(std::move(result));
         } else {
-            assert(_hasMultiValue);
-            assert(_handler);
+            CHECK(_hasMultiValue);
+            CHECK(_handler);
             setResultType(result->createBaseType());
-            assert(result->inherits(ResultNodeVector::classId));
+            CHECK(result->inherits(ResultNodeVector::classId));
             _keepAliveForIndexLookups.reset(dynamic_cast<ResultNodeVector*>(result.release()));
         }
     }
@@ -366,8 +366,8 @@ void AttributeNode::onExecute() const {
             _needExecute = false;
         }
         if (_currentIndex != nullptr) {
-            assert(_keepAliveForIndexLookups);
-            assert(_hasMultiValue);
+            CHECK(_keepAliveForIndexLookups);
+            CHECK(_hasMultiValue);
             size_t idx = _currentIndex->get();
             if (idx < _keepAliveForIndexLookups->size()) [[likely]] {
                 updateResult().set(_keepAliveForIndexLookups->get(idx));

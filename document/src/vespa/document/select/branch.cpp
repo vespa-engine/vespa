@@ -4,7 +4,8 @@
 
 #include "visitor.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <ostream>
 
 namespace document::select {
@@ -13,8 +14,8 @@ And::And(std::unique_ptr<Node> left, std::unique_ptr<Node> right, const char* na
     : Branch(name ? name : "and", std::max(left->max_depth(), right->max_depth()) + 1),
       _left(std::move(left)),
       _right(std::move(right)) {
-    assert(_left);
-    assert(_right);
+    CHECK(_left);
+    CHECK(_right);
 }
 
 void And::visit(Visitor& v) const {
@@ -54,8 +55,8 @@ Or::Or(std::unique_ptr<Node> left, std::unique_ptr<Node> right, const char* name
     : Branch(name ? name : "or", std::max(left->max_depth(), right->max_depth()) + 1),
       _left(std::move(left)),
       _right(std::move(right)) {
-    assert(_left.get());
-    assert(_right.get());
+    CHECK(_left.get());
+    CHECK(_right.get());
 }
 
 void Or::visit(Visitor& v) const {
@@ -93,7 +94,7 @@ ResultList Or::trace(const Context& context, std::ostream& out) const {
 
 Not::Not(std::unique_ptr<Node> child, const char* name)
     : Branch(name ? name : "not", child->max_depth() + 1), _child(std::move(child)) {
-    assert(_child.get());
+    CHECK(_child.get());
 }
 
 void Not::visit(Visitor& v) const {

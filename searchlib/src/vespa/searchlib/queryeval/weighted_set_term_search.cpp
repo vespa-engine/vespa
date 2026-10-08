@@ -5,6 +5,7 @@
 #include "blueprint.h"
 #include "iterator_pack.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/attribute/i_direct_posting_store.h>
@@ -108,8 +109,8 @@ public:
           _data_end(nullptr),
           _children(std::move(iteratorPack)) {
         HEAP::require_left_heap();
-        assert(_children.size() > 0);
-        assert(_children.size() == _weights.size());
+        CHECK(_children.size() > 0);
+        CHECK(_children.size() == _weights.size());
         _data_space.reserve(_children.size());
         for (size_t i = 0; i < _children.size(); ++i) {
             _data_space.push_back(i);
@@ -352,7 +353,7 @@ SearchIterator::UP WeightedSetTermSearch::create_hash_filter(
                                                                             dict_snapshot);
         }
     } else {
-        assert(attr.isIntegerType());
+        CHECK(attr.isIntegerType());
         if (is_filter_search) {
             return create_hash_filter_helper<IntegerHashFilterWrapper<false>>(tmd, weights, terms, attr,
                                                                               posting_store, dict_snapshot);

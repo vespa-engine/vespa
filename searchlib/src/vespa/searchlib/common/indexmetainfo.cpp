@@ -2,12 +2,12 @@
 
 #include "indexmetainfo.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <algorithm>
-#include <cassert>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -205,7 +205,7 @@ bool IndexMetaInfo::addSnapshot(const Snapshot& snap) {
     if (snap.dirName.empty() || (findSnapshot(snap.syncToken) != _snapshots.end())) {
         return false;
     }
-    assert(snap.syncToken != uint64_t(-1));
+    CHECK(snap.syncToken != uint64_t(-1));
     _snapshots.push_back(snap);
     std::sort(_snapshots.begin(), _snapshots.end());
     return true;
@@ -251,7 +251,7 @@ bool IndexMetaInfo::load(const std::string& baseName) {
             parser.parseBool("valid", snap.valid);
             parser.parseInt64("syncToken", snap.syncToken);
             parser.parseString("dirName", snap.dirName);
-            assert(snap.syncToken != static_cast<uint64_t>(-1));
+            CHECK(snap.syncToken != static_cast<uint64_t>(-1));
         }
     }
     std::sort(_snapshots.begin(), _snapshots.end());

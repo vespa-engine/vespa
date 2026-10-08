@@ -4,9 +4,9 @@
 
 #include "threadimpl.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <cassert>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -51,7 +51,7 @@ Thread::UP ThreadPoolImpl::startThread(Runnable& runnable, std::string_view id, 
                                        vespalib::duration maxProcessTime, int ticksBeforeWait,
                                        std::optional<vespalib::CpuUsage::Category> cpu_category) {
     std::lock_guard lock(_threadVectorLock);
-    assert(!_stopping);
+    CHECK(!_stopping);
     auto thread =
         std::make_unique<ThreadImpl>(*this, runnable, id, waitTime, maxProcessTime, ticksBeforeWait, cpu_category);
     _threads.push_back(thread.get());

@@ -2,10 +2,9 @@
 
 #include "configretriever.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/subscription/sourcespec.h>
-
-#include <cassert>
 
 namespace config {
 
@@ -44,7 +43,7 @@ ConfigSnapshot ConfigRetriever::getConfigs(const ConfigKeySet& keySet, vespalib:
     if (_bootstrapRequired) {
         throw ConfigRuntimeException("Cannot change keySet until bootstrap getBootstrapConfigs() has been called");
     }
-    assert(!keySet.empty());
+    CHECK(!keySet.empty());
     if (keySet != _lastKeySet) {
         _lastKeySet = keySet;
         {

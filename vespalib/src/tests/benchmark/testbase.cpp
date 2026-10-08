@@ -1,9 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "testbase.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/time.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".testbase");
@@ -163,7 +162,7 @@ size_t ClockSystem::onRun() {
 size_t ClockREALTIME::onRun() {
     struct timespec ts;
     int             foo = clock_gettime(CLOCK_REALTIME, &ts);
-    assert(foo == 0);
+    CHECK(foo == 0);
     (void)foo;
     nanoseconds start(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     nanoseconds end(start);
@@ -177,7 +176,7 @@ size_t ClockREALTIME::onRun() {
 size_t ClockMONOTONIC::onRun() {
     struct timespec ts;
     int             foo = clock_gettime(CLOCK_MONOTONIC, &ts);
-    assert(foo == 0);
+    CHECK(foo == 0);
     (void)foo;
     nanoseconds start(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     nanoseconds end(start);
@@ -201,7 +200,7 @@ ClockMONOTONIC_RAW::ClockMONOTONIC_RAW() {
 size_t ClockMONOTONIC_RAW::onRun() {
     struct timespec ts;
     int             foo = clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    assert(foo == 0);
+    CHECK(foo == 0);
     (void)foo;
     nanoseconds start(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     nanoseconds end(start);
@@ -215,7 +214,7 @@ size_t ClockMONOTONIC_RAW::onRun() {
 size_t ClockPROCESS_CPUTIME_ID::onRun() {
     struct timespec ts;
     int             foo = clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
-    assert(foo == 0);
+    CHECK(foo == 0);
     (void)foo;
     nanoseconds start(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     nanoseconds end(start);
@@ -229,7 +228,7 @@ size_t ClockPROCESS_CPUTIME_ID::onRun() {
 size_t ClockTHREAD_CPUTIME_ID::onRun() {
     struct timespec ts;
     int             foo = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
-    assert(foo == 0);
+    CHECK(foo == 0);
     (void)foo;
     nanoseconds start(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     nanoseconds end(start);

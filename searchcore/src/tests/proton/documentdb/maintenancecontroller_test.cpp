@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config-attributes.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -264,7 +265,7 @@ MaintenanceDocumentSubDB MyDocumentSubDB::getSubDB() {
 }
 
 void MyDocumentSubDB::handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation& op) {
-    assert(_subDBId == 1u);
+    CHECK(_subDBId == 1u);
     using LidVector = LidVectorContext::LidVector;
     const SerialNum         serialNum = op.getSerialNum();
     const LidVectorContext& lidCtx = *op.getLidsToRemove();
@@ -289,22 +290,22 @@ void MyDocumentSubDB::handleRemove(RemoveOperationWithDocId& op) {
 
         PutRes putRes(
             _metaStore.put(docId, op.getBucketId(), op.getTimestamp(), op.getSerializedDocSize(), op.getLid(), 0u));
-        assert(putRes.ok());
-        assert(op.getLid() == putRes._lid);
+        CHECK(putRes.ok());
+        CHECK(op.getLid() == putRes._lid);
         const document::DocumentType* docType = _repo->getDocumentType(_docTypeName.getName());
         auto                          doc = std::make_unique<Document>(*_repo, *docType, docId);
         _docs[op.getLid()] = std::move(doc);
         needCommit = true;
     }
     if (op.getValidPrevDbdId(_subDBId) && op.changedDbdId()) {
-        assert(_metaStore.validLid(op.getPrevLid()));
+        CHECK(_metaStore.validLid(op.getPrevLid()));
         const RawDocumentMetadata& meta(_metaStore.getRawMetadata(op.getPrevLid()));
-        assert((_subDBId == 1u) == op.getPrevMarkedAsRemoved());
-        assert(meta.getGid() == gid);
+        CHECK((_subDBId == 1u) == op.getPrevMarkedAsRemoved());
+        CHECK(meta.getGid() == gid);
         (void)meta;
 
         bool remres = _metaStore.remove(op.getPrevLid(), 0u);
-        assert(remres);
+        CHECK(remres);
         (void)remres;
 
         _metaStore.removes_complete({op.getPrevLid()});
@@ -320,7 +321,7 @@ void MyDocumentSubDB::prepareMove(MoveOperation& op) {
     const DocumentId&         docId = op.getDocument()->getId();
     const document::GlobalId& gid = docId.getGlobalId();
     DocumentMetaStore::Result inspectResult = _metaStore.inspect(gid, 0u);
-    assert(!inspectResult._found);
+    CHECK(!inspectResult._found);
     op.setDbDocumentId(DbDocumentId(_subDBId, inspectResult._lid));
 }
 
@@ -336,20 +337,20 @@ void MyDocumentSubDB::handleMove(const MoveOperation& op) {
 
         PutRes putRes(
             _metaStore.put(docId, op.getBucketId(), op.getTimestamp(), op.getSerializedDocSize(), op.getLid(), 0u));
-        assert(putRes.ok());
-        assert(op.getLid() == putRes._lid);
+        CHECK(putRes.ok());
+        CHECK(op.getLid() == putRes._lid);
         _docs[op.getLid()] = doc;
         needCommit = true;
     }
     if (op.getValidPrevDbdId(_subDBId)) {
-        assert(_metaStore.validLid(op.getPrevLid()));
+        CHECK(_metaStore.validLid(op.getPrevLid()));
         const RawDocumentMetadata& meta(_metaStore.getRawMetadata(op.getPrevLid()));
-        assert((_subDBId == 1u) == op.getPrevMarkedAsRemoved());
-        assert(meta.getGid() == gid);
+        CHECK((_subDBId == 1u) == op.getPrevMarkedAsRemoved());
+        CHECK(meta.getGid() == gid);
         (void)meta;
 
         bool remres = _metaStore.remove(op.getPrevLid(), 0u);
-        assert(remres);
+        CHECK(remres);
         (void)remres;
 
         _metaStore.removes_complete({op.getPrevLid()});
@@ -382,16 +383,16 @@ bool MyFeedHandler::isExecutorThread() const {
 }
 
 IDocumentMoveHandler::MoveResult MyFeedHandler::handleMove(MoveOperation& op, IDestructorCallback::SP moveDoneCtx) {
-    assert(isExecutorThread());
-    assert(op.getValidPrevDbdId());
+    CHECK(isExecutorThread());
+    CHECK(op.getValidPrevDbdId());
     _subDBs[op.getSubDbId()]->prepareMove(op);
-    assert(op.getValidDbdId());
-    assert(op.getSubDbId() != op.getPrevSubDbId());
+    CHECK(op.getValidDbdId());
+    CHECK(op.getSubDbId() != op.getPrevSubDbId());
     // Check for wrong magic numbers
-    assert(op.getSubDbId() != 1u);
-    assert(op.getPrevSubDbId() != 1u);
-    assert(op.getSubDbId() < _subDBs.size());
-    assert(op.getPrevSubDbId() < _subDBs.size());
+    CHECK(op.getSubDbId() != 1u);
+    CHECK(op.getPrevSubDbId() != 1u);
+    CHECK(op.getSubDbId() < _subDBs.size());
+    CHECK(op.getPrevSubDbId() < _subDBs.size());
     appendOperation(op, std::move(moveDoneCtx));
     _subDBs[op.getSubDbId()]->handleMove(op);
     _subDBs[op.getPrevSubDbId()]->handleMove(op);
@@ -399,7 +400,7 @@ IDocumentMoveHandler::MoveResult MyFeedHandler::handleMove(MoveOperation& op, ID
 }
 
 void MyFeedHandler::performPruneRemovedDocuments(PruneRemovedDocumentsOperation& op) {
-    assert(isExecutorThread());
+    CHECK(isExecutorThread());
     if (op.getLidsToRemove()->getNumLids() != 0u) {
         appendOperation(op, std::make_shared<vespalib::IgnoreCallback>());
         // magic number.
@@ -408,7 +409,7 @@ void MyFeedHandler::performPruneRemovedDocuments(PruneRemovedDocumentsOperation&
 }
 
 void MyFeedHandler::heartBeat() {
-    assert(isExecutorThread());
+    CHECK(isExecutorThread());
     _heartBeats.store(_heartBeats.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
 }
 

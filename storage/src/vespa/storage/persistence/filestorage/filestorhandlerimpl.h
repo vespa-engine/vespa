@@ -18,6 +18,7 @@
 #include "active_operations_stats.h"
 #include "filestorhandler.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/metrics/metrictimer.h>
 #include <vespa/storage/common/messagesender.h>
@@ -97,7 +98,7 @@ public:
         void emplace_back(MessageEntry entry) {
             uint64_t seq_id = _next_sequence_id++;
             auto [iter, added] = _main_map.try_emplace(seq_id, std::move(entry));
-            assert(added);
+            CHECK(added);
             MapEntry& me = *iter;
             _sequence_ids_by_priority.insert(&me);
             _sequence_ids_by_bucket.insert(&me);
@@ -105,7 +106,7 @@ public:
 
         void remove(uint64_t sequence_id) {
             auto iter = _main_map.find(sequence_id);
-            assert(iter != _main_map.end());
+            CHECK(iter != _main_map.end());
             MapEntry& me = *iter;
             _sequence_ids_by_bucket.erase(&me);
             _sequence_ids_by_priority.erase(&me);

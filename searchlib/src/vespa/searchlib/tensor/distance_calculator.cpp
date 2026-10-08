@@ -5,6 +5,7 @@
 #include "distance_function_factory.h"
 #include "nearest_neighbor_index.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -26,7 +27,7 @@ DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tens
     auto* nns_index = _attr_tensor.nearest_neighbor_index();
     auto& dff = nns_index ? nns_index->distance_function_factory() : attr_tensor.distance_function_factory();
     _dist_fun = dff.for_query_vector(query_tensor_in.cells());
-    assert(_dist_fun);
+    CHECK(_dist_fun);
 }
 
 DistanceCalculator::~DistanceCalculator() = default;

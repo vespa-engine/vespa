@@ -1,9 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/task.h>
 #include <vespa/vespalib/gtest/gtest.h>
-
-#include <cassert>
 
 using vespalib::steady_clock;
 using vespalib::steady_time;
@@ -82,10 +81,10 @@ TEST(ScheduleTest, schedule) {
 
     uint32_t taskCnt = 1000000;
     MyTask** tasks = new MyTask*[taskCnt];
-    assert(tasks != nullptr);
+    CHECK(tasks != nullptr);
     for (uint32_t i = 0; i < taskCnt; i++) {
         tasks[i] = new MyTask(rand() & 131071);
-        assert(tasks[i] != nullptr);
+        CHECK(tasks[i] != nullptr);
     }
 
     steady_time start;

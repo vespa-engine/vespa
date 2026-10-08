@@ -2,6 +2,7 @@
 
 #include "generic_reduce.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/array_array_map.h>
 #include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/eval/eval/wrap_param.h>
@@ -11,7 +12,6 @@
 #include <vespa/vespalib/util/visit_ranges.h>
 
 #include <array>
-#include <cassert>
 
 using namespace vespalib::eval::tensor_function;
 
@@ -35,9 +35,9 @@ struct ReduceParam {
           sparse_plan(type, res_type),
           dense_plan(type, res_type),
           factory(factory_in) {
-        assert(!res_type.is_error());
-        assert(dense_plan.in_size == type.dense_subspace_size());
-        assert(dense_plan.out_size == res_type.dense_subspace_size());
+        CHECK(!res_type.is_error());
+        CHECK(dense_plan.in_size == type.dense_subspace_size());
+        CHECK(dense_plan.out_size == res_type.dense_subspace_size());
     }
     ~ReduceParam();
 };
@@ -226,7 +226,7 @@ DenseReducePlan::DenseReducePlan(const ValueType& type, const ValueType& res_typ
     Case prev_case = Case::NONE;
     auto update_plan = [&](Case my_case, size_t my_size) {
         if (my_case == prev_case) {
-            assert(!loop_cnt.empty());
+            CHECK(!loop_cnt.empty());
             loop_cnt.back() *= my_size;
         } else {
             loop_cnt.push_back(my_size);
@@ -291,8 +291,8 @@ Instruction GenericReduce::make_instruction(const ValueType& result_type, const 
                                             const std::vector<std::string>& dimensions,
                                             const ValueBuilderFactory& factory, Stash& stash) {
     auto& param = stash.create<ReduceParam>(input_type, dimensions, factory);
-    assert(result_type == param.res_type);
-    assert(result_type.cell_meta().eq(input_type.cell_meta().reduce(result_type.is_double())));
+    CHECK(result_type == param.res_type);
+    CHECK(result_type.cell_meta().eq(input_type.cell_meta().reduce(result_type.is_double())));
     auto fun = typify_invoke<3, ReduceTypify, SelectGenericReduceOp>(input_type.cell_meta(),
                                                                      result_type.cell_meta().is_scalar, aggr, param);
     return {fun, wrap_param<ReduceParam>(param)};

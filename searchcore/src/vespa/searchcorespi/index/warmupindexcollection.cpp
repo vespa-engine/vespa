@@ -4,6 +4,7 @@
 
 #include "idiskindex.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
@@ -103,8 +104,8 @@ WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig& warmupConfig, I
 }
 
 void WarmupIndexCollection::setSource(uint32_t docId) {
-    assert(_prev->valid());
-    assert(_next->valid());
+    CHECK(_prev->valid());
+    CHECK(_next->valid());
     _prev->setSource(docId);
     _next->setSource(docId);
 }
@@ -127,7 +128,7 @@ WarmupIndexCollection::~WarmupIndexCollection() {
     if (_warmupEndTime != vespalib::steady_time()) {
         LOG(info, "Warmup aborted due to new state change or application shutdown");
     }
-    assert(_pendingTasks.has_zero_ref_count());
+    CHECK(_pendingTasks.has_zero_ref_count());
 }
 
 const ISourceSelector& WarmupIndexCollection::getSourceSelector() const {

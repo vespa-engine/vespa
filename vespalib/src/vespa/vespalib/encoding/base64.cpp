@@ -6,11 +6,10 @@
  *
  */
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 namespace vespalib {
 
@@ -36,7 +35,7 @@ std::string Base64::encode(const char* source, int len) {
     // Assign a string that we know is long enough
     std::string result(getMaximumEncodeLength(len), '\0');
     int         outlen = encode(source, len, &result[0], result.size());
-    assert(outlen >= 0); // Make sure buffer was big enough.
+    CHECK(outlen >= 0); // Make sure buffer was big enough.
     result.resize(outlen);
     return result;
 }
@@ -44,7 +43,7 @@ std::string Base64::encode(const char* source, int len) {
 std::string Base64::decode(const char* source, int len) {
     std::string result(getMaximumDecodeLength(len), '\0');
     int         outlen = decode(source, len, &result[0], len);
-    assert(outlen >= 0);
+    CHECK(outlen >= 0);
     result.resize(outlen);
     return result;
 }

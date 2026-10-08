@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "idealstateoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
@@ -39,7 +40,7 @@ BucketAndNodes::BucketAndNodes(const document::Bucket& bucket, uint16_t node) : 
 
 BucketAndNodes::BucketAndNodes(const document::Bucket& bucket, const std::vector<uint16_t>& nodes)
     : _bucket(bucket), _nodes(nodes) {
-    assert(!nodes.empty());
+    CHECK(!nodes.empty());
     std::sort(_nodes.begin(), _nodes.end());
 }
 

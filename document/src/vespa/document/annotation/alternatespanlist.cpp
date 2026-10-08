@@ -4,7 +4,7 @@
 
 #include "spantreevisitor.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 using std::unique_ptr;
 
@@ -43,13 +43,13 @@ void AlternateSpanList::setProbability(size_t index, double probability) {
 }
 
 SpanList& AlternateSpanList::getSubtree(size_t index) const {
-    assert(index < _subtrees.size());
-    assert(_subtrees[index].span_list);
+    CHECK(index < _subtrees.size());
+    CHECK(_subtrees[index].span_list);
     return *_subtrees[index].span_list;
 }
 
 double AlternateSpanList::getProbability(size_t index) const {
-    assert(index < _subtrees.size());
+    CHECK(index < _subtrees.size());
     return _subtrees[index].probability;
 }
 

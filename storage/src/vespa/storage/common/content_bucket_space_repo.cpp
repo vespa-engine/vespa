@@ -2,6 +2,7 @@
 
 #include "content_bucket_space_repo.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 
 using document::BucketSpace;
@@ -17,7 +18,7 @@ ContentBucketSpaceRepo::ContentBucketSpaceRepo(const ContentBucketDbOptions& db_
 
 ContentBucketSpace& ContentBucketSpaceRepo::get(BucketSpace bucketSpace) const {
     auto itr = _map.find(bucketSpace);
-    assert(itr != _map.end());
+    CHECK(itr != _map.end());
     return *itr->second;
 }
 

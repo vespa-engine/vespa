@@ -4,8 +4,9 @@
 
 #include "value_type_spec.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 #include <ostream>
 
 namespace vespalib::eval {
@@ -179,7 +180,7 @@ ValueType::~ValueType() = default;
 
 bool ValueType::is_double() const {
     if (!_error && _dimensions.empty()) {
-        assert(_cell_type == CellType::DOUBLE);
+        CHECK(_cell_type == CellType::DOUBLE);
         return true;
     }
     return false;

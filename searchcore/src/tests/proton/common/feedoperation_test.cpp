@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for feedoperation.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -65,7 +66,7 @@ uint32_t getDocSize(const Document& doc) {
     vespalib::nbostream tstream;
     doc.serialize(tstream);
     uint32_t docSize = tstream.size();
-    assert(docSize != 0);
+    CHECK(docSize != 0);
     return docSize;
 }
 
@@ -73,7 +74,7 @@ uint32_t get_update_size(const DocumentUpdate& update) {
     vespalib::nbostream stream;
     update.serializeHEAD(stream);
     uint32_t upd_size = stream.size();
-    assert(upd_size != 0);
+    CHECK(upd_size != 0);
     return upd_size;
 }
 

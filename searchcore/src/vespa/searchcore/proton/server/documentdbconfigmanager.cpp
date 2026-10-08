@@ -5,6 +5,7 @@
 #include "bootstrapconfig.h"
 #include "threading_service_config.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
@@ -26,7 +27,6 @@
 
 #include <vespa/config/retriever/configsnapshot.hpp>
 
-#include <cassert>
 #include <cinttypes>
 #include <thread>
 
@@ -343,7 +343,7 @@ void DocumentDBConfigManager::update(FNET_Transport& transport, const ConfigSnap
         build_alloc_config(_bootstrapConfig->getHwInfo(), _bootstrapConfig->getProtonConfig(), _docTypeName),
         DocumentMetaStoreConfig::make(_bootstrapConfig->getProtonConfig(), document_db_index), _configId,
         _docTypeName);
-    assert(newSnapshot->valid());
+    CHECK(newSnapshot->valid());
     {
         std::lock_guard<std::mutex> lock(_pendingConfigMutex);
         _pendingConfigSnapshot = newSnapshot;

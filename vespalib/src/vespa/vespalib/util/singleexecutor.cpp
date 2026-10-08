@@ -2,9 +2,8 @@
 
 #include "singleexecutor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/alloc.h>
-
-#include <cassert>
 
 namespace vespalib {
 
@@ -32,7 +31,7 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t reservedQueueSize, bool
       _reactionTime(reactionTime),
       _closed(false),
       _overflow() {
-    assert(reservedQueueSize >= watermark);
+    CHECK(reservedQueueSize >= watermark);
     if (!isQueueSizeHard) {
         _overflow = std::make_unique<ArrayQueue<Task::UP>>();
     }
@@ -203,7 +202,7 @@ Executor::Task::UP SingleExecutor::wait_for_room_or_put_in_overflow_Q(Lock& guar
         }
     }
     if (_overflow && !_overflow->empty()) {
-        assert(!task);
+        CHECK(!task);
         move_overflow_to_main_q(guard);
     }
     return task;

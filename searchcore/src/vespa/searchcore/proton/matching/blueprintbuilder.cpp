@@ -4,6 +4,7 @@
 
 #include "querynodes.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
@@ -101,7 +102,7 @@ private:
 
     void buildWordAlternatives(ProtonWordAlternatives& n) {
         const auto& children = n.getChildren();
-        assert(children.size() == n.getNumTerms());
+        CHECK(children.size() == n.getNumTerms());
         double                                  eqw = n.getWeight().percent();
         std::vector<std::unique_ptr<Blueprint>> term_bps;
         for (const auto& child : children) {
@@ -113,7 +114,7 @@ private:
             specs.add(n.field(i).fieldSpec());
         }
         auto eq = std::make_unique<EquivBlueprint>(std::move(specs), EquivBlueprint::allocate_outside_equiv_tag{});
-        assert(term_bps.size() == n.getNumTerms());
+        CHECK(term_bps.size() == n.getNumTerms());
         for (uint32_t idx = 0; idx < n.getNumTerms(); idx++) {
             const auto& child = children[idx];
             double      w = child->getWeight().percent();
@@ -170,8 +171,8 @@ private:
         Mixer         mixer;
         for (size_t i = 0; i < n.numFields(); ++i) {
             const ProtonTermData::FieldEntry& field = n.field(i);
-            assert(field.getFieldId() != search::fef::IllegalFieldId);
-            assert(field.getHandle() != search::fef::IllegalHandle);
+            CHECK(field.getFieldId() != search::fef::IllegalFieldId);
+            CHECK(field.getHandle() != search::fef::IllegalHandle);
             if (field.attribute_field) {
                 mixer.addAttribute(
                     _context.getAttributes().createBlueprint(_requestContext, field.fieldSpec(), n, _global_layout));
@@ -235,7 +236,7 @@ public:
                             search::fef::MatchDataLayout& global_layout)
         : _requestContext(requestContext), _context(context), _global_layout(global_layout), _result() {}
     Blueprint::UP build() {
-        assert(_result);
+        CHECK(_result);
         return std::move(_result);
     }
     static Blueprint::UP build(const IRequestContext& requestContext, Node& node, ISearchContext& context,

@@ -4,6 +4,7 @@
 
 #include "grouping.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/expression/aggregationrefnode.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -12,8 +13,6 @@
 
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/stllike/hash_set.hpp>
-
-#include <cassert>
 
 namespace search::aggregation {
 
@@ -82,7 +81,7 @@ template <typename Doc> void Group::groupNext(const GroupingLevel& level, const 
 
 Group* Group::Value::groupSingle(const ResultNode& selectResult, HitRank rank, const GroupingLevel& level) {
     if (_childInfo._childMap == nullptr) {
-        assert(getChildrenSize() == 0);
+        CHECK(getChildrenSize() == 0);
         _childInfo._childMap = new GroupHash(1, GroupHasher(&_children), GroupEqual(&_children));
     }
     GroupHash& childMap = *_childInfo._childMap;
@@ -227,17 +226,17 @@ void Group::Value::addAggregationResult(ExpressionNode::UP aggr) {
 }
 
 void Group::Value::setAggrSize(uint32_t v) {
-    assert(v < 0x10000);
+    CHECK(v < 0x10000);
     _packedLength = (_packedLength & ~0xffff) | v;
 }
 
 void Group::Value::setExprSize(uint32_t v) {
-    assert(v < sizeof(_orderBy) * 2);
+    CHECK(v < sizeof(_orderBy) * 2);
     _packedLength = (_packedLength & ~0xf0000) | (v << 16);
 }
 
 void Group::Value::setOrderBySize(uint32_t v) {
-    assert(v < sizeof(_orderBy) * 2);
+    CHECK(v < sizeof(_orderBy) * 2);
     _packedLength = (_packedLength & ~0xf00000) | (v << 20);
 }
 
@@ -256,7 +255,7 @@ template <typename Doc> void Group::Value::collect(const Doc& doc, HitRank rank)
 }
 
 void Group::Value::addResult(ExpressionNode::UP aggr) {
-    assert(getExprSize() < 15);
+    CHECK(getExprSize() < 15);
     addAggregationResult(std::move(aggr));
     addExpressionResult(std::make_unique<AggregationRefNode>(getAggrSize() - 1));
     setupAggregationReferences();
@@ -292,7 +291,7 @@ void Group::Value::select(const vespalib::ObjectPredicate& predicate, vespalib::
 }
 
 void Group::Value::preAggregate() {
-    assert(_childInfo._childMap == nullptr);
+    CHECK(_childInfo._childMap == nullptr);
     _childInfo._childMap = new GroupHash(getChildrenSize() * 2, GroupHasher(&_children), GroupEqual(&_children));
     GroupHash& childMap = *_childInfo._childMap;
     size_t     i = 0;
@@ -532,12 +531,12 @@ Serializer& Group::Value::serialize(Serializer& os) const {
 Deserializer& Group::Value::deserialize(Deserializer& is) {
     uint32_t count = 0;
     is >> count;
-    assert(count < sizeof(_orderBy) * 2);
+    CHECK(count < sizeof(_orderBy) * 2);
     setOrderBySize(count);
     for (uint32_t i = 0; i < count; i++) {
         int32_t tmp = 0;
         is >> tmp;
-        assert((-7 <= tmp) && (tmp <= 7));
+        CHECK((-7 <= tmp) && (tmp <= 7));
         setOrderBy(i, tmp);
     }
     uint32_t aggrSize = 0;

@@ -2,12 +2,12 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/common/iblobconverter.h>
 #include <vespa/searchlib/common/converters.h>
 
 #include <unicode/coll.h>
 
-#include <cassert>
 #include <string>
 #include <vector>
 
@@ -50,10 +50,10 @@ private:
             *(_data.data() + size + 7) = '\0';
         }
         void check() {
-            assert(*(_data.data() + siz() + 3) == 'd');
-            assert(*(_data.data() + siz() + 4) == 'e');
-            assert(*(_data.data() + siz() + 5) == 'a');
-            assert(*(_data.data() + siz() + 6) == 'd');
+            CHECK(*(_data.data() + siz() + 3) == 'd');
+            CHECK(*(_data.data() + siz() + 4) == 'e');
+            CHECK(*(_data.data() + siz() + 5) == 'a');
+            CHECK(*(_data.data() + siz() + 6) == 'd');
         }
     };
     int utf8ToUtf16(const ConstBufferRef& src) const;

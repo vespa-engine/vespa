@@ -2,6 +2,7 @@
 
 #include "addfieldpathupdate.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
@@ -9,7 +10,6 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <cassert>
 #include <ostream>
 
 using vespalib::nbostream;
@@ -80,7 +80,7 @@ void AddFieldPathUpdate::deserialize(const DocumentTypeRepo& repo, const DataTyp
     FieldPath path;
     type.buildFieldPath(path, getOriginalFieldPath());
     const DataType& fieldType = getResultingDataType(path);
-    assert(fieldType.isArray());
+    CHECK(fieldType.isArray());
     FieldValue::UP val = fieldType.createFieldValue();
     _values.reset(static_cast<ArrayFieldValue*>(val.release()));
     VespaDocumentDeserializer deserializer(repo, stream, Document::getNewestSerializationVersion());

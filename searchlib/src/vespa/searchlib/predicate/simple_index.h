@@ -4,6 +4,7 @@
 
 #include "common.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/type_stable_vector.h>
@@ -92,7 +93,7 @@ public:
 
     explicit PostingVectorIterator(const PostingVector& vector, size_t size)
         : _vector(&vector.acquire_elem_ref(0)), _size(size) {
-        assert(_size <= vector.get_size()); // Data race: not writer
+        CHECK(_size <= vector.get_size()); // Data race: not writer
         linearSeek(1);
     }
 

@@ -3,6 +3,7 @@
 
 #include "indexenvironment.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
@@ -59,7 +60,7 @@ public:
     }
     uint32_t get_num_docs() const override { return _num_docs; }
     const IIndexEnvironment& getIndexEnvironment() const override {
-        assert(_indexEnv != nullptr);
+        CHECK(_indexEnv != nullptr);
         return *_indexEnv;
     }
 

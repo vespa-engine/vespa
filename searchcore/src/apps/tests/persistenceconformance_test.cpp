@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-imported-fields.h>
@@ -81,7 +82,7 @@ void calc_shard_index() {
     const auto* shard = std::getenv("GTEST_SHARD_INDEX");
     if (shard != nullptr) {
         shard_index = std::atoi(shard);
-        assert(shard_index >= 0 && shard_index <= tls_port_max_bias);
+        CHECK(shard_index >= 0 && shard_index <= tls_port_max_bias);
     }
 }
 
@@ -341,7 +342,7 @@ public:
         _docDbRepo = std::make_unique<DocumentDBRepo>(cfgFactory, _docDbFactory);
         auto engine = std::make_unique<MyPersistenceEngine>(_engineOwner, _writeFilter, _resource_usage_notifier,
                                                             std::move(_docDbRepo), _docType);
-        assert(!_docDbRepo); // Repo should be handed over
+        CHECK(!_docDbRepo); // Repo should be handed over
         return engine;
     }
 

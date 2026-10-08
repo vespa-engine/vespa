@@ -2,13 +2,12 @@
 
 #include "element_completeness_feature.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/stash.h>
-
-#include <cassert>
 
 namespace search::features {
 
@@ -34,7 +33,7 @@ ElementCompletenessExecutor::ElementCompletenessExecutor(const fef::IQueryEnviro
 }
 
 void ElementCompletenessExecutor::execute(uint32_t docId) {
-    assert(_queue.empty());
+    CHECK(_queue.empty());
     for (size_t i = 0; i < _terms.size(); ++i) {
         const fef::TermFieldMatchData* tfmd = _md->resolveTermField(_terms[i].termHandle);
         if (tfmd->has_ranking_data(docId)) {

@@ -5,6 +5,7 @@
 #include "check_type.h"
 #include "node_traverser.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -26,17 +27,17 @@ public:
         : _params(params), _type_map(type_map), _errors(errors) {}
 
     const ValueType& param_type(size_t idx) {
-        assert(idx < _params.size());
+        CHECK(idx < _params.size());
         return _params[idx];
     }
     void bind(const ValueType& type, const Node& node) {
         auto pos = _type_map.find(&node);
-        assert(pos == _type_map.end());
+        CHECK(pos == _type_map.end());
         _type_map.emplace(&node, type);
     }
     const ValueType& type(const Node& node) {
         auto pos = _type_map.find(&node);
-        assert(pos != _type_map.end());
+        CHECK(pos != _type_map.end());
         return pos->second;
     }
     void add_error(const std::string& msg) { _errors.push_back(msg); }
@@ -356,7 +357,7 @@ NodeTypes::NodeTypes(const nodes::Node& const_node) : _not_found(ValueType::erro
 
 NodeTypes::NodeTypes(const Function& function, const std::vector<ValueType>& input_types)
     : _not_found(ValueType::error_type()), _type_map() {
-    assert(input_types.size() == function.num_params());
+    CHECK(input_types.size() == function.num_params());
     nodes::TypeResolver resolver(input_types, _type_map, _errors);
     function.root().traverse(resolver);
 }

@@ -2,6 +2,7 @@
 
 #include "lid_space_common.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/test/dummy_document_sub_db.h>
 
 using proton::test::DummyDocumentSubDb;
@@ -68,18 +69,18 @@ std::string MyHandler::getName() const {
 
 void MyHandler::set_operation_listener(documentmetastore::OperationListener::SP op_listener) {
     auto* rm_listener = dynamic_cast<RemoveOperationsRateTracker*>(op_listener.get());
-    assert(rm_listener != nullptr);
+    CHECK(rm_listener != nullptr);
     _op_listener = std::move(op_listener);
     _rm_listener = rm_listener;
 }
 
 LidUsageStats MyHandler::getLidStatus() const {
-    assert(_handleMoveCnt < _stats.size());
+    CHECK(_handleMoveCnt < _stats.size());
     return _stats[_handleMoveCnt];
 }
 
 IDocumentScanIterator::UP MyHandler::getIterator() const {
-    assert(_iteratorCnt < _lids.size());
+    CHECK(_iteratorCnt < _lids.size());
     return std::make_unique<MyScanIterator>(*this, _lids[_iteratorCnt++]);
 }
 
@@ -91,7 +92,7 @@ search::DocumentMetadata MyHandler::getMetadata(uint32_t lid) const {
 }
 
 MoveOperation::UP MyHandler::createMoveOperation(const search::DocumentMetadata& document, uint32_t moveToLid) const {
-    assert(document.lid > moveToLid);
+    CHECK(document.lid > moveToLid);
     _moveFromLid = document.lid;
     const auto& entry = _docs[document.lid];
     auto op = std::make_unique<MoveOperation>(entry.first.bucketId, storage::spi::Timestamp(entry.first.timestamp),

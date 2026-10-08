@@ -1,10 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "updateoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/update/documentupdate.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.feedoperation.updateoperation");
@@ -34,7 +33,7 @@ UpdateOperation::UpdateOperation(const BucketId& bucketId, Timestamp timestamp, 
 UpdateOperation::~UpdateOperation() = default;
 
 void UpdateOperation::serializeUpdate(vespalib::nbostream& os) const {
-    assert(getType() == UPDATE);
+    CHECK(getType() == UPDATE);
     _upd->serializeHEAD(os);
 }
 

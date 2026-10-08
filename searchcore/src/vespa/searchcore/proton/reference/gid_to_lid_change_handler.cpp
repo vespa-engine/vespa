@@ -5,11 +5,10 @@
 #include "i_gid_to_lid_change_listener.h"
 #include "pending_gid_to_lid_changes.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
-
-#include <cassert>
 
 using vespalib::makeLambdaTask;
 
@@ -20,9 +19,9 @@ GidToLidChangeHandler::GidToLidChangeHandler()
 }
 
 GidToLidChangeHandler::~GidToLidChangeHandler() {
-    assert(_closed);
-    assert(_listeners.empty());
-    assert(_pendingRemove.empty());
+    CHECK(_closed);
+    CHECK(_listeners.empty());
+    CHECK(_pendingRemove.empty());
 }
 
 void GidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid) {
@@ -49,11 +48,11 @@ void GidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP context, GlobalI
     auto       itr = _pendingRemove.find(gid);
     if (itr != _pendingRemove.end()) {
         auto& entry = itr->second;
-        assert(entry.removeSerialNum != serialNum);
+        CHECK(entry.removeSerialNum != serialNum);
         if (entry.removeSerialNum > serialNum) {
             return; // Document has already been removed later on
         }
-        assert(entry.putSerialNum != serialNum);
+        CHECK(entry.putSerialNum != serialNum);
         if (entry.putSerialNum > serialNum) {
             return; // Document has already been put later on
         }
@@ -70,8 +69,8 @@ void GidToLidChangeHandler::notifyRemoves(IDestructorCallbackSP context, const s
         auto insRes = _pendingRemove.insert(std::make_pair(gid, PendingRemoveEntry(serialNum)));
         if (!insRes.second) {
             auto& entry = insRes.first->second;
-            assert(entry.removeSerialNum < serialNum);
-            assert(entry.putSerialNum < serialNum);
+            CHECK(entry.removeSerialNum < serialNum);
+            CHECK(entry.putSerialNum < serialNum);
             if (entry.removeSerialNum < entry.putSerialNum) {
                 notifyRemove(context, gid);
             }
@@ -87,9 +86,9 @@ void GidToLidChangeHandler::notifyRemoves(IDestructorCallbackSP context, const s
 void GidToLidChangeHandler::notifyRemoveDone(GlobalId gid, SerialNum serialNum) {
     lock_guard guard(_lock);
     auto       itr = _pendingRemove.find(gid);
-    assert(itr != _pendingRemove.end());
+    CHECK(itr != _pendingRemove.end());
     auto& entry = itr->second;
-    assert(entry.removeSerialNum >= serialNum);
+    CHECK(entry.removeSerialNum >= serialNum);
     if (entry.refCount == 1) {
         _pendingRemove.erase(itr);
     } else {
@@ -133,7 +132,7 @@ void GidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener>
         }
         _listeners.back()->notifyRegistered(removes);
     } else {
-        assert(_listeners.empty());
+        CHECK(_listeners.empty());
     }
 }
 
@@ -161,7 +160,7 @@ void GidToLidChangeHandler::removeListeners(const std::string& docTypeName, cons
                 }
             }
         } else {
-            assert(_listeners.empty());
+            CHECK(_listeners.empty());
         }
     }
 }

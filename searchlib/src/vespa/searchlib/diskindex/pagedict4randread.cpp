@@ -2,6 +2,7 @@
 
 #include "pagedict4randread.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -48,29 +49,29 @@ void PageDict4RandRead::readSSHeader() {
 
     vespalib::FileHeader header;
     uint32_t             headerLen = ssd.readHeader(header, _ssfile->getSize());
-    assert(header.hasTag("frozen"));
-    assert(header.hasTag("fileBitSize"));
-    assert(header.hasTag("format.0"));
-    assert(!header.hasTag("format.1"));
-    assert(header.hasTag("numWordIds"));
-    assert(header.hasTag("avgBitsPerDoc"));
-    assert(header.hasTag("minChunkDocs"));
-    assert(header.hasTag("docIdLimit"));
-    assert(header.hasTag("endian"));
-    assert(header.getTag("frozen").asInteger() != 0);
+    CHECK(header.hasTag("frozen"));
+    CHECK(header.hasTag("fileBitSize"));
+    CHECK(header.hasTag("format.0"));
+    CHECK(!header.hasTag("format.1"));
+    CHECK(header.hasTag("numWordIds"));
+    CHECK(header.hasTag("avgBitsPerDoc"));
+    CHECK(header.hasTag("minChunkDocs"));
+    CHECK(header.hasTag("docIdLimit"));
+    CHECK(header.hasTag("endian"));
+    CHECK(header.getTag("frozen").asInteger() != 0);
     _ssFileBitSize = header.getTag("fileBitSize").asInteger();
-    assert(header.getTag("format.0").asString() == mySSId);
+    CHECK(header.getTag("format.0").asString() == mySSId);
     ssd._numWordIds = header.getTag("numWordIds").asInteger();
     ssd._avgBitsPerDoc = header.getTag("avgBitsPerDoc").asInteger();
     ssd._minChunkDocs = header.getTag("minChunkDocs").asInteger();
     ssd._docIdLimit = header.getTag("docIdLimit").asInteger();
 
-    assert(header.getTag("endian").asString() == "big");
+    CHECK(header.getTag("endian").asString() == "big");
     ssd.smallAlign(64);
     uint32_t minHeaderLen = header.getSize();
     minHeaderLen += (-minHeaderLen & 7);
-    assert(headerLen >= minHeaderLen);
-    assert(ssd.getReadOffset() == headerLen * 8);
+    CHECK(headerLen >= minHeaderLen);
+    CHECK(ssd.getReadOffset() == headerLen * 8);
     _ssHeaderLen = headerLen;
     _create_and_freeze_times = CreateAndFreezeTimes(header);
 }
@@ -88,20 +89,20 @@ void PageDict4RandRead::readSPHeader() {
 
     vespalib::FileHeader header;
     uint32_t             headerLen = d.readHeader(header, _spfile->getSize());
-    assert(header.hasTag("frozen"));
-    assert(header.hasTag("fileBitSize"));
-    assert(header.hasTag("format.0"));
-    assert(!header.hasTag("format.1"));
-    assert(header.hasTag("endian"));
-    assert(header.getTag("frozen").asInteger() != 0);
+    CHECK(header.hasTag("frozen"));
+    CHECK(header.hasTag("fileBitSize"));
+    CHECK(header.hasTag("format.0"));
+    CHECK(!header.hasTag("format.1"));
+    CHECK(header.hasTag("endian"));
+    CHECK(header.getTag("frozen").asInteger() != 0);
     _spFileBitSize = header.getTag("fileBitSize").asInteger();
-    assert(header.getTag("format.0").asString() == mySPId);
-    assert(header.getTag("endian").asString() == "big");
+    CHECK(header.getTag("format.0").asString() == mySPId);
+    CHECK(header.getTag("endian").asString() == "big");
     d.smallAlign(64);
     uint32_t minHeaderLen = header.getSize();
     minHeaderLen += (-minHeaderLen & 7);
-    assert(headerLen >= minHeaderLen);
-    assert(d.getReadOffset() == headerLen * 8);
+    CHECK(headerLen >= minHeaderLen);
+    CHECK(d.getReadOffset() == headerLen * 8);
     _spHeaderLen = headerLen;
     _create_and_freeze_times.merge(CreateAndFreezeTimes(header));
 }
@@ -119,20 +120,20 @@ void PageDict4RandRead::readPHeader() {
 
     vespalib::FileHeader header;
     uint32_t             headerLen = d.readHeader(header, _pfile->getSize());
-    assert(header.hasTag("frozen"));
-    assert(header.hasTag("fileBitSize"));
-    assert(header.hasTag("format.0"));
-    assert(!header.hasTag("format.1"));
-    assert(header.hasTag("endian"));
-    assert(header.getTag("frozen").asInteger() != 0);
+    CHECK(header.hasTag("frozen"));
+    CHECK(header.hasTag("fileBitSize"));
+    CHECK(header.hasTag("format.0"));
+    CHECK(!header.hasTag("format.1"));
+    CHECK(header.hasTag("endian"));
+    CHECK(header.getTag("frozen").asInteger() != 0);
     _pFileBitSize = header.getTag("fileBitSize").asInteger();
-    assert(header.getTag("format.0").asString() == myPId);
-    assert(header.getTag("endian").asString() == "big");
+    CHECK(header.getTag("format.0").asString() == myPId);
+    CHECK(header.getTag("endian").asString() == "big");
     d.smallAlign(64);
     uint32_t minHeaderLen = header.getSize();
     minHeaderLen += (-minHeaderLen & 7);
-    assert(headerLen >= minHeaderLen);
-    assert(d.getReadOffset() == headerLen * 8);
+    CHECK(headerLen >= minHeaderLen);
+    CHECK(d.getReadOffset() == headerLen * 8);
     _pHeaderLen = headerLen;
     _create_and_freeze_times.merge(CreateAndFreezeTimes(header));
 }
@@ -218,7 +219,7 @@ bool PageDict4RandRead::open(const std::string& name, const TuneFileRandRead& tu
     bool has_read_ss_header = false;
     if (_ssfile->MemoryMapPtr(0) != nullptr && fileSize >= _mmap_file_size_threshold) {
         _ssReadContext.reference_compressed_buffer(_ssfile->MemoryMapPtr(0), file_units);
-        assert(_ssd.getReadOffset() == 0u);
+        CHECK(_ssd.getReadOffset() == 0u);
         readSSHeader();
         has_read_ss_header = true;
     }
@@ -233,8 +234,8 @@ bool PageDict4RandRead::open(const std::string& name, const TuneFileRandRead& tu
         _ssReadContext.setBufferEndFilePos(0);
         _ssfile->SetPosition(0);
         _ssReadContext.readComprBuffer();
-        assert(_ssReadContext.getBufferEndFilePos() >= fileSize);
-        assert(_ssd.getReadOffset() == 0u);
+        CHECK(_ssReadContext.getBufferEndFilePos() >= fileSize);
+        CHECK(_ssd.getReadOffset() == 0u);
         if (has_read_ss_header) {
             _ssReadContext.setPosition(_ssHeaderLen * 8);
         } else {

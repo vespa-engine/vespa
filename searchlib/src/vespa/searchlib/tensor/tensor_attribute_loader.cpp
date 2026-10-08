@@ -8,6 +8,7 @@
 #include "tensor_attribute_constants.h"
 #include "tensor_attribute_saver.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
@@ -228,7 +229,7 @@ TensorAttributeLoader::~TensorAttributeLoader() = default;
 
 void TensorAttributeLoader::load_dense_tensor_store(BlobSequenceReader& reader, uint32_t docid_limit,
                                                     DenseTensorStore& dense_store) {
-    assert(reader.getVersion() == DENSE_TENSOR_ATTRIBUTE_VERSION);
+    CHECK(reader.getVersion() == DENSE_TENSOR_ATTRIBUTE_VERSION);
     uint8_t presence_flag = 0;
     for (uint32_t lid = 0; lid < docid_limit; ++lid) {
         reader.readBlob(&presence_flag, sizeof(presence_flag));
@@ -246,7 +247,7 @@ void TensorAttributeLoader::load_dense_tensor_store(BlobSequenceReader& reader, 
 }
 
 void TensorAttributeLoader::load_tensor_store(BlobSequenceReader& reader, uint32_t docid_limit) {
-    assert(reader.getVersion() == TENSOR_ATTRIBUTE_VERSION);
+    CHECK(reader.getVersion() == TENSOR_ATTRIBUTE_VERSION);
     vespalib::Array<char> buffer(1024);
     for (uint32_t lid = 0; lid < docid_limit; ++lid) {
         uint32_t tensorSize = reader.getNextSize();
@@ -334,7 +335,7 @@ bool TensorAttributeLoader::on_load(vespalib::Executor* executor) {
         return false;
     }
     _attr.setCreateSerialNum(reader.getCreateSerialNum());
-    assert(_attr.getConfig().tensorType().to_spec() == reader.getDatHeader().getTag(tensorTypeTag).asString());
+    CHECK(_attr.getConfig().tensorType().to_spec() == reader.getDatHeader().getTag(tensorTypeTag).asString());
     uint32_t docid_limit(reader.getDocIdLimit());
     _ref_vector.reset();
     _ref_vector.unsafe_reserve(docid_limit);

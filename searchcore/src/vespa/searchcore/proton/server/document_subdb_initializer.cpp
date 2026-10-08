@@ -4,6 +4,7 @@
 
 #include "idocumentsubdb.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
@@ -17,7 +18,7 @@ DocumentSubDbInitializer::DocumentSubDbInitializer(IDocumentSubDB&              
 }
 
 void DocumentSubDbInitializer::addDocumentMetaStoreInitTask(InitTask::SP documentMetaStoreInitTask) {
-    assert(!_documentMetaStoreInitTask);
+    CHECK(!_documentMetaStoreInitTask);
     _documentMetaStoreInitTask = documentMetaStoreInitTask;
     addDependency(documentMetaStoreInitTask);
 }

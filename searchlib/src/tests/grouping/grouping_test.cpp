@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/repo/newconfigbuilder.h>
@@ -64,7 +65,7 @@ public:
         for (uint32_t docid = 0; docid < numDocs; ++docid) {
             T        val;
             uint32_t res = rhs._attr->get(docid, &val, 1);
-            assert(res == 1);
+            CHECK(res == 1);
             add(val);
         }
     }

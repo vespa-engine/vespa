@@ -6,6 +6,7 @@
 #include "metrics.h"
 #include "proto_converter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/log/exceptions.h>
@@ -79,7 +80,7 @@ void encode_log_request(const ProtoConverter::ProtoLogRequest& src, FRT_RPCReque
 bool decode_log_response(FRT_RPCRequest& src, ProtoConverter::ProtoLogResponse& dst) {
     auto&   values = *src.GetReturn();
     uint8_t encoding = values[0]._intval8;
-    assert(encoding == 0); // Not using compression
+    CHECK(encoding == 0); // Not using compression
     uint32_t uncompressed_size = values[1]._intval32;
     (void)uncompressed_size;
     return dst.ParseFromArray(values[2]._data._buf, values[2]._data._len);

@@ -2,7 +2,8 @@
 
 #include "address_space.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <ostream>
 
 namespace vespalib {
@@ -12,7 +13,7 @@ AddressSpace::AddressSpace() noexcept : _used(0), _dead(0), _limit(0) {
 
 AddressSpace::AddressSpace(size_t used_, size_t dead_, size_t limit_) noexcept
     : _used(used_), _dead(dead_), _limit(limit_) {
-    assert(_used >= _dead);
+    CHECK(_used >= _dead);
 }
 
 std::ostream& operator<<(std::ostream& out, const AddressSpace& rhs) {

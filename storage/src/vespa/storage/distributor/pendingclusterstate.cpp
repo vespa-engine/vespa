@@ -6,6 +6,7 @@
 #include "pending_bucket_space_db_transition.h"
 #include "top_level_bucket_db_updater.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/vdslib/distribution/distribution.h>
@@ -199,7 +200,7 @@ PendingClusterState::Summary::~Summary() = default;
 void PendingClusterState::update_reply_failure_statistics(const api::ReturnCode&    result,
                                                           const BucketSpaceAndNode& source) {
     auto transition_iter = _pendingTransitions.find(source.bucketSpace);
-    assert(transition_iter != _pendingTransitions.end());
+    CHECK(transition_iter != _pendingTransitions.end());
     auto& transition = *transition_iter->second;
     transition.increment_request_failures(source.node);
     // Edge triggered (rate limited) warning for content node bucket fetching failures
@@ -230,7 +231,7 @@ bool PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::Re
 
     setNodeReplied(bucketSpaceAndNode.node);
     auto transitionIter = _pendingTransitions.find(bucketSpaceAndNode.bucketSpace);
-    assert(transitionIter != _pendingTransitions.end());
+    CHECK(transitionIter != _pendingTransitions.end());
     transitionIter->second->onRequestBucketInfoReply(*reply, bucketSpaceAndNode.node);
 
     update_node_supported_features_from_reply(iter->second.node, *reply);
@@ -274,7 +275,7 @@ PendingClusterState::Summary PendingClusterState::getSummary() const {
 PendingBucketSpaceDbTransition&
 PendingClusterState::getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace) {
     auto transitionIter = _pendingTransitions.find(bucketSpace);
-    assert(transitionIter != _pendingTransitions.end());
+    CHECK(transitionIter != _pendingTransitions.end());
     return *transitionIter->second;
 }
 

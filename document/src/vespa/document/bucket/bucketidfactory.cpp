@@ -4,9 +4,9 @@
 
 #include "bucketid.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 
-#include <cassert>
 #include <limits>
 #include <ostream>
 
@@ -18,7 +18,7 @@ BucketIdFactory::BucketIdFactory()
 }
 
 void BucketIdFactory::initializeMasks() {
-    assert(_countBits == 6);
+    CHECK(_countBits == 6);
     _locationMask = _gidMask = std::numeric_limits<uint64_t>::max();
 
     _locationMask <<= (_gidBits + _countBits);
@@ -34,7 +34,7 @@ void BucketIdFactory::initializeMasks() {
 
 BucketId BucketIdFactory::getBucketId(const DocumentId& id) const {
     uint64_t location = id.getScheme().getLocation();
-    assert(GlobalId::LENGTH >= sizeof(uint64_t) + 4u);
+    CHECK(GlobalId::LENGTH >= sizeof(uint64_t) + 4u);
     uint64_t gid;
     memcpy(&gid, id.getGlobalId().get() + 4, sizeof(gid));
 

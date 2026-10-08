@@ -2,13 +2,13 @@
 
 #include "testcomponentregister.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace storage::framework::defaultimplementation {
 
 TestComponentRegister::TestComponentRegister(ComponentRegisterImpl::UP compReg)
     : _compReg(std::move(compReg)), _clock(), _threadPool(_clock) {
-    assert(_compReg.get() != nullptr);
+    CHECK(_compReg.get() != nullptr);
     // Set a fake clock, giving test control of clock
     _compReg->setClock(_clock);
     // Set a thread pool so components can make threads in tests.

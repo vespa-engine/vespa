@@ -4,10 +4,11 @@
 
 #include "remove_batch_entry.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <optional>
 
 using document::GlobalId;
@@ -47,12 +48,12 @@ bucketdb::BucketState* BucketDB::getBucketStatePtr(BucketId bucket) {
 }
 
 void BucketDB::checkActiveCount() const {
-    assert(getNumActiveDocs() == countActiveDocs());
+    CHECK(getNumActiveDocs() == countActiveDocs());
 }
 
 void BucketDB::unloadBucket(BucketId bucket, const BucketState& delta) {
     BucketState* state = getBucketStatePtr(bucket);
-    assert(state);
+    CHECK(state);
     *state -= delta;
     if (state->isActive()) {
         subActive(delta.getDocumentCount());
@@ -165,10 +166,10 @@ void BucketDB::clear() {
 void BucketDB::checkEmpty() const {
     for (auto& entry : _map) {
         const BucketState& state = entry.second;
-        assert(state.empty());
+        CHECK(state.empty());
         (void)state;
     }
-    assert(getNumActiveDocs() == 0ul);
+    CHECK(getNumActiveDocs() == 0ul);
 }
 
 void BucketDB::setBucketState(BucketId bucketId, bool active) {
@@ -236,7 +237,7 @@ document::BucketId::List BucketDB::populateActiveBuckets(BucketId::List buckets)
     activeState.setActive(true);
     for (BucketId bucketId : toAdd) {
         auto [itr, inserted] = _map.insert(std::make_pair(bucketId, activeState));
-        assert(inserted);
+        CHECK(inserted);
     }
     return fixupBuckets;
 }

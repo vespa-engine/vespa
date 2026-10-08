@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/config/distributorconfiguration.h>
@@ -151,7 +152,7 @@ std::string getNodeList(std::string state, uint32_t redundancy, std::string exis
         }
         uint16_t node;
         [[maybe_unused]] auto [ptr, ec] = std::from_chars(num.data(), num.data() + num.size(), node);
-        assert(ec == std::errc{});
+        CHECK(ec == std::errc{});
         bucketDB[i] = BucketCopy(0, node, api::BucketInfo(1, 2, 3));
         bucketDB[i].setTrusted(trusted);
     }
@@ -576,9 +577,9 @@ uint32_t MergeOperationTest::merge_footprint(const std::string& db_state) {
 
     _sender.clear();
     op.start(_sender);
-    assert(!_sender.commands().empty());
+    CHECK(!_sender.commands().empty());
     auto cmd_as_merge = std::dynamic_pointer_cast<api::MergeBucketCommand>(_sender.commands()[0]);
-    assert(cmd_as_merge);
+    CHECK(cmd_as_merge);
     return cmd_as_merge->estimated_memory_footprint();
 }
 

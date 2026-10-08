@@ -14,7 +14,6 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <charconv>
 #include <cmath>
 #include <ostream>

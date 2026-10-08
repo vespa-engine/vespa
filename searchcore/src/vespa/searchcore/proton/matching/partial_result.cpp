@@ -2,7 +2,8 @@
 
 #include "partial_result.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstring>
 
 namespace proton::matching {
@@ -104,7 +105,7 @@ PartialResult::~PartialResult() = default;
 
 void PartialResult::merge(Source& rhs) {
     PartialResult& r = static_cast<PartialResult&>(rhs);
-    assert(_hasSortData == r._hasSortData);
+    CHECK(_hasSortData == r._hasSortData);
     _totalHits += r._totalHits;
     if (_hasSortData) {
         _sortDataSize = mergeHits(_maxSize, _hits, _sortData, r._hits, r._sortData);

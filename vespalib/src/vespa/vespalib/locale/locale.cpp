@@ -2,14 +2,14 @@
 
 #include "locale.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::locale {
 
 Locale::Locale() : Locale(LC_ALL_MASK, "C") {
 }
 Locale::Locale(int category, const char* locale) : _locale(newlocale(category, locale, nullptr)) {
-    assert(_locale != nullptr);
+    CHECK(_locale != nullptr);
 }
 
 Locale::~Locale() {

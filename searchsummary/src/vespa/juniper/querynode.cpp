@@ -4,9 +4,8 @@
 
 #include "juniperdebug.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.querynode");
@@ -259,7 +258,7 @@ void SimplifyStack(QueryExpr*& orig_stack) {
                 node->_nchild++;
             }
         }
-        assert(node->_arity == node->_nchild + compact);
+        CHECK(node->_arity == node->_nchild + compact);
         node->_arity = node->_nchild;
     }
 

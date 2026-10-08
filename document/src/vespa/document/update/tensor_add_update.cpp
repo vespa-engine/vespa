@@ -4,6 +4,7 @@
 
 #include "tensor_partial_update.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/tensor_data_type.h>
@@ -70,7 +71,7 @@ bool TensorAddUpdate::applyTo(FieldValue& value) const {
         TensorFieldValue& tensorFieldValue = static_cast<TensorFieldValue&>(value);
         tensorFieldValue.make_empty_if_not_existing();
         const auto* oldTensor = tensorFieldValue.getAsTensorPtr();
-        assert(oldTensor);
+        CHECK(oldTensor);
         auto newTensor = applyTo(*oldTensor);
         if (newTensor) {
             tensorFieldValue = std::move(newTensor);

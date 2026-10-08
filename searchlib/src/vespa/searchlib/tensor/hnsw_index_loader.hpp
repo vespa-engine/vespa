@@ -5,9 +5,8 @@
 #include "hnsw_graph.h"
 #include "hnsw_index_loader.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/util/fileutil.h>
-
-#include <cassert>
 
 namespace search::tensor {
 
@@ -37,7 +36,7 @@ HnswIndexLoader<ReaderType, type>::HnswIndexLoader(HnswGraph<type>& graph, IdMap
 }
 
 template <typename ReaderType, HnswIndexType type> bool HnswIndexLoader<ReaderType, type>::load_next() {
-    assert(!_complete);
+    CHECK(!_complete);
     static constexpr bool identity_mapping = (type == HnswIndexType::SINGLE);
     if (_nodeid < _num_nodes) {
         uint32_t num_levels = next_int();

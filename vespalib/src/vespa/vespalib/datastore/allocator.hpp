@@ -5,7 +5,7 @@
 #include "allocator.h"
 #include "bufferstate.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::datastore {
 
@@ -19,7 +19,7 @@ typename Allocator<EntryT, RefT>::HandleType Allocator<EntryT, RefT>::alloc(Args
     _store.ensure_buffer_capacity(_typeId, 1);
     uint32_t     buffer_id = _store.primary_buffer_id(_typeId);
     BufferState& state = _store.getBufferState(buffer_id);
-    assert(state.isActive());
+    CHECK(state.isActive());
     size_t  oldBufferSize = state.size();
     RefT    ref(oldBufferSize, buffer_id);
     EntryT* entry = _store.getEntry<EntryT>(ref);
@@ -33,8 +33,8 @@ typename Allocator<EntryT, RefT>::HandleType Allocator<EntryT, RefT>::allocArray
     _store.ensure_buffer_capacity(_typeId, 1);
     uint32_t     buffer_id = _store.primary_buffer_id(_typeId);
     BufferState& state = _store.getBufferState(buffer_id);
-    assert(state.isActive());
-    assert(state.getArraySize() == array.size());
+    CHECK(state.isActive());
+    CHECK(state.getArraySize() == array.size());
     RefT    ref(state.size(), buffer_id);
     EntryT* buf = _store.template getEntryArray<EntryT>(ref, array.size());
     for (size_t i = 0; i < array.size(); ++i) {
@@ -49,7 +49,7 @@ typename Allocator<EntryT, RefT>::HandleType Allocator<EntryT, RefT>::allocArray
     _store.ensure_buffer_capacity(_typeId, 1);
     uint32_t     buffer_id = _store.primary_buffer_id(_typeId);
     BufferState& state = _store.getBufferState(buffer_id);
-    assert(state.isActive());
+    CHECK(state.isActive());
     RefT    ref(state.size(), buffer_id);
     auto    array_size = state.getArraySize();
     EntryT* buf = _store.template getEntryArray<EntryT>(ref, array_size);
@@ -66,9 +66,9 @@ typename Allocator<EntryT, RefT>::HandleType Allocator<EntryT, RefT>::alloc_dyna
     _store.ensure_buffer_capacity(_typeId, 1);
     uint32_t     buffer_id = _store.primary_buffer_id(_typeId);
     BufferState& state = _store.getBufferState(buffer_id);
-    assert(state.isActive());
+    CHECK(state.isActive());
     auto max_array_size = state.getArraySize();
-    assert(max_array_size >= array.size());
+    CHECK(max_array_size >= array.size());
     RefT    ref(state.size(), buffer_id);
     auto    entry_size = _store.get_entry_size(_typeId);
     EntryT* buf = BufferType::get_entry(_store.getBuffer(ref.bufferId()), ref.offset(), entry_size);

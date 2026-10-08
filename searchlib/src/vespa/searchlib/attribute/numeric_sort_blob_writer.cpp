@@ -2,10 +2,10 @@
 
 #include "numeric_sort_blob_writer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/util/sort.h>
 
-#include <cassert>
 #include <cmath>
 #include <type_traits>
 
@@ -48,7 +48,7 @@ template <typename T, bool asc> void NumericSortBlobWriter<T, asc>::set_missing_
     _missing_blob.resize(sizeof(T));
     auto ret = vespalib::serializeForSort<vespalib::convertForSort<T, asc>>(value, _missing_blob.data(),
                                                                             _missing_blob.size());
-    assert(ret == sizeof(T));
+    CHECK(ret == sizeof(T));
 }
 
 template <typename T, bool asc> void NumericSortBlobWriter<T, asc>::candidate(T val) {

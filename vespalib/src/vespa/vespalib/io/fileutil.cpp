@@ -2,6 +2,7 @@
 
 #include "fileutil.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -12,7 +13,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cassert>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -107,7 +107,7 @@ FileInfo File::stat() const {
     FileInfo::UP  result;
     if (isOpen()) {
         result = processStat(filestats, fstat(_fd, &filestats) == 0, _filename);
-        assert(result.get()); // The file must exist in a file instance
+        CHECK(result.get()); // The file must exist in a file instance
     } else {
         result = processStat(filestats, ::stat(_filename.c_str(), &filestats) == 0, _filename);
         // If the file does not exist yet, act like it does. It will
@@ -144,7 +144,7 @@ off_t File::write(const void* buf, size_t bufsize, off_t offset) {
             offset += written;
         } else if (written == 0) {
             LOG(spam, "write(%s): Wrote %zd bytes at offset %" PRIu64 ".", _filename.c_str(), written, offset);
-            assert(false); // Can this happen?
+            CHECK(false); // Can this happen?
         } else if (errno != EINTR && errno != EAGAIN) {
             asciistream ost;
             ost << "write(" << _fd << ", " << buf << ", " << left << ", " << offset << "), Failed, errno(" << errno
@@ -255,7 +255,7 @@ DirectoryList listDirectory(const std::string& path) {
     if (dir) {
         while ((entry = readdir(dir))) {
             std::string name(entry->d_name);
-            assert(!name.empty());
+            CHECK(!name.empty());
             if (name[0] == '.' && (name.size() == 1 || (name.size() == 2 && name[1] == '.'))) {
                 continue; // Ignore '.' and '..' files
             }

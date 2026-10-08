@@ -3,6 +3,8 @@
 #include "nbo_write.h"
 #include "simple_index_saver.h"
 
+#include <vespa/check_require.h>
+
 namespace search::predicate {
 
 template <typename Posting, typename Key, typename DocId>
@@ -25,8 +27,8 @@ SimpleIndexSaver<Posting, Key, DocId>::~SimpleIndexSaver() {
 
 template <typename Posting, typename Key, typename DocId>
 void SimpleIndexSaver<Posting, Key, DocId>::save(BufferWriter& writer) const {
-    assert(sizeof(Key) <= sizeof(uint64_t));
-    assert(sizeof(DocId) <= sizeof(uint32_t));
+    CHECK(sizeof(Key) <= sizeof(uint64_t));
+    CHECK(sizeof(DocId) <= sizeof(uint32_t));
     nbo_write<uint32_t>(writer, _dictionary.size());
     auto& allocator = _btree_posting_lists.getAllocator();
     auto  frozen_roots_it = _frozen_roots.begin();
@@ -49,7 +51,7 @@ void SimpleIndexSaver<Posting, Key, DocId>::save(BufferWriter& writer) const {
             _subsaver->save(posting_it.getData(), writer);
         }
     }
-    assert(frozen_roots_it == _frozen_roots.end());
+    CHECK(frozen_roots_it == _frozen_roots.end());
 }
 
 template <typename Posting, typename Key, typename DocId>
@@ -65,7 +67,7 @@ void SimpleIndexSaver<Posting, Key, DocId>::make_frozen_roots() {
         auto ref = it.getData();
         if (ref.valid() && _btree_posting_lists.isBTree(ref)) {
             _frozen_roots.emplace_back(_btree_posting_lists.getTreeEntry(ref)->getFrozenRootRelaxed());
-            assert(_frozen_roots.back().valid());
+            CHECK(_frozen_roots.back().valid());
         } else {
             _frozen_roots.emplace_back();
         }

@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
-#include <cassert>
 #include <cinttypes>
 
 static uint64_t maxExpGolombVal(uint64_t kValue, uint64_t maxBits) {
@@ -57,8 +57,8 @@ int UniformApp::main(int, char**) {
         for (k = 0; k <= MAXK; ++k) {
             uint32_t bits = encodeSpace(_next, k); // Current bits
             uint64_t next = maxExpGolombVal(k, bits);
-            assert(encodeSpace(next - 1, k) == bits);
-            assert(encodeSpace(next, k) > bits);
+            CHECK(encodeSpace(next - 1, k) == bits);
+            CHECK(encodeSpace(next, k) > bits);
             if (k == 0 || next < minnext) {
                 minnext = next;
                 minnextk = k;
@@ -88,7 +88,7 @@ int UniformApp::main(int, char**) {
         }
         printf("minnext=%" PRIu64 ", minnextk=%d, bestk=%d\n", minnext, minnextk, bestk);
         for (k = 0; k <= MAXK; ++k) {
-            assert(encodeSpace(_next, k) == encodeSpace(minnext - 1, k));
+            CHECK(encodeSpace(_next, k) == encodeSpace(minnext - 1, k));
             _bits[k] += (minnext - _next) * encodeSpace(_next, k);
         }
         _next = minnext;

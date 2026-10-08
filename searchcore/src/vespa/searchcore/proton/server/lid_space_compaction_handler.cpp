@@ -6,6 +6,7 @@
 #include "ifeedview.h"
 #include "maintenancedocumentsubdb.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
@@ -77,7 +78,7 @@ void LidSpaceCompactionHandler::handleMove(const MoveOperation& op, IDestructorC
 
 void LidSpaceCompactionHandler::handleCompactLidSpace(const CompactLidSpaceOperation&      op,
                                                       std::shared_ptr<IDestructorCallback> compact_done_context) {
-    assert(_subDb.sub_db_id() == op.getSubDbId());
+    CHECK(_subDb.sub_db_id() == op.getSubDbId());
     _subDb.feed_view()->handleCompactLidSpace(op, compact_done_context);
     _subDb.feed_view()->forceCommit(CommitParam(op.getSerialNum(), CommitParam::UpdateStats::SKIP),
                                     std::move(compact_done_context));

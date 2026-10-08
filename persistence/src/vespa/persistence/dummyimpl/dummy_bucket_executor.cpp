@@ -2,6 +2,7 @@
 
 #include "dummy_bucket_executor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -43,7 +44,7 @@ void DummyBucketExecutor::internal_execute_no_defer(const Bucket& bucket, std::u
         }
         bucketTask->run(bucket, makeSharedLambdaCallback([this, bucket]() {
                             std::unique_lock guard(_lock);
-                            assert(_inFlight.contains(bucket.getBucket()));
+                            CHECK(_inFlight.contains(bucket.getBucket()));
                             _inFlight.erase(bucket.getBucket());
                             _cond.notify_all();
                         }));
@@ -62,7 +63,7 @@ void DummyBucketExecutor::schedule_all_deferred_tasks() {
     DeferredTasks to_run;
     {
         std::lock_guard guard(_lock);
-        assert(_defer_tasks);
+        CHECK(_defer_tasks);
         _deferred_tasks.swap(to_run);
     }
     for (auto& bucket_and_task : to_run) {
@@ -79,8 +80,8 @@ void DummyBucketExecutor::schedule_single_deferred_task() {
     std::pair<Bucket, std::unique_ptr<BucketTask>> bucket_and_task;
     {
         std::lock_guard guard(_lock);
-        assert(_defer_tasks);
-        assert(!_deferred_tasks.empty());
+        CHECK(_defer_tasks);
+        CHECK(!_deferred_tasks.empty());
         bucket_and_task = std::move(_deferred_tasks.front());
         _deferred_tasks.pop_front();
     }

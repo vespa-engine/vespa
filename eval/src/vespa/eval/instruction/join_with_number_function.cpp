@@ -2,6 +2,7 @@
 
 #include "join_with_number_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
@@ -90,7 +91,7 @@ InterpretedFunction::Instruction JoinWithNumberFunction::compile_self(const Valu
                                                                       Stash& stash) const {
     const auto& param = stash.create<JoinWithNumberParam>(result_type(), _function);
     auto        input_type = (_primary == Primary::LHS) ? lhs().result_type() : rhs().result_type();
-    assert(result_type() == ValueType::join(input_type, ValueType::double_type()));
+    CHECK(result_type() == ValueType::join(input_type, ValueType::double_type()));
     auto op = typify_invoke<4, MyTypify, SelectJoinWithNumberOp>(input_type.cell_meta(), _function,
                                                                  primary_is_mutable(), (_primary == Primary::RHS));
     return Instruction(op, wrap_param<JoinWithNumberParam>(param));

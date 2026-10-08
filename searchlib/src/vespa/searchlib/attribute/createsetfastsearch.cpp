@@ -7,6 +7,7 @@
 #include "multinumericpostattribute.h"
 #include "multistringpostattribute.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
@@ -25,8 +26,8 @@ using attribute::BasicType;
 #define CREATEFLOATSET(T, fname, info) static_cast<AttributeVector*>(new FLOATSET(T)(fname, info))
 
 AttributeVector::SP AttributeFactory::createSetFastSearch(std::string name, const Config& info) {
-    assert(info.collectionType().type() == attribute::CollectionType::WSET);
-    assert(info.fastSearch());
+    CHECK(info.collectionType().type() == attribute::CollectionType::WSET);
+    CHECK(info.fastSearch());
     AttributeVector::SP ret;
     switch (info.basicType().type()) {
     case BasicType::BOOL:

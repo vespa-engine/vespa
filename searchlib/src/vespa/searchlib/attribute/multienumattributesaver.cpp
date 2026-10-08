@@ -4,6 +4,7 @@
 
 #include "multivalueattributesaverutils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/multivalue.h>
 
 #include <vespa/log/log.h>
@@ -34,12 +35,12 @@ public:
           _enumerator(enumerator),
           _datWriter(saveTarget.datWriter().allocBufferWriter()),
           _compaction_interferred(compaction_interferred) {
-        assert(saveTarget.getEnumerated());
+        CHECK(saveTarget.getEnumerated());
         _indexes.reserve(1000);
     }
 
     ~DatWriter() {
-        assert(_indexes.empty());
+        CHECK(_indexes.empty());
         _datWriter->flush();
     }
 
@@ -47,7 +48,7 @@ public:
         if (!_indexes.empty()) {
             for (auto ref : _indexes) {
                 uint32_t enumValue = _enumerator.map_entry_ref_to_enum_value_or_zero(ref);
-                assert(enumValue != 0u || _compaction_interferred());
+                CHECK(enumValue != 0u || _compaction_interferred());
                 // Enumerator enumerates known entry refs (based on
                 // dictionary tree) to values >= 1, but file format
                 // starts enumeration at 0.

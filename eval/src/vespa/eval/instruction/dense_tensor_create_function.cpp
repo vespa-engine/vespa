@@ -2,6 +2,7 @@
 
 #include "dense_tensor_create_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::eval {
@@ -31,8 +32,8 @@ size_t get_index(const TensorSpec::Address& addr, const ValueType& type) {
     size_t cell_idx = 0;
     for (const auto& binding : addr) {
         size_t dim_idx = type.dimension_index(binding.first);
-        assert(dim_idx != ValueType::Dimension::npos);
-        assert(binding.second.is_indexed());
+        CHECK(dim_idx != ValueType::Dimension::npos);
+        CHECK(binding.second.is_indexed());
         cell_idx *= type.dimensions()[dim_idx].size;
         cell_idx += binding.second.index;
     }

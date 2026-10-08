@@ -4,6 +4,7 @@
 
 #include "fpfactory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/queryeval/iterators.h>
@@ -246,7 +247,7 @@ FakePosting::SP FakeMemTreeOccFactory::make(const FakeWord& fw) {
 
     uint32_t wordIdx = itr->second;
 
-    assert(_mgr._postingIdxs.size() > wordIdx);
+    CHECK(_mgr._postingIdxs.size() > wordIdx);
 
     return std::make_shared<FakeMemTreeOcc>(fw, _mgr._allocator, _mgr._postingIdxs[wordIdx]->_tree,
                                             _mgr._featureSizes[wordIdx], _mgr);
@@ -302,7 +303,7 @@ FakePosting::SP FakeMemTreeOcc2Factory::make(const FakeWord& fw) {
 
     uint32_t wordIdx = i->second;
 
-    assert(_mgr._postingIdxs.size() > wordIdx);
+    CHECK(_mgr._postingIdxs.size() > wordIdx);
 
     return std::make_shared<FakeMemTreeOcc>(fw, _mgr._allocator, _mgr._postingIdxs[wordIdx]->_tree,
                                             _mgr._featureSizes[wordIdx], _mgr, ".memtreeocc2");

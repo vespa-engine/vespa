@@ -7,6 +7,7 @@
 #include "imported_attribute_vector.h"
 #include "reference_attribute.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -305,7 +306,7 @@ void ImportedSearchContext::considerAddSearchCacheEntry() {
     if (_useSearchCache && _merger.hasBitVector()) {
         IDocumentMetaStoreContext::IReadGuard::SP dmsReadGuard =
             (_params.metaStoreReadGuard() != nullptr) ? *_params.metaStoreReadGuard() : _dmsReadGuardFallback;
-        assert(dmsReadGuard);
+        CHECK(dmsReadGuard);
         auto cacheEntry = std::make_shared<BitVectorSearchCache::Entry>(
             std::move(dmsReadGuard), _merger.getBitVectorSP(), _merger.getDocIdLimit());
         _imported_attribute.getSearchCache()->insert(_queryTerm, std::move(cacheEntry));
