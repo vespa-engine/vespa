@@ -650,11 +650,9 @@
                 <version>${luben.zstd.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.cloud</groupId>
-                <artifactId>libraries-bom</artifactId>
-                <version>26.90.0</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>com.google.api.grpc</groupId>
+                <artifactId>proto-google-common-protos</artifactId>
+                <version>${proto-google-common-protos.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.errorprone</groupId>
@@ -708,6 +706,11 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>${findbugs.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${gson.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
