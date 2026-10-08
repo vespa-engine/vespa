@@ -115,8 +115,9 @@ ConfigFile::~ConfigFile() = default;
 ConfigFile::ConfigFile(const std::string& name, const std::string& fullName) : _name(name), _content() {
     FastOS_File file;
     bool        openRes = file.OpenReadOnlyExisting(false, fullName.c_str());
-    if (!openRes)
+    if (!openRes) {
         return;
+    }
     int64_t fileSize = file.getSize();
     _content.resize(fileSize);
     file.ReadBuf(_content.data(), fileSize);
@@ -211,8 +212,9 @@ FileConfigManager::FileConfigManager(FNET_Transport& transport, const std::strin
       _size_on_disk(0) {
     std::filesystem::create_directory(std::filesystem::path(baseDir));
     vespalib::File::sync(vespalib::dirname(baseDir));
-    if (!_info.load())
+    if (!_info.load()) {
         _info.save();
+    }
     removeInvalid();
     _protonConfig.reset(new ProtonConfig());
     calc_initial_sizes_on_disk();
@@ -229,10 +231,12 @@ SerialNum FileConfigManager::getOldestSerialNum() const {
     SerialNum           res = 0;
     const SnapshotList& snaps = _info.snapshots();
     for (const auto& snap : snaps) {
-        if (!snap.valid || snap.syncToken == 0)
+        if (!snap.valid || snap.syncToken == 0) {
             continue;
-        if (res == 0 || res > snap.syncToken)
+        }
+        if (res == 0 || res > snap.syncToken) {
             res = snap.syncToken;
+        }
     }
     return res;
 }
@@ -330,11 +334,13 @@ void FileConfigManager::removeInvalid() {
 
     const SnapshotList& snaps = _info.snapshots();
     for (const auto& snap : snaps) {
-        if (!snap.valid)
+        if (!snap.valid) {
             toRem.push_back(snap.syncToken);
+        }
     }
-    if (toRem.empty())
+    if (toRem.empty()) {
         return;
+    }
 
     for (const auto& serial : toRem) {
         std::string snapDirBaseName(makeSnapDirBaseName(serial));
@@ -364,14 +370,17 @@ void FileConfigManager::prune(SerialNum serialNum) {
 
     const SnapshotList& snaps = _info.snapshots();
     for (const auto& snap : snaps) {
-        if (snap.valid && snap.syncToken <= serialNum)
+        if (snap.valid && snap.syncToken <= serialNum) {
             toPrune.push_back(snap.syncToken);
+        }
     }
     std::sort(toPrune.begin(), toPrune.end());
-    if (!toPrune.empty())
+    if (!toPrune.empty()) {
         toPrune.pop_back(); // Keep the newest old entry
-    if (toPrune.empty())
+    }
+    if (toPrune.empty()) {
         return;
+    }
     for (const auto& serial : toPrune) {
         _info.invalidateSnapshot(serial);
     }
@@ -390,10 +399,12 @@ SerialNum FileConfigManager::getPrevValidSerial(SerialNum serialNum) const {
     SerialNum           res = 0;
     const SnapshotList& snaps = _info.snapshots();
     for (const auto& snap : snaps) {
-        if (!snap.valid || snap.syncToken >= serialNum)
+        if (!snap.valid || snap.syncToken >= serialNum) {
             continue;
-        if (res < snap.syncToken)
+        }
+        if (res < snap.syncToken) {
             res = snap.syncToken;
+        }
     }
     return res;
 }
@@ -433,8 +444,9 @@ void FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream& stream
     for (uint32_t i = 0; i < numConfigs; ++i) {
         ConfigFile file;
         stream >> file;
-        if (!skip)
+        if (!skip) {
             file.save(snapDir);
+        }
     }
     assert(stream.size() == 0);
     if (!skip) {

@@ -8,8 +8,9 @@ LOG_SETUP(".proton.reprocessing.document_reprocessing_handler");
 namespace proton {
 
 void DocumentReprocessingHandler::rewriteVisit(uint32_t lid, const std::shared_ptr<document::Document>& doc, size_t) {
-    if (lid == 0 || lid >= _docIdLimit)
+    if (lid == 0 || lid >= _docIdLimit) {
         return;
+    }
     for (const auto& reader : _readers) {
         reader->handleExisting(lid, doc);
     }
@@ -25,8 +26,9 @@ DocumentReprocessingHandler::DocumentReprocessingHandler(uint32_t docIdLimit)
 DocumentReprocessingHandler::~DocumentReprocessingHandler() = default;
 
 void DocumentReprocessingHandler::visit(uint32_t lid, const std::shared_ptr<document::Document>& doc, size_t) {
-    if (lid == 0 || lid >= _docIdLimit)
+    if (lid == 0 || lid >= _docIdLimit) {
         return;
+    }
     for (const auto& reader : _readers) {
         reader->handleExisting(lid, doc);
     }

@@ -599,8 +599,9 @@ void FeedHandler::handleOperation(FeedToken token, FeedOperation::UP op) {
 IDocumentMoveHandler::MoveResult FeedHandler::handleMove(MoveOperation&                    op,
                                                          vespalib::IDestructorCallback::SP moveDoneCtx) {
     assert(_writeService.master().isCurrentThread());
-    if (!_activeFeedView->isMoveStillValid(op))
+    if (!_activeFeedView->isMoveStillValid(op)) {
         return MoveResult::FAILURE;
+    }
 
     op.set_prepare_serial_num(inc_prepare_serial_num());
     _activeFeedView->prepareMove(op);
@@ -644,8 +645,9 @@ void FeedHandler::performPruneRemovedDocuments(PruneRemovedDocumentsOperation& p
 void FeedHandler::syncTls(SerialNum syncTo) {
     {
         std::lock_guard<std::mutex> guard(_syncLock);
-        if (_syncedSerialNum >= syncTo)
+        if (_syncedSerialNum >= syncTo) {
             return;
+        }
     }
     if (!_allowSync) {
         throw IllegalStateException(make_string("Attempted to sync TLS to token %" PRIu64 " at wrong time.", syncTo));
@@ -653,8 +655,9 @@ void FeedHandler::syncTls(SerialNum syncTo) {
     SerialNum syncedTo(_tlsWriter->sync(syncTo));
     {
         std::lock_guard<std::mutex> guard(_syncLock);
-        if (_syncedSerialNum < syncedTo)
+        if (_syncedSerialNum < syncedTo) {
             _syncedSerialNum = syncedTo;
+        }
     }
 }
 

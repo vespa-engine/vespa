@@ -440,8 +440,9 @@ bool MyExecutor::isIdle() {
 bool MyExecutor::waitIdle(vespalib::duration timeout) {
     vespalib::Timer timer;
     while (!isIdle()) {
-        if (timer.elapsed() >= timeout)
+        if (timer.elapsed() >= timeout) {
             return false;
+        }
     }
     return true;
 }
@@ -665,8 +666,9 @@ TEST_F(MaintenanceControllerTest, require_that_document_pruner_is_active) {
     for (uint32_t i = 0; i < 60000; ++i) {
         std::this_thread::sleep_for(1ms);
         ASSERT_TRUE(_executor.waitIdle(TIMEOUT));
-        if (_removed.getNumUsedLids() != 10u)
+        if (_removed.getNumUsedLids() != 10u) {
             break;
+        }
     }
     _bucketExecutor.sync();
     _executor.sync();
@@ -680,8 +682,9 @@ TEST_F(MaintenanceControllerTest, require_that_heartbeats_are_scheduled) {
     setHeartBeatConfig(DocumentDBHeartBeatConfig(DELAY));
     for (uint32_t i = 0; i < 60000; ++i) {
         std::this_thread::sleep_for(1ms);
-        if (_fh.getHeartBeats() != 0u)
+        if (_fh.getHeartBeats() != 0u) {
             break;
+        }
     }
     EXPECT_GT(_fh.getHeartBeats(), 0u);
 }

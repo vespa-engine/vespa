@@ -169,8 +169,9 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
                     // One for attributes, and one for indexes
                     ok = (onWriteDoneContexts[i].use_count() == 2);
                 }
-                if (ok)
+                if (ok) {
                     return;
+                }
             }
         }
     }

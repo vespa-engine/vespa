@@ -69,11 +69,13 @@ void CombiningFeedView::findPrevDbdId(const document::GlobalId& gid, DocumentOpe
         skipSubDbId = newId.getSubDbId();
     }
     for (uint32_t subDbId = 0; subDbId < subDbIdLim; ++subDbId) {
-        if (subDbId == skipSubDbId)
+        if (subDbId == skipSubDbId) {
             continue;
+        }
         const documentmetastore::IStore* metaStore = _metaStores[subDbId];
-        if (metaStore == nullptr)
+        if (metaStore == nullptr) {
             continue;
+        }
         documentmetastore::IStore::Result inspectRes(
             const_cast<documentmetastore::IStore*>(metaStore)->inspectExisting(gid, op.get_prepare_serial_num()));
         if (inspectRes._found) {

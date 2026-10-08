@@ -54,12 +54,14 @@ public:
     }
 
     void invokeRPC(bool print, double timeout = 5.0) {
-        if (_req == nullptr)
+        if (_req == nullptr) {
             return;
+        }
 
         _target->InvokeSync(_req, timeout);
-        if (print || _req->IsError())
+        if (print || _req->IsError()) {
             _req->Print(0);
+        }
     }
 
     void finiRPC() {
@@ -79,8 +81,9 @@ public:
     void scanSpecs(slobrok::api::MirrorAPI::SpecList& specs, const std::string& me, std::string& service,
                    std::string& spec, int& found) {
         for (size_t j = 0; j < specs.size(); ++j) {
-            if (specs[j].first == service)
+            if (specs[j].first == service) {
                 continue;
+            }
             if (specs[j].second.compare(0, me.length(), me) == 0) {
                 service = specs[j].first;
                 spec = specs[j].second;
@@ -315,8 +318,9 @@ public:
             finiRPC();
             return usage(argv[0]);
         }
-        if (!invoked)
+        if (!invoked) {
             invokeRPC(true);
+        }
         finiRPC();
         return 0;
     }

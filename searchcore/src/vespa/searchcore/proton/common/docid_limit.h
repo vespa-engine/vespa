@@ -20,11 +20,14 @@ public:
     void bumpUpLimit(uint32_t newLimit) {
         for (;;) {
             uint32_t oldLimit = _docIdLimit;
-            if (newLimit <= oldLimit)
+            if (newLimit <= oldLimit) {
                 break;
+            }
             if (_docIdLimit.compare_exchange_weak(oldLimit, newLimit, std::memory_order_release,
                                                   std::memory_order_relaxed))
+            {
                 break;
+            }
         }
     }
 };

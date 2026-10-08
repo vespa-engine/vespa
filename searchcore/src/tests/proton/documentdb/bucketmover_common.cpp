@@ -75,10 +75,12 @@ void MySubDb::insertDocs(const UserDocuments& docs_) {
 }
 
 bool MySubDb::remove(uint32_t subDbId, uint32_t lid) {
-    if (_subDb.sub_db_id() != subDbId)
+    if (_subDb.sub_db_id() != subDbId) {
         return false;
-    if (!_metaStore.validLid(lid))
+    }
+    if (!_metaStore.validLid(lid)) {
         return false;
+    }
     return _metaStore.remove(lid, 0u);
 }
 
@@ -89,20 +91,27 @@ template <typename A, typename B> bool expect_eq(const A& a, const B& b) {
 
 bool assertEqual(const document::BucketId& bucket, const proton::test::Document& doc, uint32_t sourceSubDbId,
                  uint32_t targetSubDbId, const MoveOperation& op) {
-    if (!expect_eq(bucket, op.getBucketId()))
+    if (!expect_eq(bucket, op.getBucketId())) {
         return false;
-    if (!expect_eq(doc.getTimestamp(), op.getTimestamp()))
+    }
+    if (!expect_eq(doc.getTimestamp(), op.getTimestamp())) {
         return false;
-    if (!expect_eq(doc.getDocId(), op.getDocument()->getId()))
+    }
+    if (!expect_eq(doc.getDocId(), op.getDocument()->getId())) {
         return false;
-    if (!expect_eq(doc.getLid(), op.getSourceDbdId().getLid()))
+    }
+    if (!expect_eq(doc.getLid(), op.getSourceDbdId().getLid())) {
         return false;
-    if (!expect_eq(sourceSubDbId, op.getSourceDbdId().getSubDbId()))
+    }
+    if (!expect_eq(sourceSubDbId, op.getSourceDbdId().getSubDbId())) {
         return false;
-    if (!expect_eq(0u, op.getTargetDbdId().getLid()))
+    }
+    if (!expect_eq(0u, op.getTargetDbdId().getLid())) {
         return false;
-    if (!expect_eq(targetSubDbId, op.getTargetDbdId().getSubDbId()))
+    }
+    if (!expect_eq(targetSubDbId, op.getTargetDbdId().getSubDbId())) {
         return false;
+    }
     return true;
 }
 

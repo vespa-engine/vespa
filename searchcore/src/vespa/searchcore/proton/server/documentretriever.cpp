@@ -82,8 +82,9 @@ bool FieldSetAttributeDB::areAllFieldsAttributes(uint64_t key, const document::F
     if (found == _isFieldSetAttributeOnly.end()) {
         for (const Field* field : set) {
             isAttributeOnly = _fieldInfo.isFieldAttribute(*field);
-            if (!isAttributeOnly)
+            if (!isAttributeOnly) {
                 break;
+            }
         }
         _isFieldSetAttributeOnly[key] = isAttributeOnly;
     } else {

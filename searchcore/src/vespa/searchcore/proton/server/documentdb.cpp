@@ -861,8 +861,9 @@ void DocumentDB::performStartMaintenance() {
     std::shared_ptr<DocumentDBConfig> activeConfig;
     {
         lock_guard guard(_configMutex);
-        if (_state->getClosed())
+        if (_state->getClosed()) {
             return;
+        }
         activeConfig = _activeConfigSnapshot;
     }
     assert(activeConfig);
@@ -899,8 +900,9 @@ void DocumentDB::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCal
     if (feedView) {
         // Try downcast to avoid polluting API
         auto* cfv = dynamic_cast<CombiningFeedView*>(feedView.get());
-        if (cfv != nullptr)
+        if (cfv != nullptr) {
             cfv->setCalculator(newCalc);
+        }
     }
     _subDBs.setBucketStateCalculator(newCalc, std::shared_ptr<vespalib::IDestructorCallback>());
 }

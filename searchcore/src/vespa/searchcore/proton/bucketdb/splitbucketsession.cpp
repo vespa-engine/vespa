@@ -49,8 +49,9 @@ void SplitBucketSession::applyDeltas(const BucketDeltaPair& deltas) {
 }
 
 void SplitBucketSession::applyDelta(const BucketState& delta, BucketState* src, BucketId& dstBucket) {
-    if (delta.empty())
+    if (delta.empty()) {
         return;
+    }
     assert(dstBucket.valid());
     BucketState* dst = _bucketDB->getBucketStatePtr(dstBucket);
     delta.applyDelta(src, dst);

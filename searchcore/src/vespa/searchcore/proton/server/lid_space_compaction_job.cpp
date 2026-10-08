@@ -58,8 +58,9 @@ public:
     void fail(const Bucket& bucket) override {
         assert(bucket.getBucketId() == _meta.bucketId);
         auto& master = _job->_master;
-        if (_job->stopped())
+        if (_job->stopped()) {
             return;
+        }
         master.execute(makeLambdaTask([job = std::move(_job)] { job->_scanItr.reset(); }));
     }
 
@@ -86,24 +87,29 @@ bool CompactionJob::scanDocuments(const LidUsageStats& stats) {
 
 void CompactionJob::moveDocument(std::shared_ptr<CompactionJob> job, const search::DocumentMetadata& metaThen,
                                  std::shared_ptr<IDestructorCallback> context) {
-    if (job->stopped())
+    if (job->stopped()) {
         return; // TODO Remove once lidtracker is no longer in use.
+    }
     // The real lid must be sampled in the master thread.
     // TODO remove target lid from createMoveOperation interface
     auto op = job->_handler->createMoveOperation(metaThen, 0);
-    if (!op || !op->getDocument())
+    if (!op || !op->getDocument()) {
         return;
+    }
     // Early detection and force md5 calculation outside of master thread
-    if (metaThen.gid != op->getDocument()->getId().getGlobalId())
+    if (metaThen.gid != op->getDocument()->getId().getGlobalId()) {
         return;
+    }
 
     auto& master = job->_master;
-    if (job->stopped())
+    if (job->stopped()) {
         return;
+    }
     master.execute(makeLambdaTask(
         [self = std::move(job), meta = metaThen, moveOp = std::move(op), onDone = std::move(context)]() mutable {
-            if (self->stopped())
+            if (self->stopped()) {
                 return;
+            }
             self->completeMove(meta, std::move(moveOp), std::move(onDone));
         }));
 }
@@ -113,14 +119,17 @@ void CompactionJob::completeMove(const search::DocumentMetadata& metaThen, std::
     // Reread metadata as document might have been altered after move was initiated
     // If so it will fail the timestamp sanity check later on.
     search::DocumentMetadata metaNow = _handler->getMetadata(metaThen.lid);
-    if (!isSameDocument(metaThen, metaNow))
+    if (!isSameDocument(metaThen, metaNow)) {
         return;
-    if (metaNow.gid != moveOp->getDocument()->getId().getGlobalId())
+    }
+    if (metaNow.gid != moveOp->getDocument()->getId().getGlobalId()) {
         return;
+    }
 
     uint32_t lowestLid = _handler->getLidStatus().getLowestFreeLid();
-    if (lowestLid >= metaNow.lid)
+    if (lowestLid >= metaNow.lid) {
         return;
+    }
     moveOp->setTargetLid(lowestLid);
     _opStorer.appendOperation(*moveOp, onDone);
     _handler->handleMove(*moveOp, std::move(onDone));

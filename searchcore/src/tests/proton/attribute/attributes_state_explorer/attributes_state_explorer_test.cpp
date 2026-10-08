@@ -185,7 +185,7 @@ TEST_F(AttributesStateExplorerTest, require_that_bool_attribute_shows_bitvector)
 
 TEST_F(AttributesStateExplorerTest, quantized_tensor_attribute_shows_unquantized_type_and_quantization_params) {
     add_quantized_tensor_attribute("my_tensor");
-    auto slime = explore_attribute("my_tensor");
+    auto  slime = explore_attribute("my_tensor");
     auto& cfg = slime["config"];
     ASSERT_TRUE(cfg.valid()) << slime.toString();
     EXPECT_EQ(cfg["unquantized_type"].asString(), "tensor(x{},y[128])");

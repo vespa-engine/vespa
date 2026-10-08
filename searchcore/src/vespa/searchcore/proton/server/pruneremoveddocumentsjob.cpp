@@ -69,17 +69,22 @@ void PruneRemovedDocumentsJob::PruneTask::run(const Bucket& bucket, IDestructorC
 }
 
 void PruneRemovedDocumentsJob::remove(uint32_t lid, const RawDocumentMetadata& oldMeta) {
-    if (stopped())
+    if (stopped()) {
         return;
-    if (!_metaStore.validLid(lid))
+    }
+    if (!_metaStore.validLid(lid)) {
         return;
+    }
     const RawDocumentMetadata& meta = _metaStore.getRawMetadata(lid);
-    if (meta.getBucketId() != oldMeta.getBucketId())
+    if (meta.getBucketId() != oldMeta.getBucketId()) {
         return;
-    if (meta.getTimestamp() != oldMeta.getTimestamp())
+    }
+    if (meta.getTimestamp() != oldMeta.getTimestamp()) {
         return;
-    if (meta.getGid() != oldMeta.getGid())
+    }
+    if (meta.getGid() != oldMeta.getGid()) {
         return;
+    }
 
     PruneRemovedDocumentsOperation pruneOp(_metaStore.getCommittedDocIdLimit(), _subDbId);
     pruneOp.getLidsToRemove()->addLid(lid);
@@ -92,11 +97,13 @@ bool PruneRemovedDocumentsJob::run() {
     const DocId     docIdLimit(_metaStore.getCommittedDocIdLimit());
     const DocId     lidLimit = std::min(_nextLid + 1000000u, docIdLimit);
     for (; !isBlocked() && _nextLid < lidLimit; _nextLid++) {
-        if (!_metaStore.validLid(_nextLid))
+        if (!_metaStore.validLid(_nextLid)) {
             continue;
+        }
         const RawDocumentMetadata& meta = _metaStore.getRawMetadata(_nextLid);
-        if (meta.getTimestamp() >= ageLimit)
+        if (meta.getTimestamp() >= ageLimit) {
             continue;
+        }
 
         _bucketExecutor.execute(
             Bucket(document::Bucket(_bucketSpace, meta.getBucketId())),

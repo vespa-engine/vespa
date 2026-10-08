@@ -91,8 +91,9 @@ bool ScheduledForwardExecutor::cancel(uint64_t key) {
     {
         std::lock_guard guard(_lock);
         auto            found = _taskList.find(key);
-        if (found == _taskList.end())
+        if (found == _taskList.end()) {
             return false;
+        }
         state = std::move(found->second);
         _taskList.erase(found);
     }

@@ -487,8 +487,9 @@ bool StoreOnlyFeedView::lookupDocId(const DocumentId& docId, Lid& lid) const {
         return false;
     }
     lid = result.getLid();
-    if (_params._subDbType == SubDbType::REMOVED)
+    if (_params._subDbType == SubDbType::REMOVED) {
         return false;
+    }
     return true;
 }
 
@@ -650,8 +651,9 @@ void StoreOnlyFeedView::internalDeleteBucket(const DeleteBucketOperation& delOp,
 
 bool StoreOnlyFeedView::isMoveStillValid(const MoveOperation& moveOp) const {
     uint32_t lid = moveOp.getPrevLid();
-    if (!_metaStore.validLid(lid))
+    if (!_metaStore.validLid(lid)) {
         return false;
+    }
     const RawDocumentMetadata& meta = _metaStore.getRawMetadata(lid);
     return (meta.getTimestamp() == moveOp.getTimestamp()) &&
            (meta.getGid() == moveOp.getDocument()->getId().getGlobalId());

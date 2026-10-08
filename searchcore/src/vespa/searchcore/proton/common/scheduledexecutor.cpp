@@ -69,8 +69,9 @@ IScheduledExecutor::Handle ScheduledExecutor::scheduleAtFixedRate(Executor::Task
 bool ScheduledExecutor::cancel(uint64_t key) {
     std::lock_guard guard(_lock);
     auto            found = _taskList.find(key);
-    if (found == _taskList.end())
+    if (found == _taskList.end()) {
         return false;
+    }
 
     found->second->Unschedule();
     _taskList.erase(found);

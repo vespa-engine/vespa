@@ -21,14 +21,17 @@ namespace proton::bucketdb {
 using Iterator = IDocumentMetaStore::Iterator;
 
 MoveOperation::UP BucketMover::createMoveOperation(const MoveKey& key) {
-    if (_source->lidNeedsCommit(key._lid))
+    if (_source->lidNeedsCommit(key._lid)) {
         return {};
+    }
 
     const RawDocumentMetadata& metaNow = _source->meta_store()->getRawMetadata(key._lid);
-    if (metaNow.getGid() != key._gid)
+    if (metaNow.getGid() != key._gid) {
         return {};
-    if (metaNow.getTimestamp() != key._timestamp)
+    }
+    if (metaNow.getTimestamp() != key._timestamp) {
         return {};
+    }
 
     Document::SP doc(_source->retriever()->getFullDocument(key._lid));
     if (!doc || doc->getId().getGlobalId() != key._gid) {
@@ -170,8 +173,9 @@ bool DocumentBucketMover::moveDocuments(size_t maxDocsToMove, IMoveOperationLimi
     if (done && allOk) {
         _impl->setAllScheduled();
     }
-    if (moveOps.success().empty())
+    if (moveOps.success().empty()) {
         return allOk;
+    }
 
     _impl->updateLastValidGid(moveOps.success().back().first->getDocument()->getId().getGlobalId());
 

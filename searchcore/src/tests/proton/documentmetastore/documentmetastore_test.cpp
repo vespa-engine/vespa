@@ -140,9 +140,11 @@ struct BoolVector : public std::vector<bool> {
 
     uint32_t countTrue() const {
         uint32_t res(0);
-        for (uint32_t i = 0; i < size(); ++i)
-            if ((*this)[i])
+        for (uint32_t i = 0; i < size(); ++i) {
+            if ((*this)[i]) {
                 ++res;
+            }
+        }
         return res;
     }
 };
