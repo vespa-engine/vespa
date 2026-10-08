@@ -70,6 +70,11 @@ public class ModelIdResolver {
         register(m, "embeddinggemma-300m", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-300m/model.onnx", Set.of(ONNX_MODEL));
         register(m, "embeddinggemma-300m-vocab", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-300m/tokenizer.json", Set.of(HF_TOKENIZER));
 
+        register(m, "embeddinggemma-2", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-2/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "embeddinggemma-2-vocab", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-2/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "embeddinggemma-2-int8", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-2-int8/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "embeddinggemma-2-int8-vocab", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-2-int8/tokenizer.json", Set.of(HF_TOKENIZER));
+
         register(m, "nomic-ai-modernbert", "https://data.vespa-cloud.com/onnx_models/nomic-ai-modernbert-embed-base/model.onnx", Set.of(ONNX_MODEL));
         register(m, "nomic-ai-modernbert-vocab", "https://data.vespa-cloud.com/onnx_models/nomic-ai-modernbert-embed-base/tokenizer.json", Set.of(HF_TOKENIZER));
 
