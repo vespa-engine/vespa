@@ -20,7 +20,18 @@ public class XorBitFunction extends FunctionNode {
      * @param numBits The number of bits of the expression value to xor.
      */
     public XorBitFunction(GroupingExpression exp, int numBits) {
-        this(null, null, List.of(exp, new LongValue(numBits)));
+        this(null, null, List.of(exp, new LongValue(validateNumBits(numBits))));
+    }
+
+    /** The largest number of bits of an xorbit: the result is a long */
+    private static final int MAX_NUM_BITS = 64;
+
+    private static int validateNumBits(int numBits) {
+        if (numBits < 1 || numBits > MAX_NUM_BITS) {
+            throw new IllegalArgumentException("xorbit requires a number of bits between 1 and " + MAX_NUM_BITS +
+                                               ", but got " + numBits);
+        }
+        return numBits;
     }
 
     private XorBitFunction(String label, Integer level, List<GroupingExpression> exp) {

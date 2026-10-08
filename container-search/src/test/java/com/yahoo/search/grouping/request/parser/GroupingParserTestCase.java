@@ -697,6 +697,29 @@ public class GroupingParserTestCase {
     }
 
     @Test
+    void testBitCounts() {
+        assertParse("all(group(md5(foo, 1)) each(output(count())))");
+        assertParse("all(group(md5(foo, 128)) each(output(count())))");
+        assertParse("all(group(xorbit(foo, 1)) each(output(count())))");
+        assertParse("all(group(xorbit(foo, 64)) each(output(count())))");
+        assertIllegalArgument("all(group(md5(foo, 0)) each(output(count())))",
+                              "md5 requires a number of bits between 1 and 128, but got 0");
+        assertIllegalArgument("all(group(md5(foo, 129)) each(output(count())))",
+                              "md5 requires a number of bits between 1 and 128, but got 129");
+        assertIllegalArgument("all(group(xorbit(foo, 0)) each(output(count())))",
+                              "xorbit requires a number of bits between 1 and 64, but got 0");
+        assertIllegalArgument("all(group(xorbit(foo, 65)) each(output(count())))",
+                              "xorbit requires a number of bits between 1 and 64, but got 65");
+        // Does not wrap around to a valid value
+        assertIllegalArgument("all(group(xorbit(foo, 4294967361)) each(output(count())))",
+                              "xorbit requires a number of bits between 1 and 64, but got 4294967361");
+        assertEquals("xorbit requires a number of bits between 1 and 64, but got -5",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(xorbit(foo, @negative)) each(output(count())))",
+                                                                     Map.of("negative", "-5")::get)).getMessage());
+    }
+
+    @Test
     void testParameterSubstitution() {
         Map<String, String> parameters = Map.ofEntries(
                 Map.entry("pattern", "(stringinparentheses)?"),
