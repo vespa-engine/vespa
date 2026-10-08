@@ -115,8 +115,9 @@ void test_generic_rename_with(const ValueBuilderFactory& factory) {
             ValueType lhs_type = lhs.type();
             for (const auto& from_to : rename_from_to) {
                 ValueType renamed_type = lhs_type.rename(from_to.from, from_to.to);
-                if (renamed_type.is_error())
+                if (renamed_type.is_error()) {
                     continue;
+                }
                 // printf("type %s -> %s\n", lhs_type.to_spec().c_str(), renamed_type.to_spec().c_str());
                 SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.gen().to_string().c_str()));
                 auto expect = ReferenceOperations::rename(lhs, from_to.from, from_to.to);

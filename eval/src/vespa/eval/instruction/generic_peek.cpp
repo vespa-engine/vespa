@@ -83,8 +83,9 @@ struct ExtractedSpecs {
 
     ExtractedSpecs(bool indexed, const std::vector<Dimension>& input_dims, const Spec& spec) {
         auto visitor = overload{[&](visit_ranges_first, const auto& a) {
-                                    if (a.is_indexed() == indexed)
+                                    if (a.is_indexed() == indexed) {
                                         dimensions.push_back(a);
+                                    }
                                 },
                                 [&](visit_ranges_second, const auto&) {
                                     // spec has unknown dimension

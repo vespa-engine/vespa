@@ -50,8 +50,9 @@ struct StreamedFilterView : Value::Index::View {
             }
             assert(out_idx == addr_out.size());
             assert(vdm_idx == view_dims.size());
-            if (matches)
+            if (matches) {
                 return true;
+            }
         }
         return false;
     }

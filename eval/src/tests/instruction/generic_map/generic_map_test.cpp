@@ -48,8 +48,9 @@ void test_generic_map_with(const ValueBuilderFactory& factory) {
     for (const auto& layout : map_layouts) {
         for (CellType ct : CellTypeUtils::list_types()) {
             auto lhs = layout.cpy().cells(ct);
-            if (lhs.bad_scalar())
+            if (lhs.bad_scalar()) {
                 continue;
+            }
             for (auto func : {operation::Floor::f, operation::Fabs::f, operation::Square::f, operation::Inv::f}) {
                 SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.gen().to_string().c_str()));
                 auto expect = ReferenceOperations::map(lhs, func);

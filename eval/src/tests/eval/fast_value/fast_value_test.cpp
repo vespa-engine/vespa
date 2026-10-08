@@ -262,8 +262,9 @@ TEST(FastValueBuilderFactoryTest, fast_values_can_be_copied) {
     for (const auto& layout : layouts) {
         for (CellType ct : CellTypeUtils::list_types()) {
             auto expect = layout.cpy().cells(ct);
-            if (expect.bad_scalar())
+            if (expect.bad_scalar()) {
                 continue;
+            }
             std::unique_ptr<Value> value = value_from_spec(expect, factory);
             std::unique_ptr<Value> copy = factory.copy(*value);
             TensorSpec             actual = spec_from_value(*copy);
