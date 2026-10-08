@@ -238,8 +238,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private void storeDeploymentConfig(ApplicationId applicationId) {
         if (deploymentConfigStore.isEmpty()) return;
 
-        // Use the preprocessed deployment spec written to ZooKeeper when preparing
-        DeploymentSpec spec = session.getSessionZooKeeperClient().loadApplicationPackage().getDeploymentSpec();
+        DeploymentSpec spec = session.getApplicationPackage().getDeploymentSpec();
 
         // Heap dump redaction applies in all environments, and falls back to the root level
         // when the instance is not declared in the spec (e.g. manually deployed environments).
