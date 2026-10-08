@@ -100,8 +100,8 @@
         <felix.resolver.vespa.version>2.0.4</felix.resolver.vespa.version>
         <felix.bundlerepository.vespa.version>2.0.10</felix.bundlerepository.vespa.version>
         <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
-        <grpc.vespa.version>1.83.0</grpc.vespa.version> <!-- Keep in sync with grpc version in com.google.cloud:libraries-bom -->
-        <gen-grpc-java.vespa.version>1.80.0</gen-grpc-java.vespa.version> <!-- Used for protoc-gen-grpc-java only, can be older -->
+        <grpc.vespa.version>1.80.0</grpc.vespa.version>
+        <gson.vespa.version>2.14.0</gson.vespa.version>
         <hamcrest.vespa.version>3.0</hamcrest.vespa.version>
         <hdrhistogram.vespa.version>2.2.2</hdrhistogram.vespa.version>
         <huggingface.vespa.version>0.33.0</huggingface.vespa.version>
@@ -151,6 +151,7 @@
         <plexus-utils.vespa.version>4.1.0</plexus-utils.vespa.version>
         <plexus-xml.vespa.version>4.2.0</plexus-xml.vespa.version>
         <plexus-classworlds.vespa.version>2.12.1</plexus-classworlds.vespa.version>
+        <proto-google-common-protos.vespa.version>2.77.0</proto-google-common-protos.vespa.version>
         <protobuf.vespa.version>4.36.2</protobuf.vespa.version>
         <questdb.vespa.version>7.4.2</questdb.vespa.version>
         <re2j.vespa.version>1.8</re2j.vespa.version>
