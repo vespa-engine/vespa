@@ -29,14 +29,16 @@ void PropReader::Process(const char* filename) {
     while ((linep = propfile.ReadLine(line, BUFLEN - 1)) != nullptr) {
         int   i;
         char* key;
-        if (line[0] == '#')
+        if (line[0] == '#') {
             continue; // skip comments
+        }
 
         // find key
         for (i = 0; !std::isspace(static_cast<unsigned char>(line[i])); i++) {
         }
-        if (i == 0)
+        if (i == 0) {
             continue; // Skip lines starting with blank
+        }
         line[i++] = 0;
         key = line;
 
@@ -53,22 +55,26 @@ void PropReader::Process(const char* filename) {
                     unsigned char v = 0;
                     for (int s = 1; s <= 2; s++, v <<= 4) {
                         unsigned char c = static_cast<unsigned char>(line[i + s]);
-                        if (std::isdigit(c))
+                        if (std::isdigit(c)) {
                             v += (c - '0');
-                        else if (c < 'a')
+                        } else if (c < 'a') {
                             v += (c - 'A' + 10);
-                        else
+                        } else {
                             v += (c - 'a' + 10);
-                        if (s == 2)
+                        }
+                        if (s == 2) {
                             break;
+                        }
                     }
                     line[i - offset] = static_cast<char>(v);
                     i += 2;
                     offset += 2;
-                } else if (offset != 0)
+                } else if (offset != 0) {
                     line[i - offset] = line[i];
-            } else if (offset != 0)
+                }
+            } else if (offset != 0) {
                 line[i - offset] = line[i];
+            }
         }
         line[i - offset] = 0;
         LOG(debug, "Parameter :%s: value :%s:", key, value);

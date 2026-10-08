@@ -62,8 +62,9 @@ void GeoPositionDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, G
     const auto& attribute = get_attribute(dsState);
     if (attribute.hasMultiValue()) {
         uint32_t entries = attribute.getValueCount(docid);
-        if (entries == 0)
+        if (entries == 0) {
             return;
+        }
         Cursor& arr = target.insertArray();
         if (attribute.hasWeightedSetType()) {
             Symbol                                     isym = arr.resolve("item");

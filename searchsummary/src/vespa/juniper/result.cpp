@@ -46,31 +46,36 @@ Result::Result(const Config& config, QueryHandle& qhandle, const char* docsum, s
       _winsize(0),
       _winsize_fallback_multiplier(10.0),
       _max_match_candidates(1000) {
-    if (!_mo)
+    if (!_mo) {
         return; // The empty result..
+    }
 
     const MatcherParams&   mp = _config->_matcherparams;
     const Fast_WordFolder* wordfolder = mp.WordFolder();
 
-    if (_qhandle->_stem_min < 0)
+    if (_qhandle->_stem_min < 0) {
         _stem_min = mp.StemMinLength();
-    else
+    } else {
         _stem_min = _qhandle->_stem_min;
+    }
 
-    if (_qhandle->_stem_extend < 0)
+    if (_qhandle->_stem_extend < 0) {
         _stem_extend = mp.StemMaxExtend();
-    else
+    } else {
         _stem_extend = _qhandle->_stem_extend;
+    }
 
-    if (_qhandle->_winsize < 0)
+    if (_qhandle->_winsize < 0) {
         _winsize = mp.MatchWindowSize();
-    else
+    } else {
         _winsize = _qhandle->_winsize;
+    }
 
-    if (_qhandle->_winsize_fallback_multiplier < 0)
+    if (_qhandle->_winsize_fallback_multiplier < 0) {
         _winsize_fallback_multiplier = mp.MatchWindowSizeFallbackMultiplier();
-    else
+    } else {
         _winsize_fallback_multiplier = _qhandle->_winsize_fallback_multiplier;
+    }
 
     if (_qhandle->_max_match_candidates < 0) {
         _max_match_candidates = mp.MaxMatchCandidates();
@@ -86,8 +91,9 @@ Result::Result(const Config& config, QueryHandle& qhandle, const char* docsum, s
 
     _registry = std::make_unique<SpecialTokenRegistry>(_matcher->getQuery());
 
-    if (qhandle._log_mask)
+    if (qhandle._log_mask) {
         _matcher->set_log(qhandle._log_mask);
+    }
 
     _tokenizer->SetSuccessor(_matcher.get());
     if (!_registry->getSpecialTokens().empty()) {
@@ -98,10 +104,12 @@ Result::Result(const Config& config, QueryHandle& qhandle, const char* docsum, s
 Result::~Result() = default;
 
 long Result::GetRelevancy() {
-    if (!_mo)
+    if (!_mo) {
         return PROXIMITYBOOST_NOCONSTRAINT_OFFSET;
-    if (!_mo->Query())
+    }
+    if (!_mo->Query()) {
         return PROXIMITYBOOST_NOCONSTRAINT_OFFSET;
+    }
     Scan();
     long retval = _matcher->GlobalRank();
     LOG(debug, "juniper::GetRelevancy(%lu)", retval);
@@ -112,22 +120,25 @@ Summary* Result::GetTeaser(const Config* alt_config) {
     LOG(debug, "juniper::GetTeaser");
     const Config*       cfg = (alt_config ? alt_config : _config);
     const DocsumParams& dsp = cfg->_docsumparams;
-    if (_qhandle->_dynsum_len < 0)
+    if (_qhandle->_dynsum_len < 0) {
         _dynsum_len = dsp.Length();
-    else
+    } else {
         _dynsum_len = _qhandle->_dynsum_len;
+    }
     std::unique_ptr<SummaryImpl> sum;
     // Avoid overhead when being called with an empty stack
     if (_mo && _mo->Query()) {
         Scan();
-        if (_qhandle->_max_matches < 0)
+        if (_qhandle->_max_matches < 0) {
             _max_matches = dsp.MaxMatches();
-        else
+        } else {
             _max_matches = _qhandle->_max_matches;
-        if (_qhandle->_surround_max < 0)
+        }
+        if (_qhandle->_surround_max < 0) {
             _surround_max = dsp.SurroundMax();
-        else
+        } else {
             _surround_max = _qhandle->_surround_max;
+        }
 
         SummaryDesc* sdesc = _matcher->CreateSummaryDesc(_dynsum_len, dsp.MinLength(), _max_matches, _surround_max);
 

@@ -9,10 +9,11 @@ struct RewriteHandle {
     RewriteHandle(std::string& in, uint32_t langid) : _s(in), _ls(""), _cnt(0), _langid(langid) {}
 
     std::string& next() {
-        if (_cnt > 3 || _langid > 4)
+        if (_cnt > 3 || _langid > 4) {
             _ls = "";
-        else
+        } else {
             _ls = vespalib::make_string("%s%d", _s.c_str(), _cnt++);
+        }
         return _ls;
     }
     std::string _s;
@@ -30,15 +31,17 @@ const char* FakeRewriter::Name() const {
 
 RewriteHandle* FakeRewriter::Rewrite(uint32_t langid, const char* term) {
     std::string t(term);
-    if (langid > 4)
+    if (langid > 4) {
         return nullptr;
+    }
     return new RewriteHandle(t, langid);
 }
 
 RewriteHandle* FakeRewriter::Rewrite(uint32_t langid, const char* term, size_t length) {
     std::string t(term, length);
-    if (langid > 4)
+    if (langid > 4) {
         return nullptr;
+    }
     return new RewriteHandle(t, langid);
 }
 

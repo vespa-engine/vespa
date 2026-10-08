@@ -53,8 +53,9 @@ void JuniperTokenizer::scan() {
                 src = tmpSrc;
             }
         }
-        if (dst[0] == 0)
+        if (dst[0] == 0) {
             break;
+        }
         token.curlen = result_len;
         token.token = dst;
         token.wordpos = _wordpos++;
