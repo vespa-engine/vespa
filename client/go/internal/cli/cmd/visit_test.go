@@ -57,6 +57,13 @@ func TestQuoteFunc(t *testing.T) {
 	}
 }
 
+func TestQuoteFuncNonASCII(t *testing.T) {
+	assert.Equal(t, "Beyonc%C3%A9", quoteArgForUrl("Beyoncé"))
+	assert.Equal(t, "%E6%97%A5%E6%9C%AC", quoteArgForUrl("日本"))
+	assert.Equal(t, "%EF%BF%BD", quoteArgForUrl("\uFFFD"))
+	assert.Equal(t, "music%2Eartist%3D%3D%22Beyonc%C3%A9%22", quoteArgForUrl(`music.artist=="Beyoncé"`))
+}
+
 // low-level (unit) test
 func TestRunOneVisit(t *testing.T) {
 	withResponse := func(client *mock.HTTPClient) {
@@ -97,6 +104,17 @@ func TestRunOneVisit(t *testing.T) {
 	}
 	req = withMockClient(t, withResponse, op)
 	assert.Equal(t, "cluster=search&fieldSet=%5Bid%5D&selection=music%2Eyear%3E2000&continuation=asdf&wantedDocumentCount=123&stream=false", req.URL.RawQuery)
+
+	op = func(service *vespa.Service) {
+		vArgs := visitArgs{
+			contentCluster: "search",
+			selection:      `music.artist=="Beyoncé"`,
+		}
+		_, res := runOneVisit(&vArgs, service, "")
+		assert.Equal(t, true, res.Success)
+	}
+	req = withMockClient(t, withResponse, op)
+	assert.Equal(t, `music.artist=="Beyoncé"`, req.URL.Query().Get("selection"))
 }
 
 func withMockClient(t *testing.T, prepCli func(*mock.HTTPClient), runOp func(*vespa.Service)) *http.Request {
