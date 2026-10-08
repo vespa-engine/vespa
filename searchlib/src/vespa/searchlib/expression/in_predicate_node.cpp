@@ -20,7 +20,7 @@ IMPLEMENT_IDENTIFIABLE_NS2(search, expression, InPredicateNode, FilterPredicateN
 namespace {
 
 bool matches_any(const ResultNode& value, size_t index, const std::vector<std::string>& args) {
-    HoldString      held(value, index);
+    HoldString       held(value, index);
     std::string_view str(held);
     return std::ranges::any_of(args, [str](const std::string& arg) noexcept { return str == arg; });
 }
@@ -65,8 +65,7 @@ InPredicateNode::InPredicateNode(const InPredicateNode&) = default;
 InPredicateNode& InPredicateNode::operator=(const InPredicateNode&) = default;
 
 InPredicateNode::InPredicateNode(ExpressionNode::UP input, std::vector<std::string> args)
-    : _argument(std::move(input)),
-      _args(std::move(args)) {
+    : _argument(std::move(input)), _args(std::move(args)) {
 }
 
 Serializer& InPredicateNode::onSerialize(Serializer& os) const {
@@ -82,7 +81,8 @@ void InPredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
     visit(visitor, "args", _args);
 }
 
-void InPredicateNode::selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) {
+void InPredicateNode::selectMembers(const vespalib::ObjectPredicate& predicate,
+                                    vespalib::ObjectOperation&       operation) {
     _argument.select(predicate, operation);
 }
 

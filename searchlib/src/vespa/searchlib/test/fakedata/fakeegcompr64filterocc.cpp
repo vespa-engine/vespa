@@ -111,10 +111,11 @@ FakeEGCompr64FilterOcc::FakeEGCompr64FilterOcc(const FakeWord& fw, bool bigEndia
 }
 
 void FakeEGCompr64FilterOcc::setup(const FakeWord& fw) {
-    if (_bigEndian)
+    if (_bigEndian) {
         setupT<true>(fw);
-    else
+    } else {
         setupT<false>(fw);
+    }
 }
 
 template <bool bigEndian> void FakeEGCompr64FilterOcc::setupT(const FakeWord& fw) {
@@ -526,11 +527,13 @@ template <bool bigEndian> void FakeFilterOccEGCompressed64ArrayIterator<bigEndia
     uint32_t     oDocId = getDocId();
     UC64_DECODECONTEXT_CONSTRUCTOR(o, this->_docIdBits._);
 
-    if (getUnpacked())
+    if (getUnpacked()) {
         clearUnpacked();
+    }
     while (__builtin_expect(oDocId < docId, true)) {
-        if (__builtin_expect(--_residue == 0, false))
+        if (__builtin_expect(--_residue == 0, false)) {
             goto atbreak;
+        }
         UC64_DECODEEXPGOLOMB_SMALL_APPLY(oVal, oCompr, oPreRead, oCacheInt, K_VALUE_FILTEROCC_DELTA_DOCID, EC,
                                          oDocId += 1 +);
 #if DEBUG_EGCOMPR64FILTEROCC_PRINTF
@@ -817,8 +820,9 @@ template <> void FakeFilterOccEGCompressed64SkipArrayIterator<true>::doL3SkipSee
 
     if (__builtin_expect(docId > _l4SkipDocId, false)) {
         doL4SkipSeek(docId);
-        if (docId <= _l3SkipDocId)
+        if (docId <= _l3SkipDocId) {
             return;
+        }
     }
 
     UC64_DECODECONTEXT_CONSTRUCTOR(s, _l3SkipBits._);
@@ -863,8 +867,9 @@ template <> void FakeFilterOccEGCompressed64SkipArrayIterator<true>::doL2SkipSee
 
     if (__builtin_expect(docId > _l3SkipDocId, false)) {
         doL3SkipSeek(docId);
-        if (docId <= _l2SkipDocId)
+        if (docId <= _l2SkipDocId) {
             return;
+        }
     }
 
     UC64_DECODECONTEXT_CONSTRUCTOR(s, _l2SkipBits._);
@@ -907,8 +912,9 @@ template <> void FakeFilterOccEGCompressed64SkipArrayIterator<true>::doL1SkipSee
 
     if (__builtin_expect(docId > _l2SkipDocId, false)) {
         doL2SkipSeek(docId);
-        if (docId <= _l1SkipDocId)
+        if (docId <= _l1SkipDocId) {
             return;
+        }
     }
     UC64_DECODECONTEXT_CONSTRUCTOR(s, _l1SkipBits._);
     do {
@@ -933,8 +939,9 @@ template <> void FakeFilterOccEGCompressed64SkipArrayIterator<true>::doL1SkipSee
 }
 
 template <bool doSkip> void FakeFilterOccEGCompressed64SkipArrayIterator<doSkip>::doSeek(uint32_t docId) {
-    if (getUnpacked())
+    if (getUnpacked()) {
         clearUnpacked();
+    }
     if (doSkip && docId > _l1SkipDocId) {
         doL1SkipSeek(docId);
     }

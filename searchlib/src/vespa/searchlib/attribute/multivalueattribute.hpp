@@ -239,8 +239,9 @@ template <typename B, typename M> bool MultiValueAttribute<B, M>::addDoc(DocId& 
     incGen |= onAddDoc(doc);
     if (incGen) {
         this->incGeneration();
-    } else
+    } else {
         this->reclaim_unused_memory();
+    }
     return true;
 }
 

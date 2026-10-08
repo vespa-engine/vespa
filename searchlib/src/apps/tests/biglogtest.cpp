@@ -64,8 +64,9 @@ void BigLogTest::makeBlobs() {
     while (usemem > 0) {
         size_t sizeclass = 6 + _randomgenerator.nextUint32() % 20;
         size_t blobsize = _randomgenerator.nextUint32() % (1 << sizeclass);
-        if (blobsize > usemem)
+        if (blobsize > usemem) {
             blobsize = usemem;
+        }
         _blobs.push_back(Blob(blobsize));
         char* p = _blobs.back().buf.get();
         for (size_t j = 0; j < blobsize; ++j) {

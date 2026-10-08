@@ -81,8 +81,9 @@ template <typename B> bool SingleValueNumericAttribute<B>::addDoc(DocId& doc) {
     this->updateUncommittedDocIdLimit(doc);
     if (incGen) {
         this->incGeneration();
-    } else
+    } else {
         this->reclaim_unused_memory();
+    }
     return true;
 }
 
@@ -121,8 +122,9 @@ template <typename B> bool SingleValueNumericAttribute<B>::onLoad(vespalib::Exec
 
     this->setCreateSerialNum(attrReader.getCreateSerialNum());
 
-    if (attrReader.getEnumerated())
+    if (attrReader.getEnumerated()) {
         return onLoadEnumerated(attrReader);
+    }
 
     const size_t sz(attrReader.getDataCount());
     getGenerationHolder().reclaim_all();

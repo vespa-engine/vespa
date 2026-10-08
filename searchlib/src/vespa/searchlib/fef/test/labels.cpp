@@ -8,4 +8,4 @@ NoLabel::~NoLabel() = default;
 
 MultiLabel::~MultiLabel() = default;
 
-}
+} // namespace search::fef::test

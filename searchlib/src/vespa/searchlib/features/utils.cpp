@@ -7,10 +7,11 @@
 #include <vespa/searchlib/fef/itablemanager.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -227,7 +228,7 @@ std::vector<const ITermData*> getTermsByLabel(const search::fef::IQueryEnvironme
     // is represented as: [vespa.label.foo.id: "5", vespa.label.foo.id: "7"]
     vespalib::asciistream os;
     os << "vespa.label." << label << ".id";
-    Property p = env.getProperties().lookup(os.view());
+    Property                      p = env.getProperties().lookup(os.view());
     std::vector<const ITermData*> terms;
     if (!p.found()) {
         return terms;
@@ -286,7 +287,6 @@ getTermsByAllLabels(const search::fef::IQueryEnvironment& env) {
     std::erase_if(result, [](const auto& entry) noexcept { return entry.second.empty(); });
     return result;
 }
-
 
 std::optional<DocumentFrequency> lookup_document_frequency(const search::fef::IQueryEnvironment& env,
                                                            const ITermData&                      term) {

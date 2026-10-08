@@ -13,14 +13,17 @@ namespace search {
  */
 void RawBuf::expandBuf(size_t needlen) {
     size_t size = (_bufEnd - _bufStart) * 2;
-    if (size < 1)
+    if (size < 1) {
         size = 2;
+    }
     needlen += _bufEnd - _bufStart;
-    while (size < needlen)
+    while (size < needlen) {
         size *= 2;
+    }
     char* nbuf = static_cast<char*>(malloc(size));
-    if (_bufFillPos != _bufDrainPos)
+    if (_bufFillPos != _bufDrainPos) {
         memcpy(nbuf, _bufDrainPos, _bufFillPos - _bufDrainPos);
+    }
     _bufFillPos = _bufFillPos - _bufDrainPos + nbuf;
     _bufDrainPos = nbuf;
     free(_bufStart);
@@ -36,14 +39,16 @@ void RawBuf::expandBuf(size_t needlen) {
  */
 void RawBuf::preAlloc(size_t len) {
     size_t curfree = _bufEnd - _bufFillPos;
-    if (curfree >= len)
+    if (curfree >= len) {
         return;
+    }
     if (_bufEnd - _bufStart < len + _bufFillPos - _bufDrainPos) {
         expandBuf(len);
         assert(_bufEnd - _bufStart >= len + _bufFillPos - _bufDrainPos);
         curfree = _bufEnd - _bufFillPos;
-        if (curfree >= len)
+        if (curfree >= len) {
             return;
+        }
     }
     memmove(_bufStart, _bufDrainPos, _bufFillPos - _bufDrainPos);
     _bufFillPos -= (_bufDrainPos - _bufStart);

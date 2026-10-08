@@ -160,8 +160,9 @@ void BitVectorCache::populate(Key2Index& newKeys, CondensedBitVector& chunk, con
 }
 
 void BitVectorCache::populate(uint32_t sz, const PopulateInterface& lookup) {
-    if (!needPopulation())
+    if (!needPopulation()) {
         return;
+    }
     CondensedBitVector::UP chunk(CondensedBitVector::create(sz, _genHolder));
     std::unique_lock       guard(_mutex);
     Key2Index              newKeys(_keys);

@@ -62,8 +62,9 @@ bool ParameterTest::validate(const IIndexEnvironment& env, const std::vector<std
 
 bool ParameterTest::validate(const IIndexEnvironment& env, const std::vector<std::string>& params,
                              const ParameterDescriptions& descs, const ParameterValidator::Result& result) {
-    if (!validate(env, params, descs))
+    if (!validate(env, params, descs)) {
         return false;
+    }
     ParameterValidator         pv(env, params, descs);
     ParameterValidator::Result actual = pv.validate();
     bool                       failed = false;
@@ -77,8 +78,9 @@ bool ParameterTest::validate(const IIndexEnvironment& env, const std::vector<std
     }
     bool retval = true;
     for (size_t i = 0; i < result.getParameters().size(); ++i) {
-        if (!assertParameter(result.getParameters()[i], actual.getParameters()[i]))
+        if (!assertParameter(result.getParameters()[i], actual.getParameters()[i])) {
             retval = false;
+        }
     }
     return retval;
 }

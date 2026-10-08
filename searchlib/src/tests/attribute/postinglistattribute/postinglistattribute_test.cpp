@@ -162,10 +162,12 @@ protected:
 template <> void PostingListAttributeTest::populate<IntegerAttribute>(IntegerAttribute& v) {
     for (size_t i(0), m(v.getNumDocs()); i < m; i++) {
         v.clearDoc(i);
-        if (i == 0)
+        if (i == 0) {
             continue;
-        if (i == 9)
+        }
+        if (i == 9) {
             continue;
+        }
         if (i == 7) {
             if (v.hasMultiValue()) {
                 v.append(i, -42, 27);
@@ -212,10 +214,12 @@ template <> void PostingListAttributeTest::populate<IntegerAttribute>(IntegerAtt
 template <> void PostingListAttributeTest::populate<StringAttribute>(StringAttribute& v) {
     for (size_t i(0), m(v.getNumDocs()); i < m; i++) {
         v.clearDoc(i);
-        if (i == 0)
+        if (i == 0) {
             continue;
-        if (i == 9)
+        }
+        if (i == 9) {
             continue;
+        }
         if (i == 7) {
             if (v.hasMultiValue()) {
                 v.append(i, "foo", 27);

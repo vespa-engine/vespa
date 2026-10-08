@@ -148,8 +148,9 @@ public:
     void apply(EntryRef& ref, AddIter a, AddIter ae, RemoveIter r, RemoveIter re);
     void clear(const EntryRef ref);
     size_t size(const EntryRef ref) const {
-        if (!ref.valid())
+        if (!ref.valid()) {
             return 0;
+        }
         RefType  iRef(ref);
         uint32_t typeId = getTypeId(iRef);
         uint32_t clusterSize = getClusterSize(typeId);
@@ -160,8 +161,9 @@ public:
     }
 
     size_t frozenSize(const EntryRef ref) const {
-        if (!ref.valid())
+        if (!ref.valid()) {
             return 0;
+        }
         RefType  iRef(ref);
         uint32_t typeId = getTypeId(iRef);
         uint32_t clusterSize = getClusterSize(typeId);

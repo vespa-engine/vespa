@@ -27,8 +27,9 @@ Serializer& FS4Hit::onSerialize(Serializer& os) const {
     bool                 hasGlobalId = false;
     for (size_t i = 0; i < document::GlobalId::LENGTH; ++i) {
         os.put(rawGid[i]);
-        if (rawGid[i] != 0)
+        if (rawGid[i] != 0) {
             hasGlobalId = true;
+        }
     }
     if (!hasGlobalId) {
         LOG(warning, "missing GlobalId for grouping hit %u (rank %f)", _docId, getRank());

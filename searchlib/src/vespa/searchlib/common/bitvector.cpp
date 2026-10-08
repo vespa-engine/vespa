@@ -58,8 +58,9 @@ struct BitVector::OrParts : vespalib::Runnable {
 void BitVector::parallelOr(vespalib::ThreadBundle& thread_bundle, std::span<BitVector* const> vectors) {
     constexpr uint32_t MIN_BITS_PER_THREAD = 128_Ki;
     constexpr uint32_t ALIGNMENT_BITS = 8_Ki;
-    if (vectors.size() < 2)
+    if (vectors.size() < 2) {
         return;
+    }
     BitVector* master = vectors[0];
     Index      size = master->size();
     size_t     max_num_chunks = (size + (MIN_BITS_PER_THREAD - 1)) / MIN_BITS_PER_THREAD;
@@ -432,8 +433,9 @@ bool BitVector::hasTrueBitsInternal() const {
     }
 
     // Ignore guard bit.
-    if ((load(words[bitVectorSizeL1]) & ~mask(size())) != 0)
+    if ((load(words[bitVectorSizeL1]) & ~mask(size())) != 0) {
         return true;
+    }
 
     return false;
 }

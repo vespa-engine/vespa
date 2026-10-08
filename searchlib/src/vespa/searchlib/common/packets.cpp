@@ -91,36 +91,43 @@ std::string FS4Properties::toString(uint32_t indent) const {
 }
 
 bool FS4Properties::decode(FNET_DataBuffer& src, uint32_t& len) {
-    if (len < sizeof(uint32_t))
+    if (len < sizeof(uint32_t)) {
         return false;
+    }
     uint32_t strLen = src.ReadInt32();
     len -= sizeof(uint32_t);
-    if (len < strLen)
+    if (len < strLen) {
         return false;
+    }
     setName(src.GetData(), strLen);
     src.DataToDead(strLen);
     len -= strLen;
-    if (len < sizeof(uint32_t))
+    if (len < sizeof(uint32_t)) {
         return false;
+    }
     uint32_t cnt = src.ReadInt32();
     len -= sizeof(uint32_t);
     allocEntries(cnt);
     for (uint32_t i = 0; i < cnt; ++i) {
-        if (len < sizeof(uint32_t))
+        if (len < sizeof(uint32_t)) {
             return false;
+        }
         strLen = src.ReadInt32();
         len -= sizeof(uint32_t);
-        if (len < strLen)
+        if (len < strLen) {
             return false;
+        }
         setKey(i, src.GetData(), strLen);
         src.DataToDead(strLen);
         len -= strLen;
-        if (len < sizeof(uint32_t))
+        if (len < sizeof(uint32_t)) {
             return false;
+        }
         strLen = src.ReadInt32();
         len -= sizeof(uint32_t);
-        if (len < strLen)
+        if (len < strLen) {
             return false;
+        }
         setValue(i, src.GetData(), strLen);
         src.DataToDead(strLen);
         len -= strLen;

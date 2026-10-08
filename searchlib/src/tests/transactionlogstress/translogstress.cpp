@@ -235,8 +235,9 @@ void FeederThread::commitPacket() {
 }
 
 bool FeederThread::addEntry(const Packet::Entry& e) {
-    if (_packet.sizeBytes() > 0xf000)
+    if (_packet.sizeBytes() > 0xf000) {
         return false;
+    }
     _packet.add(e);
     return true;
 }

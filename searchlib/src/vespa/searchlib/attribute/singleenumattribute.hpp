@@ -52,8 +52,9 @@ template <typename B> bool SingleValueEnumAttribute<B>::addDoc(DocId& doc) {
     incGen |= onAddDoc(doc);
     if (incGen) {
         this->incGeneration();
-    } else
+    } else {
         this->reclaim_unused_memory();
+    }
     return true;
 }
 

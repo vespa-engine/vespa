@@ -79,8 +79,9 @@ private:
         }
         void startWord(std::string_view word) override {
             assert(!_insideWord);
-            if (!_firstWord)
+            if (!_firstWord) {
                 _ss << ",";
+            }
             _ss << "w=" << word << "[";
             _firstDoc = true;
             _insideWord = true;
@@ -134,8 +135,9 @@ public:
     ~MyBuilder() override;
 
     std::unique_ptr<index::FieldIndexBuilder> startField(uint32_t fieldId) override {
-        if (!_firstField)
+        if (!_firstField) {
             _ss << ",";
+        }
         _ss << "f=" << fieldId << "[";
         _firstField = false;
         return std::make_unique<FieldIndexBuilder>(_ss);
@@ -164,8 +166,9 @@ std::string toString(const SimpleMatchData& match_data, bool hasElements = false
     ss << posItr.getFieldLength() << ":";
     bool first = true;
     for (; posItr.valid(); posItr.next()) {
-        if (!first)
+        if (!first) {
             ss << ",";
+        }
         ss << posItr.getPosition();
         first = false;
         if (hasElements) {
@@ -187,8 +190,9 @@ bool assertPostingList(const std::string& exp, PostingIteratorType itr, const Fe
     SimpleMatchData                   match_data;
     ss << "[";
     for (size_t i = 0; itr.valid(); ++itr, ++i) {
-        if (i > 0)
+        if (i > 0) {
             ss << ",";
+        }
         uint32_t docId = itr.getKey();
         ss << docId;
         if (store != nullptr) { // consider features as well
@@ -209,8 +213,9 @@ template <typename PostingIteratorType> bool assertPostingList(std::vector<uint3
     std::stringstream ss;
     ss << "[";
     for (size_t i = 0; i < exp.size(); ++i) {
-        if (i > 0)
+        if (i > 0) {
             ss << ",";
+        }
         ss << exp[i];
     }
     ss << "]";

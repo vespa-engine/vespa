@@ -30,7 +30,7 @@ public:
 //-----------------------------------------------------------------------------
 
 class WeakAnd : public QueryNodeMixin<WeakAnd, Intermediate> {
-    uint32_t    _targetNumHits;
+    uint32_t _targetNumHits;
 
 public:
     virtual ~WeakAnd() = 0;

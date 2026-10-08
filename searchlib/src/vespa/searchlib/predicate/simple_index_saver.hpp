@@ -40,8 +40,9 @@ void SimpleIndexSaver<Posting, Key, DocId>::save(BufferWriter& writer) const {
         auto posting_it =
             frozen_roots_it->valid() ? PostingIterator(*frozen_roots_it, allocator) : _btree_posting_lists.begin(ref);
         nbo_write<uint32_t>(writer, posting_it.size()); // 0 if !valid()
-        if (!posting_it.valid())
+        if (!posting_it.valid()) {
             continue;
+        }
         nbo_write<uint64_t>(writer, it.getKey()); // Key
         for (; posting_it.valid(); ++posting_it) {
             nbo_write<uint32_t>(writer, posting_it.getKey()); // DocId

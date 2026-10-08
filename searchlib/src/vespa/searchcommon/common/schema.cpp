@@ -349,8 +349,9 @@ struct IntersectHelper {
 };
 
 template <> bool IntersectHelper::is_matching(const Schema::FieldSet& f1, const Schema::FieldSet& f2) {
-    if (f1.getFields() != f2.getFields())
+    if (f1.getFields() != f2.getFields()) {
         return false;
+    }
     for (const std::string& field : f1.getFields()) {
         if (schema->getIndexFieldId(field) == Schema::UNKNOWN_FIELD_ID) {
             return false;

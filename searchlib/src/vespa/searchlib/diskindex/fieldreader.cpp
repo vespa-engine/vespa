@@ -58,8 +58,9 @@ void FieldReader::readCounts() {
         assert(_wordNum != noWordNum());
         assert(_wordNum != noWordNumHigh());
         _residue = counts._numDocs;
-    } else
+    } else {
         _wordNum = _oldWordNum;
+    }
 }
 
 void FieldReader::readDocIdAndFeatures() {
@@ -316,8 +317,9 @@ void FieldReaderStripInfo::getFeatureParams(PostingListParams& params) {
         } else {
             params.setStr(collStr, "array");
         }
-    } else
+    } else {
         params.setStr(collStr, "single");
+    }
     params.erase("encoding");
 }
 

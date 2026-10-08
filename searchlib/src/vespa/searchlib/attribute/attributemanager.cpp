@@ -54,8 +54,9 @@ void waitBaseDir(const string& baseDir) {
 }
 
 void dropBaseDir(const string& baseDir) {
-    if (baseDir.empty())
+    if (baseDir.empty()) {
         return;
+    }
     std::lock_guard<std::mutex> guard(baseDirLock);
 
     auto it = baseDirSet.find(baseDir);

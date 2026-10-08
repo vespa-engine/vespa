@@ -130,8 +130,9 @@ private:
 
     bool pop(Entry& entry) {
         std::unique_lock guard(_mutex);
-        if (_queue.empty())
+        if (_queue.empty()) {
             return false;
+        }
         entry = std::move(_queue.front());
         _queue.pop();
         return true;

@@ -210,8 +210,9 @@ int64_t DomainPart::buildPacketMapping(bool allowTruncate) {
         try {
             FileHeader::FileReader fr(transLog);
             uint32_t               header2Len = FileHeader::readSize(fr);
-            if (header2Len <= fSize)
+            if (header2Len <= fSize) {
                 e.throwSelf(); // header not truncated
+            }
         } catch (const IllegalHeaderException& e2) {
         }
         if (fSize > 0) {
@@ -347,8 +348,9 @@ bool DomainPart::openAndFind(FastOS_FileInterface& file, const SerialNum& from) 
         int64_t         pos(_headerLen);
         std::lock_guard guard(_lock);
         for (const auto& skipInfo : _skipList) {
-            if (skipInfo.id() > from)
+            if (skipInfo.id() > from) {
                 break;
+            }
             pos = skipInfo.filePos();
         }
         retval = file.SetPosition(pos);

@@ -139,8 +139,8 @@ public:
     }
 
     bool handle(const ItemWeakAnd& item) {
-        uint32_t    arity = item.children_size();
-        uint32_t    targetNumHits = item.target_num_hits();
+        uint32_t arity = item.children_size();
+        uint32_t targetNumHits = item.target_num_hits();
         _builder.addWeakAnd(arity, targetNumHits);
         for (const auto& child : item.children()) {
             if (!handle_item(child)) {

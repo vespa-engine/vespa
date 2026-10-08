@@ -71,8 +71,9 @@ GenerationHeldBase::UP GrowableBitVector::grow(BitWord::Index newSize, BitWord::
 bool GrowableBitVector::reserve(BitWord::Index newCapacity) {
     BitWord::Index oldCapacity = _stored->capacity();
     assert(newCapacity >= oldCapacity);
-    if (newCapacity == oldCapacity)
+    if (newCapacity == oldCapacity) {
         return false;
+    }
     return hold(grow(_stored->size(), newCapacity));
 }
 

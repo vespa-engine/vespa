@@ -12,8 +12,9 @@ std::vector<NearestNeighborIndex::Neighbor> HnswSingleBestNeighbors::get_neighbo
     std::vector<NearestNeighborIndex::Neighbor> result;
     result.reserve(_candidates.size());
     for (const HnswCandidate& hit : _candidates.peek()) {
-        if (hit.distance > distance_threshold)
+        if (hit.distance > distance_threshold) {
             continue;
+        }
         result.emplace_back(hit.docid, hit.distance);
     }
     return result;

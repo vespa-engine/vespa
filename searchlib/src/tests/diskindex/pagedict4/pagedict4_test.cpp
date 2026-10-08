@@ -81,14 +81,18 @@ int PageDict4TestApp::main(int argc, char** argv) {
     }
     _rnd.srand48(32);
     for (int32_t i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "stress") == 0)
+        if (strcmp(argv[i], "stress") == 0) {
             _stress = true;
-        if (strcmp(argv[i], "emptyword") == 0)
+        }
+        if (strcmp(argv[i], "emptyword") == 0) {
             _emptyWord = true;
-        if (strcmp(argv[i], "firstwordforcedcommon") == 0)
+        }
+        if (strcmp(argv[i], "firstwordforcedcommon") == 0) {
             _firstWordForcedCommon = true;
-        if (strcmp(argv[i], "lastwordforcedcommon") == 0)
+        }
+        if (strcmp(argv[i], "lastwordforcedcommon") == 0) {
             _lastWordForcedCommon = true;
+        }
     }
     testWords();
 
@@ -130,8 +134,9 @@ void deDup(std::vector<WordCounts>& v) {
     std::vector<WordCounts> v2;
     std::sort(v.begin(), v.end());
     for (std::vector<WordCounts>::const_iterator i = v.begin(), ie = v.end(); i != ie; ++i) {
-        if (v2.empty() || v2.back() != *i)
+        if (v2.empty() || v2.back() != *i) {
             v2.push_back(*i);
+        }
     }
     std::swap(v, v2);
 }
@@ -140,8 +145,9 @@ void deDup(std::vector<uint32_t>& v) {
     std::vector<uint32_t> v2;
     std::sort(v.begin(), v.end());
     for (std::vector<uint32_t>::const_iterator i = v.begin(), ie = v.end(); i != ie; ++i) {
-        if (v2.empty() || v2.back() != *i)
+        if (v2.empty() || v2.back() != *i) {
             v2.push_back(*i);
+        }
     }
     std::swap(v, v2);
 }
@@ -194,8 +200,9 @@ static void makeWords(std::vector<WordCounts>& v, vespalib::Rand48& rnd, uint32_
         }
     }
     deDup(v);
-    if (!v.empty() && emptyWord)
+    if (!v.empty() && emptyWord) {
         v.front()._word = "";
+    }
     for (std::vector<WordCounts>::iterator i = v.begin(), ib = v.begin(), ie = v.end(); i != ie; ++i) {
         std::vector<WordIndexCounts> indexes;
         makeIndexes(rnd, i->_counts, (i == ib && firstWordForcedCommon) || (i + 1 == ie && lastWordForcedCommon));

@@ -211,8 +211,9 @@ void MultilevelSortTest::sortAndCheck(const std::vector<Spec>& specs, uint32_t n
             vec[name] = AttributeFactory::createAttribute(name, cfg);
             fill(dynamic_cast<StringAttribute*>(vec[name].get()), num, strValues);
         }
-        if (vec[name])
+        if (vec[name]) {
             vec[name]->commit();
+        }
     }
 
     std::vector<RankedHit> hits;
