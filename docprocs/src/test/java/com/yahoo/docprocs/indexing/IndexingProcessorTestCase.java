@@ -162,7 +162,7 @@ public class IndexingProcessorTestCase {
         //                    }
         //
         //                    field domain_bucket type int {
-        //                        indexing: input domain | hash | _ % 1000 | attribute
+        //                        indexing: input domain | hash | _ % 1000 | abs | attribute
         //                    }
         //
         //                    document page {
@@ -183,7 +183,7 @@ public class IndexingProcessorTestCase {
         Document output = ((DocumentPut)tester.process(input)).getDocument();
         assertEquals("domain1", output.getFieldValue("domain").getWrappedValue());
         assertEquals(1386505442371493468L, output.getFieldValue("domain_hash").getWrappedValue());
-        assertEquals(-212, output.getFieldValue("domain_bucket").getWrappedValue());
+        assertEquals(212, output.getFieldValue("domain_bucket").getWrappedValue());
     }
 
     @Test

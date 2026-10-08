@@ -211,11 +211,14 @@ public class ScriptTestCase {
     @Test
     public void testIntHashWithArithmetic() throws ParseException {
         assertHashOutput(-96, "input myText | hash | _ % 1000 | attribute 'myInt'", DataType.INT);
+        assertHashOutput(96, "input myText | hash | _ % 1000 | abs | attribute 'myInt'", DataType.INT);
+        assertHashOutput(96, "input myText | hash | abs | _ % 1000 | attribute 'myInt'", DataType.INT);
     }
 
     @Test
     public void testLongHashWithArithmetic() throws ParseException {
         assertHashOutput(752L, "input myText | hash | _ % 1000 | attribute 'myLong'", DataType.LONG);
+        assertHashOutput(752L, "input myText | hash | abs | _ % 1000 | attribute 'myLong'", DataType.LONG);
     }
 
     private void assertHashOutput(Object expected, String script, DataType outputType) throws ParseException {

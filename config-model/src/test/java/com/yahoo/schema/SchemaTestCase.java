@@ -576,7 +576,7 @@ public class SchemaTestCase {
                     }
 
                     field domain_bucket type int {
-                        indexing: input domain | hash | _ % 1000 | attribute
+                        indexing: input domain | hash | _ % 1000 | abs | attribute
                     }
 
                     document page {
@@ -601,7 +601,7 @@ public class SchemaTestCase {
     }
 
     @Test
-    void testHashWithArithmetic() throws Exception {
+    void testHashWithArithmeticAndAbs() throws Exception {
         String schema =
                 """
                 schema page {
@@ -610,8 +610,16 @@ public class SchemaTestCase {
                         indexing: input domain | hash | _ % 1000 | attribute
                     }
 
+                    field domain_abs_bucket type int {
+                        indexing: input domain | hash | _ % 1000 | abs | attribute
+                    }
+
                     field domain_long_bucket type long {
                         indexing: input domain | hash | _ % 1000 | attribute
+                    }
+
+                    field domain_long_abs_bucket type long {
+                        indexing: input domain | hash | abs | _ % 1000 | attribute
                     }
 
                     document page {
