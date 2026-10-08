@@ -9,10 +9,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -149,13 +151,26 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 		urlQuery.Set("trace.timestamps", "true")
 		urlQuery.Set("presentation.timing", "true")
 	}
+	var fileQuery map[string]any
+	if opts.postFile != "" {
+		fileQuery, err = readJsonFrom(opts.postFile)
+		if err != nil {
+			return fmt.Errorf("bad JSON in postFile '%s': %w", opts.postFile, err)
+		}
+	}
 	queryTimeout := urlQuery.Get("timeout")
+	if queryTimeout == "" {
+		if fileTimeout, ok := fileQuery["timeout"]; ok {
+			// Timeout set in the query file
+			queryTimeout = fmt.Sprint(fileTimeout)
+		}
+	}
 	if queryTimeout == "" {
 		// No timeout set by user, use the timeout option
 		queryTimeout = fmt.Sprintf("%ds", opts.queryTimeoutSecs)
 		urlQuery.Set("timeout", queryTimeout)
 	}
-	deadline, err := time.ParseDuration(queryTimeout)
+	deadline, err := parseQueryTimeout(queryTimeout)
 	if err != nil {
 		return fmt.Errorf("invalid query timeout: %w", err)
 	}
@@ -176,7 +191,7 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	}
 	hReq := &http.Request{Header: header, URL: url}
 	if opts.postFile != "" {
-		json, err := getJsonFrom(opts.postFile, urlQuery)
+		json, err := mergeJsonQuery(fileQuery, urlQuery)
 		if err != nil {
 			return fmt.Errorf("bad JSON in postFile '%s': %w", opts.postFile, err)
 		}
@@ -341,7 +356,20 @@ func splitArg(argument string) (string, string) {
 	return parts[0], parts[1]
 }
 
-func getJsonFrom(fn string, query url.Values) ([]byte, error) {
+// parseQueryTimeout parses a query timeout. Like the Vespa query API, a value without a unit is a number of seconds.
+func parseQueryTimeout(timeout string) (time.Duration, error) {
+	d, err := time.ParseDuration(timeout)
+	if err == nil {
+		return d, nil
+	}
+	seconds, floatErr := strconv.ParseFloat(strings.TrimSpace(timeout), 64)
+	if floatErr != nil || seconds < 0 || math.IsNaN(seconds) || math.IsInf(seconds, 0) {
+		return 0, err
+	}
+	return time.Duration(seconds * float64(time.Second)), nil
+}
+
+func readJsonFrom(fn string) (map[string]any, error) {
 	parsed := make(map[string]any)
 	f, err := os.Open(fn)
 	if err != nil {
@@ -360,6 +388,10 @@ func getJsonFrom(fn string, query url.Values) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return parsed, nil
+}
+
+func mergeJsonQuery(parsed map[string]any, query url.Values) ([]byte, error) {
 	for k, vl := range query {
 		if len(vl) == 1 {
 			parsed[k] = vl[0]
