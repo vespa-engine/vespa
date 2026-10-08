@@ -107,8 +107,9 @@ BucketVisitor::~BucketVisitor() = default;
 
 bool smallerThanSizeLimit(uint32_t minCount, uint32_t minSize, const spi::Bucket& b,
                           spi::PersistenceProvider& provider) {
-    if (minCount == 0 && minSize == 0)
+    if (minCount == 0 && minSize == 0) {
         return false;
+    }
     spi::BucketInfo info = provider.getBucketInfo(b).getBucketInfo();
     if ((minCount != 0 && info.getDocumentCount() < minCount) &&
         (minSize != 0 &&
@@ -227,11 +228,13 @@ void SplitBitDetector::Result::print(std::ostream& out, bool verbose, const std:
     switch (_result) {
     case OK:
         out << _target1.getUsedBits() << ": " << _target1 << ", ";
-        if (_singleTarget)
+        if (_singleTarget) {
             out << "[ ";
+        }
         out << _target2;
-        if (_singleTarget)
+        if (_singleTarget) {
             out << " ]";
+        }
         break;
     case EMPTY:
         out << "source empty";

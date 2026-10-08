@@ -98,8 +98,9 @@ bool DeadLockDetector::isAboveFailThreshold(vespalib::steady_time time, const fr
 
 bool DeadLockDetector::isAboveWarnThreshold(vespalib::steady_time time, const framework::ThreadProperties& tp,
                                             const framework::ThreadTickData& tick) const {
-    if (tp.getMaxCycleTime() == vespalib::duration::zero())
+    if (tp.getMaxCycleTime() == vespalib::duration::zero()) {
         return false;
+    }
     vespalib::duration slack = tick._lastTickType == framework::WAIT_CYCLE ? getWaitSlack() : getProcessSlack();
     return (tick._lastTick + tp.getMaxCycleTime() + slack / 4 < time);
 }
@@ -131,11 +132,13 @@ struct ThreadChecker : DeadLockDetector::ThreadVisitor {
         const auto& tp = thread.getProperties();
         const auto  tick = thread.getTickData();
         // In case we just got a new tick, ignore the thread
-        if (tick._lastTick > _currentTime)
+        if (tick._lastTick > _currentTime) {
             return;
+        }
         // If thread is already in halted state, ignore it.
-        if (state == DeadLockDetector::HALTED)
+        if (state == DeadLockDetector::HALTED) {
             return;
+        }
 
         if (_detector.isAboveFailThreshold(_currentTime, tp, tick)) {
             state = DeadLockDetector::HALTED;

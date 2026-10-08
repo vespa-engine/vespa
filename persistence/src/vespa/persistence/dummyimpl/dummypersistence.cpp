@@ -651,8 +651,9 @@ IterateResult DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize) con
         DocEntry::SP entry((*bc)->getEntry(next));
         if (entry) {
             uint32_t size = entry->getSize();
-            if (currentSize != 0 && currentSize + size > maxByteSize)
+            if (currentSize != 0 && currentSize + size > maxByteSize) {
                 break;
+            }
             currentSize += size;
             if (!entry->isRemove() && it->_fieldSet->getType() != FieldSet::Type::ALL) {
                 assert(entry->getDocument());

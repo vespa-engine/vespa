@@ -181,8 +181,9 @@ std::vector<typename CommandQueue<Command>::CommandEntry> CommandQueue<Command>:
     auto                      now = _clock.getMonotonicTime();
     while (!empty()) {
         auto iter = tbegin();
-        if (iter->_deadline > now)
+        if (iter->_deadline > now) {
             break;
+        }
         timed_out.emplace_back(*iter);
         _commands.remove(timed_out.back());
     }

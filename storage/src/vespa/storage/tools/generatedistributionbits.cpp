@@ -62,8 +62,9 @@ double generateSkew(uint32_t nodes, uint32_t distributionBits, uint16_t redundan
         for (uint32_t j = 0; j < curr.size(); ++j) {
             ++nodeList[curr[j]];
         }
-        if (i == 0xffffffff)
+        if (i == 0xffffffff) {
             break;
+        }
     }
 
     std::sort(nodeList.begin(), nodeList.end());

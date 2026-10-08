@@ -38,8 +38,9 @@ private:
         LockKeeper(AbstractBucketMap& map, key_type key) noexcept : _map(&map), _key(key) {}
         LockKeeper(LockKeeper&& rhs) noexcept : _map(rhs._map), _key(rhs._key) { rhs._map = nullptr; }
         LockKeeper& operator=(LockKeeper&& rhs) noexcept {
-            if (&rhs == this)
+            if (&rhs == this) {
                 return *this;
+            }
             cleanup();
             _map = rhs._map;
             _key = rhs._key;
@@ -57,8 +58,9 @@ private:
 
     private:
         void cleanup() {
-            if (_map)
+            if (_map) {
                 unlock();
+            }
         }
         AbstractBucketMap* _map;
         key_type           _key;

@@ -48,8 +48,9 @@ void PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTar
     document::BucketId lastBucket;
     bool               multipleBuckets = false;
     for (uint32_t i = 0, n = copies.size(); i < n; ++i) {
-        if (!copies[i].isNewCopy())
+        if (!copies[i].isNewCopy()) {
             continue;
+        }
         if (lastBucket.getRawId() != 0 && copies[i].getBucketId() != lastBucket) {
             multipleBuckets = true;
         }
@@ -80,8 +81,9 @@ void PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTar
         _bucket_space.getBucketDatabase().update(entry);
     }
     for (uint32_t i = 0, n = copies.size(); i < n; ++i) {
-        if (!copies[i].isNewCopy())
+        if (!copies[i].isNewCopy()) {
             continue;
+        }
         document::Bucket bucket(originalCommand.getBucket().getBucketSpace(), copies[i].getBucketId());
         auto             cbc = std::make_shared<api::CreateBucketCommand>(bucket);
         if (setOneActive && active.contains(copies[i].getNode().getIndex())) {

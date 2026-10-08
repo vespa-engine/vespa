@@ -26,8 +26,9 @@ StorageReply::StorageReply(api::StorageReply::SP reply)
 StorageReply::~StorageReply() = default;
 
 void StorageReply::deserialize() const {
-    if (_reply.get())
+    if (_reply.get()) {
         return;
+    }
     StorageReply&     reply(const_cast<StorageReply&>(*this));
     mbus::Message::UP msg(reply.getMessage());
     if (msg.get() == nullptr) {

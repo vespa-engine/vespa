@@ -34,8 +34,9 @@ ThreadPoolImpl::~ThreadPoolImpl() {
     for (uint32_t i = 0; true; i += 10) {
         {
             std::lock_guard lock(_threadVectorLock);
-            if (_threads.empty())
+            if (_threads.empty()) {
                 break;
+            }
         }
         if (i > 1000) {
             fprintf(stderr, "Failed to kill thread pool. Threads won't die. (And if allowing thread pool object"

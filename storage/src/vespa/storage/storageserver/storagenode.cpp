@@ -198,8 +198,9 @@ void StorageNode::initialize(const NodeStateReporter& nodeStateReporter) {
 }
 
 void StorageNode::initializeStatusWebServer() {
-    if (_singleThreadedDebugMode)
+    if (_singleThreadedDebugMode) {
         return;
+    }
     _statusWebServer = std::make_unique<StatusWebServer>(_context.getComponentRegister(),
                                                          _context.getComponentRegister(), _configUri);
 }
@@ -463,8 +464,9 @@ void StorageNode::waitUntilInitialized(vespalib::duration timeout) {
         {
             NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
             lib::NodeState             nodeState(*_component->getStateUpdater().getReportedNodeState());
-            if (nodeState.getState() == lib::State::UP)
+            if (nodeState.getState() == lib::State::UP) {
                 break;
+            }
         }
         std::this_thread::sleep_for(10ms);
         if (vespalib::steady_clock::now() >= doom) {

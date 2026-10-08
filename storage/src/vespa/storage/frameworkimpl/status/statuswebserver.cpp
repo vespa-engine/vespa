@@ -53,8 +53,9 @@ void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::St
     // If server is already running, ignore config updates that doesn't
     // alter port, or suggests random port.
     if (_httpServer) {
-        if (newPort == 0 || newPort == _port)
+        if (newPort == 0 || newPort == _port) {
             return;
+        }
     }
     // Try to create new server before destroying old.
     LOG(info, "Starting status web server on port %u.", newPort);

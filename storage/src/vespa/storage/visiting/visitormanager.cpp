@@ -392,8 +392,9 @@ bool VisitorManager::processReply(const std::shared_ptr<api::StorageReply>& repl
     {
         std::lock_guard sync(_visitorLock);
         auto            it = _visitorMessages.find(reply->getMsgId());
-        if (it == _visitorMessages.end())
+        if (it == _visitorMessages.end()) {
             return false;
+        }
         id = it->second.id;
         _visitorMessages.erase(it);
     }
@@ -430,8 +431,9 @@ void VisitorManager::send(const std::shared_ptr<api::StorageReply>& reply) {
         LOG(spam, "Received an internal reply");
         std::shared_ptr<api::InternalReply> rep(std::dynamic_pointer_cast<api::InternalReply>(reply));
         assert(rep.get());
-        if (onInternalReply(rep))
+        if (onInternalReply(rep)) {
             return;
+        }
     }
     LOG(spam, "Sending visitor reply %s up.", reply->getType().getName().c_str());
     sendUp(reply);
@@ -441,8 +443,9 @@ void VisitorManager::send(const std::shared_ptr<api::StorageReply>& reply) {
 // the time of the call and will be unlocked if scheduling takes
 // place. Returns true if a visitor was scheduled, false otherwise.
 bool VisitorManager::attemptScheduleQueuedVisitor(MonitorGuard& visitorLock) {
-    if (_visitorQueue.empty())
+    if (_visitorQueue.empty()) {
         return false;
+    }
 
     uint32_t totCount;
     getLeastLoadedThread(_visitorThread, totCount);
@@ -512,10 +515,12 @@ void VisitorManager::reportHtmlStatus(std::ostream& out, const framework::HttpUr
         << " | <a href=\"?" << (verbose ? "verbose" : "") << "\">Main visitor manager status page</a>"
         << " | <a href=\"?allvisitors" << (verbose ? "&verbose" : "") << "\">Show all visitors</a>"
         << " | <a href=\"?" << (verbose ? "notverbose" : "verbose");
-    if (!showStatus)
+    if (!showStatus) {
         out << "&visitor=" << xml_attribute_escaped(path.get("visitor", std::string("")));
-    if (showAll)
+    }
+    if (showAll) {
         out << "&allvisitors";
+    }
     out << "\">" << (verbose ? "Less verbose" : "More verbose") << "</a>\n"
         << " ]</font><br><br>\n";
 

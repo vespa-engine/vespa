@@ -216,14 +216,18 @@ mbus::Route StorageMessageAddress::to_mbus_route() const {
 }
 
 bool StorageMessageAddress::operator==(const StorageMessageAddress& other) const noexcept {
-    if (_protocol != other._protocol)
+    if (_protocol != other._protocol) {
         return false;
-    if (_type != other._type)
+    }
+    if (_type != other._type) {
         return false;
-    if (_index != other._index)
+    }
+    if (_index != other._index) {
         return false;
-    if (getCluster() != other.getCluster())
+    }
+    if (getCluster() != other.getCluster()) {
         return false;
+    }
     return true;
 }
 

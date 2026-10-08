@@ -397,8 +397,9 @@ bool StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd) {
             is_up_to_date)
         {
             vespalib::duration timeout = cmd->getTimeout();
-            if (timeout == vespalib::duration::max())
+            if (timeout == vespalib::duration::max()) {
                 timeout = MAX_TIMEOUT;
+            }
 
             LOG(debug,
                 "Received get node state request with timeout of %f seconds. Scheduling to be answered in "

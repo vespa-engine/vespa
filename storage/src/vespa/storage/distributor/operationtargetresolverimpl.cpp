@@ -37,8 +37,9 @@ void BucketInstance::print(vespalib::asciistream& out, const PrintProperties&) c
 
 bool BucketInstanceList::contains(lib::Node node) const {
     for (const auto& instance : _instances) {
-        if (instance._node == node)
+        if (instance._node == node) {
             return true;
+        }
     }
     return false;
 }
@@ -185,8 +186,9 @@ struct LegacyInstanceOrder {
         if (a._bucket == b._bucket) {
             // Trusted only makes sense within same bucket
             // Prefer trusted buckets over non-trusted ones.
-            if (a._trusted != b._trusted)
+            if (a._trusted != b._trusted) {
                 return a._trusted;
+            }
             if (a._ideal_location_priority != b._ideal_location_priority) {
                 return a._ideal_location_priority < b._ideal_location_priority;
             }

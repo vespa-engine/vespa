@@ -55,8 +55,9 @@ template <typename NodeSeq> uint16_t BucketInfoBase<NodeSeq>::getTrustedCount() 
 template <typename NodeSeq> bool BucketInfoBase<NodeSeq>::consistentNodes() const noexcept {
     int compareIndex = 0;
     for (uint32_t i = 1; i < _nodes.size(); i++) {
-        if (!_nodes[i].consistentWith(_nodes[compareIndex]))
+        if (!_nodes[i].consistentWith(_nodes[compareIndex])) {
             return false;
+        }
     }
     return true;
 }

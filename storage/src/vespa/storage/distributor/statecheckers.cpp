@@ -838,11 +838,13 @@ bool shouldSkipActivationDueToMaintenanceOrGatherOperationNodes(const ActiveList
                                                                 std::vector<uint16_t>&       operationNodes) {
     for (uint32_t i = 0; i < activeNodes.size(); ++i) {
         const ActiveCopy& active = activeNodes[i];
-        if (!active.entryIndex().valid())
+        if (!active.entryIndex().valid()) {
             continue;
+        }
         const BucketCopy& cp(c.entry()->getNodeRef(active.entryIndex()));
-        if (cp.active())
+        if (cp.active()) {
             continue;
+        }
 
         const auto node_index = active.nodeIndex();
         if (!cp.ready()) {
@@ -853,8 +855,9 @@ bool shouldSkipActivationDueToMaintenanceOrGatherOperationNodes(const ActiveList
                 // If copy is not ready, we don't want to activate it if a node
                 // is set in maintenance. Doing so would imply that we want proton
                 // to start background indexing.
-                if (containsMaintenanceNode(c.idealState(), c))
+                if (containsMaintenanceNode(c.idealState(), c)) {
                     return true;
+                }
             } // else: activation does not imply indexing, so we can safely do it at any time.
         }
         operationNodes.push_back(node_index);

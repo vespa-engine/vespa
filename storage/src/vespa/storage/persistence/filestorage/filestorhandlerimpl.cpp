@@ -460,8 +460,9 @@ uint32_t findCommonBits(document::BucketId a, document::BucketId b) {
         b.setUsedBits(a.getUsedBits());
     }
     for (uint32_t i = a.getUsedBits() - 1; i > 0; --i) {
-        if (a == b)
+        if (a == b) {
             return i + 1;
+        }
         a.setUsedBits(i);
         b.setUsedBits(i);
     }

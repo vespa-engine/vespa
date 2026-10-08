@@ -241,8 +241,9 @@ bool PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::Re
 }
 
 void PendingClusterState::resendDelayedMessages() {
-    if (_delayedRequests.empty())
+    if (_delayedRequests.empty()) {
         return; // Don't fetch time if not needed
+    }
     vespalib::steady_time currentTime = _clock.getMonotonicTime();
     while (!_delayedRequests.empty() && (currentTime >= _delayedRequests.front().first)) {
         requestNode(_delayedRequests.front().second);

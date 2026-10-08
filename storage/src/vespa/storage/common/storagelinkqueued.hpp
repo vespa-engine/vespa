@@ -52,8 +52,9 @@ template <typename Message> void StorageLinkQueued::Dispatcher<Message>::start()
 template <typename Message> void StorageLinkQueued::Dispatcher<Message>::add(const std::shared_ptr<Message>& m) {
     std::unique_lock guard(_sync);
 
-    if (!_thread)
+    if (!_thread) {
         start();
+    }
     while ((_messages.size() > _maxQueueSize) && !_thread->interrupted()) {
         _syncCond.wait_for(guard, 100ms);
     }
@@ -71,8 +72,9 @@ template <typename Message> void StorageLinkQueued::Dispatcher<Message>::run(fra
                 _syncCond.wait_for(guard, 100ms);
                 h.registerTick(framework::WAIT_CYCLE);
             }
-            if (h.interrupted())
+            if (h.interrupted()) {
                 break;
+            }
             message.swap(_messages.front());
         }
         try {
