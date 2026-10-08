@@ -52,12 +52,14 @@ bool FRT_RPCRequestPacket::Decode(FNET_DataBuffer* src, uint32_t len) {
     uint32_t host_endian = FNET_Info::GetEndian();
     uint32_t slen;
 
-    if (len < sizeof(uint32_t))
+    if (len < sizeof(uint32_t)) {
         goto error;
+    }
     slen = (packet_endian == FNET_Info::ENDIAN_BIG) ? src->ReadInt32() : src->ReadInt32Reverse();
     len -= sizeof(uint32_t);
-    if (len < slen)
+    if (len < slen) {
         goto error;
+    }
     _req->SetMethodName(src->GetData(), slen);
     src->DataToDead(slen);
     len -= slen;
@@ -161,18 +163,21 @@ bool FRT_RPCErrorPacket::Decode(FNET_DataBuffer* src, uint32_t len) {
     uint32_t errorCode;
     uint32_t errorMsgLen;
 
-    if (len < 2 * sizeof(uint32_t))
+    if (len < 2 * sizeof(uint32_t)) {
         goto error;
+    }
     errorCode = (packet_endian == FNET_Info::ENDIAN_BIG) ? src->ReadInt32() : src->ReadInt32Reverse();
     errorMsgLen = (packet_endian == FNET_Info::ENDIAN_BIG) ? src->ReadInt32() : src->ReadInt32Reverse();
     len -= 2 * sizeof(uint32_t);
-    if (len < errorMsgLen)
+    if (len < errorMsgLen) {
         goto error;
+    }
     _req->SetError(errorCode, src->GetData(), errorMsgLen);
     src->DataToDead(errorMsgLen);
     len -= errorMsgLen;
-    if (len != 0)
+    if (len != 0) {
         goto error;
+    }
     return true; // OK
 
 error:
@@ -196,8 +201,9 @@ FNET_Packet* FRT_PacketFactory::CreatePacket(uint32_t pcode, FNET_Context contex
     FRT_RPCRequest* req = ((FRT_RPCRequest*)context._value.VOIDP);
     uint32_t        flags = (pcode >> 16) & 0xffff;
 
-    if (req == nullptr || (flags & ~FLAG_FRT_RPC_SUPPORTED_MASK) != 0)
+    if (req == nullptr || (flags & ~FLAG_FRT_RPC_SUPPORTED_MASK) != 0) {
         return nullptr;
+    }
 
     vespalib::Stash& stash = req->getStash();
     pcode &= 0xffff; // remove flags

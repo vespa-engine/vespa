@@ -44,8 +44,9 @@ void FNET_TransportThread::AddComponent(FNET_IOComponent* comp) {
             _componentsTail->_ioc_next = comp;
         }
         _componentsTail = comp;
-        if (_timeOutHead == nullptr)
+        if (_timeOutHead == nullptr) {
             _timeOutHead = comp;
+        }
         store_relaxed(_componentCnt, load_relaxed(_componentCnt) + 1);
     } else {
         comp->_ioc_prev = nullptr;
@@ -61,16 +62,21 @@ void FNET_TransportThread::AddComponent(FNET_IOComponent* comp) {
 }
 
 void FNET_TransportThread::RemoveComponent(FNET_IOComponent* comp) {
-    if (comp == _componentsHead)
+    if (comp == _componentsHead) {
         _componentsHead = comp->_ioc_next;
-    if (comp == _timeOutHead)
+    }
+    if (comp == _timeOutHead) {
         _timeOutHead = comp->_ioc_next;
-    if (comp == _componentsTail)
+    }
+    if (comp == _componentsTail) {
         _componentsTail = comp->_ioc_prev;
-    if (comp->_ioc_prev != nullptr)
+    }
+    if (comp->_ioc_prev != nullptr) {
         comp->_ioc_prev->_ioc_next = comp->_ioc_next;
-    if (comp->_ioc_next != nullptr)
+    }
+    if (comp->_ioc_next != nullptr) {
         comp->_ioc_next->_ioc_prev = comp->_ioc_prev;
+    }
     store_relaxed(_componentCnt, load_relaxed(_componentCnt) - 1);
 }
 
@@ -326,12 +332,14 @@ void FNET_TransportThread::ShutDown(bool waitFinished) {
 }
 
 void FNET_TransportThread::WaitFinished() {
-    if (is_finished())
+    if (is_finished()) {
         return;
+    }
 
     std::unique_lock<std::mutex> guard(_shutdownLock);
-    while (!is_finished())
+    while (!is_finished()) {
         _shutdownCond.wait(guard);
+    }
 }
 
 bool FNET_TransportThread::InitEventLoop() {
@@ -447,10 +455,12 @@ bool FNET_TransportThread::EventLoopIteration() {
         FlushDeleteList();
     } // -- END OF MAIN EVENT LOOP --
 
-    if (!should_shut_down())
+    if (!should_shut_down()) {
         return true;
-    if (is_finished())
+    }
+    if (is_finished()) {
         return false;
+    }
 
     endEventLoop();
     return false;

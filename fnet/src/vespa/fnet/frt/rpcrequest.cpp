@@ -70,8 +70,9 @@ void FRT_RPCRequest::Return() {
 }
 
 FNET_Connection* FRT_RPCRequest::GetConnection() {
-    if (_returnHandler == nullptr)
+    if (_returnHandler == nullptr) {
         return nullptr;
+    }
     return _returnHandler->GetConnection();
 }
 
@@ -92,8 +93,9 @@ void FRT_RPCRequest::Reset() {
 }
 
 bool FRT_RPCRequest::Recycle() {
-    if (count_refs() > 1 || _errorCode != FRTE_NO_ERROR)
+    if (count_refs() > 1 || _errorCode != FRTE_NO_ERROR) {
         return false;
+    }
     Reset();
     return true;
 }
@@ -112,21 +114,24 @@ void FRT_RPCRequest::Print(uint32_t indent) {
 
 FNET_Packet* FRT_RPCRequest::CreateRequestPacket(bool wantReply) {
     uint32_t flags = 0;
-    if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE)
+    if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE) {
         flags |= FLAG_FRT_RPC_LITTLE_ENDIAN;
+    }
 
-    if (wantReply)
+    if (wantReply) {
         internal_addref();
-    else
+    } else {
         flags |= FLAG_FRT_RPC_NOREPLY;
+    }
 
     return &_stash.create<FRT_RPCRequestPacket>(this, flags, true);
 }
 
 FNET_Packet* FRT_RPCRequest::CreateReplyPacket() {
     uint32_t flags = 0;
-    if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE)
+    if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE) {
         flags |= FLAG_FRT_RPC_LITTLE_ENDIAN;
+    }
 
     if (IsError()) {
         return &_stash.create<FRT_RPCErrorPacket>(this, flags, true);

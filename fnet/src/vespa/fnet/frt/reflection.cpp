@@ -50,8 +50,9 @@ void FRT_ReflectionManager::Reset() {
         delete (method);
     }
 
-    for (uint32_t i = 0; i < METHOD_HASH_SIZE; i++)
+    for (uint32_t i = 0; i < METHOD_HASH_SIZE; i++) {
         _methodHash[i] = nullptr;
+    }
 }
 
 void FRT_ReflectionManager::AddMethod(FRT_Method* method) {
@@ -69,8 +70,9 @@ FRT_Method* FRT_ReflectionManager::LookupMethod(const char* name) {
     }
     uint32_t    hash = HashStr(name, METHOD_HASH_SIZE);
     FRT_Method* ret = _methodHash[hash];
-    while (ret != nullptr && strcmp(name, ret->GetName()) != 0)
+    while (ret != nullptr && strcmp(name, ret->GetName()) != 0) {
         ret = ret->_hashNext;
+    }
     return ret;
 }
 
@@ -90,8 +92,9 @@ void FRT_ReflectionManager::DumpMethodList(FRT_Values* target) {
 //------------------------------------------------------------------------
 
 void FRT_ReflectionBuilder::Flush() {
-    if (_method == nullptr)
+    if (_method == nullptr) {
         return;
+    }
 
     for (; _curArg < _argCnt; _curArg++) {
         _values->SetString(&_arg_name[_curArg], "?");
@@ -132,8 +135,9 @@ FRT_ReflectionBuilder::~FRT_ReflectionBuilder() {
 
 void FRT_ReflectionBuilder::DefineMethod(const char* name, const char* paramSpec, const char* returnSpec,
                                          FRT_METHOD_PT method, FRT_Invokable* handler) {
-    if (handler == nullptr)
+    if (handler == nullptr) {
         return;
+    }
 
     Flush();
     _method = new FRT_Method(name, paramSpec, returnSpec, method, handler);
@@ -154,18 +158,21 @@ void FRT_ReflectionBuilder::DefineMethod(const char* name, const char* paramSpec
 }
 
 void FRT_ReflectionBuilder::MethodDesc(const char* desc) {
-    if (_method == nullptr)
+    if (_method == nullptr) {
         return;
+    }
 
     _values->SetString(&_values->GetValue(0)._string, desc);
 }
 
 void FRT_ReflectionBuilder::ParamDesc(const char* name, const char* desc) {
-    if (_method == nullptr)
+    if (_method == nullptr) {
         return;
+    }
 
-    if (_curArg >= _argCnt)
+    if (_curArg >= _argCnt) {
         return;
+    }
 
     _values->SetString(&_arg_name[_curArg], name);
     _values->SetString(&_arg_desc[_curArg], desc);
@@ -173,11 +180,13 @@ void FRT_ReflectionBuilder::ParamDesc(const char* name, const char* desc) {
 }
 
 void FRT_ReflectionBuilder::ReturnDesc(const char* name, const char* desc) {
-    if (_method == nullptr)
+    if (_method == nullptr) {
         return;
+    }
 
-    if (_curRet >= _retCnt)
+    if (_curRet >= _retCnt) {
         return;
+    }
 
     _values->SetString(&_ret_name[_curRet], name);
     _values->SetString(&_ret_desc[_curRet], desc);

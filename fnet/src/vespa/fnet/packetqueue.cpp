@@ -10,10 +10,12 @@
 
 void FNET_PacketQueue_NoLock::ExpandBuf(uint32_t needentries) {
     uint32_t oldsize = _bufsize;
-    if (_bufsize < 8)
+    if (_bufsize < 8) {
         _bufsize = 8;
-    while (_bufsize < _bufused + needentries)
+    }
+    while (_bufsize < _bufused + needentries) {
         _bufsize *= 2;
+    }
     _QElem* newbuf = static_cast<_QElem*>(malloc(sizeof(_QElem) * _bufsize));
     assert(newbuf != nullptr);
     if (_bufused == 0) { // EMPTY
@@ -60,13 +62,15 @@ FNET_IPacketHandler::HP_RetCode FNET_PacketQueue_NoLock::HandlePacket(FNET_Packe
 }
 
 void FNET_PacketQueue_NoLock::QueuePacket_NoLock(FNET_Packet* packet, FNET_Context context) {
-    if (packet == nullptr)
+    if (packet == nullptr) {
         return;
+    }
     EnsureFree();
     _buf[_in_pos]._packet = packet;
     _buf[_in_pos]._context = context;
-    if (++_in_pos == _bufsize)
+    if (++_in_pos == _bufsize) {
         _in_pos = 0; // wrap around.
+    }
     _bufused++;
 }
 
@@ -77,8 +81,9 @@ FNET_Packet* FNET_PacketQueue_NoLock::DequeuePacket_NoLock(FNET_Context* context
         packet = _buf[_out_pos]._packet;
         __builtin_prefetch(packet, 0);
         *context = _buf[_out_pos]._context;
-        if (++_out_pos == _bufsize)
+        if (++_out_pos == _bufsize) {
             _out_pos = 0; // wrap around
+        }
         _bufused--;
     }
     return packet;
@@ -92,10 +97,12 @@ uint32_t FNET_PacketQueue_NoLock::FlushPackets_NoLock(FNET_PacketQueue_NoLock* t
         target->_buf[target->_in_pos]._packet = _buf[_out_pos]._packet;
         target->_buf[target->_in_pos]._context = _buf[_out_pos]._context;
 
-        if (++target->_in_pos == target->_bufsize)
+        if (++target->_in_pos == target->_bufsize) {
             target->_in_pos = 0; // wrap around.
-        if (++_out_pos == _bufsize)
+        }
+        if (++_out_pos == _bufsize) {
             _out_pos = 0; // wrap around.
+        }
     }
     assert(_out_pos == _in_pos);
 
@@ -105,8 +112,9 @@ uint32_t FNET_PacketQueue_NoLock::FlushPackets_NoLock(FNET_PacketQueue_NoLock* t
 void FNET_PacketQueue_NoLock::DiscardPackets_NoLock() {
     for (; _bufused > 0; _bufused--) {
         _buf[_out_pos]._packet->Free(); // discard packet
-        if (++_out_pos == _bufsize)
+        if (++_out_pos == _bufsize) {
             _out_pos = 0; // wrap around
+        }
     }
     assert(_out_pos == _in_pos);
 }
@@ -121,8 +129,9 @@ void FNET_PacketQueue_NoLock::Print(uint32_t indent) {
     printf("%*s  in_pos  : %d\n", indent, "", _in_pos);
     printf("%*s  out_pos : %d\n", indent, "", _out_pos);
     for (; cnt > 0; i++, cnt--) {
-        if (i == _bufsize)
+        if (i == _bufsize) {
             i = 0; // wrap around
+        }
         _buf[i]._packet->Print(indent + 2);
         _buf[i]._context.Print(indent + 2);
     }
@@ -149,8 +158,9 @@ void FNET_PacketQueue::QueuePacket(FNET_Packet* packet, FNET_Context context) {
     EnsureFree();
     _buf[_in_pos]._packet = packet; // insert packet ref.
     _buf[_in_pos]._context = context;
-    if (++_in_pos == _bufsize)
+    if (++_in_pos == _bufsize) {
         _in_pos = 0; // wrap around.
+    }
     _bufused++;
     if (_waitCnt >= _bufused) { // signal waiting thread(s)
         _cond.notify_one();
@@ -167,8 +177,9 @@ FNET_Packet* FNET_PacketQueue::DequeuePacket(FNET_Context* context) {
     _waitCnt--;
     packet = _buf[_out_pos]._packet;
     *context = _buf[_out_pos]._context;
-    if (++_out_pos == _bufsize)
+    if (++_out_pos == _bufsize) {
         _out_pos = 0; // wrap around
+    }
     _bufused--;
     return packet;
 }
@@ -194,8 +205,9 @@ FNET_Packet* FNET_PacketQueue::DequeuePacket(uint32_t maxwait, FNET_Context* con
     if (_bufused > 0) {
         packet = _buf[_out_pos]._packet;
         *context = _buf[_out_pos]._context;
-        if (++_out_pos == _bufsize)
+        if (++_out_pos == _bufsize) {
             _out_pos = 0; // wrap around
+        }
         _bufused--;
     }
     return packet;
@@ -213,8 +225,9 @@ void FNET_PacketQueue::Print(uint32_t indent) {
     printf("%*s  out_pos : %d\n", indent, "", _out_pos);
     printf("%*s  waitCnt : %d\n", indent, "", _waitCnt);
     for (; cnt > 0; i++, cnt--) {
-        if (i == _bufsize)
+        if (i == _bufsize) {
             i = 0; // wrap around
+        }
         _buf[i]._packet->Print(indent + 2);
         _buf[i]._context.Print(indent + 2);
     }

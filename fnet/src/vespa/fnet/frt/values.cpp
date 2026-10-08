@@ -109,14 +109,17 @@ void FRT_Values::DiscardBlobs() {
 }
 
 void FRT_Values::EnsureFree(uint32_t need) {
-    if (_numValues + need <= _maxValues)
+    if (_numValues + need <= _maxValues) {
         return;
+    }
 
     uint32_t cnt = _maxValues * 2;
-    if (cnt < _numValues + need)
+    if (cnt < _numValues + need) {
         cnt = _numValues + need;
-    if (cnt < 16)
+    }
+    if (cnt < 16) {
         cnt = 16;
+    }
 
     char* types = (char*)_stash.alloc(cnt + 1);
     if (_numValues > 0) {
@@ -428,8 +431,9 @@ uint32_t FRT_Values::GetLength() {
             uint32_t         num = _values[i]._string_array._len;
             FRT_StringValue* pt = _values[i]._string_array._pt;
 
-            for (; num > 0; num--, pt++)
+            for (; num > 0; num--, pt++) {
                 len += pt->_len;
+            }
         } break;
 
         case FRT_VALUE_DATA:
@@ -442,8 +446,9 @@ uint32_t FRT_Values::GetLength() {
             uint32_t       num = _values[i]._data_array._len;
             FRT_DataValue* pt = _values[i]._data_array._pt;
 
-            for (; num > 0; num--, pt++)
+            for (; num > 0; num--, pt++) {
                 len += pt->_len;
+            }
         } break;
 
         default:
@@ -459,14 +464,16 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
     const char* p;
     uint32_t    i;
 
-    if (len < sizeof(uint32_t))
+    if (len < sizeof(uint32_t)) {
         goto error;
+    }
     src->ReadBytes(&numValues, sizeof(numValues));
     len -= sizeof(uint32_t);
     EnsureFree(numValues);
 
-    if (len < numValues)
+    if (len < numValues) {
         goto error;
+    }
     typeString = src->GetData();
     src->DataToDead(numValues);
     len -= numValues;
@@ -477,8 +484,9 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
         switch (*p) {
 
         case FRT_VALUE_INT8:
-            if (len < sizeof(uint8_t))
+            if (len < sizeof(uint8_t)) {
                 goto error;
+            }
             AddInt8(src->ReadInt8());
             len -= sizeof(uint8_t);
             break;
@@ -487,12 +495,14 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
             uint32_t arrlen;
             uint8_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             src->ReadBytes(&arrlen, sizeof(arrlen));
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint8_t))
+            if (len < arrlen * sizeof(uint8_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint8_t);
             arr = AddInt8Array(arrlen);
             src->ReadBytes(arr, arrlen);
@@ -501,8 +511,9 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
         case FRT_VALUE_INT16: {
             uint16_t tmp;
 
-            if (len < sizeof(uint16_t))
+            if (len < sizeof(uint16_t)) {
                 goto error;
+            }
             src->ReadBytes(&tmp, sizeof(tmp));
             AddInt16(tmp);
             len -= sizeof(uint16_t);
@@ -512,12 +523,14 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint16_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             src->ReadBytes(&arrlen, sizeof(arrlen));
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint16_t))
+            if (len < arrlen * sizeof(uint16_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint16_t);
             arr = AddInt16Array(arrlen);
             src->ReadBytes(arr, arrlen * sizeof(uint16_t));
@@ -526,8 +539,9 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
         case FRT_VALUE_INT32: {
             uint32_t tmp;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             src->ReadBytes(&tmp, sizeof(tmp));
             AddInt32(tmp);
             len -= sizeof(uint32_t);
@@ -537,12 +551,14 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint32_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             src->ReadBytes(&arrlen, sizeof(arrlen));
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint32_t))
+            if (len < arrlen * sizeof(uint32_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint32_t);
             arr = AddInt32Array(arrlen);
             src->ReadBytes(arr, arrlen * sizeof(uint32_t));
@@ -551,8 +567,9 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
         case FRT_VALUE_INT64: {
             uint64_t tmp;
 
-            if (len < sizeof(uint64_t))
+            if (len < sizeof(uint64_t)) {
                 goto error;
+            }
             src->ReadBytes(&tmp, sizeof(tmp));
             AddInt64(tmp);
             len -= sizeof(uint64_t);
@@ -562,12 +579,14 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint64_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             src->ReadBytes(&arrlen, sizeof(arrlen));
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint64_t))
+            if (len < arrlen * sizeof(uint64_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint64_t);
             arr = AddInt64Array(arrlen);
             src->ReadBytes(arr, arrlen * sizeof(uint64_t));
@@ -578,8 +597,9 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
                 uint32_t INT32;
                 float    FLOAT;
             } val;
-            if (len < sizeof(float))
+            if (len < sizeof(float)) {
                 goto error;
+            }
             src->ReadBytes(&(val.INT32), sizeof(uint32_t));
             AddFloat(val.FLOAT);
             len -= sizeof(float);
@@ -589,12 +609,14 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint32_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             src->ReadBytes(&arrlen, sizeof(arrlen));
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(float))
+            if (len < arrlen * sizeof(float)) {
                 goto error;
+            }
             len -= arrlen * sizeof(float);
             arr = (uint32_t*)AddFloatArray(arrlen);
             src->ReadBytes(arr, arrlen * sizeof(uint32_t));
@@ -605,8 +627,9 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
                 uint64_t INT64;
                 double   DOUBLE;
             } val;
-            if (len < sizeof(double))
+            if (len < sizeof(double)) {
                 goto error;
+            }
             src->ReadBytes(&(val.INT64), sizeof(uint64_t));
             AddDouble(val.DOUBLE);
             len -= sizeof(double);
@@ -616,25 +639,29 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint64_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             src->ReadBytes(&arrlen, sizeof(arrlen));
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(double))
+            if (len < arrlen * sizeof(double)) {
                 goto error;
+            }
             len -= arrlen * sizeof(double);
             arr = (uint64_t*)AddDoubleArray(arrlen);
             src->ReadBytes(arr, arrlen * sizeof(uint64_t));
         } break;
 
         case FRT_VALUE_STRING: {
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             uint32_t slen;
             src->ReadBytes(&slen, sizeof(slen));
             len -= sizeof(uint32_t);
-            if (len < slen)
+            if (len < slen) {
                 goto error;
+            }
             AddString(src->GetData(), slen);
             src->DataToDead(slen);
             len -= slen;
@@ -644,18 +671,21 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
             uint32_t         arrlen;
             FRT_StringValue* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             src->ReadBytes(&arrlen, sizeof(arrlen));
             len -= sizeof(uint32_t);
             arr = AddStringArray(arrlen);
             for (; arrlen > 0; arrlen--, arr++) {
-                if (len < sizeof(uint32_t))
+                if (len < sizeof(uint32_t)) {
                     goto error;
+                }
                 src->ReadBytes(&(arr->_len), sizeof(uint32_t));
                 len -= sizeof(uint32_t);
-                if (len < arr->_len)
+                if (len < arr->_len) {
                     goto error;
+                }
                 SetString(arr, src->GetData(), arr->_len);
                 src->DataToDead(arr->_len);
                 len -= arr->_len;
@@ -663,13 +693,15 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
         } break;
 
         case FRT_VALUE_DATA: {
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             uint32_t dlen;
             src->ReadBytes(&dlen, sizeof(dlen));
             len -= sizeof(uint32_t);
-            if (len < dlen)
+            if (len < dlen) {
                 goto error;
+            }
             AddData(src->GetData(), dlen);
             src->DataToDead(dlen);
             len -= dlen;
@@ -679,18 +711,21 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
             uint32_t       arrlen;
             FRT_DataValue* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             src->ReadBytes(&arrlen, sizeof(arrlen));
             len -= sizeof(uint32_t);
             arr = AddDataArray(arrlen);
             for (; arrlen > 0; arrlen--, arr++) {
-                if (len < sizeof(uint32_t))
+                if (len < sizeof(uint32_t)) {
                     goto error;
+                }
                 src->ReadBytes(&(arr->_len), sizeof(uint32_t));
                 len -= sizeof(uint32_t);
-                if (len < arr->_len)
+                if (len < arr->_len) {
                     goto error;
+                }
                 SetData(arr, src->GetData(), arr->_len);
                 src->DataToDead(arr->_len);
                 len -= arr->_len;
@@ -702,10 +737,12 @@ bool FRT_Values::DecodeCopy(FNET_DataBuffer* src, uint32_t len) {
         }
     }
 
-    if (len != 0)
+    if (len != 0) {
         goto error;
-    if (numValues != 0 && strncmp(typeString, _typeString, numValues) != 0)
+    }
+    if (numValues != 0 && strncmp(typeString, _typeString, numValues) != 0) {
         goto error;
+    }
     return true;
 
 error:
@@ -719,14 +756,16 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
     const char* p;
     uint32_t    i;
 
-    if (len < sizeof(uint32_t))
+    if (len < sizeof(uint32_t)) {
         goto error;
+    }
     numValues = src->ReadInt32();
     len -= sizeof(uint32_t);
     EnsureFree(numValues);
 
-    if (len < numValues)
+    if (len < numValues) {
         goto error;
+    }
     typeString = src->GetData();
     src->DataToDead(numValues);
     len -= numValues;
@@ -737,8 +776,9 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
         switch (*p) {
 
         case FRT_VALUE_INT8:
-            if (len < sizeof(uint8_t))
+            if (len < sizeof(uint8_t)) {
                 goto error;
+            }
             AddInt8(src->ReadInt8());
             len -= sizeof(uint8_t);
             break;
@@ -747,20 +787,23 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
             uint32_t arrlen;
             uint8_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint8_t))
+            if (len < arrlen * sizeof(uint8_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint8_t);
             arr = AddInt8Array(arrlen);
             src->ReadBytes(arr, arrlen);
         } break;
 
         case FRT_VALUE_INT16:
-            if (len < sizeof(uint16_t))
+            if (len < sizeof(uint16_t)) {
                 goto error;
+            }
             AddInt16(src->ReadInt16());
             len -= sizeof(uint16_t);
             break;
@@ -769,21 +812,25 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint16_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint16_t))
+            if (len < arrlen * sizeof(uint16_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint16_t);
             arr = AddInt16Array(arrlen);
-            for (; arrlen > 0; arrlen--, arr++)
+            for (; arrlen > 0; arrlen--, arr++) {
                 *arr = src->ReadInt16();
+            }
         } break;
 
         case FRT_VALUE_INT32:
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             AddInt32(src->ReadInt32());
             len -= sizeof(uint32_t);
             break;
@@ -792,21 +839,25 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint32_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint32_t))
+            if (len < arrlen * sizeof(uint32_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint32_t);
             arr = AddInt32Array(arrlen);
-            for (; arrlen > 0; arrlen--, arr++)
+            for (; arrlen > 0; arrlen--, arr++) {
                 *arr = src->ReadInt32();
+            }
         } break;
 
         case FRT_VALUE_INT64:
-            if (len < sizeof(uint64_t))
+            if (len < sizeof(uint64_t)) {
                 goto error;
+            }
             AddInt64(src->ReadInt64());
             len -= sizeof(uint64_t);
             break;
@@ -815,16 +866,19 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint64_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint64_t))
+            if (len < arrlen * sizeof(uint64_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint64_t);
             arr = AddInt64Array(arrlen);
-            for (; arrlen > 0; arrlen--, arr++)
+            for (; arrlen > 0; arrlen--, arr++) {
                 *arr = src->ReadInt64();
+            }
         } break;
 
         case FRT_VALUE_FLOAT: {
@@ -832,8 +886,9 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
                 uint32_t INT32;
                 float    FLOAT;
             } val;
-            if (len < sizeof(float))
+            if (len < sizeof(float)) {
                 goto error;
+            }
             val.INT32 = src->ReadInt32();
             AddFloat(val.FLOAT);
             len -= sizeof(float);
@@ -843,16 +898,19 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint32_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(float))
+            if (len < arrlen * sizeof(float)) {
                 goto error;
+            }
             len -= arrlen * sizeof(float);
             arr = (uint32_t*)AddFloatArray(arrlen);
-            for (; arrlen > 0; arrlen--, arr++)
+            for (; arrlen > 0; arrlen--, arr++) {
                 *arr = src->ReadInt32();
+            }
         } break;
 
         case FRT_VALUE_DOUBLE: {
@@ -860,8 +918,9 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
                 uint64_t INT64;
                 double   DOUBLE;
             } val;
-            if (len < sizeof(double))
+            if (len < sizeof(double)) {
                 goto error;
+            }
             val.INT64 = src->ReadInt64();
             AddDouble(val.DOUBLE);
             len -= sizeof(double);
@@ -871,25 +930,30 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint64_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(double))
+            if (len < arrlen * sizeof(double)) {
                 goto error;
+            }
             len -= arrlen * sizeof(double);
             arr = (uint64_t*)AddDoubleArray(arrlen);
-            for (; arrlen > 0; arrlen--, arr++)
+            for (; arrlen > 0; arrlen--, arr++) {
                 *arr = src->ReadInt64();
+            }
         } break;
 
         case FRT_VALUE_STRING: {
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             uint32_t slen = src->ReadInt32();
             len -= sizeof(uint32_t);
-            if (len < slen)
+            if (len < slen) {
                 goto error;
+            }
             AddString(src->GetData(), slen);
             src->DataToDead(slen);
             len -= slen;
@@ -899,18 +963,21 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
             uint32_t         arrlen;
             FRT_StringValue* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32();
             len -= sizeof(uint32_t);
             arr = AddStringArray(arrlen);
             for (; arrlen > 0; arrlen--, arr++) {
-                if (len < sizeof(uint32_t))
+                if (len < sizeof(uint32_t)) {
                     goto error;
+                }
                 arr->_len = src->ReadInt32();
                 len -= sizeof(uint32_t);
-                if (len < arr->_len)
+                if (len < arr->_len) {
                     goto error;
+                }
                 SetString(arr, src->GetData(), arr->_len);
                 src->DataToDead(arr->_len);
                 len -= arr->_len;
@@ -918,12 +985,14 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
         } break;
 
         case FRT_VALUE_DATA: {
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             uint32_t dlen = src->ReadInt32();
             len -= sizeof(uint32_t);
-            if (len < dlen)
+            if (len < dlen) {
                 goto error;
+            }
             AddData(src->GetData(), dlen);
             src->DataToDead(dlen);
             len -= dlen;
@@ -933,18 +1002,21 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
             uint32_t       arrlen;
             FRT_DataValue* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32();
             len -= sizeof(uint32_t);
             arr = AddDataArray(arrlen);
             for (; arrlen > 0; arrlen--, arr++) {
-                if (len < sizeof(uint32_t))
+                if (len < sizeof(uint32_t)) {
                     goto error;
+                }
                 arr->_len = src->ReadInt32();
                 len -= sizeof(uint32_t);
-                if (len < arr->_len)
+                if (len < arr->_len) {
                     goto error;
+                }
                 SetData(arr, src->GetData(), arr->_len);
                 src->DataToDead(arr->_len);
                 len -= arr->_len;
@@ -956,10 +1028,12 @@ bool FRT_Values::DecodeBig(FNET_DataBuffer* src, uint32_t len) {
         }
     }
 
-    if (len != 0)
+    if (len != 0) {
         goto error;
-    if ((numValues > 0) && strncmp(typeString, _typeString, numValues) != 0)
+    }
+    if ((numValues > 0) && strncmp(typeString, _typeString, numValues) != 0) {
         goto error;
+    }
     return true;
 
 error:
@@ -973,14 +1047,16 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
     const char* p;
     uint32_t    i;
 
-    if (len < sizeof(uint32_t))
+    if (len < sizeof(uint32_t)) {
         goto error;
+    }
     numValues = src->ReadInt32Reverse();
     len -= sizeof(uint32_t);
     EnsureFree(numValues);
 
-    if (len < numValues)
+    if (len < numValues) {
         goto error;
+    }
     typeString = src->GetData();
     src->DataToDead(numValues);
     len -= numValues;
@@ -991,8 +1067,9 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
         switch (*p) {
 
         case FRT_VALUE_INT8:
-            if (len < sizeof(uint8_t))
+            if (len < sizeof(uint8_t)) {
                 goto error;
+            }
             AddInt8(src->ReadInt8());
             len -= sizeof(uint8_t);
             break;
@@ -1001,20 +1078,23 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
             uint32_t arrlen;
             uint8_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32Reverse();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint8_t))
+            if (len < arrlen * sizeof(uint8_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint8_t);
             arr = AddInt8Array(arrlen);
             src->ReadBytes(arr, arrlen);
         } break;
 
         case FRT_VALUE_INT16:
-            if (len < sizeof(uint16_t))
+            if (len < sizeof(uint16_t)) {
                 goto error;
+            }
             AddInt16(src->ReadInt16Reverse());
             len -= sizeof(uint16_t);
             break;
@@ -1023,21 +1103,25 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint16_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32Reverse();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint16_t))
+            if (len < arrlen * sizeof(uint16_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint16_t);
             arr = AddInt16Array(arrlen);
-            for (; arrlen > 0; arrlen--, arr++)
+            for (; arrlen > 0; arrlen--, arr++) {
                 *arr = src->ReadInt16Reverse();
+            }
         } break;
 
         case FRT_VALUE_INT32:
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             AddInt32(src->ReadInt32Reverse());
             len -= sizeof(uint32_t);
             break;
@@ -1046,21 +1130,25 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint32_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32Reverse();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint32_t))
+            if (len < arrlen * sizeof(uint32_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint32_t);
             arr = AddInt32Array(arrlen);
-            for (; arrlen > 0; arrlen--, arr++)
+            for (; arrlen > 0; arrlen--, arr++) {
                 *arr = src->ReadInt32Reverse();
+            }
         } break;
 
         case FRT_VALUE_INT64:
-            if (len < sizeof(uint64_t))
+            if (len < sizeof(uint64_t)) {
                 goto error;
+            }
             AddInt64(src->ReadInt64Reverse());
             len -= sizeof(uint64_t);
             break;
@@ -1069,16 +1157,19 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint64_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32Reverse();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(uint64_t))
+            if (len < arrlen * sizeof(uint64_t)) {
                 goto error;
+            }
             len -= arrlen * sizeof(uint64_t);
             arr = AddInt64Array(arrlen);
-            for (; arrlen > 0; arrlen--, arr++)
+            for (; arrlen > 0; arrlen--, arr++) {
                 *arr = src->ReadInt64Reverse();
+            }
         } break;
 
         case FRT_VALUE_FLOAT: {
@@ -1086,8 +1177,9 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
                 uint32_t INT32;
                 float    FLOAT;
             } val;
-            if (len < sizeof(float))
+            if (len < sizeof(float)) {
                 goto error;
+            }
             val.INT32 = src->ReadInt32Reverse();
             AddFloat(val.FLOAT);
             len -= sizeof(float);
@@ -1097,16 +1189,19 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint32_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32Reverse();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(float))
+            if (len < arrlen * sizeof(float)) {
                 goto error;
+            }
             len -= arrlen * sizeof(float);
             arr = (uint32_t*)AddFloatArray(arrlen);
-            for (; arrlen > 0; arrlen--, arr++)
+            for (; arrlen > 0; arrlen--, arr++) {
                 *arr = src->ReadInt32Reverse();
+            }
         } break;
 
         case FRT_VALUE_DOUBLE: {
@@ -1114,8 +1209,9 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
                 uint64_t INT64;
                 double   DOUBLE;
             } val;
-            if (len < sizeof(double))
+            if (len < sizeof(double)) {
                 goto error;
+            }
             val.INT64 = src->ReadInt64Reverse();
             AddDouble(val.DOUBLE);
             len -= sizeof(double);
@@ -1125,25 +1221,30 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
             uint32_t  arrlen;
             uint64_t* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32Reverse();
             len -= sizeof(uint32_t);
-            if (len < arrlen * sizeof(double))
+            if (len < arrlen * sizeof(double)) {
                 goto error;
+            }
             len -= arrlen * sizeof(double);
             arr = (uint64_t*)AddDoubleArray(arrlen);
-            for (; arrlen > 0; arrlen--, arr++)
+            for (; arrlen > 0; arrlen--, arr++) {
                 *arr = src->ReadInt64Reverse();
+            }
         } break;
 
         case FRT_VALUE_STRING: {
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             uint32_t slen = src->ReadInt32Reverse();
             len -= sizeof(uint32_t);
-            if (len < slen)
+            if (len < slen) {
                 goto error;
+            }
             AddString(src->GetData(), slen);
             src->DataToDead(slen);
             len -= slen;
@@ -1153,18 +1254,21 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
             uint32_t         arrlen;
             FRT_StringValue* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32Reverse();
             len -= sizeof(uint32_t);
             arr = AddStringArray(arrlen);
             for (; arrlen > 0; arrlen--, arr++) {
-                if (len < sizeof(uint32_t))
+                if (len < sizeof(uint32_t)) {
                     goto error;
+                }
                 arr->_len = src->ReadInt32Reverse();
                 len -= sizeof(uint32_t);
-                if (len < arr->_len)
+                if (len < arr->_len) {
                     goto error;
+                }
                 SetString(arr, src->GetData(), arr->_len);
                 src->DataToDead(arr->_len);
                 len -= arr->_len;
@@ -1172,12 +1276,14 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
         } break;
 
         case FRT_VALUE_DATA: {
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             uint32_t dlen = src->ReadInt32Reverse();
             len -= sizeof(uint32_t);
-            if (len < dlen)
+            if (len < dlen) {
                 goto error;
+            }
             AddData(src->GetData(), dlen);
             src->DataToDead(dlen);
             len -= dlen;
@@ -1187,18 +1293,21 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
             uint32_t       arrlen;
             FRT_DataValue* arr;
 
-            if (len < sizeof(uint32_t))
+            if (len < sizeof(uint32_t)) {
                 goto error;
+            }
             arrlen = src->ReadInt32Reverse();
             len -= sizeof(uint32_t);
             arr = AddDataArray(arrlen);
             for (; arrlen > 0; arrlen--, arr++) {
-                if (len < sizeof(uint32_t))
+                if (len < sizeof(uint32_t)) {
                     goto error;
+                }
                 arr->_len = src->ReadInt32Reverse();
                 len -= sizeof(uint32_t);
-                if (len < arr->_len)
+                if (len < arr->_len) {
                     goto error;
+                }
                 SetData(arr, src->GetData(), arr->_len);
                 src->DataToDead(arr->_len);
                 len -= arr->_len;
@@ -1210,10 +1319,12 @@ bool FRT_Values::DecodeLittle(FNET_DataBuffer* src, uint32_t len) {
         }
     }
 
-    if (len != 0)
+    if (len != 0) {
         goto error;
-    if (numValues != 0 && strncmp(typeString, _typeString, numValues) != 0)
+    }
+    if (numValues != 0 && strncmp(typeString, _typeString, numValues) != 0) {
         goto error;
+    }
     return true;
 
 error:
@@ -1377,8 +1488,9 @@ void FRT_Values::EncodeBig(FNET_DataBuffer* dst) {
             uint16_t* pt = _values[i]._int16_array._pt;
 
             dst->WriteInt32Fast(len);
-            for (; len > 0; len--, pt++)
+            for (; len > 0; len--, pt++) {
                 dst->WriteInt16Fast(*pt);
+            }
         } break;
 
         case FRT_VALUE_INT32:
@@ -1390,8 +1502,9 @@ void FRT_Values::EncodeBig(FNET_DataBuffer* dst) {
             uint32_t* pt = _values[i]._int32_array._pt;
 
             dst->WriteInt32Fast(len);
-            for (; len > 0; len--, pt++)
+            for (; len > 0; len--, pt++) {
                 dst->WriteInt32Fast(*pt);
+            }
         } break;
 
         case FRT_VALUE_INT64:
@@ -1403,8 +1516,9 @@ void FRT_Values::EncodeBig(FNET_DataBuffer* dst) {
             uint64_t* pt = _values[i]._int64_array._pt;
 
             dst->WriteInt32Fast(len);
-            for (; len > 0; len--, pt++)
+            for (; len > 0; len--, pt++) {
                 dst->WriteInt64Fast(*pt);
+            }
         } break;
 
         case FRT_VALUE_FLOAT:
@@ -1416,8 +1530,9 @@ void FRT_Values::EncodeBig(FNET_DataBuffer* dst) {
             uint32_t* pt = (uint32_t*)_values[i]._float_array._pt;
 
             dst->WriteInt32Fast(len);
-            for (; len > 0; len--, pt++)
+            for (; len > 0; len--, pt++) {
                 dst->WriteInt32Fast(*pt);
+            }
         } break;
 
         case FRT_VALUE_DOUBLE:
@@ -1429,8 +1544,9 @@ void FRT_Values::EncodeBig(FNET_DataBuffer* dst) {
             uint64_t* pt = (uint64_t*)_values[i]._double_array._pt;
 
             dst->WriteInt32Fast(len);
-            for (; len > 0; len--, pt++)
+            for (; len > 0; len--, pt++) {
                 dst->WriteInt64Fast(*pt);
+            }
         } break;
 
         case FRT_VALUE_STRING:
@@ -1472,18 +1588,23 @@ void FRT_Values::EncodeBig(FNET_DataBuffer* dst) {
 }
 
 bool FRT_Values::Equals(FRT_Values* values) {
-    if (values->GetNumValues() != GetNumValues())
+    if (values->GetNumValues() != GetNumValues()) {
         return false;
+    }
 
-    if (GetNumValues() == 0)
+    if (GetNumValues() == 0) {
         return true;
+    }
 
-    if (strcmp(values->GetTypeString(), GetTypeString()) != 0)
+    if (strcmp(values->GetTypeString(), GetTypeString()) != 0) {
         return false;
+    }
 
-    for (uint32_t i = 0; i < GetNumValues(); i++)
-        if (!Equals(values->GetValue(i), GetValue(i), GetType(i)))
+    for (uint32_t i = 0; i < GetNumValues(); i++) {
+        if (!Equals(values->GetValue(i), GetValue(i), GetType(i))) {
             return false;
+        }
+    }
 
     return true;
 }
@@ -1500,8 +1621,9 @@ void FRT_Values::Print(FRT_Value value, uint32_t type, uint32_t indent) {
         uint8_t* pt = value._int8_array._pt;
 
         printf("%*sint8_array {\n", indent, "");
-        for (; len > 0; len--, pt++)
+        for (; len > 0; len--, pt++) {
             printf("%*s  int8: %u\n", indent, "", *pt);
+        }
         printf("%*s}\n", indent, "");
     } break;
 
@@ -1514,8 +1636,9 @@ void FRT_Values::Print(FRT_Value value, uint32_t type, uint32_t indent) {
         uint16_t* pt = value._int16_array._pt;
 
         printf("%*sint16_array {\n", indent, "");
-        for (; len > 0; len--, pt++)
+        for (; len > 0; len--, pt++) {
             printf("%*s  int16: %u\n", indent, "", *pt);
+        }
         printf("%*s}\n", indent, "");
     } break;
 
@@ -1528,8 +1651,9 @@ void FRT_Values::Print(FRT_Value value, uint32_t type, uint32_t indent) {
         uint32_t* pt = value._int32_array._pt;
 
         printf("%*sint32_array {\n", indent, "");
-        for (; len > 0; len--, pt++)
+        for (; len > 0; len--, pt++) {
             printf("%*s  int32: %u\n", indent, "", *pt);
+        }
         printf("%*s}\n", indent, "");
     } break;
 
@@ -1542,8 +1666,9 @@ void FRT_Values::Print(FRT_Value value, uint32_t type, uint32_t indent) {
         uint64_t* pt = value._int64_array._pt;
 
         printf("%*sint64_array {\n", indent, "");
-        for (; len > 0; len--, pt++)
+        for (; len > 0; len--, pt++) {
             printf("%*s  int64: %" PRIu64 "\n", indent, "", *pt);
+        }
         printf("%*s}\n", indent, "");
     } break;
 
@@ -1556,8 +1681,9 @@ void FRT_Values::Print(FRT_Value value, uint32_t type, uint32_t indent) {
         float*   pt = value._float_array._pt;
 
         printf("%*sfloat_array {\n", indent, "");
-        for (; len > 0; len--, pt++)
+        for (; len > 0; len--, pt++) {
             printf("%*s  float: %f\n", indent, "", *pt);
+        }
         printf("%*s}\n", indent, "");
     } break;
 
@@ -1570,8 +1696,9 @@ void FRT_Values::Print(FRT_Value value, uint32_t type, uint32_t indent) {
         double*  pt = value._double_array._pt;
 
         printf("%*sdouble_array {\n", indent, "");
-        for (; len > 0; len--, pt++)
+        for (; len > 0; len--, pt++) {
             printf("%*s  double: %f\n", indent, "", *pt);
+        }
         printf("%*s}\n", indent, "");
     } break;
 
@@ -1584,8 +1711,9 @@ void FRT_Values::Print(FRT_Value value, uint32_t type, uint32_t indent) {
         FRT_StringValue* pt = value._string_array._pt;
 
         printf("%*sstring_array {\n", indent, "");
-        for (; len > 0; len--, pt++)
+        for (; len > 0; len--, pt++) {
             printf("%*s  string: %s\n", indent, "", pt->_str);
+        }
         printf("%*s}\n", indent, "");
     } break;
 
@@ -1598,8 +1726,9 @@ void FRT_Values::Print(FRT_Value value, uint32_t type, uint32_t indent) {
         FRT_DataValue* pt = value._data_array._pt;
 
         printf("%*sdata_array {\n", indent, "");
-        for (; len > 0; len--, pt++)
+        for (; len > 0; len--, pt++) {
             printf("%*s  data: len=%u\n", indent, "", pt->_len);
+        }
         printf("%*s}\n", indent, "");
     } break;
 
@@ -1622,8 +1751,9 @@ bool FRT_Values::Equals(FRT_Value a, FRT_Value b, uint32_t type) {
         uint8_t* pt_a = a._int8_array._pt;
         uint8_t* pt_b = b._int8_array._pt;
 
-        for (; rc && len > 0; len--)
+        for (; rc && len > 0; len--) {
             rc = (*pt_a++ == *pt_b++);
+        }
     } break;
 
     case FRT_VALUE_INT16:
@@ -1635,8 +1765,9 @@ bool FRT_Values::Equals(FRT_Value a, FRT_Value b, uint32_t type) {
         uint16_t* pt_a = a._int16_array._pt;
         uint16_t* pt_b = b._int16_array._pt;
 
-        for (; rc && len > 0; len--)
+        for (; rc && len > 0; len--) {
             rc = (*pt_a++ == *pt_b++);
+        }
     } break;
 
     case FRT_VALUE_INT32:
@@ -1648,8 +1779,9 @@ bool FRT_Values::Equals(FRT_Value a, FRT_Value b, uint32_t type) {
         uint32_t* pt_a = a._int32_array._pt;
         uint32_t* pt_b = b._int32_array._pt;
 
-        for (; rc && len > 0; len--)
+        for (; rc && len > 0; len--) {
             rc = (*pt_a++ == *pt_b++);
+        }
     } break;
 
     case FRT_VALUE_INT64:
@@ -1661,8 +1793,9 @@ bool FRT_Values::Equals(FRT_Value a, FRT_Value b, uint32_t type) {
         uint64_t* pt_a = a._int64_array._pt;
         uint64_t* pt_b = b._int64_array._pt;
 
-        for (; rc && len > 0; len--)
+        for (; rc && len > 0; len--) {
             rc = (*pt_a++ == *pt_b++);
+        }
     } break;
 
     case FRT_VALUE_FLOAT:
@@ -1674,8 +1807,9 @@ bool FRT_Values::Equals(FRT_Value a, FRT_Value b, uint32_t type) {
         float*   pt_a = a._float_array._pt;
         float*   pt_b = b._float_array._pt;
 
-        for (; rc && len > 0; len--)
+        for (; rc && len > 0; len--) {
             rc = (*pt_a++ == *pt_b++);
+        }
     } break;
 
     case FRT_VALUE_DOUBLE:
@@ -1687,8 +1821,9 @@ bool FRT_Values::Equals(FRT_Value a, FRT_Value b, uint32_t type) {
         double*  pt_a = a._double_array._pt;
         double*  pt_b = b._double_array._pt;
 
-        for (; rc && len > 0; len--)
+        for (; rc && len > 0; len--) {
             rc = (*pt_a++ == *pt_b++);
+        }
     } break;
 
     case FRT_VALUE_STRING:
@@ -1700,8 +1835,9 @@ bool FRT_Values::Equals(FRT_Value a, FRT_Value b, uint32_t type) {
         FRT_StringValue* pt_a = a._string_array._pt;
         FRT_StringValue* pt_b = b._string_array._pt;
 
-        for (; rc && len > 0; len--, pt_a++, pt_b++)
+        for (; rc && len > 0; len--, pt_a++, pt_b++) {
             rc = (pt_a->_len == pt_b->_len && memcmp(pt_a->_str, pt_b->_str, pt_a->_len) == 0);
+        }
     } break;
 
     case FRT_VALUE_DATA:
@@ -1713,8 +1849,9 @@ bool FRT_Values::Equals(FRT_Value a, FRT_Value b, uint32_t type) {
         FRT_DataValue* pt_a = a._data_array._pt;
         FRT_DataValue* pt_b = b._data_array._pt;
 
-        for (; rc && len > 0; len--, pt_a++, pt_b++)
+        for (; rc && len > 0; len--, pt_a++, pt_b++) {
             rc = (pt_a->_len == pt_b->_len && memcmp(pt_a->_buf, pt_b->_buf, pt_a->_len) == 0);
+        }
     } break;
 
     default:

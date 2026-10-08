@@ -34,14 +34,17 @@ public:
         int a = _target;
         int b = as_ms(_time);
 
-        if (!_done)
+        if (!_done) {
             return false;
+        }
 
-        if (b < a)
+        if (b < a) {
             return false;
+        }
 
-        if ((b - a) > (3 * vespalib::count_ms(FNET_Scheduler::tick_ms)))
+        if ((b - a) > (3 * vespalib::count_ms(FNET_Scheduler::tick_ms))) {
             return false;
+        }
 
         return true;
     }
