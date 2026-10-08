@@ -575,6 +575,10 @@ public class SchemaTestCase {
                         indexing: input domain | hash | attribute
                     }
 
+                    field domain_bucket type int {
+                        indexing: input domain | hash | _ % 1000 | attribute
+                    }
+
                     document page {
 
                         field domain type string {
@@ -594,6 +598,30 @@ public class SchemaTestCase {
         var documentModel = new DocumentModelBuilder();
         var documentManager = documentModel.build(List.of(application.schemas().get("page")));
         var documentConfig = new DocumentManager().produce(documentManager, new DocumentmanagerConfig.Builder());
+    }
+
+    @Test
+    void testHashWithArithmetic() throws Exception {
+        String schema =
+                """
+                schema page {
+
+                    field domain_bucket type int {
+                        indexing: input domain | hash | _ % 1000 | attribute
+                    }
+
+                    field domain_long_bucket type long {
+                        indexing: input domain | hash | _ % 1000 | attribute
+                    }
+
+                    document page {
+
+                        field domain type string {
+                            indexing: summary
+                        }
+                    }
+                }""";
+        ApplicationBuilder.createFromStrings(new DeployLoggerStub(), schema);
     }
 
     @Test
