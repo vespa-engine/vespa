@@ -81,6 +81,54 @@ public class VipStatusTestCase {
     }
 
     @Test
+    void testLivenessOverridesClusterStatus() {
+        String[] clusters = {"cluster1", "cluster2", "cluster3"};
+
+        VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, true, new ClustersStatus(), new MetricMock());
+        addToRotation(clusters, v);
+        assertTrue(v.isInRotation());
+
+        v.setLivenessOk(false);
+        assertFalse(v.isInRotation());  // stalled, even though all clusters are up
+
+        v.setLivenessOk(true);
+        assertTrue(v.isInRotation());   // liveness restored, cluster state still up
+    }
+
+    @Test
+    void testLivenessNotClearedByUnrelatedClusterChanges() {
+        String[] clusters = {"cluster1", "cluster2", "cluster3"};
+
+        VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, true, new ClustersStatus(), new MetricMock());
+        addToRotation(clusters, v);
+        v.setLivenessOk(false);
+        assertFalse(v.isInRotation());
+
+        // Unrelated cluster status churn must not silently clear the liveness flag
+        v.removeFromRotation(clusters[0]);
+        v.addToRotation(clusters[0]);
+        assertFalse(v.isInRotation());
+
+        v.setLivenessOk(true);
+        assertTrue(v.isInRotation());
+    }
+
+    @Test
+    void testRotationOverrideWinsOverLiveness() {
+        String[] clusters = {"cluster1", "cluster2", "cluster3"};
+
+        VipStatus v = createVipStatus(clusters, StateMonitor.Status.initializing, true, new ClustersStatus(), new MetricMock());
+        v.setLivenessOk(false);
+        assertFalse(v.isInRotation());
+
+        v.setInRotation(true);
+        assertTrue(v.isInRotation());  // manual override wins regardless of liveness
+
+        v.setInRotation(null);
+        assertFalse(v.isInRotation()); // back to liveness-gated cluster-derived state
+    }
+
+    @Test
     void testClusterRemovalRemovedIsDown() {
         assertClusterRemoval(true, false);
     }
