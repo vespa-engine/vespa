@@ -100,7 +100,8 @@
         <felix.resolver.vespa.version>2.0.4</felix.resolver.vespa.version>
         <felix.bundlerepository.vespa.version>2.0.10</felix.bundlerepository.vespa.version>
         <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
-        <grpc.vespa.version>1.83.0</grpc.vespa.version> <!-- Used for protoc-gen-grpc-java only, keep in sync with grpc version in com.google.cloud:libraries-bom -->
+        <grpc.vespa.version>1.83.0</grpc.vespa.version> <!-- Keep in sync with grpc version in com.google.cloud:libraries-bom -->
+        <gen-grpc-java.vespa.version>1.80.0</gen-grpc-java.vespa.version> <!-- Used for protoc-gen-grpc-java only, can be older -->
         <hamcrest.vespa.version>3.0</hamcrest.vespa.version>
         <hdrhistogram.vespa.version>2.2.2</hdrhistogram.vespa.version>
         <huggingface.vespa.version>0.33.0</huggingface.vespa.version>
