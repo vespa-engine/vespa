@@ -151,8 +151,9 @@ bool ClusterState::parseSorD(std::string_view key, std::string_view value, NodeD
     } else if (type == "distributor") {
         nodeType = &NodeType::DISTRIBUTOR;
     }
-    if (nodeType == nullptr)
+    if (nodeType == nullptr) {
         return false;
+    }
     if (dot == std::string::npos) { // Entry that set node counts
         uint16_t nodeCount = atoi(value.data());
 
@@ -235,8 +236,9 @@ void ClusterState::serialize(vespalib::asciistream& out) const {
         out << sep.toString() << "bits:" << _distributionBits;
     }
 
-    if ((getNodeCount(NodeType::DISTRIBUTOR) + getNodeCount(NodeType::STORAGE)) == 0u)
+    if ((getNodeCount(NodeType::DISTRIBUTOR) + getNodeCount(NodeType::STORAGE)) == 0u) {
         return;
+    }
 
     std::vector<NodeStatePair> nodeStates(_nodeStates.cbegin(), _nodeStates.cend());
     std::sort(nodeStates.begin(), nodeStates.end(),
@@ -265,8 +267,9 @@ void throwUnknownType(const Node& node) {
 const NodeState& ClusterState::getNodeState(const Node& node) const {
     // If it actually has an entry in map, return that
     const auto it = _nodeStates.find(node);
-    if (it != _nodeStates.end())
+    if (it != _nodeStates.end()) {
         return it->second;
+    }
 
     // If beyond node count, the node is down.
     if (__builtin_expect(node.getIndex() >= _nodeCount[node.getType()], false)) {
@@ -328,12 +331,15 @@ void ClusterState::removeExtraElements(const NodeType& type) {
     for (int32_t index = _nodeCount[type]; index-- > 0;) {
         Node       node(type, index);
         const auto it = _nodeStates.find(node);
-        if (it == _nodeStates.end())
+        if (it == _nodeStates.end()) {
             break;
-        if (it->second.getState() != State::DOWN)
+        }
+        if (it->second.getState() != State::DOWN) {
             break;
-        if (it->second.getDescription() != "")
+        }
+        if (it->second.getDescription() != "") {
             break;
+        }
         _nodeStates.erase(it);
         --_nodeCount[type];
     }
