@@ -138,8 +138,8 @@
       ]
     },
     "tensor-type": {
-      "begin": "\\b(tensor)\\s*(<)",
-      "end": "(\\))",
+      "begin": "\\b(tensor)\\s*(?:(<)|(?=\\())",
+      "end": "(\\))|$",
       "beginCaptures": {
         "1": {
           "name": "keyword.control.vespa"
@@ -341,6 +341,23 @@
         },
         {
           "match": "(?<![a-zA-Z0-9_-])(rank-profile)\\s+([a-zA-Z_][\\w-]*)(?:\\s+(inherits)\\s+([a-zA-Z_][\\w-]*))?",
+          "captures": {
+            "1": {
+              "name": "keyword.declaration.vespa"
+            },
+            "2": {
+              "name": "entity.name.function.vespa"
+            },
+            "3": {
+              "name": "keyword.control.vespa"
+            },
+            "4": {
+              "name": "entity.other.inherited-class.vespa"
+            }
+          }
+        },
+        {
+          "match": "^\\s*(model)\\s+([a-zA-Z_][\\w-]*)(?:\\s+(inherits)\\s+([a-zA-Z_][\\w-]*))?",
           "captures": {
             "1": {
               "name": "keyword.declaration.vespa"

@@ -369,6 +369,7 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         ("'single quoted'", "string.quoted.single.vespa", "string-single"),
         # Tensor type — begin/end pattern, check via begin match
         ("tensor<float>(x[384])", "matched-no-name", "tensor-type"),
+        ("tensor(x[384])", "matched-no-name", "tensor-type"),
         # Numerics → constant.numeric (light green)
         ("42", "constant.numeric.integer.vespa", "numeric-literal"),
         ("3.14", "constant.numeric.float.vespa", "numeric-literal"),
@@ -389,6 +390,7 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         ("sort-features: nativeRank", "sort-features", "keyword.control.vespa", "feature-list-inline"),
         # Tensor keyword → keyword.control (begin capture)
         ("tensor<float>(x[384])", "tensor", "keyword.control.vespa", "tensor-type"),
+        ("tensor(x[384])", "tensor", "keyword.control.vespa", "tensor-type"),
         # Comment # → punctuation
         ("# comment", "#", "punctuation.definition.comment.vespa", "comment"),
         # Variable $ → punctuation
@@ -401,6 +403,8 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         ("field myField type int", "type", "keyword.control.vespa", "declarations"),
         ("struct myStruct {", "myStruct", None, "declarations"),
         ("rank-profile prof {", "prof", "entity.name.function.vespa", "declarations"),
+        ("model example {", "model", "keyword.declaration.vespa", "declarations"),
+        ("model example {", "example", "entity.name.function.vespa", "declarations"),
         ("function fn(x)", "fn", "entity.name.function.vespa", "declarations"),
         ("function fn(x)", "(", "punctuation.section.parens.begin.vespa", "declarations"),
         ("annotation myAnnotation {", "myAnnotation", None, "declarations"),
