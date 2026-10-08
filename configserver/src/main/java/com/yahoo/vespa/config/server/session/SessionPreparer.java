@@ -11,6 +11,7 @@ import com.yahoo.config.application.XmlPreProcessor;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -264,8 +265,8 @@ public class SessionPreparer {
 
         void preprocess(Optional<ApplicationVersions> activeApplicationVersions) {
             try {
-                validateXmlFeatures(applicationPackage, logger);
                 this.preprocessedApplicationPackage = applicationPackage.preprocess(ZoneInfo.from(zone), logger);
+                validateXmlFeatures(applicationPackage, preprocessedApplicationPackage.getDeploymentSpec());
             } catch (IOException | RuntimeException e) {
                 var initialSession =  activeApplicationVersions.map(ApplicationVersions::applicationGeneration).map(String::valueOf).orElse("unknown");
                 throw new IllegalArgumentException("Error preprocessing application package for " + applicationId +
@@ -278,7 +279,7 @@ public class SessionPreparer {
         /**
          * Warn on use of deprecated XML features
          */
-        private void validateXmlFeatures(ApplicationPackage applicationPackage, DeployLogger logger) {
+        private void validateXmlFeatures(ApplicationPackage applicationPackage, DeploymentSpec deploymentSpec) {
             // TODO: Validate no use of XInclude, datatype definitions or external entities
             //       in any xml file we parse, such as services.xml, deployment.xml, hosts.xml,
             //       validation-overrides.xml and any pom.xml files in OSGi bundles
@@ -287,16 +288,20 @@ public class SessionPreparer {
             File applicationPackageDir = applicationPackage.getFileReference(Path.fromString("."));
             File servicesXml = applicationPackage.getFileReference(Path.fromString("services.xml"));
             File hostsXml = applicationPackage.getFileReference(Path.fromString("hosts.xml"));
+            File deploymentXml = applicationPackage.getFileReference(ApplicationPackage.DEPLOYMENT_FILE);
 
-            // Validate after doing our own preprocessing on these two files
+            // Validate after doing our own preprocessing on these files
             ApplicationMetaData meta = applicationPackage.getMetaData();
             InstanceName instance = meta.getApplicationId().instance();
-            Tags tags = applicationPackage.getDeploymentSpec().tags(instance, zone.environment());
+            Tags tags = deploymentSpec.tags(instance, zone.environment());
             if (servicesXml.exists()) {
                 vespaPreprocess(applicationPackageDir.getAbsoluteFile(), servicesXml, meta, tags);
             }
             if (hostsXml.exists()) {
                 vespaPreprocess(applicationPackageDir.getAbsoluteFile(), hostsXml, meta, tags);
+            }
+            if (deploymentXml.exists()) {
+                vespaPreprocess(applicationPackageDir.getAbsoluteFile(), deploymentXml, meta, tags);
             }
 
             // Validate pom.xml files in OSGi bundles

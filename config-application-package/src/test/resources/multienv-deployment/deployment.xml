@@ -1,0 +1,13 @@
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<deployment version='1.0' xmlns:deploy='vespa' xmlns:preprocess='properties'>
+    <preprocess:properties>
+        <cloud.account>aws:111111111111</cloud.account>
+        <cloud.account deploy:region='us-east'>aws:222222222222</cloud.account>
+    </preprocess:properties>
+    <instance id='default' cloud-account='${cloud.account}'>
+        <prod>
+            <region>us-east</region>
+            <region>us-west</region>
+        </prod>
+    </instance>
+</deployment>
