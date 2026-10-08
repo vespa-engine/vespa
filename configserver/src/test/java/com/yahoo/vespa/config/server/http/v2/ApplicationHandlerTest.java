@@ -34,6 +34,7 @@ import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
 import com.yahoo.vespa.config.server.application.ClusterReindexing.Status;
 import com.yahoo.vespa.config.server.application.HttpProxy;
+import com.yahoo.vespa.config.server.application.PendingRestarts;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.HandlerTest;
@@ -758,6 +759,38 @@ public class ApplicationHandlerTest {
                            "  \"currentGeneration\": 3,\n" +
                            "  \"wantedGeneration\": 4,\n" +
                            "  \"converged\": false\n" +
+                           "}",
+                           200,
+                           response);
+        }
+
+        { // All services on wanted generation, but with a pending restart
+            HttpServiceListResponse response =
+                    new HttpServiceListResponse(new ServiceListResponse(Map.of(createServiceInfo(hostname, port, Optional.empty()), 3L),
+                                                                        3L,
+                                                                        3L)
+                                                        .withPendingRestarts(PendingRestarts.empty().withRestarts(3, List.of(hostname))),
+                                                requestUrl);
+            assertResponse("{\n" +
+                           "  \"services\": [\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + hostname + "\",\n" +
+                           "      \"port\": " + port + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl + "\",\n" +
+                           "      \"currentGeneration\":" + 3 + "\n" +
+                           "    }\n" +
+                           "  ],\n" +
+                           "  \"url\": \"" + requestUrl + "\",\n" +
+                           "  \"currentGeneration\": 3,\n" +
+                           "  \"wantedGeneration\": 3,\n" +
+                           "  \"converged\": false,\n" +
+                           "  \"pendingRestarts\": [\n" +
+                           "    {\n" +
+                           "      \"generation\": 3,\n" +
+                           "      \"hosts\": [ \"" + hostname + "\" ]\n" +
+                           "    }\n" +
+                           "  ]\n" +
                            "}",
                            200,
                            response);
