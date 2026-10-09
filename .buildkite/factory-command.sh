@@ -63,15 +63,15 @@ case $COMMAND in
       echo "Usage: $0 $COMMAND <pipeline id> <status> <description>"
       exit 1
     fi
-    $CURL -H "Authorization: Bearer $TOKEN" -d "{
-        \"updatedSeconds\": $(date +%s),
-        \"sdApiUrl\": \"https://api.buildkite.com/\",
-        \"pipelineId\": $FACTORY_PIPELINE_ID,
-        \"jobId\": 0,
-        \"buildId\": $FACTORY_BUILD_NUMBER,
-        \"status\": \"$STATUS\",
-        \"description\": \"$DESCRIPTION\"
-    }" \
+    # The description can come from the build, so let jq escape it
+    $CURL -H "Authorization: Bearer $TOKEN" -d "$(jq -n \
+        --argjson updatedSeconds "$(date +%s)" \
+        --argjson pipelineId "$FACTORY_PIPELINE_ID" \
+        --argjson buildId "$FACTORY_BUILD_NUMBER" \
+        --arg status "$STATUS" \
+        --arg description "$DESCRIPTION" \
+        '{updatedSeconds: $updatedSeconds, sdApiUrl: "https://api.buildkite.com/", pipelineId: $pipelineId,
+          jobId: 0, buildId: $buildId, status: $status, description: $description}')" \
     "$FACTORY_API/builds/$FACTORY_BUILD_NUMBER/status"
     ;;
   update-released-time)
