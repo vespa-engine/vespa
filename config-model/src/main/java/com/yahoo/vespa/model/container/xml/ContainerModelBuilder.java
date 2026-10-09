@@ -145,8 +145,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     // Default path to vip status file for container in Hosted Vespa.
     static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/vespa/load-balancer/status.html");
 
-    static final String HOSTED_VESPA_TENANT_PARENT_DOMAIN = "vespa.tenant.";
-
     //Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
 
@@ -409,7 +407,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             context.getDeployState().getProperties().ztsUrl(),
                             context.getDeployState().getProperties().athenzDnsSuffix(),
                             context.getDeployState().zone(),
-                            AthenzDomain.from(HOSTED_VESPA_TENANT_PARENT_DOMAIN + context.properties().applicationId().tenant().value()),
+                            AthenzDomain.from(context.properties().tenantParentDomain().value() + "." + context.properties().applicationId().tenant().value()),
                             AthenzService.from(Text.format("%s-%s", context.properties().applicationId().application().value(), appContext)));
     }
 

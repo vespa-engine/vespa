@@ -1593,6 +1593,7 @@
       "public abstract boolean isFirstTimeDeployment()",
       "public java.util.Optional endpointCertificateSecrets()",
       "public java.util.Optional athenzDomain()",
+      "public com.yahoo.config.provision.AthenzDomain tenantParentDomain()",
       "public com.yahoo.config.model.api.Quota quota()",
       "public java.util.List tenantVaults()",
       "public java.util.List tenantSecretStores()",

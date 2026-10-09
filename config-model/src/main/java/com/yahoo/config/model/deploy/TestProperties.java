@@ -41,6 +41,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private ApplicationId applicationId = ApplicationId.defaultId();
     private List<ConfigServerSpec> configServerSpecs = List.of();
     private boolean hostedVespa = false;
+    private AthenzDomain tenantParentDomain = AthenzDomain.from("vespa.tenant");
     private Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
     private String jvmGCOptions = null;
@@ -97,6 +98,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public URI ztsUrl() { return null; }
     @Override public AthenzDomain tenantSecretDomain() { return null; }
     @Override public String athenzDnsSuffix() { return null; }
+    @Override public AthenzDomain tenantParentDomain() { return tenantParentDomain; }
     @Override public boolean hostedVespa() { return hostedVespa; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
     @SuppressWarnings("removal")
@@ -199,6 +201,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
+        return this;
+    }
+
+    public TestProperties setTenantParentDomain(AthenzDomain tenantParentDomain) {
+        this.tenantParentDomain = tenantParentDomain;
         return this;
     }
 
