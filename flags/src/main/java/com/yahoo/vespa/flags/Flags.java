@@ -242,6 +242,13 @@ public class Flags {
             "Takes effect on the next deployment.",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+    public static final UnboundBooleanFlag ENABLE_LEGACY_FEED_HANDLER = defineFeatureFlag(
+            "enable-legacy-feed-handler", true,
+            List.of("hmusum"), "2026-10-09", "2027-04-01",
+            "Whether to add the legacy feed handler (/reserved-for-internal-use/feedapi) to container clusters with document-api.",
+            "Takes effect on the next deployment.",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
                                                        String modificationEffect, Dimension... dimensions) {

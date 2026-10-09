@@ -1547,7 +1547,8 @@
       "public boolean fastMapSearch()",
       "public boolean relaxStrictlyIncreasingClusterStateVersions()",
       "public boolean commerceDiscovery()",
-      "public boolean enableLandlock()"
+      "public boolean enableLandlock()",
+      "public boolean enableLegacyFeedHandler()"
     ],
     "fields" : [ ]
   },
