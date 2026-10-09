@@ -220,6 +220,7 @@ public class Flags {
             INSTANCE_ID
     );
 
+    // TODO (@sebasabe): Remove when no loaded config model version reads it (models older than the release adding PRODUCT_DISCOVERY), together with its flag data
     public static final UnboundBooleanFlag COMMERCE_DISCOVERY = defineFeatureFlag(
             "commerce-discovery", false,
             List.of("sebasabe"), "2026-08-31", "2027-08-31",
@@ -248,6 +249,14 @@ public class Flags {
             "Whether to add the legacy feed handler (/reserved-for-internal-use/feedapi) to container clusters with document-api.",
             "Takes effect on the next deployment.",
             TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag PRODUCT_DISCOVERY = defineFeatureFlag(
+            "product-discovery", false,
+            List.of("sebasabe"), "2026-10-09", "2027-10-09",
+            "Whether the product-discovery element in services.xml is enabled",
+            "Takes effect at redeployment",
+            TENANT_ID
+    );
 
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

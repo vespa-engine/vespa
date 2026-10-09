@@ -1548,7 +1548,8 @@
       "public boolean relaxStrictlyIncreasingClusterStateVersions()",
       "public boolean commerceDiscovery()",
       "public boolean enableLandlock()",
-      "public boolean enableLegacyFeedHandler()"
+      "public boolean enableLegacyFeedHandler()",
+      "public boolean productDiscovery()"
     ],
     "fields" : [ ]
   },

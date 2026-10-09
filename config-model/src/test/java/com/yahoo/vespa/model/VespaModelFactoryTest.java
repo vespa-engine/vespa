@@ -195,7 +195,7 @@ public class VespaModelFactoryTest {
         factory.createModel(new MockModelContext() {
             @Override
             public Properties properties() {
-                return new TestProperties().setHostedVespa(hostedVespa).commerceDiscovery(flagEnabled);
+                return new TestProperties().setHostedVespa(hostedVespa).productDiscovery(flagEnabled);
             }
         });
         return consulted.get();

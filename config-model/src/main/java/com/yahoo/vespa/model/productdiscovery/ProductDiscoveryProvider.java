@@ -6,7 +6,7 @@ import com.yahoo.config.model.api.AdditionalContent;
 
 /**
  * Provides the platform-owned Vespa Product Discovery content. Consulted for every application
- * built in hosted Vespa when the {@code commerce-discovery} feature flag is enabled for the
+ * built in hosted Vespa when the {@code product-discovery} feature flag is enabled for the
  * application — whether the application uses the {@code <product-discovery>} services.xml
  * element is not checked by the caller. Provider implementations must detect it from the
  * application package.

@@ -89,6 +89,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean commerceDiscovery = false;
     private boolean enableLandlock = false;
     private boolean enableLegacyFeedHandler = true;
+    private boolean productDiscovery = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -154,6 +155,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean commerceDiscovery() { return commerceDiscovery; }
     @Override public boolean enableLandlock() { return enableLandlock; }
     @Override public boolean enableLegacyFeedHandler() { return enableLegacyFeedHandler; }
+    @Override public boolean productDiscovery() { return productDiscovery; }
 
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -402,6 +404,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties enableLegacyFeedHandler(boolean value) {
         this.enableLegacyFeedHandler = value;
+        return this;
+    }
+
+    public TestProperties productDiscovery(boolean value) {
+        this.productDiscovery = value;
         return this;
     }
 

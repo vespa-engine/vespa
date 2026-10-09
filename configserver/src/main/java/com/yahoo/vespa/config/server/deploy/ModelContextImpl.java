@@ -263,6 +263,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean commerceDiscovery() { return flag(Flags.COMMERCE_DISCOVERY).value(); }
         @Override public boolean enableLandlock() { return flag(Flags.ENABLE_LANDLOCK).value(); }
         @Override public boolean enableLegacyFeedHandler() { return flag(Flags.ENABLE_LEGACY_FEED_HANDLER).value(); }
+        @Override public boolean productDiscovery() { return flag(Flags.PRODUCT_DISCOVERY).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();
