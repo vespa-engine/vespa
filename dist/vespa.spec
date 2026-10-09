@@ -45,6 +45,8 @@
 %global _vespa_re2_version 20251105
 %global _vespa_xxhash_version 0.8.1
 %global _vespa_openssl_version 3.5.9
+%global _vespa_opentelemetry_cpp_version 1.29.0
+%global _vespa_grpc_version 1.84.0
 %if 0%{?el8} || 0%{?el9} || 0%{?amzn2023}
 %global _use_vespa_abseil_cpp 1
 %global _vespa_abseil_excludes |absl_[a-z_0-9]*
@@ -260,6 +262,8 @@ Requires: vespa-jllama = %{_vespa_jllama_version}
 Requires: vespa-openblas >= %{_vespa_openblas_version}
 Requires: vespa-mimalloc = %{_vespa_mimalloc_version}
 Requires: vespa-highway = %{_vespa_highway_version}
+Requires: vespa-opentelemetry-cpp = %{_vespa_opentelemetry_cpp_version}
+Requires: vespa-grpc = %{_vespa_grpc_version}
 
 %description libs
 
@@ -545,6 +549,7 @@ fi
 %exclude %{_prefix}/bin/vespa-get
 %exclude %{_prefix}/bin/vespa-jvm-dumper
 %exclude %{_prefix}/bin/vespa-logfmt
+%exclude %{_prefix}/bin/vespa-opentelemetry-test
 %exclude %{_prefix}/bin/vespa-query-profile-dump-tool
 %exclude %{_prefix}/bin/vespa-stat
 %exclude %{_prefix}/bin/vespa-security-env
@@ -789,6 +794,7 @@ fi
 %endif
 %dir %{_prefix}
 %dir %{_prefix}/bin
+%{_prefix}/bin/vespa-opentelemetry-test
 %{_prefix}/bin/vespa-tensor-conformance
 %{_prefix}/bin/vespa-tensor-instructions-benchmark
 
