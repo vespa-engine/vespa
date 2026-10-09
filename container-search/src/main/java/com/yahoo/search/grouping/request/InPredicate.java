@@ -20,7 +20,7 @@ public class InPredicate extends FilterExpression {
 
     public InPredicate(GroupingExpression expression, List<String> args) {
         if (args == null || args.isEmpty()) {
-            throw new IllegalArgumentException("In predicate requires at least one argument, but none were provided");
+            throw new IllegalArgumentException("The 'in' predicate requires at least one argument, but none were provided");
         }
         validateExpression(expression);
         this.expression = expression;
@@ -30,13 +30,13 @@ public class InPredicate extends FilterExpression {
     private static void validateExpression(GroupingExpression exp) {
         // Fail in obviously invalid expressions
         if (exp instanceof BucketValue) {
-            throw new IllegalArgumentException("In predicate cannot be used with a bucket value");
+            throw new IllegalArgumentException("The 'in' predicate cannot be used with a bucket value");
         } else if (exp instanceof AggregatorNode) {
-            throw new IllegalArgumentException("In predicate cannot be used with an aggregator");
+            throw new IllegalArgumentException("The 'in' predicate cannot be used with an aggregator");
         } else if (exp instanceof PredefinedFunction) {
-            throw new IllegalArgumentException("In predicate cannot be used with a predefined function");
+            throw new IllegalArgumentException("The 'in' predicate cannot be used with a predefined function");
         } else if (exp instanceof FixedWidthFunction) {
-            throw new IllegalArgumentException("In predicate cannot be used with a fixed width function");
+            throw new IllegalArgumentException("The 'in' predicate cannot be used with a fixed width function");
         }
     }
 

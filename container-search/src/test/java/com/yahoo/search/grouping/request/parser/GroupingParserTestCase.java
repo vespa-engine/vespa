@@ -674,7 +674,7 @@ public class GroupingParserTestCase {
                                   "all(group(foo) filter(in(foo, \"bar\")) each(output(count())))"),
                 () -> assertParse("all(group(foo) filter(in(add(foo, 1), \"2\")) each(output(count())))"));
         assertIllegalArgument("all(group(foo) filter(in(sum(foo), \"1\")) each(output(count())))",
-                "In predicate cannot be used with an aggregator");
+                "The 'in' predicate cannot be used with an aggregator");
         assertIllegalArgument("all(group(foo) filter(in(foo, sum(bar))) each(output(count())))",
                 "Encountered \" \"(\" \"(\"\" at line 1, column 34.");
         assertIllegalArgument("all(group(foo) filter(in(foo)) each(output(count())))",
@@ -796,7 +796,7 @@ public class GroupingParserTestCase {
                      assertThrows(IllegalArgumentException.class,
                                   () -> GroupingOperation.fromString("all(group(foo) filter(in(foo, @unterminated)) each(output(count())))",
                                                                      parameters::get)).getMessage());
-        assertEquals("In predicate requires at least one argument, but none were provided",
+        assertEquals("The 'in' predicate requires at least one argument, but none were provided",
                      assertThrows(IllegalArgumentException.class,
                                   () -> GroupingOperation.fromString("all(group(foo) filter(in(foo, @empty)) each(output(count())))",
                                                                      parameters::get)).getMessage());
