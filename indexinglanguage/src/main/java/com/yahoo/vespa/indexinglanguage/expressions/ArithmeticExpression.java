@@ -90,10 +90,11 @@ public final class ArithmeticExpression extends CompositeExpression {
 
         if (leftInput == null) return getInputType(context);
         if (rightInput == null) return getInputType(context);
+        // The input must satisfy both arguments, so return the most specific requirement
         if (leftInput.isAssignableTo(rightInput))
-            return rightInput;
-        else if (rightInput.isAssignableTo(leftInput))
             return leftInput;
+        else if (rightInput.isAssignableTo(leftInput))
+            return rightInput;
         else
             throw new VerificationException(this, "The left argument requires " + leftInput.getName() +
                                                   ", while the right argument requires " + rightInput.getName() +
@@ -108,6 +109,9 @@ public final class ArithmeticExpression extends CompositeExpression {
         if ( ! (right instanceof NumericDataType))
             throw new VerificationException(this, "The second argument must be a number, but has type " + right.getName());
 
+        // The exact type of an argument is not resolved yet, so neither is the result type
+        if (left instanceof AnyNumericDataType || right instanceof AnyNumericDataType)
+            return AnyNumericDataType.instance;
         if (left == DataType.FLOAT || left == DataType.DOUBLE || right == DataType.FLOAT || right == DataType.DOUBLE) {
             if (left == DataType.DOUBLE || right == DataType.DOUBLE)
                 return DataType.DOUBLE;

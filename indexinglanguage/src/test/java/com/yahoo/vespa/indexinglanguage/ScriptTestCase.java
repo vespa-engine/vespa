@@ -208,6 +208,36 @@ public class ScriptTestCase {
         assertEquals(7678158186624760752L, adapter.values.get("myLong").getWrappedValue());
     }
 
+    @Test
+    public void testIntHashWithArithmetic() throws ParseException {
+        assertHashOutput(-96, "input myText | hash | _ % 1000 | attribute 'myInt'", DataType.INT);
+        assertHashOutput(96, "input myText | hash | _ % 1000 | abs | attribute 'myInt'", DataType.INT);
+        assertHashOutput(96, "input myText | hash | abs | _ % 1000 | attribute 'myInt'", DataType.INT);
+    }
+
+    @Test
+    public void testLongHashWithArithmetic() throws ParseException {
+        assertHashOutput(752L, "input myText | hash | _ % 1000 | attribute 'myLong'", DataType.LONG);
+        assertHashOutput(752L, "input myText | hash | abs | _ % 1000 | attribute 'myLong'", DataType.LONG);
+    }
+
+    private void assertHashOutput(Object expected, String script, DataType outputType) throws ParseException {
+        var expression = Expression.fromString(script);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myText", DataType.STRING));
+        var outputField = new Field(outputType == DataType.INT ? "myInt" : "myLong", outputType);
+        adapter.createField(outputField);
+        adapter.setValue("myText", new StringFieldValue("input text"));
+
+        expression.setStatementOutput(new DocumentType("myDocument"), outputField);
+        expression.resolve(new TypeContext(adapter));
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        assertEquals(expected, adapter.values.get(outputField.getName()).getWrappedValue());
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void testZCurveArray() throws ParseException {
