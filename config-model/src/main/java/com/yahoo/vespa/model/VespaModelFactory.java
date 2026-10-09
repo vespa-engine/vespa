@@ -218,7 +218,7 @@ public class VespaModelFactory implements ModelFactory {
             .wantedDockerImageRepo(modelContext.wantedDockerImageRepo())
             .onnxModelCost(modelContext.onnxModelCost());
         sidecarProvider.ifPresent(builder::sidecarProvider);
-        if (modelContext.properties().hostedVespa() && modelContext.properties().featureFlags().commerceDiscovery())
+        if (modelContext.properties().hostedVespa() && modelContext.properties().featureFlags().productDiscovery())
             productDiscoveryProvider.ifPresent(provider ->
                     builder.additionalContent(provider.additionalContent(modelContext.applicationPackage())));
         modelContext.previousModel().ifPresent(builder::previousModel);
