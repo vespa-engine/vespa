@@ -57,6 +57,13 @@
 %global _vespa_protobuf_excludes |protobuf|utf8_validity|utf8_range
 %global _use_vespa_openblas 1
 %global _vespa_openblas_excludes |openblas
+%global _vespa_grpc_excludes1 address_sorting|gpr
+%global _vespa_grpc_excludes2 grpc\\+\\+(_(alts|error_details|reflection|unsecure))?
+%global _vespa_grpc_excludes3 grpc(_(authorization_provider|plugin_support|unsecure))?
+%global _vespa_grpc_excludes4 grpcpp_channelz
+%global _vespa_grpc_excludes5 (upb_.*|utf8_(range|validity))_lib
+%global _vespa_grpc_excludes |%{_vespa_grpc_excludes1}|%{_vespa_grpc_excludes2}|%{_vespa_grpc_excludes3}|%{_vespa_grpc_excludes4}|%{_vespa_grpc_excludes5}
+%global _vespa_opentelemetry_excludes |opentelemetry_[a-z_0-9]*
 
 %if 0%{?fedora} && ! 0%{?amzn2023} && ! 0%{?amzn2027}
 %global _vespa_java_version 25
@@ -183,7 +190,8 @@ Requires: vespa-libatomic >= 14.2.0
 %define _excludes1 %{?_vespa_abseil_excludes}%{?_vespa_gtest_excludes}%{?_vespa_protobuf_excludes}
 %define _excludes2 %{?_vespa_openblas_excludes}%{?_vespa_icu_excludes}%{?_vespa_re2_excludes}
 %define _excludes3 %{?_vespa_openssl_excludes}%{?_vespa_xxhash_excludes}
-%define _vespa_excludes %{?_excludes1}%{?_excludes2}%{?_excludes3}
+%define _excludes4 %{?_vespa_grpc_excludes}%{?_vespa_opentelemetry_excludes}
+%define _vespa_excludes %{?_excludes1}%{?_excludes2}%{?_excludes3}%{?_excludes4}
 %global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(lz4|zstd|onnxruntime|hwy|hwy_contrib|mimalloc%{?_vespa_excludes})\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
 
 %description
