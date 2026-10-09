@@ -39,6 +39,8 @@ public class BenchmarkingCluster implements Cluster {
     private final AtomicLong timeOfFirstDispatch = new AtomicLong(0);
     private final AtomicLong requests = new AtomicLong();
     private final Throttler throttler;
+    // The fields below are confined to the executor thread: only access them from tasks run on it,
+    // e.g., via stats(), never by calling getStats() directly.
     private final Map<Integer, ResponseSpecificStats> statsByCode = new HashMap<>(10);
     private long results = 0;
     private long exceptions = 0;
@@ -133,6 +135,7 @@ public class BenchmarkingCluster implements Cluster {
         }
     }
 
+    /** Must only be called on the executor thread; use stats() from elsewhere. */
     private OperationStats getStats() {
         var requests = this.requests.get();
         var duration = (System.nanoTime() - timeOfFirstDispatch.get()) * 1e-9;
@@ -156,7 +159,7 @@ public class BenchmarkingCluster implements Cluster {
     public void close() {
         delegate.close();
         Instant doom = Instant.now().plusSeconds(10);
-        while (Instant.now().isBefore(doom) && getStats().inflight() != 0)
+        while (Instant.now().isBefore(doom) && stats().inflight() != 0)
             try  {
                 Thread.sleep(10);
             }
