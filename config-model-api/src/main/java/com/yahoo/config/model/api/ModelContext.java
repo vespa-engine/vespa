@@ -158,6 +158,9 @@ public interface ModelContext {
 
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
 
+        /** The parent of tenant Athenz domains, which hold the tenant identities of applications: {@code <parent>.<tenant>} */
+        default AthenzDomain tenantParentDomain() { return AthenzDomain.from("vespa.tenant"); }
+
         default Quota quota() { return Quota.unlimited(); }
 
         default List<TenantVault> tenantVaults() { return List.of(); }

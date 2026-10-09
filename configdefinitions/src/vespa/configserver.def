@@ -58,6 +58,7 @@ loadBalancerAddress string default=""
 athenzDnsSuffix string default=""
 ztsUrl string default=""
 tenantSecretDomain string default=""
+tenantParentDomain string default="vespa.tenant"
 
 # Maintenance settings
 maintainerIntervalMinutes int default=30
