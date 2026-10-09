@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,9 +44,6 @@ public class SchemaValidatorTest {
             "  </admin>\n" +
             "</services>\n";
 
-    // TODO (@sebasabe) remove the commerce-discovery when no longer in use
-    private static final List<String> DISCOVERY_ELEMENTS = List.of("commerce-discovery", "product-discovery");
-
     private static String servicesWith(String element) {
         return "<?xml version='1.0' encoding='utf-8' ?>\n" +
                "<services>\n" +
@@ -67,26 +63,23 @@ public class SchemaValidatorTest {
     }
 
     @Test
-    void testCommerceAndProductDiscoveryAreAccepted() throws IOException {
+    void testProductDiscoveryIsAccepted() throws IOException {
         SchemaValidator validator = createValidator();
-        for (String element : DISCOVERY_ELEMENTS)
-            validator.validate(new StringReader(servicesWith(element)));
+        validator.validate(new StringReader(servicesWith("product-discovery")));
     }
 
     @Test
-    void testCommerceAndProductDiscoveryVersionIsMajorDotMinor() throws IOException {
+    void testProductDiscoveryVersionIsMajorDotMinor() throws IOException {
         SchemaValidator validator = createValidator();
-        for (String element : DISCOVERY_ELEMENTS) {
-            String original = "<" + element + " version='1.0'>";
+        String original = "<product-discovery version='1.0'>";
 
-            // version must be major.minor
-            String majorDotMinor = servicesWith(element).replace(original, "<" + element + " version='1.34'>");
-            assertDoesNotThrow(() -> validator.validate(new StringReader(majorDotMinor)));
+        // version must be major.minor
+        String majorDotMinor = servicesWith("product-discovery").replace(original, "<product-discovery version='1.34'>");
+        assertDoesNotThrow(() -> validator.validate(new StringReader(majorDotMinor)));
 
-            // major.minor.micro is rejected
-            String majorDotMinorDotMicro = servicesWith(element).replace(original, "<" + element + " version='1.0.0'>");
-            assertThrows(RuntimeException.class, () -> validator.validate(new StringReader(majorDotMinorDotMicro)));
-        }
+        // major.minor.micro is rejected
+        String majorDotMinorDotMicro = servicesWith("product-discovery").replace(original, "<product-discovery version='1.0.0'>");
+        assertThrows(RuntimeException.class, () -> validator.validate(new StringReader(majorDotMinorDotMicro)));
     }
 
     @Test
