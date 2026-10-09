@@ -4,6 +4,7 @@ package com.yahoo.vespa.flags;
 import com.yahoo.vespa.flags.custom.HostResources;
 import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.flags.json.FlagData;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -31,7 +32,7 @@ class PermanentFlagsTest {
         IllegalArgumentException illegalArgumentException = assertThrows(
                 IllegalArgumentException.class,
                 () -> wantedDockerTagFlagData("do.not.work").validate(PermanentFlags.WANTED_DOCKER_TAG.serializer()));
-        assertThat(illegalArgumentException.getMessage(), equalTo("Invalid value: 'do.not.work'"));
+        assertThat(Exceptions.toMessageString(illegalArgumentException), equalTo("Failed to deserialize value of flag wanted-docker-tag: Invalid value: 'do.not.work'"));
 
         wantedDockerTagFlagData("a").validate(PermanentFlags.WANTED_DOCKER_TAG.serializer());
         wantedDockerTagFlagData("8.1.2").validate(PermanentFlags.WANTED_DOCKER_TAG.serializer());
