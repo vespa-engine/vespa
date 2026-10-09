@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-10-07
+Last updated: 2026-10-09
 
 ---
 
@@ -405,9 +405,9 @@ Last updated: 2026-10-07
 
 ---
 
-## github.com/mattn/go-runewidth v0.0.30 — MIT
+## github.com/mattn/go-runewidth v0.0.31 — MIT
 
-- Homepage: <https://pkg.go.dev/github.com/mattn/go-runewidth@v0.0.30>
+- Homepage: <https://pkg.go.dev/github.com/mattn/go-runewidth@v0.0.31>
 - Copyright 2016 Yasuhiro Matsumoto
 
 ---
