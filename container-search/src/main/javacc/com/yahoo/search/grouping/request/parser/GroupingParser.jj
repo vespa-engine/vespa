@@ -79,6 +79,16 @@ public class GroupingParser {
         }
     }
 
+    /**
+     * Rejects a non-positive value.
+     */
+    private static Number checkPositive(String clause, Number num) throws ParseException {
+        if (num.doubleValue() <= 0) {
+            throw new ParseException(clause + " must be a positive number, but got " + num);
+        }
+        return num;
+    }
+
     private static Number resolveParameterNumber(String name, String value) throws ParseException {
         String str = value.trim();
         try {
@@ -359,12 +369,12 @@ void operationBody(GroupingOperation parent) :
             if (maxOperand instanceof InfiniteValue) {
                 parent.setMax(GroupingOperation.UNLIMITED_MAX);
             } else {
-                parent.setMax(((Number)maxOperand.getValue()).intValue());
+                parent.setMax(checkPositive("max", (Number)maxOperand.getValue()).intValue());
             }
       } ) |
       ( <ORDER>     lbrace() lst = expList(parent)                        rbrace() { parent.addOrderBy(lst); }                ) |
       ( <OUTPUT>    lbrace() lst = expList(parent)                        rbrace() { parent.addOutputs(lst); }                ) |
-      ( <PRECISION> lbrace() num = number()                               rbrace() { parent.setPrecision(num.intValue()); }   ) |
+      ( <PRECISION> lbrace() num = number()                               rbrace() { parent.setPrecision(checkPositive("precision", num).intValue()); } ) |
       ( <WHERE>     lbrace() str = where()                                rbrace() { parent.setWhere(str); }                  ) )*
     (                              operation(parent)                                                                            )*
 }
