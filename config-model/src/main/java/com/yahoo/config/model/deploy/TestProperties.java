@@ -87,6 +87,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean fastMapSearch = false;
     private boolean commerceDiscovery = false;
     private boolean enableLandlock = false;
+    private boolean enableLegacyFeedHandler = true;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -150,6 +151,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean fastMapSearch() { return fastMapSearch; }
     @Override public boolean commerceDiscovery() { return commerceDiscovery; }
     @Override public boolean enableLandlock() { return enableLandlock; }
+    @Override public boolean enableLegacyFeedHandler() { return enableLegacyFeedHandler; }
 
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -388,6 +390,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties enableLandlock(boolean value) {
         this.enableLandlock = value;
+        return this;
+    }
+
+    public TestProperties enableLegacyFeedHandler(boolean value) {
+        this.enableLegacyFeedHandler = value;
         return this;
     }
 
