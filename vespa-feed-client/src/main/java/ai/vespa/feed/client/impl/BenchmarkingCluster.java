@@ -4,6 +4,7 @@ package ai.vespa.feed.client.impl;
 import ai.vespa.feed.client.HttpResponse;
 import ai.vespa.feed.client.OperationStats;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -39,6 +41,8 @@ public class BenchmarkingCluster implements Cluster {
     private final AtomicLong timeOfFirstDispatch = new AtomicLong(0);
     private final AtomicLong requests = new AtomicLong();
     private final Throttler throttler;
+    // The fields below are confined to the executor thread: only access them from tasks run on it,
+    // e.g., via stats(), never by calling getStats() directly.
     private final Map<Integer, ResponseSpecificStats> statsByCode = new HashMap<>(10);
     private long results = 0;
     private long exceptions = 0;
@@ -133,6 +137,7 @@ public class BenchmarkingCluster implements Cluster {
         }
     }
 
+    /** Must only be called on the executor thread; use stats() from elsewhere. */
     private OperationStats getStats() {
         var requests = this.requests.get();
         var duration = (System.nanoTime() - timeOfFirstDispatch.get()) * 1e-9;
@@ -156,13 +161,18 @@ public class BenchmarkingCluster implements Cluster {
     public void close() {
         delegate.close();
         Instant doom = Instant.now().plusSeconds(10);
-        while (Instant.now().isBefore(doom) && getStats().inflight() != 0)
-            try  {
+        try {
+            while (executor.submit(this::getStats)
+                           .get(Duration.between(Instant.now(), doom).toNanos(), TimeUnit.NANOSECONDS)
+                           .inflight() != 0)
                 Thread.sleep(10);
-            }
-            catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+        }
+        catch (TimeoutException e) {
+            // Stop waiting for inflight requests when the deadline is reached.
+        }
+        catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
         executor.shutdown();
     }
 
