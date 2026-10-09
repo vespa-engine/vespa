@@ -809,21 +809,32 @@ public class GroupingParserTestCase {
                      assertThrows(IllegalArgumentException.class,
                                   () -> GroupingOperation.fromString("all(group(foo) max(@label) each(output(count())))",
                                                                      parameters::get)).getMessage());
-        assertEquals("max must be a non-negative number, but got -5",
+        assertEquals("max must be a positive number, but got -5",
                      assertThrows(IllegalArgumentException.class,
                                   () -> GroupingOperation.fromString("all(group(foo) max(@negative) each(output(count())))",
                                                                      parameters::get)).getMessage());
-        assertEquals("precision must be a non-negative number, but got -5",
+        assertEquals("precision must be a positive number, but got -5",
                      assertThrows(IllegalArgumentException.class,
                                   () -> GroupingOperation.fromString("all(group(foo) precision(@negative) each(output(count())))",
                                                                      parameters::get)).getMessage());
-        assertEquals("precision must be a non-negative number, but got -0.5",
+        assertEquals("precision must be a positive number, but got -0.5",
                      assertThrows(IllegalArgumentException.class,
                                   () -> GroupingOperation.fromString("all(group(foo) precision(@p) each(output(count())))",
                                                                      Map.of("p", "-0.5")::get)).getMessage());
-        assertParseWithParameters(Map.of("zero", "0"),
-                                  "all(group(foo) max(@zero) precision(@zero) each(output(count())))",
-                                  "all(group(foo) max(0) each(output(count())))");
+        assertEquals("max must be a positive number, but got 0",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) max(@zero) each(output(count())))",
+                                                                     Map.of("zero", "0")::get)).getMessage());
+        assertEquals("precision must be a positive number, but got 0",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) precision(@zero) each(output(count())))",
+                                                                     Map.of("zero", "0")::get)).getMessage());
+        assertEquals("max must be a positive number, but got 0",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) max(0) each(output(count())))")).getMessage());
+        assertEquals("precision must be a positive number, but got 0",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) precision(0) each(output(count())))")).getMessage());
         assertEquals("Input 'nan' must be a number, but was 'NaN'",
                      assertThrows(IllegalArgumentException.class,
                                   () -> GroupingOperation.fromString("all(group(foo) max(@nan) each(output(count())))",
