@@ -24,9 +24,15 @@ QueryLimiter::LimitedToken::~LimitedToken() {
     _limiter.releaseToken(_units);
 }
 
+/*
+ * The units to charge for a request: capped at the max, so that it can
+ * always be granted, and none when there is no limit, like a NoLimitToken.
+ * Charging units while unlimited would leave them counted against a limit
+ * configured later, blocking newcomers until those tokens are released.
+ */
 int QueryLimiter::grant_for(int units) const noexcept {
     int max_threads = get_max_threads();
-    return (max_threads > 0) ? std::min(units, max_threads) : units;
+    return (max_threads > 0) ? std::min(units, max_threads) : 0;
 }
 
 bool QueryLimiter::fits(int granted) const noexcept {

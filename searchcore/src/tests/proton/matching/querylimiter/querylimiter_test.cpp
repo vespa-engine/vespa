@@ -163,6 +163,27 @@ TEST_F(QueryLimiterTest, reconfig_to_unlimited_wakes_waiters) {
     EXPECT_EQ(0, limiter.active_threads());
 }
 
+TEST_F(QueryLimiterTest, waiters_admitted_while_unlimited_are_not_charged) {
+    limiter.configure(1, 1.0, 100);
+    auto                    t1 = limited_token(doom);
+    QueryLimiter::Token::UP q;
+    std::thread             thread([&] { q = limiter.getQueryToken(doom, 4); });
+    wait_for_waiting(1);
+    limiter.configure(0, 1.0, 100);
+    thread.join();
+    ASSERT_EQ(1, limiter.active_threads()); // only t1; else the token below would block
+    limiter.configure(2, 1.0, 100);
+    // the query token still runs, but does not count against the new limit
+    auto t2 = limited_token(doom);
+    EXPECT_EQ(2, limiter.active_threads());
+    EXPECT_EQ(0u, limiter.num_waiting());
+    q.reset();
+    EXPECT_EQ(2, limiter.active_threads());
+    t1.reset();
+    t2.reset();
+    EXPECT_EQ(0, limiter.active_threads());
+}
+
 TEST_F(QueryLimiterTest, reconfig_to_lower_max_lets_capped_query_token_through) {
     limiter.configure(4, 1.0, 100);
     auto                    t1 = limited_token(doom);
