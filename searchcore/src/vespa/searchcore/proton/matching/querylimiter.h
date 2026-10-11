@@ -18,8 +18,11 @@ namespace proton::matching {
  *
  * Capacity is counted in units (one unit per thread). Waiters are served in
  * FIFO order, so a request for many units is not starved by a stream of
- * single-unit requests. A waiter whose query reaches hard doom is let through
- * regardless of capacity.
+ * single-unit requests. The thread that frees capacity, by releasing a token
+ * or by reconfiguration, hands it to the waiters at the front of the queue,
+ * in order, while their requests fit, and wakes only those. A waiter whose
+ * query reaches hard doom leaves the queue and is let through regardless of
+ * capacity.
  *
  * A holder of a token must never wait for another thread that may itself be
  * waiting for a token; doing so can deadlock until hard doom.
@@ -68,13 +71,27 @@ private:
         LimitedToken& operator=(const NoLimitToken&) = delete;
         ~LimitedToken() override;
     };
+    /*
+     * A thread waiting for capacity. The record lives on the waiting thread's
+     * stack, and every access is made with _lock held, so its owner cannot
+     * return and destroy it while a granting thread still uses it. That is
+     * why grants notify with the lock held.
+     */
+    struct Waiter {
+        int                     units; // as requested; capped only when granted
+        int                     granted;
+        bool                    done;
+        std::condition_variable cond;
+        explicit Waiter(int units_in) : units(units_in), granted(0), done(false), cond() {}
+    };
     int grabToken(const Doom& doom, int units);
     void releaseToken(int units);
-    std::mutex              _lock;
-    std::condition_variable _cond;
-    int                     _activeThreads;
-    uint64_t                _nextTicket;
-    std::deque<uint64_t>    _waiting; // tickets in FIFO order
+    [[nodiscard]] int grant_for(int units) const noexcept;
+    [[nodiscard]] bool fits(int granted) const noexcept; // _lock must be held
+    void grant_front(); // _lock must be held
+    std::mutex          _lock;
+    int                 _activeThreads;
+    std::deque<Waiter*> _waiting; // FIFO
 
     // These are updated asynchronously at reconfig.
     std::atomic<int>      _maxThreads;
