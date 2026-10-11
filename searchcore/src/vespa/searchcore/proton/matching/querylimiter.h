@@ -74,8 +74,10 @@ private:
     /*
      * A thread waiting for capacity. The record lives on the waiting thread's
      * stack, and every access is made with _lock held, so its owner cannot
-     * return and destroy it while a granting thread still uses it. That is
-     * why grants notify with the lock held.
+     * return and destroy it while an admitting thread still uses it. That is
+     * why admit_from_front notifies with the lock held: the waiter may wake on
+     * its own (timeout or spuriously), see done, and return, so its cond must
+     * not be touched after _lock is released.
      */
     struct Waiter {
         int                     units; // as requested; capped only when granted
@@ -88,12 +90,15 @@ private:
     void releaseToken(int units);
     [[nodiscard]] int grant_for(int units) const noexcept;
     [[nodiscard]] bool fits(int granted) const noexcept; // _lock must be held
-    void grant_front(); // _lock must be held
+    void admit_from_front(); // _lock must be held
     std::mutex          _lock;
     int                 _activeThreads;
     std::deque<Waiter*> _waiting; // FIFO
 
-    // These are updated asynchronously at reconfig.
+    // Written only by configure, with _lock held, so they are stable while
+    // _lock is held. Atomic because getToken and getQueryToken read them
+    // without the lock, to decide whether to limit at all; that check may see
+    // a stale value, which grabToken copes with as it re-reads under the lock.
     std::atomic<int>      _maxThreads;
     std::atomic<double>   _coverage;
     std::atomic<uint32_t> _minHits;

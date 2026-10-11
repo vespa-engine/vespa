@@ -17,7 +17,7 @@ namespace {
 constexpr uint32_t many_hits = 1000;
 constexpr uint32_t few_docs = 10;
 
-// well below the wait slice cap, so a waiter admitted within it was woken, not timed out
+// waiters on doom sleep half of its hour between checks, so one admitted within this was woken
 constexpr auto promptly = std::chrono::milliseconds(500);
 
 struct QueryLimiterTest : ::testing::Test {
@@ -157,8 +157,8 @@ TEST_F(QueryLimiterTest, reconfig_to_unlimited_wakes_waiters) {
     auto start = std::chrono::steady_clock::now();
     limiter.configure(0, 1.0, 100);
     thread.join();
-    // well below the wait slice cap, so the waiter was woken by configure
-    EXPECT_LT(std::chrono::steady_clock::now() - start, std::chrono::milliseconds(500));
+    // the waiter would otherwise sleep for half an hour, so it was woken by configure
+    EXPECT_LT(std::chrono::steady_clock::now() - start, promptly);
     t1.reset();
     EXPECT_EQ(0, limiter.active_threads());
 }
@@ -229,7 +229,7 @@ TEST_F(QueryLimiterTest, granted_waiter_past_hard_doom_is_charged_once) {
     QueryLimiter::Token::UP t2;
     std::thread             thread([&] { t2 = limited_token(doom); });
     wait_for_waiting(1);
-    now = now.load() + std::chrono::hours(2); // past hard doom, while the waiter sleeps in a 1 s slice
+    now = now.load() + std::chrono::hours(2); // past hard doom, while the waiter sleeps
     auto start = std::chrono::steady_clock::now();
     t1.reset(); // grants it before it wakes
     thread.join();
