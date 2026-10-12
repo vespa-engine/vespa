@@ -56,6 +56,15 @@ public class SortingDegraderTestCase {
     }
 
     @Test
+    void testDegradingNonDefaultTotalMaxHits() {
+        Query query = new Query("?ranking.sorting=-a1%20-a2&ranking.matchPhase.totalMaxHits=370");
+        execute(query);
+        assertEquals("a1", query.getRanking().getMatchPhase().getAttribute());
+        assertNull(query.getRanking().getMatchPhase().getMaxHits());
+        assertEquals(370l, query.getRanking().getMatchPhase().getTotalMaxHits().longValue());
+    }
+
+    @Test
     void testDegradingNonDefaultMaxFilterCoverage() {
         Query query = new Query("?ranking.sorting=-a1%20-a2&ranking.matchPhase.maxFilterCoverage=0.37");
         execute(query);
