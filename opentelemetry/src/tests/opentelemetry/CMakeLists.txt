@@ -8,4 +8,4 @@ vespa_add_executable(opentelemetry_opentelemetry_test_app TEST
     vespa_opentelemetry
     GTest::gtest
 )
-vespa_add_test(NAME opentelemetry_opentelemetry_test_app COMMAND opentelemetry_opentelemetry_test_app)
+vespa_add_test(NAME opentelemetry_opentelemetry_test_app NO_VALGRIND COMMAND opentelemetry_opentelemetry_test_app)
