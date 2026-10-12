@@ -911,3 +911,11 @@
    obj:*/libssl.so*
    ...
 }
+{
+   for grpc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:_GLOBAL__sub_I_config_vars.cc
+   ...
+}
