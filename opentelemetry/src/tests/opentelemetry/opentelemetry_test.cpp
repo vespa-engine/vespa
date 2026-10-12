@@ -9,6 +9,7 @@
 #include <opentelemetry/trace/provider.h>
 
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -60,45 +61,41 @@ void OpenTelemetryTest::write_otelcol_config(const std::string& tls_config_file_
     auto  file = [&files](const std::string& key) { return files[key].asString().make_string(); };
 
     std::ofstream otelcol_config("otelcol-config.yaml");
-    otelcol_config << "receivers:\n"
-                      "  otlp:\n"
-                      "    protocols:\n"
-                      "      grpc:\n"
-                      "        endpoint: 127.0.0.1:4317\n"
-                      "        tls:\n"
-                      "          cert_file: "
-                   << file("certificates")
-                   << "\n"
-                      "          key_file: "
-                   << file("private-key")
-                   << "\n"
-                      "          client_ca_file: "
-                   << file("ca-certificates")
-                   << "\n"
-                      "          min_version: \"1.2\"\n"
-                      "          max_version: \"1.3\"\n"
-                      "\n"
-                      "processors:\n"
-                      "  batch:\n"
-                      "    timeout: 100ms\n"
-                      "    send_batch_size: 8192\n"
-                      "    send_batch_max_size: 0\n"
-                      "\n"
-                      "exporters:\n"
-                      "  file:\n"
-                      "    path: ./traces.json\n"
-                      "\n"
-                      "service:\n"
-                      "  pipelines:\n"
-                      "    traces:\n"
-                      "      receivers: [otlp]\n"
-                      "      processors: [batch]\n"
-                      "      exporters: [file]\n"
-                      "  \n"
-                      "  telemetry:\n"
-                      "    logs:\n"
-                      "      level: \"info\"\n"
-                      "\n";
+    otelcol_config << std::format(R"(receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:4317
+        tls:
+          cert_file: {}
+          key_file: {}
+          client_ca_file: {}
+          min_version: "1.2"
+          max_version: "1.3"
+
+processors:
+  batch:
+    timeout: 100ms
+    send_batch_size: 8192
+    send_batch_max_size: 0
+
+exporters:
+  file:
+    path: ./traces.json
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [file]
+
+  telemetry:
+    logs:
+      level: "info"
+
+)",
+                                  file("certificates"), file("private-key"), file("ca-certificates"));
     otelcol_config.close();
 }
 
