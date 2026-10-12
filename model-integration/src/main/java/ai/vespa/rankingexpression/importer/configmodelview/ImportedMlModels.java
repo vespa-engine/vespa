@@ -5,6 +5,8 @@ import com.yahoo.path.Path;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -24,6 +27,11 @@ import java.util.regex.Pattern;
  * @author bratseth
  */
 public class ImportedMlModels {
+
+    private static final Logger log = Logger.getLogger(ImportedMlModels.class.getName());
+
+    /** Log model imports taking longer than this */
+    private static final Duration slowImportThreshold = Duration.ofSeconds(30);
 
     /** All imported models, indexed by their names */
     private final Map<String, ImportedMlModel> importedModels;
@@ -97,10 +105,13 @@ public class ImportedMlModels {
                 }
 
                 Future<ImportedMlModel> future = executor.submit(() -> {
+                    Instant start = Instant.now();
                     try {
                         return importer.get().importModel(name, child);
                     } catch (RuntimeException e) {
                         skippedModels.put(name, e.getMessage());
+                    } finally {
+                        logIfSlow(name, child, importer.get(), Duration.between(start, Instant.now()));
                     }
                     return null;
                 });
@@ -110,6 +121,12 @@ public class ImportedMlModels {
                 importRecursively(child, executor, models, importers, skippedModels);
             }
         });
+    }
+
+    private static void logIfSlow(String name, File source, MlModelImporter importer, Duration elapsed) {
+        if (elapsed.compareTo(slowImportThreshold) <= 0) return;
+        log.info("Importing model '" + name + "' from " + source + " using " + importer.getClass().getSimpleName() +
+                 " took " + elapsed.toSeconds() + " seconds");
     }
 
     private static Optional<MlModelImporter> findImporterOf(File path, Collection<MlModelImporter> importers) {
