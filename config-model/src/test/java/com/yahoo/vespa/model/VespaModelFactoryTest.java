@@ -149,27 +149,24 @@ public class VespaModelFactoryTest {
 
     /** Without a builder, self-hosted must be told Vespa Cloud is required, and hosted that the version is unknown. */
     @Test
-    void commerceAndProductDiscoveryWithoutABuilderFailWithATailoredMessage() {
-        // TODO (@sebasabe) remove commerce-discovery when no longer in use and rename tests
-        for (String element : List.of("commerce-discovery", "product-discovery")) {
-            var services = """
-                    <services version="1.0">
-                        <%s version="1.1"/>
-                    </services>""".formatted(element);
-            for (boolean hostedVespa : new boolean[] { false, true }) {
-                String message = assertThrows(IllegalArgumentException.class, () ->
-                        VespaModelFactory.createTestFactory().createModel(new MockModelContext() {
-                            @Override
-                            public ApplicationPackage applicationPackage() {
-                                return new MockApplicationPackage.Builder().withServices(services).build();
-                            }
-                            @Override
-                            public Properties properties() { return new TestProperties().setHostedVespa(hostedVespa); }
-                        })).getMessage();
-                String expected = hostedVespa ? "<" + element + " version=\"1.1\"> is not available on Vespa"
-                                              : "<" + element + "> requires Vespa Cloud";
-                assertTrue(message.contains(expected), message);
-            }
+    void productDiscoveryWithoutABuilderFailsWithATailoredMessage() {
+        var services = """
+                <services version="1.0">
+                    <product-discovery version="1.1"/>
+                </services>""";
+        for (boolean hostedVespa : new boolean[] { false, true }) {
+            String message = assertThrows(IllegalArgumentException.class, () ->
+                    VespaModelFactory.createTestFactory().createModel(new MockModelContext() {
+                        @Override
+                        public ApplicationPackage applicationPackage() {
+                            return new MockApplicationPackage.Builder().withServices(services).build();
+                        }
+                        @Override
+                        public Properties properties() { return new TestProperties().setHostedVespa(hostedVespa); }
+                    })).getMessage();
+            String expected = hostedVespa ? "<product-discovery version=\"1.1\"> is not available on Vespa"
+                                          : "<product-discovery> requires Vespa Cloud";
+            assertTrue(message.contains(expected), message);
         }
     }
 

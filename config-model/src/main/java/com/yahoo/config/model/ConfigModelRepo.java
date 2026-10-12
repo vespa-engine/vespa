@@ -136,8 +136,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Iterable<ConfigMod
             Collection<ConfigModelBuilder> builders = configModelRegistry.resolve(xmlId);
 
             if (builders.isEmpty()) {
-                // TODO (@sebasabe) remove commerce-discovery when no longer in use
-                if (tagName.equals("commerce-discovery") || tagName.equals("product-discovery"))
+                if (tagName.equals("product-discovery"))
                     throw new IllegalArgumentException(deployState.isHosted()
                             ? "<" + tagName + " version=\"" + tagVersion + "\"> is not available on Vespa " + deployState.getVespaVersion()
                             : "<" + tagName + "> requires Vespa Cloud");

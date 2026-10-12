@@ -4,7 +4,6 @@ include "admin.rnc"
 include "content.rnc"
 include "routing.rnc"
 include "containercluster.rnc"
-include "commerce-discovery.rnc"
 include "product-discovery.rnc"
 
 start = element services {
@@ -17,7 +16,6 @@ start = element services {
    Content* &
    ContainerCluster* &
    Routing? &
-   CommerceDiscovery? &
    ProductDiscovery?
 }
 | Admin
