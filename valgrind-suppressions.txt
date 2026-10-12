@@ -919,3 +919,30 @@
    fun:_GLOBAL__sub_I_config_vars.cc
    ...
 }
+{
+   grpc_telemetry_static_init_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:*grpc_core*InstrumentIndex*Register*
+   ...
+   fun:_GLOBAL__sub_I_telemetry.cc
+}
+{
+   grpc_tls_telemetry_static_init_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:*grpc_core*InstrumentIndex*Register*
+   ...
+   fun:_GLOBAL__sub_I_tls_telemetry.cc
+}
+{
+   grpc_subchannel_metrics_static_init_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:*grpc_core*InstrumentIndex*Register*
+   ...
+   fun:_GLOBAL__sub_I_subchannel_metrics.cc
+}
