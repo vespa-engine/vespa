@@ -22,16 +22,18 @@ public:
 
     static void cleanup_tracer_provider();
 
-    static opentelemetry::exporter::otlp::OtlpGrpcExporterOptions
+    [[nodiscard]] static opentelemetry::exporter::otlp::OtlpGrpcExporterOptions
     setup_otlp_grpc_exporter_options(const vespalib::net::tls::TransportSecurityOptions& vespa_tls_config);
-    static opentelemetry::sdk::trace::BatchSpanProcessorOptions setup_batch_span_processor_options(bool test);
-    static opentelemetry::sdk::resource::Resource make_resource();
+    [[nodiscard]] static opentelemetry::sdk::trace::BatchSpanProcessorOptions
+    setup_batch_span_processor_options(bool test);
+    [[nodiscard]] static opentelemetry::sdk::resource::Resource make_resource();
     static void init_grpc_tracer_provider(
         const opentelemetry::exporter::otlp::OtlpGrpcExporterOptions& otlp_grpc_exporter_options,
         const opentelemetry::sdk::trace::BatchSpanProcessorOptions&   batch_span_processor_options,
         const opentelemetry::sdk::resource::Resource&                 resource);
 
-    static std::shared_ptr<opentelemetry::exporter::memory::InMemorySpanData> init_memory_tracer_provider();
+    [[nodiscard]] static std::shared_ptr<opentelemetry::exporter::memory::InMemorySpanData>
+    init_memory_tracer_provider();
 
     static void init_ostream_tracer_provider(std::ostream& os);
 };
