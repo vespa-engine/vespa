@@ -28,7 +28,7 @@ opentelemetry::exporter::otlp::OtlpGrpcExporterOptions OpenTelemetryTracerProvid
     opts.ssl_client_key_string = vespa_tls_config.private_key_pem();
     opts.ssl_credentials_cacert_as_string = vespa_tls_config.ca_certs_pem();
     opts.use_ssl_credentials = true;
-    opts.endpoint = "http://localhost:4317";
+    opts.endpoint = "https://localhost:4317";
     return opts;
 }
 
