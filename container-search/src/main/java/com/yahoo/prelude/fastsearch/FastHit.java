@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +122,7 @@ public class FastHit extends Hit {
         // Fallback to index:[source]/[partid]/[id]
         StringBuilder sb = new StringBuilder(64);
         sb.append("index:").append(getSource()).append('/').append(getPartId()).append('/');
-        appendAsHex(globalId, sb);
+        HexFormat.of().formatHex(sb, globalId);
         URI indexUri = new URI(sb.toString());
         assignId(indexUri);
         return indexUri;
@@ -359,16 +360,6 @@ public class FastHit extends Hit {
                                             "Execution.fill(Result)) before hashCode() is accessed.");
         } else {
             return super.hashCode();
-        }
-    }
-
-    private static void appendAsHex(byte[] gid, StringBuilder sb) {
-        for (byte b : gid) {
-            String hex = Integer.toHexString(0xFF & b);
-            if (hex.length() == 1) {
-                sb.append('0');
-            }
-            sb.append(hex);
         }
     }
 
