@@ -6,6 +6,7 @@ vespa_add_executable(opentelemetry_opentelemetry_test_app TEST
     INSTALL bin
     DEPENDS
     vespa_opentelemetry
+    gRPC::grpc
     GTest::gtest
 )
 vespa_add_test(NAME opentelemetry_opentelemetry_test_app NO_VALGRIND COMMAND opentelemetry_opentelemetry_test_app)
