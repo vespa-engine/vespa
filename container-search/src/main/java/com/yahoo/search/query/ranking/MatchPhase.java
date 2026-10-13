@@ -125,7 +125,7 @@ public class MatchPhase implements Cloneable {
 
     /** Internal operation - DO NOT USE */
     public void prepare(RankProperties rankProperties) {
-        if (attribute == null || maxHits == null) return;
+        if (attribute == null || (maxHits == null && totalMaxHits == null)) return;
 
         rankProperties.put("vespa.matchphase.degradation.attribute", attribute);
         if (ascending) { // backend default is descending
@@ -137,7 +137,7 @@ public class MatchPhase implements Cloneable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(ascending, attribute, maxHits, diversity, maxFilterCoverage);
+        return Objects.hash(ascending, attribute, maxHits, totalMaxHits, diversity, maxFilterCoverage);
     }
 
     @Override
@@ -148,6 +148,7 @@ public class MatchPhase implements Cloneable {
         if ( this.ascending != other.ascending) return false;
         if ( ! Objects.equals(this.attribute, other.attribute)) return false;
         if ( ! Objects.equals(this.maxHits, other.maxHits)) return false;
+        if ( ! Objects.equals(this.totalMaxHits, other.totalMaxHits)) return false;
         if ( ! Objects.equals(this.diversity, other.diversity)) return false;
         if ( ! Objects.equals(this.maxFilterCoverage, other.maxFilterCoverage)) return false;
         return true;
