@@ -6,8 +6,13 @@ import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy;
+import org.apache.hc.client5.http.impl.DefaultRedirectStrategy;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.core5.http.HttpRequest;
+import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.util.Timeout;
 
@@ -91,14 +96,32 @@ class UrlDownloader {
 
     private static HttpClient createClient() {
         return HttpClientBuilder.create()
+                                .setRedirectStrategy(new StripAuthOnCrossOriginRedirectStrategy())
                                 .setRetryStrategy(new DefaultHttpRequestRetryStrategy())
                                 .setUserAgent(USER_AGENT_MODEL_DOWNLOADER)
                                 .setDefaultRequestConfig(
                                         RequestConfig.custom()
                                                      .setConnectionRequestTimeout(Timeout.ofSeconds(30))
                                                      .setResponseTimeout(Timeout.ofSeconds(30))
+                                                     .setMaxRedirects(5)
                                                      .build())
                                 .build();
+    }
+
+    /**
+     * Follows redirects like the default strategy, but never sends the auth token to another origin: the default
+     * strategy refuses cross-origin redirects when an Authorization header is set (e.g. huggingface.co redirecting
+     * to a CDN with a pre-signed url), so instead drop the header and follow the redirect without it.
+     */
+    private static class StripAuthOnCrossOriginRedirectStrategy extends DefaultRedirectStrategy {
+
+        @Override
+        public boolean isRedirectAllowed(HttpHost currentTarget, HttpHost newTarget, HttpRequest redirect, HttpContext context) {
+            if ( ! super.isRedirectAllowed(currentTarget, newTarget, redirect, context))
+                redirect.removeHeaders(HttpHeaders.AUTHORIZATION);
+            return true;
+        }
+
     }
 
 }
