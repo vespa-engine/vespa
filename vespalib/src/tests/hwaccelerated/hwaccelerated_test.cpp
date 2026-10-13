@@ -85,6 +85,48 @@ void verify_dot_product(std::span<const IAccelerated*> accels, size_t test_lengt
     }
 }
 
+template <typename T>
+void my_unpack_bits(const int8_t* __restrict__ src_bits, T* __restrict__ dst, const size_t sz,
+                    const bool big_endian) noexcept {
+    if (big_endian) {
+        for (size_t i = 0; i < sz; ++i) {
+            for (int n = 7; n >= 0; --n) {
+                *dst++ = static_cast<T>(static_cast<bool>(src_bits[i] & (1 << n)));
+            }
+        }
+    } else {
+        for (size_t i = 0; i < sz; ++i) {
+            for (int n = 0; n <= 7; ++n) {
+                *dst++ = static_cast<T>(static_cast<bool>(src_bits[i] & (1 << n)));
+            }
+        }
+    }
+}
+
+template <typename T>
+void verify_unpack_bits(std::span<const IAccelerated*> accels, const size_t test_length, const bool big_endian) {
+    Xoshiro256PlusPlusPrng prng(1234567 * test_length);
+    std::vector<int8_t>    src = create_and_fill<int8_t>(prng, test_length); // Shall have uniform bit probability
+    std::vector<T>         dest(test_length * 8);
+
+    ASSERT_GE(test_length, 32) << "test length must be large enough to test 32 start offsets";
+    for (size_t j = 0; j < 32; j++) {
+        const size_t   sz = test_length - j;
+        std::vector<T> truth(sz * 8);
+        my_unpack_bits(&src[j], truth.data(), sz, big_endian);
+
+        for (const auto* accel : accels) {
+            LOG(spam, "verify_unpack_bits(accel=%s, len=%zu, offset=%zu)", accel->target_info().to_string().c_str(),
+                test_length, j);
+            ScopedFnTableOverride fn_scope(accel->fn_table());
+            unpack_bits(&src[j], dest.data(), sz, big_endian);
+            // std::println(std::cerr, "foo: {:08b} {}", src[j], accel->target_info().to_string());
+            ASSERT_THAT(std::span<T>(dest.data(), sz * 8), ElementsAreArray(truth))
+                << accel->target_info().to_string() << " at offset " << j;
+        }
+    }
+}
+
 void fill_auto_vectorized_accelerators(std::vector<const IAccelerated*>& accels) {
     static const auto auto_vec_targets = IAccelerated::create_supported_auto_vectorized_targets();
     for (const auto& t : auto_vec_targets) {
@@ -114,8 +156,16 @@ void verify_euclidean_distance(std::span<const IAccelerated*> accelerators, size
     verify_euclidean_distance<double>(accelerators, testLength, 0.0);
 }
 
-void verify_euclidean_length(std::span<const IAccelerated*> accelerators, size_t testLength) {
-    verify_euclidean_length<float>(accelerators, testLength, 0.0001);
+void verify_euclidean_length(std::span<const IAccelerated*> accelerators, const size_t test_length) {
+    verify_euclidean_length<float>(accelerators, test_length, 0.0001);
+}
+
+void verify_unpack_bits(std::span<const IAccelerated*> accelerators, const size_t test_length) {
+    for (const bool big_endian : {true, false}) {
+        SCOPED_TRACE(big_endian ? "big endian" : "little endian");
+        ASSERT_NO_FATAL_FAILURE(verify_unpack_bits<int8_t>(accelerators, test_length, big_endian)) << "int8";
+        ASSERT_NO_FATAL_FAILURE(verify_unpack_bits<float>(accelerators, test_length, big_endian)) << "float";
+    }
 }
 
 // Max number of elements that can be covered in one computed_chunked_sum() call
@@ -179,6 +229,13 @@ TEST_F(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {
     auto accelerators = all_accelerators_to_test();
     for (size_t test_length : test_lengths()) {
         ASSERT_NO_FATAL_FAILURE(verify_dot_product(accelerators, test_length)) << "with length " << test_length;
+    }
+}
+
+TEST_F(HwAcceleratedTest, unpack_bits_impls_match_source_of_truth) {
+    auto accelerators = all_accelerators_to_test();
+    for (size_t test_length : {32, 64, 256, 1024}) {
+        ASSERT_NO_FATAL_FAILURE(verify_unpack_bits(accelerators, test_length)) << "with length " << test_length;
     }
 }
 

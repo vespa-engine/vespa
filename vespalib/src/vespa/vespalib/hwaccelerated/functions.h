@@ -76,6 +76,23 @@ inline void or_bit(void* a, const void* b, size_t bytes) noexcept {
     dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(or_bit)(a, b, bytes);
 }
 
+// TODO flip args?
+inline void unpack_bits(const int8_t* src, int8_t* dest, size_t sz, bool big_endian) noexcept {
+    dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(unpack_bits_to_8x_i8)(src, dest, sz, big_endian);
+}
+
+inline void unpack_bits(const int8_t* src, BFloat16* dest, size_t sz, bool big_endian) noexcept {
+    dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(unpack_bits_to_8x_bf16)(src, dest, sz, big_endian);
+}
+
+inline void unpack_bits(const int8_t* src, float* dest, size_t sz, bool big_endian) noexcept {
+    dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(unpack_bits_to_8x_f32)(src, dest, sz, big_endian);
+}
+
+inline void unpack_bits(const int8_t* src, double* dest, size_t sz, bool big_endian) noexcept {
+    dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(unpack_bits_to_8x_f64)(src, dest, sz, big_endian);
+}
+
 inline void and_bit(void* a, const void* b, size_t bytes) noexcept {
     dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(and_bit)(a, b, bytes);
 }

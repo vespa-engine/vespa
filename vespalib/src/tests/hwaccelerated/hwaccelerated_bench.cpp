@@ -41,29 +41,31 @@ template <typename T> constexpr std::string_view type_string() noexcept {
     }
 }
 
-template <typename T, typename Fn>
-void register_accel_binary_arg_benchmark(std::string_view name, std::unique_ptr<IAccelerated> accel, Fn&& fn) {
-    const auto  accel_target = accel->target_info();
-    std::string instance_name = std::format("{}/{}/{}/{}", name, type_string<T>(), accel_target.implementation_name(),
-                                            accel_target.target_name());
-    auto        bench_fn = [fn = std::forward<Fn>(fn), accel = std::move(accel)](benchmark::State& state) {
-        auto [a, b] = create_and_fill_lhs_rhs<T>(state.range());
+template <typename T, typename MakeInputFn, typename KernelFn>
+void register_accel_binary_arg_benchmark(const std::string& instance_name, std::unique_ptr<IAccelerated> accel,
+                                         MakeInputFn&& make_input_fn, KernelFn&& kernel_fn) {
+    auto bench_fn = [kernel_fn = std::forward<KernelFn>(kernel_fn),
+                     make_input_fn = std::forward<MakeInputFn>(make_input_fn),
+                     accel = std::move(accel)](benchmark::State& state) {
+        auto [a, b] = make_input_fn(state.range());
         ScopedFnTableOverride fn_scope(accel->fn_table());
         for (auto _ : state) {
             // A tiny bit dirty, but beats duplicating a bunch of code.
-            constexpr bool is_void_fn = std::is_same_v<void, decltype(fn(a.data(), b.data(), state.range()))>;
+            constexpr bool is_void_fn = std::is_same_v<void, decltype(kernel_fn(a.data(), b.data(), state.range()))>;
             if constexpr (is_void_fn) {
                 // Note that this is expected to mutate `a`, so different iterations do not
                 // necessarily use the same input data. Should not be not an issue in practice(tm).
-                fn(a.data(), b.data(), state.range());
+                kernel_fn(a.data(), b.data(), state.range());
                 // _Technically_ the compiler could stare into the void and realize the above
                 // code has no side effects since the output is not used for anything. Avoid this
                 // by having the void stare back (clobber output memory with an opaque access).
-                auto* clobber_data = a.data(); // Non-const ptr; pretend we may read/write
-                benchmark::DoNotOptimize(clobber_data);
+                auto* clobber_data_a = a.data(); // Non-const ptrs; pretend we may read/write
+                benchmark::DoNotOptimize(clobber_data_a);
+                auto* clobber_data_b = b.data();
+                benchmark::DoNotOptimize(clobber_data_b);
                 benchmark::ClobberMemory(); // Compiler write barrier
             } else {
-                auto result = fn(a.data(), b.data(), state.range());
+                auto result = kernel_fn(a.data(), b.data(), state.range());
                 benchmark::DoNotOptimize(result);
             }
         }
@@ -73,19 +75,59 @@ void register_accel_binary_arg_benchmark(std::string_view name, std::unique_ptr<
     bench->RangeMultiplier(2)->Range(8, 8 << 10); // TODO also with non-aligned sizes
 }
 
-template <typename T, typename Fn> void register_benchmarks(std::string_view name, FnTable::FnId fn_id, Fn fn) {
+template <typename BenchFn, typename RegisterFn> void
+register_benchmark_for_all_accels(FnTable::FnId fn_id, BenchFn bench_fn, RegisterFn register_fn) {
     auto hwy_targets = Highway::create_supported_targets();
     for (auto& t : hwy_targets) {
         if (t->fn_table().has_fn(fn_id)) {
-            register_accel_binary_arg_benchmark<T>(name, std::move(t), fn);
+            register_fn(std::move(t), bench_fn);
         }
     }
     auto auto_vec_targets = IAccelerated::create_supported_auto_vectorized_targets();
     for (auto& t : auto_vec_targets) {
         if (t->fn_table().has_fn(fn_id)) {
-            register_accel_binary_arg_benchmark<T>(name, std::move(t), fn);
+            register_fn(std::move(t), bench_fn);
         }
     }
+}
+
+template <typename T>
+[[nodiscard]] std::string make_bench_instance_name(std::string_view base_name, const TargetInfo& accel_target) {
+    return std::format("{}/{}/{}/{}", base_name, type_string<T>(), accel_target.implementation_name(),
+                       accel_target.target_name());
+}
+
+template <typename T, typename Fn>
+void register_benchmarks(std::string_view name, FnTable::FnId fn_id, Fn fn) {
+    register_benchmark_for_all_accels(fn_id, fn, [name](auto accel, auto bench_fn) {
+        std::string instance_name = make_bench_instance_name<T>(name, accel->target_info());
+        auto        input_fn = [](const size_t sz) { return create_and_fill_lhs_rhs<T>(sz); };
+        register_accel_binary_arg_benchmark<T>(instance_name, std::move(accel), input_fn, bench_fn);
+    });
+}
+
+template <typename T>
+void register_unpack_bits_benchmark(FnTable::FnId fn_id) {
+    auto input_fn = [](const size_t sz) {
+        Xoshiro256PlusPlusPrng prng(1234567);
+        std::vector<int8_t> src = create_and_fill<int8_t>(prng, sz); // lhs
+        std::vector<T>      dest(sz * 8);                            // rhs; 1 element per input i8 element bit
+        return std::make_pair(std::move(src), std::move(dest));
+    };
+    auto unpack_bits_little_fn = [](const int8_t* src, auto* dest, const size_t sz) noexcept {
+        return unpack_bits(src, dest, sz, false);
+    };
+    register_benchmark_for_all_accels(fn_id, unpack_bits_little_fn, [input_fn](auto accel, auto bench_fn) {
+        std::string instance_name = make_bench_instance_name<T>("Unpack Bits LE", accel->target_info());
+        register_accel_binary_arg_benchmark<T>(instance_name, std::move(accel), input_fn, bench_fn);
+    });
+    auto unpack_bits_big_fn = [](const int8_t* src, auto* dest, const size_t sz) noexcept {
+        return unpack_bits(src, dest, sz, true);
+    };
+    register_benchmark_for_all_accels(fn_id, unpack_bits_big_fn, [input_fn](auto accel, auto bench_fn) {
+        std::string instance_name = make_bench_instance_name<T>("Unpack Bits BE", accel->target_info());
+        register_accel_binary_arg_benchmark<T>(instance_name, std::move(accel), input_fn, bench_fn);
+    });
 }
 
 void register_all_benchmark_suites() {
@@ -134,6 +176,11 @@ void register_all_benchmark_suites() {
 
     auto and_not_fn = [](auto* lhs, const auto* rhs, size_t my_sz) { return and_not_bit(lhs, rhs, my_sz); };
     register_benchmarks<uint8_t>("Bitwise ANDNOT", FnTable::FnId::AND_NOT_BIT, and_not_fn);
+
+    register_unpack_bits_benchmark<int8_t>(FnTable::FnId::UNPACK_BITS_TO_8X_I8);
+    //register_unpack_bits_benchmark<BFloat16>(FnTable::FnId::UNPACK_BITS_TO_8X_BF16);
+    register_unpack_bits_benchmark<float>(FnTable::FnId::UNPACK_BITS_TO_8X_F32);
+    //register_unpack_bits_benchmark<double>(FnTable::FnId::UNPACK_BITS_TO_8X_F64);
 }
 
 int main(int argc, char* argv[]) {

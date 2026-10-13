@@ -40,6 +40,11 @@ using PopulationCountFn = size_t (*)(const uint64_t* buf, size_t sz) noexcept;
 
 using ConvertBFloat16ToFloatFn = void (*)(const uint16_t* src, float* dest, size_t sz) noexcept;
 
+using UnpackBitsTo8xI8Fn = void (*)(const int8_t* src_bits, int8_t* dest, size_t sz, bool big_endian) noexcept;
+using UnpackBitsTo8xBF16Fn = void (*)(const int8_t* src_bits, BFloat16* dest, size_t sz, bool big_endian) noexcept;
+using UnpackBitsTo8xF32Fn = void (*)(const int8_t* src_bits, float* dest, size_t sz, bool big_endian) noexcept;
+using UnpackBitsTo8xF64Fn = void (*)(const int8_t* src_bits, double* dest, size_t sz, bool big_endian) noexcept;
+
 using OrBitFn = void (*)(void* a, const void* b, size_t bytes) noexcept;
 using AndBitFn = void (*)(void* a, const void* b, size_t bytes) noexcept;
 using AndNotBitFn = void (*)(void* a, const void* b, size_t bytes) noexcept;
@@ -84,6 +89,11 @@ struct FnTable {
 
     ConvertBFloat16ToFloatFn convert_bfloat16_to_float = nullptr;
 
+    UnpackBitsTo8xI8Fn   unpack_bits_to_8x_i8 = nullptr;
+    UnpackBitsTo8xBF16Fn unpack_bits_to_8x_bf16 = nullptr;
+    UnpackBitsTo8xF32Fn  unpack_bits_to_8x_f32 = nullptr;
+    UnpackBitsTo8xF64Fn  unpack_bits_to_8x_f64 = nullptr;
+
     OrBitFn     or_bit = nullptr;
     AndBitFn    and_bit = nullptr;
     AndNotBitFn and_not_bit = nullptr;
@@ -108,6 +118,10 @@ struct FnTable {
         BINARY_HAMMING_DISTANCE,
         POPULATION_COUNT,
         CONVERT_BFLOAT16_TO_FLOAT,
+        UNPACK_BITS_TO_8X_I8,
+        UNPACK_BITS_TO_8X_BF16,
+        UNPACK_BITS_TO_8X_F32,
+        UNPACK_BITS_TO_8X_F64,
         OR_BIT,
         AND_BIT,
         AND_NOT_BIT,
@@ -188,6 +202,10 @@ struct FnTable {
     VISITOR(BinaryHammingDistanceFn, binary_hamming_distance, FnTable::FnId::BINARY_HAMMING_DISTANCE)               \
     VISITOR(PopulationCountFn, population_count, FnTable::FnId::POPULATION_COUNT)                                   \
     VISITOR(ConvertBFloat16ToFloatFn, convert_bfloat16_to_float, FnTable::FnId::CONVERT_BFLOAT16_TO_FLOAT)          \
+    VISITOR(UnpackBitsTo8xI8Fn, unpack_bits_to_8x_i8, FnTable::FnId::UNPACK_BITS_TO_8X_I8)                          \
+    VISITOR(UnpackBitsTo8xBF16Fn, unpack_bits_to_8x_bf16, FnTable::FnId::UNPACK_BITS_TO_8X_BF16)                    \
+    VISITOR(UnpackBitsTo8xF32Fn, unpack_bits_to_8x_f32, FnTable::FnId::UNPACK_BITS_TO_8X_F32)                       \
+    VISITOR(UnpackBitsTo8xF64Fn, unpack_bits_to_8x_f64, FnTable::FnId::UNPACK_BITS_TO_8X_F64)                       \
     VISITOR(OrBitFn, or_bit, FnTable::FnId::OR_BIT)                                                                 \
     VISITOR(AndBitFn, and_bit, FnTable::FnId::AND_BIT)                                                              \
     VISITOR(AndNotBitFn, and_not_bit, FnTable::FnId::AND_NOT_BIT)                                                   \

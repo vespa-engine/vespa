@@ -87,6 +87,51 @@ void bitOperation(Operation operation, void* aOrg, const void* bOrg, size_t byte
     }
 }
 
+template <typename T, bool BigEndian>
+__attribute__((noinline)) void do_unpack_bits(const int8_t* __restrict__ src_bits, T* __restrict__ dst,
+                                              const size_t sz) noexcept {
+    for (size_t i = 0; i < sz; ++i) {
+        if constexpr (BigEndian) {
+            for (int n = 7; n >= 0; --n) {
+                *dst++ = static_cast<T>(static_cast<bool>(src_bits[i] & (1 << n)));
+            }
+        } else {
+            for (int n = 0; n <= 7; ++n) {
+                *dst++ = static_cast<T>(static_cast<bool>(src_bits[i] & (1 << n)));
+            }
+        }
+    }
+}
+
+///////
+// Precomputed byte -> 8-element unpack pattern, generated at compile time.
+// One instantiation per (OCT, big) combination; each is 256 * 8 * sizeof(OCT) bytes
+// (e.g. 8KiB for float), small enough to stay resident in L1 across a whole scan.
+template <typename OCT, bool big> struct UnpackLut {
+    static constexpr std::array<std::array<OCT, 8>, 256> table = [] {
+        std::array<std::array<OCT, 8>, 256> t{};
+        for (int byte = 0; byte < 256; ++byte) {
+            for (int n = 0; n < 8; ++n) {
+                int bit_pos = big ? (7 - n) : n;
+                t[byte][n] = static_cast<OCT>(bool(byte & (1 << bit_pos)));
+            }
+        }
+        return t;
+    }();
+};
+
+template <typename T, bool BigEndian>
+__attribute__((noinline)) void do_unpack_bits_lut(const int8_t* __restrict__ src_bits, T* __restrict__ dst,
+                                                  const size_t sz) noexcept {
+    const auto& lut = UnpackLut<T, BigEndian>::table;
+    for (size_t i = 0; i < sz; ++i) {
+        const auto& row = lut[static_cast<uint8_t>(src_bits[i])];
+        dst = std::copy(row.begin(), row.end(), dst);
+    }
+}
+
+///////
+
 int64_t my_dot_product_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
     return helper::multiplyAdd(a, b, sz);
 }
@@ -136,6 +181,34 @@ size_t my_population_count(const uint64_t* buf, size_t sz) noexcept {
 }
 void my_convert_bfloat16_to_float(const uint16_t* src, float* dest, size_t sz) noexcept {
     helper::convert_bfloat16_to_float(src, dest, sz);
+}
+void my_unpack_bits_to_8x_i8(const int8_t* src_bits, int8_t* dest, size_t sz, bool big_endian) noexcept {
+    if (big_endian) {
+        do_unpack_bits<int8_t, true>(src_bits, dest, sz);
+    } else {
+        do_unpack_bits<int8_t, false>(src_bits, dest, sz);
+    }
+}
+void my_unpack_bits_to_8x_bf16(const int8_t* src_bits, BFloat16* dest, size_t sz, bool big_endian) noexcept {
+    if (big_endian) {
+        do_unpack_bits<BFloat16, true>(src_bits, dest, sz);
+    } else {
+        do_unpack_bits<BFloat16, false>(src_bits, dest, sz);
+    }
+}
+void my_unpack_bits_to_8x_f32(const int8_t* src_bits, float* dest, size_t sz, bool big_endian) noexcept {
+    if (big_endian) {
+        do_unpack_bits_lut<float, true>(src_bits, dest, sz);
+    } else {
+        do_unpack_bits_lut<float, false>(src_bits, dest, sz);
+    }
+}
+void my_unpack_bits_to_8x_f64(const int8_t* src_bits, double* dest, size_t sz, bool big_endian) noexcept {
+    if (big_endian) {
+        do_unpack_bits<double, true>(src_bits, dest, sz);
+    } else {
+        do_unpack_bits<double, false>(src_bits, dest, sz);
+    }
 }
 void my_or_bit(void* aOrg, const void* bOrg, size_t bytes) noexcept {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a | b; }, aOrg, bOrg, bytes);

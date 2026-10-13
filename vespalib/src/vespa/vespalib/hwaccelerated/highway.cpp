@@ -5,6 +5,9 @@
 #include "fn_table.h"
 #include "platform_generic.h"
 #include "target_info.h"
+#include "unroller.h"
+
+#include <vespa/check_require.h>
 
 #include <hwy/base.h>
 
@@ -24,6 +27,19 @@
 #include <hwy/contrib/dot/dot-inl.h>
 
 // clang-format on
+
+#if 1
+#include <hwy/print-inl.h>
+#define DEBUG_PRINT_LANES4(d, name, v) hn::Print(d, name, v, 0, 4)
+#define DEBUG_PRINT_LANES8(d, name, v) hn::Print(d, name, v, 0, 8)
+#define DEBUG_PRINT_LANES16(d, name, v) hn::Print(d, name, v, 0, 16)
+#define DEBUG_PRINT_LANES32(d, name, v) hn::Print(d, name, v, 0, 32)
+#else
+#define DEBUG_PRINT_LANES4(d, name, v)
+#define DEBUG_PRINT_LANES8(d, name, v)
+#define DEBUG_PRINT_LANES16(d, name, v)
+#define DEBUG_PRINT_LANES32(d, name, v)
+#endif
 
 HWY_BEFORE_NAMESPACE();
 namespace vespalib::hwaccelerated { // NOLINT: must nest namespaces
@@ -278,6 +294,189 @@ int64_t my_hwy_dot_int8(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT
     return compute_chunked_sum<max_n_per_chunk, int64_t>(mul_add_i8_to_i32, a, b, sz);
 }
 
+template <typename T>
+concept InvocationMeta = requires(T a) {
+    { a.is_partial() } -> std::same_as<bool>;
+    { a.remaining() } -> std::same_as<size_t>;
+    { a.unroll_index() } -> std::same_as<size_t>;
+};
+
+template <size_t UnrollIdx>
+struct BlockInvocation {
+    [[nodiscard]] constexpr bool is_partial() const noexcept { return false; }
+    [[nodiscard]] constexpr size_t remaining() const noexcept { return 0; }
+    [[nodiscard]] constexpr size_t unroll_index() const noexcept { return UnrollIdx; }
+};
+
+struct PartialInvocation {
+    size_t rem;
+    [[nodiscard]] constexpr PartialInvocation(size_t rem_) noexcept : rem(rem_) {}
+    [[nodiscard]] constexpr bool is_partial() const noexcept { return true; }
+    [[nodiscard]] constexpr size_t remaining() const noexcept { return rem; }
+    [[nodiscard]] constexpr size_t unroll_index() const noexcept { return 0; }
+};
+
+// Recursive unroller that will instantiate `UnrollFactor` static calls to `invoke()` on the
+// provided invoker type, with each call receiving a constexpr value of BlockInvocation<N> as
+// its very first argument. The remaining arguments are forwarded from the caller.
+// `N` is in `[0, UnrollFactor)` and is always instantiated in strictly increasing order.
+//
+// Recursion (rather than folding) is used to limit the inlining depth; we want to use all
+// possible dirty tricks to prevent the compiler from ever _not_ inlining what we do here.
+//
+// Not using the Unroller class since it's primarily meant for lambdas, and these are awkward
+// to use with Highway since they must be explicitly HWY_ATTR'd everywhere (without fail) to
+// avoid wrong target codegen. OK for the vector kernel itself, a hassle everywhere else.
+// Lambdas must also avoid capturing vectors in a closure, as that will cause stack spilling
+// and missed optimization opportunities (at least on GCC). I.e. a bit too many footguns.
+//
+// `UnrollFactor` must be at least 1.
+template <size_t UnrollFactor>
+struct UnrollingInvoker {
+    static_assert(UnrollFactor > 0);
+
+    template <size_t UnrollLbound, size_t UnrollUbound, typename Invoker, typename... Args>
+    HWY_API void do_invoke_unrolled(Args&&... args) noexcept {
+        if constexpr (UnrollLbound == UnrollUbound) { // Leaf recursion case
+            constexpr size_t unroll_idx = UnrollLbound;
+            Invoker::invoke(BlockInvocation<unroll_idx>{}, std::forward<Args>(args)...);
+        } else {
+            static_assert(UnrollLbound < UnrollUbound);
+            constexpr size_t half = (UnrollUbound - UnrollLbound) / 2;
+            do_invoke_unrolled<UnrollLbound, UnrollLbound + half, Invoker>(std::forward<Args>(args)...);
+            if constexpr (half > 0) {
+                do_invoke_unrolled<UnrollLbound + half, UnrollUbound, Invoker>(std::forward<Args>(args)...);
+            }
+        }
+    }
+
+    // Important: no argument in `args` shall be a move-only type, or behavior is undefined.
+    template <typename Invoker, typename... Args>
+    HWY_API void invoke(Args&&... args) noexcept {
+        do_invoke_unrolled<0, UnrollFactor, Invoker>(std::forward<Args>(args)...);
+    }
+};
+
+template <typename T, bool BigEndian>
+struct UnpackBitsInvoker;
+
+template <bool BigEndian>
+struct UnpackBitsInvoker<int8_t, BigEndian> {
+    template <InvocationMeta MetaT, typename DI8>
+    HWY_API void invoke(MetaT meta, DI8 di8, const uint8_t* src_u8, int8_t* dest, const size_t NB, const size_t my_i,
+                        size_t& my_out_idx) noexcept {
+        HWY_LANES_CONSTEXPR size_t NI8 = hn::Lanes(di8);
+        using VecI8 = hn::VFromD<decltype(di8)>;
+
+        VecI8 bits_i8 =
+            hn::IfThenElseZero(hn::LoadMaskBits(di8, src_u8 + my_i + (NB * meta.unroll_index())), hn::Set(di8, 1));
+        if constexpr (BigEndian) {
+            bits_i8 = hn::Reverse8(di8, bits_i8);
+        }
+        if constexpr (!meta.is_partial()) {
+            hn::Store(bits_i8, di8, dest + my_out_idx);
+            my_out_idx += NI8;
+        } else {
+            // DEBUG_PRINT_LANES16(di8, "bits_i8 rem", bits_i8);
+            //  meta.remaining() is in number of input _bytes_
+            const size_t rem_out_bytes = meta.remaining() * 8;
+            hn::StoreN(bits_i8, di8, dest + my_out_idx, rem_out_bytes);
+            my_out_idx += rem_out_bytes;
+        }
+    };
+};
+
+template <bool BigEndian>
+struct UnpackBitsInvoker<float, BigEndian> {
+    template <InvocationMeta MetaT, typename DI8>
+    HWY_API void invoke(MetaT meta, DI8 di8, const uint8_t* src_u8, float* dest, const size_t NB, const size_t my_i,
+                        size_t& my_out_idx) noexcept {
+        const hn::RepartitionToWide<decltype(di8)>  di16;
+        const hn::RepartitionToWide<decltype(di16)> di32;
+        const hn::RebindToFloat<decltype(di32)>     df32;
+
+        using VecI8 = hn::VFromD<decltype(di8)>;
+        using VecI16 = hn::VFromD<decltype(di16)>;
+        using VecF32 = hn::VFromD<decltype(df32)>;
+
+        HWY_LANES_CONSTEXPR size_t NF32 = hn::Lanes(df32);
+
+        // Magic number: 127 is the biased float32 exponent for 1.0 (with a mantissa of zero)
+        VecI8 bits_i8 =
+            hn::IfThenElseZero(hn::LoadMaskBits(di8, src_u8 + my_i + (NB * meta.unroll_index())), hn::Set(di8, 127));
+        if constexpr (BigEndian) {
+            bits_i8 = hn::Reverse8(di8, bits_i8);
+        }
+        VecI16 bits_i16_lo = hn::PromoteLowerTo(di16, bits_i8);
+        VecI16 bits_i16_hi = hn::PromoteUpperTo(di16, bits_i8);
+        // Shift biased exponents into float32 MSBs (leaving sign bit and mantissa zeroed)
+        VecF32 f32_lo_lo = hn::BitCast(df32, hn::ShiftLeft<23>(hn::PromoteLowerTo(di32, bits_i16_lo)));
+        VecF32 f32_lo_hi = hn::BitCast(df32, hn::ShiftLeft<23>(hn::PromoteUpperTo(di32, bits_i16_lo)));
+        VecF32 f32_hi_lo = hn::BitCast(df32, hn::ShiftLeft<23>(hn::PromoteLowerTo(di32, bits_i16_hi)));
+        VecF32 f32_hi_hi = hn::BitCast(df32, hn::ShiftLeft<23>(hn::PromoteUpperTo(di32, bits_i16_hi)));
+        if constexpr (!meta.is_partial()) {
+            hn::Store(f32_lo_lo, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+            hn::Store(f32_lo_hi, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+            hn::Store(f32_hi_lo, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+            hn::Store(f32_hi_hi, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+        } else {
+            size_t rem_out_f32s = meta.remaining() * 8;
+
+            size_t to_write = std::min(rem_out_f32s, NF32);
+            hn::StoreN(f32_lo_lo, df32, dest + my_out_idx, to_write);
+            rem_out_f32s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f32s, NF32);
+            hn::StoreN(f32_lo_hi, df32, dest + my_out_idx, to_write);
+            rem_out_f32s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f32s, NF32);
+            hn::StoreN(f32_hi_lo, df32, dest + my_out_idx, to_write);
+            rem_out_f32s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = rem_out_f32s;
+            hn::StoreN(f32_hi_hi, df32, dest + my_out_idx, to_write);
+            my_out_idx += to_write;
+        }
+    };
+};
+
+template <typename T, bool BigEndian, size_t UnrollBy>
+[[maybe_unused]]
+HWY_NOINLINE void my_hwy_unpack_bits(const int8_t* HWY_RESTRICT src, T* HWY_RESTRICT dest, size_t sz) noexcept {
+    const hn::ScalableTag<int8_t> di8;
+
+    const auto* src_u8 = reinterpret_cast<const uint8_t*>(src);
+
+    HWY_LANES_CONSTEXPR size_t N = hn::Lanes(di8);
+    HWY_LANES_CONSTEXPR size_t NB = N / 8;
+
+    size_t i = 0, out_idx = 0;
+    for (; i + NB * UnrollBy <= sz; i += NB * UnrollBy) {
+        UnrollingInvoker<UnrollBy>::template invoke<UnpackBitsInvoker<T, BigEndian>>(di8, src_u8, dest, NB, i,
+                                                                                     out_idx);
+    }
+    for (; i + NB <= sz; i += NB) {
+        UnpackBitsInvoker<T, BigEndian>::invoke(BlockInvocation<0>{}, di8, src_u8, dest, NB, i, out_idx);
+    }
+    const size_t rem = sz - i;
+    if (rem > 0) {
+        CHECK(rem <= NB);
+        // LoadMaskBits must have at least 8 bytes readable. The value of any unused padding bytes
+        // are treated as-if zero, and can be left uninitialized by us.
+        uint8_t tmp[std::max(hn::MaxLanes(di8) / 8, size_t{8})];
+        memcpy(tmp, src_u8 + i, rem);
+        UnpackBitsInvoker<T, BigEndian>::invoke(PartialInvocation{rem}, di8, tmp, dest, NB, 0, out_idx);
+    }
+}
+
 HWY_INLINE
 const char* my_hwy_target_name() noexcept {
     return hwy::TargetName(HWY_TARGET);
@@ -321,6 +520,20 @@ size_t my_binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) n
 size_t my_population_count(const uint64_t* buf, size_t sz) noexcept {
     return my_hwy_popcount(buf, sz);
 }
+void my_unpack_bits_i8(const int8_t* src_bits, int8_t* dest, size_t sz, bool big_endian) noexcept {
+    if (!big_endian) {
+        my_hwy_unpack_bits<int8_t, false, 2>(src_bits, dest, sz);
+    } else {
+        my_hwy_unpack_bits<int8_t, true, 2>(src_bits, dest, sz);
+    }
+}
+void my_unpack_bits_f32(const int8_t* src_bits, float* dest, size_t sz, bool big_endian) noexcept {
+    if (!big_endian) {
+        my_hwy_unpack_bits<float, false, 1>(src_bits, dest, sz);
+    } else {
+        my_hwy_unpack_bits<float, true, 1>(src_bits, dest, sz);
+    }
+}
 TargetInfo my_target_info() noexcept {
     return {"Highway", my_hwy_target_name(), vector_byte_size()};
 }
@@ -347,6 +560,8 @@ public:
         ft.squared_euclidean_length_f32 = my_squared_euclidean_length_f32;
         ft.binary_hamming_distance = my_binary_hamming_distance;
         ft.population_count = my_population_count;
+        ft.unpack_bits_to_8x_i8 = my_unpack_bits_i8;
+        ft.unpack_bits_to_8x_f32 = my_unpack_bits_f32;
 #if HWY_TARGET == HWY_AVX2 || HWY_TARGET == HWY_AVX3
         // AVX2 and AVX3 do not have dedicated vector popcount instructions, so the Highway "emulation"
         // ends up being slower in practice than the baseline one using 4x pipelined POPCNT.
