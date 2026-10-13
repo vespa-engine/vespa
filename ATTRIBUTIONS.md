@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ---
 
@@ -552,9 +552,9 @@ Last updated: 2026-10-12
 
 ---
 
-## golang.org/x/net v0.60.0 — Golang BSD + Patents
+## golang.org/x/net v0.61.0 — Golang BSD + Patents
 
-- Homepage: <https://pkg.go.dev/golang.org/x/net@v0.60.0>
+- Homepage: <https://pkg.go.dev/golang.org/x/net@v0.61.0>
 - Copyright 2009 The Go Authors
 
 ---
@@ -566,16 +566,16 @@ Last updated: 2026-10-12
 
 ---
 
-## golang.org/x/term v0.46.0 — Golang BSD + Patents
+## golang.org/x/term v0.47.0 — Golang BSD + Patents
 
-- Homepage: <https://pkg.go.dev/golang.org/x/term@v0.46.0>
+- Homepage: <https://pkg.go.dev/golang.org/x/term@v0.47.0>
 - Copyright 2009 The Go Authors
 
 ---
 
-## golang.org/x/text v0.42.0 — Golang BSD + Patents
+## golang.org/x/text v0.43.0 — Golang BSD + Patents
 
-- Homepage: <https://pkg.go.dev/golang.org/x/text@v0.42.0>
+- Homepage: <https://pkg.go.dev/golang.org/x/text@v0.43.0>
 - Copyright 2009 The Go Authors
 
 ---
