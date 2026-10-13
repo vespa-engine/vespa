@@ -10,6 +10,7 @@ import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
+import com.yahoo.language.huggingface.Encoding;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
@@ -42,6 +43,13 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private final HuggingFaceTokenizer tokenizer;
     private final OnnxEvaluator evaluator;
     private final TextPrepender prepender;
+    private final SequencePadder padder;
+
+    /**
+     * Token id used to pad inputs for batching. Padded positions have a zero attention mask,
+     * so the model does not attend to them and the id does not affect the output of the real tokens.
+     */
+    private static final long PAD_TOKEN_ID = 0;
 
     record ModelAnalysis(int numInputs,
                          String inputIdsName,
@@ -127,6 +135,22 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             builder.setTruncation(true).setMaxLength(maxLength);
         }
         this.tokenizer = builder.build();
+
+        if (analysis.useAttentionMask()) {
+            // Padding beyond the tokenizer's max length would give the model longer inputs than it ever gets unpadded
+            int maxTokens = Math.min(info.maxLength() > 0 ? info.maxLength() : Integer.MAX_VALUE, embedderConfig.transformerMaxTokens());
+            var padder = SequencePadder.of(evaluator, onnxConfig, maxTokens, modelPath);
+            if ( ! padder.isDisabled()) {
+                var sample = tokenizer.encode(SequencePadder.SAMPLE_TEXT);
+                padder = padder.verifiedWith(evaluator, candidate -> createInputs(sample, candidate), sample.ids().size(), modelPath);
+            }
+            this.padder = padder;
+        } else {
+            // Without an attention mask, the model would attend to the padding
+            if ( ! onnxConfig.batching().paddingBuckets().isEmpty())
+                log.warning("Not padding inputs of " + modelPath + " to padding-buckets: the model has no attention mask input");
+            this.padder = SequencePadder.disabled();
+        }
     }
 
     private static void validateName(Map<String, TensorType> types, String name, String type) {
@@ -178,22 +202,12 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         var start = System.nanoTime();
         var encoding = tokenizer.encode(text, context.getLanguage());
         runtime.sampleSequenceLength(encoding.ids().size(), context);
-        Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1").expand("d0");
-        Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1").expand("d0");
-        Map<String, Tensor> inputs;
-        if (analysis.useAttentionMask()) {
-             if (analysis.useTokenTypeIds()) {
-                 Tensor tokenTypeIds = createTensorRepresentation(encoding.typeIds(), "d1").expand("d0");
-                 inputs = Map.of(analysis.inputIdsName(), inputSequence,
-                                 analysis.attentionMaskName(), attentionMask,
-                                 analysis.tokenTypeIdsName(), tokenTypeIds);
-             } else {
-                 inputs = Map.of(analysis.inputIdsName(), inputSequence,
-                                 analysis.attentionMaskName, attentionMask);
-             }
-        } else {
-            inputs = Map.of(analysis.inputIdsName(), inputSequence);
-        }
+        Map<String, Tensor> inputs = createInputs(encoding, padder);
+        // The mask is also used for pooling, so it is needed even when the model does not take it.
+        // Nothing is padded then, see the constructor.
+        Tensor attentionMask = analysis.useAttentionMask()
+                ? inputs.get(analysis.attentionMaskName())
+                : createTensorRepresentation(encoding.attentionMask(), "d1").expand("d0");
         IndexedTensor tokenEmbeddings = (IndexedTensor) evaluator
                 .evaluate(inputs, OnnxEmbedderTimeout.remainingOrThrow(context))
                 .get(analysis.outputName());
@@ -205,6 +219,21 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         }
         runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return new HFEmbeddingResult(tokenEmbeddings, attentionMask, context.getEmbedderId());
+    }
+
+    /** Creates the model inputs for an encoded text, padded by the given padder. */
+    private Map<String, Tensor> createInputs(Encoding encoding, SequencePadder padder) {
+        Tensor inputSequence = createTensorRepresentation(padder.pad(encoding.ids(), PAD_TOKEN_ID), "d1").expand("d0");
+        if ( ! analysis.useAttentionMask())
+            return Map.of(analysis.inputIdsName(), inputSequence);
+        Tensor attentionMask = createTensorRepresentation(padder.pad(encoding.attentionMask(), 0L), "d1").expand("d0");
+        if ( ! analysis.useTokenTypeIds())
+            return Map.of(analysis.inputIdsName(), inputSequence,
+                          analysis.attentionMaskName(), attentionMask);
+        Tensor tokenTypeIds = createTensorRepresentation(padder.pad(encoding.typeIds(), 0L), "d1").expand("d0");
+        return Map.of(analysis.inputIdsName(), inputSequence,
+                      analysis.attentionMaskName(), attentionMask,
+                      analysis.tokenTypeIdsName(), tokenTypeIds);
     }
 
     private Tensor binaryQuantization(HuggingFaceEmbedder.HFEmbeddingResult embeddingResult, TensorType targetType) {

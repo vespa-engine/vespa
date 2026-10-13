@@ -9,6 +9,7 @@ import com.yahoo.tensor.TensorType;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,6 +26,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     private final ResourceReference modelReference;
     private final TritonOnnxClient tritonClient;
     private final boolean isExplicitControl;
+    private final BooleanSupplier shouldPadForBatching;
 
     private TritonOnnxClient.ModelMetadata modelMetadata;
 
@@ -32,12 +34,20 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
             String modelName,
             ResourceReference modelReference,
             TritonOnnxClient tritonClient,
-            boolean isExplicitControl) {
+            boolean isExplicitControl,
+            BooleanSupplier shouldPadForBatching) {
         this.modelName = modelName;
         this.modelReference = modelReference;
         this.tritonClient = tritonClient;
         this.isExplicitControl = isExplicitControl;
+        this.shouldPadForBatching = shouldPadForBatching;
         modelMetadata = tritonClient.getModelMetadata(modelName);
+    }
+
+    /** Whether inputs should be padded to buckets, so that Triton's dynamic batcher can combine more requests. */
+    @Override
+    public boolean shouldPadForBatching() {
+        return shouldPadForBatching.getAsBoolean();
     }
 
     @Override

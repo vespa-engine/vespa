@@ -5,6 +5,7 @@ import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import ai.vespa.modelintegration.evaluator.OnnxStreamParser;
 import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.google.protobuf.TextFormat;
 import com.yahoo.component.AbstractComponent;
@@ -104,11 +105,39 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var modelReference = referenceModel(modelName, modelPath, resolvedOptions);
 
         try {
-            return new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit);
+            return new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit,
+                                           () -> shouldPadForBatching(modelPath, resolvedOptions));
         } catch (RuntimeException e) {
             modelReference.close(); // Don't leak the model when creating the evaluator fails.
             throw e;
         }
+    }
+
+    // Padding inputs to a few fixed lengths lets Triton's dynamic batcher combine requests of different lengths.
+    // This only pays off on GPU, where a batch is cheaper per request; a CPU does the same work either way.
+    // Vespa can't see where Triton places a model, so a requested GPU, including the default (KIND_AUTO),
+    // is assumed to be used.
+    // Only called when padding buckets are configured, see SequencePadder.
+    static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options) {
+        // A supplied model config owns batching and device placement, so they are read from it instead of the options
+        var override = options.modelConfigOverride().map(TritonOnnxRuntime::parseModelConfigOverride);
+        boolean batching = override.map(config -> config.hasDynamicBatching() && config.getMaxBatchSize() > 1)
+                                   .orElse(options.batchingMaxSize() > 1);
+        boolean requestingGpu = override.map(TritonOnnxRuntime::mayUseGpu).orElse(options.requestingGpu());
+        if ( ! batching || ! requestingGpu) return false;
+        var path = Path.of(modelPath);
+        if ( ! Files.isRegularFile(path)) return true; // Not a local file, e.g. when Triton manages the models
+        try {
+            if ( ! OnnxStreamParser.usesDynamicQuantization(path)) return true;
+        } catch (IOException e) {
+            log.log(Level.WARNING, "Could not read the operators of model " + modelPath +
+                                   ", assuming it is not dynamically quantized", e);
+            return true;
+        }
+        // The quantization scale is computed from the whole input, so padding would change the results
+        log.info("Not padding inputs of " + modelPath + " to padding-buckets: the model is dynamically quantized, " +
+                 "so padding would change its results");
+        return false;
     }
 
     // Returns a reference to the model, first copying and loading it into Triton if needed.
@@ -388,7 +417,13 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                         .build());
     }
 
-    private String createModelConfigFromFile(Path configPath, String modelName) {
+    // Triton places a model without instance groups on a GPU when there is one, like KIND_AUTO
+    private static boolean mayUseGpu(ModelConfig config) {
+        return config.getInstanceGroupList().isEmpty()
+               || config.getInstanceGroupList().stream().anyMatch(group -> group.getKind() != Kind.KIND_CPU);
+    }
+
+    static ModelConfig parseModelConfigOverride(Path configPath) {
         String configStr;
 
         try {
@@ -397,13 +432,15 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             throw new IllegalArgumentException("Failed to read model config override file: " + configPath, e);
         }
 
-        ModelConfig config;
-
         try {
-            config = TextFormat.parse(configStr, ModelConfig.class);
+            return TextFormat.parse(configStr, ModelConfig.class);
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed to parse model config override:\n" + configStr, e);
         }
+    }
+
+    private String createModelConfigFromFile(Path configPath, String modelName) {
+        ModelConfig config = parseModelConfigOverride(configPath);
 
         // Replace model name with the one that includes model content and options hash to avoid conflicts.
         var configBuilder = config.toBuilder().setName(modelName);

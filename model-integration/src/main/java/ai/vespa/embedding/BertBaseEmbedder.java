@@ -48,6 +48,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
     private final Embedder.Runtime runtime;
     private final WordPieceEmbedder tokenizer;
     private final OnnxEvaluator evaluator;
+    private final SequencePadder padder;
 
     @Inject
     public BertBaseEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, BertBaseEmbedderConfig embedderConfig, OnnxEvaluatorConfig onnxConfig) {
@@ -68,6 +69,14 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
         
         validateModel();
+
+        // Pads only if padding-buckets apply to this evaluator, and a sample is verified to embed the same padded and unpadded
+        var padder = SequencePadder.of(evaluator, onnxConfig, maxTokens, modelPath);
+        if ( ! padder.isDisabled()) {
+            var sample = embedWithSeparatorTokens(SequencePadder.SAMPLE_TEXT, new Context("padding-check"), maxTokens);
+            padder = padder.verifiedWith(evaluator, candidate -> createInputs(sample, candidate), sample.size(), modelPath);
+        }
+        this.padder = padder;
     }
 
     private void validateModel() {
@@ -124,24 +133,29 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
     }
 
     Tensor embedTokens(List<Integer> tokens, TensorType type, Duration timeout) {
-        Tensor inputSequence = createTensorRepresentation(tokens, "d1");
-        Tensor attentionMask = createAttentionMask(inputSequence).expand("d0");
-        Tensor tokenTypeIds = createTokenTypeIds(inputSequence);
-        
-        Map<String, Tensor> inputs;
-        if (!"".equals(tokenTypeIdsName)) {
-            inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
-                                            attentionMaskName, attentionMask,
-                                            tokenTypeIdsName, tokenTypeIds.expand("d0"));
-        } else {
-            inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
-                                 attentionMaskName, attentionMask);
-        }
+        Map<String, Tensor> inputs = createInputs(tokens, padder);
         Map<String, Tensor> outputs = evaluator.evaluate(inputs, timeout);
 
         Tensor tokenEmbeddings = outputs.get(outputName);
 
-        return poolingStrategy.toSentenceEmbedding(type, tokenEmbeddings, attentionMask);
+        return poolingStrategy.toSentenceEmbedding(type, tokenEmbeddings, inputs.get(attentionMaskName));
+    }
+
+    /** Creates the model inputs for the given tokens, padded by the given padder. */
+    private Map<String, Tensor> createInputs(List<Integer> tokens, SequencePadder padder) {
+        // Padding with token id 0 gives a zero attention mask, see createAttentionMask
+        Tensor inputSequence = createTensorRepresentation(padder.pad(tokens, 0), "d1");
+        Tensor attentionMask = createAttentionMask(inputSequence).expand("d0");
+        Tensor tokenTypeIds = createTokenTypeIds(inputSequence);
+        
+        if (!"".equals(tokenTypeIdsName)) {
+            return Map.of(inputIdsName, inputSequence.expand("d0"),
+                          attentionMaskName, attentionMask,
+                          tokenTypeIdsName, tokenTypeIds.expand("d0"));
+        } else {
+            return Map.of(inputIdsName, inputSequence.expand("d0"),
+                          attentionMaskName, attentionMask);
+        }
     }
 
     private List<Integer> embedWithSeparatorTokens(String text, Context context, int maxLength) {

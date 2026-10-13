@@ -3,6 +3,7 @@ package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.google.protobuf.TextFormat;
 import inference.ModelConfigOuterClass.ModelConfig;
 import inference.ModelConfigOuterClass.ModelInstanceGroup.Kind;
@@ -18,6 +19,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
+import static ai.vespa.triton.TritonOnnxRuntime.shouldPadForBatching;
 import static ai.vespa.triton.TritonOnnxRuntime.intraOpThreadsForSeparateSessions;
 import static ai.vespa.triton.TritonOnnxRuntime.resolveInstanceCount;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO;
@@ -25,8 +27,10 @@ import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -45,6 +49,50 @@ class TritonOnnxRuntimeDefaultsTest {
 
     private static OnnxEvaluatorOptions.Builder options(int cpuCores) {
         return new OnnxEvaluatorOptions.Builder(cpuCores);
+    }
+
+    @Test
+    void inputs_are_padded_only_when_batching_on_gpu() {
+        String float32 = "src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx";
+        assertTrue(shouldPadForBatching(float32, options(16).setBatchingMaxSize(8).setGpuDevice(0).build()));
+        assertTrue(shouldPadForBatching(float32, options(16).setBatchingMaxSize(8).setGpuDevice(0, true).build()));
+        assertFalse(shouldPadForBatching(float32, options(16).setBatchingMaxSize(8).build()), "Should not pad on CPU");
+        assertFalse(shouldPadForBatching(float32, options(16).setGpuDevice(0).build()), "Should not pad without batching");
+        assertTrue(shouldPadForBatching("not-a-local-file", options(16).setBatchingMaxSize(8).setGpuDevice(0).build()));
+    }
+
+    @Test
+    void padding_follows_the_model_config_override_when_there_is_one(@TempDir Path directory) throws IOException {
+        String float32 = "src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx";
+        var batchingOnGpu = "max_batch_size: 8 dynamic_batching { } instance_group { kind: KIND_GPU }";
+        var batchingOnCpu = "max_batch_size: 8 dynamic_batching { } instance_group { kind: KIND_CPU }";
+        var batchingAnywhere = "max_batch_size: 8 dynamic_batching { }";
+        var noBatchingOnGpu = "max_batch_size: 8 instance_group { kind: KIND_GPU }";
+        var withoutBatchingOrGpu = options(16);
+        var withBatchingOnGpu = options(16).setBatchingMaxSize(8).setGpuDevice(0);
+        assertTrue(shouldPadForBatching(float32, withoutBatchingOrGpu.setModelConfigOverride(Optional.of(write(directory, batchingOnGpu))).build()));
+        assertTrue(shouldPadForBatching(float32, withoutBatchingOrGpu.setModelConfigOverride(Optional.of(write(directory, batchingAnywhere))).build()));
+        assertFalse(shouldPadForBatching(float32, withBatchingOnGpu.setModelConfigOverride(Optional.of(write(directory, batchingOnCpu))).build()));
+        assertFalse(shouldPadForBatching(float32, withBatchingOnGpu.setModelConfigOverride(Optional.of(write(directory, noBatchingOnGpu))).build()));
+    }
+
+    @Test
+    void padding_applies_by_default_since_triton_may_place_the_model_on_a_gpu() {
+        String float32 = "src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx";
+        var config = new OnnxEvaluatorConfig.Builder();
+        config.batching.maxSize(8);
+        assertTrue(shouldPadForBatching(float32, OnnxEvaluatorOptions.of(config.build(), 16)), "Should pad when no GPU device set, since Triton may place the model on a GPU.");
+        assertFalse(shouldPadForBatching(float32, OnnxEvaluatorOptions.of(config.gpuDevice(-1).build(), 16)), "Should not pad on CPU (device -1).");
+    }
+
+    private static Path write(Path directory, String modelConfig) throws IOException {
+        return Files.writeString(directory.resolve("override.pbtxt"), modelConfig);
+    }
+
+    @Test
+    void dynamically_quantized_models_are_not_padded() {
+        String quantized = "src/test/models/onnx/transformer/embedding_model.onnx";
+        assertFalse(shouldPadForBatching(quantized, options(16).setBatchingMaxSize(8).setGpuDevice(0).build()));
     }
 
     @Test

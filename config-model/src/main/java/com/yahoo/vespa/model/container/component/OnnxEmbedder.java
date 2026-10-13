@@ -8,7 +8,9 @@ import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 
 import static com.yahoo.text.XML.getChild;
 import static com.yahoo.text.XML.getChildValue;
@@ -23,6 +25,7 @@ import static com.yahoo.text.XML.getChildValue;
 abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfig.Producer {
     final protected OnnxModelOptions onnxModelOptions;
     private final boolean forceDisableOptimization;
+    private final List<Integer> paddingBuckets;
 
     @SuppressWarnings("removal") // Retain deprecated batching max delay in config models for compatibility.
     protected OnnxEmbedder(String className, String bundle, Element xml, DeployState state) {
@@ -60,6 +63,8 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
             opts = opts.withBatchingMaxSize(batchingConfig.maxSize());
             opts = opts.withBatchingMaxDelay(batchingConfig.maxDelay());
         }
+        // Only embedders pad inputs, so the buckets are not part of the ONNX model options
+        this.paddingBuckets = EmbedderBatchingConfig.parsePaddingBuckets(xml);
 
         var concurrencyElement = getChild(xml, "concurrency");
         if (concurrencyElement != null) {
@@ -79,8 +84,28 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
                 .map(value -> state.getFileRegistry().addFile(value))
                 .map(opts::withModelConfigOverride)
                 .orElse(opts);
-        
+
         onnxModelOptions = opts;
+
+        reasonPaddingHasNoEffect(paddingBuckets, batchingConfig, opts).ifPresent(reason ->
+                state.getDeployLogger().logApplicationPackage(Level.WARNING, "For embedder '" + getComponentId() +
+                        "': padding-buckets has no effect since " + reason + ". Padding requires a batching max-size " +
+                        "above 1 on a GPU, and is only used by the Triton runtime"));
+    }
+
+    /**
+     * Returns why configured padding buckets will not be used, if the runtime will not pad.
+     * Without onnx-gpu-device, Triton may place the model on a GPU, so the runtime pads.
+     * With a model-config-override, the runtime decides from the override's batching and placement.
+     */
+    static Optional<String> reasonPaddingHasNoEffect(List<Integer> paddingBuckets, EmbedderBatchingConfig batching,
+                                                     OnnxModelOptions options) {
+        if (paddingBuckets.isEmpty() || options.modelConfigOverride().isPresent()) return Optional.empty();
+        if (batching == null || batching.maxSize() <= 1)
+            return Optional.of("the batching max-size is not above 1");
+        if (options.gpuDevice().map(device -> device.deviceNumber() < 0).orElse(false))
+            return Optional.of("onnx-gpu-device is -1, which means CPU");
+        return Optional.empty();
     }
 
     /**
@@ -111,6 +136,7 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
         onnxModelOptions.gpuDevice().ifPresent(value -> builder.gpuDevice(value.deviceNumber()));
         onnxModelOptions.batchingMaxSize().ifPresent(builder.batching::maxSize);
         onnxModelOptions.batchingMaxDelay().ifPresent(delay -> builder.batching.maxDelayMillis(delay.toMillis()));
+        builder.batching.paddingBuckets(paddingBuckets);
         onnxModelOptions
                 .concurrencyFactorType()
                 .ifPresent(value ->

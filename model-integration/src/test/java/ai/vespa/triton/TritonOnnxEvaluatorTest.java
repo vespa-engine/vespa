@@ -41,7 +41,7 @@ class TritonOnnxEvaluatorTest {
         try (var tritonClient = createTritonClient()) {
             tritonClient.loadModel(MODEL_NAME);
             var modelReference = mock(ResourceReference.class);
-            var evaluator = new TritonOnnxEvaluator(MODEL_NAME, modelReference, tritonClient, false);
+            var evaluator = new TritonOnnxEvaluator(MODEL_NAME, modelReference, tritonClient, false, () -> false);
 
             var inputIds = Tensor.from(
                     "tensor<float>(d0[1],d1[5]):{{d0:0,d1:0}:1.0, {d0:0,d1:1}:2.0, {d0:0,d1:2}:3.0, {d0:0,d1:3}:4.0,"
@@ -81,7 +81,7 @@ class TritonOnnxEvaluatorTest {
         try (var tritonClient = createTritonClient()) {
             tritonClient.loadModel(MODEL_NAME);
             var modelReference = mock(ResourceReference.class);
-            var evaluator = new TritonOnnxEvaluator(MODEL_NAME, modelReference, tritonClient, false);
+            var evaluator = new TritonOnnxEvaluator(MODEL_NAME, modelReference, tritonClient, false, () -> false);
 
             var inputs = Map.of(
                     "input_ids",      Tensor.from("tensor<float>(d0[1],d1[5]):[1.0, 2.0, 3.0, 4.0, 5.0]"),

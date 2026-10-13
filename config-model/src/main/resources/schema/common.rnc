@@ -189,7 +189,7 @@ OnnxModelExecutionParams =
     element onnx-intraop-threads { xsd:integer }? &
     element onnx-gpu-device { xsd:integer }? &
     element onnx-optimize-model { xsd:boolean }? &
-    EmbedderBatchingParams &
+    OnnxBatchingParams &
     element concurrency {
         attribute type { "absolute" | "relative" }? &
         xsd:double { minExclusive = "0.0" }
@@ -201,6 +201,13 @@ EmbedderBatchingParams =
     element batching {
         attribute max-size { xsd:integer } &
         attribute max-delay { xsd:string }
+    }?
+
+OnnxBatchingParams =
+    element batching {
+        attribute max-size { xsd:integer } &
+        attribute max-delay { xsd:string } &
+        attribute padding-buckets { xsd:string }?
     }?
 
 EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" | "last" | "none" }?

@@ -5,6 +5,8 @@ import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 
@@ -37,5 +39,33 @@ record EmbedderBatchingConfig(int maxSize, Duration maxDelay) {
                 .map(v -> Duration.ofMillis(new com.yahoo.vespa.model.utils.Duration(v).getMilliSeconds()))
                 .orElseThrow(() -> new IllegalArgumentException("Missing required attribute 'max-delay' on <batching>"));
         return new EmbedderBatchingConfig(maxSize, maxDelay);
+    }
+
+    /**
+     * Returns the padding-buckets of the batching element of an ONNX embedder: a whitespace or comma separated list
+     * of positive sequence lengths to pad inputs to, in any order. Empty if there are none.
+     */
+    static List<Integer> parsePaddingBuckets(Element parent) {
+        var batchingElement = XML.getChild(parent, "batching");
+        if (batchingElement == null) return List.of();
+        return XML.attribute("padding-buckets", batchingElement)
+                .map(EmbedderBatchingConfig::parsePaddingBuckets)
+                .orElse(List.of());
+    }
+
+    static List<Integer> parsePaddingBuckets(String value) {
+        List<Integer> buckets;
+        try {
+            buckets = Arrays.stream(value.trim().split("[\\s,]+"))
+                    .filter(s -> !s.isEmpty())
+                    .map(Integer::parseInt)
+                    .toList();
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Batching padding-buckets should be a list of positive integers, provided: '" +
+                                               value + "'", e);
+        }
+        if (buckets.stream().anyMatch(bucket -> bucket < 1))
+            throw new IllegalArgumentException("Batching padding-buckets should be positive, provided: '" + value + "'");
+        return buckets; // In the configured order: SequencePadder sorts them and removes duplicates
     }
 }

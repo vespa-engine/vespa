@@ -66,6 +66,8 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
 
     private final long documentSequenceToken;
     private final Set<Long> skipTokens;
+    /** Pads documents for batching. Queries always have the same length, since they are padded to max query tokens. */
+    private final SequencePadder documentPadder;
 
     /**
      * @param inputIds          full input sequence including any [MASK] expansion padding for queries
@@ -119,6 +121,14 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
         
         validateModel();
+
+        // Pads only if padding-buckets apply to this evaluator, and a sample is verified to embed the same padded and unpadded
+        var padder = SequencePadder.of(evaluator, onnxConfig, maxDocumentTokens, modelPath); // Documents are truncated to this
+        if ( ! padder.isDisabled()) {
+            var sample = buildTransformerInput(tokenizer.encode(SequencePadder.SAMPLE_TEXT).ids(), maxDocumentTokens, false);
+            padder = padder.verifiedWith(evaluator, candidate -> createInputs(sample, false, candidate), sample.inputIds().size(), modelPath);
+        }
+        this.documentPadder = padder;
     }
     
     private void validateModel() {
@@ -222,21 +232,26 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         var encoding = tokenizer.encode(text, context.getLanguage());
         runtime.sampleSequenceLength(encoding.ids().size(), context);
         TransformerInput input = buildTransformerInput(encoding.ids(), isQuery ? maxQueryTokens : maxDocumentTokens, isQuery);
-        Tensor inputIdsTensor = createTensorRepresentation(input.inputIds, "d1");
-        Tensor attentionMaskTensor = createTensorRepresentation(input.attentionMask, "d1");
-        var inputs = Map.of(inputIdsName,
-                            inputIdsTensor.expand("d0"),
-                            attentionMaskName, attentionMaskTensor.expand("d0"));
+        var inputs = createInputs(input, isQuery, documentPadder);
         Map<String, Tensor> outputs = evaluator.evaluate(inputs, OnnxEmbedderTimeout.remainingOrThrow(context));
         runtime.sampleEmbeddingLatency((System.nanoTime() - start) / 1_000_000d, context);
         // Number of token-rows to emit downstream. For queries with
         // attendToExpansionTokens=false, drop the [MASK] expansion positions so
         // they do not contribute to MaxSim — necessary for models whose
         // expansion-token outputs are not trained (e.g. LateOn).
-        int tokensToEmit = (isQuery && !attendToExpansionTokens)
-                ? input.realInputLength()
-                : input.inputIds().size();
+        // Documents never emit positions padded for batching, so use the real length rather than the input size.
+        int tokensToEmit = (isQuery && attendToExpansionTokens)
+                ? input.inputIds().size()
+                : input.realInputLength();
         return new EmbeddingResult(tokensToEmit, outputs);
+    }
+
+    /** Creates the model inputs, padding documents, but not queries, with the given padder. */
+    private Map<String, Tensor> createInputs(TransformerInput input, boolean isQuery, SequencePadder padder) {
+        var inputIds = isQuery ? input.inputIds() : padder.pad(input.inputIds(), padSequenceToken);
+        var attentionMask = isQuery ? input.attentionMask() : padder.pad(input.attentionMask(), 0L);
+        return Map.of(inputIdsName, createTensorRepresentation(inputIds, "d1").expand("d0"),
+                      attentionMaskName, createTensorRepresentation(attentionMask, "d1").expand("d0"));
     }
 
     public static Tensor toFloatTensor(IndexedTensor result, TensorType type, int nTokens) {
