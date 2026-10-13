@@ -20,7 +20,15 @@ class TestMaintainer extends Maintainer {
     }
 
     TestMaintainer(String name, JobControl jobControl, JobMetrics jobMetrics) {
-        super(name, Duration.ofDays(1), Clock.systemUTC(), jobControl, jobMetrics, List.of(), false);
+        this(name, jobControl, jobMetrics, false);
+    }
+
+    TestMaintainer(String name, JobControl jobControl, JobMetrics jobMetrics, boolean ignoreCollision) {
+        this(name, jobControl, jobMetrics, ignoreCollision, true);
+    }
+
+    TestMaintainer(String name, JobControl jobControl, JobMetrics jobMetrics, boolean ignoreCollision, boolean acquireLock) {
+        super(name, Duration.ofDays(1), Clock.systemUTC(), jobControl, jobMetrics, List.of(), ignoreCollision, 1.0, acquireLock);
     }
 
     int totalRuns() {
