@@ -162,6 +162,7 @@ TEST_F(OpenTelemetryTest, hello_world_to_grpc) {
 } // namespace vespa_opentelemetry
 
 int main(int argc, char* argv[]) {
+    grpc_init();
     ::testing::InitGoogleTest(&argc, argv);
     auto result = RUN_ALL_TESTS();
     grpc_shutdown_blocking();
