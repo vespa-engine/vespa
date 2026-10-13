@@ -201,7 +201,7 @@ public class ConfiguratorTest {
                "initLimit=20\n" +
                "syncLimit=15\n" +
                "maxClientCnxns=0\n" +
-               "snapCount=50000\n" +
+               "snapCount=100000\n" +
                "dataDir=" + getDefaults().underVespaHome("var/zookeeper") + "\n" +
                "autopurge.purgeInterval=1\n" +
                "autopurge.snapRetainCount=15\n" +
