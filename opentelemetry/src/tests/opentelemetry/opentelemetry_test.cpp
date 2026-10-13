@@ -6,6 +6,8 @@
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/process/process.h>
 
+#include <google/protobuf/stubs/common.h>
+#include <grpc/grpc.h>
 #include <opentelemetry/trace/provider.h>
 
 #include <filesystem>
@@ -159,4 +161,10 @@ TEST_F(OpenTelemetryTest, hello_world_to_grpc) {
 
 } // namespace vespa_opentelemetry
 
-GTEST_MAIN_RUN_ALL_TESTS()
+int main(int argc, char* argv[]) {
+    ::testing::InitGoogleTest(&argc, argv);
+    auto result = RUN_ALL_TESTS();
+    grpc_shutdown_blocking();
+    google::protobuf::ShutdownProtobufLibrary();
+    return result;
+}
