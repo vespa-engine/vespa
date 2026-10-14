@@ -247,6 +247,7 @@ public class SchemaParserTest {
             "src/test/sdfiles/single/defaultdefault.sd",
             "src/test/sdfiles/single/elementwise.sd",
             "src/test/sdfiles/single/embed.sd",
+            "src/test/sdfiles/single/explained.sd",
             "src/test/sdfiles/single/foreach.sd",
             "src/test/sdfiles/single/linguistics.sd",
             "src/test/sdfiles/single/mapcompletion.sd",

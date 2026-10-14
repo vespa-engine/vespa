@@ -333,6 +333,7 @@ TOKEN :
 | < SORTFEATURES_ML: "sort-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
 | < EXPRESSION_ML: "expression" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
+| < EXPLANATION: "explanation" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" >
@@ -439,6 +440,7 @@ ParsedSchema rootSchema() :
 void rootSchemaItem(ParsedSchema schema) : { }
 {
     ( document(schema)
+      | explanation(schema)
       | documentId(schema)
       | rawAsBase64(schema)
       | searchStemming(schema)
@@ -881,6 +883,7 @@ void fieldBody(ParsedField field) : { }
       attribute(field) |
       bolding(field) |
       dictionary(field) |
+      explanation(field) |
       fieldSorting(field) |
       fieldStemming(field) |
       id(field) |
@@ -909,6 +912,7 @@ void fieldBody(ParsedField field) : { }
 void structFieldBody(ParsedField field) : { }
 {
     ( summaryInField(field) |
+      explanation(field) |
       indexing(field) |
       attribute(field) |
       matchSettings(field.matchSettings()) |
@@ -1983,7 +1987,8 @@ void rankProfile(ParsedSchema schema, ParsedRankProfile outer) :
  */
 void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
 {
-    ( fieldRankType(profile)
+    ( explanation(profile)
+      | fieldRankType(profile)
       | fieldWeight(profile)
       | fieldRankFilter(profile)
       | firstPhase(profile)
@@ -3072,6 +3077,20 @@ String expression() :
       <EXPRESSION_ML> { exp = token.image.substring(token.image.indexOf("{") + 1,
                                                     token.image.lastIndexOf("}")); } )
     { return exp.trim(); }
+}
+
+/**
+ * Consumes an explanation block: Free text describing the content and usage of the enclosing element.
+ *
+ * @param block the block to add the explanation to
+ */
+void explanation(ParsedBlock block) : { }
+{
+    <EXPLANATION>
+    {
+        block.setExplanation(Utils.explanationText(token.image.substring(token.image.indexOf("{") + 1,
+                                                                         token.image.lastIndexOf("}"))));
+    }
 }
 
 String identifierWithDash() :

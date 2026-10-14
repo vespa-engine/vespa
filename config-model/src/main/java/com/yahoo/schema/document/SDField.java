@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 
 /**
@@ -80,6 +81,8 @@ public class SDField extends Field implements ImmutableSDField {
      * so 100 is default to provide the identity transform. 
      */
     private int weight = 100;
+
+    private String explanation = null;
 
     /**
      * Indicates what kind of matching should be done on this field
@@ -549,6 +552,12 @@ public class SDField extends Field implements ImmutableSDField {
     /** Returns the weight of this field, or 0 if nothing is set */
     @Override
     public int getWeight() { return weight; }
+
+    /** Sets a free text explanation of the content and usage of this field, or null to remove it. */
+    public void setExplanation(String explanation) { this.explanation = explanation; }
+
+    /** Returns the free text explanation of the content and usage of this field, if any. Explanations are not inherited. */
+    public Optional<String> getExplanation() { return Optional.ofNullable(explanation); }
 
     /** Returns what kind of matching type should be applied. */
     @Override
