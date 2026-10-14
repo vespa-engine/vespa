@@ -1,16 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import ai.vespa.telemetry.TelemetryConfig;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.OpenTelemetryConfiguration;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneInfo;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchNodesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.IndexingCluster;
@@ -32,7 +38,8 @@ import java.util.function.Predicate;
  */
 public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> implements
         ProtonConfig.Producer,
-        Redundancy.Provider
+        Redundancy.Provider,
+        TelemetryConfig.Producer
 {
 
     private static final int DEFAULT_DOC_STORE_COMPRESSION_LEVEL = 3;
@@ -61,6 +68,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final boolean forwardIssuesToQrs;
     private final int searchNodeInitializerThreads;
     private final double searchNodeReservedMemoryFactor;
+    private final OpenTelemetryConfiguration opentelemetrySdk;
+    private final Map<String, String> telemetryResourceAttributes;
 
     public ContentSearchCluster(TreeConfigProducer<?> parent,
                                 String clusterName,
@@ -69,7 +78,9 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
                                 Set<NewDocumentType> globallyDistributedDocuments,
                                 boolean flushOnShutdown,
                                 Boolean syncTransactionLog,
-                                int searchNodeInitializeThreads) {
+                                int searchNodeInitializeThreads,
+                                ApplicationId applicationId,
+                                ZoneInfo zone) {
         super(parent, "search");
         this.indexingCluster = new IndexingCluster();
         this.clusterName = clusterName;
@@ -83,6 +94,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
         this.searchNodeInitializerThreads = searchNodeInitializeThreads;
         this.searchNodeReservedMemoryFactor = featureFlags.searchNodeReservedMemoryFactor();
+        this.opentelemetrySdk = featureFlags.opentelemetrySdk();
+        this.telemetryResourceAttributes = telemetryResourceAttributes(applicationId, zone, clusterName);
     }
 
     public void setVisibilityDelay(double delay) {
@@ -303,6 +316,35 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             searchCluster.getConfig(builder);
         }
     }
+
+    @Override
+    public void getConfig(TelemetryConfig.Builder builder) {
+        builder.enabled(opentelemetrySdk.enabled())
+            .samplingRatio(opentelemetrySdk.samplingRatio())
+            .endpointHostnameFile(Defaults.OPENTELEMETRY_HOST_HOSTNAME_FILE);
+        builder.resourceAttribute.putAll(telemetryResourceAttributes);
+    }
+
+    /**
+     * Resource attributes describing this search service, filled from the deployment identity available
+     * in the model. Used by the OpenTelemetry provider to build the OTel {@code Resource}.
+     */
+    private static Map<String, String> telemetryResourceAttributes(ApplicationId applicationId, ZoneInfo zone, String clusterId) {
+        String serviceName = applicationId.application().value() + "." +
+            applicationId.instance().value() + "." + clusterId;
+
+        Map<String, String> attributes = new LinkedHashMap<>();
+        attributes.put("service.name", serviceName);
+        attributes.put("application", applicationId.application().value());
+        attributes.put("tenant", applicationId.tenant().value());
+        attributes.put("zone", zone.systemLocalValue());
+        attributes.put("environment", zone.environment().value());
+        attributes.put("cloud", zone.cloud().toString());
+        attributes.put("cluster.type", "search");
+        attributes.put("cluster.id", clusterId);
+        return attributes;
+    }
+
     public IndexedSearchCluster getSearchCluster() { return searchCluster; }
     public boolean hasSearchCluster() { return searchCluster != null; }
     public IndexingCluster getIndexingDocproc() { return indexingCluster; }
