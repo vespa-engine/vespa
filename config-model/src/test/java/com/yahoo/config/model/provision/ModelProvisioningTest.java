@@ -39,6 +39,7 @@ import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
@@ -2739,6 +2740,43 @@ public class ModelProvisioningTest {
         var clusterSpec = model.provisioned().clusters().get(ClusterSpec.Id.from("container1"));
         assertEquals(List.of(sidecar), clusterSpec.sidecars());
         assertEquals(ApplicationId.defaultId(), applicationSeenByProvider.get());
+    }
+
+    @Test
+    public void triton_runtime_is_used_self_hosted_with_the_flag_and_an_onnx_model() {
+        var services = """
+                <?xml version='1.0' encoding='utf-8' ?>
+                <services>
+                  <container version='1.0' id='container1'>
+                    <nodes count='1'/>
+                    <component id="modernbert" type="hugging-face-embedder">
+                        <transformer-model url="https://example.com/model.onnx"/>
+                        <tokenizer-model url="https://example.com/tokenizer.json"/>
+                    </component>
+                  </container>
+                </services>
+                """;
+        var mockModelCost = new OnnxModelCost.DisabledOnnxModelCost() {
+            @Override
+            public Map<String, ModelInfo> models() {
+                return Map.of("modernbert", new ModelInfo("modernbert", 1, 1, OnnxModelOptions.empty()));
+            }
+        };
+        for (boolean useTriton : List.of(true, false)) {
+            var tester = new VespaModelTester();
+            tester.addHosts(1);
+            tester.setModelProperties(new TestProperties().setUseTriton(useTriton));
+            tester.setHosted(false); // No sidecar provider: a Triton server outside Vespa, configured through the triton config
+            var model = tester.createModel(Zone.defaultZone(), services, true,
+                                           deployStateWithClusterEndpoints("container1").onnxModelCost(mockModelCost));
+            var runtimes = model.getContainerClusters().get("container1").getAllComponents().stream()
+                                .map(component -> component.getClassId().getName())
+                                .filter(name -> name.endsWith("OnnxRuntime"))
+                                .toList();
+            assertEquals(List.of(useTriton ? ContainerModelEvaluation.TRITON_ONNX_RUNTIME_CLASS
+                                           : ContainerModelEvaluation.EMBEDDED_ONNX_RUNTIME_CLASS),
+                         runtimes, "useTriton=" + useTriton);
+        }
     }
 
     @Test

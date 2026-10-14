@@ -6,7 +6,9 @@ package=ai.vespa.llm.clients
 # TritonOnnxRuntime holds state shared across reconfigurations,
 # which is only correct when this config never changes while the container serves.
 
-# Endpoint of Nvidia Triton Inference Server
+# Endpoint of Nvidia Triton Inference Server.
+# The defaults are for the Triton sidecar in hosted Vespa. Self-hosted, Triton runs outside Vespa:
+# override the target and the model repository path, which Triton must share, in services.xml.
 target string default="triton:8001" restart
 
 # Model repository path where ONNX models are copied to.

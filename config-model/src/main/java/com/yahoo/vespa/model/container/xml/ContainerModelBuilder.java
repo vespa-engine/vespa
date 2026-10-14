@@ -248,17 +248,22 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addParameterStoreValidationHandler(cluster, deployState);
     }
 
+    /**
+     * Whether the cluster evaluates its ONNX models with the Triton runtime: when the feature flag says so and it has
+     * models. Hosted Vespa runs Triton as a sidecar, which requires a sidecar provider and the public cloud.
+     * Self-hosted Vespa uses a Triton server run outside Vespa, which the triton config points to.
+     */
     private boolean shouldUseTriton(ApplicationContainerCluster cluster, DeployState deployState) {
-        // The Triton runtime requires a sidecar provider, injected e.g. in hosted Vespa.
-        if (deployState.getSidecarProvider().isEmpty()) return false;
-        var isPublicCloud = deployState.zone().system().isPublicCloudLike();
         var hasOnnxModels =  !cluster.onnxModelCostCalculator().models().isEmpty();
         var useTritonFeatureFlagValue = deployState.featureFlags()
                                                    .useTritonFlag()
                                                    .withClusterType(ClusterSpec.Type.container)
                                                    .withClusterId(cluster.id())
                                                    .value();
-        return useTritonFeatureFlagValue && isPublicCloud && hasOnnxModels;
+        if ( ! useTritonFeatureFlagValue || ! hasOnnxModels) return false;
+        if ( ! deployState.isHosted()) return true;
+        if (deployState.getSidecarProvider().isEmpty()) return false;
+        return deployState.zone().system().isPublicCloudLike();
     }
 
     private List<SidecarSpec> getSidecars(ApplicationContainerCluster cluster, DeployState deployState, NodesSpecification nodesSpecification) {
