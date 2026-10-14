@@ -1241,10 +1241,10 @@ public class SelectTestCase {
         Query query = new Query();
         query.getSelect().setGroupingString(grouping);
 
-        var e = assertThrows(IllegalArgumentException.class, () -> query.getSelect().getGrouping());
+        var e = assertThrows(IllegalInputException.class, () -> query.getSelect().getGrouping());
         assertTrue(Exceptions.toMessageString(e).contains("Input 'max' is not set"), Exceptions.toMessageString(e));
         // Still failing on repeated access, with the same error, rather than silently returning no grouping
-        e = assertThrows(IllegalArgumentException.class, () -> query.getSelect().getGrouping());
+        e = assertThrows(IllegalInputException.class, () -> query.getSelect().getGrouping());
         assertTrue(Exceptions.toMessageString(e).contains("Input 'max' is not set"), Exceptions.toMessageString(e));
 
         query.properties().set("max", "3");
@@ -1257,6 +1257,15 @@ public class SelectTestCase {
         query.properties().set("max", "4");
         assertEquals("all(group(b) max(3) each(output(count())))",
                      query.getSelect().getGrouping().get(1).getRootOperation().toString());
+    }
+
+    /** A grouping without parameter references is parsed when it is set, so an invalid one fails right there. */
+    @Test
+    void testGroupingWithoutParametersFailsWhenSet() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"max\" : \"0\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        Query query = new Query();
+        var e = assertThrows(IllegalInputException.class, () -> query.getSelect().setGroupingString(grouping));
+        assertEquals("max must be a positive number, but got 0", e.getMessage());
     }
 
     @Test
