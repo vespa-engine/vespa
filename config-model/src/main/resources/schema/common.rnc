@@ -207,7 +207,7 @@ OnnxBatchingParams =
     element batching {
         attribute max-size { xsd:integer } &
         attribute max-delay { xsd:string } &
-        attribute padding-buckets { xsd:string }?
+        attribute padding-buckets { list { xsd:positiveInteger+ } }?
     }?
 
 EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" | "last" | "none" }?

@@ -3,6 +3,7 @@ package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.SequencePadderOptions;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.google.protobuf.TextFormat;
 import inference.ModelConfigOuterClass.ModelConfig;
@@ -19,7 +20,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import static ai.vespa.triton.TritonOnnxRuntime.shouldPadForBatching;
 import static ai.vespa.triton.TritonOnnxRuntime.intraOpThreadsForSeparateSessions;
 import static ai.vespa.triton.TritonOnnxRuntime.resolveInstanceCount;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO;
@@ -39,6 +39,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * Tests the defaults TritonOnnxRuntime derives from options. Does not need a Triton server.
  *
  * @author glebashnik
+ * @author ingridhabrekke
  */
 class TritonOnnxRuntimeDefaultsTest {
 
@@ -49,6 +50,11 @@ class TritonOnnxRuntimeDefaultsTest {
 
     private static OnnxEvaluatorOptions.Builder options(int cpuCores) {
         return new OnnxEvaluatorOptions.Builder(cpuCores);
+    }
+
+    private static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options) {
+        return TritonOnnxRuntime.shouldPadForBatching(modelPath, options,
+                                                      options.modelConfigOverride().map(TritonOnnxRuntime::parseModelConfigOverride));
     }
 
     @Test
@@ -260,6 +266,22 @@ class TritonOnnxRuntimeDefaultsTest {
                                  generated.getInstanceGroup(0));
                 }
             }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void non_explicit_modes_do_not_read_an_override_for_padding(@TempDir Path directory) throws IOException {
+        var repository = Files.createDirectories(directory.resolve("repository"));
+        var config = Files.writeString(repository.resolve("config.pbtxt"), "externally managed config");
+        var client = mock(TritonOnnxClient.class);
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder().modelControlMode(TritonConfig.ModelControlMode.POLL)
+                .modelRepositoryPath(repository.toString()).build(), client);
+        try {
+            // No batching, so padding is dropped before the evaluator, and the unparseable override is never read
+            var options = options(8).setModelConfigOverride(Optional.of(config)).build();
+            assertDoesNotThrow(() -> runtime.evaluatorOf(MODEL_PATH, options, Optional.of(SequencePadderOptions.of(List.of(16)))).close());
         } finally {
             runtime.deconstruct();
         }

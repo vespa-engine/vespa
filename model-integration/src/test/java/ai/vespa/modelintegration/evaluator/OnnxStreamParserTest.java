@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author bjorncs
+ * @author ingridhabrekke
  */
 class OnnxStreamParserTest {
 

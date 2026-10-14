@@ -34,14 +34,6 @@ public interface OnnxEvaluator extends AutoCloseable {
     Map<String, TensorType> getInputInfo();
     Map<String, TensorType> getOutputInfo();
 
-    /**
-     * Returns whether callers should pad their inputs to a few fixed shapes: true when concurrent evaluations
-     * with the same input shapes are combined into a single inference call, where this pays off,
-     * and padding does not change the results.
-     * This may inspect the model, so callers should only ask when they would pad.
-     */
-    default boolean shouldPadForBatching() { return false; }
-
     @Override void close();
 
 }

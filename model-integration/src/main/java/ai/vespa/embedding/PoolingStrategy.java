@@ -17,27 +17,12 @@ enum PoolingStrategy {
     MEAN {
         @Override
         public Tensor toSentenceEmbedding(TensorType type, Tensor tokenEmbeddings, Tensor attentionMask) {
-            // Weighted by the attention mask, so tokens that are not attended to, such as padding, are ignored
-            var embeddings = (IndexedTensor) tokenEmbeddings;
-            long sequenceLength = embeddings.shape()[1];
-            long targetDimensions = type.dimensions().get(0).size().orElseThrow();
-            if (targetDimensions > embeddings.shape()[2]) {
-                throw new IllegalArgumentException("Target dimension " + targetDimensions +
-                                                   " exceeds the model output dimension " + embeddings.shape()[2]);
-            }
-            double[] sums = new double[Math.toIntExact(targetDimensions)];
-            double maskSum = 0;
-            for (long token = 0; token < sequenceLength; token++) {
-                double weight = attentionMask.get(TensorAddress.of(0, token));
-                if (weight == 0) continue;
-                maskSum += weight;
-                for (int i = 0; i < targetDimensions; i++) {
-                    sums[i] += weight * embeddings.get(0, token, i);
-                }
-            }
             var builder = Tensor.Builder.of(type);
-            for (int i = 0; i < targetDimensions; i++) {
-                builder.cell(sums[i] / maskSum, i);
+            var summedEmbeddings = tokenEmbeddings.sum("d1");
+            var summedAttentionMask = attentionMask.expand("d0").sum("d1");
+            var averaged = summedEmbeddings.join(summedAttentionMask, (x, y) -> x / y);
+            for (int i = 0; i < type.dimensions().get(0).size().get(); i++) {
+                builder.cell(averaged.get(TensorAddress.of(0, i)), i);
             }
             return builder.build();
         }

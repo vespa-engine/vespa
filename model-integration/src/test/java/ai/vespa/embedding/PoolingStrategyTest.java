@@ -61,42 +61,10 @@ class PoolingStrategyTest {
     }
 
     @Test
-    void meanPoolingAveragesAllTokensOfUnpaddedInput() {
-        var result = PoolingStrategy.MEAN.toSentenceEmbedding(OUTPUT_TYPE, TOKEN_EMBEDDINGS, attentionMask("[1,1,1,1]"));
-
-        assertEquals(Tensor.from("tensor<float>(x[3]):[5.5,6.5,7.5]"), result);
-    }
-
-    @Test
-    void meanPoolingIgnoresPadding() {
-        var result = PoolingStrategy.MEAN.toSentenceEmbedding(OUTPUT_TYPE, TOKEN_EMBEDDINGS, attentionMask("[1,1,0,0]"));
-
-        assertEquals(Tensor.from("tensor<float>(x[3]):[2.5,3.5,4.5]"), result);
-    }
-
-    @Test
-    void meanPoolingGivesTheSameResultForPaddedAndUnpaddedInput() {
-        var unpaddedEmbeddings = Tensor.from("tensor<float>(d0[1],d1[2],d2[3]):[1,2,3, 4,5,6]");
-        var unpaddedMask = Tensor.from("tensor<float>(d0[1],d1[2]):[1,1]");
-
-        assertEquals(PoolingStrategy.MEAN.toSentenceEmbedding(OUTPUT_TYPE, unpaddedEmbeddings, unpaddedMask),
-                     PoolingStrategy.MEAN.toSentenceEmbedding(OUTPUT_TYPE, TOKEN_EMBEDDINGS, attentionMask("[1,1,0,0]")));
-    }
-
-    @Test
-    void meanPoolingSupportsTruncatedOutputDimensions() {
-        var truncatedType = TensorType.fromSpec("tensor<float>(x[2])");
-
-        var result = PoolingStrategy.MEAN.toSentenceEmbedding(truncatedType, TOKEN_EMBEDDINGS, attentionMask("[1,1,1,1]"));
-
-        assertEquals(Tensor.from("tensor<float>(x[2]):[5.5,6.5]"), result);
-    }
-
-    @Test
     void tokenPoolingRejectsTargetDimensionLargerThanModelOutput() {
         var widerType = TensorType.fromSpec("tensor<float>(x[4])");
 
-        for (var strategy : new PoolingStrategy[] { PoolingStrategy.CLS, PoolingStrategy.LAST, PoolingStrategy.MEAN }) {
+        for (var strategy : new PoolingStrategy[] { PoolingStrategy.CLS, PoolingStrategy.LAST }) {
             var exception = assertThrows(IllegalArgumentException.class,
                                          () -> strategy.toSentenceEmbedding(widerType, TOKEN_EMBEDDINGS, attentionMask("[1,1,1,1]")));
             assertEquals("Target dimension 4 exceeds the model output dimension 3", exception.getMessage());

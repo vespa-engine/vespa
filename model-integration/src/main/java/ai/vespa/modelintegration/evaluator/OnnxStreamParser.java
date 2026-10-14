@@ -18,6 +18,7 @@ import java.util.Set;
  * Parses an ONNX model from a stream to extract information without loading the entire model into memory.
  *
  * @author bjorncs
+ * @author ingridhabrekke
  */
 public class OnnxStreamParser {
 

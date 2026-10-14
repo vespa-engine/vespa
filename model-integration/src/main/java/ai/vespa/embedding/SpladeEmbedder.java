@@ -3,13 +3,13 @@ package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.SequencePadderOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.modelintegration.utils.OnnxExternalDataResolver;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.SpladeEmbedderConfig;
-import com.yahoo.language.huggingface.Encoding;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
 import com.yahoo.language.process.Embedder;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
@@ -44,10 +44,6 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
     private final boolean useCustomReduce;
     private final HuggingFaceTokenizer tokenizer;
     private final OnnxEvaluator evaluator;
-    private final SequencePadder padder;
-
-    /** Token id used to pad inputs for batching. Padded positions have a zero attention mask. */
-    private static final long PAD_TOKEN_ID = 0;
 
     @Inject
     public SpladeEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, SpladeEmbedderConfig embedderConfig, OnnxEvaluatorConfig onnxConfig) {
@@ -69,31 +65,21 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
                 .addDefaultModel(tokenizerPath)
                 .setPadding(false);
         var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
-        if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
-            // Force truncation
-            // to max length accepted by model if tokenizer.json contains no valid truncation configuration
-            int maxLength = info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens()
-                    ? info.maxLength()
-                    : embedderConfig.transformerMaxTokens();
-            builder.setTruncation(true).setMaxLength(maxLength);
-        }
+        // Force truncation to max length accepted by model if tokenizer.json contains no valid truncation configuration
+        boolean forceTruncation = info.maxLength() == -1 || info.truncation() != LONGEST_FIRST;
+        int maxLength = ! forceTruncation ? info.maxLength() // The longest input the model gets, as the tokenizer truncates to it
+                        : info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens() ? info.maxLength()
+                        : embedderConfig.transformerMaxTokens();
+        if (forceTruncation) builder.setTruncation(true).setMaxLength(maxLength);
         this.tokenizer = builder.build();
 
         var resolver = new OnnxExternalDataResolver();
         var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
+        var padding = SequencePadderOptions.of(onnxConfig).map(options -> options.withAttentionMask(attentionMaskName).withMaxLength(maxLength));
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
-        this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
+        this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts, padding);
         
         validateModel();
-
-        // Padding beyond the tokenizer's max length would give the model longer inputs than it ever gets unpadded
-        int maxTokens = Math.min(info.maxLength() > 0 ? info.maxLength() : Integer.MAX_VALUE, embedderConfig.transformerMaxTokens());
-        var padder = SequencePadder.of(evaluator, onnxConfig, maxTokens, modelPath);
-        if ( ! padder.isDisabled()) {
-            var sample = tokenizer.encode(SequencePadder.SAMPLE_TEXT);
-            padder = padder.verifiedWith(evaluator, candidate -> createInputs(sample, candidate), sample.ids().size(), modelPath);
-        }
-        this.padder = padder;
     }
 
     private void validateModel() {
@@ -137,15 +123,19 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         var encoding = tokenizer.encode(text, context.getLanguage());
         runtime.sampleSequenceLength(encoding.ids().size(), context);
 
-        int sequenceLength = encoding.ids().size();
-        Map<String, Tensor> inputs = createInputs(encoding, padder);
+        Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
+        Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1");
+        Tensor tokenTypeIds = createTensorRepresentation(encoding.typeIds(), "d1");
+
+        Map<String, Tensor> inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
+                                            attentionMaskName, attentionMask.expand("d0"),
+                                            tokenTypeIdsName, tokenTypeIds.expand("d0"));
         IndexedTensor output = (IndexedTensor) evaluator
                 .evaluate(inputs, OnnxEmbedderTimeout.remainingOrThrow(context))
                 .get(outputName);
-        // Padding is a suffix, so only the first sequenceLength tokens are real
         Tensor spladeTensor = useCustomReduce
-                ? sparsifyCustomReduce(output, tensorType, sequenceLength)
-                : sparsifyReduce(output, inputs.get(attentionMaskName), tensorType, sequenceLength);
+                ? sparsifyCustomReduce(output, tensorType)
+                : sparsifyReduce(output, tensorType);
         runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return spladeTensor;
     }
@@ -156,19 +146,12 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
      *
      * @param modelOutput the model output tensor of shape d1,dim where d1 is the sequence length and dim is size
      *                    of the vocabulary
-     * @param attentionMask the attention mask of shape d0,d1; tokens with a zero mask, such as padding, are ignored
      * @param tensorType the type of the destination tensor
-     * @param sequenceLength the number of real tokens, which come before any padding
      * @return A mapped tensor with the terms from the vocab that has a score above the threshold
      */
-    private Tensor sparsifyReduce(IndexedTensor modelOutput, Tensor attentionMask, TensorType tensorType, long sequenceLength) {
-        // Scores are only kept above zero, so zeroing ignored tokens removes them from the max.
-        // The join copies the whole output, so it is only done when there is padding to ignore.
-        Tensor attended = sequenceLength < modelOutput.shape()[1]
-                ? modelOutput.join(attentionMask, (x, mask) -> mask == 0 ? 0 : x)
-                : modelOutput;
+    private Tensor sparsifyReduce(Tensor modelOutput, TensorType tensorType) {
         // Remove batch dim, batch size of 1
-        Tensor output = attended.reduce(Reduce.Aggregator.max, "d0", "d1");
+        Tensor output = modelOutput.reduce(Reduce.Aggregator.max, "d0", "d1");
         Tensor logOfRelu = output.map((x) -> Math.log(1 + (x > 0 ? x : 0)));
         IndexedTensor vocab = (IndexedTensor) logOfRelu;
         var builder = Tensor.Builder.of(tensorType);
@@ -186,13 +169,6 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         return builder.build();
     }
 
-    /** Creates the model inputs for an encoded text, padded by the given padder. */
-    private Map<String, Tensor> createInputs(Encoding encoding, SequencePadder padder) {
-        return Map.of(inputIdsName, createTensorRepresentation(padder.pad(encoding.ids(), PAD_TOKEN_ID), "d1").expand("d0"),
-                      attentionMaskName, createTensorRepresentation(padder.pad(encoding.attentionMask(), 0L), "d1").expand("d0"),
-                      tokenTypeIdsName, createTensorRepresentation(padder.pad(encoding.typeIds(), 0L), "d1").expand("d0"));
-    }
-
     /**
      * Sparsify the model output tensor.This uses an unrolled custom reduce and is 15-20% faster than the using
      * generic tensor reduce.
@@ -202,14 +178,6 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
      * @return A mapped tensor with the terms from the vocab that has a score above the threshold
      */
     public Tensor sparsifyCustomReduce(IndexedTensor modelOutput, TensorType tensorType) {
-        return sparsifyCustomReduce(modelOutput, tensorType, modelOutput.shape()[1]);
-    }
-
-    /**
-     * Same as {@link #sparsifyCustomReduce(IndexedTensor, TensorType)}, but only reduces over the first
-     * sequenceLength tokens, ignoring padding after them.
-     */
-    public Tensor sparsifyCustomReduce(IndexedTensor modelOutput, TensorType tensorType, long sequenceLength) {
         var builder = Tensor.Builder.of(tensorType);
         long[] shape = modelOutput.shape();
         if(shape.length != 3) {
@@ -217,7 +185,7 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         }
         long batch = shape[0];
         if (batch != 1) {
-            throw new IllegalArgumentException("Expected the output for a single input (batch size 1), got batch size " + batch);
+            throw new IllegalArgumentException("Batch size must be 1");
         }
         if (shape[1] > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("sequenceLength=" + shape[1] + " larger than an int");
@@ -225,9 +193,7 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         if (shape[2] > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("vocabSize=" + shape[2] + " larger than an int");
         }
-        if (sequenceLength > shape[1]) {
-            throw new IllegalArgumentException("sequenceLength=" + sequenceLength + " larger than the model output " + shape[1]);
-        }
+        int sequenceLength = (int) shape[1];
         int vocabSize = (int) shape[2];
 
         String dimension = tensorType.dimensions().get(0).name();
