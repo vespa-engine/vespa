@@ -63,6 +63,7 @@ void OpenTelemetryTest::write_otelcol_config(const std::string& tls_config_file_
     auto  file = [&files](const std::string& key) { return files[key].asString().make_string(); };
 
     std::ofstream otelcol_config("otelcol-config.yaml");
+    ASSERT_TRUE(otelcol_config.is_open());
     otelcol_config << std::format(R"(receivers:
   otlp:
     protocols:
@@ -99,6 +100,7 @@ service:
 )",
                                   file("certificates"), file("private-key"), file("ca-certificates"));
     otelcol_config.close();
+    ASSERT_TRUE(otelcol_config.good());
 }
 
 TEST_F(OpenTelemetryTest, hello_world_to_stream) {
