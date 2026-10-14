@@ -213,7 +213,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag FAST_MAP_SEARCH = defineFeatureFlag(
-            "fast-map-search", false,
+            "fast-map-search", true,
             List.of("johsol", "boeker", "arnej"), "2026-08-13", "2027-02-13",
             "Whether to enable fast map search for map fields in a schema.",
             "Takes effect at redeployment",
