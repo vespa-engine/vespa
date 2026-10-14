@@ -1169,7 +1169,7 @@ TEST(QueryTest, global_filter_is_calculated_and_handled) {
         GlobalFilterBlueprint bp(result, false);
         auto res = Query::handle_global_filter(bp, doom, ann_deadline_config, docid_limit, 0, 1, ttb(), setup_stats,
                                                nullptr);
-        EXPECT_FALSE(res);
+        EXPECT_EQ(Query::GlobalFilterOutcome::UNCHANGED, res);
         EXPECT_FALSE(bp.filter);
         EXPECT_EQ(-1.0, bp.estimated_hit_ratio);
     }
@@ -1177,7 +1177,7 @@ TEST(QueryTest, global_filter_is_calculated_and_handled) {
         GlobalFilterBlueprint bp(result, true);
         auto res = Query::handle_global_filter(bp, doom, ann_deadline_config, docid_limit, 0.31, 1, ttb(),
                                                setup_stats, nullptr);
-        EXPECT_FALSE(res);
+        EXPECT_EQ(Query::GlobalFilterOutcome::UNCHANGED, res);
         EXPECT_FALSE(bp.filter);
         EXPECT_EQ(-1.0, bp.estimated_hit_ratio);
     }
@@ -1185,7 +1185,7 @@ TEST(QueryTest, global_filter_is_calculated_and_handled) {
         GlobalFilterBlueprint bp(result, true);
         auto res = Query::handle_global_filter(bp, doom, ann_deadline_config, docid_limit, 0, 0.3, ttb(), setup_stats,
                                                nullptr);
-        EXPECT_TRUE(res);
+        EXPECT_EQ(Query::GlobalFilterOutcome::FILTER_SET, res);
         EXPECT_TRUE(bp.filter);
         EXPECT_TRUE(bp.filter->is_active());
         EXPECT_EQ(0.3, bp.estimated_hit_ratio);
@@ -1199,7 +1199,7 @@ TEST(QueryTest, global_filter_is_calculated_and_handled) {
         GlobalFilterBlueprint bp(result, true);
         auto res = Query::handle_global_filter(bp, doom, ann_deadline_config, docid_limit, 0, 0.29, ttb(),
                                                setup_stats, nullptr);
-        EXPECT_TRUE(res);
+        EXPECT_EQ(Query::GlobalFilterOutcome::FILTER_SET, res);
         EXPECT_TRUE(bp.filter);
         EXPECT_FALSE(bp.filter->is_active());
         EXPECT_EQ(0.3, bp.estimated_hit_ratio);
