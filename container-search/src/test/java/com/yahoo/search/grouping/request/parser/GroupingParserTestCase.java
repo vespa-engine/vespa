@@ -12,10 +12,12 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
 import com.yahoo.search.yql.YqlParser;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -781,7 +783,10 @@ public class GroupingParserTestCase {
                         "all(group(foo) max(3) each(output(count())))"),
                 () -> assertParseWithParameters(parameters,
                         "all(group(foo) max(@my-param_1) precision(@_x) each(output(count())))",
-                        "all(group(foo) max(9) precision(1) each(output(count())))"));
+                        "all(group(foo) max(9) precision(1) each(output(count())))"),
+                () -> assertParseWithParameters(Map.of("w", "2.5e3", "n", " 7 "),
+                        "all(group(fixedwidth(foo, @w)) max(@n) each(output(count())))",
+                        "all(group(fixedwidth(foo, 2500.0)) max(7) each(output(count())))"));
         assertAll("parameters in in() are lists",
                 () -> assertParseWithParameters(parameters,
                         "all(group(foo) filter(in(foo, \"bar\", @list)) each(output(count())))",
@@ -839,6 +844,12 @@ public class GroupingParserTestCase {
                      assertThrows(IllegalArgumentException.class,
                                   () -> GroupingOperation.fromString("all(group(foo) max(@nan) each(output(count())))",
                                                                      Map.of("nan", "NaN")::get)).getMessage());
+        assertAll("number parameters must be integers or decimal numbers, not any Java number syntax",
+                  Stream.of("10d", "1f", "0x1p3", "0x1F", "+7", ".5", "1e400", "Infinity", "7L", "1_000").map(value -> (Executable) () ->
+                          assertEquals("Input 'n' must be a number, but was '" + value + "'",
+                                       assertThrows(IllegalArgumentException.class,
+                                                    () -> GroupingOperation.fromString("all(group(foo) max(@n) each(output(count())))",
+                                                                                       Map.of("n", value)::get)).getMessage())));
         assertIllegalArgument("all(group(foo) filter(regex(@pattern, foo)) each(output(count())))",
                               "Parameter '@pattern' cannot be resolved as no query properties are available");
         assertIllegalArgument("all(group(foo) each(output(count())) as(@ label))",

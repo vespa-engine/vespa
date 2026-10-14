@@ -89,22 +89,27 @@ public class GroupingParser {
         return num;
     }
 
+    // An integer or a decimal number, optionally negative, with an optional exponent.
+    // Deliberately narrower than what Long.valueOf and Double.valueOf accept: no leading '+', no Java type
+    // suffixes such as 10d, and no hex floats.
+    private static final java.util.regex.Pattern NUMBER_PATTERN =
+            java.util.regex.Pattern.compile("-?[0-9]+(\\.[0-9]*)?([eE][+-]?[0-9]+)?");
+
     private static Number resolveParameterNumber(String name, String value) throws ParseException {
         String str = value.trim();
+        if ( ! NUMBER_PATTERN.matcher(str).matches()) {
+            throw new ParseException("Input '" + name + "' must be a number, but was '" + value + "'");
+        }
         try {
             return Long.valueOf(str);
         } catch (NumberFormatException e) {
             // not an integer, try as a double below
         }
-        try {
-            Double number = Double.valueOf(str);
-            if (number.isNaN() || number.isInfinite()) {
-                throw new NumberFormatException();
-            }
-            return number;
-        } catch (NumberFormatException e) {
+        Double number = Double.valueOf(str);
+        if (number.isInfinite()) {
             throw new ParseException("Input '" + name + "' must be a number, but was '" + value + "'");
         }
+        return number;
     }
 
     private static Number resolveNumber(String str) {
