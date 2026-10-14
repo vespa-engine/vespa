@@ -131,6 +131,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
+import static com.yahoo.jdisc.Response.Status.SERVICE_UNAVAILABLE;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
@@ -957,14 +958,25 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public HttpResponse getLogs(ApplicationId applicationId, Optional<DomainName> hostname, Query apiParams) {
         Exception exception = null;
+        HttpResponse unavailable = null;
+        // Usually there is only one log server, but if we e.g. change ports or setup logserver in a different way between
+        // model versions there could be multiple, try them in order until one works
         for (var uri : getLogServerUris(applicationId, hostname)) {
             try {
-                return logRetriever.getLogs(uri.withQuery(apiParams), activationTime(applicationId));
+                HttpResponse response = logRetriever.getLogs(uri.withQuery(apiParams), activationTime(applicationId));
+                // Log server host might be down or retired, try the next one if there is one
+                if (response.getStatus() == SERVICE_UNAVAILABLE) {
+                    unavailable = response;
+                    continue;
+                }
+                return response;
             } catch (RuntimeException e) {
                 exception = e;
                 log.log(Level.INFO, e.getMessage());
             }
         }
+        if (unavailable != null) return unavailable;
+        if (exception == null) return HttpErrorResponse.notFoundError("No log server found for " + applicationId);
         return HttpErrorResponse.internalServerError(Exceptions.toMessageString(exception));
     }
 
