@@ -363,8 +363,8 @@ struct UnpackBitsInvoker;
 template <bool BigEndian>
 struct UnpackBitsInvoker<int8_t, BigEndian> {
     template <InvocationMeta MetaT, typename DI8>
-    HWY_API void invoke(MetaT meta, DI8 di8, const uint8_t* src_u8, int8_t* dest, const size_t NB, const size_t my_i,
-                        size_t& my_out_idx) noexcept {
+    HWY_API void invoke(MetaT meta, DI8 di8, const uint8_t* HWY_RESTRICT src_u8, int8_t* HWY_RESTRICT dest,
+                        const size_t NB, const size_t my_i, size_t& my_out_idx) noexcept {
         HWY_LANES_CONSTEXPR size_t NI8 = hn::Lanes(di8);
         using VecI8 = hn::VFromD<decltype(di8)>;
 
@@ -374,10 +374,9 @@ struct UnpackBitsInvoker<int8_t, BigEndian> {
             bits_i8 = hn::Reverse8(di8, bits_i8);
         }
         if constexpr (!meta.is_partial()) {
-            hn::Store(bits_i8, di8, dest + my_out_idx);
+            hn::StoreU(bits_i8, di8, dest + my_out_idx);
             my_out_idx += NI8;
         } else {
-            // DEBUG_PRINT_LANES16(di8, "bits_i8 rem", bits_i8);
             //  meta.remaining() is in number of input _bytes_
             const size_t rem_out_bytes = meta.remaining() * 8;
             hn::StoreN(bits_i8, di8, dest + my_out_idx, rem_out_bytes);
@@ -387,10 +386,119 @@ struct UnpackBitsInvoker<int8_t, BigEndian> {
 };
 
 template <bool BigEndian>
+struct UnpackBitsInvoker<hwy::bfloat16_t, BigEndian> {
+    template <InvocationMeta MetaT, typename DI8>
+    [[maybe_unused]]
+    HWY_API void invoke(MetaT meta, DI8 di8, const uint8_t* HWY_RESTRICT src_u8, hwy::bfloat16_t* HWY_RESTRICT dest,
+                        const size_t NB, const size_t my_i, size_t& my_out_idx) noexcept {
+        const hn::RepartitionToWide<decltype(di8)>        di16;
+        const hn::Rebind<hwy::bfloat16_t, decltype(di16)> dbf16;
+        const hn::Half<decltype(di8)>                     di8_half;
+
+        using VecBF16 = hn::VFromD<decltype(dbf16)>;
+
+        HWY_LANES_CONSTEXPR size_t NBF16 = hn::Lanes(dbf16);
+
+        auto bm = hn::LoadMaskBits(di8, src_u8 + my_i + (NB * meta.unroll_index()));
+        if constexpr (BigEndian) {
+            bm = hn::MaskFromVec(hn::Reverse8(di8, hn::VecFromMask(di8, bm)));
+        }
+        auto bm_lo = hn::PromoteMaskTo(dbf16, di8_half, hn::LowerHalfOfMask(di8_half, bm));
+        auto bm_hi = hn::PromoteMaskTo(dbf16, di8_half, hn::UpperHalfOfMask(di8_half, bm));
+
+        VecBF16 bf16_lo = hn::IfThenElseZero(bm_lo, hn::Set(dbf16, hwy::bfloat16_t(1)));
+        VecBF16 bf16_hi = hn::IfThenElseZero(bm_hi, hn::Set(dbf16, hwy::bfloat16_t(1)));
+
+        if constexpr (!meta.is_partial()) {
+            hn::StoreU(bf16_lo, dbf16, dest + my_out_idx);
+            my_out_idx += NBF16;
+            hn::StoreU(bf16_hi, dbf16, dest + my_out_idx);
+            my_out_idx += NBF16;
+        } else {
+            size_t rem_out_bf16s = meta.remaining() * 8;
+
+            size_t to_write = std::min(rem_out_bf16s, NBF16);
+            hn::StoreN(bf16_lo, dbf16, dest + my_out_idx, to_write);
+            rem_out_bf16s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_bf16s, NBF16);
+            hn::StoreN(bf16_hi, dbf16, dest + my_out_idx, to_write);
+            rem_out_bf16s -= to_write;
+            my_out_idx += to_write;
+        }
+    };
+};
+
+template <bool BigEndian>
 struct UnpackBitsInvoker<float, BigEndian> {
     template <InvocationMeta MetaT, typename DI8>
-    HWY_API void invoke(MetaT meta, DI8 di8, const uint8_t* src_u8, float* dest, const size_t NB, const size_t my_i,
-                        size_t& my_out_idx) noexcept {
+    [[maybe_unused]]
+    HWY_API void invoke(MetaT meta, DI8 di8, const uint8_t* HWY_RESTRICT src_u8, float* HWY_RESTRICT dest,
+                        const size_t NB, const size_t my_i, size_t& my_out_idx) noexcept {
+        const hn::RepartitionToWide<decltype(di8)>  di16;
+        const hn::RepartitionToWide<decltype(di16)> di32;
+        const hn::RebindToFloat<decltype(di32)>     df32;
+
+        using VecF32 = hn::VFromD<decltype(df32)>;
+
+        HWY_LANES_CONSTEXPR size_t NF32 = hn::Lanes(df32);
+
+        auto bm = hn::LoadMaskBits(di8, src_u8 + my_i + (NB * meta.unroll_index()));
+        if constexpr (BigEndian) {
+            bm = hn::MaskFromVec(hn::Reverse8(di8, hn::VecFromMask(di8, bm)));
+        }
+        const hn::Half<decltype(di8)>  di8_half;
+        auto                           bm_lo = hn::PromoteMaskTo(di16, di8_half, hn::LowerHalfOfMask(di8_half, bm));
+        auto                           bm_hi = hn::PromoteMaskTo(di16, di8_half, hn::UpperHalfOfMask(di8_half, bm));
+        const hn::Half<decltype(di16)> di16_half;
+        auto bm_lo_lo = hn::PromoteMaskTo(df32, di16_half, hn::LowerHalfOfMask(di16_half, bm_lo));
+        auto bm_lo_hi = hn::PromoteMaskTo(df32, di16_half, hn::UpperHalfOfMask(di16_half, bm_lo));
+        auto bm_hi_lo = hn::PromoteMaskTo(df32, di16_half, hn::LowerHalfOfMask(di16_half, bm_hi));
+        auto bm_hi_hi = hn::PromoteMaskTo(df32, di16_half, hn::UpperHalfOfMask(di16_half, bm_hi));
+
+        VecF32 f32_lo_lo = hn::IfThenElseZero(bm_lo_lo, hn::Set(df32, 1.0f));
+        VecF32 f32_lo_hi = hn::IfThenElseZero(bm_lo_hi, hn::Set(df32, 1.0f));
+        VecF32 f32_hi_lo = hn::IfThenElseZero(bm_hi_lo, hn::Set(df32, 1.0f));
+        VecF32 f32_hi_hi = hn::IfThenElseZero(bm_hi_hi, hn::Set(df32, 1.0f));
+
+        if constexpr (!meta.is_partial()) {
+            hn::StoreU(f32_lo_lo, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+            hn::StoreU(f32_lo_hi, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+            hn::StoreU(f32_hi_lo, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+            hn::StoreU(f32_hi_hi, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+        } else {
+            size_t rem_out_f32s = meta.remaining() * 8;
+
+            size_t to_write = std::min(rem_out_f32s, NF32);
+            hn::StoreN(f32_lo_lo, df32, dest + my_out_idx, to_write);
+            rem_out_f32s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f32s, NF32);
+            hn::StoreN(f32_lo_hi, df32, dest + my_out_idx, to_write);
+            rem_out_f32s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f32s, NF32);
+            hn::StoreN(f32_hi_lo, df32, dest + my_out_idx, to_write);
+            rem_out_f32s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = rem_out_f32s;
+            hn::StoreN(f32_hi_hi, df32, dest + my_out_idx, to_write);
+            my_out_idx += to_write;
+        }
+    };
+
+    template <InvocationMeta MetaT, typename DI8>
+    [[maybe_unused]]
+    HWY_API void invoke2(MetaT meta, DI8 di8, const uint8_t* HWY_RESTRICT src_u8, float* HWY_RESTRICT dest,
+                         const size_t NB, const size_t my_i, size_t& my_out_idx) noexcept {
         const hn::RepartitionToWide<decltype(di8)>  di16;
         const hn::RepartitionToWide<decltype(di16)> di32;
         const hn::RebindToFloat<decltype(di32)>     df32;
@@ -415,13 +523,13 @@ struct UnpackBitsInvoker<float, BigEndian> {
         VecF32 f32_hi_lo = hn::BitCast(df32, hn::ShiftLeft<23>(hn::PromoteLowerTo(di32, bits_i16_hi)));
         VecF32 f32_hi_hi = hn::BitCast(df32, hn::ShiftLeft<23>(hn::PromoteUpperTo(di32, bits_i16_hi)));
         if constexpr (!meta.is_partial()) {
-            hn::Store(f32_lo_lo, df32, dest + my_out_idx);
+            hn::StoreU(f32_lo_lo, df32, dest + my_out_idx);
             my_out_idx += NF32;
-            hn::Store(f32_lo_hi, df32, dest + my_out_idx);
+            hn::StoreU(f32_lo_hi, df32, dest + my_out_idx);
             my_out_idx += NF32;
-            hn::Store(f32_hi_lo, df32, dest + my_out_idx);
+            hn::StoreU(f32_hi_lo, df32, dest + my_out_idx);
             my_out_idx += NF32;
-            hn::Store(f32_hi_hi, df32, dest + my_out_idx);
+            hn::StoreU(f32_hi_hi, df32, dest + my_out_idx);
             my_out_idx += NF32;
         } else {
             size_t rem_out_f32s = meta.remaining() * 8;
@@ -522,9 +630,17 @@ size_t my_population_count(const uint64_t* buf, size_t sz) noexcept {
 }
 void my_unpack_bits_i8(const int8_t* src_bits, int8_t* dest, size_t sz, bool big_endian) noexcept {
     if (!big_endian) {
-        my_hwy_unpack_bits<int8_t, false, 2>(src_bits, dest, sz);
+        my_hwy_unpack_bits<int8_t, false, 4>(src_bits, dest, sz);
     } else {
-        my_hwy_unpack_bits<int8_t, true, 2>(src_bits, dest, sz);
+        my_hwy_unpack_bits<int8_t, true, 4>(src_bits, dest, sz);
+    }
+}
+void my_unpack_bits_bf16(const int8_t* src_bits, BFloat16* dest, size_t sz, bool big_endian) noexcept {
+    auto* hwy_bf16_dest = reinterpret_cast<hwy::bfloat16_t*>(dest);
+    if (!big_endian) {
+        my_hwy_unpack_bits<hwy::bfloat16_t, false, 1>(src_bits, hwy_bf16_dest, sz);
+    } else {
+        my_hwy_unpack_bits<hwy::bfloat16_t, true, 1>(src_bits, hwy_bf16_dest, sz);
     }
 }
 void my_unpack_bits_f32(const int8_t* src_bits, float* dest, size_t sz, bool big_endian) noexcept {
@@ -561,6 +677,7 @@ public:
         ft.binary_hamming_distance = my_binary_hamming_distance;
         ft.population_count = my_population_count;
         ft.unpack_bits_to_8x_i8 = my_unpack_bits_i8;
+        ft.unpack_bits_to_8x_bf16 = my_unpack_bits_bf16;
         ft.unpack_bits_to_8x_f32 = my_unpack_bits_f32;
 #if HWY_TARGET == HWY_AVX2 || HWY_TARGET == HWY_AVX3
         // AVX2 and AVX3 do not have dedicated vector popcount instructions, so the Highway "emulation"

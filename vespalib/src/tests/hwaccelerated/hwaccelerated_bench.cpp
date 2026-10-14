@@ -178,9 +178,9 @@ void register_all_benchmark_suites() {
     register_benchmarks<uint8_t>("Bitwise ANDNOT", FnTable::FnId::AND_NOT_BIT, and_not_fn);
 
     register_unpack_bits_benchmark<int8_t>(FnTable::FnId::UNPACK_BITS_TO_8X_I8);
-    //register_unpack_bits_benchmark<BFloat16>(FnTable::FnId::UNPACK_BITS_TO_8X_BF16);
+    register_unpack_bits_benchmark<BFloat16>(FnTable::FnId::UNPACK_BITS_TO_8X_BF16);
     register_unpack_bits_benchmark<float>(FnTable::FnId::UNPACK_BITS_TO_8X_F32);
-    //register_unpack_bits_benchmark<double>(FnTable::FnId::UNPACK_BITS_TO_8X_F64);
+    register_unpack_bits_benchmark<double>(FnTable::FnId::UNPACK_BITS_TO_8X_F64);
 }
 
 int main(int argc, char* argv[]) {

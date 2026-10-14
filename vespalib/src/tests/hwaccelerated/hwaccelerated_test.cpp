@@ -105,7 +105,7 @@ void my_unpack_bits(const int8_t* __restrict__ src_bits, T* __restrict__ dst, co
 
 template <typename T>
 void verify_unpack_bits(std::span<const IAccelerated*> accels, const size_t test_length, const bool big_endian) {
-    Xoshiro256PlusPlusPrng prng(1234567 * test_length);
+    Xoshiro256PlusPlusPrng prng(std::random_device{}());
     std::vector<int8_t>    src = create_and_fill<int8_t>(prng, test_length); // Shall have uniform bit probability
     std::vector<T>         dest(test_length * 8);
 
@@ -120,7 +120,6 @@ void verify_unpack_bits(std::span<const IAccelerated*> accels, const size_t test
                 test_length, j);
             ScopedFnTableOverride fn_scope(accel->fn_table());
             unpack_bits(&src[j], dest.data(), sz, big_endian);
-            // std::println(std::cerr, "foo: {:08b} {}", src[j], accel->target_info().to_string());
             ASSERT_THAT(std::span<T>(dest.data(), sz * 8), ElementsAreArray(truth))
                 << accel->target_info().to_string() << " at offset " << j;
         }
@@ -164,7 +163,9 @@ void verify_unpack_bits(std::span<const IAccelerated*> accelerators, const size_
     for (const bool big_endian : {true, false}) {
         SCOPED_TRACE(big_endian ? "big endian" : "little endian");
         ASSERT_NO_FATAL_FAILURE(verify_unpack_bits<int8_t>(accelerators, test_length, big_endian)) << "int8";
+        ASSERT_NO_FATAL_FAILURE(verify_unpack_bits<BFloat16>(accelerators, test_length, big_endian)) << "BFloat16";
         ASSERT_NO_FATAL_FAILURE(verify_unpack_bits<float>(accelerators, test_length, big_endian)) << "float";
+        ASSERT_NO_FATAL_FAILURE(verify_unpack_bits<double>(accelerators, test_length, big_endian)) << "double";
     }
 }
 
