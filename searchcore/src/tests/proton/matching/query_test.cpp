@@ -1318,11 +1318,11 @@ public:
 
     // Builds, optimizes and handles the global filter for a query with a single nearest neighbor term, where the
     // white list matches the given (active) documents.
-    void plan(const SimpleResult& active_docs) {
+    void plan(const SimpleResult& active_docs, bool approximate = true) {
         QueryBuilder<ProtonNodeTypes>                  builder;
         search::query::NearestNeighborTerm::HnswParams hnsw_params;
         hnsw_params.approximate_threshold = 0.05;
-        builder.add_nearest_neighbor_term("qtensor", nn_field, 1, Weight(1), 10, true, hnsw_params);
+        builder.add_nearest_neighbor_term("qtensor", nn_field, 1, Weight(1), 10, approximate, hnsw_params);
         auto serialized_query_tree = StackDumpCreator::createSerializedQueryTree(*builder.build());
         query.buildTree(*serialized_query_tree, "", ViewResolver(), index_env);
         query.setWhiteListBlueprint(std::make_unique<ExpensiveWhiteListBlueprint>(active_docs));
@@ -1376,6 +1376,49 @@ TEST(QueryTest, white_list_comes_before_nearest_neighbor_when_skipping_global_fi
     EXPECT_FALSE(nn->strict());
     EXPECT_EQ(NearestNeighborBlueprint::Algorithm::EXACT, nn->get_algorithm());
     EXPECT_EQ(Blueprint::State::COST_TIER_EXPENSIVE, nn->getState().cost_tier());
+}
+
+SimpleResult all_docs_but_one_active() {
+    SimpleResult active_docs;
+    for (uint32_t docid = 1; docid <= WhiteListAndNearestNeighborFixture::num_docs; ++docid) {
+        if (docid != 50) {
+            active_docs.addHit(docid);
+        }
+    }
+    return active_docs;
+}
+
+TEST(QueryTest, nearest_neighbor_comes_before_white_list_when_doing_exact_search) {
+    WhiteListAndNearestNeighborFixture f;
+    // All documents but one are active, and exact search is requested, i.e., no global filter is involved.
+    // The nearest neighbor blueprint must stay in the normal cost tier to come before the white list and be strict.
+    f.plan(all_docs_but_one_active(), false);
+
+    const auto& root = f.root();
+    ASSERT_EQ(2u, root.childCnt());
+    auto nn = dynamic_cast<const NearestNeighborBlueprint*>(&root.getChild(0));
+    ASSERT_TRUE(nn != nullptr);
+    EXPECT_TRUE(nn->strict());
+    EXPECT_EQ(NearestNeighborBlueprint::Algorithm::EXACT, nn->get_algorithm());
+    EXPECT_TRUE(dynamic_cast<const ExpensiveWhiteListBlueprint*>(&root.getChild(1)));
+    EXPECT_FALSE(root.getChild(1).strict());
+}
+
+TEST(QueryTest, nearest_neighbor_comes_before_white_list_when_using_global_filter) {
+    WhiteListAndNearestNeighborFixture f;
+    // All documents but one are active, i.e., the estimated hit ratio is above the global filter lower limit,
+    // and the global filter (including the white list) is used by the nearest neighbor search.
+    // The nearest neighbor blueprint should be strict, the white list should not.
+    f.plan(all_docs_but_one_active());
+
+    const auto& root = f.root();
+    ASSERT_EQ(2u, root.childCnt());
+    auto nn = dynamic_cast<const NearestNeighborBlueprint*>(&root.getChild(0));
+    ASSERT_TRUE(nn != nullptr);
+    EXPECT_TRUE(nn->strict());
+    EXPECT_EQ(NearestNeighborBlueprint::Algorithm::INDEX_TOP_K_WITH_FILTER, nn->get_algorithm());
+    EXPECT_TRUE(dynamic_cast<const ExpensiveWhiteListBlueprint*>(&root.getChild(1)));
+    EXPECT_FALSE(root.getChild(1).strict());
 }
 
 } // namespace
