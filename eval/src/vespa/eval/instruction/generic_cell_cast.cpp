@@ -2,13 +2,12 @@
 
 #include "generic_cell_cast.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
-
-#include <cassert>
 
 using namespace vespalib::eval::tensor_function;
 
@@ -28,7 +27,7 @@ template <typename ICT, typename OCT> void my_generic_cell_cast_op(State& state,
     for (ICT value : input_cells) {
         *pos++ = (OCT)value;
     }
-    assert(pos == output_cells.end());
+    CHECK(pos == output_cells.end());
     Value& result_ref = state.stash.create<ValueView>(res_type, a.index(), TypedCells(output_cells));
     state.pop_push(result_ref);
 }
@@ -60,13 +59,13 @@ struct SelectGenericCellCastOp {
 InterpretedFunction::Instruction GenericCellCast::make_instruction(const ValueType& result_type,
                                                                    const ValueType& input_type, CellType to_cell_type,
                                                                    Stash& stash) {
-    assert(result_type == input_type.cell_cast(to_cell_type));
+    CHECK(result_type == input_type.cell_cast(to_cell_type));
     auto from = input_type.cell_type();
     auto to = result_type.cell_type();
     if (to == from) {
         return Instruction::nop();
     } else {
-        assert(!input_type.is_double());
+        CHECK(!input_type.is_double());
         auto& param = stash.create<ValueType>(result_type);
         auto  op = typify_invoke<2, TypifyCellType, SelectGenericCellCastOp>(from, to);
         return {op, wrap_param<ValueType>(param)};

@@ -4,6 +4,7 @@
 #include "floatbase.h"
 #include "single_numeric_sort_blob_writer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -18,7 +19,7 @@ FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const std::str
 template <typename T>
 FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const std::string& name, const Config& c)
     : FloatingPointAttribute(name, c), _defaultValue(ChangeBase::UPDATE, 0, defaultValue()) {
-    assert(c.basicType() == BasicType::fromType(T()));
+    CHECK(c.basicType() == BasicType::fromType(T()));
 }
 
 template <typename T> FloatingPointAttributeTemplate<T>::~FloatingPointAttributeTemplate() = default;

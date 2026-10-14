@@ -4,6 +4,7 @@
 
 #include "generic_btree_bucket_database.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -134,7 +135,7 @@ void BTreeBucketDatabase::getAll(const BucketId& bucket, std::vector<Entry>& ent
 }
 
 void BTreeBucketDatabase::update(const Entry& newEntry) {
-    assert(newEntry.valid());
+    CHECK(newEntry.valid());
     _impl->update(newEntry.getBucketId(), newEntry);
 }
 

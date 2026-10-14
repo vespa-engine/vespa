@@ -2,12 +2,12 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
-#include <cassert>
 #include <span>
 #include <type_traits>
 #include <vector>
@@ -119,7 +119,7 @@ private:
         }
         _values.resize(_values.size() + _values_per_entry);
         auto [pos, was_inserted] = _map.insert(MyKey{{tag_id}, hash});
-        assert(was_inserted);
+        CHECK(was_inserted);
         return Tag{tag_id};
     }
 

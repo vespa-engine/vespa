@@ -12,8 +12,9 @@ struct ICompactableLidSpace;
 namespace proton {
 
 /**
- * Implements a flush target that shrinks lid space in target. Used for document meta store and attribute vectors.
+ * Implements a flush target that shrinks lid space in target. Used for document meta store.
  * A derived class (ShrinkSummaryLidSpaceFlushTarget) is used for docstore.
+ * A derived class (ShrinkAttributeLidSpaceFlushTarget) is used for attribute vectors.
  */
 class ShrinkLidSpaceFlushTarget : public searchcorespi::LeafFlushTarget {
     /**

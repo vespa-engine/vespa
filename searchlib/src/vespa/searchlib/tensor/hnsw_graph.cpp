@@ -4,6 +4,8 @@
 
 #include "hnsw_index.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/type_stable_vector.hpp>
 
@@ -31,7 +33,7 @@ typename HnswGraph<type>::LevelsRef HnswGraph<type>::make_node(uint32_t nodeid, 
                                                                uint32_t num_levels) {
     nodes.ensure_size(nodeid + 1, NodeType());
     // A document cannot be added twice.
-    assert(!get_levels_ref(nodeid).valid());
+    CHECK(!get_levels_ref(nodeid).valid());
     // Note: The level array instance lives as long as the document is present in the index.
     std::vector<AtomicEntryRef> levels(num_levels, AtomicEntryRef());
     auto                        levels_ref = levels_store.add(levels);
@@ -50,7 +52,7 @@ typename HnswGraph<type>::LevelsRef HnswGraph<type>::make_node(uint32_t nodeid, 
 
 template <HnswIndexType type> void HnswGraph<type>::remove_node(uint32_t nodeid) {
     auto levels_ref = get_levels_ref(nodeid);
-    assert(levels_ref.valid());
+    CHECK(levels_ref.valid());
     auto                          levels = levels_store.get(levels_ref);
     vespalib::datastore::EntryRef invalid;
     nodes[nodeid].levels_ref().store_release(invalid);
@@ -78,9 +80,9 @@ template <HnswIndexType type>
 void HnswGraph<type>::set_link_array(uint32_t nodeid, uint32_t level, const LinkArrayRef& new_links) {
     auto new_links_ref = links_store.add(new_links);
     auto levels_ref = get_levels_ref(nodeid);
-    assert(levels_ref.valid());
+    CHECK(levels_ref.valid());
     auto levels = levels_store.get_writable(levels_ref);
-    assert(level < levels.size());
+    CHECK(level < levels.size());
     auto old_links_ref = levels[level].load_relaxed();
     levels[level].store_release(new_links_ref);
     links_store.remove(old_links_ref);
@@ -118,11 +120,11 @@ template <HnswIndexType type> void HnswGraph<type>::set_entry_node(EntryNode nod
     value <<= 32;
     value |= node.nodeid;
     if (node.levels_ref.valid()) {
-        assert(node.level >= 0);
-        assert(node.nodeid > 0);
+        CHECK(node.level >= 0);
+        CHECK(node.nodeid > 0);
     } else {
-        assert(node.level == -1);
-        assert(node.nodeid == 0);
+        CHECK(node.level == -1);
+        CHECK(node.nodeid == 0);
     }
     entry_nodeid_and_level.store(value, std::memory_order_release);
 }

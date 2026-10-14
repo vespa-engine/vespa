@@ -6,10 +6,9 @@
 #include "replygate.h"
 #include "tracelevel.h"
 
+#include <vespa/check_require.h>
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 using vespalib::make_ref_counted;
 using vespalib::make_string;
@@ -27,7 +26,7 @@ SourceSession::SourceSession(MessageBus& mbus, const SourceSessionParams& params
       _pendingCount(0),
       _closed(false),
       _done(false) {
-    assert(params.hasReplyHandler());
+    CHECK(params.hasReplyHandler());
 }
 
 SourceSession::~SourceSession() {
@@ -103,7 +102,7 @@ void SourceSession::handleReply(Reply::UP reply) {
     {
         std::lock_guard guard(_lock);
         my_pending_count = getPendingCount();
-        assert(my_pending_count > 0);
+        CHECK(my_pending_count > 0);
         --my_pending_count;
         _pendingCount.store(my_pending_count, std::memory_order_relaxed);
         if (_throttlePolicy) {
@@ -121,8 +120,8 @@ void SourceSession::handleReply(Reply::UP reply) {
     if (done) {
         {
             std::lock_guard guard(_lock);
-            assert(getPendingCount() == 0);
-            assert(_closed);
+            CHECK(getPendingCount() == 0);
+            CHECK(_closed);
             _done = true;
         }
         _cond.notify_all();

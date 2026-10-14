@@ -320,8 +320,9 @@ void DiskIndexTest::requireThatWeCanReadBitVector() {
     }
     { // word 'w2'
         BitVector::UP exp(BitVector::create(32));
-        for (uint32_t docId = 1; docId < 18; ++docId)
+        for (uint32_t docId = 1; docId < 18; ++docId) {
             exp->setBit(docId);
+        }
         { // field 'f2'
             auto  r = _index->lookup(1, "w2");
             auto& field_index = _index->get_field_index(1);

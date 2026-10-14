@@ -2,10 +2,9 @@
 
 #include "dense_join_reduce_plan.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/visit_ranges.h>
-
-#include <cassert>
 
 namespace vespalib::eval::instruction {
 
@@ -58,12 +57,12 @@ DenseJoinReducePlan::DenseJoinReducePlan(const ValueType& lhs, const ValueType& 
       rhs_stride(),
       res_stride() {
     auto dims = merge(lhs.nontrivial_indexed_dimensions(), rhs.nontrivial_indexed_dimensions());
-    assert(count_only_in_second(dims, res.nontrivial_indexed_dimensions()) == 0);
+    CHECK(count_only_in_second(dims, res.nontrivial_indexed_dimensions()) == 0);
     Strides prev_strides;
     for (const auto& dim : dims) {
         Strides strides(lhs.stride_of(dim.name), rhs.stride_of(dim.name), res.stride_of(dim.name));
         if (strides.can_combine_with(prev_strides)) {
-            assert(!loop_cnt.empty());
+            CHECK(!loop_cnt.empty());
             loop_cnt.back() *= dim.size;
             lhs_stride.back() = strides.lhs;
             rhs_stride.back() = strides.rhs;

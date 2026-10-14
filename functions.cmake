@@ -21,6 +21,7 @@ function(vespa_add_target_dependency TARGET OTHER_TARGET)
     # (Weak) dependency between object library and other target
     if(TARGET_TYPE STREQUAL OBJECT_LIBRARY)
         target_include_directories(${TARGET} PRIVATE $<TARGET_PROPERTY:${OTHER_TARGET},INTERFACE_INCLUDE_DIRECTORIES>)
+        target_compile_definitions(${TARGET} PRIVATE $<TARGET_PROPERTY:${OTHER_TARGET},INTERFACE_COMPILE_DEFINITIONS>)
         return()
     endif()
 

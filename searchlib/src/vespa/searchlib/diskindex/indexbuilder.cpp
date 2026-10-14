@@ -4,6 +4,7 @@
 
 #include "fieldwriter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/field_length_info.h>
@@ -109,7 +110,7 @@ FieldIndexBuilder::FieldIndexBuilder(const Schema& schema, uint32_t fieldId, Ind
 FieldIndexBuilder::~FieldIndexBuilder() = default;
 
 void FieldIndexBuilder::startWord(std::string_view word) {
-    assert(!_inWord);
+    CHECK(!_inWord);
     // TODO: Check sort order
     _curWord = word;
     _inWord = true;
@@ -117,12 +118,12 @@ void FieldIndexBuilder::startWord(std::string_view word) {
 }
 
 void FieldIndexBuilder::endWord() {
-    assert(_inWord);
+    CHECK(_inWord);
     _inWord = false;
 }
 
 void FieldIndexBuilder::add_document(const index::DocIdAndFeatures& features) {
-    assert(_inWord);
+    CHECK(_inWord);
     _field.add_document(features);
 }
 
@@ -134,7 +135,7 @@ FileHandle::~FileHandle() = default;
 void FileHandle::open(std::string_view dir, const SchemaUtil::IndexIterator& index, uint32_t docIdLimit,
                       uint64_t numWordIds, const FieldLengthInfo& field_length_info,
                       const TuneFileSeqWrite& tuneFileWrite, const FileHeaderContext& fileHeaderContext) {
-    assert(!_fieldWriter);
+    CHECK(!_fieldWriter);
 
     _fieldWriter = std::make_shared<FieldWriter>(docIdLimit, numWordIds, std::string(dir) + "/");
 
@@ -157,7 +158,7 @@ void FileHandle::close() {
             ret = false;
         }
     }
-    assert(ret);
+    CHECK(ret);
     (void)ret;
 }
 

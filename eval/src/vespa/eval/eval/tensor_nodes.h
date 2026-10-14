@@ -10,6 +10,8 @@
 #include "tensor_spec.h"
 #include "value_type_spec.h"
 
+#include <vespa/check_require.h>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -31,7 +33,7 @@ public:
     size_t num_children() const override { return 1; }
     const Node& get_child(size_t idx) const override {
         (void)idx;
-        assert(idx == 0);
+        CHECK(idx == 0);
         return *_child;
     }
     void detach_children(NodeHandler& handler) override { handler.handle(std::move(_child)); }
@@ -52,7 +54,7 @@ public:
     size_t num_children() const override { return 1; }
     const Node& get_child(size_t idx) const override {
         (void)idx;
-        assert(idx == 0);
+        CHECK(idx == 0);
         return *_child;
     }
     void detach_children(NodeHandler& handler) override { handler.handle(std::move(_child)); }
@@ -73,7 +75,7 @@ public:
     size_t num_children() const override { return 1; }
     const Node& get_child(size_t idx) const override {
         (void)idx;
-        assert(idx == 0);
+        CHECK(idx == 0);
         return *_child;
     }
     void detach_children(NodeHandler& handler) override { handler.handle(std::move(_child)); }
@@ -95,7 +97,7 @@ public:
     void accept(NodeVisitor& visitor) const override;
     size_t num_children() const override { return 2; }
     const Node& get_child(size_t idx) const override {
-        assert(idx < 2);
+        CHECK(idx < 2);
         return (idx == 0) ? *_lhs : *_rhs;
     }
     void detach_children(NodeHandler& handler) override {
@@ -120,7 +122,7 @@ public:
     void accept(NodeVisitor& visitor) const override;
     size_t num_children() const override { return 2; }
     const Node& get_child(size_t idx) const override {
-        assert(idx < 2);
+        CHECK(idx < 2);
         return (idx == 0) ? *_lhs : *_rhs;
     }
     void detach_children(NodeHandler& handler) override {
@@ -145,7 +147,7 @@ public:
     void accept(NodeVisitor& visitor) const override;
     size_t num_children() const override { return 1; }
     const Node& get_child(size_t idx) const override {
-        assert(idx == 0);
+        CHECK(idx == 0);
         return *_child;
     }
     void detach_children(NodeHandler& handler) override { handler.handle(std::move(_child)); }
@@ -167,7 +169,7 @@ public:
     void accept(NodeVisitor& visitor) const override;
     size_t num_children() const override { return 1; }
     const Node& get_child(size_t idx) const override {
-        assert(idx == 0);
+        CHECK(idx == 0);
         return *_child;
     }
     void detach_children(NodeHandler& handler) override { handler.handle(std::move(_child)); }
@@ -190,7 +192,7 @@ public:
     void accept(NodeVisitor& visitor) const override;
     size_t num_children() const override { return 2; }
     const Node& get_child(size_t idx) const override {
-        assert(idx < 2);
+        CHECK(idx < 2);
         return (idx == 0) ? *_lhs : *_rhs;
     }
     void detach_children(NodeHandler& handler) override {
@@ -213,7 +215,7 @@ public:
     size_t num_children() const override { return 1; }
     const Node& get_child(size_t idx) const override {
         (void)idx;
-        assert(idx == 0);
+        CHECK(idx == 0);
         return *_child;
     }
     void detach_children(NodeHandler& handler) override { handler.handle(std::move(_child)); }
@@ -233,7 +235,7 @@ public:
     size_t num_children() const override { return 1; }
     const Node& get_child(size_t idx) const override {
         (void)idx;
-        assert(idx == 0);
+        CHECK(idx == 0);
         return *_child;
     }
     void detach_children(NodeHandler& handler) override { handler.handle(std::move(_child)); }
@@ -260,11 +262,11 @@ public:
     void accept(NodeVisitor& visitor) const override;
     size_t num_children() const override { return _cells.size(); }
     const Node& get_child(size_t idx) const override {
-        assert(idx < _cells.size());
+        CHECK(idx < _cells.size());
         return *_cells[idx].second;
     }
     const TensorSpec::Address& get_child_address(size_t idx) const {
-        assert(idx < _cells.size());
+        CHECK(idx < _cells.size());
         return _cells[idx].first;
     }
     void detach_children(NodeHandler& handler) override {
@@ -283,8 +285,8 @@ private:
 public:
     TensorLambda(ValueType type_in, std::vector<size_t> bindings, std::shared_ptr<Function const> lambda)
         : _type(std::move(type_in)), _bindings(std::move(bindings)), _lambda(std::move(lambda)) {
-        assert(_type.is_dense());
-        assert(_lambda->num_params() == (_type.dimensions().size() + _bindings.size()));
+        CHECK(_type.is_dense());
+        CHECK(_lambda->num_params() == (_type.dimensions().size() + _bindings.size()));
     }
     const ValueType& type() const { return _type; }
     const std::vector<size_t>& bindings() const { return _bindings; }
@@ -330,7 +332,7 @@ public:
     void accept(NodeVisitor& visitor) const override;
     size_t num_children() const override { return (1 + _expr_dims.size()); }
     const Node& get_child(size_t idx) const override {
-        assert(idx < num_children());
+        CHECK(idx < num_children());
         if (idx == 0) {
             return *_param;
         } else {

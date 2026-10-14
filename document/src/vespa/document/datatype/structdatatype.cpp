@@ -2,6 +2,7 @@
 
 #include "structdatatype.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/structfieldvalue.h>
@@ -9,7 +10,6 @@
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-#include <cassert>
 #include <ostream>
 
 #include <vespa/log/log.h>
@@ -38,7 +38,7 @@ void StructDataType::print(std::ostream& out, bool verbose, const std::string& i
     out << ")";
     if (verbose) {
         out << " {";
-        assert(_idFieldMap.size() == _nameFieldMap.size());
+        CHECK(_idFieldMap.size() == _nameFieldMap.size());
         if (!_nameFieldMap.empty()) {
             // Use fieldset to print even though inefficient. Don't need
             // efficient print, and this gets fields in order

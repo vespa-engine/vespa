@@ -3,14 +3,13 @@
 
 #include "shared_rpc_resources.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/slobrok/imirrorapi.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.caching_rpc_target_resolver");
@@ -77,7 +76,7 @@ CachingRpcTargetResolver::insert_new_target_mapping(const api::StorageMessageAdd
     targets.reserve(_num_targets_per_node);
     for (size_t i = 0; i < _num_targets_per_node; ++i) {
         auto target = _target_factory.make_target(connection_spec); // TODO expensive inside lock?
-        assert(target);
+        CHECK(target);
         targets.push_back(std::shared_ptr<RpcTarget>(std::move(target)));
     }
     // TODO emplacement (with replace) semantics to avoid need for default constructed K/V
@@ -104,7 +103,7 @@ std::shared_ptr<RpcTarget> CachingRpcTargetResolver::resolve_rpc_target(const ap
     }
     // Note: We don't use wildcards so there is a 1-to-1 mapping between service name / slobrok id and connection
     // spec.
-    assert(specs.size() == 1);
+    CHECK(specs.size() == 1);
     const auto&      connection_spec = specs[0].second;
     std::unique_lock lock(_targets_rwmutex);
     if (auto result = consider_update_target_pool(address, bucket_id, connection_spec, curr_slobrok_gen, lock)) {

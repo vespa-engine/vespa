@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -126,14 +127,18 @@ Document::UP makeDoc(const DocumentTypeRepo& repo, const string& docId, const st
                      int32_t aa, int32_t ab) {
     const DocumentType* docType = repo.getDocumentType("test");
     auto                doc = std::make_unique<Document>(repo, *docType, DocumentId(docId));
-    if (ia != "null")
+    if (ia != "null") {
         doc->setValue("ia", StringFieldValue(ia));
-    if (ib != "null")
+    }
+    if (ib != "null") {
         doc->setValue("ib", StringFieldValue(ib));
-    if (aa != noIntVal)
+    }
+    if (aa != noIntVal) {
         doc->setValue("aa", IntFieldValue(aa));
-    if (ab != noIntVal)
+    }
+    if (ab != noIntVal) {
         doc->setValue("ab", IntFieldValue(ab));
+    }
     return doc;
 }
 
@@ -309,7 +314,7 @@ void MyDB::add_tensor_doc(uint32_t lid, const string& doc_id, bool dense_attr_pr
 
 const Document& MyDB::getDoc(uint32_t lid) const {
     auto it = _lidToDocSP.find(lid);
-    assert(it != _lidToDocSP.end());
+    CHECK(it != _lidToDocSP.end());
     return *it->second;
 }
 
@@ -355,7 +360,7 @@ CachedSelect::SP TestFixture::testParse(const string& selection, const string& d
     CachedSelect::SP res(new CachedSelect);
 
     const DocumentType* docType = repo.getDocumentType(docTypeName);
-    assert(docType != nullptr);
+    CHECK(docType != nullptr);
     auto emptyDoc = std::make_unique<Document>(repo, *docType, DocumentId());
 
     res->set(selection, docTypeName, *emptyDoc, repo, &_amgr, _hasFields, _has_document_ids);
@@ -735,17 +740,21 @@ TEST(CachedSelectTest, Test_performance_when_using_attributes) {
     vespalib::Timer sw;
     for (i = 0; i < loopcnt; ++i) {
         ctx._lid = 1u;
-        if (sel->contains(ctx) != Result::False)
+        if (sel->contains(ctx) != Result::False) {
             break;
+        }
         ctx._lid = 2u;
-        if (sel->contains(ctx) != Result::True)
+        if (sel->contains(ctx) != Result::True) {
             break;
+        }
         ctx._lid = 3u;
-        if (sel->contains(ctx) != Result::Invalid)
+        if (sel->contains(ctx) != Result::Invalid) {
             break;
+        }
         ctx._lid = 4u;
-        if (sel->contains(ctx) != Result::Invalid)
+        if (sel->contains(ctx) != Result::Invalid) {
             break;
+        }
     }
     vespalib::duration elapsed = sw.elapsed();
     EXPECT_EQ(loopcnt, i);

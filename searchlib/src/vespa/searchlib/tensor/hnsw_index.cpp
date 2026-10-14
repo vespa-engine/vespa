@@ -11,6 +11,7 @@
 #include "random_level_generator.h"
 #include "vector_bundle.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/common/create_and_freeze_times.h>
@@ -385,7 +386,7 @@ void HnswIndex<type>::search_layer_helper(Stats& stats, const BoundDistanceFunct
         candidates.push(entry);
         visited.mark(entry.nodeid);
         if (!filter_wrapper.check(entry.docid)) {
-            assert(best_neighbors.peek().size() == 1);
+            CHECK(best_neighbors.peek().size() == 1);
             best_neighbors.pop();
         }
     }
@@ -459,7 +460,7 @@ void HnswIndex<type>::search_layer_filter_first_helper(Stats& stats, const Bound
                                                        uint32_t                        nodeid_limit,
                                                        const vespalib::Deadline* const deadline,
                                                        uint32_t estimated_visited_nodes) const {
-    assert(filter);
+    CHECK(filter);
     NearestPriQ                         candidates;
     internal::GlobalFilterWrapper<type> filter_wrapper(filter);
     filter_wrapper.clamp_nodeid_limit(nodeid_limit);
@@ -477,7 +478,7 @@ void HnswIndex<type>::search_layer_filter_first_helper(Stats& stats, const Bound
         candidates.push(entry);
         visited.mark(entry.nodeid);
         if (!filter_wrapper.check(entry.docid)) {
-            assert(best_neighbors.peek().size() == 1);
+            CHECK(best_neighbors.peek().size() == 1);
             best_neighbors.pop();
         }
     }
@@ -546,7 +547,7 @@ void HnswIndex<type>::exploreNeighborhood(Stats& stats, HnswTraversalCandidate& 
                                           VisitedTracker& visited, double exploration, uint32_t level,
                                           const internal::GlobalFilterWrapper<type>& filter_wrapper,
                                           uint32_t                                   nodeid_limit) const {
-    assert(found.empty());
+    CHECK(found.empty());
 
     std::deque<uint32_t> todo;
     todo.push_back(cand.nodeid);
@@ -664,7 +665,7 @@ HnswIndex<type>::HnswIndex(const DocVectorAccess& vectors, DistanceFunctionFacto
       _level_generator(std::move(level_generator)),
       _id_mapping(),
       _cfg(cfg) {
-    assert(_distance_ff);
+    CHECK(_distance_ff);
 }
 
 template <HnswIndexType type> HnswIndex<type>::~HnswIndex() = default;
@@ -681,7 +682,7 @@ template <HnswIndexType type> void HnswIndex<type>::add_document(uint32_t docid)
     auto            subspaces = input_vectors.subspaces();
     op.nodes.reserve(subspaces);
     auto nodeids = _id_mapping.allocate_ids(docid, subspaces);
-    assert(nodeids.size() == subspaces);
+    CHECK(nodeids.size() == subspaces);
     for (uint32_t subspace = 0; subspace < subspaces; ++subspace) {
         auto entry = _graph.get_entry_node();
         internal_prepare_add_node(op, input_vectors.cells(subspace), entry);
@@ -757,7 +758,7 @@ LinkArray HnswIndex<type>::filter_valid_nodeids(uint32_t level, const typename P
         uint32_t                      nodeid = neighbor.first;
         vespalib::datastore::EntryRef levels_ref = neighbor.second;
         if (_graph.still_valid(nodeid, levels_ref)) {
-            assert(nodeid != self_nodeid);
+            CHECK(nodeid != self_nodeid);
             auto levels = _graph.get_level_array(levels_ref);
             if (level < levels.size()) {
                 valid.push_back(nodeid);
@@ -769,7 +770,7 @@ LinkArray HnswIndex<type>::filter_valid_nodeids(uint32_t level, const typename P
 
 template <HnswIndexType type> void HnswIndex<type>::internal_complete_add(uint32_t docid, PreparedAddDoc& op) {
     auto nodeids = _id_mapping.allocate_ids(docid, op.nodes.size());
-    assert(nodeids.size() == op.nodes.size());
+    CHECK(nodeids.size() == op.nodes.size());
     uint32_t subspace = 0;
     for (auto nodeid : nodeids) {
         internal_complete_add_node(nodeid, docid, subspace, op.nodes[subspace]);
@@ -1009,9 +1010,9 @@ template <HnswIndexType type> std::unique_ptr<vespalib::StateExplorer> HnswIndex
 }
 
 template <HnswIndexType type> void HnswIndex<type>::shrink_lid_space(uint32_t doc_id_limit) {
-    assert(doc_id_limit >= 1u);
+    CHECK(doc_id_limit >= 1u);
     if constexpr (std::is_same_v<IdMapping, HnswIdentityMapping>) {
-        assert(doc_id_limit >= _graph.nodes_size.load(std::memory_order_relaxed));
+        CHECK(doc_id_limit >= _graph.nodes_size.load(std::memory_order_relaxed));
         uint32_t old_doc_id_limit = _graph.nodes.size();
         if (doc_id_limit >= old_doc_id_limit) {
             return;
@@ -1029,7 +1030,7 @@ std::unique_ptr<NearestNeighborIndexSaver> HnswIndex<type>::make_saver(GenericHe
 template <HnswIndexType type>
 std::unique_ptr<NearestNeighborIndexLoader> HnswIndex<type>::make_loader(FastOS_FileInterface&          file,
                                                                          const vespalib::GenericHeader& header) {
-    assert(get_entry_nodeid() == 0); // cannot load after index has data
+    CHECK(get_entry_nodeid() == 0); // cannot load after index has data
     load_mips_max_distance(header, distance_function_factory());
     _graph.set_last_flush_duration(CreateAndFreezeTimes(header).get_flush_duration());
     using ReaderType = FileReader<uint32_t>;
@@ -1127,7 +1128,7 @@ template <HnswIndexType type> HnswTestNode HnswIndex<type>::get_node(uint32_t no
 
 template <HnswIndexType type> void HnswIndex<type>::set_node(uint32_t nodeid, const HnswTestNode& node) {
     size_t num_levels = node.size();
-    assert(num_levels > 0);
+    CHECK(num_levels > 0);
     auto levels_ref = _graph.make_node(nodeid, nodeid, 0, num_levels);
     for (size_t level = 0; level < num_levels; ++level) {
         connect_new_node(nodeid, node.level(level), level);

@@ -8,6 +8,7 @@
 #include "operation_listener.h"
 #include "search_context.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/fastos/file_interface.h>
 #include <vespa/persistence/spi/bucket_limits.h>
@@ -346,7 +347,7 @@ DocumentMetaStore::DocId DocumentMetaStore::readNextDoc(documentmetastore::Reade
                                                         documentmetastore::DocIdReader* docid_reader,
                                                         TreeType::Builder&              treeBuilder) {
     uint32_t lid(reader.getNextLid());
-    assert(lid < reader.getDocIdLimit());
+    CHECK(lid < reader.getDocIdLimit());
     RawDocumentMetadata& meta = _metadataStore[lid];
     meta.setGid(reader.getNextGid());
     meta.setBucketUsedBits(reader.getNextBucketUsedBits());
@@ -361,7 +362,7 @@ DocumentMetaStore::DocId DocumentMetaStore::readNextDoc(documentmetastore::Reade
         meta.set_docid_ref(ref);
     }
     treeBuilder.insert(GidToLidMapKey(lid, meta.getGid()), BTreeNoLeafData());
-    assert(!validLid(lid));
+    CHECK(!validLid(lid));
     _lidAlloc.registerLid(lid);
     return lid;
 }
@@ -378,7 +379,7 @@ bool DocumentMetaStore::onLoad(vespalib::Executor*) {
     size_t docIdLimit = reader.getDocIdLimit();
     _metadataStore.unsafe_reserve(std::max(numElems, docIdLimit));
     TreeType::Builder treeBuilder(_gidToLidMap.getAllocator());
-    assert(docIdLimit > 0); // lid 0 is reserved
+    CHECK(docIdLimit > 0); // lid 0 is reserved
     ensureSpace(docIdLimit - 1);
 
     // insert gids (already sorted)
@@ -456,10 +457,10 @@ namespace {
 
 void unloadBucket(bucketdb::BucketDBOwner& db, const BucketId& id, const BucketState& delta) {
     if (!id.valid()) {
-        assert(delta.empty());
+        CHECK(delta.empty());
         return;
     }
-    assert(!delta.empty());
+    CHECK(!delta.empty());
     db.takeGuard()->unloadBucket(id, delta);
 }
 
@@ -474,7 +475,7 @@ void DocumentMetaStore::unload() {
     BucketState prevDelta;
     for (; itr.valid(); ++itr) {
         uint32_t lid = itr.getKey().get_lid();
-        assert(validLid(lid));
+        CHECK(validLid(lid));
         RawDocumentMetadata& metadata = _metadataStore[lid];
         BucketId             bucketId = metadata.getBucketId();
         if (prev != bucketId) {
@@ -540,7 +541,7 @@ DocumentMetaStore::~DocumentMetaStore() {
     // between document types
     unload();
     getGenerationHolder().reclaim_all();
-    assert(get_shrink_lid_space_blockers() == 0);
+    CHECK(get_shrink_lid_space_blockers() == 0);
 }
 
 DocumentMetaStore::Result DocumentMetaStore::inspectExisting(const GlobalId& gid, uint64_t prepare_serial_num) {
@@ -560,7 +561,7 @@ DocumentMetaStore::Result DocumentMetaStore::inspectExisting(const GlobalId& gid
 }
 
 DocumentMetaStore::Result DocumentMetaStore::inspect(const GlobalId& gid, uint64_t prepare_serial_num) {
-    assert(_lidAlloc.isFreeListConstructed());
+    CHECK(_lidAlloc.isFreeListConstructed());
     Result  res;
     KeyComp comp(gid, get_unbound_metadata_view());
     auto    find_key = GidToLidMapKey::make_find_key(gid);
@@ -609,7 +610,7 @@ DocumentMetaStore::Result DocumentMetaStore::put(const DocumentId& docid, const 
         }
         if (_lidAlloc.isFreeListConstructed()) {
             DocId freeLid = getFreeLid();
-            assert(freeLid == lid);
+            CHECK(freeLid == lid);
             (void)freeLid;
         }
         if (_store_full_document_id) {
@@ -709,12 +710,12 @@ void DocumentMetaStore::removes_complete(const std::vector<DocId>& lids) {
 
 void DocumentMetaStore::move(const document::DocumentId& docid, DocId fromLid, DocId toLid,
                              uint64_t prepare_serial_num) {
-    assert(fromLid != 0);
-    assert(toLid != 0);
-    assert(fromLid > toLid);
-    assert(fromLid < getCommittedDocIdLimit());
-    assert(!validLid(toLid));
-    assert(validLid(fromLid));
+    CHECK(fromLid != 0);
+    CHECK(toLid != 0);
+    CHECK(fromLid > toLid);
+    CHECK(fromLid < getCommittedDocIdLimit());
+    CHECK(!validLid(toLid));
+    CHECK(validLid(fromLid));
     _lidAlloc.moveLidBegin(fromLid, toLid);
     _metadataStore[toLid] = _metadataStore[fromLid];
     if (_store_full_document_id) {
@@ -734,8 +735,8 @@ void DocumentMetaStore::move(const document::DocumentId& docid, DocId fromLid, D
     if (prepare_serial_num == 0u || _gid_to_lid_map_write_itr_prepare_serial_num != prepare_serial_num) {
         itr.lower_bound(_gidToLidMap.getRoot(), find_key, comp);
     }
-    assert(itr.valid());
-    assert(itr.getKey().get_lid() == fromLid);
+    CHECK(itr.valid());
+    CHECK(itr.getKey().get_lid() == fromLid);
     _gidToLidMap.thaw(itr);
     itr.writeKey(GidToLidMapKey(toLid, find_key.get_gid_key()));
     _lidAlloc.moveLidEnd(fromLid, toLid);
@@ -774,10 +775,10 @@ void DocumentMetaStore::removeBatch(const std::vector<DocId>& lidsToRemove, cons
     std::vector<LidAndRawDocumentMetadata> removed;
     removed.reserve(lidsToRemove.size());
     for (const auto& lid : lidsToRemove) {
-        assert(lid > 0 && lid < docIdLimit);
+        CHECK(lid > 0 && lid < docIdLimit);
         (void)docIdLimit;
 
-        assert(validLid(lid));
+        CHECK(validLid(lid));
         removed.emplace_back(lid, _metadataStore[lid]);
         if (_store_full_document_id) {
             remove_docid_string(removed.back().second.get_relaxed_docid_ref());
@@ -961,10 +962,10 @@ void DocumentMetaStore::getLids(const BucketId& bucketId, std::vector<DocId>& li
     TreeType::Iterator end = upperBound(bucketId);
     for (; itr != end; ++itr) {
         DocId lid = itr.getKey().get_lid();
-        assert(validLid(lid));
+        CHECK(validLid(lid));
         const RawDocumentMetadata& metadata = getRawMetadata(lid);
         uint8_t                    bucketUsedBits = metadata.getBucketUsedBits();
-        assert(BucketId::validUsedBits(bucketUsedBits));
+        CHECK(BucketId::validUsedBits(bucketUsedBits));
         if (bucketUsedBits != bucketId.getUsedBits()) {
             continue; // Skip document belonging to overlapping bucket
         }
@@ -991,10 +992,10 @@ bucketdb::BucketDeltaPair DocumentMetaStore::handleSplit(const bucketdb::SplitBu
     bucketdb::BucketDeltaPair deltas;
     for (; itr != end; ++itr) {
         DocId lid = itr.getKey().get_lid();
-        assert(validLid(lid));
+        CHECK(validLid(lid));
         RawDocumentMetadata& metadata = _metadataStore[lid];
         uint8_t              bucketUsedBits = metadata.getBucketUsedBits();
-        assert(BucketId::validUsedBits(bucketUsedBits));
+        CHECK(BucketId::validUsedBits(bucketUsedBits));
         if (bucketUsedBits == source.getUsedBits()) {
             BucketId t1(metadata.getGid().convertToBucketId());
             BucketId t2(t1);
@@ -1027,9 +1028,9 @@ bucketdb::BucketDeltaPair DocumentMetaStore::handleJoin(const bucketdb::JoinBuck
     bucketdb::BucketDeltaPair deltas;
     for (; itr != end; ++itr) {
         DocId lid = itr.getKey().get_lid();
-        assert(validLid(lid));
+        CHECK(validLid(lid));
         RawDocumentMetadata& metadata = _metadataStore[lid];
-        assert(BucketId::validUsedBits(metadata.getBucketUsedBits()));
+        CHECK(BucketId::validUsedBits(metadata.getBucketUsedBits()));
         BucketId s(metadata.getBucketId());
         if (source1.valid() && s == source1) {
             metadata.setBucketUsedBits(target.getUsedBits());
@@ -1061,7 +1062,7 @@ void DocumentMetaStore::updateActiveLids(const BucketId& bucketId, bool active) 
     uint8_t            bucketUsedBits = bucketId.getUsedBits();
     for (; itr != end; ++itr) {
         DocId lid = itr.getKey().get_lid();
-        assert(validLid(lid));
+        CHECK(validLid(lid));
         RawDocumentMetadata& metadata = _metadataStore[lid];
         if (metadata.getBucketUsedBits() != bucketUsedBits) {
             continue;
@@ -1079,8 +1080,8 @@ void DocumentMetaStore::populateActiveBuckets(BucketId::List buckets) {
 }
 
 void DocumentMetaStore::clearDocs(DocId lidLow, DocId lidLimit, bool) {
-    assert(lidLow <= lidLimit);
-    assert(lidLimit <= getNumDocs());
+    CHECK(lidLow <= lidLimit);
+    CHECK(lidLimit <= getNumDocs());
     _lidAlloc.clearDocs(lidLow, lidLimit);
 }
 
@@ -1090,7 +1091,7 @@ void DocumentMetaStore::compactLidSpace(uint32_t wantedLidLimit) {
 }
 
 void DocumentMetaStore::holdUnblockShrinkLidSpace() {
-    assert(get_shrink_lid_space_blockers() > 0);
+    CHECK(get_shrink_lid_space_blockers() > 0);
     auto hold = std::make_unique<ShrinkBlockHeld>(*this);
     getGenerationHolder().insert(std::move(hold));
     incGeneration();
@@ -1098,7 +1099,7 @@ void DocumentMetaStore::holdUnblockShrinkLidSpace() {
 
 void DocumentMetaStore::unblockShrinkLidSpace() {
     auto shrink_lid_space_blockers = get_shrink_lid_space_blockers();
-    assert(shrink_lid_space_blockers > 0);
+    CHECK(shrink_lid_space_blockers > 0);
     set_shrink_lid_space_blockers(shrink_lid_space_blockers - 1);
 }
 

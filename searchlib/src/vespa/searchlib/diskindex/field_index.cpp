@@ -5,12 +5,12 @@
 #include "fileheader.h"
 #include "pagedict4randread.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/read_stats.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 
-#include <cassert>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -158,7 +158,7 @@ DictionaryLookupResult FieldIndex::lookup(std::string_view word) const {
 PostingListHandle FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_result,
                                                          bool                          trim) const {
     auto handle = _posting_file->read_posting_list(lookup_result);
-    assert(handle._read_bytes != 0);
+    CHECK(handle._read_bytes != 0);
     _io_stats->add_uncached_read_operation(handle._read_bytes);
     if (trim) {
         _posting_file->consider_trim_posting_list(lookup_result, handle,
@@ -190,7 +190,7 @@ PostingListHandle FieldIndex::read_posting_list(const DictionaryLookupResult& lo
     IPostingListCache::Context ctx(this);
     auto                       result = _posting_list_cache->read(key, ctx);
     if (!ctx.cache_miss) {
-        assert(result._read_bytes != 0);
+        CHECK(result._read_bytes != 0);
         _io_stats->add_cached_read_operation(result._read_bytes);
     }
     return result;
@@ -207,7 +207,7 @@ std::shared_ptr<const BitVector>
 FieldIndex::read_uncached_bit_vector(BitVectorDictionaryLookupResult lookup_result) const {
     ReadStats read_stats;
     auto      result = _bit_vector_dict->read_bitvector(lookup_result, read_stats);
-    assert(read_stats.read_bytes != 0);
+    CHECK(read_stats.read_bytes != 0);
     _io_stats->add_uncached_read_operation(read_stats.read_bytes);
     return result;
 }

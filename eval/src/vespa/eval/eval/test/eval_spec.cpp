@@ -2,6 +2,7 @@
 
 #include "eval_spec.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/string_hash.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -14,12 +15,12 @@ namespace {
 
 double byte(const std::string& bits) {
     int8_t res = 0;
-    assert(bits.size() == 8);
+    CHECK(bits.size() == 8);
     for (const auto& c : bits) {
         if (c == '1') {
             res = (res << 1) | 1;
         } else {
-            assert(c == '0');
+            CHECK(c == '0');
             res = (res << 1);
         }
     }
@@ -35,7 +36,7 @@ EvalSpec::Expression::~Expression() = default;
 
 EvalSpec::Expression& EvalSpec::Expression::add_case(std::initializer_list<double> param_values,
                                                      double                        expected_result) {
-    assert(param_values.size() == param_names.size());
+    CHECK(param_values.size() == param_names.size());
     cases.emplace_back(param_values, expected_result);
     return *this;
 }
@@ -79,7 +80,7 @@ void EvalSpec::add_rule(const ParamSpec& a_spec, const ParamSpec& b_spec, const 
 
 std::string EvalSpec::EvalTest::as_string(const std::vector<std::string>& param_names,
                                           const std::vector<double>& param_values, const std::string& expression) {
-    assert(param_values.size() == param_names.size());
+    CHECK(param_values.size() == param_names.size());
     std::string str;
     str += "f(";
     for (size_t i = 0; i < param_names.size(); ++i) {

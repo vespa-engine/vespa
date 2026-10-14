@@ -4,6 +4,7 @@
 
 #include "generic_join.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/typify.h>
 
 #include <vespa/eval/eval/fast_value.hpp>
@@ -92,14 +93,14 @@ bool is_sparse_like(const ValueType& type) {
 
 SparseFullOverlapJoinFunction::SparseFullOverlapJoinFunction(const tensor_function::Join& original)
     : tensor_function::Join(original.result_type(), original.lhs(), original.rhs(), original.function()) {
-    assert(compatible_types(result_type(), lhs().result_type(), rhs().result_type()));
+    CHECK(compatible_types(result_type(), lhs().result_type(), rhs().result_type()));
 }
 
 InterpretedFunction::Instruction SparseFullOverlapJoinFunction::compile_self(const ValueBuilderFactory& factory,
                                                                              Stash&                     stash) const {
     const auto& param =
         stash.create<JoinParam>(result_type(), lhs().result_type(), rhs().result_type(), function(), factory);
-    assert(result_type() == ValueType::join(lhs().result_type(), rhs().result_type()));
+    CHECK(result_type() == ValueType::join(lhs().result_type(), rhs().result_type()));
     bool single_dim = (result_type().count_mapped_dimensions() == 1);
     auto op = typify_invoke<3, MyTypify, SelectSparseFullOverlapJoinOp>(result_type().cell_meta().limit(), function(),
                                                                         single_dim);
@@ -112,7 +113,7 @@ bool SparseFullOverlapJoinFunction::compatible_types(const ValueType& res, const
         is_sparse_like(rhs) && (res.count_mapped_dimensions() == lhs.count_mapped_dimensions()) &&
         (res.count_mapped_dimensions() == rhs.count_mapped_dimensions()))
     {
-        assert(is_sparse_like(res));
+        CHECK(is_sparse_like(res));
         return true;
     }
     return false;

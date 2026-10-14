@@ -2,6 +2,7 @@
 #include "rise_wand.h"
 #include "rise_wand.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
@@ -56,7 +57,7 @@ struct ModSearch : SearchIterator {
         setDocId(step);
     }
     void doSeek(uint32_t docid) override {
-        assert(docid > getDocId());
+        CHECK(docid > getDocId());
         uint32_t skippedDocs = (docid - getDocId() - 1);
         uint32_t skippedHits = (skippedDocs / step);
         stats.seek(skippedDocs, skippedHits);
@@ -65,7 +66,7 @@ struct ModSearch : SearchIterator {
             hit += step;
         }
         if (hit < limit) {
-            assert(hit >= docid);
+            CHECK(hit >= docid);
             setDocId(hit);
         } else {
             setAtEnd();

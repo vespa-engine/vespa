@@ -11,13 +11,13 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #include "internal.h"
 #include "log-target.h"
 
+#include <vespa/check_require.h>
 #include <vespa/defaults.h>
 
 #include <pthread.h>
 #include <sys/time.h>
 #include <unistd.h>
 
-#include <cassert>
 #include <cinttypes>
 #include <cstdarg>
 #include <cstring>
@@ -122,7 +122,7 @@ Logger::Logger(const char* name, const char* rcsId)
     memset(_rcsId, 0, sizeof(_rcsId));
     memset(_appendix, 0, sizeof(_appendix));
     const char* app(strchr(name, '.') ? strchr(name, '.') : "");
-    assert(strlen(app) < sizeof(_appendix));
+    CHECK(strlen(app) < sizeof(_appendix));
     strcpy(_appendix, app);
     if (!_target) {
         // Set up stderr first as a target so we can log even if target
@@ -187,7 +187,7 @@ int Logger::setRcsId(const char* id) {
         end = start + len;
     }
 
-    assert(size_t(len + 8) < sizeof(_rcsId));
+    CHECK(size_t(len + 8) < sizeof(_rcsId));
     snprintf(_rcsId, sizeof(_rcsId), "(%.*s): ", (int)(end - start), start);
     LOG(spam, "rcs id was set to '%s'", _rcsId);
     return 0;

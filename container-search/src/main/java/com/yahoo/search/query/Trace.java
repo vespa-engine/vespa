@@ -96,6 +96,7 @@ public class Trace implements Cloneable {
         profiling.getMatching().setDepth(profileDepth);
         profiling.getFirstPhaseRanking().setDepth(profileDepth);
         profiling.getSecondPhaseRanking().setDepth(profileDepth);
+        profiling.getSortFeatures().setDepth(profileDepth);
     }
     public int getProfileDepth() { return profile ? 100 : profileDepth; }
 

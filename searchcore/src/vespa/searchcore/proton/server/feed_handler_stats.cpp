@@ -2,7 +2,7 @@
 
 #include "feed_handler_stats.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 #include <vespa/log/log.h>
 
@@ -61,8 +61,8 @@ void FeedHandlerStats::reset_min_max() noexcept {
 }
 
 void FeedOperationCounter::commitCompleted(size_t numOperations) {
-    assert(_commitsStarted > _commitsCompleted);
-    assert(_operationsStarted >= _operationsCompleted + numOperations);
+    CHECK(_commitsStarted > _commitsCompleted);
+    CHECK(_operationsStarted >= _operationsCompleted + numOperations);
     _operationsCompleted += numOperations;
     _commitsCompleted++;
     LOG(spam, "%zu: onCommitDone(%zu) total=%zu left=%zu", _commitsCompleted, numOperations, _operationsCompleted,

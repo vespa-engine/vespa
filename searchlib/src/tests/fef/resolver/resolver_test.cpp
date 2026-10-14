@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/features/rankingexpressionfeature.h>
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/fef/fef.h>
@@ -39,7 +40,7 @@ class CombineBlueprint : public Blueprint {
 private:
     void assert_define_input(const std::string& in_name) {
         auto type = defineInput(in_name);
-        assert(type.has_value());
+        CHECK(type.has_value());
     }
 
 public:

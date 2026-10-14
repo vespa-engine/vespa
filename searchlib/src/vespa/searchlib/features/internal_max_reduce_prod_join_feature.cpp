@@ -206,8 +206,9 @@ bool InternalMaxReduceProdJoinBlueprint::setup(const IIndexEnvironment&, const P
 void InternalMaxReduceProdJoinBlueprint::prepareSharedState(const fef::IQueryEnvironment& env,
                                                             fef::IObjectStore&            store) const {
     const IAttributeVector* attribute = lookupAndStoreAttribute(_attrKey, _attribute, env, store);
-    if (attribute == nullptr)
+    if (attribute == nullptr) {
         return;
+    }
 
     const fef::Anything* queryVector = env.getObjectStore().get(_queryVectorKey);
     if (queryVector == nullptr) {

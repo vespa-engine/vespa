@@ -103,7 +103,7 @@ struct MyFuzzyTerm : FuzzyTerm {
 };
 
 struct MyWeakAnd : WeakAnd {
-    MyWeakAnd() : WeakAnd(1234, "view") {}
+    MyWeakAnd() : WeakAnd(1234) {}
     ~MyWeakAnd() override;
 };
 

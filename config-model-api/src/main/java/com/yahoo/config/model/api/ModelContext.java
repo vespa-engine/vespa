@@ -108,7 +108,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
-        @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
+        @ModelFeatureFlag(owners = {"olaa"}, removeAfter = "8.768") default boolean logserverOtelCol() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default SharedHosts sharedHosts() { return SharedHosts.empty(); }
         @ModelFeatureFlag(owners = {"bragehk"}) default boolean tokenAuthForDeploy() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default Architecture adminClusterArchitecture() { return Architecture.x86_64; }
@@ -134,8 +134,11 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.740") default boolean protonResampleDiskCapacity() { return true; }
         @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}) default boolean fastMapSearch() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.755") default boolean relaxStrictlyIncreasingClusterStateVersions() { return true; }
+        // TODO (@sebasabe): Remove when no loaded config model version reads it; productDiscovery() replaces it
         @ModelFeatureFlag(owners = {"sebasabe"}) default boolean commerceDiscovery() { return false; }
         @ModelFeatureFlag(owners = {"hmusum", "vekterli"}) default boolean enableLandlock() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean enableLegacyFeedHandler() { return true; }
+        @ModelFeatureFlag(owners = {"sebasabe"}) default boolean productDiscovery() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -157,6 +160,9 @@ public interface ModelContext {
         default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
 
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
+
+        /** The parent of tenant Athenz domains, which hold the tenant identities of applications: {@code <parent>.<tenant>} */
+        default AthenzDomain tenantParentDomain() { return AthenzDomain.from("vespa.tenant"); }
 
         default Quota quota() { return Quota.unlimited(); }
 

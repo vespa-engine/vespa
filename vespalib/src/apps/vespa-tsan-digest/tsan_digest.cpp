@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -8,7 +9,6 @@
 #include <xxhash.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cerrno>
 #include <map>
 #include <memory>
@@ -31,7 +31,7 @@ private:
     XXH3_state_t* _state;
 
 public:
-    Hasher() : _state(XXH3_createState()) { assert(_state != nullptr && "Out of memory!"); }
+    Hasher() : _state(XXH3_createState()) { CHECK(_state != nullptr && "Out of memory!"); }
     ~Hasher() { XXH3_freeState(_state); }
     void reset() { XXH3_64bits_reset(_state); }
     void update(const char* buf, size_t len) { XXH3_64bits_update(_state, buf, len); }

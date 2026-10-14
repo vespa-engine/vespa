@@ -88,7 +88,7 @@ private:
             t = &builder.add_word_alternatives(std::move(words), std::string(view), id, weight);
         } else if (type == ParseItem::ITEM_WEAK_AND) {
             uint32_t targetNumHits = queryStack.getTargetHits();
-            builder.addWeakAnd(arity, targetNumHits, queryStack.index_as_string());
+            builder.addWeakAnd(arity, targetNumHits);
             pureTermView = queryStack.index_as_view();
         } else if (type == ParseItem::ITEM_EQUIV) {
             int32_t id = queryStack.getUniqueId();

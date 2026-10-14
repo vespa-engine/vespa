@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -6,7 +7,6 @@
 #include <stdlib.h>
 
 #include <algorithm>
-#include <cassert>
 #include <vector>
 
 using namespace vespalib;
@@ -74,7 +74,7 @@ struct Input {
         for (size_t i = 0; i < n; ++i) {
             data.push_back(random());
         }
-        assert(n == data.size());
+        CHECK(n == data.size());
     }
 };
 
@@ -155,11 +155,11 @@ template <typename Heap, typename Value = int, typename Cmp = CmpInt> struct MyS
     }
     int pop() {
         if (IsRight<Heap>::VALUE) {
-            assert(limit < data.size());
+            CHECK(limit < data.size());
             Heap::pop(data.data() + limit++, data.data() + data.size(), cmp);
             return unwrap(data[limit - 1]);
         } else {
-            assert(limit > 0u);
+            CHECK(limit > 0u);
             Heap::pop(data.data(), data.data() + limit--, cmp);
             return unwrap(data[limit]);
         }

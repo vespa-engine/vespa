@@ -7,6 +7,7 @@
 #include "unique_store_buffer_type.hpp"
 #include "unique_store_value_filter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 namespace vespalib::datastore {
@@ -21,7 +22,7 @@ UniqueStoreAllocator<EntryT, RefT>::UniqueStoreAllocator(std::shared_ptr<alloc::
       _typeHandler(2u, RefT::offsetSize(), NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER, ALLOC_GROW_FACTOR,
                    std::move(memory_allocator)) {
     auto typeId = _store.addType(&_typeHandler);
-    assert(typeId == 0u);
+    CHECK(typeId == 0u);
     _store.init_primary_buffers();
     _store.enableFreeLists();
 }

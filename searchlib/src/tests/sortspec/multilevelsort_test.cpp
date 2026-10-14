@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/attribute.h>
@@ -170,7 +171,7 @@ int MultilevelSortTest::compare(AttributeVector* vector, AttrType type, uint32_t
         }
         return 1;
     } else {
-        assert(false);
+        CHECK(false);
         return 0;
     }
 }
@@ -211,8 +212,9 @@ void MultilevelSortTest::sortAndCheck(const std::vector<Spec>& specs, uint32_t n
             vec[name] = AttributeFactory::createAttribute(name, cfg);
             fill(dynamic_cast<StringAttribute*>(vec[name].get()), num, strValues);
         }
-        if (vec[name])
+        if (vec[name]) {
             vec[name]->commit();
+        }
     }
 
     std::vector<RankedHit> hits;

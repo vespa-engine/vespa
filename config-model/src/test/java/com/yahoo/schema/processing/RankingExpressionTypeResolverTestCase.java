@@ -704,6 +704,42 @@ public class RankingExpressionTypeResolverTestCase {
         builder.build(true);
     }
 
+    @Test
+    void elementwiseDefaultCellTypeIsFloatForMatchesAndDoubleForBm25() throws Exception {
+        ApplicationBuilder builder = new ApplicationBuilder();
+        builder.addSchema(joinLines(
+                "schema test {",
+                "  document test { ",
+                "    struct person {",
+                "      field name type string {}",
+                "    }",
+                "    field people type array<person> {",
+                "      indexing: summary",
+                "      struct-field name { indexing: attribute }",
+                "    }",
+                "    field chunks type array<string> {",
+                "      indexing: index | summary",
+                "    }",
+                "  }",
+                "  rank-profile my_rank_profile {",
+                "    summary-features {",
+                "      elementwise(matches(people),x)",
+                "      elementwise(matches(people),x,double)",
+                "      elementwise(bm25(chunks),x)",
+                "    }",
+                "  }",
+                "}"));
+        builder.build(true);
+        RankProfile profile = builder.getRankProfileRegistry().get(builder.getSchema(), "my_rank_profile");
+        var context = profile.typeContext(builder.getQueryProfileRegistry());
+        assertEquals(TensorType.fromSpec("tensor<float>(x{})"),
+                     summaryFeatures(profile).get("elementwise(matches(people),x)").type(context));
+        assertEquals(TensorType.fromSpec("tensor(x{})"),
+                     summaryFeatures(profile).get("elementwise(matches(people),x,double)").type(context));
+        assertEquals(TensorType.fromSpec("tensor(x{})"),
+                     summaryFeatures(profile).get("elementwise(bm25(chunks),x)").type(context));
+    }
+
     private Map<String, ReferenceNode> summaryFeatures(RankProfile profile) {
         return profile.getSummaryFeatures().stream().collect(Collectors.toMap(f -> f.toString(), f -> f));
     }

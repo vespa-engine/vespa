@@ -2,6 +2,7 @@
 
 #include "inplace_map_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
@@ -32,7 +33,7 @@ struct MyGetFun {
     template <typename ICM, typename Fun> static auto invoke() {
         using ICT = CellValueType<ICM::value.cell_type>;
         using OCT = CellValueType<ICM::value.map().cell_type>;
-        assert((std::is_same_v<ICT, OCT>));
+        CHECK((std::is_same_v<ICT, OCT>));
         return my_inplace_map_op<OCT, Fun>;
     }
 };

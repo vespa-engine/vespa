@@ -4,6 +4,7 @@
 
 #include "tensor_deserialize.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
@@ -64,7 +65,7 @@ void DirectTensorStore::holdTensor(EntryRef ref) {
         return;
     }
     const auto& tensor = _tensor_store.getEntry(ref);
-    assert(tensor);
+    CHECK(tensor);
     _tensor_store.hold_entry(ref, tensor->get_memory_usage().allocatedBytes());
 }
 
@@ -73,7 +74,7 @@ EntryRef DirectTensorStore::move_on_compact(EntryRef ref) {
         return EntryRef();
     }
     const auto& old_tensor = _tensor_store.getEntry(ref);
-    assert(old_tensor);
+    CHECK(old_tensor);
     return add_entry(old_tensor);
 }
 
@@ -89,7 +90,7 @@ std::unique_ptr<ICompactionContext> DirectTensorStore::start_compact(const Compa
 }
 
 EntryRef DirectTensorStore::store_tensor(std::unique_ptr<Value> tensor) {
-    assert(tensor);
+    CHECK(tensor);
     return add_entry(std::move(tensor));
 }
 

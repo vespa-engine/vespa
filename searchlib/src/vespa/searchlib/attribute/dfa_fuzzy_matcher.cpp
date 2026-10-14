@@ -4,6 +4,7 @@
 
 #include "i_enum_store_dictionary.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
 
@@ -69,7 +70,7 @@ const char* DfaFuzzyMatcher::skip_prefix(const char* word) const {
     for (; pos < _prefix.size() && reader.hasMore(); ++pos) {
         (void)reader.getChar();
     }
-    assert(pos == _prefix.size());
+    CHECK(pos == _prefix.size());
     return reader.get_current_ptr();
 }
 
@@ -124,7 +125,7 @@ bool DfaFuzzyMatcher::is_match(const char* word, DictionaryConstIteratorType& it
         }
     }
     DfaStringComparator cmp(data_store, _successor, _cased);
-    assert(cmp.less(itr.getKey().load_acquire(), vespalib::datastore::EntryRef()));
+    CHECK(cmp.less(itr.getKey().load_acquire(), vespalib::datastore::EntryRef()));
     itr.seek(vespalib::datastore::AtomicEntryRef(), cmp);
     return false;
 }

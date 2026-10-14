@@ -941,10 +941,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ServiceListResponse servicesToCheckForConfigConvergence(ApplicationId applicationId,
                                                                    Duration timeoutPerService,
                                                                    Optional<Version> vespaVersion) {
-        ServiceListResponse response = convergeChecker.checkConvergenceForAllServices(getApplication(applicationId, vespaVersion), timeoutPerService);
-        if (response.converged && ! getPendingRestarts(applicationId).isEmpty())
-            response = response.unconverged();
-        return response;
+        return convergeChecker.checkConvergenceForAllServices(getApplication(applicationId, vespaVersion), timeoutPerService)
+                              .withPendingRestarts(getPendingRestarts(applicationId));
     }
 
     public ConfigConvergenceChecker configConvergenceChecker() { return convergeChecker; }

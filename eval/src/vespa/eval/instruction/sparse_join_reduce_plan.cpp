@@ -2,10 +2,9 @@
 
 #include "sparse_join_reduce_plan.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/visit_ranges.h>
-
-#include <cassert>
 
 namespace vespalib::eval::instruction {
 
@@ -68,14 +67,18 @@ bool no_overlap_keep_all(bool a, bool b, bool keep) noexcept {
 } // namespace
 
 SparseJoinReducePlan::est_fun_t SparseJoinReducePlan::select_estimate() const {
-    if (check(reduce_all))
+    if (check(reduce_all)) {
         return est_1;
-    if (check(no_overlap_keep_all))
+    }
+    if (check(no_overlap_keep_all)) {
         return est_mul;
-    if (check(keep_a_reduce_b))
+    }
+    if (check(keep_a_reduce_b)) {
         return est_a_or_0;
-    if (check(keep_b_reduce_a))
+    }
+    if (check(keep_b_reduce_a)) {
         return est_b_or_0;
+    }
     return est_min;
 }
 
@@ -99,7 +102,7 @@ SparseJoinReducePlan::State::State(const bool* in_a, const bool* in_b, const boo
     // Kept dimensions are allocated from the start and dropped
     // dimensions are allocated from the end. Make sure they
     // combine to exactly cover the complete address space.
-    assert(res_dims == dims_end);
+    CHECK(res_dims == dims_end);
 }
 
 SparseJoinReducePlan::State::~State() = default;
@@ -107,7 +110,7 @@ SparseJoinReducePlan::State::~State() = default;
 SparseJoinReducePlan::SparseJoinReducePlan(const ValueType& lhs, const ValueType& rhs, const ValueType& res)
     : _in_lhs(), _in_rhs(), _in_res(), _res_dims(res.count_mapped_dimensions()), _estimate() {
     auto dims = merge(lhs.mapped_dimensions(), rhs.mapped_dimensions());
-    assert(count_only_in_second(dims, res.mapped_dimensions()) == 0);
+    CHECK(count_only_in_second(dims, res.mapped_dimensions()) == 0);
     for (const auto& dim : dims) {
         _in_lhs.push_back(lhs.has_dimension(dim.name));
         _in_rhs.push_back(rhs.has_dimension(dim.name));

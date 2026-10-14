@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
@@ -31,7 +32,7 @@ struct BitBuffer {
         writeCtx.allocComprBuf();
         encodeCtx.setWriteContext(&writeCtx);
         encodeCtx.setupWrite(writeCtx);
-        assert(encodeCtx.getWriteOffset() == 0);
+        CHECK(encodeCtx.getWriteOffset() == 0);
     }
 
     void clear() { encodeCtx.setupWrite(writeCtx); }

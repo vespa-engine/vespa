@@ -2,9 +2,9 @@
 
 #include "test_data_base.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
-#include <cassert>
 #include <cstring>
 #include <fstream>
 
@@ -20,7 +20,7 @@ nbostream TestDataBase::read_buffer_from_file(const std::string& path) {
     file.seekg(0);
     vespalib::alloc::Alloc buf = vespalib::alloc::Alloc::alloc(size);
     file.read(static_cast<char*>(buf.get()), size);
-    assert(file.good());
+    CHECK(file.good());
     file.close();
     return nbostream(std::move(buf), size);
 }
@@ -32,7 +32,7 @@ void TestDataBase::write_buffer_to_file(const nbostream& buf, const std::string&
 void TestDataBase::write_buffer_to_file(std::string_view buf, const std::string& path) {
     auto file = std::ofstream(path, std::ios::out | std::ios::binary | std::ios::trunc);
     file.write(buf.data(), buf.size());
-    assert(file.good());
+    CHECK(file.good());
     file.close();
 }
 

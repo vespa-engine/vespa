@@ -3,9 +3,9 @@
 
 #include "lrucache_map.h"
 
-#include <vespa/vespalib/stllike/hashtable.hpp>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <vespa/vespalib/stllike/hashtable.hpp>
 
 namespace vespalib {
 
@@ -131,13 +131,13 @@ template <typename P> typename lrucache_map<P>::iterator lrucache_map<P>::erase(
 template <typename P> void lrucache_map<P>::verifyInternals() {
     if (_head == LinkedValueBase::npos || _tail == LinkedValueBase::npos) {
         // If _either_ head or tail is invalid, they must both be.
-        assert(_head == LinkedValueBase::npos);
-        assert(_tail == LinkedValueBase::npos);
-        assert(size() == 0);
+        CHECK(_head == LinkedValueBase::npos);
+        CHECK(_tail == LinkedValueBase::npos);
+        CHECK(size() == 0);
         return;
     }
-    assert(HashTable::getByInternalIndex(_head).second._prev == LinkedValueBase::npos);
-    assert(HashTable::getByInternalIndex(_tail).second._next == LinkedValueBase::npos);
+    CHECK(HashTable::getByInternalIndex(_head).second._prev == LinkedValueBase::npos);
+    CHECK(HashTable::getByInternalIndex(_tail).second._next == LinkedValueBase::npos);
     {
         size_t i(0);
         size_t prev(LinkedValueBase::npos);
@@ -145,11 +145,11 @@ template <typename P> void lrucache_map<P>::verifyInternals() {
         for (size_t m(size()); (c != LinkedValueBase::npos) && (i < m);
              c = HashTable::getByInternalIndex(c).second._next, i++)
         {
-            assert((HashTable::getByInternalIndex(c).second._prev == prev));
+            CHECK((HashTable::getByInternalIndex(c).second._prev == prev));
             prev = c;
         }
-        assert(i == size());
-        assert(c == LinkedValueBase::npos);
+        CHECK(i == size());
+        CHECK(c == LinkedValueBase::npos);
     }
     {
         size_t i(0);
@@ -158,11 +158,11 @@ template <typename P> void lrucache_map<P>::verifyInternals() {
         for (size_t m(size()); (c != LinkedValueBase::npos) && (i < m);
              c = HashTable::getByInternalIndex(c).second._prev, i++)
         {
-            assert((HashTable::getByInternalIndex(c).second._next == next));
+            CHECK((HashTable::getByInternalIndex(c).second._next == next));
             next = c;
         }
-        assert(i == size());
-        assert(c == LinkedValueBase::npos);
+        CHECK(i == size());
+        CHECK(c == LinkedValueBase::npos);
     }
 }
 

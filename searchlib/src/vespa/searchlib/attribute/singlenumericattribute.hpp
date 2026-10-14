@@ -11,6 +11,7 @@
 #include "singlenumericattributesaver.h"
 #include "valuemodifier.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 
@@ -81,8 +82,9 @@ template <typename B> bool SingleValueNumericAttribute<B>::addDoc(DocId& doc) {
     this->updateUncommittedDocIdLimit(doc);
     if (incGen) {
         this->incGeneration();
-    } else
+    } else {
         this->reclaim_unused_memory();
+    }
     return true;
 }
 
@@ -102,7 +104,7 @@ template <typename B> bool SingleValueNumericAttribute<B>::onLoadEnumerated(Read
     _data.unsafe_reserve(numDocs);
 
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
-    assert((udatBuffer->size() % sizeof(T)) == 0);
+    CHECK((udatBuffer->size() % sizeof(T)) == 0);
     this->set_size_on_disk(attrReader.size_on_disk() + udatBuffer->size_on_disk());
     this->set_last_flush_duration(attrReader.flush_duration());
     std::span<const T> map(reinterpret_cast<const T*>(udatBuffer->buffer()), udatBuffer->size() / sizeof(T));
@@ -121,8 +123,9 @@ template <typename B> bool SingleValueNumericAttribute<B>::onLoad(vespalib::Exec
 
     this->setCreateSerialNum(attrReader.getCreateSerialNum());
 
-    if (attrReader.getEnumerated())
+    if (attrReader.getEnumerated()) {
         return onLoadEnumerated(attrReader);
+    }
 
     const size_t sz(attrReader.getDataCount());
     getGenerationHolder().reclaim_all();
@@ -158,8 +161,8 @@ SingleValueNumericAttribute<B>::getSearch(QueryTermSimple::UP                   
 
 template <typename B>
 void SingleValueNumericAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) {
-    assert(lidLow <= lidLimit);
-    assert(lidLimit <= this->getNumDocs());
+    CHECK(lidLow <= lidLimit);
+    CHECK(lidLimit <= this->getNumDocs());
     uint32_t           count = 0;
     constexpr uint32_t commit_interval = 1000;
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
@@ -177,7 +180,7 @@ void SingleValueNumericAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit, boo
 
 template <typename B> void SingleValueNumericAttribute<B>::onShrinkLidSpace() {
     uint32_t committedDocIdLimit = this->getCommittedDocIdLimit();
-    assert(_data.size() >= committedDocIdLimit);
+    CHECK(_data.size() >= committedDocIdLimit);
     _data.shrink(committedDocIdLimit);
     this->setNumDocs(committedDocIdLimit);
 }
@@ -185,7 +188,7 @@ template <typename B> void SingleValueNumericAttribute<B>::onShrinkLidSpace() {
 template <typename B>
 std::unique_ptr<AttributeSaver> SingleValueNumericAttribute<B>::onInitSave(std::string_view fileName) {
     const uint32_t numDocs(this->getCommittedDocIdLimit());
-    assert(numDocs <= _data.size());
+    CHECK(numDocs <= _data.size());
     return std::make_unique<SingleValueNumericAttributeSaver>(this->createAttributeHeader(fileName), &_data[0],
                                                               numDocs * sizeof(T));
 }

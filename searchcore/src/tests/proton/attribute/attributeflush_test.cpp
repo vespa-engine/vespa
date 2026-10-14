@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
@@ -92,7 +93,7 @@ public:
         }
         Executor::Task::UP wrapper(new TaskWrapper(std::move(task), gate));
         Executor::Task::UP ok = _executor.execute(std::move(wrapper));
-        assert(ok.get() == nullptr);
+        CHECK(ok.get() == nullptr);
     }
 };
 
@@ -148,7 +149,7 @@ void UpdaterTask::run() {
         }
         ia.commit(CommitParam(i - 1, i, CommitParam::UpdateStats::SKIP)); // save i as last sync token
         needFlushToken = i;
-        assert(i + 1 == ag->getNumDocs());
+        CHECK(i + 1 == ag->getNumDocs());
         if ((commits++ % 20 == 0) && (!flushHandler.gate || flushHandler.gate->getCount() == 0)) {
             startFlushing(i, flushHandler);
             ++flushCount;

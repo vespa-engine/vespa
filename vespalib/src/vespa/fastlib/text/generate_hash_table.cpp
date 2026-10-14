@@ -36,8 +36,9 @@ void GenerateHashTable::findBiases() {
     }
     std::sort(buckets.begin(), buckets.end());
     for (auto& bucket : buckets) {
-        if (bucket.keys.size() == 0)
+        if (bucket.keys.size() == 0) {
             break;
+        }
         auto [bias, taken] = findBias(bucket.keys);
         _bias[bucket.slot] = bias;
         _takenSlots = taken;

@@ -2,9 +2,8 @@
 
 #include "deletebucketoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 using document::BucketId;
 using document::DocumentTypeRepo;
@@ -20,7 +19,7 @@ DeleteBucketOperation::DeleteBucketOperation(const BucketId& bucketId)
 }
 
 void DeleteBucketOperation::serialize(vespalib::nbostream& os) const {
-    assert(_bucketId.valid());
+    CHECK(_bucketId.valid());
     os << _bucketId;
     serializeLidsToRemove(os);
 }

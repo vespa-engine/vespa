@@ -35,8 +35,9 @@ TEST(ValueCodecTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
     for (const auto& layout : layouts) {
         for (CellType ct : CellTypeUtils::list_types()) {
             auto expect = layout.cpy().cells(ct);
-            if (expect.bad_scalar())
+            if (expect.bad_scalar()) {
                 continue;
+            }
             std::unique_ptr<Value> value = value_from_spec(expect, factory);
             TensorSpec             actual = spec_from_value(*value);
             EXPECT_EQ(actual, expect);

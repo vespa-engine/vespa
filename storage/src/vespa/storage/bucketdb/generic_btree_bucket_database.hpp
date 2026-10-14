@@ -3,6 +3,7 @@
 
 #include "generic_btree_bucket_database.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
 
 #include <vespa/vespalib/btree/btree.hpp>
@@ -200,8 +201,8 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_internal(const typena
         return frozen_view.begin(); // Will be invalid.
     }
     const auto min_db_bits = frozen_view.getAggregated().getMin();
-    assert(min_db_bits >= static_cast<int32_t>(BucketId::minNumBits));
-    assert(min_db_bits <= static_cast<int32_t>(BucketId::maxNumBits));
+    CHECK(min_db_bits >= static_cast<int32_t>(BucketId::minNumBits));
+    CHECK(min_db_bits <= static_cast<int32_t>(BucketId::maxNumBits));
     // Start at the lowest possible tree level no parents can exist above,
     // descending towards the bucket itself.
     // Note: important to use getId() rather than getRawId(), as min_db_bits may be
@@ -214,12 +215,12 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_internal(const typena
     while (iter.valid() && (iter.getKey() < bucket_key)) {
         auto candidate = BucketId(BucketId::keyToBucketId(iter.getKey()));
         if (candidate.contains(bucket)) {
-            assert(candidate.getUsedBits() >= bits);
+            CHECK(candidate.getUsedBits() >= bits);
             func(iter.getKey(), IterValueExtractor::apply(*this, iter));
         }
         bits = next_parent_bit_seek_level(bits, candidate, bucket);
         const auto parent_key = BucketId(bits, bucket.getRawId()).toKey();
-        assert(parent_key > iter.getKey());
+        CHECK(parent_key > iter.getKey());
         iter.seek(parent_key);
     }
     return iter;
@@ -408,7 +409,7 @@ BucketId GenericBTreeBucketDatabase<DataStoreTraitsT>::getAppropriateBucket(uint
  */
 template <typename DataStoreTraitsT>
 uint32_t GenericBTreeBucketDatabase<DataStoreTraitsT>::child_subtree_count(const BucketId& bucket) const {
-    assert(bucket.getUsedBits() < BucketId::maxNumBits);
+    CHECK(bucket.getUsedBits() < BucketId::maxNumBits);
     BucketId lhs_bucket(bucket.getUsedBits() + 1, bucket.getId());
     BucketId rhs_bucket(bucket.getUsedBits() + 1, (1ULL << bucket.getUsedBits()) | bucket.getId());
 
@@ -460,7 +461,7 @@ template <typename DataStoreTraitsT> struct BTreeBuilderMerger final : Merger<ty
     }
     void insert_before_current(const BucketId& bucket_id, const ValueType& e) override {
         const uint64_t bucket_key = bucket_id.toKey();
-        assert(bucket_key < _current_key);
+        CHECK(bucket_key < _current_key);
         const auto new_value = DataStoreTraitsT::wrap_and_store_value(_db.store(), e);
         _builder.insert(bucket_key, vespalib::datastore::AtomicValueWrapper<uint64_t>(new_value));
     }
@@ -509,8 +510,8 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::merge(MergingProcessor<ValueT
         if (result == MergingProcessor<ValueType>::Result::KeepUnchanged) {
             builder.insert(key, AtomicValueWrapper(value)); // Reuse array store ref with no changes
         } else if (result == MergingProcessor<ValueType>::Result::Update) {
-            assert(merger._valid_cached_value); // Must actually have been touched
-            assert(merger._cached_value.valid());
+            CHECK(merger._valid_cached_value); // Must actually have been touched
+            CHECK(merger._cached_value.valid());
             DataStoreTraitsT::remove_by_wrapped_value(_store, value);
             const auto new_value = DataStoreTraitsT::wrap_and_store_value(_store, merger._cached_value);
             builder.insert(key, AtomicValueWrapper(new_value));

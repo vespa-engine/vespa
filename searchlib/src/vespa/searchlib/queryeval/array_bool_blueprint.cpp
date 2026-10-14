@@ -7,6 +7,7 @@
 #include "filter_wrapper.h"
 #include "flow_tuning.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/array_bool_attribute.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 
@@ -39,7 +40,7 @@ search::queryeval::FlowStats ArrayBoolBlueprint::calculate_flow_stats(uint32_t /
 
 std::unique_ptr<SearchIterator>
 ArrayBoolBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const {
-    assert(tfmda.size() == 1); // always search in only one field
+    CHECK(tfmda.size() == 1); // always search in only one field
     return ArrayBoolSearch::create(_attr, _element_filter, _want_true, strict(), tfmda[0], _unpack_element_positions);
 }
 

@@ -7,6 +7,7 @@
 #include "load_utils.h"
 #include "predicate_attribute_saver.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -293,7 +294,7 @@ void PredicateAttribute::updateValue(uint32_t doc_id, const PredicateFieldValue&
     _min_feature[doc_id] = minFeature;
     _interval_range_vector[doc_id] = result.interval_range;
     _max_interval_range = std::max(result.interval_range, _max_interval_range);
-    assert(result.interval_range > 0);
+    CHECK(result.interval_range > 0);
 }
 
 } // namespace search

@@ -432,7 +432,7 @@ def build_grammar(
         ],
     }
 
-    # --- tensor type: tensor<float>(x[384]) ---
+    # --- tensor type: tensor<float>(x[384]), or tensor(x[384]) with the default value type ---
     # Break the tensor type into subcomponents for rich highlighting:
     #   tensor  → keyword.control
     #   float   → storage.type.tensor (value type: float, double, bfloat16, int8, etc.)
@@ -441,8 +441,10 @@ def build_grammar(
     #   {}      → mapped dimension marker
     #   < > ( ) [ ] , → punctuation
     repository["tensor-type"] = {
-        "begin": r"\b(tensor)\s*(<)",
-        "end": r"(\))",
+        "begin": r"\b(tensor)\s*(?:(<)|(?=\())",
+        # A tensor type is on one line. Ending at the end of the line too keeps an unclosed
+        # type from coloring the lines after it.
+        "end": r"(\))|$",
         "beginCaptures": {
             "1": {"name": "keyword.control.vespa"},
             "2": {"name": "punctuation.definition.typeparameters.begin.vespa"},
@@ -620,6 +622,18 @@ def build_grammar(
     # rank-profile NAME [inherits PARENT]
     declaration_patterns.append({
         "match": r"(?<![a-zA-Z0-9_-])(rank-profile)\s+(" + _IDENT_DASH + r")(?:\s+(inherits)\s+(" + _IDENT_DASH + r"))?",
+        "captures": {
+            "1": {"name": "keyword.declaration.vespa"},
+            "2": {"name": "entity.name.function.vespa"},
+            "3": {"name": "keyword.control.vespa"},
+            "4": {"name": "entity.other.inherited-class.vespa"},
+        },
+    })
+
+    # model NAME [inherits PARENT] – a rank profile in a .model file. Only at the start of a line,
+    # so that "model" used as a name elsewhere is not colored as a keyword.
+    declaration_patterns.append({
+        "match": r"^\s*(model)\s+(" + _IDENT_DASH + r")(?:\s+(inherits)\s+(" + _IDENT_DASH + r"))?",
         "captures": {
             "1": {"name": "keyword.declaration.vespa"},
             "2": {"name": "entity.name.function.vespa"},

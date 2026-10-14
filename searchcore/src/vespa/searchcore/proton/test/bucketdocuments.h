@@ -3,8 +3,9 @@
 
 #include "document.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 
 namespace proton::test {
 
@@ -31,7 +32,7 @@ public:
     }
     void addDoc(const Document& doc) {
         if (!_docs.empty()) {
-            assert(_docs.back().getBucket() == doc.getBucket());
+            CHECK(_docs.back().getBucket() == doc.getBucket());
         }
         _docs.push_back(doc);
     }

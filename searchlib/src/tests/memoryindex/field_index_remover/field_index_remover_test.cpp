@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/i_field_index_remove_listener.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
@@ -82,7 +83,7 @@ struct FieldIndexRemoverTest : public ::testing::Test {
         return itr->second;
     }
     FieldIndexRemoverTest& insert(const std::string& word, uint32_t fieldId, uint32_t docId) {
-        assert(fieldId < _wordStores.size());
+        CHECK(fieldId < _wordStores.size());
         _removers[fieldId]->insert(getWordRef(word, fieldId), docId);
         return *this;
     }

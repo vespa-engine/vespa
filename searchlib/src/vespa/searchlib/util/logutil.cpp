@@ -30,8 +30,9 @@ std::string LogUtil::extractLastElements(const std::string& path, size_t numElem
     size_t num = std::min(numElems, elems.size());
     size_t pos = elems.size() - num;
     for (size_t i = 0; i < num; ++i) {
-        if (i != 0)
+        if (i != 0) {
             retval.append("/");
+        }
         retval.append(elems[pos + i]);
     }
     return retval;

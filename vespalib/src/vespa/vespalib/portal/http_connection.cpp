@@ -2,11 +2,10 @@
 
 #include "http_connection.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/output_writer.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/util/size_literals.h>
-
-#include <cassert>
 
 namespace vespalib::portal {
 
@@ -76,7 +75,7 @@ WriteRes write(CryptoSocket& socket, SmartBuffer& buffer) {
         } else if (is_blocked(res)) {
             return WriteRes::BLOCKED;
         } else {
-            assert(res < 0);
+            CHECK(res < 0);
             return WriteRes::FAIL;
         }
     }

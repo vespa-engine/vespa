@@ -6,12 +6,12 @@
 #include "entry_ref_filter.h"
 #include "i_compactable.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/memoryusage.h>
 
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/generation_hold_list.hpp>
 
-#include <cassert>
 #include <stdexcept>
 
 namespace vespalib {
@@ -61,7 +61,7 @@ void FixedSizeHashMap::force_add(const EntryComparator& comp, const KvType& kv) 
     ShardedHashComparator shardedComp(comp, kv.first.load_relaxed(), _num_shards);
     uint32_t              hash_idx = shardedComp.hash_idx() % _modulo;
     auto&                 chain_head = _chain_heads[hash_idx];
-    assert(_nodes.size() < _nodes.capacity());
+    CHECK(_nodes.size() < _nodes.capacity());
     uint32_t node_idx = _nodes.size();
     new (_nodes.push_back_fast()) Node(kv, chain_head.load_relaxed());
     chain_head.set(node_idx);
@@ -91,7 +91,7 @@ FixedSizeHashMap::KvType& FixedSizeHashMap::add(const ShardedHashComparator& com
         ++_count;
         return node.get_kv();
     }
-    assert(_nodes.size() < _nodes.capacity());
+    CHECK(_nodes.size() < _nodes.capacity());
     node_idx = _nodes.size();
     new (_nodes.push_back_fast())
         Node(std::make_pair(AtomicEntryRef(insert_entry()), AtomicEntryRef()), chain_head.load_relaxed());
@@ -164,7 +164,7 @@ void FixedSizeHashMap::move_keys_on_compact(ICompactable& compactable, const Ent
         while (node_idx != no_node_idx) {
             auto&    node = _nodes[node_idx];
             EntryRef old_ref = node.get_kv().first.load_relaxed();
-            assert(old_ref.valid());
+            CHECK(old_ref.valid());
             if (compacting_buffers.has(old_ref)) {
                 EntryRef new_ref = compactable.move_on_compact(old_ref);
                 node.get_kv().first.store_release(new_ref);
@@ -212,7 +212,7 @@ ChangeWriter::~ChangeWriter() = default;
 
 bool ChangeWriter::write(const std::vector<EntryRef>& refs) {
     bool changed = false;
-    assert(refs.size() == _atomic_refs.size());
+    CHECK(refs.size() == _atomic_refs.size());
     auto atomic_ref = _atomic_refs.begin();
     for (auto ref : refs) {
         EntryRef old_ref = (*atomic_ref)->load_relaxed();
@@ -222,7 +222,7 @@ bool ChangeWriter::write(const std::vector<EntryRef>& refs) {
         }
         ++atomic_ref;
     }
-    assert(atomic_ref == _atomic_refs.end());
+    CHECK(atomic_ref == _atomic_refs.end());
     _atomic_refs.clear();
     return changed;
 }

@@ -2,6 +2,7 @@
 
 #include "socket_address.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -11,7 +12,6 @@
 #include <sys/types.h>
 #include <sys/un.h>
 
-#include <cassert>
 #include <cerrno>
 
 namespace vespalib {
@@ -173,7 +173,7 @@ SocketAddress SocketAddress::address_of(int sockfd) {
     sockaddr*     addr = reinterpret_cast<sockaddr*>(&result._addr);
     socklen_t     addr_len = sizeof(result._addr);
     if (getsockname(sockfd, addr, &addr_len) == 0) {
-        assert(addr_len <= sizeof(result._addr));
+        CHECK(addr_len <= sizeof(result._addr));
         result._size = addr_len;
     }
     return result;
@@ -184,7 +184,7 @@ SocketAddress SocketAddress::peer_address(int sockfd) {
     sockaddr*     addr = reinterpret_cast<sockaddr*>(&result._addr);
     socklen_t     addr_len = sizeof(result._addr);
     if (getpeername(sockfd, addr, &addr_len) == 0) {
-        assert(addr_len <= sizeof(result._addr));
+        CHECK(addr_len <= sizeof(result._addr));
         result._size = addr_len;
     }
     return result;

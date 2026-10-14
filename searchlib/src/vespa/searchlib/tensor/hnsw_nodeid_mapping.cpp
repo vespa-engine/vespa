@@ -4,12 +4,11 @@
 
 #include "hnsw_node.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/generation_hold_list.hpp>
-
-#include <cassert>
 
 using vespalib::Generation;
 using vespalib::datastore::CompactionStrategy;
@@ -64,7 +63,7 @@ HnswNodeidMapping::~HnswNodeidMapping() {
 
 std::span<const uint32_t> HnswNodeidMapping::allocate_ids(uint32_t docid, uint32_t subspaces) {
     ensure_refs_size(docid);
-    assert(!_refs[docid].valid());
+    CHECK(!_refs[docid].valid());
     if (subspaces == 0) {
         return {};
     }
@@ -133,7 +132,7 @@ std::vector<uint32_t> make_subspaces_histogram(std::span<const HnswNode> nodes, 
             num_subspaces = std::max(num_subspaces, subspace + 1);
         }
     }
-    assert(histogram[0] == 0);
+    CHECK(histogram[0] == 0);
     return histogram;
 }
 
@@ -162,8 +161,8 @@ void HnswNodeidMapping::populate_docid_to_nodeids_mapping_and_free_list(std::spa
             auto docid = node.acquire_docid();
             auto subspace = node.acquire_subspace();
             auto nodeids = _nodeids.get_writable(_refs[docid]);
-            assert(subspace < nodeids.size());
-            assert(nodeids[subspace] == 0);
+            CHECK(subspace < nodeids.size());
+            CHECK(nodeids[subspace] == 0);
             nodeids[subspace] = nodeid;
         } else if (nodeid > 0) {
             _free_list.push_back(nodeid);
@@ -180,7 +179,7 @@ void HnswNodeidMapping::assert_all_subspaces_have_valid_nodeid(uint32_t docid_li
         if (ref.valid()) {
             auto nodeids = _nodeids.get_writable(ref);
             for (auto nodeid : nodeids) {
-                assert(nodeid != 0);
+                CHECK(nodeid != 0);
             }
         }
     }
@@ -191,7 +190,7 @@ void HnswNodeidMapping::on_load(std::span<const HnswNode> nodes) {
         return;
     }
     // Check that reserved nodeid is not used
-    assert(!nodes[0].levels_ref().load_relaxed().valid());
+    CHECK(!nodes[0].levels_ref().load_relaxed().valid());
     auto docid_limit = get_docid_limit(nodes);
     auto histogram = make_subspaces_histogram(nodes, docid_limit); // Allocate mapping from docid to nodeids
     allocate_docid_to_nodeids_mapping(std::move(histogram));

@@ -2,13 +2,13 @@
 
 #include "same_element_search.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.h>
 
 #include <vespa/vespalib/objects/visit.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <functional>
 
 using TFMD = search::fef::TermFieldMatchData;
@@ -70,7 +70,7 @@ SameElementSearch::SameElementSearch(TermFieldMatchData&                        
       _strict(strict),
       _element_filter(std::move(element_filter)) {
     _tfmd.reset(0);
-    assert(!_children.empty());
+    CHECK(!_children.empty());
 }
 
 SameElementSearch::~SameElementSearch() = default;

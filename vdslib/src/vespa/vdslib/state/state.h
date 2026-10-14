@@ -74,8 +74,9 @@ public:
      */
     bool oneOf(const char* states) const {
         for (const char* c = states; *c != '\0'; ++c) {
-            if (*c == _serialized[0])
+            if (*c == _serialized[0]) {
                 return true;
+            }
         }
         return false;
     }

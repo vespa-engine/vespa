@@ -57,40 +57,57 @@ RUsage RUsage::createChildren(vespalib::steady_time since) {
 
 std::string RUsage::toString() {
     std::string s;
-    if (_time != duration::zero())
+    if (_time != duration::zero()) {
         s += make_string("duration = %1.6f\n", vespalib::to_s(_time));
-    if (from_timeval(ru_utime) > duration::zero())
+    }
+    if (from_timeval(ru_utime) > duration::zero()) {
         s += make_string("user time = %1.6f\n", to_s(from_timeval(ru_utime)));
-    if (from_timeval(ru_stime) > duration::zero())
+    }
+    if (from_timeval(ru_stime) > duration::zero()) {
         s += make_string("system time = %1.6f\n", to_s(from_timeval(ru_stime)));
-    if (ru_maxrss != 0)
+    }
+    if (ru_maxrss != 0) {
         s += make_string("ru_maxrss = %ld\n", ru_maxrss);
-    if (ru_ixrss != 0)
+    }
+    if (ru_ixrss != 0) {
         s += make_string("ru_ixrss = %ld\n", ru_ixrss);
-    if (ru_idrss != 0)
+    }
+    if (ru_idrss != 0) {
         s += make_string("ru_idrss = %ld\n", ru_idrss);
-    if (ru_isrss != 0)
+    }
+    if (ru_isrss != 0) {
         s += make_string("ru_isrss = %ld\n", ru_isrss);
-    if (ru_minflt != 0)
+    }
+    if (ru_minflt != 0) {
         s += make_string("ru_minflt = %ld\n", ru_minflt);
-    if (ru_majflt != 0)
+    }
+    if (ru_majflt != 0) {
         s += make_string("ru_majflt = %ld\n", ru_majflt);
-    if (ru_nswap != 0)
+    }
+    if (ru_nswap != 0) {
         s += make_string("ru_nswap = %ld\n", ru_nswap);
-    if (ru_inblock != 0)
+    }
+    if (ru_inblock != 0) {
         s += make_string("ru_inblock = %ld\n", ru_inblock);
-    if (ru_oublock != 0)
+    }
+    if (ru_oublock != 0) {
         s += make_string("ru_oublock = %ld\n", ru_oublock);
-    if (ru_msgsnd != 0)
+    }
+    if (ru_msgsnd != 0) {
         s += make_string("ru_msgsnd = %ld\n", ru_msgsnd);
-    if (ru_msgrcv != 0)
+    }
+    if (ru_msgrcv != 0) {
         s += make_string("ru_msgrcv = %ld\n", ru_msgrcv);
-    if (ru_nsignals != 0)
+    }
+    if (ru_nsignals != 0) {
         s += make_string("ru_nsignals = %ld\n", ru_nsignals);
-    if (ru_nvcsw != 0)
+    }
+    if (ru_nvcsw != 0) {
         s += make_string("ru_nvcsw = %ld\n", ru_nvcsw);
-    if (ru_nivcsw != 0)
+    }
+    if (ru_nivcsw != 0) {
         s += make_string("ru_nivcsw = %ld", ru_nivcsw);
+    }
     return s;
 }
 

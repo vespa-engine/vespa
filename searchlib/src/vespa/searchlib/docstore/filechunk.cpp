@@ -6,6 +6,7 @@
 #include "randreaders.h"
 #include "summaryexceptions.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/filekit.h>
@@ -46,7 +47,7 @@ using vespalib::make_string;
 
 FileChunk::ChunkInfo::ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial) noexcept
     : _lastSerial(lastSerial), _offset(offset), _size(size) {
-    assert(valid());
+    CHECK(valid());
 }
 
 std::string FileChunk::NameId::createName(const std::string& baseName) const {
@@ -145,7 +146,7 @@ void FileChunk::erase() {
 }
 
 void FileChunk::updateLidMap(const unique_lock& guard, ISetLid& ds, uint64_t serialNum, uint32_t docIdLimit) {
-    assert(_chunkInfo.empty());
+    CHECK(_chunkInfo.empty());
 
     FastOS_File idxFile(_idxFileName.c_str());
     idxFile.enableMemoryMap(0);
@@ -153,7 +154,7 @@ void FileChunk::updateLidMap(const unique_lock& guard, ISetLid& ds, uint64_t ser
         LOG_ABORT("should not reach here");
     }
     if (!idxFile.IsMemoryMapped()) {
-        assert(idxFile.getSize() == 0);
+        CHECK(idxFile.getSize() == 0);
         return;
     }
     const int64_t fileSize = idxFile.getSize();
@@ -179,9 +180,9 @@ void FileChunk::updateLidMap(const unique_lock& guard, ISetLid& ds, uint64_t ser
                     serialNum, chunkMeta.getLastSerial(), _idxFileName.c_str());
                 serialNum = chunkMeta.getLastSerial();
             }
-            assert(serialNum <= chunkMeta.getLastSerial());
+            CHECK(serialNum <= chunkMeta.getLastSerial());
             serialNum = handleChunk(guard, ds, docIdLimit, bucketizerGuard, globalBucketMap, chunkMeta);
-            assert(serialNum >= _lastPersistedSerialNum.load(std::memory_order_relaxed));
+            CHECK(serialNum >= _lastPersistedSerialNum.load(std::memory_order_relaxed));
             _lastPersistedSerialNum.store(serialNum, std::memory_order_relaxed);
         } catch (const vespalib::IllegalStateException& e) {
             LOG(warning, "Exception deserializing idx file : %s", e.what());
@@ -323,9 +324,9 @@ public:
 
 void FileChunk::appendTo(vespalib::Executor& executor, const IGetLid& db, IWriteData& dest, uint32_t numChunks,
                          IFileChunkVisitorProgress* visitorProgress, vespalib::CpuUsage::Category cpu_category) {
-    assert(frozen() || visitorProgress);
+    CHECK(frozen() || visitorProgress);
     auto lidReadGuard(db.getLidReadGuard());
-    assert(numChunks <= getNumChunks());
+    CHECK(numChunks <= getNumChunks());
     FixedParams                       fixedParams = {db, dest, lidReadGuard, getFileId().getId(), visitorProgress};
     size_t                            limit = std::thread::hardware_concurrency();
     vespalib::ArrayQueue<FutureChunk> queue;
@@ -365,7 +366,7 @@ void FileChunk::appendTo(vespalib::Executor& executor, const IGetLid& db, IWrite
         inflight_bytes -= queue.front().chunk_size();
         queue.pop();
     }
-    assert(inflight_bytes == 0);
+    CHECK(inflight_bytes == 0);
     dest.close();
 }
 
@@ -476,7 +477,7 @@ void FileChunk::verify(bool reportOnly) const {
         FileRandRead::FSP    keepAlive(_file->read(ci.getOffset(), whole, ci.getSize()));
         try {
             Chunk chunk(chunkId++, whole.getData(), whole.getDataLen());
-            assert(chunk.getLastSerial() >= lastSerial);
+            CHECK(chunk.getLastSerial() >= lastSerial);
             lastSerial = chunk.getLastSerial();
             if (errorInPrev) {
                 LOG(error, "Last serial number in first good chunk is %" PRIu64, chunk.getLastSerial());
@@ -497,7 +498,7 @@ uint32_t FileChunk::getNumChunks() const {
 }
 
 FileChunk::ChunkInfo FileChunk::get_chunk_info(uint32_t chunk_id) const {
-    assert(chunk_id < _chunkInfo.size());
+    CHECK(chunk_id < _chunkInfo.size());
     return _chunkInfo[chunk_id];
 }
 

@@ -8,6 +8,7 @@
 #include "replay_throttling_policy.h"
 #include "replaypacketdispatcher.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
@@ -16,8 +17,6 @@
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/shared_operation_throttler.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.feedstates");
@@ -114,7 +113,7 @@ public:
         if (exp_serial_num != serial_num) {
             LOG(warning, "Expected replay serial number %" PRIu64 ", got serial number %" PRIu64, exp_serial_num,
                 serial_num);
-            assert(exp_serial_num == serial_num);
+            CHECK(exp_serial_num == serial_num);
         }
     }
     void optionalCommit(search::SerialNum serialNum) override {

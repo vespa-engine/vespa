@@ -8,6 +8,7 @@
 #include "i_document_subdb_owner.h"
 #include "reconfig_params.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -186,7 +187,7 @@ void SearchableDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketS
 }
 
 void SearchableDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
 
     AttributeManager::SP     attrMgr = getAndResetInitAttributeManager();
     const IIndexManager::SP& indexMgr = getIndexManager();
@@ -208,7 +209,7 @@ void SearchableDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
 }
 
 void SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter, const DocumentDBConfig& configSnapshot) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     auto feedView = std::make_shared<SearchableFeedView>(
         getStoreOnlyFeedViewContext(configSnapshot), getFeedViewPersistentParams(),
         FastAccessFeedView::Context(std::move(attrWriter), _docIdLimit),
@@ -226,7 +227,7 @@ void SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter, const Doc
  * flush engine has not started.
  */
 bool SearchableDocSubDB::reconfigure(std::unique_ptr<Configure> configure) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
 
     getFeedView()->forceCommitAndWait(
         search::CommitParam(_getSerialNum.getSerialNum(), search::CommitParam::UpdateStats::SKIP));
@@ -271,7 +272,7 @@ void SearchableDocSubDB::reconfigure_index_metrics(const Schema& schema) {
 }
 
 void SearchableDocSubDB::setIndexSchema(std::shared_ptr<const Schema> schema, SerialNum serialNum) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
 
     SearchView::SP oldSearchView = _rSearchView.get();
     IFeedView::SP  oldFeedView = _iFeedView.get();

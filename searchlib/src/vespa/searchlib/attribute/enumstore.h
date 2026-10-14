@@ -9,6 +9,7 @@
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/common/dictionary_config.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
@@ -154,7 +155,7 @@ public:
             return new_ref;
         }
         void set_ref_count_for_last_value(uint32_t ref_count) {
-            assert(!_refs.empty());
+            CHECK(!_refs.empty());
             _allocator.get_wrapped(_refs.back()).set_ref_count(ref_count);
         }
         void build_dictionary() { _dict.build_with_payload(_refs, _payloads); }

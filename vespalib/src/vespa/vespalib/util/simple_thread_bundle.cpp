@@ -4,7 +4,7 @@
 
 #include "exceptions.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 using namespace vespalib::fixed_thread_bundle;
 
@@ -114,7 +114,7 @@ SimpleThreadBundle::SimpleThreadBundle(size_t size_in, Runnable::init_fun_t init
             if (strategy == USE_BROADCAST) {
                 hook = chain(wrap(new BroadcastHook(_signals[0])), std::move(hook));
             } else {
-                assert(strategy == USE_SIGNAL_LIST);
+                CHECK(strategy == USE_SIGNAL_LIST);
                 for (; next_unwired < size_in; ++next_unwired) {
                     hook = chain(wrap(new SignalHook(_signals[next_unwired - 1])), std::move(hook));
                 }

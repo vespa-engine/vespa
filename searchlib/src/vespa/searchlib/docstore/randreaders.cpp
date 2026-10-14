@@ -4,6 +4,7 @@
 
 #include "summaryexceptions.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/data/databuffer.h>
 
@@ -75,8 +76,8 @@ NormalRandRead::~NormalRandRead() = default;
 
 FileRandRead::FSP MMapRandRead::read(size_t offset, vespalib::DataBuffer& buffer, size_t sz) {
     const char* data = static_cast<const char*>(_file->MemoryMapPtr(offset));
-    assert(data != nullptr);
-    assert(_file->MemoryMapPtr(offset + sz - 1) != nullptr);
+    CHECK(data != nullptr);
+    CHECK(_file->MemoryMapPtr(offset + sz - 1) != nullptr);
     vespalib::DataBuffer(data, sz).swap(buffer);
     return FSP();
 }
@@ -121,8 +122,8 @@ FileRandRead::FSP MMapRandReadDynamic::read(size_t offset, vespalib::DataBuffer&
         remap(end);
         file = _holder.get();
         data = static_cast<const char*>(file->MemoryMapPtr(offset));
-        assert(data != nullptr);
-        assert(contains(*file, end));
+        CHECK(data != nullptr);
+        CHECK(contains(*file, end));
     }
     vespalib::DataBuffer(data, sz).swap(buffer);
     return file;

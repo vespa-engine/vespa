@@ -3,7 +3,7 @@
 
 #include "unicode_utils.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::fuzzy {
 
@@ -27,7 +27,7 @@ template <typename Traits> void ImplicitLevenshteinDfa<Traits>::precompute_utf8_
         _target_utf8_char_offsets.emplace_back(static_cast<uint32_t>(_target_as_utf8.size()));
         append_utf32_char(_target_as_utf8, u32ch);
     }
-    assert(_target_as_utf8.size() < UINT32_MAX);
+    CHECK(_target_as_utf8.size() < UINT32_MAX);
 }
 
 template class ImplicitLevenshteinDfa<FixedMaxEditDistanceTraits<1>>;

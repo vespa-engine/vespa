@@ -38,8 +38,9 @@ int main(int argc, char** argv) {
     double       total, ctotal;
     int          stats[MAXQUERY + 1];
 
-    for (i = 0; i <= MAXQUERY; i++)
+    for (i = 0; i <= MAXQUERY; i++) {
         stats[i] = 0;
+    }
     while (!std::cin.eof()) {
         getline(std::cin, qstr);
         query.set(qstr, 1);
@@ -61,18 +62,20 @@ int main(int argc, char** argv) {
                 }
             }
         } else {
-            if (qlen < 2)
+            if (qlen < 2) {
                 stats[0]++;
-            else
+            } else {
                 stats[1]++;
+            }
         }
     }
 
     if (verbose) {
         total = 0.0;
         ctotal = 0.0;
-        for (i = 0; i <= MAXQUERY; i++)
+        for (i = 0; i <= MAXQUERY; i++) {
             total += stats[i];
+        }
         std::cerr << std::fixed << std::setprecision(4) << std::endl;
         std::cerr << "Statistics:" << std::endl;
         std::cerr << std::endl;

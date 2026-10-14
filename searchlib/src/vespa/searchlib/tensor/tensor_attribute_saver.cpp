@@ -6,11 +6,10 @@
 #include "nearest_neighbor_index_saver.h"
 #include "tensor_attribute_constants.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/objects/nbostream.h>
-
-#include <cassert>
 
 using vespalib::GenerationGuard;
 
@@ -56,7 +55,7 @@ bool TensorAttributeSaver::onSave(IAttributeSaveTarget& saveTarget) {
 }
 
 void TensorAttributeSaver::save_tensor_store(BufferWriter& writer) const {
-    assert(get_header_version() == TENSOR_ATTRIBUTE_VERSION);
+    CHECK(get_header_version() == TENSOR_ATTRIBUTE_VERSION);
     auto                refs_span = _ref_vector_snapshot.span();
     const uint32_t      docid_limit(refs_span.size());
     vespalib::nbostream stream;
@@ -76,7 +75,7 @@ void TensorAttributeSaver::save_tensor_store(BufferWriter& writer) const {
 
 void TensorAttributeSaver::save_dense_tensor_store(BufferWriter&           writer,
                                                    const DenseTensorStore& dense_tensor_store) const {
-    assert(get_header_version() == DENSE_TENSOR_ATTRIBUTE_VERSION);
+    CHECK(get_header_version() == DENSE_TENSOR_ATTRIBUTE_VERSION);
     auto           raw_size = dense_tensor_store.getBufSize();
     auto           refs_span = _ref_vector_snapshot.span();
     const uint32_t docid_limit(refs_span.size());

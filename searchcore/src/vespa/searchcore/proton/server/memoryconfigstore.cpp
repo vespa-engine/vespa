@@ -4,7 +4,7 @@
 
 #include "documentdbconfig.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.memoryconfigstore");
@@ -40,7 +40,7 @@ void MemoryConfigStore::saveConfig(const DocumentDBConfig& config, SerialNum ser
 }
 void MemoryConfigStore::loadConfig(const DocumentDBConfig&, SerialNum serial,
                                    std::shared_ptr<DocumentDBConfig>& loaded_config) {
-    assert(hasValidSerial(serial));
+    CHECK(hasValidSerial(serial));
     loaded_config = _maps->configs[serial];
 }
 void MemoryConfigStore::removeInvalid() {
@@ -63,7 +63,7 @@ void MemoryConfigStore::serializeConfig(SerialNum, vespalib::nbostream&) {
     LOG(info, "Serialization of config not implemented.");
 }
 void MemoryConfigStore::deserializeConfig(SerialNum, vespalib::nbostream&) {
-    assert(!"Not implemented");
+    CHECK(!"Not implemented");
 }
 void MemoryConfigStore::setProtonConfig(const ProtonConfigSP&) {
 }

@@ -165,7 +165,7 @@ message ItemOnear {
     int32 exclusion_distance = 4;
 }
 message ItemWeakAnd {
-    string index = 1;
+    string index = 1; // Note: unused
     uint32 target_num_hits = 2;
     repeated QueryTreeItem children = 3;
 }

@@ -5,6 +5,7 @@
 #include "cache_stats.h"
 #include "lrucache_map.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/relative_frequency_sketch.h>
 
 namespace vespalib {
@@ -36,7 +37,7 @@ template <typename P> void cache<P>::SizeConstrainedLru::insert_and_update_size(
     // overfull once the insertion has been completed.
     add_size_bytes(_owner.calcSize(key, value));
     auto insert_res = Lru::insert(key, std::move(value));
-    assert(insert_res.second);
+    CHECK(insert_res.second);
 }
 
 template <typename P> bool cache<P>::SizeConstrainedLru::try_replace_and_update_size(const KeyT& key, ValueT& value) {
@@ -313,7 +314,7 @@ bool cache<P>::try_fill_from_cache(const K& key, V& val_out, const std::lock_gua
             if (lfu_accepts_insertion(key, val_out, _protected_segment, new_freq)) {
                 // Hit on probationary item; move to protected segment
                 const bool erased = _probationary_segment.try_erase_and_update_size(key);
-                assert(erased);
+                CHECK(erased);
                 _protected_segment.insert_and_update_size(key, val_out);
             } else {
                 // Probationary element is not admitted to the VIP section of the protected segment,
@@ -382,8 +383,8 @@ template <typename P> bool cache<P>::hasKey(const UniqueLock& guard, const K& ke
 }
 
 template <typename P> void cache<P>::verifyHashLock(const UniqueLock& guard) const {
-    assert(guard.mutex() == &_hashLock);
-    assert(guard.owns_lock());
+    CHECK(guard.mutex() == &_hashLock);
+    CHECK(guard.owns_lock());
 }
 
 template <typename P> CacheStats cache<P>::get_stats() const {

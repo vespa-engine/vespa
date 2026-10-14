@@ -2,8 +2,6 @@
 
 #include "dummy_feed_view.h"
 
-#include <cassert>
-
 namespace proton::test {
 
 DummyFeedView::DummyFeedView() : _docTypeRepo() {

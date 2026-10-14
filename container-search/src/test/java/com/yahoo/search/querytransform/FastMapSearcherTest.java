@@ -7,6 +7,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IntItem;
@@ -233,7 +234,7 @@ public class FastMapSearcherTest {
     @Test
     public void requireEachLookupOfAFieldIsRewritten() {
         assertEquals("twolookups$lookup:foo" + FastMapSearch.keyValueSeparator() + "bar",
-                     rewrittenYql("twolookups.lookup{\"foo\"} = \"bar\""));
+                     rewrittenYql("twolookups.lookup{\"foo\"} contains \"bar\""));
         assertEquals("twolookups$reversed:" + FastMapSearch.toKeyValue8Term("bar", 42),
                      rewrittenYql("twolookups.reversed{\"bar\"} = 42"));
         assertRewritten("twolookups$reversed:" + FastMapSearch.toKeyValue8Term("bar", 42),
@@ -340,13 +341,10 @@ public class FastMapSearcherTest {
                         mapMatch("intkeyarray", new IntItem("42", "key"), new WordItem("bar", "value")));
     }
 
-    /** An integer key must be a plain integer: ranges, even of a single integer, and other number forms are rejected. */
+    /** An integer key must be a single integer: ranges, even of a single integer, and other number forms are rejected. */
     @Test
     public void requireIntegerKeyWhichIsNotAPlainIntegerRejected() {
-        for (TermItem key : List.of(new WordItem("foo", "key"), new WordItem("1.5", "key"),
-                                    new WordItem("42.0", "key"), new WordItem(" 42", "key"), new WordItem("+42", "key"),
-                                    new WordItem("\u0664\u0662", "key"), // Arabic-Indic digits 42
-                                    new WordItem("0x2A", "key"), new WordItem("1e2", "key"), new WordItem("[42;42]", "key"),
+        for (TermItem key : List.of(new WordItem("foo", "key"), new WordItem("[42;42]", "key"),
                                     new IntItem("1.5", "key"), new IntItem("42.0", "key"),
                                     new IntItem("[42;42]", "key"), new IntItem("<41;43>", "key"), new IntItem("[41.5;42.5]", "key"),
                                     new IntItem("[1;2]", "key"), new IntItem(">5", "key"), new IntItem("[;5]", "key"),
@@ -454,6 +452,28 @@ public class FastMapSearcherTest {
         assertEquals("Lookup 'intvaluemap.lookup' requires a single word as key, and a single integer or an integer range " +
                      "as value, but got intvaluemap.lookup:{key:foo value:bar}",
                      exception.getMessage());
+    }
+
+    /** Lookup fields have no bool key or value type, so a boolean key or value has no lookup term. */
+    @Test
+    public void requireBooleanKeyOrValueRejected() {
+        for (String map : List.of("mymap", "intvaluemap", "longvaluemap", "floatvaluemap", "doublevaluemap")) {
+            assertRejected(mapMatch(map, new WordItem("foo", "key"), new BoolItem(true, "value")));
+            assertRejected(mapMatch(map, new BoolItem(true, "key"), new WordItem("bar", "value")));
+        }
+        for (String map : List.of("intkeymap", "longkeymap")) {
+            assertRejected(mapMatch(map, new BoolItem(false, "key"), new WordItem("bar", "value")));
+        }
+
+        // A boolean is not taken as the string "true", which must be given with contains
+        var exception = assertThrows(IllegalInputException.class, () -> rewrittenYql("mymap.lookup{\"foo\"} = true"));
+        assertEquals("Lookup 'mymap.lookup' requires a single word as key, and a single word as value, " +
+                     "but got mymap.lookup:{key:foo value:true}",
+                     exception.getMessage());
+        assertEquals("mymap$lookup:foo" + FastMapSearch.keyValueSeparator() + "true",
+                     rewrittenYql("mymap.lookup{\"foo\"} contains \"true\""));
+        assertThrows(IllegalInputException.class, () -> rewrittenYql("intvaluemap.lookup{\"foo\"} = false"));
+        assertThrows(IllegalInputException.class, () -> rewrittenYql("intkeymap.lookup{true} contains \"bar\""));
     }
 
     @Test

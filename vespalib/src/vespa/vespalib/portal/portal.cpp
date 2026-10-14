@@ -4,11 +4,11 @@
 
 #include "http_connection.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <algorithm>
-#include <cassert>
 
 namespace vespalib {
 
@@ -29,54 +29,54 @@ Portal::Token::~Token() {
 }
 
 const std::string& Portal::GetRequest::get_header(const std::string& name) const {
-    assert(active());
+    CHECK(active());
     return _conn->get_request().get_header(name);
 }
 
 const std::string& Portal::GetRequest::get_host() const {
-    assert(active());
+    CHECK(active());
     return _conn->get_request().get_host();
 }
 
 const std::string& Portal::GetRequest::get_uri() const {
-    assert(active());
+    CHECK(active());
     return _conn->get_request().get_uri();
 }
 
 const std::string& Portal::GetRequest::get_path() const {
-    assert(active());
+    CHECK(active());
     return _conn->get_request().get_path();
 }
 
 bool Portal::GetRequest::has_param(const std::string& name) const {
-    assert(active());
+    CHECK(active());
     return _conn->get_request().has_param(name);
 }
 
 const std::string& Portal::GetRequest::get_param(const std::string& name) const {
-    assert(active());
+    CHECK(active());
     return _conn->get_request().get_param(name);
 }
 
 std::map<std::string, std::string> Portal::GetRequest::export_params() const {
-    assert(active());
+    CHECK(active());
     return _conn->get_request().export_params();
 }
 
 void Portal::GetRequest::respond_with_content(std::string_view content_type, std::string_view content) {
-    assert(active());
+    CHECK(active());
     _conn->respond_with_content(content_type, content);
     _conn = nullptr;
 }
 
 void Portal::GetRequest::respond_with_error(int code, std::string_view msg) {
-    assert(active());
+    CHECK(active());
     _conn->respond_with_error(code, msg);
     _conn = nullptr;
 }
 
 const net::ConnectionAuthContext& Portal::GetRequest::auth_context() const noexcept {
-    assert(active());
+    CHECK(active());
     return _conn->auth_context();
 }
 
@@ -133,7 +133,7 @@ void Portal::handle_http(portal::HttpConnection* conn) {
             GetHandler* get_handler = nullptr;
             auto        guard = lookup_get_handler(conn->get_request().get_path(), get_handler);
             if (guard.valid()) {
-                assert(get_handler != nullptr);
+                CHECK(get_handler != nullptr);
                 conn->resolve_host(_my_host);
                 get_handler->get(GetRequest(*conn));
             } else {
@@ -141,7 +141,7 @@ void Portal::handle_http(portal::HttpConnection* conn) {
             }
         }
     } else {
-        assert(conn->get_state() == HttpConnection::State::END);
+        CHECK(conn->get_state() == HttpConnection::State::END);
         delete (conn);
     }
 }
@@ -167,8 +167,8 @@ Portal::Portal(CryptoEngine::SP crypto, int port)
 Portal::~Portal() {
     _listener.reset();
     _handle_manager.destroy(_conn_handle);
-    assert(_handle_manager.empty());
-    assert(_bind_list.empty());
+    CHECK(_handle_manager.empty());
+    CHECK(_bind_list.empty());
 }
 
 Portal::SP Portal::create(CryptoEngine::SP crypto, int port) {

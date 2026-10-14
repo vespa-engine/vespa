@@ -2,7 +2,8 @@
 
 #include "weighted_integer_term_vector.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <charconv>
 
 namespace search::query {
@@ -13,7 +14,7 @@ WeightedIntegerTermVector::WeightedIntegerTermVector(uint32_t sz) : _terms(), _s
 
 void WeightedIntegerTermVector::addTerm(std::string_view, Weight) {
     // Will/should never happen
-    assert(false);
+    CHECK(false);
 }
 
 void WeightedIntegerTermVector::addTerm(int64_t term, Weight weight) {

@@ -2,6 +2,8 @@
 
 #include "persistencehandler.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.persistencehandler");
 
@@ -169,7 +171,7 @@ void PersistenceHandler::process_locked_message_batch(std::shared_ptr<FileStorHa
     const auto bucket = lock->getBucket();
     auto       batch = std::make_shared<AsyncMessageBatch>(std::move(lock), _env, _env._fileStorHandler);
     for (auto& bm : bucket_messages) {
-        assert(bm.first->getBucket() == bucket);
+        CHECK(bm.first->getBucket() == bucket);
         // Important: we _copy_ the message shared_ptr instead of moving to ensure that `*bm.first` remains
         // valid even if the tracker is destroyed by an exception in processMessage(). All std::exceptions
         // are caught there, so we do not expect our loop to be interrupted.

@@ -2,6 +2,7 @@
 
 #include "indexenvironment.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/searchlib/fef/indexproperties.h>
@@ -99,10 +100,10 @@ void IndexEnvironment::extractFields(const search::index::Schema& schema) {
 }
 
 void IndexEnvironment::insertField(const search::fef::FieldInfo& field) {
-    assert(field.id() == _fields.size());
+    CHECK(field.id() == _fields.size());
     // The empty name belongs to the "no field" held first in _fields, and must
     // stay out of _fieldNames so that getFieldByName("") returns nullptr.
-    assert(!field.name().empty());
+    CHECK(!field.name().empty());
     _fieldNames[field.name()] = _fields.size();
     _fields.push_back(field);
 }

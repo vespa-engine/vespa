@@ -120,12 +120,7 @@ fef::Blueprint::UP Bm25Blueprint::createInstance() const {
 }
 
 fef::ParameterDescriptions Bm25Blueprint::getDescriptions() const {
-    return fef::ParameterDescriptions()
-        .desc()
-        .indexField(fef::ParameterCollection::ANY)
-        .desc()
-        .string()
-        .string();
+    return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::ANY).desc().string().string();
 }
 
 namespace {
@@ -166,8 +161,7 @@ std::optional<std::string> parse_tagged_argument(const std::string& param, std::
 bool Bm25Blueprint::setup_label_parameter(const std::string& param) {
     auto label = parse_tagged_argument(param, "label");
     if (!label.has_value()) {
-        return fail("The second parameter must be of the form label:<query-item-label>, but was '%s'",
-                    param.c_str());
+        return fail("The second parameter must be of the form label:<query-item-label>, but was '%s'", param.c_str());
     }
     _label = std::move(*label);
     return true;
@@ -200,8 +194,8 @@ bool Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::Paramete
             auto field = parse_tagged_argument(first, "field");
             if (!field.has_value()) {
                 return fail("The first parameter must be an index field name or of the form field:<index-field>, "
-                              "but was '%s'",
-                              first.c_str());
+                            "but was '%s'",
+                            first.c_str());
             }
             if (!is_valid_field_name(*field)) {
                 return fail("The field tag value must be an identifier, but was '%s'", field->c_str());

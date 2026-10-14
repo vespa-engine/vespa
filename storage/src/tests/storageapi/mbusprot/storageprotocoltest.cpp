@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/test/make_bucket_space.h>
@@ -133,10 +134,10 @@ std::shared_ptr<Command> StorageProtocolTest::copyCommand(const std::shared_ptr<
     auto               version = GetParam();
     mbus::Blob         blob = _protocol.encode(version, *mbusMessage);
     mbus::Routable::UP copy(_protocol.decode(version, blob));
-    assert(copy.get());
+    CHECK(copy.get());
 
     auto* copy2 = dynamic_cast<mbusprot::StorageCommand*>(copy.get());
-    assert(copy2 != nullptr);
+    CHECK(copy2 != nullptr);
 
     StorageCommand::SP internalMessage(copy2->getCommand());
     lastCommand = std::move(mbusMessage);
@@ -149,10 +150,10 @@ template <typename Reply> std::shared_ptr<Reply> StorageProtocolTest::copyReply(
     auto               version = GetParam();
     mbus::Blob         blob = _protocol.encode(version, *mbusMessage);
     mbus::Routable::UP copy(_protocol.decode(version, blob));
-    assert(copy.get());
+    CHECK(copy.get());
 
     auto* copy2 = dynamic_cast<mbusprot::StorageReply*>(copy.get());
-    assert(copy2 != nullptr);
+    CHECK(copy2 != nullptr);
 
     copy2->setMessage(std::move(lastCommand));
     auto internalMessage = copy2->getReply();

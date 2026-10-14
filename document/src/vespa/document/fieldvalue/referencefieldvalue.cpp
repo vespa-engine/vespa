@@ -2,10 +2,10 @@
 
 #include "referencefieldvalue.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <ostream>
 
 using vespalib::IllegalArgumentException;
@@ -54,7 +54,7 @@ FieldValue& ReferenceFieldValue::assign(const FieldValue& rhs) {
 }
 
 void ReferenceFieldValue::setDeserializedDocumentId(const DocumentId& id) {
-    assert(_dataType != nullptr);
+    CHECK(_dataType != nullptr);
     requireIdOfMatchingType(id, _dataType->getTargetType());
     _documentId = id;
     // Pre-cache GID to ensure it's not attempted lazily initialized later in a racing manner.
@@ -62,7 +62,7 @@ void ReferenceFieldValue::setDeserializedDocumentId(const DocumentId& id) {
 }
 
 ReferenceFieldValue* ReferenceFieldValue::clone() const {
-    assert(_dataType != nullptr);
+    CHECK(_dataType != nullptr);
     if (hasValidDocumentId()) {
         return new ReferenceFieldValue(*_dataType, _documentId);
     } else {
@@ -86,7 +86,7 @@ int ReferenceFieldValue::compare(const FieldValue& rhs) const {
 
 void ReferenceFieldValue::print(std::ostream& os, bool verbose, const std::string& indent) const {
     (void)verbose;
-    assert(_dataType != nullptr);
+    CHECK(_dataType != nullptr);
     os << indent << "ReferenceFieldValue(" << *_dataType << ", DocumentId(" << _documentId << "))";
 }
 

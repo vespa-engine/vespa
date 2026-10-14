@@ -4,6 +4,7 @@
 
 #include "search_environment_snapshot.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-onnx-models.h>
 #include <vespa/config-ranking-constants.h>
 #include <vespa/config-ranking-expressions.h>
@@ -15,8 +16,6 @@
 
 #include <vespa/config/retriever/configsnapshot.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchenvironment");
@@ -96,7 +95,7 @@ void SearchEnvironment::Env::configure_ranking_asset(std::shared_ptr<const Ranki
     if (snapshot.isChanged<ConfigType>(_configId, _generation)) {
         ranking_asset = builder.build(*snapshot.getConfig<ConfigType>(_configId));
     } else {
-        assert(ranking_asset);
+        CHECK(ranking_asset);
     }
 }
 

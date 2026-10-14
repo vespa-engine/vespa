@@ -2,9 +2,9 @@
 
 #include "slime_filler_filter.h"
 
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search::docsummary {
 
@@ -15,7 +15,7 @@ SlimeFillerFilter::Iterator::Iterator(const SlimeFillerFilter* next) noexcept : 
 }
 
 SlimeFillerFilter::Iterator SlimeFillerFilter::Iterator::check_field(std::string_view field_name) const {
-    assert(_should_render);
+    CHECK(_should_render);
     return (_next != nullptr) ? _next->check_field(field_name) : SlimeFillerFilter::Iterator(true);
 }
 
@@ -64,7 +64,7 @@ SlimeFillerFilter& SlimeFillerFilter::add(std::string_view field_path) {
         }
     } else {
         auto insres = _filter.insert(std::make_pair(std::string(field_name), std::unique_ptr<SlimeFillerFilter>()));
-        assert(insres.second);
+        CHECK(insres.second);
         if (!remaining_path.empty()) {
             insres.first->second = std::make_unique<SlimeFillerFilter>();
             insres.first->second->add(remaining_path);

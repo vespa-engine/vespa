@@ -11,10 +11,10 @@ import com.yahoo.config.application.api.ApplicationPackage;
  * application package. At most one provider may be registered.
  *
  * @author sebasabe
- * @deprecated use {@code com.yahoo.vespa.model.commerce.discovery.CommerceDiscoveryProvider} in config-model.
+ * @deprecated use {@code com.yahoo.vespa.model.productdiscovery.ProductDiscoveryProvider} in config-model.
  */
 // TODO: Remove when no config model version older than the one introducing
-//       com.yahoo.vespa.model.commerce.discovery.CommerceDiscoveryProvider is in use. Kept for compatibility with
+//       the provider interface in config-model is in use. Kept for compatibility with
 //       older config model versions. Do not implement it.
 @Deprecated
 public interface CommerceDiscoveryProvider {

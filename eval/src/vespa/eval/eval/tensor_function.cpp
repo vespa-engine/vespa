@@ -8,6 +8,7 @@
 #include "value_type_spec.h"
 #include "visit_stuff.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/instruction/generic_cell_cast.h>
 #include <vespa/eval/instruction/generic_cell_order.h>
 #include <vespa/eval/instruction/generic_concat.h>
@@ -468,7 +469,7 @@ const TensorFunction& peek(const TensorFunction&                                
     for (const auto& dim_spec : spec) {
         dimensions.push_back(dim_spec.first);
     }
-    assert(!dimensions.empty());
+    CHECK(!dimensions.empty());
     ValueType result_type = param.result_type().peek(dimensions);
     return stash.create<Peek>(result_type, param, spec);
 }

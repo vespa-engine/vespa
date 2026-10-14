@@ -59,8 +59,9 @@ int main(int argc, char** argv) {
     } else if (strcmp(argv[1], "configservers_rpc") == 0) {
         size_t count = 0;
         for (std::string v : vespa::Defaults::vespaConfigServerRpcAddrs()) {
-            if (count++ > 0)
+            if (count++ > 0) {
                 printf(",");
+            }
             printf("%s", v.c_str());
         }
         printf("\n");
@@ -71,8 +72,9 @@ int main(int argc, char** argv) {
     } else if (strcmp(argv[1], "configsources") == 0) {
         size_t count = 0;
         for (std::string v : vespa::Defaults::vespaConfigSourcesRpcAddrs()) {
-            if (count++ > 0)
+            if (count++ > 0) {
                 printf(",");
+            }
             printf("%s", v.c_str());
         }
         printf("\n");

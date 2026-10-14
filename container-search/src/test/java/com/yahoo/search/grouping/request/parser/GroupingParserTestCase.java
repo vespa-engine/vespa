@@ -656,7 +656,16 @@ public class GroupingParserTestCase {
                 () -> assertParse("all(group(foo) filter(range(1990, 2012, foo, false, false)) each(output(count())))"),
                 () -> assertParse("all(group(foo) filter(range(1990, 2012, foo, true, false)) each(output(count())))"),
                 () -> assertParse("all(group(foo) filter(range(1990, 2012, foo, false, true)) each(output(count())))"),
-                () -> assertParse("all(group(foo) filter(range(1990, 2012, foo, true, true)) each(output(count())))"));
+                () -> assertParse("all(group(foo) filter(range(1990, 2012, foo, true, true)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(range(-10, 10, foo)) each(output(count())))",
+                                  "all(group(foo) filter(range(-10, 10, foo, true, false)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(range(-10, -5, foo, false, true)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(range(-1.5, 2.5, foo)) each(output(count())))",
+                                  "all(group(foo) filter(range(-1.5, 2.5, foo, true, false)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(range(-9223372036854775808, 0, foo)) each(output(count())))",
+                                  "all(group(foo) filter(range(-9223372036854775808, 0, foo, true, false)) each(output(count())))"),
+                () -> assertIllegalArgument("all(group(foo) filter(range(- 10, 10, foo)) each(output(count())))",
+                                            "Encountered \" <SPACE> \" \"\" at line 1, column 30."));
 
         assertAll("filter with in",
                 () -> assertParse("all(group(foo) filter(in(foo, \"bar\")) each(output(count())))"),
@@ -665,9 +674,11 @@ public class GroupingParserTestCase {
                                   "all(group(foo) filter(in(foo, \"bar\")) each(output(count())))"),
                 () -> assertParse("all(group(foo) filter(in(add(foo, 1), \"2\")) each(output(count())))"));
         assertIllegalArgument("all(group(foo) filter(in(sum(foo), \"1\")) each(output(count())))",
-                "In predicate cannot be used with an aggregator");
+                "The 'in' predicate cannot be used with an aggregator");
         assertIllegalArgument("all(group(foo) filter(in(foo, sum(bar))) each(output(count())))",
                 "Encountered \" \"(\" \"(\"\" at line 1, column 34.");
+        assertIllegalArgument("all(group(foo) filter(in(foo)) each(output(count())))",
+                "Encountered \" \")\" \")\"\" at line 1, column 29.");
 
         assertAll("labels which are not identifiers are quoted",
                 () -> assertParse("all(group(foo) each(output(count() as(\"my label\"))) as(\"my label\"))"),
@@ -688,12 +699,38 @@ public class GroupingParserTestCase {
     }
 
     @Test
+    void testBitCounts() {
+        assertParse("all(group(md5(foo, 1)) each(output(count())))");
+        assertParse("all(group(md5(foo, 128)) each(output(count())))");
+        assertParse("all(group(xorbit(foo, 1)) each(output(count())))");
+        assertParse("all(group(xorbit(foo, 64)) each(output(count())))");
+        assertIllegalArgument("all(group(md5(foo, 0)) each(output(count())))",
+                              "md5 requires a number of bits between 1 and 128, but got 0");
+        assertIllegalArgument("all(group(md5(foo, 129)) each(output(count())))",
+                              "md5 requires a number of bits between 1 and 128, but got 129");
+        assertIllegalArgument("all(group(xorbit(foo, 0)) each(output(count())))",
+                              "xorbit requires a number of bits between 1 and 64, but got 0");
+        assertIllegalArgument("all(group(xorbit(foo, 65)) each(output(count())))",
+                              "xorbit requires a number of bits between 1 and 64, but got 65");
+        // Does not wrap around to a valid value
+        assertIllegalArgument("all(group(xorbit(foo, 4294967361)) each(output(count())))",
+                              "xorbit requires a number of bits between 1 and 64, but got 4294967361");
+        assertEquals("xorbit requires a number of bits between 1 and 64, but got -5",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(xorbit(foo, @negative)) each(output(count())))",
+                                                                     Map.of("negative", "-5")::get)).getMessage());
+    }
+
+    @Test
     void testParameterSubstitution() {
         Map<String, String> parameters = Map.ofEntries(
                 Map.entry("pattern", "(stringinparentheses)?"),
                 Map.entry("injection", "foo or regex(bar, baz)"),
                 Map.entry("lo", "1990"),
                 Map.entry("hi", "2012.5"),
+                Map.entry("negative", "-5"),
+                Map.entry("empty", ""),
+                Map.entry("unterminated", "[\"x\", \"y\""),
                 Map.entry("n", "7"),
                 Map.entry("max", "3"),
                 Map.entry("label", "mylabel"),
@@ -734,6 +771,9 @@ public class GroupingParserTestCase {
                         "all(group(foo) filter(range(@lo, @hi, foo)) each(output(count())))",
                         "all(group(foo) filter(range(1990, 2012.5, foo, true, false)) each(output(count())))"),
                 () -> assertParseWithParameters(parameters,
+                        "all(group(foo) filter(range(@negative, -1, foo)) each(output(count())))",
+                        "all(group(foo) filter(range(-5, -1, foo, true, false)) each(output(count())))"),
+                () -> assertParseWithParameters(parameters,
                         "all(group(foo) max(@n) precision(@n) each(output(count())))",
                         "all(group(foo) max(7) precision(7) each(output(count())))"),
                 () -> assertParseWithParameters(parameters,
@@ -748,7 +788,18 @@ public class GroupingParserTestCase {
                         "all(group(foo) filter(in(foo, \"bar\", \"x\", \"y z\", \"w\")) each(output(count())))"),
                 () -> assertParseWithParameters(parameters,
                         "all(group(foo) filter(in(foo, @array)) each(output(count())))",
-                        "all(group(foo) filter(in(foo, \"x\", \"y\")) each(output(count())))"));
+                        "all(group(foo) filter(in(foo, \"x\", \"y\")) each(output(count())))"),
+                () -> assertParseWithParameters(parameters,
+                        "all(group(foo) filter(in(foo, \"bar\", @empty, @array)) each(output(count())))",
+                        "all(group(foo) filter(in(foo, \"bar\", \"x\", \"y\")) each(output(count())))"));
+        assertEquals("Input 'unterminated' is not a valid list: Expected ']' at position 8 but reached the end",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) filter(in(foo, @unterminated)) each(output(count())))",
+                                                                     parameters::get)).getMessage());
+        assertEquals("The 'in' predicate requires at least one argument, but none were provided",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) filter(in(foo, @empty)) each(output(count())))",
+                                                                     parameters::get)).getMessage());
 
         assertEquals("Input 'missing' is not set",
                      assertThrows(IllegalArgumentException.class,
@@ -758,6 +809,32 @@ public class GroupingParserTestCase {
                      assertThrows(IllegalArgumentException.class,
                                   () -> GroupingOperation.fromString("all(group(foo) max(@label) each(output(count())))",
                                                                      parameters::get)).getMessage());
+        assertEquals("max must be a positive number, but got -5",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) max(@negative) each(output(count())))",
+                                                                     parameters::get)).getMessage());
+        assertEquals("precision must be a positive number, but got -5",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) precision(@negative) each(output(count())))",
+                                                                     parameters::get)).getMessage());
+        assertEquals("precision must be a positive number, but got -0.5",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) precision(@p) each(output(count())))",
+                                                                     Map.of("p", "-0.5")::get)).getMessage());
+        assertEquals("max must be a positive number, but got 0",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) max(@zero) each(output(count())))",
+                                                                     Map.of("zero", "0")::get)).getMessage());
+        assertEquals("precision must be a positive number, but got 0",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) precision(@zero) each(output(count())))",
+                                                                     Map.of("zero", "0")::get)).getMessage());
+        assertEquals("max must be a positive number, but got 0",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) max(0) each(output(count())))")).getMessage());
+        assertEquals("precision must be a positive number, but got 0",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> GroupingOperation.fromString("all(group(foo) precision(0) each(output(count())))")).getMessage());
         assertEquals("Input 'nan' must be a number, but was 'NaN'",
                      assertThrows(IllegalArgumentException.class,
                                   () -> GroupingOperation.fromString("all(group(foo) max(@nan) each(output(count())))",

@@ -145,8 +145,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     // Default path to vip status file for container in Hosted Vespa.
     static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/vespa/load-balancer/status.html");
 
-    static final String HOSTED_VESPA_TENANT_PARENT_DOMAIN = "vespa.tenant.";
-
     //Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
 
@@ -409,7 +407,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             context.getDeployState().getProperties().ztsUrl(),
                             context.getDeployState().getProperties().athenzDnsSuffix(),
                             context.getDeployState().zone(),
-                            AthenzDomain.from(HOSTED_VESPA_TENANT_PARENT_DOMAIN + context.properties().applicationId().tenant().value()),
+                            AthenzDomain.from(context.properties().tenantParentDomain().value() + "." + context.properties().applicationId().tenant().value()),
                             AthenzService.from(Text.format("%s-%s", context.properties().applicationId().application().value(), appContext)));
     }
 
@@ -1149,7 +1147,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
             var xmlGcOptions = extractJvmOptions(nodes, cluster, nodesElement, context);
-            applyDefaultPreload(nodes, nodesElement);
+            applyDefaultPreload(nodes, nodesElement, context.getDeployState().getDeployLogger());
             var envVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT)).entrySet();
             for (var container : nodes) {
                 for (var entry : envVars) {
@@ -1345,8 +1343,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private static void applyDefaultPreload(List<ApplicationContainer> containers, Element nodesElement) {
+    private static void applyDefaultPreload(List<ApplicationContainer> containers, Element nodesElement, DeployLogger logger) {
         if (! nodesElement.hasAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME)) return;
+        AbstractService.validateNoShellMetacharacters("preload", nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME), logger);
         for (Container container: containers)
             container.setPreLoad(nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME));
     }
@@ -1579,6 +1578,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         private void validateJvmOptions(String jvmOptions) {
             if (jvmOptions == null || jvmOptions.isEmpty()) return;
+            AbstractService.validateNoShellMetacharacters("JVM options", jvmOptions, logger);
 
             String[] optionList = jvmOptions.split(" ");
             List<String> invalidOptions = Arrays.stream(optionList)
@@ -1634,6 +1634,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .withClusterId(ClusterSpec.Id.from(clusterName))
                     .value();
             if (jvmGcOptions != null) {
+                AbstractService.validateNoShellMetacharacters("JVM GC options", jvmGcOptions, logger);
                 options = jvmGcOptions;
                 String[] optionList = options.split(" ");
                 List<String> invalidOptions = Arrays.stream(optionList)

@@ -6,6 +6,7 @@
 #include "value.h"
 #include "visitcache.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
@@ -85,7 +86,7 @@ bool BackingStore::read(DocumentIdT key, Value& value) const {
 
 void BackingStore::write(DocumentIdT lid, const Value& value) {
     Value::Result buf = value.decompressed();
-    assert(buf.second);
+    CHECK(buf.second);
     _backingStore.write(value.getSyncToken(), lid, buf.first.getData(), buf.first.getDataLen());
 }
 
@@ -174,7 +175,7 @@ std::unique_ptr<document::Document> DocumentStore::read(DocumentIdT lid, const D
     _store->read(lid, value);
     if (!value.empty()) {
         Value::Result result = value.decompressed();
-        assert(result.second);
+        CHECK(result.second);
         return std::make_unique<document::Document>(repo, std::move(result.first));
     }
     return std::unique_ptr<document::Document>();

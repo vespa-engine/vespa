@@ -4,11 +4,10 @@
 
 #include "updatedocumentreply.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-#include <cassert>
 
 namespace documentapi {
 
@@ -51,7 +50,7 @@ bool UpdateDocumentMessage::create_if_missing() const {
     if (_create_if_missing.has_value()) {
         return *_create_if_missing;
     }
-    assert(_documentUpdate);
+    CHECK(_documentUpdate);
     return _documentUpdate->getCreateIfNonExistent();
 }
 

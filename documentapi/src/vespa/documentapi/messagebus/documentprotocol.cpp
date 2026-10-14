@@ -7,13 +7,13 @@
 #include "routingpolicyfactories.h"
 #include "routingpolicyrepository.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/error.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <cassert>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -277,13 +277,13 @@ void DocumentProtocol::merge(mbus::RoutingContext& ctx, const std::set<uint32_t>
         }
         rm.merge(idx, it.getReplyRef());
     }
-    assert(idx != 0);
+    CHECK(idx != 0);
     ReplyMerger::Result res(rm.mergedReply());
     if (res.isSuccessful()) {
         const uint32_t okIdx = res.getSuccessfulReplyIndex();
         ctx.setReply(ctx.getChildIterator().skip(okIdx).removeReply());
     } else {
-        assert(res.hasGeneratedReply());
+        CHECK(res.hasGeneratedReply());
         ctx.setReply(res.releaseGeneratedReply());
     }
 }

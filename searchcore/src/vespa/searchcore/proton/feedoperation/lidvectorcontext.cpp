@@ -2,11 +2,10 @@
 
 #include "lidvectorcontext.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/objects/nbostream.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.feedoperation.lidvectorcontext");
@@ -59,7 +58,7 @@ void LidVectorContext::deserialize(vespalib::nbostream& is) {
         auto bitVector = std::make_unique<AllocatedBitVector>(_docIdLimit);
         is >> *bitVector;
         uint32_t sz(bitVector->size());
-        assert(sz == _docIdLimit);
+        CHECK(sz == _docIdLimit);
         LOG(spam, "deserialize: reading bitvector of size %u", sz);
         for (search::DocumentIdT lid(bitVector->getFirstTrueBit()); lid < sz;
              lid = bitVector->getNextTrueBit(lid + 1))

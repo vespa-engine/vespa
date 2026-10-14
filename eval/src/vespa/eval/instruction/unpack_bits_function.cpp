@@ -2,6 +2,7 @@
 
 #include "unpack_bits_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/basic_nodes.h>
 #include <vespa/eval/eval/call_nodes.h>
 #include <vespa/eval/eval/node_tools.h>
@@ -10,8 +11,6 @@
 #include <vespa/eval/eval/tensor_nodes.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/wrap_param.h>
-
-#include <cassert>
 
 namespace vespalib::eval {
 
@@ -146,7 +145,7 @@ Result detect_unpack_bits(const ValueType& dst_type, size_t num_bindings, const 
             if (auto peek = as<TensorPeek>(bit->get_child(0))) {
                 const ValueType& src_type = types.get_type(peek->param());
                 if (compatible_types(src_type, dst_type) && is_byte_peek(*peek, dim_cnt)) {
-                    assert(dim_cnt > 0);
+                    CHECK(dim_cnt > 0);
                     if (is_big_bit_expr(bit->get_child(1), dim_cnt - 1)) {
                         return {true, true, src_type};
                     } else if (is_little_bit_expr(bit->get_child(1), dim_cnt - 1)) {
@@ -176,7 +175,7 @@ const TensorFunction& UnpackBitsFunction::optimize(const TensorFunction& expr, S
         auto result =
             detect_unpack_bits(lambda->result_type(), lambda->bindings().size(), lambda->lambda(), lambda->types());
         if (result.is_unpack_bits) {
-            assert(lambda->bindings().size() == 1);
+            CHECK(lambda->bindings().size() == 1);
             const TensorFunction& input = inject(result.src_type, lambda->bindings()[0], stash);
             return stash.create<UnpackBitsFunction>(lambda->result_type(), input, result.is_big_bitorder);
         }

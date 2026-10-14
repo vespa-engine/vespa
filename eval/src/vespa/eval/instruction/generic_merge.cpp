@@ -2,13 +2,12 @@
 
 #include "generic_merge.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
-
-#include <cassert>
 
 using namespace vespalib::eval::tensor_function;
 
@@ -108,7 +107,7 @@ Instruction GenericMerge::make_instruction(const ValueType& result_type, const V
                                            const ValueType& rhs_type, join_fun_t function,
                                            const ValueBuilderFactory& factory, Stash& stash) {
     const auto& param = stash.create<MergeParam>(result_type, lhs_type, rhs_type, function, factory);
-    assert(result_type == ValueType::merge(lhs_type, rhs_type));
+    CHECK(result_type == ValueType::merge(lhs_type, rhs_type));
     auto fun =
         typify_invoke<3, MergeTypify, SelectGenericMergeOp>(lhs_type.cell_meta(), rhs_type.cell_meta(), function);
     return Instruction(fun, wrap_param<MergeParam>(param));

@@ -18,8 +18,9 @@ void ISearchContext::and_element_ids_into(uint32_t docid, std::vector<uint32_t>&
     for (int32_t candidate : element_ids) {
         if (candidate > id) {
             id = find(docid, candidate, weight);
-            if (id < 0)
+            if (id < 0) {
                 break;
+            }
         }
         if (id == candidate) {
             element_ids[to_keep++] = candidate;

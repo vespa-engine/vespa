@@ -1,21 +1,23 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-CommerceDiscovery = CommerceDiscoveryV1
 
-CommerceDiscoveryV1 = element commerce-discovery {
-   attribute version { xsd:string { pattern = "[0-9]+\.[0-9]+" } } &
-   CommerceDiscoveryProduct? &
-   CommerceDiscoveryCategory? &
+# A new major version adds a ProductDiscoveryV<major> alternative, and should not replace one
+ProductDiscovery = ProductDiscoveryV1
+
+ProductDiscoveryV1 = element product-discovery {
+   attribute version { xsd:string { pattern = "1\.[0-9]+" } } &
+   ProductDiscoveryProduct? &
+   ProductDiscoveryCategory? &
    element variant-presentation { empty }? &
    element ranking-tags-registry { empty }?
 }
 
-CommerceDiscoveryProduct = element product {
+ProductDiscoveryProduct = element product {
    attribute document-type { text }? &
    attribute namespace { text }? &
    attribute id-field { text }?
 }
 
-CommerceDiscoveryCategory = element category {
+ProductDiscoveryCategory = element category {
    attribute document-type { text }? &
    attribute namespace { text }? &
    attribute id-field { text }?

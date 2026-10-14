@@ -6,8 +6,6 @@
 
 #include <vespa/eval/eval/typed_cells.h>
 
-#include <cassert>
-
 namespace search::tensor {
 
 /*

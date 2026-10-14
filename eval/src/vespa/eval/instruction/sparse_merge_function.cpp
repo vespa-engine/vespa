@@ -4,6 +4,7 @@
 
 #include "generic_merge.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/typify.h>
 
 #include <vespa/eval/eval/fast_value.hpp>
@@ -66,7 +67,7 @@ const Value& my_fast_sparse_merge(const FastAddrMap& a_map, const FastAddrMap& b
 template <typename CT, bool single_dim, typename Fun>
 void my_sparse_merge_op(InterpretedFunction::State& state, uint64_t param_in) {
     const auto& param = unwrap_param<MergeParam>(param_in);
-    assert(param.dense_subspace_size == 1u);
+    CHECK(param.dense_subspace_size == 1u);
     const Value& a = state.peek(1);
     const Value& b = state.peek(0);
     const auto&  a_idx = a.index();
@@ -96,7 +97,7 @@ using MyTypify = TypifyValue<TypifyCellMeta, TypifyBool, operation::TypifyOp2>;
 
 SparseMergeFunction::SparseMergeFunction(const tensor_function::Merge& original)
     : tensor_function::Merge(original.result_type(), original.lhs(), original.rhs(), original.function()) {
-    assert(compatible_types(result_type(), lhs().result_type(), rhs().result_type()));
+    CHECK(compatible_types(result_type(), lhs().result_type(), rhs().result_type()));
 }
 
 InterpretedFunction::Instruction SparseMergeFunction::compile_self(const ValueBuilderFactory& factory,
@@ -113,8 +114,8 @@ bool SparseMergeFunction::compatible_types(const ValueType& res, const ValueType
     if ((lhs.cell_type() == rhs.cell_type()) && (lhs.cell_type() == res.cell_type()) &&
         (lhs.count_mapped_dimensions() > 0) && (lhs.dense_subspace_size() == 1))
     {
-        assert(res == lhs);
-        assert(res == rhs);
+        CHECK(res == lhs);
+        CHECK(res == rhs);
         return true;
     }
     return false;

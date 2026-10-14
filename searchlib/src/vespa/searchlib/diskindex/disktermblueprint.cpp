@@ -2,6 +2,7 @@
 
 #include "disktermblueprint.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
@@ -9,8 +10,6 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.disktermblueprint");
@@ -116,7 +115,7 @@ const BitVector* DiskTermBlueprint::get_bitvector() const {
             log_bitvector_read();
         }
         _late_bitvector = _field_index.read_bit_vector(_bitvector_lookup_result);
-        assert(_late_bitvector);
+        CHECK(_late_bitvector);
     }
     return _late_bitvector.get();
 }

@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "storagelinkqueued.hpp"
 
+#include <vespa/check_require.h>
+
 #include <vespa/log/log.h>
 
 LOG_SETUP(".application.link.queued");
@@ -33,7 +35,7 @@ void StorageLinkQueued::dispatchUp(const std::shared_ptr<api::StorageMessage>& m
     default:
         LOG(error, "Link %s trying to dispatch %s up while in state %u", toString().c_str(), msg->toString().c_str(),
             getState());
-        assert(false);
+        CHECK(false);
     }
     _replyDispatcher.add(msg);
 }

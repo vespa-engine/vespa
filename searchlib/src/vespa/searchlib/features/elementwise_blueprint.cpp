@@ -39,6 +39,11 @@ DependencyHandlerGuard::~DependencyHandlerGuard() {
     _blueprint.detach_dependency_handler();
 }
 
+// The default cell type when it is not given, e.g. elementwise(matches(f),x) gives tensor<float>(x{})
+CellType default_cell_type(const std::string& nested_feature_base_name) {
+    return (nested_feature_base_name == "matches") ? CellType::FLOAT : CellType::DOUBLE;
+}
+
 } // namespace
 
 ElementwiseBlueprint::ElementwiseBlueprint() : ElementwiseBlueprint(make_default_nested_blueprints()) {
@@ -71,18 +76,8 @@ fef::ParameterDescriptions ElementwiseBlueprint::getDescriptions() const {
 }
 
 bool ElementwiseBlueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) {
-    const auto&             feature_name = params[0].getValue();
-    const auto&             dim_name = params[1].getValue();
-    std::optional<CellType> cell_type;
-    if (params.size() > 2) {
-        const auto& cell_type_name = params[2].getValue();
-        cell_type = vespalib::eval::value_type::cell_type_from_name(cell_type_name);
-        if (!cell_type.has_value()) {
-            return fail("'%s' is not a valid tensor cell type", cell_type_name.c_str());
-        }
-    } else {
-        cell_type.emplace(CellType::DOUBLE);
-    }
+    const auto&       feature_name = params[0].getValue();
+    const auto&       dim_name = params[1].getValue();
     FeatureNameParser feature_name_parser(feature_name);
     if (!feature_name_parser.valid()) {
         return fail("'%s' is not a valid feature name", feature_name.c_str());
@@ -91,6 +86,16 @@ bool ElementwiseBlueprint::setup(const fef::IIndexEnvironment& env, const fef::P
     auto        itr = _nested_blueprints->find(nested_feature_base_name);
     if (itr == _nested_blueprints->end()) {
         return fail("'%s' is not a feature with elementwise support", nested_feature_base_name.c_str());
+    }
+    std::optional<CellType> cell_type;
+    if (params.size() > 2) {
+        const auto& cell_type_name = params[2].getValue();
+        cell_type = vespalib::eval::value_type::cell_type_from_name(cell_type_name);
+        if (!cell_type.has_value()) {
+            return fail("'%s' is not a valid tensor cell type", cell_type_name.c_str());
+        }
+    } else {
+        cell_type.emplace(default_cell_type(nested_feature_base_name));
     }
     _inner_blueprint = itr->second->createInstance();
     DependencyHandlerGuard dependency_handler_guard(*_inner_blueprint, get_dependency_handler());

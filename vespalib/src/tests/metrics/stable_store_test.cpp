@@ -53,8 +53,9 @@ TEST(StableStoreTest, require_that_stable_store_works) {
 
     std::vector<const Foo*> after;
     bunch.for_each([&after](const Foo& value) {
-        if (after.size() < 10)
+        if (after.size() < 10) {
             after.push_back(&value);
+        }
     });
 
     EXPECT_EQ(pointers[0], after[0]);

@@ -21,7 +21,7 @@ constexpr uint8_t item_true_with_weight = static_cast<uint8_t>(ParseItem::ITEM_T
 TEST(StackDumpIteratorTest, negative_weight_encoded_in_a_single_byte_at_buffer_end_is_read) {
     // Compressed encoding of -1 is a single byte (0x81), see compress_test.cpp.
     // readCompressedInt must accept this even though no bytes follow.
-    const char buf[] = {static_cast<char>(item_true_with_weight), static_cast<char>(0x81)};
+    const char                   buf[] = {static_cast<char>(item_true_with_weight), static_cast<char>(0x81)};
     SimpleQueryStackDumpIterator it(std::string_view(buf, sizeof(buf)));
     ASSERT_TRUE(it.next());
     EXPECT_EQ(ParseItem::ITEM_TRUE, it.getType());
@@ -31,7 +31,7 @@ TEST(StackDumpIteratorTest, negative_weight_encoded_in_a_single_byte_at_buffer_e
 
 TEST(StackDumpIteratorTest, positive_weight_encoded_in_a_single_byte_at_buffer_end_is_read) {
     // Sanity check the mirrored (positive) single-byte case still works.
-    const char buf[] = {static_cast<char>(item_true_with_weight), static_cast<char>(0x01)};
+    const char                   buf[] = {static_cast<char>(item_true_with_weight), static_cast<char>(0x01)};
     SimpleQueryStackDumpIterator it(std::string_view(buf, sizeof(buf)));
     ASSERT_TRUE(it.next());
     EXPECT_EQ(1, it.GetWeight().percent());
@@ -44,24 +44,18 @@ TEST(StackDumpIteratorTest, truncated_4_byte_positive_unique_id_is_rejected_not_
     // real, decodable data instead of crashing outright; the iterator must
     // still refuse to read past the declared end of its buffer.
     constexpr uint8_t item_with_unique_id = static_cast<uint8_t>(ParseItem::ITEM_TRUE) | ParseItem::IF_UNIQUEID;
-    const char        full_buf[] = {static_cast<char>(item_with_unique_id),
-                                     static_cast<char>(0xc0),
-                                     static_cast<char>(0x00),
-                                     static_cast<char>(0x40),
-                                     static_cast<char>(0x00)};
+    const char full_buf[] = {static_cast<char>(item_with_unique_id), static_cast<char>(0xc0), static_cast<char>(0x00),
+                             static_cast<char>(0x40), static_cast<char>(0x00)};
     // Truncate the view right after the first 2 bytes of the compressed number.
-    std::string_view      truncated(full_buf, 3);
+    std::string_view             truncated(full_buf, 3);
     SimpleQueryStackDumpIterator it(truncated);
     EXPECT_FALSE(it.next());
 }
 
 TEST(StackDumpIteratorTest, full_4_byte_positive_unique_id_is_read_correctly) {
     constexpr uint8_t item_with_unique_id = static_cast<uint8_t>(ParseItem::ITEM_TRUE) | ParseItem::IF_UNIQUEID;
-    const char        buf[] = {static_cast<char>(item_with_unique_id),
-                                static_cast<char>(0xc0),
-                                static_cast<char>(0x00),
-                                static_cast<char>(0x40),
-                                static_cast<char>(0x00)};
+    const char buf[] = {static_cast<char>(item_with_unique_id), static_cast<char>(0xc0), static_cast<char>(0x00),
+                        static_cast<char>(0x40), static_cast<char>(0x00)};
     SimpleQueryStackDumpIterator it(std::string_view(buf, sizeof(buf)));
     ASSERT_TRUE(it.next());
     EXPECT_EQ(0x4000u, it.getUniqueId());

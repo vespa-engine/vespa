@@ -72,8 +72,9 @@ bool AttributeVector::adjustWeight(ChangeVectorT<ChangeTemplate<T>>& changes, Do
 template <typename T>
 bool AttributeVector::applyArithmetic(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc, const T&,
                                       const ArithmeticValueUpdate& arithm) {
-    if (hasMultiValue() || (doc >= getNumDocs()))
+    if (hasMultiValue() || (doc >= getNumDocs())) {
         return false;
+    }
 
     size_t                          oldSz(changes.size());
     ArithmeticValueUpdate::Operator op(arithm.getOperator());

@@ -4,12 +4,11 @@
 #include "getdocidnamespacespecificfunctionnode.h"
 #include "getymumchecksumfunctionnode.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/locale/c.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.documentfieldnode");
@@ -88,7 +87,7 @@ std::unique_ptr<ResultNode> deduceResultNode(std::string_view fieldName, const F
             value = deduceResultNode(fieldName, *static_cast<const CollectionFieldValue&>(fv).createNested(),
                                      preserveAccurateTypes, nestedMultiValue);
         } else {
-            assert(fv.isA(FieldValue::Type::MAP));
+            CHECK(fv.isA(FieldValue::Type::MAP));
             value = deduceResultNode(fieldName, *static_cast<const MapFieldValue&>(fv).createValue(),
                                      preserveAccurateTypes, nestedMultiValue);
         }

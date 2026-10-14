@@ -44,12 +44,15 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
             public Integer numSearchThreads = null;
             public Integer numThreadsPerSearch = null;
             public Integer numSummaryThreads = null;
+            /** Max search threads doing memory-heavy result processing at the same time; 0 means no limit. */
+            public Integer numResultProcessingThreads = null;
 
             @Override
             public void getConfig(ProtonConfig.Builder builder) {
                 if (numSearchThreads!=null) builder.numsearcherthreads(numSearchThreads);
                 if (numThreadsPerSearch!=null) builder.numthreadspersearch(numThreadsPerSearch);
                 if (numSummaryThreads!=null) builder.numsummarythreads(numSummaryThreads);
+                if (numResultProcessingThreads!=null) builder.search.memory.limiter.maxthreads(numResultProcessingThreads);
             }
         }
 

@@ -30,8 +30,9 @@ void ArrayDataType::print(std::ostream& out, bool verbose, const std::string& in
 }
 
 bool ArrayDataType::equals(const DataType& other) const noexcept {
-    if (this == &other)
+    if (this == &other) {
         return true;
+    }
     return CollectionDataType::equals(other) && other.isArray();
 }
 

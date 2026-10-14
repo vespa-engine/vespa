@@ -2,6 +2,8 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
@@ -23,6 +25,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -87,6 +90,21 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         assertTrue(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings()
                 .contains(SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi")));
         assertEquals(2, handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().size());
+    }
+
+    @Test
+    void legacy_feed_handler_can_be_disabled_by_feature_flag() {
+        Element elem = DomBuilderTest.parse(
+                "<container id='cluster1' version='1.0'>",
+                "  <document-api />",
+                nodesXml,
+                "</container>");
+        var deployState = new DeployState.Builder().properties(new TestProperties().enableLegacyFeedHandler(false)).build();
+        createModel(root, deployState, null, elem);
+
+        Map<String, Handler> handlerMap = getHandlers("cluster1");
+        assertNull(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler"));
+        assertNotNull(handlerMap.get("com.yahoo.document.restapi.resource.DocumentV1ApiHandler"));
     }
 
     @Test

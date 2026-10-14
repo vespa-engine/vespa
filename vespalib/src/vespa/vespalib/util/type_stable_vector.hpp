@@ -4,9 +4,9 @@
 
 #include "type_stable_vector.h"
 
-#include <vespa/vespalib/util/array.hpp>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <vespa/vespalib/util/array.hpp>
 
 namespace vespalib {
 
@@ -70,12 +70,12 @@ template <typename T> void TypeStableVectorBase<T>::replaceVector(ArrayType repl
 
 template <typename T> void TypeStableVectorBase<T>::expandAndInsert(const T& v) {
     expand(calcNewSize());
-    assert(_data.size() < _data.capacity());
+    CHECK(_data.size() < _data.capacity());
     _data.push_back(v);
 }
 
 template <typename T> void TypeStableVectorBase<T>::shrink(size_t newSize) {
-    assert(newSize <= _data.size());
+    CHECK(newSize <= _data.size());
     _data.resize(newSize);
     size_t wantedCapacity = calcNewSize(newSize);
     if (wantedCapacity >= _data.capacity()) {

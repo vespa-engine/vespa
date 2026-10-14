@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/docstore/logdatastore.h>
 #include <vespa/searchlib/docstore/randreaders.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -7,7 +8,6 @@
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
-#include <cassert>
 #include <cinttypes>
 
 using namespace search;
@@ -77,7 +77,7 @@ uint64_t generate(uint64_t serialNum, size_t chunks, FastOS_FileInterface& idxFi
         }
     }
     ssize_t written = idxFile.Write2(os.data(), os.size());
-    assert(written == ssize_t(os.size()));
+    CHECK(written == ssize_t(os.size()));
     return serialNum;
 }
 
@@ -92,7 +92,7 @@ int CreateIdxFileFromDatApp::createIdxFile(const std::string& datFileName, const
     uint64_t     entries(0);
     uint64_t     alignment(512);
     FastOS_File  idxFile(idxFileName.c_str());
-    assert(idxFile.OpenWriteOnly());
+    CHECK(idxFile.OpenWriteOnly());
     index::DummyFileHeaderContext fileHeaderContext;
     idxFile.SetPosition(
         WriteableFileChunk::writeIdxHeader(fileHeaderContext, std::numeric_limits<uint32_t>::max(), idxFile));

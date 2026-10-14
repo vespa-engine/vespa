@@ -2,7 +2,7 @@
 
 #include "lidstatevector.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton {
 
@@ -22,8 +22,8 @@ LidStateVector::~LidStateVector() = default;
 void LidStateVector::resizeVector(uint32_t newSize, uint32_t newCapacity) {
     uint32_t lowest = getLowest();
     uint32_t highest = getHighest();
-    assert(!_trackLowest || lowest <= _bv.writer().size());
-    assert(!_trackHighest || _bv.writer().size() == 0 || highest < _bv.writer().size());
+    CHECK(!_trackLowest || lowest <= _bv.writer().size());
+    CHECK(!_trackHighest || _bv.writer().size() == 0 || highest < _bv.writer().size());
     bool nolowest(lowest == _bv.writer().size());
     if (_bv.writer().size() > newSize) {
         _bv.shrink(newSize);
@@ -56,19 +56,19 @@ void LidStateVector::updateLowest(uint32_t lowest) {
 
 void LidStateVector::updateHighest(uint32_t highest) {
     highest = _bv.writer().getPrevTrueBit(highest);
-    assert(_bv.writer().size() == 0 || highest < _bv.writer().size());
+    CHECK(_bv.writer().size() == 0 || highest < _bv.writer().size());
     _highest.store(highest, std::memory_order_relaxed);
 }
 
 void LidStateVector::setBit(unsigned int idx) {
-    assert(idx < _bv.writer().size());
+    CHECK(idx < _bv.writer().size());
     if (_trackLowest && idx < getLowest()) {
         _lowest.store(idx, std::memory_order_relaxed);
     }
     if (_trackHighest && idx > getHighest()) {
         _highest.store(idx, std::memory_order_relaxed);
     }
-    assert(!_bv.writer().testBit(idx));
+    CHECK(!_bv.writer().testBit(idx));
     _bv.writer().setBitAndMaintainCount(idx);
 }
 
@@ -78,11 +78,11 @@ uint32_t LidStateVector::assert_is_not_set_then_set_bits_helper(const std::vecto
     uint32_t high = 0;
     uint32_t low = size;
     for (auto idx : idxs) {
-        assert(idx < size);
+        CHECK(idx < size);
         if (idx > high) {
             high = idx;
         }
-        assert(!_bv.writer().testBit(idx));
+        CHECK(!_bv.writer().testBit(idx));
         if (do_set) {
             if (idx < low) {
                 low = idx;
@@ -110,8 +110,8 @@ uint32_t LidStateVector::set_bits(const std::vector<uint32_t>& idxs) {
 }
 
 void LidStateVector::clearBit(unsigned int idx) {
-    assert(idx < _bv.writer().size());
-    assert(_bv.writer().testBit(idx));
+    CHECK(idx < _bv.writer().size());
+    CHECK(_bv.writer().testBit(idx));
     _bv.writer().clearBitAndMaintainCount(idx);
     maybeUpdateLowest();
     maybeUpdateHighest();
@@ -121,7 +121,7 @@ template <bool do_assert>
 void LidStateVector::assert_is_set_then_clear_bits_helper(const std::vector<uint32_t>& idxs) {
     for (auto idx : idxs) {
         if (do_assert) {
-            assert(_bv.writer().testBit(idx));
+            CHECK(_bv.writer().testBit(idx));
         }
         _bv.writer().clearBitAndMaintainCount(idx);
     }

@@ -2,11 +2,11 @@
 
 #include "malloc_info_explorer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/detect_malloc_impl.h>
 #include <vespa/vespalib/util/size_literals.h>
 
-#include <cassert>
 #include <cstdio>
 #include <ranges>
 #include <string>
@@ -54,10 +54,10 @@ std::string get_vespamalloc_info_dump() {
         if (!mem_f) {
             return "<open_memstream failed>";
         }
-        assert(vespamalloc_dump_info != nullptr);
+        CHECK(vespamalloc_dump_info != nullptr);
         vespamalloc_dump_info(mem_f.get());
     }
-    assert(buf_size < max_buf_size); // Excludes implicit terminating null
+    CHECK(buf_size < max_buf_size); // Excludes implicit terminating null
     return {buf_loc, buf_size};
 #else
     return "<unsupported by platform>";
@@ -65,7 +65,7 @@ std::string get_vespamalloc_info_dump() {
 }
 
 void my_mimalloc_info_callback(const char* msg, void* aux_arg) {
-    assert(aux_arg != nullptr);
+    CHECK(aux_arg != nullptr);
     auto* out_str = static_cast<std::string*>(aux_arg); // untyped C APIs <3
     // We can get a callback many times for a given `mi_stats_print_out`
     // call, so have to append rather than overwrite.
@@ -74,7 +74,7 @@ void my_mimalloc_info_callback(const char* msg, void* aux_arg) {
 
 std::string get_mimalloc_info_dump() {
     std::string info;
-    assert(mi_stats_print_out != nullptr);
+    CHECK(mi_stats_print_out != nullptr);
     // `mi_stats_print_out` forwards a void* of our choice to the callback.
     mi_stats_print_out(my_mimalloc_info_callback, &info);
     return info;

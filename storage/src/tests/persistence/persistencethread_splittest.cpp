@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/spi/test.h>
@@ -175,7 +176,7 @@ void PersistenceThreadSplitTest::doTest(SplitCase splitCase) {
         simulateGidCollision = true;
         break;
     default:
-        assert(false);
+        CHECK(false);
     }
 
     uint64_t                  location = 0;

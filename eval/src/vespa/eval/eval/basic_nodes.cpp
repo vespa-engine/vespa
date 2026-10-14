@@ -9,6 +9,7 @@
 #include "node_visitor.h"
 #include "simple_value.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace vespalib::eval::nodes {
@@ -44,7 +45,7 @@ std::string If::dump(DumpContext& ctx) const {
     return str;
 }
 double Node::get_const_double_value() const {
-    assert(is_const_double());
+    CHECK(is_const_double());
     NodeTypes                    node_types(*this);
     InterpretedFunction          function(SimpleValueBuilderFactory::get(), *this, node_types);
     NoParams                     no_params;

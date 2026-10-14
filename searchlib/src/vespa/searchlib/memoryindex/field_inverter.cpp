@@ -4,6 +4,7 @@
 
 #include "ordered_field_index_inserter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
@@ -80,7 +81,7 @@ struct WordRefRadix {
 };
 
 void FieldInverter::sortWords() {
-    assert(_wordRefs.size() > 1);
+    CHECK(_wordRefs.size() > 1);
 
     // Make a dictionary for words.
     { // Use radix sort based on first four bytes of word, before finalizing with std::sort.
@@ -106,7 +107,7 @@ void FieldInverter::sortWords() {
     for (++w; w != we; ++w) {
         const char* word = getWordFromRef(*w);
         int         cmpres = strcmp(lastWord, word);
-        assert(cmpres <= 0);
+        CHECK(cmpres <= 0);
         if (cmpres < 0) {
             ++wordNum;
             _wordRefs[wordNum] = *w;
@@ -114,7 +115,7 @@ void FieldInverter::sortWords() {
         }
         updateWordNum(*w, wordNum);
     }
-    assert(_wordRefs.size() >= wordNum + 1);
+    CHECK(_wordRefs.size() >= wordNum + 1);
     _wordRefs.resize(wordNum + 1);
     // Replace initial word reference by word number.
     for (auto& p : _positions) {
@@ -134,7 +135,7 @@ void FieldInverter::endElement() {
 
 uint32_t FieldInverter::saveWord(std::string_view word) {
     const size_t wordsSize = _words.size();
-    // assert((wordsSize & 3) == 0); // Check alignment
+    // CHECK((wordsSize & 3) == 0); // Check alignment
     const size_t unpadded_size = wordsSize + 4 + word.size() + 1;
     const size_t fullyPaddedSize = Aligner<4>::align(unpadded_size);
     _words.reserve(vespalib::roundUp2inN(fullyPaddedSize));
@@ -146,7 +147,7 @@ uint32_t FieldInverter::saveWord(std::string_view word) {
     memset(buf + 4 + word.size(), 0, fullyPaddedSize - unpadded_size + 1);
 
     uint32_t wordRef = (wordsSize + 4) >> 2;
-    // assert(wordRef != 0);
+    // CHECK(wordRef != 0);
     _wordRefs.push_back(wordRef);
     return wordRef;
 }
@@ -197,7 +198,7 @@ void FieldInverter::processNormalDocArrayTextField(const ArrayFieldValue& field,
     uint32_t ele = field.size();
     for (; el < ele; ++el) {
         const FieldValue& elfv = field[el];
-        assert(elfv.isA(FieldValue::Type::STRING));
+        CHECK(elfv.isA(FieldValue::Type::STRING));
         const auto& element = static_cast<const StringFieldValue&>(elfv);
         startElement(1);
         processAnnotations(element, doc);
@@ -209,8 +210,8 @@ void FieldInverter::processNormalDocWeightedSetTextField(const WeightedSetFieldV
     for (const auto& el : field) {
         const FieldValue& key = *el.first;
         const FieldValue& xweight = *el.second;
-        assert(key.isA(FieldValue::Type::STRING));
-        assert(xweight.isA(FieldValue::Type::INT));
+        CHECK(key.isA(FieldValue::Type::STRING));
+        CHECK(xweight.isA(FieldValue::Type::INT));
         const auto& element = static_cast<const StringFieldValue&>(key);
         int32_t     weight = xweight.getAsInt();
         startElement(weight);
@@ -255,14 +256,14 @@ void FieldInverter::abortPendingDoc(uint32_t docId) {
 }
 
 void FieldInverter::moveNotAbortedDocs(uint32_t& dstIdx, uint32_t srcIdx, uint32_t nextTrimIdx) {
-    assert(nextTrimIdx >= srcIdx);
+    CHECK(nextTrimIdx >= srcIdx);
     uint32_t size = nextTrimIdx - srcIdx;
     if (size == 0) {
         return;
     }
-    assert(dstIdx < srcIdx);
-    assert(srcIdx < _positions.size());
-    assert(srcIdx + size <= _positions.size());
+    CHECK(dstIdx < srcIdx);
+    CHECK(srcIdx < _positions.size());
+    CHECK(srcIdx + size <= _positions.size());
     PosInfo*       dst = &_positions[dstIdx];
     const PosInfo* src = &_positions[srcIdx];
     const PosInfo* srce = src + size;
@@ -306,8 +307,8 @@ void FieldInverter::invertField(uint32_t docId, const FieldValue::UP& val, const
 }
 
 void FieldInverter::startDoc(uint32_t docId) {
-    assert(_docId == 0);
-    assert(docId != 0);
+    CHECK(_docId == 0);
+    CHECK(docId != 0);
     abortPendingDoc(docId);
     _removeDocs.push_back(docId);
     _docId = docId;
@@ -389,7 +390,7 @@ void FieldInverter::push_documents_internal() {
     _inserter.rewind();
 
     for (auto& i : _positions) {
-        assert(i._wordNum <= numWordIds);
+        CHECK(i._wordNum <= numWordIds);
         (void)numWordIds;
         if (lastWordNum != i._wordNum || lastDocId != i._docId) {
             if (!emptyFeatures) {
@@ -422,9 +423,9 @@ void FieldInverter::push_documents_internal() {
             }
         } else {
             // removes must come before non-removes
-            assert(!i.removed());
+            CHECK(!i.removed());
             const ElemInfo& elem = _elems[i._elemRef];
-            assert(last_field_length == elem.get_field_length());
+            CHECK(last_field_length == elem.get_field_length());
         }
         const ElemInfo& elem = _elems[i._elemRef];
         if (i._wordPos != lastWordPos || i._elemId != lastElemId) {

@@ -13,6 +13,7 @@
 #include "stringbase.h"
 #include "valuemodifier.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
@@ -283,7 +284,7 @@ bool AttributeVector::save(IAttributeSaveTarget& saveTarget, std::string_view fi
     auto create_time = std::chrono::steady_clock::now();
     // First check if new style save is available.
     std::unique_ptr<AttributeSaver> saver(onInitSave(fileName));
-    assert(saver);
+    CHECK(saver);
     // Normally, new style save happens in background, but here it
     // will occur in the foreground.
     auto result = saver->save(saveTarget);
@@ -337,7 +338,7 @@ bool AttributeVector::load() {
 }
 
 bool AttributeVector::load(vespalib::Executor* executor) {
-    assert(!_loaded);
+    CHECK(!_loaded);
     _initialization_status->start_loading();
     bool loaded = onLoad(executor);
     if (loaded) {
@@ -419,8 +420,8 @@ void AttributeVector::divideByZeroWarning() {
 void AttributeVector::addReservedDoc() {
     uint32_t docId = 42;
     addDoc(docId); // Reserved
-    assert(docId == 0u);
-    assert(docId < getNumDocs());
+    CHECK(docId == 0u);
+    CHECK(docId < getNumDocs());
     set_reserved_doc_values();
 }
 
@@ -473,7 +474,7 @@ uint32_t AttributeVector::getVersion() const {
 void AttributeVector::compactLidSpace(uint32_t wantedLidLimit) {
     commit();
     uint32_t committed_doc_id_limit = _committedDocIdLimit.load(std::memory_order_relaxed);
-    assert(committed_doc_id_limit >= wantedLidLimit);
+    CHECK(committed_doc_id_limit >= wantedLidLimit);
     if (wantedLidLimit < committed_doc_id_limit) {
         clearDocs(wantedLidLimit, committed_doc_id_limit, false);
     }
@@ -498,7 +499,7 @@ void AttributeVector::shrinkLidSpace() {
     clearDocs(committed_doc_id_limit, getNumDocs(), true);
     clear_uncommitted_doc_id_limit();
     commit();
-    assert(committed_doc_id_limit == _committedDocIdLimit.load(std::memory_order_relaxed));
+    CHECK(committed_doc_id_limit == _committedDocIdLimit.load(std::memory_order_relaxed));
     onShrinkLidSpace();
     attribute::IPostingListAttributeBase* pab = getIPostingListAttributeBase();
     if (pab != nullptr) {
@@ -512,8 +513,8 @@ void AttributeVector::onShrinkLidSpace() {
 }
 
 void AttributeVector::clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) {
-    assert(lidLow <= lidLimit);
-    assert(lidLimit <= getNumDocs());
+    CHECK(lidLow <= lidLimit);
+    CHECK(lidLimit <= getNumDocs());
     uint32_t           count = 0;
     constexpr uint32_t commit_interval = 1000;
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {

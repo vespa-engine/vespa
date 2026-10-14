@@ -4,7 +4,7 @@
 #include "emptyreply.h"
 #include "messagebus.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace mbus {
 
@@ -21,7 +21,7 @@ DestinationSession::~DestinationSession() {
 }
 
 void DestinationSession::register_session_deferred() {
-    assert(!_session_registered);
+    CHECK(!_session_registered);
     _mbus.register_session(*this, _name, _broadcast_name);
     _session_registered = true;
 }

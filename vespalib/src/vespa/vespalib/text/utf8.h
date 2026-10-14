@@ -49,12 +49,15 @@ public:
      * @return 0, 1, 2, or 3
      **/
     static int numContBytes(unsigned char c) noexcept {
-        if (c < 0x80)
+        if (c < 0x80) {
             return 0;
-        if (c > 0xC1 && c < 0xE0)
+        }
+        if (c > 0xC1 && c < 0xE0) {
             return 1;
-        if (c > 0xDF && c < 0xF0)
+        }
+        if (c > 0xDF && c < 0xF0) {
             return 2;
+        }
         return 3;
     }
 

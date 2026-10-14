@@ -6,6 +6,7 @@
 #include "indexproperties.h"
 #include "iqueryenvironment.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/interpreted_function.h>
@@ -194,7 +195,7 @@ const Value* QueryValue::lookup_value(const fef::IObjectStore& store) const {
 }
 
 double QueryValue::lookup_number(const fef::IQueryEnvironment& env, double default_value) const {
-    assert(!_type.has_dimensions());
+    CHECK(!_type.has_dimensions());
     auto p = request_lookup(env);
     if (p.found()) {
         return as_feature(p.get());

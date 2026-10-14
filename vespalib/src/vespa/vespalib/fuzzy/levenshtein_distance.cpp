@@ -4,7 +4,8 @@
 
 #include "levenshtein_distance.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <limits>
 #include <vector>
 
@@ -13,8 +14,8 @@ namespace vespalib {
 std::optional<uint32_t> LevenshteinDistance::calculate(std::span<const uint32_t> left,
                                                        std::span<const uint32_t> right, uint32_t threshold,
                                                        bool prefix_match) {
-    assert(left.size() <= static_cast<size_t>(INT32_MAX));
-    assert(right.size() <= static_cast<size_t>(INT32_MAX));
+    CHECK(left.size() <= static_cast<size_t>(INT32_MAX));
+    CHECK(right.size() <= static_cast<size_t>(INT32_MAX));
     threshold = std::min(threshold, static_cast<uint32_t>(std::numeric_limits<int32_t>::max()));
     uint32_t n = left.size();
     uint32_t m = right.size();
@@ -73,7 +74,7 @@ std::optional<uint32_t> LevenshteinDistance::calculate(std::span<const uint32_t>
         uint32_t max = j > std::numeric_limits<uint32_t>::max() - threshold ? n : std::min(n, j + threshold);
         // ignore entry left of leftmost
         if (min > 1) {
-            assert(static_cast<size_t>(min) <= d.size());
+            CHECK(static_cast<size_t>(min) <= d.size());
             d[min - 1] = std::numeric_limits<uint32_t>::max();
         }
 

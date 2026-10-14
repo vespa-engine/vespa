@@ -4,9 +4,8 @@
 
 #include "apply_bucket_diff_state.h"
 
+#include <vespa/check_require.h>
 #include <vespa/persistence/spi/result.h>
-
-#include <cassert>
 
 namespace storage {
 
@@ -40,7 +39,7 @@ void ApplyBucketDiffEntryComplete::onComplete(std::unique_ptr<spi::Result> resul
 }
 
 void ApplyBucketDiffEntryComplete::addResultHandler(const spi::ResultHandler* resultHandler) {
-    assert(_result_handler == nullptr);
+    CHECK(_result_handler == nullptr);
     _result_handler = resultHandler;
 }
 

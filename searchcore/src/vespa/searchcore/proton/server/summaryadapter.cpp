@@ -2,10 +2,10 @@
 
 #include "summaryadapter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
-#include <cassert>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -22,7 +22,7 @@ SummaryAdapter::SummaryAdapter(SummaryManager::SP mgr)
 SummaryAdapter::~SummaryAdapter() = default;
 
 bool SummaryAdapter::ignore(SerialNum serialNum) const {
-    assert(serialNum != 0);
+    CHECK(serialNum != 0);
     return serialNum <= _lastSerial;
 }
 

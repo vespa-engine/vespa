@@ -1547,7 +1547,9 @@
       "public boolean fastMapSearch()",
       "public boolean relaxStrictlyIncreasingClusterStateVersions()",
       "public boolean commerceDiscovery()",
-      "public boolean enableLandlock()"
+      "public boolean enableLandlock()",
+      "public boolean enableLegacyFeedHandler()",
+      "public boolean productDiscovery()"
     ],
     "fields" : [ ]
   },
@@ -1592,6 +1594,7 @@
       "public abstract boolean isFirstTimeDeployment()",
       "public java.util.Optional endpointCertificateSecrets()",
       "public java.util.Optional athenzDomain()",
+      "public com.yahoo.config.provision.AthenzDomain tenantParentDomain()",
       "public com.yahoo.config.model.api.Quota quota()",
       "public java.util.List tenantVaults()",
       "public java.util.List tenantSecretStores()",

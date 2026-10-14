@@ -2,6 +2,7 @@
 
 #include "generic_filter_subspaces.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/eval/eval/wrap_param.h>
 
@@ -33,9 +34,9 @@ struct InterpretedParams {
           num_mapped(result_type.count_mapped_dimensions()),
           dense_size(result_type.dense_subspace_size()),
           direct(result_type.cell_type() == inner_type.cell_type()) {
-        assert(num_mapped > 0);
-        assert(dense_size == inner_type.dense_subspace_size());
-        assert(direct || (dense_size == 1 && inner_type.cell_type() == CellType::DOUBLE));
+        CHECK(num_mapped > 0);
+        CHECK(dense_size == inner_type.dense_subspace_size());
+        CHECK(direct || (dense_size == 1 && inner_type.cell_type() == CellType::DOUBLE));
     }
 };
 

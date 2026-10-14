@@ -2,6 +2,7 @@
 
 #include "geoposdfw.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/documentlocations.h>
 #include <vespa/searchlib/common/location.h>
@@ -11,7 +12,6 @@
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 
-#include <cassert>
 #include <climits>
 
 #include <vespa/log/log.h>
@@ -62,8 +62,9 @@ void GeoPositionDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, G
     const auto& attribute = get_attribute(dsState);
     if (attribute.hasMultiValue()) {
         uint32_t entries = attribute.getValueCount(docid);
-        if (entries == 0)
+        if (entries == 0) {
             return;
+        }
         Cursor& arr = target.insertArray();
         if (attribute.hasWeightedSetType()) {
             Symbol                                     isym = arr.resolve("item");
@@ -83,7 +84,7 @@ void GeoPositionDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, G
             if (numValues > elements.size()) {
                 elements.resize(numValues);
                 numValues = attribute.get(docid, &elements[0], elements.size());
-                assert(numValues <= elements.size());
+                CHECK(numValues <= elements.size());
             }
             for (uint32_t i = 0; i < numValues; i++) {
                 int64_t       pos = elements[i];

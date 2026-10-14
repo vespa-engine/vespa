@@ -2,7 +2,7 @@
 
 #include "ddbstate.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton {
 
@@ -31,7 +31,7 @@ bool DDBState::enterLoadState() {
     if (getClosed()) {
         return false;
     }
-    assert(getState() == State::CONSTRUCT);
+    CHECK(getState() == State::CONSTRUCT);
     _load_time = std::chrono::system_clock::now();
     set_state(State::LOAD);
     return true;
@@ -42,7 +42,7 @@ bool DDBState::enterReplayTransactionLogState() {
     if (getClosed()) {
         return false;
     }
-    assert(getState() == State::LOAD);
+    CHECK(getState() == State::LOAD);
     _replay_time = std::chrono::system_clock::now();
     set_state(State::REPLAY_TRANSACTION_LOG);
     return true;
@@ -53,7 +53,7 @@ bool DDBState::enterRedoReprocessState() {
     if (getClosed()) {
         return false;
     }
-    assert(getState() == State::REPLAY_TRANSACTION_LOG);
+    CHECK(getState() == State::REPLAY_TRANSACTION_LOG);
     set_state(State::REDO_REPROCESS);
     return true;
 }
@@ -64,7 +64,7 @@ bool DDBState::enter_doc_store_validation_state() {
         return false;
     }
     State state(getState());
-    assert(state == State::REPLAY_TRANSACTION_LOG || state == State::REDO_REPROCESS);
+    CHECK(state == State::REPLAY_TRANSACTION_LOG || state == State::REDO_REPROCESS);
     set_state(State::DOC_STORE_VALIDATION);
     return true;
 }
@@ -75,8 +75,8 @@ bool DDBState::enterApplyLiveConfigState() {
         return false;
     }
     State state(getState());
-    assert(state == State::REPLAY_TRANSACTION_LOG || state == State::REDO_REPROCESS ||
-           state == State::DOC_STORE_VALIDATION);
+    CHECK(state == State::REPLAY_TRANSACTION_LOG || state == State::REDO_REPROCESS ||
+          state == State::DOC_STORE_VALIDATION);
     set_state(State::APPLY_LIVE_CONFIG);
     return true;
 }
@@ -86,7 +86,7 @@ bool DDBState::enterReprocessState() {
     if (getClosed()) {
         return false;
     }
-    assert(getState() == State::APPLY_LIVE_CONFIG);
+    CHECK(getState() == State::APPLY_LIVE_CONFIG);
     set_state(State::REPROCESS);
     return true;
 }
@@ -96,7 +96,7 @@ bool DDBState::enterOnlineState() {
     if (getClosed()) {
         return false;
     }
-    assert(getState() == State::REPROCESS);
+    CHECK(getState() == State::REPROCESS);
     _online_time = std::chrono::system_clock::now();
     set_state(State::ONLINE);
     _cond.notify_all();
@@ -118,7 +118,7 @@ void DDBState::enterDeadState() {
     if (getState() == State::DEAD) {
         return;
     }
-    assert(getState() == State::SHUTDOWN);
+    CHECK(getState() == State::SHUTDOWN);
     set_state(State::DEAD);
     _cond.notify_all();
 }

@@ -2,6 +2,7 @@
 
 #include "document_field_extractor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/boolfieldvalue.h>
@@ -18,8 +19,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
-
-#include <cassert>
 
 using document::ArrayDataType;
 using document::ArrayFieldValue;
@@ -146,7 +145,7 @@ const FieldValue* DocumentFieldExtractor::getCachedFieldValue(const FieldPathEnt
     } else {
         auto insres = _cachedFieldValues.insert(
             std::make_pair(fieldPathEntry.getName(), _doc.getValue(fieldPathEntry.getFieldRef())));
-        assert(insres.second);
+        CHECK(insres.second);
         return insres.first->second.get();
     }
 }

@@ -2,7 +2,7 @@
 
 #include "onnx_models.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search::fef {
 
@@ -29,7 +29,7 @@ const OnnxModels::Model* OnnxModels::getModel(const std::string& name) const {
 }
 
 void OnnxModels::configure(const ModelConfig& config, Model& model) {
-    assert(config.name == model.name());
+    CHECK(config.name == model.name());
     for (const auto& input : config.input) {
         model.input_feature(input.name, input.source);
     }

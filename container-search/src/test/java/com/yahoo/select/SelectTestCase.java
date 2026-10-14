@@ -53,6 +53,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.yahoo.language.Language;
 
@@ -1041,6 +1042,21 @@ public class SelectTestCase {
     }
 
     @Test
+    void testGroupingLabelOnAllCanBeAParameter() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"@name\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        GroupingOperation root = parser.getGroupingSteps(grouping, Map.<String, String>of("name", "my label")::get).get(0).getOperation();
+        assertEquals("my label", root.getChildren().get(0).getLabel());
+
+        var e = assertThrows(IllegalArgumentException.class, () -> parser.getGroupingSteps(grouping, Map.<String, String>of()::get));
+        assertTrue(e.getMessage().contains("Input 'name' is not set"), e.getMessage());
+
+        // Not a parameter reference: a literal label
+        String literal = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"@1\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        root = parser.getGroupingSteps(literal, Map.<String, String>of()::get).get(0).getOperation();
+        assertEquals("@1", root.getChildren().get(0).getLabel());
+    }
+
+    @Test
     void testGroupingWithLabelContainingQuoteAndBackslashOnAll() {
         // Raw JSON: "label" : "a\"b\\c"  -> decoded label should be the 5-char string a"b\c
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"a\\\"b\\\\c\", \"each\" : { \"output\" : \"count()\" } } } ]";
@@ -1215,6 +1231,32 @@ public class SelectTestCase {
         var e = assertThrows(IllegalArgumentException.class,
                              () -> new Query(HttpRequest.createTestRequest("?", com.yahoo.jdisc.http.HttpRequest.Method.GET), missing, null));
         assertTrue(Exceptions.toMessageString(e).contains("Input 'pattern' is not set"), Exceptions.toMessageString(e));
+    }
+
+    /** A grouping which fails to resolve stays pending, so it is not lost and can be resolved once the parameter is set. */
+    @Test
+    void testGroupingWhichFailsToResolveIsNotDiscarded() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\" } } }, " +
+                          "  { \"all\" : { \"group\" : \"b\", \"max\" : \"@max\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        Query query = new Query();
+        query.getSelect().setGroupingString(grouping);
+
+        var e = assertThrows(IllegalArgumentException.class, () -> query.getSelect().getGrouping());
+        assertTrue(Exceptions.toMessageString(e).contains("Input 'max' is not set"), Exceptions.toMessageString(e));
+        // Still failing on repeated access, with the same error, rather than silently returning no grouping
+        e = assertThrows(IllegalArgumentException.class, () -> query.getSelect().getGrouping());
+        assertTrue(Exceptions.toMessageString(e).contains("Input 'max' is not set"), Exceptions.toMessageString(e));
+
+        query.properties().set("max", "3");
+        assertEquals(2, query.getSelect().getGrouping().size());
+        assertEquals("all(group(a) each(output(count())))",
+                     query.getSelect().getGrouping().get(0).getRootOperation().toString());
+        assertEquals("all(group(b) max(3) each(output(count())))",
+                     query.getSelect().getGrouping().get(1).getRootOperation().toString());
+        // Resolved once: not re-resolved on later access
+        query.properties().set("max", "4");
+        assertEquals("all(group(b) max(3) each(output(count())))",
+                     query.getSelect().getGrouping().get(1).getRootOperation().toString());
     }
 
     @Test

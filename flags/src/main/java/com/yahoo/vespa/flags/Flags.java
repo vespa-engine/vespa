@@ -147,13 +147,6 @@ public class Flags {
             __ -> true,
             APPLICATION, INSTANCE_ID);
 
-    public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
-            "logserver-otelcol-agent", false,
-            List.of("olaa"), "2024-04-03", "2026-10-01",
-            "Whether logserver container should run otel agent",
-            "Takes effect at redeployment",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
-
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
             List.of("arnej"), "2023-07-26", "2027-01-01",
@@ -227,6 +220,7 @@ public class Flags {
             INSTANCE_ID
     );
 
+    // TODO (@sebasabe): Remove when no loaded config model version reads it (models older than the release adding PRODUCT_DISCOVERY), together with its flag data
     public static final UnboundBooleanFlag COMMERCE_DISCOVERY = defineFeatureFlag(
             "commerce-discovery", false,
             List.of("sebasabe"), "2026-08-31", "2027-08-31",
@@ -248,6 +242,21 @@ public class Flags {
             "Whether to set env variables enabling Landlock for sandboxing.",
             "Takes effect on the next deployment.",
             TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag ENABLE_LEGACY_FEED_HANDLER = defineFeatureFlag(
+            "enable-legacy-feed-handler", true,
+            List.of("hmusum"), "2026-10-09", "2027-04-01",
+            "Whether to add the legacy feed handler (/reserved-for-internal-use/feedapi) to container clusters with document-api.",
+            "Takes effect on the next deployment.",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag PRODUCT_DISCOVERY = defineFeatureFlag(
+            "product-discovery", false,
+            List.of("sebasabe"), "2026-10-09", "2027-10-09",
+            "Whether the product-discovery element in services.xml is enabled",
+            "Takes effect at redeployment",
+            TENANT_ID
+    );
 
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

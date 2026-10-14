@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstdint>
 #include <cstring>
 #include <vector>
@@ -22,14 +23,14 @@ public:
     VectorBufferReader(const std::vector<char>& data) : _data(data), _pos(0) {}
     uint32_t readHostOrder() {
         uint32_t result = 0;
-        assert(_pos + sizeof(uint32_t) <= _data.size());
+        CHECK(_pos + sizeof(uint32_t) <= _data.size());
         std::memcpy(&result, _data.data() + _pos, sizeof(uint32_t));
         _pos += sizeof(uint32_t);
         return result;
     }
 
     void readNHostOrder(uint32_t* buf, size_t n) {
-        assert(_pos + sizeof(uint32_t) * n <= _data.size());
+        CHECK(_pos + sizeof(uint32_t) * n <= _data.size());
         std::memcpy(buf, _data.data() + _pos, sizeof(uint32_t) * n);
         _pos += sizeof(uint32_t) * n;
     }

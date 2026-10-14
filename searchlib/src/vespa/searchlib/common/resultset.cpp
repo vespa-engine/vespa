@@ -5,7 +5,8 @@
 #include "bitvector.h"
 #include "sortresults.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstring>
 
 using vespalib::alloc::Alloc;
@@ -75,7 +76,7 @@ void ResultSet::mergeWithBitOverflow(HitRank default_value) {
             bidx = bitVector->getNextTrueBit(bidx + 1);
         }
     }
-    assert(oldA == oldAEnd);
+    CHECK(oldA == oldAEnd);
 
     // bitvector hits after array hits
     while (newHits.size() < actualHits) {

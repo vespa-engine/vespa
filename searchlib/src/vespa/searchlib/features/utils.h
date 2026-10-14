@@ -207,7 +207,6 @@ std::vector<const search::fef::ITermData*> getTermsByLabel(const search::fef::IQ
 std::vector<std::pair<std::string, std::vector<const search::fef::ITermData*>>>
 getTermsByAllLabels(const search::fef::IQueryEnvironment& env);
 
-
 std::optional<search::fef::DocumentFrequency> lookup_document_frequency(const search::fef::IQueryEnvironment& env,
                                                                         const search::fef::ITermData&         term);
 

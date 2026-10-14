@@ -12,6 +12,7 @@
 #include "minimal_document_retriever.h"
 #include "reconfig_params.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandlerinitializer.h>
@@ -173,7 +174,7 @@ void StoreOnlyDocSubDB::onReplayDone() {
     _dms->constructFreeList();
     auto     stats = _dms->getLidUsageStats();
     uint32_t docIdLimit = stats.getHighestUsedLid() + 1;
-    assert(docIdLimit <= _dms->getCommittedDocIdLimit());
+    CHECK(docIdLimit <= _dms->getCommittedDocIdLimit());
     _dms->compactLidSpace(docIdLimit);
     _dms->unblockShrinkLidSpace();
     _dms->shrinkLidSpace();
@@ -337,7 +338,7 @@ StoreOnlyFeedView::PersistentParams StoreOnlyDocSubDB::getFeedViewPersistentPara
 }
 
 void StoreOnlyDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     _iSearchView.set(std::make_shared<EmptySearchView>());
     {
         std::lock_guard<std::mutex> guard(_configMutex);
@@ -370,7 +371,7 @@ void StoreOnlyDocSubDB::validateDocStore(FeedHandler& feedHandler, SerialNum ser
 }
 
 void StoreOnlyDocSubDB::initFeedView(const DocumentDBConfig& configSnapshot) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     auto feedView = std::make_shared<StoreOnlyFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
                                                         getFeedViewPersistentParams());
 
@@ -405,7 +406,7 @@ IReprocessingTask::List StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig& n
     (void)params;
     (void)resolver;
     (void)prepared_reconfig;
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     AllocStrategy alloc_strategy = newConfigSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     reconfigure(newConfigSnapshot.getStoreConfig(), alloc_strategy);
     initFeedView(newConfigSnapshot);
@@ -484,7 +485,7 @@ void StoreOnlyDocSubDB::pruneRemovedFields(SerialNum) {
 }
 
 void StoreOnlyDocSubDB::setIndexSchema(std::shared_ptr<const Schema>, SerialNum) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
 }
 
 search::IndexStats StoreOnlyDocSubDB::get_index_stats(bool) const {
@@ -503,7 +504,7 @@ MatchingStats StoreOnlyDocSubDB::getMatcherStats(const std::string& rankProfile)
 }
 
 void StoreOnlyDocSubDB::flush_document_summary(bool sync_tls) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     search::IDocumentStore& store(_rSummaryMgr->getBackingStore());
     auto                    summaryFlush = std::make_shared<SummaryFlushTarget>(store, _writeService.summary());
     auto                    summaryFlushTask =

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/common/bitvector.h>
@@ -112,20 +113,20 @@ private:
 public:
     MyDocVectorStore() { _vectors = aligned_alloc_pv(NUM_POSSIBLE_DOCS); }
     MyDocVectorStore& set(uint32_t docid, ConstVectorRef vec) {
-        assert(docid < NUM_POSSIBLE_DOCS);
+        CHECK(docid < NUM_POSSIBLE_DOCS);
         memcpy(&_vectors[docid], vec.data(), sizeof(MallocPointVector));
         return *this;
     }
     vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const noexcept override {
-        assert(docid < NUM_POSSIBLE_DOCS);
+        CHECK(docid < NUM_POSSIBLE_DOCS);
         (void)subspace;
         ConstVectorRef ref(_vectors[docid]);
         return vespalib::eval::TypedCells(ref);
     }
     VectorBundle get_vectors(uint32_t docid) const noexcept override {
-        assert(docid < NUM_POSSIBLE_DOCS);
+        CHECK(docid < NUM_POSSIBLE_DOCS);
         ConstVectorRef ref(_vectors[docid]);
-        assert(subspace_type.size() == ref.size());
+        CHECK(subspace_type.size() == ref.size());
         return {ref.data(), 1, subspace_type};
     }
 };
@@ -186,7 +187,7 @@ public:
         std::promise<PrepUP> result_promise;
         auto get_result_future() { return result_promise.get_future(); }
         void run() override {
-            assert(subspace_type.size() == vec.size());
+            CHECK(subspace_type.size() == vec.size());
             VectorBundle v(vec.data(), 1, subspace_type);
             auto         up = parent.index->prepare_add_document(docid, v, read_guard);
             result_promise.set_value(std::move(up));

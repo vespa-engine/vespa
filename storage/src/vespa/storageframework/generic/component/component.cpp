@@ -4,11 +4,10 @@
 
 #include "componentregister.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storageframework/generic/metric/metricregistrator.h>
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storageframework/generic/thread/threadpool.h>
-
-#include <cassert>
 
 namespace storage::framework {
 
@@ -32,12 +31,12 @@ Component::Component(ComponentRegister& cr, std::string_view name)
 Component::~Component() = default;
 
 void Component::registerStatusPage(const StatusReporter& sr) {
-    assert(_status == nullptr);
+    CHECK(_status == nullptr);
     _status = &sr;
 }
 
 void Component::registerMetric(metrics::Metric& m) {
-    assert(_metric == nullptr);
+    CHECK(_metric == nullptr);
     _metric = &m;
     if (_metricReg != nullptr) {
         _metricReg->registerMetric(m);
@@ -45,7 +44,7 @@ void Component::registerMetric(metrics::Metric& m) {
 }
 
 void Component::registerMetricUpdateHook(MetricUpdateHook& hook, vespalib::system_time::duration period) {
-    assert(_metricUpdateHook.first == nullptr);
+    CHECK(_metricUpdateHook.first == nullptr);
     _metricUpdateHook = std::make_pair(&hook, period);
     if (_metricReg != nullptr) {
         _metricReg->registerUpdateHook(_name, *_metricUpdateHook.first, _metricUpdateHook.second);
@@ -63,7 +62,7 @@ void Component::setMetricRegistrator(MetricRegistrator& mr) {
 }
 
 ThreadPool& Component::getThreadPool() const {
-    assert(_threadPool != nullptr);
+    CHECK(_threadPool != nullptr);
     return *_threadPool;
 }
 

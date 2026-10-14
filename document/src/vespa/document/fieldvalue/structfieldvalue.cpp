@@ -275,8 +275,9 @@ void StructFieldValue::print(std::ostream& out, bool verbose, const std::string&
         out << "\n" << indent << "  " << it.field().getName() << " - ";
         getValue(it.field())->print(out, verbose, indent + "  ");
     }
-    if (count > 0)
+    if (count > 0) {
         out << "\n" << indent;
+    }
     out << ")";
 }
 

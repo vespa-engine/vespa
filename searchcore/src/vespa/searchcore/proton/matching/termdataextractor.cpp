@@ -4,6 +4,7 @@
 
 #include "querynodes.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 
 using search::fef::ITermData;
@@ -27,7 +28,7 @@ public:
     }
 
     void visit(ProtonNodeTypes::AndNot& n) override {
-        assert(n.getChildren().size() > 0);
+        CHECK(n.getChildren().size() > 0);
         n.getChildren()[0]->accept(*this);
     }
 

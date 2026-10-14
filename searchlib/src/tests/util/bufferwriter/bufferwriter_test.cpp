@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/util/drainingbufferwriter.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/rand48.h>
 
-#include <cassert>
 #include <string>
 
 namespace search {
@@ -37,7 +37,7 @@ StoreBufferWriter::StoreBufferWriter() : BufferWriter(), _buf(), _bytesWritten(0
 StoreBufferWriter::~StoreBufferWriter() = default;
 
 void StoreBufferWriter::flush() {
-    assert(_incompleteBuffers == 0); // all previous buffers must have been full
+    CHECK(_incompleteBuffers == 0); // all previous buffers must have been full
     size_t nowLen = usedLen();
     if (nowLen != _buf.size()) {
         // buffer is not full, only allowed for last buffer

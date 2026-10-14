@@ -59,8 +59,9 @@ QueryHandle::QueryHandle(const IQuery& fquery, const char* options)
 
 QueryHandle::~QueryHandle() {
     LOG(debug, "juniper: Deleting query handle");
-    if (_mo)
+    if (_mo) {
         delete _mo;
+    }
 }
 
 MatchObject* QueryHandle::MatchObj() {
@@ -70,15 +71,17 @@ MatchObject* QueryHandle::MatchObj() {
 // small utility
 std::string fetchtext(char* cur, char** next) {
     *next = cur;
-    while (**next != '\0' && **next != '_')
+    while (**next != '\0' && **next != '_') {
         (*next)++;
+    }
     std::string t(cur, *next);
     return t;
 }
 
 void QueryHandle::parse_parameters(const char* options) {
-    if (!options)
+    if (!options) {
         return;
+    }
     char* p = const_cast<char*>(options);
 
     LOG(debug, "juniper parameter string '%s'", options);
@@ -140,10 +143,12 @@ void QueryHandle::parse_parameters(const char* options) {
                 juniper::SetDebug(strtol(p, &p, 0));
             }
         }
-        while (*p != '\0' && *p != '_')
+        while (*p != '\0' && *p != '_') {
             p++;
-        if (*p == '_')
+        }
+        if (*p == '_') {
             p++;
+        }
     }
 } // end parse_parameters
 

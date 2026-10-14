@@ -2,9 +2,9 @@
 
 #include "current_index_setup.h"
 
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search::expression {
 
@@ -18,13 +18,13 @@ CurrentIndexSetup::Usage::Usage() : _unbound() {
 CurrentIndexSetup::Usage::~Usage() = default;
 
 std::string_view CurrentIndexSetup::Usage::get_unbound_name() const {
-    assert(has_single_unbound_name());
+    CHECK(has_single_unbound_name());
     return *_unbound.begin();
 }
 
 CurrentIndexSetup::Usage::Bind::Bind(CurrentIndexSetup& setup, Usage& usage) noexcept : _setup(setup) {
     auto prev = setup.capture(std::addressof(usage));
-    assert(prev == nullptr); // no nesting
+    CHECK(prev == nullptr); // no nesting
 }
 
 CurrentIndexSetup::Usage::Bind::~Bind() {
@@ -51,7 +51,7 @@ const CurrentIndex* CurrentIndexSetup::resolve(std::string_view field_name) cons
 
 void CurrentIndexSetup::bind(std::string_view struct_name, const CurrentIndex& index) {
     auto res = _bound.insert(std::make_pair(std::string(struct_name), std::addressof(index)));
-    assert(res.second); // struct must be either bound or unbound
+    CHECK(res.second); // struct must be either bound or unbound
 }
 
 } // namespace search::expression

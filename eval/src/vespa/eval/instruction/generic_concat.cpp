@@ -4,14 +4,13 @@
 
 #include "generic_join.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/visit_ranges.h>
-
-#include <cassert>
 
 using namespace vespalib::eval::tensor_function;
 
@@ -34,7 +33,7 @@ struct ConcatParam {
           sparse_plan(lhs_type, rhs_type),
           dense_plan(lhs_type, rhs_type, dimension, res_type),
           factory(factory_in) {
-        assert(!res_type.is_error());
+        CHECK(!res_type.is_error());
     }
 };
 
@@ -106,11 +105,11 @@ void my_mixed_dense_concat_op(State& state, uint64_t param_in) {
         dst += dense_plan.output_size;
     }
     if (forward_lhs) {
-        assert(lhs == lhs_cells.data() + lhs_cells.size());
+        CHECK(lhs == lhs_cells.data() + lhs_cells.size());
     } else {
-        assert(rhs == rhs_cells.data() + rhs_cells.size());
+        CHECK(rhs == rhs_cells.data() + rhs_cells.size());
     }
-    assert(dst == out_cells.data() + out_cells.size());
+    CHECK(dst == out_cells.data() + out_cells.size());
     state.pop_pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
 }
 
@@ -167,7 +166,7 @@ std::pair<size_t, size_t> DenseConcatPlan::InOutLoop::fill_from(const ValueType&
     Case                prev_case = Case::NONE;
     auto update_plan = [&](Case my_case, size_t in_size, size_t out_size, size_t in_val, size_t out_val) {
         if (my_case == prev_case) {
-            assert(!out_loop_cnt.empty());
+            CHECK(!out_loop_cnt.empty());
             in_loop_cnt.back() *= in_size;
             out_loop_cnt.back() *= out_size;
         } else {
@@ -205,17 +204,17 @@ std::pair<size_t, size_t> DenseConcatPlan::InOutLoop::fill_from(const ValueType&
             in_stride[i] = input_size;
             input_size *= in_loop_cnt[i];
         }
-        assert(out_stride[i] != 0);
-        assert(out_loop_cnt[i] != 0);
+        CHECK(out_stride[i] != 0);
+        CHECK(out_loop_cnt[i] != 0);
         out_stride[i] = output_size_for_concat;
         output_size_for_concat *= out_loop_cnt[i];
         // loop counts are different if and only if this is the concat dimension
         if (in_loop_cnt[i] != out_loop_cnt[i]) {
-            assert(offset_for_concat == 0);
+            CHECK(offset_for_concat == 0);
             offset_for_concat = in_loop_cnt[i] * out_stride[i];
         }
     }
-    assert(offset_for_concat != 0);
+    CHECK(offset_for_concat != 0);
     return std::make_pair(offset_for_concat, output_size_for_concat);
 }
 
@@ -223,8 +222,8 @@ DenseConcatPlan::DenseConcatPlan(const ValueType& lhs_type, const ValueType& rhs
                                  const ValueType& out_type) {
     std::tie(right_offset, output_size) = left.fill_from(lhs_type, concat_dimension, out_type);
     auto [other_offset, other_size] = right.fill_from(rhs_type, concat_dimension, out_type);
-    assert(other_offset > 0);
-    assert(output_size == other_size);
+    CHECK(other_offset > 0);
+    CHECK(output_size == other_size);
 }
 
 DenseConcatPlan::~DenseConcatPlan() = default;
@@ -235,7 +234,7 @@ InterpretedFunction::Instruction GenericConcat::make_instruction(const ValueType
                                                                  const std::string&         dimension,
                                                                  const ValueBuilderFactory& factory, Stash& stash) {
     auto& param = stash.create<ConcatParam>(result_type, lhs_type, rhs_type, dimension, factory);
-    assert(result_type == ValueType::concat(lhs_type, rhs_type, dimension));
+    CHECK(result_type == ValueType::concat(lhs_type, rhs_type, dimension));
     auto fun =
         typify_invoke<2, TypifyCellMeta, SelectGenericConcatOp>(lhs_type.cell_meta(), rhs_type.cell_meta(), param);
     return Instruction(fun, wrap_param<ConcatParam>(param));

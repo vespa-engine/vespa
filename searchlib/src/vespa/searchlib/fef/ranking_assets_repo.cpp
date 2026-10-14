@@ -19,8 +19,9 @@ RankingAssetsRepo::RankingAssetsRepo(const ConstantValueFactory&               f
 RankingAssetsRepo::~RankingAssetsRepo() = default;
 
 ConstantValue::UP RankingAssetsRepo::getConstant(const std::string& name) const {
-    if (!_constants)
+    if (!_constants) {
         return {};
+    }
     const RankingConstants::Constant* constant = _constants->getConstant(name);
     if (constant != nullptr) {
         return _factory.create(constant->filePath, constant->type);

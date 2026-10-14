@@ -44,8 +44,9 @@ protected:
      * @param needentries the number of free packet entries needed.
      **/
     void EnsureFree(uint32_t needentries = 1) {
-        if (_bufsize < _bufused + needentries)
+        if (_bufsize < _bufused + needentries) {
             ExpandBuf(needentries);
+        }
     }
 
     /**

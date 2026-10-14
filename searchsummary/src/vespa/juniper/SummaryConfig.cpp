@@ -22,10 +22,11 @@ inline char hexchar(const char* s) {
     const char*   str = s;
     unsigned char c = 0;
     for (int i = 0; i < 2; i++) {
-        if (*str <= 'F')
+        if (*str <= 'F') {
             c |= (*str - '0');
-        else
+        } else {
             c |= (*str - 'a' + 10);
+        }
         c = c << ((1 - i) * 4);
         str++;
     }
@@ -46,12 +47,14 @@ SummaryConfig::SummaryConfig(const char* hi_on, const char* hi_off, const char* 
     init(_dots, usedots);
 
     for (const char* c = separators; *c != '\0'; c++) {
-        if (*c > 0)
+        if (*c > 0) {
             _separator.set(*c, 1);
+        }
     }
     for (const unsigned char* uc = connectors; *uc != '\0'; uc++) {
-        if (*uc > 0)
+        if (*uc > 0) {
             _connector.set(*uc, 1);
+        }
     }
 }
 
@@ -82,10 +85,12 @@ void SummaryConfig::init(std::string& cf, const char* str) {
 }
 
 ConfigFlag StringToConfigFlag(const char* confstring) {
-    if (strcmp(confstring, "off") == 0)
+    if (strcmp(confstring, "off") == 0) {
         return CF_OFF;
-    if (strcmp(confstring, "on") == 0)
+    }
+    if (strcmp(confstring, "on") == 0) {
         return CF_ON;
+    }
     // default:
     return CF_AUTO;
 }

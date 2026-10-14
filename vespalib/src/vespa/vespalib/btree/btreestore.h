@@ -267,8 +267,9 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT, type
 template <typename FunctionType, bool Frozen>
 void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::foreach_key(EntryRef     ref,
                                                                                FunctionType func) const {
-    if (!ref.valid())
+    if (!ref.valid()) {
         return;
+    }
     RefType  iRef(ref);
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize == 0) {
@@ -286,8 +287,9 @@ void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::foreach_key(E
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
 template <typename FunctionType, bool Frozen>
 void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::foreach(EntryRef ref, FunctionType func) const {
-    if (!ref.valid())
+    if (!ref.valid()) {
         return;
+    }
     RefType  iRef(ref);
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize == 0) {

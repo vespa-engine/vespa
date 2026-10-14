@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/barrier.h>
 #include <vespa/vespalib/util/shared_operation_throttler.h>
 
-#include <cassert>
 #include <thread>
 
 using vespalib::steady_clock;
@@ -94,7 +94,7 @@ TEST_F(SharedOperationHandlerTest, blocking_call_woken_up_if_throttle_slot_avail
     vespalib::Barrier barrier(2);
     std::thread       t([&] {
         auto token = f._throttler->try_acquire_one();
-        assert(token.valid());
+        CHECK(token.valid());
         barrier.await();
         while (f._throttler->waiting_threads() != 1) {
             std::this_thread::sleep_for(100us);

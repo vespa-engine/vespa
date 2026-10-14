@@ -2,7 +2,7 @@
 
 #include "parameterdescriptions.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search {
 namespace fef {
@@ -45,14 +45,14 @@ ParameterDescriptions& ParameterDescriptions::desc(size_t tag) {
 }
 
 void ParameterDescriptions::addParameter(const ParamDescItem& param) {
-    assert(!_descriptions.empty());
-    assert(!getCurrent().hasRepeat());
+    CHECK(!_descriptions.empty());
+    CHECK(!getCurrent().hasRepeat());
     getCurrent().addParameter(param);
 }
 
 ParameterDescriptions& ParameterDescriptions::repeat(size_t n) {
-    assert(!_descriptions.empty());
-    assert(getCurrent().getParams().size() >= n);
+    CHECK(!_descriptions.empty());
+    CHECK(getCurrent().getParams().size() >= n);
     getCurrent().setRepeat(n);
     return *this;
 }

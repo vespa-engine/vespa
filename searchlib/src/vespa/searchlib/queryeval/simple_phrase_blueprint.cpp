@@ -5,6 +5,8 @@
 #include "field_spec.hpp"
 #include "simple_phrase_search.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/objects/visit.hpp>
 
 #include <map>
@@ -22,9 +24,9 @@ SimplePhraseBlueprint::~SimplePhraseBlueprint() = default;
 
 void SimplePhraseBlueprint::addTerm(Blueprint::UP term) {
     const State& childState = term->getState();
-    assert(childState.numFields() == 1);
+    CHECK(childState.numFields() == 1);
     const FieldSpecBase& childField = childState.field(0);
-    assert(childField.getFieldId() == _field.getFieldId());
+    CHECK(childField.getFieldId() == _field.getFieldId());
     (void)childField;
 
     HitEstimate childEst = childState.estimate();
@@ -53,20 +55,20 @@ FlowStats SimplePhraseBlueprint::calculate_flow_stats(uint32_t docid_limit) cons
 }
 
 SearchIterator::UP SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray&) const {
-    assert(false);
+    CHECK(false);
     return {};
 }
 
 SearchIterator::UP SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray& tfmda,
                                                            fef::MatchData&                     global_md) const {
-    assert(tfmda.size() == 1);
+    CHECK(tfmda.size() == 1);
     fef::TermFieldMatchDataArray childMatch;
     SimplePhraseSearch::Children children;
     children.reserve(_terms.size());
     std::multimap<uint32_t, uint32_t> order_map;
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State& childState = _terms[i]->getState();
-        assert(childState.numFields() == 1);
+        CHECK(childState.numFields() == 1);
         auto* child_term_field_match_data = childState.field(0).resolve(global_md);
         child_term_field_match_data->setNeedInterleavedFeatures(tfmda[0]->needs_interleaved_features());
         child_term_field_match_data->setNeedNormalFeatures(true);

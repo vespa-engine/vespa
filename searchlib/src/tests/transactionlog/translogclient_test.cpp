@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/fastos/file.h>
 #include <vespa/fnet/transport.h>
@@ -136,10 +137,10 @@ RPC::Result CallBackManyTest::receive(const Packet& p) {
     for (; !h.empty(); _count++, _value++) {
         Packet::Entry e;
         e.deserialize(h);
-        assert(e.data().size() == 8);
+        CHECK(e.data().size() == 8);
         size_t v = *(const size_t*)(const void*)e.data().c_str();
-        assert(_count + 1 == e.serial());
-        assert(v == _value);
+        CHECK(_count + 1 == e.serial());
+        CHECK(v == _value);
         (void)v;
     }
     return RPC::OK;
@@ -185,11 +186,11 @@ RPC::Result CallBackUpdate::receive(const Packet& packet) {
                     LOG(warning, "Failed deserializing (%" PRId64 ", %s) bb(%zu, %zu, %zu)=%s what=%s", e.serial(),
                         cl->name(), is.rp(), is.size(), is.capacity(), myhex(is.peek(), is.size()).c_str(),
                         ex.what());
-                    assert(false);
+                    CHECK(false);
                     return RPC::ERROR;
                 }
-                assert(is.state() == nbostream::ok);
-                assert(is.empty());
+                CHECK(is.state() == nbostream::ok);
+                CHECK(is.empty());
                 _packetMap[e.serial()] = ser;
             } else {
                 LOG(warning, "Packet::Entry(%" PRId64 ", %s) is not a Identifiable", e.serial(), cl->name());
@@ -268,9 +269,9 @@ bool createDomainTest(TransLogClient& tls, const std::string& name, size_t preEx
     tls.listDomains(dir);
     EXPECT_EQ(dir.size(), preExistingDomains);
     auto s1 = tls.open(name);
-    assert(!s1);
+    CHECK(!s1);
     retval = tls.create(name);
-    assert(retval);
+    CHECK(retval);
     dir.clear();
     tls.listDomains(dir);
     EXPECT_EQ(dir.size(), preExistingDomains + 1);
@@ -279,7 +280,7 @@ bool createDomainTest(TransLogClient& tls, const std::string& name, size_t preEx
 
 std::unique_ptr<Session> openDomainTest(TransLogClient& tls, const std::string& name) {
     auto s1 = tls.open(name);
-    assert(s1);
+    CHECK(s1);
     return s1;
 }
 
@@ -295,9 +296,9 @@ void fillDomainTest(Session* s1, const std::string& name) {
     b.add(e3);
     EXPECT_THROW(b.add(e1), std::runtime_error);
     bool commit_res = s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size()));
-    assert(commit_res);
+    CHECK(commit_res);
     commit_res = s1->commit(vespalib::ConstBufferRef(b.getHandle().data(), b.getHandle().size()));
-    assert(commit_res);
+    CHECK(commit_res);
     VESPA_EXPECT_EXCEPTION(s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size())),
                            std::runtime_error,
                            "commit failed with code -2. server says: Exception during commit on " + name +
@@ -412,20 +413,20 @@ bool visitDomainTest(TransLogClient& tls, Session* s1, const std::string& name) 
 
     CallBackTest ca;
     auto         visitor = tls.createVisitor(name, ca);
-    assert(visitor);
+    CHECK(visitor);
     EXPECT_TRUE(visitor->visit(0, 1));
     bool eof_result = ca.wait_for_eof();
-    assert(eof_result);
+    CHECK(eof_result);
     EXPECT_TRUE(!ca.hasSerial(0));
     EXPECT_TRUE(ca.hasSerial(1));
     EXPECT_TRUE(!ca.hasSerial(2));
     ca.clear();
 
     visitor = tls.createVisitor(name, ca);
-    assert(visitor.get());
+    CHECK(visitor.get());
     EXPECT_TRUE(visitor->visit(1, 2));
     eof_result = ca.wait_for_eof();
-    assert(eof_result);
+    CHECK(eof_result);
     EXPECT_TRUE(!ca.hasSerial(0));
     EXPECT_TRUE(!ca.hasSerial(1));
     EXPECT_TRUE(ca.hasSerial(2));
@@ -436,7 +437,7 @@ bool visitDomainTest(TransLogClient& tls, Session* s1, const std::string& name) 
     EXPECT_TRUE(visitor.get());
     EXPECT_TRUE(visitor->visit(0, 3));
     eof_result = ca.wait_for_eof();
-    assert(eof_result);
+    CHECK(eof_result);
     EXPECT_TRUE(!ca.hasSerial(0));
     EXPECT_TRUE(ca.hasSerial(1));
     EXPECT_TRUE(ca.hasSerial(2));
@@ -444,10 +445,10 @@ bool visitDomainTest(TransLogClient& tls, Session* s1, const std::string& name) 
     ca.clear();
 
     visitor = tls.createVisitor(name, ca);
-    assert(visitor.get());
+    CHECK(visitor.get());
     EXPECT_TRUE(visitor->visit(2, 3));
     eof_result = ca.wait_for_eof();
-    assert(eof_result);
+    CHECK(eof_result);
     EXPECT_TRUE(!ca.hasSerial(0));
     EXPECT_TRUE(!ca.hasSerial(1));
     EXPECT_TRUE(!ca.hasSerial(2));

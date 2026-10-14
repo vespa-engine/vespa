@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <cassert>
 #include <initializer_list>
 #include <string>
 #include <vector>

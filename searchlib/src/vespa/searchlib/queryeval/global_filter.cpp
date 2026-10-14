@@ -5,6 +5,7 @@
 #include "blueprint.h"
 #include "profiled_iterator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -12,7 +13,6 @@
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
-#include <cassert>
 #include <cstdint>
 
 using search::engine::Trace;
@@ -202,8 +202,8 @@ std::shared_ptr<GlobalFilter> GlobalFilter::create(Blueprint& blueprint, uint32_
         parts.emplace_back(blueprint, docid, docid + part_size, trace);
         docid += part_size;
     }
-    assert(parts.size() <= num_threads);
-    assert((docid == docid_limit) || parts.empty());
+    CHECK(parts.size() <= num_threads);
+    CHECK((docid == docid_limit) || parts.empty());
     thread_bundle.run(parts);
     insert_traces(trace, parts);
     std::vector<std::unique_ptr<BitVector>> vectors;

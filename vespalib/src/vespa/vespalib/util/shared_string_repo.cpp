@@ -2,9 +2,9 @@
 
 #include "shared_string_repo.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 
-#include <cassert>
 #include <charconv>
 #include <cstdlib>
 
@@ -53,15 +53,15 @@ SharedStringRepo::Partition::Entry::Entry(Entry&&) noexcept = default;
 SharedStringRepo::Partition::Entry::~Entry() = default;
 
 std::string SharedStringRepo::Partition::Entry::as_string() const {
-    assert(!is_free());
+    CHECK(!is_free());
     return _str;
 }
 void SharedStringRepo::Partition::Entry::add_ref() {
-    assert(!is_free());
+    CHECK(!is_free());
     ++_ref_cnt;
 }
 bool SharedStringRepo::Partition::Entry::sub_ref() {
-    assert(!is_free());
+    CHECK(!is_free());
     return (--_ref_cnt == 0);
 }
 
@@ -130,7 +130,7 @@ void SharedStringRepo::Partition::make_entries(size_t hint) {
     size_t want_mem = roundUp2inN(hint * sizeof(Entry));
     size_t want_entries = want_mem / sizeof(Entry);
     want_entries = std::min(want_entries, PART_LIMIT);
-    assert(want_entries > _entries.size());
+    CHECK(want_entries > _entries.size());
     _entries.reserve(want_entries);
     while (_entries.size() < _entries.capacity()) {
         _entries.emplace_back(_free);
@@ -250,7 +250,7 @@ SharedStringRepo::Handles::Handles() : _handles() {
 }
 
 SharedStringRepo::Handles::Handles(Handles&& rhs) noexcept : _handles(std::move(rhs._handles)) {
-    assert(rhs._handles.empty());
+    CHECK(rhs._handles.empty());
 }
 
 SharedStringRepo::Handles::~Handles() {

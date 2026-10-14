@@ -13,8 +13,9 @@ using vespa::config::search::core::ProtonConfig;
 
 namespace {
 template <typename T> bool equals(const T* lhs, const T* rhs) {
-    if (lhs == nullptr)
+    if (lhs == nullptr) {
         return rhs == nullptr;
+    }
     return rhs != nullptr && *lhs == *rhs;
 }
 } // namespace

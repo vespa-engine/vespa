@@ -2,14 +2,13 @@
 
 #include "attribute_populator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_populator");
@@ -31,7 +30,7 @@ public:
 } // namespace
 
 search::SerialNum AttributePopulator::nextSerialNum() {
-    assert(_currSerialNum <= _configSerialNum);
+    CHECK(_currSerialNum <= _configSerialNum);
     return _currSerialNum++;
 }
 
@@ -77,13 +76,13 @@ void AttributePopulator::done() {
     auto mgr = _writer.getAttributeManager();
     auto flushTargets = mgr->getFlushTargets();
     for (const auto& flushTarget : flushTargets) {
-        assert(flushTarget->getFlushedSerialNum() < _configSerialNum);
+        CHECK(flushTarget->getFlushedSerialNum() < _configSerialNum);
         auto task = flushTarget->initFlush(_configSerialNum, std::make_shared<search::FlushToken>());
         // shrink target only return task if able to shrink.
         if (task) {
             task->run();
         }
-        assert(flushTarget->getFlushedSerialNum() == _configSerialNum);
+        CHECK(flushTarget->getFlushedSerialNum() == _configSerialNum);
     }
 }
 

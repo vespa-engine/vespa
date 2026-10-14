@@ -2,6 +2,7 @@
 
 #include "sum_max_inv_hamming_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
@@ -243,7 +244,7 @@ bool check_chunked_params(const ValueType& res_type, const ValueType& query, con
 size_t get_dim_size(const ValueType& type, const std::string& dim) {
     size_t npos = ValueType::Dimension::npos;
     size_t idx = type.dimension_index(dim);
-    assert(idx != npos);
+    CHECK(idx != npos);
     return type.dimensions()[idx].size;
 }
 

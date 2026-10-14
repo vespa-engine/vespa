@@ -2,8 +2,9 @@
 
 #include "exceptions.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 #include <limits>
 
 namespace vespalib {
@@ -44,8 +45,8 @@ void Rendezvous<IN, OUT, external_id>::meet_others(IN& input, OUT& output, size_
     size_t my_gen = _gen;
     check_destroyed(my_gen, guard);
     if (external_id) {
-        assert(_in[my_id] == nullptr);
-        assert(_out[my_id] == nullptr);
+        CHECK(_in[my_id] == nullptr);
+        CHECK(_out[my_id] == nullptr);
     }
     _in[my_id] = &input;
     _out[my_id] = &output;
@@ -113,7 +114,7 @@ OUT Rendezvous<IN, OUT, external_id>::rendezvous(IN input, size_t my_id)
     requires(external_id)
 {
     OUT ret{};
-    assert(my_id < _size);
+    CHECK(my_id < _size);
     static_assert(external_id);
     if (_size == 1) {
         meet_self(input, ret);

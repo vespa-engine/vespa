@@ -4,8 +4,9 @@
 
 #include "detached_rpc_request.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 
 namespace proton {
 
@@ -25,7 +26,7 @@ bool DetachedRpcRequestsOwner::add_detached_request(std::shared_ptr<DetachedRpcR
         return false; // Add after remove is not allowed
     }
     auto it = std::find(_detached_requests.begin(), _detached_requests.end(), request);
-    assert(it == _detached_requests.end());
+    CHECK(it == _detached_requests.end());
     _detached_requests.push_back(request);
     return true;
 }

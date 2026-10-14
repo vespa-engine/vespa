@@ -16,13 +16,16 @@ namespace search::features {
  * matching the field. The dimension and cell type are passed as extra parameters to the inner blueprint and calls to
  * prepareSharedState() and createExecutor() are proxied to the inner blueprint.
  *
- * Inner feature name and dimension name are mandatory arguments. Cell type is optional with 'double' as default
- * value. e.g. both elementwise(bm25(i),x,double) and elementwise(bm25(i),x) will pass (i,x,double) to the inner
- * elementwise bm25 ranking feature blueprint and rank property keys used for tuning must always contain the cell type
- * name.
+ * Inner feature name and dimension name are mandatory arguments. Cell type is optional, and the default depends
+ * on the inner feature (see below). The resolved cell type is always passed explicitly to the inner blueprint,
+ * e.g. both elementwise(bm25(i),x) and elementwise(bm25(i),x,double) pass (i,x,double) to the inner elementwise
+ * bm25 blueprint. Rank property keys used for tuning must therefore always contain the cell type name.
  *
- * Supported inner features: bm25 (e.g. elementwise(bm25(i),x,float)) and matches (e.g. elementwise(matches(f),x),
- * giving 1.0 for each element id matched by sameElement in an array of struct or map field f).
+ * Supported inner features:
+ *   - bm25: elementwise bm25 score per element of index field i, e.g. elementwise(bm25(i),x).
+ *     Default cell type is 'double'.
+ *   - matches: 1.0 for each element id matched by sameElement in an array of struct or map field f,
+ *     e.g. elementwise(matches(f),x). Default cell type is 'float', since the values are always 1.0.
  */
 class ElementwiseBlueprint : public fef::Blueprint {
 public:
