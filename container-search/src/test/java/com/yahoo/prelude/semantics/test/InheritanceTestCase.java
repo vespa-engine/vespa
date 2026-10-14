@@ -9,7 +9,7 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.semantics.RuleBase;
-import com.yahoo.prelude.semantics.RuleBaseException;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.prelude.semantics.SemanticSearcher;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bratseth
@@ -136,13 +136,9 @@ public class InheritanceTestCase {
         assertSemantics("WEAKAND vehiclebrand:skoda", "vw cars",   "");
         assertSemantics("WEAKAND vehiclebrand:skoda", "vw cars",   "&rules.rulebase=grandchild");
         assertSemantics("WEAKAND vehiclebrand:skoda", "vw cars",   "&rules.rulebase=grandchild.sd");
-        try {
-            assertSemantics("WEAKAND vw cars",       "vw cars",   "&rules.rulebase=doesntexist");
-            fail("No exception on missing rule base");
-        }
-        catch (RuleBaseException e) {
-            // Success
-        }
+        Query query = new Query("?query=" + QueryTestCase.httpEncode("vw cars") + "&rules.rulebase=doesntexist");
+        var e = assertThrows(IllegalInputException.class, () -> doSearch(searcher, query, 0, 10));
+        assertEquals("Requested rule base 'doesntexist' does not exist", e.getMessage());
         assertSemantics("WEAKAND vw cars",       "vw cars",   "&rules.rulebase=grandchild.sd&rules.off");
         assertSemantics("WEAKAND vw cars",       "vw cars",   "&rules.off");
 
