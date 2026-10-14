@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-10-13
+Last updated: 2026-10-14
 
 ---
 
@@ -282,9 +282,10 @@ Last updated: 2026-10-13
 
 ---
 
-## commons-codec 1.22.1 — Apache 2.0
+## commons-codec 1.23.0 — Apache 2.0
 
-- Homepage: <https://commons.apache.org/proper/commons-codec/>
+- Homepage: <https://www.apache.org/>
+- Copyright 2002-2026 The Apache Software Foundation
 - The Apache Software Foundation
 
 ---
