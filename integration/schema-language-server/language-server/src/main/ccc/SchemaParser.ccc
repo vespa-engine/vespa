@@ -538,7 +538,8 @@ TOKEN :
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
-| < EXPLANATION: "explanation" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
+| < EXPLANATION_SL: "explanation" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* >
+| < EXPLANATION_ML: "explanation" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" >
@@ -3536,17 +3537,24 @@ double tensorCellValue() :
 ;
 
 /**
- * Consumes an explanation block: Free text describing the content and usage of the enclosing element.
+ * Consumes an explanation, either on a single line after a colon or as a block:
+ * Free text describing the content and usage of the enclosing element.
  *
  * @param block the block to add the explanation to
  */
-void explanationElm(ParsedBlock block) : { }
+void explanationElm(ParsedBlock block) :
+{
+    String image;
+}
 
-    <EXPLANATION>
-    {
-        String image = lastConsumedToken.toString();
-        block.setExplanation(Utils.explanationText(image.substring(image.indexOf("{") + 1, image.lastIndexOf("}"))));
-    }
+    ( <EXPLANATION_SL> {
+          image = lastConsumedToken.toString();
+          block.setExplanation(Utils.explanationText(image.substring(image.indexOf(":") + 1)));
+      } |
+      <EXPLANATION_ML> {
+          image = lastConsumedToken.toString();
+          block.setExplanation(Utils.explanationText(image.substring(image.indexOf("{") + 1, image.lastIndexOf("}"))));
+      } )
 ;
 
 /** Undocumented syntax for supplying a tensor constant value by a string prefixed by "value" */
