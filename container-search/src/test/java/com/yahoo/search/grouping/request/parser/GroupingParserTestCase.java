@@ -684,7 +684,9 @@ public class GroupingParserTestCase {
                 () -> assertParse("all(group(foo) each(output(count() as(\"my label\"))) as(\"my label\"))"),
                 () -> assertParse("all(group(foo) each(output(count() as('my label'))) as('my label'))",
                                   "all(group(foo) each(output(count() as(\"my label\"))) as(\"my label\"))"),
-                () -> assertParse("all(group(foo) each(output(count() as(\"a\\\"b\"))))"));
+                () -> assertParse("all(group(foo) each(output(count() as(\"a\\\"b\"))))"),
+                () -> assertParse("all(group(foo) each(output(count() as(\"inf\"))) as(\"inf\"))"),
+                () -> assertParse("all(group(foo) each(output(count() as(max))) as(max))"));
 
         assertAll("filter with alias",
                 () -> assertParse(
