@@ -7,7 +7,7 @@ require (
 	github.com/fatih/color v1.19.0
 	github.com/fxamacker/cbor/v2 v2.9.6
 	github.com/go-json-experiment/json v0.0.0-20260820222146-c27c302e5fc3
-	github.com/klauspost/compress v1.20.1
+	github.com/klauspost/compress v1.20.3
 	github.com/mattn/go-colorable v0.1.16
 	github.com/mattn/go-isatty v0.0.24
 	github.com/mattn/go-runewidth v0.0.31
