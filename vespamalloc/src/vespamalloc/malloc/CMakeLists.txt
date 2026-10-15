@@ -2,6 +2,7 @@
 vespa_add_library(vespamalloc_malloc OBJECT
     SOURCES
     malloc.cpp
+    check_require.cpp
     allocchunk.cpp
     common.cpp
     freelist.cpp
@@ -17,6 +18,7 @@ vespa_add_library(vespamalloc_malloc OBJECT
 vespa_add_library(vespamalloc_mallocd OBJECT
     SOURCES
     mallocd.cpp
+    check_require.cpp
     allocchunk.cpp
     common.cpp
     freelist.cpp
@@ -33,6 +35,7 @@ vespa_add_library(vespamalloc_mallocd OBJECT
 vespa_add_library(vespamalloc_mallocdst16 OBJECT
     SOURCES
     mallocdst16.cpp
+    check_require.cpp
     allocchunk.cpp
     common.cpp
     freelist.cpp
@@ -50,6 +53,7 @@ vespa_workaround_gcc_bug_67055(mallocdst16.cpp)
 vespa_add_library(vespamalloc_mallocdst16_nl OBJECT
     SOURCES
     mallocdst16_nl.cpp
+    check_require.cpp
     allocchunk.cpp
     common.cpp
     freelist.cpp
@@ -72,6 +76,7 @@ vespa_add_library(vespamalloc_mmap OBJECT
 vespa_add_library(vespamalloc_load_as_huge OBJECT
     SOURCES
     load_as_huge.cpp
+    check_require.cpp
     independent_non_inlined_memcpy.cpp
     DEPENDS
 )
