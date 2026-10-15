@@ -1383,6 +1383,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         return result;
     }
+
     private static Collection<UserBindingPattern> userBindingPattern(String path, Set<Integer> portBindingOverride) {
         UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
         if (portBindingOverride.isEmpty()) return Set.of(bindingPattern);
@@ -1390,7 +1391,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .map(bindingPattern::withOverriddenPort)
                 .toList();
     }
-
 
     private ContainerDocumentApi buildDocumentApi(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         Element documentApiElement = XML.getChild(spec, "document-api");
