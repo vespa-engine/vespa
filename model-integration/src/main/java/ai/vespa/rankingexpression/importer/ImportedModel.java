@@ -13,6 +13,9 @@ import com.yahoo.tensor.TensorType;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -170,11 +173,29 @@ public class ImportedModel implements ImportedMlModel {
      * @throws IllegalArgumentException if the path is illegal or non-existent
      */
     public File relativeFile(String relativePath, String descriptionOfPath) {
-        File file = new File(new File(source()).getParent(), relativePath);
+        Path modelDir = Paths.get(source()).toAbsolutePath().getParent().normalize();
+        Path path = Paths.get(relativePath);
+        Path resolved = modelDir.resolve(path).normalize();
+        if (path.isAbsolute() || ! resolved.startsWith(modelDir))
+            throw outsideModelDir(relativePath, descriptionOfPath);
+
+        File file = resolved.toFile();
         if ( ! file.exists())
             throw new IllegalArgumentException(descriptionOfPath + " references '" + relativePath +
                                                "', but this file does not exist");
+        try {
+            if ( ! file.toPath().toRealPath().startsWith(modelDir.toRealPath()))
+                throw outsideModelDir(relativePath, descriptionOfPath);
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return file;
+    }
+
+    private static IllegalArgumentException outsideModelDir(String relativePath, String descriptionOfPath) {
+        return new IllegalArgumentException(descriptionOfPath + " references '" + relativePath +
+                                            "', which is outside the model directory");
     }
 
     /**

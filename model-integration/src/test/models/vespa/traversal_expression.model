@@ -1,0 +1,7 @@
+model traversal_expression {
+
+    function leak() {
+        expression: file: d/../../outside.expression
+    }
+
+}
