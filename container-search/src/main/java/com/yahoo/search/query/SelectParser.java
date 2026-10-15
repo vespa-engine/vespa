@@ -342,7 +342,17 @@ public class SelectParser implements Parser {
         List<VespaGroupingStep> groupingSteps = new ArrayList<>();
         List<String> groupingOperations = toGroupingRequests(grouping);
         for (String groupingString : groupingOperations) {
-            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingString, parameters);
+            GroupingOperation groupingOperation;
+            try {
+                groupingOperation = GroupingOperation.fromString(groupingString, parameters);
+            }
+            catch (IllegalInputException e) {
+                throw e;
+            }
+            catch (IllegalArgumentException e) {
+                // An invalid grouping is illegal input, also when it is first parsed after the query is constructed
+                throw new IllegalInputException(e.getMessage(), e);
+            }
             VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
             groupingSteps.add(groupingStep);
         }
