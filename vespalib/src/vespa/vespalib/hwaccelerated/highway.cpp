@@ -631,9 +631,6 @@ struct UnpackBitsInvoker<double, BigEndian> {
         const hn::RepartitionToWide<decltype(di16)> di32;
         const hn::RepartitionToWide<decltype(di32)> di64;
         const hn::RebindToFloat<decltype(di64)>     df64;
-        const hn::Half<decltype(di8)>               di8_half;
-        const hn::Half<decltype(di16)>              di16_half;
-        const hn::Half<decltype(di32)>              di32_half;
 
         using VecF64 = hn::VFromD<decltype(df64)>;
 
@@ -644,23 +641,23 @@ struct UnpackBitsInvoker<double, BigEndian> {
             bm = hn::MaskFromVec(hn::Reverse8(di8, hn::VecFromMask(di8, bm)));
         }
 
-        auto bm_0 = hn::PromoteMaskTo(di16, di8_half, hn::LowerHalfOfMask(di8_half, bm));
-        auto bm_1 = hn::PromoteMaskTo(di16, di8_half, hn::UpperHalfOfMask(di8_half, bm));
+        auto bm_0 = MyPromoteLowerMaskTo(di16, di8, bm);
+        auto bm_1 = MyPromoteUpperMaskTo(di16, di8, bm);
 
-        auto bm_0_0 = hn::PromoteMaskTo(di32, di16_half, hn::LowerHalfOfMask(di16_half, bm_0));
-        auto bm_0_1 = hn::PromoteMaskTo(di32, di16_half, hn::UpperHalfOfMask(di16_half, bm_0));
-        auto bm_1_0 = hn::PromoteMaskTo(di32, di16_half, hn::LowerHalfOfMask(di16_half, bm_1));
-        auto bm_1_1 = hn::PromoteMaskTo(di32, di16_half, hn::UpperHalfOfMask(di16_half, bm_1));
+        auto bm_0_0 = MyPromoteLowerMaskTo(di32, di16, bm_0);
+        auto bm_0_1 = MyPromoteUpperMaskTo(di32, di16, bm_0);
+        auto bm_1_0 = MyPromoteLowerMaskTo(di32, di16, bm_1);
+        auto bm_1_1 = MyPromoteUpperMaskTo(di32, di16, bm_1);
 
         // We shall count our blessings that there's no float128 to support.
-        auto bm_0_0_0 = hn::PromoteMaskTo(df64, di32_half, hn::LowerHalfOfMask(di32_half, bm_0_0));
-        auto bm_0_0_1 = hn::PromoteMaskTo(df64, di32_half, hn::UpperHalfOfMask(di32_half, bm_0_0));
-        auto bm_0_1_0 = hn::PromoteMaskTo(df64, di32_half, hn::LowerHalfOfMask(di32_half, bm_0_1));
-        auto bm_0_1_1 = hn::PromoteMaskTo(df64, di32_half, hn::UpperHalfOfMask(di32_half, bm_0_1));
-        auto bm_1_0_0 = hn::PromoteMaskTo(df64, di32_half, hn::LowerHalfOfMask(di32_half, bm_1_0));
-        auto bm_1_0_1 = hn::PromoteMaskTo(df64, di32_half, hn::UpperHalfOfMask(di32_half, bm_1_0));
-        auto bm_1_1_0 = hn::PromoteMaskTo(df64, di32_half, hn::LowerHalfOfMask(di32_half, bm_1_1));
-        auto bm_1_1_1 = hn::PromoteMaskTo(df64, di32_half, hn::UpperHalfOfMask(di32_half, bm_1_1));
+        auto bm_0_0_0 = MyPromoteLowerMaskTo(df64, di32, bm_0_0);
+        auto bm_0_0_1 = MyPromoteUpperMaskTo(df64, di32, bm_0_0);
+        auto bm_0_1_0 = MyPromoteLowerMaskTo(df64, di32, bm_0_1);
+        auto bm_0_1_1 = MyPromoteUpperMaskTo(df64, di32, bm_0_1);
+        auto bm_1_0_0 = MyPromoteLowerMaskTo(df64, di32, bm_1_0);
+        auto bm_1_0_1 = MyPromoteUpperMaskTo(df64, di32, bm_1_0);
+        auto bm_1_1_0 = MyPromoteLowerMaskTo(df64, di32, bm_1_1);
+        auto bm_1_1_1 = MyPromoteUpperMaskTo(df64, di32, bm_1_1);
 
         VecF64 f64_0_0_0 = hn::IfThenElseZero(bm_0_0_0, hn::Set(df64, 1.0));
         VecF64 f64_0_0_1 = hn::IfThenElseZero(bm_0_0_1, hn::Set(df64, 1.0));
