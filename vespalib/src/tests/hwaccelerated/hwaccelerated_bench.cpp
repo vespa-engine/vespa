@@ -69,7 +69,9 @@ void register_accel_binary_arg_benchmark(const std::string& instance_name, std::
                 benchmark::DoNotOptimize(result);
             }
         }
-        state.SetBytesProcessed(sizeof(T) * state.range() * state.iterations() * 2); // *2 due to lhs+rhs
+        state.SetBytesProcessed(
+            (sizeof(typename decltype(a)::value_type) + sizeof(typename decltype(b)::value_type)) * state.range() *
+            state.iterations());
     };
     auto* bench = benchmark::RegisterBenchmark(instance_name, std::move(bench_fn));
     bench->RangeMultiplier(2)->Range(8, 8 << 10); // TODO also with non-aligned sizes
@@ -110,8 +112,8 @@ template <typename T>
 void register_unpack_bits_benchmark(FnTable::FnId fn_id) {
     auto input_fn = [](const size_t sz) {
         Xoshiro256PlusPlusPrng prng(1234567);
-        std::vector<int8_t> src = create_and_fill<int8_t>(prng, sz); // lhs
-        std::vector<T>      dest(sz * 8);                            // rhs; 1 element per input i8 element bit
+        std::vector<int8_t>    src = create_and_fill<int8_t>(prng, sz); // lhs
+        std::vector<T>         dest(sz * 8);                            // rhs; 1 element per input i8 element bit
         return std::make_pair(std::move(src), std::move(dest));
     };
     auto unpack_bits_little_fn = [](const int8_t* src, auto* dest, const size_t sz) noexcept {

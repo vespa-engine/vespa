@@ -432,9 +432,73 @@ struct UnpackBitsInvoker<hwy::bfloat16_t, BigEndian> {
 
 template <bool BigEndian>
 struct UnpackBitsInvoker<float, BigEndian> {
+
     template <InvocationMeta MetaT, typename DI8>
     [[maybe_unused]]
     HWY_API void invoke(MetaT meta, DI8 di8, const uint8_t* HWY_RESTRICT src_u8, float* HWY_RESTRICT dest,
+                        const size_t NB, const size_t my_i, size_t& my_out_idx) noexcept {
+        const hn::RepartitionToWide<decltype(di8)>  di16;
+        const hn::RepartitionToWide<decltype(di16)> di32;
+        const hn::RebindToFloat<decltype(di32)>     df32;
+
+        using VecF32 = hn::VFromD<decltype(df32)>;
+
+        HWY_LANES_CONSTEXPR size_t NF32 = hn::Lanes(df32);
+
+        auto bm = hn::LoadMaskBits(di8, src_u8 + my_i + (NB * meta.unroll_index()));
+        if constexpr (BigEndian) {
+            bm = hn::MaskFromVec(hn::Reverse8(di8, hn::VecFromMask(di8, bm)));
+        }
+
+        auto bm_0 = MyPromoteLowerMaskTo(di16, di8, bm);
+        auto bm_1 = MyPromoteUpperMaskTo(di16, di8, bm);
+
+        auto bm_0_0 = MyPromoteLowerMaskTo(df32, di16, bm_0);
+        auto bm_0_1 = MyPromoteUpperMaskTo(df32, di16, bm_0);
+        auto bm_1_0 = MyPromoteLowerMaskTo(df32, di16, bm_1);
+        auto bm_1_1 = MyPromoteUpperMaskTo(df32, di16, bm_1);
+
+        VecF32 f32_0_0 = hn::IfThenElseZero(bm_0_0, hn::Set(df32, 1.0f));
+        VecF32 f32_0_1 = hn::IfThenElseZero(bm_0_1, hn::Set(df32, 1.0f));
+        VecF32 f32_1_0 = hn::IfThenElseZero(bm_1_0, hn::Set(df32, 1.0f));
+        VecF32 f32_1_1 = hn::IfThenElseZero(bm_1_1, hn::Set(df32, 1.0f));
+
+        if constexpr (!meta.is_partial()) {
+            hn::StoreU(f32_0_0, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+            hn::StoreU(f32_0_1, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+            hn::StoreU(f32_1_0, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+            hn::StoreU(f32_1_1, df32, dest + my_out_idx);
+            my_out_idx += NF32;
+        } else {
+            size_t rem_out_f32s = meta.remaining() * 8;
+
+            size_t to_write = std::min(rem_out_f32s, NF32);
+            hn::StoreN(f32_0_0, df32, dest + my_out_idx, to_write);
+            rem_out_f32s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f32s, NF32);
+            hn::StoreN(f32_0_1, df32, dest + my_out_idx, to_write);
+            rem_out_f32s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f32s, NF32);
+            hn::StoreN(f32_1_0, df32, dest + my_out_idx, to_write);
+            rem_out_f32s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = rem_out_f32s;
+            hn::StoreN(f32_1_1, df32, dest + my_out_idx, to_write);
+            my_out_idx += to_write;
+        }
+    };
+
+    template <InvocationMeta MetaT, typename DI8>
+    [[maybe_unused]]
+    HWY_API void invoke3(MetaT meta, DI8 di8, const uint8_t* HWY_RESTRICT src_u8, float* HWY_RESTRICT dest,
                         const size_t NB, const size_t my_i, size_t& my_out_idx) noexcept {
         const hn::RepartitionToWide<decltype(di8)>  di16;
         const hn::RepartitionToWide<decltype(di16)> di32;

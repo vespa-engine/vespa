@@ -24,6 +24,34 @@ namespace HWY_NAMESPACE {
 
 namespace hn = hwy::HWY_NAMESPACE;
 
+#if (HWY_TARGET & HWY_ALL_SVE) != 0
+
+template <typename DTo, typename DFrom, HWY_IF_T_SIZE_D(DTo, sizeof(hn::TFromD<DFrom>) * 2)>
+HWY_API svbool_t MyPromoteLowerMaskTo(DTo /*d_to*/, DFrom /*d_from*/, svbool_t m) {
+    return svunpklo_b(m);
+}
+
+template <typename DTo, typename DFrom, HWY_IF_T_SIZE_D(DTo, sizeof(hn::TFromD<DFrom>) * 2)>
+HWY_API svbool_t MyPromoteUpperMaskTo(DTo /*d_to*/, DFrom /*d_from*/, svbool_t m) {
+    return svunpkhi_b(m);
+}
+
+#else // non-SVE/SVE2
+
+template <typename DTo, typename DFrom, HWY_IF_T_SIZE_D(DTo, sizeof(hn::TFromD<DFrom>) * 2)>
+HWY_API hn::Mask<DTo> MyPromoteLowerMaskTo(DTo d_to, DFrom /*d_from*/, hn::Mask<DFrom> m) {
+    const hn::Half<DFrom> d_half;
+    return hn::PromoteMaskTo(d_to, d_half, hn::LowerHalfOfMask(d_half, m));
+}
+
+template <typename DTo, typename DFrom, HWY_IF_T_SIZE_D(DTo, sizeof(hn::TFromD<DFrom>) * 2)>
+HWY_API hn::Mask<DTo> MyPromoteUpperMaskTo(DTo d_to, DFrom /*d_from*/, hn::Mask<DFrom> m) {
+    const hn::Half<DFrom> d_half;
+    return hn::PromoteMaskTo(d_to, d_half, hn::UpperHalfOfMask(d_half, m));
+}
+
+#endif // (HWY_TARGET & HWY_ALL_SVE) != 0
+
 #if HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE2_128
 
 // Both GCC and Clang will under NEON peephole-optimize the sequence
