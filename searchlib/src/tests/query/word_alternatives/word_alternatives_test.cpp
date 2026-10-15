@@ -6,6 +6,7 @@
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
+#include <vespa/searchlib/query/tree/querytreecreator.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/query/tree/stackdumpquerycreator.h>
@@ -19,7 +20,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("querybuilder_test");
-#include <vespa/searchlib/query/tree/querytreecreator.h>
 
 using string = std::string;
 using namespace search;
