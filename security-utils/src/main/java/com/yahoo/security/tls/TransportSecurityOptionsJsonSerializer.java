@@ -96,6 +96,9 @@ class TransportSecurityOptionsJsonSerializer {
         if (authorizedPeer.requiredCredentials == null) {
             throw missingFieldException("required-credentials");
         }
+        if (authorizedPeer.requiredCredentials.isEmpty()) {
+            throw new IllegalArgumentException("'required-credentials' cannot be empty");
+        }
         return new PeerPolicy(authorizedPeer.name, Optional.ofNullable(authorizedPeer.description),
                               toCapabilities(authorizedPeer.capabilities), toRequestPeerCredentials(authorizedPeer.requiredCredentials));
     }
