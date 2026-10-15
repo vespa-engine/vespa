@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "log_protocol_proto.h"
+#include "absl_wrapped_proto.h"
 
 #include <vespa/log/log_message.h>
 
