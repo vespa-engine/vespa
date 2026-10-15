@@ -2,7 +2,7 @@
 
 #include "mimalloc_intercept.h"
 
-#include <absl/debugging/stacktrace.h>
+#include <vespa/vespalib/util/backtrace.h>
 #include <absl/debugging/symbolize.h>
 
 #include <atomic>
@@ -65,8 +65,8 @@ __attribute__((noreturn)) void terminate_on_mi_malloc_failure_once(int err, [[ma
         // This is both dependent on compiler optimizations and the underlying mimalloc code.
         constexpr int skip_frames = 0;
         void*         frames[max_frames];
-        int           depth = absl::GetStackTrace(frames, max_frames, skip_frames);
-        for (int i = 0; i < depth; ++i) {
+        int           depth = signal_safe_collect_stack_frames(frames, max_frames);
+        for (int i = skip_frames; i < depth; ++i) {
             const char* sym = "(unknown)";
             char        tmp[1024];
             if (absl::Symbolize(frames[i], tmp, sizeof(tmp))) {
