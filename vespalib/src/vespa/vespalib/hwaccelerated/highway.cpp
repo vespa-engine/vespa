@@ -439,6 +439,8 @@ struct UnpackBitsInvoker<float, BigEndian> {
         const hn::RepartitionToWide<decltype(di8)>  di16;
         const hn::RepartitionToWide<decltype(di16)> di32;
         const hn::RebindToFloat<decltype(di32)>     df32;
+        const hn::Half<decltype(di8)>               di8_half;
+        const hn::Half<decltype(di16)>              di16_half;
 
         using VecF32 = hn::VFromD<decltype(df32)>;
 
@@ -448,49 +450,49 @@ struct UnpackBitsInvoker<float, BigEndian> {
         if constexpr (BigEndian) {
             bm = hn::MaskFromVec(hn::Reverse8(di8, hn::VecFromMask(di8, bm)));
         }
-        const hn::Half<decltype(di8)>  di8_half;
-        auto                           bm_lo = hn::PromoteMaskTo(di16, di8_half, hn::LowerHalfOfMask(di8_half, bm));
-        auto                           bm_hi = hn::PromoteMaskTo(di16, di8_half, hn::UpperHalfOfMask(di8_half, bm));
-        const hn::Half<decltype(di16)> di16_half;
-        auto bm_lo_lo = hn::PromoteMaskTo(df32, di16_half, hn::LowerHalfOfMask(di16_half, bm_lo));
-        auto bm_lo_hi = hn::PromoteMaskTo(df32, di16_half, hn::UpperHalfOfMask(di16_half, bm_lo));
-        auto bm_hi_lo = hn::PromoteMaskTo(df32, di16_half, hn::LowerHalfOfMask(di16_half, bm_hi));
-        auto bm_hi_hi = hn::PromoteMaskTo(df32, di16_half, hn::UpperHalfOfMask(di16_half, bm_hi));
 
-        VecF32 f32_lo_lo = hn::IfThenElseZero(bm_lo_lo, hn::Set(df32, 1.0f));
-        VecF32 f32_lo_hi = hn::IfThenElseZero(bm_lo_hi, hn::Set(df32, 1.0f));
-        VecF32 f32_hi_lo = hn::IfThenElseZero(bm_hi_lo, hn::Set(df32, 1.0f));
-        VecF32 f32_hi_hi = hn::IfThenElseZero(bm_hi_hi, hn::Set(df32, 1.0f));
+        auto bm_0 = hn::PromoteMaskTo(di16, di8_half, hn::LowerHalfOfMask(di8_half, bm));
+        auto bm_1 = hn::PromoteMaskTo(di16, di8_half, hn::UpperHalfOfMask(di8_half, bm));
+
+        auto bm_0_0 = hn::PromoteMaskTo(df32, di16_half, hn::LowerHalfOfMask(di16_half, bm_0));
+        auto bm_0_1 = hn::PromoteMaskTo(df32, di16_half, hn::UpperHalfOfMask(di16_half, bm_0));
+        auto bm_1_0 = hn::PromoteMaskTo(df32, di16_half, hn::LowerHalfOfMask(di16_half, bm_1));
+        auto bm_1_1 = hn::PromoteMaskTo(df32, di16_half, hn::UpperHalfOfMask(di16_half, bm_1));
+
+        VecF32 f32_0_0 = hn::IfThenElseZero(bm_0_0, hn::Set(df32, 1.0f));
+        VecF32 f32_0_1 = hn::IfThenElseZero(bm_0_1, hn::Set(df32, 1.0f));
+        VecF32 f32_1_0 = hn::IfThenElseZero(bm_1_0, hn::Set(df32, 1.0f));
+        VecF32 f32_1_1 = hn::IfThenElseZero(bm_1_1, hn::Set(df32, 1.0f));
 
         if constexpr (!meta.is_partial()) {
-            hn::StoreU(f32_lo_lo, df32, dest + my_out_idx);
+            hn::StoreU(f32_0_0, df32, dest + my_out_idx);
             my_out_idx += NF32;
-            hn::StoreU(f32_lo_hi, df32, dest + my_out_idx);
+            hn::StoreU(f32_0_1, df32, dest + my_out_idx);
             my_out_idx += NF32;
-            hn::StoreU(f32_hi_lo, df32, dest + my_out_idx);
+            hn::StoreU(f32_1_0, df32, dest + my_out_idx);
             my_out_idx += NF32;
-            hn::StoreU(f32_hi_hi, df32, dest + my_out_idx);
+            hn::StoreU(f32_1_1, df32, dest + my_out_idx);
             my_out_idx += NF32;
         } else {
             size_t rem_out_f32s = meta.remaining() * 8;
 
             size_t to_write = std::min(rem_out_f32s, NF32);
-            hn::StoreN(f32_lo_lo, df32, dest + my_out_idx, to_write);
+            hn::StoreN(f32_0_0, df32, dest + my_out_idx, to_write);
             rem_out_f32s -= to_write;
             my_out_idx += to_write;
 
             to_write = std::min(rem_out_f32s, NF32);
-            hn::StoreN(f32_lo_hi, df32, dest + my_out_idx, to_write);
+            hn::StoreN(f32_0_1, df32, dest + my_out_idx, to_write);
             rem_out_f32s -= to_write;
             my_out_idx += to_write;
 
             to_write = std::min(rem_out_f32s, NF32);
-            hn::StoreN(f32_hi_lo, df32, dest + my_out_idx, to_write);
+            hn::StoreN(f32_1_0, df32, dest + my_out_idx, to_write);
             rem_out_f32s -= to_write;
             my_out_idx += to_write;
 
             to_write = rem_out_f32s;
-            hn::StoreN(f32_hi_hi, df32, dest + my_out_idx, to_write);
+            hn::StoreN(f32_1_1, df32, dest + my_out_idx, to_write);
             my_out_idx += to_write;
         }
     };
@@ -551,6 +553,119 @@ struct UnpackBitsInvoker<float, BigEndian> {
 
             to_write = rem_out_f32s;
             hn::StoreN(f32_hi_hi, df32, dest + my_out_idx, to_write);
+            my_out_idx += to_write;
+        }
+    };
+};
+
+template <bool BigEndian>
+struct UnpackBitsInvoker<double, BigEndian> {
+    template <InvocationMeta MetaT, typename DI8>
+    HWY_API void invoke(MetaT meta, DI8 di8, const uint8_t* HWY_RESTRICT src_u8, double* HWY_RESTRICT dest,
+                        const size_t NB, const size_t my_i, size_t& my_out_idx) noexcept {
+        const hn::RepartitionToWide<decltype(di8)>  di16;
+        const hn::RepartitionToWide<decltype(di16)> di32;
+        const hn::RepartitionToWide<decltype(di32)> di64;
+        const hn::RebindToFloat<decltype(di64)>     df64;
+        const hn::Half<decltype(di8)>               di8_half;
+        const hn::Half<decltype(di16)>              di16_half;
+        const hn::Half<decltype(di32)>              di32_half;
+
+        using VecF64 = hn::VFromD<decltype(df64)>;
+
+        HWY_LANES_CONSTEXPR size_t NF64 = hn::Lanes(df64);
+
+        auto bm = hn::LoadMaskBits(di8, src_u8 + my_i + (NB * meta.unroll_index()));
+        if constexpr (BigEndian) {
+            bm = hn::MaskFromVec(hn::Reverse8(di8, hn::VecFromMask(di8, bm)));
+        }
+
+        auto bm_0 = hn::PromoteMaskTo(di16, di8_half, hn::LowerHalfOfMask(di8_half, bm));
+        auto bm_1 = hn::PromoteMaskTo(di16, di8_half, hn::UpperHalfOfMask(di8_half, bm));
+
+        auto bm_0_0 = hn::PromoteMaskTo(di32, di16_half, hn::LowerHalfOfMask(di16_half, bm_0));
+        auto bm_0_1 = hn::PromoteMaskTo(di32, di16_half, hn::UpperHalfOfMask(di16_half, bm_0));
+        auto bm_1_0 = hn::PromoteMaskTo(di32, di16_half, hn::LowerHalfOfMask(di16_half, bm_1));
+        auto bm_1_1 = hn::PromoteMaskTo(di32, di16_half, hn::UpperHalfOfMask(di16_half, bm_1));
+
+        // We shall count our blessings that there's no float128 to support.
+        auto bm_0_0_0 = hn::PromoteMaskTo(df64, di32_half, hn::LowerHalfOfMask(di32_half, bm_0_0));
+        auto bm_0_0_1 = hn::PromoteMaskTo(df64, di32_half, hn::UpperHalfOfMask(di32_half, bm_0_0));
+        auto bm_0_1_0 = hn::PromoteMaskTo(df64, di32_half, hn::LowerHalfOfMask(di32_half, bm_0_1));
+        auto bm_0_1_1 = hn::PromoteMaskTo(df64, di32_half, hn::UpperHalfOfMask(di32_half, bm_0_1));
+        auto bm_1_0_0 = hn::PromoteMaskTo(df64, di32_half, hn::LowerHalfOfMask(di32_half, bm_1_0));
+        auto bm_1_0_1 = hn::PromoteMaskTo(df64, di32_half, hn::UpperHalfOfMask(di32_half, bm_1_0));
+        auto bm_1_1_0 = hn::PromoteMaskTo(df64, di32_half, hn::LowerHalfOfMask(di32_half, bm_1_1));
+        auto bm_1_1_1 = hn::PromoteMaskTo(df64, di32_half, hn::UpperHalfOfMask(di32_half, bm_1_1));
+
+        VecF64 f64_0_0_0 = hn::IfThenElseZero(bm_0_0_0, hn::Set(df64, 1.0));
+        VecF64 f64_0_0_1 = hn::IfThenElseZero(bm_0_0_1, hn::Set(df64, 1.0));
+        VecF64 f64_0_1_0 = hn::IfThenElseZero(bm_0_1_0, hn::Set(df64, 1.0));
+        VecF64 f64_0_1_1 = hn::IfThenElseZero(bm_0_1_1, hn::Set(df64, 1.0));
+        VecF64 f64_1_0_0 = hn::IfThenElseZero(bm_1_0_0, hn::Set(df64, 1.0));
+        VecF64 f64_1_0_1 = hn::IfThenElseZero(bm_1_0_1, hn::Set(df64, 1.0));
+        VecF64 f64_1_1_0 = hn::IfThenElseZero(bm_1_1_0, hn::Set(df64, 1.0));
+        VecF64 f64_1_1_1 = hn::IfThenElseZero(bm_1_1_1, hn::Set(df64, 1.0));
+        // Before anyone asks, no you can't have arrays of SIMD vector registers.
+        // One good reason is that their size is not known at compile-time for SVE/SVE2.
+        if constexpr (!meta.is_partial()) {
+            hn::StoreU(f64_0_0_0, df64, dest + my_out_idx);
+            my_out_idx += NF64;
+            hn::StoreU(f64_0_0_1, df64, dest + my_out_idx);
+            my_out_idx += NF64;
+            hn::StoreU(f64_0_1_0, df64, dest + my_out_idx);
+            my_out_idx += NF64;
+            hn::StoreU(f64_0_1_1, df64, dest + my_out_idx);
+            my_out_idx += NF64;
+            hn::StoreU(f64_1_0_0, df64, dest + my_out_idx);
+            my_out_idx += NF64;
+            hn::StoreU(f64_1_0_1, df64, dest + my_out_idx);
+            my_out_idx += NF64;
+            hn::StoreU(f64_1_1_0, df64, dest + my_out_idx);
+            my_out_idx += NF64;
+            hn::StoreU(f64_1_1_1, df64, dest + my_out_idx);
+            my_out_idx += NF64;
+        } else {
+            size_t rem_out_f64s = meta.remaining() * 8;
+
+            size_t to_write = std::min(rem_out_f64s, NF64);
+            hn::StoreN(f64_0_0_0, df64, dest + my_out_idx, to_write);
+            rem_out_f64s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f64s, NF64);
+            hn::StoreN(f64_0_0_1, df64, dest + my_out_idx, to_write);
+            rem_out_f64s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f64s, NF64);
+            hn::StoreN(f64_0_1_0, df64, dest + my_out_idx, to_write);
+            rem_out_f64s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f64s, NF64);
+            hn::StoreN(f64_0_1_1, df64, dest + my_out_idx, to_write);
+            rem_out_f64s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f64s, NF64);
+            hn::StoreN(f64_1_0_0, df64, dest + my_out_idx, to_write);
+            rem_out_f64s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f64s, NF64);
+            hn::StoreN(f64_1_0_1, df64, dest + my_out_idx, to_write);
+            rem_out_f64s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f64s, NF64);
+            hn::StoreN(f64_1_1_0, df64, dest + my_out_idx, to_write);
+            rem_out_f64s -= to_write;
+            my_out_idx += to_write;
+
+            to_write = std::min(rem_out_f64s, NF64);
+            hn::StoreN(f64_1_1_1, df64, dest + my_out_idx, to_write);
+            rem_out_f64s -= to_write;
             my_out_idx += to_write;
         }
     };
@@ -650,6 +765,13 @@ void my_unpack_bits_f32(const int8_t* src_bits, float* dest, size_t sz, bool big
         my_hwy_unpack_bits<float, true, 1>(src_bits, dest, sz);
     }
 }
+void my_unpack_bits_f64(const int8_t* src_bits, double* dest, size_t sz, bool big_endian) noexcept {
+    if (!big_endian) {
+        my_hwy_unpack_bits<double, false, 1>(src_bits, dest, sz);
+    } else {
+        my_hwy_unpack_bits<double, true, 1>(src_bits, dest, sz);
+    }
+}
 TargetInfo my_target_info() noexcept {
     return {"Highway", my_hwy_target_name(), vector_byte_size()};
 }
@@ -679,6 +801,7 @@ public:
         ft.unpack_bits_to_8x_i8 = my_unpack_bits_i8;
         ft.unpack_bits_to_8x_bf16 = my_unpack_bits_bf16;
         ft.unpack_bits_to_8x_f32 = my_unpack_bits_f32;
+        ft.unpack_bits_to_8x_f64 = my_unpack_bits_f64;
 #if HWY_TARGET == HWY_AVX2 || HWY_TARGET == HWY_AVX3
         // AVX2 and AVX3 do not have dedicated vector popcount instructions, so the Highway "emulation"
         // ends up being slower in practice than the baseline one using 4x pipelined POPCNT.
