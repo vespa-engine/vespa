@@ -1831,6 +1831,8 @@
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactor(java.lang.Double)",
       "public com.yahoo.config.model.api.OnnxModelOptions withModelConfigOverride(com.yahoo.config.FileReference)",
       "public com.yahoo.config.model.api.OnnxModelOptions withOptimizeModel(java.lang.Boolean)",
+      "public java.util.List paddingBuckets()",
+      "public com.yahoo.config.model.api.OnnxModelOptions withPaddingBuckets(java.util.List)",
       "public java.util.Optional executionMode()",
       "public java.util.Optional interOpThreads()",
       "public java.util.Optional intraOpThreads()",
@@ -1843,7 +1845,8 @@
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
-      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)"
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.List)"
     ],
     "fields" : [ ]
   },

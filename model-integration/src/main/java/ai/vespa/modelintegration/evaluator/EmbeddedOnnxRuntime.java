@@ -149,7 +149,8 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
     }
 
     private ReferencedOrtSession getOrCreateSession(ModelPathOrData model, OnnxEvaluatorOptions vespaOpts, boolean loadCuda) throws OrtException {
-        var sessionId = new OrtSessionId(model.calculateHash(), vespaOpts, loadCuda);
+        // Padding is done outside the session, so options differing only in it share one
+        var sessionId = new OrtSessionId(model.calculateHash(), vespaOpts.withoutPadding(), loadCuda);
         synchronized (monitor) {
             var existingSession = sessions.get(sessionId);
             if (existingSession != null) {

@@ -123,6 +123,7 @@ public class Validation {
         new EmbedExpressionValidator().validate(execution);
         new MaxDocumentSizeValidator().validate(execution);
         new QuantizedTensorValidator().validate(execution);
+        new PaddingBucketsValidator().validate(execution);
     }
 
     private static void validateFirstTimeDeployment(Execution execution) {

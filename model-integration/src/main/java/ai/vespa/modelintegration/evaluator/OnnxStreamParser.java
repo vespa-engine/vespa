@@ -18,10 +18,24 @@ import java.util.Set;
  * Parses an ONNX model from a stream to extract information without loading the entire model into memory.
  *
  * @author bjorncs
+ * @author ingridhabrekke
  */
 public class OnnxStreamParser {
 
     private OnnxStreamParser() {}
+
+    /**
+     * Operators that quantize their input with a scale computed from the input itself, at inference time.
+     * In a batch, that input holds every request, so each request's result depends on the others in the batch.
+     * The last two are ONNX Runtime's fused versions, found in models saved after optimization.
+     */
+    private static final Set<String> DYNAMIC_QUANTIZATION_OPERATORS =
+            Set.of("DynamicQuantizeLinear", "DynamicQuantizeMatMul", "DynamicQuantizeLSTM");
+
+    /** Returns whether the model quantizes values dynamically, see {@link #DYNAMIC_QUANTIZATION_OPERATORS}. */
+    public static boolean usesDynamicQuantization(Path model) throws IOException {
+        return getOperatorTypes(model).stream().anyMatch(DYNAMIC_QUANTIZATION_OPERATORS::contains);
+    }
 
     /**
      * Finds all external data locations in an ONNX model by streaming the model file.
@@ -48,6 +62,97 @@ public class OnnxStreamParser {
                 }
             }
             return Set.copyOf(externalDataPaths);
+        }
+    }
+
+    /**
+     * Finds the operator types used in an ONNX model by streaming the model file,
+     * including the nodes of subgraphs and model-local functions.
+     *
+     * @return the operator types of the nodes in the provided ONNX model, e.g. "MatMul"
+     */
+    public static Set<String> getOperatorTypes(Path model) throws IOException {
+        try (var bis = new BufferedInputStream(Files.newInputStream(model))) {
+            return getOperatorTypes(CodedInputStream.newInstance(bis));
+        }
+    }
+
+    private static Set<String> getOperatorTypes(CodedInputStream stream) throws IOException {
+        var operatorTypes = new HashSet<String>();
+        while (!stream.isAtEnd()) {
+            var tag = stream.readTag();
+            if (WireFormat.getTagFieldNumber(tag) == 0) break;
+            switch (WireFormat.getTagFieldNumber(tag)) {
+                case Onnx.ModelProto.GRAPH_FIELD_NUMBER:
+                    parseDelimited(stream, s -> parseGraphOperatorTypes(s, operatorTypes));
+                    break;
+                case Onnx.ModelProto.FUNCTIONS_FIELD_NUMBER:
+                    parseDelimited(stream, s -> parseFunctionOperatorTypes(s, operatorTypes));
+                    break;
+                default:
+                    stream.skipField(tag);
+                    break;
+            }
+        }
+        return Set.copyOf(operatorTypes);
+    }
+
+    private static void parseGraphOperatorTypes(CodedInputStream stream, Set<String> operatorTypes) throws IOException {
+        while (!stream.isAtEnd()) {
+            var tag = stream.readTag();
+            if (WireFormat.getTagFieldNumber(tag) == 0) return;
+            if (WireFormat.getTagFieldNumber(tag) == Onnx.GraphProto.NODE_FIELD_NUMBER) {
+                parseDelimited(stream, s -> parseNodeOperatorTypes(s, operatorTypes));
+            } else {
+                stream.skipField(tag);
+            }
+        }
+    }
+
+    private static void parseFunctionOperatorTypes(CodedInputStream stream, Set<String> operatorTypes) throws IOException {
+        while (!stream.isAtEnd()) {
+            var tag = stream.readTag();
+            if (WireFormat.getTagFieldNumber(tag) == 0) return;
+            if (WireFormat.getTagFieldNumber(tag) == Onnx.FunctionProto.NODE_FIELD_NUMBER) {
+                parseDelimited(stream, s -> parseNodeOperatorTypes(s, operatorTypes));
+            } else {
+                stream.skipField(tag);
+            }
+        }
+    }
+
+    private static void parseNodeOperatorTypes(CodedInputStream stream, Set<String> operatorTypes) throws IOException {
+        while (!stream.isAtEnd()) {
+            var tag = stream.readTag();
+            if (WireFormat.getTagFieldNumber(tag) == 0) return;
+            switch (WireFormat.getTagFieldNumber(tag)) {
+                case Onnx.NodeProto.OP_TYPE_FIELD_NUMBER:
+                    operatorTypes.add(stream.readString());
+                    break;
+                case Onnx.NodeProto.ATTRIBUTE_FIELD_NUMBER:
+                    // Attributes may hold subgraphs, e.g. the branches of an If node
+                    parseDelimited(stream, s -> parseAttributeOperatorTypes(s, operatorTypes));
+                    break;
+                default:
+                    stream.skipField(tag);
+                    break;
+            }
+        }
+    }
+
+    private static void parseAttributeOperatorTypes(CodedInputStream stream, Set<String> operatorTypes) throws IOException {
+        while (!stream.isAtEnd()) {
+            var tag = stream.readTag();
+            if (WireFormat.getTagFieldNumber(tag) == 0) return;
+            switch (WireFormat.getTagFieldNumber(tag)) {
+                case Onnx.AttributeProto.G_FIELD_NUMBER:
+                case Onnx.AttributeProto.GRAPHS_FIELD_NUMBER:
+                    parseDelimited(stream, s -> parseGraphOperatorTypes(s, operatorTypes));
+                    break;
+                default:
+                    stream.skipField(tag);
+                    break;
+            }
         }
     }
 

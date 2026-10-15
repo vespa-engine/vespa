@@ -5,6 +5,7 @@ import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import ai.vespa.modelintegration.evaluator.OnnxPadder;
 import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.google.protobuf.TextFormat;
 import com.yahoo.component.AbstractComponent;
@@ -25,6 +26,7 @@ import net.jpountz.xxhash.XXHashFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,6 +47,7 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  * @author glebashnik
+ * @author ingridhabrekke
  */
 public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime {
     private static final Logger log = Logger.getLogger(TritonOnnxRuntime.class.getName());
@@ -104,11 +107,27 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var modelReference = referenceModel(modelName, modelPath, resolvedOptions);
 
         try {
-            return new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit);
+            OnnxEvaluator evaluator = new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit);
+            
+            if (options.padding().isPresent() && shouldPadForBatching(modelPath, resolvedOptions))
+                evaluator = OnnxPadder.of(options.padding().get(), evaluator, modelName);
+
+            return evaluator;
         } catch (RuntimeException e) {
             modelReference.close(); // Don't leak the model when creating the evaluator fails.
             throw e;
         }
+    }
+
+    /**
+     * Returns whether to pad inputs, so that Triton's dynamic batcher can combine requests
+     * of different lengths. Padding is useful for batching on a GPU.
+     * With a model config override the batching setup is not known here, so padding is used as configured.
+     * Never for dynamic quantization, whose results padding changes.
+     */
+    static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options) {
+        return (options.modelConfigOverride().isPresent() || OnnxPadder.isBatchingOnGpu(options))
+               && ! OnnxPadder.isDynamicallyQuantized(modelPath);
     }
 
     // Returns a reference to the model, first copying and loading it into Triton if needed.
@@ -219,7 +238,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var extensionIndex = fileName.lastIndexOf('.');
         var baseName = extensionIndex < 0 ? fileName : fileName.substring(0, extensionIndex);
         var modelHash = ModelPathOrData.of(modelPath).calculateHash();
-        var optionsHash = options.calculateHash();
+        var optionsHash = hashOptions(options);
         // Hash a fixed-width encoding of the model contents, options, and session-sharing setting.
         var identity = ByteBuffer.allocate(2 * Long.BYTES + Byte.BYTES)
                 .putLong(modelHash)
@@ -228,6 +247,24 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 .array();
         var combinedHash = XXHashFactory.fastestInstance().hash64().hash(identity, 0, identity.length, 0);
         return baseName + "_" + Long.toHexString(combinedHash); // add hash to avoid conflicts
+    }
+
+    /**
+     * Hashes the options that are part of model configuration in Triton.
+     */
+    private static long hashOptions(OnnxEvaluatorOptions options) {
+        var encoding = "OnnxEvaluatorOptions[executionMode=" + options.executionMode() +
+                       ", interOpThreads=" + options.interOpThreads() +
+                       ", intraOpThreads=" + options.intraOpThreads() +
+                       ", gpuDeviceNumber=" + options.gpuDeviceNumber() +
+                       ", gpuDeviceRequired=" + options.gpuDeviceRequired() +
+                       ", optimizeModel=" + options.optimizeModel() +
+                       ", batchingMaxSize=" + options.batchingMaxSize() +
+                       ", numModelInstances=" + options.numModelInstances() +
+                       ", modelConfigOverride=" + options.modelConfigOverride() +
+                       ", availableProcessors=" + options.availableProcessors() + "]";
+        var bytes = encoding.getBytes(StandardCharsets.UTF_8);
+        return XXHashFactory.fastestInstance().hash64().hash(bytes, 0, bytes.length, 0);
     }
 
     private Path getModelDirInModelRepository(String modelName) {
