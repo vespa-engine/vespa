@@ -233,8 +233,5 @@ inline bool Logger::wants(LogLevel level) {
 
 #define LOG_ABORT(msg) (ns_log::log_abort(msg, __FILE__, __LINE__))
 
-#ifndef NDEBUG
+// LOG_ASSERT is always active, regardless of NDEBUG
 #define LOG_ASSERT(expr) ((void)((expr) ? 0 : (ns_log::log_assert_fail(__STRING(expr), __FILE__, __LINE__), 0)))
-#else
-#define LOG_ASSERT(expr)
-#endif // #ifndef NDEBUG

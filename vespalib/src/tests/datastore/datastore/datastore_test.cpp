@@ -644,11 +644,9 @@ TEST(DataStoreTest, hold_to_active_then_held_buffer_is_ok) {
     test_free_element_to_held_buffer(true);
 }
 
-#ifndef NDEBUG
 TEST(DataStoreDeathTest, hold_to_held_buffer_is_not_ok) {
     test_free_element_to_held_buffer(false);
 }
-#endif
 
 } // namespace vespalib::datastore
 

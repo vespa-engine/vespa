@@ -5,8 +5,8 @@
 
 #include <dlfcn.h>
 #include <malloc.h>
+#include <vespamalloc/malloc/check_require.h>
 
-#include <cassert>
 #include <functional>
 
 #include <vespa/log/log.h>
@@ -268,7 +268,7 @@ TEST(NewTest, realloc_from_large_to_small_constrains_copied_memory_extent) {
     constexpr size_t new_sz = 1_Ki;
     ASSERT_EQ(1, mallopt(M_MMAP_THRESHOLD, 1_Mi));
     char* buf = static_cast<char*>(malloc(old_sz));
-    assert(buf);
+    CHECK(buf);
     memset(buf, 0x5b, old_sz);
     // This will SIGSEGV (with a very high likelihood) if we don't constrain the copied
     // memory size since it will attempt to write outside a valid mapped region.
@@ -282,7 +282,7 @@ TEST(NewTest, realloc_from_large_to_small_constrains_copied_memory_extent) {
 void verify_alignment(void* ptr, size_t align, size_t min_sz) {
     EXPECT_NE(ptr, nullptr);
     EXPECT_EQ(0u, size_t(ptr) & (align - 1));
-    assert(0ul == (size_t(ptr) & (align - 1)));
+    CHECK(0ul == (size_t(ptr) & (align - 1)));
     EXPECT_GE(malloc_usable_size(ptr), min_sz);
     free(ptr);
 }

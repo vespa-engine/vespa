@@ -8,6 +8,7 @@ vespa_add_executable(vespamalloc_thread_test_app TEST
 vespa_add_executable(vespamalloc_racemanythreads_test_app
     SOURCES
     racemanythreads.cpp
+    ../../vespamalloc/malloc/check_require.cpp
     DEPENDS
     GTest::gtest
 )
