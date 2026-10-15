@@ -63,8 +63,8 @@ public class HashExpression extends Expression  {
     }
 
     private boolean isHashCompatible(DataType type) {
-        if (type.equals(DataType.INT)) return true;
-        if (type.equals(DataType.LONG)) return true;
+        if (DataType.INT.isAssignableTo(type)) return true;
+        if (DataType.LONG.isAssignableTo(type)) return true;
         return false;
     }
 
