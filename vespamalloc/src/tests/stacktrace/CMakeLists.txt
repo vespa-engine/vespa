@@ -2,6 +2,7 @@
 vespa_add_executable(vespamalloc_stacktrace_test_app TEST
     SOURCES
     stacktrace.cpp
+    ../../vespamalloc/malloc/check_require.cpp
     DEPENDS
 )
 vespa_add_test(
