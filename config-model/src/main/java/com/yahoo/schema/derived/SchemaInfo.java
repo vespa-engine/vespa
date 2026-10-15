@@ -91,6 +91,7 @@ public final class SchemaInfo extends Derived {
     public void getConfig(SchemaInfoConfig.Builder builder) {
         var schemaBuilder = new SchemaInfoConfig.Schema.Builder();
         schemaBuilder.name(schema.getName());
+        schema.getExplanation().ifPresent(schemaBuilder::explanation);
         addFieldsConfig(schemaBuilder);
         addFieldSetConfig(schemaBuilder);
         addSummaryConfig(schemaBuilder);
@@ -132,6 +133,7 @@ public final class SchemaInfo extends Derived {
         fieldBuilder.attribute(field.doesAttributing());
         fieldBuilder.index(field.doesIndexing());
         fieldBuilder.bitPacked(field.doesBitPacking());
+        field.getExplanation().ifPresent(fieldBuilder::explanation);
         for (var fastMapFields : field.getFastMapSearches()) {
             fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
                                                      .lookupName(fastMapFields.lookupName())
@@ -208,6 +210,7 @@ public final class SchemaInfo extends Derived {
                     .hasRankFeatures(rankProfile.hasRankFeatures())
                     .significance(new SchemaInfoConfig.Schema.Rankprofile.Significance.Builder()
                                           .useModel(rankProfile.useSignificanceModel()));
+            rankProfile.explanation().ifPresent(rankProfileConfig::explanation);
             rankProfile.getMatchPhaseMaxHits().ifPresent(rankProfileConfig::matchPhaseMaxHits);
             rankProfile.getTotalMatchPhaseMaxHits().ifPresent(rankProfileConfig::totalMatchPhaseMaxHits);
             rankProfile.getTotalKeepRankCount().ifPresent(rankProfileConfig::totalKeepRankCount);
@@ -266,9 +269,11 @@ public final class SchemaInfo extends Derived {
         private final boolean useSignificanceModel;
         private final Map<Reference, RankProfile.Input> inputs;
         private final List<String> sortFeatures;
+        private final Optional<String> explanation;
 
         public RankProfileInfo(RankProfile profile) {
             this.name = profile.name();
+            this.explanation = profile.getExplanation();
             this.hasSummaryFeatures =  ! profile.getSummaryFeatures().isEmpty();
             this.hasRankFeatures =  ! profile.getRankFeatures().isEmpty();
             this.inputs = profile.inputs();
@@ -296,6 +301,7 @@ public final class SchemaInfo extends Derived {
         public boolean useSignificanceModel() { return useSignificanceModel; }
         public Map<Reference, RankProfile.Input> inputs() { return inputs; }
         public List<String> sortFeatures() { return sortFeatures; }
+        public Optional<String> explanation() { return explanation; }
 
     }
 

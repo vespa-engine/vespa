@@ -1,7 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema;
 
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.schema.derived.SchemaInfo;
+import com.yahoo.schema.derived.Summaries;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.search.config.SchemaInfoConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -95,6 +100,68 @@ public class ExplanationTestCase {
         assertEquals(Optional.of("Semantic similarity: Use for natural language queries."),
                      registry.get(schema, "vector").getExplanation());
         assertEquals(Optional.empty(), registry.get(schema, "default").getExplanation());
+    }
+
+    @Test
+    void testExplanationsInSchemaInfoConfig() throws ParseException {
+        var registry = new RankProfileRegistry();
+        var builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+                          schema parent {
+                              document parent {
+                                  field name type string {
+                                      indexing: attribute
+                                      explanation: The name of the parent
+                                  }
+                              }
+                          }
+                          """);
+        builder.addSchema("""
+                          schema child {
+                              explanation: Children, each with a parent
+                              document child {
+                                  field parent_ref type reference<parent> {
+                                      indexing: attribute
+                                  }
+                                  field title type string {
+                                      indexing: index
+                                      explanation {
+                                          The title.
+                                          Use for text matching.
+                                      }
+                                  }
+                              }
+                              import field parent_ref.name as parent_name {}
+                              rank-profile text {
+                                  explanation: Text relevance
+                                  first-phase {
+                                      expression: nativeRank(title)
+                                  }
+                              }
+                          }
+                          """);
+        builder.build(true);
+        Schema schema = builder.getSchema("child");
+        var schemaInfo = new SchemaInfo(schema, "index", registry,
+                                        new Summaries(schema, new BaseDeployLogger(), new TestProperties()));
+        var configBuilder = new SchemaInfoConfig.Builder();
+        schemaInfo.getConfig(configBuilder);
+        var config = configBuilder.build().schema(0);
+
+        assertEquals("Children, each with a parent", config.explanation());
+        assertEquals("The title.\nUse for text matching.", fieldConfig("title", config).explanation());
+        assertEquals("", fieldConfig("parent_ref", config).explanation());
+        assertEquals("The name of the parent", fieldConfig("parent_name", config).explanation());
+        assertEquals("Text relevance", rankProfileConfig("text", config).explanation());
+        assertEquals("", rankProfileConfig("default", config).explanation());
+    }
+
+    private SchemaInfoConfig.Schema.Field fieldConfig(String name, SchemaInfoConfig.Schema schema) {
+        return schema.field().stream().filter(field -> field.name().equals(name)).findFirst().orElseThrow();
+    }
+
+    private SchemaInfoConfig.Schema.Rankprofile rankProfileConfig(String name, SchemaInfoConfig.Schema schema) {
+        return schema.rankprofile().stream().filter(profile -> profile.name().equals(name)).findFirst().orElseThrow();
     }
 
     @Test

@@ -557,6 +557,7 @@ public class SDField extends Field implements ImmutableSDField {
     public void setExplanation(String explanation) { this.explanation = explanation; }
 
     /** Returns the free text explanation of the content and usage of this field, if any. Explanations are not inherited. */
+    @Override
     public Optional<String> getExplanation() { return Optional.ofNullable(explanation); }
 
     /** Returns what kind of matching type should be applied. */

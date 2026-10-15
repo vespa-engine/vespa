@@ -9,6 +9,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
@@ -20,6 +21,7 @@ import java.util.Set;
 public class RankProfile {
 
     private final String      name;
+    private final Optional<String> explanation;
     private final boolean     hasSummaryFeatures;
     private final boolean     hasRankFeatures;
     private final boolean     useSignificanceModel;
@@ -35,6 +37,7 @@ public class RankProfile {
 
     private RankProfile(Builder builder) {
         this.name = builder.name;
+        this.explanation = Optional.ofNullable(builder.explanation);
         this.hasSummaryFeatures = builder.hasSummaryFeatures;
         this.hasRankFeatures = builder.hasRankFeatures;
         this.useSignificanceModel = builder.useSignificanceModel;
@@ -47,6 +50,9 @@ public class RankProfile {
     }
 
     public String name() { return name; }
+
+    /** Returns the free text explanation of what this rank profile does and when to use it, if any. */
+    public Optional<String> explanation() { return explanation; }
 
     /** Returns the schema owning this, or null if this is not added to a schema */
     public Schema schema() { return schema; }
@@ -90,6 +96,7 @@ public class RankProfile {
         if (o == this) return true;
         if ( ! (o instanceof RankProfile other)) return false;
         if ( ! other.name.equals(this.name)) return false;
+        if ( ! other.explanation.equals(this.explanation)) return false;
         if ( other.hasSummaryFeatures != this.hasSummaryFeatures) return false;
         if ( other.hasRankFeatures != this.hasRankFeatures) return false;
         if ( other.useSignificanceModel != this.useSignificanceModel) return false;
@@ -104,7 +111,7 @@ public class RankProfile {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, hasSummaryFeatures, hasRankFeatures, useSignificanceModel, inputs, keepRankCount, totalKeepRankCount, matchPhase, secondPhase, sortFeatures);
+        return Objects.hash(name, explanation, hasSummaryFeatures, hasRankFeatures, useSignificanceModel, inputs, keepRankCount, totalKeepRankCount, matchPhase, secondPhase, sortFeatures);
     }
 
     @Override
@@ -134,6 +141,7 @@ public class RankProfile {
     public static class Builder {
 
         private final String name;
+        private String explanation = null;
         private boolean hasSummaryFeatures = true;
         private boolean hasRankFeatures = true;
         private boolean useSignificanceModel = false;
@@ -146,6 +154,12 @@ public class RankProfile {
 
         public Builder(String name) {
             this.name = Objects.requireNonNull(name);
+        }
+
+        /** Sets a free text explanation of what this rank profile does and when to use it. */
+        public Builder setExplanation(String explanation) {
+            this.explanation = Objects.requireNonNull(explanation);
+            return this;
         }
 
         public Builder setHasSummaryFeatures(boolean hasSummaryFeatures) {

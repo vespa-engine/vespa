@@ -12,6 +12,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * An interface containing the non-mutating methods of {@link SDField}.
@@ -190,6 +191,10 @@ public interface ImmutableSDField {
     boolean hasFullIndexingDocprocRights();
 
     int getWeight();
+
+    /** Returns the free text explanation of the content and usage of this field, if any. */
+    Optional<String> getExplanation();
+
     int getLiteralBoost();
     RankType getRankType();
     Map<String, Index> getIndices();

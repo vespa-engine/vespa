@@ -20,12 +20,16 @@ class SchemaInfoConfigurer {
 
     static Schema toSchema(SchemaInfoConfig.Schema schemaInfoConfig) {
         Schema.Builder schemaBuilder = new Schema.Builder(schemaInfoConfig.name());
+        if ( ! schemaInfoConfig.explanation().isEmpty())
+            schemaBuilder.setExplanation(schemaInfoConfig.explanation());
 
         for (var fieldConfig : schemaInfoConfig.field()) {
             Field.Builder fieldBuilder = new Field.Builder(fieldConfig.name(), fieldConfig.type());
             fieldBuilder.setAttribute(fieldConfig.attribute());
             fieldBuilder.setIndex(fieldConfig.index());
             fieldBuilder.setBitPacked(fieldConfig.bitPacked());
+            if ( ! fieldConfig.explanation().isEmpty())
+                fieldBuilder.setExplanation(fieldConfig.explanation());
             for (var fastMapConfig : fieldConfig.fastMapSearchFields())
                 fieldBuilder.addFastMapSearch(new Field.FastMapSearchFields(fastMapConfig.lookupName(),
                                                                             fastMapConfig.keyField(),
@@ -42,6 +46,8 @@ class SchemaInfoConfigurer {
                     .setHasSummaryFeatures(profileConfig.hasSummaryFeatures())
                     .setHasRankFeatures(profileConfig.hasRankFeatures())
                     .setUseSignificanceModel(profileConfig.significance().useModel());
+            if ( ! profileConfig.explanation().isEmpty())
+                profileBuilder.setExplanation(profileConfig.explanation());
             if (profileConfig.keepRankCount() >= 0)
                 profileBuilder.setKeepRankCount(profileConfig.keepRankCount());
             if (profileConfig.totalKeepRankCount() >= 0)
