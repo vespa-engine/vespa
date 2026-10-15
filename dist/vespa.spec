@@ -32,7 +32,7 @@
 %define _create_vespa_service 1
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
-%global _vespa_abseil_cpp_version 20260817.0
+%global _vespa_abseil_cpp_version 20260817.0.1
 %global _vespa_build_dependencies_version 1.22.0
 %global _vespa_gtest_version 1.18.0
 %global _vespa_protobuf_version 7.36.2
