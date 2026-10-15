@@ -32,7 +32,7 @@ public class PaddingBucketsValidator implements Validator {
 
     /**
      * Returns why configured padding buckets will not be used, if so. The GPU device defaults to 0, so a model
-     * without onnx-gpu-device may be placed on a GPU. A model config override decides instead when given.
+     * without onnx-gpu-device may be placed on a GPU. With a model config override they are always used.
      */
     static Optional<String> reasonPaddingHasNoEffect(OnnxEvaluatorConfig config) {
         if (config.batching().paddingBuckets().isEmpty() || config.modelConfigOverride().isPresent()) return Optional.empty();

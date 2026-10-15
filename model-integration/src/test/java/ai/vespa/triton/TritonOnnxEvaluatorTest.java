@@ -2,8 +2,8 @@
 package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
-import ai.vespa.modelintegration.evaluator.SequencePadderOptions;
-import ai.vespa.modelintegration.evaluator.SequencePadder;
+import ai.vespa.modelintegration.evaluator.OnnxPadderOptions;
+import ai.vespa.modelintegration.evaluator.OnnxPadder;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.language.process.TimeoutException;
 import com.yahoo.tensor.IndexedTensor;
@@ -18,10 +18,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
@@ -52,9 +52,8 @@ class TritonOnnxEvaluatorTest {
             tritonClient.loadModel(MASKED_MODEL_NAME);
             var modelReference = mock(ResourceReference.class);
             var unpadded = new TritonOnnxEvaluator(MASKED_MODEL_NAME, modelReference, tritonClient, false);
-            var padded = new TritonOnnxEvaluator(MASKED_MODEL_NAME, modelReference, tritonClient, false,
-                                                 Optional.of(SequencePadderOptions.of(List.of(8, 16))));
-            assertEquals(SequencePadder.State.ENABLED, padded.padder().orElseThrow().state(), "Verified with a sample at construction");
+            var padded = OnnxPadder.of(OnnxPadderOptions.of(List.of(8, 16)), unpadded, MASKED_MODEL_NAME);
+            assertTrue(padded instanceof OnnxPadder, "Verified with a sample at construction");
 
             var inputs = inputs(List.of(101L, 2023L, 2003L, 102L));
             var expected = unpadded.evaluate(inputs);

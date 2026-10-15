@@ -2,8 +2,6 @@
 package ai.vespa.triton;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
-import ai.vespa.modelintegration.evaluator.SequencePadderOptions;
-import ai.vespa.modelintegration.evaluator.SequencePadder;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -11,8 +9,6 @@ import com.yahoo.tensor.TensorType;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +25,6 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     private final ResourceReference modelReference;
     private final TritonOnnxClient tritonClient;
     private final boolean isExplicitControl;
-    private final Optional<SequencePadder> padder; // Present when padding buckets are configured
 
     private TritonOnnxClient.ModelMetadata modelMetadata;
 
@@ -38,22 +33,11 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
             ResourceReference modelReference,
             TritonOnnxClient tritonClient,
             boolean isExplicitControl) {
-        this(modelName, modelReference, tritonClient, isExplicitControl, Optional.empty());
-    }
-
-    TritonOnnxEvaluator(
-            String modelName,
-            ResourceReference modelReference,
-            TritonOnnxClient tritonClient,
-            boolean isExplicitControl,
-            Optional<SequencePadderOptions> paddingOptions) {
         this.modelName = modelName;
         this.modelReference = modelReference;
         this.tritonClient = tritonClient;
         this.isExplicitControl = isExplicitControl;
         modelMetadata = tritonClient.getModelMetadata(modelName);
-        padder = paddingOptions.map(options -> SequencePadder.of(options, modelMetadata.inputs, modelMetadata.outputs, modelName));
-        padder.ifPresent(padder -> padder.verify((inputs, request) -> evaluate(inputs, request, null)));
     }
 
     @Override
@@ -63,20 +47,8 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
 
     @Override
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Duration timeout) {
-        if (padder.isPresent()) return padder.get().evaluate(inputs, (unpadded, request) -> evaluate(unpadded, request, timeout));
-        return reloadingOnFailure(() -> tritonClient.evaluate(modelName, modelMetadata, inputs, timeout));
-    }
-
-    private Map<String, Tensor> evaluate(Map<String, Tensor> inputs, SequencePadder.Request request, Duration timeout) {
-        if ( ! request.isPadded()) return reloadingOnFailure(() -> tritonClient.evaluate(modelName, modelMetadata, inputs, timeout));
-        var padder = this.padder.get();
-        var padded = padder.pad(inputs, request);
-        return reloadingOnFailure(() -> tritonClient.evaluate(modelName, modelMetadata, padded, timeout, padder, request));
-    }
-
-    private Map<String, Tensor> reloadingOnFailure(Supplier<Map<String, Tensor>> evaluation) {
         try {
-            return evaluation.get();
+            return tritonClient.evaluate(modelName, modelMetadata, inputs, timeout);
         } catch (TritonOnnxClient.TritonException e) {
             if (!isExplicitControl) {
                 throw e;
@@ -88,7 +60,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
                     e);
             tritonClient.loadUntilModelReady(modelName);
             modelMetadata = tritonClient.getModelMetadata(modelName);
-            return evaluation.get();
+            return tritonClient.evaluate(modelName, modelMetadata, inputs, timeout);
         }
     }
 
@@ -115,9 +87,6 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     public Map<String, TensorType> getOutputInfo() {
         return modelMetadata.outputs;
     }
-
-    // For unit testing
-    Optional<SequencePadder> padder() { return padder; }
 
     @Override
     public void close() {

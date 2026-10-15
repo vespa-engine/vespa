@@ -6,8 +6,7 @@ import ai.vespa.modelintegration.evaluator.EmbeddedOnnxRuntime;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
-import ai.vespa.modelintegration.evaluator.SequencePadder;
-import ai.vespa.modelintegration.evaluator.SequencePadderOptions;
+import ai.vespa.modelintegration.evaluator.OnnxPadder;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import ai.vespa.embedding.BertBaseEmbedder;
 import ai.vespa.embedding.ColBertEmbedder;
@@ -31,7 +30,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -131,8 +129,7 @@ class TritonPaddedEmbeddingTest {
                             padded.embed(text, new Embedder.Context(context), targetType));
             }
             assertEquals(1, triton.evaluators.size());
-            assertEquals(SequencePadder.State.ENABLED, triton.evaluators.get(0).padder().orElseThrow().state(),
-                         "Padding should be verified and in use after embedding");
+            assertTrue(triton.evaluators.get(0) instanceof OnnxPadder, "Padding should be verified and in use");
         } finally {
             triton.deconstruct();
         }
@@ -157,7 +154,7 @@ class TritonPaddedEmbeddingTest {
     /** The Triton runtime against the test container, keeping the evaluators it creates so that their padding can be inspected */
     private static class RecordingTritonRuntime extends TritonOnnxRuntime {
 
-        final List<TritonOnnxEvaluator> evaluators = new ArrayList<>();
+        final List<OnnxEvaluator> evaluators = new ArrayList<>();
 
         RecordingTritonRuntime() {
             super(new TritonConfig.Builder()
@@ -168,8 +165,8 @@ class TritonPaddedEmbeddingTest {
         }
 
         @Override
-        public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options, Optional<SequencePadderOptions> padding) {
-            var evaluator = (TritonOnnxEvaluator) super.evaluatorOf(modelPath, options, padding);
+        public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
+            var evaluator = super.evaluatorOf(modelPath, options);
             evaluators.add(evaluator);
             return evaluator;
         }

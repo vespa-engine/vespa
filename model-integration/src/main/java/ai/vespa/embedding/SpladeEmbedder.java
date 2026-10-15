@@ -3,7 +3,6 @@ package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
-import ai.vespa.modelintegration.evaluator.SequencePadderOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.modelintegration.utils.OnnxExternalDataResolver;
 import com.yahoo.api.annotations.Beta;
@@ -74,10 +73,9 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         this.tokenizer = builder.build();
 
         var resolver = new OnnxExternalDataResolver();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
-        var padding = SequencePadderOptions.of(onnxConfig).map(options -> options.withAttentionMask(attentionMaskName).withMaxLength(maxLength));
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig).withAttentionMask(attentionMaskName).withMaxLength(maxLength);
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
-        this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts, padding);
+        this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
         
         validateModel();
     }

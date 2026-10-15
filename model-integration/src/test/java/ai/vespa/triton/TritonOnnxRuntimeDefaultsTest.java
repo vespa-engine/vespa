@@ -3,7 +3,6 @@ package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
-import ai.vespa.modelintegration.evaluator.SequencePadderOptions;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.google.protobuf.TextFormat;
 import inference.ModelConfigOuterClass.ModelConfig;
@@ -53,8 +52,7 @@ class TritonOnnxRuntimeDefaultsTest {
     }
 
     private static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options) {
-        return TritonOnnxRuntime.shouldPadForBatching(modelPath, options,
-                                                      options.modelConfigOverride().map(TritonOnnxRuntime::parseModelConfigOverride));
+        return TritonOnnxRuntime.shouldPadForBatching(modelPath, options);
     }
 
     @Test
@@ -68,18 +66,11 @@ class TritonOnnxRuntimeDefaultsTest {
     }
 
     @Test
-    void padding_follows_the_model_config_override_when_there_is_one(@TempDir Path directory) throws IOException {
+    void padding_is_used_with_a_model_config_override_since_it_is_configured_on_purpose(@TempDir Path directory) throws IOException {
         String float32 = "src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx";
-        var batchingOnGpu = "max_batch_size: 8 dynamic_batching { } instance_group { kind: KIND_GPU }";
-        var batchingOnCpu = "max_batch_size: 8 dynamic_batching { } instance_group { kind: KIND_CPU }";
-        var batchingAnywhere = "max_batch_size: 8 dynamic_batching { }";
-        var noBatchingOnGpu = "max_batch_size: 8 instance_group { kind: KIND_GPU }";
-        var withoutBatchingOrGpu = options(16);
-        var withBatchingOnGpu = options(16).setBatchingMaxSize(8).setGpuDevice(0);
-        assertTrue(shouldPadForBatching(float32, withoutBatchingOrGpu.setModelConfigOverride(Optional.of(write(directory, batchingOnGpu))).build()));
-        assertTrue(shouldPadForBatching(float32, withoutBatchingOrGpu.setModelConfigOverride(Optional.of(write(directory, batchingAnywhere))).build()));
-        assertFalse(shouldPadForBatching(float32, withBatchingOnGpu.setModelConfigOverride(Optional.of(write(directory, batchingOnCpu))).build()));
-        assertFalse(shouldPadForBatching(float32, withBatchingOnGpu.setModelConfigOverride(Optional.of(write(directory, noBatchingOnGpu))).build()));
+        var override = Files.writeString(directory.resolve("override.pbtxt"), "max_batch_size: 8 instance_group { kind: KIND_CPU }");
+        assertTrue(shouldPadForBatching(float32, options(16).setModelConfigOverride(Optional.of(override)).build()),
+                   "The override owns the batching setup, so padding configured with it is used as is");
     }
 
     @Test
@@ -89,10 +80,6 @@ class TritonOnnxRuntimeDefaultsTest {
         config.batching.maxSize(8);
         assertTrue(shouldPadForBatching(float32, OnnxEvaluatorOptions.of(config.build(), 16)), "Should pad when no GPU device set, since Triton may place the model on a GPU.");
         assertFalse(shouldPadForBatching(float32, OnnxEvaluatorOptions.of(config.gpuDevice(-1).build(), 16)), "Should not pad on CPU (device -1).");
-    }
-
-    private static Path write(Path directory, String modelConfig) throws IOException {
-        return Files.writeString(directory.resolve("override.pbtxt"), modelConfig);
     }
 
     @Test
@@ -266,22 +253,6 @@ class TritonOnnxRuntimeDefaultsTest {
                                  generated.getInstanceGroup(0));
                 }
             }
-        } finally {
-            runtime.deconstruct();
-        }
-    }
-
-    @Test
-    void non_explicit_modes_do_not_read_an_override_for_padding(@TempDir Path directory) throws IOException {
-        var repository = Files.createDirectories(directory.resolve("repository"));
-        var config = Files.writeString(repository.resolve("config.pbtxt"), "externally managed config");
-        var client = mock(TritonOnnxClient.class);
-        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder().modelControlMode(TritonConfig.ModelControlMode.POLL)
-                .modelRepositoryPath(repository.toString()).build(), client);
-        try {
-            // No batching, so padding is dropped before the evaluator, and the unparseable override is never read
-            var options = options(8).setModelConfigOverride(Optional.of(config)).build();
-            assertDoesNotThrow(() -> runtime.evaluatorOf(MODEL_PATH, options, Optional.of(SequencePadderOptions.of(List.of(16)))).close());
         } finally {
             runtime.deconstruct();
         }

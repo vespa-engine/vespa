@@ -5,8 +5,7 @@ import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
-import ai.vespa.modelintegration.evaluator.SequencePadderOptions;
-import ai.vespa.modelintegration.evaluator.SequencePadder;
+import ai.vespa.modelintegration.evaluator.OnnxPadder;
 import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.google.protobuf.TextFormat;
 import com.yahoo.component.AbstractComponent;
@@ -27,13 +26,13 @@ import net.jpountz.xxhash.XXHashFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -98,11 +97,6 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        return evaluatorOf(modelPath, options, Optional.empty());
-    }
-
-    @Override
-    public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options, Optional<SequencePadderOptions> padding) {
         // Options are used as-is when this runtime does not generate the model config from them:
         // a supplied config override owns its instance configuration, and the other model control modes
         // leave loading to Triton.
@@ -110,15 +104,15 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 ? resolveInstanceCount(options, shareSessionBetweenInstances)
                 : options;
         var modelName = generateModelName(modelPath, resolvedOptions, shareSessionBetweenInstances);
-        // A config override is only read when this runtime loads the model, which it does in explicit mode
-        var override = isModelControlExplicit
-                       ? resolvedOptions.modelConfigOverride().map(TritonOnnxRuntime::parseModelConfigOverride)
-                       : Optional.<ModelConfig>empty();
-        var modelReference = referenceModel(modelName, modelPath, resolvedOptions, override);
+        var modelReference = referenceModel(modelName, modelPath, resolvedOptions);
 
         try {
-            if (padding.isPresent() && ! shouldPadForBatching(modelPath, resolvedOptions, override)) padding = Optional.empty();
-            return new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit, padding);
+            OnnxEvaluator evaluator = new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit);
+            
+            if (options.padding().isPresent() && shouldPadForBatching(modelPath, resolvedOptions))
+                evaluator = OnnxPadder.of(options.padding().get(), evaluator, modelName);
+
+            return evaluator;
         } catch (RuntimeException e) {
             modelReference.close(); // Don't leak the model when creating the evaluator fails.
             throw e;
@@ -126,29 +120,21 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     }
 
     /**
-     * Returns whether to pad inputs to configured buckets, so that Triton's dynamic batcher can combine requests
-     * of different lengths. Only when batching on a GPU, where a batch is cheaper per request; a requested GPU,
-     * including the default KIND_AUTO, is assumed used. A model config override decides instead when this runtime
-     * loaded the model from it. Never for dynamic quantization.
+     * Returns whether to pad inputs, so that Triton's dynamic batcher can combine requests
+     * of different lengths. Padding is useful for batching on a GPU.
+     * With a model config override the batching setup is not known here, so padding is used as configured.
+     * Never for dynamic quantization, whose results padding changes.
      */
-    static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options, Optional<ModelConfig> override) {
-        boolean batchingOnGpu = override.map(config -> config.hasDynamicBatching() && config.getMaxBatchSize() > 1 && mayUseGpu(config))
-                                        .orElse(SequencePadder.isBatchingOnGpu(options));
-        return batchingOnGpu && ! SequencePadder.isDynamicallyQuantized(modelPath);
-    }
-
-    // Triton places a model without instance groups on a GPU when there is one, like KIND_AUTO
-    private static boolean mayUseGpu(ModelConfig config) {
-        return config.getInstanceGroupList().isEmpty()
-               || config.getInstanceGroupList().stream().anyMatch(group -> group.getKind() != Kind.KIND_CPU);
+    static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options) {
+        return (options.modelConfigOverride().isPresent() || OnnxPadder.isBatchingOnGpu(options))
+               && ! OnnxPadder.isDynamicallyQuantized(modelPath);
     }
 
     // Returns a reference to the model, first copying and loading it into Triton if needed.
     // The map's per-key compute serializes this with a concurrent release of the same model.
-    private ResourceReference referenceModel(String modelName, String modelPath, OnnxEvaluatorOptions options,
-                                             Optional<ModelConfig> override) {
+    private ResourceReference referenceModel(String modelName, String modelPath, OnnxEvaluatorOptions options) {
         modelResources.compute(modelName, (key, modelResource) -> {
-            ensureModelReady(modelName, modelPath, options, override);
+            ensureModelReady(modelName, modelPath, options);
 
             if (modelResource == null) {
                 modelResource = new TritonModelResource();
@@ -193,8 +179,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     // Uses an already-ready model, or copies the model into the repository and loads it into Triton.
     // A load failure only fails the reconfiguration requesting this model; cleanup is best effort.
-    private void ensureModelReady(String modelName, String modelPath, OnnxEvaluatorOptions options,
-                                  Optional<ModelConfig> override) {
+    private void ensureModelReady(String modelName, String modelPath, OnnxEvaluatorOptions options) {
         if (!isModelControlExplicit) {
             return;
         }
@@ -208,7 +193,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
 
         try {
-            var modelConfig = createModelConfig(modelName, options, override);
+            var modelConfig = createModelConfig(modelName, options);
             copyModelFilesToModelRepository(modelName, modelPath, modelConfig);
             tritonClient.loadUntilModelReady(modelName);
         } catch (RuntimeException e) {
@@ -253,7 +238,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var extensionIndex = fileName.lastIndexOf('.');
         var baseName = extensionIndex < 0 ? fileName : fileName.substring(0, extensionIndex);
         var modelHash = ModelPathOrData.of(modelPath).calculateHash();
-        var optionsHash = options.calculateHash();
+        var optionsHash = hashOptions(options);
         // Hash a fixed-width encoding of the model contents, options, and session-sharing setting.
         var identity = ByteBuffer.allocate(2 * Long.BYTES + Byte.BYTES)
                 .putLong(modelHash)
@@ -262,6 +247,24 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 .array();
         var combinedHash = XXHashFactory.fastestInstance().hash64().hash(identity, 0, identity.length, 0);
         return baseName + "_" + Long.toHexString(combinedHash); // add hash to avoid conflicts
+    }
+
+    /**
+     * Hashes the options that are part of model configuration in Triton.
+     */
+    private static long hashOptions(OnnxEvaluatorOptions options) {
+        var encoding = "OnnxEvaluatorOptions[executionMode=" + options.executionMode() +
+                       ", interOpThreads=" + options.interOpThreads() +
+                       ", intraOpThreads=" + options.intraOpThreads() +
+                       ", gpuDeviceNumber=" + options.gpuDeviceNumber() +
+                       ", gpuDeviceRequired=" + options.gpuDeviceRequired() +
+                       ", optimizeModel=" + options.optimizeModel() +
+                       ", batchingMaxSize=" + options.batchingMaxSize() +
+                       ", numModelInstances=" + options.numModelInstances() +
+                       ", modelConfigOverride=" + options.modelConfigOverride() +
+                       ", availableProcessors=" + options.availableProcessors() + "]";
+        var bytes = encoding.getBytes(StandardCharsets.UTF_8);
+        return XXHashFactory.fastestInstance().hash64().hash(bytes, 0, bytes.length, 0);
     }
 
     private Path getModelDirInModelRepository(String modelName) {
@@ -311,10 +314,11 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         Files.setPosixFilePermissions(path, modelPerms);
     }
 
-    private String createModelConfig(String modelName, OnnxEvaluatorOptions options, Optional<ModelConfig> override) {
-        return override.map(config -> createModelConfigFromOverride(config, modelName))
-                       .orElseGet(() -> createModelConfigFromOptions(modelName, options))
-                       .toString();
+    private String createModelConfig(String modelName, OnnxEvaluatorOptions options) {
+        return options.modelConfigOverride()
+                .map(path -> createModelConfigFromFile(path, modelName))
+                .orElseGet(() -> createModelConfigFromOptions(modelName, options))
+                .toString();
     }
 
     // Takes options with a resolved instance count, see resolveInstanceCount().
@@ -416,7 +420,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                         .build());
     }
 
-    static ModelConfig parseModelConfigOverride(Path configPath) {
+    private String createModelConfigFromFile(Path configPath, String modelName) {
         String configStr;
 
         try {
@@ -425,14 +429,13 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             throw new IllegalArgumentException("Failed to read model config override file: " + configPath, e);
         }
 
+        ModelConfig config;
+
         try {
-            return TextFormat.parse(configStr, ModelConfig.class);
+            config = TextFormat.parse(configStr, ModelConfig.class);
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed to parse model config override:\n" + configStr, e);
         }
-    }
-
-    private String createModelConfigFromOverride(ModelConfig config, String modelName) {
 
         // Replace model name with the one that includes model content and options hash to avoid conflicts.
         var configBuilder = config.toBuilder().setName(modelName);

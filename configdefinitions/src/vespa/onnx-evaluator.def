@@ -20,7 +20,7 @@ batching.maxDelayMillis long default=0
 # Sequence lengths that the evaluator pads inputs up to (the smallest that fits), so that the runtime can batch
 # requests of different lengths. Empty by default: no padding.
 # Only used by the Triton runtime, with maxSize > 1 and a GPU device that is not -1 (unset counts as GPU),
-# or as set by a modelConfigOverride, and never for dynamically quantized models.
+# or always with a modelConfigOverride, and never for dynamically quantized models.
 # Padding costs compute and output transfer, especially for models with a large output per token (e.g. SPLADE).
 batching.paddingBuckets[] int
 

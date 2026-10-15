@@ -3,7 +3,6 @@ package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
-import ai.vespa.modelintegration.evaluator.SequencePadderOptions;
 import ai.vespa.modelintegration.utils.OnnxExternalDataResolver;
 import com.yahoo.api.annotations.Beta;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
@@ -115,10 +114,13 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         );
         
         var resolver = new OnnxExternalDataResolver();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
-        var padding = SequencePadderOptions.of(onnxConfig).map(options -> options.withAttentionMask(attentionMaskName).withMaxLength(Math.max(maxDocumentTokens, maxQueryTokens)));
+        // Queries are expanded to exactly maxQueryTokens, so that length is a bucket to avoid padding them further
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig)
+                                           .withAttentionMask(attentionMaskName)
+                                           .withPaddingBucket(maxQueryTokens)
+                                           .withMaxLength(Math.max(maxDocumentTokens, maxQueryTokens));
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
-        this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts, padding);
+        this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
         
         validateModel();
     }

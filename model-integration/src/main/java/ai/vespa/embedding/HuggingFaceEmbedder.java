@@ -3,7 +3,6 @@ package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
-import ai.vespa.modelintegration.evaluator.SequencePadderOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.modelintegration.utils.ModelPathHelper;
 import ai.vespa.modelintegration.utils.OnnxExternalDataResolver;
@@ -122,9 +121,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
         var resolver = new OnnxExternalDataResolver(modelHelper);
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
-        var padding = SequencePadderOptions.of(onnxConfig).map(options -> options.withAttentionMask(embedderConfig.transformerAttentionMask()).withMaxLength(maxLength));
-        evaluator = onnx.evaluatorOf(modelPath, onnxOpts, padding);
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig).withAttentionMask(embedderConfig.transformerAttentionMask()).withMaxLength(maxLength);
+        evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
 
         this.analysis = analyze(evaluator, embedderConfig);
         normalize = embedderConfig.normalize();

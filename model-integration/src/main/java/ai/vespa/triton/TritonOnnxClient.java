@@ -3,8 +3,6 @@ package ai.vespa.triton;
 
 import ai.onnxruntime.platform.Fp16Conversions;
 import ai.vespa.llm.clients.TritonConfig;
-import ai.vespa.modelintegration.evaluator.SequencePadder;
-import ai.vespa.modelintegration.evaluator.TensorDecoder;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import com.google.protobuf.ByteString;
 import com.yahoo.api.annotations.Beta;
@@ -313,48 +311,6 @@ public class TritonOnnxClient implements AutoCloseable {
     public Map<String, Tensor> evaluate(
             String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Set<String> outputNames,
             Duration timeout) {
-        var response = infer(modelName, modelMetadata, inputs, outputNames, timeout);
-        Map<String, Tensor> outputs = new HashMap<>();
-        for (int i = 0; i < response.getOutputsCount(); i++) {
-            var tritonTensor = response.getOutputs(i);
-            var name = OnnxImporter.asValidIdentifier(tritonTensor.getName());
-            var outputBuffer = ByteBuffer.wrap(response.getRawOutputContents(i).toByteArray())
-                    .order(ByteOrder.LITTLE_ENDIAN);
-            var tensor =
-                    createTensorFromRawOutput(outputBuffer, tritonTensor.getDatatype(), tritonTensor.getShapeList());
-            outputs.put(name, tensor);
-        }
-
-        return outputs;
-    }
-
-    /** Evaluates on inputs padded as the request says, slice the outputs while decoding them */
-    public Map<String, Tensor> evaluate(
-            String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Duration timeout,
-            SequencePadder padder, SequencePadder.Request request) {
-        var response = infer(modelName, modelMetadata, inputs, Set.of(), timeout);
-        Map<String, Tensor> outputs = new HashMap<>();
-        for (int i = 0; i < response.getOutputsCount(); i++) {
-            var tritonTensor = response.getOutputs(i);
-            var name = OnnxImporter.asValidIdentifier(tritonTensor.getName());
-            var outputBuffer = ByteBuffer.wrap(response.getRawOutputContents(i).toByteArray())
-                    .order(ByteOrder.LITTLE_ENDIAN);
-            var shape = tritonTensor.getShapeList().stream().mapToLong(Long::longValue).toArray();
-            var slice = padder.sliceFor(name, shape, request);
-            var tensor = slice == null
-                         ? createTensorFromRawOutput(outputBuffer, tritonTensor.getDatatype(), tritonTensor.getShapeList())
-                         : createUnpaddedTensorFromRawOutput(outputBuffer, tritonTensor.getDatatype(), tritonTensor.getShapeList(),
-                                                             padder.slicedType(toVespaTensorType(tritonTensor.getDatatype(), tritonTensor.getShapeList()), request),
-                                                             slice);
-            outputs.put(name, tensor);
-        }
-
-        return outputs;
-    }
-
-    private GrpcService.ModelInferResponse infer(
-            String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Set<String> outputNames,
-            Duration timeout) {
         Duration effectiveTimeout = timeout != null ? timeout : defaultTimeout;
         if (effectiveTimeout.toMillis() <= 0) {
             throw new TimeoutException(
@@ -372,7 +328,20 @@ public class TritonOnnxClient implements AutoCloseable {
                         .build()));
 
         var stub = grpcInferenceStub.withDeadlineAfter(effectiveTimeout.toMillis(), MILLISECONDS);
-        return invokeGrpc(stub, s -> s.modelInfer(requestBuilder.build()), "Failed to evaluate model");
+        var response = invokeGrpc(stub, s -> s.modelInfer(requestBuilder.build()), "Failed to evaluate model");
+
+        Map<String, Tensor> outputs = new HashMap<>();
+        for (int i = 0; i < response.getOutputsCount(); i++) {
+            var tritonTensor = response.getOutputs(i);
+            var name = OnnxImporter.asValidIdentifier(tritonTensor.getName());
+            var outputBuffer = ByteBuffer.wrap(response.getRawOutputContents(i).toByteArray())
+                    .order(ByteOrder.LITTLE_ENDIAN);
+            var tensor =
+                    createTensorFromRawOutput(outputBuffer, tritonTensor.getDatatype(), tritonTensor.getShapeList());
+            outputs.put(name, tensor);
+        }
+
+        return outputs;
     }
 
     @Override
@@ -541,24 +510,6 @@ public class TritonOnnxClient implements AutoCloseable {
                     builder.cellByDirectIndex(i, longBuffer.get(i));
                 }
             }
-            default -> throw new TritonException(Text.format("Unsupported type from ONNX output: %s", tritonType));
-        }
-        return builder.build();
-    }
-
-    private static Tensor createUnpaddedTensorFromRawOutput(ByteBuffer buffer, String tritonType, List<Long> shape,
-                                                            TensorType unpaddedType, SequencePadder.Slice slice) {
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        var builder = (IndexedTensor.BoundBuilder) Tensor.Builder.of(unpaddedType, DimensionSizes.of(unpaddedType));
-        switch (tritonType) {
-            case "BF16" -> TensorDecoder.read(buffer.asShortBuffer(), Fp16Conversions::bf16ToFloat, slice, builder);
-            case "FP16" -> TensorDecoder.read(buffer.asShortBuffer(), Fp16Conversions::fp16ToFloat, slice, builder);
-            case "FP32" -> TensorDecoder.read(buffer.asFloatBuffer(), slice, builder);
-            case "FP64" -> TensorDecoder.read(buffer.asDoubleBuffer(), slice, builder);
-            case "INT8" -> TensorDecoder.read(buffer, slice, builder);
-            case "INT16" -> TensorDecoder.read(buffer.asShortBuffer(), slice, builder);
-            case "INT32" -> TensorDecoder.read(buffer.asIntBuffer(), slice, builder);
-            case "INT64" -> TensorDecoder.read(buffer.asLongBuffer(), slice, builder);
             default -> throw new TritonException(Text.format("Unsupported type from ONNX output: %s", tritonType));
         }
         return builder.build();

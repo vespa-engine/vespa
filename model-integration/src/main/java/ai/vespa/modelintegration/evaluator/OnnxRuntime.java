@@ -4,7 +4,6 @@ package ai.vespa.modelintegration.evaluator;
 
 import ai.vespa.triton.TritonOnnxRuntime;
 
-import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -37,13 +36,4 @@ public interface OnnxRuntime {
         return evaluatorOf(modelPath, OnnxEvaluatorOptions.createDefault());
     }
     OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options);
-
-    /**
-     * Returns an evaluator which pads sequence inputs as the padding options say, if this runtime batches
-     * requests in a way padding helps with, see {@link SequencePadder}. Padding is only worthwhile with batching,
-     * so a runtime that does not batch ignores the options, which is the default.
-     */
-    default OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options, Optional<SequencePadderOptions> padding) {
-        return evaluatorOf(modelPath, options);
-    }
 }
