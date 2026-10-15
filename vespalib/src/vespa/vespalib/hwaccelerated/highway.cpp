@@ -393,7 +393,6 @@ struct UnpackBitsInvoker<hwy::bfloat16_t, BigEndian> {
                         const size_t NB, const size_t my_i, size_t& my_out_idx) noexcept {
         const hn::RepartitionToWide<decltype(di8)>        di16;
         const hn::Rebind<hwy::bfloat16_t, decltype(di16)> dbf16;
-        const hn::Half<decltype(di8)>                     di8_half;
 
         using VecBF16 = hn::VFromD<decltype(dbf16)>;
 
@@ -403,8 +402,8 @@ struct UnpackBitsInvoker<hwy::bfloat16_t, BigEndian> {
         if constexpr (BigEndian) {
             bm = hn::MaskFromVec(hn::Reverse8(di8, hn::VecFromMask(di8, bm)));
         }
-        auto bm_lo = hn::PromoteMaskTo(dbf16, di8_half, hn::LowerHalfOfMask(di8_half, bm));
-        auto bm_hi = hn::PromoteMaskTo(dbf16, di8_half, hn::UpperHalfOfMask(di8_half, bm));
+        auto bm_lo = MyPromoteLowerMaskTo(dbf16, di8, bm);
+        auto bm_hi = MyPromoteUpperMaskTo(dbf16, di8, bm);
 
         VecBF16 bf16_lo = hn::IfThenElseZero(bm_lo, hn::Set(dbf16, hwy::bfloat16_t(1)));
         VecBF16 bf16_hi = hn::IfThenElseZero(bm_hi, hn::Set(dbf16, hwy::bfloat16_t(1)));
