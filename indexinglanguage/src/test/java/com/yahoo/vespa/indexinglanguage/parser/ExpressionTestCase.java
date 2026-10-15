@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.parser;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.vespa.indexinglanguage.expressions.AbsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Base64DecodeExpression;
@@ -73,6 +74,7 @@ public class ExpressionTestCase {
 
     @Test
     public void requireThatAllExpressionTypesAreParsed() throws ParseException {
+        assertExpression(AbsExpression.class, "abs");
         assertExpression(ArithmeticExpression.class, "1 + 2");
         assertExpression(AttributeExpression.class, "attribute");
         assertExpression(Base64DecodeExpression.class, "base64decode");

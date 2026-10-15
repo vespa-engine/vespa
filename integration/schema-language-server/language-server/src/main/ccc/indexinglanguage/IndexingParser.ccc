@@ -176,6 +176,7 @@ TOKEN :
     <SCOLON: ";"> |
     <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
              ("'" (~["'"] | "\\'")* "'")> |
+    <ABS: "abs"> |
     <ATTRIBUTE: "attribute"> |
     <BASE64_DECODE: "base64decode"> |
     <BASE64_ENCODE: "base64encode"> |
@@ -347,7 +348,8 @@ Expression value() :
     Expression val;
 }
  
-    ( val = attributeExp()          |
+    ( val = absExp()                |
+      val = attributeExp()          |
       val = base64DecodeExp()       |
       val = base64EncodeExp()       |
       val = binarizeExp()           |
@@ -417,6 +419,12 @@ Expression value() :
       val = executionValueExp()     |
       ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
     { return val; }
+;
+
+Expression absExp() : { }
+ 
+    ( <ABS> )
+    { return new AbsExpression(); }
 ;
 
 Expression attributeExp() :
@@ -993,7 +1001,8 @@ String identifierStr() :
     String val;
 }
     ( val = stringLiteral()      |
-      ( <ATTRIBUTE>              |
+      ( <ABS>                    |
+        <ATTRIBUTE>              |
         <BASE64_DECODE>          |
         <BASE64_ENCODE>          |
         <BINARIZE>               |
