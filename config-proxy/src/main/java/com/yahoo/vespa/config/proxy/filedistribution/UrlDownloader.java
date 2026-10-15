@@ -12,8 +12,8 @@ import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.http.HttpRequest;
-import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.http.message.BasicHeader;
+import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.File;
@@ -112,14 +112,15 @@ class UrlDownloader {
      * Follows redirects like the default strategy, but never sends the auth token to another origin: the default
      * strategy refuses cross-origin redirects when an Authorization header is set (e.g. huggingface.co redirecting
      * to a CDN with a pre-signed url), so instead drop the header and follow the redirect without it.
+     * Any other sensitive header is left to the default strategy, which will then still refuse the redirect.
      */
-    private static class StripAuthOnCrossOriginRedirectStrategy extends DefaultRedirectStrategy {
+    static class StripAuthOnCrossOriginRedirectStrategy extends DefaultRedirectStrategy {
 
         @Override
         public boolean isRedirectAllowed(HttpHost currentTarget, HttpHost newTarget, HttpRequest redirect, HttpContext context) {
-            if ( ! super.isRedirectAllowed(currentTarget, newTarget, redirect, context))
-                redirect.removeHeaders(HttpHeaders.AUTHORIZATION);
-            return true;
+            if (super.isRedirectAllowed(currentTarget, newTarget, redirect, context)) return true;
+            redirect.removeHeaders(HttpHeaders.AUTHORIZATION);
+            return super.isRedirectAllowed(currentTarget, newTarget, redirect, context);
         }
 
     }
