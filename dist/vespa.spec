@@ -32,10 +32,10 @@
 %define _create_vespa_service 1
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
-%global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_dependencies_version 1.21.0
-%global _vespa_gtest_version 1.16.0
-%global _vespa_protobuf_version 6.34.1
+%global _vespa_abseil_cpp_version 20260817.0
+%global _vespa_build_dependencies_version 1.22.0
+%global _vespa_gtest_version 1.18.0
+%global _vespa_protobuf_version 7.36.2
 %global _vespa_openblas_version 0.3.27
 %global _vespa_mimalloc_version 3.3.2
 %global _vespa_highway_version 1.4.0
@@ -254,6 +254,9 @@ Requires: vespa-re2 = %{_vespa_re2_version}
 %global _vespa_re2_excludes |re2
 %else
 Requires: re2
+%endif
+%if 0%{?_use_vespa_abseil_cpp}
+Requires: vespa-abseil-cpp = %{_vespa_abseil_cpp_version}
 %endif
 
 %if 0%{?el8} || 0%{?el9} || 0%{?el10}
