@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-10-14
+Last updated: 2026-10-15
 
 ---
 
@@ -246,26 +246,23 @@ Last updated: 2026-10-14
 
 ---
 
-## com.google.guava 1.0.2 — Apache 2.0
+## com.google.guava 1.0.3 — Apache 2.0
 
 - Homepage: <https://github.com/google/guava>
-- Copyright 2018 The Guava Authors
+- Copyright 2024 The Guava Authors
 
 ---
 
-## com.google.guava 33.2.1-jre — Apache 2.0
+## com.google.guava 33.7.2-jre — Apache 2.0
 
-- Homepage: <https://github.com/google/guava>
-- Copyright 2010 The Guava Authors
+- Copyright 2008 The Guava Authors
 
 ---
 
-## com.google.j2objc 3.0.0 — Apache 2.0
+## com.google.j2objc 3.1 — Apache 2.0
 
 - Homepage: <https://github.com/google/j2objc/>
-- Copyright 1995-2016 International Business Machines Corporation and others
-- Copyright 1999-2007 Apple Inc
-- Copyright 2006-2008 Google Inc
+- Copyright 2012 Google Inc
 
 ---
 
