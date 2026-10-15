@@ -184,16 +184,16 @@ void my_convert_bfloat16_to_float(const uint16_t* src, float* dest, size_t sz) n
 }
 void my_unpack_bits_to_8x_i8(const int8_t* src_bits, int8_t* dest, size_t sz, bool big_endian) noexcept {
     if (big_endian) {
-        do_unpack_bits<int8_t, true>(src_bits, dest, sz);
+        do_unpack_bits_lut<int8_t, true>(src_bits, dest, sz);
     } else {
-        do_unpack_bits<int8_t, false>(src_bits, dest, sz);
+        do_unpack_bits_lut<int8_t, false>(src_bits, dest, sz);
     }
 }
 void my_unpack_bits_to_8x_bf16(const int8_t* src_bits, BFloat16* dest, size_t sz, bool big_endian) noexcept {
     if (big_endian) {
-        do_unpack_bits<BFloat16, true>(src_bits, dest, sz);
+        do_unpack_bits_lut<BFloat16, true>(src_bits, dest, sz);
     } else {
-        do_unpack_bits<BFloat16, false>(src_bits, dest, sz);
+        do_unpack_bits_lut<BFloat16, false>(src_bits, dest, sz);
     }
 }
 void my_unpack_bits_to_8x_f32(const int8_t* src_bits, float* dest, size_t sz, bool big_endian) noexcept {
@@ -205,9 +205,9 @@ void my_unpack_bits_to_8x_f32(const int8_t* src_bits, float* dest, size_t sz, bo
 }
 void my_unpack_bits_to_8x_f64(const int8_t* src_bits, double* dest, size_t sz, bool big_endian) noexcept {
     if (big_endian) {
-        do_unpack_bits<double, true>(src_bits, dest, sz);
+        do_unpack_bits_lut<double, true>(src_bits, dest, sz);
     } else {
-        do_unpack_bits<double, false>(src_bits, dest, sz);
+        do_unpack_bits_lut<double, false>(src_bits, dest, sz);
     }
 }
 void my_or_bit(void* aOrg, const void* bOrg, size_t bytes) noexcept {
