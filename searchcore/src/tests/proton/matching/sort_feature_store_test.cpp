@@ -3,11 +3,34 @@
 #include <vespa/searchcore/proton/matching/sort_feature_store.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <vector>
 
 using proton::matching::SortFeatureStore;
+
+namespace {
+
+// Records the docids in the given order, each with a value derived from its
+// docid, and checks that ascending seeks read every docid's own value.
+void expect_read_in_docid_order(std::vector<uint32_t> docids) {
+    SortFeatureStore    store({"foo"});
+    std::vector<double> value(1);
+    for (uint32_t docid : docids) {
+        value[0] = docid * 0.5;
+        store.record(docid, value);
+    }
+    store.ensure_sorted_for_read();
+    std::sort(docids.begin(), docids.end());
+    for (uint32_t docid : docids) {
+        store.seek(docid);
+        ASSERT_FALSE(store.failed()) << "docid " << docid;
+        EXPECT_EQ(docid * 0.5, store.get(0)) << "docid " << docid;
+    }
+}
+
+} // namespace
 
 TEST(SortFeatureStoreTest, rows_recorded_in_docid_order_are_read_in_order) {
     SortFeatureStore store({"foo", "bar"});
@@ -66,6 +89,28 @@ TEST(SortFeatureStoreTest, out_of_order_rows_are_read_in_docid_order) {
     EXPECT_EQ(3.0, store.get(0));
     store.seek(30);
     EXPECT_EQ(1.0, store.get(0));
+}
+
+TEST(SortFeatureStoreTest, runs_across_chunks_are_read_in_docid_order) {
+    // A first run of 1500 rows, across the 1024-row chunk boundary, then three
+    // lower runs placed so that the merges interleave rows. The second run
+    // continues above the first, as a low range followed by a high one would.
+    std::vector<uint32_t> docids;
+    auto add = [&docids](uint32_t first, uint32_t end) {
+        for (uint32_t docid = first; docid < end; ++docid) {
+            docids.push_back(docid);
+        }
+    };
+    add(1000, 2500);
+    add(10, 20);
+    add(3000, 3010);
+    add(500, 510);
+    add(100, 110);
+    expect_read_in_docid_order(docids);
+}
+
+TEST(SortFeatureStoreTest, descending_rows_are_read_in_docid_order) {
+    expect_read_in_docid_order({60, 50, 40, 30, 20, 10});
 }
 
 TEST(SortFeatureStoreTest, sanitizes_non_finite_values_and_consumed_clears_storage) {
