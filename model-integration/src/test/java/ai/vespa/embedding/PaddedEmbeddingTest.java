@@ -25,8 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Embeds with each ONNX embedder through an OnnxPadder over the embedded runtime, and checks that the embeddings
- * are the same as without padding, and that the model saw inputs padded to the buckets, which end with the max
- * tokens of the embedder. Pooling must follow the real tokens, not the padded, which the cut back outputs ensure.
+ * are the same as without padding, and that the model saw inputs padded to the buckets.
+ * Pooling must follow the real tokens, not the padded, which the cut back outputs ensure.
  * ColBERT keeps one vector per token, so its embeddings show whether the padding is cut back: queries are
  * expanded with [MASK] tokens to a fixed length, with attention mask zeros, before padding, and documents vary in
  * length. Does not need Triton, see TritonPaddedEmbeddingTest for the same through it.
@@ -57,7 +57,7 @@ class PaddedEmbeddingTest {
                     .poolingStrategy(pooling)
                     .build();
             assertEmbedsTheSame(runtime -> new HuggingFaceEmbedder(runtime, Embedder.Runtime.testInstance(), config, PaddingTestRuntime.onnxConfig(runtime), new ModelPaths()),
-                                List.of("tensor<float>(x[16])", "tensor<int8>(x[2])"), 512, "Pooling " + pooling);
+                                List.of("tensor<float>(x[16])", "tensor<int8>(x[2])"), "Pooling " + pooling);
         }
     }
 
@@ -69,7 +69,7 @@ class PaddedEmbeddingTest {
                 .termScoreThreshold(1.15)
                 .build();
         assertEmbedsTheSame(runtime -> new SpladeEmbedder(runtime, Embedder.Runtime.testInstance(), config, PaddingTestRuntime.onnxConfig(runtime)),
-                            List.of("tensor<float>(t{})"), 512, "SPLADE");
+                            List.of("tensor<float>(t{})"), "SPLADE");
     }
 
     @Test
@@ -82,7 +82,7 @@ class PaddedEmbeddingTest {
                 .build();
         // The dummy vocabulary has single letters
         assertEmbedsTheSame(runtime -> new BertBaseEmbedder(runtime, Embedder.Runtime.testInstance(), config, PaddingTestRuntime.onnxConfig(runtime)),
-                            List.of("tensor<float>(x[16])"), 384, "BERT", "a b c d e f g h i j k", "a b c d e f g h i j k ".repeat(4), "a b c d e f g h i j k ".repeat(10));
+                            List.of("tensor<float>(x[16])"), "BERT", "a b c d e f g h i j k", "a b c d e f g h i j k ".repeat(4), "a b c d e f g h i j k ".repeat(10));
     }
 
     @Test
@@ -105,7 +105,7 @@ class PaddedEmbeddingTest {
 
             expected = embed(unpadded, LONGER_THAN_CONFIGURED_BUCKETS, DOCUMENT, COLBERT_FLOAT);
             assertClose(expected, embed(padded, LONGER_THAN_CONFIGURED_BUCKETS, DOCUMENT, COLBERT_FLOAT), "ColBERT");
-            assertEquals(512, runtime.lastInputLength(), "Padded to the max document tokens, which is always a bucket");
+            assertEquals(tokensIn(expected), runtime.lastInputLength(), "Longer than the largest bucket: not padded");
             assertTrue(tokensIn(expected) > 64, "Longer than the configured buckets");
         } finally {
             padded.deconstruct();
@@ -114,16 +114,15 @@ class PaddedEmbeddingTest {
     }
 
     @Test
-    void colBertMaxQueryTokensAreABucketSoThatExpandedQueriesAreNotPaddedFurther() {
+    void colBertExpandedQueriesArePaddedToTheSmallestBucketThatFitsAndEmbedTheSame() {
         var runtime = new PaddingTestRuntime();
         var padded = colBert(runtime, MASKED_MODEL, true);
         var unpadded = colBert(EmbeddedOnnxRuntime.createTestInstance(), MASKED_MODEL, true);
         try {
-            assertEquals(List.of(16, 32, 64, 512), runtime.buckets(),
-                         "The configured buckets, the max query tokens and the max document tokens");
+            assertEquals(PaddingTestRuntime.BUCKETS, runtime.buckets(), "The configured buckets");
             var expected = embed(unpadded, SHORT_TEXT, QUERY, COLBERT_FLOAT);
             assertClose(expected, embed(padded, SHORT_TEXT, QUERY, COLBERT_FLOAT), "ColBERT");
-            assertEquals(32, runtime.lastInputLength(), "The query is expanded to 32 tokens by the embedder, which is a bucket");
+            assertEquals(64, runtime.lastInputLength(), "The query is expanded to 32 tokens by the embedder, then padded to the next bucket");
             assertEquals(32, tokensIn(expected), "One vector per query token, including the expansion");
         } finally {
             padded.deconstruct();
@@ -132,16 +131,16 @@ class PaddedEmbeddingTest {
     }
 
     @Test
-    void colBertQueriesWithAnotherMaxQueryTokensGetThatBucket() {
+    void colBertBucketsLongerThanItsMaxTokensAreTrimmedToThem() {
         var runtime = new PaddingTestRuntime();
-        var padded = colBert(runtime, MASKED_MODEL, true, 20);
-        var unpadded = colBert(EmbeddedOnnxRuntime.createTestInstance(), MASKED_MODEL, true, 20);
+        var padded = colBert(runtime, MASKED_MODEL, true, 32, 48);
+        var unpadded = colBert(EmbeddedOnnxRuntime.createTestInstance(), MASKED_MODEL, true, 32, 48);
         try {
-            assertEquals(List.of(16, 20, 64, 512), runtime.buckets());
-            var expected = embed(unpadded, SHORT_TEXT, QUERY, COLBERT_FLOAT);
-            assertClose(expected, embed(padded, SHORT_TEXT, QUERY, COLBERT_FLOAT), "ColBERT");
-            assertEquals(20, runtime.lastInputLength());
-            assertEquals(20, tokensIn(expected));
+            assertEquals(List.of(16, 48), runtime.buckets(), "The configured 64 is longer than any input, so it is trimmed to the max document tokens");
+            var expected = embed(unpadded, LONGER_THAN_CONFIGURED_BUCKETS, DOCUMENT, COLBERT_FLOAT);
+            assertClose(expected, embed(padded, LONGER_THAN_CONFIGURED_BUCKETS, DOCUMENT, COLBERT_FLOAT), "ColBERT");
+            assertEquals(48, runtime.lastInputLength());
+            assertEquals(48, tokensIn(expected), "Truncated to the max document tokens");
         } finally {
             padded.deconstruct();
             unpadded.deconstruct();
@@ -156,7 +155,7 @@ class PaddedEmbeddingTest {
         try {
             var expected = embed(unpadded, SHORT_TEXT, QUERY, COLBERT_FLOAT);
             assertClose(expected, embed(padded, SHORT_TEXT, QUERY, COLBERT_FLOAT), "ColBERT");
-            assertEquals(32, runtime.lastInputLength());
+            assertEquals(64, runtime.lastInputLength(), "The query is expanded to 32 tokens, then padded to the next bucket");
             assertTrue(tokensIn(expected) < 32, "Only the real query tokens");
         } finally {
             padded.deconstruct();
@@ -183,26 +182,29 @@ class PaddedEmbeddingTest {
         }
     }
 
-    private static void assertEmbedsTheSame(Function<OnnxRuntime, Embedder> embedderOf, List<String> types, int maxTokens, String what) {
-        assertEmbedsTheSame(embedderOf, types, maxTokens, what, SHORT_TEXT, LONG_TEXT, LONGER_THAN_CONFIGURED_BUCKETS);
+    private static void assertEmbedsTheSame(Function<OnnxRuntime, Embedder> embedderOf, List<String> types, String what) {
+        assertEmbedsTheSame(embedderOf, types, what, SHORT_TEXT, LONG_TEXT, LONGER_THAN_CONFIGURED_BUCKETS);
     }
 
     /** Embeds the texts padded and unpadded, and checks the embeddings are the same and the model saw each bucket. */
-    private static void assertEmbedsTheSame(Function<OnnxRuntime, Embedder> embedderOf, List<String> types, int maxTokens, String what,
+    private static void assertEmbedsTheSame(Function<OnnxRuntime, Embedder> embedderOf, List<String> types, String what,
                                             String shortText, String longText, String longerThanConfiguredBuckets) {
         var runtime = new PaddingTestRuntime();
         var padded = embedderOf.apply(runtime);
-        var unpadded = embedderOf.apply(EmbeddedOnnxRuntime.createTestInstance());
+        var unpaddedRuntime = PaddingTestRuntime.unpadded();
+        var unpadded = embedderOf.apply(unpaddedRuntime);
         try {
             assertTrue(runtime.isPadding(), what + " should be padded");
-            assertEquals(List.of(16, 64, maxTokens), runtime.buckets(), what + ": the configured buckets and the max tokens");
+            assertEquals(PaddingTestRuntime.BUCKETS, runtime.buckets(), what + ": the configured buckets");
             var texts = List.of(shortText, longText, longerThanConfiguredBuckets);
-            var expectedLengths = List.of(16, 64, maxTokens);
             for (int i = 0; i < texts.size(); i++) {
                 for (var type : types) {
                     var targetType = TensorType.fromSpec(type);
                     assertClose(embed(unpadded, texts.get(i), DOCUMENT, targetType), embed(padded, texts.get(i), DOCUMENT, targetType), what);
-                    assertEquals(expectedLengths.get(i), runtime.lastInputLength(), what + ": text " + i + " as " + type);
+                    if (i < PaddingTestRuntime.BUCKETS.size())
+                        assertEquals(PaddingTestRuntime.BUCKETS.get(i), runtime.lastInputLength(), what + ": text " + i + " as " + type);
+                    else
+                        assertEquals(unpaddedRuntime.lastInputLength(), runtime.lastInputLength(), what + ": text " + i + " as " + type + " is longer than the largest bucket, so not padded");
                 }
             }
         } finally {
@@ -216,11 +218,16 @@ class PaddedEmbeddingTest {
     }
 
     private static ColBertEmbedder colBert(OnnxRuntime runtime, String model, boolean attendToExpansionTokens, int maxQueryTokens) {
+        return colBert(runtime, model, attendToExpansionTokens, maxQueryTokens, 512);
+    }
+
+    private static ColBertEmbedder colBert(OnnxRuntime runtime, String model, boolean attendToExpansionTokens, int maxQueryTokens, int maxDocumentTokens) {
         var config = new ColBertEmbedderConfig.Builder()
                 .tokenizerPath(ModelReference.valueOf(TOKENIZER))
                 .transformerModel(ModelReference.valueOf(model))
                 .attendToExpansionTokens(attendToExpansionTokens)
-                .maxQueryTokens(maxQueryTokens);
+                .maxQueryTokens(maxQueryTokens)
+                .maxDocumentTokens(maxDocumentTokens);
         if (model.equals(MASKED_MODEL)) config.transformerOutput("last_hidden_state");
         return new ColBertEmbedder(runtime, Embedder.Runtime.testInstance(), config.build(), PaddingTestRuntime.onnxConfig(runtime));
     }

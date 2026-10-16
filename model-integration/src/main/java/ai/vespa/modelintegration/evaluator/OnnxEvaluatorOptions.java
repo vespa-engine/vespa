@@ -283,14 +283,9 @@ public record OnnxEvaluatorOptions(
         return withPadding(padding -> padding.withAttentionMask(name));
     }
 
-    /** Returns these options padding to at most the given length, the longest input, if padding is configured */
-    public OnnxEvaluatorOptions withMaxLength(int length) {
-        return withPadding(padding -> padding.withMaxLength(length));
-    }
-
-    /** Returns these options also padding to the given length, if padding is configured */
-    public OnnxEvaluatorOptions withPaddingBucket(int length) {
-        return withPadding(padding -> padding.withBucket(length));
+    /** Returns these options padding to at most the given max tokens, the longest input, if padding is configured */
+    public OnnxEvaluatorOptions withMaxTokens(int maxTokens) {
+        return withPadding(padding -> padding.withMaxTokens(maxTokens));
     }
 
     /** Returns these options without padding, which runtimes that do not pad key their sessions on */

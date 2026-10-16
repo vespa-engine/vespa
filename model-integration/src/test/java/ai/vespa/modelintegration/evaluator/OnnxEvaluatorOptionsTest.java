@@ -40,17 +40,15 @@ public class OnnxEvaluatorOptionsTest {
         batchingOnly.batching.maxSize(8);
         var options = OnnxEvaluatorOptions.of(batchingOnly.build(), 8);
         assertTrue(options.padding().isEmpty());
-        assertEquals(options, options.withAttentionMask("mask").withPaddingBucket(32).withMaxLength(512),
-                     "Nothing to refine without padding buckets");
+        assertEquals(options, options.withAttentionMask("mask").withMaxTokens(32), "Nothing to refine without padding buckets");
 
         var withBuckets = new OnnxEvaluatorConfig.Builder();
         withBuckets.batching.maxSize(8).paddingBuckets(List.of(16, 64));
         var refined = OnnxEvaluatorOptions.of(withBuckets.build(), 8)
-                                          .withAttentionMask("mask").withPaddingBucket(32).withMaxLength(512)
+                                          .withAttentionMask("mask").withMaxTokens(32)
                                           .padding().orElseThrow();
         assertEquals("mask", refined.attentionMaskName());
-        assertEquals(List.of(16, 32, 64), refined.buckets());
-        assertEquals(512, refined.maxLength().orElseThrow());
+        assertEquals(List.of(16, 32), refined.buckets());
     }
 
     @Test

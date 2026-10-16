@@ -63,24 +63,16 @@ class OnnxPadderTest {
     }
 
     @Test
-    void aBucketCanBeAddedWithoutRepetition() {
-        var options = OnnxPadderOptions.of(List.of(16, 64));
-        assertEquals(List.of(16, 32, 64), options.withBucket(32).buckets());
-        assertEquals(options, options.withBucket(16), "Already a bucket");
-        assertSame(options, options.withBucket(0), "Not a length");
-        assertEquals(List.of(16, 32, 64), buckets(options.withBucket(32)));
-        assertEquals(List.of(16, 32), buckets(options.withBucket(32).withMaxLength(32)));
-    }
-
-    @Test
-    void bucketsEndWithTheMaxLength() {
-        assertEquals(List.of(16, 32), buckets(OnnxPadderOptions.of(List.of(16, 64)).withMaxLength(32)));
-        assertEquals(List.of(16), buckets(OnnxPadderOptions.of(List.of(16, 64, 128)).withMaxLength(16)));
-        assertEquals(List.of(16, 64, 128), buckets(OnnxPadderOptions.of(List.of(16, 64)).withMaxLength(128)),
-                     "The max length is a bucket, so that every input pads to one");
-        assertEquals(List.of(16, 64), buckets(OnnxPadderOptions.of(List.of(16, 64)).withMaxLength(64)));
-        assertEquals(List.of(16, 64), buckets(OnnxPadderOptions.of(List.of(16, 64)).withMaxLength(0)),
-                     "An unknown max length changes nothing");
+    void bucketsLongerThanTheMaxTokensAreTrimmedToIt() {
+        assertEquals(List.of(16, 32), buckets(OnnxPadderOptions.of(List.of(16, 64)).withMaxTokens(32)));
+        assertEquals(List.of(16), buckets(OnnxPadderOptions.of(List.of(16, 64, 128)).withMaxTokens(16)));
+        assertEquals(List.of(10, 15), buckets(OnnxPadderOptions.of(List.of(10, 20, 30)).withMaxTokens(15)),
+                     "Several buckets longer than the max tokens become one at it");
+        assertEquals(List.of(16, 64), buckets(OnnxPadderOptions.of(List.of(16, 64)).withMaxTokens(128)),
+                     "No bucket is added for the max tokens");
+        assertEquals(List.of(16, 64), buckets(OnnxPadderOptions.of(List.of(16, 64)).withMaxTokens(64)));
+        assertEquals(List.of(16, 64), buckets(OnnxPadderOptions.of(List.of(16, 64)).withMaxTokens(0)),
+                     "Unknown max tokens change nothing");
         assertThrows(IllegalArgumentException.class, () -> OnnxPadderOptions.of(List.of(0, 16)));
     }
 

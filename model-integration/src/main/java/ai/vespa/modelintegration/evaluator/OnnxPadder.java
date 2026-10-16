@@ -19,7 +19,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * An evaluator which pads the sequence inputs of the evaluator it wraps to a few fixed lengths (buckets), so that
@@ -29,8 +28,8 @@ import java.util.stream.IntStream;
  * the mask gives the same output for the real tokens. Outputs indexed by position are cut back to the real length,
  * so callers never see the padding.
  * Sequence inputs are the inputs of shape [batch, sequence], among them the attention mask named in the
- * {@link OnnxPadderOptions}, and sequence outputs the outputs with an unbound second dimension. The longest input
- * the caller sends is always a bucket, so that every input pads to one.
+ * {@link OnnxPadderOptions}, and sequence outputs the outputs with an unbound second dimension. An input longer
+ * than the largest bucket is not padded.
  * {@link #of} verifies that the model respects its mask, by evaluating a sample padded to the largest bucket and
  * unpadded, and returns the wrapped evaluator itself, with a warning, if the outputs differ, or if the model
  * cannot be padded: it has no attention mask, or inputs that are not sequences.
@@ -118,16 +117,6 @@ public final class OnnxPadder implements OnnxEvaluator {
                                        .collect(Collectors.toUnmodifiableSet());
 
         var buckets = options.buckets().stream().mapToInt(Integer::intValue).toArray(); // Sorted and distinct
-        if (options.maxLength().isPresent()) {
-            // The longest input is the largest bucket, so that every input pads to a bucket, and none is longer
-            int maxLength = options.maxLength().getAsInt();
-            var withMaxLength = IntStream.concat(Arrays.stream(buckets).filter(bucket -> bucket < maxLength),
-                                                 IntStream.of(maxLength)).toArray();
-            if ( ! Arrays.equals(buckets, withMaxLength))
-                log.info("Padding inputs of " + modelName + " to " + Arrays.toString(withMaxLength) + " instead of " +
-                         Arrays.toString(buckets) + ", since it gets at most " + maxLength + " tokens");
-            buckets = withMaxLength;
-        }
         if (buckets[buckets.length - 1] < 2) {
             log.warning("Not padding inputs of " + modelName + " to " + Arrays.toString(buckets) + ": no bucket is longer than a sample");
             return Optional.empty();
@@ -163,7 +152,7 @@ public final class OnnxPadder implements OnnxEvaluator {
         return true;
     }
 
-    /** Returns the buckets, sorted and ending with the max length if known */
+    /** Returns the buckets, sorted */
     public List<Integer> buckets() { return Arrays.stream(buckets).boxed().toList(); }
 
     @Override

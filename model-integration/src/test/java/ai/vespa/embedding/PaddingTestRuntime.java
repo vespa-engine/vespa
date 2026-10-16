@@ -27,10 +27,18 @@ class PaddingTestRuntime implements OnnxRuntime {
     static final List<Integer> BUCKETS = List.of(16, 64);
 
     private final EmbeddedOnnxRuntime embedded = EmbeddedOnnxRuntime.createTestInstance();
+    private final boolean padding;
     /** The evaluator the padder wraps, seeing the padded inputs */
     private RecordingEvaluator model;
     /** What the embedder got: the padder, or the model itself if padding was disabled */
     private OnnxEvaluator evaluator;
+
+    PaddingTestRuntime() { this(true); }
+
+    private PaddingTestRuntime(boolean padding) { this.padding = padding; }
+
+    /** Returns a runtime which records the inputs without padding them */
+    static PaddingTestRuntime unpadded() { return new PaddingTestRuntime(false); }
 
     /** Returns the config asking for the buckets, and the batching that makes padding worthwhile, for this runtime */
     static OnnxEvaluatorConfig onnxConfig(OnnxRuntime runtime) {
@@ -42,7 +50,7 @@ class PaddingTestRuntime implements OnnxRuntime {
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
         model = new RecordingEvaluator(embedded.evaluatorOf(modelPath, options));
-        evaluator = OnnxPadder.of(options.padding().orElseThrow(), model, modelPath);
+        evaluator = padding ? OnnxPadder.of(options.padding().orElseThrow(), model, modelPath) : model;
         return evaluator;
     }
 
