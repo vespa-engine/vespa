@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
@@ -60,7 +61,7 @@ MyWorld::MyWorld() : attributeContext(), documentType("test"), bv(NUM_DOCS + 1) 
             attr->addDoc(docid);
             attr->add(i, docid); // value = docid
         }
-        assert(docid + 1 == NUM_DOCS);
+        CHECK(docid + 1 == NUM_DOCS);
         attributeContext.add(attr);
     }
     {
@@ -70,7 +71,7 @@ MyWorld::MyWorld() : attributeContext(), documentType("test"), bv(NUM_DOCS + 1) 
             attr->addDoc(docid);
             attr->add(i * 2, docid); // value = docid * 2
         }
-        assert(docid + 1 == NUM_DOCS);
+        CHECK(docid + 1 == NUM_DOCS);
         attributeContext.add(attr);
     }
     {
@@ -80,7 +81,7 @@ MyWorld::MyWorld() : attributeContext(), documentType("test"), bv(NUM_DOCS + 1) 
             attr->addDoc(docid);
             attr->add(i * 3, docid); // value = docid * 3
         }
-        assert(docid + 1 == NUM_DOCS);
+        CHECK(docid + 1 == NUM_DOCS);
         attributeContext.add(attr);
     }
     {
@@ -90,7 +91,7 @@ MyWorld::MyWorld() : attributeContext(), documentType("test"), bv(NUM_DOCS + 1) 
             attr->addDoc(docid);
             attr->add(i * 4, docid); // value = docid * 4
         }
-        assert(docid + 1 == NUM_DOCS);
+        CHECK(docid + 1 == NUM_DOCS);
         attributeContext.add(attr);
     }
 }

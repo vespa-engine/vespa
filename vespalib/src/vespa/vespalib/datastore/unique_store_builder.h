@@ -4,6 +4,7 @@
 
 #include "unique_store_allocator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/allocator.h>
 
 namespace vespalib::datastore {
@@ -35,8 +36,8 @@ public:
         _refs.push_back(newRef);
     }
     EntryRef mapEnumValueToEntryRef(uint32_t enumValue) {
-        assert(enumValue < _refs.size());
-        assert(_refCounts[enumValue] < std::numeric_limits<uint32_t>::max());
+        CHECK(enumValue < _refs.size());
+        CHECK(_refCounts[enumValue] < std::numeric_limits<uint32_t>::max());
         ++_refCounts[enumValue];
         return _refs[enumValue];
     }

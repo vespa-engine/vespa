@@ -88,10 +88,12 @@ public:
         _attrBuffer.allocate(_attribute->getMaxValueCount());
         const auto& dims = _type.dimensions();
         for (size_t d = 0; d < dims.size(); ++d) {
-            if (dims[d].name == label_dim)
+            if (dims[d].name == label_dim) {
                 _label_idx = d;
-            if (dims[d].name == offset_dim)
+            }
+            if (dims[d].name == offset_dim) {
                 _offset_idx = d;
+            }
         }
     }
 

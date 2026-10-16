@@ -2,13 +2,13 @@
 
 #include "chunks.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <xxhash.h>
 
-#include <cassert>
 #include <ostream>
 
 #include <vespa/log/log.h>
@@ -23,8 +23,8 @@ using vespalib::make_string_short::fmt;
 namespace search::transactionlog {
 
 Encoding::Encoding(Crc crc, Compression compression) : _raw(crc | (compression << 4u)) {
-    assert(crc <= Crc::xxh64);
-    assert(compression <= Compression::zstd);
+    CHECK(crc <= Crc::xxh64);
+    CHECK(compression <= Compression::zstd);
 }
 
 IChunk::~IChunk() = default;
@@ -140,11 +140,11 @@ SerializedChunk::SerializedChunk(std::unique_ptr<CommitChunk> commitChunk, Encod
         // h.getPos(), h.getLength(), h.getLimit(), h.getRemaining());
         Packet::Entry entry;
         entry.deserialize(h);
-        assert(prev < entry.serial());
+        CHECK(prev < entry.serial());
         chunk->add(entry);
         prev = entry.serial();
     }
-    assert(!chunk->getEntries().empty());
+    CHECK(!chunk->getEntries().empty());
     encode(_os, *chunk, encoding);
 }
 

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <vespa/searchlib/fef/matchdata.h>
@@ -159,7 +160,7 @@ SameElementQueryNodeTest::make_query(QueryTweak query_tweak, const std::vector<s
     case QueryTweak::ANDNOT:
     case QueryTweak::RANK:
         EXPECT_LE(2, num_terms);
-        assert(num_terms >= 2);
+        CHECK(num_terms >= 2);
         --top_arity;
         break;
     default:

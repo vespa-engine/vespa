@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/socket_spec.h>
@@ -16,8 +17,6 @@
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
-
 using namespace vespalib;
 using namespace vespalib::test;
 using vespalib::test::Nexus;
@@ -27,7 +26,7 @@ using vespalib::test::Nexus;
 std::string do_http(int port, CryptoEngine::SP crypto, const std::string& method, const std::string& uri,
                     bool send_host = true) {
     auto socket = SocketSpec::from_port(port).client_address().connect();
-    assert(socket.valid());
+    CHECK(socket.valid());
     auto        conn = SyncCryptoSocket::create_client(*crypto, std::move(socket), make_local_spec());
     std::string http_req = vespalib::make_string("%s %s HTTP/1.1\r\n"
                                                  "My-Header: my value\r\n"

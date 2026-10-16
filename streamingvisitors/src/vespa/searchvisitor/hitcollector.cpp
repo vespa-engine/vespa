@@ -2,6 +2,7 @@
 
 #include "hitcollector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchlib/fef/utils.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -60,8 +61,9 @@ bool HitCollector::addHit(vsm::StorageDocument::SP doc, uint32_t docId, const Ma
 }
 
 bool HitCollector::addHitToHeap(uint32_t index) const {
-    if (_heap.capacity() == 0)
+    if (_heap.capacity() == 0) {
         return false;
+    }
     // return true if the given hit is better than the current worst one.
     const Hit& hit = _hits[index];
     return _use_sort_blob ? (hit.cmpSort(_hits[_heap[0]]) < 0) : (hit.cmpRank(_hits[_heap[0]]) < 0);
@@ -93,8 +95,8 @@ void HitCollector::push_heap() {
 
 bool HitCollector::addHit(Hit&& hit) {
     size_t avail = (_heap.capacity() - _heap.size());
-    assert(_use_sort_blob != hit.getSortBlob().empty());
-    assert(_hits.size() <= hit.getDocId());
+    CHECK(_use_sort_blob != hit.getSortBlob().empty());
+    CHECK(_hits.size() <= hit.getDocId());
     _hits.emplace_back(std::move(hit));
     uint32_t index = _hits.size() - 1;
     if (avail > 1) {
@@ -202,7 +204,7 @@ FeatureValues HitCollector::get_match_features(IRankProgram& rank_program, const
         FefUtils::extract_feature_values(resolver, docid, f);
         f += resolver.num_features();
     }
-    assert(f == match_features.values.data() + match_features.values.size());
+    CHECK(f == match_features.values.data() + match_features.values.size());
     return match_features;
 }
 

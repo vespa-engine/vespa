@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
@@ -214,7 +215,7 @@ void VisitorManagerTest::addSomeRemoves(bool removeAll) {
 
 void VisitorManagerTest::TearDown() {
     if (_top) {
-        assert(_top->getNumReplies() == 0);
+        CHECK(_top->getNumReplies() == 0);
         _top->close();
         _top->flush();
         _top.reset();

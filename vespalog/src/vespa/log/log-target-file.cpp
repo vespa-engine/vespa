@@ -4,10 +4,11 @@ LOG_SETUP(".log");
 #include "internal.h"
 #include "log-target-file.h"
 
+#include <vespa/check_require.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <cassert>
 #include <cerrno>
 #include <cstring>
 
@@ -20,7 +21,7 @@ namespace ns_log {
 LogTargetFile::LogTargetFile(const char* target) : LogTarget(target), _failstate(FS_OK) {
     memset(_fname, 0, sizeof(_fname));
     const char* fname = target + strlen("file:");
-    assert(strlen(fname) < sizeof(_fname));
+    CHECK(strlen(fname) < sizeof(_fname));
     // NOTE: This function cannot LOG()
     if (strncmp(target, "file:", strlen("file:")) != 0) {
         throwInvalid("Illegal log target '%s'", target);

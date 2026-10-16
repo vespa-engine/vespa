@@ -62,8 +62,9 @@ TEST(RandoMTest, test_floating_point) {
         int    b = (int)foo;
         EXPECT_TRUE(b >= 0);
         EXPECT_TRUE(b < 100);
-        if (b >= 0 && b < 100)
+        if (b >= 0 && b < 100) {
             ++buckets[b];
+        }
     }
     for (int b = 0; b < 100; b++) {
         // note that it's *possible* for this to fail:

@@ -2,10 +2,9 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/objects/nbostream.h>
-
-#include <cassert>
 
 namespace vespalib::eval {
 
@@ -18,7 +17,7 @@ struct LabelStream {
     size_t                pos;
     LabelStream(const StringIdVector& data) : source(data), pos(0) {}
     string_id next_label() {
-        assert(pos < source.size());
+        CHECK(pos < source.size());
         return source[pos++];
     }
     void reset() { pos = 0; }

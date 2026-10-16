@@ -78,8 +78,9 @@ void ThreadImpl::registerTick(CycleType cycleType) {
 }
 
 void ThreadImpl::registerTick(CycleType cycleType, vespalib::steady_time now) {
-    if (now.time_since_epoch() == vespalib::duration::zero())
+    if (now.time_since_epoch() == vespalib::duration::zero()) {
         now = _pool.getClock().getMonotonicTime();
+    }
     ThreadTickData                     data(getTickData());
     vespalib::steady_clock::time_point previousTick = data._lastTick;
     data._lastTick = now;

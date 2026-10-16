@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
@@ -347,7 +348,7 @@ void VisitorTest::sendGetIterReply(GetIterCommand& cmd, const api::ReturnCode& r
         _bottom->sendUp(reply);
         return;
     }
-    assert(maxDocuments < _documents.size());
+    CHECK(maxDocuments < _documents.size());
     size_t documentCount = maxDocuments != 0 ? maxDocuments : _documents.size();
     for (size_t i = 0; i < documentCount; ++i) {
         reply->getEntries().push_back(

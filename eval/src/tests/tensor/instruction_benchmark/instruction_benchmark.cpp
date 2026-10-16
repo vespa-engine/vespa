@@ -20,6 +20,7 @@
 // implementations against each other, a smoke test is performed by
 // verifying that all implementations produce the same result.
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/operation.h>
@@ -79,7 +80,7 @@ struct MyPeekSpec {
     MyPeekSpec(bool is_dynamic_in) : is_dynamic(is_dynamic_in), spec() {}
     MyPeekSpec& add(const std::string& dim, size_t index) {
         auto [ignore, was_inserted] = spec.emplace(dim, index);
-        assert(was_inserted);
+        CHECK(was_inserted);
         return *this;
     }
 };
@@ -219,7 +220,7 @@ struct Impl {
         } else {
             for (const auto& entry : my_spec.spec) {
                 size_t idx = type.dimension_index(entry.first);
-                assert(idx != ValueType::Dimension::npos);
+                CHECK(idx != ValueType::Dimension::npos);
                 if (type.dimensions()[idx].is_mapped()) {
                     spec.emplace(entry.first, TensorSpec::Label(fmt("%zu", entry.second)));
                 } else {
@@ -361,7 +362,7 @@ struct MyParam : LazyParams {
     MyParam() : my_value() {}
     MyParam(const TensorSpec& p0, const Impl& impl) : my_value(impl.create_value(p0)) {}
     const Value& resolve(size_t idx, Stash&) const override {
-        assert(idx == 0);
+        CHECK(idx == 0);
         return *my_value;
     }
     ~MyParam() override;
@@ -431,7 +432,7 @@ struct EvalOp {
                 timer.after();
             }
         } else {
-            assert((loop_cnt % 8) == 0);
+            CHECK((loop_cnt % 8) == 0);
             auto my_loop = [&]() {
                 for (size_t i = 0; (i + 7) < loop_cnt; i += 8) {
                     for (size_t j = 0; j < 8; ++j) {

@@ -5,7 +5,8 @@
 #include "alloc.h"
 #include "traits.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -69,7 +70,7 @@ template <typename T> std::pair<T*, size_t> alloc_objects(size_t wanted) {
     size_t entries = (mem / sizeof(T));
     mem = (entries * sizeof(T));
     T* ptr = static_cast<T*>(malloc(mem));
-    assert(ptr != nullptr);
+    CHECK(ptr != nullptr);
     return {ptr, entries};
 }
 
@@ -143,7 +144,7 @@ public:
         _size = rhs._size;
     }
     SmallVector& operator=(SmallVector&& rhs) {
-        assert(std::addressof(rhs) != this);
+        CHECK(std::addressof(rhs) != this);
         clear();
         reserve(rhs._size);
         small_vector::move_objects(_data, rhs._data, rhs._size);
@@ -151,7 +152,7 @@ public:
         return *this;
     }
     SmallVector& operator=(const SmallVector& rhs) {
-        assert(std::addressof(rhs) != this);
+        CHECK(std::addressof(rhs) != this);
         clear();
         reserve(rhs._size);
         small_vector::copy_objects(_data, rhs._data, rhs._size);

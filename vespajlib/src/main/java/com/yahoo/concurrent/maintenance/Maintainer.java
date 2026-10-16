@@ -3,6 +3,7 @@ package com.yahoo.concurrent.maintenance;
 
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.net.HostName;
+import com.yahoo.transaction.Mutex;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -11,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -85,24 +87,35 @@ public abstract class Maintainer implements Runnable {
         long startTime = clock.millis();
         try {
             if (acquireLock) {
-                try (var lock = jobControl.lockJob(name())) {
-                    successFactorDeviation = maintain();
-                } catch (UncheckedTimeoutException e) {
-                    if (ignoreCollision)
-                        successFactorDeviation = 0;
-                    else
-                        log.log(Level.WARNING, this + " collided with another run. Will retry in " + interval);
+                Optional<Mutex> lock = tryLockJob();
+                if (lock.isPresent()) {
+                    try (Mutex jobLock = lock.get()) {
+                        successFactorDeviation = maintain();
+                    }
+                } else if (ignoreCollision) {
+                    successFactorDeviation = 0;
                 }
             } else {
                 successFactorDeviation = maintain();
             }
-        }  catch (Throwable e) {
+        } catch (Throwable e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval, e);
         } finally {
             long endTime = clock.millis();
             jobMetrics.completed(name(), successFactorDeviation, endTime - startTime);
         }
         log.log(Level.FINE, () -> "Finished " + this.getClass().getSimpleName());
+    }
+
+    /** Returns the job lock, or empty if it's held by another run. Only a timeout here is a collision */
+    private Optional<Mutex> tryLockJob() {
+        try {
+            return Optional.of(jobControl.lockJob(name()));
+        } catch (UncheckedTimeoutException e) {
+            if ( ! ignoreCollision)
+                log.log(Level.WARNING, this + " collided with another run. Will retry in " + interval);
+            return Optional.empty();
+        }
     }
 
     /** Convenience methods to convert attempts and failures into a success factor deviation from the baseline, and return   */

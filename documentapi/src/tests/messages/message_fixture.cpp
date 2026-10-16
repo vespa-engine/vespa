@@ -2,6 +2,7 @@
 
 #include "message_fixture.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/test/test_path.h>
@@ -11,7 +12,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <cassert>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -33,7 +33,7 @@ MessageFixture::MessageFixture()
 MessageFixture::~MessageFixture() = default;
 
 mbus::Blob MessageFixture::truncate(mbus::Blob data, size_t bytes) {
-    assert(data.size() > bytes);
+    CHECK(data.size() > bytes);
     mbus::Blob res(data.size() - bytes);
     memcpy(res.data(), data.data(), res.size());
     return res;

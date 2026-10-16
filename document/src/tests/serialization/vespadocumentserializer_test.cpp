@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for vespadocumentserializer.
 
+#include <vespa/check_require.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spantree.h>
@@ -911,7 +912,7 @@ struct RefFixture {
         // Get reference type from the field definition instead of by ID
         const auto& field = ref_doc_type->getField(ref_field_name);
         auto*       raw_type = &field.getDataType();
-        assert(raw_type != nullptr);
+        CHECK(raw_type != nullptr);
         return dynamic_cast<const ReferenceDataType&>(*raw_type);
     }
 

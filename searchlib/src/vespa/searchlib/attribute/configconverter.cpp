@@ -2,6 +2,7 @@
 
 #include "configconverter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
@@ -59,7 +60,7 @@ DictionaryConfig::Type convert(AttributesConfig::Attribute::Dictionary::Type typ
     case AttributesConfig::Attribute::Dictionary::Type::BTREE_AND_HASH:
         return DictionaryConfig::Type::BTREE_AND_HASH;
     }
-    assert(false);
+    CHECK(false);
 }
 
 DictionaryConfig::Match convert(AttributesConfig::Attribute::Dictionary::Match match_cfg) {
@@ -71,7 +72,7 @@ DictionaryConfig::Match convert(AttributesConfig::Attribute::Dictionary::Match m
     case AttributesConfig::Attribute::Dictionary::Match::UNCASED:
         return DictionaryConfig::Match::UNCASED;
     }
-    assert(false);
+    CHECK(false);
 }
 
 DictionaryConfig convert_dictionary(const AttributesConfig::Attribute::Dictionary& dictionary) {
@@ -138,7 +139,7 @@ Config::Match convertMatch(AttributesConfig::Attribute::Match match_cfg) {
     case AttributesConfig::Attribute::Match::UNCASED:
         return Config::Match::UNCASED;
     }
-    assert(false);
+    CHECK(false);
 }
 
 } // namespace

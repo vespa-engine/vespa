@@ -204,13 +204,15 @@ uint32_t addInterval(uint32_t interval, uint64_t subquery, uint64_t* subquery_ma
 
     if (isNotInterval(begin, end)) {
         // Note: End and begin values are swapped for zStar intervals
-        if (highest_end_seen < end)
+        if (highest_end_seen < end) {
             return UINT32_MAX;
+        }
         markSubquery(end, begin, ~(subquery_markers[end]), subquery_markers, visited);
         return begin;
     } else {
-        if (highest_end_seen < begin - 1)
+        if (highest_end_seen < begin - 1) {
             return UINT32_MAX;
+        }
         markSubquery(begin - 1, end, subquery_markers[begin - 1] & subquery, subquery_markers, visited);
         return end;
     }

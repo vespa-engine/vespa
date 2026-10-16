@@ -5,6 +5,7 @@ import com.yahoo.config.FileReference;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,6 +32,23 @@ public class OnnxEvaluatorOptionsTest {
         assertEquals(1, options.batchingMaxSize());
         assertTrue(options.numModelInstances().isEmpty());
         assertTrue(options.modelConfigOverride().isEmpty());
+    }
+
+    @Test
+    public void padding_is_unset_unless_padding_buckets_are_configured() {
+        var batchingOnly = new OnnxEvaluatorConfig.Builder();
+        batchingOnly.batching.maxSize(8);
+        var options = OnnxEvaluatorOptions.of(batchingOnly.build(), 8);
+        assertTrue(options.padding().isEmpty());
+        assertEquals(options, options.withAttentionMask("mask").withMaxTokens(32), "Nothing to refine without padding buckets");
+
+        var withBuckets = new OnnxEvaluatorConfig.Builder();
+        withBuckets.batching.maxSize(8).paddingBuckets(List.of(16, 64));
+        var refined = OnnxEvaluatorOptions.of(withBuckets.build(), 8)
+                                          .withAttentionMask("mask").withMaxTokens(32)
+                                          .padding().orElseThrow();
+        assertEquals("mask", refined.attentionMaskName());
+        assertEquals(List.of(16, 32), refined.buckets());
     }
 
     @Test
@@ -69,11 +87,15 @@ public class OnnxEvaluatorOptionsTest {
         assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
                 options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
                 options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
-                options.batchingMaxSize(), null, options.modelConfigOverride(), options.availableProcessors()));
+                options.batchingMaxSize(), null, options.modelConfigOverride(), options.padding(), options.availableProcessors()));
         assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
                 options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
                 options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
-                options.batchingMaxSize(), options.numModelInstances(), null, options.availableProcessors()));
+                options.batchingMaxSize(), options.numModelInstances(), null, options.padding(), options.availableProcessors()));
+        assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
+                options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
+                options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
+                options.batchingMaxSize(), options.numModelInstances(), options.modelConfigOverride(), null, options.availableProcessors()));
     }
 
     @Test

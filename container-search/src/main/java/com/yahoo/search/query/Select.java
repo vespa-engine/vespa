@@ -108,10 +108,14 @@ public class Select implements Cloneable {
     public void setGroupingString(String grouping) {
         groupingRequests.clear();
         this.grouping = grouping;
-        // Parsing is deferred until the grouping is first accessed, as parameter references (@name) in the grouping
-        // must be resolved against the complete query properties, and this may be called while the properties of
-        // the query are still being set from the request
         this.groupingPending = true;
+        // A grouping with parameter references (@name) must be resolved against the complete query properties,
+        // and this may be called while the properties of the query are still being set from the request, so
+        // parsing it is deferred until the grouping is first accessed. A grouping without parameter references
+        // is parsed here, so that an invalid grouping fails where it is set.
+        if ( ! grouping.contains("@")) {
+            resolveGrouping();
+        }
     }
 
     /**
@@ -126,9 +130,13 @@ public class Select implements Cloneable {
         if ( ! groupingPending) {
             return;
         }
-        groupingPending = false; // before parsing, as GroupingRequest.newInstance adds to the list returned by getGrouping()
         SelectParser parser = (SelectParser) ParserFactory.newInstance(Query.Type.SELECT, new ParserEnvironment());
-        for (VespaGroupingStep step : parser.getGroupingSteps(grouping, parent.properties()::getString)) {
+        // Parse everything before clearing the pending flag, so a failed parse (e.g. a parameter which is not set yet)
+        // leaves the grouping pending and it can be resolved later. The flag must be cleared before adding the
+        // requests, as GroupingRequest.newInstance adds to the list returned by getGrouping().
+        var steps = parser.getGroupingSteps(grouping, parent.properties()::getString);
+        groupingPending = false;
+        for (VespaGroupingStep step : steps) {
             GroupingRequest.newInstance(parent)
                     .setRootOperation(step.getOperation())
                     .continuations().addAll(step.continuations());

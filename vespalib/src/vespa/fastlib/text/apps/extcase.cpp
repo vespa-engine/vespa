@@ -19,12 +19,15 @@ int pageoff[256];
 char linebuf[1024];
 
 static int hexval(char cp) {
-    if (cp >= '0' && cp <= '9')
+    if (cp >= '0' && cp <= '9') {
         return cp - '0';
-    if (cp >= 'a' && cp <= 'f')
+    }
+    if (cp >= 'a' && cp <= 'f') {
         return cp - 'a' + 10;
-    if (cp >= 'A' && cp <= 'F')
+    }
+    if (cp >= 'A' && cp <= 'F') {
         return cp - 'A' + 10;
+    }
     return -1;
 }
 
@@ -38,18 +41,22 @@ void DumpCase() {
     allocpage = 0;
     for (xpage = 0; xpage < 256; xpage++) {
         for (checkpage = (xpage == 0) ? 0 : 1; checkpage < xpage; checkpage++) {
-            for (code = 0; code < 256; code++)
-                if (lowercase[code + 256 * xpage] != lowercase[code + 256 * checkpage])
+            for (code = 0; code < 256; code++) {
+                if (lowercase[code + 256 * xpage] != lowercase[code + 256 * checkpage]) {
                     break;
-            if (code >= 256)
+                }
+            }
+            if (code >= 256) {
                 break;
+            }
         }
         pages[xpage] = checkpage;
         if (checkpage >= xpage) {
             pageoff[xpage] = allocpage * 256;
             allocpage++;
-        } else
+        } else {
             pageoff[xpage] = pageoff[checkpage];
+        }
     }
     printf("allocpage=%d\n", allocpage);
 
@@ -63,17 +70,20 @@ void DumpCase() {
     for (xpage = 0; xpage < 256; xpage++) {
         if (pages[xpage] == xpage) {
             for (code = 0; code < 256; code++) {
-                if ((code & 7) == 0)
+                if ((code & 7) == 0) {
                     file.WriteString("  ");
+                }
                 file.WriteString("0x");
                 file.addHexNum(lowercase[code + 256 * xpage], 4, '0');
                 file.WriteString("u");
-                if (code + 1 < static_cast<unsigned int>(256 * allocpage))
+                if (code + 1 < static_cast<unsigned int>(256 * allocpage)) {
                     file.WriteString(",");
-                if ((code & 7) < 7)
+                }
+                if ((code & 7) < 7) {
                     file.WriteString(" ");
-                else
+                } else {
                     file.WriteString("\n");
+                }
             }
         }
     }
@@ -85,10 +95,11 @@ void DumpCase() {
     for (xpage = 0; xpage < 256; xpage++) {
         file.WriteString("  Fast_intCompLowerCase+0x");
         file.addHexNum(pageoff[xpage], 4, '0');
-        if (xpage < 255)
+        if (xpage < 255) {
             file.WriteString(",");
-        else
+        } else {
             file.WriteString(" ");
+        }
         file.WriteString(" /* Page 0x");
         file.addHexNum(xpage, 2, '0');
         file.WriteString(" */\n");
@@ -116,18 +127,21 @@ int main(int argc, char** argv) {
     while (!file.Eof()) {
         (void)file.ReadLine(linebuf, sizeof(linebuf));
         len = strlen(linebuf);
-        if (len > 0 && linebuf[len - 1] == '\n')
+        if (len > 0 && linebuf[len - 1] == '\n') {
             len--;
-        if (len > 0 && linebuf[len - 1] == '\r')
+        }
+        if (len > 0 && linebuf[len - 1] == '\r') {
             len--;
+        }
         linebuf[len] = '\0';
 
         badline = false;
         if (hexval(linebuf[0]) >= 0) {
             code = 0;
             for (i = 0; i < 4; i++) {
-                if (hexval(linebuf[i]) < 0)
+                if (hexval(linebuf[i]) < 0) {
                     badline = true;
+                }
                 code = code * 16 + hexval(linebuf[i]);
             }
 
@@ -139,18 +153,21 @@ int main(int argc, char** argv) {
                         semcnt++;
                     }
                     i++;
-                    if (semcnt >= 13)
+                    if (semcnt >= 13) {
                         break;
+                    }
                 }
                 lowcode = 0;
                 if (hexval(linebuf[i]) >= 0) {
                     for (j = 0; j < 4; j++) {
-                        if (hexval(linebuf[i + j]) < 0)
+                        if (hexval(linebuf[i + j]) < 0) {
                             badline = true;
+                        }
                         lowcode = lowcode * 16 + hexval(linebuf[i + j]);
                     }
-                } else
+                } else {
                     badline = true;
+                }
                 if (!badline) {
                     lowercase[code] = lowcode;
                 } else {

@@ -2,6 +2,7 @@
 
 #include "doc_builder.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -11,8 +12,6 @@
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/newconfigbuilder.h>
-
-#include <cassert>
 
 using document::ArrayFieldValue;
 using document::DataType;
@@ -56,21 +55,21 @@ std::unique_ptr<Document> DocBuilder::make_document(std::string document_id) con
 
 const DataType& DocBuilder::get_data_type(const std::string& name) const {
     const DataType* type = _repo->getDataType(*_document_type, name);
-    assert(type);
+    CHECK(type);
     return *type;
 }
 
 ArrayFieldValue DocBuilder::make_array(std::string_view field_name) {
     auto& field = _document_type->getField(field_name);
     auto& field_type = field.getDataType();
-    assert(field_type.isArray());
+    CHECK(field_type.isArray());
     return ArrayFieldValue(field_type);
 }
 
 WeightedSetFieldValue DocBuilder::make_wset(std::string_view field_name) {
     auto& field = _document_type->getField(field_name);
     auto& field_type = field.getDataType();
-    assert(field_type.isWeightedSet());
+    CHECK(field_type.isWeightedSet());
     return {field_type};
 }
 

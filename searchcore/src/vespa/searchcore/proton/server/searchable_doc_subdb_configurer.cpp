@@ -7,6 +7,7 @@
 #include "searchable_feed_view.h"
 #include "searchview.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec.h>
@@ -143,8 +144,8 @@ IReprocessingInitializer::UP createAttributeReprocessingInitializer(
     const std::string& subDbName, search::SerialNum serialNum) {
     const document::DocumentType* newDocType = newConfig.getDocumentType();
     const document::DocumentType* oldDocType = oldConfig.getDocumentType();
-    assert(newDocType != nullptr);
-    assert(oldDocType != nullptr);
+    CHECK(newDocType != nullptr);
+    CHECK(oldDocType != nullptr);
     DocumentTypeInspector inspector(*oldDocType, *newDocType);
     IndexschemaInspector  oldIndexschemaInspector(oldConfig.getIndexschemaConfig());
     return std::make_unique<AttributeReprocessingInitializer>(

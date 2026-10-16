@@ -2,7 +2,7 @@
 
 #include "generation_hold.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 
@@ -10,12 +10,12 @@ GenerationHold::GenerationHold() noexcept : _refCount(1), _generation(Generation
 }
 
 GenerationHold::~GenerationHold() {
-    assert(getRefCount() == 0);
+    CHECK(getRefCount() == 0);
 }
 
 void GenerationHold::setValid() noexcept {
     auto old = _refCount.fetch_sub(1, std::memory_order_release);
-    assert(!valid(old));
+    CHECK(!valid(old));
 }
 
 bool GenerationHold::setInvalid() noexcept {
@@ -23,7 +23,7 @@ bool GenerationHold::setInvalid() noexcept {
     if (_refCount.compare_exchange_strong(refs, 1, std::memory_order_acq_rel, std::memory_order_relaxed)) {
         return true;
     } else {
-        assert(valid(refs));
+        CHECK(valid(refs));
         return false;
     }
 }
@@ -43,7 +43,7 @@ GenerationHold* GenerationHold::copy(GenerationHold* self) noexcept {
     } else {
         uint32_t oldRefCount = self->_refCount.fetch_add(2, std::memory_order_relaxed);
         (void)oldRefCount;
-        assert(valid(oldRefCount));
+        CHECK(valid(oldRefCount));
         return self;
     }
 }

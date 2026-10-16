@@ -97,8 +97,9 @@ private:
          * @brief Destructor.
          */
         ~TransitionList() {
-            if (_trans != nullptr)
+            if (_trans != nullptr) {
                 free(_trans);
+            }
         }
 
         /**
@@ -195,8 +196,9 @@ private:
          * @return Pointer to last transition, or nullptr.
          */
         Transition* last() {
-            if (_size > 0)
+            if (_size > 0) {
                 return &_trans[_size - 1];
+            }
             return nullptr;
         }
 
@@ -212,8 +214,9 @@ private:
          */
         Transition* find(symbol_t sy) {
             for (unsigned int i = 0; i < _size; i++) {
-                if (_trans[i]._symbol == sy)
+                if (_trans[i]._symbol == sy) {
                     return &_trans[i];
+                }
             }
             return nullptr;
         }
@@ -284,8 +287,9 @@ private:
          * @brief Destructor.
          */
         ~State() {
-            if (_blob != nullptr)
+            if (_blob != nullptr) {
                 delete _blob;
+            }
         }
 
         /**
@@ -458,8 +462,9 @@ private:
                 if (_chunks.size() == 0 || _CAPACITY - (_size * sizeof(_Tp)) < __b) { // need new chunk
                     __ret = static_cast<_Tp*>(::mmap(0, _CAPACITY, PROT_READ | PROT_WRITE,
                                                      MAP_PRIVATE | MAP_ANONYMOUS, /*fd=*/0, /*offset=*/0));
-                    if (__ret == MAP_FAILED)
+                    if (__ret == MAP_FAILED) {
                         throw std::bad_alloc();
+                    }
                     _chunks.push_back(__ret);
                     _size = __n;
                 } else { // fits in current chunk

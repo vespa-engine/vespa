@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
@@ -115,9 +116,9 @@ public:
         }
     }
 
-    void getAttributeList(vector<AttributeGuard>&) const override { assert(!"Not implemented"); }
+    void getAttributeList(vector<AttributeGuard>&) const override { CHECK(!"Not implemented"); }
     IAttributeContext::UP createContext() const override {
-        assert(!"Not implemented");
+        CHECK(!"Not implemented");
         return IAttributeContext::UP();
     }
 

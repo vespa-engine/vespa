@@ -11,6 +11,7 @@
 #include "stripe_access_guard.h"
 #include "top_level_distributor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -58,7 +59,7 @@ OperationRoutingSnapshot StripeBucketDBUpdater::read_snapshot_for_bucket(const d
     const auto      bucket_space = bucket.getBucketSpace();
     std::lock_guard lock(_distribution_context_mutex);
     auto            active_state_iter = _active_distribution_contexts.find(bucket_space);
-    assert(active_state_iter != _active_distribution_contexts.cend());
+    CHECK(active_state_iter != _active_distribution_contexts.cend());
     auto& state = *active_state_iter->second;
     if (!state.bucket_owned_in_active_state(bucket.getBucketId())) {
         return OperationRoutingSnapshot::make_not_routable_in_state(active_state_iter->second);
@@ -70,7 +71,7 @@ OperationRoutingSnapshot StripeBucketDBUpdater::read_snapshot_for_bucket(const d
     const auto& space_repo =
         bucket_present_in_mutable_db ? _op_ctx.bucket_space_repo() : _op_ctx.read_only_bucket_space_repo();
     auto existing_guard_iter = _explicit_transition_read_guard.find(bucket_space);
-    assert(existing_guard_iter != _explicit_transition_read_guard.cend());
+    CHECK(existing_guard_iter != _explicit_transition_read_guard.cend());
     auto db_guard = existing_guard_iter->second
                         ? existing_guard_iter->second
                         : space_repo.get(bucket_space).getBucketDatabase().acquire_read_guard();

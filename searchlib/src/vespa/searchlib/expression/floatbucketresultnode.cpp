@@ -25,21 +25,26 @@ int FloatBucketResultNode::onCmp(const Identifiable& b) const {
     double      f1(_from);
     double      f2(other._from);
 
-    if (f1 < f2)
+    if (f1 < f2) {
         return -1;
-    if (f1 > f2)
+    }
+    if (f1 > f2) {
         return 1;
+    }
 
     double t1(_to);
     double t2(other._to);
 
     if (f1 == f2) [[likely]] {
-        if (t1 == t2) [[likely]]
+        if (t1 == t2) [[likely]] {
             return 0;
-        if (t1 < t2)
+        }
+        if (t1 < t2) {
             return -1;
-        if (t1 > t2)
+        }
+        if (t1 > t2) {
             return 1;
+        }
 
         // at least one of t1,t2 is NaN; this is bad
         if (std::isnan(t1)) {

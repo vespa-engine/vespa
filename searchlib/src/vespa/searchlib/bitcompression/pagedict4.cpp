@@ -2,6 +2,7 @@
 
 #include "pagedict4.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
 
@@ -141,11 +142,11 @@ void PageDict4SSWriter::addL6Skip(std::string_view word, const StartOffset& star
     _eL6.writeBits(lcp, 8);
     _eL6.writeComprBufferIfNeeded();
     _eL6.writeString(wordSuffix);
-    assert(pageNum >= _l6PageNum);
+    CHECK(pageNum >= _l6PageNum);
     _eL6.encodeExpGolomb(pageNum - _l6PageNum, K_VALUE_COUNTFILE_L6_PAGENUM);
     _eL6.writeComprBufferIfNeeded();
-    assert(_l6PageNum < pageNum);
-    assert(_l6SparsePageNum + 1 == sparsePageNum);
+    CHECK(_l6PageNum < pageNum);
+    CHECK(_l6SparsePageNum + 1 == sparsePageNum);
     _l6SparsePageNum = sparsePageNum;
     _l6PageNum = pageNum;
     _l6StartOffset = startOffset;
@@ -245,23 +246,23 @@ void PageDict4SPWriter::setup() {
 PageDict4SPWriter::~PageDict4SPWriter() = default;
 
 void PageDict4SPWriter::flushPage() {
-    assert(_l3Entries > 0);
-    assert(_l3Size > 0);
-    assert(_headerSize >= getPageHeaderBitSize());
+    CHECK(_l3Entries > 0);
+    CHECK(_l3Size > 0);
+    CHECK(_headerSize >= getPageHeaderBitSize());
     uint32_t wordsSize = _prevWordsSize;
-    assert(_prevL3Size + _prevL4Size + _prevL5Size + _headerSize + wordsSize * 8 <= getPageBitSize());
-    assert(_prevL5Size < (1u << 15));
-    assert(_prevL4Size < (1u << 15));
-    assert(_prevL3Size < (1u << 15));
-    assert(_l3Entries < (1u << 15));
-    assert(wordsSize < (1u << 12));
-    assert(wordsSize <= _words.size());
+    CHECK(_prevL3Size + _prevL4Size + _prevL5Size + _headerSize + wordsSize * 8 <= getPageBitSize());
+    CHECK(_prevL5Size < (1u << 15));
+    CHECK(_prevL4Size < (1u << 15));
+    CHECK(_prevL3Size < (1u << 15));
+    CHECK(_l3Entries < (1u << 15));
+    CHECK(wordsSize < (1u << 12));
+    CHECK(wordsSize <= _words.size());
 
     uint32_t l4Residue = getL4Entries(_l3Entries);
     uint32_t l5Residue = getL5Entries(l4Residue);
 
-    assert((l4Residue == 0) == (_prevL4Size == 0));
-    assert((l5Residue == 0) == (_prevL5Size == 0));
+    CHECK((l4Residue == 0) == (_prevL4Size == 0));
+    CHECK((l5Residue == 0) == (_prevL5Size == 0));
     (void)l5Residue;
 
     EC& e = _spe;
@@ -288,7 +289,7 @@ void PageDict4SPWriter::flushPage() {
     if (wordsSize > 0) {
         e.writeBytes(std::span<const char>(_words.data(), wordsSize));
     }
-    assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
+    CHECK((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l6Word = _l3Word;
     _l6StartOffset = _l3StartOffset;
     _l6WordNum = _l3WordNum;
@@ -307,9 +308,9 @@ void PageDict4SPWriter::resetPage() {
     _eL3.setupWrite(_wcL3);
     _eL4.setupWrite(_wcL4);
     _eL5.setupWrite(_wcL5);
-    assert(_eL3.getWriteOffset() == 0);
-    assert(_eL4.getWriteOffset() == 0);
-    assert(_eL5.getWriteOffset() == 0);
+    CHECK(_eL3.getWriteOffset() == 0);
+    CHECK(_eL4.getWriteOffset() == 0);
+    CHECK(_eL5.getWriteOffset() == 0);
     _l3Word = _l6Word;
     _l4Word = _l6Word;
     _l5Word = _l6Word;
@@ -341,7 +342,7 @@ void PageDict4SPWriter::resetPage() {
 
 void PageDict4SPWriter::addL3Skip(std::string_view word, const StartOffset& startOffset, uint64_t wordNum,
                                   uint64_t pageNum) {
-    assert(_l3WordOffset == _words.size());
+    CHECK(_l3WordOffset == _words.size());
     /*
      * Update notion of previous size, converting tentative writes to
      * full writes.  This is used when flushing page, since last entry
@@ -391,7 +392,7 @@ void PageDict4SPWriter::addL3Skip(std::string_view word, const StartOffset& star
 
 void PageDict4SPWriter::addL4Skip(size_t& lcp) {
     size_t tlcp = getLCP(_l3Word, _l4Word);
-    assert(tlcp <= lcp);
+    CHECK(tlcp <= lcp);
     if (tlcp < lcp) {
         lcp = tlcp;
     }
@@ -419,7 +420,7 @@ void PageDict4SPWriter::addL4Skip(size_t& lcp) {
 
 void PageDict4SPWriter::addL5Skip(size_t& lcp) {
     size_t tlcp = getLCP(_l3Word, _l5Word);
-    assert(tlcp <= lcp);
+    CHECK(tlcp <= lcp);
     if (tlcp < lcp) {
         lcp = tlcp;
     }
@@ -508,20 +509,20 @@ void PageDict4PWriter::setup() {
 PageDict4PWriter::~PageDict4PWriter() = default;
 
 void PageDict4PWriter::flushPage() {
-    assert(_countsEntries > 0);
-    assert(_countsSize > 0);
-    assert(_headerSize >= getPageHeaderBitSize());
-    assert(_countsSize + _l1Size + _l2Size + _headerSize + 8 * _countsWordOffset <= getPageBitSize());
-    assert(_l2Size < (1u << 15));
-    assert(_l1Size < (1u << 15));
-    assert(_countsEntries < (1u << 15));
-    assert(_countsWordOffset < (1u << 12));
+    CHECK(_countsEntries > 0);
+    CHECK(_countsSize > 0);
+    CHECK(_headerSize >= getPageHeaderBitSize());
+    CHECK(_countsSize + _l1Size + _l2Size + _headerSize + 8 * _countsWordOffset <= getPageBitSize());
+    CHECK(_l2Size < (1u << 15));
+    CHECK(_l1Size < (1u << 15));
+    CHECK(_countsEntries < (1u << 15));
+    CHECK(_countsWordOffset < (1u << 12));
 
     uint32_t l1Residue = getL1Entries(_countsEntries);
     uint32_t l2Residue = getL2Entries(l1Residue);
 
-    assert((l1Residue == 0) == (_l1Size == 0));
-    assert((l2Residue == 0) == (_l2Size == 0));
+    CHECK((l1Residue == 0) == (_l1Size == 0));
+    CHECK((l2Residue == 0) == (_l2Size == 0));
     (void)l2Residue;
 
     EC& e = _pe;
@@ -548,7 +549,7 @@ void PageDict4PWriter::flushPage() {
     if (_countsWordOffset > 0) {
         e.writeBytes(std::span<const char>(_words.data(), _countsWordOffset));
     }
-    assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
+    CHECK((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l3Word = _pendingCountsWord;
     _l3StartOffset = _countsStartOffset;
     _l3WordNum = _wordNum;
@@ -567,9 +568,9 @@ void PageDict4PWriter::resetPage() {
     _eCounts.setupWrite(_wcCounts);
     _eL1.setupWrite(_wcL1);
     _eL2.setupWrite(_wcL2);
-    assert(_eCounts.getWriteOffset() == 0);
-    assert(_eL1.getWriteOffset() == 0);
-    assert(_eL2.getWriteOffset() == 0);
+    CHECK(_eCounts.getWriteOffset() == 0);
+    CHECK(_eL1.getWriteOffset() == 0);
+    CHECK(_eL2.getWriteOffset() == 0);
     _countsWord = _l3Word;
     _l1Word = _l3Word;
     _l2Word = _l3Word;
@@ -596,7 +597,7 @@ void PageDict4PWriter::resetPage() {
 }
 
 void PageDict4PWriter::addCounts(std::string_view word, const Counts& counts) {
-    assert(_countsWordOffset == _words.size());
+    CHECK(_countsWordOffset == _words.size());
     size_t lcp = getLCP(_pendingCountsWord, _countsWord);
     if (_l1StrideCheck >= getL1SkipStride()) {
         addL1Skip(lcp);
@@ -642,14 +643,14 @@ void PageDict4PWriter::addCounts(std::string_view word, const Counts& counts) {
 
 /* Private use */
 void PageDict4PWriter::addOverflowCounts(std::string_view word, const Counts& counts) {
-    assert(_countsEntries == 0);
-    assert(_countsSize == 0);
-    assert(_headerSize >= getPageHeaderBitSize());
-    assert(_countsSize + _l1Size + _l2Size + _headerSize <= getPageBitSize());
-    assert(_l2Size == 0);
-    assert(_l1Size == 0);
-    assert(_countsSize == 0);
-    assert(_countsWordOffset == 0);
+    CHECK(_countsEntries == 0);
+    CHECK(_countsSize == 0);
+    CHECK(_headerSize >= getPageHeaderBitSize());
+    CHECK(_countsSize + _l1Size + _l2Size + _headerSize <= getPageBitSize());
+    CHECK(_l2Size == 0);
+    CHECK(_l1Size == 0);
+    CHECK(_countsSize == 0);
+    CHECK(_countsWordOffset == 0);
 
     EC& e = _pe;
     e.writeBits(0, 15);
@@ -662,7 +663,7 @@ void PageDict4PWriter::addOverflowCounts(std::string_view word, const Counts& co
     uint32_t alignedHeaderSize = (_headerSize + 63) & -64;
     uint32_t padding = getPageBitSize() - alignedHeaderSize - 64;
     e.padBits(padding);
-    assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
+    CHECK((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l3Word = word;
     _l3StartOffset = _countsStartOffset;
     _l3StartOffset.adjust(counts);
@@ -675,7 +676,7 @@ void PageDict4PWriter::addL1Skip(size_t& lcp) {
     _prevL1Size = _l1Size; // Prepare for undo
     _prevL2Size = _l2Size; // Prepare for undo
     size_t tlcp = getLCP(_pendingCountsWord, _l1Word);
-    assert(tlcp <= lcp);
+    CHECK(tlcp <= lcp);
     if (tlcp < lcp) {
         lcp = tlcp;
     }
@@ -698,7 +699,7 @@ void PageDict4PWriter::addL1Skip(size_t& lcp) {
 
 void PageDict4PWriter::addL2Skip(size_t& lcp) {
     size_t tlcp = getLCP(_pendingCountsWord, _l2Word);
-    assert(tlcp <= lcp);
+    CHECK(tlcp <= lcp);
     if (tlcp < lcp) {
         lcp = tlcp;
     }
@@ -821,7 +822,7 @@ void PageDict4SSReader::setup(DC& ssd) {
         const uint8_t* bytes = dL6.getByteCompr();
         size_t         lcp = *bytes;
         ++bytes;
-        assert(lcp <= word.size());
+        CHECK(lcp <= word.size());
         word.resize(lcp);
         word += reinterpret_cast<const char*>(bytes);
         dL6.setByteCompr(bytes + word.size() + 1 - lcp);
@@ -846,7 +847,7 @@ void PageDict4SSReader::setup(DC& ssd) {
         }
         _l7.push_back(L7Entry(word, startOffset, l6WordNum, l6Offset, sparsePageNum, pageNum, l7Ref));
     }
-    assert(l6Offset == _ssFileBitLen);
+    CHECK(l6Offset == _ssFileBitLen);
 }
 
 PageDict4SSLookupRes PageDict4SSReader::lookup(std::string_view key) {
@@ -928,7 +929,7 @@ PageDict4SSLookupRes PageDict4SSReader::lookup(std::string_view key) {
         const uint8_t* bytes = dL6.getByteCompr();
         size_t         lcp = *bytes;
         ++bytes;
-        assert(lcp <= word.size());
+        CHECK(lcp <= word.size());
         word.resize(lcp);
         word += reinterpret_cast<const char*>(bytes);
         dL6.setByteCompr(bytes + word.size() + 1 - lcp);
@@ -962,7 +963,7 @@ PageDict4SSLookupRes PageDict4SSReader::lookup(std::string_view key) {
         }
         l6Offset = dL6.getReadOffset();
     }
-    assert(l6Offset <= _ssFileBitLen);
+    CHECK(l6Offset <= _ssFileBitLen);
     res._l6Word = l6Word;
     if (l6Offset >= _ssFileBitLen) {
         res._lastWord.clear(); // Mark that word is beyond end of dictionary
@@ -982,14 +983,14 @@ PageDict4SSLookupRes PageDict4SSReader::lookup(std::string_view key) {
 PageDict4SSLookupRes PageDict4SSReader::lookupOverflow(uint64_t wordNum) const {
     PageDict4SSLookupRes res;
 
-    assert(!_overflows.empty());
+    CHECK(!_overflows.empty());
 
     auto lb = std::lower_bound(_overflows.begin(), _overflows.end(), wordNum);
 
-    assert(lb != _overflows.end());
-    assert(lb->_wordNum == wordNum);
+    CHECK(lb != _overflows.end());
+    CHECK(lb->_wordNum == wordNum);
     uint32_t l7Ref = lb->_l7Ref;
-    assert(l7Ref < _l7.size());
+    CHECK(l7Ref < _l7.size());
 
     const std::string& word = _l7[l7Ref]._l7Word;
     uint64_t           l6Offset = _ssStartOffset;
@@ -1023,7 +1024,7 @@ PageDict4SSLookupRes PageDict4SSReader::lookupOverflow(uint64_t wordNum) const {
     oVal <<= 1;
     length = 1;
     UC64_READBITS_NS(o, EC);
-    assert(overflow);
+    CHECK(overflow);
     (void)overflow;
     UC64_DECODECONTEXT_STORE(o, dL6._);
 
@@ -1036,11 +1037,11 @@ PageDict4SSLookupRes PageDict4SSReader::lookupOverflow(uint64_t wordNum) const {
     const uint8_t* bytes = dL6.getByteCompr();
     size_t         lcp = *bytes;
     ++bytes;
-    assert(lcp <= word.size());
+    CHECK(lcp <= word.size());
     std::string_view suffix = reinterpret_cast<const char*>(bytes);
     dL6.setByteCompr(bytes + suffix.size() + 1);
-    assert(lcp + suffix.size() == word.size());
-    assert(suffix == word.substr(lcp));
+    CHECK(lcp + suffix.size() == word.size());
+    CHECK(suffix == word.substr(lcp));
     (void)lcp;
     Counts counts;
     dL6.readCounts(counts);
@@ -1084,18 +1085,18 @@ void PageDict4SPLookupRes::lookup(const SSReader& ssReader, const void* sparsePa
     uint32_t wordsSize = dL5.readBits(12);
     uint32_t l3Residue = l3Entries;
 
-    assert(l3Entries > 0);
+    CHECK(l3Entries > 0);
     uint32_t l4Residue = getL4Entries(l3Entries);
     uint32_t l5Residue = getL5Entries(l4Residue);
 
-    assert((l4Residue == 0) == (l4Size == 0));
-    assert((l5Residue == 0) == (l5Size == 0));
+    CHECK((l4Residue == 0) == (l4Size == 0));
+    CHECK((l5Residue == 0) == (l5Size == 0));
 
     uint32_t l5Offset = getPageHeaderBitSize() + spStartOffset;
     uint32_t l4Offset = l5Offset + l5Size;
     uint32_t l3Offset = l4Offset + l4Size;
 
-    assert(l5Offset == dL5.getReadOffset());
+    CHECK(l5Offset == dL5.getReadOffset());
 
     uint32_t    wordOffset = getPageByteSize() - wordsSize;
     const char* wordBuf = static_cast<const char*>(sparsePage) + wordOffset;
@@ -1119,7 +1120,7 @@ void PageDict4SPLookupRes::lookup(const SSReader& ssReader, const void* sparsePa
         const char* l5WordBuf = wordBuf + l5WordOffset;
         size_t      lcp = *reinterpret_cast<const unsigned char*>(l5WordBuf);
         ++l5WordBuf;
-        assert(lcp <= _l3Word.size());
+        CHECK(lcp <= _l3Word.size());
         word = _l3Word.substr(0, lcp) + l5WordBuf;
         bool l3NotLessThanKey = !(word < key);
         if (l3NotLessThanKey) {
@@ -1138,9 +1139,9 @@ void PageDict4SPLookupRes::lookup(const SSReader& ssReader, const void* sparsePa
         l4Offset += val64;
         UC64_DECODECONTEXT_STORE(o, dL5._);
         --l5Residue;
-        assert(l4Residue >= getL5SkipStride());
+        CHECK(l4Residue >= getL5SkipStride());
         l4Residue -= getL5SkipStride();
-        assert(l3Residue > getL5SkipStride() * getL4SkipStride());
+        CHECK(l3Residue > getL5SkipStride() * getL4SkipStride());
         l3Residue -= getL5SkipStride() * getL4SkipStride();
     }
     setDecoderPositionInPage(dL4, sparsePage, l4Offset);
@@ -1157,7 +1158,7 @@ void PageDict4SPLookupRes::lookup(const SSReader& ssReader, const void* sparsePa
         const char* l4WordBuf = wordBuf + l4WordOffset;
         size_t      lcp = *reinterpret_cast<const unsigned char*>(l4WordBuf);
         ++l4WordBuf;
-        assert(lcp <= _l3Word.size());
+        CHECK(lcp <= _l3Word.size());
         word = _l3Word.substr(0, lcp) + l4WordBuf;
         bool l3NotLessThanKey = !(word < key);
         if (l3NotLessThanKey) {
@@ -1174,18 +1175,18 @@ void PageDict4SPLookupRes::lookup(const SSReader& ssReader, const void* sparsePa
         l3Offset += val64;
         UC64_DECODECONTEXT_STORE(o, dL4._);
         --l4Residue;
-        assert(l3Residue > getL4SkipStride());
+        CHECK(l3Residue > getL4SkipStride());
         l3Residue -= getL4SkipStride();
     }
 
     setDecoderPositionInPage(dL3, sparsePage, l3Offset);
-    assert(l3Residue > 0);
+    CHECK(l3Residue > 0);
     while (l3Residue > 0) {
         if (l3Residue > 1) {
             const char* l3WordBuf = wordBuf + l3WordOffset;
             size_t      lcp = *reinterpret_cast<const unsigned char*>(l3WordBuf);
             ++l3WordBuf;
-            assert(lcp <= _l3Word.size());
+            CHECK(lcp <= _l3Word.size());
             word = _l3Word.substr(0, lcp) + l3WordBuf;
             bool l3NotLessThanKey = !(word < key);
             if (l3NotLessThanKey) {
@@ -1195,7 +1196,7 @@ void PageDict4SPLookupRes::lookup(const SSReader& ssReader, const void* sparsePa
             l3WordOffset += 2 + word.size() - lcp;
         } else {
             word = lastSPWord;
-            assert(!word.empty()); // Should've stopped at SS level
+            CHECK(!word.empty()); // Should've stopped at SS level
             bool l3NotLessThanKey = !(word < key);
             if (l3NotLessThanKey) {
                 break;
@@ -1220,7 +1221,7 @@ void PageDict4SPLookupRes::lookup(const SSReader& ssReader, const void* sparsePa
     // Lookup succeded if not run to end of L3 info.
     // Shoudn't have tried to look at page if word < key, i.e. lookup at this
     // level should always succeed.
-    assert(l3Residue > 0);
+    CHECK(l3Residue > 0);
 }
 
 PageDict4PLookupRes::PageDict4PLookupRes()
@@ -1265,14 +1266,14 @@ bool PageDict4PLookupRes::lookup(const SSReader& ssReader, const void* page, std
     uint32_t l1Residue = getL1Entries(countsEntries);
     uint32_t l2Residue = getL2Entries(l1Residue);
 
-    assert((l1Residue == 0) == (l1Size == 0));
-    assert((l2Residue == 0) == (l2Size == 0));
+    CHECK((l1Residue == 0) == (l1Size == 0));
+    CHECK((l2Residue == 0) == (l2Size == 0));
 
     uint32_t l2Offset = getPageHeaderBitSize() + pStartOffset;
     uint32_t l1Offset = l2Offset + l2Size;
     uint32_t countsOffset = l1Offset + l1Size;
 
-    assert(l2Offset == dL2.getReadOffset());
+    CHECK(l2Offset == dL2.getReadOffset());
 
     uint32_t    wordOffset = getPageByteSize() - wordsSize;
     const char* wordBuf = static_cast<const char*>(page) + wordOffset;
@@ -1297,7 +1298,7 @@ bool PageDict4PLookupRes::lookup(const SSReader& ssReader, const void* page, std
         const char* l2WordBuf = wordBuf + l2WordOffset;
         size_t      lcp = *reinterpret_cast<const unsigned char*>(l2WordBuf);
         ++l2WordBuf;
-        assert(lcp <= countsWord.size());
+        CHECK(lcp <= countsWord.size());
         word = countsWord.substr(0, lcp) + l2WordBuf;
         bool countsNotLessThanKey = !(word < key);
         if (countsNotLessThanKey) {
@@ -1315,9 +1316,9 @@ bool PageDict4PLookupRes::lookup(const SSReader& ssReader, const void* page, std
         l1Offset += val64;
         UC64_DECODECONTEXT_STORE(o, dL2._);
         --l2Residue;
-        assert(l1Residue >= getL2SkipStride());
+        CHECK(l1Residue >= getL2SkipStride());
         l1Residue -= getL2SkipStride();
-        assert(countsResidue > getL2SkipStride() * getL1SkipStride());
+        CHECK(countsResidue > getL2SkipStride() * getL1SkipStride());
         countsResidue -= getL2SkipStride() * getL1SkipStride();
         wordNum += getL2SkipStride() * getL1SkipStride();
     }
@@ -1335,7 +1336,7 @@ bool PageDict4PLookupRes::lookup(const SSReader& ssReader, const void* page, std
         const char* l1WordBuf = wordBuf + l1WordOffset;
         size_t      lcp = *reinterpret_cast<const unsigned char*>(l1WordBuf);
         ++l1WordBuf;
-        assert(lcp <= countsWord.size());
+        CHECK(lcp <= countsWord.size());
         word = countsWord.substr(0, lcp) + l1WordBuf;
         bool countsNotLessThanKey = !(word < key);
         if (countsNotLessThanKey) {
@@ -1351,20 +1352,20 @@ bool PageDict4PLookupRes::lookup(const SSReader& ssReader, const void* page, std
         countsOffset += val64;
         UC64_DECODECONTEXT_STORE(o, dL1._);
         --l1Residue;
-        assert(countsResidue > getL1SkipStride());
+        CHECK(countsResidue > getL1SkipStride());
         countsResidue -= getL1SkipStride();
         wordNum += getL1SkipStride();
     }
 
     setDecoderPositionInPage(dCounts, page, countsOffset);
-    assert(countsResidue > 0);
+    CHECK(countsResidue > 0);
     while (countsResidue > 0) {
         dCounts.readCounts(counts);
         if (countsResidue > 1) {
             const char* countsWordBuf = wordBuf + countsWordOffset;
             size_t      lcp = *reinterpret_cast<const unsigned char*>(countsWordBuf);
             ++countsWordBuf;
-            assert(lcp <= countsWord.size());
+            CHECK(lcp <= countsWord.size());
             word = countsWord.substr(0, lcp) + countsWordBuf;
             bool countsNotLessThanKey = !(word < key);
             if (countsNotLessThanKey) {
@@ -1374,7 +1375,7 @@ bool PageDict4PLookupRes::lookup(const SSReader& ssReader, const void* page, std
             countsWord = word;
         } else {
             word = lastPWord;
-            assert(!word.empty()); // Should've stopped at SS level
+            CHECK(!word.empty()); // Should've stopped at SS level
             bool countsNotLessThanKey = !(word < key);
             if (countsNotLessThanKey) {
                 break;
@@ -1393,7 +1394,7 @@ bool PageDict4PLookupRes::lookup(const SSReader& ssReader, const void* page, std
     } else {
         // Shouldn't have tried to look at page if word < key, and we know
         // that key != word.  Thus we can assert that key < word.
-        assert(key < word);
+        CHECK(key < word);
     }
     return _res;
 }
@@ -1431,12 +1432,12 @@ void PageDict4Reader::setup() {
     _ssd.copyParams(_ssReader.getSSD());
     _spd.copyParams(_ssReader.getSSD());
     _pd.copyParams(_ssReader.getSSD());
-    assert(_pd.getReadOffset() == _ssReader._pStartOffset);
-    assert(_spd.getReadOffset() == _ssReader._spStartOffset);
+    CHECK(_pd.getReadOffset() == _ssReader._pStartOffset);
+    CHECK(_spd.getReadOffset() == _ssReader._spStartOffset);
     // Handle extra padding after file header
     _pd.skipBits(getFileHeaderPad(_ssReader._pStartOffset));
     _spd.skipBits(getFileHeaderPad(_ssReader._spStartOffset));
-    assert(_pFileBitLen >= _pd.getReadOffset());
+    CHECK(_pFileBitLen >= _pd.getReadOffset());
     if (_pFileBitLen > _pd.getReadOffset()) {
         setupSPage();
         setupPage();
@@ -1454,7 +1455,7 @@ namespace {
 template <typename CheckVector>
 void checkWordOffset(CheckVector& skip, uint32_t& skipAdjust, uint32_t wordOffset, uint32_t wordEntryLen) {
     if (skip.valid() && skip->wordOffset + skipAdjust <= wordOffset) {
-        assert(skip->wordOffset + skipAdjust == wordOffset);
+        CHECK(skip->wordOffset + skipAdjust == wordOffset);
         skipAdjust += wordEntryLen;
         skip.step();
     }
@@ -1475,19 +1476,19 @@ void PageDict4Reader::checkWordOffsets(const std::vector<char>& words, CheckVect
     while (c != ce) {
         wordOffset = c - words.cbegin();
         ++c; // skip lcp
-        assert(c != ce);
+        CHECK(c != ce);
         while (*c != '\0') {
             ++c;
-            assert(c != ce);
+            CHECK(c != ce);
         }
-        assert(c != ce);
+        CHECK(c != ce);
         ++c;
         uint32_t wordEntryLen = c - words.cbegin() - wordOffset;
         checkWordOffset(skip1, skip1Adjust, wordOffset, wordEntryLen);
         checkWordOffset(skip2, skip2Adjust, wordOffset, wordEntryLen);
     }
-    assert(!skip1.valid());
-    assert(!skip2.valid());
+    CHECK(!skip1.valid());
+    CHECK(!skip2.valid());
 }
 
 void PageDict4Reader::setupPage() {
@@ -1503,7 +1504,7 @@ void PageDict4Reader::setupPage() {
         return;
     }
     _overflowPage = false;
-    assert(countsEntries > 0);
+    CHECK(countsEntries > 0);
     uint32_t l1Residue = getL1Entries(countsEntries);
     uint32_t l2Residue = getL2Entries(l1Residue);
 
@@ -1532,7 +1533,7 @@ void PageDict4Reader::setupPage() {
         _l2SkipChecks.push_back(l2SkipCheck);
     }
     _l2SkipChecks.setup();
-    assert(_pd.getReadOffset() == beforePos + l2Size);
+    CHECK(_pd.getReadOffset() == beforePos + l2Size);
     _l1SkipChecks.clear();
     L1SkipCheck l1SkipCheck(_startOffset);
     while (l1Residue > 0) {
@@ -1556,15 +1557,15 @@ void PageDict4Reader::setupPage() {
             uint64_t l1CheckOffset = beforePos + l2Size + _l2SkipChecks->l1Offset;
             uint64_t l1Offset = _pd.getReadOffset();
             if (l1Offset >= l1CheckOffset) {
-                assert(l1Offset == l1CheckOffset);
-                assert(_l2SkipChecks->check(l1SkipCheck));
+                CHECK(l1Offset == l1CheckOffset);
+                CHECK(_l2SkipChecks->check(l1SkipCheck));
                 _l2SkipChecks.step();
             }
         }
     }
-    assert(!_l2SkipChecks.valid());
+    CHECK(!_l2SkipChecks.valid());
     _l1SkipChecks.setup();
-    assert(_pd.getReadOffset() == beforePos + l2Size + l1Size);
+    CHECK(_pd.getReadOffset() == beforePos + l2Size + l1Size);
     (void)beforePos;
     _counts.clear();
     StartOffset startOffset(_startOffset);
@@ -1577,16 +1578,16 @@ void PageDict4Reader::setupPage() {
             uint64_t countsCheckOffset = beforePos + l2Size + l1Size + _l1SkipChecks->countOffset;
             uint64_t countsOffset = _pd.getReadOffset();
             if (countsOffset >= countsCheckOffset) {
-                assert(countsOffset == countsCheckOffset);
-                assert(startOffset == _l1SkipChecks->startOffset);
+                CHECK(countsOffset == countsCheckOffset);
+                CHECK(startOffset == _l1SkipChecks->startOffset);
                 _l1SkipChecks.step();
             }
         }
     }
-    assert(!_l1SkipChecks.valid());
+    CHECK(!_l1SkipChecks.valid());
     if (_l3SkipChecks.valid()) {
-        assert(_l3SkipChecks->startOffset == startOffset);
-        assert(_l3SkipChecks->wordNum == _wordNum + _countsResidue);
+        CHECK(_l3SkipChecks->startOffset == startOffset);
+        CHECK(_l3SkipChecks->wordNum == _wordNum + _countsResidue);
         _l3SkipChecks.step();
     }
     _cc = _counts.begin();
@@ -1607,9 +1608,9 @@ void PageDict4Reader::setupSPage() {
     uint32_t l3Entries = _spd.readBits(15);
     uint32_t wordsSize = _spd.readBits(12);
     _l3Residue = l3Entries;
-    assert(!_l3SkipChecks.valid());
+    CHECK(!_l3SkipChecks.valid());
 
-    assert(l3Entries > 0);
+    CHECK(l3Entries > 0);
     uint32_t l4Residue = getL4Entries(l3Entries);
     uint32_t l5Residue = getL5Entries(l4Residue);
 
@@ -1639,7 +1640,7 @@ void PageDict4Reader::setupSPage() {
         _l5SkipChecks.push_back(l5SkipCheck);
     }
     _l5SkipChecks.setup();
-    assert(_spd.getReadOffset() == beforePos + l5Size);
+    CHECK(_spd.getReadOffset() == beforePos + l5Size);
     _l4SkipChecks.clear();
     L4SkipCheck l4SkipCheck(_startOffset, _wordNum);
     while (l4Residue > 0) {
@@ -1665,15 +1666,15 @@ void PageDict4Reader::setupSPage() {
             uint64_t l4CheckOffset = beforePos + l5Size + _l5SkipChecks->l4Offset;
             uint64_t l4Offset = _spd.getReadOffset();
             if (l4Offset >= l4CheckOffset) {
-                assert(l4Offset == l4CheckOffset);
-                assert(_l5SkipChecks->check(l4SkipCheck));
+                CHECK(l4Offset == l4CheckOffset);
+                CHECK(_l5SkipChecks->check(l4SkipCheck));
                 _l5SkipChecks.step();
             }
         }
     }
-    assert(!_l5SkipChecks.valid());
+    CHECK(!_l5SkipChecks.valid());
     _l4SkipChecks.setup();
-    assert(_spd.getReadOffset() == beforePos + l5Size + l4Size);
+    CHECK(_spd.getReadOffset() == beforePos + l5Size + l4Size);
     (void)l4Size;
     (void)l5Size;
     (void)beforePos;
@@ -1696,13 +1697,13 @@ void PageDict4Reader::setupSPage() {
             uint64_t l3CheckOffset = beforePos + l5Size + l4Size + _l4SkipChecks->l3Offset;
             uint64_t l3Offset = _spd.getReadOffset();
             if (l3Offset >= l3CheckOffset) {
-                assert(l3Offset == l3CheckOffset);
-                assert(_l4SkipChecks->check(l3SkipCheck));
+                CHECK(l3Offset == l3CheckOffset);
+                CHECK(_l4SkipChecks->check(l3SkipCheck));
                 _l4SkipChecks.step();
             }
         }
     }
-    assert(!_l4SkipChecks.valid());
+    CHECK(!_l4SkipChecks.valid());
     _l3SkipChecks.setup();
     uint32_t pageOffset = _spd.getReadOffset() & (getPageBitSize() - 1);
     uint32_t padding = getPageBitSize() - wordsSize * 8 - pageOffset;
@@ -1715,34 +1716,34 @@ void PageDict4Reader::setupSPage() {
 }
 
 void PageDict4Reader::decodePWord(std::string& word) {
-    assert(_wc != _we);
+    CHECK(_wc != _we);
     size_t lcp = static_cast<unsigned char>(*_wc);
     ++_wc;
-    assert(lcp <= _lastWord.size());
-    assert(_wc != _we);
+    CHECK(lcp <= _lastWord.size());
+    CHECK(_wc != _we);
     word = _lastWord.substr(0, lcp);
     while (*_wc != 0) {
         word += *_wc;
-        assert(_wc != _we);
+        CHECK(_wc != _we);
         ++_wc;
     }
-    assert(_wc != _we);
+    CHECK(_wc != _we);
     ++_wc;
 }
 
 void PageDict4Reader::decodeSPWord(std::string& word) {
-    assert(_spwc != _spwe);
+    CHECK(_spwc != _spwe);
     size_t lcp = static_cast<unsigned char>(*_spwc);
     ++_spwc;
-    assert(lcp <= _lastWord.size());
-    assert(_spwc != _spwe);
+    CHECK(lcp <= _lastWord.size());
+    CHECK(_spwc != _spwe);
     word = _lastWord.substr(0, lcp);
     while (*_spwc != 0) {
         word += *_spwc;
-        assert(_spwc != _spwe);
+        CHECK(_spwc != _spwe);
         ++_spwc;
     }
-    assert(_spwc != _spwe);
+    CHECK(_spwc != _spwe);
     ++_spwc;
 }
 
@@ -1770,7 +1771,7 @@ void PageDict4Reader::decodeSSWord(std::string& word) {
         const uint8_t* bytes = _ssd.getByteCompr();
         size_t         lcp = *bytes;
         ++bytes;
-        assert(lcp <= _lastSSWord.size());
+        CHECK(lcp <= _lastSSWord.size());
         word = _lastSSWord.substr(0, lcp);
         word += reinterpret_cast<const char*>(bytes);
         _ssd.setByteCompr(bytes + word.size() + 1 - lcp);
@@ -1790,25 +1791,25 @@ void PageDict4Reader::decodeSSWord(std::string& word) {
 
 void PageDict4Reader::readCounts(std::string& word, uint64_t& wordNum, Counts& counts) {
     if (_countsResidue > 0) {
-        assert(_cc != _ce);
+        CHECK(_cc != _ce);
         counts = *_cc;
         ++_cc;
         if (_countsResidue > 1) {
-            assert(_cc != _ce);
+            CHECK(_cc != _ce);
         } else {
-            assert(_cc == _ce);
+            CHECK(_cc == _ce);
         }
         _startOffset.adjust(counts);
         if (_countsResidue > 1) {
             decodePWord(word);
             _lastWord = word;
             if (_countsResidue == 2) {
-                assert(_wc == _we);
+                CHECK(_wc == _we);
             } else {
-                assert(_wc != _we);
+                CHECK(_wc != _we);
             }
         } else {
-            assert(_l3Residue > 0);
+            CHECK(_l3Residue > 0);
             if (_l3Residue > 1) {
                 decodeSPWord(word);
             } else {
@@ -1820,27 +1821,27 @@ void PageDict4Reader::readCounts(std::string& word, uint64_t& wordNum, Counts& c
         --_countsResidue;
         wordNum = _wordNum++;
         if (_countsResidue == 0) {
-            assert((_pd.getReadOffset() & (getPageBitSize() - 1)) == 0);
+            CHECK((_pd.getReadOffset() & (getPageBitSize() - 1)) == 0);
             if (_pd.getReadOffset() < _pFileBitLen) {
                 if (_l3Residue == 0) {
                     setupSPage();
                 }
                 setupPage();
             } else {
-                assert(_pd.getReadOffset() == _pFileBitLen);
+                CHECK(_pd.getReadOffset() == _pFileBitLen);
             }
         }
     } else if (_overflowPage) {
         readOverflowCounts(word, counts);
         _overflowPage = false;
-        assert(_l3Residue > 0);
+        CHECK(_l3Residue > 0);
         std::string tword;
         if (_l3Residue > 1) {
             decodeSPWord(tword);
         } else {
             decodeSSWord(tword);
         }
-        assert(tword == word);
+        CHECK(tword == word);
         --_l3Residue;
         _lastWord = word;
         wordNum = _wordNum++;
@@ -1851,7 +1852,7 @@ void PageDict4Reader::readCounts(std::string& word, uint64_t& wordNum, Counts& c
             }
             setupPage();
         } else {
-            assert(_pd.getReadOffset() == _pFileBitLen);
+            CHECK(_pd.getReadOffset() == _pFileBitLen);
         }
     } else {
         // Mark end of file.
@@ -1866,18 +1867,18 @@ void PageDict4Reader::readOverflowCounts(std::string& word, Counts& counts) {
 
     PageDict4SSLookupRes wtsslr;
     wtsslr = _ssReader.lookupOverflow(wordNum);
-    assert(wtsslr._overflow);
-    assert(wtsslr._res);
+    CHECK(wtsslr._overflow);
+    CHECK(wtsslr._res);
 
     word = wtsslr._lastWord;
     counts = wtsslr._counts;
 
-    assert(wordNum == _wordNum);
-    assert(wtsslr._startOffset == _startOffset);
+    CHECK(wordNum == _wordNum);
+    CHECK(wtsslr._startOffset == _startOffset);
     _startOffset.adjust(counts);
     if (_l3SkipChecks.valid()) {
-        assert(_l3SkipChecks->startOffset == _startOffset);
-        assert(_l3SkipChecks->wordNum == _wordNum + 1);
+        CHECK(_l3SkipChecks->startOffset == _startOffset);
+        CHECK(_l3SkipChecks->wordNum == _wordNum + 1);
         _l3SkipChecks.step();
     }
 }

@@ -13,15 +13,17 @@ void Timer::SetMax(double max) {
 }
 
 void Timer::Start() {
-    if (_running)
+    if (_running) {
         return;
+    }
     _running = true;
     _time = clock::now();
 }
 
 void Timer::Stop() {
-    if (!_running)
+    if (!_running) {
         return;
+    }
     _timespan = GetCurrent();
     _running = false;
 }
@@ -32,8 +34,9 @@ void Timer::Clear() {
 }
 
 double Timer::GetTimespan() {
-    if (_running)
+    if (_running) {
         Stop();
+    }
     return _timespan;
 }
 
@@ -43,8 +46,9 @@ double Timer::GetRemaining() {
 }
 
 double Timer::GetCurrent() {
-    if (!_running)
+    if (!_running) {
         return 0;
+    }
     using milliseconds = std::chrono::duration<double, std::milli>;
     return std::chrono::duration_cast<milliseconds>(time_point(clock::now()) - _time).count();
 }

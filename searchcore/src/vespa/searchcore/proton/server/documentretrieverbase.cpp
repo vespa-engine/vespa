@@ -47,8 +47,9 @@ search::DocumentMetadata DocumentRetrieverBase::getDocumentMetadata(const Docume
 CachedSelect::SP DocumentRetrieverBase::parseSelect(const std::string& selection) const {
     {
         std::lock_guard<std::mutex> guard(_lock);
-        if (_selectCache.hasKey(selection))
+        if (_selectCache.hasKey(selection)) {
             return _selectCache[selection];
+        }
     }
 
     auto nselect = std::make_shared<CachedSelect>();
@@ -57,8 +58,9 @@ CachedSelect::SP DocumentRetrieverBase::parseSelect(const std::string& selection
                  _can_populate_document_metadata_docid);
 
     std::lock_guard<std::mutex> guard(_lock);
-    if (_selectCache.hasKey(selection))
+    if (_selectCache.hasKey(selection)) {
         return _selectCache[selection];
+    }
     _selectCache.insert(selection, nselect);
     return nselect;
 }

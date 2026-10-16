@@ -4,7 +4,7 @@
 
 #include "result.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace storage::spi {
 
@@ -16,7 +16,7 @@ void CatchResult::onComplete(std::unique_ptr<Result> result) noexcept {
     _promisedResult.set_value(std::move(result));
 }
 void CatchResult::addResultHandler(const ResultHandler* resultHandler) {
-    assert(_resulthandler == nullptr);
+    CHECK(_resulthandler == nullptr);
     _resulthandler = resultHandler;
 }
 

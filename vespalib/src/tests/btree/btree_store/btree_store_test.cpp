@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/datastore/compacting_buffers.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
@@ -91,13 +92,13 @@ ChangeWriter::ChangeWriter(uint32_t capacity) : _old_refs() {
 ChangeWriter::~ChangeWriter() = default;
 
 void ChangeWriter::write(const std::vector<EntryRef>& refs) {
-    assert(refs.size() == _old_refs.size());
+    CHECK(refs.size() == _old_refs.size());
     auto old_ref_itr = _old_refs.begin();
     for (auto ref : refs) {
         **old_ref_itr = ref;
         ++old_ref_itr;
     }
-    assert(old_ref_itr == _old_refs.end());
+    CHECK(old_ref_itr == _old_refs.end());
     _old_refs.clear();
 }
 

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/simple_value.h>
@@ -253,14 +254,14 @@ public:
     std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid, VectorBundle vectors,
                                                         GenerationGuard guard) const override {
         (void)guard;
-        assert(vectors.subspaces() == 1);
+        CHECK(vectors.subspaces() == 1);
         auto d_vector = vectors.cells(0).typify<double>();
         _prepare_adds.emplace_back(docid, DoubleVector(d_vector.begin(), d_vector.end()));
         return std::make_unique<MockPrepareResult>(docid);
     }
     void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) override {
         auto* mock_result = dynamic_cast<MockPrepareResult*>(prepare_result.get());
-        assert(mock_result);
+        CHECK(mock_result);
         EXPECT_EQ(docid, mock_result->docid);
         auto vector = _vectors.get_vector(docid, 0).typify<double>();
         _complete_adds.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
@@ -370,7 +371,7 @@ class MockNearestNeighborIndexFactory : public NearestNeighborIndexFactory {
         (void)params;
         (void)multi_vector_index;
         (void)quant_params;
-        assert(cell_type == CellType::DOUBLE);
+        CHECK(cell_type == CellType::DOUBLE);
         return std::make_unique<MockNearestNeighborIndex>(vectors);
     }
 };
@@ -551,7 +552,7 @@ struct Fixture {
 
     std::shared_ptr<TensorAttribute> makeAttr() {
         if (_traits.use_dense_tensor_attribute) {
-            assert(_denseTensors);
+            CHECK(_denseTensors);
             return std::make_shared<DenseTensorAttribute>(_name, _cfg, *_index_factory);
         } else if (_traits.use_direct_tensor_attribute) {
             return std::make_shared<DirectTensorAttribute>(_name, _cfg);
@@ -562,14 +563,14 @@ struct Fixture {
 
     const DenseTensorAttribute& as_dense_tensor() const {
         auto result = dynamic_cast<const DenseTensorAttribute*>(_tensorAttr.get());
-        assert(result != nullptr);
+        CHECK(result != nullptr);
         return *result;
     }
 
     template <typename IndexType> IndexType& get_nearest_neighbor_index() {
-        assert(_tensorAttr->nearest_neighbor_index() != nullptr);
+        CHECK(_tensorAttr->nearest_neighbor_index() != nullptr);
         auto index = dynamic_cast<const IndexType*>(_tensorAttr->nearest_neighbor_index());
-        assert(index != nullptr);
+        CHECK(index != nullptr);
         return *const_cast<IndexType*>(index);
     }
 

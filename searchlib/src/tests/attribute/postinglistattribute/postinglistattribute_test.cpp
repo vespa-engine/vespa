@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute.h>
@@ -162,10 +163,12 @@ protected:
 template <> void PostingListAttributeTest::populate<IntegerAttribute>(IntegerAttribute& v) {
     for (size_t i(0), m(v.getNumDocs()); i < m; i++) {
         v.clearDoc(i);
-        if (i == 0)
+        if (i == 0) {
             continue;
-        if (i == 9)
+        }
+        if (i == 9) {
             continue;
+        }
         if (i == 7) {
             if (v.hasMultiValue()) {
                 v.append(i, -42, 27);
@@ -212,10 +215,12 @@ template <> void PostingListAttributeTest::populate<IntegerAttribute>(IntegerAtt
 template <> void PostingListAttributeTest::populate<StringAttribute>(StringAttribute& v) {
     for (size_t i(0), m(v.getNumDocs()); i < m; i++) {
         v.clearDoc(i);
-        if (i == 0)
+        if (i == 0) {
             continue;
-        if (i == 9)
+        }
+        if (i == 9) {
             continue;
+        }
         if (i == 7) {
             if (v.hasMultiValue()) {
                 v.append(i, "foo", 27);
@@ -260,7 +265,7 @@ template <> void PostingListAttributeTest::populate<StringAttribute>(StringAttri
 
 template <typename VectorType> VectorType& PostingListAttributeTest::as(AttributePtr& v) {
     VectorType* res = dynamic_cast<VectorType*>(v.get());
-    assert(res != nullptr);
+    CHECK(res != nullptr);
     return *res;
 }
 

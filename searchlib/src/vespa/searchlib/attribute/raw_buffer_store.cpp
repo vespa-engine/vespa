@@ -4,8 +4,6 @@
 
 #include <vespa/vespalib/datastore/array_store.hpp>
 
-#include <cassert>
-
 using vespalib::alloc::MemoryAllocator;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::EntryRef;

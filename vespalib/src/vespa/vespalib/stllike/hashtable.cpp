@@ -16,10 +16,12 @@ constexpr unsigned long STL_PRIME_LIST[] = {
 namespace vespalib {
 
 size_t hashtable_base::getModuloStl(size_t size) noexcept {
-    if (size > 0xfffffffful)
+    if (size > 0xfffffffful) {
         return 0xfffffffful;
-    if (size < 8)
+    }
+    if (size < 8) {
         return 7ul;
+    }
     uint32_t index = Optimized::msbIdx(size);
     return (size <= STL_PRIME_LIST[index - 1]) ? STL_PRIME_LIST[index - 1] : STL_PRIME_LIST[index];
 }

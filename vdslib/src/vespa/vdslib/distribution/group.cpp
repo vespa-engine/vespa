@@ -2,12 +2,12 @@
 
 #include "group.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <algorithm>
-#include <cassert>
 #include <ostream>
 
 namespace storage::lib {
@@ -115,7 +115,7 @@ void Group::setCapacity(vespalib::Double capacity) {
 }
 
 void Group::setNodes(const std::vector<uint16_t>& nodes, bool normalize_order) {
-    assert(_distributionSpec.size() == 0);
+    CHECK(_distributionSpec.size() == 0);
     _originalNodes = nodes;
     _nodes = nodes;
     // Maintain ordering invariant. Required to ensure node score computations

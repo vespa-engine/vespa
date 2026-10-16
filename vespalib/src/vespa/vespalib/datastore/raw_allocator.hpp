@@ -5,6 +5,8 @@
 #include "bufferstate.h"
 #include "raw_allocator.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::datastore {
 
 template <typename EntryT, typename RefT>
@@ -17,7 +19,7 @@ typename RawAllocator<EntryT, RefT>::HandleType RawAllocator<EntryT, RefT>::allo
     _store.ensure_buffer_capacity(_typeId, num_entries + extra_entries);
     uint32_t     buffer_id = _store.primary_buffer_id(_typeId);
     BufferState& state = _store.getBufferState(buffer_id);
-    assert(state.isActive());
+    CHECK(state.isActive());
     RefT    ref(state.size(), buffer_id);
     EntryT* buffer = _store.getEntryArray<EntryT>(ref, state.getArraySize());
     state.stats().pushed_back(num_entries);
@@ -30,8 +32,8 @@ typename RawAllocator<EntryT, RefT>::HandleType RawAllocator<EntryT, RefT>::allo
     _store.ensure_buffer_capacity(_typeId, 1);
     uint32_t     buffer_id = _store.primary_buffer_id(_typeId);
     BufferState& state = _store.getBufferState(buffer_id);
-    assert(state.isActive());
-    assert(state.getArraySize() >= array_size);
+    CHECK(state.isActive());
+    CHECK(state.getArraySize() >= array_size);
     RefT    ref(state.size(), buffer_id);
     auto    entry_size = _store.get_entry_size(_typeId);
     EntryT* buffer = BufferType::get_entry(_store.getBuffer(ref.bufferId()), ref.offset(), entry_size);

@@ -2,6 +2,7 @@
 
 #include "zcposting.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/postinglistcountfile.h>
@@ -9,8 +10,6 @@
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/vespalib/data/fileheader.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.zcposting");
@@ -92,8 +91,8 @@ void Zc4PostingSeqRead::getParams(PostingListParams& params) {
         uint32_t countMinChunkDocs = 0;
         countParams.get("docIdLimit", countDocIdLimit);
         countParams.get("minChunkDocs", countMinChunkDocs);
-        assert(_reader.get_posting_params()._doc_id_limit == countDocIdLimit);
-        assert(_reader.get_posting_params()._min_chunk_docs == countMinChunkDocs);
+        CHECK(_reader.get_posting_params()._doc_id_limit == countDocIdLimit);
+        CHECK(_reader.get_posting_params()._min_chunk_docs == countMinChunkDocs);
     } else {
         params.clear();
         params.set("docIdLimit", _reader.get_posting_params()._doc_id_limit);
@@ -115,25 +114,25 @@ void Zc4PostingSeqRead::readHeader() {
     vespalib::FileHeader header;
     d.readHeader(header, _file.getSize());
     uint32_t headerLen = header.getSize();
-    assert(header.hasTag("frozen"));
-    assert(header.hasTag("fileBitSize"));
-    assert(header.hasTag("format.0"));
-    assert(header.hasTag("format.1"));
-    assert(!header.hasTag("format.2"));
-    assert(header.hasTag("numWords"));
-    assert(header.hasTag("minChunkDocs"));
-    assert(header.hasTag("docIdLimit"));
-    assert(header.hasTag("minSkipDocs"));
-    assert(header.hasTag("endian"));
+    CHECK(header.hasTag("frozen"));
+    CHECK(header.hasTag("fileBitSize"));
+    CHECK(header.hasTag("format.0"));
+    CHECK(header.hasTag("format.1"));
+    CHECK(!header.hasTag("format.2"));
+    CHECK(header.hasTag("numWords"));
+    CHECK(header.hasTag("minChunkDocs"));
+    CHECK(header.hasTag("docIdLimit"));
+    CHECK(header.hasTag("minSkipDocs"));
+    CHECK(header.hasTag("endian"));
     bool completed = header.getTag("frozen").asInteger() != 0;
     _fileBitSize = header.getTag("fileBitSize").asInteger();
     headerLen += (-headerLen & 7);
-    assert(completed);
+    CHECK(completed);
     (void)completed;
-    assert(_fileBitSize >= 8 * headerLen);
-    assert(header.getTag("format.0").asString() == myId);
+    CHECK(_fileBitSize >= 8 * headerLen);
+    CHECK(header.getTag("format.0").asString() == myId);
     (void)myId;
-    assert(header.getTag("format.1").asString() == d.getIdentifier());
+    CHECK(header.getTag("format.1").asString() == d.getIdentifier());
     _numWords = header.getTag("numWords").asInteger();
     posting_params._min_chunk_docs = header.getTag("minChunkDocs").asInteger();
     posting_params._doc_id_limit = header.getTag("docIdLimit").asInteger();
@@ -141,12 +140,12 @@ void Zc4PostingSeqRead::readHeader() {
     if (header.hasTag(interleaved_features) && (header.getTag(interleaved_features).asInteger() != 0)) {
         posting_params._encode_interleaved_features = true;
     }
-    assert(header.getTag("endian").asString() == "big");
+    CHECK(header.getTag("endian").asString() == "big");
     // Read feature decoding specific subheader
     d.readHeader(header, "features.");
     // Align on 64-bit unit
     d.smallAlign(64);
-    assert(d.getReadOffset() == headerLen * 8);
+    CHECK(d.getReadOffset() == headerLen * 8);
     _headerBitLen = d.getReadOffset();
 }
 
@@ -202,8 +201,8 @@ void Zc4PostingSeqWrite::makeHeader(const FileHeaderContext& fileHeaderContext) 
     e.flush();
     uint32_t headerLen = header.getSize();
     headerLen += (-headerLen & 7); // Then to uint64_t
-    assert(e.getWriteOffset() == headerLen * 8);
-    assert((e.getWriteOffset() & 63) == 0); // Header must be word aligned
+    CHECK(e.getWriteOffset() == headerLen * 8);
+    CHECK((e.getWriteOffset() & 63) == 0); // Header must be word aligned
 }
 
 bool Zc4PostingSeqWrite::updateHeader() {
@@ -238,7 +237,7 @@ bool Zc4PostingSeqWrite::open(const std::string& name, const TuneFileSeqWrite& t
     }
     auto&    writeContext = _writer.get_write_context();
     uint64_t bufferStartFilePos = writeContext.getBufferStartFilePos();
-    assert(bufferStartFilePos == 0);
+    CHECK(bufferStartFilePos == 0);
     _file.SetSize(0);
     writeContext.setFile(&_file);
     search::ComprBuffer& cb = writeContext;
@@ -282,8 +281,8 @@ void Zc4PostingSeqWrite::getParams(PostingListParams& params) {
         uint32_t countMinChunkDocs = 0;
         countParams.get("docIdLimit", countDocIdLimit);
         countParams.get("minChunkDocs", countMinChunkDocs);
-        assert(_writer.get_docid_limit() == countDocIdLimit);
-        assert(_writer.get_min_chunk_docs() == countMinChunkDocs);
+        CHECK(_writer.get_docid_limit() == countDocIdLimit);
+        CHECK(_writer.get_min_chunk_docs() == countMinChunkDocs);
     } else {
         params.clear();
         params.set("docIdLimit", _writer.get_docid_limit());

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -138,7 +139,7 @@ public:
         VisitorFactory& factory(_factory);
         auto*           visitor = factory.makeVisitor(*_component, _env, params);
         auto*           search_visitor = dynamic_cast<SearchVisitor*>(visitor);
-        assert(search_visitor != nullptr);
+        CHECK(search_visitor != nullptr);
         return std::make_unique<VisitorSession>(search_visitor);
     }
     Visitor::DocEntryList make_documents(const std::vector<MyDocument>& docs) const {
@@ -163,7 +164,7 @@ SearchVisitorTest::SearchVisitorTest()
       _factory(::config::ConfigUri(src_cfg("dir:", "")), nullptr, ""),
       _repo(std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig(src_cfg("", "/documenttypes.cfg")))),
       _doc_type(_repo->getDocumentType("test")) {
-    assert(_doc_type != nullptr);
+    CHECK(_doc_type != nullptr);
     _componentRegister.setNodeInfo("mycl", lib::NodeType::STORAGE, 1);
     _componentRegister.setClock(_clock);
     _componentRegister.setDocumentTypeRepo(_repo);

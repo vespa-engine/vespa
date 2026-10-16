@@ -4,7 +4,7 @@
 
 #include "replay_feedtoken_state.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton::feedtoken {
 
@@ -25,7 +25,7 @@ ReplayFeedTokenFactory::ReplayFeedTokenFactory(bool enable_tracking)
 
 ReplayFeedTokenFactory::~ReplayFeedTokenFactory() {
     std::lock_guard guard(_lock);
-    assert(_states.empty());
+    CHECK(_states.empty());
 }
 
 FeedToken ReplayFeedTokenFactory::make_replay_feed_token(ThrottlerToken throttler_token, const FeedOperation& op) {
@@ -33,7 +33,7 @@ FeedToken ReplayFeedTokenFactory::make_replay_feed_token(ThrottlerToken throttle
         auto            token = std::make_unique<ReplayState>(std::move(throttler_token), op);
         std::lock_guard guard(_lock);
         bool            inserted = _states.insert(token.get()).second;
-        assert(inserted);
+        CHECK(inserted);
         return std::shared_ptr<ReplayState>(token.release(), Deleter(*this));
     } else {
         return std::make_shared<ReplayState>(std::move(throttler_token), op);
@@ -43,7 +43,7 @@ FeedToken ReplayFeedTokenFactory::make_replay_feed_token(ThrottlerToken throttle
 void ReplayFeedTokenFactory::on_delete(const ReplayState* state) noexcept {
     std::lock_guard guard(_lock);
     bool            erased = _states.erase(state) > 0u;
-    assert(erased);
+    CHECK(erased);
 }
 
 } // namespace proton::feedtoken

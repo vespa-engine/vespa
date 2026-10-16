@@ -4,8 +4,6 @@
 
 #include <openssl/crypto.h>
 
-#include <cassert>
-
 namespace vespalib::net::tls {
 
 TransportSecurityOptions::TransportSecurityOptions(Params params)

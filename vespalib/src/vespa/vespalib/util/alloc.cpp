@@ -5,6 +5,7 @@
 #include "memory_allocator.h"
 #include "round_up_to_page_size.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -13,7 +14,6 @@
 #include <sys/mman.h>
 
 #include <atomic>
-#include <cassert>
 #include <cstdlib>
 #include <map>
 #include <mutex>
@@ -190,7 +190,7 @@ void createAlignedAutoAllocators(AutoAllocatorsMap& map, size_t mmapLimit) {
         MMapLimitAndAlignment key(mmapLimit, alignment);
         auto                  result = map.emplace(key, std::make_unique<AutoAllocator>(mmapLimit, alignment));
         (void)result;
-        assert(result.second);
+        CHECK(result.second);
     }
 }
 
@@ -426,7 +426,7 @@ void MMapAllocator::sfree(PtrAndSize alloc) noexcept {
         if (alloc.size() >= _g_MMapLogLimit) {
             std::lock_guard guard(_g_lock);
             MMapInfo        info = _g_HugeMappings[alloc.get()];
-            assert(alloc.size() == info._sz);
+            CHECK(alloc.size() == info._sz);
             _g_HugeMappings.erase(alloc.get());
             LOG(info, "munmap %ld of size %ld", info._id, info._sz);
             LOG(info, "%ld mappings of accumulated size %ld", _g_HugeMappings.size(), sum(_g_HugeMappings));
@@ -540,7 +540,7 @@ Alloc Alloc::alloc_with_allocator(const MemoryAllocator* allocator) noexcept {
 PtrAndSize::PtrAndSize(void* ptr, size_t sz) noexcept : _ptr(ptr), _sz(sz) {
     constexpr uint8_t  MAX_PTR_BITS = 57;
     constexpr uint64_t MAX_PTR = 1ul << MAX_PTR_BITS;
-    assert((uint64_t(ptr) + sz) < MAX_PTR);
+    CHECK((uint64_t(ptr) + sz) < MAX_PTR);
 }
 
 } // namespace alloc

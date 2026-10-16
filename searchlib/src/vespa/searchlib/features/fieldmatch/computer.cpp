@@ -98,9 +98,9 @@ void Computer::reset(uint32_t docId) {
                 }
                 for (; it.valid(); it.next()) {
                     uint32_t fieldPos = it.getPosition();
-                    if (__builtin_expect(fieldPos < _fieldLength, true))
+                    if (__builtin_expect(fieldPos < _fieldLength, true)) {
                         _cachedHits[i].bitvector.setBit(fieldPos);
-                    else {
+                    } else {
                         handleError(fieldPos, docId);
                     }
                 }

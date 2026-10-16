@@ -4,6 +4,7 @@
 
 #include "streamed_value.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 
@@ -60,9 +61,9 @@ public:
 
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>>) override {
         if (_num_mapped_dimensions == 0) {
-            assert(_num_subspaces == 1);
+            CHECK(_num_subspaces == 1);
         }
-        assert(_num_subspaces * _dense_subspace_size == _cells.size());
+        CHECK(_num_subspaces * _dense_subspace_size == _cells.size());
         return std::make_unique<StreamedValue<T>>(std::move(_type), _num_mapped_dimensions, std::move(_cells),
                                                   _num_subspaces, std::move(_labels));
     }

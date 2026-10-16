@@ -508,6 +508,15 @@ public class ApplicationHandler extends HttpHandler {
             object.setLong("currentGeneration", response.currentGeneration);
             object.setLong("wantedGeneration", response.wantedGeneration);
             object.setBool("converged", response.converged);
+            if ( ! response.pendingRestarts.isEmpty()) {
+                Cursor pendingRestartsArray = object.setArray("pendingRestarts");
+                response.pendingRestarts.generationsForRestarts().forEach((generation, hostnames) -> {
+                    Cursor pendingRestartObject = pendingRestartsArray.addObject();
+                    pendingRestartObject.setLong("generation", generation);
+                    Cursor hostsArray = pendingRestartObject.setArray("hosts");
+                    hostnames.forEach(hostsArray::addString);
+                });
+            }
             var failed = serviceWithFailedConfig.get();
             if (failed != null) {
                 Cursor cfObject = object.setObject("config");

@@ -2,10 +2,10 @@
 
 #include "document_scorer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/rank_program.h>
 
 #include <algorithm>
-#include <cassert>
 
 using search::feature_t;
 using search::fef::FeatureResolver;
@@ -19,7 +19,7 @@ namespace {
 
 LazyValue extractScoreFeature(const RankProgram& rankProgram) {
     FeatureResolver resolver(rankProgram.get_seeds());
-    assert(resolver.num_features() == 1u);
+    CHECK(resolver.num_features() == 1u);
     return resolver.resolve(0);
 }
 

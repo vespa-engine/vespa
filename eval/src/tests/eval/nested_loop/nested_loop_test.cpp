@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/nested_loop.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -8,7 +9,7 @@ using namespace vespalib::eval;
 std::vector<size_t> run_loop(size_t idx_in, const std::vector<size_t>& loop, const std::vector<size_t>& stride) {
     std::vector<size_t> result;
     auto                capture = [&](size_t idx_out) { result.push_back(idx_out); };
-    assert(loop.size() == stride.size());
+    CHECK(loop.size() == stride.size());
     run_nested_loop(idx_in, loop, stride, capture);
     return result;
 }
@@ -18,8 +19,8 @@ std::vector<std::pair<size_t, size_t>> run_two_loops(size_t idx1_in, size_t idx2
                                                      const std::vector<size_t>& stride2) {
     std::vector<std::pair<size_t, size_t>> result;
     auto capture = [&](size_t idx1_out, size_t idx2_out) { result.emplace_back(idx1_out, idx2_out); };
-    assert(loop.size() == stride1.size());
-    assert(loop.size() == stride2.size());
+    CHECK(loop.size() == stride1.size());
+    CHECK(loop.size() == stride2.size());
     run_nested_loop(idx1_in, idx2_in, loop, stride1, stride2, capture);
     return result;
 }
@@ -36,9 +37,9 @@ std::vector<std::vector<size_t>> run_three_loops(size_t idx1_in, size_t idx2_in,
     auto                             capture = [&](size_t idx1_out, size_t idx2_out, size_t idx3_out) {
         add_entry(result, {idx1_out, idx2_out, idx3_out});
     };
-    assert(loop.size() == stride1.size());
-    assert(loop.size() == stride2.size());
-    assert(loop.size() == stride3.size());
+    CHECK(loop.size() == stride1.size());
+    CHECK(loop.size() == stride2.size());
+    CHECK(loop.size() == stride3.size());
     run_nested_loop(idx1_in, idx2_in, idx3_in, loop, stride1, stride2, stride3, capture);
     return result;
 }

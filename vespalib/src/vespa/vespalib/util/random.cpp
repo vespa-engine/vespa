@@ -81,11 +81,13 @@ double RandomGen::DRanNormalZig() {
         double       u = 2 * nextDouble() - 1;
         unsigned int i = nextInt32() & 0x7F;
         /* first try the rectangular boxes */
-        if (std::fabs(u) < s_adZigR[i])
+        if (std::fabs(u) < s_adZigR[i]) {
             return u * s_adZigX[i];
+        }
         /* bottom box: sample from the tail */
-        if (i == 0)
+        if (i == 0) {
             return DRanNormalTail(ZIGNOR_R, u < 0);
+        }
         /* is this a sample from the wedges? */
         double x = u * s_adZigX[i];
         double f0 = std::exp(-0.5 * (s_adZigX[i] * s_adZigX[i] - x * x));

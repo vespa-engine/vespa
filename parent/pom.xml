@@ -650,9 +650,11 @@
                 <version>${luben.zstd.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.api.grpc</groupId>
-                <artifactId>proto-google-common-protos</artifactId>
-                <version>${proto-google-common-protos.vespa.version}</version>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>libraries-bom</artifactId>
+                <version>26.90.0</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.errorprone</groupId>
@@ -708,11 +710,6 @@
                 <version>${findbugs.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>${gson.vespa.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>failureaccess</artifactId>
                 <version>${failureaccess.vespa.version}</version>
@@ -736,6 +733,11 @@
                         <!-- Annotations with retention Runtime. Remove exclusion if needed. -->
                         <groupId>org.checkerframework</groupId>
                         <artifactId>checker-qual</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Annotations with retention Runtime. Remove exclusion if needed. -->
+                        <groupId>org.jspecify</groupId>
+                        <artifactId>jspecify</artifactId>
                     </exclusion>
                     <exclusion>
                         <!-- Annotation with retention class only -->

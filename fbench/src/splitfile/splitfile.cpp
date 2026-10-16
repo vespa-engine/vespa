@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
+
 #include <unistd.h>
 #include <util/filereader.h>
 
-#include <cassert>
 #include <fstream>
 #include <memory>
 #include <vector>
@@ -84,7 +85,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < outcnt; i++) {
         char filename[1024];
         int  written = snprintf(filename, sizeof(filename), pattern.c_str(), i);
-        assert(written < int(sizeof(filename)));
+        CHECK(written < int(sizeof(filename)));
         output.emplace_back(std::make_unique<std::ofstream>(filename, std::ofstream::out | std::ofstream::binary |
                                                                           std::ofstream::trunc));
         if (!output.back()) {

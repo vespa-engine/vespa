@@ -7,12 +7,11 @@
 #include "selectcontext.h"
 #include "selectpruner.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
-
-#include <cassert>
 
 namespace proton {
 
@@ -106,7 +105,7 @@ void AttrVisitor::visitFieldValueNode(const FieldValueNode& expr) {
                     // Already allocated location for guard
                     idx = it->second;
                 }
-                assert(idx != invalidIdx());
+                CHECK(idx != invalidIdx());
                 _valueNode = std::make_unique<AttributeFieldValueNode>(expr.getDocType(), name, idx);
             } else {
                 ++_complexAttrs;
@@ -165,8 +164,8 @@ void CachedSelect::setPreDocumentSelect(const search::IAttributeManager& attrMgr
     _attributes.clear();
     AttrVisitor allAttrVisitor(attrMgr, _attributes);
     _docSelect->visit(allAttrVisitor);
-    assert(_fieldNodes == allAttrVisitor.getFieldNodes());
-    assert(_attrFieldNodes == (allAttrVisitor._mvAttrs + allAttrVisitor._svAttrs + allAttrVisitor._complexAttrs));
+    CHECK(_fieldNodes == allAttrVisitor.getFieldNodes());
+    CHECK(_attrFieldNodes == (allAttrVisitor._mvAttrs + allAttrVisitor._svAttrs + allAttrVisitor._complexAttrs));
     _svAttrFieldNodes = allAttrVisitor._svAttrs;
     _pre_doc_select_resultset = noDocsPruner.getResultSet();
 
@@ -178,7 +177,7 @@ void CachedSelect::setPreDocumentSelect(const search::IAttributeManager& attrMgr
         _docSelect = std::move(allAttrVisitor.getNode());
         [[maybe_unused]] size_t attrs_before = _attributes.size();
         AttrVisitor             someAttrVisitor(attrMgr, _attributes, std::move(allAttrVisitor._amap));
-        assert(_attributes.size() == attrs_before);
+        CHECK(_attributes.size() == attrs_before);
         noDocsPruner.getNode()->visit(someAttrVisitor);
         _preDocSelect = std::move(someAttrVisitor.getNode());
     }

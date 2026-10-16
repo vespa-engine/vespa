@@ -9,6 +9,7 @@
 #include "reindexing_visitor.h"
 #include "testvisitor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/storageframework/generic/thread/thread.h>
@@ -18,8 +19,6 @@
 #include <vespa/config/helper/configfetcher.hpp>
 
 #include <unistd.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.manager");
@@ -79,7 +78,7 @@ VisitorManager::~VisitorManager() {
 }
 
 void VisitorManager::create_and_start_manager_thread() {
-    assert(!_thread);
+    CHECK(!_thread);
     _thread = _component.startThread(*this, 30s, 1s, 1, vespalib::CpuUsage::Category::READ);
 }
 
@@ -286,7 +285,7 @@ bool VisitorManager::scheduleVisitor(const std::shared_ptr<api::CreateVisitorCom
                         // Lower int ==> higher pri
                         if (cmd->getPriority() < tail->getPriority()) {
                             auto evictCommand = _visitorQueue.releaseLowestPriorityCommand();
-                            assert(tail == evictCommand.first);
+                            CHECK(tail == evictCommand.first);
                             _visitorQueue.add(cmd);
                             _visitorCond.notify_one();
                             auto now = _component.getClock().getMonotonicTime();
@@ -373,7 +372,7 @@ bool VisitorManager::onInternalReply(const std::shared_ptr<api::InternalReply>& 
     switch (r->getType()) {
     case RequestStatusPageReply::ID: {
         std::shared_ptr<RequestStatusPageReply> reply(std::dynamic_pointer_cast<RequestStatusPageReply>(r));
-        assert(reply.get());
+        CHECK(reply.get());
         std::lock_guard waiter(_statusLock);
         _statusRequest.push_back(reply);
         _statusCond.notify_one();
@@ -392,8 +391,9 @@ bool VisitorManager::processReply(const std::shared_ptr<api::StorageReply>& repl
     {
         std::lock_guard sync(_visitorLock);
         auto            it = _visitorMessages.find(reply->getMsgId());
-        if (it == _visitorMessages.end())
+        if (it == _visitorMessages.end()) {
             return false;
+        }
         id = it->second.id;
         _visitorMessages.erase(it);
     }
@@ -402,7 +402,7 @@ bool VisitorManager::processReply(const std::shared_ptr<api::StorageReply>& repl
 }
 
 void VisitorManager::send(const std::shared_ptr<api::StorageCommand>& cmd, Visitor& visitor) {
-    assert(cmd->getType() == api::MessageType::INTERNAL);
+    CHECK(cmd->getType() == api::MessageType::INTERNAL);
     // Only add to internal state if not destroy iterator command, as
     // these are considered special-cased fire-and-forget commands
     // that don't have replies.
@@ -429,9 +429,10 @@ void VisitorManager::send(const std::shared_ptr<api::StorageReply>& reply) {
     if (reply->getType() == api::MessageType::INTERNAL_REPLY) {
         LOG(spam, "Received an internal reply");
         std::shared_ptr<api::InternalReply> rep(std::dynamic_pointer_cast<api::InternalReply>(reply));
-        assert(rep.get());
-        if (onInternalReply(rep))
+        CHECK(rep.get());
+        if (onInternalReply(rep)) {
             return;
+        }
     }
     LOG(spam, "Sending visitor reply %s up.", reply->getType().getName().c_str());
     sendUp(reply);
@@ -441,16 +442,17 @@ void VisitorManager::send(const std::shared_ptr<api::StorageReply>& reply) {
 // the time of the call and will be unlocked if scheduling takes
 // place. Returns true if a visitor was scheduled, false otherwise.
 bool VisitorManager::attemptScheduleQueuedVisitor(MonitorGuard& visitorLock) {
-    if (_visitorQueue.empty())
+    if (_visitorQueue.empty()) {
         return false;
+    }
 
     uint32_t totCount;
     getLeastLoadedThread(_visitorThread, totCount);
     auto cmd = _visitorQueue.peekNextCommand();
-    assert(cmd.get());
+    CHECK(cmd.get());
     if (totCount < maximumConcurrent(*cmd)) {
         auto cmd2 = _visitorQueue.releaseNextCommand();
-        assert(cmd == cmd2.first);
+        CHECK(cmd == cmd2.first);
         scheduleVisitor(cmd, true, visitorLock);
         auto now = _component.getClock().getMonotonicTime();
         // TODO is this really tracking what the metric description implies it's tracking...?
@@ -512,10 +514,12 @@ void VisitorManager::reportHtmlStatus(std::ostream& out, const framework::HttpUr
         << " | <a href=\"?" << (verbose ? "verbose" : "") << "\">Main visitor manager status page</a>"
         << " | <a href=\"?allvisitors" << (verbose ? "&verbose" : "") << "\">Show all visitors</a>"
         << " | <a href=\"?" << (verbose ? "notverbose" : "verbose");
-    if (!showStatus)
+    if (!showStatus) {
         out << "&visitor=" << xml_attribute_escaped(path.get("visitor", std::string("")));
-    if (showAll)
+    }
+    if (showAll) {
         out << "&allvisitors";
+    }
     out << "\">" << (verbose ? "Less verbose" : "More verbose") << "</a>\n"
         << " ]</font><br><br>\n";
 
@@ -542,7 +546,7 @@ void VisitorManager::reportHtmlStatus(std::ostream& out, const framework::HttpUr
             const auto now = _component.getClock().getMonotonicTime();
             for (const auto& enqueued : _visitorQueue) {
                 const auto& cmd = enqueued._command;
-                assert(cmd);
+                CHECK(cmd);
                 out << "<li>" << xml_content_escaped(cmd->getInstanceId()) << " - "
                     << vespalib::count_ms(cmd->getQueueTimeout()) << ", remaining timeout "
                     << vespalib::count_ms(enqueued._deadline - now) << " ms\n";

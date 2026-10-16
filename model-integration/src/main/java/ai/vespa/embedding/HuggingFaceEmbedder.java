@@ -104,14 +104,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     public HuggingFaceEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, HuggingFaceEmbedderConfig embedderConfig, OnnxEvaluatorConfig onnxConfig, ModelPathHelper modelHelper) {
         this.runtime = runtime;
         
-        var resolver = new OnnxExternalDataResolver(modelHelper);
-        var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
-        evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
-        
-        this.analysis = analyze(evaluator, embedderConfig);
-        normalize = embedderConfig.normalize();
-        prepender = new TextPrepender(embedderConfig.prependQuery(), embedderConfig.prependDocument());
         var tokenizerPath = modelHelper.getModelPathResolvingIfNecessary(embedderConfig.tokenizerPathReference());
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
@@ -119,14 +111,22 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                 .setPadding(false);
         var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
         log.fine(() -> Text.format("'%s' has info '%s'", tokenizerPath, info));
-        if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
-            // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
-            int maxLength = info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens()
-                    ? info.maxLength()
-                    : embedderConfig.transformerMaxTokens();
-            builder.setTruncation(true).setMaxLength(maxLength);
-        }
+        // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
+        boolean forceTruncation = info.maxLength() == -1 || info.truncation() != LONGEST_FIRST;
+        int maxLength = ! forceTruncation ? info.maxLength() // The longest input the model gets, as the tokenizer truncates to it
+                        : info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens() ? info.maxLength()
+                        : embedderConfig.transformerMaxTokens();
+        if (forceTruncation) builder.setTruncation(true).setMaxLength(maxLength);
         this.tokenizer = builder.build();
+
+        var resolver = new OnnxExternalDataResolver(modelHelper);
+        var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig).withAttentionMask(embedderConfig.transformerAttentionMask()).withMaxTokens(maxLength);
+        evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
+
+        this.analysis = analyze(evaluator, embedderConfig);
+        normalize = embedderConfig.normalize();
+        prepender = new TextPrepender(embedderConfig.prependQuery(), embedderConfig.prependDocument());
     }
 
     private static void validateName(Map<String, TensorType> types, String name, String type) {

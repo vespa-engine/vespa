@@ -4,9 +4,10 @@
 
 #include "backtrace.h"
 
+#include <vespa/check_require.h>
+
 #include <array>
 #include <atomic>
-#include <cassert>
 #include <mutex>
 #include <thread>
 
@@ -88,11 +89,11 @@ void SignalHandler::dump_current_thread_stack_to_shared_state() noexcept {
 }
 
 SignalHandler::SignalHandler(int signal) : _signal(signal), _gotSignal(0) {
-    assert(signal >= 0);
+    CHECK(signal >= 0);
     while (_handlers.size() < ((size_t)(signal + 1))) {
         _handlers.push_back(nullptr);
     }
-    assert(_handlers[signal] == nullptr);
+    CHECK(_handlers[signal] == nullptr);
     _handlers[signal] = this;
 }
 
@@ -167,7 +168,7 @@ std::string SignalHandler::get_cross_thread_stack_trace(pthread_t thread_id) {
     static std::mutex stack_dump_caller_mutex;
     std::lock_guard   guard(stack_dump_caller_mutex);
 
-    assert(!_shared_backtrace_data._want_backtrace.load());
+    CHECK(!_shared_backtrace_data._want_backtrace.load());
     _shared_backtrace_data._want_backtrace.store(true);
 
     if (pthread_kill(thread_id, SIGUSR2) != 0) {

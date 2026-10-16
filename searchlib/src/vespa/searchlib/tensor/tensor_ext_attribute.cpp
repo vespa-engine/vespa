@@ -5,6 +5,7 @@
 #include "serialized_tensor_ref.h"
 #include "vector_bundle.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
@@ -43,7 +44,7 @@ TensorExtAttribute::TensorExtAttribute(const std::string& name, const Config& cf
       _empty_tensor(create_empty_tensor(cfg.tensorType())) {
     // Streaming search pseudo-attributes operate on the raw, full-precision document data
     // and should therefore never be quantized.
-    assert(!cfg.quantization_params().has_value());
+    CHECK(!cfg.quantization_params().has_value());
 }
 
 TensorExtAttribute::~TensorExtAttribute() = default;

@@ -6,10 +6,10 @@
 #include "minmaxaggregated.h"
 #include "noaggregated.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/handle.h>
 
-#include <cassert>
 #include <cstddef>
 #include <type_traits>
 #include <utility>
@@ -49,14 +49,14 @@ protected:
         : _level(rhs._level), _isFrozen(rhs._isFrozen), _validSlots(rhs._validSlots) {}
 
     BTreeNode& operator=(const BTreeNode& rhs) noexcept {
-        assert(!_isFrozen);
+        CHECK(!_isFrozen);
         _level = rhs._level;
         _isFrozen = rhs._isFrozen;
         _validSlots = rhs._validSlots;
         return *this;
     }
 
-    ~BTreeNode() { assert(_isFrozen); }
+    ~BTreeNode() { CHECK(_isFrozen); }
 
 public:
     using Ref = datastore::EntryRef;
@@ -88,8 +88,9 @@ public:
         const DataT* rdata = rhs._data;
         DataT*       ldata = _data;
         DataT*       ldatae = _data + validSlots;
-        for (; ldata != ldatae; ++ldata, ++rdata)
+        for (; ldata != ldatae; ++ldata, ++rdata) {
             *ldata = *rdata;
+        }
     }
 
     const DataT& getData(uint32_t idx) const noexcept { return _data[idx]; }
@@ -163,8 +164,9 @@ protected:
         const KeyT* rkeys = rhs._keys;
         KeyT*       lkeys = _keys;
         KeyT*       lkeyse = _keys + _validSlots;
-        for (; lkeys != lkeyse; ++lkeys, ++rkeys)
+        for (; lkeys != lkeyse; ++lkeys, ++rkeys) {
             *lkeys = *rkeys;
+        }
     }
 
     BTreeNodeT& operator=(const BTreeNodeT& rhs) noexcept {
@@ -172,8 +174,9 @@ protected:
         const KeyT* rkeys = rhs._keys;
         KeyT*       lkeys = _keys;
         KeyT*       lkeyse = _keys + _validSlots;
-        for (; lkeys != lkeyse; ++lkeys, ++rkeys)
+        for (; lkeys != lkeyse; ++lkeys, ++rkeys) {
             *lkeys = *rkeys;
+        }
         return *this;
     }
 
@@ -237,8 +240,8 @@ public:
     using NodeType = BTreeNodeTT<KeyT, DataT, AggrT, NumSlots>;
     void insert(uint32_t idx, const KeyT& key, const DataT& data) noexcept;
     void update(uint32_t idx, const KeyT& key, const DataT& data) noexcept {
-        // assert(idx < NodeType::maxSlots());
-        // assert(!getFrozen());
+        // CHECK(idx < NodeType::maxSlots());
+        // CHECK(!getFrozen());
         _keys[idx] = key;
         setData(idx, data);
     }

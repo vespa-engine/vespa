@@ -114,7 +114,9 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         );
         
         var resolver = new OnnxExternalDataResolver();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig)
+                                           .withAttentionMask(attentionMaskName)
+                                           .withMaxTokens(Math.max(maxDocumentTokens, maxQueryTokens));
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
         this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
         

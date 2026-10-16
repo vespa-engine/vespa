@@ -48,7 +48,7 @@ struct TermLabelFixture {
         queryEnv.getProperties().add("vespa.label.dupmissing.id", "5"); // duplicated non-existing uid
         queryEnv.getProperties().add("vespa.label.dupmissing.id", "7");
         queryEnv.getProperties().add("vespa.label.dupmissing.id", "7");
-        queryEnv.getProperties().add("vespa.label..id", "5");        // the empty label
+        queryEnv.getProperties().add("vespa.label..id", "5");          // the empty label
         queryEnv.getProperties().add("vespa.label.my.label.id", "10"); // label containing '.'
     }
     const ITermData* term(size_t idx) { return &queryEnv.getTerms()[idx]; }
@@ -156,7 +156,6 @@ TEST(UtilsTest, require_that_duplicated_uid_values_are_deduped_by_term_set_looku
     EXPECT_EQ(TermVector({f1.term(2)}), getTermsByLabel(f1.queryEnv, "dup"));
     EXPECT_EQ(0u, issues.list.size());
 }
-
 
 template <typename T> void verifyStrToNum(const std::string& label) {
     SCOPED_TRACE(label);

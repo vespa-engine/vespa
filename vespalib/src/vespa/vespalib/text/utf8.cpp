@@ -2,10 +2,9 @@
 
 #include "utf8.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.utf8");
@@ -23,7 +22,7 @@ uint32_t Utf8Reader::getComplexChar(unsigned char firstbyte, uint32_t fallback) 
         LOG(warning, "last byte %02X of Utf8Reader block was incomplete UTF-8", firstbyte);
         return fallback;
     }
-    assert(hasMore()); // should never fall out of range
+    CHECK(hasMore()); // should never fall out of range
     if (!Utf8::validFirstByte(firstbyte)) {
         LOG(debug, "invalid first byte %02X in Utf8Reader data block", firstbyte);
         return fallback;

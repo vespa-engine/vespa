@@ -2,9 +2,8 @@
 
 #include "array_bool_search.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 
@@ -19,8 +18,8 @@ ArrayBoolSearch::ArrayBoolSearch(const ArrayBoolAttribute& attr, const std::vect
       _tfmd(tfmd),
       _unpack_element_positions(unpack_element_positions),
       _matching_elements() {
-    assert(!_element_filter.empty());
-    assert(tfmd != nullptr);
+    CHECK(!_element_filter.empty());
+    CHECK(tfmd != nullptr);
 }
 
 void ArrayBoolSearch::doUnpack(uint32_t docid) {
@@ -46,7 +45,7 @@ public:
     ArrayBoolSearchSingleImpl(const ArrayBoolAttribute& attr, const std::vector<uint32_t>& element_filter,
                               fef::TermFieldMatchData* tfmd, bool unpack_element_positions)
         : ArrayBoolSearch(attr, element_filter, tfmd, unpack_element_positions), _element_id(0) {
-        assert(element_filter.size() == 1);
+        CHECK(element_filter.size() == 1);
         _element_id = element_filter[0];
     }
 

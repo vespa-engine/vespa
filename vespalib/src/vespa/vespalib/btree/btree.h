@@ -5,6 +5,8 @@
 #include "btreeroot.h"
 #include "noaggrcalc.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::datastore {
 class CompactionStrategy;
 }
@@ -71,7 +73,7 @@ public:
     const AggrT& getAggregated() const { return _tree.getAggregated(_alloc); }
 
     void thaw(Iterator& itr) {
-        assert(&itr.getAllocator() == &getAllocator());
+        CHECK(&itr.getAllocator() == &getAllocator());
         _tree.thaw(itr);
     }
 

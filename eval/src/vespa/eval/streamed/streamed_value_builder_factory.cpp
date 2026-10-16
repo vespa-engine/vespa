@@ -4,13 +4,15 @@
 
 #include "streamed_value_builder.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::eval {
 
 struct SelectStreamedValueBuilder {
     template <typename T>
     static std::unique_ptr<ValueBuilderBase> invoke(const ValueType& type, size_t num_mapped, size_t subspace_size,
                                                     size_t expected_subspaces) {
-        assert(check_cell_type<T>(type.cell_type()));
+        CHECK(check_cell_type<T>(type.cell_type()));
         return std::make_unique<StreamedValueBuilder<T>>(type, num_mapped, subspace_size, expected_subspaces);
     }
 };

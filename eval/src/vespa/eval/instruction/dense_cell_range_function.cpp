@@ -2,6 +2,7 @@
 
 #include "dense_cell_range_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::eval {
@@ -26,13 +27,13 @@ struct MyCellRangeOp {
 DenseCellRangeFunction::DenseCellRangeFunction(const ValueType& result_type, const TensorFunction& child,
                                                size_t offset, size_t length)
     : tensor_function::Op1(result_type, child), _offset(offset), _length(length) {
-    assert(result_type.cell_type() == child.result_type().cell_type());
+    CHECK(result_type.cell_type() == child.result_type().cell_type());
 }
 
 DenseCellRangeFunction::~DenseCellRangeFunction() = default;
 
 InterpretedFunction::Instruction DenseCellRangeFunction::compile_self(const ValueBuilderFactory&, Stash&) const {
-    assert(result_type().cell_type() == child().result_type().cell_type());
+    CHECK(result_type().cell_type() == child().result_type().cell_type());
 
     using MyTypify = TypifyCellType;
     auto op = typify_invoke<1, MyTypify, MyCellRangeOp>(result_type().cell_type());

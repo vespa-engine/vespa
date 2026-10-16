@@ -7,6 +7,7 @@
 #include "putoperation.h"
 #include "updateoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -82,7 +83,7 @@ const char* TwoPhaseUpdateOperation::stateToString(SendState state) noexcept {
 }
 
 void TwoPhaseUpdateOperation::transitionTo(SendState newState) {
-    assert(newState != SendState::NONE_SENT);
+    CHECK(newState != SendState::NONE_SENT);
     LOG(spam, "Transitioning operation %p state %s ->  %s", this, stateToString(_sendState), stateToString(newState));
     _sendState = newState;
 }
@@ -91,13 +92,13 @@ void TwoPhaseUpdateOperation::ensureUpdateReplyCreated() {
     if (!_updateReply) {
         _updateReply =
             std::dynamic_pointer_cast<api::UpdateReply>(std::shared_ptr<api::StorageReply>(_updateCmd->makeReply()));
-        assert(_updateReply);
+        CHECK(_updateReply);
     }
 }
 
 void TwoPhaseUpdateOperation::sendReply(DistributorStripeMessageSender&          sender,
                                         const std::shared_ptr<api::UpdateReply>& reply) {
-    assert(!_replySent);
+    CHECK(!_replySent);
     reply->getTrace().addChild(std::move(_trace));
     sender.sendReply(reply);
     _replySent = true;
@@ -163,7 +164,7 @@ void TwoPhaseUpdateOperation::startSafePathUpdate(DistributorStripeMessageSender
     transitionTo(_use_initial_cheap_metadata_fetch_phase ? SendState::METADATA_GETS_SENT : SendState::FULL_GETS_SENT);
 
     if (intermediate._reply.get()) {
-        assert(intermediate._reply->getType() == api::MessageType::GET_REPLY);
+        CHECK(intermediate._reply->getType() == api::MessageType::GET_REPLY);
         // We always trigger the safe path Get reply handling here regardless of whether
         // metadata-only or full Gets were sent. This is because we might get an early
         // reply due to there being no replicas in existence at all for the target bucket.
@@ -243,7 +244,7 @@ void TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<do
                                                               api::Timestamp                      putTimestamp,
                                                               DistributorStripeMessageSender&     sender,
                                                               uint32_t                            approx_byte_size) {
-    assert(!is_cancelled());
+    CHECK(!is_cancelled());
     if (lostBucketOwnershipBetweenPhases()) { // TODO deprecate with cancellation
         sendLostOwnershipTransientErrorReply(sender);
         return;
@@ -281,7 +282,7 @@ void TwoPhaseUpdateOperation::onReceive(DistributorStripeMessageSender&         
 void TwoPhaseUpdateOperation::handleFastPathReceive(DistributorStripeMessageSender&           sender,
                                                     const std::shared_ptr<api::StorageReply>& msg) {
     if (msg->getType() == api::MessageType::GET_REPLY) {
-        assert(_sendState == SendState::FULL_GETS_SENT);
+        CHECK(_sendState == SendState::FULL_GETS_SENT);
         auto& getReply = static_cast<api::GetReply&>(*msg);
         addTraceFromReply(getReply);
 
@@ -307,20 +308,20 @@ void TwoPhaseUpdateOperation::handleFastPathReceive(DistributorStripeMessageSend
     }
 
     std::shared_ptr<Operation> callback = _sentMessageMap.pop(msg->getMsgId());
-    assert(callback.get());
+    CHECK(callback.get());
     Operation&                callbackOp = *callback;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(callback), sender);
     callbackOp.receive(intermediate, msg);
 
     if (msg->getType() == api::MessageType::UPDATE_REPLY) {
         if (intermediate._reply.get()) {
-            assert(_sendState == SendState::UPDATES_SENT);
+            CHECK(_sendState == SendState::UPDATES_SENT);
             addTraceFromReply(*intermediate._reply);
             auto& cb = dynamic_cast<UpdateOperation&>(callbackOp);
 
             auto [newest_bucket, newest_node] = cb.getNewestTimestampLocation();
             auto intermediate_update_reply = std::dynamic_pointer_cast<api::UpdateReply>(intermediate._reply);
-            assert(intermediate_update_reply);
+            CHECK(intermediate_update_reply);
 
             if (!intermediate_update_reply->getResult().success() || (newest_bucket == document::BucketId(0))) {
                 if (intermediate_update_reply->getResult().success() &&
@@ -365,12 +366,12 @@ void TwoPhaseUpdateOperation::handleSafePathReceive(DistributorStripeMessageSend
     // No explicit operation is associated with the direct replica Get operation,
     // so we handle its reply separately.
     if (_sendState == SendState::SINGLE_GET_SENT) {
-        assert(msg->getType() == api::MessageType::GET_REPLY);
+        CHECK(msg->getType() == api::MessageType::GET_REPLY);
         handle_safe_path_received_single_full_get(sender, dynamic_cast<api::GetReply&>(*msg));
         return;
     }
     std::shared_ptr<Operation> callback = _sentMessageMap.pop(msg->getMsgId());
-    assert(callback.get());
+    CHECK(callback.get());
     Operation& callbackOp = *callback;
 
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(callback), sender);
@@ -381,18 +382,18 @@ void TwoPhaseUpdateOperation::handleSafePathReceive(DistributorStripeMessageSend
     }
     addTraceFromReply(*intermediate._reply);
     if (_sendState == SendState::METADATA_GETS_SENT) {
-        assert(intermediate._reply->getType() == api::MessageType::GET_REPLY);
+        CHECK(intermediate._reply->getType() == api::MessageType::GET_REPLY);
         const auto& get_op = dynamic_cast<const GetOperation&>(*intermediate.callback);
         handle_safe_path_received_metadata_get(sender, static_cast<api::GetReply&>(*intermediate._reply),
                                                get_op.newest_replica(), get_op.any_replicas_failed());
     } else if (_sendState == SendState::FULL_GETS_SENT) {
-        assert(intermediate._reply->getType() == api::MessageType::GET_REPLY);
+        CHECK(intermediate._reply->getType() == api::MessageType::GET_REPLY);
         handleSafePathReceivedGet(sender, static_cast<api::GetReply&>(*intermediate._reply));
     } else if (_sendState == SendState::PUTS_SENT) {
-        assert(intermediate._reply->getType() == api::MessageType::PUT_REPLY);
+        CHECK(intermediate._reply->getType() == api::MessageType::PUT_REPLY);
         handleSafePathReceivedPut(sender, static_cast<api::PutReply&>(*intermediate._reply));
     } else {
-        assert(!"Unknown state");
+        CHECK(!"Unknown state");
     }
 }
 
@@ -408,7 +409,7 @@ void TwoPhaseUpdateOperation::handle_safe_path_received_single_full_get(Distribu
     } else {
         _getMetric.failures.storagefailure.inc();
     }
-    assert(_single_get_latency_timer.has_value());
+    CHECK(_single_get_latency_timer.has_value());
     _getMetric.latency.addValue(_single_get_latency_timer->getElapsedTimeAsDouble());
     handleSafePathReceivedGet(sender, reply);
 }
@@ -457,7 +458,7 @@ void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
     // If we've gotten here, we must have had no Get failures and replicas must
     // be somehow inconsistent. Replicas can only be inconsistent if their timestamps
     // mismatch, so we must have observed at least one non-zero timestamp.
-    assert(newest_replica.has_value() && (newest_replica->timestamp != api::Timestamp(0)));
+    CHECK(newest_replica.has_value() && (newest_replica->timestamp != api::Timestamp(0)));
     // Timestamps were not in sync, so we have to fetch the document from the highest
     // timestamped replica, apply the update to it and then explicitly Put the result
     // to all replicas.
@@ -564,7 +565,7 @@ void TwoPhaseUpdateOperation::restart_with_fast_path_due_to_consistent_get_times
     DistributorStripeMessageSender& sender) {
     LOG(debug, "Update(%s): all Gets returned in initial safe path were consistent, restarting in fast path mode",
         update_doc_id().c_str());
-    assert(!is_cancelled());
+    CHECK(!is_cancelled());
     if (lostBucketOwnershipBetweenPhases()) { // TODO remove once cancellation is wired
         sendLostOwnershipTransientErrorReply(sender);
         return;
@@ -572,7 +573,7 @@ void TwoPhaseUpdateOperation::restart_with_fast_path_due_to_consistent_get_times
     _updateMetric.fast_path_restarts.inc();
     // Must not be any other messages in flight, or we might mis-interpret them when we
     // have switched back to fast-path mode.
-    assert(_sentMessageMap.empty());
+    CHECK(_sentMessageMap.empty());
     startFastPathUpdate(sender, {});
 }
 
@@ -662,7 +663,7 @@ void TwoPhaseUpdateOperation::onClose(DistributorStripeMessageSender& sender) {
             // propagated to the outside world.
             auto candidateReply = std::move(intermediate._reply);
             if (candidateReply && candidateReply->getType() == api::MessageType::UPDATE_REPLY) {
-                assert(_mode == Mode::FAST_PATH);
+                CHECK(_mode == Mode::FAST_PATH);
                 sendReply(sender, std::dynamic_pointer_cast<api::UpdateReply>(candidateReply)); // Sets _replySent
             }
         } else {
@@ -691,7 +692,7 @@ void TwoPhaseUpdateOperation::on_cancel(DistributorStripeMessageSender& sender, 
 }
 
 std::string TwoPhaseUpdateOperation::update_doc_id() const {
-    assert(_updateCmd.get() != nullptr);
+    CHECK(_updateCmd.get() != nullptr);
     return _updateCmd->getDocumentId().toString();
 }
 

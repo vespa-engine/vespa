@@ -4,6 +4,8 @@
 
 #include "unique_store_remapper.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::datastore {
 
 template <typename RefT>
@@ -14,9 +16,9 @@ template <typename RefT> UniqueStoreRemapper<RefT>::~UniqueStoreRemapper() = def
 template <typename RefT> EntryRef UniqueStoreRemapper<RefT>::remap(EntryRef ref) const {
     RefType internal_ref(ref);
     auto&   inner_mapping = _mapping[internal_ref.bufferId()];
-    assert(internal_ref.offset() < inner_mapping.size());
+    CHECK(internal_ref.offset() < inner_mapping.size());
     EntryRef mapped_ref = inner_mapping[internal_ref.offset()];
-    assert(mapped_ref.valid());
+    CHECK(mapped_ref.valid());
     return mapped_ref;
 }
 

@@ -13,7 +13,6 @@
 #include <vespa/vespalib/objects/visit.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <iterator>
 #include <span>
 

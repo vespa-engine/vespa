@@ -2,6 +2,7 @@
 
 #include "bucket_space_state_map.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 
 using document::BucketSpace;
@@ -26,13 +27,13 @@ BucketSpaceStateMap::BucketSpaceStateMap() : _map() {
 
 const BucketSpaceState& BucketSpaceStateMap::get(document::BucketSpace space) const {
     auto itr = _map.find(space);
-    assert(itr != _map.end());
+    CHECK(itr != _map.end());
     return *itr->second;
 }
 
 BucketSpaceState& BucketSpaceStateMap::get(document::BucketSpace space) {
     auto itr = _map.find(space);
-    assert(itr != _map.end());
+    CHECK(itr != _map.end());
     return *itr->second;
 }
 
@@ -50,13 +51,13 @@ void BucketSpaceStateMap::set_distribution(std::shared_ptr<const lib::Distributi
 
 const lib::ClusterState& BucketSpaceStateMap::get_cluster_state(document::BucketSpace space) const {
     auto itr = _map.find(space);
-    assert(itr != _map.end());
+    CHECK(itr != _map.end());
     return itr->second->get_cluster_state();
 }
 
 const lib::Distribution& BucketSpaceStateMap::get_distribution(document::BucketSpace space) const {
     auto itr = _map.find(space);
-    assert(itr != _map.end());
+    CHECK(itr != _map.end());
     return itr->second->get_distribution();
 }
 

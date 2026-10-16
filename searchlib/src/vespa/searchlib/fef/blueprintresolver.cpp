@@ -6,12 +6,12 @@
 #include "blueprintfactory.h"
 #include "featurenameparser.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <set>
 
 using vespalib::make_string_short::fmt;
@@ -209,7 +209,7 @@ struct Compiler : public Blueprint::DependencyHandler {
     }
 
     std::optional<FeatureType> resolve_input(const std::string& feature_name, Accept accept_type) override {
-        assert(self().spec.output_types.empty()); // require: 'resolve inputs' before 'define outputs'
+        CHECK(self().spec.output_types.empty()); // require: 'resolve inputs' before 'define outputs'
         auto ref = resolve_feature(feature_name, accept_type);
         if (!ref.valid()) {
             // fail silently here to avoid mutiple traces for the same root error
@@ -279,7 +279,7 @@ constexpr size_t STACK_MULTIPLIER = 1;
 } // namespace
 
 bool BlueprintResolver::compile() {
-    assert(_executorSpecs.empty()); // only one compilation allowed
+    CHECK(_executorSpecs.empty()); // only one compilation allowed
     Compiler compiler(_factory, _indexEnv, _executorSpecs, _featureMap);
 
     compiler.probe_stack();

@@ -6,6 +6,7 @@
 #include "communicationmanager.h"
 #include "statemanager.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/distributor/distributor_stripe_pool.h>
@@ -110,7 +111,7 @@ api::Timestamp DistributorNode::generate_unique_timestamp() {
                 _intra_second_pseudo_usec_counter);
             std::_Exit(65);
         }
-        assert(_intra_second_pseudo_usec_counter < 999'999);
+        CHECK(_intra_second_pseudo_usec_counter < 999'999);
         ++_intra_second_pseudo_usec_counter;
     } else {
         _timestamp_second_counter = now_seconds;
@@ -125,7 +126,7 @@ ResumeGuard DistributorNode::pause() {
 }
 
 void DistributorNode::on_bouncer_config_changed() {
-    assert(_bouncer);
+    CHECK(_bouncer);
     _bouncer->on_configure(bouncer_config());
 }
 

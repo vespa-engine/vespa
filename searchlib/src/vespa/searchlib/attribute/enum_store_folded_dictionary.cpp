@@ -2,6 +2,8 @@
 
 #include "enum_store_folded_dictionary.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
@@ -42,7 +44,7 @@ UniqueStoreAddResult EnumStoreFoldedDictionary::add(const EntryComparator&    co
         _btree_dict.thaw(it);
         it.writeData(AtomicEntryRef());
         --it;
-        assert(it.valid() && it.getKey().load_relaxed() == newRef);
+        CHECK(it.valid() && it.getKey().load_relaxed() == newRef);
         it.writeData(AtomicEntryRef(posting_list_ref));
     }
     return UniqueStoreAddResult(newRef, true);
@@ -50,9 +52,9 @@ UniqueStoreAddResult EnumStoreFoldedDictionary::add(const EntryComparator&    co
 
 void EnumStoreFoldedDictionary::remove(const EntryComparator& comp, EntryRef ref) {
     static_assert(!has_hash_dictionary, "Folded Dictionary does not support hash dictionary");
-    assert(ref.valid());
+    CHECK(ref.valid());
     auto it = _btree_dict.lowerBound(AtomicEntryRef(ref), comp);
-    assert(it.valid() && it.getKey().load_relaxed() == ref);
+    CHECK(it.valid() && it.getKey().load_relaxed() == ref);
     EntryRef posting_list_ref(it.getData().load_relaxed());
     _btree_dict.remove(it);
     // Maybe copy posting list reference to next entry
@@ -80,7 +82,7 @@ void EnumStoreFoldedDictionary::collect_folded(Index idx, EntryRef root,
 
 IEnumStore::Index EnumStoreFoldedDictionary::remap_index(Index idx) {
     auto itr = _btree_dict.find(AtomicEntryRef(idx), *_folded_compare);
-    assert(itr.valid());
+    CHECK(itr.valid());
     return itr.getKey().load_acquire();
 }
 

@@ -4,8 +4,6 @@
 
 #include "fake_doom.h"
 
-#include <cassert>
-
 namespace vespalib {
 
 Doom::Doom(const std::atomic<steady_time>& now_ref, steady_time soft_doom, steady_time hard_doom,

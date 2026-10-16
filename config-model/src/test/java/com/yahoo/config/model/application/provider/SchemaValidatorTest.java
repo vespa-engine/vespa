@@ -44,15 +44,17 @@ public class SchemaValidatorTest {
             "  </admin>\n" +
             "</services>\n";
 
-    private static final String servicesWithCommerceDiscovery = "<?xml version='1.0' encoding='utf-8' ?>\n" +
-            "<services>\n" +
-            "  <commerce-discovery version='1.0'>\n" +
-            "    <product document-type='model' namespace='model' id-field='id' />\n" +
-            "    <category id-field='id' />\n" +
-            "    <variant-presentation />\n" +
-            "    <ranking-tags-registry />\n" +
-            "  </commerce-discovery>\n" +
-            "</services>\n";
+    private static String servicesWith(String element) {
+        return "<?xml version='1.0' encoding='utf-8' ?>\n" +
+               "<services>\n" +
+               "  <" + element + " version='1.0'>\n" +
+               "    <product document-type='model' namespace='model' id-field='id' />\n" +
+               "    <category id-field='id' />\n" +
+               "    <variant-presentation />\n" +
+               "    <ranking-tags-registry />\n" +
+               "  </" + element + ">\n" +
+               "</services>\n";
+    }
 
     @Test
     void testXMLParse() throws IOException {
@@ -61,30 +63,38 @@ public class SchemaValidatorTest {
     }
 
     @Test
-    void testCommerceDiscoveryIsAccepted() throws IOException {
+    void testProductDiscoveryIsAccepted() throws IOException {
         SchemaValidator validator = createValidator();
-        validator.validate(new StringReader(servicesWithCommerceDiscovery));
+        validator.validate(new StringReader(servicesWith("product-discovery")));
     }
 
     @Test
-    void testCommerceDiscoveryVersionIsMajorDotMinor() throws IOException {
+    void testProductDiscoveryVersionIsMajorDotMinor() throws IOException {
         SchemaValidator validator = createValidator();
-        String original = "<commerce-discovery version='1.0'>";
+        String original = "<product-discovery version='1.0'>";
 
         // version must be major.minor
-        String majorDotMinor = servicesWithCommerceDiscovery.replace(original, "<commerce-discovery version='12.34'>");
+        String majorDotMinor = servicesWith("product-discovery").replace(original, "<product-discovery version='1.34'>");
         assertDoesNotThrow(() -> validator.validate(new StringReader(majorDotMinor)));
 
         // major.minor.micro is rejected
-        String majorDotMinorDotMicro = servicesWithCommerceDiscovery.replace(original, "<commerce-discovery version='1.0.0'>");
+        String majorDotMinorDotMicro = servicesWith("product-discovery").replace(original, "<product-discovery version='1.0.0'>");
         assertThrows(RuntimeException.class, () -> validator.validate(new StringReader(majorDotMinorDotMicro)));
+    }
+
+    @Test
+    void testProductDiscoveryGrammarOnlyAcceptsItsMajorVersion() throws IOException {
+        SchemaValidator validator = createValidator();
+        String original = "<product-discovery version='1.0'>";
+        assertDoesNotThrow(() -> validator.validate(new StringReader(servicesWith("product-discovery").replace(original, "<product-discovery version='1.34'>"))));
+        assertThrows(RuntimeException.class, () -> validator.validate(new StringReader(servicesWith("product-discovery").replace(original, "<product-discovery version='2.0'>"))));
     }
 
     @Test
     void testUnknownTopLevelElementIsRejected() {
         Throwable exception = assertThrows(RuntimeException.class, () -> {
             SchemaValidator validator = createValidator();
-            validator.validate(new StringReader(servicesWithCommerceDiscovery.replace("commerce-discovery", "commerce-discoverh")));
+            validator.validate(new StringReader(servicesWith("commerce-discoverh")));
         });
         assertTrue(exception.getMessage().contains("element \"commerce-discoverh\" not allowed"));
     }

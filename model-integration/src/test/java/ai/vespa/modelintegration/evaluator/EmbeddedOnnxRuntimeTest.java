@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -49,6 +51,24 @@ class EmbeddedOnnxRuntimeTest {
         session4.close();
         assertEquals(0, runtime.sessionsCached());
         assertClosed(session4);
+    }
+
+    @Test
+    void options_differing_only_in_padding_share_a_session() {
+        assumeTrue(OnnxRuntime.isRuntimeAvailable());
+        var runtime = EmbeddedOnnxRuntime.createTestInstance();
+        String model = "src/test/models/onnx/simple/simple.onnx";
+        var padding = new OnnxEvaluatorOptions.Builder().setPadding(Optional.of(OnnxPadderOptions.of(List.of(16)))).build();
+        var evaluator1 = runtime.evaluatorOf(model, padding);
+        var evaluator2 = runtime.evaluatorOf(model, padding.withMaxTokens(8));
+        var evaluator3 = runtime.evaluatorOf(model, OnnxEvaluatorOptions.createDefault());
+        assertSameSession(evaluator1, evaluator2);
+        assertSameSession(evaluator1, evaluator3);
+        assertEquals(1, runtime.sessionsCached(), "Padding is done outside the session");
+        evaluator1.close();
+        evaluator2.close();
+        evaluator3.close();
+        assertEquals(0, runtime.sessionsCached());
     }
 
     @Test

@@ -1,10 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "condensedbitvectors.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/type_stable_vector.h>
-
-#include <cassert>
 
 using vespalib::GenerationHolder;
 using vespalib::IllegalArgumentException;
@@ -28,7 +27,7 @@ private:
     T computeMask(const KeySet& keys) const __attribute__((noinline)) {
         T mask(0);
         for (size_t i : keys) {
-            assert(i < getKeyCapacity());
+            CHECK(i < getKeyCapacity());
             mask |= (B << i);
         }
         return mask;
@@ -56,7 +55,7 @@ private:
     void computeTail(T mask, std::span<uint8_t> cv, F func, size_t i) const __attribute__((noinline));
 
     void set(Key key, uint32_t index, bool v) override {
-        assert(key < getKeyCapacity());
+        CHECK(key < getKeyCapacity());
         if (v) {
             _v[index] |= B << key;
         } else {
@@ -64,7 +63,7 @@ private:
         }
     }
     bool get(Key key, uint32_t index) const override {
-        assert(key < getKeyCapacity());
+        CHECK(key < getKeyCapacity());
         return (_v.acquire_elem_ref(index) & (B << key)) != 0;
     }
 

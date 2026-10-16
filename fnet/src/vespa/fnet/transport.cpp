@@ -5,6 +5,7 @@
 #include "iocomponent.h"
 #include "transport_thread.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/rendezvous.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -126,7 +127,7 @@ FNET_Transport::FNET_Transport(const fnet::TransportConfig& cfg)
       _config(cfg.config()) {
     // TODO Temporary logging to track down overspend
     LOG(debug, "FNET_Transport threads=%d from :%s", cfg.num_threads(), vespalib::getStackTrace(0).c_str());
-    assert(cfg.num_threads() >= 1);
+    CHECK(cfg.num_threads() >= 1);
     for (size_t i = 0; i < cfg.num_threads(); ++i) {
         _threads.emplace_back(std::make_unique<FNET_TransportThread>(*this));
     }
@@ -251,6 +252,6 @@ void FNET_Transport::Close(FNET_IOComponent* comp, bool needRef) {
 }
 
 void FNET_Transport::Main() {
-    assert(_threads.size() == 1);
+    CHECK(_threads.size() == 1);
     _threads[0]->Main();
 }

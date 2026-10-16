@@ -6,6 +6,8 @@
 #include "datastorebase.h"
 #include "unique_store_enumerator.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::datastore {
 
 template <typename RefT>
@@ -23,10 +25,10 @@ template <typename RefT> UniqueStoreEnumerator<RefT>::~UniqueStoreEnumerator() =
 
 template <typename RefT> void UniqueStoreEnumerator<RefT>::enumerateValue(EntryRef ref) {
     RefType iRef(ref);
-    assert(iRef.valid());
-    assert(iRef.offset() < _enumValues[iRef.bufferId()].size());
+    CHECK(iRef.valid());
+    CHECK(iRef.offset() < _enumValues[iRef.bufferId()].size());
     uint32_t& enumVal = _enumValues[iRef.bufferId()][iRef.offset()];
-    assert(enumVal == 0u);
+    CHECK(enumVal == 0u);
     enumVal = _next_enum_val;
     ++_next_enum_val;
 }

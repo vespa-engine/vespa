@@ -57,11 +57,13 @@ void DocType::visit(Visitor& v) const {
 void DocType::print(std::ostream& out, bool verbose, const std::string& indent) const {
     (void)verbose;
     (void)indent;
-    if (_parentheses)
+    if (_parentheses) {
         out << '(';
+    }
     out << _doctype;
-    if (_parentheses)
+    if (_parentheses) {
         out << ')';
+    }
 }
 
 } // namespace document::select

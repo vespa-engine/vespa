@@ -32,10 +32,10 @@
 %define _create_vespa_service 1
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
-%global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_depencencies_version 1.20.0
-%global _vespa_gtest_version 1.16.0
-%global _vespa_protobuf_version 6.34.1
+%global _vespa_abseil_cpp_version 20260817.0.1
+%global _vespa_build_dependencies_version 1.22.0
+%global _vespa_gtest_version 1.18.0
+%global _vespa_protobuf_version 7.36.2
 %global _vespa_openblas_version 0.3.27
 %global _vespa_mimalloc_version 3.3.2
 %global _vespa_highway_version 1.4.0
@@ -45,6 +45,8 @@
 %global _vespa_re2_version 20251105
 %global _vespa_xxhash_version 0.8.1
 %global _vespa_openssl_version 3.5.9
+%global _vespa_opentelemetry_cpp_version 1.29.0
+%global _vespa_grpc_version 1.84.0
 %if 0%{?el8} || 0%{?el9} || 0%{?amzn2023}
 %global _use_vespa_abseil_cpp 1
 %global _vespa_abseil_excludes |absl_[a-z_0-9]*
@@ -55,6 +57,13 @@
 %global _vespa_protobuf_excludes |protobuf|utf8_validity|utf8_range
 %global _use_vespa_openblas 1
 %global _vespa_openblas_excludes |openblas
+%global _vespa_grpc_excludes1 address_sorting|gpr
+%global _vespa_grpc_excludes2 grpc\\+\\+(_(alts|error_details|reflection|unsecure))?
+%global _vespa_grpc_excludes3 grpc(_(authorization_provider|plugin_support|unsecure))?
+%global _vespa_grpc_excludes4 grpcpp_channelz
+%global _vespa_grpc_excludes5 (upb_.*|utf8_(range|validity))_lib
+%global _vespa_grpc_excludes |%{_vespa_grpc_excludes1}|%{_vespa_grpc_excludes2}|%{_vespa_grpc_excludes3}|%{_vespa_grpc_excludes4}|%{_vespa_grpc_excludes5}
+%global _vespa_opentelemetry_excludes |opentelemetry_[a-z_0-9]*
 
 %if 0%{?fedora} && ! 0%{?amzn2023} && ! 0%{?amzn2027}
 %global _vespa_java_version 25
@@ -93,7 +102,7 @@ License:        Commercial
 URL:            http://vespa.ai
 Source0:        vespa-%{version}.tar.gz
 
-BuildRequires: vespa-build-dependencies = %{_vespa_build_depencencies_version}
+BuildRequires: vespa-build-dependencies = %{_vespa_build_dependencies_version}
 
 Requires: %{name}-base             = %{version}-%{release}
 Requires: %{name}-base-libs        = %{version}-%{release}
@@ -181,7 +190,8 @@ Requires: vespa-libatomic >= 14.2.0
 %define _excludes1 %{?_vespa_abseil_excludes}%{?_vespa_gtest_excludes}%{?_vespa_protobuf_excludes}
 %define _excludes2 %{?_vespa_openblas_excludes}%{?_vespa_icu_excludes}%{?_vespa_re2_excludes}
 %define _excludes3 %{?_vespa_openssl_excludes}%{?_vespa_xxhash_excludes}
-%define _vespa_excludes %{?_excludes1}%{?_excludes2}%{?_excludes3}
+%define _excludes4 %{?_vespa_grpc_excludes}%{?_vespa_opentelemetry_excludes}
+%define _vespa_excludes %{?_excludes1}%{?_excludes2}%{?_excludes3}%{?_excludes4}
 %global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(lz4|zstd|onnxruntime|hwy|hwy_contrib|mimalloc%{?_vespa_excludes})\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
 
 %description
@@ -245,6 +255,9 @@ Requires: vespa-re2 = %{_vespa_re2_version}
 %else
 Requires: re2
 %endif
+%if 0%{?_use_vespa_abseil_cpp}
+Requires: vespa-abseil-cpp = %{_vespa_abseil_cpp_version}
+%endif
 
 %if 0%{?el8} || 0%{?el9} || 0%{?el10}
 Requires: vespa-openssl >= %{_vespa_openssl_version}
@@ -260,6 +273,8 @@ Requires: vespa-jllama = %{_vespa_jllama_version}
 Requires: vespa-openblas >= %{_vespa_openblas_version}
 Requires: vespa-mimalloc = %{_vespa_mimalloc_version}
 Requires: vespa-highway = %{_vespa_highway_version}
+Requires: vespa-opentelemetry-cpp = %{_vespa_opentelemetry_cpp_version}
+Requires: vespa-grpc = %{_vespa_grpc_version}
 
 %description libs
 
@@ -329,7 +344,7 @@ Vespa - The open big data serving engine - tools for system tests
 
 Summary: Vespa - The open big data serving engine - devel package
 
-Requires: vespa-build-dependencies = %{_vespa_build_depencencies_version}
+Requires: vespa-build-dependencies = %{_vespa_build_dependencies_version}
 Requires: %{name}           = %{version}-%{release}
 Requires: %{name}-base-libs = %{version}-%{release}
 
@@ -545,6 +560,7 @@ fi
 %exclude %{_prefix}/bin/vespa-get
 %exclude %{_prefix}/bin/vespa-jvm-dumper
 %exclude %{_prefix}/bin/vespa-logfmt
+%exclude %{_prefix}/bin/vespa-opentelemetry-test
 %exclude %{_prefix}/bin/vespa-query-profile-dump-tool
 %exclude %{_prefix}/bin/vespa-stat
 %exclude %{_prefix}/bin/vespa-security-env
@@ -789,6 +805,7 @@ fi
 %endif
 %dir %{_prefix}
 %dir %{_prefix}/bin
+%{_prefix}/bin/vespa-opentelemetry-test
 %{_prefix}/bin/vespa-tensor-conformance
 %{_prefix}/bin/vespa-tensor-instructions-benchmark
 

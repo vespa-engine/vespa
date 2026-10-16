@@ -4,6 +4,7 @@
 
 #include "docsum_field_writer_state.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/juniper/queryhandle.h>
 #include <vespa/juniper/rpinterface.h>
@@ -16,8 +17,6 @@
 #include <vespa/vespalib/util/issue.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
-
-#include <cassert>
 
 using search::common::GeoLocationParser;
 using search::common::GeoLocationSpec;
@@ -77,7 +76,7 @@ const FeatureSet& GetDocsumsState::get_summary_features() {
 
 void GetDocsumsState::parse_locations() {
     using document::PositionDataType;
-    assert(_parsedLocations.empty()); // only allowed to call this once
+    CHECK(_parsedLocations.empty()); // only allowed to call this once
     if (!_args.getLocation().empty()) {
         GeoLocationParser parser;
         if (parser.parseWithField(_args.getLocation())) {

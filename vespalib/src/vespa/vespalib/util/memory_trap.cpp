@@ -2,10 +2,11 @@
 
 #include "memory_trap.h"
 
+#include <vespa/check_require.h>
+
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include <cassert>
 #include <cerrno>
 #include <cstdint>
 #include <cstdlib>
@@ -108,7 +109,7 @@ void MemoryRangeTrapper::rw_protect_buffer_if_possible() {
     if ((aligned_end > aligned_start) && mprotect_trapping_is_enabled()) {
         _trap_offset = aligned_start - reinterpret_cast<uintptr_t>(_trap_buf);
         _trap_len = aligned_end - aligned_start;
-        assert(is_4k_aligned(_trap_len));
+        CHECK(is_4k_aligned(_trap_len));
 
         LOG(info, "attempting mprotect(%p + %zu = %p, %zu, PROT_NONE)", _trap_buf, _trap_offset,
             _trap_buf + _trap_offset, _trap_len);
@@ -130,14 +131,14 @@ bool MemoryRangeTrapper::hw_trapping_enabled() noexcept {
 void MemoryRangeTrapper::unprotect_buffer_to_read_only() {
     if (_trap_len > 0) {
         int ret = mprotect(_trap_buf + _trap_offset, _trap_len, PROT_READ);
-        assert(ret == 0 && "failed to un-protect memory region to PROT_READ");
+        CHECK(ret == 0 && "failed to un-protect memory region to PROT_READ");
     }
 }
 
 void MemoryRangeTrapper::unprotect_buffer_to_read_and_write() {
     if (_trap_len > 0) {
         int ret = mprotect(_trap_buf + _trap_offset, _trap_len, PROT_READ | PROT_WRITE);
-        assert(ret == 0 && "failed to un-protect memory region to PROT_READ | PROT_WRITE");
+        CHECK(ret == 0 && "failed to un-protect memory region to PROT_READ | PROT_WRITE");
     }
 }
 

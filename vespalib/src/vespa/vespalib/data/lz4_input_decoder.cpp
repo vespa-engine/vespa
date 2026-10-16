@@ -2,9 +2,9 @@
 
 #include "lz4_input_decoder.h"
 
-#include <lz4frame.h>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <lz4frame.h>
 
 namespace vespalib {
 
@@ -15,7 +15,7 @@ void Lz4InputDecoder::fail(const char* reason) {
 }
 
 void Lz4InputDecoder::decode_more() {
-    assert((_pos == _used) && !_eof);
+    CHECK((_pos == _used) && !_eof);
     Memory memory = _input.obtain();
     size_t input_size = memory.size;
     size_t output_size = _buffer.size();
@@ -23,8 +23,8 @@ void Lz4InputDecoder::decode_more() {
     if (LZ4F_isError(decode_res)) {
         fail(LZ4F_getErrorName(decode_res));
     } else {
-        assert(input_size <= memory.size);
-        assert(output_size <= _buffer.size());
+        CHECK(input_size <= memory.size);
+        CHECK(output_size <= _buffer.size());
         _input.evict(input_size);
         _used = output_size;
         _pos = 0;

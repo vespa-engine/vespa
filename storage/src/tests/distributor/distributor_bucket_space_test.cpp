@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/vdslib/distribution/distribution.h>
@@ -75,7 +76,7 @@ std::vector<BucketId> DistributorBucketSpaceTest::make_deep_split_buckets(std::f
             break;
         }
     }
-    assert(bias < bias_max);
+    CHECK(bias < bias_max);
     for (uint32_t i = 0; i < 100; ++i) {
         buckets.emplace_back(42u, i * (1ul << 32) + bias);
     }

@@ -14,8 +14,9 @@ SerialNumFileHeaderContext::SerialNumFileHeaderContext(const FileHeaderContext& 
 void SerialNumFileHeaderContext::addTags(vespalib::GenericHeader& header, const std::string& name) const {
     _parentFileHeaderContext.addTags(header, name);
     using Tag = vespalib::GenericHeader::Tag;
-    if (_serialNum != 0u)
+    if (_serialNum != 0u) {
         header.putTag(Tag("serialNum", _serialNum));
+    }
 }
 
 } // namespace search::common

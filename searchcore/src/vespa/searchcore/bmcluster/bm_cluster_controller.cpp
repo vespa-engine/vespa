@@ -6,6 +6,7 @@
 #include "bm_node.h"
 #include "i_bm_distribution.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/storage/storageserver/rpc/caching_rpc_target_resolver.h>
@@ -52,7 +53,7 @@ void BmClusterController::propagate_cluster_state(uint32_t node_idx, bool distri
     uint64_t fake_bucket_id = 0;
     auto     target = target_resolver->resolve_rpc_target(storage_address, fake_bucket_id);
     target->get()->InvokeSync(req, 10.0); // 10 seconds timeout
-    assert(!req->IsError());
+    CHECK(!req->IsError());
     req->internal_subref();
 }
 

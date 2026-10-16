@@ -8,6 +8,7 @@
 #include "attrvector.h"
 #include "interlock.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -54,8 +55,9 @@ void waitBaseDir(const string& baseDir) {
 }
 
 void dropBaseDir(const string& baseDir) {
-    if (baseDir.empty())
+    if (baseDir.empty()) {
         return;
+    }
     std::lock_guard<std::mutex> guard(baseDirLock);
 
     auto it = baseDirSet.find(baseDir);
@@ -205,10 +207,10 @@ bool AttributeManager::addVector(std::string_view name, const Config& config) {
         if (!retval) {
             string       baseFileName = createBaseFileName(name);
             VectorHolder vh(AttributeFactory::createAttribute(baseFileName, config));
-            assert(vh.get());
+            CHECK(vh.get());
             if (vh->load()) {
-                assert(vh->getInternalBasicType() == config.basicType());
-                assert(vh->getInternalCollectionType() == config.collectionType());
+                CHECK(vh->getInternalBasicType() == config.basicType());
+                CHECK(vh->getInternalCollectionType() == config.collectionType());
                 retval = add(vh);
             } else {
                 retval = add(vh);

@@ -5,6 +5,7 @@
 #include "inline_operation.h"
 #include "value_codec.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/typify.h>
 
@@ -23,7 +24,7 @@ struct CreateSimpleValueBuilderBase {
     template <typename T>
     static std::unique_ptr<ValueBuilderBase> invoke(const ValueType& type, size_t num_mapped_dims,
                                                     size_t subspace_size, size_t expected_subspaces) {
-        assert(check_cell_type<T>(type.cell_type()));
+        CHECK(check_cell_type<T>(type.cell_type()));
         return std::make_unique<SimpleValueT<T>>(type, num_mapped_dims, subspace_size, expected_subspaces);
     }
 };
@@ -44,7 +45,7 @@ struct SimpleLookupView : public Value::Index::View {
     SimpleLookupView(const Map& map_in, size_t num_dims) : map(map_in), my_addr(num_dims), pos(map.end()) {}
 
     void lookup(std::span<const string_id* const> addr) override {
-        assert(addr.size() == my_addr.size());
+        CHECK(addr.size() == my_addr.size());
         for (size_t i = 0; i < my_addr.size(); ++i) {
             my_addr[i] = Handle::handle_from_id(*addr[i]);
         }
@@ -99,12 +100,12 @@ struct SimpleFilterView : public Value::Index::View {
                 ++my_pos;
             }
         }
-        assert(my_pos == match_dims.end());
-        assert((match_dims.size() + extract_dims.size()) == num_dims);
+        CHECK(my_pos == match_dims.end());
+        CHECK((match_dims.size() + extract_dims.size()) == num_dims);
     }
 
     void lookup(std::span<const string_id* const> addr) override {
-        assert(addr.size() == query.size());
+        CHECK(addr.size() == query.size());
         for (size_t i = 0; i < addr.size(); ++i) {
             query[i] = Handle::handle_from_id(*addr[i]);
         }
@@ -114,7 +115,7 @@ struct SimpleFilterView : public Value::Index::View {
     bool next_result(std::span<string_id* const> addr_out, size_t& idx_out) override {
         while (pos != map.end()) {
             if (is_match()) {
-                assert(addr_out.size() == extract_dims.size());
+                CHECK(addr_out.size() == extract_dims.size());
                 for (size_t i = 0; i < extract_dims.size(); ++i) {
                     *addr_out[i] = pos->first[extract_dims[i]].id();
                 }
@@ -148,7 +149,7 @@ struct SimpleIterateView : public Value::Index::View {
         if (pos == map.end()) {
             return false;
         }
-        assert(addr_out.size() == pos->first.size());
+        CHECK(addr_out.size() == pos->first.size());
         for (size_t i = 0; i < addr_out.size(); ++i) {
             *addr_out[i] = pos->first[i].id();
         }
@@ -166,8 +167,8 @@ struct SimpleIterateView : public Value::Index::View {
 
 SimpleValue::SimpleValue(const ValueType& type, size_t num_mapped_dims_in, size_t subspace_size_in)
     : _type(type), _num_mapped_dims(num_mapped_dims_in), _subspace_size(subspace_size_in), _index() {
-    assert(_type.count_mapped_dimensions() == _num_mapped_dims);
-    assert(_type.dense_subspace_size() == _subspace_size);
+    CHECK(_type.count_mapped_dimensions() == _num_mapped_dims);
+    CHECK(_type.dense_subspace_size() == _subspace_size);
 }
 
 SimpleValue::~SimpleValue() = default;
@@ -178,7 +179,7 @@ void SimpleValue::add_mapping(std::span<const std::string_view> addr) {
         my_addr.emplace_back(label);
     }
     auto [ignore, was_inserted] = _index.emplace(my_addr, _index.size());
-    assert(was_inserted);
+    CHECK(was_inserted);
 }
 
 void SimpleValue::add_mapping(std::span<const string_id> addr) {
@@ -187,7 +188,7 @@ void SimpleValue::add_mapping(std::span<const string_id> addr) {
         my_addr.emplace_back(Handle::handle_from_id(label));
     }
     auto [ignore, was_inserted] = _index.emplace(my_addr, _index.size());
-    assert(was_inserted);
+    CHECK(was_inserted);
 }
 
 MemoryUsage SimpleValue::estimate_extra_memory_usage() const {

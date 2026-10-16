@@ -6,6 +6,8 @@
 #include "field_spec.hpp"
 #include "flow_tuning.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/objects/visit.hpp>
 
 namespace search::queryeval {
@@ -52,14 +54,14 @@ FlowStats DotProductBlueprint::calculate_flow_stats(uint32_t docid_limit) const 
 }
 
 SearchIterator::UP DotProductBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const {
-    assert(tfmda.size() == 1);
-    assert(getState().numFields() == 1);
+    CHECK(tfmda.size() == 1);
+    CHECK(getState().numFields() == 1);
     fef::MatchData::UP                    md = _layout.createMatchData();
     std::vector<fef::TermFieldMatchData*> childMatch;
     std::vector<SearchIterator*>          children(_terms.size());
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State& childState = _terms[i]->getState();
-        assert(childState.numFields() == 1);
+        CHECK(childState.numFields() == 1);
         childMatch.push_back(childState.field(0).resolve(*md));
         // TODO: pass ownership with unique_ptr
         children[i] = _terms[i]->createSearch(*md).release();

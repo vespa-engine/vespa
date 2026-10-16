@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
 #include <vespa/fastos/file.h>
@@ -94,7 +95,7 @@ void corrupt_file_header(const std::string& name) {
     h.putTag(Tag(FILE_BIT_SIZE, file_bit_size));
     h.rewriteFile(f);
     bool sync_ok = f.Sync();
-    assert(sync_ok);
+    CHECK(sync_ok);
 }
 
 } // namespace

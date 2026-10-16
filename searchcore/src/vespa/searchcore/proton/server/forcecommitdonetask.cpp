@@ -2,6 +2,7 @@
 
 #include "forcecommitdonetask.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
 
@@ -18,7 +19,7 @@ ForceCommitDoneTask::ForceCommitDoneTask(IDocumentMetaStore&                    
 ForceCommitDoneTask::~ForceCommitDoneTask() = default;
 
 void ForceCommitDoneTask::reuseLids(std::vector<uint32_t>&& lids) {
-    assert(_lidsToReuse.empty());
+    CHECK(_lidsToReuse.empty());
     _lidsToReuse = std::move(lids);
 }
 

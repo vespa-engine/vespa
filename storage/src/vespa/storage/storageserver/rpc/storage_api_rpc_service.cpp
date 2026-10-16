@@ -8,6 +8,7 @@
 #include "rpc_envelope_proto.h"
 #include "shared_rpc_resources.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
@@ -24,8 +25,6 @@
 #include <vespa/vespalib/trace/tracelevel.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.storage_api_rpc_service");
@@ -98,7 +97,7 @@ template <typename HeaderType> bool decode_header_from_rpc_params(const FRT_Valu
         vespalib::DataBuffer     uncompressed(params[2]._data._buf, params[2]._data._len);
         vespalib::ConstBufferRef blob(params[2]._data._buf, params[2]._data._len);
         decompress(compression_type, uncompressed_length, blob, uncompressed, true);
-        assert(uncompressed_length == uncompressed.getDataLen());
+        CHECK(uncompressed_length == uncompressed.getDataLen());
         return hdr.ParseFromArray(uncompressed.getData(), uncompressed.getDataLen());
     }
 }
@@ -111,20 +110,20 @@ template <typename HeaderType> void encode_header_into_rpc_params(HeaderType& hd
     // change in ciphertext sizes on the wire across many messages.
     params.AddInt8(CompressionConfig::Type::NONE);
     const auto header_size = hdr.ByteSizeLong();
-    assert(header_size <= UINT32_MAX);
+    CHECK(header_size <= UINT32_MAX);
     params.AddInt32(static_cast<uint32_t>(header_size));
     auto* header_buf = reinterpret_cast<uint8_t*>(params.AddData(header_size));
     auto* header_end = hdr.SerializeWithCachedSizesToArray(header_buf);
-    assert(header_buf + header_size == header_end);
+    CHECK(header_buf + header_size == header_end);
 }
 
 void compress_and_add_payload_to_rpc_params(mbus::BlobRef payload, FRT_Values& params,
                                             const CompressionConfig& compression_cfg) {
-    assert(payload.size() <= UINT32_MAX);
+    CHECK(payload.size() <= UINT32_MAX);
     vespalib::ConstBufferRef to_compress(payload.data(), payload.size());
     vespalib::DataBuffer     buf(vespalib::roundUp2inN(payload.size()));
     auto                     comp_type = compress(compression_cfg, to_compress, buf, false);
-    assert(buf.getDataLen() <= UINT32_MAX);
+    CHECK(buf.getDataLen() <= UINT32_MAX);
 
     params.AddInt8(comp_type);
     params.AddInt32(static_cast<uint32_t>(to_compress.size()));
@@ -175,8 +174,8 @@ bool StorageApiRpcService::uncompress_rpc_payload(const FRT_Values& params, Payl
     vespalib::DataBuffer     uncompressed(params[5]._data._buf, params[5]._data._len);
     vespalib::ConstBufferRef blob(params[5]._data._buf, params[5]._data._len);
     decompress(compression_type, uncompressed_length, blob, uncompressed, true);
-    assert(uncompressed_length == uncompressed.getDataLen());
-    assert(uncompressed_length <= UINT32_MAX);
+    CHECK(uncompressed_length == uncompressed.getDataLen());
+    CHECK(uncompressed_length <= UINT32_MAX);
     auto wrapped_codec = _message_codec_provider.wrapped_codec();
 
     try {
@@ -204,7 +203,7 @@ void StorageApiRpcService::RPC_rpc_v1_send(FRT_RPCRequest* req) {
         uncompressed_size = static_cast<uint32_t>(payload.size());
     });
     if (ok) {
-        assert(cmd && cmd->has_command());
+        CHECK(cmd && cmd->has_command());
         auto scmd = cmd->steal_command();
         scmd->setApproxByteSize(uncompressed_size);
         scmd->getTrace().setLevel(hdr.trace_level());
@@ -249,7 +248,7 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
     LOG(spam, "Client: sending rpc.v1 request for message of type %s to %s", cmd->getType().getName().c_str(),
         cmd->getAddress()->toString().c_str());
 
-    assert(cmd->getAddress() != nullptr);
+    CHECK(cmd->getAddress() != nullptr);
     auto target = _target_resolver->resolve_rpc_target(*cmd->getAddress(), get_super_bucket_key(cmd->getBucketId()));
     if (!target) {
         auto reply = cmd->makeReply();
@@ -315,14 +314,14 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
         uncompressed_size = payload.size();
     });
     if (!ok) {
-        assert(!wrapped_reply);
+        CHECK(!wrapped_reply);
         handle_request_done_decode_error(*req_ctx, "Failed to decode RPC response payload");
         return;
     }
     // TODO the reply wrapper does lazy deserialization. Can we/should we ever defer?
     auto reply = wrapped_reply->getInternalMessage(); // TODO message stealing
-    assert(reply);
-    assert(reply->getMsgId() == cmd.getMsgId());
+    CHECK(reply);
+    CHECK(reply->getMsgId() == cmd.getMsgId());
 
     if (!hdr.trace_payload().empty()) {
         cmd.getTrace().addChild(mbus::TraceNode::decode(hdr.trace_payload()));
@@ -356,7 +355,7 @@ void StorageApiRpcService::handle_request_done_rpc_error(FRT_RPCRequest& req, co
 void StorageApiRpcService::handle_request_done_decode_error(const RpcRequestContext& req_ctx,
                                                             std::string_view         description) {
     auto& cmd = *req_ctx._originator_cmd;
-    assert(cmd.has_transport_context()); // Otherwise, reply already (destructively) generated by codec
+    CHECK(cmd.has_transport_context()); // Otherwise, reply already (destructively) generated by codec
     create_and_dispatch_error_reply(
         cmd, api::ReturnCode(static_cast<api::ReturnCode::Result>(mbus::ErrorCode::DECODE_ERROR), description));
 }

@@ -4,6 +4,7 @@
 
 #include "bootstrapconfig.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
@@ -12,7 +13,6 @@
 #include <vespa/config/retriever/configsnapshot.hpp>
 #include <vespa/searchlib/common/tunefileinfo.hpp>
 
-#include <cassert>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -107,12 +107,12 @@ void BootstrapConfigManager::update(const ConfigSnapshot& snapshot) {
         LOG(spam, "Bucketspaces config is changed");
         newBucketspacesConfig = snapshot.getConfig<BucketspacesConfig>(_configId);
     }
-    assert(newProtonConfig);
-    assert(newFiledistRpcConfSP);
-    assert(newBucketspacesConfig);
-    assert(newTuneFileDocumentDB);
-    assert(newDocumenttypesConfig);
-    assert(newRepo);
+    CHECK(newProtonConfig);
+    CHECK(newFiledistRpcConfSP);
+    CHECK(newBucketspacesConfig);
+    CHECK(newTuneFileDocumentDB);
+    CHECK(newDocumenttypesConfig);
+    CHECK(newRepo);
 
     const ProtonConfig&   protonConfig = *newProtonConfig;
     const auto&           hwDiskCfg = protonConfig.hwinfo.disk;
@@ -127,7 +127,7 @@ void BootstrapConfigManager::update(const ConfigSnapshot& snapshot) {
                                                        newProtonConfig, newFiledistRpcConfSP, newBucketspacesConfig,
                                                        newTuneFileDocumentDB, sampler.hwInfo()));
 
-    assert(newSnapshot->valid());
+    CHECK(newSnapshot->valid());
     {
         std::lock_guard<std::mutex> lock(_pendingConfigMutex);
         _pendingConfigSnapshot = newSnapshot;

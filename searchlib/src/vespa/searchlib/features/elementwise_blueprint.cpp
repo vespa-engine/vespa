@@ -76,9 +76,9 @@ fef::ParameterDescriptions ElementwiseBlueprint::getDescriptions() const {
 }
 
 bool ElementwiseBlueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) {
-    const auto&             feature_name = params[0].getValue();
-    const auto&             dim_name = params[1].getValue();
-    FeatureNameParser       feature_name_parser(feature_name);
+    const auto&       feature_name = params[0].getValue();
+    const auto&       dim_name = params[1].getValue();
+    FeatureNameParser feature_name_parser(feature_name);
     if (!feature_name_parser.valid()) {
         return fail("'%s' is not a valid feature name", feature_name.c_str());
     }

@@ -2,10 +2,11 @@
 
 #include "properties.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
 
-#include <cassert>
 #include <string>
 
 namespace search::fef {
@@ -39,7 +40,7 @@ Properties::Properties(const Properties&) = default;
 Properties& Properties::operator=(const Properties&) = default;
 
 Properties::~Properties() {
-    assert(_numValues >= _data.size());
+    CHECK(_numValues >= _data.size());
 }
 
 Properties& Properties::add(std::string_view key, std::string_view value) {

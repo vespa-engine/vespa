@@ -8,6 +8,7 @@
 #include "resultconfig.h"
 #include "slime_filler_filter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
@@ -30,8 +31,6 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
-#include <cassert>
 
 using document::AnnotationReferenceFieldValue;
 using document::ArrayFieldValue;
@@ -153,7 +152,7 @@ void SlimeFiller::visit(const MapFieldValue& v) {
     bool                  render_key = value_is_struct || _filter.check_field("key").should_render();
     MapFieldValueInserter map_inserter(_inserter, render_key, _filter.check_field("value"));
     if (filter_matching_elements()) {
-        assert(v.has_no_erased_keys());
+        CHECK(v.has_no_erased_keys());
         for (uint32_t id_to_keep : _selected_elements) {
             auto entry = v[id_to_keep];
             map_inserter.insert_entry(*entry.first, *entry.second);

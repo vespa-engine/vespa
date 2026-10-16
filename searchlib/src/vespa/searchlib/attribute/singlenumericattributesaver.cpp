@@ -4,6 +4,7 @@
 
 #include "iattributesavetarget.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -17,12 +18,12 @@ SingleValueNumericAttributeSaver::SingleValueNumericAttributeSaver(const attribu
     : AttributeSaver(GenerationGuard(), header), _buf(), _tracker() {
     auto lock = _tracker.acquire_lock();
     _buf = std::make_unique<BufferBuf>(size, FileSettings::DIRECTIO_ALIGNMENT);
-    assert(_buf->getFreeLen() >= size);
+    CHECK(_buf->getFreeLen() >= size);
     if (size > 0) {
         memcpy(_buf->getFree(), data, size);
         _buf->moveFreeToData(size);
     }
-    assert(_buf->getDataLen() == size);
+    CHECK(_buf->getDataLen() == size);
     _tracker.set_transient_memory(std::move(lock), size);
 }
 

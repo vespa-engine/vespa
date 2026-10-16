@@ -58,22 +58,70 @@ public class GroupingParser {
         return value;
     }
 
+    /** Converts a number of bits to an int, failing on values which do not fit rather than wrapping around */
+    private static int toNumBits(String function, Number num, int maxBits) throws ParseException {
+        long bits = num.longValue();
+        if (bits < 1 || bits > maxBits) {
+            throw new ParseException(function + " requires a number of bits between 1 and " + maxBits + ", but got " + num);
+        }
+        return (int)bits;
+    }
+
+    /**
+     * Resolves a parameter used as a list of values, on the same format as a list parameter in YQL.
+     */
+    private List<String> resolveParameterList(String name) throws ParseException {
+        String value = resolveParameter(name);
+        try {
+            return ParameterListParser.stringTokens(value);
+        } catch (IllegalArgumentException e) {
+            throw new ParseException("Input '" + name + "' is not a valid list: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Rejects a non-positive value.
+     */
+    private static Number checkPositive(String clause, Number num) throws ParseException {
+        if (num.doubleValue() <= 0) {
+            throw new ParseException(clause + " must be a positive number, but got " + num);
+        }
+        return num;
+    }
+
+    // An integer or a decimal number, optionally negative, with an optional exponent.
+    // Deliberately narrower than what Long.valueOf and Double.valueOf accept: no leading '+', no Java type
+    // suffixes such as 10d, and no hex floats.
+    private static final java.util.regex.Pattern NUMBER_PATTERN =
+            java.util.regex.Pattern.compile("-?[0-9]+(\\.[0-9]*)?([eE][+-]?[0-9]+)?");
+
     private static Number resolveParameterNumber(String name, String value) throws ParseException {
         String str = value.trim();
+        if ( ! NUMBER_PATTERN.matcher(str).matches()) {
+            throw new ParseException("Input '" + name + "' must be a number, but was '" + value + "'");
+        }
         try {
             return Long.valueOf(str);
         } catch (NumberFormatException e) {
             // not an integer, try as a double below
         }
-        try {
-            Double number = Double.valueOf(str);
-            if (number.isNaN() || number.isInfinite()) {
-                throw new NumberFormatException();
-            }
-            return number;
-        } catch (NumberFormatException e) {
+        Double number = Double.valueOf(str);
+        if (number.isInfinite()) {
             throw new ParseException("Input '" + name + "' must be a number, but was '" + value + "'");
         }
+        return number;
+    }
+
+    /**
+     * Resolves a parameter used where an int is expected. The value must be an integer within the given bounds,
+     * so that the narrowing done by the caller is lossless.
+     */
+    private Number resolveParameterInteger(String name, String clause, long min, long max) throws ParseException {
+        Number num = resolveParameterNumber(name, resolveParameter(name));
+        if (num instanceof Double || num.longValue() < min || num.longValue() > max) {
+            throw new ParseException(clause + " must be an integer between " + min + " and " + max + ", but got " + num);
+        }
+        return num;
     }
 
     private static Number resolveNumber(String str) {
@@ -322,7 +370,7 @@ void operationBody(GroupingOperation parent) :
     FilterExpression filterExp = null;
     ConstantValue<?> maxOperand = null;
     String str;
-    Number num;
+    Number num = null;
     GroupingExpression exp;
     List<GroupingExpression> lst;
 }
@@ -333,17 +381,17 @@ void operationBody(GroupingOperation parent) :
       ( <HINT>      lbrace() str = identifier()                           rbrace() { parent.addHint(str); }                   ) |
       ( <FILTER>    lbrace() filterExp = filterExp(parent)                rbrace() { parent.setFilterBy(filterExp); }         ) |
       ( <KEEP>      lbrace() filterExp = filterExp(parent)                rbrace() { parent.setFilterBy(filterExp); }         ) |
-      ( <MAX>       lbrace() ( maxOperand = infinitePositiveValue() | maxOperand = constantValue() ) rbrace()
+      ( <MAX>       { maxOperand = null; } lbrace() ( maxOperand = infinitePositiveValue() | num = integerNumber("max", Integer.MAX_VALUE) ) rbrace()
       {
-            if (maxOperand instanceof InfiniteValue) {
+            if (maxOperand != null) {
                 parent.setMax(GroupingOperation.UNLIMITED_MAX);
             } else {
-                parent.setMax(((Number)maxOperand.getValue()).intValue());
+                parent.setMax(checkPositive("max", num).intValue());
             }
       } ) |
       ( <ORDER>     lbrace() lst = expList(parent)                        rbrace() { parent.addOrderBy(lst); }                ) |
       ( <OUTPUT>    lbrace() lst = expList(parent)                        rbrace() { parent.addOutputs(lst); }                ) |
-      ( <PRECISION> lbrace() num = number()                               rbrace() { parent.setPrecision(num.intValue()); }   ) |
+      ( <PRECISION> lbrace() num = integerNumber("precision", Integer.MAX_VALUE) rbrace() { parent.setPrecision(checkPositive("precision", num).intValue()); } ) |
       ( <WHERE>     lbrace() str = where()                                rbrace() { parent.setWhere(str); }                  ) )*
     (                              operation(parent)                                                                            )*
 }
@@ -708,8 +756,8 @@ GroupingExpression md5Function(GroupingOperation grp) :
     Number num;
 }
 {
-    ( <MD5> lbrace() exp = exp(grp) comma() num = number() rbrace() )
-    { return new Md5Function(exp, num.intValue()); }
+    ( <MD5> lbrace() exp = exp(grp) comma() num = integerNumber("md5 bits", 128) rbrace() )
+    { return new Md5Function(exp, toNumBits("md5", num, 128)); }
 }
 
 GroupingExpression quantilesExpression(GroupingOperation grp) :
@@ -1075,8 +1123,8 @@ XorBitFunction xorBitFunction(GroupingOperation grp) :
     Number num;
 }
 {
-    ( <XORBIT> lbrace() exp = exp(grp) comma() num = number() rbrace() )
-    { return new XorBitFunction(exp, num.intValue()); }
+    ( <XORBIT> lbrace() exp = exp(grp) comma() num = integerNumber("xorbit bits", 64) rbrace() )
+    { return new XorBitFunction(exp, toNumBits("xorbit", num, 64)); }
 }
 
 FilterExpression filterPrimary(GroupingOperation grp) :
@@ -1111,7 +1159,7 @@ RangePredicate rangePredicate(GroupingOperation grp) :
     BooleanValue upperInclusive = new BooleanValue(false);
 }
 {
-    <RANGE> lbrace() lower = number() comma() upper = number() comma() exp = exp(grp) [ comma()  lowerInclusive = booleanValue() comma() upperInclusive = booleanValue() ] rbrace()
+    <RANGE> lbrace() lower = rangeBound() comma() upper = rangeBound() comma() exp = exp(grp) [ comma()  lowerInclusive = booleanValue() comma() upperInclusive = booleanValue() ] rbrace()
     { return new RangePredicate(lower, upper, exp, lowerInclusive.getValue(), upperInclusive.getValue()); }
 }
 
@@ -1133,7 +1181,7 @@ InPredicate inPredicate(GroupingOperation grp) :
 {
     <IN> lbrace() exp = exp(grp)
     ( comma() ( ( arg = literalString() { args.add(arg); } ) |
-                ( arg = parameterName() { args.addAll(ParameterListParser.stringTokens(resolveParameter(arg))); } ) ) )+
+                ( arg = parameterName() { args.addAll(resolveParameterList(arg)); } ) ) )+
     rbrace()
     { return new InPredicate(exp, args); }
 }
@@ -1211,6 +1259,28 @@ Number number() :
 }
 {
     ( num = literalNumber() | num = parameterNumber() )
+    { return num; }
+}
+
+// A number used where an int is expected. A literal is narrowed by the caller as before, while a parameter
+// must be an integer between 1 and max, as it may come from the request.
+Number integerNumber(String clause, int max) :
+{
+    Number num;
+    String name;
+}
+{
+    ( num = literalNumber() | name = parameterName() { num = resolveParameterInteger(name, clause, 1, max); } )
+    { return num; }
+}
+
+// A bound of range(): a number literal which may be negative, or a parameter
+Number rangeBound() :
+{
+    Number num;
+}
+{
+    ( num = signedNumber() | num = parameterNumber() )
     { return num; }
 }
 

@@ -4,6 +4,7 @@
 
 #include "supervisor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/channel.h>
 
 #include <vespa/log/log.h>
@@ -56,8 +57,9 @@ bool FRT_RPCInvoker::Invoke() {
     bool detached = false;
     _req->SetDetachedPT(&detached);
     (_method->GetHandler()->*_method->GetMethod())(_req);
-    if (detached)
+    if (detached) {
         return false;
+    }
     HandleDone(false);
     return true;
 }
@@ -74,14 +76,16 @@ void FRT_RPCInvoker::HandleDone(bool freeChannel) {
         LOG(debug, "invoke(server) done: '%s': '%s'", methodName.c_str(), FRT_GetErrorCodeName(_req->GetErrorCode()));
     }
     // send response to client or get rid of it
-    if (_noReply || (_req->GetErrorCode() == FRTE_RPC_BAD_REQUEST))
+    if (_noReply || (_req->GetErrorCode() == FRTE_RPC_BAD_REQUEST)) {
         _req->internal_subref();
-    else
+    } else {
         ch->Send(_req->CreateReplyPacket());
+    }
 
     // free FNET channel (if not in packet delivery callback)
-    if (freeChannel)
+    if (freeChannel) {
         ch->Free();
+    }
 }
 
 void FRT_RPCInvoker::HandleReturn() {
@@ -98,7 +102,7 @@ void FRT_HookInvoker::Invoke() {
     bool detached = false;
     _req->SetDetachedPT(&detached);
     (_hook->GetHandler()->*_hook->GetMethod())(_req);
-    assert(!detached);
+    CHECK(!detached);
     _req->internal_subref();
 }
 

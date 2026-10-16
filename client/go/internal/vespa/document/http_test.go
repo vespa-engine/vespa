@@ -4,11 +4,14 @@ package document
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/klauspost/compress/gzip"
 
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
@@ -241,6 +244,54 @@ func TestClientSendCompressed(t *testing.T) {
 	assertCompressedRequest(t, true, result, httpClient)
 	result = client.Send(smallDoc)
 	assertCompressedRequest(t, true, result, httpClient)
+}
+
+func TestClientSendCompressedBodyReadAfterResponse(t *testing.T) {
+	// The HTTP transport may continue reading the request body after Do returns, e.g. when the server responds before
+	// consuming the request. Simulate this by not reading the body in Do, and reading it after Send returns.
+	httpClient := &mock.HTTPClient{}
+	client, _ := NewClient(ClientOptions{
+		BaseURL:     "https://example.com:1337",
+		Compression: CompressionGzip,
+	}, []httputil.Client{httpClient})
+
+	body := fmt.Sprintf(`{"fields": {"foo": "%s"}}`, strings.Repeat("s", 512+1))
+	httpClient.NextResponseString(429, `{"message":"Rejecting execution due to overload"}`)
+	result := client.Send(Document{Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(body)})
+	if result.HTTPStatus != 429 {
+		t.Fatalf("got HTTPStatus=%d, want 429", result.HTTPStatus)
+	}
+	// Send a different document to provoke re-use of pooled buffers
+	client.Send(Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(strings.ToUpper(body))})
+
+	req := httpClient.Requests[0]
+	if req.ContentLength != result.BytesSent {
+		t.Errorf("got ContentLength=%d, want %d", req.ContentLength, result.BytesSent)
+	}
+	assertGzipBody(t, body, req.Body)
+	if req.GetBody == nil {
+		t.Fatal("GetBody is not set, request cannot be retried")
+	}
+	retryBody, err := req.GetBody()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertGzipBody(t, body, retryBody)
+}
+
+func assertGzipBody(t *testing.T, want string, body io.Reader) {
+	t.Helper()
+	zr, err := gzip.NewReader(body)
+	if err != nil {
+		t.Fatalf("request body is not gzip: %v", err)
+	}
+	got, err := io.ReadAll(zr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != want {
+		t.Errorf("got request body %q, want %q", got, want)
+	}
 }
 
 func assertCompressedRequest(t *testing.T, want bool, result Result, client *mock.HTTPClient) {

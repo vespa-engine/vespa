@@ -6,7 +6,6 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 
-#include <cassert>
 #include <string>
 
 namespace document::config_builder {

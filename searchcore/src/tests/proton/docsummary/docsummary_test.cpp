@@ -310,8 +310,9 @@ public:
         if (sv != nullptr) {
             // cf. FeedView::putAttributes()
             DocIdLimit& docIdLimit = sv->getDocIdLimit();
-            if (docIdLimit.get() <= lid)
+            if (docIdLimit.get() <= lid) {
                 docIdLimit.set(lid + 1);
+            }
         }
     }
 };

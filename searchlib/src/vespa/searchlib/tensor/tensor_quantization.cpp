@@ -2,6 +2,7 @@
 
 #include "tensor_quantization.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
@@ -9,7 +10,6 @@
 #include <vespa/vespalib/util/bfloat16.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <type_traits>
 
@@ -72,14 +72,14 @@ void copy_convert<float, Int8Float>(std::span<const float> src, std::span<Int8Fl
 template <typename CT>
 void convert_to_f32(std::span<const CT> src, std::span<float> dst) {
     static_assert(!std::is_same_v<CT, float>, "Trying to convert float to float; broken type conditions?");
-    assert(dst.size() == src.size());
+    CHECK(dst.size() == src.size());
     copy_convert<CT, float>(src, dst);
 }
 
 template <typename CT>
 void convert_from_f32(std::span<const float> src, std::span<CT> dst) {
     static_assert(!std::is_same_v<CT, float>, "Trying to convert float to float; broken type conditions?");
-    assert(dst.size() == src.size());
+    CHECK(dst.size() == src.size());
     copy_convert<float, CT>(src, dst);
 }
 
@@ -90,8 +90,8 @@ void convert_from_f32(std::span<const float> src, std::span<CT> dst) {
 
 ValueType to_quantized_tensor_type(const ValueType& in_tensor_type, const vespalib::quant::EdenQuantizer& quantizer) {
     std::vector<ValueType::Dimension> q_dims = in_tensor_type.mapped_dimensions();
-    assert(!in_tensor_type.is_sparse()); // Must have at least 1 indexed dimension
-    assert(in_tensor_type.dense_subspace_size() == quantizer.dimensions());
+    CHECK(!in_tensor_type.is_sparse()); // Must have at least 1 indexed dimension
+    CHECK(in_tensor_type.dense_subspace_size() == quantizer.dimensions());
     // Leave all sparse dimensions untouched and replace all indexed dimensions with a single
     // quantized "aggregate" dimension. We cheekily reuse the name of the last indexed dimension
     // to ensure we use a name that is unique within the tensor type.
@@ -116,9 +116,9 @@ struct QuantizeTensorWithImplicitInputConversion {
         const auto&  idx = in_tensor.index();
         auto         input_cells = in_tensor.cells().typify<InputCT>();
 
-        assert(input_dense_size == quantizer.dimensions());
-        assert(quantized_dense_size == quantizer.quantized_size());
-        assert(num_mapped == quantized_type.dimensions().size() - 1); // Indexed must be reduced down to 1 dimension
+        CHECK(input_dense_size == quantizer.dimensions());
+        CHECK(quantized_dense_size == quantizer.quantized_size());
+        CHECK(num_mapped == quantized_type.dimensions().size() - 1); // Indexed must be reduced down to 1 dimension
 
         auto builder = FastValueBuilderFactory::get().create_value_builder<Int8Float>(
             quantized_type, num_mapped, quantized_dense_size, idx.size());
@@ -128,7 +128,7 @@ struct QuantizeTensorWithImplicitInputConversion {
         }
         std::vector<vespalib::string_id> addr(num_mapped);
         if (num_mapped == 0) {
-            assert(idx.size() == 1);
+            CHECK(idx.size() == 1);
             auto i8f_array_ref = builder->add_subspace(addr);
             auto u8_array_ref = span_cast<uint8_t>(i8f_array_ref);
             if constexpr (std::is_same_v<InputCT, float>) {
@@ -174,7 +174,7 @@ struct DequantizeTensorWithImplicitOutputConversion {
         const auto&  idx = quantized_in_tensor.index();
         auto         input_cells = quantized_in_tensor.cells().typify<Int8Float>();
 
-        assert(dense_size == quantizer.dimensions());
+        CHECK(dense_size == quantizer.dimensions());
         auto builder = FastValueBuilderFactory::get().create_value_builder<OutputCT>(out_tensor_type, num_mapped,
                                                                                      dense_size, idx.size());
         if constexpr (!std::is_same_v<OutputCT, float>) {
@@ -182,7 +182,7 @@ struct DequantizeTensorWithImplicitOutputConversion {
         }
         std::vector<vespalib::string_id> addr(num_mapped);
         if (num_mapped == 0) {
-            assert(idx.size() == 1);
+            CHECK(idx.size() == 1);
             auto array_ref = builder->add_subspace(addr);
             auto input_as_u8 = span_cast<const uint8_t>(input_cells);
             if constexpr (std::is_same_v<OutputCT, float>) {

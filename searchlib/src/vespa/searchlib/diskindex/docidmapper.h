@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/array.h>
 
-#include <cassert>
 #include <cstdint>
 #include <span>
 #include <string>
@@ -47,7 +47,7 @@ public:
     static uint32_t noDocId() { return static_cast<uint32_t>(-1); }
 
     uint32_t mapDocId(uint32_t docId) const {
-        assert(docId < _docIdLimit);
+        CHECK(docId < _docIdLimit);
         if (_selector.data() != nullptr && (docId >= _selector.size() || _selector[docId] != _selectorId)) {
             docId = noDocId();
         }

@@ -20,8 +20,9 @@ TEST(Utf8Test, utf8_test) {
     for (uint32_t h = 0; h < 0x1100; h++) {
         std::string data;
 
-        if (h >= 0xD8 && h < 0xE0)
+        if (h >= 0xD8 && h < 0xE0) {
             continue;
+        }
 
         Utf8Writer w(data);
         for (uint32_t i = 0; i < 256; i++) {

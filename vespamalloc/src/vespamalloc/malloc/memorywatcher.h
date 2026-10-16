@@ -221,7 +221,7 @@ template <typename T, typename S> void MemoryWatcher<T, S>::getOptions() {
     if (retval == 0) {
         int  fd = open(searchOrder[index], O_RDONLY);
         char buffer[4096];
-        assert(st.st_size + 1 < int(sizeof(buffer)));
+        CHECK(st.st_size + 1 < int(sizeof(buffer)));
         retval = read(fd, buffer, st.st_size);
         if (retval == st.st_size) {
             buffer[st.st_size] = 0;

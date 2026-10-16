@@ -42,12 +42,15 @@ TEST(NewConfigBuilderTest, primitive_types) {
     // Check that primitive types have been registered
     bool found_int = false, found_string = false, found_long = false;
     for (const auto& pt : config.doctype[0].primitivetype) {
-        if (pt.name == "int")
+        if (pt.name == "int") {
             found_int = true;
-        if (pt.name == "string")
+        }
+        if (pt.name == "string") {
             found_string = true;
-        if (pt.name == "long")
+        }
+        if (pt.name == "long") {
             found_long = true;
+        }
     }
 
     EXPECT_TRUE(found_int);

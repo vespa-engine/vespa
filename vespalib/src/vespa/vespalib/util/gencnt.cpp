@@ -2,7 +2,7 @@
 
 #include "gencnt.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 
@@ -36,7 +36,7 @@ bool GenCnt::inRangeInclusive(GenCnt a, GenCnt b) const {
 uint32_t GenCnt::distance(const GenCnt& other) const {
     if (other._val == 0) {
         // special case
-        assert(_val == 0);
+        CHECK(_val == 0);
         return 0;
     }
     if (_val <= other._val) {

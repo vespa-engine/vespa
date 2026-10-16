@@ -5,9 +5,8 @@
 #include "hnsw_index_utils.h"
 #include "nearest_neighbor_index.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-
-#include <cassert>
 
 namespace search::tensor {
 
@@ -29,7 +28,7 @@ class HnswMultiBestNeighbors {
 
     bool remove_docid(uint32_t docid) {
         auto itr = _docids.find(docid);
-        assert(itr != _docids.end());
+        CHECK(itr != _docids.end());
         if (itr->second > 1) {
             --itr->second;
             return false;
@@ -50,7 +49,7 @@ public:
         _candidates.push(candidate);
     }
     void pop() {
-        assert(!_candidates.empty());
+        CHECK(!_candidates.empty());
         uint32_t docid = _candidates.top().docid;
         remove_docid(docid);
         _candidates.pop();

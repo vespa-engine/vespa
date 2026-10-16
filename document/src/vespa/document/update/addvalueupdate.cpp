@@ -26,13 +26,16 @@ AddValueUpdate::AddValueUpdate(std::unique_ptr<FieldValue> value, int weight)
 AddValueUpdate::~AddValueUpdate() = default;
 
 bool AddValueUpdate::operator==(const ValueUpdate& other) const {
-    if (other.getType() != Add)
+    if (other.getType() != Add) {
         return false;
+    }
     const AddValueUpdate& o(static_cast<const AddValueUpdate&>(other));
-    if (*_value != *o._value)
+    if (*_value != *o._value) {
         return false;
-    if (_weight != o._weight)
+    }
+    if (_weight != o._weight) {
         return false;
+    }
     return true;
 }
 

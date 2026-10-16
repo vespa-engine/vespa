@@ -2,10 +2,10 @@
 
 #include "bufferedfile.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/util/error.h>
 
-#include <cassert>
 #include <cinttypes>
 #include <cstring>
 
@@ -56,18 +56,21 @@ void Fast_BufferedFile::addNum(unsigned int num, int fieldw, char fill) {
         num /= 10;
     } while (num != 0);
     while (p - buf1 < fieldw) {
-        if (_bufi >= _bufe)
+        if (_bufi >= _bufe) {
             flushWriteBuf();
+        }
         while (p - buf1 < fieldw && _bufi < _bufe) {
             *_bufi++ = fill;
             fieldw--;
         }
     }
     while (p > buf1) {
-        if (_bufi >= _bufe)
+        if (_bufi >= _bufe) {
             flushWriteBuf();
-        while (p > buf1 && _bufi < _bufe)
+        }
+        while (p > buf1 && _bufi < _bufe) {
             *_bufi++ = *--p;
+        }
     }
 }
 
@@ -180,8 +183,9 @@ char* Fast_BufferedFile::ReadLine(char* line, size_t buflen) {
     p = line;
     ep = line + buflen - 1;
     while (true) {
-        while (_bufi < _bufe && *_bufi != '\n' && p < ep)
+        while (_bufi < _bufe && *_bufi != '\n' && p < ep) {
             *p++ = *_bufi++;
+        }
         if (p >= ep) {
             *p = 0;
             return line;
@@ -189,8 +193,9 @@ char* Fast_BufferedFile::ReadLine(char* line, size_t buflen) {
         if (_bufi >= _bufe) {
             fillReadBuf();
             if (_bufi >= _bufe) {
-                if (p == line)
+                if (p == line) {
                     return nullptr;
+                }
                 *p = 0;
                 return line;
             }
@@ -219,10 +224,12 @@ ssize_t Fast_BufferedFile::Write2(const void* src, size_t srclen) {
 
 void Fast_BufferedFile::WriteString(const char* src) {
     while (*src) {
-        if (_bufi >= _bufe)
+        if (_bufi >= _bufe) {
             flushWriteBuf();
-        while (*src && _bufi < _bufe)
+        }
+        while (*src && _bufi < _bufe) {
             *_bufi++ = *src++;
+        }
     }
 }
 
@@ -234,11 +241,13 @@ ssize_t Fast_BufferedFile::Read(void* dst, size_t dstlen) {
         memcpy(p, _bufi, sz);
         p += sz;
         _bufi += sz;
-        if (p >= pe)
+        if (p >= pe) {
             break;
+        }
         fillReadBuf();
-        if (_bufi >= _bufe)
+        if (_bufi >= _bufe) {
             break;
+        }
     }
     return p - static_cast<char*>(dst);
 }
@@ -253,7 +262,7 @@ vespalib::Memory Fast_BufferedFile::obtain() {
 }
 
 vespalib::Input& Fast_BufferedFile::evict(size_t bytes) {
-    assert(_bufi + bytes <= _bufe);
+    CHECK(_bufi + bytes <= _bufe);
     _bufi += bytes;
     return *this;
 }
@@ -270,7 +279,7 @@ void Fast_BufferedFile::ReadOpenExisting(const char* name) {
     ok &= _file->OpenReadOnlyExisting(true, name);
     if (!ok) {
         fprintf(stderr, "ERROR opening %s for read: %s\n", _file->GetFileName(), getLastErrorString().c_str());
-        assert(ok);
+        CHECK(ok);
     }
     _openFlags = FASTOS_FILE_OPEN_READ;
     // CASTWARN
@@ -284,14 +293,15 @@ void Fast_BufferedFile::ReadOpen(const char* name) {
     ok &= _file->OpenReadOnly(name);
     if (!ok) {
         fprintf(stderr, "ERROR opening %s for read: %s\n", _file->GetFileName(), getLastErrorString().c_str());
-        assert(ok);
+        CHECK(ok);
     }
     if (_file->IsOpened()) {
         // CASTWARN
         _fileleft = static_cast<uint64_t>(getSize());
         _openFlags = FASTOS_FILE_OPEN_READ;
-    } else
+    } else {
         _fileleft = 0;
+    }
     _filepos = 0;
     ResetBuf();
 }
@@ -301,12 +311,13 @@ void Fast_BufferedFile::WriteOpen(const char* name) {
     ok &= _file->OpenWriteOnly(name);
     if (!ok) {
         fprintf(stderr, "ERROR opening %s for write: %s\n", _file->GetFileName(), getLastErrorString().c_str());
-        assert(ok);
+        CHECK(ok);
     }
     _filepos = 0;
     ResetBuf();
-    if (_file->IsOpened())
+    if (_file->IsOpened()) {
         _openFlags = FASTOS_FILE_OPEN_WRITE;
+    }
 }
 
 Fast_BufferedFile::Fast_BufferedFile() : Fast_BufferedFile(DEFAULT_BUF_SIZE) {
@@ -345,7 +356,7 @@ Fast_BufferedFile::Fast_BufferedFile(FastOS_FileInterface* file, size_t bufferSi
 
 Fast_BufferedFile::~Fast_BufferedFile() {
     bool close_ok = Close();
-    assert(close_ok);
+    CHECK(close_ok);
 }
 
 void Fast_BufferedFile::ResetBuf() {

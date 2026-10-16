@@ -19,13 +19,16 @@ static const char* operatorName[] = {"add", "div", "mul", "sub"};
 static const char* operatorNameC[] = {"Add", "Div", "Mul", "Sub"};
 
 bool ArithmeticValueUpdate::operator==(const ValueUpdate& other) const {
-    if (other.getType() != Arithmetic)
+    if (other.getType() != Arithmetic) {
         return false;
+    }
     const ArithmeticValueUpdate& o(static_cast<const ArithmeticValueUpdate&>(other));
-    if (_operator != o._operator)
+    if (_operator != o._operator) {
         return false;
-    if (_operand != o._operand)
+    }
+    if (_operand != o._operand) {
         return false;
+    }
     return true;
 }
 

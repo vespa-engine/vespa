@@ -2,9 +2,13 @@
 package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
+import ai.vespa.modelintegration.evaluator.OnnxPadderOptions;
+import ai.vespa.modelintegration.evaluator.OnnxPadder;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.language.process.TimeoutException;
+import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -13,9 +17,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
@@ -26,6 +32,8 @@ import static org.mockito.Mockito.mock;
 @ExtendWith(ContainerEnvironmentAvailableCondition.class)
 class TritonOnnxEvaluatorTest {
     private static final String MODEL_NAME = "dummy_transformer";
+    /** A float model with BERT-like masked attention, whose output for the real tokens is unchanged by padding. */
+    private static final String MASKED_MODEL_NAME = "dummy_masked_attention_embedder";
 
     private static TritonServerContainer tritonContainer;
 
@@ -33,7 +41,30 @@ class TritonOnnxEvaluatorTest {
     static void launchTritonServer() throws IOException {
         tritonContainer = new TritonServerContainer();
         tritonContainer.addModel(MODEL_NAME, Path.of("src/test/models/onnx/transformer/" + MODEL_NAME + ".onnx"));
+        tritonContainer.addModel(MASKED_MODEL_NAME, Path.of("src/test/models/onnx/transformer/" + MASKED_MODEL_NAME + ".onnx"));
         tritonContainer.start();
+    }
+
+    /** Padding pads inputs to the buckets and unpads the outputs, which the real tokens' output is unchanged by */
+    @Test
+    void outputs_are_the_same_with_padding_and_cut_back_to_the_real_length() {
+        try (var tritonClient = createTritonClient()) {
+            tritonClient.loadModel(MASKED_MODEL_NAME);
+            var modelReference = mock(ResourceReference.class);
+            var unpadded = new TritonOnnxEvaluator(MASKED_MODEL_NAME, modelReference, tritonClient, false);
+            var padded = OnnxPadder.of(OnnxPadderOptions.of(List.of(8, 16)), unpadded, MASKED_MODEL_NAME);
+            assertTrue(padded instanceof OnnxPadder, "Verified with a sample at construction");
+
+            var inputs = inputs(List.of(101L, 2023L, 2003L, 102L));
+            var expected = unpadded.evaluate(inputs);
+            var actual = padded.evaluate(inputs);
+            assertEquals(TensorType.fromSpec("tensor<float>(d0[1],d1[4],d2[16])"), actual.get("last_hidden_state").type());
+            assertClose(expected.get("last_hidden_state"), actual.get("last_hidden_state"));
+
+            var longer = inputs(List.of(101L, 2023L, 2003L, 2001L, 2002L, 2004L, 2005L, 2006L, 2007L, 102L));
+            assertClose(unpadded.evaluate(longer, "last_hidden_state"),
+                                                         padded.evaluate(longer, "last_hidden_state"));
+        }
     }
 
     @Test
@@ -91,6 +122,25 @@ class TritonOnnxEvaluatorTest {
             assertThrows(TimeoutException.class,
                     () -> evaluator.evaluate(inputs, "output_0", Duration.ofMillis(1)));
         }
+    }
+
+    private static Map<String, Tensor> inputs(List<Long> ids) {
+        var type = TensorType.fromSpec("tensor<float>(d0[1],d1[" + ids.size() + "])");
+        var idsBuilder = Tensor.Builder.of(type);
+        var maskBuilder = Tensor.Builder.of(type);
+        for (int i = 0; i < ids.size(); i++) {
+            idsBuilder.cell(ids.get(i), 0, i);
+            maskBuilder.cell(1, 0, i);
+        }
+        return Map.of("input_ids", idsBuilder.build(), "attention_mask", maskBuilder.build());
+    }
+
+    private static void assertClose(Tensor expected, Tensor actual) {
+        assertEquals(expected.type(), actual.type());
+        var expectedCells = (IndexedTensor) expected;
+        var actualCells = (IndexedTensor) actual;
+        for (long i = 0; i < expectedCells.size(); i++)
+            assertEquals(expectedCells.get(i), actualCells.get(i), 1e-5, "Cell " + i);
     }
 
     private static TritonOnnxClient createTritonClient() {

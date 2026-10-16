@@ -22,7 +22,7 @@ import java.util.Set;
 
 /**
  * @author Einar M R Rosenvinge
- * @author bjorncs
+ * @author Bjorn Seime
  */
 public class ContainerDocumentApi {
 
@@ -36,7 +36,8 @@ public class ContainerDocumentApi {
                                 boolean ignoreUndefinedFields, Set<Integer> portOverride) {
         this.ignoreUndefinedFields = ignoreUndefinedFields;
         addRestApiHandler(cluster, handlerOptions, portOverride);
-        addFeedHandler(ds, cluster, handlerOptions, portOverride);
+        if (handlerOptions.enableLegacyFeedApi && ds.featureFlags().enableLegacyFeedHandler())
+            addFeedHandler(ds, cluster, handlerOptions, portOverride);
         addVespaClientContainerBundle(cluster);
     }
 
@@ -125,10 +126,12 @@ public class ContainerDocumentApi {
 
         private final Collection<String> bindings;
         private final Element feedApiThreadpoolOptions;
+        private final boolean enableLegacyFeedApi;
 
-        public HandlerOptions(Collection<String> bindings, Element feedApiThreadpoolOptions) {
+        public HandlerOptions(Collection<String> bindings, Element feedApiThreadpoolOptions, boolean enableLegacyFeedApi) {
             this.bindings = Collections.unmodifiableCollection(bindings);
             this.feedApiThreadpoolOptions = feedApiThreadpoolOptions;
+            this.enableLegacyFeedApi = enableLegacyFeedApi;
         }
     }
 

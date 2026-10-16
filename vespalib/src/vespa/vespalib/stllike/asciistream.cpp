@@ -2,6 +2,7 @@
 
 #include "asciistream.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/alloc.h>
@@ -9,7 +10,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <cctype>
 #include <charconv>
 #include <limits>
@@ -29,7 +29,7 @@ std::vector<std::string> getPrecisions(const char type) {
     for (uint32_t i = 0; i < result.size(); ++i) {
         char buf[8];
         int  count = snprintf(buf, sizeof(buf), "%%.%u%c", i, type);
-        assert(size_t(count) < sizeof(buf)); // Assert no truncation.
+        CHECK(size_t(count) < sizeof(buf)); // Assert no truncation.
         (void)count;
         result[i] = buf;
     }
@@ -42,13 +42,13 @@ std::vector<std::string> autoPrecisions = getPrecisions('g');
 } // namespace
 
 asciistream& asciistream::operator<<(Precision v) {
-    assert(v.getPrecision() <= VESPALIB_ASCIISTREAM_MAX_PRECISION);
+    CHECK(v.getPrecision() <= VESPALIB_ASCIISTREAM_MAX_PRECISION);
     _precision = v.getPrecision();
     return *this;
 }
 
 asciistream& asciistream::operator>>(Precision v) {
-    assert(v.getPrecision() <= VESPALIB_ASCIISTREAM_MAX_PRECISION);
+    CHECK(v.getPrecision() <= VESPALIB_ASCIISTREAM_MAX_PRECISION);
     _precision = v.getPrecision();
     return *this;
 }
@@ -413,7 +413,7 @@ asciistream& asciistream::operator<<(long long v_in) {
             i = printInt<16>(v, tmp, i);
             break;
         default:
-            assert(!"unhandled number base");
+            CHECK(!"unhandled number base");
         }
     }
     const char* final = prependSign(negative, prependInt(tmp + i - 2, _base) - 1);
@@ -448,7 +448,7 @@ asciistream& asciistream::operator<<(unsigned long long v) {
             i = printInt<16>(v, tmp, i);
             break;
         default:
-            assert(!"unhandled number base");
+            CHECK(!"unhandled number base");
         }
     }
     const char* final = prependInt(tmp + i - 2, _base);
@@ -494,7 +494,7 @@ template <typename T> void asciistream::printFixed(T v) {
                               // precision, a high precision adds even more.
     const char* spec = fixedPrecisions[_precision].c_str();
     int         len = snprintf(tmp, sizeof(tmp), spec, v);
-    assert(len < static_cast<int>(sizeof(tmp)));
+    CHECK(len < static_cast<int>(sizeof(tmp)));
     doFill(len);
     write(tmp, len);
 }
@@ -521,7 +521,7 @@ template <typename T> void asciistream::printScientific(T v) {
     const char* spec =
         (((_floatSpec == scientific) ? scientificPrecisions[_precision] : autoPrecisions[_precision])).c_str();
     int len = snprintf(tmp, sizeof(tmp), spec, v);
-    assert(len < static_cast<int>(sizeof(tmp)));
+    CHECK(len < static_cast<int>(sizeof(tmp)));
     doFill(len);
     write(tmp, len);
     if (_floatModifier == forcedot && !hasDotOrIsScientific(tmp, len)) {

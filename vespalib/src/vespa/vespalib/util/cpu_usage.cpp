@@ -4,10 +4,11 @@
 
 #include "require.h"
 
+#include <vespa/check_require.h>
+
 #include <pthread.h>
 #include <sys/resource.h>
 
-#include <cassert>
 #include <cstring>
 #include <optional>
 
@@ -130,17 +131,17 @@ CpuUsage& CpuUsage::self() {
 }
 
 void CpuUsage::do_add_thread(const Guard&, ThreadTracker::SP tracker) {
-    assert(!_sampling);
+    CHECK(!_sampling);
     auto* key = tracker.get();
     auto [ignore, was_inserted] = _threads.emplace(key, std::move(tracker));
-    assert(was_inserted);
+    CHECK(was_inserted);
 }
 
 void CpuUsage::do_remove_thread(const Guard&, ThreadTracker::SP tracker) {
-    assert(!_sampling);
+    CHECK(!_sampling);
     _usage.merge(tracker->sample());
     auto was_removed = _threads.erase(tracker.get());
-    assert(was_removed);
+    CHECK(was_removed);
 }
 
 void CpuUsage::add_thread(ThreadTracker::SP tracker) {
@@ -173,7 +174,7 @@ void CpuUsage::handle_pending(const Guard& guard) {
 }
 
 CpuUsage::TimedSample CpuUsage::do_sample() {
-    assert(_sampling);
+    CHECK(_sampling);
     Sample                                   my_sample;
     std::optional<std::promise<TimedSample>> my_promise;
     auto                                     t = steady_clock::now();

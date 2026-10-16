@@ -3,6 +3,7 @@
 #include "data_utils.h"
 #include "scoped_fn_table_override.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/hwaccelerated/float4.h>
 #include <vespa/vespalib/hwaccelerated/float8_luts.h>
@@ -263,7 +264,7 @@ public:
     constexpr size_t ALIGN = 8;
     void*            mem;
     int              r = posix_memalign(&mem, ALIGN, sz);
-    assert(r == 0);
+    CHECK(r == 0);
     return {mem, unalignment};
 }
 
@@ -278,7 +279,7 @@ void flip_one_bit(void* memory, const void* other_memory, size_t sz) {
         uint8_t bit = 1u << bit_idx;
         if ((old & bit) == (cmp & bit)) {
             uint8_t new_val = old ^ bit;
-            assert(old != new_val);
+            CHECK(old != new_val);
             buf[byte_idx] = new_val;
             return;
         }

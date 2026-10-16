@@ -4,8 +4,9 @@
 
 #include "flush_strategy_id_listener.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 
 namespace proton::flushengine {
 
@@ -58,7 +59,7 @@ bool FlushStrategyIdNotifier::add_strategy_id_listener(std::shared_ptr<FlushStra
         return false;
     }
     auto it = std::find(_listeners.begin(), _listeners.end(), listener);
-    assert(it == _listeners.end());
+    CHECK(it == _listeners.end());
     _listeners.push_back(listener);
     auto strategy_id = _strategy_id;
     guard.unlock();

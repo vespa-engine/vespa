@@ -61,10 +61,12 @@ public:
         bool getRemove() const { return _removal; }
 
         bool operator<(const PendingOp& rhs) const noexcept {
-            if (_wordIdx != rhs._wordIdx)
+            if (_wordIdx != rhs._wordIdx) {
                 return _wordIdx < rhs._wordIdx;
-            if (_docId != rhs.getDocId())
+            }
+            if (_docId != rhs.getDocId()) {
                 return _docId < rhs.getDocId();
+            }
             return _seq < rhs._seq;
         }
     };

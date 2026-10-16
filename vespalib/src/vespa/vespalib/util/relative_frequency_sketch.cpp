@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "relative_frequency_sketch.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 #include <cstring>
 
 namespace vespalib {
@@ -21,7 +22,7 @@ RawRelativeFrequencySketch::RawRelativeFrequencySketch(size_t count)
       _estimated_sample_count(0),
       _window_size((_buf.size() / 8) * 10),
       _block_mask_bits(_buf.size() > 64 ? Optimized::msbIdx(_buf.size() / 64) : 0) {
-    assert(_block_mask_bits <= 44); // Will always be the case in practice, but it's an invariant...
+    CHECK(_block_mask_bits <= 44); // Will always be the case in practice, but it's an invariant...
     memset(_buf.get(), 0, _buf.size());
 }
 
@@ -48,7 +49,7 @@ RawRelativeFrequencySketch::~RawRelativeFrequencySketch() = default;
 template <bool ReturnMinCount> uint8_t RawRelativeFrequencySketch::add_by_hash_impl(uint64_t hash) noexcept {
     const uint64_t block = hash & ((1ULL << _block_mask_bits) - 1);
     hash >>= _block_mask_bits;
-    assert(block * 64 + 64 <= _buf.size());
+    CHECK(block * 64 + 64 <= _buf.size());
     auto*   block_ptr = static_cast<uint8_t*>(_buf.get()) + (block * 64);
     uint8_t new_counters[4];
     // The compiler will happily and easily unroll this loop.

@@ -4,6 +4,7 @@
 
 #include "chunkformats.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -92,9 +93,9 @@ vespalib::ConstBufferRef Chunk::getLid(uint32_t lid) const {
             uint32_t            bLid(0), bLen(0);
             vespalib::nbostream is(getData().data() + elem.getOffset(), elem.size());
             is >> bLid >> bLen;
-            assert(bLid == lid);
-            assert(bLen == elem.netSize());
-            assert((bLen + 2 * sizeof(uint32_t)) == elem.size());
+            CHECK(bLid == lid);
+            CHECK(bLen == elem.netSize());
+            CHECK((bLen + 2 * sizeof(uint32_t)) == elem.size());
 #endif
             buf = vespalib::ConstBufferRef(getData().data() + elem.getNetOffset(), elem.netSize());
         }

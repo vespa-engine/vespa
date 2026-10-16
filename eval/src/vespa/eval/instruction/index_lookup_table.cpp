@@ -2,6 +2,7 @@
 
 #include "index_lookup_table.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/key_gen.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/value_type.h>
@@ -31,7 +32,7 @@ std::vector<uint32_t> make_index_table(const Function& idx_fun, const ValueType&
     do {
         result.push_back(uint32_t(fun(&params[0])));
     } while (step_params(params, type));
-    assert(result.size() == type.dense_subspace_size());
+    CHECK(result.size() == type.dense_subspace_size());
     return result;
 }
 
@@ -55,9 +56,9 @@ size_t IndexLookupTable::count_refs() {
 }
 
 IndexLookupTable::Token::UP IndexLookupTable::create(const Function& idx_fun, const ValueType& type) {
-    assert(type.is_dense());
-    assert(idx_fun.num_params() == type.dimensions().size());
-    assert(!CompiledFunction::detect_issues(idx_fun));
+    CHECK(type.is_dense());
+    CHECK(idx_fun.num_params() == type.dimensions().size());
+    CHECK(!CompiledFunction::detect_issues(idx_fun));
     auto key = type.to_spec() + gen_key(idx_fun, PassParams::ARRAY);
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -78,7 +79,7 @@ IndexLookupTable::Token::UP IndexLookupTable::create(const Function& idx_fun, co
             return std::make_unique<Token>(pos, Token::ctor_tag());
         } else {
             auto res = _cached.emplace(std::move(key), Value::ctor_tag());
-            assert(res.second);
+            CHECK(res.second);
             res.first->second.data = std::move(table);
             return std::make_unique<Token>(res.first, Token::ctor_tag());
         }

@@ -2,10 +2,10 @@
 
 #include "sort_feature_store.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <numeric>
 
@@ -49,14 +49,14 @@ SortFeatureStore::SortFeatureStore(std::vector<std::string> public_names)
       _chunks(),
       _read_order(),
       _run_starts() {
-    assert(no_duplicates(_public_names));
+    CHECK(no_duplicates(_public_names));
 }
 
 SortFeatureStore::~SortFeatureStore() = default;
 
 void SortFeatureStore::record(uint32_t docid, std::span<const double> values) {
-    assert(_phase == Phase::recording);
-    assert(values.size() == _num_features);
+    CHECK(_phase == Phase::recording);
+    CHECK(values.size() == _num_features);
     if (_rows > 0 && docid < _last_docid) {
         _run_starts.push_back(_rows);
     }
@@ -213,7 +213,7 @@ double SortFeatureStore::get(uint32_t ordinal) const {
         // The caller fails the query on failed(), so this value is never presented.
         return -HUGE_VAL;
     }
-    assert(ordinal < _num_features);
+    CHECK(ordinal < _num_features);
     return row_values(_seek_row)[ordinal];
 }
 

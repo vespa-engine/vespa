@@ -570,9 +570,12 @@ public abstract class GroupingOperation extends GroupingNode {
         return ret.toString();
     }
 
-    /** Returns a label as it must be written in a grouping request: unquoted if it is an identifier, quoted otherwise */
+    /**
+     * Returns a label as it must be written in a grouping request: unquoted if it is an identifier, quoted otherwise.
+     * "inf" is a reserved word which the grammar does not accept as an identifier, so it is quoted as well.
+     */
     private static String asLabelImage(String label) {
-        if (label.matches("[A-Za-z][A-Za-z0-9_@]*")) {
+        if (label.matches("[A-Za-z][A-Za-z0-9_@]*") && ! label.equals("inf")) {
             return label;
         }
         return GroupingExpression.asImage(label);

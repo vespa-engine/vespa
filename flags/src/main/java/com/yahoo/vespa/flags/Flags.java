@@ -206,20 +206,21 @@ public class Flags {
 
     public static final UnboundBooleanFlag FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY = defineFeatureFlag(
             "fail-when-configuring-indexed-map-of-array", true,
-            List.of("hmusum"), "2026-07-01", "2026-10-13",
+            List.of("hmusum"), "2026-07-01", "2026-11-13",
             "Whether to fail a deployment when an indexed map of array is used in a schema",
             "Takes effect at redeployment",
             INSTANCE_ID
     );
 
     public static final UnboundBooleanFlag FAST_MAP_SEARCH = defineFeatureFlag(
-            "fast-map-search", false,
+            "fast-map-search", true,
             List.of("johsol", "boeker", "arnej"), "2026-08-13", "2027-02-13",
             "Whether to enable fast map search for map fields in a schema.",
             "Takes effect at redeployment",
             INSTANCE_ID
     );
 
+    // TODO (@sebasabe): Remove when no loaded config model version reads it (models older than the release adding PRODUCT_DISCOVERY), together with its flag data
     public static final UnboundBooleanFlag COMMERCE_DISCOVERY = defineFeatureFlag(
             "commerce-discovery", false,
             List.of("sebasabe"), "2026-08-31", "2027-08-31",
@@ -241,6 +242,21 @@ public class Flags {
             "Whether to set env variables enabling Landlock for sandboxing.",
             "Takes effect on the next deployment.",
             TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag ENABLE_LEGACY_FEED_HANDLER = defineFeatureFlag(
+            "enable-legacy-feed-handler", true,
+            List.of("hmusum"), "2026-10-09", "2027-04-01",
+            "Whether to add the legacy feed handler (/reserved-for-internal-use/feedapi) to container clusters with document-api.",
+            "Takes effect on the next deployment.",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag PRODUCT_DISCOVERY = defineFeatureFlag(
+            "product-discovery", false,
+            List.of("sebasabe"), "2026-10-09", "2027-10-09",
+            "Whether the product-discovery element in services.xml is enabled",
+            "Takes effect at redeployment",
+            TENANT_ID
+    );
 
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

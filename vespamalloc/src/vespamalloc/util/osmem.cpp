@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <vespamalloc/malloc/common.h>
 
-#include <cassert>
 #include <cctype>
 #include <cerrno>
 #include <cstdio>

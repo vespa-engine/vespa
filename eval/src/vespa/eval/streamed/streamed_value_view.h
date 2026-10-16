@@ -4,10 +4,9 @@
 
 #include "streamed_value_index.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
-
-#include <cassert>
 
 namespace vespalib::eval {
 
@@ -26,7 +25,7 @@ public:
     StreamedValueView(const ValueType& type, size_t num_mapped_dimensions, TypedCells cells, size_t num_subspaces,
                       const StringIdVector& labels)
         : _type(type), _cells_ref(cells), _my_index(num_mapped_dimensions, num_subspaces, labels) {
-        assert(num_subspaces * _type.dense_subspace_size() == _cells_ref.size);
+        CHECK(num_subspaces * _type.dense_subspace_size() == _cells_ref.size);
     }
 
     ~StreamedValueView();

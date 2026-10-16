@@ -42,8 +42,7 @@ public:
     QueryEnvironment(const search::fef::IIndexEnvironment&       indexEnv,
                      const search::attribute::IAttributeContext& attrContext,
                      const search::fef::Properties&              properties,
-                     const search::index::IFieldLengthInspector& field_length_inspector,
-                     uint32_t                                    num_docs);
+                     const search::index::IFieldLengthInspector& field_length_inspector, uint32_t num_docs);
 
     /**
      * Used to edit the list of terms by the one setting up this query

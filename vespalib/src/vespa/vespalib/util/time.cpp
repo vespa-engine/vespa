@@ -112,7 +112,9 @@ void toGmtDateAndTime(time_t t, struct tm& target) {
 
     // 2. Day of the week calculation (1970-01-01 was a Thursday = 4)
     int wday = (int)((days + 4) % 7);
-    if (wday < 0) wday += 7;
+    if (wday < 0) {
+        wday += 7;
+    }
     target.tm_wday = wday;
 
     // 3. Date extraction (musl algorithm)
@@ -124,14 +126,18 @@ void toGmtDateAndTime(time_t t, struct tm& target) {
     }
 
     int64_t c_cycles = remdays / 36524;
-    if (c_cycles == 4) c_cycles = 3;
+    if (c_cycles == 4) {
+        c_cycles = 3;
+    }
     remdays -= c_cycles * 36524;
 
     int64_t q_cycles = remdays / 1461;
     remdays %= 1461;
 
     int64_t y_years = remdays / 365;
-    if (y_years == 4) y_years = 3;
+    if (y_years == 4) {
+        y_years = 3;
+    }
     remdays -= y_years * 365;
 
     int64_t year = 2000 + qc_cycles * 400 + c_cycles * 100 + q_cycles * 4 + y_years;
@@ -145,14 +151,12 @@ void toGmtDateAndTime(time_t t, struct tm& target) {
     }
 
     target.tm_year = (int)year - 1900; // struct tm uses 1900 as base year
-    target.tm_mon = (int)month - 1; // struct tm uses 0-11 for months
+    target.tm_mon = (int)month - 1;    // struct tm uses 0-11 for months
     target.tm_mday = (int)day;
 
     // 4. Day of the year calculation [0-365]
     // Non-leap year cumulative days preceding the start of each month (1-indexed mapping)
-    static const int32_t days_before_month[] = {
-        0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
-    };
+    static const int32_t days_before_month[] = {0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
 
     int yday = days_before_month[month] + day - 1;
     if (month > 2 && is_leap_year(year)) {

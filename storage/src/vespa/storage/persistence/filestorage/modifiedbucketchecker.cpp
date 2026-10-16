@@ -4,6 +4,7 @@
 
 #include "filestormanager.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
@@ -35,7 +36,7 @@ ModifiedBucketChecker::BucketIdListResult::BucketIdListResult()
 void ModifiedBucketChecker::BucketIdListResult::reset(document::BucketSpace           bucketSpace,
                                                       document::bucket::BucketIdList& buckets) {
     _bucketSpace = bucketSpace;
-    assert(_buckets.empty());
+    CHECK(_buckets.empty());
     _buckets.swap(buckets);
     // We pick chunks from the end of the list, so reverse it to get
     // the same send order as order received.
@@ -65,7 +66,7 @@ ModifiedBucketChecker::ModifiedBucketChecker(ServiceLayerComponentRegister& comp
 }
 
 ModifiedBucketChecker::~ModifiedBucketChecker() {
-    assert(!_thread);
+    CHECK(!_thread);
 }
 
 void ModifiedBucketChecker::on_configure(const vespa::config::content::core::StorServerConfig& newConfig) {
@@ -118,7 +119,7 @@ void ModifiedBucketChecker::run(framework::ThreadHandle& thread) {
 bool ModifiedBucketChecker::onInternalReply(const std::shared_ptr<api::InternalReply>& r) {
     if (r->getType() == RecheckBucketInfoReply::ID) {
         std::lock_guard guard(_stateLock);
-        assert(_pendingRequests > 0);
+        CHECK(_pendingRequests > 0);
         --_pendingRequests;
         if (_pendingRequests == 0 && moreChunksRemaining()) {
             _cond.notify_one();
@@ -142,8 +143,8 @@ bool ModifiedBucketChecker::requestModifiedBucketsFromProvider(document::BucketS
 }
 
 void ModifiedBucketChecker::nextRecheckChunk(std::vector<RecheckBucketInfoCommand::SP>& commandsToSend) {
-    assert(_pendingRequests == 0);
-    assert(commandsToSend.empty());
+    CHECK(_pendingRequests == 0);
+    CHECK(commandsToSend.empty());
     size_t n = std::min(_maxPendingChunkSize, _rechecksNotStarted.size());
 
     for (size_t i = 0; i < n; ++i) {

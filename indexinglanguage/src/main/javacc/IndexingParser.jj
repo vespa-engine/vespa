@@ -36,6 +36,7 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.text.StringUtilities;
+import com.yahoo.vespa.indexinglanguage.expressions.AbsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Base64DecodeExpression;
@@ -249,6 +250,7 @@ TOKEN :
     <SCOLON: ";"> |
     <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
              ("'" (~["'"] | "\\'")* "'")> |
+    <ABS: "abs"> |
     <ATTRIBUTE: "attribute"> |
     <BASE64_DECODE: "base64decode"> |
     <BASE64_ENCODE: "base64encode"> |
@@ -414,7 +416,8 @@ Expression value() :
     Expression val;
 }
 {
-    ( val = attributeExp()          |
+    ( val = absExp()                |
+      val = attributeExp()          |
       val = base64DecodeExp()       |
       val = base64EncodeExp()       |
       val = binarizeExp()           |
@@ -484,6 +487,12 @@ Expression value() :
       val = zcurveExp()             |
       ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
     { return val; }
+}
+
+Expression absExp() : { }
+{
+    ( <ABS> )
+    { return new AbsExpression(); }
 }
 
 Expression attributeExp() :
@@ -1054,7 +1063,8 @@ String identifier() :
 }
 {
     ( val = string()             |
-      ( <ATTRIBUTE>              |
+      ( <ABS>                    |
+        <ATTRIBUTE>              |
         <BASE64_DECODE>          |
         <BASE64_ENCODE>          |
         <BINARIZE>               |

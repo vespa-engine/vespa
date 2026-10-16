@@ -119,8 +119,9 @@ void ResourceUsageNotifier::notify_attribute_usage(const AttributeUsageStats& at
 
 bool ResourceUsageNotifier::setConfig(Config config_in) {
     Guard guard(_lock);
-    if (_config == config_in)
+    if (_config == config_in) {
         return false;
+    }
     _config = config_in;
     recalcState(guard, false);
     return true;

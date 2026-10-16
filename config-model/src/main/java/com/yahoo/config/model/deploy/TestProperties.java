@@ -14,6 +14,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.OpenTelemetryConfiguration;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -41,6 +42,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private ApplicationId applicationId = ApplicationId.defaultId();
     private List<ConfigServerSpec> configServerSpecs = List.of();
     private boolean hostedVespa = false;
+    private AthenzDomain tenantParentDomain = AthenzDomain.from("vespa.tenant");
     private Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
     private String jvmGCOptions = null;
@@ -87,6 +89,9 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean fastMapSearch = false;
     private boolean commerceDiscovery = false;
     private boolean enableLandlock = false;
+    private boolean enableLegacyFeedHandler = true;
+    private boolean productDiscovery = false;
+    private OpenTelemetryConfiguration opentelemetrySdk = OpenTelemetrySettings.createDisabled();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -96,6 +101,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public URI ztsUrl() { return null; }
     @Override public AthenzDomain tenantSecretDomain() { return null; }
     @Override public String athenzDnsSuffix() { return null; }
+    @Override public AthenzDomain tenantParentDomain() { return tenantParentDomain; }
     @Override public boolean hostedVespa() { return hostedVespa; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
     @SuppressWarnings("removal")
@@ -150,6 +156,9 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean fastMapSearch() { return fastMapSearch; }
     @Override public boolean commerceDiscovery() { return commerceDiscovery; }
     @Override public boolean enableLandlock() { return enableLandlock; }
+    @Override public boolean enableLegacyFeedHandler() { return enableLegacyFeedHandler; }
+    @Override public boolean productDiscovery() { return productDiscovery; }
+    @Override public OpenTelemetryConfiguration opentelemetrySdk() { return opentelemetrySdk; }
 
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -197,6 +206,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
+        return this;
+    }
+
+    public TestProperties setTenantParentDomain(AthenzDomain tenantParentDomain) {
+        this.tenantParentDomain = tenantParentDomain;
         return this;
     }
 
@@ -391,6 +405,21 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
+    public TestProperties enableLegacyFeedHandler(boolean value) {
+        this.enableLegacyFeedHandler = value;
+        return this;
+    }
+
+    public TestProperties productDiscovery(boolean value) {
+        this.productDiscovery = value;
+        return this;
+    }
+
+    public TestProperties opentelemetrySdk(OpenTelemetryConfiguration value) {
+        this.opentelemetrySdk = value;
+        return this;
+    }
+
     public static class Spec implements ConfigServerSpec {
 
         private final String hostName;
@@ -431,6 +460,23 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
             this.configServerPort = configServerPort;
             this.zooKeeperPort = zooKeeperPort;
         }
+    }
+
+    public static class OpenTelemetrySettings implements OpenTelemetryConfiguration {
+        private final boolean enabled;
+        private final double samplingRatio;
+
+        public static OpenTelemetrySettings createDisabled() {
+            return new OpenTelemetrySettings(false, null);
+        }
+
+        public OpenTelemetrySettings(Boolean enabled, Double samplingRatio) {
+            this.enabled = enabled != null && enabled;
+            this.samplingRatio = samplingRatio != null ? samplingRatio : 1.0;
+        }
+
+        @Override public boolean enabled()      { return enabled; }
+        @Override public double samplingRatio() { return samplingRatio; }
     }
 
 }

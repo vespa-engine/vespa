@@ -7,6 +7,7 @@
 #include "idumpfeaturevisitor.h"
 #include "indexproperties.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -163,32 +164,32 @@ void RankSetup::configure() {
 }
 
 void RankSetup::setFirstPhaseRank(const std::string& featureName) {
-    assert(!_compiled);
+    CHECK(!_compiled);
     _firstPhaseRankFeature = featureName;
 }
 
 void RankSetup::setSecondPhaseRank(const std::string& featureName) {
-    assert(!_compiled);
+    CHECK(!_compiled);
     _secondPhaseRankFeature = featureName;
 }
 
 void RankSetup::add_match_feature(const std::string& match_feature) {
-    assert(!_compiled);
+    CHECK(!_compiled);
     _match_features.push_back(match_feature);
 }
 
 void RankSetup::addSummaryFeature(const std::string& summaryFeature) {
-    assert(!_compiled);
+    CHECK(!_compiled);
     _summaryFeatures.push_back(summaryFeature);
 }
 
 void RankSetup::addDumpFeature(const std::string& dumpFeature) {
-    assert(!_compiled);
+    CHECK(!_compiled);
     _dumpFeatures.push_back(dumpFeature);
 }
 
 void RankSetup::add_sort_feature(const std::string& sort_feature) {
-    assert(!_compiled);
+    CHECK(!_compiled);
     _sort_features.push_back(sort_feature);
 }
 
@@ -201,7 +202,7 @@ void RankSetup::compileAndCheckForErrors(BlueprintResolver& bpr) {
     }
 }
 bool RankSetup::compile() {
-    assert(!_compiled);
+    CHECK(!_compiled);
     if (!_firstPhaseRankFeature.empty()) {
         FeatureNameParser parser(_firstPhaseRankFeature);
         if (parser.valid()) {
@@ -292,7 +293,7 @@ bool RankSetup::compile() {
 }
 
 void RankSetup::prepareSharedState(const IQueryEnvironment& queryEnv, IObjectStore& objectStore) const {
-    assert(_compiled && !_compileError);
+    CHECK(_compiled && !_compileError);
     for (const auto& spec : _first_phase_resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
@@ -318,7 +319,7 @@ RankProgram::UP RankSetup::create_sort_program(const std::string& public_name) c
 
 bool RankSetup::prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IObjectStore& objectStore,
                                           const std::vector<std::string>& selected_public_names) const {
-    assert(_compiled && !_compileError);
+    CHECK(_compiled && !_compileError);
     std::vector<const BlueprintResolver*> prepared;
     for (const auto& public_name : selected_public_names) {
         auto it = _sort_resolver_by_public.find(public_name);

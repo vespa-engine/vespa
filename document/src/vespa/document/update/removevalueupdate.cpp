@@ -24,11 +24,13 @@ RemoveValueUpdate::RemoveValueUpdate(std::unique_ptr<FieldValue> key) : ValueUpd
 RemoveValueUpdate::~RemoveValueUpdate() = default;
 
 bool RemoveValueUpdate::operator==(const ValueUpdate& other) const {
-    if (other.getType() != Remove)
+    if (other.getType() != Remove) {
         return false;
+    }
     const RemoveValueUpdate& o(static_cast<const RemoveValueUpdate&>(other));
-    if (*_key != *o._key)
+    if (*_key != *o._key) {
         return false;
+    }
     return true;
 }
 

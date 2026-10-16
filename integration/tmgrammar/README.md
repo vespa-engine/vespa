@@ -55,7 +55,7 @@ Source files are read directly from the vespa repo tree:
 
 ### YQL
 
-The YQL grammar is generated the same way by `tools/generate_yql_tmgrammar.py`, from `yqlplus/YQLPlus.ccc` and `grouping/GroupingParser.ccc`, classified by `YQLPlusSemanticTokenConfig.java` and `VespaGroupingSemanticTokenConfig.java`. It differs from the LSP in two ways, for readability where the LSP is not running: a name followed by `(` (`nearestNeighbor`, `userQuery`, `group`) is colored as a function, and `=` and `!=` are colored as operators like `<` and `>`. YQL keywords are case-insensitive, as in the query parser; the grouping language after `|` is case-sensitive.
+The YQL grammar is generated the same way by `tools/generate_yql_tmgrammar.py`, from `yqlplus/YQLPlus.ccc` and `grouping/GroupingParser.ccc`, classified by `YQLPlusSemanticTokenConfig.java` and `VespaGroupingSemanticTokenConfig.java`. It differs from the LSP in a few ways, for readability where the LSP is not running: a name followed by `(` (`nearestNeighbor`, `userQuery`, `group`) is colored as a function, `=` and `!=` are colored as operators like `<` and `>`, operators written as words (`and`, `or`, `not in`, `istrue`) are colored as keywords, and a query parameter (`@name`) is one token. Grouping starts after `|`, or at a line beginning with `all(` or `each(`, so that grouping expressions shown on their own are colored as grouping. YQL keywords are case-insensitive, as in the query parser; the grouping language is case-sensitive.
 
 ## Development
 

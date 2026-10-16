@@ -2,13 +2,13 @@
 
 #include "testdocman.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/datatypes.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/rand48.h>
 
-#include <cassert>
 #include <sstream>
 
 namespace document {
@@ -71,7 +71,7 @@ void TestDocMan::setTypeRepo(const std::shared_ptr<const DocumentTypeRepo>& repo
 Document::UP TestDocMan::createDocument(const std::string& content, const std::string& id,
                                         const std::string& type) const {
     const DocumentType* type_ptr = _repo->getDocumentType(type);
-    assert(type_ptr);
+    CHECK(type_ptr);
     Document::UP doc(new Document(*_repo, *type_ptr, DocumentId(id)));
     doc->setValue(doc->getField("content"), StringFieldValue(content.c_str()));
     return doc;

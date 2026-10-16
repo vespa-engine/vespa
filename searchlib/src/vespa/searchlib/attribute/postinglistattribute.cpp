@@ -6,6 +6,8 @@
 #include "enumcomparator.h"
 #include "loadednumericvalue.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/util/array.hpp>
 
 namespace search {
@@ -46,13 +48,13 @@ void PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_stor
     uint32_t refCount = 0;
 
     std::span<const EnumIndex> enum_indexes(loader.get_enum_indexes());
-    assert(!enum_indexes.empty());
+    CHECK(!enum_indexes.empty());
     auto     posting_indexes = loader.initialize_empty_posting_indexes();
     uint32_t posting_enum = preve;
     for (const auto& elem : loaded_enums) {
         if (preve != elem.getEnum()) {
-            assert(preve < elem.getEnum());
-            assert(elem.getEnum() < enum_indexes.size());
+            CHECK(preve < elem.getEnum());
+            CHECK(elem.getEnum() < enum_indexes.size());
             loader.set_ref_count(enum_indexes[preve], refCount);
             refCount = 0;
             preve = elem.getEnum();
@@ -67,13 +69,13 @@ void PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_stor
                 posting_enum = elem.getEnum();
             }
         }
-        assert(refCount < std::numeric_limits<uint32_t>::max());
+        CHECK(refCount < std::numeric_limits<uint32_t>::max());
         ++refCount;
-        assert(elem.getDocId() < docIdLimit);
+        CHECK(elem.getDocId() < docIdLimit);
         (void)docIdLimit;
         postings.add(elem.getDocId(), elem.getWeight());
     }
-    assert(refCount != 0);
+    CHECK(refCount != 0);
     loader.set_ref_count(enum_indexes[preve], refCount);
     postings.removeDups();
     newIndex = EntryRef();

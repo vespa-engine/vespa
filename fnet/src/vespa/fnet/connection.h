@@ -94,8 +94,9 @@ private:
      **/
     uint32_t GetNextID() {
         uint32_t ret = _currentID;
-        if (ret == FNET_NOID)
+        if (ret == FNET_NOID) {
             ret += 2;
+        }
         _currentID = ret + 2;
         return ret;
     }

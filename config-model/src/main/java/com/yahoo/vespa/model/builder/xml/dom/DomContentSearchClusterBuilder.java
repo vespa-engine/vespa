@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.config.provision.zone.ZoneInfo;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
@@ -40,7 +41,9 @@ public class DomContentSearchClusterBuilder extends VespaDomBuilder.DomConfigPro
                                               documentDefinitions, globallyDistributedDocuments,
                                               getFlushOnShutdown(flushOnShutdownElem, deployState),
                                               syncTransactionLog,
-                                              deployState.getProperties().searchNodeInitializerThreads(clusterName));
+                                              deployState.getProperties().searchNodeInitializerThreads(clusterName),
+                                              deployState.getProperties().applicationId(),
+                                              ZoneInfo.from(deployState.zone()));
 
         ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");
         if (tuning != null) {

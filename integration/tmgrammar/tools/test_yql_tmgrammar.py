@@ -29,12 +29,12 @@ GROUPING = "select * from doc where true | "
 SPOT_CHECKS = {
     "select id from music where ({targetHits: 10}nearestNeighbor(embedding, q)) and year >= 2000 order by year desc": [
         ("select", "keyword.control"), ("music", "variable.other"), ("targetHits", "variable.other"),
-        ("10", "constant.numeric"), ("nearestNeighbor", "entity.name.function"), ("and", "keyword.operator"),
+        ("10", "constant.numeric"), ("nearestNeighbor", "entity.name.function"), ("and", "keyword.operator.wordlike"),
         (">=", "keyword.operator"), ("order by", "keyword.control")],
     'SELECT * FROM sources * WHERE title CONTAINS "a"': [
         ("SELECT", "keyword.control"), ("CONTAINS", "keyword.control")],
-    "select * from doc where a contains @query": [("@", "entity.name.function"), ("query", "variable.other")],
-    "select * from doc where a != 1 and b not in (1, 2)": [("!=", "keyword.operator"), ("not in", "keyword.operator")],
+    "select * from doc where a contains @query": [("@query", "variable.parameter")],
+    "select * from doc where a != 1 and b not in (1, 2)": [("!=", "keyword.operator"), ("not in", "keyword.operator.wordlike")],
     "select * from doc where title contains 'x' // comment": [(" comment", "comment.line.double-slash")],
     # Comments start with // or #, as in the query parser
     "select foo from bar where # false | x\n true": [
@@ -66,7 +66,14 @@ SPOT_CHECKS = {
         ("each", "keyword.control"), ("select", "keyword.control", 2)],
     # Query parameters in grouping
     GROUPING + "all(group(f) filter(regex(@pattern, f)) each(output(sum(@my-param_1))))": [
-        ("@", "entity.name.function"), ("pattern", "variable.other"), ("my-param_1", "variable.other")],
+        ("@pattern", "variable.parameter"), ("@my-param_1", "variable.parameter")],
+    # Grouping on its own, without a query and "|" before it, starts at a line beginning with all( or each(
+    'all(group(a) filter(in(a, "x", "y") and istrue(b)) each(output(argmax(c, count()))))': [
+        ("all", "keyword.control"), ("in", "keyword.operator.wordlike"), ("and", "keyword.operator.wordlike"),
+        ("istrue", "keyword.operator.wordlike"), ("argmax", "entity.name.function"), ("each", "keyword.control")],
+    "  each(output(count())) as(total)": [("each", "keyword.control"), ("as", "keyword.control")],
+    # but not in the middle of a line
+    "select * from doc where all(a)": [("all", "entity.name.function")],
 }
 
 

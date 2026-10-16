@@ -39,15 +39,17 @@ class OperationTargetList : public std::vector<OperationTarget> {
 public:
     bool hasAnyNewCopies() const noexcept {
         for (size_t i = 0; i < size(); ++i) {
-            if (operator[](i).isNewCopy())
+            if (operator[](i).isNewCopy()) {
                 return true;
+            }
         }
         return false;
     }
     bool hasAnyExistingCopies() const noexcept {
         for (size_t i = 0; i < size(); ++i) {
-            if (!operator[](i).isNewCopy())
+            if (!operator[](i).isNewCopy()) {
                 return true;
+            }
         }
         return false;
     }

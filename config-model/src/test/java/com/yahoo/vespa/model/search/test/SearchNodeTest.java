@@ -1,18 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search.test;
 
+import ai.vespa.telemetry.TelemetryConfig;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.zone.ZoneInfo;
+import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchlib.TranslogserverConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SearchNode;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,12 +50,22 @@ public class SearchNodeTest {
     private static SearchNode createSearchNode(MockRoot root, String name, int distributionKey, NodeSpec nodeSpec,
                                                boolean flushOnShutDown, boolean isHosted,
                                                Boolean syncTransactionLog) {
-        return SearchNode.create(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown,
-                null, isHosted, syncTransactionLog, "");
+        var deployState = root.getDeployState();
+        var applicationId = deployState.getProperties().applicationId();
+        var zone = ZoneInfo.from(deployState.zone());
+        var documentType = new NewDocumentType(new NewDocumentType.Name("book"));
+        var cluster = new ContentSearchCluster(root, "mycluster", deployState.getProperties().featureFlags(),
+            Map.of("book", documentType), Set.of(), true, syncTransactionLog, 0, applicationId, zone);
+        return SearchNode.create(cluster, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown,
+            null, isHosted, syncTransactionLog, "");
     }
 
     private static SearchNode createSearchNode(MockRoot root, Boolean syncTransactionLog) {
         return createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), true, true, syncTransactionLog);
+    }
+
+    private static SearchNode createSearchNode(MockRoot root) {
+        return createSearchNode(root, true);
     }
 
     @Test
@@ -88,6 +105,24 @@ public class SearchNodeTest {
         assertTrue(node.getPreShutdownCommand().get().contains("vespa-proton-cmd " + node.getRpcPort() + " prepareRestart"));
     }
 
+    @Test
+    void requireThatTelemetryCanBeEnabled() {
+        assertFalse(getTelemetryConfig(new TestProperties()).enabled());
+        var telemetryConfig = getTelemetryConfig(new TestProperties().opentelemetrySdk(new TestProperties.OpenTelemetrySettings(true, 2.0)));
+        assertTrue(telemetryConfig.enabled());
+        assertEquals(2.0, telemetryConfig.samplingRatio());
+        assertEquals(Map.of("application", "default",
+                            "cloud", "default",
+                            "cluster.id", "mycluster",
+                            "cluster.type", "search",
+                            "environment", "prod",
+                            "service.name", "default.default.mycluster",
+                            "tenant", "default",
+                            "zone", "prod.default"),
+                     telemetryConfig.resourceAttribute());
+        assertFalse(getTelemetryConfig(new TestProperties().opentelemetrySdk(new TestProperties.OpenTelemetrySettings(false, 3.0))).enabled());
+    }
+
     private MockRoot createRoot(ModelContext.Properties properties) {
         return new MockRoot("", new DeployState.Builder().properties(properties).build());
     }
@@ -99,6 +134,15 @@ public class SearchNodeTest {
         TranslogserverConfig.Builder tlsBuilder = new TranslogserverConfig.Builder();
         node.getConfig(tlsBuilder);
         return tlsBuilder.build();
+    }
+
+    private TelemetryConfig getTelemetryConfig(ModelContext.Properties properties) {
+        MockRoot root = createRoot(properties);
+        SearchNode node = createSearchNode(root, false);
+        prepare(root, node);
+        var builder = new TelemetryConfig.Builder();
+        node.cascadeConfig(builder);
+        return builder.build();
     }
 
 }

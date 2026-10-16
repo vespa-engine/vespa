@@ -2,6 +2,7 @@
 
 #include "attributememoryfilebufferwriter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/databuffer.h>
 
 namespace search {
@@ -14,7 +15,7 @@ AttributeMemoryFileBufferWriter::~AttributeMemoryFileBufferWriter() = default;
 
 void AttributeMemoryFileBufferWriter::onFlush(size_t nowLen) {
     _buf->moveFreeToData(nowLen);
-    assert(_buf->getDataLen() == nowLen);
+    CHECK(_buf->getDataLen() == nowLen);
     _fileWriter.writeBuf(std::move(_buf));
     _buf = _fileWriter.allocBuf(BUFFER_SIZE);
 }

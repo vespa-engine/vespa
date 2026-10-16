@@ -10,10 +10,15 @@ classifications from YQLPlusSemanticTokenConfig.java and VespaGroupingSemanticTo
 then emits grammars/vespa-yql.tmLanguage.json.
 
 Like the schema grammar, the scopes follow the colors the Java LSP produces in VS Code's default
-Dark+ theme, with two additions:
+Dark+ theme, with these additions:
   - A name followed by "(" is colored as a function. The LSP colors function names such as
     nearestNeighbor or userQuery as plain variables.
   - = and != are colored as operators, like < and >. The LSP leaves them uncolored.
+  - Operators written as words (and, or, not in, istrue) are scoped keyword.operator.wordlike,
+    which Dark+ colors as keywords. The LSP colors them like < and >.
+  - A query parameter (@name) is one token. The LSP colors the @ as a macro.
+  - Grouping also starts at a line beginning with all( or each(, so that a grouping expression
+    shown on its own, without a query and "|" before it, is colored as grouping.
 
 YQL keywords are case-insensitive, as in the query parser. The grouping language is case-sensitive.
 
@@ -108,6 +113,9 @@ def scope(lsp_type: str) -> str:
     return LSP_TO_TM[lsp_type] + ".yql"
 
 
+WORD_OPERATOR = "keyword.operator.wordlike.yql"
+
+
 def alternatives(literals) -> str:
     """Escaped alternatives, longest first, with spaces matching any whitespace."""
     return "|".join(re.escape(w).replace(r"\ ", r"\s+") for w in sorted(set(literals), key=lambda w: (-len(w), w)))
@@ -153,6 +161,7 @@ def build_grammar() -> dict:
     operators = [lit for lit in yql(operator_tokens + production_tokens(YQL_CCC, "equality_op")) if lit not in keywords]
     word_operators = [lit for lit in operators if re.fullmatch(r"[a-z ]+", lit)]
     grouping_operators = grouping("Operator") + grouping("Operator", grouping_parent)
+    grouping_starts = [grouping_tokens["ALL"], grouping_tokens["EACH"]]
 
     # Grouping methods by namespace: time.year(...), math.sqrt(...), zcurve.x(...)
     namespaces = {"time": [], "math": [], "zcurve": []}
@@ -174,19 +183,20 @@ def build_grammar() -> dict:
         "number": {"patterns": [
             {"name": scope("Number"), "match": r"(?<![\w.-])-?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?[lL]?(?![\w.])"},
         ]},
-        "parameter": {"match": rf"(@)({IDENT})",
-                      "captures": {"1": {"name": scope(yql_map.get("AT", "Macro"))}, "2": {"name": scope("Variable")}}},
+        "parameter": {"name": "variable.parameter.yql", "match": rf"@{IDENT}"},
         "keyword": {"name": scope("Keyword"), "match": words(keywords, ignore_case=True)},
         "operator": {"patterns": [
-            {"name": scope("Operator"), "match": words(word_operators, ignore_case=True)},
+            {"name": WORD_OPERATOR, "match": words(word_operators, ignore_case=True)},
             {"name": scope("Operator"), "match": alternatives(lit for lit in operators if lit not in word_operators)},
         ]},
         "constant": {"name": scope("Type"),
                      "match": words(yql(c for c, t in yql_map.items() if t == "Type"), ignore_case=True)},
         "function-call": {"name": scope("Function"), "match": rf"{YQL[0]}{IDENT}(?=\s*\()"},
         "identifier": {"name": scope("Variable"), "match": rf"{YQL[0]}{IDENT}"},
-        # Grouping runs from "|" to the end of the statement: a ";" or a line starting a new query.
-        "grouping": {"name": "meta.grouping.yql", "begin": r"\|", "end": r"(?=;)|^(?=\s*(?i:select)(?![\w-]))",
+        # Grouping runs from "|", or from a line starting with all( or each(, to the end of the statement:
+        # a ";" or a line starting a new query.
+        "grouping": {"name": "meta.grouping.yql", "begin": rf"\||^(?=\s*(?:{alternatives(grouping_starts)})\s*\()",
+                     "end": r"(?=;)|^(?=\s*(?i:select)(?![\w-]))",
                      "patterns": [{"include": "#grouping-expression"}]},
         # A bucket range opens with (, [ or < and closes with ), ] or > in any combination (bucketElm in
         # GroupingParser.ccc), so it is tracked separately from parentheses.
@@ -216,7 +226,7 @@ def build_grammar() -> dict:
                "captures": {"1": {"name": scope("Class")}, "3": {"name": scope("Method")}}}
               for ns, methods in namespaces.items()),
             {"name": scope("Keyword"), "match": words(grouping("Keyword"), GROUPING)},
-            {"name": scope("Operator"), "match": words([lit for lit in grouping_operators if lit.isalpha()], GROUPING)},
+            {"name": WORD_OPERATOR, "match": words([lit for lit in grouping_operators if lit.isalpha()], GROUPING)},
             {"name": scope("Type"), "match": words(grouping("Type"), GROUPING)},
             {"name": scope("Function"), "match": words(grouping("Function") + grouping("Macro"), GROUPING)},
             {"name": scope("Function"), "match": rf"{GROUPING[0]}{GROUPING_IDENT}(?=\s*\()"},

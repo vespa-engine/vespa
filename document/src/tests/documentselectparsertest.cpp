@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
@@ -385,8 +386,9 @@ void verifyFailedParse(const std::string& query, const std::string& error) {
         FAIL() << "Expected exception parsing query '" << query << "'";
     } catch (select::ParsingFailedException& e) {
         std::string message(e.what());
-        if (message.size() > error.size())
+        if (message.size() > error.size()) {
             message = message.substr(0, error.size());
+        }
         std::string failure("Expected: " + error + "\n- Actual  : " + std::string(e.what()));
         EXPECT_EQ(error, message) << failure;
     }
@@ -1400,7 +1402,7 @@ public:
 
     void visitInvalidConstant(const select::InvalidConstant& node) override {
         (void)node;
-        assert(false);
+        CHECK(false);
     }
 
     void visitDocumentType(const select::DocType& node) override { data << "(DOCTYPE " << node << ")"; }

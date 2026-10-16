@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstddef>
 
 namespace vespalib::datastore::test {
@@ -46,18 +47,18 @@ struct BufferStats {
         return *this;
     }
     BufferStats& dec_used(size_t val) {
-        assert(_used >= val);
+        CHECK(_used >= val);
         _used -= val;
         return *this;
     }
     BufferStats& dec_hold(size_t val) {
-        assert(_hold >= val);
+        CHECK(_hold >= val);
         _hold -= val;
         return *this;
     }
     BufferStats& dec_extra(size_t val) {
-        assert(_extra_used >= val);
-        assert(_extra_hold >= val);
+        CHECK(_extra_used >= val);
+        CHECK(_extra_hold >= val);
         _extra_used -= val;
         _extra_hold -= val;
         return *this;

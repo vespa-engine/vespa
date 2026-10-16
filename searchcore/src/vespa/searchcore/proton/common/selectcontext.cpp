@@ -4,11 +4,10 @@
 
 #include "cachedselect.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/select/value.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/readable_attribute_vector.h>
-
-#include <cassert>
 
 namespace proton {
 
@@ -47,8 +46,8 @@ void SelectContext::dropAttributeGuards() {
 }
 
 const search::attribute::IAttributeVector& SelectContext::guarded_attribute_at_index(uint32_t index) const noexcept {
-    assert(index < _guards->size());
-    assert((*_guards)[index].get() != nullptr);
+    CHECK(index < _guards->size());
+    CHECK((*_guards)[index].get() != nullptr);
     return *((*_guards)[index])->attribute();
 }
 

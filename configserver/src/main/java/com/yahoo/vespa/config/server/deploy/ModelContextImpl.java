@@ -262,6 +262,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean fastMapSearch() { return flag(Flags.FAST_MAP_SEARCH).value(); }
         @Override public boolean commerceDiscovery() { return flag(Flags.COMMERCE_DISCOVERY).value(); }
         @Override public boolean enableLandlock() { return flag(Flags.ENABLE_LANDLOCK).value(); }
+        @Override public boolean enableLegacyFeedHandler() { return flag(Flags.ENABLE_LEGACY_FEED_HANDLER).value(); }
+        @Override public boolean productDiscovery() { return flag(Flags.PRODUCT_DISCOVERY).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();
@@ -279,6 +281,7 @@ public class ModelContextImpl implements ModelContext {
         private final HostName loadBalancerName;
         private final URI ztsUrl;
         private final String tenantSecretDomain;
+        private final AthenzDomain tenantParentDomain;
         private final String athenzDnsSuffix;
         private final boolean hostedVespa;
         private final Set<ContainerEndpoint> endpoints;
@@ -319,6 +322,7 @@ public class ModelContextImpl implements ModelContext {
             this.loadBalancerName = configserverConfig.loadBalancerAddress().isEmpty() ? null : HostName.of(configserverConfig.loadBalancerAddress());
             this.ztsUrl = configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null;
             this.tenantSecretDomain = configserverConfig.tenantSecretDomain();
+            this.tenantParentDomain = AthenzDomain.from(configserverConfig.tenantParentDomain());
             this.athenzDnsSuffix = configserverConfig.athenzDnsSuffix();
             this.hostedVespa = configserverConfig.hostedVespa();
             this.endpoints = endpoints;
@@ -342,6 +346,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public HostName loadBalancerName() { return loadBalancerName; }
         @Override public URI ztsUrl() { return ztsUrl; }
         @Override public String athenzDnsSuffix() { return athenzDnsSuffix; }
+        @Override public AthenzDomain tenantParentDomain() { return tenantParentDomain; }
         @Override public boolean hostedVespa() { return hostedVespa; }
         @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
         @Override public boolean isBootstrap() { return isBootstrap; }

@@ -301,6 +301,7 @@ DocumentApi = element document-api {
    element timeout { xsd:double { minInclusive = "0.0" } }? &
    element tracelevel { xsd:positiveInteger }? &
    element mbusport { xsd:positiveInteger }? &
+   element legacy-feed-api { xsd:string }? &
    DocumentRestApi? &
    HttpClientApi?
 }

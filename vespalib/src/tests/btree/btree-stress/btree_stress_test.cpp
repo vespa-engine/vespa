@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
@@ -256,7 +257,7 @@ template <typename Params> bool Fixture<Params>::adjustWriteIterator(uint32_t ke
     } else {
         _writeItr.lower_bound(compare.lookup_key(), compare.get_compare());
     }
-    assert(!_writeItr.valid() || _keys.get_relaxed(_writeItr.getKey()) >= key);
+    CHECK(!_writeItr.valid() || _keys.get_relaxed(_writeItr.getKey()) >= key);
     return (_writeItr.valid() && _keys.get_relaxed(_writeItr.getKey()) == key);
 }
 
@@ -347,7 +348,7 @@ template <typename Params> void Fixture<Params>::readWork(uint32_t cnt) {
         uint32_t            key = rnd.lrand48() % (_keyLimit + 1);
         MyCompare           compare(_keys, key);
         MyTreeConstIterator itr = _tree.getFrozenView().lowerBound(compare.lookup_key(), compare.get_compare());
-        assert(!itr.valid() || _keys.get_acquire(itr.getKey()) >= key);
+        CHECK(!itr.valid() || _keys.get_acquire(itr.getKey()) >= key);
         if (itr.valid() && _keys.get_acquire(itr.getKey()) == key) {
             EXPECT_EQ(key + value_offset, _values.get_acquire(itr.getData()));
             ++hits;

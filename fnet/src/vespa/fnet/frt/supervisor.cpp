@@ -34,8 +34,9 @@ FNET_Scheduler* FRT_Supervisor::GetScheduler() {
 }
 
 bool FRT_Supervisor::Listen(const char* spec) {
-    if (_connector != nullptr)
+    if (_connector != nullptr) {
         return false;
+    }
     _connector = _transport->Listen(spec, get_packet_streamer(), this);
     return (_connector != nullptr);
 }

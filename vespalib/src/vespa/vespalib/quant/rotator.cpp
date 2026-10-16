@@ -5,8 +5,9 @@
 #include "hadamard.h"
 #include "sign_flip.h"
 
+#include <vespa/check_require.h>
+
 #include <bit>
-#include <cassert>
 
 namespace vespalib::quant {
 
@@ -21,7 +22,7 @@ Rotator::Rotator(const size_t dimensions, splitmix64 mixer) noexcept
       // List element init of element N shall be sequenced before N+1, so this should be
       // well-defined even though the RoundSeeds constructor has side effects on its argument.
       _sign_flip_seeds({RoundSeeds(mixer), RoundSeeds(mixer)}) {
-    assert(dimensions > 0);
+    CHECK(dimensions > 0);
 }
 
 // Precondition: v.size() is a power of 2
@@ -44,7 +45,7 @@ void Rotator::inv_rand_rotate(std::span<float> v, const PrngType& seed) const no
 
 // See the Rotator "Implementation details" comments for algorithm description and rationale.
 void Rotator::rotate_forward(std::span<float> v) const noexcept {
-    assert(v.size() == _dimensions);
+    CHECK(v.size() == _dimensions);
     const size_t d = _dimensions;
     const size_t d_capped = _dimensions_capped;
 
@@ -64,7 +65,7 @@ void Rotator::rotate_forward(std::span<float> v) const noexcept {
 
 // This is rotate_forward, but with every step in the exact reverse order.
 void Rotator::rotate_inverse(std::span<float> v) const noexcept {
-    assert(v.size() == _dimensions);
+    CHECK(v.size() == _dimensions);
     const size_t d = _dimensions;
     const size_t d_capped = _dimensions_capped;
 

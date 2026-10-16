@@ -13,6 +13,7 @@
 #include "stripe_host_info_notifier.h"
 #include "throttlingoperationstarter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
@@ -510,7 +511,7 @@ void DistributorStripe::propagateDefaultDistribution(std::shared_ptr<const lib::
 void DistributorStripe::update_distribution_config(const lib::BucketSpaceDistributionConfigs& new_configs) {
     auto default_distr = new_configs.get_or_nullptr(document::FixedBucketSpaces::default_space());
     auto global_distr = new_configs.get_or_nullptr(document::FixedBucketSpaces::global_space());
-    assert(default_distr && global_distr);
+    CHECK(default_distr && global_distr);
 
     for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
         repo->get(document::FixedBucketSpaces::default_space()).setDistribution(default_distr);
@@ -826,7 +827,7 @@ void DistributorStripe::propagate_config_snapshot_to_internal_components() {
 }
 
 void DistributorStripe::fetchExternalMessages() {
-    assert(_fetchedMessages.empty());
+    CHECK(_fetchedMessages.empty());
     _fetchedMessages.swap(_messageQueue);
 }
 

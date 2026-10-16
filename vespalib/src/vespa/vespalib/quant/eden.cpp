@@ -7,10 +7,10 @@
 #include "hadamard.h"
 #include "multi_bit_packer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/hwaccelerated/autovec_unrolled.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
 
-#include <cassert>
 #include <cmath>
 #include <cstring>
 
@@ -58,7 +58,7 @@ EdenQuantizer::EdenQuantizer(const size_t dimensions, const uint8_t bits, const 
       _seed(seed),
       _sqrt_d(std::sqrtf(static_cast<float>(dimensions))),
       _bits(bits) {
-    assert(bits >= 1 && bits <= 4);
+    CHECK(bits >= 1 && bits <= 4);
 }
 
 EdenQuantizer::~EdenQuantizer() = default;
@@ -69,7 +69,7 @@ std::span<const float> EdenQuantizer::my_codebook() const noexcept {
 
 EdenQuantizer::ScaleAndCentroidIndexesPtr
 EdenQuantizer::unary_unpack_bits_to_scratch_space(std::span<const uint8_t> buf) noexcept {
-    assert(buf.size() == _quantized_size);
+    CHECK(buf.size() == _quantized_size);
     const float scale = extract_scale_factor(buf.data());
     with_packer_for_bit_count(_bits, [&](auto bp) {
         const uint8_t* in_bits = packed_bits_buf(buf.data());
@@ -81,8 +81,8 @@ EdenQuantizer::unary_unpack_bits_to_scratch_space(std::span<const uint8_t> buf) 
 std::pair<EdenQuantizer::ScaleAndCentroidIndexesPtr, EdenQuantizer::ScaleAndCentroidIndexesPtr>
 EdenQuantizer::binary_unpack_bits_to_scratch_space(std::span<const uint8_t> lhs,
                                                    std::span<const uint8_t> rhs) noexcept {
-    assert(lhs.size() == _quantized_size);
-    assert(rhs.size() == _quantized_size);
+    CHECK(lhs.size() == _quantized_size);
+    CHECK(rhs.size() == _quantized_size);
     // We have left room for an additional vector bit unpacking run in _idx_tmp
     uint8_t* lhs_idx = lhs_scratch_idx_space();
     uint8_t* rhs_idx = rhs_scratch_idx_space();
@@ -100,8 +100,8 @@ EdenQuantizer::binary_unpack_bits_to_scratch_space(std::span<const uint8_t> lhs,
 // details from [0].
 
 void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, const QuantMode quant_mode) noexcept {
-    assert(x.size() == _dimensions);
-    assert(q_x.size() == _quantized_size);
+    CHECK(x.size() == _dimensions);
+    CHECK(q_x.size() == _quantized_size);
     const size_t d = _dimensions;
     // We compute the vector norm _prior_ to rotation to minimize errors introduced by
     // floating point arithmetic. Our rotation abstraction is mathematically speaking
@@ -169,7 +169,7 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
 }
 
 void EdenQuantizer::dequantize(std::span<const uint8_t> q_x, std::span<float> dq_x) noexcept {
-    assert(dq_x.size() == _dimensions);
+    CHECK(dq_x.size() == _dimensions);
     const auto [scale, centroid_idx] = unary_unpack_bits_to_scratch_space(q_x);
     const auto codebook = my_codebook();
     for (size_t i = 0; i < _dimensions; ++i) {
@@ -179,13 +179,13 @@ void EdenQuantizer::dequantize(std::span<const uint8_t> q_x, std::span<float> dq
 }
 
 void EdenQuantizer::rotate_vector_inplace(std::span<float> vec) const noexcept {
-    assert(vec.size() == _dimensions);
+    CHECK(vec.size() == _dimensions);
     _rotator.rotate_forward(vec);
 }
 
 float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   query,
                                                    std::span<const uint8_t> quant_vec) noexcept {
-    assert(query.size() == _dimensions);
+    CHECK(query.size() == _dimensions);
     const auto [scale, centroid_idx] = unary_unpack_bits_to_scratch_space(quant_vec);
     const auto codebook = my_codebook();
     // Taunt the auto-vectorizer by explicitly running parallel fp accumulators.
@@ -212,7 +212,7 @@ float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
 
 float EdenQuantizer::pre_rotated_query_squared_euclidean_distance(std::span<const float>   query,
                                                                   std::span<const uint8_t> quant_vec) noexcept {
-    assert(query.size() == _dimensions);
+    CHECK(query.size() == _dimensions);
     const auto [scale, centroid_idx] = unary_unpack_bits_to_scratch_space(quant_vec);
     const auto codebook = my_codebook();
     return sum_indexed_unrolled<8, float>(_dimensions, [&](size_t idx) noexcept {

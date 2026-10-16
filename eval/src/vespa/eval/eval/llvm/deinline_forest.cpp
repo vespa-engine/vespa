@@ -2,6 +2,8 @@
 
 #include "deinline_forest.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib {
 namespace eval {
 namespace gbdt {
@@ -18,7 +20,7 @@ DeinlineForest::DeinlineForest(const std::vector<const nodes::Node*>& trees) {
         }
         ForestStats stats(fragment);
         size_t      id = _llvm_wrapper.make_forest_fragment(stats.num_params, fragment);
-        assert(id == num_fragments);
+        CHECK(id == num_fragments);
         ++num_fragments;
     }
     _llvm_wrapper.compile();

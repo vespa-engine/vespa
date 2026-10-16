@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/enumstore.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
@@ -58,7 +59,7 @@ template <typename T0, typename T1>
 auto zipped_and_sorted_by_first(const std::vector<T0>& a, const std::vector<T1>& b)
     -> std::vector<std::pair<T0, T1>> {
     std::vector<std::pair<T0, T1>> combined;
-    assert(a.size() == b.size());
+    CHECK(a.size() == b.size());
     for (size_t i = 0; i < a.size(); ++i) {
         combined.emplace_back(a[i], b[i]);
     }

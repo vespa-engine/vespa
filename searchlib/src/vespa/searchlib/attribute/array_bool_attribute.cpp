@@ -7,6 +7,7 @@
 #include "single_raw_attribute_loader.h"
 #include "single_raw_attribute_saver.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/file_settings.h>
@@ -99,7 +100,7 @@ void ArrayBoolAttribute::set_bools(DocId docid, std::span<const int8_t> bools) {
     if (!packed.empty()) {
         ref = _raw_store.set(packed);
     }
-    assert(docid < _ref_vector.size());
+    CHECK(docid < _ref_vector.size());
     updateUncommittedDocIdLimit(docid);
     auto&    elem_ref = _ref_vector[docid];
     EntryRef old_ref(elem_ref.load_relaxed());
@@ -186,7 +187,7 @@ void ArrayBoolAttribute::onAddDocs(DocId) {
 
 void ArrayBoolAttribute::onShrinkLidSpace() {
     uint32_t committed_doc_id_limit = getCommittedDocIdLimit();
-    assert(committed_doc_id_limit < getNumDocs());
+    CHECK(committed_doc_id_limit < getNumDocs());
     _ref_vector.shrink(committed_doc_id_limit);
     setNumDocs(committed_doc_id_limit);
 }

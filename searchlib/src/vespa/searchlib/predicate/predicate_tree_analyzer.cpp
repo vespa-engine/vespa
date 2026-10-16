@@ -2,10 +2,10 @@
 
 #include "predicate_tree_analyzer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/predicate/predicate.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 
 using document::Predicate;
@@ -43,7 +43,7 @@ void createOrIncrease(map<string, int>& counts, const string& key) {
 void PredicateTreeAnalyzer::traverseTree(const Inspector& in) {
     switch (getType(in, _negated)) {
     case Predicate::TYPE_NEGATION:
-        assert(in[Predicate::CHILDREN].children() == 1);
+        CHECK(in[Predicate::CHILDREN].children() == 1);
         _negated = !_negated;
         traverseTree(in[Predicate::CHILDREN][0]);
         _negated = !_negated;
@@ -119,7 +119,7 @@ float PredicateTreeAnalyzer::findMinFeature(const Inspector& in) {
         }
         return min_feature;
     case Predicate::TYPE_NEGATION: // == child
-        assert(in[Predicate::CHILDREN].children() == 1);
+        CHECK(in[Predicate::CHILDREN].children() == 1);
         _negated = !_negated;
         min_feature = findMinFeature(in[Predicate::CHILDREN][0]);
         _negated = !_negated;
@@ -138,7 +138,7 @@ float PredicateTreeAnalyzer::findMinFeature(const Inspector& in) {
             label.resize(prefix_size);
             label.append(value.data, value.size);
             auto it = _key_counts.find(label);
-            assert(it != _key_counts.end());
+            CHECK(it != _key_counts.end());
             min_feature = min(min_feature, 1.0f / it->second);
         }
         return min_feature;
@@ -149,7 +149,7 @@ float PredicateTreeAnalyzer::findMinFeature(const Inspector& in) {
         }
         string key = in[Predicate::KEY].asString().make_string();
         auto   it = _key_counts.find(key);
-        assert(it != _key_counts.end());
+        CHECK(it != _key_counts.end());
         return 1.0f / it->second;
     }
     } // switch

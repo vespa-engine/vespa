@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/flushengine/active_flush_stats.h>
 #include <vespa/searchcore/proton/flushengine/flush_target_candidate.h>
 #include <vespa/searchcore/proton/flushengine/flush_target_candidates.h>
@@ -8,8 +9,6 @@
 #include <vespa/searchcore/proton/test/dummy_flush_handler.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/vespalib/gtest/gtest.h>
-
-#include <cassert>
 
 using namespace proton;
 using proton::flushengine::FlushStrategyResult;
@@ -87,7 +86,7 @@ public:
                    replay_operation_cost);
     }
     ContextsBuilder& set_approx_read_disk_bytes(uint32_t idx, uint64_t approx_read_disk_bytes_) {
-        assert(idx < _result.size());
+        CHECK(idx < _result.size());
         auto& target = dynamic_cast<SimpleFlushTarget&>(*_result[idx]->getTarget());
         target.set_approx_disk_read_bytes(approx_read_disk_bytes_);
         return *this;

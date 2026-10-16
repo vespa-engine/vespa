@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
@@ -33,7 +34,7 @@ using DocsumStats = SearchProtocolMetrics::DocsumStats;
 struct MySearchServer : SearchServer {
     SearchReply::UP search(SearchRequest::Source src, SearchClient& client) override {
         auto req = src.release();
-        assert(req);
+        CHECK(req);
         auto reply = std::make_unique<SearchReply>();
         reply->totalHitCount = req->offset; // simplified search implementation
         reply->request = std::move(req);
@@ -46,7 +47,7 @@ struct MySearchServer : SearchServer {
 struct MyDocsumServer : DocsumServer {
     DocsumReply::UP getDocsums(DocsumRequest::Source src, DocsumClient& client) override {
         auto req = src.release();
-        assert(req);
+        CHECK(req);
         auto  slime = std::make_unique<Slime>();
         auto& list = slime->setArray();
         list.addObject().setBool("use_root_slime", true);
@@ -61,7 +62,7 @@ struct MyDocsumServer : DocsumServer {
 struct MyMonitorServer : MonitorServer {
     std::unique_ptr<MonitorReply> ping(std::unique_ptr<MonitorRequest> req, MonitorClient&) override {
         (void)req;
-        assert(req);
+        CHECK(req);
         auto reply = std::make_unique<MonitorReply>();
         reply->activeDocs = 53;
         return reply; // proton does sync response here

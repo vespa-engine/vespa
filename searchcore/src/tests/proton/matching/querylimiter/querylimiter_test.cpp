@@ -5,7 +5,12 @@
 
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
+#include <cstdio>
+#include <cstdlib>
+#include <mutex>
 #include <thread>
+#include <vector>
 
 using namespace proton::matching;
 using vespalib::Doom;
@@ -15,6 +20,9 @@ namespace {
 
 constexpr uint32_t many_hits = 1000;
 constexpr uint32_t few_docs = 10;
+
+// waiters on doom sleep half of its hour between checks, so one admitted within this was woken
+constexpr auto promptly = std::chrono::milliseconds(500);
 
 struct QueryLimiterTest : ::testing::Test {
     std::atomic<steady_time> now;
@@ -42,6 +50,34 @@ struct QueryLimiterTest : ::testing::Test {
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
+    }
+
+    // Joins t, but fails rather than hangs if it does not finish: lifting the
+    // limit lets every queued waiter through. A waiter that was admitted but
+    // never woken would still sleep for half an hour, so then give up loudly.
+    void join(std::thread& t) {
+        std::mutex              lock;
+        std::condition_variable cond;
+        bool                    joined = false;
+        std::thread             watchdog([&] {
+            std::unique_lock<std::mutex> guard(lock);
+            auto                         is_joined = [&] { return joined; };
+            if (!cond.wait_for(guard, std::chrono::seconds(30), is_joined)) {
+                ADD_FAILURE() << "timed out joining thread; lifting the limit";
+                limiter.configure(0, 1.0, 100);
+                if (!cond.wait_for(guard, std::chrono::seconds(5), is_joined)) {
+                    std::fprintf(stderr, "thread still not finished; aborting\n");
+                    std::abort();
+                }
+            }
+        });
+        t.join();
+        {
+            std::lock_guard<std::mutex> guard(lock);
+            joined = true;
+        }
+        cond.notify_one();
+        watchdog.join();
     }
 };
 
@@ -108,7 +144,7 @@ TEST_F(QueryLimiterTest, waits_until_capacity_is_released) {
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
     EXPECT_FALSE(done);
     q1.reset();
-    thread.join();
+    join(thread);
     EXPECT_TRUE(done);
     EXPECT_EQ(0, limiter.active_threads());
 }
@@ -134,13 +170,13 @@ TEST_F(QueryLimiterTest, large_request_is_not_starved_by_small_ones) {
     EXPECT_FALSE(query_done);
     EXPECT_FALSE(small_done);
     t1.reset();
-    query_thread.join();
+    join(query_thread);
     EXPECT_TRUE(query_done);
     EXPECT_EQ(2, limiter.active_threads());
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
     EXPECT_FALSE(small_done);
     q.reset();
-    small_thread.join();
+    join(small_thread);
     EXPECT_TRUE(small_done);
     EXPECT_EQ(0, limiter.active_threads());
 }
@@ -152,10 +188,31 @@ TEST_F(QueryLimiterTest, reconfig_to_unlimited_wakes_waiters) {
     wait_for_waiting(1);
     auto start = std::chrono::steady_clock::now();
     limiter.configure(0, 1.0, 100);
-    thread.join();
-    // well below the wait slice cap, so the waiter was woken by configure
-    EXPECT_LT(std::chrono::steady_clock::now() - start, std::chrono::milliseconds(500));
+    join(thread);
+    // the waiter would otherwise sleep for half an hour, so it was woken by configure
+    EXPECT_LT(std::chrono::steady_clock::now() - start, promptly);
     t1.reset();
+    EXPECT_EQ(0, limiter.active_threads());
+}
+
+TEST_F(QueryLimiterTest, waiters_admitted_while_unlimited_are_not_charged) {
+    limiter.configure(1, 1.0, 100);
+    auto                    t1 = limited_token(doom);
+    QueryLimiter::Token::UP q;
+    std::thread             thread([&] { q = limiter.getQueryToken(doom, 4); });
+    wait_for_waiting(1);
+    limiter.configure(0, 1.0, 100);
+    join(thread);
+    ASSERT_EQ(1, limiter.active_threads()); // only t1; else the token below would block
+    limiter.configure(2, 1.0, 100);
+    // the query token still runs, but does not count against the new limit
+    auto t2 = limited_token(doom);
+    EXPECT_EQ(2, limiter.active_threads());
+    EXPECT_EQ(0u, limiter.num_waiting());
+    q.reset();
+    EXPECT_EQ(2, limiter.active_threads());
+    t1.reset();
+    t2.reset();
     EXPECT_EQ(0, limiter.active_threads());
 }
 
@@ -171,7 +228,7 @@ TEST_F(QueryLimiterTest, reconfig_to_lower_max_lets_capped_query_token_through) 
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
     EXPECT_EQ(1u, limiter.num_waiting());
     t1.reset();
-    thread.join();
+    join(thread);
     EXPECT_EQ(2, limiter.active_threads());
     q.reset();
     EXPECT_EQ(0, limiter.active_threads());
@@ -202,18 +259,125 @@ TEST_F(QueryLimiterTest, doomed_waiter_in_middle_of_queue_does_not_strand_others
     });
     wait_for_waiting(3);
     now = now.load() + std::chrono::seconds(1); // only late_doom is now past hard doom
-    middle_thread.join();
+    join(middle_thread);
     EXPECT_TRUE(middle_done);
     EXPECT_EQ(2u, limiter.num_waiting());
     EXPECT_EQ(2, limiter.active_threads());
     t1.reset();
     middle_token.reset();
-    front_thread.join();
+    join(front_thread);
     EXPECT_TRUE(front_done);
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
     EXPECT_FALSE(back_done);
     front_token.reset();
-    back_thread.join();
+    join(back_thread);
+    EXPECT_TRUE(back_done);
+    EXPECT_EQ(0, limiter.active_threads());
+    EXPECT_EQ(0u, limiter.num_waiting());
+}
+
+TEST_F(QueryLimiterTest, granted_waiter_past_hard_doom_is_charged_once) {
+    limiter.configure(1, 1.0, 100);
+    auto                    t1 = limited_token(doom);
+    QueryLimiter::Token::UP t2;
+    std::thread             thread([&] { t2 = limited_token(doom); });
+    wait_for_waiting(1);
+    now = now.load() + std::chrono::hours(2); // past hard doom, while the waiter sleeps
+    auto start = std::chrono::steady_clock::now();
+    t1.reset(); // grants it before it wakes
+    join(thread);
+    EXPECT_LT(std::chrono::steady_clock::now() - start, promptly);
+    EXPECT_EQ(1, limiter.active_threads());
+    t2.reset();
+    EXPECT_EQ(0, limiter.active_threads());
+}
+
+TEST_F(QueryLimiterTest, release_admits_mixed_sizes_in_order_without_backfilling) {
+    limiter.configure(4, 1.0, 100);
+    auto                                 q0 = limiter.getQueryToken(doom, 4);
+    const std::vector<uint32_t>          units = {2, 1, 2, 1};
+    std::vector<QueryLimiter::Token::UP> tokens(units.size());
+    std::vector<std::atomic<bool>>       got(units.size());
+    std::vector<std::thread>             threads;
+    for (size_t i = 0; i < units.size(); ++i) {
+        threads.emplace_back([&, i] {
+            tokens[i] = limiter.getQueryToken(doom, units[i]);
+            got[i] = true;
+        });
+        wait_for_waiting(i + 1); // fixes the queue order
+    }
+    auto start = std::chrono::steady_clock::now();
+    q0.reset();
+    join(threads[0]);
+    join(threads[1]);
+    EXPECT_LT(std::chrono::steady_clock::now() - start, promptly);
+    EXPECT_EQ(3, limiter.active_threads());
+    // the last request would fit the spare unit, but must not pass the blocked one
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    EXPECT_FALSE(got[2]);
+    EXPECT_FALSE(got[3]);
+    EXPECT_EQ(2u, limiter.num_waiting());
+    start = std::chrono::steady_clock::now();
+    tokens[0].reset();
+    join(threads[2]);
+    join(threads[3]);
+    EXPECT_LT(std::chrono::steady_clock::now() - start, promptly);
+    EXPECT_EQ(4, limiter.active_threads());
+    tokens[1].reset();
+    tokens[2].reset();
+    tokens[3].reset();
+    EXPECT_EQ(0, limiter.active_threads());
+    EXPECT_EQ(0u, limiter.num_waiting());
+}
+
+TEST_F(QueryLimiterTest, raising_max_grants_queued_requests_against_the_new_max) {
+    limiter.configure(1, 1.0, 100);
+    auto                    t1 = limited_token(doom);
+    QueryLimiter::Token::UP large;
+    QueryLimiter::Token::UP small;
+    std::thread             large_thread([&] { large = limiter.getQueryToken(doom, 3); });
+    wait_for_waiting(1);
+    std::thread small_thread([&] { small = limiter.getQueryToken(doom, 1); });
+    wait_for_waiting(2);
+    auto start = std::chrono::steady_clock::now();
+    limiter.configure(5, 1.0, 100);
+    join(large_thread);
+    join(small_thread);
+    EXPECT_LT(std::chrono::steady_clock::now() - start, promptly);
+    // 1 + 3 + 1; a grant capped at the max of queueing time would give 3
+    EXPECT_EQ(5, limiter.active_threads());
+    t1.reset();
+    large.reset();
+    small.reset();
+    EXPECT_EQ(0, limiter.active_threads());
+}
+
+TEST_F(QueryLimiterTest, hard_doomed_waiter_at_front_leaves_no_stale_entry) {
+    limiter.configure(2, 1.0, 100);
+    Doom                    late_doom(now, now.load() + std::chrono::milliseconds(50));
+    auto                    t1 = limited_token(doom);
+    std::atomic<bool>       back_done(false);
+    QueryLimiter::Token::UP front_token;
+    std::thread             front_thread([&] { front_token = limiter.getQueryToken(late_doom, 2); });
+    wait_for_waiting(1);
+    std::thread back_thread([&] {
+        auto t = limited_token(doom);
+        back_done = true;
+    });
+    wait_for_waiting(2);
+    now = now.load() + std::chrono::seconds(1); // only late_doom is now past hard doom
+    join(front_thread);
+    // the front is charged before the next waiter is considered, so the back one,
+    // which would fit beside t1 alone, still waits
+    EXPECT_EQ(3, limiter.active_threads());
+    EXPECT_EQ(1u, limiter.num_waiting());
+    t1.reset();
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    EXPECT_FALSE(back_done);
+    auto start = std::chrono::steady_clock::now();
+    front_token.reset();
+    join(back_thread);
+    EXPECT_LT(std::chrono::steady_clock::now() - start, promptly);
     EXPECT_TRUE(back_done);
     EXPECT_EQ(0, limiter.active_threads());
     EXPECT_EQ(0u, limiter.num_waiting());

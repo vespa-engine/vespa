@@ -5,6 +5,8 @@
 #include "document_features_store_saver.h"
 #include "predicate_range_expander.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
@@ -101,7 +103,7 @@ void deserialize_ranges(DataBuffer& buffer, vector<EntryRef>& word_refs, RefsVec
             refs.resize(doc_id + 1);
         }
         auto& cur_refs = refs[doc_id];
-        assert(!cur_refs._ranges.valid());
+        CHECK(!cur_refs._ranges.valid());
         uint32_t range_count = buffer.readInt32();
         range_vector.clear();
         range_vector.reserve(range_count);
@@ -126,7 +128,7 @@ void deserialize_features(DataBuffer& buffer, RefsVector& refs, FeaturesStore& f
             refs.resize(doc_id + 1);
         }
         auto& cur_refs = refs[doc_id];
-        assert(!cur_refs._features.valid());
+        CHECK(!cur_refs._features.valid());
         uint32_t feature_count = buffer.readInt32();
         feature_vector.clear();
         feature_vector.reserve(feature_count);
@@ -155,7 +157,7 @@ DocumentFeaturesStore::~DocumentFeaturesStore() {
 }
 
 void DocumentFeaturesStore::insert(const PredicateTreeAnnotations& annotations, uint32_t doc_id) {
-    assert(doc_id != 0);
+    CHECK(doc_id != 0);
     if (doc_id >= _refs.size()) {
         _refs.resize(doc_id + 1);
     }

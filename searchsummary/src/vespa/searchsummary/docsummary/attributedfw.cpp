@@ -8,6 +8,7 @@
 #include "empty_docsum_field_writer_state.h"
 #include "summary_elements_selector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/i_array_bool_read_view.h>
@@ -156,7 +157,7 @@ void TensorAttrDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, Ge
     if (!field_writer_state) {
         const auto& attr = get_attribute(state);
         const auto* as_tensor_attr = attr.asTensorAttribute();
-        assert(as_tensor_attr != nullptr);
+        CHECK(as_tensor_attr != nullptr);
         field_writer_state = &state.get_stash().create<TensorAttrDFWState>(*as_tensor_attr);
     }
     field_writer_state->insertField(docid, selected_elements, target);

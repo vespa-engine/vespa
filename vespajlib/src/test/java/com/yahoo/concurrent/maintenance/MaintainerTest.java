@@ -18,7 +18,8 @@ public class MaintainerTest {
 
     private static final double delta = 0.000001;
 
-    private final JobControl jobControl = new JobControl(new JobControlStateMock());
+    private final JobControlStateMock jobControlState = new JobControlStateMock();
+    private final JobControl jobControl = new JobControl(jobControlState);
 
     @Test
     public void staggering() {
@@ -71,20 +72,99 @@ public class MaintainerTest {
         maintainer.successOnNextRun(1.0).run();
         assertEquals(1, jobMetrics.successFactor, delta);
 
-        // Lock exception is treated as a failure
+        // Timeout thrown by maintain() is treated as a failure
         maintainer.throwOnNextRun(new UncheckedTimeoutException()).run();
         assertEquals(-1, jobMetrics.successFactor, delta);
+    }
+
+    @Test
+    public void timeout_in_maintain_is_failure_even_when_ignoring_collisions() {
+        TestJobMetrics jobMetrics = new TestJobMetrics();
+        TestMaintainer maintainer = new TestMaintainer(null, jobControl, jobMetrics, true);
+
+        maintainer.throwOnNextRun(new UncheckedTimeoutException()).run();
+        assertEquals(1, jobMetrics.completions);
+        assertEquals(-1, jobMetrics.successFactor, delta);
+    }
+
+    @Test
+    public void job_lock_timeout_is_ignored_collision() {
+        TestJobMetrics jobMetrics = new TestJobMetrics();
+        TestMaintainer maintainer = new TestMaintainer(null, jobControl, jobMetrics, true);
+        maintainer.successOnNextRun(1.0).run();
+        assertEquals(1, maintainer.totalRuns());
+        assertEquals(1, jobMetrics.successFactor, delta);
+
+        jobControlState.setLockTimesOut(true);
+        maintainer.run();
+        assertEquals(1, maintainer.totalRuns());
+        assertEquals(2, jobMetrics.completions);
+        assertEquals(0, jobMetrics.successFactor, delta);
+
+        jobControlState.setLockTimesOut(false);
+        maintainer.run();
+        assertEquals(2, maintainer.totalRuns());
+        assertEquals(1, jobMetrics.successFactor, delta);
+    }
+
+    @Test
+    public void job_lock_timeout_is_failure_when_not_ignoring_collisions() {
+        TestJobMetrics jobMetrics = new TestJobMetrics();
+        TestMaintainer maintainer = new TestMaintainer(null, jobControl, jobMetrics, false);
+        maintainer.successOnNextRun(1.0).run();
+        assertEquals(1, maintainer.totalRuns());
+
+        jobControlState.setLockTimesOut(true);
+        maintainer.run();
+        assertEquals(1, maintainer.totalRuns());
+        assertEquals(2, jobMetrics.completions);
+        assertEquals(-1, jobMetrics.successFactor, delta);
+
+        jobControlState.setLockTimesOut(false);
+        maintainer.run();
+        assertEquals(2, maintainer.totalRuns());
+        assertEquals(1, jobMetrics.successFactor, delta);
+    }
+
+    @Test
+    public void lock_release_failure_keeps_result() {
+        TestJobMetrics jobMetrics = new TestJobMetrics();
+        TestMaintainer maintainer = new TestMaintainer(null, jobControl, jobMetrics, true);
+
+        jobControlState.setReleaseThrows(new IllegalStateException());
+        maintainer.successOnNextRun(0.5).run();
+        assertEquals(1, maintainer.totalRuns());
+        assertEquals(0.5, jobMetrics.successFactor, delta);
+
+        // Timeout releasing the lock is not a collision either
+        jobControlState.setReleaseThrows(new UncheckedTimeoutException());
+        maintainer.successOnNextRun(0.25).run();
+        assertEquals(2, maintainer.totalRuns());
+        assertEquals(0.25, jobMetrics.successFactor, delta);
+    }
+
+    @Test
+    public void runs_without_job_lock() {
+        TestJobMetrics jobMetrics = new TestJobMetrics();
+        TestMaintainer maintainer = new TestMaintainer(null, jobControl, jobMetrics, false, false);
+
+        jobControlState.setLockTimesOut(true);
+        maintainer.successOnNextRun(1.0).run();
+        assertEquals(1, maintainer.totalRuns());
+        assertEquals(1, jobMetrics.successFactor, delta);
     }
 
     private static class TestJobMetrics extends JobMetrics {
 
         double successFactor = 0.0;
         long durationMs = 0;
+        int completions = 0;
 
         @Override
         public void completed(String job, double successFactor, long durationMs) {
             this.successFactor = successFactor;
             this.durationMs = durationMs;
+            completions++;
         }
 
     }

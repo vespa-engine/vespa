@@ -4,9 +4,9 @@
 
 #include "zc4_posting_header.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 
-#include <cassert>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -45,8 +45,8 @@ void Zc4PostingReaderBase::NoSkipBase::setup(DecodeContext& decode_context, uint
 }
 
 void Zc4PostingReaderBase::NoSkipBase::check_end(uint32_t last_doc_id) {
-    assert(_doc_id == last_doc_id);
-    assert(_zc_decoder.at_end());
+    CHECK(_doc_id == last_doc_id);
+    CHECK(_zc_decoder.at_end());
 }
 
 Zc4PostingReaderBase::NoSkip::NoSkip() : NoSkipBase(), _field_length(1), _num_occs(1) {
@@ -55,7 +55,7 @@ Zc4PostingReaderBase::NoSkip::NoSkip() : NoSkipBase(), _field_length(1), _num_oc
 Zc4PostingReaderBase::NoSkip::~NoSkip() = default;
 
 void Zc4PostingReaderBase::NoSkip::read(bool decode_interleaved_features) {
-    assert(_zc_decoder.before_end());
+    CHECK(_zc_decoder.before_end());
     _doc_id += (_zc_decoder.decode32() + 1);
     if (decode_interleaved_features) {
         _field_length = _zc_decoder.decode32() + 1;
@@ -65,8 +65,8 @@ void Zc4PostingReaderBase::NoSkip::read(bool decode_interleaved_features) {
 }
 
 void Zc4PostingReaderBase::NoSkip::check_not_end(uint32_t last_doc_id) {
-    assert(_doc_id < last_doc_id);
-    assert(_zc_decoder.before_end());
+    CHECK(_doc_id < last_doc_id);
+    CHECK(_zc_decoder.before_end());
 }
 
 Zc4PostingReaderBase::L1Skip::L1Skip() : NoSkipBase(), _l1_skip_pos(0) {
@@ -85,9 +85,9 @@ void Zc4PostingReaderBase::L1Skip::setup(DecodeContext& decode_context, uint32_t
 
 void Zc4PostingReaderBase::L1Skip::check(const Zc4PostingReaderBase& rb, const std::string& level_name,
                                          const NoSkipBase& no_skip, bool top_level, bool decode_features) {
-    assert(_doc_id == no_skip.get_doc_id());
+    CHECK(_doc_id == no_skip.get_doc_id());
     _doc_id_pos += (_zc_decoder.decode32() + 1);
-    assert(_doc_id_pos == no_skip.get_doc_id_pos());
+    CHECK(_doc_id_pos == no_skip.get_doc_id_pos());
     if (decode_features) {
         _features_pos += (_zc_decoder.decode42() + 1);
         if (_features_pos != no_skip.get_features_pos()) {
@@ -97,7 +97,7 @@ void Zc4PostingReaderBase::L1Skip::check(const Zc4PostingReaderBase& rb, const s
                 rb._readContext.get_file_name().c_str(), rb._word.c_str(), _doc_id, level_name.c_str(), _features_pos,
                 no_skip.get_features_pos());
         }
-        assert(_features_pos == no_skip.get_features_pos());
+        CHECK(_features_pos == no_skip.get_features_pos());
     }
     if (top_level) {
         _l1_skip_pos = _zc_decoder.pos();
@@ -121,7 +121,7 @@ void Zc4PostingReaderBase::L2Skip::check(const Zc4PostingReaderBase& rb, const s
                                          const L1Skip& l1_skip, bool top_level, bool decode_features) {
     L1Skip::check(rb, level_name, l1_skip, false, decode_features);
     _l1_skip_pos += (_zc_decoder.decode32() + 1);
-    assert(_l1_skip_pos == l1_skip.get_l1_skip_pos());
+    CHECK(_l1_skip_pos == l1_skip.get_l1_skip_pos());
     if (top_level) {
         _l2_skip_pos = _zc_decoder.pos();
     }
@@ -140,7 +140,7 @@ void Zc4PostingReaderBase::L3Skip::check(const Zc4PostingReaderBase& rb, const s
                                          const L2Skip& l2_skip, bool top_level, bool decode_features) {
     L2Skip::check(rb, level_name, l2_skip, false, decode_features);
     _l2_skip_pos += (_zc_decoder.decode32() + 1);
-    assert(_l2_skip_pos == l2_skip.get_l2_skip_pos());
+    CHECK(_l2_skip_pos == l2_skip.get_l2_skip_pos());
     if (top_level) {
         _l3_skip_pos = _zc_decoder.pos();
     }
@@ -158,7 +158,7 @@ void Zc4PostingReaderBase::L4Skip::check(const Zc4PostingReaderBase& rb, const s
                                          const L3Skip& l3_skip, bool decode_features) {
     L3Skip::check(rb, level_name, l3_skip, false, decode_features);
     _l3_skip_pos += (_zc_decoder.decode32() + 1);
-    assert(_l3_skip_pos == l3_skip.get_l3_skip_pos());
+    CHECK(_l3_skip_pos == l3_skip.get_l3_skip_pos());
 }
 
 Zc4PostingReaderBase::Zc4PostingReaderBase(bool dynamic_k)
@@ -217,19 +217,19 @@ void Zc4PostingReaderBase::read_common_word_doc_id(DecodeContext64Base& decode_c
 
 void Zc4PostingReaderBase::read_word_start_with_skip(DecodeContext64Base&    decode_context,
                                                      const Zc4PostingHeader& header) {
-    assert(_num_docs >= _posting_params._min_skip_docs || _has_more || header._features_size_flush);
+    CHECK(_num_docs >= _posting_params._min_skip_docs || _has_more || header._features_size_flush);
     bool has_more = header._has_more;
     bool features_size_flush = header._features_size_flush;
     if (_has_more || has_more) {
-        assert(has_more == (_chunkNo + 1 < _counts._segments.size()));
-        assert(_num_docs == _counts._segments[_chunkNo]._numDocs);
+        CHECK(has_more == (_chunkNo + 1 < _counts._segments.size()));
+        CHECK(_num_docs == _counts._segments[_chunkNo]._numDocs);
         if (has_more && !features_size_flush) {
-            assert(_num_docs >= _posting_params._min_skip_docs);
-            assert(_num_docs >= _posting_params._min_chunk_docs);
+            CHECK(_num_docs >= _posting_params._min_skip_docs);
+            CHECK(_num_docs >= _posting_params._min_chunk_docs);
         }
     } else {
-        assert(_num_docs >= _posting_params._min_skip_docs || features_size_flush);
-        assert(_num_docs == _counts._numDocs);
+        CHECK(_num_docs >= _posting_params._min_skip_docs || features_size_flush);
+        CHECK(_num_docs == _counts._numDocs);
     }
     uint32_t prev_doc_id = _no_skip.get_doc_id();
     _no_skip.setup(decode_context, header._doc_ids_size, prev_doc_id);
@@ -238,7 +238,7 @@ void Zc4PostingReaderBase::read_word_start_with_skip(DecodeContext64Base&    dec
     _l3_skip.setup(decode_context, header._l3_skip_size, prev_doc_id, _last_doc_id);
     _l4_skip.setup(decode_context, header._l4_skip_size, prev_doc_id, _last_doc_id);
     if (_has_more || has_more) {
-        assert(_last_doc_id == _counts._segments[_chunkNo]._lastDoc);
+        CHECK(_last_doc_id == _counts._segments[_chunkNo]._lastDoc);
     }
     uint64_t features_pos = decode_context.getReadOffset();
     _features_start_pos = features_pos;
@@ -266,9 +266,9 @@ void Zc4PostingReaderBase::read_word_start(DecodeContext64Base& decode_context) 
     _doc_id_k = header._doc_id_k;
     _last_doc_id = header._last_doc_id;
     _features_size = header._features_size;
-    assert(_num_docs <= _counts._numDocs);
-    assert(_num_docs == _counts._numDocs || _num_docs >= _posting_params._min_chunk_docs || _has_more ||
-           header._features_size_flush);
+    CHECK(_num_docs <= _counts._numDocs);
+    CHECK(_num_docs == _counts._numDocs || _num_docs >= _posting_params._min_chunk_docs || _has_more ||
+          header._features_size_flush);
 
     if (_num_docs >= _posting_params._min_skip_docs || _has_more || header._features_size_flush) {
         read_word_start_with_skip(decode_context, header);
@@ -277,10 +277,10 @@ void Zc4PostingReaderBase::read_word_start(DecodeContext64Base& decode_context) 
 
 void Zc4PostingReaderBase::set_word_and_counts(bitcompression::DecodeContext64Base& decode_context,
                                                const std::string& word, const index::PostingListCounts& counts) {
-    assert(!_has_more && _residue == 0); // Previous words must have been read.
+    CHECK(!_has_more && _residue == 0); // Previous words must have been read.
     _word = word;
     _counts = counts;
-    assert((_counts._numDocs == 0) == (_counts._bitLength == 0));
+    CHECK((_counts._numDocs == 0) == (_counts._bitLength == 0));
     if (_counts._numDocs > 0) {
         read_word_start(decode_context);
     }

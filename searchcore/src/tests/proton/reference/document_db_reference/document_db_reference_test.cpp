@@ -8,8 +8,6 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-#include <cassert>
-
 #include <vespa/log/log.h>
 LOG_SETUP("document_db_reference_test");
 

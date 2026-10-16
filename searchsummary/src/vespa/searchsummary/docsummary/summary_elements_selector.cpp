@@ -4,6 +4,7 @@
 
 #include "docsumstate.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/common/matching_elements.h>
@@ -12,7 +13,6 @@
 #include <vespa/vespalib/util/shared_string_repo.h>
 
 #include <algorithm>
-#include <cassert>
 #include <charconv>
 #include <optional>
 
@@ -44,14 +44,14 @@ std::vector<uint32_t> extract_elements_from_feature(const FeatureSet::Value& enc
             auto view = value->index().create_view({});
             view->lookup({});
             while (view->next_result(addr_ref_span, subspace)) {
-                assert(subspace < num_subspaces);
+                CHECK(subspace < num_subspaces);
                 auto     label = SharedStringRepo::Handle::string_from_id(addr);
                 uint32_t ivalue(0);
                 std::from_chars(label.data(), label.data() + label.size(), ivalue);
                 elements.emplace_back(ivalue);
                 ++num_subspaces_visited;
             }
-            assert(num_subspaces_visited == num_subspaces);
+            CHECK(num_subspaces_visited == num_subspaces);
             std::sort(elements.begin(), elements.end());
         }
     }

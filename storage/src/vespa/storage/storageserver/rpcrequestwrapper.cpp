@@ -2,9 +2,8 @@
 
 #include "rpcrequestwrapper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/rpcrequest.h>
-
-#include <cassert>
 
 namespace storage {
 
@@ -19,31 +18,31 @@ RPCRequestWrapper::~RPCRequestWrapper() {
 }
 
 const char* RPCRequestWrapper::getParam() const {
-    assert(_req);
+    CHECK(_req);
     return _req->GetParams()->GetValue(0)._data._buf;
 }
 
 uint32_t RPCRequestWrapper::getParamLen() const {
-    assert(_req);
+    CHECK(_req);
     return _req->GetParams()->GetValue(0)._data._len;
 }
 
 void RPCRequestWrapper::returnData(const char* pt, uint32_t len) {
-    assert(_req);
+    CHECK(_req);
     _req->GetReturn()->AddData(pt, len);
     _req->Return();
     _req = nullptr;
 }
 
 void RPCRequestWrapper::returnError(uint32_t errorCode, const char* errorMessage) {
-    assert(_req);
+    CHECK(_req);
     _req->SetError(errorCode, errorMessage);
     _req->Return();
     _req = nullptr;
 }
 
 void RPCRequestWrapper::addReturnString(const char* str, uint32_t len) {
-    assert(_req);
+    CHECK(_req);
     if (len != 0) {
         _req->GetReturn()->AddString(str, len);
     } else {
@@ -52,12 +51,12 @@ void RPCRequestWrapper::addReturnString(const char* str, uint32_t len) {
 }
 
 void RPCRequestWrapper::addReturnInt(uint32_t value) {
-    assert(_req);
+    CHECK(_req);
     _req->GetReturn()->AddInt32(value);
 }
 
 void RPCRequestWrapper::returnRequest() {
-    assert(_req);
+    CHECK(_req);
     _req->Return();
     _req = nullptr;
 }

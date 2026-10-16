@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
-#include <cassert>
 #include <cinttypes>
 
 static uint64_t maxExpGolombVal(uint64_t kValue, uint64_t maxBits) {
@@ -27,15 +27,17 @@ public:
 };
 
 void UniformApp::clearBits() {
-    for (unsigned int k = 0; k <= MAXK; ++k)
+    for (unsigned int k = 0; k <= MAXK; ++k) {
         _bits[k] = 0;
+    }
     _next = 0;
 }
 
 void UniformApp::reportBits() {
     printf("next=%" PRIu64 " ", _next);
-    for (unsigned int k = 0; k <= MAXK; ++k)
+    for (unsigned int k = 0; k <= MAXK; ++k) {
         printf("b[%u]=%" PRIu64 " ", static_cast<unsigned int>(k), _bits[k]);
+    }
     printf("\n");
 }
 
@@ -55,14 +57,15 @@ int UniformApp::main(int, char**) {
         for (k = 0; k <= MAXK; ++k) {
             uint32_t bits = encodeSpace(_next, k); // Current bits
             uint64_t next = maxExpGolombVal(k, bits);
-            assert(encodeSpace(next - 1, k) == bits);
-            assert(encodeSpace(next, k) > bits);
+            CHECK(encodeSpace(next - 1, k) == bits);
+            CHECK(encodeSpace(next, k) > bits);
             if (k == 0 || next < minnext) {
                 minnext = next;
                 minnextk = k;
             }
-            if (_bits[k] < _bits[bestk])
+            if (_bits[k] < _bits[bestk]) {
                 bestk = k;
+            }
             printf("k=%d, bits=%d, next=%" PRIu64 "\n", k, bits, next);
         }
         printf("minnext=%" PRIu64 ", minnextk=%d, bestk=%d\n", minnext, minnextk, bestk);
@@ -85,30 +88,37 @@ int UniformApp::main(int, char**) {
         }
         printf("minnext=%" PRIu64 ", minnextk=%d, bestk=%d\n", minnext, minnextk, bestk);
         for (k = 0; k <= MAXK; ++k) {
-            assert(encodeSpace(_next, k) == encodeSpace(minnext - 1, k));
+            CHECK(encodeSpace(_next, k) == encodeSpace(minnext - 1, k));
             _bits[k] += (minnext - _next) * encodeSpace(_next, k);
         }
         _next = minnext;
         bestmask = 0;
         uint32_t smallk = 0;
         for (k = 0; k <= MAXK; ++k) {
-            if (_bits[k] < _bits[smallk])
+            if (_bits[k] < _bits[smallk]) {
                 smallk = k;
+            }
         }
-        for (k = 0; k <= MAXK; ++k)
-            if (_bits[k] <= _bits[smallk])
+        for (k = 0; k <= MAXK; ++k) {
+            if (_bits[k] <= _bits[smallk]) {
                 bestmask |= (1 << k);
-        if (bestmask == oldbestmask && _next < (UINT64_C(1) << 30))
+            }
+        }
+        if (bestmask == oldbestmask && _next < (UINT64_C(1) << 30)) {
             continue;
+        }
         reportBits();
         printf("Best k for interval [0..%" PRIu64 ") is", _next);
-        for (k = 0; k <= MAXK; ++k)
-            if (_bits[k] <= _bits[smallk])
+        for (k = 0; k <= MAXK; ++k) {
+            if (_bits[k] <= _bits[smallk]) {
                 printf(" %d", k);
+            }
+        }
         printf("\n");
         oldbestmask = bestmask;
-        if (_next >= (UINT64_C(1) << 30))
+        if (_next >= (UINT64_C(1) << 30)) {
             break;
+        }
         printf("m iter=%d\n", m);
         ++m;
         if (m >= 10000) {

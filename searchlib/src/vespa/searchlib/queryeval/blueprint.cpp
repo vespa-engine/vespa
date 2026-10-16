@@ -13,6 +13,7 @@
 #include "matching_elements_search.h"
 #include "orsearch.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/objects/object2slime.h>
@@ -291,7 +292,7 @@ std::unique_ptr<SearchIterator> create_op_filter(std::span<const Blueprint::UP> 
         }
     }
     if (list.empty()) {
-        assert(spare);
+        CHECK(spare);
         return spare;
     }
     if (list.size() == 1) {
@@ -353,7 +354,7 @@ std::unique_ptr<SearchIterator> Blueprint::create_andnot_filter(std::span<const 
             list.push_back(std::move(filter));
         }
     }
-    assert(!list.empty());
+    CHECK(!list.empty());
     if (list.size() == 1) {
         return std::move(list[0]);
     }
@@ -439,13 +440,13 @@ namespace blueprint {
 //-----------------------------------------------------------------------------
 
 void StateCache::updateState() const {
-    assert(!frozen());
+    CHECK(!frozen());
     _state = calculateState();
     _stale = false;
 }
 
 void StateCache::notifyChange() {
-    assert(!frozen());
+    CHECK(!frozen());
     if (!_stale) {
         Blueprint::notifyChange();
         _stale = true;
@@ -592,7 +593,7 @@ bool IntermediateBlueprint::should_do_termwise_eval(const UnpackInfo& unpack, do
 }
 
 void IntermediateBlueprint::optimize(Blueprint*& self, OptimizePass pass) {
-    assert(self == this);
+    CHECK(self == this);
     for (auto& child : _children) {
         auto* child_ptr = child.release();
         child_ptr->optimize(child_ptr, pass);
@@ -660,7 +661,7 @@ IntermediateBlueprint& IntermediateBlueprint::addChild(Blueprint::UP child) {
 }
 
 Blueprint::UP IntermediateBlueprint::removeChild(size_t n) {
-    assert(n < _children.size());
+    CHECK(n < _children.size());
     Blueprint::UP ret = std::move(_children[n]);
     _children.erase(_children.begin() + n);
     ret->setParent(nullptr);
@@ -669,7 +670,7 @@ Blueprint::UP IntermediateBlueprint::removeChild(size_t n) {
 }
 
 IntermediateBlueprint& IntermediateBlueprint::insertChild(size_t n, Blueprint::UP child) {
-    assert(n <= _children.size());
+    CHECK(n <= _children.size());
     child->setParent(this);
     _children.insert(_children.begin() + n, std::move(child));
     notifyChange();
@@ -790,7 +791,7 @@ bool LeafBlueprint::getRange(search::NumericRangeSpec&) const {
 }
 
 void LeafBlueprint::optimize(Blueprint*& self, OptimizePass pass) {
-    assert(self == this);
+    CHECK(self == this);
     optimize_self(pass);
     if (pass == OptimizePass::LAST) {
         update_flow_stats(get_docid_limit());
@@ -799,7 +800,7 @@ void LeafBlueprint::optimize(Blueprint*& self, OptimizePass pass) {
 }
 
 void LeafBlueprint::set_cost_tier(uint32_t value) {
-    assert(value < 0x100);
+    CHECK(value < 0x100);
     _state.cost_tier(value);
     notifyChange();
 }

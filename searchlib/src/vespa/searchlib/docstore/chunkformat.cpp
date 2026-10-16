@@ -2,6 +2,7 @@
 
 #include "chunkformats.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/memorydatastore.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -133,7 +134,7 @@ void ChunkFormat::deserializeBody(vespalib::nbostream& is, MemoryDataStore* memo
     vespalib::DataBuffer     uncompressed(const_cast<char*>(is.peek()), (size_t)0);
     vespalib::ConstBufferRef data(is.peek(), is.size() - sizeof(uint32_t));
     decompress(CompressionConfig::Type(type), uncompressedLen, data, uncompressed, true);
-    assert(uncompressed.getData() == uncompressed.getDead());
+    CHECK(uncompressed.getData() == uncompressed.getDead());
     if (uncompressed.getData() != data.c_str()) {
         const size_t sz(uncompressed.getDataLen());
         vespalib::nbostream(std::move(uncompressed).stealBuffer(), sz).swap(_dataBuf);

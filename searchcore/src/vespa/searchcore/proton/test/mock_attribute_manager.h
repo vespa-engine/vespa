@@ -2,13 +2,12 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager_reconfig.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/util/hdr_abort.h>
-
-#include <cassert>
 
 namespace proton::test {
 
@@ -47,11 +46,11 @@ public:
     void pruneRemovedFields(search::SerialNum) override {}
     const IAttributeFactory::SP& getFactory() const override { HDR_ABORT("should not be reached"); }
     vespalib::ISequencedTaskExecutor& getAttributeFieldWriter() const override {
-        assert(_writer != nullptr);
+        CHECK(_writer != nullptr);
         return *_writer;
     }
     vespalib::Executor& get_shared_executor() const override {
-        assert(_shared != nullptr);
+        CHECK(_shared != nullptr);
         return *_shared;
     }
     search::AttributeVector* getWritableAttribute(std::string_view name) const override {
