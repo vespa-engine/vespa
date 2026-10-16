@@ -25,6 +25,12 @@ namespace proton::matching {
  *
  * Unrequested rows between seeks are skipped.
  * ordinal(name) is the 0..X-1 index used with get().
+ *
+ * Rows recorded in docid order are read in place. Otherwise
+ * ensure_sorted_for_read() merges the ascending runs they form into a read
+ * order of 4 bytes per row: about one pass when the first run holds most
+ * rows, as it typically does under the adaptive docid range scheduler, and a
+ * merge sort at worst.
  */
 class SortFeatureStore : public INumericSortValueProvider {
 public:
@@ -63,7 +69,6 @@ private:
 
     uint32_t                            _num_features;
     uint32_t                            _rows;
-    bool                                _recorded_in_docid_order;
     uint32_t                            _last_docid;
     uint32_t                            _seek_row;
     uint32_t                            _consume_pos;
@@ -73,6 +78,7 @@ private:
     std::vector<std::string>            _public_names;
     std::vector<std::unique_ptr<Chunk>> _chunks;
     std::vector<uint32_t>               _read_order;
+    std::vector<uint32_t>               _run_starts; // first row of each ascending run after the first
 };
 
 } // namespace proton::matching
