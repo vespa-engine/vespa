@@ -51,7 +51,17 @@ Trinary ClusterState::shouldBeReady(const Bucket& b) const {
             return Trinary::True;
         }
     }
-    return Trinary::False;
+    // A replica on a node outside the bucket's ideal set will be removed once it has been
+    // merged to the ideal nodes. Moving it between ready and not ready before that only
+    // costs a rewrite of every document and, when demoting, a searchable copy.
+    _distribution->getIdealNodes(lib::NodeType::STORAGE, *_state, b.getBucketId(), idealNodes, "uim",
+                                 _distribution->getRedundancy());
+    for (uint16_t node : idealNodes) {
+        if (node == _nodeIndex) {
+            return Trinary::False;
+        }
+    }
+    return Trinary::Undefined;
 }
 
 bool ClusterState::clusterUp() const noexcept {

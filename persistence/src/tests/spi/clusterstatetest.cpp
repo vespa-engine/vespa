@@ -10,6 +10,10 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 using document::GlobalId;
 using storage::spi::test::makeSpiBucket;
 using vespalib::Trinary;
@@ -180,18 +184,106 @@ TEST(ClusterStateTest, testReady) {
 
     lib::ClusterState s2("version:1 storage:3 .0.s:d distributor:3");
 
-    // The two others should be ready now
+    // The two others should be ready now. Node 0 is down, so it is not in the ideal set.
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 2));
         ClusterState      state(s2, i, d);
-        EXPECT_EQ(toTrinary(i == 1 || i == 2), state.shouldBeReady(b));
+        EXPECT_EQ(i == 0 ? Trinary::Undefined : toTrinary(i == 1 || i == 2), state.shouldBeReady(b));
     }
 
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 1));
         ClusterState      state(s2, i, d);
-        EXPECT_EQ(toTrinary(i == 2), state.shouldBeReady(b));
+        EXPECT_EQ(i == 0 ? Trinary::Undefined : toTrinary(i == 2), state.shouldBeReady(b));
     }
+}
+
+TEST(ClusterStateTest, readiness_is_undefined_for_nodes_outside_the_ideal_set) {
+    lib::ClusterState s("version:1 storage:6 distributor:6");
+    for (uint64_t raw = 1; raw <= 64; ++raw) {
+        Bucket b(makeSpiBucket(document::BucketId(16, raw)));
+        for (auto [redundancy, ready] : std::vector<std::pair<uint16_t, uint16_t>>{{2, 2}, {3, 1}, {3, 2}}) {
+            lib::Distribution     d(getCfg(redundancy, ready));
+            std::vector<uint16_t> ideal;
+            d.getIdealNodes(lib::NodeType::STORAGE, s, b.getBucketId(), ideal, "uim", redundancy);
+            ASSERT_EQ(redundancy, ideal.size());
+            for (uint16_t i = 0; i < 6; ++i) {
+                ClusterState state(s, i, d);
+                auto         pos = std::find(ideal.begin(), ideal.end(), i);
+                Trinary      expected = (pos == ideal.end())       ? Trinary::Undefined
+                                        : (pos - ideal.begin() < ready) ? Trinary::True
+                                                                        : Trinary::False;
+                EXPECT_EQ(expected, state.shouldBeReady(b)) << "bucket " << raw << " node " << i << " redundancy "
+                                                            << redundancy << " ready " << ready;
+            }
+        }
+    }
+}
+
+TEST(ClusterStateTest, replica_left_behind_on_node_that_lost_its_ideal_position_is_not_moved) {
+    // Adding node 3 takes over some buckets from nodes 0-2 (redundancy 2, searchable copies 2).
+    // The replica on the node that is no longer ideal must not be demoted while it waits to be deleted.
+    lib::ClusterState  before("version:1 storage:3 distributor:3");
+    lib::ClusterState  after("version:2 storage:4 distributor:4");
+    lib::Distribution  d(getCfg(2, 2));
+    uint32_t           checked = 0;
+    for (uint64_t raw = 1; raw <= 256; ++raw) {
+        Bucket                b(makeSpiBucket(document::BucketId(16, raw)));
+        std::vector<uint16_t> idealBefore, idealAfter;
+        d.getIdealNodes(lib::NodeType::STORAGE, before, b.getBucketId(), idealBefore, "uim", 2);
+        d.getIdealNodes(lib::NodeType::STORAGE, after, b.getBucketId(), idealAfter, "uim", 2);
+        for (uint16_t node : idealBefore) {
+            if (std::find(idealAfter.begin(), idealAfter.end(), node) == idealAfter.end()) {
+                EXPECT_EQ(Trinary::True, ClusterState(before, node, d).shouldBeReady(b));
+                EXPECT_EQ(Trinary::Undefined, ClusterState(after, node, d).shouldBeReady(b));
+                ++checked;
+            }
+        }
+    }
+    EXPECT_GT(checked, 0u);
+}
+
+TEST(ClusterStateTest, moving_flat_nodes_into_one_group_does_not_make_their_not_ready_replicas_ready) {
+    // Flat redundancy=2, searchable-copies=1 on nodes 0-3 is reconfigured to 2 groups with 1 copy each, all old
+    // nodes in group 0 and a new node in group 1. The cluster-global config is then redundancy=2,
+    // searchable-copies=2, but replicas that are leaving group 0 must not be made ready.
+    lib::ClusterState flatState("version:1 storage:4 distributor:4");
+    lib::ClusterState groupedState("version:2 storage:5 distributor:5");
+    lib::Distribution flat(getCfg(2, 1));
+    lib::Distribution grouped("redundancy 2\n"
+                              "ready_copies 2\n"
+                              "active_per_leaf_group true\n"
+                              "group[3]\n"
+                              "group[0].name \"invalid\"\n"
+                              "group[0].index \"invalid\"\n"
+                              "group[0].partitions 1|*\n"
+                              "group[0].nodes[0]\n"
+                              "group[1].name g0\n"
+                              "group[1].index 0\n"
+                              "group[1].nodes[4]\n"
+                              "group[1].nodes[0].index 0\n"
+                              "group[1].nodes[1].index 1\n"
+                              "group[1].nodes[2].index 2\n"
+                              "group[1].nodes[3].index 3\n"
+                              "group[2].name g1\n"
+                              "group[2].index 1\n"
+                              "group[2].nodes[1]\n"
+                              "group[2].nodes[0].index 4\n");
+    uint32_t leaving = 0;
+    for (uint64_t raw = 1; raw <= 256; ++raw) {
+        Bucket b(makeSpiBucket(document::BucketId(16, raw)));
+        for (uint16_t node = 0; node < 4; ++node) {
+            Trinary before = ClusterState(flatState, node, flat).shouldBeReady(b);
+            Trinary after = ClusterState(groupedState, node, grouped).shouldBeReady(b);
+            if (before != Trinary::True) {
+                EXPECT_NE(Trinary::True, after) << "bucket " << raw << " node " << node;
+            }
+            if (before == Trinary::False && after == Trinary::Undefined) {
+                ++leaving;
+            }
+        }
+    }
+    EXPECT_GT(leaving, 0u);
 }
 
 namespace {
