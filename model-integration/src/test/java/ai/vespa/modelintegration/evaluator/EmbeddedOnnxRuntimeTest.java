@@ -60,7 +60,7 @@ class EmbeddedOnnxRuntimeTest {
         String model = "src/test/models/onnx/simple/simple.onnx";
         var padding = new OnnxEvaluatorOptions.Builder().setPadding(Optional.of(OnnxPadderOptions.of(List.of(16)))).build();
         var evaluator1 = runtime.evaluatorOf(model, padding);
-        var evaluator2 = runtime.evaluatorOf(model, padding.withMaxLength(512));
+        var evaluator2 = runtime.evaluatorOf(model, padding.withMaxTokens(8));
         var evaluator3 = runtime.evaluatorOf(model, OnnxEvaluatorOptions.createDefault());
         assertSameSession(evaluator1, evaluator2);
         assertSameSession(evaluator1, evaluator3);

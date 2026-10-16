@@ -121,7 +121,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
         var resolver = new OnnxExternalDataResolver(modelHelper);
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig).withAttentionMask(embedderConfig.transformerAttentionMask()).withMaxLength(maxLength);
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig).withAttentionMask(embedderConfig.transformerAttentionMask()).withMaxTokens(maxLength);
         evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
 
         this.analysis = analyze(evaluator, embedderConfig);
