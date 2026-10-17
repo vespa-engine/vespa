@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-        image: almalinux:8
+        image: almalinux:8@sha256:8b469a3a78515e8a18ea8fc727e6a3679e1d0c5ba6f58d5b30be3d0d9b86cffe
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           CLOUDSMITH_API_TOKEN: ${{ secrets.CLOUDSMITH_API_TOKEN }}
