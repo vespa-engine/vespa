@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/fxamacker/cbor/v2"
 	"github.com/stretchr/testify/assert"
@@ -181,6 +182,51 @@ func TestQueryPostFileWithArgs(t *testing.T) {
 	assert.Equal(t, []string{"application/json"}, client.LastRequest.Header.Values("Content-Type"))
 	assert.Equal(t, "POST", client.LastRequest.Method)
 	assert.Equal(t, "http://foo.bar:1234/search/", client.LastRequest.URL.String())
+}
+
+func TestQueryPostFileWithTimeout(t *testing.T) {
+	client := &mock.HTTPClient{ReadBody: true}
+	client.NextResponseString(200, `{"query":"result"}`)
+	cli, _, _ := newTestCLI(t)
+	cli.httpClient = client
+
+	tmpFileName := filepath.Join(t.TempDir(), "tq3.json")
+	jsonQuery := []byte(`{"yql": "some yql here", "timeout": "30s"}`)
+	require.Nil(t, os.WriteFile(tmpFileName, jsonQuery, 0o644))
+
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "--file", tmpFileName))
+	assert.Equal(t, `{"timeout":"30s","yql":"some yql here"}`, string(client.LastBody))
+
+	client.NextResponseString(200, `{"query":"result"}`)
+	require.Nil(t, os.WriteFile(tmpFileName, []byte(`{"yql": "some yql here", "timeout": 30}`), 0o644))
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "--file", tmpFileName))
+	assert.Equal(t, `{"timeout":30,"yql":"some yql here"}`, string(client.LastBody))
+}
+
+func TestQueryWithTimeoutWithoutUnit(t *testing.T) {
+	assertQuery(t,
+		"?timeout=5&yql=select+from+sources+%2A+where+title+contains+%27foo%27",
+		"select from sources * where title contains 'foo'", "timeout=5")
+	assertQuery(t,
+		"?timeout=0.5&yql=select+from+sources+%2A+where+title+contains+%27foo%27",
+		"select from sources * where title contains 'foo'", "timeout=0.5")
+}
+
+func TestParseQueryTimeout(t *testing.T) {
+	for in, want := range map[string]time.Duration{
+		"10s":   10 * time.Second,
+		"500ms": 500 * time.Millisecond,
+		"5":     5 * time.Second,
+		"1.5":   1500 * time.Millisecond,
+	} {
+		got, err := parseQueryTimeout(in)
+		assert.Nil(t, err, in)
+		assert.Equal(t, want, got, in)
+	}
+	for _, in := range []string{"", "foo", "-5", "NaN", "Inf"} {
+		_, err := parseQueryTimeout(in)
+		assert.NotNil(t, err, in)
+	}
 }
 
 func assertStreamingQuery(t *testing.T, expectedOutput, body string, args ...string) {
