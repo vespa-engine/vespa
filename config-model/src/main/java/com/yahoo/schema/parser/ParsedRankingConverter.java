@@ -53,6 +53,7 @@ public class ParsedRankingConverter {
             profile.inherit(namePrefix + inherited);
         }
         parsed.isStrict().ifPresent(profile::setStrict);
+        parsed.getExplanation().ifPresent(profile::setExplanation);
         parsed.isUseSignificanceModel().ifPresent(profile::setUseSignificanceModel);
         parsed.getConstants().values().forEach(profile::add);
         parsed.getOnnxModels().forEach(profile::add);

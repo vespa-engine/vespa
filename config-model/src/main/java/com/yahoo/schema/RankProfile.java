@@ -177,6 +177,8 @@ public class RankProfile implements Cloneable {
 
     private Boolean useSignificanceModel;
 
+    private String explanation = null;
+
     private final ApplicationPackage applicationPackage;
     private final DeployLogger deployLogger;
 
@@ -251,6 +253,12 @@ public class RankProfile implements Cloneable {
     public void setStrict(Boolean strict) {
         this.strict = strict;
     }
+
+    /** Sets a free text explanation of the content and usage of this rank profile, or null to remove it. */
+    public void setExplanation(String explanation) { this.explanation = explanation; }
+
+    /** Returns the free text explanation of the content and usage of this rank profile, if any. Explanations are not inherited. */
+    public Optional<String> getExplanation() { return Optional.ofNullable(explanation); }
 
     public void setUseSignificanceModel(Boolean useSignificanceModel) {
         this.useSignificanceModel = useSignificanceModel;

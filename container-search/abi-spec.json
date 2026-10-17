@@ -9270,6 +9270,7 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String, java.lang.String)",
+      "public com.yahoo.search.schema.Field$Builder setExplanation(java.lang.String)",
       "public com.yahoo.search.schema.Field$Builder addAlias(java.lang.String)",
       "public com.yahoo.search.schema.Field$Builder setAttribute(boolean)",
       "public com.yahoo.search.schema.Field$Builder setIndex(boolean)",
@@ -9394,6 +9395,7 @@
       "public java.lang.String name()",
       "public com.yahoo.search.schema.Field$Type type()",
       "public java.util.Set aliases()",
+      "public java.util.Optional explanation()",
       "public boolean isAttribute()",
       "public boolean isIndex()",
       "public boolean hasFastMapSearch()",
@@ -9494,6 +9496,7 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String)",
+      "public com.yahoo.search.schema.RankProfile$Builder setExplanation(java.lang.String)",
       "public com.yahoo.search.schema.RankProfile$Builder setHasSummaryFeatures(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder setHasRankFeatures(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder addInput(java.lang.String, com.yahoo.search.schema.RankProfile$InputType)",
@@ -9534,6 +9537,7 @@
     ],
     "methods" : [
       "public java.lang.String name()",
+      "public java.util.Optional explanation()",
       "public com.yahoo.search.schema.Schema schema()",
       "public boolean hasSummaryFeatures()",
       "public boolean hasRankFeatures()",
@@ -9558,6 +9562,7 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String)",
+      "public com.yahoo.search.schema.Schema$Builder setExplanation(java.lang.String)",
       "public com.yahoo.search.schema.Schema$Builder add(com.yahoo.search.schema.Field)",
       "public com.yahoo.search.schema.Schema$Builder add(com.yahoo.search.schema.FieldSet)",
       "public com.yahoo.search.schema.Schema$Builder add(com.yahoo.search.schema.RankProfile)",
@@ -9578,6 +9583,7 @@
       "public java.util.Map fieldSets()",
       "public java.util.Map rankProfiles()",
       "public java.util.Map documentSummaries()",
+      "public java.util.Optional explanation()",
       "public java.util.Optional fieldInfo(java.lang.String)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",

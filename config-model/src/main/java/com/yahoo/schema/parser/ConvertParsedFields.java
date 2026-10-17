@@ -218,6 +218,7 @@ public class ConvertParsedFields {
             Attribute.validateDataType(schema.getName(), field.getName(), field.getDataType());
         }
         parsed.getWeight().ifPresent(value -> field.setWeight(value));
+        parsed.getExplanation().ifPresent(field::setExplanation);
         parsed.getStemming().ifPresent(value -> field.setStemming(value));
         parsed.getNormalizing().ifPresent(value -> convertNormalizing(field, value));
         parsed.getIndexLinguisticsProfile().ifPresent(value -> field.setIndexLinguisticsProfile(value));

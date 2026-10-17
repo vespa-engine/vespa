@@ -3,6 +3,8 @@ namespace=search.config
 
 ## The name of this schema
 schema[].name string
+## A free text explanation of the content and usage of this schema, or empty if none
+schema[].explanation string default=""
 
 ## Information about a schema field (currently incomplete)
 schema[].field[].name string
@@ -11,6 +13,8 @@ schema[].field[].alias[] string
 schema[].field[].attribute bool
 schema[].field[].index bool
 schema[].field[].bitPacked bool
+## A free text explanation of the content and usage of this field, or empty if none
+schema[].field[].explanation string default=""
 ## Present (with a single entry) if this field has fast map search, i.e. does 'fast-search-map-field',
 ## either on a map, or on an array of struct with the key and value struct fields given here
 ## The name given to the lookup field in 'fast-search-map-field'
@@ -35,6 +39,8 @@ schema[].summaryclass[].fields[].dynamic bool default=false
 
 ## Information about rank profiles
 schema[].rankprofile[].name string
+# A free text explanation of what this rank profile does and when to use it, or empty if none
+schema[].rankprofile[].explanation string default=""
 schema[].rankprofile[].hasSummaryFeatures bool default=true
 schema[].rankprofile[].hasRankFeatures bool default=true
 # The match-phase max hits per node, or -1 to use the default
