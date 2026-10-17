@@ -71,6 +71,7 @@ public abstract class AbstractBundleValidator implements Validator {
         Manifest manifest = jar.getManifest();
         if (manifest == null) {
             context.illegal("Non-existing or invalid manifest in " + filename(jar));
+            return;
         }
         validateManifest(context, jar, manifest);
         getPomXmlContent(context::illegal, context.deployState().getDeployLogger(), jar).ifPresent(pom -> validatePomXml(context, jar, pom));
