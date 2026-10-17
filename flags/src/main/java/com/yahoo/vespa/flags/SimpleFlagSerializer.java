@@ -31,7 +31,7 @@ public class SimpleFlagSerializer<T> implements FlagSerializer<T> {
     public T deserialize(RawFlag rawFlag) {
         JsonNode jsonNode = rawFlag.asJsonNode();
         if (!isCorrectType.test(jsonNode)) {
-            throw new IllegalArgumentException("Wrong type of JsonNode: " + jsonNode.getNodeType());
+            throw new IllegalArgumentException("Found " + jsonNode + " of invalid type " + jsonNode.getNodeType());
         }
 
         return deserializer.apply(jsonNode);

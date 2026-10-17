@@ -40,7 +40,7 @@ public class InMemoryFlagSource extends AbstractComponent implements FlagSource 
     }
 
     public <T> InMemoryFlagSource withCodecFlag(FlagId flagId, T value, Codec<T> codec) {
-        var flag = new UnboundCodecFlag<>(flagId, value, new FetchVector(), codec, any -> true);
+        var flag = new UnboundCodecFlag<>(flagId, value, new FetchVector(), codec.toFlagSerializer());
         return withRawFlag(flagId, flag.serializer().serialize(value));
     }
 
