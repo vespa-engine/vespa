@@ -223,7 +223,7 @@ public class TenantRepositoryTest {
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
                   new StripedExecutor<>(new InThreadExecutorService()),
-                  new FileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig), new InMemoryFlagSource()),
+                  new FileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)),
                   flagSource,
                   new InThreadExecutorService(),
                   HostProvisionerProvider.empty(),

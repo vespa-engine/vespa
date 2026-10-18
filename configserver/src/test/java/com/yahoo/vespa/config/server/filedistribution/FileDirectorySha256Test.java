@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.io.IOUtils;
-import com.yahoo.vespa.config.server.filedistribution.FileDirectory.HashScheme;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,15 +40,15 @@ public class FileDirectorySha256Test {
         IOUtils.writeFile(json, "same content", false);
         IOUtils.writeFile(text, "same content", false);
 
-        FileReference jsonReference = fileDirectory.addFile(json, HashScheme.SHA256);
+        FileReference jsonReference = fileDirectory.addFile(json);
         File storedJson = fileDirectory.getFile(jsonReference).orElseThrow();
-        FileReference textReference = fileDirectory.addFile(text, HashScheme.SHA256);
+        FileReference textReference = fileDirectory.addFile(text);
 
         assertNotEquals(jsonReference, textReference);
         assertTrue(storedJson.exists());
         assertEquals("constant.json", fileDirectory.getFile(jsonReference).orElseThrow().getName());
         assertEquals("constant.txt", fileDirectory.getFile(textReference).orElseThrow().getName());
-        assertEquals(jsonReference, fileDirectory.addFile(json, HashScheme.SHA256));
+        assertEquals(jsonReference, fileDirectory.addFile(json));
         assertTrue(fileDirectory.getFile(textReference).orElseThrow().exists());
     }
 
@@ -62,8 +61,8 @@ public class FileDirectorySha256Test {
         createFileInSubDir(second, "left", "beta");
         createFileInSubDir(second, "right", "alpha");
 
-        FileReference firstReference = fileDirectory.addFile(first, HashScheme.SHA256);
-        FileReference secondReference = fileDirectory.addFile(second, HashScheme.SHA256);
+        FileReference firstReference = fileDirectory.addFile(first);
+        FileReference secondReference = fileDirectory.addFile(second);
 
         assertNotEquals(firstReference, secondReference);
         assertEquals("alpha", Files.readString(fileDirectory.getFile(firstReference).orElseThrow().toPath().resolve("left")));
@@ -77,8 +76,8 @@ public class FileDirectorySha256Test {
         createFileInSubDir(new File(first, "foo/bar"), "value", "same content");
         createFileInSubDir(new File(second, "bar/foo"), "value", "same content");
 
-        FileReference firstReference = fileDirectory.addFile(first, HashScheme.SHA256);
-        FileReference secondReference = fileDirectory.addFile(second, HashScheme.SHA256);
+        FileReference firstReference = fileDirectory.addFile(first);
+        FileReference secondReference = fileDirectory.addFile(second);
 
         assertNotEquals(firstReference, secondReference);
         assertTrue(new File(fileDirectory.getFile(firstReference).orElseThrow(), "foo/bar/value").isFile());
@@ -94,7 +93,7 @@ public class FileDirectorySha256Test {
         createFileInSubDir(second, "right", "beta");
         createFileInSubDir(second, "left", "alpha");
 
-        assertEquals(fileDirectory.addFile(first, HashScheme.SHA256), fileDirectory.addFile(second, HashScheme.SHA256));
+        assertEquals(fileDirectory.addFile(first), fileDirectory.addFile(second));
     }
 
     @Test
@@ -104,8 +103,8 @@ public class FileDirectorySha256Test {
         createFileInSubDir(first, "value", "same content");
         createFileInSubDir(second, "value", "same content");
 
-        FileReference firstReference = fileDirectory.addFile(first, HashScheme.SHA256);
-        FileReference secondReference = fileDirectory.addFile(second, HashScheme.SHA256);
+        FileReference firstReference = fileDirectory.addFile(first);
+        FileReference secondReference = fileDirectory.addFile(second);
 
         assertNotEquals(firstReference, secondReference);
         assertEquals("first", fileDirectory.getFile(firstReference).orElseThrow().getName());
@@ -118,8 +117,8 @@ public class FileDirectorySha256Test {
         Files.createFile(emptyFile.toPath());
         File emptyDirectory = temporaryFolder.newFolder("second", "empty");
 
-        FileReference fileReference = fileDirectory.addFile(emptyFile, HashScheme.SHA256);
-        FileReference directoryReference = fileDirectory.addFile(emptyDirectory, HashScheme.SHA256);
+        FileReference fileReference = fileDirectory.addFile(emptyFile);
+        FileReference directoryReference = fileDirectory.addFile(emptyDirectory);
 
         assertNotEquals(fileReference, directoryReference);
         assertTrue(fileDirectory.getFile(fileReference).orElseThrow().isFile());
@@ -133,7 +132,7 @@ public class FileDirectorySha256Test {
         IOUtils.writeFile(first, "c", false);
         IOUtils.writeFile(second, "bc", false);
 
-        assertNotEquals(fileDirectory.addFile(first, HashScheme.SHA256), fileDirectory.addFile(second, HashScheme.SHA256));
+        assertNotEquals(fileDirectory.addFile(first), fileDirectory.addFile(second));
     }
 
     @Test
@@ -142,7 +141,7 @@ public class FileDirectorySha256Test {
         File source = temporaryFolder.newFolder("source");
         Files.createSymbolicLink(new File(source, "missing").toPath(), new File(source, "absent").toPath());
 
-        assertThrows(IOException.class, () -> store.addFile(source, HashScheme.SHA256));
+        assertThrows(IOException.class, () -> store.addFile(source));
         assertEquals(0, store.getRoot().list().length);
     }
 
@@ -178,7 +177,7 @@ public class FileDirectorySha256Test {
     }
 
     private FileDBRegistry reloadedRegistry(FileDirectory store) {
-        var manager = new ApplicationFileManager(temporaryFolder.getRoot(), store, false, Optional.empty(), HashScheme.SHA256);
+        var manager = new ApplicationFileManager(temporaryFolder.getRoot(), store, false, Optional.empty());
         return FileDBRegistry.create(manager, new StringReader("host\n"));
     }
 
@@ -191,7 +190,7 @@ public class FileDirectorySha256Test {
             directory = new File(directory, "d");
         Files.createDirectories(directory.toPath());
 
-        assertThrows(IOException.class, () -> store.addFile(source, HashScheme.SHA256));
+        assertThrows(IOException.class, () -> store.addFile(source));
         assertEquals(0, store.getRoot().list().length);
     }
 
@@ -201,7 +200,7 @@ public class FileDirectorySha256Test {
         File directory = source;
         for (int depth = 0; depth < 100; depth++) directory = new File(directory, "d");
         Files.createDirectories(directory.toPath());
-        FileReference reference = fileDirectory.addFile(source, HashScheme.SHA256);
+        FileReference reference = fileDirectory.addFile(source);
         assertEquals(64, reference.value().length());
         assertTrue(fileDirectory.getFile(reference).orElseThrow().isDirectory());
     }
@@ -212,7 +211,10 @@ public class FileDirectorySha256Test {
         File directory = temporaryFolder.newFolder(reference.value());
         createFileInSubDir(directory, "foo", "foo");
 
+        FileReference sha256 = fileDirectory.addFile(new File(directory, "foo"));
+        assertEquals("6bc0de8175d0cf33c2d4cca86c64b0d954b41b44096954b90fd149ce5ce9179f", sha256.value());
         assertEquals("foo", Files.readString(fileDirectory.getFile(reference).orElseThrow().toPath()));
+        assertEquals("foo", Files.readString(fileDirectory.getFile(sha256).orElseThrow().toPath()));
     }
 
     @Test
@@ -221,7 +223,7 @@ public class FileDirectorySha256Test {
         File source = new File(temporaryFolder.newFolder("source").getPath()) {
             @Override public File[] listFiles() { return null; }
         };
-        assertThrows(IOException.class, () -> store.addFile(source, HashScheme.SHA256));
+        assertThrows(IOException.class, () -> store.addFile(source));
         assertEquals(0, store.getRoot().list().length);
     }
 
@@ -237,17 +239,7 @@ public class FileDirectorySha256Test {
                 return children;
             }
         };
-        assertEquals(fileDirectory.addFile(source, HashScheme.SHA256), fileDirectory.addFile(reversed, HashScheme.SHA256));
-    }
-
-    @Test
-    public void referenceFormatDeterminesTheVerificationScheme() {
-        assertEquals(HashScheme.LEGACY, HashScheme.fromReference(new FileReference("0")));
-        assertEquals(HashScheme.LEGACY, HashScheme.fromReference(new FileReference("12f292a25163dd9")));
-        assertEquals(HashScheme.LEGACY, HashScheme.fromReference(new FileReference("ea315b7acac56246")));
-        assertEquals(HashScheme.SHA256, HashScheme.fromReference(new FileReference("0".repeat(64))));
-        for (String invalid : new String[] { "", "0".repeat(17), "0".repeat(63), "0".repeat(65), "g", "../foo" })
-            assertThrows(IllegalArgumentException.class, () -> HashScheme.fromReference(new FileReference(invalid)));
+        assertEquals(fileDirectory.addFile(source), fileDirectory.addFile(reversed));
     }
 
     @Test
@@ -256,11 +248,11 @@ public class FileDirectorySha256Test {
         Files.write(source.toPath(), new byte[] { 0, 1, (byte) 255 });
         // Independently encoded frame: 66 00000002 c3a6 0000000000000003 0001ff.
         assertEquals("e7375f310fafcd13aa03f277e08bfc204ffac3bf43aea7041bb566b13adbde83",
-                     fileDirectory.addFile(source, HashScheme.SHA256).value());
+                     fileDirectory.addFile(source).value());
         File emptyDirectory = temporaryFolder.newFolder("foo");
         // Independently encoded frame: 64 00000003 666f6f 00000000.
         assertEquals("b163725ce44e17633bf7b4b845d7825ea411d14e127839c5a4c1b4e87c6be663",
-                     fileDirectory.addFile(emptyDirectory, HashScheme.SHA256).value());
+                     fileDirectory.addFile(emptyDirectory).value());
     }
 
     private void createFileInSubDir(File directory, String name, String content) throws IOException {
