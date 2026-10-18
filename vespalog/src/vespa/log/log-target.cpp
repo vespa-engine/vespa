@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "log.h"
 
-#include <vespa/check_require.h>
-
-#include <cstring>
-LOG_SETUP(".log");
+#include "log-target.h"
 
 #include "internal.h"
 #include "log-target-fd.h"
 #include "log-target-file.h"
+#include "log.h"
+LOG_SETUP(".log");
+
+#include <vespa/check_require.h>
+
+#include <cstring>
 
 namespace ns_log {
 

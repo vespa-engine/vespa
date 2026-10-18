@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "log.h"
+#include "log-indirect.h"
 
 #include <cstdio>
 LOG_SETUP_INDIRECT(".log.control", "$Id$");
@@ -69,10 +69,10 @@ void Component::modifyLevels(const char* levels) {
 
         if (strcmp(mod, "on") == 0 || strncmp(mod, "on,", 3) == 0) {
             s = mod + 2;
-            newValue = CHARS_TO_UINT(' ', ' ', 'O', 'N');
+            newValue = Logger::encoded_on_value();
         } else if (strcmp(mod, "off") == 0 || strncmp(mod, "off,", 4) == 0) {
             s = mod + 3;
-            newValue = CHARS_TO_UINT(' ', 'O', 'F', 'F');
+            newValue = Logger::encoded_off_value();
         } else {
             throwInvalid("Invalid modification string at \"%s\", expected "
                          "\"on\" or \"off\"",
