@@ -4,7 +4,6 @@
 build/
 bin/
 gradle/
-gradle.properties
 gradlew
 gradlew.bat
 *.db
