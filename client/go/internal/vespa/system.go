@@ -194,7 +194,7 @@ func (s System) ApplicationURL(id ApplicationID) *url.URL {
 
 // ConsoleRunURL returns the console URL for a deployment job run in this system.
 func (s System) ConsoleRunURL(deployment Deployment, run int64) string {
-	return fmt.Sprintf("%s/tenant/%s/application/%s/%s/instance/%s/job/%s/run/%d",
+	return fmt.Sprintf("%s/tenant/%s/application/%s/environment/%s/instance/%s/job/%s/run/%d",
 		s.ConsoleURL, deployment.Application.Tenant, deployment.Application.Application, deployment.Zone.Environment,
 		deployment.Application.Instance, jobName(deployment.Zone), run)
 }
