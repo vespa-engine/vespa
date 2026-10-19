@@ -69,6 +69,8 @@ public class Schema implements ImmutableSchema {
 
     private Stemming stemming = null;
 
+    private String explanation = null;
+
     private final FieldSets fieldSets = new FieldSets(Optional.of(this));
 
     /** The document contained in this schema */
@@ -204,6 +206,12 @@ public class Schema implements ImmutableSchema {
     }
 
     public void enableRawAsBase64(boolean value) { rawAsBase64 = value; }
+
+    /** Sets a free text explanation of the content and usage of this schema, or null to remove it. */
+    public void setExplanation(String explanation) { this.explanation = explanation; }
+
+    /** Returns the free text explanation of the content and usage of this schema, if any. Explanations are not inherited. */
+    public Optional<String> getExplanation() { return Optional.ofNullable(explanation); }
 
     /**
      * Sets the stemming default of fields. Default is ALL

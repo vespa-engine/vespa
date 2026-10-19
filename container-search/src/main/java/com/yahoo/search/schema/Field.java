@@ -25,6 +25,7 @@ public class Field implements FieldInfo {
     private final boolean bitPacked;
     private final List<FastMapSearchFields> fastMapSearches;
     private final Set<String> aliases;
+    private final Optional<String> explanation;
 
     public Field(Builder builder) {
         this.name = builder.name;
@@ -34,6 +35,7 @@ public class Field implements FieldInfo {
         this.bitPacked = builder.isBitPacked;
         this.fastMapSearches = List.copyOf(builder.fastMapSearches);
         this.aliases = Set.copyOf(builder.aliases);
+        this.explanation = Optional.ofNullable(builder.explanation);
     }
 
     @Override
@@ -43,6 +45,9 @@ public class Field implements FieldInfo {
     public Type type() { return type; }
 
     public Set<String> aliases() { return aliases; }
+
+    /** Returns the free text explanation of the content and usage of this field, if any. */
+    public Optional<String> explanation() { return explanation; }
 
     /** Returns whether this field is an attribute, i.e. does indexing: attribute. */
     @Override
@@ -76,12 +81,13 @@ public class Field implements FieldInfo {
         if ( this.isIndex != other.isIndex) return false;
         if ( ! this.fastMapSearches.equals(other.fastMapSearches)) return false;
         if ( ! this.aliases.equals(other.aliases)) return false;
+        if ( ! this.explanation.equals(other.explanation)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, isAttribute, isIndex, fastMapSearches, aliases);
+        return Objects.hash(name, type, isAttribute, isIndex, fastMapSearches, aliases, explanation);
     }
 
     @Override
@@ -264,10 +270,17 @@ public class Field implements FieldInfo {
         private boolean isIndex;
         private boolean isBitPacked;
         private final List<FastMapSearchFields> fastMapSearches = new ArrayList<>();
+        private String explanation = null;
 
         public Builder(String name, String typeString) {
             this.name = name;
             this.type = Type.from(typeString);
+        }
+
+        /** Sets a free text explanation of the content and usage of this field. */
+        public Builder setExplanation(String explanation) {
+            this.explanation = Objects.requireNonNull(explanation);
+            return this;
         }
 
         public Builder addAlias(String alias) {

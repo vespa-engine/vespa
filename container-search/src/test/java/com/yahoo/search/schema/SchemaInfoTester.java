@@ -61,13 +61,16 @@ public class SchemaInfoTester {
                 .addInput("query(myTensor3)", InputType.fromSpec("tensor(x[2],y[2])"))
                 .addInput("query(myTensor4)", InputType.fromSpec("tensor<float>(x[5])"));
         schemas.add(new Schema.Builder("a")
+                            .setExplanation("Schema a")
                             .add(common.build())
-                            .add(new Field.Builder("field1", "string").setIndex(true).addAlias("alias1").addAlias("alias2").build())
+                            .add(new Field.Builder("field1", "string").setIndex(true).addAlias("alias1").addAlias("alias2")
+                                                                      .setExplanation("Field 1\nin schema a").build())
                             .add(new Field.Builder("field2", "int").setAttribute(true).build())
                             .add(new RankProfile.Builder("inconsistent")
                                          .addInput("query(myTensor1)", InputType.fromSpec("tensor(a{},b{})"))
                                          .build())
                             .add(new RankProfile.Builder("withParameters")
+                                         .setExplanation("Profile with parameters")
                                          .setSecondPhase(new SecondPhase.Builder().setRerankCount(201).build())
                                          .setKeepRankCount(401)
                                          .setMatchPhase(new MatchPhase.Builder().setMaxHits(801).build())
@@ -114,10 +117,12 @@ public class SchemaInfoTester {
         // ----- Schema A
         var schemaA = new SchemaInfoConfig.Schema.Builder();
         schemaA.name("a");
+        schemaA.explanation("Schema a");
 
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field1").type("string")
                                                                  .index(true).attribute(false).bitPacked(false)
-                                                                 .alias("alias1").alias("alias2"));
+                                                                 .alias("alias1").alias("alias2")
+                                                                 .explanation("Field 1\nin schema a"));
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field2").type("int")
                                                                  .index(false).attribute(true).bitPacked(false));
 
@@ -125,6 +130,7 @@ public class SchemaInfoTester {
 
         var rankProfileWithParameters = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileWithParameters.name("withParameters");
+        rankProfileWithParameters.explanation("Profile with parameters");
         rankProfileWithParameters.rerankCount(201);
         rankProfileWithParameters.keepRankCount(401);
         rankProfileWithParameters.matchPhaseMaxHits(801);

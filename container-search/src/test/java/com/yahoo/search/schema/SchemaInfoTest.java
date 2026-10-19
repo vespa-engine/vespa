@@ -7,6 +7,7 @@ import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -21,6 +22,17 @@ public class SchemaInfoTest {
     @Test
     void testSchemaInfoConfiguration() {
         assertEquals(SchemaInfoTester.createSchemaInfoFromConfig(), SchemaInfoTester.createSchemaInfo());
+    }
+
+    @Test
+    void testExplanations() {
+        var schemaA = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("a");
+        assertEquals(Optional.of("Schema a"), schemaA.explanation());
+        assertEquals(Optional.of("Field 1\nin schema a"), schemaA.fields().get("field1").explanation());
+        assertEquals(Optional.empty(), schemaA.fields().get("field2").explanation());
+        assertEquals(Optional.of("Profile with parameters"), schemaA.rankProfiles().get("withParameters").explanation());
+        assertEquals(Optional.empty(), schemaA.rankProfiles().get("commonProfile").explanation());
+        assertEquals(Optional.empty(), SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("b").explanation());
     }
 
     @Test
