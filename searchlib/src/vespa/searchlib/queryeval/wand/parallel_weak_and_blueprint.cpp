@@ -103,6 +103,7 @@ bool ParallelWeakAndBlueprint::always_needs_unpack() const {
 }
 
 void ParallelWeakAndBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept {
+    Blueprint::set_matching_phase(matching_phase);
     _matching_phase = matching_phase;
     if (matching_phase != MatchingPhase::FIRST_PHASE) {
         /*
