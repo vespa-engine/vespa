@@ -21,6 +21,7 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -316,9 +317,26 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
      * - queryTermDocumentFrequency
      * - bm25_for_labels
      * - matches_for_labels
+     * - correlatedBindings
      * This returns the type of those features if this is a reference to either of them, or empty otherwise.
      */
     private Optional<TensorType> tensorFeatureType(Reference reference) {
+        if (reference.name().equals("correlatedBindings")) {
+            if (reference.arguments().size() < 2)
+                throw new IllegalArgumentException("correlatedBindings requires a query label and at least one variable");
+            var type = new TensorType.Builder(TensorType.Value.DOUBLE);
+            var variables = new HashSet<String>();
+            for (int i = 1; i < reference.arguments().size(); ++i) {
+                ExpressionNode variable = getArgExp(reference, i);
+                if (!(variable instanceof NameNode) &&
+                    !(variable instanceof ReferenceNode name && name.reference().isIdentifier()))
+                    throw new IllegalArgumentException("correlatedBindings variables must be dimension names, not " + variable);
+                if (!variables.add(variable.toString()))
+                    throw new IllegalArgumentException("correlatedBindings requires distinct variables");
+                type.mapped(variable.toString());
+            }
+            return Optional.of(type.build());
+        }
         if (reference.name().equals("queryTermDocumentFrequency")) {
             if (reference.arguments().size() != 1)
                 throw new IllegalArgumentException(reference.name() + " must have one argument");

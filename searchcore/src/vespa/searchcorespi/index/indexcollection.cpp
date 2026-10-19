@@ -158,6 +158,7 @@ private:
     void visit(Equiv&) override {}
     void visit(Rank&) override {}
     void visit(LabelWrapper&) override {}
+    void visit(CorrelateBy&) override {}
     void visit(Near&) override {}
     void visit(ONear&) override {}
     void visit(SameElement&) override {}

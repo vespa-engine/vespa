@@ -9,6 +9,7 @@ SimpleTrue::~SimpleTrue() = default;
 SimpleFalse::~SimpleFalse() = default;
 
 SimpleAnd::~SimpleAnd() = default;
+SimpleCorrelateBy::~SimpleCorrelateBy() = default;
 
 SimpleAndNot::~SimpleAndNot() = default;
 

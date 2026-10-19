@@ -40,6 +40,9 @@ void walk(const QueryTreeItem& item, std::vector<TreeItem>& target) {
     target.push_back(TreeItem(&item));
     using IC = QueryTreeItem::ItemCase;
     switch (item.item_case()) {
+    case IC::kItemCorrelateBy:
+        for (const auto& clause : item.item_correlate_by().clauses()) walk(clause.query(), target);
+        return;
     case IC::kItemOr:
         return walk_children(item.item_or().children(), target);
     case IC::kItemAnd:
@@ -472,6 +475,10 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
     _d.clear();
     using IC = QueryTreeItem::ItemCase;
     switch (qsi.item_case()) {
+    case IC::kItemCorrelateBy:
+        _d.itemType = ParseItem::ITEM_CORRELATE_BY;
+        _d.arity = qsi.item_correlate_by().clauses_size();
+        return true;
 
     case IC::kItemTrue:
         _d.itemType = ParseItem::ItemType::ITEM_TRUE;

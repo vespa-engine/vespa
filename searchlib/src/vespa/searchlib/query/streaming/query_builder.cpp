@@ -120,7 +120,7 @@ std::unique_ptr<QueryNode> QueryBuilder::build(const QueryNode* parent, const Qu
             HiddenTermsGuard hidden_terms_guard(*this);
             size_t           num_positive = (num_negative_terms > arity) ? 0 : (arity - num_negative_terms);
             for (size_t i = 0; i < arity; i++) {
-                queryRep.next();
+                if (!queryRep.next()) return {};
                 if (i == num_positive) {
                     hidden_terms_guard.activate();
                 }
@@ -130,7 +130,9 @@ std::unique_ptr<QueryNode> QueryBuilder::build(const QueryNode* parent, const Qu
                     }
                     arity += queryRep.getArity();
                 } else {
-                    qc->addChild(build(qc, factory, queryRep, allowRewrite && !disableRewrite(qn.get())));
+                    auto child = build(qc, factory, queryRep, allowRewrite && !disableRewrite(qn.get()));
+                    if (!child) return {};
+                    qc->addChild(std::move(child));
                 }
             }
         }
@@ -353,8 +355,9 @@ std::unique_ptr<QueryNode> QueryBuilder::build_phrase_term(const QueryNodeResult
     phrase->setWeight(queryRep.GetWeight());
     phrase->setUniqueId(queryRep.getUniqueId());
     for (size_t i = 0; i < arity; ++i) {
-        queryRep.next();
+        if (!queryRep.next()) return {};
         auto                       qn = build(phrase.get(), factory, queryRep, false);
+        if (!qn) return {};
         std::unique_ptr<QueryTerm> qt(dynamic_cast<QueryTerm*>(qn.release()));
         CHECK(qt);
         phrase->add_term(std::move(qt));
@@ -369,8 +372,9 @@ std::unique_ptr<QueryNode> QueryBuilder::build_equiv_term(const QueryNodeResultF
     eqn->setWeight(queryRep.GetWeight());
     eqn->setUniqueId(queryRep.getUniqueId());
     for (size_t i = 0; i < arity; ++i) {
-        queryRep.next();
+        if (!queryRep.next()) return {};
         auto qn = build(eqn.get(), factory, queryRep, allow_rewrite);
+        if (!qn) return {};
         auto nested_eqn = dynamic_cast<EquivQueryNode*>(qn.get());
         if (nested_eqn != nullptr) {
             auto stolen_terms = nested_eqn->steal_terms();
@@ -396,8 +400,9 @@ std::unique_ptr<QueryNode> QueryBuilder::build_same_element_term(const QueryNode
     sen->setWeight(queryRep.GetWeight());
     sen->setUniqueId(queryRep.getUniqueId());
     for (size_t i = 0; i < arity; ++i) {
-        queryRep.next();
+        if (!queryRep.next()) return {};
         auto qn = build(sen.get(), factory, queryRep, false);
+        if (!qn) return {};
         sen->add_child(std::move(qn));
     }
     _same_element_view.reset();
@@ -413,11 +418,12 @@ std::unique_ptr<QueryNode> QueryBuilder::build_and_not(const QueryNodeResultFact
     auto             arity = queryRep.getArity();
     auto             and_not = std::make_unique<AndNotQueryNode>(_same_element_view.has_value());
     for (size_t i = 0; i < arity; ++i) {
-        queryRep.next();
+        if (!queryRep.next()) return {};
         if (i == 1u) {
             hidden_terms_guard.activate();
         }
         auto qn = build(and_not.get(), factory, queryRep, true);
+        if (!qn) return {};
         and_not->addChild(std::move(qn));
     }
     return and_not;

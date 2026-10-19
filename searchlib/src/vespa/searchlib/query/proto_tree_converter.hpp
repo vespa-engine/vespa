@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <set>
+
 #include "tree/node.h"
 #include "tree/querybuilder.h"
 
@@ -109,6 +111,76 @@ public:
     bool handle(const ItemLabelWrapper& item) {
         _builder.add_label_wrapper(item.unique_id(), item.score());
         return handle_item(item.child());
+    }
+
+    bool handle(const ItemCorrelateBy& item) {
+        query::CorrelateBy::Bindings bindings;
+        query::CorrelateBy::Domains domains;
+        query::CorrelateBy::ExactValues exact_values;
+        if (item.clauses_size() < 1) {
+            _builder.reportError("correlateBy requires at least one clause");
+            return false;
+        }
+        for (const auto& clause : item.clauses()) {
+            if (!clause.query().has_item_same_element() || clause.bindings().empty()) {
+                _builder.reportError("correlateBy requires bound sameElement clauses");
+                return false;
+            }
+            std::map<std::string, std::string> fields;
+            for (const auto& binding : clause.bindings()) {
+                if (binding.variable().empty() || binding.field().empty() ||
+                    !fields.emplace(binding.variable(), binding.field()).second) {
+                    _builder.reportError("correlateBy bindings must have distinct nonempty variables and nonempty fields");
+                    return false;
+                }
+            }
+            bindings.push_back(std::move(fields));
+            query::CorrelateBy::Domains exact_fields;
+            for (const auto& filter : clause.exact_values()) {
+                if (filter.field().empty() || !exact_fields.emplace(filter.field(), std::vector<std::string>(filter.values().begin(), filter.values().end())).second) {
+                    _builder.reportError("correlateBy exact-value fields must be distinct and nonempty");
+                    return false;
+                }
+            }
+            exact_values.push_back(std::move(exact_fields));
+        }
+        for (const auto& domain : item.domains()) {
+            if (!domains.emplace(domain.variable(), std::vector<std::string>(domain.values().begin(), domain.values().end())).second) {
+                _builder.reportError("correlateBy variable domains must be distinct");
+                return false;
+            }
+        }
+        std::vector<query::CorrelateBy::FirstPresent> first_present;
+        std::set<uint32_t> presence_clauses;
+        std::set<uint32_t> matching_clauses;
+        for (const auto& rule : item.first_present()) {
+            if (rule.clause() >= bindings.size() || rule.presence() >= bindings.size() ||
+                rule.clause() == rule.presence() || !presence_clauses.insert(rule.presence()).second ||
+                !matching_clauses.insert(rule.clause()).second || bindings[rule.clause()] != bindings[rule.presence()] ||
+                !bindings[rule.clause()].contains(rule.variable()) ||
+                item.clauses(rule.clause()).query().item_same_element().properties().index() !=
+                item.clauses(rule.presence()).query().item_same_element().properties().index()) {
+                _builder.reportError("firstPresent requires distinct compatible matching and presence clauses");
+                return false;
+            }
+            first_present.push_back({rule.clause(), rule.presence(), rule.variable(),
+                                     {rule.values().begin(), rule.values().end()}});
+        }
+        for (uint32_t clause : matching_clauses) {
+            if (presence_clauses.contains(clause)) {
+                _builder.reportError("firstPresent presence clauses cannot also be matching clauses");
+                return false;
+            }
+        }
+        if (bindings.size() == presence_clauses.size()) {
+            _builder.reportError("correlateBy requires at least one matching clause");
+            return false;
+        }
+        _builder.add_correlate_by(std::move(bindings), std::move(domains), item.label(), std::move(exact_values), std::move(first_present));
+        for (const auto& clause : item.clauses()) {
+            if (!handle_item(clause.query())) return false;
+        }
+        return true;
     }
 
     bool handle(const ItemNear& item) {
@@ -705,6 +777,8 @@ public:
             return handle(qti.item_rank());
         case IC::kItemLabelWrapper:
             return handle(qti.item_label_wrapper());
+        case IC::kItemCorrelateBy:
+            return handle(qti.item_correlate_by());
         case IC::kItemNear:
             return handle(qti.item_near());
         case IC::kItemOnear:

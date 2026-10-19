@@ -1557,6 +1557,23 @@ public class JsonRendererTestCase {
     }
 
     @Test
+    void uniqueCountPrecisionRendersAsAStructuredObject() throws Exception {
+        var result = new Result(new Query());
+        var root = new com.yahoo.search.grouping.result.RootGroup(0, new Continuation() {
+            @Override public Continuation copy() { return this; }
+            @Override public String toString() { return ""; }
+        }, result.getQuery());
+        root.setField("uniquecount(model)", new Value.ObjectValue().put("count", 5)
+                .put("exact", new Value.BoolValue(true)));
+        result.hits().add(root);
+        var json = new com.fasterxml.jackson.databind.ObjectMapper().readTree(render(result));
+        var count = json.path("root").path("children").get(0).path("fields").path("uniquecount(model)");
+        assertTrue(count.isObject(), count.toString());
+        assertEquals(5, count.path("count").asLong());
+        assertTrue(count.path("exact").asBoolean());
+    }
+
+    @Test
     @Timeout(300)
     void testTopLevelArray() throws IOException, InterruptedException, ExecutionException {
         // added to exercise string array specific optimization

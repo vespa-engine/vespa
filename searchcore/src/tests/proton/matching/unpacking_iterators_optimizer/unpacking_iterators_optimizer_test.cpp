@@ -55,6 +55,7 @@ struct DumpQuery : QueryVisitor {
     void visit(StringRangeTerm&) override {}
     void visit(Rank&) override {}
     void visit(LabelWrapper&) override {}
+    void visit(CorrelateBy&) override {}
     void visit(StringTerm& n) override {
         out.printf("%*s%s %s%s%s\n", indent, "", "Term", n.getTerm().c_str(),
                    (!n.isRanked() && !n.usePositionData()) ? " cheap" : "",

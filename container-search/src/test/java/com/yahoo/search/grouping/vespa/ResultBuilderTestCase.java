@@ -24,6 +24,7 @@ import com.yahoo.searchlib.aggregation.MaxAggregationResult;
 import com.yahoo.searchlib.aggregation.MinAggregationResult;
 import com.yahoo.searchlib.aggregation.QuantileAggregationResult;
 import com.yahoo.searchlib.aggregation.SumAggregationResult;
+import com.yahoo.searchlib.aggregation.UniqueCountAggregationResult;
 import com.yahoo.searchlib.aggregation.XorAggregationResult;
 import com.yahoo.searchlib.aggregation.hll.SparseSketch;
 import com.yahoo.searchlib.expression.FloatBucketResultNode;
@@ -300,6 +301,21 @@ public class ResultBuilderTestCase {
                 "RootGroup{id=group:root, count()=42, artist=2}" +
                         "[GroupList{label=count()}[Group{id=group:foo0}[], Group{id=group:foo1}[], Group{id=group:foo2}[]]]");
 
+    }
+
+    @Test
+    void uniqueCountIsNotReplacedByTheNumberOfReturnedBucketGroups() {
+        var count = new UniqueCountAggregationResult();
+        ((SparseSketch) count.getSketch()).aggregate(java.util.List.of(1, 2, 3, 4));
+        Group root = newGroup(1, count.setTag(2));
+        for (int i = 0; i < 2; ++i) {
+            root.addChild(new Group().setTag(2).setId(new StringResultNode("foo" + i)))
+                .addAggregationResult(new CountAggregationResult(i).setTag(3));
+        }
+        assertLayout("all(group(artist) output(uniquecount(1)) each(output(count())))",
+                     new Grouping().setRoot(root),
+                     "RootGroup{id=group:root, uniquecount(1)={\"count\":4,\"exact\":true}, artist=1}" +
+                     "[GroupList{label=uniquecount(1)}[Group{id=group:foo0}[], Group{id=group:foo1}[]]]");
     }
 
 

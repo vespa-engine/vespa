@@ -6,11 +6,47 @@
 #include "querynodemixin.h"
 #include "term.h"
 
+#include <map>
+
 namespace search::query {
 
 class And : public QueryNodeMixin<And, Intermediate> {
 public:
     virtual ~And() = 0;
+};
+
+/** Rows from every clause must agree on their shared document-local variables. */
+class CorrelateBy : public QueryNodeMixin<CorrelateBy, Intermediate> {
+public:
+    using Bindings = std::vector<std::map<std::string, std::string>>;
+    using Domains = std::map<std::string, std::vector<std::string>>;
+    using ExactValues = std::vector<Domains>;
+    struct FirstPresent {
+        uint32_t clause;
+        uint32_t presence;
+        std::string variable;
+        std::vector<std::string> values;
+    };
+
+    CorrelateBy(Bindings bindings, Domains domains, std::string label = {}, ExactValues exact_values = {},
+                std::vector<FirstPresent> first_present = {})
+        : _bindings(std::move(bindings)), _domains(std::move(domains)), _label(std::move(label)),
+          _exact_values(std::move(exact_values)), _first_present(std::move(first_present)) {
+        if (_exact_values.empty()) _exact_values.resize(_bindings.size());
+    }
+    virtual ~CorrelateBy() = 0;
+    const Bindings& bindings() const noexcept { return _bindings; }
+    const Domains& domains() const noexcept { return _domains; }
+    const ExactValues& exact_values() const noexcept { return _exact_values; }
+    const std::vector<FirstPresent>& first_present() const noexcept { return _first_present; }
+    const std::string& label() const noexcept { return _label; }
+
+private:
+    Bindings _bindings;
+    Domains _domains;
+    std::string _label;
+    ExactValues _exact_values;
+    std::vector<FirstPresent> _first_present;
 };
 
 //-----------------------------------------------------------------------------

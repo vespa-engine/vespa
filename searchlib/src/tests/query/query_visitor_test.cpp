@@ -24,6 +24,7 @@ public:
     }
 
     void visit(And&) override { isVisited<And>() = true; }
+    void visit(CorrelateBy&) override { isVisited<CorrelateBy>() = true; }
     void visit(AndNot&) override { isVisited<AndNot>() = true; }
     void visit(Equiv&) override { isVisited<Equiv>() = true; }
     void visit(NumberTerm&) override { isVisited<NumberTerm>() = true; }
@@ -71,6 +72,7 @@ TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     checkVisit<Or>(new SimpleOr);
     checkVisit<Phrase>(new SimplePhrase("field", 0, Weight(42)));
     checkVisit<SameElement>(new SimpleSameElement("field", 0, Weight(42)));
+    checkVisit<CorrelateBy>(new SimpleCorrelateBy({}, {}));
     checkVisit<WeightedSetTerm>(new SimpleWeightedSetTerm(0, "field", 0, Weight(42)));
     checkVisit<DotProduct>(new SimpleDotProduct(0, "field", 0, Weight(42)));
     checkVisit<WandTerm>(new SimpleWandTerm(0, "field", 0, Weight(42), 57, 67, 77.7));

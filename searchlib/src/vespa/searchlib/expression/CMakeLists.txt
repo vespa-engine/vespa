@@ -11,6 +11,8 @@ vespa_add_library(searchlib_expression OBJECT
     bucketresultnode.cpp
     catserializer.cpp
     current_index_setup.cpp
+    correlated_predicate_node.cpp
+    once_per_document_predicate_node.cpp
     debugwaitfunctionnode.cpp
     documentfieldnode.cpp
     enumattributeresult.cpp

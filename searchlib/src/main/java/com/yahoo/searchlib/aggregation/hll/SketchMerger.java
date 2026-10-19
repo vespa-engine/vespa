@@ -8,6 +8,18 @@ import com.yahoo.text.Text;
  */
 public class SketchMerger {
 
+    private final int sparseConversionThreshold;
+
+    public SketchMerger() {
+        this(HyperLogLog.SPARSE_SKETCH_CONVERSION_THRESHOLD);
+    }
+
+    public SketchMerger(int sparseConversionThreshold) {
+        if (sparseConversionThreshold < 1)
+            throw new IllegalArgumentException("Sparse conversion threshold must be positive");
+        this.sparseConversionThreshold = sparseConversionThreshold;
+    }
+
     /**
      * Merges one of the two sketches into the other. The merge operation is performed in-place is possible.
      *
@@ -32,7 +44,7 @@ public class SketchMerger {
 
     private Sketch<?> mergeSparseWithSparse(SparseSketch dest, SparseSketch other) {
         dest.merge(other);
-        if (dest.size() > HyperLogLog.SPARSE_SKETCH_CONVERSION_THRESHOLD) {
+        if (dest.size() > sparseConversionThreshold) {
             NormalSketch newSketch = new NormalSketch();
             newSketch.aggregate(dest.data());
             return newSketch;

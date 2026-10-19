@@ -9,6 +9,7 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/queryeval/create_blueprint_params.h>
+#include <vespa/searchlib/queryeval/correlate_by_blueprint.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
@@ -166,6 +167,78 @@ private:
         }
     }
 
+    void buildCorrelateBy(ProtonCorrelateBy& n) {
+        std::map<std::string, uint32_t> columns;
+        for (const auto& bindings : n.bindings()) {
+            for (const auto& [variable, field] : bindings) columns.emplace(variable, 0);
+        }
+        uint32_t column_id = 0;
+        for (auto& [variable, id] : columns) id = column_id++;
+        std::vector<std::optional<std::vector<std::string>>> domains(columns.size());
+        for (const auto& [variable, values] : n.domains()) {
+            auto column = columns.find(variable);
+            if (column == columns.end()) {
+                vespalib::Issue::report("correlateBy domain refers to unbound variable '%s'", variable.c_str());
+                _result = std::make_unique<EmptyBlueprint>();
+                return;
+            }
+            domains[column->second] = values;
+        }
+        auto bp = std::make_unique<CorrelateByBlueprint>(std::move(domains));
+        bp->set_correlation_identity(n.label(), columns);
+        std::map<std::string, bool> string_variables;
+        for (size_t i = 0; i < n.getChildren().size(); ++i) {
+            auto* clause = dynamic_cast<ProtonSameElement*>(n.getChildren()[i]);
+            if (!clause) {
+                vespalib::Issue::report("correlateBy requires sameElement clauses");
+                _result = std::make_unique<EmptyBlueprint>();
+                return;
+            }
+            std::vector<BoundAttribute> attributes;
+            for (const auto& [variable, field] : n.bindings()[i]) {
+                std::string name = clause->getView() + "." + field;
+                auto* attr = _requestContext.getAttributeStableEnum(name);
+                if (!attr || attr->getCollectionType() != search::attribute::CollectionType::ARRAY ||
+                    (!attr->isStringType() && !attr->isIntegerType())) {
+                    vespalib::Issue::report("correlateBy binding '%s' requires an integer or string array attribute '%s'",
+                                          variable.c_str(), name.c_str());
+                    _result = std::make_unique<EmptyBlueprint>();
+                    return;
+                }
+                auto [entry, inserted] = string_variables.emplace(variable, attr->isStringType());
+                if ((!inserted && entry->second != attr->isStringType()) ||
+                    (n.domains().contains(variable) && !attr->isStringType())) {
+                    vespalib::Issue::report("correlateBy variable '%s' has incompatible binding types or a non-string domain",
+                                          variable.c_str());
+                    _result = std::make_unique<EmptyBlueprint>();
+                    return;
+                }
+                attributes.push_back({columns.at(variable), attr});
+            }
+            std::vector<search::queryeval::ExactAttributeValues> exact_values;
+            for (const auto& [field, values] : n.exact_values()[i]) {
+                std::string name = clause->getView() + "." + field;
+                auto* attr = _requestContext.getAttributeStableEnum(name);
+                if (!attr || !attr->isStringType() || attr->getCollectionType() != search::attribute::CollectionType::ARRAY) {
+                    vespalib::Issue::report("correlateBy exact values require a string array attribute '%s'", name.c_str());
+                    _result = std::make_unique<EmptyBlueprint>();
+                    return;
+                }
+                exact_values.push_back({attr, values});
+            }
+            bp->add_clause(build(_requestContext, *clause, _context, _global_layout), std::move(attributes), std::move(exact_values));
+        }
+        for (const auto& selection : n.first_present()) {
+            if (!string_variables.at(selection.variable)) {
+                vespalib::Issue::report("firstPresent requires a string priority variable '%s'", selection.variable.c_str());
+                _result = std::make_unique<EmptyBlueprint>();
+                return;
+            }
+            bp->add_first_present(selection.clause, selection.presence, columns.at(selection.variable), selection.values);
+        }
+        _result = std::move(bp);
+    }
+
     template <typename NodeType> void buildTerm(NodeType& n) {
         FieldSpecList indexFields;
         Mixer         mixer;
@@ -209,6 +282,7 @@ protected:
                           n);
     }
     void visit(ProtonSameElement& n) override { buildSameElement(n); }
+    void visit(ProtonCorrelateBy& n) override { buildCorrelateBy(n); }
 
     void visit(ProtonWeightedSetTerm& n) override { buildTerm(n); }
     void visit(ProtonDotProduct& n) override { buildTerm(n); }

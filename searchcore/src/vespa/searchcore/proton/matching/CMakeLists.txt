@@ -4,6 +4,7 @@ vespa_add_library(searchcore_matching STATIC
     ann_deadline_configuration.cpp
     attribute_limiter.cpp
     blueprintbuilder.cpp
+    correlated_grouping_filters.cpp
     docid_range_scheduler.cpp
     docsum_matcher.cpp
     document_scorer.cpp

@@ -14,6 +14,7 @@
 #include <vespa/searchlib/query/streaming/wand_term.h>
 #include <vespa/searchlib/query/streaming/weighted_set_term.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
+#include <vespa/searchlib/query/tree/query_to_protobuf.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/query/tree/string_term_vector.h>
@@ -942,3 +943,24 @@ TEST(StreamingQueryTest, control_the_size_of_query_terms) {
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
+
+TEST(StreamingQueryTest, correlation_in_a_composite_query_is_rejected) {
+    for (int connector : {0, 1, 2}) {
+        search::query::QueryBuilder<SimpleQueryNodeTypes> builder;
+        if (connector == 0) builder.addAnd(2);
+        else if (connector == 1) builder.addOr(2);
+        else builder.addRank(2);
+        builder.add_correlate_by({{{"unit", "unit_id"}}}, {}, "selection", {});
+        builder.addSameElement(1, "signals", 1, Weight(100));
+        builder.addStringTerm("Price", "key", 2, Weight(100));
+        builder.addStringTerm("after", "body", 3, Weight(100));
+        auto node = builder.build();
+        ASSERT_TRUE(node);
+        QueryToProtobuf converter;
+        auto proto = converter.serialize(*node);
+        auto tree = SerializedQueryTree::fromProtobuf(std::make_unique<decltype(proto)>(proto));
+        AllowRewrite factory("body");
+        search::streaming::Query query(factory, *tree);
+        EXPECT_FALSE(query.valid());
+    }
+}

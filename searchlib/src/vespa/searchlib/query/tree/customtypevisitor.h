@@ -27,6 +27,7 @@ public:
     virtual ~CustomTypeVisitor() = default;
 
     virtual void visit(typename NodeTypes::And&) = 0;
+    virtual void visit(typename NodeTypes::CorrelateBy&) = 0;
     virtual void visit(typename NodeTypes::AndNot&) = 0;
     virtual void visit(typename NodeTypes::Equiv&) = 0;
     virtual void visit(typename NodeTypes::NumberTerm&) = 0;
@@ -61,6 +62,7 @@ private:
     // Route QueryVisit requests to the correct custom type.
 
     using TAnd = typename NodeTypes::And;
+    using TCorrelateBy = typename NodeTypes::CorrelateBy;
     using TAndNot = typename NodeTypes::AndNot;
     using TEquiv = typename NodeTypes::Equiv;
     using TNumberTerm = typename NodeTypes::NumberTerm;
@@ -92,6 +94,7 @@ private:
     using TWordAlternatives = typename NodeTypes::WordAlternatives;
 
     void visit(And& n) override { visit(static_cast<TAnd&>(n)); }
+    void visit(CorrelateBy& n) override { visit(static_cast<TCorrelateBy&>(n)); }
     void visit(AndNot& n) override { visit(static_cast<TAndNot&>(n)); }
     void visit(Equiv& n) override { visit(static_cast<TEquiv&>(n)); }
     void visit(NumberTerm& n) override { visit(static_cast<TNumberTerm&>(n)); }

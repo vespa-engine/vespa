@@ -157,6 +157,7 @@ public:
      */
     Blueprint::HitEstimate estimate() const;
     const Blueprint* peekRoot() const { return _blueprint.get(); }
+    const search::query::Node* query_tree_root() const noexcept { return _query_tree.get(); }
     // Hand the QueryEvalStats object to the underlying blueprint tree
     void install_stats(search::queryeval::QueryEvalStats& stats);
     bool needs_ranking() const noexcept { return _needs_ranking; }

@@ -62,6 +62,10 @@ private:
                                  std::string& pureTermView) {
         uint32_t            arity = queryStack.getArity();
         ParseItem::ItemType type = queryStack.getType();
+        if (type == ParseItem::ITEM_CORRELATE_BY) {
+            builder.reportError("Correlation metadata requires the protobuf query converter");
+            return nullptr;
+        }
         Node::UP            node;
         Term*               t = nullptr;
         if (type == ParseItem::ITEM_AND) {

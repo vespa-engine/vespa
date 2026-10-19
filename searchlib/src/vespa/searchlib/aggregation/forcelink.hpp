@@ -11,6 +11,8 @@ void forcelink_file_searchlib_aggregation_hit();
 void forcelink_file_searchlib_aggregation_vdshit();
 void forcelink_file_searchlib_aggregation_hitsaggregationresult();
 void forcelink_file_searchlib_aggregation_groupinglevel();
+void forcelink_file_searchlib_aggregation_document_count_aggregation_result();
+void forcelink_file_searchlib_aggregation_unique_count_aggregation_result();
 
 void forcelink_searchlib_aggregation() {
     forcelink_file_searchlib_aggregation_grouping();
@@ -23,4 +25,6 @@ void forcelink_searchlib_aggregation() {
     forcelink_file_searchlib_aggregation_vdshit();
     forcelink_file_searchlib_aggregation_hitsaggregationresult();
     forcelink_file_searchlib_aggregation_groupinglevel();
+    forcelink_file_searchlib_aggregation_document_count_aggregation_result();
+    forcelink_file_searchlib_aggregation_unique_count_aggregation_result();
 }

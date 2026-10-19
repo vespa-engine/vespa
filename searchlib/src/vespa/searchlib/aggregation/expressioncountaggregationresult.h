@@ -20,17 +20,26 @@ class ExpressionCountAggregationResult : public AggregationResult {
 
     HyperLogLog<PRECISION>      _hll;
     expression::Int64ResultNode _rank;
+    uint32_t _sparse_limit;
 
     [[nodiscard]] const ResultNode& onGetRank() const override { return _rank; }
     void onPrepare(const ResultNode&) override {}
 
 public:
-    DECLARE_AGGREGATIONRESULT(ExpressionCountAggregationResult);
+    DECLARE_AGGREGATIONRESULT_BASE(ExpressionCountAggregationResult);
+    ExpressionCountAggregationResult* clone() const override { return new ExpressionCountAggregationResult(*this); }
     ExpressionCountAggregationResult();
     ~ExpressionCountAggregationResult() override;
 
     void visitMembers(vespalib::ObjectVisitor&) const override {}
     [[nodiscard]] const Sketch<PRECISION, uint32_t>& getSketch() const { return _hll.getSketch(); }
+
+protected:
+    void onMerge(const AggregationResult& result) override;
+    void onAggregate(const ResultNode& result) override;
+    void onReset() override;
+    explicit ExpressionCountAggregationResult(uint32_t sparse_limit);
+    void aggregate_value(const ResultNode& result);
 };
 
 } // namespace search::aggregation

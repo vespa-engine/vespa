@@ -162,6 +162,7 @@ template struct ProtonTerm<search::query::WordAlternatives>;
 ProtonAndNot::~ProtonAndNot() = default;
 ProtonEquiv::~ProtonEquiv() = default;
 ProtonLabelWrapper::~ProtonLabelWrapper() = default;
+ProtonCorrelateBy::~ProtonCorrelateBy() = default;
 ProtonWordAlternatives::~ProtonWordAlternatives() = default;
 ProtonSameElement::~ProtonSameElement() = default;
 ProtonNearestNeighborTerm::~ProtonNearestNeighborTerm() = default;

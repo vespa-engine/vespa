@@ -20,6 +20,7 @@
 #include <vespa/searchlib/aggregation/predicates.h>
 #include <vespa/searchlib/aggregation/standarddeviationaggregationresult.h>
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
+#include <vespa/searchlib/aggregation/unique_count_aggregation_result.h>
 #include <vespa/searchlib/aggregation/xoraggregationresult.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
@@ -2282,6 +2283,144 @@ TEST(GroupingTest, test_bad_grouping) {
                   ", 2 children",
                   e.getMessage());
     }
+}
+
+TEST(GroupingTest, unique_count_deduplicates_scalar_values_across_documents) {
+    UniqueCountAggregationResult count;
+    count.setExpression(MU<ConstantNode>(MU<StringResultNode>("a"))).aggregate(DocId(1), HitRank(1.0));
+    count.aggregate(DocId(2), HitRank(1.0));
+    count.setExpression(MU<ConstantNode>(MU<StringResultNode>("b"))).aggregate(DocId(3), HitRank(1.0));
+    EXPECT_EQ(2, count.getRank().getInteger());
+}
+
+TEST(GroupingTest, unique_count_deduplicates_individual_vector_values_and_ignores_empty_vectors) {
+    UniqueCountAggregationResult count;
+    auto values = MU<StringResultNodeVector>();
+    values->push_back(StringResultNode("a"));
+    values->push_back(StringResultNode("b"));
+    values->push_back(StringResultNode("a"));
+    count.setExpression(MU<ConstantNode>(std::move(values))).aggregate(DocId(1), HitRank(1.0));
+    EXPECT_EQ(2, count.getRank().getInteger());
+    auto other = MU<StringResultNodeVector>();
+    other->push_back(StringResultNode("b"));
+    other->push_back(StringResultNode("c"));
+    count.setExpression(MU<ConstantNode>(std::move(other))).aggregate(DocId(2), HitRank(1.0));
+    EXPECT_EQ(3, count.getRank().getInteger());
+    count.setExpression(MU<ConstantNode>(MU<StringResultNodeVector>())).aggregate(DocId(3), HitRank(1.0));
+    EXPECT_EQ(3, count.getRank().getInteger());
+    count.reset();
+    count.aggregate(DocId(4), HitRank(1.0));
+    EXPECT_EQ(0, count.getRank().getInteger());
+}
+
+TEST(GroupingTest, unique_count_merge_clone_and_serialization_preserve_distinct_values) {
+    UniqueCountAggregationResult left;
+    left.setExpression(MU<ConstantNode>(MU<StringResultNode>("a"))).aggregate(DocId(1), HitRank(1.0));
+    left.setExpression(MU<ConstantNode>(MU<StringResultNode>("b"))).aggregate(DocId(2), HitRank(1.0));
+    UniqueCountAggregationResult right;
+    right.setExpression(MU<ConstantNode>(MU<StringResultNode>("b"))).aggregate(DocId(3), HitRank(1.0));
+    right.setExpression(MU<ConstantNode>(MU<StringResultNode>("c"))).aggregate(DocId(4), HitRank(1.0));
+    left.merge(right);
+    left.merge(right);
+    EXPECT_EQ(3, left.getRank().getInteger());
+    auto copy = std::unique_ptr<UniqueCountAggregationResult>(left.clone());
+    left.reset();
+    EXPECT_EQ(0, left.getRank().getInteger());
+    EXPECT_EQ(3, copy->getRank().getInteger());
+    vespalib::nbostream stream;
+    vespalib::NBOSerializer serializer(stream);
+    serializer << *copy;
+    auto restored = vespalib::Identifiable::create(stream);
+    ASSERT_EQ(UniqueCountAggregationResult::classId, restored->getClass().id());
+    auto& count = static_cast<UniqueCountAggregationResult&>(*restored);
+    EXPECT_EQ(3, count.getRank().getInteger());
+    count.setExpression(MU<ConstantNode>(MU<StringResultNode>("a"))).aggregate(DocId(5), HitRank(1.0));
+    EXPECT_EQ(3, count.getRank().getInteger());
+    count.setExpression(MU<ConstantNode>(MU<StringResultNode>("d"))).aggregate(DocId(6), HitRank(1.0));
+    EXPECT_EQ(4, count.getRank().getInteger());
+}
+
+TEST(GroupingTest, unique_count_ignores_missing_rollup_keys_but_counts_nonempty_values) {
+    UniqueCountAggregationResult count;
+    count.setExpression(MU<ConstantNode>(MU<StringResultNode>(""))).aggregate(DocId(1), HitRank(1.0));
+    EXPECT_EQ(0, count.getRank().getInteger());
+    auto values = MU<StringResultNodeVector>();
+    values->push_back(StringResultNode(""));
+    values->push_back(StringResultNode("model-a"));
+    values->push_back(StringResultNode("model-a"));
+    count.setExpression(MU<ConstantNode>(std::move(values))).aggregate(DocId(2), HitRank(1.0));
+    EXPECT_EQ(1, count.getRank().getInteger());
+}
+
+TEST(GroupingTest, unique_count_retains_one_thousand_hashes_through_clone_merge_and_reset) {
+    UniqueCountAggregationResult count;
+    for (uint32_t i = 0; i < 1000; ++i) {
+        count.setExpression(MU<ConstantNode>(MU<StringResultNode>(std::to_string(i))))
+             .aggregate(DocId(i + 1), HitRank(1.0));
+    }
+    EXPECT_EQ(1000, count.getRank().getInteger());
+    auto copy = std::unique_ptr<UniqueCountAggregationResult>(count.clone());
+    EXPECT_EQ(1000, copy->getRank().getInteger());
+    copy->merge(count);
+    EXPECT_EQ(1000, copy->getRank().getInteger());
+    copy->reset();
+    EXPECT_EQ(0, copy->getRank().getInteger());
+    EXPECT_EQ(1000, count.getRank().getInteger());
+    for (uint32_t i = 0; i < 1000; ++i) {
+        copy->setExpression(MU<ConstantNode>(MU<StringResultNode>(std::to_string(i))))
+            .aggregate(DocId(i + 1), HitRank(1.0));
+    }
+    EXPECT_EQ(1000, copy->getRank().getInteger());
+}
+
+TEST(GroupingTest, unique_count_dense_rank_is_consistent_between_aggregation_and_merge) {
+    UniqueCountAggregationResult sequential;
+    UniqueCountAggregationResult left;
+    UniqueCountAggregationResult right;
+    for (uint32_t i = 0; i < 1002; ++i) {
+        auto add = [i](UniqueCountAggregationResult& count) {
+            count.setExpression(MU<ConstantNode>(MU<StringResultNode>(std::to_string(i))))
+                 .aggregate(DocId(i + 1), HitRank(1.0));
+        };
+        add(sequential);
+        add(i < 500 ? left : right);
+    }
+    left.merge(right);
+    EXPECT_EQ(sequential.getRank().getInteger(), left.getRank().getInteger());
+    auto copy = std::unique_ptr<UniqueCountAggregationResult>(sequential.clone());
+    EXPECT_EQ(sequential.getRank().getInteger(), copy->getRank().getInteger());
+}
+
+TEST(GroupingTest, unique_count_orders_dense_sketches_by_the_container_estimate_and_invalidates_deserialized_cache) {
+    UniqueCountAggregationResult count;
+    auto restore = [&count](size_t filled, uint8_t even, uint8_t odd) {
+        NormalSketch<10, uint32_t> sketch;
+        for (size_t i = 0; i < filled; ++i) sketch.bucket[i] = i % 2 == 0 ? even : odd;
+        vespalib::nbostream stream;
+        vespalib::NBOSerializer serializer(stream);
+        ExpressionTree expression;
+        serializer << expression;
+        serializer.put(uint32_t(-1));
+        serializer.put(NormalSketch<10, uint32_t>::classId);
+        sketch.serialize(serializer);
+        count.deserialize(serializer);
+    };
+    restore(512, 1, 1);
+    EXPECT_EQ(710, count.getRank().getInteger());
+    restore(700, 1, 1);
+    EXPECT_EQ(688, count.getRank().getInteger());
+    restore(900, 2, 2);
+    EXPECT_EQ(2056, count.getRank().getInteger());
+    restore(1024, 2, 2);
+    EXPECT_EQ(2918, count.getRank().getInteger());
+    restore(1024, 1, 3);
+    EXPECT_EQ(2278, count.getRank().getInteger());
+    restore(1024, 3, 3);
+    EXPECT_EQ(5903, count.getRank().getInteger());
+    restore(1024, 7, 7);
+    EXPECT_EQ(94443, count.getRank().getInteger());
+    count.reset();
+    EXPECT_EQ(0, count.getRank().getInteger());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

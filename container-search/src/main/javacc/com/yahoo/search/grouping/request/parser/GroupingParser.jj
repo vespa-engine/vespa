@@ -180,6 +180,9 @@ TOKEN :
     <COS: "cos"> |
     <COSH: "cosh"> |
     <COUNT: "count"> |
+    <DOCCOUNT: "doccount"> |
+    <UNIQUECOUNT: "uniquecount"> |
+    <CORRELATED: "correlated"> |
     <DEBUGWAIT: "debugwait"> |
     <DIV: "div"> |
     <DOCIDNSSPECIFIC: "docidnsspecific"> |
@@ -209,6 +212,7 @@ TOKEN :
     <NORMALIZESUBJECT: "normalizesubject"> |
     <NOW: "now"> |
     <OR: "or"> |
+    <ONCEPERDOC: "onceperdoc"> |
     <ORDER: "order"> |
     <OUTPUT: "output"> |
     <POW: "pow"> |
@@ -455,6 +459,8 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = literalConstantValue()        |
                    exp = parameterStringValue()        |
                    exp = countAggregator()             |
+                   exp = documentCountAggregator()     |
+                   exp = uniqueCountAggregator(grp)    |
                    exp = debugWaitFunction(grp)        |
                    exp = divFunction(grp)              |
                    exp = docIdNsSpecificValue()        |
@@ -655,6 +661,18 @@ CountAggregator countAggregator() : { }
 {
     ( <COUNT> lbrace() rbrace() )
     { return new CountAggregator(); }
+}
+
+DocumentCountAggregator documentCountAggregator() : { }
+{
+    ( <DOCCOUNT> lbrace() rbrace() )
+    { return new DocumentCountAggregator(); }
+}
+
+UniqueCountAggregator uniqueCountAggregator(GroupingOperation grp) : { GroupingExpression value; }
+{
+    ( <UNIQUECOUNT> lbrace() value = exp(grp) rbrace() )
+    { return new UniqueCountAggregator(value); }
 }
 
 DebugWaitFunction debugWaitFunction(GroupingOperation grp) :
@@ -1107,6 +1125,8 @@ FilterExpression filterPrimary(GroupingOperation grp) :
 {
     (( lbrace() f = filterExp(grp) rbrace() ) |
     ( f = regexPredicate(grp) )              |
+    ( f = correlatedPredicate(grp) )         |
+    ( f = oncePerDocumentPredicate(grp) )     |
     ( f = rangePredicate(grp) )              |
     ( f = istruePredicate(grp) )             |
     ( f = inPredicate(grp) ))
@@ -1123,6 +1143,30 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
     { return new RegexPredicate(pattern, exp); }
 }
 
+CorrelatedPredicate correlatedPredicate(GroupingOperation grp) :
+{
+    String label, variable;
+    AttributeValue field;
+    java.util.Map<String, AttributeValue> bindings = new java.util.TreeMap<String, AttributeValue>();
+}
+{
+    <CORRELATED> lbrace() label = literalString()
+    ( comma() variable = literalString() comma() field = attributeValue()
+      { if (bindings.putIfAbsent(variable, field) != null) throw new IllegalArgumentException("Duplicate correlation variable: " + variable); } )+
+    rbrace()
+    { return new CorrelatedPredicate(label, bindings); }
+}
+
+OncePerDocumentPredicate oncePerDocumentPredicate(GroupingOperation grp) :
+{
+    GroupingExpression key;
+    List<GroupingExpression> keys = new ArrayList<GroupingExpression>();
+}
+{
+    <ONCEPERDOC> lbrace() key = exp(grp) { keys.add(key); }
+    ( comma() key = exp(grp) { keys.add(key); } )* rbrace()
+    { return new OncePerDocumentPredicate(keys); }
+}
 RangePredicate rangePredicate(GroupingOperation grp) :
 {
     Number lower;
@@ -1343,7 +1387,10 @@ String identifier() :
         <CBRT> |
         <COS> |
         <COSH> |
+        <CORRELATED> |
         <COUNT> |
+        <DOCCOUNT> |
+        <UNIQUECOUNT> |
         <DEBUGWAIT> |
         <DIV> |
         <DOCIDNSSPECIFIC> |
@@ -1375,6 +1422,7 @@ String identifier() :
         <NOT> |
         <NORMALIZESUBJECT> |
         <NOW> |
+        <ONCEPERDOC> |
         <OR> |
         <ORDER> |
         <OUTPUT> |

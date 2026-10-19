@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.aggregation;
 
 import com.yahoo.searchlib.aggregation.hll.HyperLogLogEstimator;
+import com.yahoo.searchlib.aggregation.hll.NormalSketch;
 import com.yahoo.searchlib.aggregation.hll.Sketch;
 import com.yahoo.searchlib.aggregation.hll.SketchMerger;
 import com.yahoo.searchlib.aggregation.hll.SparseSketch;
@@ -25,7 +26,7 @@ public class ExpressionCountAggregationResult extends AggregationResult {
     // The unique count estimator
     private final UniqueCountEstimator<Sketch<?>> estimator;
     // Sketch merger
-    private final SketchMerger sketchMerger = new SketchMerger();
+    private final SketchMerger sketchMerger;
     // The sketch used as basis for the unique count calculation. The sketch is populated with data by the search nodes.
     private Sketch<?> sketch;
     // The estimated unique count. This value will not be serialized / deserialized.
@@ -43,8 +44,14 @@ public class ExpressionCountAggregationResult extends AggregationResult {
      * @param initialSketch the HLL sketch
      */
     public ExpressionCountAggregationResult(Sketch<?> initialSketch, UniqueCountEstimator<Sketch<?>> estimator) {
+        this(initialSketch, estimator, new SketchMerger());
+    }
+
+    protected ExpressionCountAggregationResult(Sketch<?> initialSketch, UniqueCountEstimator<Sketch<?>> estimator,
+                                               SketchMerger sketchMerger) {
         this.sketch = initialSketch;
         this.estimator = estimator;
+        this.sketchMerger = sketchMerger;
     }
 
     /**
@@ -65,7 +72,7 @@ public class ExpressionCountAggregationResult extends AggregationResult {
     @Override
     protected void onMerge(AggregationResult result) {
         ExpressionCountAggregationResult other = (ExpressionCountAggregationResult) result;
-        sketch = sketchMerger.merge(sketch, other.sketch);
+        sketch = sketchMerger.merge(sketch, copySketch(other.sketch));
         // Any cached result should be invalidated.
         estimatedUniqueCount = UNDEFINED;
     }
@@ -89,6 +96,26 @@ public class ExpressionCountAggregationResult extends AggregationResult {
     protected void onDeserialize(Deserializer buf) {
         super.onDeserialize(buf);
         sketch = (Sketch<?>) create(buf);
+        estimatedUniqueCount = UNDEFINED;
+    }
+
+    @Override
+    public ExpressionCountAggregationResult clone() {
+        var copy = (ExpressionCountAggregationResult) super.clone();
+        copy.sketch = copySketch(sketch);
+        return copy;
+    }
+
+    private static Sketch<?> copySketch(Sketch<?> sketch) {
+        if (sketch instanceof SparseSketch sparse) {
+            var copy = new SparseSketch();
+            copy.aggregate(sparse.data());
+            return copy;
+        }
+        var normal = (NormalSketch) sketch;
+        var copy = new NormalSketch(Integer.numberOfTrailingZeros(normal.size()));
+        System.arraycopy(normal.data(), 0, copy.data(), 0, normal.size());
+        return copy;
     }
 
     @Override

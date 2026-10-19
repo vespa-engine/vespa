@@ -28,6 +28,7 @@ import com.yahoo.searchlib.aggregation.ArgmaxAggregationResult;
 import com.yahoo.searchlib.aggregation.AverageAggregationResult;
 import com.yahoo.searchlib.aggregation.CountAggregationResult;
 import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
+import com.yahoo.searchlib.aggregation.UniqueCountAggregationResult;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.searchlib.aggregation.Hit;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
@@ -305,6 +306,10 @@ class ResultBuilder {
                 return ((CountAggregationResult)execResult).getCount();
             } else if (execResult instanceof QuantileAggregationResult quantiles) {
                 return quantiles.getQuantileResults();
+            } else if (execResult instanceof UniqueCountAggregationResult unique) {
+                return new Value.ObjectValue()
+                        .put("count", unique.getEstimatedUniqueCount())
+                        .put("exact", new Value.BoolValue(unique.isExact()));
             } else if (execResult instanceof ExpressionCountAggregationResult) {
                 long count = ((ExpressionCountAggregationResult)execResult).getEstimatedUniqueCount();
                 return correctExpressionCountEstimate(count, tag);

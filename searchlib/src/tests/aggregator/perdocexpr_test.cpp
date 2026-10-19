@@ -6,6 +6,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/aggregation/averageaggregationresult.h>
 #include <vespa/searchlib/aggregation/countaggregationresult.h>
+#include <vespa/searchlib/aggregation/document_count_aggregation_result.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/hitsaggregationresult.h>
@@ -1390,6 +1391,66 @@ TEST(PerDocExprTest, testAggregationResults) {
     testAggregationResult(sum, SumGetter(), v, Int64ResultNode(0), Int64ResultNode(15), Int64ResultNode(30));
     testAggregationResult(sum, SumGetter(), FloatResultNode(7.77), FloatResultNode(0), FloatResultNode(7.77),
                           FloatResultNode(15.54));
+}
+
+TEST(PerDocExprTest, document_count_counts_documents_instead_of_repeated_elements) {
+    DocumentCountAggregationResult count;
+    count.setExpression(createVectorInt({7, 8, 9}));
+    for (DocId docid : {42u, 42u, 42u, 9u, 9u, 2u, 2u}) count.aggregate(docid, 0);
+    EXPECT_EQ(3u, count.getCount());
+    count.reset();
+    EXPECT_EQ(0u, count.getCount());
+    count.aggregate(2, 0);
+    EXPECT_EQ(1u, count.getCount());
+}
+
+TEST(PerDocExprTest, document_count_clones_assigns_and_merges_without_copying_document_state) {
+    DocumentCountAggregationResult count;
+    count.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)));
+    count.aggregate(42, 0);
+    auto copy = std::unique_ptr<DocumentCountAggregationResult>(count.clone());
+    copy->aggregate(42, 0);
+    EXPECT_EQ(2u, copy->getCount());
+    DocumentCountAggregationResult assigned;
+    assigned = count;
+    assigned.aggregate(42, 0);
+    EXPECT_EQ(2u, assigned.getCount());
+    count.merge(*copy);
+    EXPECT_EQ(3u, count.getCount());
+    count.aggregate(42, 0);
+    EXPECT_EQ(4u, count.getCount());
+}
+
+TEST(PerDocExprTest, document_count_serializes_only_its_count_and_expression) {
+    DocumentCountAggregationResult count;
+    count.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)));
+    count.aggregate(42, 0);
+    nbostream stream;
+    NBOSerializer serializer(stream);
+    serializer << count;
+    auto restored = Identifiable::create(serializer);
+    auto* result = dynamic_cast<DocumentCountAggregationResult*>(restored.get());
+    ASSERT_NE(nullptr, result);
+    EXPECT_EQ(0u, stream.size());
+    EXPECT_EQ(1u, result->getCount());
+    result->aggregate(42, 0);
+    EXPECT_EQ(2u, result->getCount());
+}
+
+TEST(PerDocExprTest, document_count_uses_document_identity_for_streaming) {
+    document::TestDocMan documents;
+    auto first = documents.createDocument("foo", "id:footype:testdoctype1:n=1234:first");
+    auto second = documents.createDocument("foo", "id:footype:testdoctype1:n=1234:second");
+    DocumentCountAggregationResult count;
+    count.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)));
+    count.aggregate(*first, 0);
+    count.aggregate(*first, 0);
+    count.aggregate(*second, 0);
+    count.aggregate(*second, 0);
+    EXPECT_EQ(2u, count.getCount());
+    count.reset();
+    count.aggregate(*second, 0);
+    EXPECT_EQ(1u, count.getCount());
 }
 
 TEST(PerDocExprTest, test_Average_over_integer) {

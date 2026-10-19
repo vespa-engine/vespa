@@ -5,6 +5,7 @@
 namespace search::query {
 
 class And;
+class CorrelateBy;
 class AndNot;
 class Equiv;
 class NumberTerm;
@@ -39,6 +40,7 @@ struct QueryVisitor {
     virtual ~QueryVisitor() = default;
 
     virtual void visit(And&) = 0;
+    virtual void visit(CorrelateBy&) = 0;
     virtual void visit(AndNot&) = 0;
     virtual void visit(Equiv&) = 0;
     virtual void visit(NumberTerm&) = 0;

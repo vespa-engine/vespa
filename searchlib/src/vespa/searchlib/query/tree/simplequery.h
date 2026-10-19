@@ -22,6 +22,10 @@ struct SimpleFalse : FalseQueryNode {
 struct SimpleAnd : And {
     ~SimpleAnd() override;
 };
+struct SimpleCorrelateBy : CorrelateBy {
+    using CorrelateBy::CorrelateBy;
+    ~SimpleCorrelateBy() override;
+};
 struct SimpleAndNot : AndNot {
     ~SimpleAndNot() override;
 };
@@ -166,6 +170,7 @@ struct SimpleQueryNodeTypes {
     using StringRangeTerm = SimpleStringRangeTerm;
     using Rank = SimpleRank;
     using LabelWrapper = SimpleLabelWrapper;
+    using CorrelateBy = SimpleCorrelateBy;
     using StringTerm = SimpleStringTerm;
     using SubstringTerm = SimpleSubstringTerm;
     using SuffixTerm = SimpleSuffixTerm;

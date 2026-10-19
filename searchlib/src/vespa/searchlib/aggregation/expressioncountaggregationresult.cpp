@@ -31,7 +31,11 @@ template <int BucketBits, typename HashT> int calculateRank(const Sketch<BucketB
 }
 } // namespace
 
-ExpressionCountAggregationResult::ExpressionCountAggregationResult() = default;
+ExpressionCountAggregationResult::ExpressionCountAggregationResult()
+    : ExpressionCountAggregationResult(SPARSE_SKETCH_LIMIT) {}
+
+ExpressionCountAggregationResult::ExpressionCountAggregationResult(uint32_t sparse_limit)
+    : _hll(sparse_limit), _rank(), _sparse_limit(sparse_limit) {}
 
 ExpressionCountAggregationResult::~ExpressionCountAggregationResult() = default;
 
@@ -42,16 +46,25 @@ void ExpressionCountAggregationResult::onMerge(const AggregationResult& r) {
 }
 
 void ExpressionCountAggregationResult::onAggregate(const ResultNode& result) {
+    aggregate_value(result);
+}
+
+void ExpressionCountAggregationResult::aggregate_value(const ResultNode& result) {
     size_t             hash = result.hash();
     const unsigned int seed = 42;
     hash = XXH32(&hash, sizeof(hash), seed);
     // The rank is a maintained sum of all buckets. This should give
     // almost the same ordering as the actual estimates.
-    _rank += _hll.aggregate(hash);
+    bool was_sparse = _hll.getSketch().getClassId() == SparseSketch<PRECISION, uint32_t>::classId;
+    int delta = _hll.aggregate(hash);
+    if (was_sparse && _hll.getSketch().getClassId() != SparseSketch<PRECISION, uint32_t>::classId)
+        _rank.set(calculateRank(_hll.getSketch()));
+    else
+        _rank += delta;
 }
 
 void ExpressionCountAggregationResult::onReset() {
-    _hll = HyperLogLog<PRECISION>();
+    _hll = HyperLogLog<PRECISION>(_sparse_limit);
     _rank.set(0);
 }
 

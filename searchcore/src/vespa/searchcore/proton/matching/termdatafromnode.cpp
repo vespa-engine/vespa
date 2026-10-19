@@ -16,6 +16,7 @@ struct TermDataFromTermVisitor : public search::query::CustomTypeVisitor<ProtonN
     template <class TermNode> void visitTerm(const TermNode& n) { data = &n; }
 
     void visit(ProtonAnd&) override {}
+    void visit(ProtonCorrelateBy&) override {}
     void visit(ProtonAndNot&) override {}
     void visit(ProtonNear&) override {}
     void visit(ProtonONear&) override {}

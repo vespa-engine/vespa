@@ -73,6 +73,7 @@ options {
   // dereference
   DOT : '.';
   AT : '@';
+  DOLLAR : '$';
 
   // quotes
   SQ : '\'';
@@ -359,6 +360,7 @@ equality_expression
 in_not_in_target
     : {expression_stack.peek()}? LPAREN select_statement RPAREN
     | literal_list
+    | array_literal
     ;
 
 equality_op
@@ -444,7 +446,7 @@ fieldref
 
 // a parameter is an argument from outside the YQL statement
 parameter
-	: AT ident
+	: (AT | DOLLAR) ident
 	;	
 	       
 property_name_and_value

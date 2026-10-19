@@ -51,6 +51,7 @@ enum ExpressionOperator implements Operator {
     CALL(TypeCheckers.LIST_OF_STRING, TypeCheckers.EXPRS),
 
     VARREF(String.class),
+    BINDREF(String.class),
 
     LITERAL(TypeCheckers.LITERAL_TYPES),
 

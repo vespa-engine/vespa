@@ -11,6 +11,7 @@
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/query_to_protobuf.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
+#include <vespa/searchlib/query/tree/queryreplicator.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -610,6 +611,7 @@ MyWordAlternatives::~MyWordAlternatives() = default;
 
 struct MyQueryNodeTypes {
     using And = MyAnd;
+    using CorrelateBy = SimpleCorrelateBy;
     using AndNot = MyAndNot;
     using Equiv = MyEquiv;
     using NumberTerm = MyNumberTerm;
@@ -1141,3 +1143,76 @@ TEST(QueryBuilderTest, require_that_in_term_with_integers_can_be_created) {
 } // namespace
 
 GTEST_MAIN_RUN_ALL_TESTS()
+
+TEST(QueryBuilderTest, correlation_bindings_exact_values_label_and_fallback_survive_protobuf_and_replication) {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    CorrelateBy::Bindings bindings{{{"unit", "unit_id"}, {"zone", "zone_id"}},
+                                   {{"unit", "unit_id"}, {"zone", "zone_id"}}, {{"unit", "unit_id"}}};
+    CorrelateBy::Domains domains{{"zone", {"A", "B"}}};
+    CorrelateBy::ExactValues exact_values{{{"key", {"Price"}}}, {{"key", {"Price"}}}, {{"value", {"True"}}}};
+    builder.add_correlate_by(bindings, domains, "selection", exact_values, {{0, 1, "zone", {"B", "A"}}});
+    for (int i = 0; i < 3; ++i) {
+        builder.addSameElement(1, i == 2 ? "flat" : "signals", id[i], weight[i]);
+        builder.addStringTerm("Price", "key", id[i + 3], weight[i + 3]);
+    }
+    auto node = builder.build();
+    QueryToProtobuf converter;
+    auto proto = converter.serialize(*node);
+    auto restored = search::ProtoTreeConverter<SimpleQueryNodeTypes>::convert(proto);
+    ASSERT_TRUE(restored);
+    auto* correlated = as_node<CorrelateBy>(restored.get());
+    EXPECT_EQ(bindings, correlated->bindings());
+    EXPECT_EQ(domains, correlated->domains());
+    EXPECT_EQ(exact_values, correlated->exact_values());
+    EXPECT_EQ("selection", correlated->label());
+    ASSERT_EQ(1u, correlated->first_present().size());
+    EXPECT_EQ(0u, correlated->first_present()[0].clause);
+    EXPECT_EQ(1u, correlated->first_present()[0].presence);
+    EXPECT_EQ((std::vector<std::string>{"B", "A"}), correlated->first_present()[0].values);
+    QueryReplicator<SimpleQueryNodeTypes> replicator;
+    auto copy = replicator.replicate(*restored);
+    QueryToProtobuf copy_converter;
+    EXPECT_EQ(proto.SerializeAsString(), copy_converter.serialize(*copy).SerializeAsString());
+    auto bad = proto;
+    bad.mutable_root()->mutable_item_correlate_by()->mutable_first_present(0)->set_presence(9);
+    EXPECT_FALSE(search::ProtoTreeConverter<SimpleQueryNodeTypes>::convert(bad));
+    bad = proto;
+    bad.mutable_root()->mutable_item_correlate_by()->mutable_first_present(0)->set_variable("unbound");
+    EXPECT_FALSE(search::ProtoTreeConverter<SimpleQueryNodeTypes>::convert(bad));
+}
+
+TEST(QueryBuilderTest, protobuf_iterator_visits_correlation_clauses_and_following_terms) {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    builder.addAnd(3);
+    builder.add_correlate_by({{{"unit", "unit_id"}}}, {}, "selection", {});
+    builder.addSameElement(1, "signals", id[0], weight[0]);
+    builder.addStringTerm("Price", "key", id[1], weight[1]);
+    builder.addStringTerm("after", "body", id[2], weight[2]);
+    builder.addLocationTerm(location, "position", id[3], weight[3]);
+    auto node = builder.build();
+    ASSERT_TRUE(node);
+    QueryToProtobuf converter;
+    auto proto = converter.serialize(*node);
+    auto tree = SerializedQueryTree::fromProtobuf(std::make_unique<decltype(proto)>(proto));
+    auto iterator = tree->makeIterator();
+    ASSERT_TRUE(iterator->next());
+    EXPECT_EQ(search::ParseItem::ITEM_AND, iterator->getType());
+    EXPECT_EQ(3u, iterator->getArity());
+    ASSERT_TRUE(iterator->next());
+    EXPECT_EQ(search::ParseItem::ITEM_CORRELATE_BY, iterator->getType());
+    EXPECT_EQ(1u, iterator->getArity());
+    ASSERT_TRUE(iterator->next());
+    EXPECT_EQ(search::ParseItem::ITEM_SAME_ELEMENT, iterator->getType());
+    ASSERT_TRUE(iterator->next());
+    EXPECT_EQ("Price", iterator->getTerm());
+    ASSERT_TRUE(iterator->next());
+    EXPECT_EQ("after", iterator->getTerm());
+    ASSERT_TRUE(iterator->next());
+    EXPECT_EQ(search::ParseItem::ITEM_GEO_LOCATION_TERM, iterator->getType());
+    EXPECT_EQ("position", iterator->index_as_string());
+    EXPECT_FALSE(iterator->next());
+
+    // The iterator lacks binding metadata and must not rebuild an uncorrelated query.
+    iterator = tree->makeIterator();
+    EXPECT_FALSE(QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator));
+}

@@ -24,8 +24,10 @@ public class ForceLoad {
                 "GroupingLevel",
                 "MaxAggregationResult",
                 "CountAggregationResult",
+                "DocumentCountAggregationResult",
                 "AverageAggregationResult",
                 "ExpressionCountAggregationResult",
+                "UniqueCountAggregationResult",
                 "hll.SparseSketch",
                 "hll.NormalSketch"
         };

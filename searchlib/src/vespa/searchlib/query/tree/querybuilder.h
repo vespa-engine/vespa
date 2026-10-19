@@ -20,6 +20,7 @@
 #pragma once
 
 #include "const_bool_nodes.h"
+#include "intermediatenodes.h"
 #include "node.h"
 #include "predicate_query_term.h"
 #include "termnodes.h"
@@ -281,6 +282,12 @@ public:
     using string_view = std::string_view;
     using string = std::string;
     typename NodeTypes::And& addAnd(int child_count) { return addIntermediate(createAnd<NodeTypes>(), child_count); }
+    typename NodeTypes::CorrelateBy& add_correlate_by(CorrelateBy::Bindings bindings, CorrelateBy::Domains domains,
+                                                   std::string label = {}, CorrelateBy::ExactValues exact_values = {},
+                                                   std::vector<CorrelateBy::FirstPresent> first_present = {}) {
+        int child_count = bindings.size();
+        return addIntermediate(new typename NodeTypes::CorrelateBy(std::move(bindings), std::move(domains), std::move(label), std::move(exact_values), std::move(first_present)), child_count);
+    }
     typename NodeTypes::AndNot& addAndNot(int child_count) {
         return addIntermediate(createAndNot<NodeTypes>(), child_count);
     }

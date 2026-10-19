@@ -14,6 +14,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <vector>
+#include <stdexcept>
 
 using search::ParseItem;
 using search::RawBuf;
@@ -142,6 +143,9 @@ class QueryNodeConverter : public QueryVisitor {
     void visit(Equiv& node) override { createIntermediate(node, ParseItem::ITEM_EQUIV); }
 
     void visit(SameElement& node) override { createIntermediate(node, ParseItem::ITEM_SAME_ELEMENT, node.getView()); }
+    void visit(CorrelateBy&) override {
+        throw std::invalid_argument("correlateBy requires the protobuf query protocol");
+    }
 
     void visit(Phrase& node) override {
         createComplexIntermediate(node, node.getChildren(), ParseItem::ITEM_PHRASE,

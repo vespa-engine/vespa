@@ -678,7 +678,9 @@ final class ProgramParser {
                 // external variable reference
                 ParserRuleContext parameterContext = (ParserRuleContext) parseTree;
                 IdentContext identContext = parameterContext.getRuleContext(IdentContext.class, 0);
-                return OperatorNode.create(toLocation(scope, identContext), ExpressionOperator.VARREF, identContext.getText());
+                ExpressionOperator operator = parameterContext.getChild(0).getText().equals("$")
+                        ? ExpressionOperator.BINDREF : ExpressionOperator.VARREF;
+                return OperatorNode.create(toLocation(scope, identContext), operator, identContext.getText());
             }
             case yqlplusParser.RULE_annotate_expression: {
                 //annotation logicalORExpression
@@ -724,7 +726,10 @@ final class ProgramParser {
                 if (inNotInTarget != null) {
                     Literal_listContext literalListContext = inNotInTarget.literal_list();
                     boolean isIN = equalityExpression.IN() != null;
-                    if (literalListContext == null) {
+                    if (inNotInTarget.array_literal() != null) {
+                        return readBinOp(isIN ? ExpressionOperator.IN : ExpressionOperator.NOT_IN,
+                                         equalityExpression.getChild(0), inNotInTarget.array_literal(), scope);
+                    } else if (literalListContext == null) {
                         Select_statementContext selectStatementContext = inNotInTarget.select_statement();
                         OperatorNode<SequenceOperator> query = convertQuery(selectStatementContext, scope);
                         return OperatorNode.create(expr.getLocation(),isIN ? ExpressionOperator.IN_QUERY: ExpressionOperator.NOT_IN_QUERY, expr, query);

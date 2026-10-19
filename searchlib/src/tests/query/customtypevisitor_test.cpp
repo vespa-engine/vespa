@@ -23,6 +23,10 @@ template <class Base> struct InitTerm : Base {
 struct MyAnd : And {
     ~MyAnd() override;
 };
+struct MyCorrelateBy : CorrelateBy {
+    MyCorrelateBy() : CorrelateBy({}, {}) {}
+    ~MyCorrelateBy() override = default;
+};
 
 struct MyAndNot : AndNot {
     ~MyAndNot() override;
@@ -221,6 +225,7 @@ MyWordAlternatives::~MyWordAlternatives() = default;
 
 struct MyQueryNodeTypes {
     using And = MyAnd;
+    using CorrelateBy = MyCorrelateBy;
     using AndNot = MyAndNot;
     using Equiv = MyEquiv;
     using NumberTerm = MyNumberTerm;
@@ -262,6 +267,7 @@ public:
     template <typename T> void setVisited() { isVisited<T>() = true; }
 
     void visit(MyAnd&) override { setVisited<MyAnd>(); }
+    void visit(MyCorrelateBy&) override { setVisited<MyCorrelateBy>(); }
     void visit(MyAndNot&) override { setVisited<MyAndNot>(); }
     void visit(MyEquiv&) override { setVisited<MyEquiv>(); }
     void visit(MyNumberTerm&) override { setVisited<MyNumberTerm>(); }
@@ -310,6 +316,7 @@ TEST(CustomTypeVisitorTest, all_query_nodes_are_visited) {
     requireThatNodeIsVisited<MyOr>();
     requireThatNodeIsVisited<MyPhrase>();
     requireThatNodeIsVisited<MySameElement>();
+    requireThatNodeIsVisited<MyCorrelateBy>();
     requireThatNodeIsVisited<MyRangeTerm>();
     requireThatNodeIsVisited<MyStringRangeTerm>();
     requireThatNodeIsVisited<MyRank>();

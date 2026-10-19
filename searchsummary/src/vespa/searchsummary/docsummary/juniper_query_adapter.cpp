@@ -140,6 +140,7 @@ bool JuniperQueryAdapter::Traverse(juniper::IQueryVisitor* v) const {
         case search::ParseItem::ITEM_REGEXP:
         case search::ParseItem::ITEM_PREDICATE_QUERY:
         case search::ParseItem::ITEM_SAME_ELEMENT:
+        case search::ParseItem::ITEM_CORRELATE_BY:
         case search::ParseItem::ITEM_NEAREST_NEIGHBOR:
         case search::ParseItem::ITEM_GEO_LOCATION_TERM:
         case search::ParseItem::ITEM_FUZZY:

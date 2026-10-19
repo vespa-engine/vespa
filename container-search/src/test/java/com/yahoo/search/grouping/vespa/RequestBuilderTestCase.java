@@ -79,6 +79,53 @@ public class RequestBuilderTestCase {
         assertEquals(new AttributeNode("foo"), aggr.getExpression());
     }
 
+    @Test
+    void uniqueCountKeepsItsExpressionWhenTheBucketClassifierIsDifferent() {
+        RequestBuilder builder = new RequestBuilder(0);
+        builder.setRootOperation(GroupingOperation.fromString(
+                "all(group(price) each(output(uniquecount(model), count())))"));
+        builder.build();
+        var aggregations = builder.getRequestList().get(0).getLevels().get(0)
+                .getGroupPrototype().getAggregationResults();
+        assertTrue(aggregations.get(0) instanceof com.yahoo.searchlib.aggregation.UniqueCountAggregationResult);
+        assertEquals(new AttributeNode("model"), aggregations.get(0).getExpression());
+        assertTrue(aggregations.get(1) instanceof com.yahoo.searchlib.aggregation.CountAggregationResult);
+    }
+
+    @Test
+    void uniqueCountPrecisionOverDocumentsCompilesAlongsideOrderedValueBuckets() {
+        var builder = new RequestBuilder(0);
+        builder.setRootOperation(GroupingOperation.fromString(
+                "all(output(uniquecount(aggregation_map{\"modelId\"}) as(precision)) " +
+                "all(group(price) max(2) order(-uniquecount(aggregation_map{\"modelId\"})) " +
+                "each(output(uniquecount(aggregation_map{\"modelId\"}) as(models), count(), doccount()))))"));
+        builder.build();
+        var grouping = builder.getRequestList().get(0);
+        assertTrue(grouping.getRoot().getAggregationResults().get(0) instanceof
+                com.yahoo.searchlib.aggregation.UniqueCountAggregationResult);
+        assertTrue(grouping.getLevels().get(0).getGroupPrototype().getAggregationResults().stream().anyMatch(
+                result -> result instanceof com.yahoo.searchlib.aggregation.UniqueCountAggregationResult));
+    }
+
+    @Test
+    void nativeOtherUnionCompilesWithCorrelationAndPerUnitDeduplication() {
+        var builder = new RequestBuilder(0);
+        builder.setRootOperation(GroupingOperation.fromString("""
+                all(group(unit_string_signals.key) max(1)
+                    filter((not in(unit_string_signals.value, "M")) and
+                           in(unit_string_signals.key, "size") and
+                           correlated("sizeBinding", "unit", unit_string_signals.unit_id) and
+                           onceperdoc(unit_string_signals.unit_id))
+                    each(output(count(), doccount(), uniquecount(aggregation_map{"modelId"}) as(rollupCount))))
+                """));
+        builder.build();
+        var grouping = builder.getRequestList().get(0);
+        assertEquals(1, grouping.getLevels().size());
+        assertEquals(new AttributeNode("unit_string_signals.key"), grouping.getLevels().get(0).getExpression());
+        assertTrue(grouping.getLevels().get(0).getGroupPrototype().getAggregationResults().stream().anyMatch(
+                result -> result instanceof com.yahoo.searchlib.aggregation.UniqueCountAggregationResult));
+    }
+
     private List<Grouping> getRequestList(String selection) {
         RequestBuilder builder = new RequestBuilder(0);
         builder.setRootOperation(GroupingOperation.fromString(selection));

@@ -10,6 +10,7 @@ import com.yahoo.prelude.IndexModel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.StringInItem;
 import org.junit.jupiter.api.Test;
@@ -231,6 +232,58 @@ public class LowercasingTestCase {
         WordItem w1 = (WordItem) root.getItem(1);
         assertEquals("abc", w0.getWord());
         assertEquals("def", w1.getWord());
+    }
+
+    @Test
+    void lowercasesAlternativesInsideSameElementUsingTheStructField() {
+        var query = new Query();
+        var sameElement = new SameElementItem(SARR);
+        var alternatives = new OrItem();
+        var first = new WordItem("ABC", TEDDY, true);
+        var second = new WordItem("DEF", TEDDY, true);
+        alternatives.addItem(first);
+        alternatives.addItem(second);
+        sameElement.addItem(alternatives);
+        query.getModel().getQueryTree().setRoot(sameElement);
+
+        createExecution().search(query);
+
+        assertEquals(SARR + "." + TEDDY, first.getFieldName());
+        assertEquals("abc", first.getWord());
+        assertEquals("def", second.getWord());
+    }
+
+    @Test
+    void preservesCaseInsideNestedBooleanElementConditions() {
+        var query = new Query();
+        var sameElement = new SameElementItem("myArray");
+        var alternatives = new OrItem();
+        var conjunction = new AndItem();
+        var word = new WordItem("ABC", "x", true);
+        conjunction.addItem(word);
+        alternatives.addItem(conjunction);
+        sameElement.addItem(alternatives);
+        query.getModel().getQueryTree().setRoot(sameElement);
+
+        createCollisionExecution().search(query);
+
+        assertEquals("myArray.x", word.getFieldName());
+        assertEquals("ABC", word.getWord());
+    }
+
+    @Test
+    void lowercasesMapValueAlternativesUsingTheMapField() {
+        var query = new Query();
+        var alternatives = new OrItem();
+        var word = new WordItem("ABC", TEDDY, true);
+        alternatives.addItem(word);
+        var mapMatch = new MapMatchItem(SARR, new WordItem("key", BAMSE, true), alternatives);
+        query.getModel().getQueryTree().setRoot(mapMatch);
+
+        createExecution().search(query);
+
+        assertEquals(SARR + "." + TEDDY, word.getFieldName());
+        assertEquals("abc", word.getWord());
     }
 
     /** Creates index facts where top-level "x" has lowercase=true but struct-field "myArray.x" has lowercase=false. */

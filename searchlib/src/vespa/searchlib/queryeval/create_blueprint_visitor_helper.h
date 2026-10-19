@@ -64,6 +64,7 @@ public:
     void illegalVisit() {}
 
     void visit(query::And&) override { illegalVisit(); }
+    void visit(query::CorrelateBy&) override { illegalVisit(); }
     void visit(query::AndNot&) override { illegalVisit(); }
     void visit(query::Equiv&) override { illegalVisit(); }
     void visit(query::Near&) override { illegalVisit(); }

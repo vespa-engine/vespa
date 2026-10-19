@@ -140,6 +140,35 @@ message ItemOr {
 message ItemAnd {
     repeated QueryTreeItem children = 1;
 }
+message CorrelationBinding {
+    string variable = 1;
+    string field = 2;
+}
+message CorrelationClause {
+    QueryTreeItem query = 1;
+    repeated CorrelationBinding bindings = 2;
+    repeated CorrelationStringValues exact_values = 3;
+}
+message CorrelationStringValues {
+    string field = 1;
+    repeated string values = 2;
+}
+message CorrelationDomain {
+    string variable = 1;
+    repeated string values = 2;
+}
+message ItemCorrelateBy {
+    repeated CorrelationClause clauses = 1;
+    repeated CorrelationDomain domains = 2;
+    string label = 3;
+    repeated CorrelationFirstPresent first_present = 4;
+}
+message CorrelationFirstPresent {
+    uint32 clause = 1;
+    uint32 presence = 2;
+    string variable = 3;
+    repeated string values = 4;
+}
 message ItemAndNot {
     repeated QueryTreeItem children = 1;
 }
@@ -429,6 +458,7 @@ message QueryTreeItem {
         ItemLabelWrapper item_label_wrapper = 39;
 
         ItemStringRangeTerm item_string_range_term = 40;
+        ItemCorrelateBy item_correlate_by = 41;
 
         // unfinished, only inside QRS: item_multi_term
         // not used anymore: item_any

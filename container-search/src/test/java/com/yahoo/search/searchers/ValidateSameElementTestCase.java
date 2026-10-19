@@ -2,6 +2,7 @@ package com.yahoo.search.searchers;
 
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.CorrelateByItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.OrItem;
@@ -11,8 +12,14 @@ import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.schema.Cluster;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -78,6 +85,61 @@ public class ValidateSameElementTestCase {
         addChildrenWithWeakAnd(root);
         var result = search(root);
         assertNull(result.hits().getError());
+    }
+
+    @Test
+    void correlationIsRejectedWhenStreamingIsAmongTheSelectedClusters() {
+        var query = correlationQuery();
+        var result = search(query, mixedSchemaInfo());
+        assertNotNull(result.hits().getError());
+        assertEquals("correlateBy is only supported by indexed search", result.hits().getError().getDetailedMessage());
+    }
+
+    @Test
+    void correlationIsAcceptedWhenSourcesSelectOnlyTheIndexedCluster() {
+        var query = correlationQuery();
+        query.getModel().getSources().add("indexed-cluster");
+        assertNull(search(query, mixedSchemaInfo()).hits().getError());
+    }
+
+    @Test
+    void correlationIsAcceptedWhenRestrictExcludesTheStreamingSchema() {
+        var query = correlationQuery();
+        query.getModel().getRestrict().add("indexed-document");
+        assertNull(search(query, mixedSchemaInfo()).hits().getError());
+    }
+
+    @Test
+    void correlationIsRejectedWhenTheStreamingSchemaIsSelectedDirectly() {
+        var query = correlationQuery();
+        query.getModel().getSources().add("streaming-document");
+        assertNotNull(search(query, mixedSchemaInfo()).hits().getError());
+    }
+
+    private Query correlationQuery() {
+        var clause = new SameElementItem("signals");
+        clause.addItem(new WordItem("size", "key"));
+        var correlation = new CorrelateByItem();
+        correlation.addClause(clause, Map.of("unit", "unit_id"));
+        var root = new AndItem();
+        root.addItem(new WordItem("shoe"));
+        root.addItem(correlation);
+        var query = new Query();
+        query.getModel().getQueryTree().setRoot(root);
+        return query;
+    }
+
+    private SchemaInfo mixedSchemaInfo() {
+        return new SchemaInfo(List.of(new Schema.Builder("indexed-document").build(),
+                                      new Schema.Builder("streaming-document").build()),
+                              List.of(new Cluster.Builder("indexed-cluster").addSchema("indexed-document").build(),
+                                      new Cluster.Builder("streaming-cluster").setStreaming(true)
+                                          .addSchema("streaming-document").build()));
+    }
+
+    private Result search(Query query, SchemaInfo schemaInfo) {
+        return new Execution(new ValidateSameElementSearcher(),
+                             Execution.Context.createContextStub(schemaInfo)).search(query);
     }
 
     private void addChildrenWithWeakAnd(CompositeItem root) {

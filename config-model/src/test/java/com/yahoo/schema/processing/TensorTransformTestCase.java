@@ -149,6 +149,23 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
                 "max(returns_tensor_with_arg(attribute(tensor_field_1)),x)");
     }
 
+    @Test
+    void correlatedBindingsHasMappedVariableDimensions() throws ParseException {
+        assertTransformedExpression("reduce(correlatedBindings(selection,unit),sum,unit)",
+                                    "sum(correlatedBindings(selection,unit),unit)");
+        assertTransformedExpression("reduce(correlatedBindings(selection,zone,unit),sum,zone)",
+                                    "sum(correlatedBindings(selection,zone,unit),zone)");
+        assertTransformedExpression("reduce(rename(correlatedBindings(selection,unit),unit,x)*attribute(tensor_field_1),sum,x)",
+                                    "sum(rename(correlatedBindings(selection,unit),unit,x)*attribute(tensor_field_1),x)");
+    }
+
+    @Test
+    void correlatedBindingsRejectsMissingDuplicateAndNonVariableArguments() {
+        assertThrows(IllegalArgumentException.class, () -> buildSearch("sum(correlatedBindings(selection))"));
+        assertThrows(IllegalArgumentException.class, () -> buildSearch("sum(correlatedBindings(selection,unit,unit))"));
+        assertThrows(IllegalArgumentException.class, () -> buildSearch("sum(correlatedBindings(selection,attribute(double_field)))"));
+    }
+
     private void assertTransformedExpression(String expected, String original) throws ParseException {
         for (Pair<String, String> rankPropertyExpression : buildSearch(original)) {
             String rankProperty = rankPropertyExpression.getFirst();

@@ -67,7 +67,8 @@ public:
         ITEM_LABEL_WRAPPER = 33,
         ITEM_STRING_RANGE_TERM = 34,
         // sentinel, kept last: it moves up as item types are added
-        ITEM_UNDEF = 35,
+        ITEM_CORRELATE_BY = 35,
+        ITEM_UNDEF = 36,
     };
 
     /*

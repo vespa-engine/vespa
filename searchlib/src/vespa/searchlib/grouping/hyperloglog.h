@@ -29,9 +29,10 @@ const uint32_t SPARSE_SKETCH_LIMIT = 255;
 template <int BucketBits = 10, typename HashT = uint32_t>
 class ExchangerSketch : public SparseSketch<BucketBits, HashT> {
     typename Sketch<BucketBits, HashT>::UP& _sketch_ptr;
+    uint32_t _sparse_limit;
 
     int aggregate(HashT hash) override {
-        if (this->getSize() > SPARSE_SKETCH_LIMIT) {
+        if (this->getSize() > _sparse_limit) {
             NormalSketch<BucketBits, HashT>* normal_sketch = new NormalSketch<BucketBits, HashT>;
             normal_sketch->merge(*this);
             _sketch_ptr.reset(normal_sketch); // deletes this
@@ -41,7 +42,8 @@ class ExchangerSketch : public SparseSketch<BucketBits, HashT> {
     }
 
 public:
-    ExchangerSketch(typename Sketch<BucketBits, HashT>::UP& sketch_ptr) : _sketch_ptr(sketch_ptr) {}
+    ExchangerSketch(typename Sketch<BucketBits, HashT>::UP& sketch_ptr, uint32_t sparse_limit)
+        : _sketch_ptr(sketch_ptr), _sparse_limit(sparse_limit) {}
 };
 
 /**
@@ -49,16 +51,20 @@ public:
  */
 template <int BucketBits = 10, typename HashT = uint32_t> class HyperLogLog {
     typename Sketch<BucketBits, HashT>::UP _sketch;
+    uint32_t _sparse_limit;
 
 public:
     using hash_type = HashT;
     enum { bucketBits = BucketBits };
 
     // Initialize ExchangerSketch with a reference to _sketch.
-    HyperLogLog() : _sketch(new ExchangerSketch<BucketBits, HashT>(_sketch)) {}
-    HyperLogLog(const HyperLogLog<BucketBits, HashT>& other) : HyperLogLog() { merge(other); }
+    explicit HyperLogLog(uint32_t sparse_limit = SPARSE_SKETCH_LIMIT)
+        : _sketch(new ExchangerSketch<BucketBits, HashT>(_sketch, sparse_limit)), _sparse_limit(sparse_limit) {}
+    HyperLogLog(const HyperLogLog<BucketBits, HashT>& other) : HyperLogLog(other._sparse_limit) { merge(other); }
     HyperLogLog<BucketBits, HashT>& operator=(const HyperLogLog<BucketBits, HashT>& other) {
-        _sketch.reset(new ExchangerSketch<BucketBits, HashT>(_sketch));
+        if (this == &other) return *this;
+        _sparse_limit = other._sparse_limit;
+        _sketch.reset(new ExchangerSketch<BucketBits, HashT>(_sketch, _sparse_limit));
         merge(other);
         return *this;
     }
@@ -82,7 +88,7 @@ void HyperLogLog<BucketBits, HashT>::merge(const HyperLogLog<BucketBits, HashT>&
         if (other.getSketch().getClassId() == Sparse::classId) {
             const Sparse& other_sparse = static_cast<const Sparse&>(other.getSketch());
             sparse.merge(other_sparse);
-            if (sparse.getSize() > SPARSE_SKETCH_LIMIT) {
+            if (sparse.getSize() > _sparse_limit) {
                 typename Normal::UP new_sketch(new Normal);
                 new_sketch->merge(sparse);
                 _sketch.reset(new_sketch.release());
@@ -116,7 +122,7 @@ void HyperLogLog<BucketBits, HashT>::deserialize(vespalib::Deserializer& is) {
     uint32_t type;
     is >> type;
     if (type == SparseSketch<BucketBits, HashT>::classId) {
-        _sketch.reset(new ExchangerSketch<BucketBits, HashT>(_sketch));
+        _sketch.reset(new ExchangerSketch<BucketBits, HashT>(_sketch, _sparse_limit));
         _sketch->deserialize(is);
     } else if (type == NormalSketch<BucketBits, HashT>::classId) {
         _sketch.reset(new NormalSketch<BucketBits, HashT>);

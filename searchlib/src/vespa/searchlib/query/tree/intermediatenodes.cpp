@@ -4,6 +4,7 @@
 namespace search::query {
 
 And::~And() = default;
+CorrelateBy::~CorrelateBy() = default;
 AndNot::~AndNot() = default;
 Or::~Or() = default;
 WeakAnd::~WeakAnd() = default;

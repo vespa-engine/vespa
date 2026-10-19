@@ -95,6 +95,40 @@ private:
         visitNodes(node.getChildren());
     }
 
+    void visit(CorrelateBy& node) override {
+        auto* item = _item_stack.back()->mutable_item_correlate_by();
+        item->set_label(node.label());
+        CHECK(node.bindings().size() == node.getChildren().size());
+        for (size_t i = 0; i < node.getChildren().size(); ++i) {
+            auto* clause = item->add_clauses();
+            for (const auto& [variable, field] : node.bindings()[i]) {
+                auto* binding = clause->add_bindings();
+                binding->set_variable(variable);
+                binding->set_field(field);
+            }
+            for (const auto& [field, values] : node.exact_values()[i]) {
+                auto* filter = clause->add_exact_values();
+                filter->set_field(field);
+                for (const auto& value : values) filter->add_values(value);
+            }
+            _item_stack.push_back(clause->mutable_query());
+            node.getChildren()[i]->accept(*this);
+            _item_stack.pop_back();
+        }
+        for (const auto& selection : node.first_present()) {
+            auto* rule = item->add_first_present();
+            rule->set_clause(selection.clause);
+            rule->set_presence(selection.presence);
+            rule->set_variable(selection.variable);
+            for (const auto& value : selection.values) rule->add_values(value);
+        }
+        for (const auto& [variable, values] : node.domains()) {
+            auto* domain = item->add_domains();
+            domain->set_variable(variable);
+            for (const auto& value : values) domain->add_values(value);
+        }
+    }
+
     void visit(AndNot& node) override {
         _item_stack.back()->mutable_item_and_not();
         visitNodes(node.getChildren());

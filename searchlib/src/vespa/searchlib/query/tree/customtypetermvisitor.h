@@ -17,6 +17,7 @@ protected:
 
 private:
     void visit(typename NodeTypes::And& n) override { visitChildren(n); }
+    void visit(typename NodeTypes::CorrelateBy& n) override { visitChildren(n); }
     void visit(typename NodeTypes::AndNot& n) override { visitChildren(n); }
     void visit(typename NodeTypes::Equiv& n) override { visitChildren(n); }
     void visit(typename NodeTypes::Near& n) override { visitChildren(n); }

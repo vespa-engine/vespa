@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -39,6 +40,7 @@ import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.BlockItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.CorrelateByItem;
 import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
@@ -221,6 +223,7 @@ public class YqlParser implements Parser {
     public static final String RANK = "rank";
     public static final String RANKED = "ranked";
     public static final String SAME_ELEMENT = "sameElement";
+    public static final String CORRELATE_BY = "correlateBy";
     public static final String MAP_MATCH = "mapMatch";
     public static final String SCORE_THRESHOLD = "scoreThreshold";
     public static final String SIGNIFICANCE = "significance";
@@ -269,6 +272,8 @@ public class YqlParser implements Parser {
     private Parsable currentlyParsing;
     private IndexFacts.Session indexFactsSession;
     private IndexNameExpander indexNameExpander = new IndexNameExpander();
+    private Map<String, String> clauseBindings;
+    private Map<String, List<String>> clauseExactValues;
     private Set<String> docTypes;
     private Sorting sorting;
     private boolean queryParser = true;
@@ -620,6 +625,7 @@ public class YqlParser implements Parser {
             case PREDICATE: return buildPredicate(ast);
             case RANK: return buildRank(ast, currentField);
             case LABELED: return buildLabelWrapper(ast, currentField);
+            case CORRELATE_BY: return buildCorrelateBy(ast);
             case WEAK_AND: return buildWeakAnd(ast);
             case USER_INPUT: return buildUserInput(ast, currentField);
             case NON_EMPTY: return ensureNonEmpty(ast);
@@ -652,6 +658,75 @@ public class YqlParser implements Parser {
         Item item = convertExpression(args.get(0), null);
         ToolBox.visit(noEmptyTerms, item);
         return item;
+    }
+
+    private Item buildCorrelateBy(OperatorNode<ExpressionOperator> ast) {
+        Preconditions.checkArgument(clauseBindings == null, "correlateBy cannot be nested");
+        var item = new CorrelateByItem();
+        String label = getAnnotation(ast, LABEL, String.class, null, "correlation label");
+        if (label != null) item.setLabel(label);
+        var domains = new TreeMap<String, List<String>>();
+        try {
+            for (var argument : ast.<List<OperatorNode<ExpressionOperator>>>getArgument(1)) {
+                if (argument.getOperator() == ExpressionOperator.IN &&
+                    argument.<OperatorNode<ExpressionOperator>>getArgument(0).getOperator() == ExpressionOperator.BINDREF) {
+                    String variable = argument.<OperatorNode<ExpressionOperator>>getArgument(0).getArgument(0);
+                    OperatorNode<ExpressionOperator> values = argument.getArgument(1);
+                    var strings = correlationValues(values);
+                    Preconditions.checkArgument(domains.putIfAbsent(variable, strings) == null,
+                                                "Variable '%s' has more than one domain", variable);
+                    continue;
+                }
+                if (argument.getOperator() == ExpressionOperator.CALL &&
+                    argument.getArgument(0).equals(List.of("firstPresent"))) {
+                    List<OperatorNode<ExpressionOperator>> args = argument.getArgument(1);
+                    Preconditions.checkArgument(args.size() == 3, "firstPresent requires matching, presence and priority arguments");
+                    SameElementItem clause = buildCorrelatedClause(args.get(0));
+                    var bindings = clauseBindings;
+                    var exactValues = clauseExactValues;
+                    SameElementItem presence = buildCorrelatedClause(args.get(1));
+                    Preconditions.checkArgument(bindings.equals(clauseBindings), "firstPresent clauses must bind the same variables and fields");
+                    OperatorNode<ExpressionOperator> priority = args.get(2);
+                    assertHasOperator(priority, ExpressionOperator.IN);
+                    OperatorNode<ExpressionOperator> variable = priority.getArgument(0);
+                    assertHasOperator(variable, ExpressionOperator.BINDREF);
+                    item.addFirstPresentClause(clause, presence, bindings, exactValues, clauseExactValues,
+                                               variable.getArgument(0), correlationValues(priority.getArgument(1)));
+                } else {
+                    SameElementItem clause = buildCorrelatedClause(argument);
+                    item.addClause(clause, clauseBindings, clauseExactValues);
+                }
+            }
+        } finally {
+            clauseBindings = null;
+            clauseExactValues = null;
+        }
+        Preconditions.checkArgument(item.getItemCount() > 0, "correlateBy requires at least one matching clause");
+        var variables = new HashSet<String>();
+        for (int i = 0; i < item.getItemCount(); ++i) variables.addAll(item.getBindings(i).keySet());
+        domains.forEach((variable, values) -> {
+            Preconditions.checkArgument(variables.contains(variable), "Variable '%s' is not bound by a clause", variable);
+            item.setAllowedValues(variable, values);
+        });
+        return item;
+    }
+
+    private SameElementItem buildCorrelatedClause(OperatorNode<ExpressionOperator> argument) {
+        clauseBindings = new TreeMap<>();
+        clauseExactValues = new TreeMap<>();
+        Item clause = convertExpression(argument, null);
+        Preconditions.checkArgument(clause instanceof SameElementItem, "correlateBy clauses must be rooted in sameElement");
+        return (SameElementItem) clause;
+    }
+
+    private List<String> correlationValues(OperatorNode<ExpressionOperator> values) {
+        assertHasOperator(values, ExpressionOperator.ARRAY);
+        var strings = new ArrayList<String>();
+        for (var value : values.<List<OperatorNode<ExpressionOperator>>>getArgument(0)) {
+            assertHasOperator(value, ExpressionOperator.LITERAL);
+            strings.add(value.getArgument(0, String.class));
+        }
+        return strings;
     }
 
     private Item buildWeightedSet(OperatorNode<ExpressionOperator> ast) {
@@ -974,10 +1049,43 @@ public class YqlParser implements Parser {
         IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
         try {
             for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
+                if (clauseBindings != null && term.getOperator() == ExpressionOperator.EQ) {
+                    OperatorNode<ExpressionOperator> value = term.getArgument(1);
+                    if (value.getOperator() == ExpressionOperator.BINDREF) {
+                        String variable = value.getArgument(0);
+                        String bindingField = getFieldIndex(term.getArgument(0), CORRELATE_BY);
+                        Preconditions.checkArgument(clauseBindings.putIfAbsent(variable, bindingField) == null,
+                                                    "Variable '%s' is bound more than once in a clause", variable);
+                        continue;
+                    }
+                    if (value.getOperator() == ExpressionOperator.LITERAL && value.getArgument(0) instanceof String string) {
+                        String exactField = getFieldIndex(term.getArgument(0), CORRELATE_BY);
+                        var existing = clauseExactValues.putIfAbsent(exactField, List.of(string));
+                        if (existing != null && !existing.equals(List.of(string))) clauseExactValues.put(exactField, List.of());
+                        term = OperatorNode.create(term.getLocation(), ExpressionOperator.CONTAINS, term.getArgument(0), value);
+                    }
+                }
+                if (clauseBindings != null && term.getOperator() == ExpressionOperator.IN) {
+                    OperatorNode<ExpressionOperator> values = term.getArgument(1);
+                    if (values.getOperator() == ExpressionOperator.ARRAY) {
+                        List<OperatorNode<ExpressionOperator>> members = values.getArgument(0);
+                        if (!members.isEmpty() && members.stream().allMatch(YqlParser::isNumberLiteral)) {
+                            var alternatives = new OrItem();
+                            for (var member : members) {
+                                alternatives.addItem(convertExpression(OperatorNode.create(term.getLocation(),
+                                        ExpressionOperator.EQ, term.getArgument(0), member), field));
+                            }
+                            sameElement.addItem(alternatives);
+                            continue;
+                        }
+                    }
+                }
                 // TODO: getIndex that is called once every term is rather expensive as it does sanity checking
                 // that is not necessary. This is an issue when having many elements
                 sameElement.addItem(convertExpression(term, field));
             }
+            Preconditions.checkArgument(clauseBindings == null || sameElement.getItemCount() > 0,
+                                        "sameElement must have a predicate in addition to its variable bindings");
         }
         finally {
             swapIndexCreator(prev); // Also on a failed term, as this parser may be used again

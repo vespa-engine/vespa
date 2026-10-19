@@ -2,6 +2,7 @@
 vespa_add_test_executable(searchlib_filter_predicate_node_test_app
     SOURCES
     filter_predicate_node_test.cpp
+    correlated_predicate_test.cpp
     DEPENDS
     searchlib_test
 )

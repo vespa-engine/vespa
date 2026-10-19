@@ -11,12 +11,15 @@ class ElementFieldNames {
 
     private ElementFieldNames() { }
 
-    /** Returns the given index name, prefixed by the field name of the parent and a dot if the parent searches inside one field. */
+    /** Returns the given index name, prefixed by the enclosing element field, if any. */
     static String fieldName(CompositeItem parent, String indexName) {
-        if (parent instanceof SameElementItem sameElement)
-            return sameElement.getFieldName() + "." + indexName;
-        if (parent instanceof MapMatchItem mapMatch)
-            return mapMatch.getFieldName() + "." + indexName;
+        while (parent != null) {
+            if (parent instanceof SameElementItem sameElement)
+                return sameElement.getFieldName() + "." + indexName;
+            if (parent instanceof MapMatchItem mapMatch)
+                return mapMatch.getFieldName() + "." + indexName;
+            parent = parent.getParent();
+        }
         return indexName;
     }
 

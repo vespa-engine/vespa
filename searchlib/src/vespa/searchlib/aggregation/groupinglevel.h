@@ -129,6 +129,10 @@ public:
         _classify = std::move(root);
         return *this;
     }
+    GroupingLevel& setFilter(std::unique_ptr<expression::FilterPredicateNode> filter) {
+        _filter.reset(filter.release());
+        return *this;
+    }
     GroupingLevel& addResult(ExpressionNode::UP result) {
         _collect.addResult(std::move(result));
         return *this;

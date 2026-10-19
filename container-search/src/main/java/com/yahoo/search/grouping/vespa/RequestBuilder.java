@@ -191,7 +191,7 @@ class RequestBuilder {
         Group group = getLeafGroup(frame);
         // The ExpressionCountAggregationResult uses the group-by expression to simulate aggregation of list of groups.
         group.getAggregationResults().stream()
-                .filter(aggr -> aggr instanceof ExpressionCountAggregationResult)
+                .filter(aggr -> aggr.getClassId() == ExpressionCountAggregationResult.classId)
                 .forEach(aggr -> aggr.setExpression(frame.state.groupBy.clone()));
     }
 

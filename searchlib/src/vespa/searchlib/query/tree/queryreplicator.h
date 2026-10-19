@@ -44,6 +44,11 @@ private:
         visitNodes(node.getChildren());
     }
 
+    void visit(CorrelateBy& node) override {
+        _builder.add_correlate_by(node.bindings(), node.domains(), node.label(), node.exact_values(), node.first_present());
+        visitNodes(node.getChildren());
+    }
+
     void visit(AndNot& node) override {
         _builder.addAndNot(node.getChildren().size());
         visitNodes(node.getChildren());

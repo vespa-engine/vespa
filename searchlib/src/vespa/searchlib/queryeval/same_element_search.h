@@ -49,6 +49,7 @@ public:
     void doUnpack(uint32_t docid) override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     const std::vector<std::unique_ptr<SearchIterator>>& children() const { return _children; }
+    std::span<const uint32_t> matching_elements() const noexcept { return _matchingElements; }
 
     // used during docsum fetching to identify matching elements
     // initRange must be called before use.

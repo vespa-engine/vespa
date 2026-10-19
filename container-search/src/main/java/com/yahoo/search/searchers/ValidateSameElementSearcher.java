@@ -4,6 +4,7 @@ package com.yahoo.search.searchers;
 
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.CorrelateByItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearItem;
@@ -49,12 +50,24 @@ public class ValidateSameElementSearcher extends Searcher {
         public Optional<ErrorMessage> errorMessage = Optional.empty();
 
         private boolean inSameElement = false;
+        private final boolean searchesStreaming;
 
         public SameElementVisitor(Query query, Execution execution) {
+            var sources = query.getModel().getSources();
+            var restrict = query.getModel().getRestrict();
+            searchesStreaming = execution.context().schemaInfo().clusters().values().stream()
+                    .anyMatch(cluster -> cluster.isStreaming()
+                            && (sources.isEmpty() || sources.contains(cluster.name())
+                                || sources.stream().anyMatch(cluster.schemas()::contains))
+                            && (restrict.isEmpty() || restrict.stream().anyMatch(cluster.schemas()::contains)));
         }
 
         @Override
         public boolean visit(Item item) {
+            if (item instanceof CorrelateByItem && searchesStreaming) {
+                errorMessage = Optional.of(ErrorMessage.createIllegalQuery("correlateBy is only supported by indexed search"));
+                return false;
+            }
             if (inSameElement && ! isValidSameItemChild(item)) {
                 errorMessage = Optional.of(ErrorMessage.createIllegalQuery("SameElementItem cannot contain '" + item + "'"));
                 return false;

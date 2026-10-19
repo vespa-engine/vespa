@@ -163,6 +163,11 @@ struct ProtonSameElement final : public ProtonTermBase<search::query::SameElemen
     ~ProtonSameElement() override;
 };
 
+struct ProtonCorrelateBy final : public search::query::CorrelateBy {
+    using CorrelateBy::CorrelateBy;
+    ~ProtonCorrelateBy() override;
+};
+
 struct ProtonNearestNeighborTerm : public ProtonTermBase<search::query::NearestNeighborTerm> {
     using ProtonTermBase::ProtonTermBase;
     [[nodiscard]] std::optional<std::string> query_tensor_name() const override {
@@ -216,6 +221,7 @@ struct ProtonNodeTypes {
     using StringRangeTerm = ProtonStringRangeTerm;
     using Rank = ProtonRank;
     using LabelWrapper = ProtonLabelWrapper;
+    using CorrelateBy = ProtonCorrelateBy;
     using StringTerm = ProtonStringTerm;
     using SubstringTerm = ProtonSubstringTerm;
     using SuffixTerm = ProtonSuffixTerm;

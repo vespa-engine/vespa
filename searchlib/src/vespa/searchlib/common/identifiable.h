@@ -190,3 +190,7 @@
 
 #define CID_search_aggregation_ArgmaxAggregationResult SEARCHLIB_CID(183)
 #define CID_search_expression_InPredicateNode SEARCHLIB_CID(184)
+#define CID_search_expression_CorrelatedPredicateNode SEARCHLIB_CID(185)
+#define CID_search_expression_OncePerDocumentPredicateNode SEARCHLIB_CID(186)
+#define CID_search_aggregation_DocumentCountAggregationResult SEARCHLIB_CID(187)
+#define CID_search_aggregation_UniqueCountAggregationResult SEARCHLIB_CID(188)

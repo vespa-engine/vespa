@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.vespa;
 
+import java.util.List;
+
 import com.yahoo.document.PositionDataType;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.request.AddFunction;
@@ -18,6 +20,8 @@ import com.yahoo.search.grouping.request.BucketValue;
 import com.yahoo.search.grouping.request.CatFunction;
 import com.yahoo.search.grouping.request.ConstantValue;
 import com.yahoo.search.grouping.request.CountAggregator;
+import com.yahoo.search.grouping.request.DocumentCountAggregator;
+import com.yahoo.search.grouping.request.UniqueCountAggregator;
 import com.yahoo.search.grouping.request.DateFunction;
 import com.yahoo.search.grouping.request.DayOfMonthFunction;
 import com.yahoo.search.grouping.request.DayOfWeekFunction;
@@ -78,6 +82,8 @@ import com.yahoo.search.grouping.request.QuantileAggregator;
 import com.yahoo.search.grouping.request.RangePredicate;
 import com.yahoo.search.grouping.request.RawValue;
 import com.yahoo.search.grouping.request.RegexPredicate;
+import com.yahoo.search.grouping.request.CorrelatedPredicate;
+import com.yahoo.search.grouping.request.OncePerDocumentPredicate;
 import com.yahoo.search.grouping.request.RelevanceValue;
 import com.yahoo.search.grouping.request.ReverseFunction;
 import com.yahoo.search.grouping.request.SecondOfMinuteFunction;
@@ -105,7 +111,9 @@ import com.yahoo.searchlib.aggregation.AggregationResult;
 import com.yahoo.searchlib.aggregation.ArgmaxAggregationResult;
 import com.yahoo.searchlib.aggregation.AverageAggregationResult;
 import com.yahoo.searchlib.aggregation.CountAggregationResult;
+import com.yahoo.searchlib.aggregation.DocumentCountAggregationResult;
 import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
+import com.yahoo.searchlib.aggregation.UniqueCountAggregationResult;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.aggregation.MaxAggregationResult;
 import com.yahoo.searchlib.aggregation.MinAggregationResult;
@@ -158,6 +166,8 @@ import com.yahoo.searchlib.expression.RawBucketResultNode;
 import com.yahoo.searchlib.expression.RawBucketResultNodeVector;
 import com.yahoo.searchlib.expression.RawResultNode;
 import com.yahoo.searchlib.expression.RegexPredicateNode;
+import com.yahoo.searchlib.expression.CorrelatedPredicateNode;
+import com.yahoo.searchlib.expression.OncePerDocumentPredicateNode;
 import com.yahoo.searchlib.expression.RelevanceNode;
 import com.yahoo.searchlib.expression.ResultNodeVector;
 import com.yahoo.searchlib.expression.ReverseFunctionNode;
@@ -222,6 +232,9 @@ class ExpressionConverter {
      */
     public AggregationResult toAggregationResult(GroupingExpression exp) {
         int level = exp.getLevel();
+        if (exp instanceof UniqueCountAggregator unique) {
+            return new UniqueCountAggregationResult().setExpression(toExpressionNode(unique.getExpression()));
+        }
         // Is aggregating on list of groups?
         if (level > 1) {
             /*
@@ -241,6 +254,10 @@ class ExpressionConverter {
         }
         if (exp instanceof CountAggregator) {
             return new CountAggregationResult()
+                    .setExpression(new ConstantNode(new IntegerResultNode(0)));
+        }
+        if (exp instanceof DocumentCountAggregator) {
+            return new DocumentCountAggregationResult()
                     .setExpression(new ConstantNode(new IntegerResultNode(0)));
         }
         if (exp instanceof QuantileAggregator qa) {
@@ -289,7 +306,13 @@ class ExpressionConverter {
 
     /** Converts instances of {@link FilterExpression} to a corresponding back-end type ({@link FilterExpressionNode}). */
     public FilterExpressionNode toFilterExpressionNode(FilterExpression expression) {
-        if (expression instanceof RegexPredicate rp) {
+        if (expression instanceof CorrelatedPredicate correlated) {
+            var bindings = new java.util.TreeMap<>(correlated.getBindings());
+            return new CorrelatedPredicateNode(correlated.getLabel(), List.copyOf(bindings.keySet()),
+                    bindings.values().stream().map(this::toExpressionNode).toList());
+        } else if (expression instanceof OncePerDocumentPredicate oncePerDocument) {
+            return new OncePerDocumentPredicateNode(oncePerDocument.getKeys().stream().map(this::toExpressionNode).toList());
+        } else if (expression instanceof RegexPredicate rp) {
             return new RegexPredicateNode(rp.getPattern(), toExpressionNode(rp.getExpression()));
         } else if (expression instanceof RangePredicate rp) {
             return new RangePredicateNode(rp.getLower(), rp.getUpper(), toExpressionNode(rp.getExpression()), rp.getLowerInclusive(), rp.getUpperInclusive());

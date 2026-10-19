@@ -14,6 +14,7 @@
 LOG_SETUP(".termasstring");
 
 using search::query::And;
+using search::query::CorrelateBy;
 using search::query::AndNot;
 using search::query::DotProduct;
 using search::query::Equiv;
@@ -86,6 +87,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     }
 
     void visit(And&) override { illegalVisit(); }
+    void visit(CorrelateBy&) override { illegalVisit(); }
     void visit(AndNot&) override { illegalVisit(); }
     void visit(Equiv&) override { illegalVisit(); }
     void visit(Near&) override { illegalVisit(); }

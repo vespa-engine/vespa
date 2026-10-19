@@ -20,6 +20,28 @@ using search::streaming::Query;
 using search::streaming::QueryNodeResultFactory;
 using search::streaming::QueryTermList;
 
+TEST(StreamingQueryBuilderTest, unsupported_correlation_rejects_root_and_nested_queries) {
+    using ProtoQuery = SerializedQueryTree::ProtobufQueryTree;
+    for (bool nested : {false, true}) {
+        auto proto = std::make_unique<ProtoQuery>();
+        auto* root = proto->mutable_root();
+        if (nested) {
+            auto* conjunction = root->mutable_item_and();
+            conjunction->add_children()->mutable_item_true();
+            root = conjunction->add_children();
+        }
+        root->mutable_item_correlate_by();
+        auto serialized = SerializedQueryTree::fromProtobuf(std::move(proto));
+        QueryNodeResultFactory empty;
+        Query query(empty, *serialized);
+        EXPECT_FALSE(query.valid());
+        EXPECT_FALSE(query.evaluate());
+        QueryTermList terms;
+        query.getLeaves(terms);
+        EXPECT_TRUE(terms.empty());
+    }
+}
+
 TEST(StreamingQueryBuilderTest, hidden_terms_are_not_ranked) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addAnd(2);

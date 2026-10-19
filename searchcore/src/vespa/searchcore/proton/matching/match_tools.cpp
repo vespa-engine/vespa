@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "match_tools.h"
+#include "correlated_grouping_filters.h"
 
 #include "querynodes.h"
 #include "rangequerylocator.h"
@@ -298,6 +299,7 @@ MatchToolsFactory::MatchToolsFactory(
             setup_profiler->report(trace.createCursor("setup_profiling"));
         }
         _query.freeze();
+        prepare_correlated_bindings(_query, _mdl, _queryEnv.getObjectStore());
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         _object_store = &_queryEnv.getObjectStore();

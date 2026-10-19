@@ -3,6 +3,7 @@
 #include "match_thread.h"
 
 #include "document_scorer.h"
+#include "correlated_grouping_filters.h"
 #include "match_tools.h"
 #include "partial_result.h"
 #include "sort_feature_store.h"
@@ -433,6 +434,8 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
         return;
     }
     bool hasGrouping = bool(context.grouping);
+    std::unique_ptr<CorrelatedGroupingFilters> correlation_filters;
+    if (hasGrouping) correlation_filters = std::make_unique<CorrelatedGroupingFilters>(*context.grouping, matchToolsFactory);
     if (context.sort->hasSortData() || hasGrouping) {
         result->mergeWithBitOverflow(fallback_rank_value());
     }
