@@ -450,7 +450,11 @@ public:
     virtual void freeze() = 0;
     bool frozen() const { return _frozen; }
 
-    virtual void set_matching_phase(MatchingPhase matching_phase) noexcept = 0;
+    virtual void set_matching_phase(MatchingPhase matching_phase) noexcept {
+        if (matching_phase != MatchingPhase::FIRST_PHASE) {
+            _strict = false;
+        }
+    }
 
 protected:
     virtual SearchIteratorUP createSearchImpl(fef::MatchData& md) const = 0;
@@ -640,7 +644,6 @@ public:
     const State& getState() const final { return _state; }
     void fetchPostings(const ExecuteInfo& execInfo) override;
     void freeze() final;
-    void set_matching_phase(MatchingPhase matching_phase) noexcept override;
     SearchIteratorUP createSearchImpl(fef::MatchData& md) const override;
     const LeafBlueprint* asLeaf() const noexcept final { return this; }
 
