@@ -134,8 +134,9 @@ public interface Embedder {
         /** Add a sample embedding length to this */
         void sampleSequenceLength(long length, Context ctx);
         /**
-         * Add a sample length of the input sequence evaluated by a model to this: the length after padding it to a
-         * bucket for batching, which is the input length when it is not padded.
+         * Add a sample padded embedding length to this.
+         * Padding to padding-buckets makes inputs of different lengths the same length, so they can be batched.
+         * Without padding, this is the input length.
          */
         default void samplePaddedSequenceLength(long length, Context ctx) { }
         /** Add a sample request count to this */

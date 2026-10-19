@@ -110,7 +110,7 @@ class OnnxPadderTest {
             padded.evaluate(inputs(length));
             assertEquals(evaluator.lastInputLength(), padded.paddedLength(length), "Length " + length);
         }
-        assertEquals(5, evaluator.paddedLength(5), "An evaluator which does not pad evaluates inputs at their length");
+        assertEquals(5, evaluator.paddedLength(5), "An evaluator which does not pad returns the length unchanged");
     }
 
     @Test
