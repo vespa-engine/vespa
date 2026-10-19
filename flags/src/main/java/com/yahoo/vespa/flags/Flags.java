@@ -250,6 +250,13 @@ public class Flags {
             "Takes effect on the next deployment.",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+    public static final UnboundBooleanFlag USE_ML_MODEL_IMPORT_CACHE = defineFeatureFlag(
+            "use-ml-model-import-cache", false,
+            List.of("hmusum"), "2026-10-18", "2027-04-18",
+            "Whether to cache imported ONNX, XGBoost and LightGBM models on config server disk between deployments.",
+            "Takes effect on the next deployment.",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
     public static final UnboundBooleanFlag PRODUCT_DISCOVERY = defineFeatureFlag(
             "product-discovery", false,
             List.of("sebasabe"), "2026-10-09", "2027-10-09",

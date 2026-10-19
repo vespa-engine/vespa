@@ -70,6 +70,7 @@ public class ModelContextImpl implements ModelContext {
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
     private final OnnxModelCost onnxModelCost;
+    private final Optional<File> mlModelImportCacheDir;
 
     private final Optional<DockerImage> wantedDockerImageRepository;
 
@@ -99,7 +100,8 @@ public class ModelContextImpl implements ModelContext {
                             OnnxModelCost onnxModelCost,
                             Optional<DockerImage> wantedDockerImageRepository,
                             Version modelVespaVersion,
-                            Version wantedNodeVespaVersion) {
+                            Version wantedNodeVespaVersion,
+                            Optional<File> mlModelImportCacheDir) {
         this.applicationPackage = applicationPackage;
         this.previousModel = previousModel;
         this.deployLogger = deployLogger;
@@ -115,6 +117,7 @@ public class ModelContextImpl implements ModelContext {
         this.modelVespaVersion = modelVespaVersion;
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.onnxModelCost = onnxModelCost;
+        this.mlModelImportCacheDir = mlModelImportCacheDir;
     }
 
     @Override
@@ -157,6 +160,8 @@ public class ModelContextImpl implements ModelContext {
     public Optional<File> appDir() { return appDir; }
 
     @Override public OnnxModelCost onnxModelCost() { return onnxModelCost; }
+
+    @Override public Optional<File> mlModelImportCacheDir() { return mlModelImportCacheDir; }
 
     @Override
     public Optional<DockerImage> wantedDockerImageRepo() { return wantedDockerImageRepository; }
@@ -264,6 +269,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableLandlock() { return flag(Flags.ENABLE_LANDLOCK).value(); }
         @Override public boolean enableLegacyFeedHandler() { return flag(Flags.ENABLE_LEGACY_FEED_HANDLER).value(); }
         @Override public boolean productDiscovery() { return flag(Flags.PRODUCT_DISCOVERY).value(); }
+        @Override public boolean useMlModelImportCache() { return flag(Flags.USE_ML_MODEL_IMPORT_CACHE).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();

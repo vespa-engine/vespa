@@ -14,4 +14,10 @@ public interface MlModelImporter {
 
     ImportedMlModel importModel(String modelName, File modelPath);
 
+    /**
+     * Returns true if the result of importing a model with this depends only on the model name and
+     * the content of the model file, such that the result can be cached by file content.
+     */
+    default boolean isCacheable() { return false; }
+
 }

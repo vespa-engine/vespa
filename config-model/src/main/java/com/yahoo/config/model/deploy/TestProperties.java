@@ -91,6 +91,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean enableLandlock = false;
     private boolean enableLegacyFeedHandler = true;
     private boolean productDiscovery = false;
+    private boolean useMlModelImportCache = false;
     private OpenTelemetryConfiguration opentelemetrySdk = OpenTelemetrySettings.createDisabled();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -158,6 +159,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean enableLandlock() { return enableLandlock; }
     @Override public boolean enableLegacyFeedHandler() { return enableLegacyFeedHandler; }
     @Override public boolean productDiscovery() { return productDiscovery; }
+    @Override public boolean useMlModelImportCache() { return useMlModelImportCache; }
     @Override public OpenTelemetryConfiguration opentelemetrySdk() { return opentelemetrySdk; }
 
 
@@ -412,6 +414,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties productDiscovery(boolean value) {
         this.productDiscovery = value;
+        return this;
+    }
+
+    public TestProperties useMlModelImportCache(boolean value) {
+        this.useMlModelImportCache = value;
         return this;
     }
 
