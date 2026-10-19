@@ -178,6 +178,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         var start = System.nanoTime();
         var encoding = tokenizer.encode(text, context.getLanguage());
         runtime.sampleSequenceLength(encoding.ids().size(), context);
+        runtime.samplePaddedSequenceLength(evaluator.paddedLength(encoding.ids().size()), context);
         Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1").expand("d0");
         Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1").expand("d0");
         Map<String, Tensor> inputs;

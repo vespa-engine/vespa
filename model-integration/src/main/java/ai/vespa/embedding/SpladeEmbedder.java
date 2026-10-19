@@ -120,6 +120,7 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
 
         var encoding = tokenizer.encode(text, context.getLanguage());
         runtime.sampleSequenceLength(encoding.ids().size(), context);
+        runtime.samplePaddedSequenceLength(evaluator.paddedLength(encoding.ids().size()), context);
 
         Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
         Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1");

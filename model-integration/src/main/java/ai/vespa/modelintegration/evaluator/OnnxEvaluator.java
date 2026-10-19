@@ -34,6 +34,12 @@ public interface OnnxEvaluator extends AutoCloseable {
     Map<String, TensorType> getInputInfo();
     Map<String, TensorType> getOutputInfo();
 
+    /**
+     * Returns the length that an input sequence is padded to given its original length.
+     * For an {@link OnnxPadder} this is a bucket length; evaluators which do not pad return the length unchanged.
+     */
+    default int paddedLength(int length) { return length; }
+
     @Override void close();
 
 }

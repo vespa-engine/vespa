@@ -16,6 +16,7 @@ import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -83,6 +84,20 @@ class PaddedEmbeddingTest {
         // The dummy vocabulary has single letters
         assertEmbedsTheSame(runtime -> new BertBaseEmbedder(runtime, Embedder.Runtime.testInstance(), config, PaddingTestRuntime.onnxConfig(runtime)),
                             List.of("tensor<float>(x[16])"), "BERT", "a b c d e f g h i j k", "a b c d e f g h i j k ".repeat(4), "a b c d e f g h i j k ".repeat(10));
+    }
+
+    @Test
+    void theColBertPaddedSequenceLengthIsTheExpandedQueryPadded() {
+        var runtime = new PaddingTestRuntime();
+        var metrics = new LengthRecordingRuntime();
+        var padded = colBert(runtime, metrics, MASKED_MODEL, true, 32, 512);
+        try {
+            embed(padded, SHORT_TEXT, QUERY, COLBERT_FLOAT);
+            assertEquals(runtime.lastInputLength(), metrics.lastPaddedSequenceLength(), "The bucket the expanded query is padded to");
+            assertTrue(metrics.lastSequenceLength() < 32, "The text has fewer tokens than the expanded query");
+        } finally {
+            padded.deconstruct();
+        }
     }
 
     @Test
@@ -222,6 +237,11 @@ class PaddedEmbeddingTest {
     }
 
     private static ColBertEmbedder colBert(OnnxRuntime runtime, String model, boolean attendToExpansionTokens, int maxQueryTokens, int maxDocumentTokens) {
+        return colBert(runtime, Embedder.Runtime.testInstance(), model, attendToExpansionTokens, maxQueryTokens, maxDocumentTokens);
+    }
+
+    private static ColBertEmbedder colBert(OnnxRuntime runtime, Embedder.Runtime metrics, String model, boolean attendToExpansionTokens,
+                                           int maxQueryTokens, int maxDocumentTokens) {
         var config = new ColBertEmbedderConfig.Builder()
                 .tokenizerPath(ModelReference.valueOf(TOKENIZER))
                 .transformerModel(ModelReference.valueOf(model))
@@ -229,7 +249,7 @@ class PaddedEmbeddingTest {
                 .maxQueryTokens(maxQueryTokens)
                 .maxDocumentTokens(maxDocumentTokens);
         if (model.equals(MASKED_MODEL)) config.transformerOutput("last_hidden_state");
-        return new ColBertEmbedder(runtime, Embedder.Runtime.testInstance(), config.build(), PaddingTestRuntime.onnxConfig(runtime));
+        return new ColBertEmbedder(runtime, metrics, config.build(), PaddingTestRuntime.onnxConfig(runtime));
     }
 
     /** Embeds with a new context each time, since a context caches embeddings by embedder id and text, which the embedders share */
@@ -249,6 +269,23 @@ class PaddedEmbeddingTest {
             double value = actual.get(cell.getKey());
             assertTrue(Math.abs(cell.getValue() - value) <= 1e-4, what + ": expected " + cell.getValue() + " at " + cell.getKey() + ", got " + value);
         });
+    }
+
+    /** Records the sequence lengths an embedder samples */
+    private static class LengthRecordingRuntime implements Embedder.Runtime {
+
+        final List<Long> sequenceLengths = new ArrayList<>();
+        final List<Long> paddedSequenceLengths = new ArrayList<>();
+
+        long lastSequenceLength() { return sequenceLengths.get(sequenceLengths.size() - 1); }
+        long lastPaddedSequenceLength() { return paddedSequenceLengths.get(paddedSequenceLengths.size() - 1); }
+
+        @Override public void sampleSequenceLength(long length, Embedder.Context ctx) { sequenceLengths.add(length); }
+        @Override public void samplePaddedSequenceLength(long length, Embedder.Context ctx) { paddedSequenceLengths.add(length); }
+        @Override public void sampleEmbeddingLatency(double millis, Embedder.Context ctx) { }
+        @Override public void sampleRequestCount(Embedder.Context ctx) { }
+        @Override public void sampleRequestFailure(Embedder.Context ctx, int statusCode) { }
+
     }
 
     private static class ModelPaths implements ModelPathHelper {
