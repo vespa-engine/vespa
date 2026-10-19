@@ -653,6 +653,20 @@ struct MyWorld {
         return match_tools->match_data().get_termwise_limit();
     }
 
+    bool sort_needs_unpack(const std::vector<std::string>& public_names) {
+        Matcher::SP                        matcher = createMatcher();
+        SearchRequest::SP                  request = createSimpleRequest("f1", "spread");
+        search::fef::Properties            overrides;
+        search::queryeval::QuerySetupStats setup_stats;
+        auto                               mtf =
+            matcher->create_match_tools_factory(*request, searchContext, attributeContext, metaStore, overrides,
+                                                ttb(), nullptr, setup_stats, searchContext.getDocIdLimit(), true);
+        EXPECT_TRUE(mtf->prepare_and_install_sort_features(public_names));
+        MatchTools::UP match_tools = mtf->createMatchTools();
+        match_tools->setup_first_phase_and_sort(nullptr, nullptr, false);
+        return match_tools->sort_needs_unpack();
+    }
+
     SearchReply::UP performSearch(const SearchRequest& req, size_t threads) {
         Matcher::SP                    matcher = createMatcher();
         SearchSession::OwnershipBundle owned_objects(
@@ -1522,7 +1536,7 @@ TEST_F(MatchingTest, require_that_sort_features_profiling_is_absent_without_feat
     EXPECT_FALSE(walk_profile_tag(*request, "sort_features_profiling").present);
 }
 
-TEST_F(MatchingTest, require_that_sort_features_profiling_counts_constants_per_sort_program) {
+TEST_F(MatchingTest, require_that_sort_features_profiling_counts_shared_executors_once) {
     MyWorld world(shared_state());
     world.basicSetup();
     world.setup_sort_feature_expr("by_x", "attribute(a1) + rankingExpression(c)");
@@ -1536,15 +1550,53 @@ TEST_F(MatchingTest, require_that_sort_features_profiling_counts_constants_per_s
     ASSERT_EQ(9u, reply->hits.size());
     auto sort_walk = walk_profile_tag(*request, "sort_features_profiling");
     ASSERT_TRUE(sort_walk.present);
+    // One program: the constant is computed once at setup, and the shared
+    // attribute under the first sort level to evaluate it for each hit.
     EXPECT_EQ(3u, sort_walk.root_counts.size());
     EXPECT_EQ(9, sort_walk.root_counts["function by_x"]);
     EXPECT_EQ(9, sort_walk.root_counts["function by_y"]);
-    EXPECT_EQ(2, sort_walk.root_counts["function c"]);
+    EXPECT_EQ(1, sort_walk.root_counts["function c"]);
     EXPECT_EQ(1u, sort_walk.child_counts["function by_x"].size());
     EXPECT_EQ(9, sort_walk.child_counts["function by_x"]["rank feature attribute(a1)"]);
-    EXPECT_EQ(1u, sort_walk.child_counts["function by_y"].size());
-    EXPECT_EQ(9, sort_walk.child_counts["function by_y"]["rank feature attribute(a1)"]);
+    EXPECT_EQ(0u, sort_walk.child_counts["function by_y"].size());
     EXPECT_EQ(0u, sort_walk.child_counts["function c"].size());
+}
+
+TEST_F(MatchingTest, require_that_feature_sort_levels_follow_the_sort_spec) {
+    for (bool with_unselected : {false, true}) {
+        MyWorld world(shared_state());
+        world.basicSetup();
+        // The seeds, attribute(a1) and rankingExpression(by_neg), are kept sorted by name.
+        world.setup_sort_feature_by_a1();
+        world.setup_sort_feature_expr("by_neg", "0 - attribute(a1)");
+        if (with_unselected) {
+            world.setup_sort_feature_bm25();
+        }
+        world.basicResults();
+        const std::string label = "with_unselected=" + std::to_string(with_unselected);
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        request->sortSpec = "-feature(by_neg) -feature(by_a1)";
+        SearchReply::UP reply = world.performSearch(*request, 1);
+        ASSERT_EQ(9u, reply->hits.size()) << label;
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[0].gid) << label;
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[8].gid) << label;
+        request->sortSpec = "-feature(by_a1) -feature(by_neg)";
+        reply = world.performSearch(*request, 1);
+        ASSERT_EQ(9u, reply->hits.size()) << label;
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid) << label;
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[8].gid) << label;
+    }
+}
+
+TEST_F(MatchingTest, require_that_unselected_sort_features_do_not_force_unpack) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.setup_sort_feature_bm25();
+    world.basicResults();
+    EXPECT_FALSE(world.sort_needs_unpack({"by_a1"}));
+    EXPECT_TRUE(world.sort_needs_unpack({"title_bm25"}));
+    EXPECT_TRUE(world.sort_needs_unpack({"by_a1", "title_bm25"}));
 }
 
 TEST_F(MatchingTest, require_that_sort_features_profiling_is_absent_when_tracing_is_off) {

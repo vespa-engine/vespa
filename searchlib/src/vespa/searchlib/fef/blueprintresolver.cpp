@@ -299,4 +299,45 @@ bool BlueprintResolver::compile() {
     return !compiler.failed();
 }
 
+BlueprintResolver::SP BlueprintResolver::select_seeds(const std::vector<std::string>& seeds) const {
+    auto              result = std::make_shared<BlueprintResolver>(_factory, _indexEnv);
+    std::vector<bool> keep(_executorSpecs.size(), false);
+    for (const auto& seed : seeds) {
+        auto pos = _seedMap.find(seed);
+        if (pos == _seedMap.end()) {
+            return {};
+        }
+        keep[pos->second.executor] = true;
+        result->_seedMap.insert(*pos);
+    }
+    // Inputs always have lower indexes than the executors using them.
+    for (size_t i = keep.size(); i-- > 0;) {
+        if (keep[i]) {
+            for (const auto& input : _executorSpecs[i].inputs) {
+                keep[input.executor] = true;
+            }
+        }
+    }
+    std::vector<uint32_t> new_index(keep.size(), FeatureRef::undef);
+    for (size_t i = 0; i < keep.size(); ++i) {
+        if (keep[i]) {
+            new_index[i] = result->_executorSpecs.size();
+            auto& spec = result->_executorSpecs.emplace_back(_executorSpecs[i]);
+            for (auto& input : spec.inputs) {
+                input.executor = new_index[input.executor];
+            }
+        }
+    }
+    for (const auto& [name, ref] : _featureMap) {
+        if (keep[ref.executor]) {
+            result->_featureMap.emplace_hint(result->_featureMap.end(), name,
+                                             FeatureRef(new_index[ref.executor], ref.output));
+        }
+    }
+    for (auto& entry : result->_seedMap) {
+        entry.second.executor = new_index[entry.second.executor];
+    }
+    return result;
+}
+
 } // namespace search::fef

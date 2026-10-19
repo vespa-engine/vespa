@@ -38,6 +38,22 @@ public:
         std::string _attribute;
         std::string _operation;
     };
+    /**
+     * The sort features selected by one query. The resolver holds only those
+     * features and their dependencies. For each selected public name, in
+     * query order, seed_index gives the index of its value in the sort
+     * program's get_seeds().
+     **/
+    struct SortSelection {
+        BlueprintResolver::SP resolver;
+        std::vector<uint32_t> seed_index;
+        SortSelection();
+        SortSelection(const SortSelection&);
+        SortSelection(SortSelection&&) noexcept;
+        SortSelection& operator=(SortSelection&&) noexcept;
+        ~SortSelection();
+        bool valid() const noexcept { return bool(resolver); }
+    };
 
 private:
     const BlueprintFactory&                      _factory;
@@ -68,7 +84,8 @@ private:
     std::vector<std::string>                     _summaryFeatures;
     std::vector<std::string>                     _dumpFeatures;
     std::vector<std::string>                     _sort_features;
-    std::map<std::string, BlueprintResolver::SP> _sort_resolver_by_public;
+    BlueprintResolver::SP                        _sort_resolver;
+    std::map<std::string, std::string>           _sort_seed_by_public;
     Warnings                                     _warnings;
     StringStringMap                              _feature_rename_map;
     bool                                         _sort_blueprints_by_cost;
@@ -100,6 +117,7 @@ private:
     bool                                         _mutateAllowQueryOverride;
 
     void compileAndCheckForErrors(BlueprintResolver& bp);
+    void check_sort_features();
 
 public:
     RankSetup(const RankSetup&) = delete;
@@ -463,24 +481,26 @@ public:
     RankProgram::UP create_dump_program() const { return std::make_unique<RankProgram>(_dumpResolver); }
 
     bool has_sort_feature(const std::string& public_name) const {
-        return _sort_resolver_by_public.contains(public_name);
+        return _sort_seed_by_public.contains(public_name);
     }
 
     /**
-     * Creates the program evaluating the named sort feature. Returns nullptr if
-     * the name is not an allowed sort feature; callers reaching this with a name
-     * they have not checked with has_sort_feature() must fail the query rather
-     * than order the hits some other way.
+     * Selects the named sort features for one query. Returns an invalid
+     * selection if one of the names is not an allowed sort feature; callers
+     * must then fail the query rather than order the hits some other way.
      **/
-    RankProgram::UP create_sort_program(const std::string& public_name) const;
+    SortSelection select_sort_features(const std::vector<std::string>& public_names) const;
 
     /**
-     * Prepare shared state only for the unique resolvers selected by public name.
-     * Returns false, having prepared nothing further, if one of the names is not
-     * an allowed sort feature.
+     * Creates the single program evaluating every feature in a valid selection.
      **/
-    [[nodiscard]] bool prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IObjectStore& objectStore,
-                                                 const std::vector<std::string>& selected_public_names) const;
+    RankProgram::UP create_sort_program(const SortSelection& selection) const;
+
+    /**
+     * Prepare shared state for the features in a valid selection only.
+     **/
+    void prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IObjectStore& objectStore,
+                                   const SortSelection& selection) const;
 
     /**
      * Here you can do some preprocessing. State must be stored in the IObjectStore.

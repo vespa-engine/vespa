@@ -130,6 +130,16 @@ public:
     bool compile();
 
     /**
+     * Create a compiled resolver holding only the given seeds and the
+     * executors they depend on, in the same relative order. Blueprints
+     * are shared with this resolver, which is left unchanged. Seeds are
+     * named as in the seed map.
+     *
+     * @return the selected resolver, or nullptr if a name is not a seed
+     **/
+    [[nodiscard]] SP select_seeds(const std::vector<std::string>& seeds) const;
+
+    /**
      * Obtain a vector indicating the order of instantiation of
      * feature executors and also how they should be wired together.
      * The enum value of an executor spec may be used directly as an
