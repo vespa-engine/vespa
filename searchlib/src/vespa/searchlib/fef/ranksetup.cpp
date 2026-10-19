@@ -335,13 +335,13 @@ RankSetup::SortSelection RankSetup::select_sort_features(const std::vector<std::
 }
 
 RankProgram::UP RankSetup::create_sort_program(const SortSelection& selection) const {
-    assert(selection.valid());
+    CHECK(selection.valid());
     return std::make_unique<RankProgram>(selection.resolver);
 }
 
 void RankSetup::prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IObjectStore& objectStore,
                                           const SortSelection& selection) const {
-    assert(selection.valid());
+    CHECK(selection.valid());
     for (const auto& spec : selection.resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
