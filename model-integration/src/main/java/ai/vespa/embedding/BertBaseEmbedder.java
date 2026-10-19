@@ -110,6 +110,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         }
         List<Integer> tokens = embedWithSeparatorTokens(text, context, maxTokens);
         runtime.sampleSequenceLength(tokens.size(), context);
+        runtime.samplePaddedSequenceLength(evaluator.paddedLength(tokens.size()), context);
         var embedding = embedTokens(tokens, type, OnnxEmbedderTimeout.remainingOrThrow(context));
         runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return embedding;

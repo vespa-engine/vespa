@@ -103,6 +103,17 @@ class OnnxPadderTest {
     }
 
     @Test
+    void thePaddedLengthIsTheLengthInputsAreEvaluatedAt() {
+        var evaluator = new FakeEvaluator(0);
+        var padded = padded(evaluator, 64, 8);
+        for (var length : List.of(3, 8, 9, 65)) {
+            padded.evaluate(inputs(length));
+            assertEquals(evaluator.lastInputLength(), padded.paddedLength(length), "Length " + length);
+        }
+        assertEquals(5, evaluator.paddedLength(5), "An evaluator which does not pad evaluates inputs at their length");
+    }
+
+    @Test
     void sequenceInputsArePaddedWithZerosAndOtherInputsLeftAlone() {
         var evaluator = new FakeEvaluator(MIXED_INPUTS, OUTPUTS, 0);
         var padded = OnnxPadder.of(OnnxPadderOptions.of(List.of(8)), evaluator, "model");

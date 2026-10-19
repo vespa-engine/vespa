@@ -133,6 +133,11 @@ public interface Embedder {
         void sampleEmbeddingLatency(double millis, Context ctx);
         /** Add a sample embedding length to this */
         void sampleSequenceLength(long length, Context ctx);
+        /**
+         * Add a sample length of the input sequence evaluated by a model to this: the length after padding it to a
+         * bucket for batching, which is the input length when it is not padded.
+         */
+        default void samplePaddedSequenceLength(long length, Context ctx) { }
         /** Add a sample request count to this */
         void sampleRequestCount(Context ctx);
         /** Add a sample request failure to this */

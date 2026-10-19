@@ -225,7 +225,8 @@ public final class OnnxPadder implements OnnxEvaluator {
     private int largestBucket() { return buckets[buckets.length - 1]; }
 
     /** Returns the smallest bucket that fits the length, or the length itself if none does */
-    private int paddedLength(int length) {
+    @Override
+    public int paddedLength(int length) {
         for (int bucket : buckets) {
             if (bucket >= length) return bucket;
         }

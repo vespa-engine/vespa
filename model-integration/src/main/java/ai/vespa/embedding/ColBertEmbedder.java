@@ -224,6 +224,8 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         var encoding = tokenizer.encode(text, context.getLanguage());
         runtime.sampleSequenceLength(encoding.ids().size(), context);
         TransformerInput input = buildTransformerInput(encoding.ids(), isQuery ? maxQueryTokens : maxDocumentTokens, isQuery);
+        // The model input, unlike the encoding, includes special tokens, and for queries [MASK] expansion tokens
+        runtime.samplePaddedSequenceLength(evaluator.paddedLength(input.inputIds().size()), context);
         Tensor inputIdsTensor = createTensorRepresentation(input.inputIds, "d1");
         Tensor attentionMaskTensor = createTensorRepresentation(input.attentionMask, "d1");
         var inputs = Map.of(inputIdsName,
