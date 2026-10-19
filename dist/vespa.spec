@@ -47,12 +47,10 @@
 %global _vespa_openssl_version 3.5.9
 %global _vespa_opentelemetry_cpp_version 1.29.0
 %global _vespa_grpc_version 1.84.0
-%if 0%{?el8} || 0%{?el9} || 0%{?amzn2023}
 %global _use_vespa_abseil_cpp 1
 %global _vespa_abseil_excludes |absl_[a-z_0-9]*
 %global _use_vespa_gtest 1
 %global _vespa_gtest_excludes |(gtest|gmock)(_main)?
-%endif
 %global _use_vespa_protobuf 1
 %global _vespa_protobuf_excludes |protobuf|utf8_validity|utf8_range
 %global _use_vespa_openblas 1
@@ -80,9 +78,9 @@
 %if ! 0%{?_vespa_java_version:1}
 %global _vespa_java_version 17
 %endif
-%if 0%{?el8} || 0%{?el9} || 0%{?el10}
 %global _use_vespa_re2 1
 %global _vespa_re2_excludes |re2
+%if 0%{?el8} || 0%{?el9} || 0%{?el10}
 %global _use_vespa_icu 1
 %global _vespa_icu_excludes |icu(data|i18n|io|test|tu|uc)
 %endif
