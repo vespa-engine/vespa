@@ -132,7 +132,7 @@ public interface ModelContext {
         // Keep until the oldest version supported by that window is at least 8.740.40.
         @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.740") default boolean protonLogWarningOnDiskCapacityChange() { return true; }
         @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.740") default boolean protonResampleDiskCapacity() { return true; }
-        @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}) default boolean fastMapSearch() { return false; }
+        @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}) default boolean fastMapSearch() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.755") default boolean relaxStrictlyIncreasingClusterStateVersions() { return true; }
         // TODO (@sebasabe): Remove when no loaded config model version reads it; productDiscovery() replaces it
         @ModelFeatureFlag(owners = {"sebasabe"}) default boolean commerceDiscovery() { return false; }
