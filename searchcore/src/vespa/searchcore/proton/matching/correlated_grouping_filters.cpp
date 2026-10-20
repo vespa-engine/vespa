@@ -6,6 +6,7 @@
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/queryeval/correlate_by_blueprint.h>
 #include <vespa/searchlib/queryeval/correlated_bindings.h>
+#include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <algorithm>
@@ -117,12 +118,24 @@ public:
                            uint32_t docid_limit)
         : _blueprint(blueprint), _layout(std::move(layout)), _docid_limit(docid_limit) {}
     const std::map<std::string, uint32_t>& columns() const override { return _blueprint.columns(); }
+    std::vector<bool> uncased_columns() const override { return _blueprint.uncased_columns(); }
     std::unique_ptr<CorrelatedBindingReader> create() const override {
         return std::make_unique<BindingProvider>(_blueprint, _layout, _docid_limit);
     }
 };
 
 bool reject_all_rows(uint32_t, std::span<const search::CorrelationBinding>) noexcept { return false; }
+
+/** A bound value of a variable compared without case is already lowercase, so the grouped value
+ *  must be lowercased too, or uppercase data in a case-insensitive field would never match. */
+bool same_value(const search::queryeval::BindingValue& bound, const search::CorrelationValue& grouped, bool uncased) {
+    if (uncased) {
+        const auto* text = std::get_if<std::string_view>(&grouped);
+        const auto* bound_text = std::get_if<std::string_view>(&bound);
+        if (text != nullptr && bound_text != nullptr) return *bound_text == vespalib::LowerCase::convert(*text);
+    }
+    return bound == grouped;
+}
 
 struct FindFilters : vespalib::ObjectPredicate, vespalib::ObjectOperation {
     std::vector<CorrelatedPredicateNode*>& filters;
@@ -174,6 +187,7 @@ CorrelatedGroupingFilters::CorrelatedGroupingFilters(search::grouping::GroupingC
             continue;
         }
         std::vector<uint32_t> projection;
+        std::vector<bool> uncased;
         std::string unbound;
         for (const auto& variable : filter->variables()) {
             auto column = provider_factory->columns().find(variable);
@@ -183,6 +197,8 @@ CorrelatedGroupingFilters::CorrelatedGroupingFilters(search::grouping::GroupingC
             }
             projection.push_back(column->second);
         }
+        auto uncased_columns = provider_factory->uncased_columns();
+        for (uint32_t column : projection) uncased.push_back(column < uncased_columns.size() && uncased_columns[column]);
         if (!unbound.empty()) {
             vespalib::Issue::report("Grouping filter error: correlated('%s') uses variable '%s', which the query "
                                     "does not bind", label.c_str(), unbound.c_str());
@@ -191,12 +207,12 @@ CorrelatedGroupingFilters::CorrelatedGroupingFilters(search::grouping::GroupingC
         }
         auto& provider = providers[label];
         if (!provider) provider = provider_factory->create();
-        matchers.emplace_back([provider, projection = std::move(projection)]
+        matchers.emplace_back([provider, projection = std::move(projection), uncased = std::move(uncased)]
                                (uint32_t docid, std::span<const search::CorrelationBinding> projected) {
             auto bindings = provider->read(docid, projection);
             return std::any_of(bindings.begin(), bindings.end(), [&](const auto& binding) {
                 for (size_t i = 0; i < projected.size(); ++i)
-                    if (binding[i] != projected[i].second) return false;
+                    if (!same_value(binding[i], projected[i].second, uncased[i])) return false;
                 return true;
             });
         });

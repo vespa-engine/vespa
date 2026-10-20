@@ -21,6 +21,8 @@ class CorrelatedBindingFactory : public fef::Anything {
 public:
     static std::string store_key(std::string_view label) { return "correlatedBindings." + std::string(label); }
     virtual const std::map<std::string, uint32_t>& columns() const = 0;
+    /** Whether each column holds lowercased values, because the variable is compared without case. */
+    virtual std::vector<bool> uncased_columns() const { return {}; }
     virtual std::unique_ptr<CorrelatedBindingReader> create() const = 0;
 };
 
