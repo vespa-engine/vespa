@@ -19,7 +19,11 @@
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
+#include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/common/serialized_query_tree.h>
+#include <vespa/searchlib/common/unique_issues.h>
 #include <vespa/searchlib/common/converters.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
@@ -31,6 +35,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
+#include <vespa/searchlib/query/tree/query_to_protobuf.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/fake_index.h>
@@ -41,6 +46,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/featureset.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/limited_thread_bundle_wrapper.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/testclock.h>
@@ -2055,6 +2061,269 @@ TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_f
     ASSERT_EQ(list.size(), 2u);
     EXPECT_EQ(list[0], 2u);
     EXPECT_EQ(list[1], 3u);
+}
+
+//-----------------------------------------------------------------------------
+// correlateBy: clauses on the struct array "offers" share variables such as $unit.
+
+using OfferValues = std::map<uint32_t, std::vector<std::string>>;
+
+std::shared_ptr<AttributeVector> make_string_array(const std::string& name, const OfferValues& values) {
+    search::attribute::Config config(search::attribute::BasicType::STRING, search::attribute::CollectionType::ARRAY);
+    auto attr = AttributeFactory::createAttribute(name, config);
+    attr->addDocs(NUM_DOCS);
+    auto& strings = dynamic_cast<StringAttribute&>(*attr);
+    for (const auto& [docid, list] : values) {
+        for (const auto& value : list) {
+            strings.append(docid, value, 1);
+        }
+    }
+    attr->commit();
+    return attr;
+}
+
+std::shared_ptr<AttributeVector> make_int_array(const std::string& name) {
+    search::attribute::Config config(search::attribute::BasicType::INT32, search::attribute::CollectionType::ARRAY);
+    auto attr = AttributeFactory::createAttribute(name, config);
+    attr->addDocs(NUM_DOCS);
+    attr->commit();
+    return attr;
+}
+
+struct CorrelateClause {
+    std::string key_term;
+    std::map<std::string, std::string> bindings;
+};
+
+SerializedQueryTreeSP make_correlate_query(const std::vector<CorrelateClause>& clauses, CorrelateBy::Domains domains,
+                                           std::vector<CorrelateBy::FirstPresent> first_present = {},
+                                           const std::string& label = "") {
+    QueryBuilder<ProtonNodeTypes> builder;
+    CorrelateBy::Bindings bindings;
+    for (const auto& clause : clauses) {
+        bindings.push_back(clause.bindings);
+    }
+    builder.add_correlate_by(std::move(bindings), std::move(domains), label, {}, std::move(first_present));
+    int32_t id = 1;
+    for (const auto& clause : clauses) {
+        builder.addSameElement(1, "offers", id++, Weight(1));
+        builder.addStringTerm(clause.key_term, "key", id++, Weight(1));
+    }
+    QueryToProtobuf converter;
+    auto proto = converter.serialize(*builder.build());
+    return SerializedQueryTree::fromProtobuf(
+        std::make_unique<SerializedQueryTree::ProtobufQueryTree>(std::move(proto)));
+}
+
+// A world where the documents have an "offers" struct array with key, unit and zone attributes.
+struct CorrelateWorld {
+    MyWorld              world;
+    MockAttributeContext attributes;
+
+    explicit CorrelateWorld(MatchingTestSharedState& shared_state, bool with_offers = true)
+        : world(shared_state), attributes() {
+        world.basicSetup();
+        // The rank profile ranks by attribute(a1), which is the docid.
+        auto a1 = std::make_shared<SingleInt32ExtAttribute>("a1");
+        AttributeVector::DocId docid(0);
+        for (uint32_t i = 0; i < NUM_DOCS; ++i) {
+            a1->addDoc(docid);
+            a1->add(i, docid);
+        }
+        attributes.add(a1);
+        if (with_offers) {
+            for (const char* name : {"offers.key", "offers.unit", "offers.zone"}) {
+                world.schema.addAttributeField(
+                    Schema::AttributeField(name, DataType::STRING, schema::CollectionType::ARRAY));
+            }
+            world.schema.addAttributeField(
+                Schema::AttributeField("offers.rank", DataType::INT32, schema::CollectionType::ARRAY));
+            attributes.add(make_int_array("offers.rank"));
+        }
+    }
+
+    void add_offers(const std::string& field, const OfferValues& values) { attributes.add(make_string_array(field, values)); }
+
+    // Elements of "offers" whose key matches the term, for each document.
+    void add_key_matches(const std::string& term, const std::vector<std::pair<uint32_t, std::vector<uint32_t>>>& docs) {
+        world.searchContext.attr().addResult("offers.key", term, make_elem_result(docs));
+    }
+
+    SearchReply::UP search(SerializedQueryTreeSP query) {
+        SearchRequest request;
+        request.setTimeout(60s);
+        request.setSerializedQueryTree(std::move(query));
+        request.maxhits = 10;
+        Matcher::SP                    matcher = world.createMatcher();
+        SearchSession::OwnershipBundle owned_objects(
+            {std::make_unique<MockAttributeContext>(), std::make_unique<FakeSearchContext>()},
+            std::make_shared<MyWorld::MySearchHandler>(matcher));
+        return matcher->match(request, ttb(), world.searchContext, attributes, *world.sessionManager, world.metaStore,
+                              world.metaStore.getBucketDB(), std::move(owned_objects));
+    }
+
+    MatchingElements::UP matching_elements(SerializedQueryTreeSP query, std::initializer_list<uint32_t> docs) {
+        auto request = std::make_unique<DocsumRequest>();
+        request->setSerializedQueryTree(std::move(query));
+        for (uint32_t docid : docs) {
+            request->hits.emplace_back();
+            request->hits.back().docid = docid;
+        }
+        MatchingElementsFields fields;
+        fields.add_mapping("offers", "offers.key");
+        fields.add_mapping("offers", "offers.unit");
+        Matcher::SP matcher = world.createMatcher();
+        auto docsum_matcher = matcher->create_docsum_matcher(*request, world.searchContext, attributes, *world.sessionManager);
+        return docsum_matcher->get_matching_elements(fields);
+    }
+};
+
+std::vector<uint32_t> hit_docids(const SearchReply& reply) {
+    std::vector<uint32_t> result;
+    for (const auto& hit : reply.hits) {
+        for (uint32_t docid = 0; docid < NUM_DOCS; ++docid) {
+            if (document::DocumentId(vespalib::make_string("id:ns:searchdocument::%u", docid)).getGlobalId() == hit.gid) {
+                result.push_back(docid);
+            }
+        }
+    }
+    std::sort(result.begin(), result.end());
+    return result;
+}
+
+// Offers of doc 10: 0 = {price, u1, A}, 1 = {price, u2, C}, 2 = {eco, u1}, 3 = {price, u2, A}.
+// Doc 20 has a price for u1 and an eco offer for u2 only. Doc 30 has a price for u1 in zone C only.
+void add_unit_zone_offers(CorrelateWorld& f) {
+    f.add_offers("offers.unit", {{10, {"u1", "u2", "u1", "u2"}}, {20, {"u1", "u2"}}, {30, {"u1", "u1"}}});
+    f.add_offers("offers.zone", {{10, {"A", "C", "", "A"}}, {20, {"A", ""}}, {30, {"C", ""}}});
+    f.add_key_matches("price", {{10, {0, 1, 3}}, {20, {0}}, {30, {0}}});
+    f.add_key_matches("eco", {{10, {2}}, {20, {1}}, {30, {1}}});
+}
+
+SerializedQueryTreeSP price_with_eco_query(const std::string& label = "") {
+    return make_correlate_query({{"price", {{"unit", "unit"}, {"zone", "zone"}}}, {"eco", {{"unit", "unit"}}}},
+                                {{"zone", {"A", "B"}}}, {}, label);
+}
+
+TEST_F(MatchingTest, correlate_by_returns_documents_where_the_clauses_bind_the_same_unit_in_an_allowed_zone) {
+    CorrelateWorld f(shared_state());
+    add_unit_zone_offers(f);
+    search::UniqueIssues issues;
+    auto capture = vespalib::Issue::listen(issues);
+    auto reply = f.search(price_with_eco_query());
+    EXPECT_EQ(hit_docids(*reply), (std::vector<uint32_t>{10}));
+    EXPECT_EQ(0u, issues.size());
+}
+
+TEST_F(MatchingTest, correlate_by_exposes_only_correlated_elements_to_ranking) {
+    CorrelateWorld f(shared_state());
+    add_unit_zone_offers(f);
+    f.world.config.add(indexproperties::match::Feature::NAME, "elementwise(matches(offers),x)");
+    auto reply = f.search(price_with_eco_query());
+    ASSERT_EQ(1u, reply->hits.size());
+    ASSERT_EQ(1u, reply->match_features.names.size());
+    const auto& value = reply->match_features.values[0];
+    ASSERT_TRUE(value.is_data());
+    nbostream buf(value.as_data().data, value.as_data().size);
+    // Element 1 is in zone C and element 3 has a unit without an eco offer, so neither is reported.
+    EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)),
+              TensorSpec("tensor<float>(x{})").add({{"x", "0"}}, 1.0).add({{"x", "2"}}, 1.0));
+}
+
+TEST_F(MatchingTest, correlate_by_reports_bindings_of_a_labeled_query_to_ranking) {
+    CorrelateWorld f(shared_state());
+    add_unit_zone_offers(f);
+    f.world.config.add(indexproperties::match::Feature::NAME, "correlatedBindings(selection,unit,zone)");
+    auto reply = f.search(price_with_eco_query("selection"));
+    ASSERT_EQ(1u, reply->hits.size());
+    ASSERT_EQ(1u, reply->match_features.names.size());
+    const auto& value = reply->match_features.values[0];
+    ASSERT_TRUE(value.is_data());
+    nbostream buf(value.as_data().data, value.as_data().size);
+    // The zone attribute matches without case, so its values are reported in lowercase.
+    EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)),
+              TensorSpec("tensor(unit{},zone{})").add({{"unit", "u1"}, {"zone", "a"}}, 1.0));
+}
+
+TEST_F(MatchingTest, correlate_by_summary_elements_include_only_correlated_elements) {
+    CorrelateWorld f(shared_state());
+    add_unit_zone_offers(f);
+    auto result = f.matching_elements(price_with_eco_query(), {10, 20});
+    EXPECT_EQ(result->get_matching_elements(10, "offers"), (std::vector<uint32_t>{0, 2}));
+    EXPECT_TRUE(result->get_matching_elements(20, "offers").empty());
+}
+
+TEST_F(MatchingTest, correlate_by_first_present_uses_the_first_present_zone_and_hides_presence_elements) {
+    CorrelateWorld f(shared_state());
+    // Doc 40 has prices in zones A and B, but only zone B has a valid price.
+    // Doc 50 has a valid price in zone B, and a price without a valid value for unit u2 in zone C.
+    f.add_offers("offers.unit", {{40, {"u1", "u1", "u1"}}, {50, {"u1", "u1", "u2"}}});
+    f.add_offers("offers.zone", {{40, {"A", "B", ""}}, {50, {"B", "", "C"}}});
+    f.add_key_matches("valid_price", {{40, {1}}, {50, {0}}});
+    f.add_key_matches("price", {{40, {0, 1}}, {50, {0, 2}}});
+    f.add_key_matches("eco", {{40, {2}}, {50, {1}}});
+    std::map<std::string, std::string> unit_zone{{"unit", "unit"}, {"zone", "zone"}};
+    auto query = [&] {
+        return make_correlate_query({{"valid_price", unit_zone}, {"price", unit_zone}, {"eco", {{"unit", "unit"}}}}, {},
+                                    {{0, 1, "zone", {"A", "B"}}});
+    };
+    auto reply = f.search(query());
+    // Zone A is present for doc 40, so its valid price in zone B does not count.
+    EXPECT_EQ(hit_docids(*reply), (std::vector<uint32_t>{50}));
+    auto result = f.matching_elements(query(), {50});
+    // Element 2 only matches the presence clause.
+    EXPECT_EQ(result->get_matching_elements(50, "offers"), (std::vector<uint32_t>{0, 1}));
+}
+
+TEST_F(MatchingTest, correlate_by_reports_an_issue_for_a_binding_that_is_not_an_attribute) {
+    CorrelateWorld f(shared_state());
+    add_unit_zone_offers(f);
+    search::UniqueIssues issues;
+    auto capture = vespalib::Issue::listen(issues);
+    auto reply = f.search(make_correlate_query({{"price", {{"unit", "missing"}}}, {"eco", {{"unit", "unit"}}}}, {}));
+    EXPECT_TRUE(reply->hits.empty());
+    ASSERT_EQ(1u, issues.size());
+    issues.for_each_message([](const auto& message) {
+        EXPECT_NE(std::string::npos, message.find("'offers.missing', which is not an attribute"));
+    });
+}
+
+TEST_F(MatchingTest, correlate_by_reports_an_issue_for_a_variable_bound_to_integers_and_strings) {
+    CorrelateWorld f(shared_state());
+    add_unit_zone_offers(f);
+    search::UniqueIssues issues;
+    auto capture = vespalib::Issue::listen(issues);
+    auto reply = f.search(make_correlate_query({{"price", {{"unit", "unit"}}}, {"eco", {{"unit", "rank"}}}}, {}));
+    EXPECT_TRUE(reply->hits.empty());
+    ASSERT_EQ(1u, issues.size());
+    issues.for_each_message([](const auto& message) {
+        EXPECT_NE(std::string::npos, message.find("bound to both integer and string attributes"));
+    });
+}
+
+TEST_F(MatchingTest, correlate_by_reports_an_issue_for_a_domain_on_an_integer_variable) {
+    CorrelateWorld f(shared_state());
+    add_unit_zone_offers(f);
+    search::UniqueIssues issues;
+    auto capture = vespalib::Issue::listen(issues);
+    auto reply = f.search(make_correlate_query({{"price", {{"rank", "rank"}}}, {"eco", {{"rank", "rank"}}}},
+                                               {{"rank", {"1"}}}));
+    EXPECT_TRUE(reply->hits.empty());
+    ASSERT_EQ(1u, issues.size());
+    issues.for_each_message([](const auto& message) {
+        EXPECT_NE(std::string::npos, message.find("requires string attributes"));
+    });
+}
+
+TEST_F(MatchingTest, correlate_by_on_a_schema_without_the_field_reports_an_issue_and_matches_nothing) {
+    CorrelateWorld f(shared_state(), false);
+    f.add_key_matches("price", {{10, {0}}});
+    f.add_key_matches("eco", {{10, {1}}});
+    search::UniqueIssues issues;
+    auto capture = vespalib::Issue::listen(issues);
+    auto reply = f.search(price_with_eco_query());
+    EXPECT_TRUE(reply->hits.empty());
+    EXPECT_LE(1u, issues.size());
 }
 
 TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_near_operator) {

@@ -51,6 +51,10 @@ public:
     const std::vector<std::unique_ptr<SearchIterator>>& children() const { return _children; }
     std::span<const uint32_t> matching_elements() const noexcept { return _matchingElements; }
 
+    // Unpacks like doUnpack, but exposes only the given elements, which must be a
+    // sorted subset of matching_elements(). The search must be positioned at docid.
+    void unpack_elements(uint32_t docid, std::span<const uint32_t> element_ids);
+
     // used during docsum fetching to identify matching elements
     // initRange must be called before use.
     // doSeek/doUnpack must not be called.

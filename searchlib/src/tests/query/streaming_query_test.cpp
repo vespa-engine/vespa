@@ -942,8 +942,6 @@ TEST(StreamingQueryTest, control_the_size_of_query_terms) {
     EXPECT_EQ(136u + 2 * sizeof(std::string), sizeof(QueryTerm));
 }
 
-GTEST_MAIN_RUN_ALL_TESTS()
-
 TEST(StreamingQueryTest, correlation_in_a_composite_query_is_rejected) {
     for (int connector : {0, 1, 2}) {
         search::query::QueryBuilder<SimpleQueryNodeTypes> builder;
@@ -964,3 +962,5 @@ TEST(StreamingQueryTest, correlation_in_a_composite_query_is_rejected) {
         EXPECT_FALSE(query.valid());
     }
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()

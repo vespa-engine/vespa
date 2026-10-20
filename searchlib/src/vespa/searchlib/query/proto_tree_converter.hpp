@@ -13,6 +13,7 @@
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/searchlib/query/tree/weighted_string_term_vector.h>
+#include <vespa/vespalib/util/issue.h>
 
 using search::common::GeoLocation;
 using search::query::IntegerTermVector;
@@ -36,6 +37,10 @@ public:
         } else {
             LOG(error, "invalid serialized query tree >>>\n%s\n<<<",
                 search::common::protobuf_message_to_json(_proto).c_str());
+            // Tell the user why, for example which correlateBy rule the query breaks.
+            if (_builder.hasError()) {
+                vespalib::Issue::report("invalid query: %s", _builder.error().c_str());
+            }
             return {};
         }
     }
@@ -846,7 +851,9 @@ public:
             return handle(qti.item_geo_location_term());
 
         case IC::ITEM_NOT_SET:
-            LOG(error, "missing item in serialized query tree");
+            // A newer container may send an item type that this content node does not know.
+            _builder.reportError("the query contains an item type this content node does not support; "
+                                 "upgrade the content nodes before using it");
             return false;
         }
         LOG(error, "unknown item type %d in serialized query tree", (int)qti.item_case());

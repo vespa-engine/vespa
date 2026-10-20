@@ -166,6 +166,45 @@ TEST(CorrelatedRowsTest, unit_projection_does_not_materialize_independent_zone_c
     for (size_t i = 0; i < matches.size(); ++i) EXPECT_EQ(matches[i], (BindingRow{int64_t(i + 1)}));
 }
 
+TEST(CorrelatedRowsTest, a_shared_variable_that_is_not_the_first_column_is_still_looked_up) {
+    // Variables sorted by name: priceZone = 0, stockZone = 1, unit = 2.
+    std::vector<BindingTable> tables{{{0, 2}, {}}, {{1, 2}, {}}};
+    for (int64_t unit = 0; unit < 100; ++unit) {
+        for (int64_t zone = 0; zone < 5; ++zone) {
+            tables[0].rows.push_back({zone, unit});
+            tables[1].rows.push_back({zone + 10, unit});
+        }
+    }
+    CorrelatedRows join(3);
+    EXPECT_TRUE(join.has_match(tables));
+    // The zones are bound by one clause each, so only the unit is joined.
+    EXPECT_LE(join.visited_rows(), 2u);
+    const auto& matches = join.find_matches(tables);
+    EXPECT_EQ(2500u, matches.size());
+    EXPECT_EQ(matches.front(), (BindingRow{int64_t(0), int64_t(10), int64_t(0)}));
+    // Each price row looks up the five stock rows of its unit, instead of scanning all 500.
+    EXPECT_LE(join.visited_rows(), 500u + 500u * 5u);
+}
+
+TEST(CorrelatedRowsTest, variables_bound_by_one_clause_do_not_multiply_the_work) {
+    // Variables sorted by name: mode = 0, priceZone = 1, stockZone = 2, unit = 3, w = 4.
+    std::vector<BindingTable> tables{{{1, 3}, {}}, {{2, 3}, {}}, {{0, 3}, {}}, {{3, 4}, {{int64_t(8), int64_t(1)}}}};
+    for (int64_t value = 0; value < 20; ++value) {
+        for (size_t i = 0; i < 3; ++i) tables[i].rows.push_back({value, int64_t(7)});
+    }
+    CorrelatedRows join(5);
+    EXPECT_FALSE(join.has_match(tables));
+    // Unit 7 has no w row, which is found without trying every zone and mode combination.
+    EXPECT_LE(join.visited_rows(), 4u);
+    std::vector<uint32_t> projection{3};
+    EXPECT_TRUE(join.find_matches(tables, projection).empty());
+    EXPECT_LE(join.visited_rows(), 4u);
+    tables[3].rows.push_back({int64_t(7), int64_t(2)});
+    EXPECT_TRUE(join.has_match(tables));
+    EXPECT_EQ(join.find_matches(tables, projection), (std::vector<BindingRow>{{int64_t(7)}}));
+    EXPECT_LE(join.visited_rows(), 4u);
+}
+
 TEST(CorrelatedRowsTest, an_empty_clause_cannot_match) {
     std::vector<BindingTable> tables{{{0}, {{int64_t(1)}}}, {{0}, {}}};
     CorrelatedRows join(1);

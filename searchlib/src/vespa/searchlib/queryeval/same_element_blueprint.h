@@ -21,6 +21,7 @@ private:
     bool                                      _expensive;
     bool                                      _expose_match_data_for_same_element;
     std::vector<uint32_t>                     _element_filter;
+    bool                                      _allow_replacement;
     AnyFlow my_flow(InFlow in_flow) const override;
     FlowStats self_flow_stats(double est, size_t num_children) const override;
 
@@ -53,6 +54,8 @@ public:
     const FieldSpec& get_field() const noexcept { return _field; }
 
     Blueprint::UP get_replacement() override;
+    // Keeps this blueprint during optimize, for parents that need its SameElementSearch.
+    void disallow_replacement() noexcept { _allow_replacement = false; }
 };
 
 } // namespace search::queryeval
