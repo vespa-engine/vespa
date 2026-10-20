@@ -1140,10 +1140,6 @@ TEST(QueryBuilderTest, require_that_in_term_with_integers_can_be_created) {
     test_in_node(in_integers);
 }
 
-} // namespace
-
-GTEST_MAIN_RUN_ALL_TESTS()
-
 TEST(QueryBuilderTest, correlation_bindings_exact_values_label_and_fallback_survive_protobuf_and_replication) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     CorrelateBy::Bindings bindings{{{"unit", "unit_id"}, {"zone", "zone_id"}},
@@ -1216,3 +1212,7 @@ TEST(QueryBuilderTest, protobuf_iterator_visits_correlation_clauses_and_followin
     iterator = tree->makeIterator();
     EXPECT_FALSE(QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator));
 }
+
+} // namespace
+
+GTEST_MAIN_RUN_ALL_TESTS()
