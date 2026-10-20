@@ -5,11 +5,13 @@ import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.yahoo.api.annotations.Beta;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TreeMap;
 
 /**
@@ -17,107 +19,162 @@ import java.util.TreeMap;
  * A variable omitted by a clause is unbound there: a unit-only clause can match
  * the same unit as clauses which also bind a zone.
  *
+ * <p>Each child is a sameElement clause. This item keeps the variables each clause binds,
+ * the exact values its rows must have, and its firstPresent link, in the same order as the children.
+ * Add children with {@link #addClause} and {@link #addFirstPresent}; the other ways of adding a child are refused.
+ * Removing a child removes its clause. Removing one clause of a firstPresent pair turns the other into an ordinary clause.</p>
  */
 @Beta
 public class CorrelateByItem extends NonReducibleCompositeItem {
 
-    private static final String BINDINGS = "vespa.correlateBy.bindings";
-    private static final String EXACT_VALUES = "vespa.correlateBy.exactValues";
-    private static final String FIRST_PRESENT = "vespa.correlateBy.firstPresent";
-    private static final String PRESENCE = "vespa.correlateBy.presence";
-    private Map<String, List<String>> allowedValues = Map.of();
-    private int nextPresenceId;
+    /** The variable and its values in priority order for a clause matched at the first value which is present. */
+    public record FirstPresent(String variable, List<String> values) {
 
-    private record PresenceSelection(int id, String variable, List<String> values) {}
-
-    /** A value-filtered clause restricted by a separate, ordered presence query. */
-    public record FirstPresentRule(int clause, int presence, String variable, List<String> values) {}
-
-    /** Adds a clause and its variable-to-struct-field bindings. Fields are relative to the struct. */
-    public void addClause(SameElementItem clause, Map<String, String> bindings) {
-        addClause(clause, bindings, Map.of());
-    }
-
-    /** Adds a clause with exact string values required on its matching struct rows. */
-    public void addClause(SameElementItem clause, Map<String, String> bindings, Map<String, List<String>> exactValues) {
-        if (bindings.isEmpty()) throw new IllegalArgumentException("A correlated clause must bind at least one variable");
-        for (var binding : bindings.entrySet()) {
-            if (binding.getKey().isBlank() || binding.getValue().isBlank())
-                throw new IllegalArgumentException("Binding variables and fields must be nonempty");
+        public FirstPresent {
+            Objects.requireNonNull(variable, "variable");
+            if (variable.isBlank()) throw new IllegalArgumentException("The firstPresent variable must be nonempty");
+            values = List.copyOf(values);
         }
-        clause.addAnnotation(BINDINGS, Map.copyOf(bindings));
-        var copied = new TreeMap<String, List<String>>();
-        exactValues.forEach((field, values) -> {
-            if (field.isBlank()) throw new IllegalArgumentException("Exact value fields must be nonempty");
-            copied.put(field, List.copyOf(values));
-        });
-        clause.addAnnotation(EXACT_VALUES, Map.copyOf(copied));
-        addItem(clause);
+
     }
 
-    /** Returns immutable bindings for the clause at the given position. */
-    @SuppressWarnings("unchecked")
-    public Map<String, String> getBindings(int clause) {
-        Object bindings = getItem(clause).getAnnotation(BINDINGS);
-        if (!(bindings instanceof Map<?, ?>))
-            throw new IllegalArgumentException("Every correlateBy clause must have variable bindings");
-        return (Map<String, String>) bindings;
+    /** A sameElement clause, the variables it binds to its struct fields, and the exact values its rows must have. */
+    public record Clause(SameElementItem item, Map<String, String> bindings, Map<String, List<String>> exactValues) {
+
+        public Clause {
+            Objects.requireNonNull(item, "item");
+            if (bindings.isEmpty()) throw new IllegalArgumentException("A correlated clause must bind at least one variable");
+            for (var binding : bindings.entrySet()) {
+                if (binding.getKey().isBlank() || binding.getValue().isBlank())
+                    throw new IllegalArgumentException("Binding variables and fields must be nonempty");
+            }
+            bindings = sorted(bindings);
+            var copied = new TreeMap<String, List<String>>();
+            exactValues.forEach((field, values) -> {
+                if (field.isBlank()) throw new IllegalArgumentException("Exact value fields must be nonempty");
+                copied.put(field, List.copyOf(values));
+            });
+            exactValues = Collections.unmodifiableMap(copied);
+        }
+
+        public Clause(SameElementItem item, Map<String, String> bindings) {
+            this(item, bindings, Map.of());
+        }
+
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, List<String>> getExactValues(int clause) {
-        Object values = getItem(clause).getAnnotation(EXACT_VALUES);
-        return values == null ? Map.of() : (Map<String, List<String>>) values;
+    /** What this keeps about each child. A presence clause always follows the clause holding its firstPresent. */
+    private record ClauseInfo(Map<String, String> bindings, Map<String, List<String>> exactValues,
+                              FirstPresent firstPresent, boolean presence) {
+
+        ClauseInfo withoutFirstPresent() { return new ClauseInfo(bindings, exactValues, null, false); }
+
+    }
+
+    private List<ClauseInfo> clauses = new ArrayList<>();
+    private Map<String, List<String>> allowedValues = Map.of();
+
+    /** Adds a clause. */
+    public void addClause(Clause clause) {
+        super.addItem(clause.item());
+        clauses.add(new ClauseInfo(clause.bindings(), clause.exactValues(), null, false));
     }
 
     /**
-     * Adds a clause evaluated at the first listed value present for its other bindings.
-     * The presence query must bind the same variables on the same struct fields,
-     * and should test key presence independently of the matching value predicate.
+     * Adds a clause which is evaluated at the first of the given values of the variable for which
+     * the presence clause has a matching row. Both clauses must bind the same variables to the same fields,
+     * and the presence clause should test that a key is present independently of the value the first clause tests.
      */
-    public void addFirstPresentClause(SameElementItem clause, SameElementItem presence,
-                                      Map<String, String> bindings, Map<String, List<String>> exactValues,
-                                      Map<String, List<String>> presenceExactValues,
-                                      String variable, List<String> values) {
-        if (!bindings.containsKey(variable)) throw new IllegalArgumentException("First-present variable must be bound by the clause");
-        if (!clause.getFieldName().equals(presence.getFieldName()) || clause == presence)
-            throw new IllegalArgumentException("First-present queries must be distinct clauses on the same struct field");
-        var selection = new PresenceSelection(nextPresenceId++, variable, List.copyOf(values));
-        addClause(clause, bindings, exactValues);
-        addClause(presence, bindings, presenceExactValues);
-        clause.addAnnotation(FIRST_PRESENT, selection);
-        presence.addAnnotation(PRESENCE, selection.id());
+    public void addFirstPresent(Clause clause, Clause presence, String variable, List<String> values) {
+        var firstPresent = new FirstPresent(variable, values);
+        if ( ! clause.bindings().containsKey(variable))
+            throw new IllegalArgumentException("The firstPresent variable must be bound by the clause");
+        if ( ! clause.bindings().equals(presence.bindings()))
+            throw new IllegalArgumentException("firstPresent clauses must bind the same variables to the same fields");
+        if (clause.item() == presence.item() || ! clause.item().getFieldName().equals(presence.item().getFieldName()))
+            throw new IllegalArgumentException("firstPresent requires two different clauses on the same struct field");
+        super.addItem(clause.item());
+        super.addItem(presence.item());
+        clauses.add(new ClauseInfo(clause.bindings(), clause.exactValues(), firstPresent, false));
+        clauses.add(new ClauseInfo(presence.bindings(), presence.exactValues(), null, true));
     }
 
-    public List<FirstPresentRule> getFirstPresentRules() {
-        var presenceClauses = new TreeMap<Integer, Integer>();
-        for (int i = 0; i < getItemCount(); ++i) {
-            if (getItem(i).getAnnotation(PRESENCE) instanceof Integer id && presenceClauses.putIfAbsent(id, i) != null)
-                throw new IllegalArgumentException("First-present presence clauses must be unique");
-        }
-        var rules = new ArrayList<FirstPresentRule>();
-        var used = new HashSet<Integer>();
-        for (int i = 0; i < getItemCount(); ++i) {
-            if (!(getItem(i).getAnnotation(FIRST_PRESENT) instanceof PresenceSelection selection)) continue;
-            Integer presence = presenceClauses.get(selection.id());
-            if (presence == null || !used.add(presence) || presence == i ||
-                getItem(i).getAnnotation(PRESENCE) != null || !getBindings(i).equals(getBindings(presence)))
-                throw new IllegalArgumentException("First-present clause has no unique compatible presence query");
-            rules.add(new FirstPresentRule(i, presence, selection.variable(), selection.values()));
-        }
-        if (used.size() != presenceClauses.size()) throw new IllegalArgumentException("First-present presence query has no matching clause");
-        return List.copyOf(rules);
+    /** Returns the variables the clause at the given position binds, each mapped to its struct field. */
+    public Map<String, String> getBindings(int clause) { return clauses.get(clause).bindings(); }
+
+    /** Returns the exact values required by the clause at the given position, by struct field. */
+    public Map<String, List<String>> getExactValues(int clause) { return clauses.get(clause).exactValues(); }
+
+    /** Returns the firstPresent rule of the clause at the given position. Its presence clause is the next clause. */
+    public Optional<FirstPresent> getFirstPresent(int clause) {
+        return Optional.ofNullable(clauses.get(clause).firstPresent());
     }
 
-    /** Restricts a string variable to these values, using exact equality. An empty list matches nothing. */
+    /** Returns whether the clause at the given position is the presence clause of the clause before it. */
+    public boolean isPresenceClause(int clause) { return clauses.get(clause).presence(); }
+
+    /** Restricts a string variable to these values. An empty list matches nothing. */
     public void setAllowedValues(String variable, List<String> values) {
         if (variable.isBlank()) throw new IllegalArgumentException("Binding variable must be nonempty");
         var updated = new TreeMap<>(allowedValues);
         updated.put(variable, List.copyOf(values));
-        allowedValues = Map.copyOf(updated);
+        allowedValues = Collections.unmodifiableMap(updated);
     }
 
     public Map<String, List<String>> getAllowedValues() { return allowedValues; }
+
+    /** Refused: add clauses with {@link #addClause} or {@link #addFirstPresent}, which also add their variable bindings. */
+    @Override
+    public void addItem(Item item) {
+        throw new IllegalArgumentException("Add correlateBy clauses with addClause or addFirstPresent");
+    }
+
+    /** Refused: add clauses with {@link #addClause} or {@link #addFirstPresent}, which also add their variable bindings. */
+    @Override
+    public void addItem(int index, Item item) {
+        throw new IllegalArgumentException("Add correlateBy clauses with addClause or addFirstPresent");
+    }
+
+    /** Replaces the sameElement query of a clause, keeping its variable bindings. */
+    @Override
+    public Item setItem(int index, Item item) {
+        requireSameElement(item);
+        return super.setItem(index, item);
+    }
+
+    @Override
+    public Item removeItem(int index) {
+        Item removed = super.removeItem(index);
+        clauseRemoved(index);
+        return removed;
+    }
+
+    @Override
+    public boolean removeItem(Item item) {
+        int index = getItemIndex(item);
+        if (index < 0) return false;
+        removeItem(index);
+        return true;
+    }
+
+    @Override
+    public ListIterator<Item> getItemIterator() {
+        return new ClauseIterator(super.getItemIterator());
+    }
+
+    private static void requireSameElement(Item item) {
+        if ( ! (item instanceof SameElementItem))
+            throw new IllegalArgumentException("A correlateBy clause must be a sameElement item, not " + item);
+    }
+
+    /** Removes the information about a removed child, and unlinks the other clause of its firstPresent pair. */
+    private void clauseRemoved(int index) {
+        var removed = clauses.remove(index);
+        if (removed.firstPresent() != null) // its presence clause has moved to this index
+            clauses.set(index, clauses.get(index).withoutFirstPresent());
+        if (removed.presence())
+            clauses.set(index - 1, clauses.get(index - 1).withoutFirstPresent());
+    }
 
     @Override
     public ItemType getItemType() { return ItemType.CORRELATE_BY; }
@@ -132,60 +189,119 @@ public class CorrelateByItem extends NonReducibleCompositeItem {
 
     @Override
     protected void appendHeadingString(StringBuilder buffer) {
-        buffer.append(getName()).append(allowedValues).append(' ');
-        if (!getFirstPresentRules().isEmpty()) buffer.append(getFirstPresentRules()).append(' ');
+        buffer.append(getName());
+        if ( ! allowedValues.isEmpty()) buffer.append(allowedValues);
+        buffer.append(' ');
     }
 
     @Override
     protected void appendBodyString(StringBuilder buffer) {
         for (int i = 0; i < getItemCount(); ++i) {
+            var info = clauses.get(i);
             if (i > 0) buffer.append(' ');
-            buffer.append(new TreeMap<>(getBindings(i))).append(':').append(getItem(i));
+            buffer.append(info.bindings());
+            if ( ! info.exactValues().isEmpty()) buffer.append(info.exactValues());
+            if (info.firstPresent() != null)
+                buffer.append("firstPresent(").append(info.firstPresent().variable()).append(info.firstPresent().values()).append(')');
+            if (info.presence()) buffer.append("presence");
+            buffer.append(':').append(getItem(i));
         }
     }
 
     @Override
     SearchProtocol.QueryTreeItem toProtobuf(SerializationContext context) {
-        var firstPresentRules = getFirstPresentRules();
         if (getItemCount() == 0)
             throw new IllegalArgumentException("correlateBy requires at least one matching clause");
         var builder = SearchProtocol.ItemCorrelateBy.newBuilder();
         if (getLabel() != null) builder.setLabel(getLabel());
         for (int i = 0; i < getItemCount(); ++i) {
-            if (!(getItem(i) instanceof SameElementItem))
-                throw new IllegalArgumentException("correlateBy clauses must be sameElement items");
+            var info = clauses.get(i);
             var clause = SearchProtocol.CorrelationClause.newBuilder().setQuery(getItem(i).toProtobuf(context));
-            new TreeMap<>(getBindings(i)).forEach((variable, field) -> clause.addBindings(
+            info.bindings().forEach((variable, field) -> clause.addBindings(
                     SearchProtocol.CorrelationBinding.newBuilder().setVariable(variable).setField(field)));
-            new TreeMap<>(getExactValues(i)).forEach((field, values) -> clause.addExactValues(
+            info.exactValues().forEach((field, values) -> clause.addExactValues(
                     SearchProtocol.CorrelationStringValues.newBuilder().setField(field).addAllValues(values)));
             builder.addClauses(clause);
+            if (info.firstPresent() != null)
+                builder.addFirstPresent(SearchProtocol.CorrelationFirstPresent.newBuilder()
+                        .setClause(i).setPresence(i + 1)
+                        .setVariable(info.firstPresent().variable()).addAllValues(info.firstPresent().values()));
         }
-        new TreeMap<>(allowedValues).forEach((variable, values) -> builder.addDomains(
+        allowedValues.forEach((variable, values) -> builder.addDomains(
                 SearchProtocol.CorrelationDomain.newBuilder().setVariable(variable).addAllValues(values)));
-        firstPresentRules.forEach(rule -> builder.addFirstPresent(SearchProtocol.CorrelationFirstPresent.newBuilder()
-                .setClause(rule.clause()).setPresence(rule.presence()).setVariable(rule.variable()).addAllValues(rule.values())));
         return SearchProtocol.QueryTreeItem.newBuilder().setItemCorrelateBy(builder).build();
     }
 
     @Override
+    public CorrelateByItem clone() {
+        var copy = (CorrelateByItem) super.clone();
+        copy.clauses = new ArrayList<>(clauses);
+        return copy;
+    }
+
+    @Override
     public boolean equals(Object other) {
-        if (!super.equals(other)) return false;
+        if ( ! super.equals(other)) return false;
         var that = (CorrelateByItem) other;
-        if (!allowedValues.equals(that.allowedValues)) return false;
-        if (!getFirstPresentRules().equals(that.getFirstPresentRules())) return false;
-        for (int i = 0; i < getItemCount(); ++i) {
-            if (!getBindings(i).equals(that.getBindings(i))) return false;
-            if (!getExactValues(i).equals(that.getExactValues(i))) return false;
-        }
-        return true;
+        return clauses.equals(that.clauses) && allowedValues.equals(that.allowedValues);
     }
 
     @Override
     public int hashCode() {
-        int hash = Objects.hash(super.hashCode(), allowedValues, getFirstPresentRules());
-        for (int i = 0; i < getItemCount(); ++i)
-            hash = 31 * hash + Objects.hash(getBindings(i), getExactValues(i));
-        return hash;
+        return Objects.hash(super.hashCode(), clauses, allowedValues);
     }
+
+    private static <V> Map<String, V> sorted(Map<String, V> map) {
+        return Collections.unmodifiableMap(new TreeMap<>(map));
+    }
+
+    /** Iterates over the clauses, and keeps the clause information in step when a clause is removed or replaced. */
+    private class ClauseIterator implements ListIterator<Item> {
+
+        private final ListIterator<Item> items;
+        private int current = -1;
+
+        ClauseIterator(ListIterator<Item> items) { this.items = items; }
+
+        @Override public boolean hasNext() { return items.hasNext(); }
+        @Override public boolean hasPrevious() { return items.hasPrevious(); }
+        @Override public int nextIndex() { return items.nextIndex(); }
+        @Override public int previousIndex() { return items.previousIndex(); }
+
+        @Override
+        public Item next() {
+            int index = items.nextIndex();
+            Item item = items.next();
+            current = index;
+            return item;
+        }
+
+        @Override
+        public Item previous() {
+            int index = items.previousIndex();
+            Item item = items.previous();
+            current = index;
+            return item;
+        }
+
+        @Override
+        public void remove() {
+            items.remove();
+            clauseRemoved(current);
+            current = -1;
+        }
+
+        @Override
+        public void set(Item item) {
+            requireSameElement(item);
+            items.set(item);
+        }
+
+        @Override
+        public void add(Item item) {
+            throw new IllegalArgumentException("Add correlateBy clauses with addClause or addFirstPresent");
+        }
+
+    }
+
 }

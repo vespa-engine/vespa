@@ -690,11 +690,12 @@ public class YqlParser implements Parser {
                     assertHasOperator(priority, ExpressionOperator.IN);
                     OperatorNode<ExpressionOperator> variable = priority.getArgument(0);
                     assertHasOperator(variable, ExpressionOperator.BINDREF);
-                    item.addFirstPresentClause(clause, presence, bindings, exactValues, clauseExactValues,
-                                               variable.getArgument(0), correlationValues(priority.getArgument(1)));
+                    item.addFirstPresent(new CorrelateByItem.Clause(clause, bindings, exactValues),
+                                         new CorrelateByItem.Clause(presence, clauseBindings, clauseExactValues),
+                                         variable.getArgument(0), correlationValues(priority.getArgument(1)));
                 } else {
                     SameElementItem clause = buildCorrelatedClause(argument);
-                    item.addClause(clause, clauseBindings, clauseExactValues);
+                    item.addClause(new CorrelateByItem.Clause(clause, clauseBindings, clauseExactValues));
                 }
             }
         } finally {

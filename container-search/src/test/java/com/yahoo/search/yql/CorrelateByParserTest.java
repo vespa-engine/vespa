@@ -8,6 +8,7 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CorrelateByParserTest {
@@ -77,13 +78,14 @@ class CorrelateByParserTest {
                 flat contains sameElement(unit_id = $unit, key = "Eco Friendly", value = "True")
                 """);
         assertEquals(3, item.getItemCount());
-        assertEquals(List.of(new CorrelateByItem.FirstPresentRule(0, 1, "zone", List.of("A", "B"))), item.getFirstPresentRules());
+        assertEquals(Optional.of(new CorrelateByItem.FirstPresent("zone", List.of("A", "B"))), item.getFirstPresent(0));
+        assertTrue(item.isPresenceClause(1));
         assertEquals(item.getBindings(0), item.getBindings(1));
         assertEquals(Map.of("key", List.of("price")), item.getExactValues(1));
         assertEquals(1, ((SameElementItem) item.getItem(1)).getItemCount());
         var clone = (CorrelateByItem) item.clone();
         assertEquals(item, clone);
-        assertEquals(item.getFirstPresentRules(), clone.getFirstPresentRules());
+        assertEquals(item.getFirstPresent(0), clone.getFirstPresent(0));
     }
 
     @Test
@@ -106,7 +108,7 @@ class CorrelateByParserTest {
         String clause = "a contains sameElement(unit_id = $u, zone_id = $z, key = 'price')";
         assertEquals(1, parse(parser, clause).getItemCount());
         var fallback = parse(parser, "firstPresent(" + clause + ", " + clause + ", $z in ['A', 'B'])");
-        assertEquals(1, fallback.getFirstPresentRules().size());
+        assertTrue(fallback.getFirstPresent(0).isPresent());
     }
 
 }
