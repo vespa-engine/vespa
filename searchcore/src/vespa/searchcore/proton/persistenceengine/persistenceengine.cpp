@@ -42,7 +42,7 @@ namespace proton {
 
 namespace {
 
-constexpr bool prioritize_unique_lock = false;
+constexpr bool prioritize_unique_lock = true;
 
 class ResultHandlerBase {
 private:
