@@ -11,6 +11,7 @@
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/correlate_by_blueprint.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
@@ -30,6 +31,7 @@ using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::queryeval::AndNotBlueprint;
 using search::queryeval::Blueprint;
+using search::queryeval::CorrelateByBlueprint;
 using search::queryeval::EquivBlueprint;
 using search::queryeval::IntermediateBlueprint;
 using search::queryeval::MatchingElementsSearch;
@@ -82,6 +84,34 @@ void find_matching_elements(const std::vector<uint32_t>& docs, const SameElement
         if (!matches.empty()) {
             result.add_matching_elements(doc, same_element.field_name(), matches);
             matches.clear();
+        }
+    }
+}
+
+// Reports only the elements that take part in a correlated match, and nothing
+// from the presence clauses of firstPresent.
+void find_matching_elements(const std::vector<uint32_t>& docs, const CorrelateByBlueprint& correlate_by,
+                            const MatchingElementsFields& fields, MatchData& md, MatchingElements& result) {
+    auto search = correlate_by.create_correlate_search(md);
+    if (!search) {
+        return;
+    }
+    search->initRange(docs.front(), docs.back() + 1);
+    std::vector<uint32_t> matches;
+    for (uint32_t doc : docs) {
+        if (!search->seek(doc)) {
+            continue;
+        }
+        for (size_t i = 0; i < correlate_by.childCnt(); ++i) {
+            const auto* same_element = as<SameElementBlueprint>(correlate_by.getChild(i));
+            if (same_element == nullptr || !fields.has_field(same_element->field_name())) {
+                continue;
+            }
+            search->find_correlated_elements(doc, i, matches);
+            if (!matches.empty()) {
+                result.add_matching_elements(doc, same_element->field_name(), matches);
+                matches.clear();
+            }
         }
     }
 }
@@ -208,6 +238,8 @@ void FindMatchingElements::process(const std::vector<uint32_t>& docs, const Blue
         if (fields.has_field(same_element->field_name())) {
             find_matching_elements(docs, *same_element, matchData, result);
         }
+    } else if (auto correlate_by = as<CorrelateByBlueprint>(bp)) {
+        find_matching_elements(docs, *correlate_by, fields, matchData, result);
     } else if (auto matching_elements_search = bp.create_matching_elements_search(fields)) {
         find_matching_elements(docs, *matching_elements_search, result);
     } else if (const AttrSearchCtx* attr_ctx = bp.get_attribute_search_context()) {

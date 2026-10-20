@@ -18,6 +18,10 @@
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/vespalib/util/issue.h>
 
+#include <map>
+#include <optional>
+#include <set>
+
 using namespace search::queryeval;
 using search::query::Node;
 
@@ -167,7 +171,62 @@ private:
         }
     }
 
+    // Reports why a correlateBy query cannot run and makes it match nothing.
+    void reject_correlate_by(const std::string& message) {
+        vespalib::Issue::report("correlateBy: %s", message.c_str());
+        _result = std::make_unique<EmptyBlueprint>();
+    }
+
+    // Checks the clause structure that the correlation search relies on.
+    bool check_correlate_by_clauses(const ProtonCorrelateBy& n) {
+        const auto& bindings = n.bindings();
+        if (bindings.size() != n.getChildren().size() || n.exact_values().size() != bindings.size()) {
+            reject_correlate_by("each clause needs its own bindings and exact values");
+            return false;
+        }
+        for (const auto& clause : bindings) {
+            if (clause.empty()) {
+                reject_correlate_by("each clause must bind at least one variable");
+                return false;
+            }
+        }
+        std::set<uint32_t> presence_clauses;
+        std::set<uint32_t> matching_clauses;
+        for (const auto& selection : n.first_present()) {
+            if (selection.clause >= bindings.size() || selection.presence >= bindings.size() ||
+                selection.clause == selection.presence) {
+                reject_correlate_by("firstPresent refers to clauses that do not exist");
+                return false;
+            }
+            if (!presence_clauses.insert(selection.presence).second || !matching_clauses.insert(selection.clause).second) {
+                reject_correlate_by("each firstPresent needs its own matching and presence clause");
+                return false;
+            }
+            if (bindings[selection.clause] != bindings[selection.presence] ||
+                !bindings[selection.clause].contains(selection.variable)) {
+                reject_correlate_by("firstPresent clauses must bind the same fields, including variable '" +
+                                    selection.variable + "'");
+                return false;
+            }
+        }
+        for (uint32_t clause : matching_clauses) {
+            if (presence_clauses.contains(clause)) {
+                reject_correlate_by("a firstPresent presence clause cannot also be a matching clause");
+                return false;
+            }
+        }
+        if (presence_clauses.size() == bindings.size()) {
+            reject_correlate_by("at least one clause must be a matching clause");
+            return false;
+        }
+        return true;
+    }
+
     void buildCorrelateBy(ProtonCorrelateBy& n) {
+        if (!check_correlate_by_clauses(n)) {
+            return;
+        }
+        std::string document_type(_context.get_document_type_name());
         std::map<std::string, uint32_t> columns;
         for (const auto& bindings : n.bindings()) {
             for (const auto& [variable, field] : bindings) columns.emplace(variable, 0);
@@ -178,8 +237,7 @@ private:
         for (const auto& [variable, values] : n.domains()) {
             auto column = columns.find(variable);
             if (column == columns.end()) {
-                vespalib::Issue::report("correlateBy domain refers to unbound variable '%s'", variable.c_str());
-                _result = std::make_unique<EmptyBlueprint>();
+                reject_correlate_by("the domain of variable '" + variable + "' refers to a variable no clause binds");
                 return;
             }
             domains[column->second] = values;
@@ -190,27 +248,31 @@ private:
         for (size_t i = 0; i < n.getChildren().size(); ++i) {
             auto* clause = dynamic_cast<ProtonSameElement*>(n.getChildren()[i]);
             if (!clause) {
-                vespalib::Issue::report("correlateBy requires sameElement clauses");
-                _result = std::make_unique<EmptyBlueprint>();
+                reject_correlate_by("every clause must be a sameElement");
                 return;
             }
             std::vector<BoundAttribute> attributes;
             for (const auto& [variable, field] : n.bindings()[i]) {
                 std::string name = clause->getView() + "." + field;
                 auto* attr = _requestContext.getAttributeStableEnum(name);
-                if (!attr || attr->getCollectionType() != search::attribute::CollectionType::ARRAY ||
+                if (!attr) {
+                    reject_correlate_by("variable '" + variable + "' is bound to '" + name +
+                                        "', which is not an attribute in document type '" + document_type + "'");
+                    return;
+                }
+                if (attr->getCollectionType() != search::attribute::CollectionType::ARRAY ||
                     (!attr->isStringType() && !attr->isIntegerType())) {
-                    vespalib::Issue::report("correlateBy binding '%s' requires an integer or string array attribute '%s'",
-                                          variable.c_str(), name.c_str());
-                    _result = std::make_unique<EmptyBlueprint>();
+                    reject_correlate_by("variable '" + variable + "' requires '" + name +
+                                        "' to be an integer or string array attribute");
                     return;
                 }
                 auto [entry, inserted] = string_variables.emplace(variable, attr->isStringType());
-                if ((!inserted && entry->second != attr->isStringType()) ||
-                    (n.domains().contains(variable) && !attr->isStringType())) {
-                    vespalib::Issue::report("correlateBy variable '%s' has incompatible binding types or a non-string domain",
-                                          variable.c_str());
-                    _result = std::make_unique<EmptyBlueprint>();
+                if (!inserted && entry->second != attr->isStringType()) {
+                    reject_correlate_by("variable '" + variable + "' is bound to both integer and string attributes");
+                    return;
+                }
+                if (n.domains().contains(variable) && !attr->isStringType()) {
+                    reject_correlate_by("the domain of variable '" + variable + "' requires string attributes");
                     return;
                 }
                 attributes.push_back({columns.at(variable), attr});
@@ -220,8 +282,8 @@ private:
                 std::string name = clause->getView() + "." + field;
                 auto* attr = _requestContext.getAttributeStableEnum(name);
                 if (!attr || !attr->isStringType() || attr->getCollectionType() != search::attribute::CollectionType::ARRAY) {
-                    vespalib::Issue::report("correlateBy exact values require a string array attribute '%s'", name.c_str());
-                    _result = std::make_unique<EmptyBlueprint>();
+                    reject_correlate_by("exact values require '" + name + "' to be a string array attribute in document type '" +
+                                        document_type + "'");
                     return;
                 }
                 exact_values.push_back({attr, values});
@@ -229,9 +291,9 @@ private:
             bp->add_clause(build(_requestContext, *clause, _context, _global_layout), std::move(attributes), std::move(exact_values));
         }
         for (const auto& selection : n.first_present()) {
-            if (!string_variables.at(selection.variable)) {
-                vespalib::Issue::report("firstPresent requires a string priority variable '%s'", selection.variable.c_str());
-                _result = std::make_unique<EmptyBlueprint>();
+            auto variable = string_variables.find(selection.variable);
+            if (variable == string_variables.end() || !variable->second) {
+                reject_correlate_by("firstPresent requires a string priority variable '" + selection.variable + "'");
                 return;
             }
             bp->add_first_present(selection.clause, selection.presence, columns.at(selection.variable), selection.values);
