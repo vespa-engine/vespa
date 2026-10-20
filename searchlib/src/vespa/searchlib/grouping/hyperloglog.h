@@ -15,8 +15,9 @@
 
 namespace search {
 
-// How many elements are required before we use a normal sketch representation.
-const uint32_t SPARSE_SKETCH_LIMIT = 255;
+// The most hashes a sparse sketch holds. One more distinct hash switches to a normal sketch.
+// Aggregation, merging and copying all use this rule, and it matches the Java container.
+const uint32_t SPARSE_SKETCH_LIMIT = 256;
 
 /**
  * Decorator to SparseSketch handling the switch to NormalSketch
@@ -32,7 +33,8 @@ class ExchangerSketch : public SparseSketch<BucketBits, HashT> {
     uint32_t _sparse_limit;
 
     int aggregate(HashT hash) override {
-        if (this->getSize() > _sparse_limit) {
+        // A repeated hash never forces the switch, so the result does not depend on how values are split.
+        if (this->getSize() >= _sparse_limit && !this->hash_set.contains(hash)) {
             NormalSketch<BucketBits, HashT>* normal_sketch = new NormalSketch<BucketBits, HashT>;
             normal_sketch->merge(*this);
             _sketch_ptr.reset(normal_sketch); // deletes this

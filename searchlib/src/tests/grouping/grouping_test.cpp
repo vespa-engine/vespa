@@ -9,6 +9,7 @@
 #include <vespa/searchlib/aggregation/attribute_node_replacer.h>
 #include <vespa/searchlib/aggregation/averageaggregationresult.h>
 #include <vespa/searchlib/aggregation/countaggregationresult.h>
+#include <vespa/searchlib/aggregation/document_count_aggregation_result.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/groupinglevel.h>
@@ -28,6 +29,7 @@
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
 #include <vespa/searchlib/expression/negatefunctionnode.h>
+#include <vespa/searchlib/expression/once_per_document_predicate_node.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
@@ -2285,6 +2287,44 @@ TEST(GroupingTest, test_bad_grouping) {
     }
 }
 
+namespace {
+
+int64_t bucket_sum(const NormalSketch<10, uint32_t>& sketch) {
+    int64_t sum = 0;
+    for (auto bucket : sketch.bucket) {
+        sum += bucket;
+    }
+    return sum;
+}
+
+void aggregate_string(AggregationResult& result, uint32_t value) {
+    result.setExpression(MU<ConstantNode>(MU<StringResultNode>(std::to_string(value))))
+          .aggregate(DocId(value + 1), HitRank(1.0));
+}
+
+} // namespace
+
+TEST(GroupingTest, expression_count_rank_adds_bucket_increases_after_switching_to_a_normal_sketch) {
+    ExpressionCountAggregationResult all_values;
+    ExpressionCountAggregationResult values_up_to_limit;
+    for (uint32_t i = 0; i < 300; ++i) {
+        aggregate_string(all_values, i);
+        if (i < SPARSE_SKETCH_LIMIT) {
+            aggregate_string(values_up_to_limit, i);
+        }
+    }
+    ASSERT_EQ((SparseSketch<10, uint32_t>::classId), values_up_to_limit.getSketch().getClassId());
+    ASSERT_EQ(int64_t(SPARSE_SKETCH_LIMIT), values_up_to_limit.getRank().getInteger());
+    ASSERT_EQ((NormalSketch<10, uint32_t>::classId), all_values.getSketch().getClassId());
+    // The rank counts each sparse hash once, then adds how much each later value raises a bucket.
+    NormalSketch<10, uint32_t> at_limit;
+    at_limit.merge(static_cast<const SparseSketch<10, uint32_t>&>(values_up_to_limit.getSketch()));
+    const auto& final_sketch = static_cast<const NormalSketch<10, uint32_t>&>(all_values.getSketch());
+    int64_t expected = SPARSE_SKETCH_LIMIT + bucket_sum(final_sketch) - bucket_sum(at_limit);
+    EXPECT_EQ(expected, all_values.getRank().getInteger());
+    EXPECT_LT(expected, bucket_sum(final_sketch));
+}
+
 TEST(GroupingTest, unique_count_deduplicates_scalar_values_across_documents) {
     UniqueCountAggregationResult count;
     count.setExpression(MU<ConstantNode>(MU<StringResultNode>("a"))).aggregate(DocId(1), HitRank(1.0));
@@ -2352,25 +2392,88 @@ TEST(GroupingTest, unique_count_ignores_missing_rollup_keys_but_counts_nonempty_
     EXPECT_EQ(1, count.getRank().getInteger());
 }
 
-TEST(GroupingTest, unique_count_retains_one_thousand_hashes_through_clone_merge_and_reset) {
+TEST(GroupingTest, unique_count_keeps_hashes_up_to_the_sparse_limit_through_clone_merge_and_reset) {
+    constexpr uint32_t limit = UniqueCountAggregationResult::sparse_limit;
     UniqueCountAggregationResult count;
-    for (uint32_t i = 0; i < 1000; ++i) {
-        count.setExpression(MU<ConstantNode>(MU<StringResultNode>(std::to_string(i))))
-             .aggregate(DocId(i + 1), HitRank(1.0));
+    for (uint32_t i = 0; i < limit; ++i) {
+        aggregate_string(count, i);
     }
-    EXPECT_EQ(1000, count.getRank().getInteger());
+    EXPECT_EQ(int64_t(limit), count.getRank().getInteger());
     auto copy = std::unique_ptr<UniqueCountAggregationResult>(count.clone());
-    EXPECT_EQ(1000, copy->getRank().getInteger());
+    EXPECT_EQ(int64_t(limit), copy->getRank().getInteger());
     copy->merge(count);
-    EXPECT_EQ(1000, copy->getRank().getInteger());
+    EXPECT_EQ(int64_t(limit), copy->getRank().getInteger());
     copy->reset();
     EXPECT_EQ(0, copy->getRank().getInteger());
-    EXPECT_EQ(1000, count.getRank().getInteger());
-    for (uint32_t i = 0; i < 1000; ++i) {
-        copy->setExpression(MU<ConstantNode>(MU<StringResultNode>(std::to_string(i))))
-            .aggregate(DocId(i + 1), HitRank(1.0));
+    EXPECT_EQ(int64_t(limit), count.getRank().getInteger());
+    for (uint32_t i = 0; i < limit; ++i) {
+        aggregate_string(*copy, i);
     }
-    EXPECT_EQ(1000, copy->getRank().getInteger());
+    EXPECT_EQ(int64_t(limit), copy->getRank().getInteger());
+}
+
+namespace {
+
+bool is_sparse(const UniqueCountAggregationResult& count) {
+    return count.getSketch().getClassId() == SparseSketch<10, uint32_t>::classId;
+}
+
+// Aggregates values [0, total) in one result, and split at 'split' into two results that are merged.
+std::pair<std::unique_ptr<UniqueCountAggregationResult>, std::unique_ptr<UniqueCountAggregationResult>>
+count_in_one_and_two_parts(uint32_t total, uint32_t split) {
+    auto one = std::make_unique<UniqueCountAggregationResult>();
+    auto left = std::make_unique<UniqueCountAggregationResult>();
+    UniqueCountAggregationResult right;
+    for (uint32_t i = 0; i < total; ++i) {
+        aggregate_string(*one, i);
+        aggregate_string(i < split ? *left : right, i);
+    }
+    left->merge(right);
+    return {std::move(one), std::move(left)};
+}
+
+} // namespace
+
+TEST(GroupingTest, unique_count_switches_to_an_estimate_at_the_same_size_however_values_are_split) {
+    constexpr uint32_t limit = UniqueCountAggregationResult::sparse_limit;
+    {
+        auto [one, two] = count_in_one_and_two_parts(limit, limit / 2);
+        auto copy = std::unique_ptr<UniqueCountAggregationResult>(one->clone());
+        EXPECT_TRUE(is_sparse(*one));
+        EXPECT_TRUE(is_sparse(*two));
+        EXPECT_TRUE(is_sparse(*copy));
+        EXPECT_EQ(int64_t(limit), one->getRank().getInteger());
+        EXPECT_EQ(int64_t(limit), two->getRank().getInteger());
+        EXPECT_EQ(int64_t(limit), copy->getRank().getInteger());
+    }
+    {
+        auto [one, two] = count_in_one_and_two_parts(limit + 1, (limit + 1) / 2);
+        auto copy = std::unique_ptr<UniqueCountAggregationResult>(one->clone());
+        EXPECT_FALSE(is_sparse(*one));
+        EXPECT_FALSE(is_sparse(*two));
+        EXPECT_FALSE(is_sparse(*copy));
+        EXPECT_EQ(one->getRank().getInteger(), two->getRank().getInteger());
+        EXPECT_EQ(one->getRank().getInteger(), copy->getRank().getInteger());
+        // Right after the switch the estimate uses linear counting, so it stays close to the true count.
+        EXPECT_NEAR(double(limit + 1), double(one->getRank().getInteger()), 50.0);
+    }
+}
+
+TEST(GroupingTest, unique_count_skips_undefined_integer_and_float_values) {
+    UniqueCountAggregationResult count;
+    count.setExpression(MU<ConstantNode>(MU<Int32ResultNode>(getUndefined<int32_t>()))).aggregate(DocId(1), HitRank(1.0));
+    count.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(getUndefined<int64_t>()))).aggregate(DocId(2), HitRank(1.0));
+    count.setExpression(MU<ConstantNode>(MU<FloatResultNode>(getUndefined<double>()))).aggregate(DocId(3), HitRank(1.0));
+    EXPECT_EQ(0, count.getRank().getInteger());
+    auto values = MU<Int32ResultNodeVector>();
+    values->push_back(Int32ResultNode(getUndefined<int32_t>()));
+    values->push_back(Int32ResultNode(7));
+    values->push_back(Int32ResultNode(7));
+    values->push_back(Int32ResultNode(8));
+    count.setExpression(MU<ConstantNode>(std::move(values))).aggregate(DocId(4), HitRank(1.0));
+    EXPECT_EQ(2, count.getRank().getInteger());
+    count.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0))).aggregate(DocId(5), HitRank(1.0));
+    EXPECT_EQ(3, count.getRank().getInteger());
 }
 
 TEST(GroupingTest, unique_count_dense_rank_is_consistent_between_aggregation_and_merge) {
@@ -2421,6 +2524,69 @@ TEST(GroupingTest, unique_count_orders_dense_sketches_by_the_container_estimate_
     EXPECT_EQ(94443, count.getRank().getInteger());
     count.reset();
     EXPECT_EQ(0, count.getRank().getInteger());
+}
+
+namespace {
+
+const Group* find_child(const Group& parent, const ResultNode& id) {
+    for (uint32_t i = 0; i < parent.getChildrenSize(); ++i) {
+        if (parent.getChild(i).getId().cmp(id) == 0) {
+            return &parent.getChild(i);
+        }
+    }
+    return nullptr;
+}
+
+uint64_t document_count(const Group& group) {
+    const auto* count = dynamic_cast<const DocumentCountAggregationResult*>(&group.getAggregationResult(0));
+    return count != nullptr ? count->getCount() : 0;
+}
+
+std::unique_ptr<DocumentCountAggregationResult> make_document_count() {
+    auto count = std::make_unique<DocumentCountAggregationResult>();
+    count->setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)));
+    return count;
+}
+
+} // namespace
+
+TEST(GroupingTest, once_per_document_keeps_the_same_key_once_under_each_parent_group) {
+    AggregationContext ctx;
+    ctx.result().add(0).add(1);
+    // Document 0 has rows (7, A) and (8, A). Document 1 has the row (7, B).
+    ctx.add(IntArrayAttrBuilder("signals.unit").add({7, 8}).add({7}).sp());
+    ctx.add(StringArrayAttrBuilder("signals.zone").add({"A", "A"}).add({"B"}).sp());
+
+    std::vector<ExpressionNode::UP> keys;
+    keys.push_back(MU<AttributeNode>("signals.zone"));
+    Grouping request;
+    request.setFirstLevel(0).setLastLevel(2);
+    request.addLevel(std::move(GroupingLevel()
+                                   .setExpression(MU<AttributeNode>("signals.unit"))
+                                   .addAggregationResult(make_document_count())));
+    request.addLevel(std::move(GroupingLevel()
+                                   .setExpression(MU<AttributeNode>("signals.zone"))
+                                   .setFilter(MU<OncePerDocumentPredicateNode>(std::move(keys)))
+                                   .addAggregationResult(make_document_count())));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits());
+    request.sortById();
+
+    const Group* unit7 = find_child(request.getRoot(), Int64ResultNode(7));
+    const Group* unit8 = find_child(request.getRoot(), Int64ResultNode(8));
+    ASSERT_NE(nullptr, unit7);
+    ASSERT_NE(nullptr, unit8);
+    EXPECT_EQ(2u, document_count(*unit7));
+    EXPECT_EQ(1u, document_count(*unit8));
+    const Group* unit7_zone_a = find_child(*unit7, StringResultNode("A"));
+    const Group* unit7_zone_b = find_child(*unit7, StringResultNode("B"));
+    const Group* unit8_zone_a = find_child(*unit8, StringResultNode("A"));
+    ASSERT_NE(nullptr, unit7_zone_a);
+    ASSERT_NE(nullptr, unit7_zone_b);
+    ASSERT_NE(nullptr, unit8_zone_a);
+    EXPECT_EQ(1u, document_count(*unit7_zone_a));
+    EXPECT_EQ(1u, document_count(*unit7_zone_b));
+    EXPECT_EQ(1u, document_count(*unit8_zone_a));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

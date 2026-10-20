@@ -15,23 +15,27 @@ import static org.junit.Assert.assertTrue;
 
 public class UniqueCountAggregationResultTest {
 
+    private static final int LIMIT = UniqueCountAggregationResult.SPARSE_LIMIT;
+
     @Test
-    public void oneThousandDistinctHashesRemainExactAfterMerge() {
-        var left = values(0, 500);
-        left.merge(values(500, 1000));
+    public void hashesUpToTheSparseLimitAreCountedDirectlyAfterMerge() {
+        var left = values(0, LIMIT / 2);
+        left.merge(values(LIMIT / 2, LIMIT));
         assertTrue(left.isExact());
-        assertEquals(1000, left.getEstimatedUniqueCount());
-        left.merge(values(0, 1000));
+        assertEquals(LIMIT, left.getEstimatedUniqueCount());
+        left.merge(values(0, LIMIT));
         assertTrue(left.isExact());
-        assertEquals(1000, left.getEstimatedUniqueCount());
+        assertEquals(LIMIT, left.getEstimatedUniqueCount());
     }
 
     @Test
-    public void mergingPastTheExactCapacityReportsAnEstimate() {
-        var result = values(0, 1000);
+    public void mergingPastTheSparseLimitReportsAnEstimateCloseToTheTrueCount() {
+        var result = values(0, LIMIT);
         assertTrue(result.isExact());
-        result.merge(values(1000, 1001));
+        result.merge(values(LIMIT, LIMIT + 1));
         assertFalse(result.isExact());
+        // Right after the switch the estimate uses linear counting, so it stays close to the true count.
+        assertEquals(LIMIT + 1, result.getEstimatedUniqueCount(), 50);
     }
 
     @Test
@@ -43,8 +47,8 @@ public class UniqueCountAggregationResultTest {
         assertEquals(1, original.getEstimatedUniqueCount());
         assertEquals(2, copy.getEstimatedUniqueCount());
 
-        var dense = values(0, 1000);
-        dense.merge(values(1000, 1001));
+        var dense = values(0, LIMIT);
+        dense.merge(values(LIMIT, LIMIT + 1));
         var denseBefore = dense.getSketch().toString();
         original.merge(dense);
         assertEquals(denseBefore, dense.getSketch().toString());

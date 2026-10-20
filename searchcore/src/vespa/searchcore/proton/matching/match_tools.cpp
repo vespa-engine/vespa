@@ -299,7 +299,7 @@ MatchToolsFactory::MatchToolsFactory(
             setup_profiler->report(trace.createCursor("setup_profiling"));
         }
         _query.freeze();
-        prepare_correlated_bindings(_query, _mdl, _queryEnv.getObjectStore());
+        prepare_correlated_bindings(_query, _mdl, _queryEnv.getObjectStore(), searchContext.getDocIdLimit());
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         _object_store = &_queryEnv.getObjectStore();

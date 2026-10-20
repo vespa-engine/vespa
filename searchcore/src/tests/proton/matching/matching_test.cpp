@@ -16,14 +16,18 @@
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/matching/viewresolver.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/aggregation/countaggregationresult.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
+#include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/common/unique_issues.h>
+#include <vespa/searchlib/expression/correlated_predicate_node.h>
 #include <vespa/searchlib/common/converters.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
@@ -160,6 +164,36 @@ IAttributeContext& MatchingTestSharedState::attribute_context() {
             CHECK(docid + 1 == NUM_DOCS);
             _attribute_context->add(attr);
         }
+        {
+            // Struct array 'sig' with fields 'unit' and 'zone', used by the correlateBy tests.
+            // Document 10 has rows (7, A) and (8, B), document 20 has (7, B) and (9, A),
+            // and document 30 has (8, A).
+            using search::attribute::BasicType;
+            using search::attribute::CollectionType;
+            auto units = AttributeFactory::createAttribute(
+                "sig.unit", search::attribute::Config(BasicType::INT64, CollectionType::ARRAY));
+            auto zones = AttributeFactory::createAttribute(
+                "sig.zone", search::attribute::Config(BasicType::STRING, CollectionType::ARRAY));
+            for (const auto& attr : {units, zones}) {
+                attr->addReservedDoc();
+                for (uint32_t i = 1; i < NUM_DOCS; ++i) {
+                    AttributeVector::DocId docid(0);
+                    attr->addDoc(docid);
+                }
+            }
+            auto& unit_values = dynamic_cast<IntegerAttribute&>(*units);
+            auto& zone_values = dynamic_cast<StringAttribute&>(*zones);
+            for (auto unit : {7, 8}) unit_values.append(10, unit, 1);
+            for (auto zone : {"A", "B"}) zone_values.append(10, zone, 1);
+            for (auto unit : {7, 9}) unit_values.append(20, unit, 1);
+            for (auto zone : {"B", "A"}) zone_values.append(20, zone, 1);
+            unit_values.append(30, 8, 1);
+            zone_values.append(30, "A", 1);
+            units->commit();
+            zones->commit();
+            _attribute_context->add(units);
+            _attribute_context->add(zones);
+        }
     }
     return *_attribute_context;
 }
@@ -214,6 +248,17 @@ std::string make_same_element_stack_dump(const std::string& a1_term, const std::
     builder.addSameElement(2, "my", 0, Weight(1));
     builder.addStringTerm(a1_term, "a1", 1, Weight(1));
     builder.addStringTerm(f1_term, "f1", 2, Weight(1));
+    return StackDumpCreator::create(*builder.build());
+}
+
+// correlateBy with one clause, sameElement(sig: zone contains "A"), binding the variables unit and zone.
+std::string make_correlate_by_stack_dump(const std::string& label) {
+    QueryBuilder<ProtonNodeTypes> builder;
+    std::map<std::string, std::string> clause{{"unit", "unit"}, {"zone", "zone"}};
+    CorrelateBy::Bindings              bindings{clause};
+    builder.add_correlate_by(std::move(bindings), CorrelateBy::Domains{}, label);
+    builder.addSameElement(1, "sig", 0, Weight(1));
+    builder.addStringTerm("A", "zone", 1, Weight(1));
     return StackDumpCreator::create(*builder.build());
 }
 
@@ -578,6 +623,12 @@ struct MyWorld {
         auto my_f1_0_result = make_elem_result({{10, {2}}, {20, {1, 2}}, {21, {2}}});
         searchContext.attr().addResult("my.a1", my_a1_term, my_a1_result);
         searchContext.idx(0).getFake().addResult("my.f1", my_f1_0_term, my_f1_0_result);
+    }
+
+    void add_correlate_by_results() {
+        schema.addAttributeField(Schema::AttributeField("sig.unit", DataType::INT64, schema::CollectionType::ARRAY));
+        schema.addAttributeField(Schema::AttributeField("sig.zone", DataType::STRING, schema::CollectionType::ARRAY));
+        searchContext.attr().addResult("sig.zone", "A", make_elem_result({{10, {0}}, {20, {1}}, {30, {0}}}));
     }
 
     void add_near_result() {
@@ -2024,6 +2075,165 @@ TEST_F(MatchingTest, require_that_elementwise_matches_reports_matching_elements_
     };
     // doc 20 has my.a1 matching elements {2,3} and my.f1 matching elements {1,2}; only element 2 matches both
     EXPECT_EQ(decode("elementwise(matches(my),x)"), TensorSpec("tensor<float>(x{})").add({{"x", "2"}}, 1.0));
+}
+
+namespace {
+
+std::unique_ptr<CorrelatedPredicateNode>
+make_correlated_filter(const std::string& label, const std::vector<std::pair<std::string, std::string>>& bindings) {
+    std::vector<std::string>        variables;
+    std::vector<ExpressionNode::UP> fields;
+    for (const auto& [variable, attribute] : bindings) {
+        variables.push_back(variable);
+        fields.push_back(std::make_unique<AttributeNode>(attribute));
+    }
+    return std::make_unique<CorrelatedPredicateNode>(label, std::move(variables), std::move(fields));
+}
+
+// all(group(sig.unit) filter(correlated(label, unit_variable, sig.unit)) each(output(count()))
+//     each(group(sig.zone) filter(correlated(label, unit_variable, sig.unit, "zone", sig.zone)) each(output(count()))))
+void add_correlated_grouping(SearchRequest& request, const std::string& label, const std::string& unit_variable) {
+    Grouping grouping;
+    grouping.setFirstLevel(0).setLastLevel(2);
+    grouping.addLevel(std::move(
+        GroupingLevel()
+            .setExpression(std::make_unique<AttributeNode>("sig.unit"))
+            .setFilter(make_correlated_filter(label, {{unit_variable, "sig.unit"}}))
+            .addResult(CountAggregationResult().setExpression(std::make_unique<ConstantNode>(std::make_unique<Int64ResultNode>(0))))));
+    grouping.addLevel(std::move(
+        GroupingLevel()
+            .setExpression(std::make_unique<AttributeNode>("sig.zone"))
+            .setFilter(make_correlated_filter(label, {{unit_variable, "sig.unit"}, {"zone", "sig.zone"}}))
+            .addResult(CountAggregationResult().setExpression(std::make_unique<ConstantNode>(std::make_unique<Int64ResultNode>(0))))));
+    vespalib::nbostream     buf;
+    vespalib::NBOSerializer os(buf);
+    os << uint32_t(1);
+    grouping.serialize(os);
+    request.groupSpec.assign(buf.data(), buf.data() + buf.size());
+}
+
+std::string group_id(const ResultNode& id) {
+    char buffer[64];
+    auto value = id.getString(vespalib::BufferRef(buffer, sizeof(buffer)));
+    return {value.c_str(), value.size()};
+}
+
+void collect_group_counts(const Group& group, const std::string& prefix, std::map<std::string, uint64_t>& counts) {
+    for (uint32_t i = 0; i < group.getChildrenSize(); ++i) {
+        const auto& child = group.getChild(i);
+        std::string key = prefix + group_id(child.getId());
+        const auto* count = dynamic_cast<const CountAggregationResult*>(&child.getAggregationResult(0));
+        counts[key] = (count != nullptr) ? count->getCount() : 0;
+        collect_group_counts(child, key + "/", counts);
+    }
+}
+
+// Returns the count of each group, keyed by unit, and by unit/zone for the second level.
+std::map<std::string, uint64_t> group_counts(const SearchReply& reply) {
+    std::map<std::string, uint64_t> counts;
+    if (reply.groupResult.empty()) {
+        return counts;
+    }
+    vespalib::nbostream     buf(&reply.groupResult[0], reply.groupResult.size());
+    vespalib::NBOSerializer is(buf);
+    uint32_t                n = 0;
+    is >> n;
+    EXPECT_EQ(1u, n);
+    Grouping grouping;
+    grouping.deserialize(is);
+    collect_group_counts(grouping.getRoot(), "", counts);
+    return counts;
+}
+
+bool has_issue_containing(const search::UniqueIssues& issues, const std::string& text) {
+    bool found = false;
+    issues.for_each_message([&](const std::string& message) { found = found || message.find(text) != std::string::npos; });
+    return found;
+}
+
+} // namespace
+
+TEST_F(MatchingTest, correlated_grouping_keeps_only_rows_bound_by_the_labeled_query) {
+    // A result array of one hit puts the other hits in the bit vector, so grouping visits
+    // document 30 first and then goes back to documents 10 and 20.
+    for (size_t threads : {1, 4}) {
+        MyWorld world(shared_state());
+        world.basicSetup(1, 1);
+        world.add_correlate_by_results();
+        auto request = MyWorld::createRequest(make_correlate_by_stack_dump("sel"));
+        add_correlated_grouping(*request, "sel", "unit");
+        search::UniqueIssues issues;
+        auto                 capture = vespalib::Issue::listen(issues);
+        SearchReply::UP      reply = world.performSearch(*request, threads);
+        EXPECT_EQ(3u, reply->totalHitCount);
+        // Document 10 binds (7, A), document 20 binds (9, A) and document 30 binds (8, A).
+        // The rows (8, B) of document 10 and (7, B) of document 20 are not bound by the query.
+        std::map<std::string, uint64_t> expected{{"7", 1}, {"7/A", 1}, {"8", 1}, {"8/A", 1}, {"9", 1}, {"9/A", 1}};
+        EXPECT_EQ(expected, group_counts(*reply)) << "threads: " << threads;
+        EXPECT_EQ(0u, issues.size());
+    }
+}
+
+TEST_F(MatchingTest, correlated_grouping_with_an_unknown_label_rejects_all_rows_and_reports_one_issue) {
+    for (size_t threads : {1, 4}) {
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.add_correlate_by_results();
+        auto request = MyWorld::createRequest(make_correlate_by_stack_dump("sel"));
+        add_correlated_grouping(*request, "typo", "unit");
+        search::UniqueIssues issues;
+        auto                 capture = vespalib::Issue::listen(issues);
+        SearchReply::UP      reply = world.performSearch(*request, threads);
+        EXPECT_EQ(3u, reply->totalHitCount);
+        EXPECT_TRUE(group_counts(*reply).empty());
+        EXPECT_EQ(1u, issues.size());
+        EXPECT_TRUE(has_issue_containing(issues, "correlated('typo')"));
+    }
+}
+
+TEST_F(MatchingTest, correlated_grouping_with_an_unbound_variable_rejects_all_rows_and_reports_one_issue) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_correlate_by_results();
+    auto request = MyWorld::createRequest(make_correlate_by_stack_dump("sel"));
+    add_correlated_grouping(*request, "sel", "color");
+    search::UniqueIssues issues;
+    auto                 capture = vespalib::Issue::listen(issues);
+    SearchReply::UP      reply = world.performSearch(*request, 4);
+    EXPECT_EQ(3u, reply->totalHitCount);
+    EXPECT_TRUE(group_counts(*reply).empty());
+    EXPECT_EQ(1u, issues.size());
+    EXPECT_TRUE(has_issue_containing(issues, "'color'"));
+}
+
+TEST_F(MatchingTest, grouping_with_an_unknown_class_id_fails_the_query_without_stopping_the_process) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    vespalib::nbostream     buf;
+    vespalib::NBOSerializer os(buf);
+    os << uint32_t(1);
+    Grouping grouping;
+    grouping.setRoot(Group().addResult(CountAggregationResult().setExpression(createAttr())));
+    grouping.serialize(os);
+    // Replace the class id of the count aggregator with one that is not registered.
+    std::string spec(buf.data(), buf.size());
+    auto        to_bytes = [](uint32_t value) {
+        return std::string{char(value >> 24), char(value >> 16), char(value >> 8), char(value)};
+    };
+    std::string known = to_bytes(CountAggregationResult::classId);
+    auto        pos = spec.find(known);
+    ASSERT_NE(std::string::npos, pos);
+    ASSERT_EQ(std::string::npos, spec.find(known, pos + 1));
+    spec.replace(pos, known.size(), to_bytes(0x7ffffff0));
+    request->groupSpec.assign(spec.begin(), spec.end());
+    search::UniqueIssues issues;
+    auto                 capture = vespalib::Issue::listen(issues);
+    SearchReply::UP      reply = world.performSearch(*request, 1);
+    ASSERT_TRUE(reply);
+    EXPECT_TRUE(reply->groupResult.empty());
+    EXPECT_TRUE(has_issue_containing(issues, "failed to deserialize grouping context"));
 }
 
 TEST_F(MatchingTest, require_that_invalid_queries_are_handled) {

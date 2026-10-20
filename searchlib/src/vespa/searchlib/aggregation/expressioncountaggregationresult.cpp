@@ -55,12 +55,7 @@ void ExpressionCountAggregationResult::aggregate_value(const ResultNode& result)
     hash = XXH32(&hash, sizeof(hash), seed);
     // The rank is a maintained sum of all buckets. This should give
     // almost the same ordering as the actual estimates.
-    bool was_sparse = _hll.getSketch().getClassId() == SparseSketch<PRECISION, uint32_t>::classId;
-    int delta = _hll.aggregate(hash);
-    if (was_sparse && _hll.getSketch().getClassId() != SparseSketch<PRECISION, uint32_t>::classId)
-        _rank.set(calculateRank(_hll.getSketch()));
-    else
-        _rank += delta;
+    _rank += _hll.aggregate(hash);
 }
 
 void ExpressionCountAggregationResult::onReset() {

@@ -6,7 +6,7 @@
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/queryeval/correlate_by_blueprint.h>
 #include <vespa/searchlib/queryeval/correlated_bindings.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <algorithm>
 #include <limits>
@@ -41,44 +41,88 @@ void find_query_labels(const search::query::Node& node, std::map<std::string, ui
     }
 }
 
+/**
+ * Reads the bindings of one labeled query for one thread. All complete bindings of a
+ * document are found once, then projected for each caller, so filters that use
+ * different variables of the same query share the work.
+ */
 class BindingProvider : public CorrelatedBindingReader {
+    struct Projection {
+        std::vector<uint32_t> columns;
+        std::vector<search::queryeval::BindingRow> rows;
+        bool valid = false;
+    };
     search::fef::MatchData::UP _match_data;
     std::unique_ptr<CorrelateBySearch> _search;
+    uint32_t _docid_limit;
     uint32_t _docid = std::numeric_limits<uint32_t>::max();
-    std::vector<uint32_t> _projection;
-    const std::vector<search::queryeval::BindingRow>* _bindings = nullptr;
+    const std::vector<search::queryeval::BindingRow>* _rows = nullptr;
+    std::vector<Projection> _projections;
+
+    void read_document(uint32_t docid) {
+        // Iterators only move forward. Ranking and grouping can go back to an earlier
+        // document, and only then must the iterators start over.
+        if (_docid == std::numeric_limits<uint32_t>::max() || docid < _docid) {
+            _search->initRange(docid, _docid_limit);
+        }
+        _rows = &_search->find_bindings(docid);
+        _docid = docid;
+        for (auto& projection : _projections) projection.valid = false;
+    }
+
+    Projection& projection_for(std::span<const uint32_t> columns) {
+        for (auto& projection : _projections) {
+            if (std::equal(projection.columns.begin(), projection.columns.end(), columns.begin(), columns.end())) {
+                return projection;
+            }
+        }
+        auto& projection = _projections.emplace_back();
+        projection.columns.assign(columns.begin(), columns.end());
+        return projection;
+    }
+
+    void project(Projection& projection) {
+        projection.rows.clear();
+        for (const auto& row : *_rows) {
+            auto& projected = projection.rows.emplace_back();
+            projected.reserve(projection.columns.size());
+            for (uint32_t column : projection.columns) projected.push_back(row[column]);
+        }
+        std::sort(projection.rows.begin(), projection.rows.end());
+        projection.rows.erase(std::unique(projection.rows.begin(), projection.rows.end()), projection.rows.end());
+        projection.valid = true;
+    }
 
 public:
-    BindingProvider(const CorrelateByBlueprint& bp, const search::fef::MatchDataLayout& layout)
-        : _match_data(layout.createMatchData()), _search(bp.create_correlate_search(*_match_data)) {}
+    BindingProvider(const CorrelateByBlueprint& bp, const search::fef::MatchDataLayout& layout, uint32_t docid_limit)
+        : _match_data(layout.createMatchData()), _search(bp.create_correlate_search(*_match_data)),
+          _docid_limit(docid_limit), _projections() {}
 
-    std::span<const search::queryeval::BindingRow> read(uint32_t docid, std::span<const uint32_t> projection) override {
+    std::span<const search::queryeval::BindingRow> read(uint32_t docid, std::span<const uint32_t> columns) override {
         if (!_search) return {};
-        bool same_document = _docid == docid;
-        if (!same_document || !std::equal(projection.begin(), projection.end(), _projection.begin(), _projection.end())) {
-            // Ranking and grouping can visit documents in relevance order, so reset the
-            // independent iterator before reading a document out of order.
-            if (!same_document) _search->initRange(docid, docid + 1);
-            _bindings = &_search->find_bindings(docid, projection);
-            _projection.assign(projection.begin(), projection.end());
-            _docid = docid;
-        }
-        return *_bindings;
+        if (docid != _docid) read_document(docid);
+        auto& projection = projection_for(columns);
+        if (!projection.valid) project(projection);
+        return projection.rows;
     }
 };
 
 class BindingProviderFactory : public CorrelatedBindingFactory {
     const CorrelateByBlueprint& _blueprint;
     search::fef::MatchDataLayout _layout;
+    uint32_t _docid_limit;
 
 public:
-    BindingProviderFactory(const CorrelateByBlueprint& blueprint, search::fef::MatchDataLayout layout)
-        : _blueprint(blueprint), _layout(std::move(layout)) {}
+    BindingProviderFactory(const CorrelateByBlueprint& blueprint, search::fef::MatchDataLayout layout,
+                           uint32_t docid_limit)
+        : _blueprint(blueprint), _layout(std::move(layout)), _docid_limit(docid_limit) {}
     const std::map<std::string, uint32_t>& columns() const override { return _blueprint.columns(); }
     std::unique_ptr<CorrelatedBindingReader> create() const override {
-        return std::make_unique<BindingProvider>(_blueprint, _layout);
+        return std::make_unique<BindingProvider>(_blueprint, _layout, _docid_limit);
     }
 };
+
+bool reject_all_rows(uint32_t, std::span<const search::CorrelationBinding>) noexcept { return false; }
 
 struct FindFilters : vespalib::ObjectPredicate, vespalib::ObjectOperation {
     std::vector<CorrelatedPredicateNode*>& filters;
@@ -90,7 +134,7 @@ struct FindFilters : vespalib::ObjectPredicate, vespalib::ObjectOperation {
 } // namespace
 
 void prepare_correlated_bindings(const Query& query, search::fef::MatchDataLayout& layout,
-                                search::fef::IObjectStore& store) {
+                                search::fef::IObjectStore& store, uint32_t docid_limit) {
     std::map<std::string, const CorrelateByBlueprint*> blueprints;
     if (query.peekRoot()) find_blueprints(*query.peekRoot(), blueprints);
     std::map<std::string, uint32_t> labels;
@@ -98,7 +142,7 @@ void prepare_correlated_bindings(const Query& query, search::fef::MatchDataLayou
     for (const auto& [label, blueprint] : blueprints) {
         if (labels[label] == 1)
             store.add(CorrelatedBindingFactory::store_key(label),
-                      std::make_unique<BindingProviderFactory>(*blueprint, layout.copy()));
+                      std::make_unique<BindingProviderFactory>(*blueprint, layout.copy(), docid_limit));
     }
 }
 
@@ -111,34 +155,44 @@ CorrelatedGroupingFilters::CorrelatedGroupingFilters(search::grouping::GroupingC
     if (factory.query().query_tree_root()) find_query_labels(*factory.query().query_tree_root(), labels);
     std::map<std::string, std::shared_ptr<CorrelatedBindingReader>> providers;
     std::vector<CorrelatedPredicateNode::Matcher> matchers;
+    // Check each filter once here, so a bad request costs one issue, not one error per row.
+    // Issues with the same text from several threads are reported once.
     for (auto* filter : _filters) {
-        if (labels[filter->label()] != 1) {
-            auto message = "correlated grouping requires exactly one query with label '" + filter->label() + "'";
-            matchers.emplace_back([message](uint32_t, std::span<const search::CorrelationBinding>) -> bool {
-                throw vespalib::IllegalArgumentException(message);
-            });
+        const std::string& label = filter->label();
+        uint32_t label_count = labels[label];
+        if (label_count != 1) {
+            vespalib::Issue::report("Grouping filter error: correlated('%s') needs exactly one correlateBy with this "
+                                    "label in the query, but there are %u", label.c_str(), label_count);
+            matchers.emplace_back(reject_all_rows);
             continue;
         }
         const auto* provider_factory = dynamic_cast<const CorrelatedBindingFactory*>(factory.object_store()->get(
-                CorrelatedBindingFactory::store_key(filter->label())));
+                CorrelatedBindingFactory::store_key(label)));
         if (!provider_factory) {
             // A known labeled query may have been optimized to an empty search.
-            matchers.emplace_back([](uint32_t, std::span<const search::CorrelationBinding>) noexcept { return false; });
+            matchers.emplace_back(reject_all_rows);
             continue;
         }
-        auto& provider = providers[filter->label()];
-        if (!provider) provider = provider_factory->create();
-        matchers.emplace_back([provider, columns = provider_factory->columns(), projection = std::vector<uint32_t>{}]
-                               (uint32_t docid, std::span<const search::CorrelationBinding> projected) mutable {
-            if (projection.empty()) {
-                std::vector<uint32_t> requested;
-                for (const auto& [variable, value] : projected) {
-                    if (!columns.contains(variable))
-                        throw vespalib::IllegalArgumentException("Grouping refers to an unbound correlation variable '" + variable + "'");
-                    requested.push_back(columns.at(variable));
-                }
-                projection = std::move(requested);
+        std::vector<uint32_t> projection;
+        std::string unbound;
+        for (const auto& variable : filter->variables()) {
+            auto column = provider_factory->columns().find(variable);
+            if (column == provider_factory->columns().end()) {
+                unbound = variable;
+                break;
             }
+            projection.push_back(column->second);
+        }
+        if (!unbound.empty()) {
+            vespalib::Issue::report("Grouping filter error: correlated('%s') uses variable '%s', which the query "
+                                    "does not bind", label.c_str(), unbound.c_str());
+            matchers.emplace_back(reject_all_rows);
+            continue;
+        }
+        auto& provider = providers[label];
+        if (!provider) provider = provider_factory->create();
+        matchers.emplace_back([provider, projection = std::move(projection)]
+                               (uint32_t docid, std::span<const search::CorrelationBinding> projected) {
             auto bindings = provider->read(docid, projection);
             return std::any_of(bindings.begin(), bindings.end(), [&](const auto& binding) {
                 for (size_t i = 0; i < projected.size(); ++i)

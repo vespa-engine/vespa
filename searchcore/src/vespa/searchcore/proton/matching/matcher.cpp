@@ -330,6 +330,12 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
             vespalib::Issue::report("Matcher::match failed to deserialize grouping context: %s", e.message());
             LOG(error, "Failed to deserialize grouping context: %s", e.message());
             return reply;
+        } catch (const std::exception& e) {
+            // For example an unknown grouping class id from a newer container. This must fail the
+            // query, not escape the search thread and stop the process.
+            vespalib::Issue::report("Matcher::match failed to deserialize grouping context: %s", e.what());
+            LOG(warning, "Failed to deserialize grouping context: %s", e.what());
+            return reply;
         }
         SessionId sessionId(request.sessionId.data(), request.sessionId.size());
         bool      shouldCacheSearchSession = false;

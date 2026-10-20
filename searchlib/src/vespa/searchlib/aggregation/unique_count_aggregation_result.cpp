@@ -1,6 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "unique_count_aggregation_result.h"
 #include "aggregation.hpp"
+#include <vespa/searchcommon/common/undefinedvalues.h>
+#include <vespa/searchlib/expression/floatresultnode.h>
+#include <vespa/searchlib/expression/integerresultnode.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/expression/stringresultnode.h>
 #include <algorithm>
@@ -94,12 +97,24 @@ int64_t estimate_count(const Sketch<10, uint32_t>& sketch) {
     }
     return static_cast<int64_t>(std::floor(estimate + 0.5));
 }
+
+// Attributes store a missing value as an empty string, the undefined value of the integer type, or NaN.
+bool is_missing(const expression::ResultNode& value) {
+    using namespace search::expression;
+    if (value.inherits(StringResultNode::classId)) return static_cast<const StringResultNode&>(value).get().empty();
+    if (value.inherits(Int8ResultNode::classId)) return value.getInteger() == search::attribute::getUndefined<int8_t>();
+    if (value.inherits(Int16ResultNode::classId)) return value.getInteger() == search::attribute::getUndefined<int16_t>();
+    if (value.inherits(Int32ResultNode::classId)) return value.getInteger() == search::attribute::getUndefined<int32_t>();
+    if (value.inherits(Int64ResultNode::classId)) return value.getInteger() == search::attribute::getUndefined<int64_t>();
+    if (value.inherits(FloatResultNode::classId)) return std::isnan(value.getFloat());
+    return false;
+}
 } // namespace
 
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, UniqueCountAggregationResult, ExpressionCountAggregationResult);
 
-UniqueCountAggregationResult::UniqueCountAggregationResult() : ExpressionCountAggregationResult(1000) {}
+UniqueCountAggregationResult::UniqueCountAggregationResult() : ExpressionCountAggregationResult(sparse_limit) {}
 UniqueCountAggregationResult::~UniqueCountAggregationResult() = default;
 
 const UniqueCountAggregationResult::ResultNode& UniqueCountAggregationResult::onGetRank() const {
@@ -131,13 +146,9 @@ void UniqueCountAggregationResult::onAggregate(const ResultNode& result) {
     if (auto* values = dynamic_cast<const expression::ResultNodeVector*>(&result)) {
         for (size_t i = 0; i < values->size(); ++i) {
             const auto& value = values->get(i);
-            if (auto* string = dynamic_cast<const expression::StringResultNode*>(&value);
-                string && string->get().empty()) continue;
-            aggregate_value(value);
+            if (!is_missing(value)) aggregate_value(value);
         }
-    } else {
-        if (auto* string = dynamic_cast<const expression::StringResultNode*>(&result);
-            string && string->get().empty()) return;
+    } else if (!is_missing(result)) {
         aggregate_value(result);
     }
 }
