@@ -5,6 +5,7 @@ import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import com.yahoo.io.IOUtils;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.text.Text;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -423,6 +424,22 @@ class TritonOnnxRuntimeTest {
         } finally {
             runtime.deconstruct();
             Files.deleteIfExists(faultyModelPath);
+        }
+    }
+
+    @Test
+    void load_and_evaluate_model_with_external_data() {
+        var runtime = createRuntime();
+        // The model has no batch dimension
+        var opts = optsBuilder.setBatchingMaxSize(0).build();
+        var model = "src/test/models/onnx/external_data/add_with_external_data.onnx";
+        try (var evaluator = runtime.evaluatorOf(model, opts)) {
+            var inputs = Map.of("input1", Tensor.from("tensor<float>(d0[1]):[1]"),
+                                "input2", Tensor.from("tensor<float>(d0[1]):[2]"));
+            // The output adds the constant 5 stored in the external data file
+            assertEquals(Tensor.from("tensor<float>(d0[1]):[8]"), evaluator.evaluate(inputs, "output"));
+        } finally {
+            runtime.deconstruct();
         }
     }
 
