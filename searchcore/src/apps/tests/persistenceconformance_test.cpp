@@ -287,7 +287,7 @@ public:
             }
             LOG(info, "putHandler(%s)", dbEntry.first.toString().c_str());
             auto proxy = std::make_shared<PersistenceHandlerProxy>(dbEntry.second);
-            putHandler(getWLock(), dbEntry.second->getBucketSpace(), dbEntry.first, proxy);
+            putHandler(get_unique_lock(), dbEntry.second->getBucketSpace(), dbEntry.first, proxy);
         }
     }
 
@@ -297,7 +297,8 @@ public:
         }
         const DocumentDBMap& docDbs = _docDbRepo->getDocDbs();
         for (const auto& dbEntry : docDbs) {
-            IPersistenceHandler::SP proxy(removeHandler(getWLock(), dbEntry.second->getBucketSpace(), dbEntry.first));
+            IPersistenceHandler::SP proxy(
+                removeHandler(get_unique_lock(), dbEntry.second->getBucketSpace(), dbEntry.first));
             (void)proxy;
         }
     }

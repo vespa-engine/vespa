@@ -489,7 +489,7 @@ MyBmNode::MyBmNode(const std::string& base_dir, int base_port, uint32_t node_idx
                                                                       _resource_usage_notifier, -1, false);
     create_document_db(params);
     auto proxy = std::make_shared<proton::PersistenceHandlerProxy>(_document_db);
-    _persistence_engine->putHandler(_persistence_engine->getWLock(), _bucket_space, _doc_type_name, proxy);
+    _persistence_engine->putHandler(_persistence_engine->get_unique_lock(), _bucket_space, _doc_type_name, proxy);
     _service_layer_config.add_builders(_config_set);
     _distributor_config.add_builders(_config_set);
 }
@@ -497,7 +497,7 @@ MyBmNode::MyBmNode(const std::string& base_dir, int base_port, uint32_t node_idx
 MyBmNode::~MyBmNode() {
     if (_persistence_engine) {
         _persistence_engine->destroyIterators();
-        _persistence_engine->removeHandler(_persistence_engine->getWLock(), _bucket_space, _doc_type_name);
+        _persistence_engine->removeHandler(_persistence_engine->get_unique_lock(), _bucket_space, _doc_type_name);
     }
     if (_document_db) {
         _document_db->close();
