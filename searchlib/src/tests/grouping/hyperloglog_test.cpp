@@ -63,7 +63,49 @@ TEST(HyperLogLogTest, require_that_sparse_hyperloglogs_can_be_merged) {
 
     EXPECT_EQ(1, hll2.aggregate(255));
     hll.merge(hll2);
+    EXPECT_TRUE(dynamic_cast<const SparseSketch<>*>(&hll.getSketch()));
+
+    EXPECT_EQ(1, hll2.aggregate(256));
+    hll.merge(hll2);
     EXPECT_TRUE(dynamic_cast<const NormalSketch<>*>(&hll.getSketch()));
+}
+
+bool is_sparse(const HyperLogLog<>& hll) {
+    return dynamic_cast<const SparseSketch<>*>(&hll.getSketch()) != nullptr;
+}
+
+HyperLogLog<> make_hll(uint32_t limit, uint32_t from, uint32_t to) {
+    HyperLogLog<> hll(limit);
+    for (uint32_t i = from; i < to; ++i) {
+        hll.aggregate(i);
+    }
+    return hll;
+}
+
+TEST(HyperLogLogTest, sparse_limit_is_the_same_for_aggregation_merge_and_copy) {
+    for (uint32_t limit : {256u, 512u}) {
+        auto at_limit = make_hll(limit, 0, limit);
+        EXPECT_TRUE(is_sparse(at_limit));
+        HyperLogLog<> copy(at_limit);
+        EXPECT_TRUE(is_sparse(copy));
+        auto merged = make_hll(limit, 0, limit / 2);
+        merged.merge(make_hll(limit, limit / 2, limit));
+        EXPECT_TRUE(is_sparse(merged));
+        EXPECT_EQ(at_limit.getSketch(), merged.getSketch());
+
+        EXPECT_FALSE(is_sparse(make_hll(limit, 0, limit + 1)));
+        auto merged_past_limit = make_hll(limit, 0, limit / 2);
+        merged_past_limit.merge(make_hll(limit, limit / 2, limit + 1));
+        EXPECT_FALSE(is_sparse(merged_past_limit));
+    }
+}
+
+TEST(HyperLogLogTest, repeated_hash_at_the_sparse_limit_keeps_the_sparse_sketch) {
+    auto hll = make_hll(256, 0, 256);
+    EXPECT_EQ(0, hll.aggregate(7));
+    EXPECT_TRUE(is_sparse(hll));
+    EXPECT_EQ(23, hll.aggregate(256));
+    EXPECT_FALSE(is_sparse(hll));
 }
 
 TEST(HyperLogLogTest, require_that_mixed_hyperloglogs_can_be_merged) {

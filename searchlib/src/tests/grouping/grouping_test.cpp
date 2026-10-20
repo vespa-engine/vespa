@@ -2285,6 +2285,44 @@ TEST(GroupingTest, test_bad_grouping) {
     }
 }
 
+namespace {
+
+int64_t bucket_sum(const NormalSketch<10, uint32_t>& sketch) {
+    int64_t sum = 0;
+    for (auto bucket : sketch.bucket) {
+        sum += bucket;
+    }
+    return sum;
+}
+
+void aggregate_string(AggregationResult& result, uint32_t value) {
+    result.setExpression(MU<ConstantNode>(MU<StringResultNode>(std::to_string(value))))
+          .aggregate(DocId(value + 1), HitRank(1.0));
+}
+
+} // namespace
+
+TEST(GroupingTest, expression_count_rank_adds_bucket_increases_after_switching_to_a_normal_sketch) {
+    ExpressionCountAggregationResult all_values;
+    ExpressionCountAggregationResult values_up_to_limit;
+    for (uint32_t i = 0; i < 300; ++i) {
+        aggregate_string(all_values, i);
+        if (i < SPARSE_SKETCH_LIMIT) {
+            aggregate_string(values_up_to_limit, i);
+        }
+    }
+    ASSERT_EQ((SparseSketch<10, uint32_t>::classId), values_up_to_limit.getSketch().getClassId());
+    ASSERT_EQ(int64_t(SPARSE_SKETCH_LIMIT), values_up_to_limit.getRank().getInteger());
+    ASSERT_EQ((NormalSketch<10, uint32_t>::classId), all_values.getSketch().getClassId());
+    // The rank counts each sparse hash once, then adds how much each later value raises a bucket.
+    NormalSketch<10, uint32_t> at_limit;
+    at_limit.merge(static_cast<const SparseSketch<10, uint32_t>&>(values_up_to_limit.getSketch()));
+    const auto& final_sketch = static_cast<const NormalSketch<10, uint32_t>&>(all_values.getSketch());
+    int64_t expected = SPARSE_SKETCH_LIMIT + bucket_sum(final_sketch) - bucket_sum(at_limit);
+    EXPECT_EQ(expected, all_values.getRank().getInteger());
+    EXPECT_LT(expected, bucket_sum(final_sketch));
+}
+
 TEST(GroupingTest, unique_count_deduplicates_scalar_values_across_documents) {
     UniqueCountAggregationResult count;
     count.setExpression(MU<ConstantNode>(MU<StringResultNode>("a"))).aggregate(DocId(1), HitRank(1.0));
