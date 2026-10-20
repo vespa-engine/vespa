@@ -178,7 +178,7 @@ func TestProdDeployWithoutCertificate(t *testing.T) {
 	httpClient.NextResponseString(200, `{"build": 42}`)
 	assert.Nil(t, cli.Run("prod", "deploy", pkgDir))
 	assert.Contains(t, stdout.String(), "Success: Submitted '"+pkgDir+"' with build number 42")
-	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
+	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/environment/prod/deployment for deployment progress")
 }
 
 func TestProdDeployWithoutTests(t *testing.T) {
@@ -214,12 +214,12 @@ func prodDeploy(pkgDir string, t *testing.T) {
 	httpClient.NextResponseString(200, `{"build": 42}`)
 	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert"))
 	assert.Contains(t, stdout.String(), "Success: Submitted '.' with build number 42")
-	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
+	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/environment/prod/deployment for deployment progress")
 	stdout.Reset()
 	httpClient.NextResponseString(200, `{"build": 43}`)
 	assert.Nil(t, cli.Run("prod", "submit", "--add-cert")) // old variant also works
 	assert.Contains(t, stdout.String(), "Success: Submitted '.' with build number 43")
-	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
+	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/environment/prod/deployment for deployment progress")
 }
 
 func TestProdDeployWithProductionTests(t *testing.T) {
@@ -270,7 +270,7 @@ func TestProdDeployWithJava(t *testing.T) {
 	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert", pkgDir))
 	assert.Equal(t, "", stderr.String())
 	assert.Contains(t, stdout.String(), "Success: Submitted '"+pkgDir+"/target/application' with build number 42")
-	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
+	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/environment/prod/deployment for deployment progress")
 }
 
 func TestProdDeployInvalidZip(t *testing.T) {

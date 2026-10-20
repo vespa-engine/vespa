@@ -160,7 +160,7 @@ func TestStatusCloudDeployment(t *testing.T) {
 	}
 	client.NextResponse(running)
 	assert.NotNil(t, cli.Run("status", "deployment"))
-	assert.Equal(t, `Deployment is still running. See https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details
+	assert.Equal(t, `Deployment is still running. See https://console.vespa-cloud.com/tenant/t1/application/a1/environment/dev/instance/i1/job/dev-us-north-1/run/1337 for more details
 Warning: wait deadline reached
 Hint: Consider using the --wait flag to increase the wait period
 Hint: --wait 120 will make this command wait for completion up to 2 minutes
@@ -179,7 +179,7 @@ Hint: --wait 120 will make this command wait for completion up to 2 minutes
 	assert.Nil(t, cli.Run("status", "deployment"))
 	assert.Equal(t, "", stderr.String())
 	assert.Equal(t,
-		"Deployment run 1337 has completed\nSee https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details\n",
+		"Deployment run 1337 has completed\nSee https://console.vespa-cloud.com/tenant/t1/application/a1/environment/dev/instance/i1/job/dev-us-north-1/run/1337 for more details\n",
 		stdout.String())
 	// Explicit run ID and wait period
 	run := mock.HTTPResponse{
