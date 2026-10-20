@@ -2390,25 +2390,88 @@ TEST(GroupingTest, unique_count_ignores_missing_rollup_keys_but_counts_nonempty_
     EXPECT_EQ(1, count.getRank().getInteger());
 }
 
-TEST(GroupingTest, unique_count_retains_one_thousand_hashes_through_clone_merge_and_reset) {
+TEST(GroupingTest, unique_count_keeps_hashes_up_to_the_sparse_limit_through_clone_merge_and_reset) {
+    constexpr uint32_t limit = UniqueCountAggregationResult::sparse_limit;
     UniqueCountAggregationResult count;
-    for (uint32_t i = 0; i < 1000; ++i) {
-        count.setExpression(MU<ConstantNode>(MU<StringResultNode>(std::to_string(i))))
-             .aggregate(DocId(i + 1), HitRank(1.0));
+    for (uint32_t i = 0; i < limit; ++i) {
+        aggregate_string(count, i);
     }
-    EXPECT_EQ(1000, count.getRank().getInteger());
+    EXPECT_EQ(int64_t(limit), count.getRank().getInteger());
     auto copy = std::unique_ptr<UniqueCountAggregationResult>(count.clone());
-    EXPECT_EQ(1000, copy->getRank().getInteger());
+    EXPECT_EQ(int64_t(limit), copy->getRank().getInteger());
     copy->merge(count);
-    EXPECT_EQ(1000, copy->getRank().getInteger());
+    EXPECT_EQ(int64_t(limit), copy->getRank().getInteger());
     copy->reset();
     EXPECT_EQ(0, copy->getRank().getInteger());
-    EXPECT_EQ(1000, count.getRank().getInteger());
-    for (uint32_t i = 0; i < 1000; ++i) {
-        copy->setExpression(MU<ConstantNode>(MU<StringResultNode>(std::to_string(i))))
-            .aggregate(DocId(i + 1), HitRank(1.0));
+    EXPECT_EQ(int64_t(limit), count.getRank().getInteger());
+    for (uint32_t i = 0; i < limit; ++i) {
+        aggregate_string(*copy, i);
     }
-    EXPECT_EQ(1000, copy->getRank().getInteger());
+    EXPECT_EQ(int64_t(limit), copy->getRank().getInteger());
+}
+
+namespace {
+
+bool is_sparse(const UniqueCountAggregationResult& count) {
+    return count.getSketch().getClassId() == SparseSketch<10, uint32_t>::classId;
+}
+
+// Aggregates values [0, total) in one result, and split at 'split' into two results that are merged.
+std::pair<std::unique_ptr<UniqueCountAggregationResult>, std::unique_ptr<UniqueCountAggregationResult>>
+count_in_one_and_two_parts(uint32_t total, uint32_t split) {
+    auto one = std::make_unique<UniqueCountAggregationResult>();
+    auto left = std::make_unique<UniqueCountAggregationResult>();
+    UniqueCountAggregationResult right;
+    for (uint32_t i = 0; i < total; ++i) {
+        aggregate_string(*one, i);
+        aggregate_string(i < split ? *left : right, i);
+    }
+    left->merge(right);
+    return {std::move(one), std::move(left)};
+}
+
+} // namespace
+
+TEST(GroupingTest, unique_count_switches_to_an_estimate_at_the_same_size_however_values_are_split) {
+    constexpr uint32_t limit = UniqueCountAggregationResult::sparse_limit;
+    {
+        auto [one, two] = count_in_one_and_two_parts(limit, limit / 2);
+        auto copy = std::unique_ptr<UniqueCountAggregationResult>(one->clone());
+        EXPECT_TRUE(is_sparse(*one));
+        EXPECT_TRUE(is_sparse(*two));
+        EXPECT_TRUE(is_sparse(*copy));
+        EXPECT_EQ(int64_t(limit), one->getRank().getInteger());
+        EXPECT_EQ(int64_t(limit), two->getRank().getInteger());
+        EXPECT_EQ(int64_t(limit), copy->getRank().getInteger());
+    }
+    {
+        auto [one, two] = count_in_one_and_two_parts(limit + 1, (limit + 1) / 2);
+        auto copy = std::unique_ptr<UniqueCountAggregationResult>(one->clone());
+        EXPECT_FALSE(is_sparse(*one));
+        EXPECT_FALSE(is_sparse(*two));
+        EXPECT_FALSE(is_sparse(*copy));
+        EXPECT_EQ(one->getRank().getInteger(), two->getRank().getInteger());
+        EXPECT_EQ(one->getRank().getInteger(), copy->getRank().getInteger());
+        // Right after the switch the estimate uses linear counting, so it stays close to the true count.
+        EXPECT_NEAR(double(limit + 1), double(one->getRank().getInteger()), 50.0);
+    }
+}
+
+TEST(GroupingTest, unique_count_skips_undefined_integer_and_float_values) {
+    UniqueCountAggregationResult count;
+    count.setExpression(MU<ConstantNode>(MU<Int32ResultNode>(getUndefined<int32_t>()))).aggregate(DocId(1), HitRank(1.0));
+    count.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(getUndefined<int64_t>()))).aggregate(DocId(2), HitRank(1.0));
+    count.setExpression(MU<ConstantNode>(MU<FloatResultNode>(getUndefined<double>()))).aggregate(DocId(3), HitRank(1.0));
+    EXPECT_EQ(0, count.getRank().getInteger());
+    auto values = MU<Int32ResultNodeVector>();
+    values->push_back(Int32ResultNode(getUndefined<int32_t>()));
+    values->push_back(Int32ResultNode(7));
+    values->push_back(Int32ResultNode(7));
+    values->push_back(Int32ResultNode(8));
+    count.setExpression(MU<ConstantNode>(std::move(values))).aggregate(DocId(4), HitRank(1.0));
+    EXPECT_EQ(2, count.getRank().getInteger());
+    count.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0))).aggregate(DocId(5), HitRank(1.0));
+    EXPECT_EQ(3, count.getRank().getInteger());
 }
 
 TEST(GroupingTest, unique_count_dense_rank_is_consistent_between_aggregation_and_merge) {
