@@ -5,6 +5,7 @@
 #include <vespa/searchlib/aggregation/argmax_aggregation_result.h>
 #include <vespa/searchlib/aggregation/averageaggregationresult.h>
 #include <vespa/searchlib/aggregation/countaggregationresult.h>
+#include <vespa/searchlib/aggregation/document_count_aggregation_result.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/groupinglevel.h>
@@ -16,13 +17,16 @@
 #include <vespa/searchlib/aggregation/quantile_aggregation_result.h>
 #include <vespa/searchlib/aggregation/standarddeviationaggregationresult.h>
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
+#include <vespa/searchlib/aggregation/unique_count_aggregation_result.h>
 #include <vespa/searchlib/aggregation/xoraggregationresult.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/expression/correlated_predicate_node.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/geo_distance_function_node.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/getymumchecksumfunctionnode.h>
 #include <vespa/searchlib/expression/in_predicate_node.h>
+#include <vespa/searchlib/expression/once_per_document_predicate_node.h>
 #include <vespa/searchlib/expression/position_document_field_node.h>
 #include <vespa/searchlib/expression/regex_predicate_node.h>
 #include <vespa/searchlib/expression/resultvector.h>
@@ -31,6 +35,7 @@
 #include <vespa/vespalib/util/casts.h>
 
 #include <fstream>
+#include <functional>
 
 #include <vespa/log/log.h>
 LOG_SETUP("grouping_serialization_test");
@@ -110,6 +115,17 @@ ExpressionNode::UP createDummyExpression() {
     std::unique_ptr<AddFunctionNode> f = MU<AddFunctionNode>();
     f->addArg(MU<ConstantNode>(MU<Int64ResultNode>(2))).addArg(MU<ConstantNode>(MU<Int64ResultNode>(2)));
     return f;
+}
+
+// Fills a uniquecount over attributeA with the sketch written by write_sketch. The result is filled in
+// place, since copying a sparse sketch can change the order its hashes are written in.
+void fill_unique_count(UniqueCountAggregationResult& result, const std::function<void(NBOSerializer&)>& write_sketch) {
+    nbostream     stream;
+    NBOSerializer serializer(stream);
+    serializer << ExpressionTree(MU<AttributeNode>("attributeA"));
+    serializer.put(uint32_t(-1));
+    write_sketch(serializer);
+    result.deserialize(serializer);
 }
 
 //-----------------------------------------------------------------------------
@@ -263,6 +279,32 @@ TEST(GroupingSerializationTest, testAggregatorResults) {
     argmax_multivalue.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
     argmax_multivalue.setExpression(MU<ConstantNode>(std::move(argmax_values))).aggregate(DocId(42), HitRank(21));
     f.checkObject(argmax_multivalue);
+
+    DocumentCountAggregationResult document_count;
+    document_count.setExpression(MU<AttributeNode>("attributeA"));
+    document_count.setCount(7);
+    f.checkObject(document_count);
+
+    // The Java side adds the hashes 0 to 299 to a sparse sketch, which it writes in ascending order.
+    UniqueCountAggregationResult sparse_unique_count;
+    fill_unique_count(sparse_unique_count, [](NBOSerializer& serializer) {
+        serializer.put(search::SparseSketch<10, uint32_t>::classId);
+        serializer.put(uint32_t(300));
+        for (uint32_t hash = 0; hash < 300; ++hash) {
+            serializer.put(hash);
+        }
+    });
+    f.checkObject(sparse_unique_count);
+    UniqueCountAggregationResult normal_unique_count;
+    fill_unique_count(normal_unique_count, [](NBOSerializer& serializer) {
+        search::NormalSketch<10, uint32_t> sketch;
+        for (size_t i = 0; i < sketch.BUCKET_COUNT; ++i) {
+            sketch.bucket[i] = i % 3;
+        }
+        serializer.put(search::NormalSketch<10, uint32_t>::classId);
+        sketch.serialize(serializer);
+    });
+    f.checkObject(normal_unique_count);
 }
 
 TEST(GroupingSerializationTest, testHitList) {
@@ -340,6 +382,14 @@ TEST(GroupingSerializationTest, testFilterExpression) {
     // "如果"; UTF-8: e5 a6 82 e6 9e 9c
     f.checkObject(InPredicateNode(MU<AttributeNode>("attributeA"), {"\u5982\u679c"}));
     f.checkObject(InPredicateNode(ExpressionNode::UP(), {"foo"}));
+    std::vector<ExpressionNode::UP> fields;
+    fields.push_back(MU<AttributeNode>("a.unit"));
+    fields.push_back(MU<AttributeNode>("a.zone"));
+    f.checkObject(CorrelatedPredicateNode("sel", {"unit", "zone"}, std::move(fields)));
+    std::vector<ExpressionNode::UP> keys;
+    keys.push_back(MU<AttributeNode>("a.unit"));
+    keys.push_back(MU<AttributeNode>("a.zone"));
+    f.checkObject(OncePerDocumentPredicateNode(std::move(keys)));
 }
 
 TEST(GroupingSerializationTest, testGroup) {

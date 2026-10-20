@@ -4,11 +4,13 @@ package com.yahoo.searchlib.aggregation;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.GlobalId;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.searchlib.aggregation.hll.NormalSketch;
 import com.yahoo.searchlib.aggregation.hll.SparseSketch;
 import com.yahoo.searchlib.expression.AddFunctionNode;
 import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.CatFunctionNode;
 import com.yahoo.searchlib.expression.ConstantNode;
+import com.yahoo.searchlib.expression.CorrelatedPredicateNode;
 import com.yahoo.searchlib.expression.DebugWaitFunctionNode;
 import com.yahoo.searchlib.expression.DivideFunctionNode;
 import com.yahoo.searchlib.expression.DocumentFieldNode;
@@ -32,6 +34,7 @@ import com.yahoo.searchlib.expression.ModuloFunctionNode;
 import com.yahoo.searchlib.expression.MultiplyFunctionNode;
 import com.yahoo.searchlib.expression.NegateFunctionNode;
 import com.yahoo.searchlib.expression.NormalizeSubjectFunctionNode;
+import com.yahoo.searchlib.expression.OncePerDocumentPredicateNode;
 import com.yahoo.searchlib.expression.RangeBucketPreDefFunctionNode;
 import com.yahoo.searchlib.expression.RawBucketResultNode;
 import com.yahoo.searchlib.expression.RawBucketResultNodeVector;
@@ -230,7 +233,32 @@ public class GroupingSerializationTest {
             t.assertMatch(new ArgmaxAggregationResult(new IntegerResultNode(5), argminValues)
                     .setKeyExpression(new ConstantNode(new IntegerResultNode(5)))
                     .setExpression(new ConstantNode((IntegerResultNodeVector)argminValues.clone())));
+            t.assertMatch(new DocumentCountAggregationResult()
+                    .setCount(7)
+                    .setExpression(new AttributeNode("attributeA")));
+            // More than 255 hashes, so the count does not fit in a byte.
+            var sparseUniqueCount = new UniqueCountAggregationResult();
+            for (int hash = 0; hash < 300; hash++) {
+                ((SparseSketch) sparseUniqueCount.getSketch()).aggregate(hash);
+            }
+            t.assertMatch(sparseUniqueCount.setExpression(new AttributeNode("attributeA")));
+            var normalSketch = new NormalSketch();
+            for (int i = 0; i < normalSketch.size(); i++) {
+                normalSketch.data()[i] = (byte) (i % 3);
+            }
+            t.assertMatch(uniqueCountWithSketch(normalSketch).setExpression(new AttributeNode("attributeA")));
         }
+    }
+
+    private static UniqueCountAggregationResult uniqueCountWithSketch(NormalSketch sketch) {
+        var buffer = new BufferSerializer();
+        buffer.putByte(null, (byte) 0);
+        buffer.putInt(null, -1);
+        sketch.serializeWithId(buffer);
+        buffer.flip();
+        var result = new UniqueCountAggregationResult();
+        result.deserialize(buffer);
+        return result;
     }
 
     @Test
@@ -378,6 +406,9 @@ public class GroupingSerializationTest {
             t.assertMatch(new InPredicateNode(new AttributeNode("attributeA"), List.of("foo", "bar")));
             t.assertMatch(new InPredicateNode(new AttributeNode("attributeA"), List.of("\u5982\u679C")));
             t.assertMatch(new InPredicateNode(null, List.of("foo")));
+            t.assertMatch(new CorrelatedPredicateNode("sel", List.of("unit", "zone"),
+                                                      List.of(new AttributeNode("a.unit"), new AttributeNode("a.zone"))));
+            t.assertMatch(new OncePerDocumentPredicateNode(List.of(new AttributeNode("a.unit"), new AttributeNode("a.zone"))));
         }
     }
 
