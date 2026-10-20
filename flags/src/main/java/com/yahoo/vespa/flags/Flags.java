@@ -212,14 +212,6 @@ public class Flags {
             INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag FAST_MAP_SEARCH = defineFeatureFlag(
-            "fast-map-search", true,
-            List.of("johsol", "boeker", "arnej"), "2026-08-13", "2027-02-13",
-            "Whether to enable fast map search for map fields in a schema.",
-            "Takes effect at redeployment",
-            INSTANCE_ID
-    );
-
     // TODO (@sebasabe): Remove when no loaded config model version reads it (models older than the release adding PRODUCT_DISCOVERY), together with its flag data
     public static final UnboundBooleanFlag COMMERCE_DISCOVERY = defineFeatureFlag(
             "commerce-discovery", false,
