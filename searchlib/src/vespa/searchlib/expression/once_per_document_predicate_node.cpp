@@ -3,6 +3,8 @@
 #include "and_predicate_node.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/objects/objectoperation.h>
+#include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <functional>
 #include <limits>
