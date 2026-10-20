@@ -1,12 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
+import com.yahoo.api.annotations.Beta;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /** Keeps grouping rows whose variables match a labeled correlated query. */
+@Beta
 public class CorrelatedPredicate extends FilterExpression {
     private final String label;
     private final Map<String, AttributeValue> bindings;

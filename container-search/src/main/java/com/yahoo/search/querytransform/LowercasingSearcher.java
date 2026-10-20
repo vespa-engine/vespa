@@ -2,8 +2,10 @@
 package com.yahoo.search.querytransform;
 
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.CorrelateByItem;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.StringInItem;
@@ -59,6 +61,9 @@ public abstract class LowercasingSearcher extends Searcher {
     private void traverse(CompositeItem base, IndexFacts.Session indexFacts) {
         for (Iterator<Item> i = base.getItemIterator(); i.hasNext();) {
             Item next = i.next();
+            if (next instanceof CorrelateByItem correlation) {
+                lowerCase(correlation, indexFacts);
+            }
             if (next instanceof WordItem) {
                 lowerCase((WordItem) next, indexFacts);
             } else if (next instanceof CompositeItem) {
@@ -79,6 +84,15 @@ public abstract class LowercasingSearcher extends Searcher {
         if (shouldLowercase(word, indexFacts)) {
             word.setWord(toLowerCase(word.getWord()));
             word.setLowercased(true);
+        }
+    }
+
+    /** Lowercases the exact values and variable values of correlateBy as the terms on the same fields are lowercased. */
+    private void lowerCase(CorrelateByItem correlation, IndexFacts.Session indexFacts) {
+        try {
+            correlation.lowercaseValues(field -> syntheticLowerCaseCheck(field, indexFacts, true));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalInputException(e.getMessage());
         }
     }
 

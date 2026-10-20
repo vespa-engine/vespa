@@ -224,6 +224,7 @@ public class YqlParser implements Parser {
     public static final String RANKED = "ranked";
     public static final String SAME_ELEMENT = "sameElement";
     public static final String CORRELATE_BY = "correlateBy";
+    public static final String FIRST_PRESENT = "firstPresent";
     public static final String MAP_MATCH = "mapMatch";
     public static final String SCORE_THRESHOLD = "scoreThreshold";
     public static final String SIGNIFICANCE = "significance";
@@ -347,6 +348,7 @@ public class YqlParser implements Parser {
                                     filterPart.getArguments().length);
         populateYqlSources(filterPart.getArgument(0));
         OperatorNode<ExpressionOperator> filterExpression = filterPart.getArgument(1);
+        rejectMisplacedVariables(filterExpression);
         Item root = convertExpression(filterExpression, null);
         connectItems();
         userQuery = null;
@@ -668,33 +670,16 @@ public class YqlParser implements Parser {
         var domains = new TreeMap<String, List<String>>();
         try {
             for (var argument : ast.<List<OperatorNode<ExpressionOperator>>>getArgument(1)) {
-                if (argument.getOperator() == ExpressionOperator.IN &&
-                    argument.<OperatorNode<ExpressionOperator>>getArgument(0).getOperator() == ExpressionOperator.BINDREF) {
+                if (isVariableValues(argument)) {
                     String variable = argument.<OperatorNode<ExpressionOperator>>getArgument(0).getArgument(0);
-                    OperatorNode<ExpressionOperator> values = argument.getArgument(1);
-                    var strings = correlationValues(values);
-                    Preconditions.checkArgument(domains.putIfAbsent(variable, strings) == null,
-                                                "Variable '%s' has more than one domain", variable);
-                    continue;
+                    Preconditions.checkArgument(domains.putIfAbsent(variable, variableValues(argument)) == null,
+                                                "Variable '$%s' has more than one domain", variable);
                 }
-                if (argument.getOperator() == ExpressionOperator.CALL &&
-                    argument.getArgument(0).equals(List.of("firstPresent"))) {
-                    List<OperatorNode<ExpressionOperator>> args = argument.getArgument(1);
-                    Preconditions.checkArgument(args.size() == 3, "firstPresent requires matching, presence and priority arguments");
-                    SameElementItem clause = buildCorrelatedClause(args.get(0));
-                    var bindings = clauseBindings;
-                    var exactValues = clauseExactValues;
-                    SameElementItem presence = buildCorrelatedClause(args.get(1));
-                    Preconditions.checkArgument(bindings.equals(clauseBindings), "firstPresent clauses must bind the same variables and fields");
-                    OperatorNode<ExpressionOperator> priority = args.get(2);
-                    assertHasOperator(priority, ExpressionOperator.IN);
-                    OperatorNode<ExpressionOperator> variable = priority.getArgument(0);
-                    assertHasOperator(variable, ExpressionOperator.BINDREF);
-                    item.addFirstPresentClause(clause, presence, bindings, exactValues, clauseExactValues,
-                                               variable.getArgument(0), correlationValues(priority.getArgument(1)));
-                } else {
-                    SameElementItem clause = buildCorrelatedClause(argument);
-                    item.addClause(clause, clauseBindings, clauseExactValues);
+                else if (isFunctionCall(argument, FIRST_PRESENT)) {
+                    addFirstPresent(argument, item);
+                }
+                else {
+                    item.addClause(buildCorrelatedClause(argument));
                 }
             }
         } finally {
@@ -702,31 +687,120 @@ public class YqlParser implements Parser {
             clauseExactValues = null;
         }
         Preconditions.checkArgument(item.getItemCount() > 0, "correlateBy requires at least one matching clause");
-        var variables = new HashSet<String>();
-        for (int i = 0; i < item.getItemCount(); ++i) variables.addAll(item.getBindings(i).keySet());
         domains.forEach((variable, values) -> {
-            Preconditions.checkArgument(variables.contains(variable), "Variable '%s' is not bound by a clause", variable);
+            requireStringVariable(item, variable, "have a domain");
             item.setAllowedValues(variable, values);
         });
         return item;
     }
 
-    private SameElementItem buildCorrelatedClause(OperatorNode<ExpressionOperator> argument) {
+    /** Adds firstPresent(matching clause, presence clause, $variable in ("value", ...)) to the given item. */
+    private void addFirstPresent(OperatorNode<ExpressionOperator> ast, CorrelateByItem item) {
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        Preconditions.checkArgument(args.size() == 3 && isVariableValues(args.get(2)),
+                                    "firstPresent takes a matching clause, a presence clause and " +
+                                    "values in priority order, such as $zone in (\"a\", \"b\")");
+        var clause = buildCorrelatedClause(args.get(0));
+        var presence = buildCorrelatedClause(args.get(1));
+        String variable = args.get(2).<OperatorNode<ExpressionOperator>>getArgument(0).getArgument(0);
+        item.addFirstPresent(clause, presence, variable, variableValues(args.get(2)));
+        requireStringVariable(item, variable, "be used in firstPresent");
+    }
+
+    private CorrelateByItem.Clause buildCorrelatedClause(OperatorNode<ExpressionOperator> argument) {
         clauseBindings = new TreeMap<>();
         clauseExactValues = new TreeMap<>();
         Item clause = convertExpression(argument, null);
         Preconditions.checkArgument(clause instanceof SameElementItem, "correlateBy clauses must be rooted in sameElement");
-        return (SameElementItem) clause;
+        Preconditions.checkArgument( ! clauseBindings.isEmpty(),
+                                    "A correlateBy clause must bind at least one variable, such as unit_id = $unit");
+        return new CorrelateByItem.Clause((SameElementItem) clause, clauseBindings, clauseExactValues);
     }
 
-    private List<String> correlationValues(OperatorNode<ExpressionOperator> values) {
+    /** Returns whether the given node is $variable in (...). */
+    private static boolean isVariableValues(OperatorNode<ExpressionOperator> ast) {
+        return ast.getOperator() == ExpressionOperator.IN &&
+               ast.<OperatorNode<ExpressionOperator>>getArgument(0).getOperator() == ExpressionOperator.BINDREF;
+    }
+
+    /** Returns the values of $variable in ("value", ...), which must be strings. */
+    private static List<String> variableValues(OperatorNode<ExpressionOperator> ast) {
+        String variable = ast.<OperatorNode<ExpressionOperator>>getArgument(0).getArgument(0);
+        OperatorNode<ExpressionOperator> values = ast.getArgument(1);
         assertHasOperator(values, ExpressionOperator.ARRAY);
         var strings = new ArrayList<String>();
         for (var value : values.<List<OperatorNode<ExpressionOperator>>>getArgument(0)) {
-            assertHasOperator(value, ExpressionOperator.LITERAL);
+            Preconditions.checkArgument(value.getOperator() == ExpressionOperator.LITERAL && value.getArgument(0) instanceof String,
+                                        "The values of $%s must be quoted strings, such as $%s in (\"a\", \"b\")",
+                                        variable, variable);
             strings.add(value.getArgument(0, String.class));
         }
         return strings;
+    }
+
+    /** Values are only compared with string fields, so a variable with values must not be bound to a numeric field. */
+    private void requireStringVariable(CorrelateByItem item, String variable, String usage) {
+        boolean bound = false;
+        for (int i = 0; i < item.getItemCount(); ++i) {
+            String subfield = item.getBindings(i).get(variable);
+            if (subfield == null) continue;
+            bound = true;
+            String field = ((SameElementItem) item.getItem(i)).getFieldName() + "." + subfield;
+            Preconditions.checkArgument( ! indexFactsSession.getIndex(field).isNumerical(),
+                                        "Variable '$%s' is bound to the numeric field '%s'. Only variables bound to " +
+                                        "string fields can %s", variable, field, usage);
+        }
+        Preconditions.checkArgument(bound, "Variable '$%s' is not bound by a clause", variable);
+    }
+
+    /**
+     * Rejects $variables used outside correlateBy, where they have no meaning. Inside correlateBy a variable can be
+     * bound in a clause, as in unit_id = $unit, or be given values, as in $zone in ("a", "b").
+     */
+    private static void rejectMisplacedVariables(OperatorNode<?> ast) {
+        if (isFunctionCall(ast, CORRELATE_BY)) {
+            for (var argument : ast.<List<OperatorNode<?>>>getArgument(1))
+                rejectMisplacedVariablesInCorrelateBy(argument);
+            return;
+        }
+        if (ast.getOperator() == ExpressionOperator.BINDREF)
+            throw new IllegalArgumentException("'$" + ast.getArgument(0) + "' can only be used inside correlateBy, " +
+                                               "as in unit_id = $unit in a sameElement clause, or $zone in (\"a\", \"b\")");
+        for (Object argument : ast.getArguments()) {
+            if (argument instanceof OperatorNode<?> node)
+                rejectMisplacedVariables(node);
+            else if (argument instanceof List<?> list)
+                list.stream().filter(OperatorNode.class::isInstance).forEach(node -> rejectMisplacedVariables((OperatorNode<?>) node));
+        }
+    }
+
+    private static void rejectMisplacedVariablesInCorrelateBy(OperatorNode<?> argument) {
+        if (argument.getOperator() == ExpressionOperator.IN &&
+            argument.<OperatorNode<?>>getArgument(0).getOperator() == ExpressionOperator.BINDREF) {
+            rejectMisplacedVariables(argument.getArgument(1));
+        }
+        else if (isFunctionCall(argument, FIRST_PRESENT)) {
+            for (var firstPresentArgument : argument.<List<OperatorNode<?>>>getArgument(1))
+                rejectMisplacedVariablesInCorrelateBy(firstPresentArgument);
+        }
+        else if (argument.getOperator() == ExpressionOperator.CONTAINS &&
+                 isFunctionCall(argument.getArgument(1), SAME_ELEMENT)) {
+            rejectMisplacedVariables(argument.getArgument(0));
+            for (var term : argument.<OperatorNode<?>>getArgument(1).<List<OperatorNode<?>>>getArgument(1)) {
+                if (term.getOperator() == ExpressionOperator.EQ &&
+                    term.<OperatorNode<?>>getArgument(1).getOperator() == ExpressionOperator.BINDREF)
+                    rejectMisplacedVariables(term.getArgument(0));
+                else
+                    rejectMisplacedVariables(term);
+            }
+        }
+        else {
+            rejectMisplacedVariables(argument);
+        }
+    }
+
+    private static boolean isFunctionCall(OperatorNode<?> ast, String name) {
+        return ast.getOperator() == ExpressionOperator.CALL && ast.<List<String>>getArgument(0).equals(List.of(name));
     }
 
     private Item buildWeightedSet(OperatorNode<ExpressionOperator> ast) {
@@ -1051,13 +1125,16 @@ public class YqlParser implements Parser {
             for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
                 if (clauseBindings != null && term.getOperator() == ExpressionOperator.EQ) {
                     OperatorNode<ExpressionOperator> value = term.getArgument(1);
-                    if (value.getOperator() == ExpressionOperator.BINDREF) {
+                    if (value.getOperator() == ExpressionOperator.BINDREF) { // field = $variable binds the variable
                         String variable = value.getArgument(0);
                         String bindingField = getFieldIndex(term.getArgument(0), CORRELATE_BY);
                         Preconditions.checkArgument(clauseBindings.putIfAbsent(variable, bindingField) == null,
-                                                    "Variable '%s' is bound more than once in a clause", variable);
+                                                    "Variable '$%s' is bound more than once in a clause", variable);
                         continue;
                     }
+                    // field = "value" requires the whole field value to equal the string, with the case handling of
+                    // the field. It is matched as field contains "value", and then checked on the matching rows.
+                    // Two different values for one field leave an empty list, which no row matches.
                     if (value.getOperator() == ExpressionOperator.LITERAL && value.getArgument(0) instanceof String string) {
                         String exactField = getFieldIndex(term.getArgument(0), CORRELATE_BY);
                         var existing = clauseExactValues.putIfAbsent(exactField, List.of(string));
@@ -1065,6 +1142,7 @@ public class YqlParser implements Parser {
                         term = OperatorNode.create(term.getLocation(), ExpressionOperator.CONTAINS, term.getArgument(0), value);
                     }
                 }
+                // Inside correlateBy, numbers in a list are matched as alternatives on the row
                 if (clauseBindings != null && term.getOperator() == ExpressionOperator.IN) {
                     OperatorNode<ExpressionOperator> values = term.getArgument(1);
                     if (values.getOperator() == ExpressionOperator.ARRAY) {

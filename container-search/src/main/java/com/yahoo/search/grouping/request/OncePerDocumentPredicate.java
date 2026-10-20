@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
+import com.yahoo.api.annotations.Beta;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
 /** Keeps the first grouping row with each distinct key tuple in a document. */
+@Beta
 public class OncePerDocumentPredicate extends FilterExpression {
     private final List<GroupingExpression> keys;
 

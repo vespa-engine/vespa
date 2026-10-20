@@ -120,7 +120,7 @@ public class ValidateSameElementTestCase {
         var clause = new SameElementItem("signals");
         clause.addItem(new WordItem("size", "key"));
         var correlation = new CorrelateByItem();
-        correlation.addClause(clause, Map.of("unit", "unit_id"));
+        correlation.addClause(new CorrelateByItem.Clause(clause, Map.of("unit", "unit_id")));
         var root = new AndItem();
         root.addItem(new WordItem("shoe"));
         root.addItem(correlation);

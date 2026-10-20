@@ -462,6 +462,81 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.prelude.query.CorrelateByItem$Clause" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.prelude.query.SameElementItem, java.util.Map, java.util.Map)",
+      "public void <init>(com.yahoo.prelude.query.SameElementItem, java.util.Map)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public com.yahoo.prelude.query.SameElementItem item()",
+      "public java.util.Map bindings()",
+      "public java.util.Map exactValues()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.prelude.query.CorrelateByItem$FirstPresent" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, java.util.List)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public java.lang.String variable()",
+      "public java.util.List values()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.prelude.query.CorrelateByItem" : {
+    "superClass" : "com.yahoo.prelude.query.NonReducibleCompositeItem",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void addClause(com.yahoo.prelude.query.CorrelateByItem$Clause)",
+      "public void addFirstPresent(com.yahoo.prelude.query.CorrelateByItem$Clause, com.yahoo.prelude.query.CorrelateByItem$Clause, java.lang.String, java.util.List)",
+      "public java.util.Map getBindings(int)",
+      "public java.util.Map getExactValues(int)",
+      "public java.util.Optional getFirstPresent(int)",
+      "public boolean isPresenceClause(int)",
+      "public void setAllowedValues(java.lang.String, java.util.List)",
+      "public java.util.Map getAllowedValues()",
+      "public void lowercaseValues(java.util.function.Predicate)",
+      "public void addItem(com.yahoo.prelude.query.Item)",
+      "public void addItem(int, com.yahoo.prelude.query.Item)",
+      "public com.yahoo.prelude.query.Item setItem(int, com.yahoo.prelude.query.Item)",
+      "public com.yahoo.prelude.query.Item removeItem(int)",
+      "public boolean removeItem(com.yahoo.prelude.query.Item)",
+      "public java.util.ListIterator getItemIterator()",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "protected void appendHeadingString(java.lang.StringBuilder)",
+      "protected void appendBodyString(java.lang.StringBuilder)",
+      "public com.yahoo.prelude.query.CorrelateByItem clone()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public bridge synthetic com.yahoo.prelude.query.CompositeItem clone()",
+      "public bridge synthetic com.yahoo.prelude.query.Item clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.prelude.query.DocumentFrequency" : {
     "superClass" : "java.lang.Record",
     "interfaces" : [ ],
@@ -3050,6 +3125,22 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.CorrelatedPredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, java.util.Map)",
+      "public java.lang.String getLabel()",
+      "public java.util.Map getBindings()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.CorrelatedPredicate copy()",
+      "public bridge synthetic com.yahoo.search.grouping.request.FilterExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.CountAggregator" : {
     "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
     "interfaces" : [ ],
@@ -3153,6 +3244,19 @@
     "methods" : [
       "public void <init>()",
       "public com.yahoo.search.grouping.request.DocIdNsSpecificValue copy()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.DocumentCountAggregator" : {
+    "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.search.grouping.request.DocumentCountAggregator copy()",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
     ],
     "fields" : [ ]
@@ -4077,6 +4181,21 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.OncePerDocumentPredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.util.List)",
+      "public java.util.List getKeys()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.OncePerDocumentPredicate copy()",
+      "public bridge synthetic com.yahoo.search.grouping.request.FilterExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.OrFunction" : {
     "superClass" : "com.yahoo.search.grouping.request.FunctionNode",
     "interfaces" : [ ],
@@ -4546,6 +4665,19 @@
       "public com.yahoo.search.grouping.request.UcaFunction copy()",
       "public java.lang.String getLocale()",
       "public java.lang.String getStrength()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.UniqueCountAggregator" : {
+    "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.grouping.request.GroupingExpression)",
+      "public com.yahoo.search.grouping.request.UniqueCountAggregator copy()",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
     ],
     "fields" : [ ]
@@ -10340,109 +10472,6 @@
       "public void <init>(ai.vespa.search.llm.LlmSearcherConfig, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
       "protected ai.vespa.llm.completion.Prompt buildPrompt(com.yahoo.search.Query, com.yahoo.search.Result)"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.prelude.query.CorrelateByItem" : {
-    "superClass" : "com.yahoo.prelude.query.NonReducibleCompositeItem",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "public void addClause(com.yahoo.prelude.query.SameElementItem, java.util.Map)",
-      "public void addClause(com.yahoo.prelude.query.SameElementItem, java.util.Map, java.util.Map)",
-      "public java.util.Map getBindings(int)",
-      "public java.util.Map getExactValues(int)",
-      "public void addFirstPresentClause(com.yahoo.prelude.query.SameElementItem, com.yahoo.prelude.query.SameElementItem, java.util.Map, java.util.Map, java.util.Map, java.lang.String, java.util.List)",
-      "public java.util.List getFirstPresentRules()",
-      "public void setAllowedValues(java.lang.String, java.util.List)",
-      "public java.util.Map getAllowedValues()",
-      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public java.lang.String getName()",
-      "protected void encodeThis(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
-      "protected void appendHeadingString(java.lang.StringBuilder)",
-      "protected void appendBodyString(java.lang.StringBuilder)",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.prelude.query.CorrelateByItem$FirstPresentRule" : {
-    "superClass" : "java.lang.Record",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "final",
-      "record"
-    ],
-    "methods" : [
-      "public void <init>(int, int, java.lang.String, java.util.List)",
-      "public final java.lang.String toString()",
-      "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)",
-      "public int clause()",
-      "public int presence()",
-      "public java.lang.String variable()",
-      "public java.util.List values()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.search.grouping.request.CorrelatedPredicate" : {
-    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(java.lang.String, java.util.Map)",
-      "public java.lang.String getLabel()",
-      "public java.util.Map getBindings()",
-      "public java.lang.String toString()",
-      "public com.yahoo.search.grouping.request.CorrelatedPredicate copy()",
-      "public bridge synthetic com.yahoo.search.grouping.request.FilterExpression copy()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.search.grouping.request.DocumentCountAggregator" : {
-    "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "public com.yahoo.search.grouping.request.DocumentCountAggregator copy()",
-      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.search.grouping.request.OncePerDocumentPredicate" : {
-    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(java.util.List)",
-      "public java.util.List getKeys()",
-      "public java.lang.String toString()",
-      "public com.yahoo.search.grouping.request.OncePerDocumentPredicate copy()",
-      "public bridge synthetic com.yahoo.search.grouping.request.FilterExpression copy()"
-    ],
-    "fields" : [ ]
-  },
-  "com.yahoo.search.grouping.request.UniqueCountAggregator" : {
-    "superClass" : "com.yahoo.search.grouping.request.AggregatorNode",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(com.yahoo.search.grouping.request.GroupingExpression)",
-      "public com.yahoo.search.grouping.request.UniqueCountAggregator copy()",
-      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
     ],
     "fields" : [ ]
   }

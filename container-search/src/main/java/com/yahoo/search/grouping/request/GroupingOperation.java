@@ -225,8 +225,45 @@ public abstract class GroupingOperation extends GroupingNode {
     /** Assigns an {@link FilterExpression} as the filter-by clause of this operation. */
     @Beta
     public GroupingOperation setFilterBy(FilterExpression exp) {
-        filterBy = Objects.requireNonNull(exp, "Filter expression cannot be null");
+        Objects.requireNonNull(exp, "Filter expression cannot be null");
+        requireOncePerDocumentLast(exp);
+        filterBy = exp;
         return this;
+    }
+
+    /**
+     * onceperdoc remembers each key it lets through, so it must only see rows which all the other conditions accept.
+     * It is therefore only allowed as the whole filter, or as the last condition joined by "and".
+     */
+    private static void requireOncePerDocumentLast(FilterExpression filter) {
+        List<FilterExpression> conditions = new ArrayList<>();
+        addConditions(filter, conditions);
+        for (int i = 0; i < conditions.size(); i++) {
+            boolean last = i == conditions.size() - 1;
+            if ( ! (last && conditions.get(i) instanceof OncePerDocumentPredicate))
+                rejectOncePerDocument(conditions.get(i));
+        }
+    }
+
+    /** Adds the conditions which are joined by "and" in the given filter, in the order they are evaluated. */
+    private static void addConditions(FilterExpression filter, List<FilterExpression> conditions) {
+        if (filter instanceof AndPredicate and)
+            and.getArgs().forEach(arg -> addConditions(arg, conditions));
+        else
+            conditions.add(filter);
+    }
+
+    private static void rejectOncePerDocument(FilterExpression filter) {
+        if (filter instanceof OncePerDocumentPredicate)
+            throw new IllegalArgumentException("onceperdoc must be the last condition of a filter, as in " +
+                                               "filter(correlated(...) and onceperdoc(...)), and cannot be used " +
+                                               "inside 'or' or 'not'");
+        if (filter instanceof AndPredicate and)
+            and.getArgs().forEach(GroupingOperation::rejectOncePerDocument);
+        else if (filter instanceof OrPredicate or)
+            or.getArgs().forEach(GroupingOperation::rejectOncePerDocument);
+        else if (filter instanceof NotPredicate not)
+            rejectOncePerDocument(not.getExpression());
     }
 
     /**

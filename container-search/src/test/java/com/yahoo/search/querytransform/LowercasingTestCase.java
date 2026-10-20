@@ -5,11 +5,14 @@ package com.yahoo.search.querytransform;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import com.yahoo.prelude.IndexModel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.prelude.query.CorrelateByItem;
 import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.StringInItem;
@@ -28,7 +31,11 @@ import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.query.parser.Parsable;
+import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.yql.YqlParser;
+import com.yahoo.processing.IllegalInputException;
 
 /**
  * Tests term lowercasing in the search chain.
@@ -284,6 +291,59 @@ public class LowercasingTestCase {
 
         assertEquals(SARR + "." + TEDDY, word.getFieldName());
         assertEquals("abc", word.getWord());
+    }
+
+    @Test
+    void lowercasesCorrelateByExactValuesAndVariableValuesOnlyOnFieldsWhichIgnoreCase() {
+        var parser = new YqlParser(new ParserEnvironment().setIndexFacts(createCorrelationIndexFacts()));
+        var query = new Query();
+        query.getModel().getQueryTree().setRoot(parser.parse(new Parsable().setQuery(
+                "select * from sources * where correlateBy(" +
+                SARR + " contains sameElement(" + BAMSE + " = $zone, " + TEDDY + " = \"True\"), " +
+                "cased contains sameElement(zone = $other, key = \"Size\"), " +
+                "$zone in (\"NORTH\", \"South\"), $other in (\"EAST\"))")).getRoot());
+
+        createCorrelationExecution().search(query);
+
+        var correlation = (CorrelateByItem) query.getModel().getQueryTree().getRoot();
+        assertEquals(Map.of(TEDDY, List.of("true")), correlation.getExactValues(0));
+        var word = (WordItem) ((SameElementItem) correlation.getItem(0)).getItem(0);
+        assertEquals("true", word.getWord()); // The term and the exact value agree
+        assertEquals(Map.of("key", List.of("Size")), correlation.getExactValues(1));
+        assertEquals(List.of("north", "south"), correlation.getAllowedValues().get("zone"));
+        assertEquals(List.of("EAST"), correlation.getAllowedValues().get("other"));
+    }
+
+    @Test
+    void rejectsCorrelateByValuesForAVariableBoundToFieldsWithDifferentCaseHandling() {
+        var parser = new YqlParser(new ParserEnvironment().setIndexFacts(createCorrelationIndexFacts()));
+        var query = new Query();
+        query.getModel().getQueryTree().setRoot(parser.parse(new Parsable().setQuery(
+                "select * from sources * where correlateBy(" +
+                SARR + " contains sameElement(" + BAMSE + " = $zone, " + TEDDY + " = \"x\"), " +
+                "cased contains sameElement(zone = $zone, key = \"Size\"), $zone in (\"NORTH\"))")).getRoot());
+        var e = assertThrows(IllegalInputException.class, () -> createCorrelationExecution().search(query));
+        assertEquals("Variable '$zone' has values, but is bound both to fields which ignore case and fields " +
+                     "which do not: [cased.zone, sarr.bamse]", e.getMessage());
+    }
+
+    /** Creates index facts where the fields of "sarr" ignore case, and the fields of "cased" do not. */
+    private IndexFacts createCorrelationIndexFacts() {
+        SearchDefinition sd = new SearchDefinition("correlation");
+        for (String name : List.of(SARR + "." + BAMSE, SARR + "." + TEDDY)) {
+            Index index = new Index(name);
+            index.setLowercase(true);
+            sd.addIndex(index);
+        }
+        for (String name : List.of(SARR, "cased", "cased.zone", "cased.key"))
+            sd.addIndex(new Index(name));
+        return new IndexFacts(new IndexModel(sd));
+    }
+
+    private Execution createCorrelationExecution() {
+        return new Execution(new Chain<Searcher>(
+                new VespaLowercasingSearcher(new LowercasingConfig(new LowercasingConfig.Builder()))),
+                Execution.Context.createContextStub(createCorrelationIndexFacts()));
     }
 
     /** Creates index facts where top-level "x" has lowercase=true but struct-field "myArray.x" has lowercase=false. */
