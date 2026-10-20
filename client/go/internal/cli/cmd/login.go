@@ -67,18 +67,18 @@ func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool, noBrowser bool, 
 	if err != nil {
 		return err
 	}
-	a, err := auth0.NewClient(cli.httpClient, auth0.Options{ConfigPath: cli.config.authConfigPath(), SystemName: system.Name, SystemURL: system.URL})
+	a, err := auth0.NewClient(cli.httpClient, auth0.Options{ConfigPath: cli.config.authConfigPath(), SystemName: system.Name, SystemURL: system.URL, UseFileStorage: useFileStorage})
 	if err != nil {
 		return err
 	}
-	if _, err := a.AccessToken(true); err == nil {
-		cli.printDebug("Using stored credentials, refreshed if needed")
-		if !batch {
+	if !batch {
+		if _, err := a.AccessToken(true); err == nil {
+			cli.printDebug("Using stored credentials, refreshed if needed")
 			cli.printSuccess("Logged in")
+			return nil
+		} else {
+			cli.printDebug("Could not use stored credentials, starting new login: ", err)
 		}
-		return nil
-	} else {
-		cli.printDebug("Could not use stored credentials, starting new login: ", err)
 	}
 	state, err := a.Authenticator.Start(ctx)
 	if err != nil {

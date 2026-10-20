@@ -38,9 +38,10 @@ type Client struct {
 }
 
 type Options struct {
-	ConfigPath string
-	SystemName string
-	SystemURL  string
+	ConfigPath     string
+	SystemName     string
+	SystemURL      string
+	UseFileStorage bool
 }
 
 // config is the root type of the persisted config
@@ -150,7 +151,7 @@ func (a *Client) AccessToken(forceRefresh bool) (string, error) {
 		// use the refresh token to get a new access token:
 		tr := &auth.TokenRetriever{
 			Authenticator: a.Authenticator,
-			Secrets:       auth.NewKeyring(),
+			Secrets:       auth.NewKeyringWithOptions(a.options.UseFileStorage),
 			Client:        http.DefaultClient,
 		}
 		resp, err := tr.Refresh(cancelOnInterrupt(), a.options.SystemName)
