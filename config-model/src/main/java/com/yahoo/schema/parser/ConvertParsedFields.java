@@ -305,11 +305,6 @@ public class ConvertParsedFields {
                                                         "'fast-search-map-field " + other.lookupName() + "'.");
             }
         }
-        // error on duplicates
-        if (!properties.featureFlags().fastMapSearch()) {
-            throw fastMapSearchError(schema, field, "'fast-search-map-field' is an unfinished feature that " +
-                                                    "will not be enabled yet. Please remove this property from the field.");
-        }
         field.addFastMapSearch(fastMapFields);
     }
 
