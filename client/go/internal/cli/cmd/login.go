@@ -71,7 +71,7 @@ func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool, noBrowser bool, 
 	if err != nil {
 		return err
 	}
-	if _, err := a.AccessToken(); err == nil {
+	if _, err := a.AccessToken(true); err == nil {
 		cli.printDebug("Using stored credentials, refreshed if needed")
 		if !batch {
 			cli.printSuccess("Logged in")

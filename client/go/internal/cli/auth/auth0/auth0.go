@@ -124,7 +124,7 @@ func (a *Client) getDeviceFlowConfig() (flowConfig, error) {
 }
 
 func (a *Client) Authenticate(request *http.Request) error {
-	accessToken, err := a.AccessToken()
+	accessToken, err := a.AccessToken(false)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (a *Client) Authenticate(request *http.Request) error {
 }
 
 // AccessToken returns an access token for the configured system, refreshing it if necessary.
-func (a *Client) AccessToken() (string, error) {
+func (a *Client) AccessToken(forceRefresh bool) (string, error) {
 	creds, ok := a.provider.Systems[a.options.SystemName]
 	switch {
 	case !ok:
@@ -145,7 +145,7 @@ func (a *Client) AccessToken() (string, error) {
 		return "", fmt.Errorf("auth0: access token missing: %s", reauthMessage)
 	case scopesChanged(creds):
 		return "", fmt.Errorf("auth0: authentication scopes changed: %s", reauthMessage)
-	case isExpired(creds.ExpiresAt, accessTokenExpiry):
+	case forceRefresh || isExpired(creds.ExpiresAt, accessTokenExpiry):
 		// check if the stored access token is expired:
 		// use the refresh token to get a new access token:
 		tr := &auth.TokenRetriever{
