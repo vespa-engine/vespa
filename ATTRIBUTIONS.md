@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-10-16
+Last updated: 2026-10-20
 
 ---
 
@@ -212,14 +212,6 @@ Last updated: 2026-10-16
 ## com.fasterxml.jackson.core 2.22 — Apache 2.0
 
 - Homepage: <https://github.com/FasterXML/jackson>
-- FasterXML
-
----
-
-## com.fasterxml.jackson.core 2.22.3 — Apache 2.0
-
-- Homepage: <https://github.com/FasterXML/jackson>
-- Copyright 2007 Tatu Saloranta tatu.saloranta@iki.fi
 - FasterXML
 
 ---
