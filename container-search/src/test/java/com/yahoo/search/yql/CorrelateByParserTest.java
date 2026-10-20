@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
+import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -9,10 +10,15 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NumericInItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.search.Query;
+import com.yahoo.search.Searcher;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
+import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +43,19 @@ class CorrelateByParserTest {
             $zone in ("A", "B")),
         flat contains sameElement(unit_id = $unit, key = "Eco Friendly", value = "True")
         """;
+
+    /** Every correlateBy body parsed successfully in this test, used to check that each one survives a YQL round trip. */
+    private static final List<String> VALID_BODIES = List.of(
+            CLAUSES,
+            CLAUSES + ", $zone in (\"WAREHOUSE_A\", \"WAREHOUSE_B\")",
+            "$zone in (\"B\"), " + CLAUSES,
+            FIRST_PRESENT,
+            FIRST_PRESENT + ", $unit in (\"u1\", \"u\\\"2\")",
+            "a contains sameElement(unit_id = $u, zone_id = $z, key = 'price')",
+            "a contains sameElement(unit_id = $u, key = 'a', key = 'b')",
+            "a contains sameElement(unit_id = $u, key = 'a', key contains 'b', value > 3)",
+            "firstPresent(a contains sameElement(unit_id = $u, zone_id = $z, key = 'price'), " +
+            "a contains sameElement(unit_id = $u, zone_id = $z, key = 'price'), $z in ('A', 'B'))");
 
     private static Item parseWhere(YqlParser parser, String where) {
         return parser.parse(new Parsable().setQuery("select * from sources * where " + where)).getRoot();
@@ -207,6 +226,53 @@ class CorrelateByParserTest {
         }
         assertEquals(NumericInItem.class, parseWhere(typedParser(), "price in (100, 200)").getClass());
         assertEquals(StringInItem.class, parseWhere(typedParser(), "title in (\"a\", \"b\")").getClass());
+    }
+
+    @Test
+    void serializesToYqlWhichParsesToAnEqualItem() {
+        for (String body : VALID_BODIES) {
+            var parsed = parse(parser(), body);
+            String yql = VespaSerializer.serialize(parsed);
+            assertTrue(yql.startsWith("correlateBy("), yql);
+            var reparsed = parseWhere(parser(), yql);
+            assertEquals(parsed, reparsed, body + " was serialized as " + yql);
+            assertEquals(yql, VespaSerializer.serialize(reparsed));
+        }
+    }
+
+    @Test
+    void serializesAStringListInAClause() {
+        var parsed = parse(typedParser(), "a contains sameElement(unit_id = $u, key in ('x', 'y'))");
+        String yql = VespaSerializer.serialize(parsed);
+        assertEquals("correlateBy(a contains sameElement(unit_id = $u, key in (\"x\", \"y\")))", yql);
+        assertEquals(parsed, parseWhere(typedParser(), yql));
+    }
+
+    @Test
+    void serializesTheLabelAndExactValues() {
+        var parsed = parse(parser(), "a contains sameElement(unit_id = $u, key = 'k', key contains 'p'), $u in (\"x\")");
+        parsed.setLabel("selection");
+        String yql = VespaSerializer.serialize(parsed);
+        assertEquals("({label: \"selection\"}correlateBy(a contains sameElement(unit_id = $u, key = \"k\", " +
+                     "key contains \"p\"), $u in (\"x\")))",
+                     yql);
+        var reparsed = (CorrelateByItem) parseWhere(parser(), yql);
+        assertEquals("selection", reparsed.getLabel());
+        assertEquals(parsed.getItemCount(), reparsed.getItemCount());
+        assertEquals(parsed.getExactValues(0), reparsed.getExactValues(0));
+    }
+
+    @Test
+    void correlateByQueryWithTracingSucceedsAndTracesTheQuery() {
+        var execution = new Execution(new Chain<Searcher>(new MinimalQueryInserter()), Execution.Context.createContextStub());
+        String yql = "select * from sources * where correlateBy(a contains sameElement(unit_id = $u, key = \"x\"))";
+        var query = new Query("?tracelevel=2&yql=" + URLEncoder.encode(yql, StandardCharsets.UTF_8));
+        var result = execution.search(query);
+        assertNull(result.hits().getError());
+        assertTrue(query.getModel().getQueryTree().getRoot() instanceof CorrelateByItem);
+        String trace = query.getContext(false).getTrace().toString();
+        assertTrue(trace.contains("correlateBy(a contains sameElement(unit_id = $u, key = \"x\"))"), trace);
+        assertFalse(trace.contains("Invalid query"), trace);
     }
 
 }

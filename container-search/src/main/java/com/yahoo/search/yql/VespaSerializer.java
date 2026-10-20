@@ -11,6 +11,7 @@ import static com.yahoo.search.yql.YqlParser.BOUNDS_RIGHT_OPEN;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_ID;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
 import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
+import static com.yahoo.search.yql.YqlParser.CORRELATE_BY;
 import static com.yahoo.search.yql.YqlParser.DISTANCE;
 import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
 import static com.yahoo.search.yql.YqlParser.ELEMENT_FILTER;
@@ -18,6 +19,7 @@ import static com.yahoo.search.yql.YqlParser.ELEMENT_VALUE;
 import static com.yahoo.search.yql.YqlParser.END_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.EQUIV;
 import static com.yahoo.search.yql.YqlParser.FILTER;
+import static com.yahoo.search.yql.YqlParser.FIRST_PRESENT;
 import static com.yahoo.search.yql.YqlParser.FUZZY;
 import static com.yahoo.search.yql.YqlParser.GEO_BOUNDING_BOX;
 import static com.yahoo.search.yql.YqlParser.GEO_LOCATION;
@@ -78,6 +80,7 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.CorrelateByItem;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.FalseItem;
@@ -769,6 +772,100 @@ public class VespaSerializer {
 
     }
 
+    /**
+     * Writes correlateBy(...) with the variable bindings, exact values, firstPresent pairs and variable values
+     * which the parser takes out of the sameElement clauses.
+     */
+    private static class CorrelateBySerializer extends Serializer<CorrelateByItem> {
+
+        @Override
+        void onExit(StringBuilder destination, CorrelateByItem item) { }
+
+        @Override
+        boolean serialize(StringBuilder destination, CorrelateByItem item, Scope scope) {
+            String label = item.getLabel();
+            if (label != null) {
+                destination.append("({").append(LABEL).append(": \"");
+                escape(label, destination).append("\"}");
+            }
+            destination.append(CORRELATE_BY).append('(');
+            for (int i = 0; i < item.getItemCount(); ++i) {
+                if (i > 0) destination.append(", ");
+                var firstPresent = item.getFirstPresent(i);
+                if (firstPresent.isPresent()) {
+                    destination.append(FIRST_PRESENT).append('(');
+                    serializeClause(destination, item, i);
+                    destination.append(", ");
+                    serializeClause(destination, item, ++i);
+                    destination.append(", ");
+                    serializeVariableValues(destination, firstPresent.get().variable(), firstPresent.get().values());
+                    destination.append(')');
+                }
+                else {
+                    serializeClause(destination, item, i);
+                }
+            }
+            item.getAllowedValues().forEach((variable, values) -> {
+                destination.append(", ");
+                serializeVariableValues(destination, variable, values);
+            });
+            destination.append(')');
+            if (label != null)
+                destination.append(')');
+            return false;
+        }
+
+        /** Writes the bindings first, then the terms, with exact values written as field = "value". */
+        private static void serializeClause(StringBuilder destination, CorrelateByItem item, int index) {
+            var clause = (SameElementItem) item.getItem(index);
+            var exactValues = item.getExactValues(index);
+            destination.append(clause.getFieldName()).append(" contains ").append(SAME_ELEMENT).append('(');
+            int initLen = destination.length();
+            item.getBindings(index).forEach((variable, field) -> {
+                comma(destination, initLen);
+                destination.append(field).append(" = $").append(variable);
+            });
+            for (Item term : clause.items()) {
+                comma(destination, initLen);
+                if (isExactValue(term, exactValues)) {
+                    var value = (IndexedItem) term;
+                    destination.append(value.getIndexName()).append(" = ");
+                    String annotations = term instanceof WordItem word ? WordSerializer.getAllAnnotations(word).toString() : "";
+                    annotatedTerm(destination, value, annotations);
+                }
+                else {
+                    VespaSerializer.serialize(term, Scope.SAME_ELEMENT, destination);
+                }
+            }
+            destination.append(')');
+        }
+
+        /**
+         * Returns whether the term matches one of the exact values of its field. The term is a word, or a phrase
+         * when the value has several words. An empty list of exact values means that the clause gave different
+         * values for the field.
+         */
+        private static boolean isExactValue(Item term, Map<String, List<String>> exactValues) {
+            if ( ! (term instanceof WordItem || term instanceof PhraseItem || term instanceof PhraseSegmentItem)) return false;
+            if (term instanceof WordItem && term.getClass() != WordItem.class) return false; // not prefix, substring etc.
+            var value = (IndexedItem) term;
+            var values = exactValues.get(value.getIndexName());
+            return values != null && (values.isEmpty() || values.contains(value.getIndexedString()));
+        }
+
+        private static void serializeVariableValues(StringBuilder destination, String variable, List<String> values) {
+            destination.append('$').append(variable).append(" in (");
+            int initLen = destination.length();
+            for (String value : values) {
+                comma(destination, initLen);
+                destination.append('"');
+                escape(value, destination).append('"');
+            }
+            destination.append(')');
+        }
+
+    }
+
     private static class GeoLocationSerializer extends Serializer<GeoLocationItem> {
 
         @Override
@@ -1439,6 +1536,7 @@ public class VespaSerializer {
         dispatchBuilder.put(OrItem.class, new OrSerializer());
         dispatchBuilder.put(PhraseItem.class, new PhraseSerializer());
         dispatchBuilder.put(SameElementItem.class, new SameElementSerializer());
+        dispatchBuilder.put(CorrelateByItem.class, new CorrelateBySerializer());
         dispatchBuilder.put(PhraseSegmentItem.class, new PhraseSegmentSerializer());
         dispatchBuilder.put(PredicateQueryItem.class, new PredicateQuerySerializer());
         dispatchBuilder.put(PrefixItem.class, new WordSerializer()); // gotcha
