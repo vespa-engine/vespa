@@ -71,6 +71,15 @@ func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool, noBrowser bool, 
 	if err != nil {
 		return err
 	}
+	if _, err := a.AccessToken(); err == nil {
+		cli.printDebug("Using stored credentials, refreshed if needed")
+		if !batch {
+			cli.printSuccess("Logged in")
+		}
+		return nil
+	} else {
+		cli.printDebug("Could not use stored credentials, starting new login: ", err)
+	}
 	state, err := a.Authenticator.Start(ctx)
 	if err != nil {
 		return fmt.Errorf("could not start the authentication process: %w", err)
