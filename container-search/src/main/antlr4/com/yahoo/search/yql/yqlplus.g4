@@ -360,7 +360,6 @@ equality_expression
 in_not_in_target
     : {expression_stack.peek()}? LPAREN select_statement RPAREN
     | literal_list
-    | array_literal
     ;
 
 equality_op
@@ -433,6 +432,7 @@ primary_expression
 	: call_expression[in_select]
 	| fieldref
 	| constant_expression
+	| binding_variable
 	| LPAREN expression[in_select] RPAREN
 	;
 	
@@ -446,8 +446,13 @@ fieldref
 
 // a parameter is an argument from outside the YQL statement
 parameter
-	: (AT | DOLLAR) ident
+	: AT ident
 	;	
+
+// a variable such as $unit, which correlateBy binds to struct fields
+binding_variable
+	: DOLLAR ident
+	;
 	       
 property_name_and_value
 	: property_name ':' constant_expression
