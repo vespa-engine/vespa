@@ -252,14 +252,18 @@ std::string make_same_element_stack_dump(const std::string& a1_term, const std::
 }
 
 // correlateBy with one clause, sameElement(sig: zone contains "A"), binding the variables unit and zone.
-std::string make_correlate_by_stack_dump(const std::string& label) {
+// correlateBy exists only in the protobuf query protocol, so this query is not a stack dump.
+SerializedQueryTreeSP make_correlate_by_query(const std::string& label) {
     QueryBuilder<ProtonNodeTypes> builder;
     std::map<std::string, std::string> clause{{"unit", "unit"}, {"zone", "zone"}};
     CorrelateBy::Bindings              bindings{clause};
     builder.add_correlate_by(std::move(bindings), CorrelateBy::Domains{}, label);
     builder.addSameElement(1, "sig", 0, Weight(1));
     builder.addStringTerm("A", "zone", 1, Weight(1));
-    return StackDumpCreator::create(*builder.build());
+    QueryToProtobuf converter;
+    auto proto = converter.serialize(*builder.build());
+    return SerializedQueryTree::fromProtobuf(
+        std::make_unique<SerializedQueryTree::ProtobufQueryTree>(std::move(proto)));
 }
 
 std::string make_two_term_and_stack_dump(const std::string& field, const std::string& term1,
@@ -2160,7 +2164,8 @@ TEST_F(MatchingTest, correlated_grouping_keeps_only_rows_bound_by_the_labeled_qu
         MyWorld world(shared_state());
         world.basicSetup(1, 1);
         world.add_correlate_by_results();
-        auto request = MyWorld::createRequest(make_correlate_by_stack_dump("sel"));
+        auto request = MyWorld::createRequest(make_simple_stack_dump("f1", "foo"));
+        request->setSerializedQueryTree(make_correlate_by_query("sel"));
         add_correlated_grouping(*request, "sel", "unit");
         search::UniqueIssues issues;
         auto                 capture = vespalib::Issue::listen(issues);
@@ -2179,7 +2184,8 @@ TEST_F(MatchingTest, correlated_grouping_with_an_unknown_label_rejects_all_rows_
         MyWorld world(shared_state());
         world.basicSetup();
         world.add_correlate_by_results();
-        auto request = MyWorld::createRequest(make_correlate_by_stack_dump("sel"));
+        auto request = MyWorld::createRequest(make_simple_stack_dump("f1", "foo"));
+        request->setSerializedQueryTree(make_correlate_by_query("sel"));
         add_correlated_grouping(*request, "typo", "unit");
         search::UniqueIssues issues;
         auto                 capture = vespalib::Issue::listen(issues);
@@ -2195,7 +2201,8 @@ TEST_F(MatchingTest, correlated_grouping_with_an_unbound_variable_rejects_all_ro
     MyWorld world(shared_state());
     world.basicSetup();
     world.add_correlate_by_results();
-    auto request = MyWorld::createRequest(make_correlate_by_stack_dump("sel"));
+    auto request = MyWorld::createRequest(make_simple_stack_dump("f1", "foo"));
+        request->setSerializedQueryTree(make_correlate_by_query("sel"));
     add_correlated_grouping(*request, "sel", "color");
     search::UniqueIssues issues;
     auto                 capture = vespalib::Issue::listen(issues);
