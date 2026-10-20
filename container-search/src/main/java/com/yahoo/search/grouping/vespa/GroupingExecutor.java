@@ -79,6 +79,7 @@ public class GroupingExecutor extends Searcher {
         query.prepare();
 
         if (query.getSelect().getGrouping().isEmpty()) return execution.search(query);
+        CorrelatedFilterValidator.validate(query);
 
         // Convert requests to Vespa style grouping.
         Map<Integer, Grouping> groupingMap = new HashMap<>();
