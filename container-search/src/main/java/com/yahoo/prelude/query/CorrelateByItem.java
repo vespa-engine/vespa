@@ -7,12 +7,18 @@ import com.yahoo.api.annotations.Beta;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.function.Predicate;
+
+import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
 /**
  * Requires matching rows in every clause to agree on their shared variables.
@@ -23,6 +29,10 @@ import java.util.TreeMap;
  * the exact values its rows must have, and its firstPresent link, in the same order as the children.
  * Add children with {@link #addClause} and {@link #addFirstPresent}; the other ways of adding a child are refused.
  * Removing a child removes its clause. Removing one clause of a firstPresent pair turns the other into an ordinary clause.</p>
+ *
+ * <p>An exact value, written <code>field = "value"</code> in YQL, requires the whole value of the
+ * row's field to equal the given string. Case is handled as the field handles the case of its terms:
+ * {@link #lowercaseValues} lowercases exact values and variable values for fields which ignore case.</p>
  */
 @Beta
 public class CorrelateByItem extends NonReducibleCompositeItem {
@@ -122,6 +132,59 @@ public class CorrelateByItem extends NonReducibleCompositeItem {
     }
 
     public Map<String, List<String>> getAllowedValues() { return allowedValues; }
+
+    /**
+     * Lowercases the exact values on fields which lowercase their terms, and the allowed and firstPresent values
+     * of variables bound to such fields, so that these values compare the same way as the terms of the clauses.
+     *
+     * @param lowercases tells whether a field, given by its full name such as "signals.zone", lowercases its terms
+     * @throws IllegalArgumentException if a variable with values is bound both to fields which lowercase and fields which do not
+     */
+    public void lowercaseValues(Predicate<String> lowercases) {
+        for (int i = 0; i < clauses.size(); ++i) {
+            var info = clauses.get(i);
+            String field = clauseField(i);
+            var exactValues = new TreeMap<String, List<String>>();
+            info.exactValues().forEach((subfield, values) ->
+                    exactValues.put(subfield, lowercases.test(field + "." + subfield) ? lowercase(values) : values));
+            var firstPresent = info.firstPresent();
+            if (firstPresent != null && lowercasesVariable(firstPresent.variable(), lowercases))
+                firstPresent = new FirstPresent(firstPresent.variable(), lowercase(firstPresent.values()));
+            clauses.set(i, new ClauseInfo(info.bindings(), Collections.unmodifiableMap(exactValues),
+                                          firstPresent, info.presence()));
+        }
+        var updated = new TreeMap<String, List<String>>();
+        allowedValues.forEach((variable, values) ->
+                updated.put(variable, lowercasesVariable(variable, lowercases) ? lowercase(values) : values));
+        allowedValues = Collections.unmodifiableMap(updated);
+    }
+
+    /** Returns the full names of the fields the given variable is bound to, such as "signals.zone". */
+    private Set<String> boundFields(String variable) {
+        Set<String> fields = new HashSet<>();
+        for (int i = 0; i < clauses.size(); ++i) {
+            String subfield = clauses.get(i).bindings().get(variable);
+            if (subfield != null) fields.add(clauseField(i) + "." + subfield);
+        }
+        return fields;
+    }
+
+    private boolean lowercasesVariable(String variable, Predicate<String> lowercases) {
+        var fields = boundFields(variable);
+        boolean anyLowercases = fields.stream().anyMatch(lowercases);
+        if (anyLowercases && ! fields.stream().allMatch(lowercases))
+            throw new IllegalArgumentException("Variable '$" + variable + "' has values, but is bound both to fields " +
+                                               "which ignore case and fields which do not: " + new TreeSet<>(fields));
+        return anyLowercases;
+    }
+
+    private static List<String> lowercase(List<String> values) {
+        return values.stream().map(value -> toLowerCase(value)).toList();
+    }
+
+    private String clauseField(int clause) {
+        return ((SameElementItem) getItem(clause)).getFieldName();
+    }
 
     /** Refused: add clauses with {@link #addClause} or {@link #addFirstPresent}, which also add their variable bindings. */
     @Override

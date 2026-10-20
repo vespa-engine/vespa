@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -230,6 +231,34 @@ class CorrelateByItemTest {
         assertEquals(2, protobuf(query).getClausesCount());
         assertNotNull(query.toString());
         assertEquals(query, query.clone());
+    }
+
+    @Test
+    void lowercasesExactValuesAndVariableValuesOnlyForFieldsWhichIgnoreCase() {
+        var query = new CorrelateByItem();
+        var bindings = Map.of("unit", "unit_id", "zone", "zone_id");
+        query.addFirstPresent(new CorrelateByItem.Clause(sameElement("zoned", "price"), bindings, Map.of("key", List.of("Price"))),
+                              clause("zoned", "price", bindings), "zone", List.of("North", "South"));
+        query.addClause(new CorrelateByItem.Clause(sameElement("flat", "eco"), Map.of("unit", "unit_id"),
+                                                   Map.of("value", List.of("True"))));
+        query.setAllowedValues("zone", List.of("North"));
+        query.setAllowedValues("unit", List.of("U1"));
+        Set<String> ignoringCase = Set.of("zoned.key", "zoned.zone_id");
+        query.lowercaseValues(ignoringCase::contains);
+        assertEquals(Map.of("key", List.of("price")), query.getExactValues(0));
+        assertEquals(Map.of("value", List.of("True")), query.getExactValues(2));
+        assertEquals(List.of("north", "south"), query.getFirstPresent(0).get().values());
+        assertEquals(List.of("north"), query.getAllowedValues().get("zone"));
+        assertEquals(List.of("U1"), query.getAllowedValues().get("unit"));
+    }
+
+    @Test
+    void refusesToLowercaseValuesOfAVariableBoundToFieldsWithDifferentCaseHandling() {
+        var query = query();
+        query.setAllowedValues("unit", List.of("U1"));
+        var e = assertThrows(IllegalArgumentException.class, () -> query.lowercaseValues("zoned.unit_id"::equals));
+        assertEquals("Variable '$unit' has values, but is bound both to fields which ignore case and fields which " +
+                     "do not: [flat.unit_id, zoned.unit_id]", e.getMessage());
     }
 
 }
