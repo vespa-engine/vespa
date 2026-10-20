@@ -9,6 +9,7 @@
 #include <vespa/searchlib/aggregation/attribute_node_replacer.h>
 #include <vespa/searchlib/aggregation/averageaggregationresult.h>
 #include <vespa/searchlib/aggregation/countaggregationresult.h>
+#include <vespa/searchlib/aggregation/document_count_aggregation_result.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/groupinglevel.h>
@@ -28,6 +29,7 @@
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
 #include <vespa/searchlib/expression/negatefunctionnode.h>
+#include <vespa/searchlib/expression/once_per_document_predicate_node.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
@@ -2522,6 +2524,69 @@ TEST(GroupingTest, unique_count_orders_dense_sketches_by_the_container_estimate_
     EXPECT_EQ(94443, count.getRank().getInteger());
     count.reset();
     EXPECT_EQ(0, count.getRank().getInteger());
+}
+
+namespace {
+
+const Group* find_child(const Group& parent, const ResultNode& id) {
+    for (uint32_t i = 0; i < parent.getChildrenSize(); ++i) {
+        if (parent.getChild(i).getId().cmp(id) == 0) {
+            return &parent.getChild(i);
+        }
+    }
+    return nullptr;
+}
+
+uint64_t document_count(const Group& group) {
+    const auto* count = dynamic_cast<const DocumentCountAggregationResult*>(&group.getAggregationResult(0));
+    return count != nullptr ? count->getCount() : 0;
+}
+
+std::unique_ptr<DocumentCountAggregationResult> make_document_count() {
+    auto count = std::make_unique<DocumentCountAggregationResult>();
+    count->setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)));
+    return count;
+}
+
+} // namespace
+
+TEST(GroupingTest, once_per_document_keeps_the_same_key_once_under_each_parent_group) {
+    AggregationContext ctx;
+    ctx.result().add(0).add(1);
+    // Document 0 has rows (7, A) and (8, A). Document 1 has the row (7, B).
+    ctx.add(IntArrayAttrBuilder("signals.unit").add({7, 8}).add({7}).sp());
+    ctx.add(StringArrayAttrBuilder("signals.zone").add({"A", "A"}).add({"B"}).sp());
+
+    std::vector<ExpressionNode::UP> keys;
+    keys.push_back(MU<AttributeNode>("signals.zone"));
+    Grouping request;
+    request.setFirstLevel(0).setLastLevel(2);
+    request.addLevel(std::move(GroupingLevel()
+                                   .setExpression(MU<AttributeNode>("signals.unit"))
+                                   .addAggregationResult(make_document_count())));
+    request.addLevel(std::move(GroupingLevel()
+                                   .setExpression(MU<AttributeNode>("signals.zone"))
+                                   .setFilter(MU<OncePerDocumentPredicateNode>(std::move(keys)))
+                                   .addAggregationResult(make_document_count())));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits());
+    request.sortById();
+
+    const Group* unit7 = find_child(request.getRoot(), Int64ResultNode(7));
+    const Group* unit8 = find_child(request.getRoot(), Int64ResultNode(8));
+    ASSERT_NE(nullptr, unit7);
+    ASSERT_NE(nullptr, unit8);
+    EXPECT_EQ(2u, document_count(*unit7));
+    EXPECT_EQ(1u, document_count(*unit8));
+    const Group* unit7_zone_a = find_child(*unit7, StringResultNode("A"));
+    const Group* unit7_zone_b = find_child(*unit7, StringResultNode("B"));
+    const Group* unit8_zone_a = find_child(*unit8, StringResultNode("A"));
+    ASSERT_NE(nullptr, unit7_zone_a);
+    ASSERT_NE(nullptr, unit7_zone_b);
+    ASSERT_NE(nullptr, unit8_zone_a);
+    EXPECT_EQ(1u, document_count(*unit7_zone_a));
+    EXPECT_EQ(1u, document_count(*unit7_zone_b));
+    EXPECT_EQ(1u, document_count(*unit8_zone_a));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

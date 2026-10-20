@@ -7,7 +7,11 @@ import com.yahoo.vespa.objects.Serializer;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Protocol representation of document-local grouping deduplication. */
+/**
+ * Protocol representation of document-local grouping deduplication. The content node keeps each key tuple
+ * once per document within each parent group. It must be the whole filter or the last condition of an
+ * 'and'; elsewhere the content node rejects every row and reports an error.
+ */
 public class OncePerDocumentPredicateNode extends FilterExpressionNode {
     public static final int classId = registerClass(0x4000 + 186, OncePerDocumentPredicateNode.class, OncePerDocumentPredicateNode::new);
     private List<ExpressionNode> keys;

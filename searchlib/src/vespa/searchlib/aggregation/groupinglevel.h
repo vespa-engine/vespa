@@ -8,6 +8,7 @@
 
 namespace search::expression {
 class CurrentIndexSetup;
+class OncePerDocumentPredicateNode;
 }
 
 namespace search::aggregation {
@@ -48,13 +49,17 @@ private:
         bool            _hasNext;
         bool            _doNext;
     };
+    using OncePerDocument = expression::OncePerDocumentPredicateNode;
     class SingleValueGrouper : public Grouper {
     public:
-        SingleValueGrouper(Filter& filter, const Grouping* grouping, uint32_t level) noexcept
-            : Grouper(grouping, level), _filter(filter) {}
+        SingleValueGrouper(Filter& filter, OncePerDocument* once_per_document, const Grouping* grouping,
+                           uint32_t level) noexcept
+            : Grouper(grouping, level), _filter(filter), _once_per_document(once_per_document) {}
 
     protected:
         Filter& _filter;
+        // Set when the filter ends with onceperdoc, which keeps keys apart per parent group.
+        OncePerDocument* _once_per_document;
         template <typename Doc>
         void groupDoc(Group& group, const ResultNode& result, const Doc& doc, HitRank rank) const;
         void group(Group& g, const ResultNode& result, DocId doc, HitRank rank) const override;
@@ -63,9 +68,9 @@ private:
     };
     class MultiValueGrouper : public SingleValueGrouper {
     public:
-        MultiValueGrouper(CurrentIndex& currentIndex, Filter& filter, const Grouping* grouping,
-                          uint32_t level) noexcept
-            : SingleValueGrouper(filter, grouping, level), _currentIndex(currentIndex) {}
+        MultiValueGrouper(CurrentIndex& currentIndex, Filter& filter, OncePerDocument* once_per_document,
+                          const Grouping* grouping, uint32_t level) noexcept
+            : SingleValueGrouper(filter, once_per_document, grouping, level), _currentIndex(currentIndex) {}
         MultiValueGrouper(const MultiValueGrouper&) = default; // TODO Try to remove
         MultiValueGrouper& operator=(const MultiValueGrouper&) = delete;
 

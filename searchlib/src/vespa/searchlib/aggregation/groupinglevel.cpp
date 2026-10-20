@@ -5,6 +5,7 @@
 #include "grouping.h"
 
 #include <vespa/searchlib/expression/current_index_setup.h>
+#include <vespa/searchlib/expression/once_per_document_predicate_node.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
@@ -102,11 +103,18 @@ bool GroupingLevel::Grouper::hasNext(size_t level) const noexcept {
 template <typename Doc>
 void GroupingLevel::SingleValueGrouper::groupDoc(Group& g, const ResultNode& result, const Doc& doc,
                                                  HitRank rank) const {
+    if (_once_per_document != nullptr) {
+        _once_per_document->set_parent_group(&g);
+    }
     bool allowed = false;
     try {
         allowed = _filter.allow(doc, rank);
     } catch (const vespalib::IllegalArgumentException& e) {
         vespalib::Issue::report(std::format("Grouping filter error: {}", e.getMessage()));
+        return;
+    } catch (const std::exception& e) {
+        // An exception must not escape the match thread, as that would stop the process.
+        vespalib::Issue::report(std::format("Grouping filter error: {}", e.what()));
         return;
     }
 
@@ -166,10 +174,12 @@ void GroupingLevel::wire_current_index(CurrentIndexSetup& setup, const vespalib:
 void GroupingLevel::prepare(const Grouping* grouping, uint32_t level, bool isOrdered_) {
     _isOrdered = isOrdered_;
     _frozen = level < grouping->getFirstLevel();
+    auto* once_per_document =
+        _filter.get() ? expression::OncePerDocumentPredicateNode::find_last_condition(*_filter) : nullptr;
     if (_classify.getResult()->inherits(ResultNodeVector::classId)) {
-        _grouper.reset(new MultiValueGrouper(_currentIndex, getActiveFilter(), grouping, level));
+        _grouper.reset(new MultiValueGrouper(_currentIndex, getActiveFilter(), once_per_document, grouping, level));
     } else {
-        _grouper.reset(new SingleValueGrouper(getActiveFilter(), grouping, level));
+        _grouper.reset(new SingleValueGrouper(getActiveFilter(), once_per_document, grouping, level));
     }
 }
 
