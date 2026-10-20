@@ -105,10 +105,14 @@ void SameElementSearch::doSeek(uint32_t docid) {
 }
 
 void SameElementSearch::doUnpack(uint32_t docid) {
+    unpack_elements(docid, _matchingElements);
+}
+
+void SameElementSearch::unpack_elements(uint32_t docid, std::span<const uint32_t> element_ids) {
     if (_tfmd.needs_normal_features()) {
         // Expose matching elements to ranking (e.g. elementwise(matches(field),dim)), one position per element
         _tfmd.reset(docid);
-        for (uint32_t element_id : _matchingElements) {
+        for (uint32_t element_id : element_ids) {
             _tfmd.appendPosition(fef::TermFieldMatchDataPosition(element_id, 0, 1, 1));
         }
     } else {
@@ -118,7 +122,7 @@ void SameElementSearch::doUnpack(uint32_t docid) {
         child->unpack(docid);
     }
     // Need to filter descendants again due to FakeSearch and SimplePhraseSearch overwriting filtered match data
-    filter_descendants_match_data(docid, _matchingElements);
+    filter_descendants_match_data(docid, element_ids);
 }
 
 void SameElementSearch::visitMembers(vespalib::ObjectVisitor& visitor) const {

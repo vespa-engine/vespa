@@ -31,7 +31,8 @@ SameElementBlueprint::SameElementBlueprint(const FieldSpec&                     
       _descendants_index_handles(descendants_index_handles),
       _expensive(expensive),
       _expose_match_data_for_same_element(expose_match_data_for_same_element),
-      _element_filter(std::move(element_filter)) {
+      _element_filter(std::move(element_filter)),
+      _allow_replacement(true) {
 }
 
 SameElementBlueprint::~SameElementBlueprint() = default;
@@ -147,7 +148,7 @@ void SameElementBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const 
 Blueprint::UP SameElementBlueprint::get_replacement() {
     // If this blueprint is used for indexing into a bool array (and only that), replace it by an ArrayBoolBlueprint
     auto& children = get_children();
-    if (children.size() == 1 && !_element_filter.empty()) {
+    if (_allow_replacement && children.size() == 1 && !_element_filter.empty()) {
         const auto&                      only_child = children[0];
         const attribute::ISearchContext* search_context = only_child->get_attribute_search_context();
         if (search_context) {
