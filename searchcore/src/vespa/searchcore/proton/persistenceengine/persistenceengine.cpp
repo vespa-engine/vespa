@@ -175,21 +175,24 @@ BucketInfoResultHandler::~BucketInfoResultHandler() = default;
 
 } // namespace
 
-PersistenceEngine::HandlerSnapshot PersistenceEngine::getHandlerSnapshot(const WriteGuard&) const {
+PersistenceEngine::HandlerSnapshot
+PersistenceEngine::getHandlerSnapshot(const std::unique_lock<std::shared_mutex>&) const {
     return _handlers.getHandlerSnapshot();
 }
 
 PersistenceEngine::HandlerSnapshot
-PersistenceEngine::getSafeHandlerSnapshot(const ReadGuard&, document::BucketSpace bucketSpace) const {
+PersistenceEngine::getSafeHandlerSnapshot(const std::shared_lock<std::shared_mutex>&,
+                                          document::BucketSpace bucketSpace) const {
     return _handlers.getHandlerSnapshot(bucketSpace);
 }
 
 PersistenceEngine::UnsafeHandlerSnapshot
-PersistenceEngine::getHandlerSnapshot(const ReadGuard&, document::BucketSpace bucketSpace) const {
+PersistenceEngine::getHandlerSnapshot(const std::shared_lock<std::shared_mutex>&,
+                                      document::BucketSpace bucketSpace) const {
     return _handlers.getUnsafeHandlerSnapshot(bucketSpace);
 }
 
-PersistenceEngine::HandlerSnapshot PersistenceEngine::getHandlerSnapshot(const WriteGuard&,
+PersistenceEngine::HandlerSnapshot PersistenceEngine::getHandlerSnapshot(const std::unique_lock<std::shared_mutex>&,
                                                                          document::BucketSpace bucketSpace) const {
     return _handlers.getHandlerSnapshot(bucketSpace);
 }
@@ -216,25 +219,27 @@ PersistenceEngine::~PersistenceEngine() {
     destroyIterators();
 }
 
-IPersistenceHandler::SP PersistenceEngine::putHandler(const WriteGuard&, document::BucketSpace bucketSpace,
-                                                      const DocTypeName&             docType,
+IPersistenceHandler::SP PersistenceEngine::putHandler(const std::unique_lock<std::shared_mutex>&,
+                                                      document::BucketSpace bucketSpace, const DocTypeName& docType,
                                                       const IPersistenceHandler::SP& handler) {
     return _handlers.putHandler(bucketSpace, docType, handler);
 }
 
-IPersistenceHandler* PersistenceEngine::getHandler(const ReadGuard&, document::BucketSpace bucketSpace,
-                                                   const DocTypeName& docType) const {
+IPersistenceHandler* PersistenceEngine::getHandler(const std::shared_lock<std::shared_mutex>&,
+                                                   document::BucketSpace bucketSpace,
+                                                   const DocTypeName&    docType) const {
     return _handlers.getHandler(bucketSpace, docType);
 }
 
-IPersistenceHandler::SP PersistenceEngine::removeHandler(const WriteGuard&, document::BucketSpace bucketSpace,
-                                                         const DocTypeName& docType) {
+IPersistenceHandler::SP PersistenceEngine::removeHandler(const std::unique_lock<std::shared_mutex>&,
+                                                         document::BucketSpace bucketSpace,
+                                                         const DocTypeName&    docType) {
     // TODO: Grab bucket list and treat them as modified
     return _handlers.removeHandler(bucketSpace, docType);
 }
 
 Result PersistenceEngine::initialize() {
-    WriteGuard wguard(getWLock());
+    auto wguard(get_unique_lock());
     LOG(debug, "Begin initializing persistence handlers");
     HandlerSnapshot snap = getHandlerSnapshot(wguard);
     for (; snap.handlers().valid(); snap.handlers().next()) {
@@ -248,7 +253,7 @@ Result PersistenceEngine::initialize() {
 BucketIdListResult PersistenceEngine::listBuckets(BucketSpace bucketSpace) const {
     // Runs in SPI thread.
     // No handover to write threads in persistence handlers.
-    ReadGuard                 rguard(_rwMutex);
+    auto                      rguard(get_shared_lock());
     auto                      snap = getHandlerSnapshot(rguard, bucketSpace);
     BucketIdListResultHandler resultHandler;
     for (; snap.handlers().valid(); snap.handlers().next()) {
@@ -259,7 +264,7 @@ BucketIdListResult PersistenceEngine::listBuckets(BucketSpace bucketSpace) const
 }
 
 Result PersistenceEngine::setClusterState(BucketSpace bucketSpace, const ClusterState& calc) {
-    ReadGuard rguard(_rwMutex);
+    auto rguard(get_shared_lock());
     saveClusterState(bucketSpace, calc);
     auto                 snap = getHandlerSnapshot(rguard, bucketSpace);
     auto                 catchResult = std::make_unique<storage::spi::CatchResult>();
@@ -276,9 +281,9 @@ Result PersistenceEngine::setClusterState(BucketSpace bucketSpace, const Cluster
 
 void PersistenceEngine::setActiveStateAsync(const Bucket& bucket, BucketInfo::ActiveState newState,
                                             OperationComplete::UP onComplete) {
-    ReadGuard rguard(_rwMutex);
-    auto      snap = getHandlerSnapshot(rguard, bucket.getBucketSpace());
-    auto      resultHandler = std::make_shared<GenericResultHandler>(snap.size(), std::move(onComplete));
+    auto rguard(get_shared_lock());
+    auto snap = getHandlerSnapshot(rguard, bucket.getBucketSpace());
+    auto resultHandler = std::make_shared<GenericResultHandler>(snap.size(), std::move(onComplete));
     while (snap.handlers().valid()) {
         IPersistenceHandler* handler = snap.handlers().get();
         snap.handlers().next();
@@ -293,7 +298,7 @@ void PersistenceEngine::setActiveStateAsync(const Bucket& bucket, BucketInfo::Ac
 BucketInfoResult PersistenceEngine::getBucketInfo(const Bucket& b) const {
     // Runs in SPI thread.
     // No handover to write threads in persistence handlers.
-    ReadGuard               rguard(_rwMutex);
+    auto                    rguard(get_shared_lock());
     auto                    snap = getHandlerSnapshot(rguard, b.getBucketSpace());
     BucketInfoResultHandler resultHandler;
     for (; snap.handlers().valid(); snap.handlers().next()) {
@@ -314,7 +319,7 @@ void PersistenceEngine::putAsync(const Bucket& bucket, Timestamp ts, storage::sp
                                              doc->getId().toString().c_str(), state.message().c_str())));
         }
     }
-    ReadGuard   rguard(_rwMutex);
+    auto        rguard(get_shared_lock());
     DocTypeName docType(doc->getType());
     LOG(spam, "putAsync(%s, %" PRIu64 ", (\"%s\", \"%s\"))", bucket.toString().c_str(),
         static_cast<uint64_t>(ts.getValue()), docType.toString().c_str(), doc->getId().toString().c_str());
@@ -344,7 +349,7 @@ void PersistenceEngine::removeAsync(const Bucket& b, std::vector<storage::spi::I
 
 void PersistenceEngine::removeAsyncMulti(const Bucket& b, std::vector<storage::spi::IdAndTimestamp> ids,
                                          OperationComplete::UP onComplete) {
-    ReadGuard rguard(_rwMutex);
+    auto rguard(get_shared_lock());
     // TODO Group per document type/handler and handle in one go.
     for (const auto& stampedId : ids) {
         const document::DocumentId& id = stampedId.id;
@@ -372,7 +377,7 @@ void PersistenceEngine::removeAsyncMulti(const Bucket& b, std::vector<storage::s
 
 void PersistenceEngine::removeAsyncSingle(const Bucket& b, Timestamp t, const DocumentId& id,
                                           OperationComplete::UP onComplete) {
-    ReadGuard rguard(_rwMutex);
+    auto rguard(get_shared_lock());
     LOG(spam, "remove(%s, %" PRIu64 ", \"%s\")", b.toString().c_str(), static_cast<uint64_t>(t.getValue()),
         id.toString().c_str());
     if (!id.hasDocType()) {
@@ -393,7 +398,7 @@ void PersistenceEngine::removeAsyncSingle(const Bucket& b, Timestamp t, const Do
 
 void PersistenceEngine::removeByGidAsync(const Bucket& b, std::vector<storage::spi::DocTypeGidAndTimestamp> ids,
                                          std::unique_ptr<OperationComplete> onComplete) {
-    ReadGuard rguard(_rwMutex);
+    auto rguard(get_shared_lock());
     for (const auto& dt_gid_ts : ids) {
         DocTypeName          doc_type(dt_gid_ts.doc_type);
         IPersistenceHandler* handler = getHandler(rguard, b.getBucketSpace(), doc_type);
@@ -442,7 +447,7 @@ void PersistenceEngine::updateAsync(const Bucket& b, Timestamp t, DocumentUpdate
             fmt("Update operation rejected for document '%s' of type '%s': 'Wrong tensor type: %s'",
                 upd->getId().toString().c_str(), upd->getType().getName().c_str(), e.getMessage().c_str())));
     }
-    ReadGuard   rguard(_rwMutex);
+    auto        rguard(get_shared_lock());
     DocTypeName docType(upd->getType());
     LOG(spam, "update(%s, %" PRIu64 ", (\"%s\", \"%s\"), createIfNonExistent='%s')", b.toString().c_str(),
         static_cast<uint64_t>(t.getValue()), docType.toString().c_str(), upd->getId().toString().c_str(),
@@ -470,8 +475,8 @@ void PersistenceEngine::updateAsync(const Bucket& b, Timestamp t, DocumentUpdate
 
 PersistenceEngine::GetResult PersistenceEngine::get(const Bucket& b, const document::FieldSet& fields,
                                                     const DocumentId& did, Context& context) const {
-    ReadGuard rguard(_rwMutex);
-    auto      snap = getHandlerSnapshot(rguard, b.getBucketSpace());
+    auto rguard(get_shared_lock());
+    auto snap = getHandlerSnapshot(rguard, b.getBucketSpace());
 
     for (; snap.handlers().valid(); snap.handlers().next()) {
         IPersistenceHandler::RetrieversSP retrievers =
@@ -502,8 +507,8 @@ PersistenceEngine::CreateIteratorResult PersistenceEngine::createIterator(const 
                                                                           const Selection& selection,
                                                                           IncludedVersions versions,
                                                                           Context&         context) {
-    ReadGuard rguard(_rwMutex);
-    auto      snap = getSafeHandlerSnapshot(rguard, bucket.getBucketSpace());
+    auto rguard(get_shared_lock());
+    auto snap = getSafeHandlerSnapshot(rguard, bucket.getBucketSpace());
 
     auto entry = std::make_unique<IteratorEntry>(context.getReadConsistency(), bucket, std::move(fields), selection,
                                                  versions, _defaultSerializedSize, _ignoreMaxBytes);
@@ -524,7 +529,7 @@ PersistenceEngine::CreateIteratorResult PersistenceEngine::createIterator(const 
 }
 
 PersistenceEngine::IterateResult PersistenceEngine::iterate(IteratorId id, uint64_t maxByteSize) const {
-    ReadGuard      rguard(_rwMutex);
+    auto           rguard(get_shared_lock());
     IteratorEntry* iteratorEntry;
     {
         std::lock_guard<std::mutex> guard(_iterators_lock);
@@ -558,7 +563,7 @@ PersistenceEngine::IterateResult PersistenceEngine::iterate(IteratorId id, uint6
 }
 
 Result PersistenceEngine::destroyIterator(IteratorId id) {
-    ReadGuard                   rguard(_rwMutex);
+    auto                        rguard(get_shared_lock());
     std::lock_guard<std::mutex> guard(_iterators_lock);
     auto                        it = _iterators.find(id);
     if (it == _iterators.end()) {
@@ -574,7 +579,7 @@ Result PersistenceEngine::destroyIterator(IteratorId id) {
 }
 
 void PersistenceEngine::createBucketAsync(const Bucket& b, OperationComplete::UP onComplete) noexcept {
-    ReadGuard rguard(_rwMutex);
+    auto rguard(get_shared_lock());
     LOG(spam, "createBucket(%s)", b.toString().c_str());
     auto snap = getHandlerSnapshot(rguard, b.getBucketSpace());
 
@@ -591,7 +596,7 @@ void PersistenceEngine::createBucketAsync(const Bucket& b, OperationComplete::UP
 }
 
 void PersistenceEngine::deleteBucketAsync(const Bucket& b, OperationComplete::UP onComplete) noexcept {
-    ReadGuard rguard(_rwMutex);
+    auto rguard(get_shared_lock());
     LOG(spam, "deleteBucket(%s)", b.toString().c_str());
     auto snap = getHandlerSnapshot(rguard, b.getBucketSpace());
 
@@ -608,7 +613,7 @@ void PersistenceEngine::deleteBucketAsync(const Bucket& b, OperationComplete::UP
 }
 
 BucketIdListResult PersistenceEngine::getModifiedBuckets(BucketSpace bucketSpace) const {
-    ReadGuard rguard(_rwMutex);
+    auto rguard(get_shared_lock());
     using MBV = BucketIdListResultV;
     MBV extraModifiedBuckets;
     {
@@ -631,7 +636,7 @@ BucketIdListResult PersistenceEngine::getModifiedBuckets(BucketSpace bucketSpace
 }
 
 Result PersistenceEngine::split(const Bucket& source, const Bucket& target1, const Bucket& target2) {
-    ReadGuard rguard(_rwMutex);
+    auto rguard(get_shared_lock());
     LOG(spam, "split(%s, %s, %s)", source.toString().c_str(), target1.toString().c_str(), target2.toString().c_str());
     CHECK(source.getBucketSpace() == target1.getBucketSpace());
     CHECK(source.getBucketSpace() == target2.getBucketSpace());
@@ -646,7 +651,7 @@ Result PersistenceEngine::split(const Bucket& source, const Bucket& target1, con
 }
 
 Result PersistenceEngine::join(const Bucket& source1, const Bucket& source2, const Bucket& target) {
-    ReadGuard rguard(_rwMutex);
+    auto rguard(get_shared_lock());
     LOG(spam, "join(%s, %s, %s)", source1.toString().c_str(), source2.toString().c_str(), target.toString().c_str());
     CHECK(source1.getBucketSpace() == target.getBucketSpace());
     CHECK(source2.getBucketSpace() == target.getBucketSpace());
@@ -742,8 +747,8 @@ public:
     const BucketIdMap& getBucketMap() const { return _bucketMap; }
 };
 
-void PersistenceEngine::populateInitialBucketDB(const WriteGuard& guard, BucketSpace bucketSpace,
-                                                IPersistenceHandler& targetHandler) {
+void PersistenceEngine::populateInitialBucketDB(const std::unique_lock<std::shared_mutex>& guard,
+                                                BucketSpace bucketSpace, IPersistenceHandler& targetHandler) {
     HandlerSnapshot snap = getHandlerSnapshot(guard, bucketSpace);
 
     size_t snapSize(snap.size());
@@ -774,8 +779,12 @@ void PersistenceEngine::populateInitialBucketDB(const WriteGuard& guard, BucketS
     (void)futureResult.get();
 }
 
-std::unique_lock<std::shared_mutex> PersistenceEngine::getWLock() const {
-    return WriteGuard(_rwMutex);
+std::shared_lock<std::shared_mutex> PersistenceEngine::get_shared_lock() const {
+    return std::shared_lock<std::shared_mutex>(_rwMutex);
+}
+
+std::unique_lock<std::shared_mutex> PersistenceEngine::get_unique_lock() const {
+    return std::unique_lock<std::shared_mutex>(_rwMutex);
 }
 
 namespace {
