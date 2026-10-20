@@ -1,16 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class document::ClearValueUpdate
- * @ingroup document
- *
- * @brief Represents an update that clears the content of a field value.
- */
+
 #pragma once
 
 #include "valueupdate.h"
 
 namespace document {
 
+/**
+ * Represents an update that removes the field value from the document.
+ *
+ * Wrapped in a MapValueUpdate it removes the addressed array element or
+ * weighted set entry instead.
+ */
 class ClearValueUpdate final : public ValueUpdate {
     ACCEPT_UPDATE_VISITOR;
 

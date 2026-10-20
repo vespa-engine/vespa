@@ -1,28 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class document::DocumentUpdate
- * @ingroup document
- *
- * @brief Holds a set of operation that may be used to update a document.
- *
- * Stores update values for fields defined in the common
- * VESPA field repository. The "key" for a document is the document id, a
- * string that must conform to the vespa URI schemes.
- *
- * The following update operations are supported: assign, append and remove.
- * Append and remove are only supported for multivalued fields (arrays and
- * weightedsets).
- *
- * Each document update has a document type, which defines what documents this
- * update may be applied to and what fields may be updated in that document
- * update.  The document type for the update is given as a pointer in the
- * document update object's constructor.<br>
- * A DocumentUpdate has a vector of DocumentUpdate::Update objects
- *
- * @see DocumentId
- * @see IdString
- * @see documentmanager.h
- */
+
 #pragma once
 
 #include "fieldpathupdate.h"
@@ -36,10 +13,16 @@ namespace document {
 class ByteBuffer;
 class Document;
 class VespaDocumentSerializer;
+
 /**
- * Class containing a document update.  In vespa 5.0, support for field
- * path updates was added, and a new serialization format was
- * introduced while keeping the old one.
+ * Holds the set of update operations to apply to a single document, identified
+ * by its document id.
+ *
+ * The update is bound to a document type, which defines which fields may be
+ * updated, and it may only be applied to a document of that type. The
+ * operations are kept as a list of FieldUpdate (a set of ValueUpdate for one
+ * field) and a list of FieldPathUpdate. If createIfNonExistent is set, an
+ * empty document is created and updated when the target document is missing.
  */
 class DocumentUpdate {
 public:

@@ -1,14 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class document::MapValueUpdate
- * @ingroup document
- *
- * @brief This class is intended to map a value update to a part of a collection
- *        field value.
- *
- * Note that the key must be an IntFieldValue in case of an array. For a
- * weighted set it must match the nested type of the weighted set.
- */
+
 #pragma once
 
 #include "valueupdate.h"
@@ -17,6 +8,18 @@
 
 namespace document {
 
+/**
+ * Applies a nested value update to one element of a collection field value.
+ *
+ * For an array the key is an IntFieldValue index, and the nested update is
+ * applied to that element. An index out of range is silently ignored.
+ *
+ * For a weighted set the key must match the nested type, and the nested
+ * update is applied to the weight of that entry. A missing entry is created
+ * with weight zero if the type has createIfNonExistent. The entry is removed
+ * if the nested update returns false, or if the weight ends up as zero and the
+ * type has removeIfZero.
+ */
 class MapValueUpdate final : public ValueUpdate {
 public:
     /**

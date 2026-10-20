@@ -1,14 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class document::AssignValueUpdate
- * @ingroup document
- *
- * @brief Represents an update that specifies an assignment of a value to a
- *        field, completely overwriting the previous value.
- *
- * Note that for multi-value types, the entire collection is overwritten with a
- * new collection.
- */
+
 #pragma once
 
 #include "valueupdate.h"
@@ -17,6 +8,13 @@
 
 namespace document {
 
+/**
+ * Represents an update that specifies an assignment of a value to a
+ * field, completely overwriting the previous value.
+ *
+ * Note that for multi-value types, the entire collection is overwritten with a
+ * new collection. An assign without a value removes the field.
+ */
 class AssignValueUpdate final : public ValueUpdate {
     std::unique_ptr<FieldValue> _value;
 

@@ -1,21 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class document::ValueUpdate
- * @ingroup document
- *
- * @brief Superclass for all types of field value update operations.
- *
- * It declares the interface required for all value updates.
- *
- * Furthermore, this class inherits from Printable without implementing its
- * virtual {@link Printable#print} function, so that all subclasses must also
- * implement a human readable output format.
- *
- * This class is a serializable, serializing its content to a buffer. It is
- * however not a deserializable, as it does not serialize the datatype of the
- * content it serializes, such that it needs to get a datatype specified upon
- * deserialization.
- */
+
 #pragma once
 
 #include "updatevisitor.h"
@@ -31,6 +15,14 @@ class Field;
 class FieldValue;
 class DataType;
 
+/**
+ * Superclass for all types of field value update operations, such as assign,
+ * add, remove, arithmetic and the tensor updates.
+ *
+ * Subclasses must implement compatibility checking, application to a field
+ * value, deserialization, visitor dispatch and human readable output.
+ * Serialization is done by a visitor, see VespaDocumentSerializer.
+ */
 class ValueUpdate {
 protected:
     using nbostream = vespalib::nbostream;

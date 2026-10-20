@@ -1,17 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class document::ArithmeticValueUpdate
- * @ingroup document
- *
- * @brief Represent an update that specifies an arithmetic operation that is to
- *        be applied to the weight of a field value.
- */
+
 #pragma once
 
 #include "valueupdate.h"
 
 namespace document {
 
+/**
+ * Represents an arithmetic operation (add, subtract, multiply or divide) to
+ * be applied to a numeric field value.
+ *
+ * Wrapped in a MapValueUpdate it operates on the weight of a weighted set
+ * entry.
+ */
 class ArithmeticValueUpdate final : public ValueUpdate {
 public:
     /** Declare all types of arithmetic value updates. */
