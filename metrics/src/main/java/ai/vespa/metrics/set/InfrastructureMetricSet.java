@@ -63,6 +63,8 @@ public class InfrastructureMetricSet {
         // Node repository metrics
         addMetric(metrics, ConfigServerMetrics.NODES_ACTIVE.max());
         addMetric(metrics, ConfigServerMetrics.NODES_NON_ACTIVE_FRACTION.max());
+        addMetric(metrics, ConfigServerMetrics.NODES_TRUST_STORE_CA.max());
+        addMetric(metrics, ConfigServerMetrics.NODES_IDENTITY_CERT_ISSUER.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_COST.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_CPU.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_MEMORY.max());
