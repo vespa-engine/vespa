@@ -47,7 +47,8 @@ std::string run_cmd(const std::string& cmd) {
 }
 
 std::string getPage(int port, const std::string& path, const std::string& extra_params = "") {
-    return run_cmd(make_string("curl -s %s 'http://localhost:%d%s'", extra_params.c_str(), port, path.c_str()));
+    return run_cmd(make_string("curl --silent --show-error %s 'http://localhost:%d%s'", extra_params.c_str(), port,
+                               path.c_str()));
 }
 
 std::string getFull(int port, const std::string& path) {
@@ -163,10 +164,13 @@ TEST(StateServerTest, require_that_host_is_passed_correctly) {
     std::string default_result = make_string("[\"%s\"]", f2.host().c_str());
     std::string localhost_result = make_string("[\"%s:%d\"]", "localhost", f2.port());
     std::string silly_result = "[\"sillyserver\"]";
-    EXPECT_EQ(localhost_result, run_cmd(make_string("curl -s http://localhost:%d/my/path", f2.port())));
+    EXPECT_EQ(localhost_result,
+              run_cmd(make_string("curl --silent --show-error http://localhost:%d/my/path", f2.port())));
     EXPECT_EQ(silly_result,
-              run_cmd(make_string("curl -s http://localhost:%d/my/path -H \"Host: sillyserver\"", f2.port())));
-    EXPECT_EQ(default_result, run_cmd(make_string("curl -s http://localhost:%d/my/path -H \"Host:\"", f2.port())));
+              run_cmd(make_string("curl --silent --show-error http://localhost:%d/my/path -H \"Host: sillyserver\"",
+                                  f2.port())));
+    EXPECT_EQ(default_result,
+              run_cmd(make_string("curl --silent --show-error http://localhost:%d/my/path -H \"Host:\"", f2.port())));
 }
 
 struct SamplingHandler : JsonGetHandler {
