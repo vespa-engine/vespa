@@ -10,6 +10,8 @@
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/persistence/spi/bucketexecutor.h>
 
+#include <atomic>
+#include <condition_variable>
 #include <mutex>
 #include <shared_mutex>
 
@@ -74,6 +76,8 @@ private:
     std::unordered_map<BucketSpace, ClusterState::SP, BucketSpace::hash> _clusterStates;
     mutable ExtraModifiedBuckets                                         _extraModifiedBuckets;
     mutable std::shared_mutex                                            _rwMutex;
+    [[maybe_unused]] mutable std::atomic<uint32_t>                       _pending_unique_lock;
+    [[maybe_unused]] mutable std::condition_variable_any                 _rw_cond;
     std::shared_ptr<ResourceUsageTracker>                                _resource_usage_tracker;
     std::weak_ptr<BucketExecutor>                                        _bucket_executor;
 
@@ -92,7 +96,7 @@ private:
     std::shared_ptr<BucketExecutor> get_bucket_executor() noexcept { return _bucket_executor.lock(); }
     void removeAsyncSingle(const Bucket&, Timestamp, const document::DocumentId& id, OperationComplete::UP);
     void removeAsyncMulti(const Bucket&, std::vector<storage::spi::IdAndTimestamp> ids, OperationComplete::UP);
-    std::shared_lock<std::shared_mutex> get_shared_lock() const;
+    [[nodiscard]] std::shared_lock<std::shared_mutex> get_shared_lock() const;
 
 public:
     using UP = std::unique_ptr<PersistenceEngine>;
@@ -137,7 +141,7 @@ public:
     void grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenceHandler& handler);
     void populateInitialBucketDB(const std::unique_lock<std::shared_mutex>& guard, BucketSpace bucketSpace,
                                  IPersistenceHandler& targetHandler);
-    std::unique_lock<std::shared_mutex> get_unique_lock() const;
+    [[nodiscard]] std::unique_lock<std::shared_mutex> get_unique_lock() const;
     ResourceUsageTracker& get_resource_usage_tracker() noexcept { return *_resource_usage_tracker; }
     void execute(const Bucket& bucket, std::unique_ptr<BucketTask> task) override;
 };

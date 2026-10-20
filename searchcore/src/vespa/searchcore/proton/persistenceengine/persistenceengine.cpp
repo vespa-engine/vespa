@@ -42,6 +42,8 @@ namespace proton {
 
 namespace {
 
+constexpr bool prioritize_unique_lock = false;
+
 class ResultHandlerBase {
 private:
     virtual Result::UP createResult() const = 0;
@@ -212,6 +214,8 @@ PersistenceEngine::PersistenceEngine(IPersistenceEngineOwner& owner, const IReso
       _clusterStates(),
       _extraModifiedBuckets(),
       _rwMutex(),
+      _pending_unique_lock(0),
+      _rw_cond(),
       _resource_usage_tracker(std::make_shared<ResourceUsageTracker>(resource_usage_notifier)) {
 }
 
@@ -780,11 +784,26 @@ void PersistenceEngine::populateInitialBucketDB(const std::unique_lock<std::shar
 }
 
 std::shared_lock<std::shared_mutex> PersistenceEngine::get_shared_lock() const {
-    return std::shared_lock<std::shared_mutex>(_rwMutex);
+    std::shared_lock<std::shared_mutex> lock(_rwMutex);
+    if constexpr (prioritize_unique_lock) {
+        while (_pending_unique_lock.load(std::memory_order_acquire) != 0) {
+            _rw_cond.wait(lock);
+        }
+    }
+    return lock;
 }
 
 std::unique_lock<std::shared_mutex> PersistenceEngine::get_unique_lock() const {
-    return std::unique_lock<std::shared_mutex>(_rwMutex);
+    if constexpr (prioritize_unique_lock) {
+        _pending_unique_lock.fetch_add(1, std::memory_order_acq_rel);
+    }
+    std::unique_lock<std::shared_mutex> lock(_rwMutex);
+    if constexpr (prioritize_unique_lock) {
+        if (_pending_unique_lock.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+            _rw_cond.notify_all();
+        }
+    }
+    return lock;
 }
 
 namespace {
