@@ -13,7 +13,6 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -33,15 +32,26 @@ class OnnxStreamParserTest {
 
     @Test
     void extracts_external_data_locations_from_tensor_attributes(@TempDir Path directory) throws IOException {
-        var constant = Onnx.NodeProto.newBuilder()
-                .setOpType("Constant")
-                .addAttribute(Onnx.AttributeProto.newBuilder()
-                                      .setName("value")
-                                      .setT(externalTensor("constant.bin"))
-                                      .setType(Onnx.AttributeProto.AttributeType.TENSOR));
         var model = Files.write(directory.resolve("model.onnx"), Onnx.ModelProto.newBuilder()
-                .setGraph(Onnx.GraphProto.newBuilder().addNode(constant)).build().toByteArray());
+                .setGraph(Onnx.GraphProto.newBuilder().addNode(constantNode("constant.bin"))).build().toByteArray());
         assertEquals(Set.of(Paths.get("constant.bin")), OnnxStreamParser.getExternalDataLocations(model));
+    }
+
+    @Test
+    void extracts_external_data_locations_from_functions(@TempDir Path directory) throws IOException {
+        var function = Onnx.FunctionProto.newBuilder().setName("f").addNode(constantNode("function.bin"));
+        var model = Files.write(directory.resolve("model.onnx"), Onnx.ModelProto.newBuilder()
+                .setGraph(Onnx.GraphProto.newBuilder()).addFunctions(function).build().toByteArray());
+        assertEquals(Set.of(Paths.get("function.bin")), OnnxStreamParser.getExternalDataLocations(model));
+    }
+
+    @Test
+    void extracts_external_data_locations_from_training_graphs(@TempDir Path directory) throws IOException {
+        var trainingInfo = Onnx.TrainingInfoProto.newBuilder()
+                .setAlgorithm(Onnx.GraphProto.newBuilder().addNode(constantNode("training.bin")));
+        var model = Files.write(directory.resolve("model.onnx"), Onnx.ModelProto.newBuilder()
+                .setGraph(Onnx.GraphProto.newBuilder()).addTrainingInfo(trainingInfo).build().toByteArray());
+        assertEquals(Set.of(Paths.get("training.bin")), OnnxStreamParser.getExternalDataLocations(model));
     }
 
     @Test
@@ -68,13 +78,6 @@ class OnnxStreamParserTest {
     }
 
     @Test
-    void escaping_external_data_location_is_rejected(@TempDir Path directory) throws IOException {
-        var escaping = Files.write(directory.resolve("escaping.onnx"), modelWithExternalData("../weights.bin"));
-        assertThrows(IllegalArgumentException.class, () -> OnnxStreamParser.getExternalDataLocations(escaping));
-        assertThrows(IllegalArgumentException.class, () -> OnnxStreamParser.tryGetExternalDataLocations(escaping));
-    }
-
-    @Test
     void extracts_operator_types_from_model_file() throws IOException {
         var model = Path.of("src/test/models/onnx/external_data/add_with_external_data.onnx");
         assertEquals(Set.of("Add"), OnnxStreamParser.getOperatorTypes(model));
@@ -95,6 +98,16 @@ class OnnxStreamParserTest {
         return Onnx.ModelProto.newBuilder()
                 .setGraph(Onnx.GraphProto.newBuilder().addInitializer(externalTensor(location)))
                 .build().toByteArray();
+    }
+
+    private static Onnx.NodeProto constantNode(String location) {
+        return Onnx.NodeProto.newBuilder()
+                .setOpType("Constant")
+                .addAttribute(Onnx.AttributeProto.newBuilder()
+                                      .setName("value")
+                                      .setT(externalTensor(location))
+                                      .setType(Onnx.AttributeProto.AttributeType.TENSOR))
+                .build();
     }
 
     private static Onnx.TensorProto externalTensor(String location) {

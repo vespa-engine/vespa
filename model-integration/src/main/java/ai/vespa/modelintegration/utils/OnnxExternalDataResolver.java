@@ -64,6 +64,8 @@ public class OnnxExternalDataResolver {
             var urlPrefix = url.substring(0, url.lastIndexOf('/') + 1);
             var externalDataFiles = new HashMap<Path, Path>();
             for (var location : externalDataLocations) {
+                if (location.toString().contains(".."))
+                    throw new IllegalArgumentException("External data path '" + location + "' must not contain '..'");
                 var dataFileUrl = urlPrefix + location;
                 log.info(Text.format("Downloading external data file '%s' for ONNX model '%s' using URL '%s'", location, localPath.getFileName(), dataFileUrl));
                 var externalDataRef = ModelReference.unresolved(

@@ -292,8 +292,11 @@ class TritonOnnxRuntimeDefaultsTest {
     @Test
     void external_data_file_outside_the_model_directory_is_rejected(@TempDir Path directory) throws IOException {
         var dataFile = Files.writeString(directory.resolve("weights.bin"), "weights");
-        var model = modelWithExternalData(directory, dataFile.toAbsolutePath().toString());
-        assertExternalDataRejected(directory, model, "is outside the directory of");
+        var absolute = modelWithExternalData(directory, dataFile.toAbsolutePath().toString());
+        assertExternalDataRejected(directory, absolute, "is outside the directory of");
+
+        var escaping = modelWithExternalData(directory, "../weights.bin");
+        assertExternalDataRejected(directory, escaping, "is outside the directory of");
     }
 
     @Test
