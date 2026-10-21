@@ -2,6 +2,7 @@
 #include "correlate_by_search.h"
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/objects/visit.hpp>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/text/lowercase.h>
 
 #include <algorithm>
@@ -61,14 +62,15 @@ CorrelateBySearch::CorrelateBySearch(std::vector<std::unique_ptr<SameElementSear
                                    std::vector<std::vector<BoundAttribute>> bindings,
                                    std::vector<std::optional<std::vector<std::string>>> domains, bool strict,
                                    std::vector<std::vector<ExactAttributeValues>> exact_values,
-                                   std::vector<FirstPresentSelection> first_present)
+                                   std::vector<FirstPresentSelection> first_present, const vespalib::Doom& doom)
     : _children(std::move(children)), _bindings(std::move(bindings)), _domains(std::move(domains)),
       _exact_values(std::move(exact_values)), _uncased_columns(), _attributes(), _binding_attributes(),
       _exact_attributes(), _tables(_children.size() - first_present.size()), _presence_tables(first_present.size()),
       _child_tables(_children.size()), _presence_children(_children.size(), false),
-      _first_present(std::move(first_present)), _priorities(), _join(_domains.size()), _strict(strict),
+      _first_present(std::move(first_present)), _priorities(), _join(_domains.size(), doom), _strict(strict),
       _loaded_docid(std::numeric_limits<uint32_t>::max()), _rows_docid(std::numeric_limits<uint32_t>::max()),
-      _integers(), _strings(), _row(), _elements() {
+      _integers(), _strings(), _row(), _elements(), _reported_deadline(false),
+      _reported_memory_limit(false) {
     assert(_children.size() == _bindings.size());
     if (_exact_values.empty()) _exact_values.resize(_children.size());
     assert(_exact_values.size() == _children.size());
@@ -232,11 +234,35 @@ void CorrelateBySearch::read_matching_rows(uint32_t docid) {
     _rows_docid = docid;
 }
 
+void CorrelateBySearch::report_stop() {
+    switch (_join.stop_reason()) {
+        case CorrelationStop::none:
+            return;
+        case CorrelationStop::deadline:
+            if (_reported_deadline) return;
+            _reported_deadline = true;
+            vespalib::Issue::report("correlateBy reached the query timeout while joining the rows of a document, "
+                                    "so that document has no correlated bindings or elements");
+            return;
+        case CorrelationStop::memory_limit:
+            if (_reported_memory_limit) return;
+            _reported_memory_limit = true;
+            vespalib::Issue::report("correlateBy found more correlated matches in a document than fit in "
+                                    "%zu bytes, so that document has no correlated bindings or elements",
+                                    _join.memory_limit());
+            return;
+    }
+}
+
 void CorrelateBySearch::doSeek(uint32_t docid) {
     while (!isAtEnd(docid)) {
         if (check_docid_match(docid)) {
             read_matching_rows(docid);
-            if (_join.has_match(_tables)) { setDocId(docid); return; }
+            // Past the soft deadline, stop here and let the match loop end matching.
+            if (_join.has_match(_tables) || _join.stop_reason() == CorrelationStop::deadline) {
+                setDocId(docid);
+                return;
+            }
         }
         if (!_strict) return;
         docid = std::max(docid + 1, _children.front()->getDocId());
@@ -258,6 +284,7 @@ void CorrelateBySearch::find_correlated_elements(uint32_t docid, size_t child, s
     if (_rows_docid != docid) read_matching_rows(docid);
     // Correlated matches projected onto this clause's variables, sorted for lookup.
     const auto& correlated = _join.find_matches(_tables, _child_tables[child]->columns);
+    report_stop();
     for (uint32_t element : _children[child]->matching_elements()) {
         if (make_row(child, element, _row) && std::binary_search(correlated.begin(), correlated.end(), _row)) {
             dst.push_back(element);
@@ -280,7 +307,9 @@ const std::vector<BindingRow>& CorrelateBySearch::find_bindings(uint32_t docid, 
         for (auto& table : _tables) table.rows.clear();
         _rows_docid = std::numeric_limits<uint32_t>::max();
     }
-    return _join.find_matches(_tables, projection);
+    const auto& matches = _join.find_matches(_tables, projection);
+    report_stop();
+    return matches;
 }
 
 void CorrelateBySearch::visitMembers(vespalib::ObjectVisitor& visitor) const {

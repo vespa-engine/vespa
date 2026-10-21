@@ -42,6 +42,7 @@
 #include <vespa/searchlib/query/tree/query_to_protobuf.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
+#include <vespa/searchlib/queryeval/correlate_by_blueprint.h>
 #include <vespa/searchlib/queryeval/fake_index.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
@@ -2468,6 +2469,35 @@ TEST_F(MatchingTest, correlate_by_summary_elements_include_only_correlated_eleme
     auto result = f.matching_elements(price_with_eco_query(), {10, 20});
     EXPECT_EQ(result->get_matching_elements(10, "offers"), (std::vector<uint32_t>{0, 2}));
     EXPECT_TRUE(result->get_matching_elements(20, "offers").empty());
+}
+
+const CorrelateByBlueprint* find_correlate_by(const search::queryeval::Blueprint* blueprint) {
+    if (auto* correlate_by = dynamic_cast<const CorrelateByBlueprint*>(blueprint)) return correlate_by;
+    auto* intermediate = dynamic_cast<const IntermediateBlueprint*>(blueprint);
+    for (size_t i = 0; intermediate != nullptr && i < intermediate->childCnt(); ++i) {
+        if (auto* found = find_correlate_by(&intermediate->getChild(i))) return found;
+    }
+    return nullptr;
+}
+
+TEST_F(MatchingTest, correlate_by_blueprint_gets_the_deadline_of_the_request) {
+    CorrelateWorld f(shared_state());
+    add_unit_zone_offers(f);
+    SearchRequest request;
+    request.setTimeout(600s);
+    request.setSerializedQueryTree(price_with_eco_query());
+    Matcher::SP matcher = f.world.createMatcher();
+    search::fef::Properties overrides;
+    search::queryeval::QuerySetupStats setup_stats;
+    auto mtf = matcher->create_match_tools_factory(request, f.world.searchContext, f.attributes, f.world.metaStore,
+                                                   overrides, ttb(), nullptr, setup_stats,
+                                                   f.world.searchContext.getDocIdLimit(), true);
+    ASSERT_TRUE(mtf->valid());
+    const auto* correlate_by = find_correlate_by(mtf->query().peekRoot());
+    ASSERT_NE(nullptr, correlate_by);
+    // Doom::never() reports one second left, so this shows the request deadline reached the join.
+    EXPECT_GT(correlate_by->doom().hard_left(), 500s);
+    EXPECT_LT(correlate_by->doom().hard_left(), 601s);
 }
 
 TEST_F(MatchingTest, correlate_by_first_present_uses_the_first_present_zone_and_hides_presence_elements) {

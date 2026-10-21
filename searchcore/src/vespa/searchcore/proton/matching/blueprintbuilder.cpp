@@ -242,7 +242,7 @@ private:
             }
             domains[column->second] = values;
         }
-        auto bp = std::make_unique<CorrelateByBlueprint>(std::move(domains));
+        auto bp = std::make_unique<CorrelateByBlueprint>(std::move(domains), _requestContext.getDoom());
         bp->set_correlation_identity(n.label(), columns);
         std::map<std::string, bool> string_variables;
         for (size_t i = 0; i < n.getChildren().size(); ++i) {

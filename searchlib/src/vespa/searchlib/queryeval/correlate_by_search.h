@@ -32,6 +32,17 @@ struct FirstPresentSelection {
  */
 std::vector<bool> find_uncased_columns(size_t column_count, std::span<const std::vector<BoundAttribute>> bindings);
 
+/**
+ * Matches documents where the sameElement clauses have rows that agree on
+ * their bound variables. When the soft deadline passes while joining the rows
+ * of a document, seek stops at that document as if it matched. The match loop
+ * checks the soft deadline before it uses a hit, so the document is not
+ * returned, and the result reports reduced coverage like any soft timeout.
+ * Ranking and summaries seek only documents that already matched, so for them
+ * the answer is right. When reading bindings or correlated elements passes the
+ * hard deadline or the memory limit of the join, that document gets none, and
+ * the search reports an issue.
+ */
 class CorrelateBySearch : public SearchIterator {
     struct AttributeValues {
         const attribute::IAttributeVector* attribute;
@@ -64,6 +75,8 @@ class CorrelateBySearch : public SearchIterator {
     std::vector<const char*> _strings;
     BindingRow _row;
     std::vector<uint32_t> _elements;
+    bool _reported_deadline;
+    bool _reported_memory_limit;
 
     uint32_t attribute_index(const attribute::IAttributeVector* attribute, bool fold);
     void fold_literals();
@@ -71,13 +84,16 @@ class CorrelateBySearch : public SearchIterator {
     void read_attributes(uint32_t docid);
     void read_matching_rows(uint32_t docid);
     bool make_row(size_t child, uint32_t element, BindingRow& row) const;
+    // Reports, once per reason, that the last join stopped before it was complete.
+    void report_stop();
 
 public:
     CorrelateBySearch(std::vector<std::unique_ptr<SameElementSearch>> children,
                      std::vector<std::vector<BoundAttribute>> bindings,
                      std::vector<std::optional<std::vector<std::string>>> domains, bool strict,
                      std::vector<std::vector<ExactAttributeValues>> exact_values = {},
-                     std::vector<FirstPresentSelection> first_present = {});
+                     std::vector<FirstPresentSelection> first_present = {},
+                     const vespalib::Doom& doom = vespalib::Doom::never());
     ~CorrelateBySearch() override;
     void initRange(uint32_t begin, uint32_t end) override;
     void doSeek(uint32_t docid) override;

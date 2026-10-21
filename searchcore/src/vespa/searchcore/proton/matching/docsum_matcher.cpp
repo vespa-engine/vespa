@@ -89,7 +89,10 @@ void find_matching_elements(const std::vector<uint32_t>& docs, const SameElement
 }
 
 // Reports only the elements that take part in a correlated match, and nothing
-// from the presence clauses of firstPresent.
+// from the presence clauses of firstPresent. The search uses the deadline of the
+// request that built the query. A summary request that reuses a cached search
+// session can run after that deadline: a document whose join then stops reports
+// no elements, and the search reports an issue.
 void find_matching_elements(const std::vector<uint32_t>& docs, const CorrelateByBlueprint& correlate_by,
                             const MatchingElementsFields& fields, MatchData& md, MatchingElements& result) {
     auto search = correlate_by.create_correlate_search(md);

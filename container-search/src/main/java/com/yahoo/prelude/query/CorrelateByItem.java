@@ -33,6 +33,14 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  * <p>An exact value, written <code>field = "value"</code> in YQL, requires the whole value of the
  * row's field to equal the given string. Case is handled as the field handles the case of its terms:
  * {@link #lowercaseValues} lowercases exact values and variable values for fields which ignore case.</p>
+ *
+ * <p>The content node joins the matching rows of each document, which can take long for clauses that
+ * bind many values. The query timeout bounds this work. When the soft timeout passes while a document
+ * is joined, matching stops there as for any soft timeout, and the result reports reduced coverage.
+ * Ranking, grouping and summaries read the bindings and matched elements of matched documents until the
+ * query timeout. A document whose rows are not joined by then, or whose correlated matches need more
+ * than 64 MiB, gets no bindings and no matched elements, and the result has an error saying so. A summary
+ * request that reuses the cached query of its search after the query timeout is affected the same way.</p>
  */
 @Beta
 public class CorrelateByItem extends NonReducibleCompositeItem {

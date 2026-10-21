@@ -26,11 +26,13 @@ class CorrelateByBlueprint : public IntermediateBlueprint {
     std::vector<std::optional<std::vector<std::string>>> _domains;
     std::string _label;
     std::map<std::string, uint32_t> _columns;
+    vespalib::Doom _doom;
     AnyFlow my_flow(InFlow in_flow) const override;
     bool has_empty_child() const;
 
 public:
-    explicit CorrelateByBlueprint(std::vector<std::optional<std::vector<std::string>>> domains);
+    /** The search bounds its joins by the deadline of the query, see CorrelateBySearch. */
+    CorrelateByBlueprint(std::vector<std::optional<std::vector<std::string>>> domains, const vespalib::Doom& doom);
     ~CorrelateByBlueprint() override;
     void add_clause(Blueprint::UP child, std::vector<BoundAttribute> bindings,
                     std::vector<ExactAttributeValues> exact_values = {});
@@ -38,6 +40,7 @@ public:
     /** Clause numbers count clauses in the order they were added. */
     void add_first_present(uint32_t clause, uint32_t presence, uint32_t column, std::vector<std::string> values);
     const std::string& label() const noexcept { return _label; }
+    const vespalib::Doom& doom() const noexcept { return _doom; }
     const std::map<std::string, uint32_t>& columns() const noexcept { return _columns; }
     /** Whether each variable is compared without case, see find_uncased_columns. */
     std::vector<bool> uncased_columns() const;

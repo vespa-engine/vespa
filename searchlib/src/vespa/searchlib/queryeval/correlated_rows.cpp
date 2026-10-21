@@ -45,8 +45,15 @@ void select_first_present_rows(const BindingTable& presence, BindingTable& candi
     });
 }
 
-CorrelatedRows::CorrelatedRows(uint32_t column_count)
+CorrelatedRows::CorrelatedRows(uint32_t column_count, const vespalib::Doom& doom, size_t memory_limit)
     : _column_count(column_count),
+      _doom(doom),
+      _memory_limit(memory_limit),
+      _match_limit(0),
+      _collect(false),
+      _check_shared_values(false),
+      _no_common_values(false),
+      _stop(CorrelationStop::none),
       _matches(),
       _work(),
       _work_size(0),
@@ -58,9 +65,13 @@ CorrelatedRows::CorrelatedRows(uint32_t column_count)
       _column_positions(),
       _column_scratch(),
       _value_scratch(),
+      _common_values(),
+      _table_values(),
+      _intersection(),
       _binding(column_count),
       _projection_depth(0),
-      _visited_rows(0) {
+      _total_visited_rows(0),
+      _visited_rows_before(0) {
     if (column_count == 0) throw std::invalid_argument("Correlation needs at least one bound variable");
 }
 
@@ -85,7 +96,9 @@ const std::vector<BindingRow>& CorrelatedRows::find_matches(std::span<BindingTab
 
 bool CorrelatedRows::evaluate(std::span<BindingTable> tables, bool collect, std::span<const uint32_t> projection) {
     _matches.clear();
-    _visited_rows = 0;
+    _visited_rows_before = _total_visited_rows;
+    _collect = collect;
+    _stop = CorrelationStop::none;
     _projected.assign(_column_count, false);
     for (uint32_t column : projection) {
         if (column >= _column_count || _projected[column])
@@ -111,6 +124,8 @@ bool CorrelatedRows::evaluate(std::span<BindingTable> tables, bool collect, std:
         throw std::invalid_argument("Every correlation variable must be bound by a clause");
     }
     if (empty) return false;
+    // Count the memory of each collected row, including duplicates that are not yet removed.
+    _match_limit = std::max(size_t(1), _memory_limit / (sizeof(BindingRow) + projection.size() * sizeof(BindingValue)));
 
     // Keep a variable when the caller asked for it or when it joins two clauses.
     _needed.assign(_column_count, false);
@@ -125,11 +140,15 @@ bool CorrelatedRows::evaluate(std::span<BindingTable> tables, bool collect, std:
         return true;
     }
     plan_join_order(!projection.empty());
-    if (_column_count > 2 && _work_size > 2 && !shared_values_overlap()) return false;
+    _check_shared_values = _column_count > 2 && _work_size > 2;
+    _no_common_values = false;
     bool found = extend(0, !collect, projection);
+    if (interrupted()) {
+        _matches.clear();
+        return false;
+    }
     if (!collect) return found;
-    std::sort(_matches.begin(), _matches.end());
-    _matches.erase(std::unique(_matches.begin(), _matches.end()), _matches.end());
+    sort_and_deduplicate_matches();
     return !_matches.empty();
 }
 
@@ -156,7 +175,7 @@ void CorrelatedRows::project_tables(std::span<const BindingTable> tables) {
     }
 }
 
-bool CorrelatedRows::shared_values_overlap() const {
+bool CorrelatedRows::shared_values_overlap() {
     size_t branches = 0;
     for (size_t i = 0; i < _work_size; ++i) {
         const auto& table = _work[i];
@@ -171,9 +190,9 @@ bool CorrelatedRows::shared_values_overlap() const {
         // A two-clause join already rejects missing values with a lookup. Check
         // variables shared by more clauses before other variables multiply work.
         if (_binding_counts[column] < 3) continue;
-        std::vector<BindingValue> common;
-        std::vector<BindingValue> values;
-        std::vector<BindingValue> intersection;
+        auto& common = _common_values;
+        auto& values = _table_values;
+        auto& intersection = _intersection;
         bool first = true;
         for (size_t i = 0; i < _work_size; ++i) {
             const auto& table = _work[i];
@@ -288,15 +307,14 @@ void CorrelatedRows::sort_and_deduplicate(WorkTable& table) {
 }
 
 bool CorrelatedRows::extend(size_t depth, bool exists_only, std::span<const uint32_t> projection) {
+    // Returning true ends the search, either because a match was found or because the join stopped.
     if (depth == _work_size) {
-        if (exists_only) return true;
-        append_match(projection);
-        return false;
+        return exists_only || !append_match(projection);
     }
     if (!exists_only && depth == _projection_depth) {
         // Every requested variable is bound, so the remaining clauses only need one completion.
-        if (extend(depth, true, projection)) append_match(projection);
-        return false;
+        if (!extend(depth, true, projection)) return false;
+        return interrupted() || !append_match(projection);
     }
     const auto& table = _work[depth];
     size_t width = table.columns.size();
@@ -330,7 +348,7 @@ bool CorrelatedRows::extend(size_t depth, bool exists_only, std::span<const uint
         last = low;
     }
     for (size_t index = first; index < last; ++index) {
-        ++_visited_rows;
+        if (++_total_visited_rows % shared_values_check_rows == 0 && at_check_point()) return true;
         const BindingValue* row = table.row(index);
         for (size_t i = table.lookup_size; i < width; ++i) _binding[table.columns[i]] = row[i];
         if (extend(depth + 1, exists_only, projection)) return true;
@@ -338,11 +356,43 @@ bool CorrelatedRows::extend(size_t depth, bool exists_only, std::span<const uint
     return false;
 }
 
-void CorrelatedRows::append_match(std::span<const uint32_t> projection) {
+void CorrelatedRows::sort_and_deduplicate_matches() {
+    std::sort(_matches.begin(), _matches.end());
+    _matches.erase(std::unique(_matches.begin(), _matches.end()), _matches.end());
+}
+
+bool CorrelatedRows::at_check_point() {
+    // Checking reads only the clause rows, which the join does not change. Checking for a
+    // match decides for every candidate document, so it checks early. Collecting matches
+    // reads documents that already matched, where the check passes, so it checks late.
+    if (_check_shared_values && visited_rows() >= (_collect ? deadline_check_interval : shared_values_check_rows)) {
+        _check_shared_values = false;
+        if (!shared_values_overlap()) {
+            _no_common_values = true;
+            return true;
+        }
+    }
+    if (_total_visited_rows % deadline_check_interval == 0 && (_collect ? _doom.hard_doom() : _doom.soft_doom())) {
+        _stop = CorrelationStop::deadline;
+        return true;
+    }
+    return false;
+}
+
+bool CorrelatedRows::append_match(std::span<const uint32_t> projection) {
+    if (_matches.size() == _match_limit) {
+        // The same projected row can be found through different unprojected values.
+        sort_and_deduplicate_matches();
+        if (_matches.size() > _match_limit / 2) {
+            _stop = CorrelationStop::memory_limit;
+            return false;
+        }
+    }
     BindingRow row;
     row.reserve(projection.size());
     for (uint32_t column : projection) row.push_back(_binding[column]);
     _matches.push_back(std::move(row));
+    return true;
 }
 
 } // namespace search::queryeval

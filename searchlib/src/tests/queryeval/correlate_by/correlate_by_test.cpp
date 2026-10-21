@@ -19,6 +19,7 @@
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <algorithm>
@@ -48,11 +49,12 @@ struct Fixture {
     Blueprint::UP finalized;
     MatchData::UP match_data;
 
-    explicit Fixture(uint32_t columns, std::optional<std::vector<std::string>> zone_domain = std::nullopt)
+    explicit Fixture(uint32_t columns, std::optional<std::vector<std::string>> zone_domain = std::nullopt,
+                     const vespalib::Doom& doom = vespalib::Doom::never())
         : blueprint() {
         std::vector<std::optional<std::vector<std::string>>> domains(columns);
         if (zone_domain) domains.back() = std::move(zone_domain);
-        blueprint = std::make_unique<CorrelateByBlueprint>(std::move(domains));
+        blueprint = std::make_unique<CorrelateByBlueprint>(std::move(domains), doom);
     }
 
     // String attributes match without case by default, like in a schema.
@@ -148,6 +150,52 @@ struct Fixture {
         return finalized->createSearch(*match_data);
     }
 };
+
+// Keeps every reported message, including repeats. UniqueIssues drops repeats,
+// so it cannot show that an issue is reported only once.
+struct AllIssues : vespalib::Issue::Handler {
+    std::vector<std::string> messages;
+    void handle(const vespalib::Issue& issue) override { messages.push_back(issue.message()); }
+};
+
+// A deadline whose soft and hard parts are the given time from now.
+struct TestDoom {
+    std::atomic<vespalib::steady_time> now{vespalib::steady_clock::now()};
+    vespalib::Doom doom;
+    TestDoom(vespalib::duration soft, vespalib::duration hard)
+        : doom(now, now.load() + soft, now.load() + hard, false) {}
+};
+
+// Doc 2 has three clauses binding the pairs (x, y), (y, z) and (x, z) of unit 7,
+// where the two values of each pair have different parity. No x, y and z can
+// differ in parity pairwise, so doc 2 does not match, and the join visits 67,584
+// rows to find that out. With late_match, every clause also gets the pair
+// (62, 62), so doc 2 matches, but only after more than 1024 visited rows.
+// Doc 3 has the single pair (0, 0), which matches at once.
+void add_cycle(Fixture& f, bool late_match) {
+    BindingRow units, firsts, seconds;
+    std::vector<uint32_t> elements;
+    auto add = [&](int64_t first, int64_t second) {
+        elements.push_back(units.size());
+        units.push_back(int64_t(7));
+        firsts.push_back(first);
+        seconds.push_back(second);
+    };
+    for (int64_t a = 0; a < 64; ++a) {
+        for (int64_t b = 0; b < 64; ++b) {
+            if ((a % 2) != (b % 2)) add(a, b);
+        }
+    }
+    if (late_match) add(62, 62);
+    auto* unit = f.attribute("pair.unit", {{2, units}, {3, {int64_t(7)}}}, false);
+    auto* first = f.attribute("pair.first", {{2, firsts}, {3, {int64_t(0)}}}, false);
+    auto* second = f.attribute("pair.second", {{2, seconds}, {3, {int64_t(0)}}}, false);
+    Matches matches{{2, elements}, {3, {0}}};
+    // Variables: unit = 0, x = 1, y = 2, z = 3.
+    f.clause("pair", matches, {{0, unit}, {1, first}, {2, second}});
+    f.clause("pair", matches, {{0, unit}, {2, first}, {3, second}});
+    f.clause("pair", matches, {{0, unit}, {1, first}, {3, second}});
+}
 
 // The correlated elements of every clause, sorted so the result does not depend on the clause order.
 std::vector<std::vector<uint32_t>> correlated_elements(SearchIterator& search, uint32_t docid, size_t clauses) {
@@ -551,6 +599,117 @@ TEST(CorrelateBySearchTest, a_clause_that_is_not_same_element_reports_an_issue_a
     EXPECT_EQ(1u, issues.size());
 }
 
+TEST(CorrelateBySearchTest, before_the_deadline_an_unsatisfiable_cycle_does_not_match_and_a_later_document_does) {
+    for (bool strict : {false, true}) {
+        TestDoom doom(std::chrono::hours(1), std::chrono::hours(1));
+        Fixture f(4, std::nullopt, doom.doom);
+        add_cycle(f, false);
+        AllIssues issues;
+        auto capture = vespalib::Issue::listen(issues);
+        auto search = f.search(strict);
+        EXPECT_EQ(SimpleResult().search(*search, docid_limit), SimpleResult({3}));
+        EXPECT_TRUE(issues.messages.empty());
+    }
+}
+
+TEST(CorrelateBySearchTest, seek_stops_at_a_document_whose_join_passes_the_soft_deadline) {
+    for (bool strict : {false, true}) {
+        TestDoom doom(-std::chrono::seconds(1), std::chrono::hours(1));
+        Fixture f(4, std::nullopt, doom.doom);
+        add_cycle(f, false);
+        AllIssues issues;
+        auto capture = vespalib::Issue::listen(issues);
+        auto search = f.search(strict);
+        search->initRange(1, docid_limit);
+        // Doc 2 does not match, but seek stops there so the match loop can end matching.
+        EXPECT_TRUE(search->seek(2));
+        EXPECT_EQ(2u, search->getDocId());
+        auto& correlated = dynamic_cast<CorrelateBySearch&>(*search);
+        EXPECT_EQ(CorrelatedRows::deadline_check_interval, correlated.visited_rows());
+        // A soft timeout is reported by the match loop, not by this search.
+        EXPECT_TRUE(issues.messages.empty());
+    }
+}
+
+TEST(CorrelateBySearchTest, matched_documents_unpack_the_same_elements_after_the_soft_deadline) {
+    // Second phase ranking starts a new range with the hits that matched, and
+    // unpacks each of them. The join of doc 2 passes the soft deadline, but doc 2
+    // matched, so it must unpack the same elements as without a deadline.
+    auto unpack = [](const vespalib::Doom& doom, bool expect_soft_deadline) {
+        Fixture f(4, std::nullopt, doom);
+        add_cycle(f, true);
+        auto search = f.search(true);
+        auto& correlated = dynamic_cast<CorrelateBySearch&>(*search);
+        search->initRange(2, 4);
+        EXPECT_TRUE(search->seek(2));
+        EXPECT_EQ(expect_soft_deadline, correlated.visited_rows() == CorrelatedRows::deadline_check_interval);
+        search->initRange(2, 4);
+        std::vector<std::optional<std::vector<uint32_t>>> elements;
+        for (uint32_t docid : {2u, 3u}) {
+            search->unpack(docid);
+            for (size_t clause = 0; clause < 3; ++clause) elements.push_back(f.unpacked_elements(clause, docid));
+        }
+        return elements;
+    };
+    TestDoom soft_passed(-std::chrono::seconds(1), std::chrono::hours(1));
+    auto expected = unpack(vespalib::Doom::never(), false);
+    EXPECT_EQ(expected, unpack(soft_passed.doom, true));
+    // The pair (62, 62) of doc 2 is element 2048, after the 2048 pairs of different parity.
+    ASSERT_TRUE(expected[0].has_value());
+    EXPECT_TRUE(std::find(expected[0]->begin(), expected[0]->end(), 2048u) != expected[0]->end());
+    EXPECT_EQ(expected[3], (std::vector<uint32_t>{0}));
+}
+
+TEST(CorrelateBySearchTest, past_only_the_hard_deadline_a_document_matches_but_has_no_elements_or_bindings_and_one_issue_is_reported) {
+    TestDoom doom(std::chrono::hours(1), -std::chrono::seconds(1));
+    Fixture f(4, std::nullopt, doom.doom);
+    add_cycle(f, true);
+    AllIssues issues;
+    auto capture = vespalib::Issue::listen(issues);
+    auto search = f.search(true);
+    search->initRange(1, docid_limit);
+    // Matching uses the soft deadline, which has not passed.
+    ASSERT_TRUE(search->seek(2));
+    // Reading elements and bindings uses the hard deadline, which has passed.
+    search->unpack(2);
+    for (size_t clause = 0; clause < 3; ++clause) {
+        EXPECT_EQ(f.unpacked_elements(clause, 2), std::vector<uint32_t>{});
+    }
+    auto& correlated = dynamic_cast<CorrelateBySearch&>(*search);
+    EXPECT_TRUE(correlated.find_bindings(2).empty());
+    // Doc 3 needs fewer rows than the deadline check interval, so it still gets its bindings.
+    EXPECT_TRUE(search->seek(3));
+    EXPECT_EQ(correlated.find_bindings(3), (std::vector<BindingRow>{{int64_t(7), int64_t(0), int64_t(0), int64_t(0)}}));
+    ASSERT_EQ(1u, issues.messages.size());
+    EXPECT_NE(std::string::npos, issues.messages[0].find("query timeout"));
+}
+
+TEST(CorrelateBySearchTest, bindings_past_the_memory_limit_are_empty_and_reported_once_while_the_documents_match) {
+    Fixture f(13, std::nullopt, vespalib::Doom::never());
+    BindingRow units(5, int64_t(7));
+    BindingRow zone_values{int64_t(0), int64_t(1), int64_t(2), int64_t(3), int64_t(4)};
+    auto* unit = f.attribute("sig.unit", {{2, units}, {4, units}}, false);
+    auto* zones = f.attribute("sig.zone", {{2, zone_values}, {4, zone_values}}, false);
+    for (uint32_t column = 1; column <= 12; ++column) {
+        f.clause("sig", {{2, {0, 1, 2, 3, 4}}, {4, {0, 1, 2, 3, 4}}}, {{0, unit}, {column, zones}});
+    }
+    AllIssues issues;
+    auto capture = vespalib::Issue::listen(issues);
+    auto search = f.search(true);
+    EXPECT_EQ(SimpleResult().search(*search, docid_limit), SimpleResult({2, 4}));
+    auto& correlated = dynamic_cast<CorrelateBySearch&>(*search);
+    correlated.initRange(1, docid_limit);
+    // All 13 variables have 5^12 distinct zone combinations, far more than fit in the memory limit.
+    EXPECT_TRUE(correlated.find_bindings(2).empty());
+    ASSERT_EQ(1u, issues.messages.size());
+    EXPECT_TRUE(correlated.find_bindings(4).empty());
+    std::vector<uint32_t> unit_only{0};
+    EXPECT_EQ(correlated.find_bindings(4, unit_only), (std::vector<BindingRow>{{int64_t(7)}}));
+    ASSERT_EQ(1u, issues.messages.size());
+    EXPECT_NE(std::string::npos,
+              issues.messages[0].find(std::to_string(CorrelatedRows::default_memory_limit) + " bytes"));
+}
+
 TEST(CorrelateBySearchTest, binding_provider_projects_independent_zones_and_caches_each_projection) {
     for (bool strict : {false, true}) {
         Fixture f(13);
@@ -588,6 +747,120 @@ TEST(CorrelateBySearchTest, binding_provider_projects_independent_zones_and_cach
         for (auto& row : expected) row[1] = int64_t(9);
         EXPECT_EQ(read(4, zone_unit), expected);
     }
+}
+
+namespace {
+
+// Like add_cycle, for each of the given documents. Every listed document has the
+// 2048 pairs of different parity and then the pair (62, 62), so it matches, but
+// only after more than 1024 visited rows. Doc 3 has the single matching pair
+// (0, 0). Doc 4 has the pair (0, 1) in every clause, which cannot join, and
+// needs only a few visited rows to find that out.
+void add_cycles(Fixture& f, const std::vector<uint32_t>& docs) {
+    BindingRow units, firsts, seconds;
+    std::vector<uint32_t> elements;
+    for (int64_t a = 0; a < 64; ++a) {
+        for (int64_t b = 0; b < 64; ++b) {
+            if ((a % 2) != (b % 2)) {
+                elements.push_back(units.size());
+                units.push_back(int64_t(7));
+                firsts.push_back(a);
+                seconds.push_back(b);
+            }
+        }
+    }
+    elements.push_back(units.size());
+    units.push_back(int64_t(7));
+    firsts.push_back(int64_t(62));
+    seconds.push_back(int64_t(62));
+    Rows unit_rows{{3, {int64_t(7)}}, {4, {int64_t(7)}}};
+    Rows first_rows{{3, {int64_t(0)}}, {4, {int64_t(0)}}};
+    Rows second_rows{{3, {int64_t(0)}}, {4, {int64_t(1)}}};
+    Matches matches{{3, {0}}, {4, {0}}};
+    for (uint32_t doc : docs) {
+        unit_rows.emplace_back(doc, units);
+        first_rows.emplace_back(doc, firsts);
+        second_rows.emplace_back(doc, seconds);
+        matches.emplace_back(doc, elements);
+    }
+    std::sort(matches.begin(), matches.end());
+    auto* unit = f.attribute("pair.unit", unit_rows, false);
+    auto* first = f.attribute("pair.first", first_rows, false);
+    auto* second = f.attribute("pair.second", second_rows, false);
+    // Variables: unit = 0, x = 1, y = 2, z = 3.
+    f.clause("pair", matches, {{0, unit}, {1, first}, {2, second}});
+    f.clause("pair", matches, {{0, unit}, {2, first}, {3, second}});
+    f.clause("pair", matches, {{0, unit}, {1, first}, {3, second}});
+}
+
+} // namespace
+
+// Stopping one document at the soft deadline must not make later documents match.
+TEST(CorrelateBySearchTest, after_a_soft_deadline_stop_a_later_document_whose_rows_do_not_join_is_not_returned) {
+    for (bool strict : {false, true}) {
+        SCOPED_TRACE(strict);
+        TestDoom doom(-std::chrono::seconds(1), std::chrono::hours(1));
+        Fixture f(4, std::nullopt, doom.doom);
+        add_cycles(f, {2});
+        auto search = f.search(strict);
+        // Doc 2 stops at the soft deadline, doc 3 matches, and doc 4 needs only
+        // a few rows, which do not reach the next check, to find no match.
+        EXPECT_EQ(SimpleResult().search(*search, docid_limit), SimpleResult({2, 3}));
+        // Searching again from the start gives the same documents.
+        EXPECT_EQ(SimpleResult().search(*search, docid_limit), SimpleResult({2, 3}));
+    }
+}
+
+// Unpacking reports the timeout itself, and only once for many documents.
+TEST(CorrelateBySearchTest, unpacking_many_documents_past_the_hard_deadline_reports_one_issue_and_unpacks_no_elements) {
+    TestDoom doom(std::chrono::hours(1), -std::chrono::seconds(1));
+    Fixture f(4, std::nullopt, doom.doom);
+    add_cycles(f, {2, 5, 6, 7});
+    AllIssues issues;
+    auto capture = vespalib::Issue::listen(issues);
+    auto search = f.search(true);
+    search->initRange(1, docid_limit);
+    for (uint32_t docid : {2u, 5u, 6u, 7u}) {
+        SCOPED_TRACE(docid);
+        ASSERT_TRUE(search->seek(docid));
+        search->unpack(docid);
+        for (size_t clause = 0; clause < 3; ++clause) {
+            EXPECT_EQ(f.unpacked_elements(clause, docid), std::vector<uint32_t>{});
+        }
+        // Reported by the first unpack, before any binding was read.
+        ASSERT_EQ(1u, issues.messages.size());
+    }
+    EXPECT_NE(std::string::npos, issues.messages[0].find("query timeout"));
+}
+
+// Each reason is reported once, by the call that stopped.
+TEST(CorrelateBySearchTest, a_memory_stop_and_a_later_deadline_stop_are_each_reported_once) {
+    TestDoom doom(std::chrono::hours(1), std::chrono::hours(1));
+    Fixture f(13, std::nullopt, doom.doom);
+    BindingRow units(5, int64_t(7));
+    BindingRow zone_values{int64_t(0), int64_t(1), int64_t(2), int64_t(3), int64_t(4)};
+    auto* unit = f.attribute("sig.unit", {{2, units}, {4, units}}, false);
+    auto* zones = f.attribute("sig.zone", {{2, zone_values}, {4, zone_values}}, false);
+    for (uint32_t column = 1; column <= 12; ++column) {
+        f.clause("sig", {{2, {0, 1, 2, 3, 4}}, {4, {0, 1, 2, 3, 4}}}, {{0, unit}, {column, zones}});
+    }
+    AllIssues issues;
+    auto capture = vespalib::Issue::listen(issues);
+    auto search = f.search(true);
+    auto& correlated = dynamic_cast<CorrelateBySearch&>(*search);
+    correlated.initRange(1, docid_limit);
+    EXPECT_TRUE(correlated.find_bindings(2).empty());
+    // The issue is reported by the call that stopped, not by the next one.
+    ASSERT_EQ(1u, issues.messages.size());
+    EXPECT_NE(std::string::npos, issues.messages[0].find("bytes"));
+    doom.now = doom.now.load() + std::chrono::hours(2);
+    // Past the hard deadline, the join stops at the next check, long before the memory limit.
+    EXPECT_TRUE(correlated.find_bindings(4).empty());
+    ASSERT_EQ(2u, issues.messages.size());
+    EXPECT_NE(std::string::npos, issues.messages[1].find("query timeout"));
+    // Reading the same document again stops again, without a new issue.
+    EXPECT_TRUE(correlated.find_bindings(4).empty());
+    EXPECT_EQ(2u, issues.messages.size());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

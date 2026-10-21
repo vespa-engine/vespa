@@ -12,8 +12,10 @@
 
 namespace search::queryeval {
 
-CorrelateByBlueprint::CorrelateByBlueprint(std::vector<std::optional<std::vector<std::string>>> domains)
-    : _clauses(), _clause_of_child(), _first_present(), _domains(std::move(domains)), _label(), _columns() {}
+CorrelateByBlueprint::CorrelateByBlueprint(std::vector<std::optional<std::vector<std::string>>> domains,
+                                           const vespalib::Doom& doom)
+    : _clauses(), _clause_of_child(), _first_present(), _domains(std::move(domains)), _label(), _columns(),
+      _doom(doom) {}
 CorrelateByBlueprint::~CorrelateByBlueprint() = default;
 
 void CorrelateByBlueprint::add_first_present(uint32_t clause, uint32_t presence, uint32_t column,
@@ -122,7 +124,7 @@ std::unique_ptr<CorrelateBySearch> CorrelateByBlueprint::create_correlate_search
                                  selection.column, selection.values});
     }
     return std::make_unique<CorrelateBySearch>(std::move(searches), std::move(bindings), _domains, strict(),
-                                              std::move(exact_values), std::move(first_present));
+                                              std::move(exact_values), std::move(first_present), _doom);
 }
 
 SearchIterator::UP CorrelateByBlueprint::createIntermediateSearch(MultiSearch::Children, fef::MatchData&) const {
