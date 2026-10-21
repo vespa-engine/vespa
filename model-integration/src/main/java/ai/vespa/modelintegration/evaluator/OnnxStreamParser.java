@@ -2,15 +2,17 @@
 package ai.vespa.modelintegration.evaluator;
 
 import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.WireFormat;
 import onnx.Onnx;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,6 +21,7 @@ import java.util.Set;
  *
  * @author bjorncs
  * @author ingridhabrekke
+ * @author glebashnik
  */
 public class OnnxStreamParser {
 
@@ -43,26 +46,54 @@ public class OnnxStreamParser {
      * @return set of relative file locations for the external data references in the provided ONNX model.
      */
     public static Set<Path> getExternalDataLocations(Path model) throws IOException {
-        try (var bis = new BufferedInputStream(Files.newInputStream(model))) {
-            var stream = CodedInputStream.newInstance(bis);
-            var externalDataPaths = new HashSet<Path>();
-            while (!stream.isAtEnd()) {
-                var tag = stream.readTag();
-                if (WireFormat.getTagFieldNumber(tag) == 0) break;
-                switch (WireFormat.getTagFieldNumber(tag)) {
-                    case Onnx.ModelProto.GRAPH_FIELD_NUMBER:
-                        parseDelimited(stream, s -> parseGraphProto(s, externalDataPaths));
-                        break;
-                    case Onnx.ModelProto.TRAINING_INFO_FIELD_NUMBER:
-                        parseDelimited(stream, s -> parseTrainingInfoProto(s, externalDataPaths));
-                        break;
-                    default:
-                        stream.skipField(tag);
-                        break;
-                }
-            }
-            return Set.copyOf(externalDataPaths);
+        try (var stream = new BufferedInputStream(Files.newInputStream(model))) {
+            return getExternalDataLocations(stream);
         }
+    }
+
+    /**
+     * Finds external data locations like {@link #getExternalDataLocations(Path)}, but returns none for files that
+     * are not valid ONNX, leaving those for the runtime to report.
+     */
+    public static Set<Path> tryGetExternalDataLocations(Path model) throws IOException {
+        try {
+            return getExternalDataLocations(model);
+        } catch (InvalidProtocolBufferException | InvalidPathException e) {
+            return Set.of();
+        }
+    }
+
+    /** Like {@link #tryGetExternalDataLocations(Path)}, reading the stream sequentially. */
+    public static Set<Path> tryGetExternalDataLocations(InputStream model) throws IOException {
+        try {
+            return getExternalDataLocations(model);
+        } catch (InvalidProtocolBufferException | InvalidPathException e) {
+            return Set.of();
+        }
+    }
+
+    private static Set<Path> getExternalDataLocations(InputStream model) throws IOException {
+        var stream = CodedInputStream.newInstance(model);
+        var externalDataPaths = new HashSet<Path>();
+        while (!stream.isAtEnd()) {
+            var tag = stream.readTag();
+            if (WireFormat.getTagFieldNumber(tag) == 0) break;
+            switch (WireFormat.getTagFieldNumber(tag)) {
+                case Onnx.ModelProto.GRAPH_FIELD_NUMBER:
+                    parseDelimited(stream, s -> parseGraphProto(s, externalDataPaths));
+                    break;
+                case Onnx.ModelProto.TRAINING_INFO_FIELD_NUMBER:
+                    parseDelimited(stream, s -> parseTrainingInfoProto(s, externalDataPaths));
+                    break;
+                case Onnx.ModelProto.FUNCTIONS_FIELD_NUMBER:
+                    parseDelimited(stream, s -> parseFunctionProto(s, externalDataPaths));
+                    break;
+                default:
+                    stream.skipField(tag);
+                    break;
+            }
+        }
+        return Set.copyOf(externalDataPaths);
     }
 
     /**
@@ -177,6 +208,18 @@ public class OnnxStreamParser {
         }
     }
 
+    private static void parseFunctionProto(CodedInputStream stream, Set<Path> externalDataPaths) throws IOException {
+        while (!stream.isAtEnd()) {
+            var tag = stream.readTag();
+            if (WireFormat.getTagFieldNumber(tag) == 0) return;
+            if (WireFormat.getTagFieldNumber(tag) == Onnx.FunctionProto.NODE_FIELD_NUMBER) {
+                parseDelimited(stream, s -> parseNodeProto(s, externalDataPaths));
+            } else {
+                stream.skipField(tag);
+            }
+        }
+    }
+
     private static void parseNodeProto(CodedInputStream stream, Set<Path> externalDataPaths) throws IOException {
         while (!stream.isAtEnd()) {
             int tag = stream.readTag();
@@ -189,11 +232,8 @@ public class OnnxStreamParser {
         }
     }
 
+    // Finds external data locations in the tensors and subgraphs of an attribute.
     private static void parseAttributeProto(CodedInputStream stream, Set<Path> externalDataPaths) throws IOException {
-        Onnx.AttributeProto.AttributeType type = Onnx.AttributeProto.AttributeType.UNDEFINED;
-        var tensorData = new ArrayList<byte[]>();
-        var sparseTensorData = new ArrayList<byte[]>();
-
         while (!stream.isAtEnd()) {
             var tag = stream.readTag();
             var fieldNumber = WireFormat.getTagFieldNumber(tag);
@@ -202,28 +242,19 @@ public class OnnxStreamParser {
             switch (fieldNumber) {
                 case Onnx.AttributeProto.T_FIELD_NUMBER:
                 case Onnx.AttributeProto.TENSORS_FIELD_NUMBER:
-                    tensorData.add(readDelimitedBytes(stream));
+                    parseDelimited(stream, s -> parseTensorProto(s, externalDataPaths));
                     break;
                 case Onnx.AttributeProto.SPARSE_TENSOR_FIELD_NUMBER:
                 case Onnx.AttributeProto.SPARSE_TENSORS_FIELD_NUMBER:
-                    sparseTensorData.add(readDelimitedBytes(stream));
+                    parseDelimited(stream, s -> parseSparseTensorProto(s, externalDataPaths));
                     break;
-                case Onnx.AttributeProto.TYPE_FIELD_NUMBER:
-                    type = Onnx.AttributeProto.AttributeType.forNumber(stream.readEnum());
+                case Onnx.AttributeProto.G_FIELD_NUMBER:
+                case Onnx.AttributeProto.GRAPHS_FIELD_NUMBER:
+                    parseDelimited(stream, s -> parseGraphProto(s, externalDataPaths));
                     break;
                 default:
                     stream.skipField(tag);
                     break;
-            }
-        }
-        if (type == Onnx.AttributeProto.AttributeType.TENSOR || type == Onnx.AttributeProto.AttributeType.TENSORS) {
-            for (var data : tensorData) {
-                parseTensorProto(CodedInputStream.newInstance(data), externalDataPaths);
-            }
-        }
-        if (type == Onnx.AttributeProto.AttributeType.SPARSE_TENSOR || type == Onnx.AttributeProto.AttributeType.SPARSE_TENSORS) {
-            for (var data : sparseTensorData) {
-                parseSparseTensorProto(CodedInputStream.newInstance(data), externalDataPaths);
             }
         }
     }
@@ -235,25 +266,7 @@ public class OnnxStreamParser {
             switch (WireFormat.getTagFieldNumber(tag)) {
                 case Onnx.TrainingInfoProto.INITIALIZATION_FIELD_NUMBER:
                 case Onnx.TrainingInfoProto.ALGORITHM_FIELD_NUMBER:
-                    parseDelimited(stream, s -> parseGraphProtoInitializers(s, externalDataPaths));
-                    break;
-                default:
-                    stream.skipField(tag);
-                    break;
-            }
-        }
-    }
-
-    private static void parseGraphProtoInitializers(CodedInputStream stream, Set<Path> externalDataPaths) throws IOException {
-        while (!stream.isAtEnd()) {
-            var tag = stream.readTag();
-            if (WireFormat.getTagFieldNumber(tag) == 0) return;
-            switch (WireFormat.getTagFieldNumber(tag)) {
-                case Onnx.GraphProto.INITIALIZER_FIELD_NUMBER:
-                    parseDelimited(stream, s -> parseTensorProto(s, externalDataPaths));
-                    break;
-                case Onnx.GraphProto.SPARSE_INITIALIZER_FIELD_NUMBER:
-                    parseDelimited(stream, s -> parseSparseTensorProto(s, externalDataPaths));
+                    parseDelimited(stream, s -> parseGraphProto(s, externalDataPaths));
                     break;
                 default:
                     stream.skipField(tag);
@@ -284,7 +297,6 @@ public class OnnxStreamParser {
             }
         }
         if (dataLocation == Onnx.TensorProto.DataLocation.EXTERNAL && location != null) {
-            if (location.contains("..")) throw new IllegalArgumentException("External data path '" + location + "' must not contain '..'");
             externalDataPaths.add(Paths.get(location));
         }
     }
@@ -303,11 +315,6 @@ public class OnnxStreamParser {
                     break;
             }
         }
-    }
-
-    private static byte[] readDelimitedBytes(CodedInputStream stream) throws IOException {
-        var length = stream.readRawVarint32();
-        return stream.readRawBytes(length);
     }
 
     private static void parseDelimited(CodedInputStream stream, CodedInputStreamConsumer consumer) throws IOException {

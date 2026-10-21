@@ -4,7 +4,9 @@ package ai.vespa.modelintegration.utils;
 
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.UrlReference;
+import onnx.Onnx;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -17,6 +19,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -25,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * @author bjorncs
+ * @author glebashnik
  */
 class OnnxExternalDataResolverTest {
     @Test
@@ -69,6 +73,26 @@ class OnnxExternalDataResolverTest {
         } finally {
             deleteRecursively(tempDir);
         }
+    }
+
+    @Test
+    void rejects_external_data_locations_that_escape_the_model_directory(@TempDir Path directory) throws IOException {
+        var tensor = Onnx.TensorProto.newBuilder()
+                .setName("weights")
+                .setDataLocation(Onnx.TensorProto.DataLocation.EXTERNAL)
+                .addExternalData(Onnx.StringStringEntryProto.newBuilder()
+                                         .setKey("location").setValue("../weights.bin"));
+        var model = Files.write(directory.resolve("model.onnx"), Onnx.ModelProto.newBuilder()
+                .setGraph(Onnx.GraphProto.newBuilder().addInitializer(tensor)).build().toByteArray());
+        var modelRef = ModelReference.unresolved(
+                Optional.empty(), Optional.of(new UrlReference("https://my.website/model.onnx")),
+                Optional.empty(), Optional.empty());
+        var modelPathHelper = mock(ModelPathHelper.class);
+        when(modelPathHelper.getModelPathResolvingIfNecessary(modelRef)).thenReturn(model);
+
+        var resolver = new OnnxExternalDataResolver(modelPathHelper);
+        var exception = assertThrows(IllegalArgumentException.class, () -> resolver.resolveOnnxModel(modelRef));
+        assertTrue(exception.getMessage().contains("must not contain '..'"), exception.getMessage());
     }
 
     @Test

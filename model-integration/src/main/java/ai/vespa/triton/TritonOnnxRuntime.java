@@ -6,6 +6,7 @@ import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.modelintegration.evaluator.OnnxPadder;
+import ai.vespa.modelintegration.evaluator.OnnxStreamParser;
 import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.google.protobuf.TextFormat;
 import com.yahoo.component.AbstractComponent;
@@ -51,6 +52,7 @@ import java.util.logging.Logger;
  */
 public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime {
     private static final Logger log = Logger.getLogger(TritonOnnxRuntime.class.getName());
+    private static final String MODEL_FILE_NAME = "model.onnx";
 
     private final TritonOnnxClient tritonClient;
     private final boolean isModelControlExplicit;
@@ -272,13 +274,16 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     }
 
     /**
-     * Copies the model file and config to a model repository directory that Triton has access to.
+     * Copies the model file, its external data files and config to a model repository directory that Triton has
+     * access to. External data files are referenced by paths relative to the model file, so they are copied
+     * to the same relative paths in the repository.
      */
     private void copyModelFilesToModelRepository(String modelName, String externalModelPath, String modelConfig) {
         var modelDirPath = getModelDirInModelRepository(modelName);
         var modelVersionPath = modelDirPath.resolve("1");
-        var modelFilePath = modelVersionPath.resolve("model.onnx");
+        var modelFilePath = modelVersionPath.resolve(MODEL_FILE_NAME);
         var modelConfigPath = modelDirPath.resolve("config.pbtxt");
+        var sourceModelPath = Paths.get(externalModelPath);
 
         try {
             // Create directory for model name and version with correct permissions
@@ -286,7 +291,26 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                     modelVersionPath,
                     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x")));
 
-            Files.copy(Paths.get(externalModelPath), modelFilePath, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(sourceModelPath, modelFilePath, StandardCopyOption.REPLACE_EXISTING);
+
+            var versionDirPath = modelVersionPath.normalize();
+            for (var location : OnnxStreamParser.tryGetExternalDataLocations(sourceModelPath)) {
+                var dataFilePath = versionDirPath.resolve(location).normalize();
+
+                if (!dataFilePath.startsWith(versionDirPath) || dataFilePath.equals(versionDirPath)) {
+                    throw new IllegalArgumentException(
+                            "External data file '" + location + "' is outside the directory of " + externalModelPath);
+                }
+                // Reject an external data file named model.onnx because it would overwrite the main model file.
+                if (dataFilePath.equals(versionDirPath.resolve(MODEL_FILE_NAME))) {
+                    throw new IllegalArgumentException("External data file of " + externalModelPath +
+                                                       " cannot be named " + MODEL_FILE_NAME);
+                }
+
+                Files.createDirectories(dataFilePath.getParent());
+                Files.copy(sourceModelPath.resolveSibling(location), dataFilePath, StandardCopyOption.REPLACE_EXISTING);
+                addReadPermissions(dataFilePath);
+            }
             Files.writeString(modelConfigPath, modelConfig);
 
             // Explicitly grant world read to ensure that Triton can read model files

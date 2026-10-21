@@ -12,6 +12,7 @@ import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
@@ -26,6 +27,7 @@ import java.util.logging.Logger;
  * into a temporary directory together with the ONNX model file.
  *
  * @author bjorncs
+ * @author glebashnik
  */
 public class OnnxExternalDataResolver {
 
@@ -62,6 +64,8 @@ public class OnnxExternalDataResolver {
             var urlPrefix = url.substring(0, url.lastIndexOf('/') + 1);
             var externalDataFiles = new HashMap<Path, Path>();
             for (var location : externalDataLocations) {
+                if (location.toString().contains(".."))
+                    throw new IllegalArgumentException("External data path '" + location + "' must not contain '..'");
                 var dataFileUrl = urlPrefix + location;
                 log.info(Text.format("Downloading external data file '%s' for ONNX model '%s' using URL '%s'", location, localPath.getFileName(), dataFileUrl));
                 var externalDataRef = ModelReference.unresolved(
@@ -179,7 +183,8 @@ public class OnnxExternalDataResolver {
         } catch (UnsupportedOperationException | FileSystemException e) {
             log.fine(() -> Text.format(
                     "Hard link from '%s' to '%s' failed (%s); copying instead", src, target, e.getMessage()));
-            Files.copy(src, target);
+            // Keeps the modification time, which is part of the model hash
+            Files.copy(src, target, StandardCopyOption.COPY_ATTRIBUTES);
         }
     }
 }

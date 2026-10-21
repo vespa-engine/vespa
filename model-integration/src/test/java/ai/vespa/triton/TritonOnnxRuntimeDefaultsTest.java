@@ -7,6 +7,7 @@ import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.google.protobuf.TextFormat;
 import inference.ModelConfigOuterClass.ModelConfig;
 import inference.ModelConfigOuterClass.ModelInstanceGroup.Kind;
+import onnx.Onnx;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,11 +25,13 @@ import static ai.vespa.triton.TritonOnnxRuntime.resolveInstanceCount;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -253,6 +256,89 @@ class TritonOnnxRuntimeDefaultsTest {
                                  generated.getInstanceGroup(0));
                 }
             }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void external_data_files_are_copied_next_to_the_model(@TempDir Path directory) throws IOException {
+        var model = "src/test/models/onnx/external_data/add_with_external_data.onnx";
+        var dataFile = Path.of("src/test/models/onnx/external_data/external_data.bin");
+        var repository = directory.resolve("repository");
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                .modelRepositoryPath(repository.toString())
+                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class));
+        try {
+            try (var evaluator = runtime.evaluatorOf(model, options(8).build());
+                 var modelDirs = Files.list(repository)) {
+                var versionDir = modelDirs.toList().get(0).resolve("1");
+                assertTrue(Files.exists(versionDir.resolve("model.onnx")));
+                assertArrayEquals(Files.readAllBytes(dataFile),
+                                  Files.readAllBytes(versionDir.resolve("external_data.bin")));
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void external_data_file_named_model_onnx_is_rejected(@TempDir Path directory) throws IOException {
+        var model = modelWithExternalData(directory, "model.onnx");
+        Files.writeString(directory.resolve("model.onnx"), "weights");
+        assertExternalDataRejected(directory, model, "cannot be named model.onnx");
+    }
+
+    @Test
+    void external_data_file_outside_the_model_directory_is_rejected(@TempDir Path directory) throws IOException {
+        var dataFile = Files.writeString(directory.resolve("weights.bin"), "weights");
+        var absolute = modelWithExternalData(directory, dataFile.toAbsolutePath().toString());
+        assertExternalDataRejected(directory, absolute, "is outside the directory of");
+
+        var escaping = modelWithExternalData(directory, "../weights.bin");
+        assertExternalDataRejected(directory, escaping, "is outside the directory of");
+    }
+
+    @Test
+    void external_data_file_in_subdirectory_is_copied_to_the_same_subdirectory(@TempDir Path directory)
+            throws IOException {
+        var model = modelWithExternalData(directory, "weights/part0.bin");
+        Files.createDirectories(directory.resolve("weights"));
+        Files.writeString(directory.resolve("weights/part0.bin"), "weights");
+        var repository = directory.resolve("repository");
+        var runtime = runtimeWithRepository(repository);
+        try {
+            try (var evaluator = runtime.evaluatorOf(model.toString(), options(8).build());
+                 var modelDirs = Files.list(repository)) {
+                var dataFile = modelDirs.toList().get(0).resolve("1/weights/part0.bin");
+                assertEquals("weights", Files.readString(dataFile));
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    private static Path modelWithExternalData(Path directory, String location) throws IOException {
+        var tensor = Onnx.TensorProto.newBuilder()
+                .setName("weights")
+                .setDataLocation(Onnx.TensorProto.DataLocation.EXTERNAL)
+                .addExternalData(Onnx.StringStringEntryProto.newBuilder().setKey("location").setValue(location));
+        return Files.write(directory.resolve("encoder.onnx"), Onnx.ModelProto.newBuilder()
+                .setGraph(Onnx.GraphProto.newBuilder().addInitializer(tensor)).build().toByteArray());
+    }
+
+    private static TritonOnnxRuntime runtimeWithRepository(Path repository) {
+        return new TritonOnnxRuntime(new TritonConfig.Builder()
+                .modelRepositoryPath(repository.toString())
+                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class));
+    }
+
+    private static void assertExternalDataRejected(Path directory, Path model, String expectedMessage) {
+        var runtime = runtimeWithRepository(directory.resolve("repository"));
+        try {
+            var exception = assertThrows(IllegalArgumentException.class,
+                                         () -> runtime.evaluatorOf(model.toString(), options(8).build()));
+            assertTrue(exception.getMessage().contains(expectedMessage), exception.getMessage());
         } finally {
             runtime.deconstruct();
         }
