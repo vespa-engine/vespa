@@ -7,6 +7,7 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
@@ -50,6 +51,7 @@ using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using namespace std::chrono_literals;
+using ai::vespa::telemetry::TelemetryConfig;
 using vespa::config::content::core::BucketspacesConfig;
 
 using document::BucketSpace;
@@ -191,7 +193,8 @@ public:
         DocumentDBConfigHelper mgr(spec, docType.getName());
         auto                   b = std::make_shared<BootstrapConfig>(1, factory.getTypeCfg(), factory.getTypeRepo(),
                                                                      make_proton_config(), std::make_shared<FiledistributorrpcConfig>(),
-                                                                     std::make_shared<BucketspacesConfig>(), tuneFileDocDB, HwInfo());
+                                                                     std::make_shared<BucketspacesConfig>(),
+                                                                     std::make_shared<TelemetryConfig>(), tuneFileDocDB, HwInfo());
         mgr.forwardConfig(b);
         mgr.nextGeneration(_shared_service.transport(), 0ms);
         return DocumentDB::create(

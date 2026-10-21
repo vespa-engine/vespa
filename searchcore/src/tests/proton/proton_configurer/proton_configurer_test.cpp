@@ -6,6 +6,7 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -31,6 +32,8 @@ using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using namespace cloud::config::filedistribution;
+using ai::vespa::telemetry::TelemetryConfig;
+using ai::vespa::telemetry::TelemetryConfigBuilder;
 using vespa::config::content::core::BucketspacesConfig;
 using vespa::config::content::core::BucketspacesConfigBuilder;
 
@@ -89,6 +92,7 @@ struct ConfigFixture {
     DocumenttypesConfigBuilder            _documenttypesBuilder;
     FiledistributorrpcConfigBuilder       _filedistBuilder;
     BucketspacesConfigBuilder             _bucketspacesBuilder;
+    TelemetryConfigBuilder                _telemetry_builder;
     map<std::string, DBConfigFixture::UP> _dbConfig;
     int                                   _idcounter;
     int64_t                               _generation;
@@ -100,6 +104,7 @@ struct ConfigFixture {
           _documenttypesBuilder(),
           _filedistBuilder(),
           _bucketspacesBuilder(),
+          _telemetry_builder(),
           _dbConfig(),
           _idcounter(-1),
           _generation(1),
@@ -164,7 +169,7 @@ struct ConfigFixture {
             generation, std::make_shared<DocumenttypesConfig>(_documenttypesBuilder),
             std::make_shared<DocumentTypeRepo>(_documenttypesBuilder), std::make_shared<ProtonConfig>(_protonBuilder),
             std::make_shared<FiledistributorrpcConfig>(), std::make_shared<BucketspacesConfig>(_bucketspacesBuilder),
-            std::make_shared<TuneFileDocumentDB>(), HwInfo());
+            std::make_shared<TelemetryConfig>(_telemetry_builder), std::make_shared<TuneFileDocumentDB>(), HwInfo());
     }
 
     std::shared_ptr<ProtonConfigSnapshot> getConfigSnapshot() {

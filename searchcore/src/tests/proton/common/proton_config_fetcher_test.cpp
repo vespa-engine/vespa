@@ -9,6 +9,7 @@
 #include <vespa/config-ranking-constants.h>
 #include <vespa/config-ranking-expressions.h>
 #include <vespa/config-summary.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/config.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -37,6 +38,8 @@ using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using namespace cloud::config::filedistribution;
 using namespace std::chrono_literals;
+using ai::vespa::telemetry::TelemetryConfig;
+using ai::vespa::telemetry::TelemetryConfigBuilder;
 using vespa::config::content::core::BucketspacesConfig;
 using vespa::config::content::core::BucketspacesConfigBuilder;
 
@@ -72,6 +75,7 @@ struct ConfigTestFixture {
     DocumenttypesConfigBuilder           documenttypesBuilder;
     FiledistributorrpcConfigBuilder      filedistBuilder;
     BucketspacesConfigBuilder            bucketspacesBuilder;
+    TelemetryConfigBuilder               telemetry_builder;
     map<std::string, DoctypeFixture::UP> dbConfig;
     ConfigSet                            set;
     std::shared_ptr<IConfigContext>      context;
@@ -84,6 +88,7 @@ struct ConfigTestFixture {
           documenttypesBuilder(),
           filedistBuilder(),
           bucketspacesBuilder(),
+          telemetry_builder(),
           dbConfig(),
           set(),
           context(std::make_shared<ConfigContext>(set)),
@@ -92,6 +97,7 @@ struct ConfigTestFixture {
         set.addBuilder(configId, &documenttypesBuilder);
         set.addBuilder(configId, &filedistBuilder);
         set.addBuilder(configId, &bucketspacesBuilder);
+        set.addBuilder(configId, &telemetry_builder);
         if (add_alwaysthere) {
             addDocType("_alwaysthere_");
         }
@@ -177,7 +183,7 @@ struct ConfigTestFixture {
             generation, std::make_shared<DocumenttypesConfig>(documenttypesBuilder),
             std::make_shared<DocumentTypeRepo>(documenttypesBuilder), std::make_shared<ProtonConfig>(protonBuilder),
             std::make_shared<FiledistributorrpcConfig>(), std::make_shared<BucketspacesConfig>(bucketspacesBuilder),
-            std::make_shared<TuneFileDocumentDB>(), hwInfo);
+            std::make_shared<TelemetryConfig>(telemetry_builder), std::make_shared<TuneFileDocumentDB>(), hwInfo);
     }
 
     void reload() { context->reload(); }
@@ -234,13 +240,15 @@ ProtonConfigOwner::~ProtonConfigOwner() = default;
 TEST(ProtonConfigFetcherTest, require_that_bootstrap_config_manager_creats_correct_key_set) {
     BootstrapConfigManager f1("foo");
     const ConfigKeySet     set(f1.createConfigKeySet());
-    ASSERT_EQ(4u, set.size());
+    ASSERT_EQ(5u, set.size());
     ConfigKey protonKey(ConfigKey::create<ProtonConfig>("foo"));
     ConfigKey dtKey(ConfigKey::create<DocumenttypesConfig>("foo"));
     ConfigKey bsKey(ConfigKey::create<BucketspacesConfig>("foo"));
+    ConfigKey telemetry_config_key(ConfigKey::create<TelemetryConfig>("foo"));
     ASSERT_TRUE(set.find(protonKey) != set.end());
     ASSERT_TRUE(set.find(dtKey) != set.end());
     ASSERT_TRUE(set.find(bsKey) != set.end());
+    ASSERT_TRUE(set.find(telemetry_config_key) != set.end());
 }
 
 TEST(ProtonConfigFetcherTest, require_that_bootstrap_config_manager_updates_config) {

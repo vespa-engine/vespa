@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config-bucketspaces.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
@@ -61,6 +62,7 @@ using namespace searchcorespi;
 using namespace vespalib;
 using namespace std::chrono_literals;
 
+using ai::vespa::telemetry::TelemetryConfig;
 using document::test::makeBucketSpace;
 using proton::bucketdb::BucketDBHandler;
 using proton::bucketdb::IBucketDBHandler;
@@ -282,7 +284,8 @@ MyConfigSnapshot::MyConfigSnapshot(FNET_Transport& transport, Schema schema, con
     auto tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
     _bootstrap = std::make_shared<BootstrapConfig>(
         1, documenttypesConfig, _builder.get_repo_sp(), std::make_shared<ProtonConfig>(),
-        std::make_shared<FiledistributorrpcConfig>(), std::make_shared<BucketspacesConfig>(), tuneFileDocumentDB,
+        std::make_shared<FiledistributorrpcConfig>(), std::make_shared<BucketspacesConfig>(),
+        std::make_shared<TelemetryConfig>(), tuneFileDocumentDB,
         HwInfo(HwInfo::Disk(128_Gi, false, false), HwInfo::Memory(16_Gi), HwInfo::Cpu(8)));
     ::config::DirSpec      spec(cfgDir);
     DocumentDBConfigHelper mgr(spec, "searchdocument");
