@@ -66,6 +66,9 @@ public class SchemaInfoTester {
                             .add(new Field.Builder("field1", "string").setIndex(true).addAlias("alias1").addAlias("alias2")
                                                                       .setExplanation("Field 1\nin schema a").build())
                             .add(new Field.Builder("field2", "int").setAttribute(true).build())
+                            .add(new FieldSet.Builder("default").addField("field1").build())
+                            .add(new FieldSet.Builder("structFields").addField("struct1.x").addField("struct1.y").build())
+                            .add(new FieldSet.Builder("mixed").addField("struct1.x").addField("field2").build())
                             .add(new RankProfile.Builder("inconsistent")
                                          .addInput("query(myTensor1)", InputType.fromSpec("tensor(a{},b{})"))
                                          .build())
@@ -125,6 +128,10 @@ public class SchemaInfoTester {
                                                                  .explanation("Field 1\nin schema a"));
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field2").type("int")
                                                                  .index(false).attribute(true).bitPacked(false));
+
+        schemaA.fieldset(new SchemaInfoConfig.Schema.Fieldset.Builder().name("default").field("field1"));
+        schemaA.fieldset(new SchemaInfoConfig.Schema.Fieldset.Builder().name("structFields").field("struct1.x").field("struct1.y"));
+        schemaA.fieldset(new SchemaInfoConfig.Schema.Fieldset.Builder().name("mixed").field("struct1.x").field("field2"));
 
         schemaA.rankprofile(rankProfileCommon);
 

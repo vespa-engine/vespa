@@ -41,6 +41,13 @@ class SchemaInfoConfigurer {
             schemaBuilder.add(fieldBuilder.build());
         }
 
+        for (var fieldSetConfig : schemaInfoConfig.fieldset()) {
+            FieldSet.Builder fieldSetBuilder = new FieldSet.Builder(fieldSetConfig.name());
+            for (String fieldName : fieldSetConfig.field())
+                fieldSetBuilder.addField(fieldName);
+            schemaBuilder.add(fieldSetBuilder.build());
+        }
+
         for (var profileConfig : schemaInfoConfig.rankprofile()) {
             var profileBuilder = new RankProfile.Builder(profileConfig.name())
                     .setHasSummaryFeatures(profileConfig.hasSummaryFeatures())

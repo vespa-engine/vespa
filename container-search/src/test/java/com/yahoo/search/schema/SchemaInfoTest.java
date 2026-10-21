@@ -8,9 +8,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -22,6 +24,32 @@ public class SchemaInfoTest {
     @Test
     void testSchemaInfoConfiguration() {
         assertEquals(SchemaInfoTester.createSchemaInfoFromConfig(), SchemaInfoTester.createSchemaInfo());
+    }
+
+    @Test
+    void testFieldSets() {
+        var schemaA = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("a");
+        assertEquals(List.of("default", "structFields", "mixed"), List.copyOf(schemaA.fieldSets().keySet()));
+
+        var defaultFieldSet = schemaA.fieldInfo("").get();
+        assertEquals(schemaA.fieldSets().get("default"), defaultFieldSet);
+        assertEquals(Field.Type.from("string"), defaultFieldSet.type());
+        assertTrue(defaultFieldSet.isIndex());
+        assertFalse(defaultFieldSet.isAttribute());
+
+        // Properties are determined by the first field known by the schema
+        var mixed = schemaA.fieldInfo("mixed").get();
+        assertEquals(Field.Type.from("int"), mixed.type());
+        assertTrue(mixed.isAttribute());
+        assertFalse(mixed.isIndex());
+
+        // A field set without any fields known by the schema is present, but not resolved as field info
+        var structFields = schemaA.fieldSets().get("structFields");
+        assertEquals(Set.of("struct1.x", "struct1.y"), structFields.fieldNames());
+        assertNull(structFields.type());
+        assertFalse(structFields.isAttribute());
+        assertFalse(structFields.isIndex());
+        assertTrue(schemaA.fieldInfo("structFields").isEmpty());
     }
 
     @Test

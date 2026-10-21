@@ -3,6 +3,7 @@ package com.yahoo.search.schema;
 
 import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -26,24 +27,22 @@ public class FieldSet implements FieldInfo {
     @Override
     public String name() { return name; }
 
+    /** Returns the type of the fields in this, or null if it contains no fields known by the schema. */
     @Override
     public Field.Type type() {
-        if (schema == null || fieldNames.isEmpty()) return null;
-        return randomFieldInThis().type();
+        return representativeField().map(Field::type).orElse(null);
     }
 
     /** Returns whether this field or field set is attribute(s), i.e. does indexing: attribute. */
     @Override
     public boolean isAttribute() {
-        if (schema == null || fieldNames.isEmpty()) return false;
-        return randomFieldInThis().isAttribute();
+        return representativeField().map(Field::isAttribute).orElse(false);
     }
 
     /** Returns whether this field is index(es), i.e. does indexing: index. */
     @Override
     public boolean isIndex() {
-        if (schema == null || fieldNames.isEmpty()) return false;
-        return randomFieldInThis().isIndex();
+        return representativeField().map(Field::isIndex).orElse(false);
     }
 
     @Override
@@ -58,9 +57,14 @@ public class FieldSet implements FieldInfo {
         this.schema = schema;
     }
 
-    /** Use a random field in this to determine its properties. Any inconsistency will have been warned about on deploy. */
-    private Field randomFieldInThis() {
-        return schema.fields().get(fieldNames.iterator().next());
+    /**
+     * Returns the first field in this which is known by the schema, which is used to determine the properties of this.
+     * Any inconsistency between the fields will have been warned about on deploy.
+     * Fields may be unknown since field sets may contain struct fields, which are not included in schemas.
+     */
+    Optional<Field> representativeField() {
+        if (schema == null) return Optional.empty();
+        return fieldNames.stream().map(name -> schema.fields().get(name)).filter(Objects::nonNull).findFirst();
     }
 
     public Set<String> fieldNames() { return fieldNames; }
