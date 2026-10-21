@@ -108,7 +108,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
-        @ModelFeatureFlag(owners = {"olaa"}, removeAfter = "8.768") default boolean logserverOtelCol() { return false; }
+        @ModelFeatureFlag(owners = {"olaa"}, unusedSince = "8.768") default boolean logserverOtelCol() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default SharedHosts sharedHosts() { return SharedHosts.empty(); }
         @ModelFeatureFlag(owners = {"bragehk"}) default boolean tokenAuthForDeploy() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default Architecture adminClusterArchitecture() { return Architecture.x86_64; }
@@ -130,10 +130,10 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean failWhenConfiguringIndexedMapOfArray() { return true; }
         // Retained for Kubernetes upgrades within the supported 30 minor version window.
         // Keep until the oldest version supported by that window is at least 8.740.40.
-        @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.740") default boolean protonLogWarningOnDiskCapacityChange() { return true; }
-        @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.740") default boolean protonResampleDiskCapacity() { return true; }
-        @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}) default boolean fastMapSearch() { return true; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.755") default boolean relaxStrictlyIncreasingClusterStateVersions() { return true; }
+        @ModelFeatureFlag(owners = {"johsol"}, unusedSince = "8.740") default boolean protonLogWarningOnDiskCapacityChange() { return true; }
+        @ModelFeatureFlag(owners = {"johsol"}, unusedSince = "8.740") default boolean protonResampleDiskCapacity() { return true; }
+        @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}, unusedSince = "8.778") default boolean fastMapSearch() { return true; }
+        @ModelFeatureFlag(owners = {"hmusum"}, unusedSince = "8.755") default boolean relaxStrictlyIncreasingClusterStateVersions() { return true; }
         // TODO (@sebasabe): Remove when no loaded config model version reads it; productDiscovery() replaces it
         @ModelFeatureFlag(owners = {"sebasabe"}) default boolean commerceDiscovery() { return false; }
         @ModelFeatureFlag(owners = {"hmusum", "vekterli"}) default boolean enableLandlock() { return false; }
@@ -242,7 +242,7 @@ public interface ModelContext {
     @Target(ElementType.METHOD)
     @interface ModelFeatureFlag {
         String[] owners();
-        String removeAfter() default ""; // On the form "8.100.10"
+        String unusedSince() default ""; // On the form "8.100.10"
         String comment() default "";
     }
 

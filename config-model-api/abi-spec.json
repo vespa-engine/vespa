@@ -187,11 +187,11 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.config.provision.RegionName, double)",
-      "public com.yahoo.config.provision.RegionName region()",
-      "public double fraction()",
       "public final java.lang.String toString()",
       "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)"
+      "public final boolean equals(java.lang.Object)",
+      "public com.yahoo.config.provision.RegionName region()",
+      "public double fraction()"
     ],
     "fields" : [ ]
   },
@@ -697,10 +697,10 @@
       "enum"
     ],
     "methods" : [
-      "public static java.lang.String toValue(com.yahoo.config.application.api.Notifications$Role)",
-      "public static com.yahoo.config.application.api.Notifications$Role fromValue(java.lang.String)",
       "public static com.yahoo.config.application.api.Notifications$Role[] values()",
-      "public static com.yahoo.config.application.api.Notifications$Role valueOf(java.lang.String)"
+      "public static com.yahoo.config.application.api.Notifications$Role valueOf(java.lang.String)",
+      "public static java.lang.String toValue(com.yahoo.config.application.api.Notifications$Role)",
+      "public static com.yahoo.config.application.api.Notifications$Role fromValue(java.lang.String)"
     ],
     "fields" : [
       "public static final enum com.yahoo.config.application.api.Notifications$Role author"
@@ -715,10 +715,10 @@
       "enum"
     ],
     "methods" : [
-      "public static java.lang.String toValue(com.yahoo.config.application.api.Notifications$When)",
-      "public static com.yahoo.config.application.api.Notifications$When fromValue(java.lang.String)",
       "public static com.yahoo.config.application.api.Notifications$When[] values()",
-      "public static com.yahoo.config.application.api.Notifications$When valueOf(java.lang.String)"
+      "public static com.yahoo.config.application.api.Notifications$When valueOf(java.lang.String)",
+      "public static java.lang.String toValue(com.yahoo.config.application.api.Notifications$When)",
+      "public static com.yahoo.config.application.api.Notifications$When fromValue(java.lang.String)"
     ],
     "fields" : [
       "public static final enum com.yahoo.config.application.api.Notifications$When failing",
@@ -794,12 +794,12 @@
       "enum"
     ],
     "methods" : [
+      "public static com.yahoo.config.application.api.ValidationId[] values()",
+      "public static com.yahoo.config.application.api.ValidationId valueOf(java.lang.String)",
       "public java.lang.String value()",
       "public java.lang.String description()",
       "public java.lang.String toString()",
-      "public static java.util.Optional from(java.lang.String)",
-      "public static com.yahoo.config.application.api.ValidationId[] values()",
-      "public static com.yahoo.config.application.api.ValidationId valueOf(java.lang.String)"
+      "public static java.util.Optional from(java.lang.String)"
     ],
     "fields" : [
       "public static final enum com.yahoo.config.application.api.ValidationId accessControl",
@@ -898,12 +898,12 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String, com.yahoo.config.model.api.AdditionalContent$Mode, boolean)",
-      "public java.lang.String type()",
-      "public com.yahoo.config.model.api.AdditionalContent$Mode mode()",
-      "public boolean global()",
       "public final java.lang.String toString()",
       "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)"
+      "public final boolean equals(java.lang.Object)",
+      "public java.lang.String type()",
+      "public com.yahoo.config.model.api.AdditionalContent$Mode mode()",
+      "public boolean global()"
     ],
     "fields" : [ ]
   },
@@ -916,9 +916,9 @@
       "enum"
     ],
     "methods" : [
-      "public java.lang.String xmlValue()",
       "public static com.yahoo.config.model.api.AdditionalContent$Mode[] values()",
-      "public static com.yahoo.config.model.api.AdditionalContent$Mode valueOf(java.lang.String)"
+      "public static com.yahoo.config.model.api.AdditionalContent$Mode valueOf(java.lang.String)",
+      "public java.lang.String xmlValue()"
     ],
     "fields" : [
       "public static final enum com.yahoo.config.model.api.AdditionalContent$Mode INDEX",
@@ -938,11 +938,11 @@
       "public void <init>(java.util.List, java.util.List)",
       "public static com.yahoo.config.model.api.AdditionalContent none()",
       "public boolean isEmpty()",
-      "public java.util.List schemas()",
-      "public java.util.List documents()",
       "public final java.lang.String toString()",
       "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)"
+      "public final boolean equals(java.lang.Object)",
+      "public java.util.List schemas()",
+      "public java.util.List documents()"
     ],
     "fields" : [ ]
   },
@@ -1136,9 +1136,9 @@
       "enum"
     ],
     "methods" : [
-      "public java.lang.String toString()",
       "public static com.yahoo.config.model.api.ConfigChangeAction$Type[] values()",
-      "public static com.yahoo.config.model.api.ConfigChangeAction$Type valueOf(java.lang.String)"
+      "public static com.yahoo.config.model.api.ConfigChangeAction$Type valueOf(java.lang.String)",
+      "public java.lang.String toString()"
     ],
     "fields" : [
       "public static final enum com.yahoo.config.model.api.ConfigChangeAction$Type RESTART",
@@ -1316,9 +1316,9 @@
       "enum"
     ],
     "methods" : [
-      "public boolean acme()",
       "public static com.yahoo.config.model.api.EndpointCertificateMetadata$Provider[] values()",
-      "public static com.yahoo.config.model.api.EndpointCertificateMetadata$Provider valueOf(java.lang.String)"
+      "public static com.yahoo.config.model.api.EndpointCertificateMetadata$Provider valueOf(java.lang.String)",
+      "public boolean acme()"
     ],
     "fields" : [
       "public static final enum com.yahoo.config.model.api.EndpointCertificateMetadata$Provider digicert",
@@ -1462,11 +1462,11 @@
       "record"
     ],
     "methods" : [
-      "public java.lang.Object value()",
+      "public void <init>(java.lang.Object)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
-      "public void <init>(java.lang.Object)"
+      "public java.lang.Object value()"
     ],
     "fields" : [ ]
   },
@@ -1566,7 +1566,7 @@
     ],
     "methods" : [
       "public abstract java.lang.String[] owners()",
-      "public abstract java.lang.String removeAfter()",
+      "public abstract java.lang.String unusedSince()",
       "public abstract java.lang.String comment()"
     ],
     "fields" : [ ]
@@ -1698,19 +1698,19 @@
       "record"
     ],
     "methods" : [
+      "public void <init>(long, long, long, long)",
       "public static com.yahoo.config.model.api.OnnxMemoryStats fromJson(com.fasterxml.jackson.databind.JsonNode)",
       "public static com.yahoo.config.model.api.OnnxMemoryStats fromJson(com.yahoo.config.application.api.ApplicationFile)",
       "public static com.yahoo.path.Path memoryStatsFilePath(com.yahoo.path.Path)",
       "public long peakMemoryUsage()",
       "public com.fasterxml.jackson.databind.JsonNode toJson()",
-      "public long vmSize()",
-      "public long vmRss()",
-      "public long mallocPeak()",
-      "public long mallocCurrent()",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
-      "public void <init>(long, long, long, long)"
+      "public long vmSize()",
+      "public long vmRss()",
+      "public long mallocPeak()",
+      "public long mallocCurrent()"
     ],
     "fields" : [ ]
   },
@@ -1764,14 +1764,14 @@
       "record"
     ],
     "methods" : [
-      "public java.lang.String modelId()",
-      "public long estimatedCost()",
-      "public long hash()",
-      "public com.yahoo.config.model.api.OnnxModelOptions onnxModelOptions()",
+      "public void <init>(java.lang.String, long, long, com.yahoo.config.model.api.OnnxModelOptions)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
-      "public void <init>(java.lang.String, long, long, com.yahoo.config.model.api.OnnxModelOptions)"
+      "public java.lang.String modelId()",
+      "public long estimatedCost()",
+      "public long hash()",
+      "public com.yahoo.config.model.api.OnnxModelOptions onnxModelOptions()"
     ],
     "fields" : [ ]
   },
@@ -1800,11 +1800,11 @@
     "methods" : [
       "public void <init>(int, boolean)",
       "public void <init>(int)",
-      "public int deviceNumber()",
-      "public boolean required()",
       "public final java.lang.String toString()",
       "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)"
+      "public final boolean equals(java.lang.Object)",
+      "public int deviceNumber()",
+      "public boolean required()"
     ],
     "fields" : [ ]
   },
@@ -1817,6 +1817,8 @@
       "record"
     ],
     "methods" : [
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.List)",
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public void <init>(java.lang.String, int, int, com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
       "public static com.yahoo.config.model.api.OnnxModelOptions empty()",
@@ -1831,8 +1833,10 @@
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactor(java.lang.Double)",
       "public com.yahoo.config.model.api.OnnxModelOptions withModelConfigOverride(com.yahoo.config.FileReference)",
       "public com.yahoo.config.model.api.OnnxModelOptions withOptimizeModel(java.lang.Boolean)",
-      "public java.util.List paddingBuckets()",
       "public com.yahoo.config.model.api.OnnxModelOptions withPaddingBuckets(java.util.List)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
       "public java.util.Optional executionMode()",
       "public java.util.Optional interOpThreads()",
       "public java.util.Optional intraOpThreads()",
@@ -1842,11 +1846,7 @@
       "public java.util.Optional concurrencyFactor()",
       "public java.util.Optional modelConfigOverride()",
       "public java.util.Optional optimizeModel()",
-      "public final java.lang.String toString()",
-      "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)",
-      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
-      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.List)"
+      "public java.util.List paddingBuckets()"
     ],
     "fields" : [ ]
   },
@@ -1943,13 +1943,13 @@
       "record"
     ],
     "methods" : [
-      "public java.lang.String serviceName()",
-      "public long currentGeneration()",
-      "public java.util.Optional applyOnRestart()",
+      "public void <init>(java.lang.String, long, java.util.Optional)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
-      "public void <init>(java.lang.String, long, java.util.Optional)"
+      "public java.lang.String serviceName()",
+      "public long currentGeneration()",
+      "public java.util.Optional applyOnRestart()"
     ],
     "fields" : [ ]
   },
@@ -2070,12 +2070,12 @@
       "record"
     ],
     "methods" : [
-      "public java.lang.String id()",
-      "public java.lang.String name()",
+      "public void <init>(java.lang.String, java.lang.String)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
-      "public void <init>(java.lang.String, java.lang.String)"
+      "public java.lang.String id()",
+      "public java.lang.String name()"
     ],
     "fields" : [ ]
   },
@@ -2088,14 +2088,14 @@
       "record"
     ],
     "methods" : [
-      "public java.lang.String id()",
-      "public java.lang.String name()",
-      "public java.lang.String externalId()",
-      "public java.util.List secrets()",
+      "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.util.List)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
-      "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.util.List)"
+      "public java.lang.String id()",
+      "public java.lang.String name()",
+      "public java.lang.String externalId()",
+      "public java.util.List secrets()"
     ],
     "fields" : [ ]
   },
