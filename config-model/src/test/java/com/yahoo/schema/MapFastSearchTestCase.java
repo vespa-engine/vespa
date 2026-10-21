@@ -430,7 +430,7 @@ public class MapFastSearchTestCase {
     }
 
     private static Schema build(String sd) throws ParseException {
-        var builder = new ApplicationBuilder(new TestProperties().fastMapSearch());
+        var builder = new ApplicationBuilder();
         builder.addSchema(sd);
         builder.build(true);
         return builder.getSchema();
