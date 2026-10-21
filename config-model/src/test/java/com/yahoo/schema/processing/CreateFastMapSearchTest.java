@@ -352,7 +352,7 @@ public class CreateFastMapSearchTest {
     @Test
     void requireInheritedFastSearchMapIsNotDerivedAgain() throws ParseException {
         for (String valueType : supportedValueTypes) {
-            var builder = new ApplicationBuilder(new TestProperties().fastMapSearch(true));
+            var builder = new ApplicationBuilder();
             builder.addSchema(joinLines("schema parent {",
                                         "  document parent {",
                                         fastSearchMap("foo", "string", valueType),
@@ -498,7 +498,7 @@ public class CreateFastMapSearchTest {
 
     private static Schema build(String fields, DeployLogger logger) throws ParseException {
         var builder = new ApplicationBuilder(MockApplicationPackage.createEmpty(), new MockFileRegistry(), logger,
-                                             new TestProperties().fastMapSearch(true),
+                                             new TestProperties(),
                                              new RankProfileRegistry(), new QueryProfileRegistry());
         builder.addSchema(joinLines("schema test {",
                                     "  document test {",
