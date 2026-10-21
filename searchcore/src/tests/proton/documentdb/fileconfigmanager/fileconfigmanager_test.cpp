@@ -8,6 +8,7 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
@@ -32,6 +33,7 @@ using namespace search;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search;
 using namespace std::chrono_literals;
+using ai::vespa::telemetry::TelemetryConfig;
 using search::fef::OnnxModels;
 using search::fef::RankingConstants;
 using search::fef::RankingExpressions;
@@ -55,7 +57,7 @@ DocumentDBConfig::SP makeBaseConfigSnapshot(FNET_Transport& transport) {
     auto                  b = std::make_shared<BootstrapConfig>(
         1, dtcfg, std::make_shared<DocumentTypeRepo>(*dtcfg), std::make_shared<ProtonConfig>(),
         std::make_shared<FiledistributorrpcConfig>(), std::make_shared<BucketspacesConfig>(),
-        std::make_shared<TuneFileDocumentDB>(), HwInfo());
+        std::make_shared<TelemetryConfig>(), std::make_shared<TuneFileDocumentDB>(), HwInfo());
     dbcm.forwardConfig(b);
     dbcm.nextGeneration(transport, 0ms);
     DocumentDBConfig::SP snap = dbcm.getConfig();

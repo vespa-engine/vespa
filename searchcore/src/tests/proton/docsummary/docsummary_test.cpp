@@ -2,6 +2,7 @@
 
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-summary.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
@@ -91,6 +92,7 @@ using namespace search::transactionlog;
 using namespace search;
 using namespace std::chrono_literals;
 
+using ai::vespa::telemetry::TelemetryConfig;
 using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
 using search::common::ElementIds;
@@ -254,10 +256,10 @@ public:
           _aw(),
           _sa() {
         (void)_made_dir;
-        auto b =
-            std::make_shared<BootstrapConfig>(1, _documenttypesConfig, _repo, std::make_shared<ProtonConfig>(),
-                                              std::make_shared<FiledistributorrpcConfig>(),
-                                              std::make_shared<BucketspacesConfig>(), _tuneFileDocumentDB, _hwInfo);
+        auto b = std::make_shared<BootstrapConfig>(1, _documenttypesConfig, _repo, std::make_shared<ProtonConfig>(),
+                                                   std::make_shared<FiledistributorrpcConfig>(),
+                                                   std::make_shared<BucketspacesConfig>(),
+                                                   std::make_shared<TelemetryConfig>(), _tuneFileDocumentDB, _hwInfo);
         _configMgr.forwardConfig(b);
         _configMgr.nextGeneration(_shared_service.transport(), 0ms);
         std::filesystem::create_directory(std::filesystem::path(std::string("tmpdb/") + docTypeName));

@@ -20,6 +20,7 @@
 #include <vespa/config-slobroks.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/config-summary.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/config-upgrading.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/document/bucket/bucketspace.h>
@@ -69,6 +70,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".bmcluster.bm_node");
 
+using ai::vespa::telemetry::TelemetryConfig;
 using cloud::config::SlobroksConfigBuilder;
 using cloud::config::filedistribution::FiledistributorrpcConfig;
 using config::ConfigSet;
@@ -526,7 +528,7 @@ void MyBmNode::create_document_db(const BmClusterParams& params) {
     protonCfg->summary.log.chunk.maxbytes = params.get_doc_store_chunk_maxbytes();
     auto bootstrap_config = std::make_shared<BootstrapConfig>(
         1, _document_types, _repo, std::move(protonCfg), std::make_shared<FiledistributorrpcConfig>(),
-        std::make_shared<BucketspacesConfig>(), tuneFileDocDB, HwInfo());
+        std::make_shared<BucketspacesConfig>(), std::make_shared<TelemetryConfig>(), tuneFileDocDB, HwInfo());
     mgr.forwardConfig(bootstrap_config);
     mgr.nextGeneration(_shared_service.transport(), 0ms);
     _document_db = DocumentDB::create(

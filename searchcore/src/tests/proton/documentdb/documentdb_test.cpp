@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config-bucketspaces.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -48,6 +49,7 @@ using namespace proton;
 using namespace vespalib::slime;
 using namespace std::chrono_literals;
 
+using ai::vespa::telemetry::TelemetryConfig;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::test::makeBucketSpace;
@@ -139,9 +141,9 @@ Fixture::Fixture(bool file_config)
     auto                   tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
     config::DirSpec        spec(TEST_PATH("cfg"));
     DocumentDBConfigHelper mgr(spec, "typea");
-    auto b = std::make_shared<BootstrapConfig>(1, documenttypesConfig, repo, std::make_shared<ProtonConfig>(),
-                                               std::make_shared<FiledistributorrpcConfig>(),
-                                               std::make_shared<BucketspacesConfig>(), tuneFileDocumentDB, HwInfo());
+    auto                   b = std::make_shared<BootstrapConfig>(
+        1, documenttypesConfig, repo, std::make_shared<ProtonConfig>(), std::make_shared<FiledistributorrpcConfig>(),
+        std::make_shared<BucketspacesConfig>(), std::make_shared<TelemetryConfig>(), tuneFileDocumentDB, HwInfo());
     mgr.forwardConfig(b);
     mgr.nextGeneration(_shared_service.transport(), 0ms);
     _db = DocumentDB::create(".", mgr.getConfig(), tls_port_spec(), _queryLimiter, DocTypeName("typea"),
