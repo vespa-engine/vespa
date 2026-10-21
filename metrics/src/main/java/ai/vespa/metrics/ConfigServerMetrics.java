@@ -60,6 +60,7 @@ public enum ConfigServerMetrics implements VespaMetrics {
     NODES_EMPTY_EXCLUSIVE("nodes.emptyExclusive", Unit.NODE, "The number of exclusive hosts that do not have any nodes allocated to them"),
     NODES_TRUST_STORE_CA("nodes.trustStore.ca", Unit.NODE, "The number of nodes whose reported trust store contains the CA certificate with the given fingerprint, or reports no trust store"),
     NODES_IDENTITY_CERT_ISSUER("nodes.identityCert.issuer", Unit.NODE, "The number of nodes whose reported identity certificate was issued by the given CA, or report no identity certificate"),
+    NODES_TRUST_STORE_MISSING_CA("nodes.trustStore.missingCa", Unit.SECONDS_SINCE_EPOCH, "Set per active node whose reported trust store lacks a CA certificate that other active nodes in the zone trust, or that reports no trust store. The value is when the node became active, in seconds since epoch"),
     NODES_EXPIRED_DEPROVISIONED("nodes.expired.deprovisioned", Unit.NODE, "The number of deprovisioned nodes that have expired"),
     NODES_EXPIRED_DIRTY("nodes.expired.dirty", Unit.NODE, "The number of dirty nodes that have expired"),
     NODES_EXPIRED_INACTIVE("nodes.expired.inactive", Unit.NODE, "The number of inactive nodes that have expired"),
