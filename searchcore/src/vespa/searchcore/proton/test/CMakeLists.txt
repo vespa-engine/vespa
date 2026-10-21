@@ -3,10 +3,12 @@ vespa_add_library(searchcore_test STATIC
     SOURCES
     attribute_utils.cpp
     attribute_vectors.cpp
+    bootstrap_config_set_builder.cpp
     bucketfactory.cpp
     buckethandler.cpp
     bucketstatecalculator.cpp
     clusterstatehandler.cpp
+    document_db_config_set_builder.cpp
     documentdb_config_builder.cpp
     dummy_document_sub_db.cpp
     dummy_feed_view.cpp
