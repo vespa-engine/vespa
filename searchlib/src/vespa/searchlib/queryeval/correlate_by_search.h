@@ -88,6 +88,7 @@ public:
     void doUnpack(uint32_t docid) override;
     Trinary is_strict() const override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
+    size_t visited_rows() const noexcept { return _join.visited_rows(); }
     const std::vector<BindingRow>& find_bindings(uint32_t docid);
     const std::vector<BindingRow>& find_bindings(uint32_t docid, std::span<const uint32_t> projection);
     /**

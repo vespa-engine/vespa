@@ -290,6 +290,7 @@ void ProtoConverter::monitor_reply_to_proto(const MonitorReply& reply, ProtoMoni
     proto.set_target_active_docs(reply.targetActiveDocs);
     proto.set_distribution_key(reply.distribution_key);
     proto.set_is_blocking_writes(reply.is_blocking_writes);
+    proto.set_supports_correlated_queries(reply.supports_correlated_queries);
 }
 
 //-----------------------------------------------------------------------------

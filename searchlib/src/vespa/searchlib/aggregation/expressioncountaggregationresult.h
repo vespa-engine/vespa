@@ -20,7 +20,6 @@ class ExpressionCountAggregationResult : public AggregationResult {
 
     HyperLogLog<PRECISION>      _hll;
     expression::Int64ResultNode _rank;
-    uint32_t _sparse_limit;
 
     [[nodiscard]] const ResultNode& onGetRank() const override { return _rank; }
     void onPrepare(const ResultNode&) override {}

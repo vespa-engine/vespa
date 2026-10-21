@@ -49,6 +49,56 @@ class CorrelateByItemTest {
     }
 
     @Test
+    void rejectingACyclicFirstPresentLeavesTheQueryUnchanged() {
+        for (boolean cyclicPresence : new boolean[]{false, true}) {
+            var query = query();
+            var expected = protobuf(query);
+            var bindings = Map.of("unit", "unit_id", "zone", "zone_id");
+            var matching = clause("zoned", "price", bindings);
+            var presence = clause("zoned", "price_present", bindings);
+            var ancestor = cyclicPresence ? presence.item() : matching.item();
+            ancestor.addItem(query);
+
+            assertThrows(IllegalArgumentException.class,
+                         () -> query.addFirstPresent(matching, presence, "zone", List.of("A", "B")));
+            assertEquals(expected, protobuf(query));
+            assertSame(ancestor, query.getParent());
+            assertNull((cyclicPresence ? matching.item() : presence.item()).getParent());
+
+            ancestor.removeItem(query);
+            query.addFirstPresent(matching, presence, "zone", List.of("A", "B"));
+            var updated = protobuf(query);
+            assertEquals(4, updated.getClausesCount());
+            assertEquals(1, updated.getFirstPresentCount());
+            assertEquals(2, updated.getFirstPresent(0).getClause());
+            assertEquals(3, updated.getFirstPresent(0).getPresence());
+        }
+    }
+
+    @Test
+    void rejectedIteratorReplacementKeepsTheOriginalParent() {
+        var query = query();
+        var original = query.getItem(0);
+        var expected = protobuf(query);
+        var ancestor = sameElement("zoned", "ancestor");
+        ancestor.addItem(query);
+        var iterator = query.getItemIterator();
+        assertSame(original, iterator.next());
+
+        assertThrows(IllegalArgumentException.class, () -> iterator.set(ancestor));
+        assertSame(query, original.getParent());
+        assertSame(original, query.getItem(0));
+        assertEquals(expected, protobuf(query));
+
+        ancestor.removeItem(query);
+        var replacement = sameElement("zoned", "replacement");
+        iterator.set(replacement);
+        assertSame(query, replacement.getParent());
+        assertNull(original.getParent());
+        assertEquals(2, protobuf(query).getClausesCount());
+    }
+
+    @Test
     void serializesEachClausesBindingsAndTheZoneDomain() {
         var proto = protobuf(query());
         assertEquals(2, proto.getClausesCount());
@@ -191,46 +241,52 @@ class CorrelateByItemTest {
     }
 
     @Test
-    void removingThePresenceClauseTurnsTheMatchingClauseIntoAnOrdinaryClause() {
-        var query = firstPresentQuery();
-        query.removeItem(1);
-        assertEquals(2, query.getItemCount());
-        assertEquals(Optional.empty(), query.getFirstPresent(0));
-        assertFalse(query.isPresenceClause(0));
-        assertEquals(0, protobuf(query).getFirstPresentCount());
-        assertNotNull(query.toString());
-        assertEquals(query, query.clone());
-        assertEquals(query.hashCode(), query.clone().hashCode());
+    void refusesRemovingEitherClauseOfAFirstPresentPair() {
+        for (int index : new int[]{0, 1}) {
+            var query = firstPresentQuery();
+            var original = query.clone();
+            int position = index;
+            assertThrows(IllegalArgumentException.class, () -> query.removeItem(position));
+            assertThrows(IllegalArgumentException.class, () -> query.removeItem(query.getItem(position)));
+            var iterator = query.getItemIterator();
+            for (int i = 0; i <= index; ++i) iterator.next();
+            assertThrows(IllegalArgumentException.class, iterator::remove);
+            assertEquals(original, query);
+            assertEquals(1, protobuf(query).getFirstPresentCount());
+        }
     }
 
     @Test
-    void removingTheMatchingClauseWithAnIteratorTurnsThePresenceClauseIntoAnOrdinaryClause() {
-        var query = firstPresentQuery();
-        var iterator = query.getItemIterator();
-        iterator.next();
-        iterator.remove();
-        assertEquals(2, query.getItemCount());
-        assertFalse(query.isPresenceClause(0));
-        assertEquals(Optional.empty(), query.getFirstPresent(0));
-        assertEquals("price_present", ((WordItem) ((SameElementItem) query.getItem(0)).getItem(0)).getWord());
-        assertEquals(0, protobuf(query).getFirstPresentCount());
-        assertNotNull(query.toString());
+    void firstPresentReplacementsMustKeepThePairedField() {
+        for (int index : new int[]{0, 1}) {
+            var query = firstPresentQuery();
+            var original = query.clone();
+            int position = index;
+            assertThrows(IllegalArgumentException.class, () -> query.setItem(position, sameElement("other", "price")));
+            assertThrows(IllegalArgumentException.class, () -> query.setItem(position, query.getItem(1 - position)));
+            var iterator = query.getItemIterator();
+            for (int i = 0; i <= index; ++i) iterator.next();
+            assertThrows(IllegalArgumentException.class, () -> iterator.set(sameElement("other", "price")));
+            assertEquals(original, query);
+            iterator.set(sameElement("zoned", "replacement"));
+            assertEquals(1, protobuf(query).getFirstPresentCount());
+            query.setItem(position, sameElement("zoned", "another"));
+            assertEquals(1, protobuf(query).getFirstPresentCount());
+        }
     }
 
     @Test
-    void canonicalizerRemovesAnEmptiedClauseTogetherWithItsBindings() {
-        var query = firstPresentQuery();
-        var presence = (SameElementItem) query.getItem(1);
-        presence.setItem(0, new NullItem());
-        var tree = new QueryTree(query);
-        assertNull(QueryCanonicalizer.canonicalize(tree));
-        assertSame(query, tree.getRoot());
-        assertEquals(2, query.getItemCount());
-        assertEquals(Optional.empty(), query.getFirstPresent(0));
-        assertEquals(Map.of("unit", "unit_id"), query.getBindings(1));
-        assertEquals(2, protobuf(query).getClausesCount());
-        assertNotNull(query.toString());
-        assertEquals(query, query.clone());
+    void canonicalizerRejectsAnEmptyFirstPresentClause() {
+        for (int index : new int[]{0, 1}) {
+            var query = firstPresentQuery();
+            var clause = (SameElementItem) query.getItem(index);
+            clause.setItem(0, new NullItem());
+            var error = QueryCanonicalizer.canonicalize(new QueryTree(query));
+            assertEquals("Cannot remove an empty clause of a firstPresent pair", error);
+            assertEquals(3, query.getItemCount());
+            assertTrue(query.isPresenceClause(1));
+            assertTrue(query.getFirstPresent(0).isPresent());
+        }
     }
 
     @Test

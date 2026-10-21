@@ -15,9 +15,8 @@
 
 namespace search {
 
-// The most hashes a sparse sketch holds. One more distinct hash switches to a normal sketch.
-// Aggregation, merging and copying all use this rule, and it matches the Java container.
-const uint32_t SPARSE_SKETCH_LIMIT = 256;
+// Keep the existing boundaries for sketches without an explicit limit.
+const uint32_t SPARSE_SKETCH_LIMIT = 255;
 
 /**
  * Decorator to SparseSketch handling the switch to NormalSketch
@@ -31,10 +30,15 @@ template <int BucketBits = 10, typename HashT = uint32_t>
 class ExchangerSketch : public SparseSketch<BucketBits, HashT> {
     typename Sketch<BucketBits, HashT>::UP& _sketch_ptr;
     uint32_t _sparse_limit;
+    bool _legacy_limit;
+
+    bool should_exchange(HashT hash) const {
+        if (_legacy_limit) return this->getSize() > SPARSE_SKETCH_LIMIT;
+        return this->getSize() >= _sparse_limit && !this->hash_set.contains(hash);
+    }
 
     int aggregate(HashT hash) override {
-        // A repeated hash never forces the switch, so the result does not depend on how values are split.
-        if (this->getSize() >= _sparse_limit && !this->hash_set.contains(hash)) {
+        if (should_exchange(hash)) {
             NormalSketch<BucketBits, HashT>* normal_sketch = new NormalSketch<BucketBits, HashT>;
             normal_sketch->merge(*this);
             _sketch_ptr.reset(normal_sketch); // deletes this
@@ -44,8 +48,8 @@ class ExchangerSketch : public SparseSketch<BucketBits, HashT> {
     }
 
 public:
-    ExchangerSketch(typename Sketch<BucketBits, HashT>::UP& sketch_ptr, uint32_t sparse_limit)
-        : _sketch_ptr(sketch_ptr), _sparse_limit(sparse_limit) {}
+    ExchangerSketch(typename Sketch<BucketBits, HashT>::UP& sketch_ptr, uint32_t sparse_limit, bool legacy_limit)
+        : _sketch_ptr(sketch_ptr), _sparse_limit(sparse_limit), _legacy_limit(legacy_limit) {}
 };
 
 /**
@@ -54,19 +58,27 @@ public:
 template <int BucketBits = 10, typename HashT = uint32_t> class HyperLogLog {
     typename Sketch<BucketBits, HashT>::UP _sketch;
     uint32_t _sparse_limit;
+    bool _legacy_limit;
+
+    HyperLogLog(uint32_t sparse_limit, bool legacy_limit)
+        : _sketch(new ExchangerSketch<BucketBits, HashT>(_sketch, sparse_limit, legacy_limit)),
+          _sparse_limit(sparse_limit), _legacy_limit(legacy_limit) {}
 
 public:
     using hash_type = HashT;
     enum { bucketBits = BucketBits };
 
     // Initialize ExchangerSketch with a reference to _sketch.
-    explicit HyperLogLog(uint32_t sparse_limit = SPARSE_SKETCH_LIMIT)
-        : _sketch(new ExchangerSketch<BucketBits, HashT>(_sketch, sparse_limit)), _sparse_limit(sparse_limit) {}
-    HyperLogLog(const HyperLogLog<BucketBits, HashT>& other) : HyperLogLog(other._sparse_limit) { merge(other); }
+    HyperLogLog() : HyperLogLog(SPARSE_SKETCH_LIMIT, true) {}
+    // Explicit limits keep repeated hashes sparse and use the same boundary when merging.
+    explicit HyperLogLog(uint32_t sparse_limit) : HyperLogLog(sparse_limit, false) {}
+    HyperLogLog(const HyperLogLog<BucketBits, HashT>& other)
+        : HyperLogLog(other._sparse_limit, other._legacy_limit) { merge(other); }
     HyperLogLog<BucketBits, HashT>& operator=(const HyperLogLog<BucketBits, HashT>& other) {
         if (this == &other) return *this;
         _sparse_limit = other._sparse_limit;
-        _sketch.reset(new ExchangerSketch<BucketBits, HashT>(_sketch, _sparse_limit));
+        _legacy_limit = other._legacy_limit;
+        clear();
         merge(other);
         return *this;
     }
@@ -76,6 +88,7 @@ public:
     void merge(const HyperLogLog<BucketBits, HashT>& other);
     void serialize(vespalib::Serializer& os) const;
     void deserialize(vespalib::Deserializer& is);
+    void clear() { _sketch.reset(new ExchangerSketch<BucketBits, HashT>(_sketch, _sparse_limit, _legacy_limit)); }
 
     const Sketch<BucketBits, HashT>& getSketch() const { return *_sketch; }
 };
@@ -124,7 +137,7 @@ void HyperLogLog<BucketBits, HashT>::deserialize(vespalib::Deserializer& is) {
     uint32_t type;
     is >> type;
     if (type == SparseSketch<BucketBits, HashT>::classId) {
-        _sketch.reset(new ExchangerSketch<BucketBits, HashT>(_sketch, _sparse_limit));
+        clear();
         _sketch->deserialize(is);
     } else if (type == NormalSketch<BucketBits, HashT>::classId) {
         _sketch.reset(new NormalSketch<BucketBits, HashT>);

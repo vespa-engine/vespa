@@ -11,6 +11,8 @@
 #include <vespa/vespalib/util/issue.h>
 
 #include <format>
+#include <string_view>
+#include <utility>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.groupinglevel");
@@ -100,59 +102,115 @@ bool GroupingLevel::Grouper::hasNext(size_t level) const noexcept {
     return level < _grouping->getLevels().size();
 }
 
-template <typename Doc>
+namespace {
+
+// Keep error formatting out of the per-document grouping path.
+[[gnu::cold]] void report_filter_error(std::string_view message) {
+    vespalib::Issue::report(std::format("Grouping filter error: {}", message));
+}
+
+} // namespace
+
+template <bool filtered, typename Doc>
 void GroupingLevel::SingleValueGrouper::groupDoc(Group& g, const ResultNode& result, const Doc& doc,
                                                  HitRank rank) const {
-    if (_once_per_document != nullptr) {
-        _once_per_document->set_parent_group(&g);
-    }
-    bool allowed = false;
-    try {
-        allowed = _filter.allow(doc, rank);
-    } catch (const vespalib::IllegalArgumentException& e) {
-        vespalib::Issue::report(std::format("Grouping filter error: {}", e.getMessage()));
-        return;
-    } catch (const std::exception& e) {
-        // An exception must not escape the match thread, as that would stop the process.
-        vespalib::Issue::report(std::format("Grouping filter error: {}", e.what()));
-        return;
+    if constexpr (filtered) {
+        try {
+            if (!_filter.allow(doc, rank)) {
+                return;
+            }
+        } catch (const vespalib::IllegalArgumentException& e) {
+            report_filter_error(e.getMessage());
+            return;
+        } catch (const std::exception& e) {
+            // An exception must not escape the match thread, as that would stop the process.
+            report_filter_error(e.what());
+            return;
+        }
     }
 
-    if (allowed) {
-        Group* next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
-        if ((next != nullptr) && doNext()) { // do next level ?
-            next->aggregate(*_grouping, _level + 1, doc, rank);
-        }
+    Group* next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
+    if ((next != nullptr) && doNext()) { // do next level ?
+        next->aggregate(*_grouping, _level + 1, doc, rank);
     }
 }
 
 void GroupingLevel::SingleValueGrouper::group(Group& g, const ResultNode& result, DocId doc, HitRank rank) const {
-    groupDoc(g, result, doc, rank);
+    groupDoc<true>(g, result, doc, rank);
 }
 
 void GroupingLevel::SingleValueGrouper::group(Group& g, const ResultNode& result, const document::Document& doc,
                                               HitRank rank) const {
-    groupDoc(g, result, doc, rank);
+    groupDoc<true>(g, result, doc, rank);
 }
 
-template <typename Doc>
+template <bool filtered, typename Doc>
 void GroupingLevel::MultiValueGrouper::groupDoc(Group& g, const ResultNode& result, const Doc& doc,
                                                 HitRank rank) const {
     const ResultNodeVector& rv = static_cast<const ResultNodeVector&>(result);
     for (size_t i = 0; i < rv.size(); i++) {
         const ResultNode& sr = rv.get(i);
         _currentIndex.set(i);
-        SingleValueGrouper::groupDoc(g, sr, doc, rank);
+        SingleValueGrouper::groupDoc<filtered>(g, sr, doc, rank);
     }
 }
 
 void GroupingLevel::MultiValueGrouper::group(Group& g, const ResultNode& result, DocId doc, HitRank rank) const {
-    groupDoc(g, result, doc, rank);
+    groupDoc<true>(g, result, doc, rank);
 }
 
 void GroupingLevel::MultiValueGrouper::group(Group& g, const ResultNode& result, const document::Document& doc,
                                              HitRank rank) const {
-    groupDoc(g, result, doc, rank);
+    groupDoc<true>(g, result, doc, rank);
+}
+
+template <typename BaseGrouper>
+class GroupingLevel::UnfilteredGrouper : public BaseGrouper {
+public:
+    using BaseGrouper::BaseGrouper;
+
+    void group(Group& g, const ResultNode& result, DocId doc, HitRank rank) const override {
+        BaseGrouper::template groupDoc<false>(g, result, doc, rank);
+    }
+
+    void group(Group& g, const ResultNode& result, const document::Document& doc, HitRank rank) const override {
+        BaseGrouper::template groupDoc<false>(g, result, doc, rank);
+    }
+
+    UnfilteredGrouper* clone() const override { return new UnfilteredGrouper(*this); }
+};
+
+template <typename BaseGrouper>
+class GroupingLevel::OncePerDocumentGrouper : public BaseGrouper {
+    OncePerDocument& _once_per_document;
+
+public:
+    template <typename... Args>
+    OncePerDocumentGrouper(OncePerDocument& once_per_document, Args&&... args)
+        : BaseGrouper(std::forward<Args>(args)...), _once_per_document(once_per_document) {}
+
+    void group(Group& g, const ResultNode& result, DocId doc, HitRank rank) const override {
+        _once_per_document.set_parent_group(&g);
+        BaseGrouper::group(g, result, doc, rank);
+    }
+
+    void group(Group& g, const ResultNode& result, const document::Document& doc, HitRank rank) const override {
+        _once_per_document.set_parent_group(&g);
+        BaseGrouper::group(g, result, doc, rank);
+    }
+
+    OncePerDocumentGrouper* clone() const override { return new OncePerDocumentGrouper(*this); }
+};
+
+template <typename BaseGrouper, typename... Args>
+GroupingLevel::Grouper* GroupingLevel::make_grouper(OncePerDocument* once_per_document, Args&&... args) {
+    if (once_per_document != nullptr) {
+        return new OncePerDocumentGrouper<BaseGrouper>(*once_per_document, std::forward<Args>(args)...);
+    }
+    if (!_filter.get()) {
+        return new UnfilteredGrouper<BaseGrouper>(std::forward<Args>(args)...);
+    }
+    return new BaseGrouper(std::forward<Args>(args)...);
 }
 
 void GroupingLevel::wire_current_index(CurrentIndexSetup& setup, const vespalib::ObjectPredicate& resolve_pred,
@@ -177,9 +235,10 @@ void GroupingLevel::prepare(const Grouping* grouping, uint32_t level, bool isOrd
     auto* once_per_document =
         _filter.get() ? expression::OncePerDocumentPredicateNode::find_last_condition(*_filter) : nullptr;
     if (_classify.getResult()->inherits(ResultNodeVector::classId)) {
-        _grouper.reset(new MultiValueGrouper(_currentIndex, getActiveFilter(), once_per_document, grouping, level));
+        _grouper.reset(make_grouper<MultiValueGrouper>(
+            once_per_document, _currentIndex, getActiveFilter(), grouping, level));
     } else {
-        _grouper.reset(new SingleValueGrouper(getActiveFilter(), once_per_document, grouping, level));
+        _grouper.reset(make_grouper<SingleValueGrouper>(once_per_document, getActiveFilter(), grouping, level));
     }
 }
 

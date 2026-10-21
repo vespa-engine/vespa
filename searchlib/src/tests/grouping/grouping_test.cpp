@@ -3,6 +3,7 @@
 #include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/aggregation/argmax_aggregation_result.h>
@@ -35,11 +36,15 @@
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <algorithm>
 #include <cmath>
+#include <format>
 #include <limits>
 #include <optional>
+#include <stdexcept>
+#include <utility>
 
 #include <vespa/log/log.h>
 LOG_SETUP("grouping_test");
@@ -2305,22 +2310,23 @@ void aggregate_string(AggregationResult& result, uint32_t value) {
 } // namespace
 
 TEST(GroupingTest, expression_count_rank_adds_bucket_increases_after_switching_to_a_normal_sketch) {
+    constexpr uint32_t sparse_values = 256;
     ExpressionCountAggregationResult all_values;
     ExpressionCountAggregationResult values_up_to_limit;
     for (uint32_t i = 0; i < 300; ++i) {
         aggregate_string(all_values, i);
-        if (i < SPARSE_SKETCH_LIMIT) {
+        if (i < sparse_values) {
             aggregate_string(values_up_to_limit, i);
         }
     }
     ASSERT_EQ((SparseSketch<10, uint32_t>::classId), values_up_to_limit.getSketch().getClassId());
-    ASSERT_EQ(int64_t(SPARSE_SKETCH_LIMIT), values_up_to_limit.getRank().getInteger());
+    ASSERT_EQ(int64_t(sparse_values), values_up_to_limit.getRank().getInteger());
     ASSERT_EQ((NormalSketch<10, uint32_t>::classId), all_values.getSketch().getClassId());
     // The rank counts each sparse hash once, then adds how much each later value raises a bucket.
     NormalSketch<10, uint32_t> at_limit;
     at_limit.merge(static_cast<const SparseSketch<10, uint32_t>&>(values_up_to_limit.getSketch()));
     const auto& final_sketch = static_cast<const NormalSketch<10, uint32_t>&>(all_values.getSketch());
-    int64_t expected = SPARSE_SKETCH_LIMIT + bucket_sum(final_sketch) - bucket_sum(at_limit);
+    int64_t expected = sparse_values + bucket_sum(final_sketch) - bucket_sum(at_limit);
     EXPECT_EQ(expected, all_values.getRank().getInteger());
     EXPECT_LT(expected, bucket_sum(final_sketch));
 }
@@ -2476,6 +2482,127 @@ TEST(GroupingTest, unique_count_skips_undefined_integer_and_float_values) {
     EXPECT_EQ(3, count.getRank().getInteger());
 }
 
+namespace {
+
+template <typename T> class UniqueCountIntegerAttributeTest : public ::testing::Test {};
+using IntegerTypes = ::testing::Types<int8_t, int16_t, int32_t, int64_t>;
+TYPED_TEST_SUITE(UniqueCountIntegerAttributeTest, IntegerTypes);
+
+std::unique_ptr<UniqueCountAggregationResult> unique_count_attribute(std::string_view name) {
+    auto count = MU<UniqueCountAggregationResult>();
+    count->setExpression(MU<AttributeNode>(name));
+    return count;
+}
+
+} // namespace
+
+TYPED_TEST(UniqueCountIntegerAttributeTest, skips_missing_scalar_values) {
+    AggregationContext ctx;
+    AttrBuilder<SingleExtAttribute<TypeParam>, TypeParam> values("value");
+    ctx.add(values.add(getUndefined<TypeParam>()).add(0).add(7).add(7).sp());
+    ctx.result().add(0).add(1).add(2).add(3);
+    Grouping request;
+    request.setRoot(Group().addResult(unique_count_attribute("value")));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits());
+    EXPECT_EQ(2, request.getRoot().getAggregationResult(0).getRank().getInteger());
+}
+
+TYPED_TEST(UniqueCountIntegerAttributeTest, skips_missing_array_elements_and_empty_arrays) {
+    AggregationContext ctx;
+    AttrBuilder<MultiExtAttribute<TypeParam>, TypeParam> values("value");
+    ctx.add(values.add(std::vector<TypeParam>{getUndefined<TypeParam>(), 7, 7, 8, 0})
+                  .add(std::vector<TypeParam>{}).sp());
+    ctx.result().add(0).add(1);
+    Grouping request;
+    request.setRoot(Group().addResult(unique_count_attribute("value")));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits());
+    EXPECT_EQ(3, request.getRoot().getAggregationResult(0).getRank().getInteger());
+}
+
+TYPED_TEST(UniqueCountIntegerAttributeTest, skips_missing_struct_subfields_at_the_current_index) {
+    AggregationContext ctx;
+    AttrBuilder<MultiExtAttribute<TypeParam>, TypeParam> values("signals.value");
+    ctx.add(values.add(std::vector<TypeParam>{getUndefined<TypeParam>(), 7, 7, 8, 0}).sp());
+    ctx.add(IntArrayAttrBuilder("signals.unit").add({1, 1, 1, 1, 1}).sp());
+    ctx.result().add(0);
+    Grouping request;
+    request.setFirstLevel(0).setLastLevel(1);
+    request.addLevel(std::move(GroupingLevel()
+                                  .setExpression(MU<AttributeNode>("signals.unit"))
+                                  .addAggregationResult(unique_count_attribute("signals.value"))));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits());
+    ASSERT_EQ(1u, request.getRoot().getChildrenSize());
+    EXPECT_EQ(3, request.getRoot().getChild(0).getAggregationResult(0).getRank().getInteger());
+}
+
+TEST(GroupingTest, unique_count_counts_narrow_integer_sentinels_in_a_wider_attribute) {
+    AggregationContext ctx;
+    ctx.add(IntArrayAttrBuilder("value").add({getUndefined<int8_t>(), getUndefined<int16_t>(),
+                                             getUndefined<int32_t>(), getUndefined<int64_t>()}).sp());
+    ctx.result().add(0);
+    Grouping request;
+    request.setRoot(Group().addResult(unique_count_attribute("value")));
+    ctx.setup(request);
+    request.aggregate(ctx.result().hits());
+    EXPECT_EQ(3, request.getRoot().getAggregationResult(0).getRank().getInteger());
+}
+
+TEST(GroupingTest, unique_count_skips_missing_document_fields_but_counts_zero) {
+    search::test::DocBuilder builder([](auto& header, auto& doc) noexcept {
+        doc.addField("value", header.intTypeRef());
+    });
+    Grouping request;
+    request.setRoot(Group().addResult(unique_count_attribute("value")));
+    aggregation::Attribute2DocumentAccessor replace;
+    request.select(replace, replace);
+    request.configureStaticStuff(ConfigureStaticParams(nullptr, &builder.get_document_type()));
+    request.preAggregate(false);
+    auto missing = builder.make_document("id:ns:searchdocument::missing");
+    auto defined = builder.make_document("id:ns:searchdocument::defined");
+    defined->setValue("value", document::IntFieldValue(7));
+    auto zero = builder.make_document("id:ns:searchdocument::zero");
+    zero->setValue("value", document::IntFieldValue(0));
+    request.aggregate(*missing, HitRank(1.0));
+    EXPECT_EQ(0, request.getRoot().getAggregationResult(0).getRank().getInteger());
+    request.aggregate(*defined, HitRank(1.0));
+    request.aggregate(*missing, HitRank(1.0));
+    EXPECT_EQ(1, request.getRoot().getAggregationResult(0).getRank().getInteger());
+    request.aggregate(*zero, HitRank(1.0));
+    request.postAggregate();
+    EXPECT_EQ(2, request.getRoot().getAggregationResult(0).getRank().getInteger());
+}
+
+TEST(GroupingTest, unique_count_skips_missing_and_empty_document_strings_after_a_value) {
+    search::test::DocBuilder builder([](auto& header, auto& doc) noexcept {
+        doc.addField("value", header.stringTypeRef());
+    });
+    Grouping request;
+    request.setRoot(Group().addResult(unique_count_attribute("value")));
+    aggregation::Attribute2DocumentAccessor replace;
+    request.select(replace, replace);
+    request.configureStaticStuff(ConfigureStaticParams(nullptr, &builder.get_document_type()));
+    request.preAggregate(false);
+    auto missing = builder.make_document("id:ns:searchdocument::missing");
+    auto empty = builder.make_document("id:ns:searchdocument::empty");
+    empty->setValue("value", document::StringFieldValue(""));
+    auto defined = builder.make_document("id:ns:searchdocument::defined");
+    defined->setValue("value", document::StringFieldValue("a"));
+    request.aggregate(*missing, HitRank(1.0));
+    request.aggregate(*empty, HitRank(1.0));
+    EXPECT_EQ(0, request.getRoot().getAggregationResult(0).getRank().getInteger());
+    request.aggregate(*defined, HitRank(1.0));
+    request.aggregate(*missing, HitRank(1.0));
+    request.aggregate(*empty, HitRank(1.0));
+    EXPECT_EQ(1, request.getRoot().getAggregationResult(0).getRank().getInteger());
+    defined->setValue("value", document::StringFieldValue("b"));
+    request.aggregate(*defined, HitRank(1.0));
+    request.postAggregate();
+    EXPECT_EQ(2, request.getRoot().getAggregationResult(0).getRank().getInteger());
+}
+
 TEST(GroupingTest, unique_count_dense_rank_is_consistent_between_aggregation_and_merge) {
     UniqueCountAggregationResult sequential;
     UniqueCountAggregationResult left;
@@ -2528,6 +2655,32 @@ TEST(GroupingTest, unique_count_orders_dense_sketches_by_the_container_estimate_
 
 namespace {
 
+class ThrowOnceFilter : public TruePredicateNode {
+    bool _illegal_argument;
+    bool _first = true;
+
+    bool allow() {
+        if (std::exchange(_first, false)) {
+            if (_illegal_argument) {
+                throw vespalib::IllegalArgumentException("invalid filter");
+            }
+            throw std::runtime_error("failed filter");
+        }
+        return true;
+    }
+
+public:
+    explicit ThrowOnceFilter(bool illegal_argument) : _illegal_argument(illegal_argument) {}
+    ThrowOnceFilter* clone() const override { return new ThrowOnceFilter(*this); }
+    bool allow(DocId, HitRank) override { return allow(); }
+    bool allow(const document::Document&, HitRank) override { return allow(); }
+};
+
+struct FilterIssues : vespalib::Issue::Handler {
+    std::vector<std::string> messages;
+    void handle(const vespalib::Issue& issue) override { messages.push_back(issue.message()); }
+};
+
 const Group* find_child(const Group& parent, const ResultNode& id) {
     for (uint32_t i = 0; i < parent.getChildrenSize(); ++i) {
         if (parent.getChild(i).getId().cmp(id) == 0) {
@@ -2549,6 +2702,45 @@ std::unique_ptr<DocumentCountAggregationResult> make_document_count() {
 }
 
 } // namespace
+
+TEST(GroupingTest, filter_errors_skip_failed_documents_and_preserve_messages) {
+    for (bool illegal_argument : {false, true}) {
+        for (bool use_document : {false, true}) {
+            SCOPED_TRACE(std::format("illegal_argument={}, use_document={}", illegal_argument, use_document));
+            AggregationContext ctx;
+            Grouping request;
+            auto count = MU<CountAggregationResult>();
+            count->setExpression(MU<ConstantNode>(MU<Int64ResultNode>(0)));
+            request.setFirstLevel(0).setLastLevel(1);
+            request.addLevel(std::move(GroupingLevel()
+                                              .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(7)))
+                                              .setFilter(MU<ThrowOnceFilter>(illegal_argument))
+                                              .addAggregationResult(std::move(count))));
+            ctx.setup(request);
+            request.preAggregate(false);
+            FilterIssues issues;
+            auto capture = vespalib::Issue::listen(issues);
+            if (use_document) {
+                search::test::DocBuilder builder([](auto&, auto&) noexcept {});
+                auto first = builder.make_document("id:ns:searchdocument::first");
+                auto second = builder.make_document("id:ns:searchdocument::second");
+                request.aggregate(*first, HitRank(1.0));
+                request.aggregate(*second, HitRank(1.0));
+            } else {
+                request.aggregate(DocId(0), HitRank(1.0));
+                request.aggregate(DocId(1), HitRank(1.0));
+            }
+            request.postAggregate();
+            ASSERT_EQ(1u, request.getRoot().getChildrenSize());
+            const auto& group = request.getRoot().getChild(0);
+            EXPECT_EQ(7, group.getId().getInteger());
+            EXPECT_EQ(1, group.getAggregationResult(0).getRank().getInteger());
+            EXPECT_EQ((std::vector<std::string>{illegal_argument ? "Grouping filter error: invalid filter"
+                                                                : "Grouping filter error: failed filter"}),
+                      issues.messages);
+        }
+    }
+}
 
 TEST(GroupingTest, once_per_document_keeps_the_same_key_once_under_each_parent_group) {
     AggregationContext ctx;
@@ -2587,6 +2779,39 @@ TEST(GroupingTest, once_per_document_keeps_the_same_key_once_under_each_parent_g
     EXPECT_EQ(1u, document_count(*unit7_zone_a));
     EXPECT_EQ(1u, document_count(*unit7_zone_b));
     EXPECT_EQ(1u, document_count(*unit8_zone_a));
+}
+
+TEST(GroupingTest, single_value_once_per_document_keeps_keys_apart_after_cloning) {
+    AggregationContext ctx;
+    ctx.result().add(0);
+    ctx.add(IntArrayAttrBuilder("signals.unit").add({7, 8}).sp());
+    ctx.add(StringArrayAttrBuilder("signals.zone").add({"A", "A"}).sp());
+    std::vector<ExpressionNode::UP> keys;
+    keys.push_back(MU<AttributeNode>("signals.zone"));
+    Grouping request;
+    request.setFirstLevel(0).setLastLevel(2);
+    request.addLevel(std::move(GroupingLevel().setExpression(MU<AttributeNode>("signals.unit"))));
+    request.addLevel(std::move(GroupingLevel()
+                                      .setExpression(MU<ConstantNode>(MU<Int64ResultNode>(1)))
+                                      .setFilter(MU<OncePerDocumentPredicateNode>(std::move(keys)))
+                                      .addAggregationResult(make_document_count())));
+    ctx.setup(request);
+    request.preAggregate(false);
+    request.postAggregate();
+    Grouping copy(request);
+    for (auto* grouping : {&request, &copy}) {
+        ctx.setup(*grouping);
+        grouping->aggregate(ctx.result().hits());
+        ASSERT_EQ(2u, grouping->getRoot().getChildrenSize());
+        for (int64_t unit : {7, 8}) {
+            const Group* parent = find_child(grouping->getRoot(), Int64ResultNode(unit));
+            ASSERT_NE(nullptr, parent);
+            ASSERT_EQ(1u, parent->getChildrenSize());
+            const Group* child = find_child(*parent, Int64ResultNode(1));
+            ASSERT_NE(nullptr, child);
+            EXPECT_EQ(1u, document_count(*child));
+        }
+    }
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

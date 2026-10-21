@@ -31,11 +31,10 @@ template <int BucketBits, typename HashT> int calculateRank(const Sketch<BucketB
 }
 } // namespace
 
-ExpressionCountAggregationResult::ExpressionCountAggregationResult()
-    : ExpressionCountAggregationResult(SPARSE_SKETCH_LIMIT) {}
+ExpressionCountAggregationResult::ExpressionCountAggregationResult() = default;
 
 ExpressionCountAggregationResult::ExpressionCountAggregationResult(uint32_t sparse_limit)
-    : _hll(sparse_limit), _rank(), _sparse_limit(sparse_limit) {}
+    : _hll(sparse_limit), _rank() {}
 
 ExpressionCountAggregationResult::~ExpressionCountAggregationResult() = default;
 
@@ -59,7 +58,7 @@ void ExpressionCountAggregationResult::aggregate_value(const ResultNode& result)
 }
 
 void ExpressionCountAggregationResult::onReset() {
-    _hll = HyperLogLog<PRECISION>(_sparse_limit);
+    _hll.clear();
     _rank.set(0);
 }
 

@@ -27,6 +27,7 @@ public class Node {
     private volatile long targetActiveDocuments = 0;
     private volatile boolean statusIsKnown = false;
     private volatile boolean working = true;
+    private volatile boolean supportsCorrelatedQueries = false;
 
     public Node(String clusterName, int key, String hostname, int group, boolean multipleGroups) {
         this(clusterName, key, hostname, group, multipleGroups, "default");
@@ -86,10 +87,15 @@ public class Node {
         this.statusIsKnown = true;
         this.working = working;
         if ( ! working ) {
+            supportsCorrelatedQueries = false;
             activeDocuments = 0;
             targetActiveDocuments = 0;
         }
     }
+
+    public boolean supportsCorrelatedQueries() { return supportsCorrelatedQueries; }
+
+    public void setSupportsCorrelatedQueries(boolean supported) { supportsCorrelatedQueries = supported; }
 
     /** Returns whether this node is currently responding to requests, or null if status is not known */
     public Boolean isWorking() {

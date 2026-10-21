@@ -823,6 +823,7 @@ std::unique_ptr<MonitorReply> Proton::ping(std::unique_ptr<MonitorRequest>, Moni
         ret.targetActiveDocs = 0; // TODO vekterli hmm... or target anyway ...
     }
     ret.is_blocking_writes = !_write_filter->acceptWriteOperation();
+    ret.supports_correlated_queries = true;
     return reply;
 }
 

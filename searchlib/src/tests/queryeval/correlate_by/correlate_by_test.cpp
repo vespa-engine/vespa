@@ -10,6 +10,7 @@
 #include <vespa/searchlib/common/unique_issues.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/correlate_by_blueprint.h>
+#include <vespa/searchlib/queryeval/correlated_binding_provider.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/fake_result.h>
@@ -42,6 +43,7 @@ struct Fixture {
     attribute::test::MockAttributeContext attribute_context;
     FakeRequestContext request_context{&attribute_context};
     std::vector<TermFieldHandle> clause_handles;
+    std::vector<TermFieldHandle> term_handles;
     std::unique_ptr<CorrelateByBlueprint> blueprint;
     Blueprint::UP finalized;
     MatchData::UP match_data;
@@ -76,7 +78,7 @@ struct Fixture {
     }
 
     void clause(const std::string& field, const Matches& matches, std::vector<BoundAttribute> bindings,
-                std::vector<ExactAttributeValues> exact_values = {}) {
+                std::vector<ExactAttributeValues> exact_values = {}, bool indexed = true) {
         uint32_t id = next_field++;
         FieldSpec term_field(field + ".key", id, layout.allocTermField(id), false);
         FakeResult result;
@@ -87,8 +89,10 @@ struct Fixture {
         uint32_t root_id = next_field++;
         FieldSpec root(field, root_id, layout.allocTermField(root_id), false);
         clause_handles.push_back(root.getHandle());
+        term_handles.push_back(term_field.getHandle());
         auto same_element = std::make_unique<SameElementBlueprint>(root,
-                std::vector<TermFieldHandle>{term_field.getHandle()}, false, true);
+                indexed ? std::vector<TermFieldHandle>{term_field.getHandle()} : std::vector<TermFieldHandle>{},
+                false, true);
         same_element->addChild(std::make_unique<FakeBlueprint>(term_field, result));
         blueprint->add_clause(std::move(same_element), std::move(bindings), std::move(exact_values));
     }
@@ -364,6 +368,27 @@ TEST(CorrelateBySearchTest, a_variable_with_one_uncased_attribute_compares_all_i
     EXPECT_EQ(SimpleResult().search(*search, docid_limit), SimpleResult({2}));
 }
 
+TEST(CorrelateBySearchTest, an_uncased_join_preserves_cased_exact_filters_on_the_same_attribute) {
+    using namespace std::literals;
+    for (bool strict : {false, true}) {
+        for (const std::string expected : {"SKU", "sku"}) {
+            Fixture f(1);
+            auto* cased = f.attribute("a.unit", {{2, {"SKU"sv}}, {3, {"sku"sv}}}, true,
+                                      attribute::BasicType::INT64, AttributeMatch::CASED);
+            auto* uncased = f.attribute("b.unit", {{2, {"sku"sv}}, {3, {"SKU"sv}}}, true);
+            Matches matches{{2, {0}}, {3, {0}}};
+            f.clause("a", matches, {{0, cased}}, {{cased, {expected}}});
+            f.clause("b", matches, {{0, uncased}});
+            auto search = f.search(strict);
+            uint32_t docid = expected == "SKU" ? 2 : 3;
+            EXPECT_EQ(SimpleResult().search(*search, docid_limit), SimpleResult({docid}));
+            auto& correlated = dynamic_cast<CorrelateBySearch&>(*search);
+            correlated.initRange(1, docid_limit);
+            EXPECT_EQ(correlated.find_bindings(docid), (std::vector<BindingRow>{{"sku"sv}}));
+        }
+    }
+}
+
 TEST(CorrelateBySearchTest, cased_attributes_keep_case_in_joins_and_domains) {
     using namespace std::literals;
     using attribute::BasicType;
@@ -393,6 +418,52 @@ TEST(CorrelateBySearchTest, unpack_exposes_only_elements_in_a_correlated_match) 
     EXPECT_EQ(f.unpacked_elements(0, 2), (std::vector<uint32_t>{0}));
     EXPECT_EQ(f.unpacked_elements(1, 2), (std::vector<uint32_t>{2}));
     EXPECT_EQ(correlated_elements(*search, 2, 2), (std::vector<std::vector<uint32_t>>{{0}, {2}}));
+}
+
+TEST(CorrelateBySearchTest, attribute_unpack_skips_projections_unless_positions_are_needed) {
+    for (bool positions : {false, true}) {
+        Fixture f(1);
+        auto* units = f.attribute("offers.unit", {{2, {int64_t(7), int64_t(9), int64_t(11)}},
+                                                 {4, {int64_t(13)}}}, false);
+        f.clause("offers", {{2, {0, 1, 2}}, {4, {0}}}, {{0, units}}, {}, false);
+        f.clause("offers", {{2, {1, 2}}, {4, {0}}}, {{0, units}}, {}, false);
+        auto search = f.search(true);
+        if (!positions) {
+            for (auto handle : f.clause_handles) f.match_data->resolveTermField(handle)->tagAsNotNeeded();
+        }
+        search->initRange(1, docid_limit);
+        auto& correlated = dynamic_cast<CorrelateBySearch&>(*search);
+        for (uint32_t docid : {2, 4}) {
+            ASSERT_TRUE(search->seek(docid));
+            auto work = correlated.visited_rows();
+            search->unpack(docid);
+            if (positions) {
+                EXPECT_EQ(f.unpacked_elements(0, docid),
+                          (docid == 2 ? std::vector<uint32_t>{1, 2} : std::vector<uint32_t>{0}));
+            } else {
+                EXPECT_EQ(correlated.visited_rows(), work);
+                EXPECT_EQ(f.unpacked_elements(0, docid), std::vector<uint32_t>{});
+                EXPECT_EQ(f.unpacked_elements(1, docid), std::vector<uint32_t>{});
+            }
+        }
+    }
+}
+
+TEST(CorrelateBySearchTest, unpack_filters_index_terms_without_parent_positions) {
+    Fixture f(1);
+    auto* units = f.attribute("offers.unit", {{2, {int64_t(7), int64_t(9)}}}, false);
+    f.clause("offers", {{2, {0, 1}}}, {{0, units}});
+    f.clause("offers", {{2, {1}}}, {{0, units}});
+    auto search = f.search(true);
+    for (auto handle : f.clause_handles) f.match_data->resolveTermField(handle)->tagAsNotNeeded();
+    search->initRange(1, docid_limit);
+    ASSERT_TRUE(search->seek(2));
+    search->unpack(2);
+    const auto* term = f.match_data->resolveTermField(f.term_handles[0]);
+    ASSERT_EQ(term->getDocId(), 2u);
+    std::vector<uint32_t> elements;
+    for (const auto& position : *term) elements.push_back(position.getElementId());
+    EXPECT_EQ(elements, (std::vector<uint32_t>{1}));
 }
 
 TEST(CorrelateBySearchTest, unpack_hides_presence_clauses_and_zones_that_first_present_skipped) {
@@ -478,6 +549,45 @@ TEST(CorrelateBySearchTest, a_clause_that_is_not_same_element_reports_an_issue_a
     auto search = f.search(true);
     EXPECT_EQ(SimpleResult().search(*search, docid_limit), SimpleResult());
     EXPECT_EQ(1u, issues.size());
+}
+
+TEST(CorrelateBySearchTest, binding_provider_projects_independent_zones_and_caches_each_projection) {
+    for (bool strict : {false, true}) {
+        Fixture f(13);
+        BindingRow first(5, int64_t(7)), second(5, int64_t(9));
+        auto* units = f.attribute("sig.unit", {{2, first}, {4, second}}, false);
+        auto* zones = f.attribute("sig.zone", {{2, {int64_t(0), int64_t(1), int64_t(2), int64_t(3), int64_t(4)}},
+                                             {4, {int64_t(0), int64_t(1), int64_t(2), int64_t(3), int64_t(4)}}}, false);
+        for (uint32_t column = 1; column <= 12; ++column) {
+            f.clause("sig", {{2, {0, 1, 2, 3, 4}}, {4, {0, 1, 2, 3, 4}}}, {{0, units}, {column, zones}});
+        }
+        auto search = f.search(strict);
+        CorrelatedBindingProvider provider(dynamic_cast<const CorrelateByBlueprint&>(*f.finalized), f.layout, docid_limit);
+        std::vector<uint32_t> unit{0}, zone_unit{12, 0};
+        auto read = [&](uint32_t docid, const std::vector<uint32_t>& projection) {
+            auto rows = provider.read(docid, projection);
+            return std::vector<BindingRow>(rows.begin(), rows.end());
+        };
+        EXPECT_EQ(read(2, unit), (std::vector<BindingRow>{{int64_t(7)}}));
+        EXPECT_LE(provider.visited_rows(), 12u);
+        std::vector<BindingRow> expected;
+        for (int64_t zone = 0; zone < 5; ++zone) expected.push_back({zone, int64_t(7)});
+        EXPECT_EQ(read(2, zone_unit), expected);
+        auto projected_work = provider.visited_rows();
+        EXPECT_LE(projected_work, 72u);
+        EXPECT_EQ(read(2, unit), (std::vector<BindingRow>{{int64_t(7)}}));
+        EXPECT_EQ(read(2, zone_unit), expected);
+        EXPECT_EQ(provider.visited_rows(), projected_work);
+        EXPECT_EQ(read(4, unit), (std::vector<BindingRow>{{int64_t(9)}}));
+        EXPECT_TRUE(read(3, unit).empty());
+        EXPECT_TRUE(read(3, zone_unit).empty());
+        auto before_revisit = provider.visited_rows();
+        EXPECT_EQ(read(2, zone_unit), expected);
+        EXPECT_LE(provider.visited_rows() - before_revisit, 60u);
+        EXPECT_EQ(read(2, unit), (std::vector<BindingRow>{{int64_t(7)}}));
+        for (auto& row : expected) row[1] = int64_t(9);
+        EXPECT_EQ(read(4, zone_unit), expected);
+    }
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

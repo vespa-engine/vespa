@@ -12,6 +12,7 @@ struct MonitorReply {
     int32_t  distribution_key;
     uint32_t timestamp;
     bool     is_blocking_writes;
+    bool     supports_correlated_queries;
 
     MonitorReply();
 };

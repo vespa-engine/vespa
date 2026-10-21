@@ -18,7 +18,7 @@ namespace search::aggregation {
 class UniqueCountAggregationResult : public ExpressionCountAggregationResult {
 public:
     // At this limit the estimate right after switching still uses linear
-    // counting, so counts do not jump, and a sparse sketch is at most 2 KB on
+    // counting, and a sparse sketch is at most 2 KB on
     // the wire. The Java container uses the same limit.
     static constexpr uint32_t sparse_limit = 512;
 

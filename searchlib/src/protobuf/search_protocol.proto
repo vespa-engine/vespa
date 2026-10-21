@@ -120,6 +120,8 @@ message MonitorReply {
     int32 distribution_key = 3;
     bool is_blocking_writes = 4;
     int64 target_active_docs = 5;
+    // Includes correlateBy and its grouping predicates and count aggregators.
+    bool supports_correlated_queries = 6;
 }
 
 // to replace old query stack serialization:

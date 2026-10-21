@@ -45,22 +45,27 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
         try {
             sendPing();
         } catch (RuntimeException e) {
-            pongHandler.handle(new Pong(ErrorMessage.createBackendCommunicationError("Exception when pinging " + node +
-                                                                                 ": " + Exceptions.toMessageString(e))));
+            receive(ResponseOrError.fromError("Exception when pinging " + node + ": " + Exceptions.toMessageString(e)));
         }
     }
 
-    private Pong toPong(ResponseOrError<ProtobufResponse> responseOrError) {
+    private record Reply(Pong pong, boolean supportsCorrelatedQueries) { }
+
+    private static Reply failure(ErrorMessage error) {
+        return new Reply(new Pong(error), false);
+    }
+
+    private Reply toPong(ResponseOrError<ProtobufResponse> responseOrError) {
         if (responseOrError == null) {
-            return new Pong(ErrorMessage.createNoAnswerWhenPingingNode("Timed out waiting for pong from " + node));
+            return failure(ErrorMessage.createNoAnswerWhenPingingNode("Timed out waiting for pong from " + node));
         } else if (responseOrError.error().isPresent()) {
-            return new Pong(ErrorMessage.createBackendCommunicationError(responseOrError.error().get()));
+            return failure(ErrorMessage.createBackendCommunicationError(responseOrError.error().get()));
         }
 
         try {
             return decodeReply(responseOrError.response().get());
-        } catch (InvalidProtocolBufferException e) {
-            return new Pong(ErrorMessage.createBackendCommunicationError(e.getMessage()));
+        } catch (InvalidProtocolBufferException | RuntimeException e) {
+            return failure(ErrorMessage.createBackendCommunicationError(Exceptions.toMessageString(e)));
         }
     }
 
@@ -72,30 +77,36 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
         connection.request(RPC_METHOD, compressionResult.type(), ping.length, compressionResult.data(), this, timeoutSeconds);
     }
 
-    private Pong decodeReply(ProtobufResponse response) throws InvalidProtocolBufferException {
+    private Reply decodeReply(ProtobufResponse response) throws InvalidProtocolBufferException {
         CompressionType compression = CompressionType.valueOf(response.compression());
         byte[] responseBytes = compressor.decompress(response.compressedPayload(), compression, response.uncompressedSize());
         var reply = SearchProtocol.MonitorReply.parseFrom(responseBytes);
 
         if (reply.getDistributionKey() != node.key()) {
-            return new Pong(ErrorMessage.createBackendCommunicationError("Expected pong from node id " + node.key() +
+            return failure(ErrorMessage.createBackendCommunicationError("Expected pong from node id " + node.key() +
                                                                          ", response is from id " + reply.getDistributionKey()));
         } else if (!reply.getOnline()) {
-            return new Pong(ErrorMessage.createBackendCommunicationError("Node id " + node.key() + " reports being offline"));
+            return failure(ErrorMessage.createBackendCommunicationError("Node id " + node.key() + " reports being offline"));
         } else {
-            return new Pong(reply.getActiveDocs(), reply.getTargetActiveDocs(), reply.getIsBlockingWrites());
+            return new Reply(new Pong(reply.getActiveDocs(), reply.getTargetActiveDocs(), reply.getIsBlockingWrites()),
+                             reply.getSupportsCorrelatedQueries());
         }
     }
 
     @Override
     public void receive(ResponseOrError<ProtobufResponse> response) {
         if (clusterMonitor.isClosed() && ! triggeredClassLoading) return;
-        if (node.isLastReceivedPong(pingSequenceId)) {
-            pongHandler.handle(toPong(response));
-        } else {
-            // TODO: Reduce to debug or remove once we have enumerated what happens here.
-            log.info("Pong " + pingSequenceId + " from node " + node.key() + " in group " + node.group() +
-                     " with hostname " + node.hostname() + " received too late, latest is " + node.getLastReceivedPongId());
+        Reply reply = toPong(response);
+        // Accept the sequence and publish its state together, after decoding completes.
+        synchronized (node) {
+            if (node.isLastReceivedPong(pingSequenceId)) {
+                node.setSupportsCorrelatedQueries(reply.supportsCorrelatedQueries());
+                pongHandler.handle(reply.pong());
+            } else {
+                // TODO: Reduce to debug or remove once we have enumerated what happens here.
+                log.info("Pong " + pingSequenceId + " from node " + node.key() + " in group " + node.group() +
+                         " with hostname " + node.hostname() + " received too late, latest is " + node.getLastReceivedPongId());
+            }
         }
     }
 

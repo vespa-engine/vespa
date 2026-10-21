@@ -302,33 +302,112 @@ TEST(CorrelatedRowsTest, fallback_rejects_malformed_tables_and_an_unbound_priori
     EXPECT_THROW(select_first_present_rows(presence, candidates, 1, priority), std::invalid_argument);
 }
 
+TEST(CorrelatedRowsTest, rejects_disjoint_shared_values_before_expanding_independent_variables) {
+    std::vector<BindingTable> tables;
+    for (uint32_t column = 1; column <= 4; ++column) {
+        BindingTable table{{0, column}, {}};
+        for (int64_t zone = 0; zone < 30; ++zone) table.rows.push_back({int64_t(1), zone});
+        tables.push_back(table);
+        tables.push_back(std::move(table));
+    }
+    BindingTable absent{{0, 5}, {}};
+    for (int64_t value = 0; value < 1000; ++value) absent.rows.push_back({int64_t(2), value});
+    tables.push_back(absent);
+    tables.push_back(std::move(absent));
+    CorrelatedRows join(6);
+    EXPECT_FALSE(join.has_match(tables));
+    EXPECT_EQ(0u, join.visited_rows());
+    EXPECT_TRUE(join.find_matches(tables, std::vector<uint32_t>{0}).empty());
+    EXPECT_EQ(0u, join.visited_rows());
+    std::reverse(tables.begin(), tables.end());
+    EXPECT_TRUE(join.find_matches(tables).empty());
+    EXPECT_EQ(0u, join.visited_rows());
+}
+
+TEST(CorrelatedRowsTest, shared_values_need_a_common_value_in_all_clauses) {
+    std::vector<BindingTable> tables{
+        {{0, 1}, {{"a"sv, int64_t(1)}, {"b"sv, int64_t(1)}}},
+        {{0, 1}, {{"a"sv, int64_t(1)}, {"b"sv, int64_t(1)}}},
+        {{0, 2}, {{"b"sv, int64_t(2)}, {"c"sv, int64_t(2)}}},
+        {{0, 2}, {{"b"sv, int64_t(2)}, {"c"sv, int64_t(2)}}},
+        {{0}, {{"a"sv}, {"c"sv}}}
+    };
+    CorrelatedRows join(3);
+    EXPECT_FALSE(join.has_match(tables));
+    EXPECT_EQ(0u, join.visited_rows());
+    tables[4].rows.push_back({"b"sv});
+    EXPECT_EQ((std::vector<BindingRow>{{"b"sv, int64_t(1), int64_t(2)}}), join.find_matches(tables));
+}
+
+TEST(CorrelatedRowsTest, a_projected_unit_needs_a_complete_cyclic_join) {
+    std::vector<BindingTable> tables{
+        {{0, 1, 2}, {{int64_t(7), int64_t(0), int64_t(1)}, {int64_t(7), int64_t(1), int64_t(0)}}},
+        {{0, 2, 3}, {{int64_t(7), int64_t(0), int64_t(1)}, {int64_t(7), int64_t(1), int64_t(0)}}},
+        {{0, 1, 3}, {{int64_t(7), int64_t(0), int64_t(1)}, {int64_t(7), int64_t(1), int64_t(0)}}}
+    };
+    CorrelatedRows join(4);
+    std::vector<uint32_t> unit{0};
+    // Each pair has unequal values, which cannot hold for all three pairs at once.
+    EXPECT_FALSE(join.has_match(tables));
+    EXPECT_TRUE(join.find_matches(tables, unit).empty());
+    tables[2].rows = {{int64_t(7), int64_t(0), int64_t(0)}, {int64_t(7), int64_t(1), int64_t(1)}};
+    EXPECT_EQ((std::vector<BindingRow>{{int64_t(7)}}), join.find_matches(tables, unit));
+    EXPECT_EQ((std::vector<BindingRow>{{int64_t(7), int64_t(0), int64_t(1), int64_t(0)},
+                                      {int64_t(7), int64_t(1), int64_t(0), int64_t(1)}}),
+              join.find_matches(tables));
+    std::reverse(tables.begin(), tables.end());
+    EXPECT_EQ((std::vector<BindingRow>{{int64_t(7)}}), join.find_matches(tables, unit));
+}
+
+TEST(CorrelatedRowsTest, valid_queries_work_after_rejected_tables_and_projections) {
+    std::vector<BindingTable> tables{{{0, 1}, {{int64_t(7), "A"sv}}}, {{0}, {{int64_t(7)}}}};
+    CorrelatedRows join(2);
+    const std::vector<BindingRow> expected{{int64_t(7), "A"sv}};
+    EXPECT_EQ(expected, join.find_matches(tables));
+    auto malformed = tables;
+    malformed[1].rows[0].push_back("extra"sv);
+    EXPECT_THROW(join.find_matches(malformed), std::invalid_argument);
+    EXPECT_EQ(expected, join.find_matches(tables));
+    for (const auto& projection : {std::vector<uint32_t>{0, 0}, {2}}) {
+        EXPECT_THROW(join.find_matches(tables, projection), std::invalid_argument);
+        EXPECT_EQ(expected, join.find_matches(tables));
+    }
+}
+
 TEST(CorrelatedRowsTest, agrees_with_cartesian_product_oracle_on_random_catalogues_and_clause_orders) {
     std::mt19937 random(104729);
+    const std::vector<BindingValue> values{int64_t(-1), int64_t(0), int64_t(1),
+                                          std::numeric_limits<int64_t>::max(), ""sv, "A"sv, "a"sv, "å"sv};
+    auto value = [&] { return values[random() % values.size()]; };
     for (size_t run = 0; run < 3000; ++run) {
         SCOPED_TRACE(run);
         std::vector<BindingTable> tables;
-        uint32_t column_count = 1 + random() % 3;
-        size_t clause_count = 2 + random() % 3;
+        uint32_t column_count = 1 + random() % 5;
+        size_t clause_count = 1 + random() % 5;
         for (size_t i = 0; i < clause_count; ++i) {
             BindingTable table;
             for (uint32_t c = 0; c < column_count; ++c) {
-                if (i == 0 || c == 0 || random() % 2) table.columns.push_back(c);
+                if (random() % 2) table.columns.push_back(c);
             }
-            size_t row_count = random() % 6;
+            if (table.columns.empty()) table.columns.push_back(random() % column_count);
+            size_t row_count = random() % 5;
             for (size_t r = 0; r < row_count; ++r) {
                 BindingRow row;
-                for (size_t c = 0; c < table.columns.size(); ++c) row.emplace_back(int64_t(random() % 4));
+                for (size_t c = 0; c < table.columns.size(); ++c) row.push_back(value());
                 table.rows.push_back(std::move(row));
             }
             tables.push_back(std::move(table));
         }
-        // Removing column 2 from the first clause exercises joins without a full anchor.
-        if (column_count == 3 && run % 2 && tables.size() >= 2) {
-            tables[0].columns.pop_back();
-            for (auto& row : tables[0].rows) row.pop_back();
-            if (tables[1].columns.back() != 2) {
-                tables[1].columns.push_back(2);
-                for (auto& row : tables[1].rows) row.emplace_back(int64_t(random() % 4));
+        // Bind missing variables without forcing one clause to contain every variable.
+        for (uint32_t column = 0; column < column_count; ++column) {
+            if (std::none_of(tables.begin(), tables.end(), [column](const auto& table) {
+                    return std::binary_search(table.columns.begin(), table.columns.end(), column);
+                })) {
+                auto& table = tables[random() % tables.size()];
+                auto position = std::lower_bound(table.columns.begin(), table.columns.end(), column);
+                size_t offset = position - table.columns.begin();
+                table.columns.insert(position, column);
+                for (auto& row : table.rows) row.insert(row.begin() + offset, value());
             }
         }
         auto expected = reference_join(tables, column_count);

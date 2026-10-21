@@ -5,6 +5,7 @@
 #include "querynodes.h"
 
 #include <vespa/check_require.h>
+#include <algorithm>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 
 using search::fef::ITermData;
@@ -24,6 +25,15 @@ public:
     template <class TermType> void visitTerm(TermType& n) {
         if (n.isRanked()) {
             _term_data.push_back(&n);
+        }
+    }
+
+    void visit(ProtonNodeTypes::CorrelateBy& n) override {
+        // Presence clauses choose fallback values but never supply ranking matches.
+        for (size_t i = 0; i < n.getChildren().size(); ++i) {
+            bool presence = std::any_of(n.first_present().begin(), n.first_present().end(),
+                                       [i](const auto& rule) { return rule.presence == i; });
+            if (!presence) n.getChildren()[i]->accept(*this);
         }
     }
 

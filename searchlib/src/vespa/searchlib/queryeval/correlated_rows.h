@@ -70,6 +70,7 @@ class CorrelatedRows {
 
     bool evaluate(std::span<BindingTable> tables, bool collect, std::span<const uint32_t> projection);
     void project_tables(std::span<const BindingTable> tables);
+    bool shared_values_overlap() const;
     void plan_join_order(bool has_projection);
     // Returns true when the columns moved, so the rows must be sorted again.
     bool put_lookup_columns_first(WorkTable& table);

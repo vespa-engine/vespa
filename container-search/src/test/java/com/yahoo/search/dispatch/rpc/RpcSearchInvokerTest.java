@@ -9,8 +9,10 @@ import com.yahoo.concurrent.Timer;
 import com.yahoo.prelude.cluster.ClusterSearcher;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.VespaBackend;
+import com.yahoo.prelude.query.CorrelateByItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
@@ -22,17 +24,28 @@ import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.MockDocumentCountSource;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.schema.MatchPhase;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.schema.SecondPhase;
+import com.yahoo.searchlib.aggregation.CountAggregationResult;
+import com.yahoo.searchlib.aggregation.DocumentCountAggregationResult;
+import com.yahoo.searchlib.aggregation.Grouping;
+import com.yahoo.searchlib.aggregation.GroupingLevel;
+import com.yahoo.searchlib.aggregation.UniqueCountAggregationResult;
+import com.yahoo.searchlib.expression.AndPredicateNode;
+import com.yahoo.searchlib.expression.AttributeNode;
+import com.yahoo.searchlib.expression.CorrelatedPredicateNode;
+import com.yahoo.searchlib.expression.OncePerDocumentPredicateNode;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -77,6 +90,84 @@ public class RpcSearchInvokerTest {
         assertSame(serialized1, serialized2);
         assertEquals(holders.length.get(), serialized1.compressedPayload.uncompressedSize());
         assertSame(serialized1.compressedPayload.data(), holders.payload.get());
+    }
+
+    @Test
+    void correlatedRequestsAreRejectedBeforeRpcOnUnsupportedNodes() throws IOException {
+        var node = new Node("test", 7, "seven", 1, true);
+        for (var query : correlatedRequests()) {
+            var holders = new Holders();
+            var invoker = createRpcInvoker(node, 1000, holders);
+            invoker.sendSearchRequest(query, 1.0, null);
+            assertNull(holders.payload.get());
+            assertTrue(invoker.getSearchResult().getResult().hits().getError().getDetailedMessage()
+                              .contains("has not advertised support"));
+        }
+    }
+
+    @Test
+    void advertisedSupportAllowsCorrelatedRequestsButDoesNotBypassOtherNodes() {
+        var supported = new Node("test", 7, "seven", 1, true);
+        supported.setSupportsCorrelatedQueries(true);
+        var old = new Node("test", 8, "eight", 1, true);
+        for (var query : correlatedRequests()) {
+            var holders = new Holders();
+            var invoker = createRpcInvoker(supported, 1000, holders);
+            Object serialized = invoker.sendSearchRequest(query, 1.0, null);
+            assertTrue(holders.payload.get().length > 0);
+            var rejected = new Holders();
+            createRpcInvoker(old, 1000, rejected).sendSearchRequest(query, 1.0, serialized);
+            assertNull(rejected.payload.get());
+        }
+    }
+
+    @Test
+    void ordinaryGroupingIsSentToUnsupportedNodes() {
+        var query = new Query("?query=test");
+        var count = new CountAggregationResult().setExpression(new AttributeNode("unit"));
+        var grouping = new Grouping().setRoot(new com.yahoo.searchlib.aggregation.Group().addAggregationResult(count));
+        GroupingExecutor.setGroupingList(query, List.of(grouping));
+        var holders = new Holders();
+        createRpcInvoker(new Node("test", 7, "seven", 1, true), 1000, holders).sendSearchRequest(query, 1.0, null);
+        assertFalse(decompress(holders).getGroupingBlob().isEmpty());
+    }
+
+    private static List<Query> correlatedRequests() {
+        var correlation = new CorrelateByItem();
+        var clause = new SameElementItem("signals");
+        clause.addItem(new WordItem("price", "key"));
+        correlation.addClause(new CorrelateByItem.Clause(clause, Map.of("unit", "unit")));
+        var tree = new OrItem();
+        tree.addItem(new WordItem("test", "title"));
+        tree.addItem(correlation);
+        var correlated = new Query("?query=test");
+        correlated.getModel().getQueryTree().setRoot(tree);
+        var queries = new ArrayList<Query>();
+        queries.add(correlated);
+        for (var result : List.of(new DocumentCountAggregationResult(),
+                                   new UniqueCountAggregationResult())) {
+            var query = new Query("?query=test");
+            result.setExpression(new AttributeNode("unit"));
+            var group = new com.yahoo.searchlib.aggregation.Group().addAggregationResult(result);
+            var grouping = new Grouping();
+            grouping.addLevel(new GroupingLevel()
+                    .setExpression(new AttributeNode("key")).setGroupPrototype(group));
+            GroupingExecutor.setGroupingList(query, List.of(grouping));
+            queries.add(query);
+        }
+        for (var filter : List.of(new CorrelatedPredicateNode("selection", List.of("unit"),
+                                       List.of(new AttributeNode("signals.unit"))),
+                                   new OncePerDocumentPredicateNode(
+                                       List.of(new AttributeNode("signals.unit"))))) {
+            var query = new Query("?query=test");
+            var grouping = new Grouping();
+            grouping.addLevel(new GroupingLevel()
+                    .setExpression(new AttributeNode("signals.key"))
+                    .setFilter(new AndPredicateNode(List.of(filter))));
+            GroupingExecutor.setGroupingList(query, List.of(grouping));
+            queries.add(query);
+        }
+        return queries;
     }
 
     @Test

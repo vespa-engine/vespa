@@ -12,6 +12,8 @@ import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.grouping.GroupingRequest;
+import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.schema.Cluster;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
@@ -114,6 +116,30 @@ public class ValidateSameElementTestCase {
         var query = correlationQuery();
         query.getModel().getSources().add("streaming-document");
         assertNotNull(search(query, mixedSchemaInfo()).hits().getError());
+    }
+
+    @Test
+    void indexedGroupingFiltersAreRejectedWhenStreamingIsSelected() {
+        for (String filter : List.of("onceperdoc(signals.unit)", "not(correlated(\"sel\", \"unit\", signals.unit))",
+                                     "correlated(\"sel\", \"unit\", signals.unit) and onceperdoc(signals.unit)")) {
+            var query = new Query("?query=shoe");
+            GroupingRequest.newInstance(query).setRootOperation(GroupingOperation.fromString(
+                    "all(group(signals.unit) filter(" + filter + ") each(output(count())))"));
+            var result = search(query, mixedSchemaInfo());
+            assertNotNull(result.hits().getError());
+            assertEquals("correlated() and onceperdoc() grouping filters are only supported by indexed search",
+                         result.hits().getError().getDetailedMessage());
+            query.getModel().getSources().add("indexed-cluster");
+            assertNull(search(query, mixedSchemaInfo()).hits().getError());
+        }
+    }
+
+    @Test
+    void ordinaryGroupingFiltersRemainValidForStreaming() {
+        var query = new Query("?query=shoe");
+        GroupingRequest.newInstance(query).setRootOperation(GroupingOperation.fromString(
+                "all(group(signals.unit) filter(regex(\"a.*\", signals.unit)) each(output(count())))"));
+        assertNull(search(query, mixedSchemaInfo()).hits().getError());
     }
 
     private Query correlationQuery() {

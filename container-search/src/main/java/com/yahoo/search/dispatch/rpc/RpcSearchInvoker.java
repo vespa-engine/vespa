@@ -68,6 +68,12 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
             .setAttribute(TraceAttributes.RPC_SYSTEM,        "vespa_jrt")
             .setAttribute(TraceAttributes.RPC_METHOD_KEY,    RPC_METHOD);
 
+        if (!node.supportsCorrelatedQueries() && CorrelatedQuerySupport.requiredBy(query)) {
+            receive(Client.ResponseOrError.fromError("Node " + node.key() +
+                    " has not advertised support for correlateBy and correlated grouping"));
+            return incomingContext;
+        }
+
         Client.NodeConnection nodeConnection = resourcePool.getConnection(node.key());
         if (nodeConnection == null) {
             responses.add(Client.ResponseOrError.fromError("Could not send search to unknown node " + node.key()));

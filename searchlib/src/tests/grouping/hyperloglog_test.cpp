@@ -63,10 +63,6 @@ TEST(HyperLogLogTest, require_that_sparse_hyperloglogs_can_be_merged) {
 
     EXPECT_EQ(1, hll2.aggregate(255));
     hll.merge(hll2);
-    EXPECT_TRUE(dynamic_cast<const SparseSketch<>*>(&hll.getSketch()));
-
-    EXPECT_EQ(1, hll2.aggregate(256));
-    hll.merge(hll2);
     EXPECT_TRUE(dynamic_cast<const NormalSketch<>*>(&hll.getSketch()));
 }
 
@@ -80,6 +76,51 @@ HyperLogLog<> make_hll(uint32_t limit, uint32_t from, uint32_t to) {
         hll.aggregate(i);
     }
     return hll;
+}
+
+TEST(HyperLogLogTest, default_limit_preserves_existing_copy_and_duplicate_boundaries) {
+    HyperLogLog<> hll;
+    for (uint32_t i = 0; i < 256; ++i) hll.aggregate(i);
+    EXPECT_TRUE(is_sparse(hll));
+    HyperLogLog<> copy(hll);
+    EXPECT_FALSE(is_sparse(copy));
+    hll.aggregate(7);
+    EXPECT_FALSE(is_sparse(hll));
+    EXPECT_EQ(copy.getSketch(), hll.getSketch());
+}
+
+TEST(HyperLogLogTest, clear_and_deserialization_preserve_the_default_boundary) {
+    HyperLogLog<> hll;
+    for (uint32_t i = 0; i < 256; ++i) hll.aggregate(i);
+    nbostream stream;
+    NBOSerializer serializer(stream);
+    hll.serialize(serializer);
+    HyperLogLog<> restored;
+    restored.deserialize(serializer);
+    EXPECT_TRUE(is_sparse(restored));
+    restored.aggregate(7);
+    EXPECT_FALSE(is_sparse(restored));
+    hll.clear();
+    for (uint32_t i = 0; i < 256; ++i) hll.aggregate(i);
+    EXPECT_TRUE(is_sparse(hll));
+    hll.aggregate(7);
+    EXPECT_FALSE(is_sparse(hll));
+}
+
+TEST(HyperLogLogTest, assignment_and_clear_preserve_an_explicit_limit) {
+    auto source = make_hll(512, 0, 512);
+    HyperLogLog<> assigned;
+    assigned = source;
+    EXPECT_TRUE(is_sparse(assigned));
+    EXPECT_EQ(0, assigned.aggregate(7));
+    EXPECT_TRUE(is_sparse(assigned));
+    assigned.clear();
+    for (uint32_t i = 0; i < 512; ++i) assigned.aggregate(i);
+    EXPECT_TRUE(is_sparse(assigned));
+    EXPECT_EQ(0, assigned.aggregate(7));
+    EXPECT_TRUE(is_sparse(assigned));
+    assigned.aggregate(512);
+    EXPECT_FALSE(is_sparse(assigned));
 }
 
 TEST(HyperLogLogTest, sparse_limit_is_the_same_for_aggregation_merge_and_copy) {

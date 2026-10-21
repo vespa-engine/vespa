@@ -6,11 +6,11 @@
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/queryeval/correlate_by_blueprint.h>
 #include <vespa/searchlib/queryeval/correlated_bindings.h>
+#include <vespa/searchlib/queryeval/correlated_binding_provider.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <algorithm>
-#include <limits>
 #include <map>
 
 namespace proton::matching {
@@ -20,7 +20,6 @@ namespace {
 using search::expression::CorrelatedPredicateNode;
 using search::queryeval::Blueprint;
 using search::queryeval::CorrelateByBlueprint;
-using search::queryeval::CorrelateBySearch;
 using search::queryeval::CorrelatedBindingFactory;
 using search::queryeval::CorrelatedBindingReader;
 
@@ -42,72 +41,6 @@ void find_query_labels(const search::query::Node& node, std::map<std::string, ui
     }
 }
 
-/**
- * Reads the bindings of one labeled query for one thread. All complete bindings of a
- * document are found once, then projected for each caller, so filters that use
- * different variables of the same query share the work.
- */
-class BindingProvider : public CorrelatedBindingReader {
-    struct Projection {
-        std::vector<uint32_t> columns;
-        std::vector<search::queryeval::BindingRow> rows;
-        bool valid = false;
-    };
-    search::fef::MatchData::UP _match_data;
-    std::unique_ptr<CorrelateBySearch> _search;
-    uint32_t _docid_limit;
-    uint32_t _docid = std::numeric_limits<uint32_t>::max();
-    const std::vector<search::queryeval::BindingRow>* _rows = nullptr;
-    std::vector<Projection> _projections;
-
-    void read_document(uint32_t docid) {
-        // Iterators only move forward. Ranking and grouping can go back to an earlier
-        // document, and only then must the iterators start over.
-        if (_docid == std::numeric_limits<uint32_t>::max() || docid < _docid) {
-            _search->initRange(docid, _docid_limit);
-        }
-        _rows = &_search->find_bindings(docid);
-        _docid = docid;
-        for (auto& projection : _projections) projection.valid = false;
-    }
-
-    Projection& projection_for(std::span<const uint32_t> columns) {
-        for (auto& projection : _projections) {
-            if (std::equal(projection.columns.begin(), projection.columns.end(), columns.begin(), columns.end())) {
-                return projection;
-            }
-        }
-        auto& projection = _projections.emplace_back();
-        projection.columns.assign(columns.begin(), columns.end());
-        return projection;
-    }
-
-    void project(Projection& projection) {
-        projection.rows.clear();
-        for (const auto& row : *_rows) {
-            auto& projected = projection.rows.emplace_back();
-            projected.reserve(projection.columns.size());
-            for (uint32_t column : projection.columns) projected.push_back(row[column]);
-        }
-        std::sort(projection.rows.begin(), projection.rows.end());
-        projection.rows.erase(std::unique(projection.rows.begin(), projection.rows.end()), projection.rows.end());
-        projection.valid = true;
-    }
-
-public:
-    BindingProvider(const CorrelateByBlueprint& bp, const search::fef::MatchDataLayout& layout, uint32_t docid_limit)
-        : _match_data(layout.createMatchData()), _search(bp.create_correlate_search(*_match_data)),
-          _docid_limit(docid_limit), _projections() {}
-
-    std::span<const search::queryeval::BindingRow> read(uint32_t docid, std::span<const uint32_t> columns) override {
-        if (!_search) return {};
-        if (docid != _docid) read_document(docid);
-        auto& projection = projection_for(columns);
-        if (!projection.valid) project(projection);
-        return projection.rows;
-    }
-};
-
 class BindingProviderFactory : public CorrelatedBindingFactory {
     const CorrelateByBlueprint& _blueprint;
     search::fef::MatchDataLayout _layout;
@@ -120,22 +53,11 @@ public:
     const std::map<std::string, uint32_t>& columns() const override { return _blueprint.columns(); }
     std::vector<bool> uncased_columns() const override { return _blueprint.uncased_columns(); }
     std::unique_ptr<CorrelatedBindingReader> create() const override {
-        return std::make_unique<BindingProvider>(_blueprint, _layout, _docid_limit);
+        return std::make_unique<search::queryeval::CorrelatedBindingProvider>(_blueprint, _layout, _docid_limit);
     }
 };
 
 bool reject_all_rows(uint32_t, std::span<const search::CorrelationBinding>) noexcept { return false; }
-
-/** A bound value of a variable compared without case is already lowercase, so the grouped value
- *  must be lowercased too, or uppercase data in a case-insensitive field would never match. */
-bool same_value(const search::queryeval::BindingValue& bound, const search::CorrelationValue& grouped, bool uncased) {
-    if (uncased) {
-        const auto* text = std::get_if<std::string_view>(&grouped);
-        const auto* bound_text = std::get_if<std::string_view>(&bound);
-        if (text != nullptr && bound_text != nullptr) return *bound_text == vespalib::LowerCase::convert(*text);
-    }
-    return bound == grouped;
-}
 
 struct FindFilters : vespalib::ObjectPredicate, vespalib::ObjectOperation {
     std::vector<CorrelatedPredicateNode*>& filters;
@@ -150,6 +72,7 @@ void prepare_correlated_bindings(const Query& query, search::fef::MatchDataLayou
                                 search::fef::IObjectStore& store, uint32_t docid_limit) {
     std::map<std::string, const CorrelateByBlueprint*> blueprints;
     if (query.peekRoot()) find_blueprints(*query.peekRoot(), blueprints);
+    if (blueprints.empty()) return;
     std::map<std::string, uint32_t> labels;
     if (query.query_tree_root()) find_query_labels(*query.query_tree_root(), labels);
     for (const auto& [label, blueprint] : blueprints) {
@@ -207,14 +130,22 @@ CorrelatedGroupingFilters::CorrelatedGroupingFilters(search::grouping::GroupingC
         }
         auto& provider = providers[label];
         if (!provider) provider = provider_factory->create();
-        matchers.emplace_back([provider, projection = std::move(projection), uncased = std::move(uncased)]
-                               (uint32_t docid, std::span<const search::CorrelationBinding> projected) {
+        matchers.emplace_back([provider, projection = std::move(projection), uncased = std::move(uncased),
+                               values = search::queryeval::BindingRow{}, strings = std::vector<std::string>{}]
+                               (uint32_t docid, std::span<const search::CorrelationBinding> projected) mutable {
             auto bindings = provider->read(docid, projection);
-            return std::any_of(bindings.begin(), bindings.end(), [&](const auto& binding) {
-                for (size_t i = 0; i < projected.size(); ++i)
-                    if (!same_value(binding[i], projected[i].second, uncased[i])) return false;
-                return true;
-            });
+            values.clear();
+            strings.resize(projected.size());
+            for (size_t i = 0; i < projected.size(); ++i) {
+                const auto& value = projected[i].second;
+                if (uncased[i] && std::holds_alternative<std::string_view>(value)) {
+                    strings[i] = vespalib::LowerCase::convert(std::get<std::string_view>(value));
+                    values.emplace_back(std::string_view(strings[i]));
+                } else {
+                    values.push_back(value);
+                }
+            }
+            return std::binary_search(bindings.begin(), bindings.end(), values);
         });
     }
     // Prepare every provider before installing callbacks so a failed setup

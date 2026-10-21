@@ -52,15 +52,12 @@ private:
     using OncePerDocument = expression::OncePerDocumentPredicateNode;
     class SingleValueGrouper : public Grouper {
     public:
-        SingleValueGrouper(Filter& filter, OncePerDocument* once_per_document, const Grouping* grouping,
-                           uint32_t level) noexcept
-            : Grouper(grouping, level), _filter(filter), _once_per_document(once_per_document) {}
+        SingleValueGrouper(Filter& filter, const Grouping* grouping, uint32_t level) noexcept
+            : Grouper(grouping, level), _filter(filter) {}
 
     protected:
         Filter& _filter;
-        // Set when the filter ends with onceperdoc, which keeps keys apart per parent group.
-        OncePerDocument* _once_per_document;
-        template <typename Doc>
+        template <bool filtered, typename Doc>
         void groupDoc(Group& group, const ResultNode& result, const Doc& doc, HitRank rank) const;
         void group(Group& g, const ResultNode& result, DocId doc, HitRank rank) const override;
         void group(Group& g, const ResultNode& result, const document::Document& doc, HitRank rank) const override;
@@ -68,20 +65,26 @@ private:
     };
     class MultiValueGrouper : public SingleValueGrouper {
     public:
-        MultiValueGrouper(CurrentIndex& currentIndex, Filter& filter, OncePerDocument* once_per_document,
-                          const Grouping* grouping, uint32_t level) noexcept
-            : SingleValueGrouper(filter, once_per_document, grouping, level), _currentIndex(currentIndex) {}
+        MultiValueGrouper(CurrentIndex& currentIndex, Filter& filter, const Grouping* grouping,
+                          uint32_t level) noexcept
+            : SingleValueGrouper(filter, grouping, level), _currentIndex(currentIndex) {}
         MultiValueGrouper(const MultiValueGrouper&) = default; // TODO Try to remove
         MultiValueGrouper& operator=(const MultiValueGrouper&) = delete;
 
-    private:
-        template <typename Doc>
+    protected:
+        template <bool filtered, typename Doc>
         void groupDoc(Group& group, const ResultNode& result, const Doc& doc, HitRank rank) const;
         void group(Group& g, const ResultNode& result, DocId doc, HitRank rank) const override;
         void group(Group& g, const ResultNode& result, const document::Document& doc, HitRank rank) const override;
         MultiValueGrouper* clone() const override { return new MultiValueGrouper(*this); }
+
+    private:
         CurrentIndex& _currentIndex;
     };
+    template <typename BaseGrouper> class OncePerDocumentGrouper;
+    template <typename BaseGrouper> class UnfilteredGrouper;
+    template <typename BaseGrouper, typename... Args>
+    Grouper* make_grouper(OncePerDocument* once_per_document, Args&&... args);
     int64_t        _maxGroups;
     int64_t        _precision;
     bool           _isOrdered;

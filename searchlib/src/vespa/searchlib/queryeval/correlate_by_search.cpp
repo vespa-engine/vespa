@@ -102,8 +102,7 @@ CorrelateBySearch::~CorrelateBySearch() = default;
 
 uint32_t CorrelateBySearch::attribute_index(const attribute::IAttributeVector* attribute, bool fold) {
     for (uint32_t i = 0; i < _attributes.size(); ++i) {
-        if (_attributes[i].attribute == attribute) {
-            _attributes[i].fold = _attributes[i].fold || fold;
+        if (_attributes[i].attribute == attribute && _attributes[i].fold == fold) {
             return i;
         }
     }
@@ -249,7 +248,7 @@ void CorrelateBySearch::doUnpack(uint32_t docid) {
     for (size_t i = 0; i < _children.size(); ++i) {
         if (_presence_children[i]) continue;
         _elements.clear();
-        find_correlated_elements(docid, i, _elements);
+        if (_children[i]->needs_element_filter()) find_correlated_elements(docid, i, _elements);
         _children[i]->unpack_elements(docid, _elements);
     }
 }
@@ -275,9 +274,9 @@ const std::vector<BindingRow>& CorrelateBySearch::find_bindings(uint32_t docid) 
 }
 
 const std::vector<BindingRow>& CorrelateBySearch::find_bindings(uint32_t docid, std::span<const uint32_t> projection) {
-    if (check_docid_match(docid)) {
+    if (_rows_docid != docid && check_docid_match(docid)) {
         read_matching_rows(docid);
-    } else {
+    } else if (_rows_docid != docid) {
         for (auto& table : _tables) table.rows.clear();
         _rows_docid = std::numeric_limits<uint32_t>::max();
     }

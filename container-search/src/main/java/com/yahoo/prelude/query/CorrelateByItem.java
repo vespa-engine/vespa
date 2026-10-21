@@ -28,7 +28,7 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  * <p>Each child is a sameElement clause. This item keeps the variables each clause binds,
  * the exact values its rows must have, and its firstPresent link, in the same order as the children.
  * Add children with {@link #addClause} and {@link #addFirstPresent}; the other ways of adding a child are refused.
- * Removing a child removes its clause. Removing one clause of a firstPresent pair turns the other into an ordinary clause.</p>
+ * Removing an ordinary child removes its clause. Neither clause of a firstPresent pair can be removed separately.</p>
  *
  * <p>An exact value, written <code>field = "value"</code> in YQL, requires the whole value of the
  * row's field to equal the given string. Case is handled as the field handles the case of its terms:
@@ -75,11 +75,7 @@ public class CorrelateByItem extends NonReducibleCompositeItem {
 
     /** What this keeps about each child. A presence clause always follows the clause holding its firstPresent. */
     private record ClauseInfo(Map<String, String> bindings, Map<String, List<String>> exactValues,
-                              FirstPresent firstPresent, boolean presence) {
-
-        ClauseInfo withoutFirstPresent() { return new ClauseInfo(bindings, exactValues, null, false); }
-
-    }
+                              FirstPresent firstPresent, boolean presence) { }
 
     private List<ClauseInfo> clauses = new ArrayList<>();
     private Map<String, List<String>> allowedValues = Map.of();
@@ -103,6 +99,9 @@ public class CorrelateByItem extends NonReducibleCompositeItem {
             throw new IllegalArgumentException("firstPresent clauses must bind the same variables to the same fields");
         if (clause.item() == presence.item() || ! clause.item().getFieldName().equals(presence.item().getFieldName()))
             throw new IllegalArgumentException("firstPresent requires two different clauses on the same struct field");
+        // Check both clauses before changing the children or their metadata.
+        ensureNotInSubtree(clause.item());
+        ensureNotInSubtree(presence.item());
         super.addItem(clause.item());
         super.addItem(presence.item());
         clauses.add(new ClauseInfo(clause.bindings(), clause.exactValues(), firstPresent, false));
@@ -201,14 +200,15 @@ public class CorrelateByItem extends NonReducibleCompositeItem {
     /** Replaces the sameElement query of a clause, keeping its variable bindings. */
     @Override
     public Item setItem(int index, Item item) {
-        requireSameElement(item);
+        requireReplacement(index, item);
         return super.setItem(index, item);
     }
 
     @Override
     public Item removeItem(int index) {
+        requireRemovable(index);
         Item removed = super.removeItem(index);
-        clauseRemoved(index);
+        clauses.remove(index);
         return removed;
     }
 
@@ -230,13 +230,21 @@ public class CorrelateByItem extends NonReducibleCompositeItem {
             throw new IllegalArgumentException("A correlateBy clause must be a sameElement item, not " + item);
     }
 
-    /** Removes the information about a removed child, and unlinks the other clause of its firstPresent pair. */
-    private void clauseRemoved(int index) {
-        var removed = clauses.remove(index);
-        if (removed.firstPresent() != null) // its presence clause has moved to this index
-            clauses.set(index, clauses.get(index).withoutFirstPresent());
-        if (removed.presence())
-            clauses.set(index - 1, clauses.get(index - 1).withoutFirstPresent());
+    private void requireReplacement(int index, Item item) {
+        requireSameElement(item);
+        ensureNotInSubtree((SameElementItem) item);
+        var info = clauses.get(index);
+        int partner = info.presence() ? index - 1 : info.firstPresent() != null ? index + 1 : -1;
+        if (partner >= 0 && ! ((SameElementItem) item).getFieldName().equals(clauseField(partner)))
+            throw new IllegalArgumentException("firstPresent clauses must use the same struct field");
+        if (partner >= 0 && item == getItem(partner))
+            throw new IllegalArgumentException("firstPresent requires two different clauses");
+    }
+
+    private void requireRemovable(int index) {
+        var info = clauses.get(index);
+        if (info.firstPresent() != null || info.presence())
+            throw new IllegalArgumentException("Cannot remove one clause of a firstPresent pair");
     }
 
     @Override
@@ -349,14 +357,17 @@ public class CorrelateByItem extends NonReducibleCompositeItem {
 
         @Override
         public void remove() {
+            if (current < 0) throw new IllegalStateException();
+            requireRemovable(current);
             items.remove();
-            clauseRemoved(current);
+            clauses.remove(current);
             current = -1;
         }
 
         @Override
         public void set(Item item) {
-            requireSameElement(item);
+            if (current < 0) throw new IllegalStateException();
+            requireReplacement(current, item);
             items.set(item);
         }
 

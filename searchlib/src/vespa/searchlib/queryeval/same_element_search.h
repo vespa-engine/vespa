@@ -51,6 +51,11 @@ public:
     const std::vector<std::unique_ptr<SearchIterator>>& children() const { return _children; }
     std::span<const uint32_t> matching_elements() const noexcept { return _matchingElements; }
 
+    // Attribute terms need no element filtering when ranking does not request positions.
+    bool needs_element_filter() const noexcept {
+        return _tfmd.needs_normal_features() || !_descendants_index_tfmd.empty();
+    }
+
     // Unpacks like doUnpack, but exposes only the given elements, which must be a
     // sorted subset of matching_elements(). The search must be positioned at docid.
     void unpack_elements(uint32_t docid, std::span<const uint32_t> element_ids);

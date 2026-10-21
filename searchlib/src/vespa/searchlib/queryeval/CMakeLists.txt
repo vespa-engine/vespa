@@ -57,6 +57,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     profiled_iterator.cpp
     ranksearch.cpp
     same_element_blueprint.cpp
+    correlated_binding_provider.cpp
     correlated_rows.cpp
     correlate_by_blueprint.cpp
     correlate_by_search.cpp

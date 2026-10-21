@@ -728,6 +728,19 @@ public class VespaSerializer {
 
     private static class SameElementSerializer extends Serializer<SameElementItem> {
 
+        private static boolean openElementFilter(StringBuilder destination, SameElementItem item) {
+            if (item.getElementFilter().isEmpty()) return false;
+            // Annotations wrap the sameElement expression in parentheses.
+            destination.append("({").append(ELEMENT_FILTER).append(":[");
+            List<Integer> filter = item.getElementFilter();
+            for (int i = 0; i < filter.size(); i++) {
+                if (i > 0) destination.append(", ");
+                destination.append(filter.get(i));
+            }
+            destination.append("]} ");
+            return true;
+        }
+
         @Override
         void onExit(StringBuilder destination, SameElementItem item) { }
 
@@ -735,19 +748,7 @@ public class VespaSerializer {
         boolean serialize(StringBuilder destination, SameElementItem item, Scope scope) {
             serializeField(item, scope, destination);
 
-            boolean hasFilter = !item.getElementFilter().isEmpty();
-            if (hasFilter) {
-                // NOTE(johsol): sameElement with annotation must be wrapped in parens
-                destination.append("({");
-                destination.append(ELEMENT_FILTER);
-                destination.append(":[");
-                List<Integer> filter = item.getElementFilter();
-                for (int i = 0; i < filter.size(); i++) {
-                    if (i > 0) destination.append(", ");
-                    destination.append(filter.get(i));
-                }
-                destination.append("]} ");
-            }
+            boolean hasFilter = openElementFilter(destination, item);
             destination.append(SAME_ELEMENT);
             if (item.getItemCount() == 1 && (item.getItem(0) instanceof AndItem || item.getItem(0) instanceof OrItem)) {
                 // serialize nested content without extra parenthesis
@@ -819,7 +820,9 @@ public class VespaSerializer {
         private static void serializeClause(StringBuilder destination, CorrelateByItem item, int index) {
             var clause = (SameElementItem) item.getItem(index);
             var exactValues = item.getExactValues(index);
-            destination.append(clause.getFieldName()).append(" contains ").append(SAME_ELEMENT).append('(');
+            destination.append(clause.getFieldName()).append(" contains ");
+            boolean hasFilter = SameElementSerializer.openElementFilter(destination, clause);
+            destination.append(SAME_ELEMENT).append('(');
             int initLen = destination.length();
             item.getBindings(index).forEach((variable, field) -> {
                 comma(destination, initLen);
@@ -838,6 +841,7 @@ public class VespaSerializer {
                 }
             }
             destination.append(')');
+            if (hasFilter) destination.append(')');
         }
 
         /**

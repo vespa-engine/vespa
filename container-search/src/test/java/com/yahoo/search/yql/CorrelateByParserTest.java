@@ -44,7 +44,7 @@ class CorrelateByParserTest {
         flat contains sameElement(unit_id = $unit, key = "Eco Friendly", value = "True")
         """;
 
-    /** Every correlateBy body parsed successfully in this test, used to check that each one survives a YQL round trip. */
+    /** Bodies used to check that correlation metadata survives a YQL round trip. */
     private static final List<String> VALID_BODIES = List.of(
             CLAUSES,
             CLAUSES + ", $zone in (\"WAREHOUSE_A\", \"WAREHOUSE_B\")",
@@ -54,6 +54,9 @@ class CorrelateByParserTest {
             "a contains sameElement(unit_id = $u, zone_id = $z, key = 'price')",
             "a contains sameElement(unit_id = $u, key = 'a', key = 'b')",
             "a contains sameElement(unit_id = $u, key = 'a', key contains 'b', value > 3)",
+            "a contains ({elementFilter:[0, 2]}sameElement(unit_id = $u, key = 'price'))",
+            "firstPresent(a contains ({elementFilter:[0]}sameElement(unit_id = $u, zone_id = $z, key = 'price')), " +
+            "a contains ({elementFilter:[1, 2]}sameElement(unit_id = $u, zone_id = $z, key = 'price')), $z in ('A', 'B'))",
             "firstPresent(a contains sameElement(unit_id = $u, zone_id = $z, key = 'price'), " +
             "a contains sameElement(unit_id = $u, zone_id = $z, key = 'price'), $z in ('A', 'B'))");
 

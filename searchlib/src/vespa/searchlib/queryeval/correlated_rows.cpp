@@ -2,6 +2,7 @@
 #include "correlated_rows.h"
 
 #include <algorithm>
+#include <iterator>
 #include <map>
 #include <numeric>
 #include <stdexcept>
@@ -124,6 +125,7 @@ bool CorrelatedRows::evaluate(std::span<BindingTable> tables, bool collect, std:
         return true;
     }
     plan_join_order(!projection.empty());
+    if (_column_count > 2 && _work_size > 2 && !shared_values_overlap()) return false;
     bool found = extend(0, !collect, projection);
     if (!collect) return found;
     std::sort(_matches.begin(), _matches.end());
@@ -152,6 +154,50 @@ void CorrelatedRows::project_tables(std::span<const BindingTable> tables) {
         }
         sort_and_deduplicate(work);
     }
+}
+
+bool CorrelatedRows::shared_values_overlap() const {
+    size_t branches = 0;
+    for (size_t i = 0; i < _work_size; ++i) {
+        const auto& table = _work[i];
+        if (table.row_count() <= 1) continue;
+        auto first_unbound = table.columns.begin() + table.lookup_size;
+        if (std::any_of(first_unbound, table.columns.end(),
+                        [this](uint32_t column) { return _binding_counts[column] > 1; })) ++branches;
+    }
+    // A single branching step is already bounded by the table size and lookups.
+    if (branches < 2) return true;
+    for (uint32_t column = 0; column < _column_count; ++column) {
+        // A two-clause join already rejects missing values with a lookup. Check
+        // variables shared by more clauses before other variables multiply work.
+        if (_binding_counts[column] < 3) continue;
+        std::vector<BindingValue> common;
+        std::vector<BindingValue> values;
+        std::vector<BindingValue> intersection;
+        bool first = true;
+        for (size_t i = 0; i < _work_size; ++i) {
+            const auto& table = _work[i];
+            auto found = std::find(table.columns.begin(), table.columns.end(), column);
+            if (found == table.columns.end()) continue;
+            size_t offset = found - table.columns.begin();
+            values.clear();
+            values.reserve(table.row_count());
+            for (size_t row = 0; row < table.row_count(); ++row) values.push_back(table.row(row)[offset]);
+            std::sort(values.begin(), values.end());
+            values.erase(std::unique(values.begin(), values.end()), values.end());
+            if (first) {
+                common.swap(values);
+                first = false;
+            } else {
+                intersection.clear();
+                std::set_intersection(common.begin(), common.end(), values.begin(), values.end(),
+                                      std::back_inserter(intersection));
+                common.swap(intersection);
+            }
+            if (common.empty()) return false;
+        }
+    }
+    return true;
 }
 
 void CorrelatedRows::plan_join_order(bool has_projection) {

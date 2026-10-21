@@ -3,6 +3,7 @@
 
 #include <vespa/check_require.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
+#include <vespa/searchlib/common/unique_issues.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/query/proto_tree_converter.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
@@ -15,6 +16,8 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <functional>
 
 #include <vespa/log/log.h>
 LOG_SETUP("querybuilder_test");
@@ -1175,6 +1178,73 @@ TEST(QueryBuilderTest, correlation_bindings_exact_values_label_and_fallback_surv
     bad = proto;
     bad.mutable_root()->mutable_item_correlate_by()->mutable_first_present(0)->set_variable("unbound");
     EXPECT_FALSE(search::ProtoTreeConverter<SimpleQueryNodeTypes>::convert(bad));
+}
+
+TEST(QueryBuilderTest, malformed_correlations_report_an_issue_and_do_not_build_a_query) {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    CorrelateBy::Bindings bindings(3, {{"unit", "unit_id"}, {"zone", "zone_id"}});
+    builder.add_correlate_by(bindings, {{"zone", {"A"}}}, "selection", {}, {{0, 1, "zone", {"A"}}});
+    for (size_t i = 0; i < 3; ++i) {
+        builder.addSameElement(1, "signals", id[i], weight[i]);
+        builder.addStringTerm("price", "key", id[i], weight[i]);
+    }
+    auto node = builder.build();
+    ASSERT_TRUE(node);
+    QueryToProtobuf converter;
+    const auto valid = converter.serialize(*node);
+    ASSERT_TRUE(search::ProtoTreeConverter<SimpleQueryNodeTypes>::convert(valid));
+    using Correlation = searchlib::searchprotocol::protobuf::ItemCorrelateBy;
+    const std::vector<std::pair<const char*, std::function<void(Correlation&)>>> cases{
+        {"no clauses", [](auto& c) { c.clear_clauses(); }},
+        {"wrong clause type", [](auto& c) { c.mutable_clauses(0)->mutable_query()->mutable_item_and(); }},
+        {"no bindings", [](auto& c) { c.mutable_clauses(0)->clear_bindings(); }},
+        {"empty variable", [](auto& c) { c.mutable_clauses(0)->mutable_bindings(0)->clear_variable(); }},
+        {"empty field", [](auto& c) { c.mutable_clauses(0)->mutable_bindings(0)->clear_field(); }},
+        {"duplicate variable", [](auto& c) {
+            auto binding = c.clauses(0).bindings(0);
+            *c.mutable_clauses(0)->add_bindings() = binding;
+        }},
+        {"empty exact field", [](auto& c) { c.mutable_clauses(0)->add_exact_values(); }},
+        {"duplicate exact field", [](auto& c) {
+            c.mutable_clauses(0)->add_exact_values()->set_field("key");
+            c.mutable_clauses(0)->add_exact_values()->set_field("key");
+        }},
+        {"duplicate domain", [](auto& c) { c.add_domains()->set_variable("zone"); }},
+        {"missing matching clause", [](auto& c) { c.mutable_first_present(0)->set_clause(3); }},
+        {"missing presence clause", [](auto& c) { c.mutable_first_present(0)->set_presence(3); }},
+        {"same matching and presence clause", [](auto& c) { c.mutable_first_present(0)->set_presence(0); }},
+        {"different bindings", [](auto& c) { c.mutable_clauses(1)->mutable_bindings(0)->set_field("other"); }},
+        {"different struct fields", [](auto& c) {
+            c.mutable_clauses(1)->mutable_query()->mutable_item_same_element()->mutable_properties()->set_index("other");
+        }},
+        {"unbound priority variable", [](auto& c) { c.mutable_first_present(0)->set_variable("unknown"); }},
+        {"reused matching clause", [](auto& c) {
+            auto rule = c.first_present(0);
+            rule.set_presence(2);
+            *c.add_first_present() = rule;
+        }},
+        {"reused presence clause", [](auto& c) {
+            auto rule = c.first_present(0);
+            rule.set_clause(2);
+            *c.add_first_present() = rule;
+        }},
+        {"presence also used for matching", [](auto& c) {
+            auto rule = c.first_present(0);
+            rule.set_clause(1);
+            rule.set_presence(2);
+            *c.add_first_present() = rule;
+        }}
+    };
+    for (const auto& [name, mutate] : cases) {
+        SCOPED_TRACE(name);
+        auto malformed = valid;
+        mutate(*malformed.mutable_root()->mutable_item_correlate_by());
+        search::UniqueIssues issues;
+        auto capture = vespalib::Issue::listen(issues);
+        EXPECT_FALSE(search::ProtoTreeConverter<SimpleQueryNodeTypes>::convert(malformed));
+        EXPECT_EQ(1u, issues.size());
+        issues.for_each_message([](const auto& message) { EXPECT_TRUE(message.starts_with("invalid query:")); });
+    }
 }
 
 TEST(QueryBuilderTest, protobuf_iterator_visits_correlation_clauses_and_following_terms) {

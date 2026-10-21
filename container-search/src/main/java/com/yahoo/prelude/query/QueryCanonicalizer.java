@@ -86,8 +86,14 @@ public class QueryCanonicalizer {
         if (composite instanceof EquivItem) {
             removeDuplicates((EquivItem) composite);
         }
-        if (composite.getItemCount() == 0)
+        if (composite.getItemCount() == 0) {
+            if (item.getParent() instanceof CorrelateByItem correlation) {
+                int index = correlation.getItemIndex(item);
+                if (correlation.getFirstPresent(index).isPresent() || correlation.isPresenceClause(index))
+                    return CanonicalizationResult.error("Cannot remove an empty clause of a firstPresent pair");
+            }
             parentIterator.remove();
+        }
 
         composite.extractSingleChild().ifPresent(parentIterator::set);
 

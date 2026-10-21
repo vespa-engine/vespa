@@ -173,6 +173,24 @@ TEST(TermDataExtractorTest, requireThatNegativeTermsAreSkipped) {
     EXPECT_EQ(id[1], term_data[1]->getUniqueId());
 }
 
+TEST(TermDataExtractorTest, first_present_presence_terms_do_not_contribute_to_ranking) {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.add_correlate_by({{{"zone", "zone"}}, {{"zone", "zone"}}, {{"zone", "zone"}}}, {}, "sel", {},
+                             {{0, 1, "zone", {"A", "B"}}});
+    for (uint32_t i = 0; i < 3; ++i) {
+        builder.addSameElement(1, "offers", 2 * i + 1, Weight(1));
+        builder.addStringTerm("price", "key", 2 * i + 2, Weight(1));
+    }
+    auto node = builder.build();
+    SameElementModifier modifier;
+    node->accept(modifier);
+    vector<const ITermData*> terms;
+    TermDataExtractor::extractTerms(*node, terms);
+    std::vector<uint32_t> ids;
+    for (auto* term : terms) ids.push_back(term->getUniqueId());
+    EXPECT_EQ((std::vector<uint32_t>{1, 2, 5, 6}), ids);
+}
+
 std::vector<uint32_t> same_element_query_ids(bool structured, bool ranked, bool negative) {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);

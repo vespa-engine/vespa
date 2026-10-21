@@ -667,6 +667,17 @@ TEST_F(MonitorReplyTest, require_that_is_blocking_writes_is_converted) {
     EXPECT_TRUE(proto.is_blocking_writes());
 }
 
+TEST_F(MonitorReplyTest, correlated_query_support_defaults_to_false_and_is_converted) {
+    convert();
+    EXPECT_FALSE(proto.supports_correlated_queries());
+    reply.supports_correlated_queries = true;
+    convert();
+    EXPECT_TRUE(proto.supports_correlated_queries());
+    reply.supports_correlated_queries = false;
+    convert();
+    EXPECT_FALSE(proto.supports_correlated_queries());
+}
+
 //-----------------------------------------------------------------------------
 
 GTEST_MAIN_RUN_ALL_TESTS()

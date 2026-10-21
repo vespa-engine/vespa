@@ -2,6 +2,8 @@
 #include "unique_count_aggregation_result.h"
 #include "aggregation.hpp"
 #include <vespa/searchcommon/common/undefinedvalues.h>
+#include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/floatresultnode.h>
 #include <vespa/searchlib/expression/integerresultnode.h>
 #include <vespa/searchlib/expression/resultvector.h>
@@ -9,6 +11,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iterator>
+#include <optional>
 
 namespace search::aggregation {
 
@@ -98,10 +101,23 @@ int64_t estimate_count(const Sketch<10, uint32_t>& sketch) {
     return static_cast<int64_t>(std::floor(estimate + 0.5));
 }
 
-// Attributes store a missing value as an empty string, the undefined value of the integer type, or NaN.
-bool is_missing(const expression::ResultNode& value) {
+std::optional<int64_t> undefined_integer(const expression::AttributeNode& node) {
+    if (node.getAttribute() == nullptr) return std::nullopt;
+    using search::attribute::BasicType;
+    switch (node.getAttribute()->getBasicType()) {
+    case BasicType::INT8: return search::attribute::getUndefined<int8_t>();
+    case BasicType::INT16: return search::attribute::getUndefined<int16_t>();
+    case BasicType::INT32: return search::attribute::getUndefined<int32_t>();
+    case BasicType::INT64: return search::attribute::getUndefined<int64_t>();
+    default: return std::nullopt;
+    }
+}
+
+// Grouping widens integer attributes to Int64, but keeps the source type's missing value.
+bool is_missing(const expression::ResultNode& value, std::optional<int64_t> undefined) {
     using namespace search::expression;
     if (value.inherits(StringResultNode::classId)) return static_cast<const StringResultNode&>(value).get().empty();
+    if (undefined && value.inherits(IntegerResultNode::classId)) return value.getInteger() == *undefined;
     if (value.inherits(Int8ResultNode::classId)) return value.getInteger() == search::attribute::getUndefined<int8_t>();
     if (value.inherits(Int16ResultNode::classId)) return value.getInteger() == search::attribute::getUndefined<int16_t>();
     if (value.inherits(Int32ResultNode::classId)) return value.getInteger() == search::attribute::getUndefined<int32_t>();
@@ -143,12 +159,23 @@ vespalib::Deserializer& UniqueCountAggregationResult::onDeserialize(vespalib::De
 
 void UniqueCountAggregationResult::onAggregate(const ResultNode& result) {
     _estimate_valid = false;
+    // Missing strings are empty, including values read from document fields.
+    if (const auto* value = vespalib::Identifiable::cast<const expression::StringResultNode*>(&result)) {
+        if (!value->get().empty()) aggregate_value(result);
+        return;
+    }
+    std::optional<int64_t> undefined;
+    if (const auto* attribute = vespalib::Identifiable::cast<const expression::AttributeNode*>(getExpression())) {
+        undefined = undefined_integer(*attribute);
+    } else if (const auto* field = vespalib::Identifiable::cast<const expression::DocumentFieldNode*>(getExpression())) {
+        if (!field->has_field_value()) return;
+    }
     if (auto* values = dynamic_cast<const expression::ResultNodeVector*>(&result)) {
         for (size_t i = 0; i < values->size(); ++i) {
             const auto& value = values->get(i);
-            if (!is_missing(value)) aggregate_value(value);
+            if (!is_missing(value, undefined)) aggregate_value(value);
         }
-    } else if (!is_missing(result)) {
+    } else if (!is_missing(result, undefined)) {
         aggregate_value(result);
     }
 }

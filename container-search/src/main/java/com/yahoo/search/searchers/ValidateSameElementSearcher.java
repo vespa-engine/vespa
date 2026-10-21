@@ -17,6 +17,13 @@ import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.grouping.request.AndPredicate;
+import com.yahoo.search.grouping.request.CorrelatedPredicate;
+import com.yahoo.search.grouping.request.FilterExpression;
+import com.yahoo.search.grouping.request.GroupingOperation;
+import com.yahoo.search.grouping.request.NotPredicate;
+import com.yahoo.search.grouping.request.OncePerDocumentPredicate;
+import com.yahoo.search.grouping.request.OrPredicate;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
@@ -42,7 +49,25 @@ public class ValidateSameElementSearcher extends Searcher {
     private Optional<ErrorMessage> validate(Query query, Execution execution) {
         SameElementVisitor visitor = new SameElementVisitor(query, execution);
         ToolBox.visit(visitor, query.getModel().getQueryTree().getRoot());
-        return visitor.errorMessage;
+        if (visitor.errorMessage.isPresent()) return visitor.errorMessage;
+        if (visitor.searchesStreaming && query.getSelect().getGrouping().stream()
+                .anyMatch(request -> hasIndexedFilter(request.getRootOperation())))
+            return Optional.of(ErrorMessage.createIllegalQuery(
+                    "correlated() and onceperdoc() grouping filters are only supported by indexed search"));
+        return Optional.empty();
+    }
+
+    private static boolean hasIndexedFilter(GroupingOperation operation) {
+        return hasIndexedFilter(operation.getFilterBy()) || operation.getChildren().stream()
+                .anyMatch(ValidateSameElementSearcher::hasIndexedFilter);
+    }
+
+    private static boolean hasIndexedFilter(FilterExpression filter) {
+        if (filter instanceof CorrelatedPredicate || filter instanceof OncePerDocumentPredicate) return true;
+        if (filter instanceof AndPredicate and) return and.getArgs().stream().anyMatch(ValidateSameElementSearcher::hasIndexedFilter);
+        if (filter instanceof OrPredicate or) return or.getArgs().stream().anyMatch(ValidateSameElementSearcher::hasIndexedFilter);
+        if (filter instanceof NotPredicate not) return hasIndexedFilter(not.getExpression());
+        return false;
     }
 
     private static class SameElementVisitor extends ToolBox.QueryVisitor {
