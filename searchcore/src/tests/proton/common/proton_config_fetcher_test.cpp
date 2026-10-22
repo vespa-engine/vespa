@@ -29,11 +29,9 @@ using namespace vespa::config::search;
 using namespace cloud::config::filedistribution;
 using namespace std::chrono_literals;
 using ai::vespa::telemetry::TelemetryConfig;
-using ai::vespa::telemetry::TelemetryConfigBuilder;
 using proton::test::BootstrapConfigSetBuilder;
 using proton::test::DocumentDBConfigSetBuilder;
 using vespa::config::content::core::BucketspacesConfig;
-using vespa::config::content::core::BucketspacesConfigBuilder;
 
 using config::ConfigUri;
 using document::DocumentTypeRepo;
@@ -52,7 +50,7 @@ struct DoctypeFixture : public DocumentDBConfigSetBuilder {};
 struct ConfigTestFixture {
     const std::string                                 configId;
     Transport                                         transport;
-    BootstrapConfigSetBuilder                         bootstrap_builder;
+    BootstrapConfigSetBuilder                         bootstrap_config_builder;
     map<std::string, std::unique_ptr<DoctypeFixture>> dbConfig;
     ConfigSet                                         set;
     std::shared_ptr<IConfigContext>                   context;
@@ -62,12 +60,12 @@ struct ConfigTestFixture {
     ConfigTestFixture(const std::string& id, bool add_alwaysthere)
         : configId(id),
           transport(),
-          bootstrap_builder(),
+          bootstrap_config_builder(),
           dbConfig(),
           set(),
           context(std::make_shared<ConfigContext>(set)),
           idcounter(-1) {
-        bootstrap_builder.add_builders(set, configId);
+        bootstrap_config_builder.add_builders(set, configId);
         if (add_alwaysthere) {
             addDocType("_alwaysthere_");
         }
@@ -90,14 +88,14 @@ struct ConfigTestFixture {
         dt.id = idcounter--;
         dt.name = name;
         dt.version = 0;
-        bootstrap_builder.documenttypes.documenttype.push_back(dt);
+        bootstrap_config_builder.documenttypes.documenttype.push_back(dt);
 
         ProtonConfigBuilder::Documentdb db;
         db.inputdoctypename = name;
         db.configid = configId + "/" + name;
         db.global = isGlobal;
         db.mode = mode;
-        bootstrap_builder.proton.documentdb.push_back(db);
+        bootstrap_config_builder.proton.documentdb.push_back(db);
 
         auto fixture = std::make_unique<DoctypeFixture>();
         fixture->add_builders(set, db.configid);
@@ -105,7 +103,7 @@ struct ConfigTestFixture {
     }
 
     void removeDocType(const std::string& name) {
-        auto& documenttypesBuilder = bootstrap_builder.documenttypes;
+        auto& documenttypesBuilder = bootstrap_config_builder.documenttypes;
         for (auto it(documenttypesBuilder.documenttype.begin()), mt(documenttypesBuilder.documenttype.end());
              it != mt; it++)
         {
@@ -115,11 +113,12 @@ struct ConfigTestFixture {
             }
         }
 
-        for (auto it(bootstrap_builder.proton.documentdb.begin()), mt(bootstrap_builder.proton.documentdb.end());
+        for (auto it(bootstrap_config_builder.proton.documentdb.begin()),
+             mt(bootstrap_config_builder.proton.documentdb.end());
              it != mt; it++)
         {
             if ((*it).inputdoctypename.compare(name) == 0) {
-                bootstrap_builder.proton.documentdb.erase(it);
+                bootstrap_config_builder.proton.documentdb.erase(it);
                 break;
             }
         }
@@ -138,18 +137,12 @@ struct ConfigTestFixture {
     }
 
     bool configEqual(const BootstrapConfig& bootstrapConfig) const {
-        return (bootstrap_builder.proton == bootstrapConfig.getProtonConfig() &&
-                bootstrap_builder.documenttypes == bootstrapConfig.getDocumenttypesConfig());
+        return (bootstrap_config_builder.proton == bootstrapConfig.getProtonConfig() &&
+                bootstrap_config_builder.documenttypes == bootstrapConfig.getDocumenttypesConfig());
     }
 
-    BootstrapConfig::SP getBootstrapConfig(int64_t generation, const HwInfo& hwInfo) const {
-        return std::make_shared<BootstrapConfig>(
-            generation, std::make_shared<DocumenttypesConfig>(bootstrap_builder.documenttypes),
-            std::make_shared<DocumentTypeRepo>(bootstrap_builder.documenttypes),
-            std::make_shared<ProtonConfig>(bootstrap_builder.proton), std::make_shared<FiledistributorrpcConfig>(),
-            std::make_shared<BucketspacesConfig>(bootstrap_builder.bucketspaces),
-            std::make_shared<TelemetryConfig>(bootstrap_builder.telemetry), std::make_shared<TuneFileDocumentDB>(),
-            hwInfo);
+    std::shared_ptr<BootstrapConfig> getBootstrapConfig(int64_t generation, const HwInfo& hwInfo) const {
+        return bootstrap_config_builder.build(generation, hwInfo);
     }
 
     void reload() { context->reload(); }
@@ -223,7 +216,7 @@ TEST(ProtonConfigFetcherTest, require_that_bootstrap_config_manager_updates_conf
     ConfigRetriever        f3(f2.createConfigKeySet(), f1.context);
     f2.update(f3.getBootstrapConfigs());
     ASSERT_TRUE(f1.configEqual(*f2.getConfig()));
-    f1.bootstrap_builder.proton.rpcport = proton_rpc_port;
+    f1.bootstrap_config_builder.proton.rpcport = proton_rpc_port;
     ASSERT_FALSE(f1.configEqual(*f2.getConfig()));
     f1.reload();
     f2.update(f3.getBootstrapConfigs());
@@ -297,7 +290,7 @@ TEST(ProtonConfigFetcherTest, require_that_proton_config_fetcher_follows_changes
     ASSERT_TRUE(f2._configured);
     ASSERT_TRUE(f1.configEqual(*f2.getBootstrapConfig()));
     f2._configured = false;
-    f1.bootstrap_builder.proton.rpcport = proton_rpc_port;
+    f1.bootstrap_config_builder.proton.rpcport = proton_rpc_port;
     f1.reload();
     ASSERT_TRUE(f2.waitUntilConfigured(120s));
     ASSERT_TRUE(f1.configEqual(*f2.getBootstrapConfig()));
@@ -404,7 +397,7 @@ TEST(ProtonConfigFetcherTest, require_that_target_numdocs_follows_memory_for_str
     f1.addDocType("test", ProtonConfig::Documentdb::Mode::STREAMING, true);
     EXPECT_EQ(adjust_expected_minimum_capacity(23342213u), get_minimum_capacity(f1, f2, 1_Gi));
     EXPECT_EQ(adjust_expected_minimum_capacity(233422135u), get_minimum_capacity(f1, f2, 10_Gi));
-    f1.bootstrap_builder.proton.distribution.searchablecopies = 2;
+    f1.bootstrap_config_builder.proton.distribution.searchablecopies = 2;
     EXPECT_EQ(adjust_expected_minimum_capacity(11671106u), get_minimum_capacity(f1, f2, 1_Gi));
     EXPECT_EQ(adjust_expected_minimum_capacity(116711067u), get_minimum_capacity(f1, f2, 10_Gi));
     f1.addDocType("typea");
@@ -416,8 +409,8 @@ TEST(ProtonConfigFetcherTest, require_that_target_numdocs_follows_memory_for_str
 TEST(ProtonConfigFetcherTest, require_that_prune_removed_documents_interval_can_be_set_based_on_age) {
     ConfigTestFixture       f1("test");
     DocumentDBConfigManager f2(f1.configId + "/test", "test");
-    f1.bootstrap_builder.proton.pruneremoveddocumentsage = 2000;
-    f1.bootstrap_builder.proton.pruneremoveddocumentsinterval = 0;
+    f1.bootstrap_config_builder.proton.pruneremoveddocumentsage = 2000;
+    f1.bootstrap_config_builder.proton.pruneremoveddocumentsinterval = 0;
     f1.addDocType("test");
     auto config = getDocumentDBConfig(f1, f2);
     EXPECT_EQ(20s, config->getMaintenanceConfigSP()->getPruneRemovedDocumentsConfig().getInterval());
@@ -428,15 +421,15 @@ TEST(ProtonConfigFetcherTest, require_that_docstore_config_computes_cachesize_au
     DocumentDBConfigManager f2(f1.configId + "/test", "test");
     HwInfo                  hwInfo = createHwInfoWithMemory(1000000);
     f1.addDocType("test");
-    f1.bootstrap_builder.proton.summary.cache.maxbytes = 2000;
+    f1.bootstrap_config_builder.proton.summary.cache.maxbytes = 2000;
     auto config = getDocumentDBConfig(f1, f2, hwInfo);
     EXPECT_EQ(2000ul, config->getStoreConfig().getMaxCacheBytes());
 
-    f1.bootstrap_builder.proton.summary.cache.maxbytes = -7;
+    f1.bootstrap_config_builder.proton.summary.cache.maxbytes = -7;
     config = getDocumentDBConfig(f1, f2, hwInfo);
     EXPECT_EQ(70000ul, config->getStoreConfig().getMaxCacheBytes());
 
-    f1.bootstrap_builder.proton.summary.cache.maxbytes = -700;
+    f1.bootstrap_config_builder.proton.summary.cache.maxbytes = -700;
     config = getDocumentDBConfig(f1, f2, hwInfo);
     EXPECT_EQ(500000ul, config->getStoreConfig().getMaxCacheBytes());
 }
@@ -452,11 +445,11 @@ GrowStrategy growStrategy(uint32_t initial) {
 TEST(ProtonConfigFetcherTest, require_that_allocation_config_is_propagated) {
     ConfigTestFixture       f1("test");
     DocumentDBConfigManager f2(f1.configId + "/test", "test");
-    f1.bootstrap_builder.proton.distribution.redundancy = 5;
-    f1.bootstrap_builder.proton.distribution.searchablecopies = 2;
+    f1.bootstrap_config_builder.proton.distribution.redundancy = 5;
+    f1.bootstrap_config_builder.proton.distribution.searchablecopies = 2;
     f1.addDocType("test");
     {
-        auto& allocation = f1.bootstrap_builder.proton.documentdb.back().allocation;
+        auto& allocation = f1.bootstrap_config_builder.proton.documentdb.back().allocation;
         allocation.initialnumdocs = 10000000;
         allocation.growfactor = 0.1;
         allocation.growbias = 1;

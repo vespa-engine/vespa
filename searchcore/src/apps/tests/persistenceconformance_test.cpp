@@ -1,13 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/check_require.h>
-#include <vespa/config-attributes.h>
-#include <vespa/config-bucketspaces.h>
-#include <vespa/config-imported-fields.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-summary.h>
-#include <vespa/config-telemetry.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
@@ -27,6 +20,8 @@
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
+#include <vespa/searchcore/proton/test/bootstrap_config_set_builder.h>
+#include <vespa/searchcore/proton/test/document_db_config_set_builder.h>
 #include <vespa/searchcore/proton/test/dummydbowner.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
 #include <vespa/searchcore/proton/test/port_numbers.h>
@@ -34,7 +29,6 @@
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
-#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -51,14 +45,14 @@ using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using namespace std::chrono_literals;
-using ai::vespa::telemetry::TelemetryConfig;
-using vespa::config::content::core::BucketspacesConfig;
 
 using document::BucketSpace;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::TestDocMan;
 using document::test::makeBucketSpace;
+using proton::test::BootstrapConfigSetBuilder;
+using proton::test::DocumentDBConfigSetBuilder;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
 using search::index::Schema;
@@ -94,34 +88,21 @@ void storeDocType(DocTypeVector* types, const DocumentType& type) {
     types->push_back(DocTypeName(type.getName()));
 }
 
-struct SchemaConfigFactory {
+struct SchemaConfigFactory : public DocumentDBConfigSetBuilder {
     using CS = DocumentDBConfig;
-    using SP = std::shared_ptr<SchemaConfigFactory>;
     virtual ~SchemaConfigFactory() = default;
-    static SchemaConfigFactory::SP get() { return std::make_shared<SchemaConfigFactory>(); }
-    virtual CS::IndexschemaConfigSP createIndexSchema(const DocumentType& docType) {
-        (void)docType;
-        return std::make_shared<IndexschemaConfig>();
-    }
-    virtual CS::AttributesConfigSP createAttributes(const DocumentType& docType) {
-        (void)docType;
-        return std::make_shared<AttributesConfig>();
-    }
-    virtual CS::SummaryConfigSP createSummary(const DocumentType& docType) {
-        (void)docType;
-        return std::make_shared<SummaryConfig>();
-    }
+    static std::shared_ptr<SchemaConfigFactory> get() { return std::make_shared<SchemaConfigFactory>(); }
 };
 
 class ConfigFactory {
 private:
     std::shared_ptr<const DocumentTypeRepo> _repo;
     DocumenttypesConfigSP                   _typeCfg;
-    SchemaConfigFactory::SP                 _schemaFactory;
+    std::shared_ptr<SchemaConfigFactory>    _schemaFactory;
 
 public:
     ConfigFactory(std::shared_ptr<const DocumentTypeRepo> repo, DocumenttypesConfigSP typeCfg,
-                  SchemaConfigFactory::SP schemaFactory);
+                  std::shared_ptr<SchemaConfigFactory> schemaFactory);
     ~ConfigFactory();
     std::shared_ptr<const DocumentTypeRepo> getTypeRepo() const { return _repo; }
     DocumenttypesConfigSP getTypeCfg() const { return _typeCfg; }
@@ -136,24 +117,12 @@ public:
         if (docType == nullptr) {
             return DocumentDBConfig::SP();
         }
-        using CS = DocumentDBConfig;
-        CS::IndexschemaConfigSP indexschema = _schemaFactory->createIndexSchema(*docType);
-        CS::AttributesConfigSP  attributes = _schemaFactory->createAttributes(*docType);
-        CS::SummaryConfigSP     summary = _schemaFactory->createSummary(*docType);
-        auto                    schema = DocumentDBConfig::build_schema(*attributes, *indexschema);
-        return std::make_shared<DocumentDBConfig>(
-            1, std::make_shared<RankProfilesConfig>(), std::make_shared<search::fef::RankingConstants>(),
-            std::make_shared<search::fef::RankingExpressions>(), std::make_shared<search::fef::OnnxModels>(),
-            indexschema, attributes, summary, std::make_shared<JuniperrcConfig>(), _typeCfg, _repo,
-            std::make_shared<ImportedFieldsConfig>(), std::make_shared<TuneFileDocumentDB>(), schema,
-            std::make_shared<DocumentDBMaintenanceConfig>(), search::LogDocumentStore::Config(),
-            ThreadingServiceConfig::make(), AllocConfig::makeDefault(), DocumentMetaStoreConfig::make(), "client",
-            docTypeName.getName());
+        return _schemaFactory->build(1, *_typeCfg, docTypeName.getName(), "client");
     }
 };
 
 ConfigFactory::ConfigFactory(std::shared_ptr<const DocumentTypeRepo> repo, DocumenttypesConfigSP typeCfg,
-                             SchemaConfigFactory::SP schemaFactory)
+                             std::shared_ptr<SchemaConfigFactory> schemaFactory)
     : _repo(std::move(repo)), _typeCfg(std::move(typeCfg)), _schemaFactory(std::move(schemaFactory)) {
 }
 ConfigFactory::~ConfigFactory() = default;
@@ -170,10 +139,11 @@ private:
     MockSharedThreadingService    _shared_service;
     TransLogServer                _tls;
 
-    static std::shared_ptr<ProtonConfig> make_proton_config() {
-        ProtonConfigBuilder proton_config;
-        proton_config.indexing.optimize = ProtonConfigBuilder::Indexing::Optimize::LATENCY;
-        return std::make_shared<ProtonConfig>(proton_config);
+    static BootstrapConfigSetBuilder make_bootstrap_config_builder(const DocumenttypesConfig& documenttypes) {
+        BootstrapConfigSetBuilder builder;
+        builder.documenttypes = documenttypes;
+        builder.proton.indexing.optimize = ProtonConfigBuilder::Indexing::Optimize::LATENCY;
+        return builder;
     }
 
 public:
@@ -191,10 +161,8 @@ public:
         config::DirSpec        spec(inputCfg + "/config-1");
         auto                   tuneFileDocDB = std::make_shared<TuneFileDocumentDB>();
         DocumentDBConfigHelper mgr(spec, docType.getName());
-        auto                   b = std::make_shared<BootstrapConfig>(1, factory.getTypeCfg(), factory.getTypeRepo(),
-                                                                     make_proton_config(), std::make_shared<FiledistributorrpcConfig>(),
-                                                                     std::make_shared<BucketspacesConfig>(),
-                                                                     std::make_shared<TelemetryConfig>(), tuneFileDocDB, HwInfo());
+        auto                   bootstrap_config_builder = make_bootstrap_config_builder(*factory.getTypeCfg());
+        auto                   b = bootstrap_config_builder.build(1, HwInfo());
         mgr.forwardConfig(b);
         mgr.nextGeneration(_shared_service.transport(), 0ms);
         return DocumentDB::create(
@@ -315,18 +283,18 @@ public:
 
 class MyPersistenceFactory : public PersistenceFactory {
 private:
-    std::string                 _baseDir;
-    DocumentDBFactory           _docDbFactory;
-    SchemaConfigFactory::SP     _schemaFactory;
-    DocumentDBRepo::UP          _docDbRepo;
-    std::string                 _docType;
-    MyPersistenceEngineOwner    _engineOwner;
-    MyResourceWriteFilter       _writeFilter;
-    test::ResourceUsageNotifier _resource_usage_notifier;
+    std::string                          _baseDir;
+    DocumentDBFactory                    _docDbFactory;
+    std::shared_ptr<SchemaConfigFactory> _schemaFactory;
+    DocumentDBRepo::UP                   _docDbRepo;
+    std::string                          _docType;
+    MyPersistenceEngineOwner             _engineOwner;
+    MyResourceWriteFilter                _writeFilter;
+    test::ResourceUsageNotifier          _resource_usage_notifier;
 
 public:
-    MyPersistenceFactory(const std::string& baseDir, int tlsListenPort, SchemaConfigFactory::SP schemaFactory,
-                         const std::string& docType = "")
+    MyPersistenceFactory(const std::string& baseDir, int tlsListenPort,
+                         std::shared_ptr<SchemaConfigFactory> schemaFactory, const std::string& docType = "")
         : _baseDir(baseDir),
           _docDbFactory(baseDir, tlsListenPort),
           _schemaFactory(std::move(schemaFactory)),

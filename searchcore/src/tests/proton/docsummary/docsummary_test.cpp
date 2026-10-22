@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config-bucketspaces.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-telemetry.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
@@ -46,6 +44,7 @@
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/searchview.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
+#include <vespa/searchcore/proton/test/bootstrap_config_set_builder.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/test/dummydbowner.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
@@ -92,16 +91,14 @@ using namespace search::transactionlog;
 using namespace search;
 using namespace std::chrono_literals;
 
-using ai::vespa::telemetry::TelemetryConfig;
 using document::test::makeBucketSpace;
+using proton::test::BootstrapConfigSetBuilder;
 using search::TuneFileDocumentDB;
 using search::common::ElementIds;
 using search::index::DummyFileHeaderContext;
 using search::linguistics::SPANTREE_NAME;
 using search::test::DocBuilder;
 using storage::spi::Timestamp;
-using vespa::config::content::core::BucketspacesConfig;
-using vespa::config::search::core::ProtonConfig;
 using vespalib::GateCallback;
 using vespalib::HwInfo;
 using vespalib::IDestructorCallback;
@@ -231,7 +228,6 @@ public:
     DocumentDBConfigHelper                        _configMgr;
     DocumentDBConfig::DocumenttypesConfigSP       _documenttypesConfig;
     const std::shared_ptr<const DocumentTypeRepo> _repo;
-    TuneFileDocumentDB::SP                        _tuneFileDocumentDB;
     HwInfo                                        _hwInfo;
     std::shared_ptr<DocumentDB>                   _ddb;
     AttributeWriter::UP                           _aw;
@@ -250,16 +246,14 @@ public:
           _configMgr(_spec, getDocTypeName()),
           _documenttypesConfig(std::make_shared<DocumenttypesConfig>()),
           _repo(std::move(repo)),
-          _tuneFileDocumentDB(std::make_shared<TuneFileDocumentDB>()),
           _hwInfo(),
           _ddb(),
           _aw(),
           _sa() {
         (void)_made_dir;
-        auto b = std::make_shared<BootstrapConfig>(1, _documenttypesConfig, _repo, std::make_shared<ProtonConfig>(),
-                                                   std::make_shared<FiledistributorrpcConfig>(),
-                                                   std::make_shared<BucketspacesConfig>(),
-                                                   std::make_shared<TelemetryConfig>(), _tuneFileDocumentDB, _hwInfo);
+        BootstrapConfigSetBuilder bootstrap_config_builder;
+        bootstrap_config_builder.documenttypes = *_documenttypesConfig;
+        auto b = bootstrap_config_builder.build(1, _repo, _hwInfo);
         _configMgr.forwardConfig(b);
         _configMgr.nextGeneration(_shared_service.transport(), 0ms);
         std::filesystem::create_directory(std::filesystem::path(std::string("tmpdb/") + docTypeName));
