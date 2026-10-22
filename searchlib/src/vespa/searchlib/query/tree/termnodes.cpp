@@ -39,6 +39,7 @@ SuffixTerm::~SuffixTerm() = default;
 LocationTerm::~LocationTerm() = default;
 RegExpTerm::~RegExpTerm() = default;
 NearestNeighborTerm::~NearestNeighborTerm() = default;
+SparseTensorWandTerm::~SparseTensorWandTerm() = default;
 WeightedSetTerm::~WeightedSetTerm() = default;
 DotProduct::~DotProduct() = default;
 WandTerm::~WandTerm() = default;

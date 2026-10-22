@@ -11,6 +11,7 @@
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/objects/nbo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <vector>
@@ -306,6 +307,10 @@ class QueryNodeConverter : public QueryVisitor {
         appendCompressedPositiveNumber(node.get_allow_approximate() ? 0x1 : 0x0);
         appendCompressedPositiveNumber(node.get_explore_additional_hits());
         appendDouble(node.get_distance_threshold());
+    }
+
+    void visit(SparseTensorWandTerm&) override {
+        throw vespalib::IllegalArgumentException("SparseTensorWandTerm cannot be serialized as a stack dump");
     }
 
     void visit(InTerm& node) override {

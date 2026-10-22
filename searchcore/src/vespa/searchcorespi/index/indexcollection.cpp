@@ -179,6 +179,7 @@ private:
     void visit(PredicateQuery& n) override { visitTerm(n); }
     void visit(RegExpTerm& n) override { visitTerm(n); }
     void visit(NearestNeighborTerm& n) override { visitTerm(n); }
+    void visit(SparseTensorWandTerm& n) override { visitTerm(n); }
     void visit(FuzzyTerm& n) override { visitTerm(n); }
     void visit(InTerm& n) override { visitTerm(n); }
     void visit(WordAlternatives& n) override { visitTerm(n); }

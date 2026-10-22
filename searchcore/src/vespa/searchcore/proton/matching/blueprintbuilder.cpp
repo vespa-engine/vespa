@@ -226,6 +226,7 @@ protected:
     void visit(ProtonPredicateQuery& n) override { buildTerm(n); }
     void visit(ProtonRegExpTerm& n) override { buildTerm(n); }
     void visit(ProtonNearestNeighborTerm& n) override { buildTerm(n); }
+    void visit(ProtonSparseTensorWandTerm& n) override { buildTerm(n); }
     void visit(ProtonTrue&) override { _result = std::make_unique<AlwaysTrueBlueprint>(); }
     void visit(ProtonFalse&) override { _result = std::make_unique<EmptyBlueprint>(); }
     void visit(ProtonFuzzyTerm& n) override { buildTerm(n); }

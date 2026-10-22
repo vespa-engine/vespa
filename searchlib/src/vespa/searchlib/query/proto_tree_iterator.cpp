@@ -555,6 +555,9 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
         return handle(qsi.item_nearest_neighbor(), _d);
     case IC::kItemGeoLocationTerm:
         return handle(qsi.item_geo_location_term(), _d, _serialized_term);
+    case IC::kItemSparseTensorWand:
+        // not supported by streaming search
+        return false;
 
     case IC::ITEM_NOT_SET:
         return false;

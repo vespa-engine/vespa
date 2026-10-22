@@ -324,6 +324,13 @@ message ItemLongWand {
     repeated PureWeightedLong weighted_longs = 5;
 }
 
+message ItemSparseTensorWand {
+    TermItemProperties properties = 1;
+    string query_tensor_name = 2;
+    uint32 target_num_hits = 3;
+    double score_threshold = 4;
+}
+
 // complex intermediates:
 message ItemPhrase {
     TermItemProperties properties = 1;
@@ -429,6 +436,8 @@ message QueryTreeItem {
         ItemLabelWrapper item_label_wrapper = 39;
 
         ItemStringRangeTerm item_string_range_term = 40;
+
+        ItemSparseTensorWand item_sparse_tensor_wand = 41;
 
         // unfinished, only inside QRS: item_multi_term
         // not used anymore: item_any

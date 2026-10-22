@@ -271,6 +271,7 @@ public:
     void visit(ProtonPredicateQuery&) override {}
     void visit(ProtonRegExpTerm&) override {}
     void visit(ProtonNearestNeighborTerm&) override {}
+    void visit(ProtonSparseTensorWandTerm&) override {}
     void visit(ProtonInTerm&) override {}
     void visit(ProtonWordAlternatives&) override {}
 };
@@ -407,6 +408,7 @@ public:
     void visit(ProtonPredicateQuery&) override {}
     void visit(ProtonRegExpTerm&) override {}
     void visit(ProtonNearestNeighborTerm&) override {}
+    void visit(ProtonSparseTensorWandTerm&) override {}
     void visit(ProtonFuzzyTerm&) override {}
     void visit(ProtonInTerm&) override {}
     void visit(ProtonWordAlternatives&) override {}

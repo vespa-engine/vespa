@@ -21,6 +21,7 @@
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
+#include <vespa/searchlib/queryeval/sparse_tensor_wand_blueprint.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/test/attribute_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -55,6 +56,7 @@ using search::queryeval::FilterWrapper;
 using search::queryeval::NearestNeighborBlueprint;
 using search::queryeval::SearchIterator;
 using search::queryeval::SimpleResult;
+using search::queryeval::SparseTensorWandBlueprint;
 using std::string;
 using std::vector;
 using vespalib::eval::TensorSpec;
@@ -365,6 +367,38 @@ TEST(AttributeBlueprintTest, empty_blueprint_is_created_when_nearest_neighbor_te
     expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2])"),
                            dense_y_2); // tensor types are not compatible
     expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2])"), dense_x_3); // tensor types are not same size
+}
+
+Blueprint::UP make_sparse_tensor_wand_blueprint(AttributeVector::SP attr, const TensorSpec* query_tensor) {
+    BlueprintFactoryFixture f(std::move(attr));
+    if (query_tensor != nullptr) {
+        f.request_ctx.set_query_tensor("query_tensor", *query_tensor);
+    }
+    query::SimpleSparseTensorWandTerm term("query_tensor", f.attr_name, 0, Weight(0), 7, 1.5);
+    return f.create_blueprint(term);
+}
+
+TEST(AttributeBlueprintTest, sparse_tensor_wand_blueprint_is_created_by_attribute_blueprint_factory) {
+    TensorSpec  sparse_x = TensorSpec("tensor(x{})").add({{"x", "a"}}, 3);
+    auto        result = make_sparse_tensor_wand_blueprint(make_tensor_attribute(field, "tensor(x{})"), &sparse_x);
+    const auto& wand = downcast<const SparseTensorWandBlueprint>(*result);
+    EXPECT_EQ(7u, wand.get_target_hits());
+    EXPECT_EQ(1.5, wand.get_score_threshold());
+}
+
+TEST(AttributeBlueprintTest, empty_blueprint_is_created_when_sparse_tensor_wand_term_is_invalid) {
+    TensorSpec sparse_x = TensorSpec("tensor(x{})").add({{"x", "a"}}, 3);
+    TensorSpec sparse_y = TensorSpec("tensor(y{})").add({{"y", "a"}}, 3);
+    TensorSpec dense_x = TensorSpec("tensor(x[2])").add({{"x", 0}}, 3);
+    auto       is_empty = [](const Blueprint::UP& bp) { return dynamic_cast<EmptyBlueprint*>(bp.get()) != nullptr; };
+    // attribute is not a tensor
+    EXPECT_TRUE(is_empty(make_sparse_tensor_wand_blueprint(make_int_attribute(field), &sparse_x)));
+    // attribute is not a sparse tensor
+    EXPECT_TRUE(is_empty(make_sparse_tensor_wand_blueprint(make_tensor_attribute(field, "tensor(x[2])"), &dense_x)));
+    // query tensor not found
+    EXPECT_TRUE(is_empty(make_sparse_tensor_wand_blueprint(make_tensor_attribute(field, "tensor(x{})"), nullptr)));
+    // tensor types differ
+    EXPECT_TRUE(is_empty(make_sparse_tensor_wand_blueprint(make_tensor_attribute(field, "tensor(x{})"), &sparse_y)));
 }
 
 TEST(AttributeBlueprintTest, attribute_field_blueprint_creates_exact_filter_search) {

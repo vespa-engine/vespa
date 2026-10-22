@@ -419,6 +419,14 @@ private:
         item->set_distance_threshold(node.get_distance_threshold());
     }
 
+    void visit(SparseTensorWandTerm& node) override {
+        auto* item = _item_stack.back()->mutable_item_sparse_tensor_wand();
+        copyTermState(node, item->mutable_properties());
+        item->set_query_tensor_name(node.get_query_tensor_name());
+        item->set_target_num_hits(node.get_target_num_hits());
+        item->set_score_threshold(node.get_score_threshold());
+    }
+
     void visit(TrueQueryNode&) override { _item_stack.back()->mutable_item_true(); }
 
     void visit(FalseQueryNode&) override { _item_stack.back()->mutable_item_false(); }
