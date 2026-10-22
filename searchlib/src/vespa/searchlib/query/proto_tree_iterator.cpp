@@ -374,6 +374,16 @@ bool handle(const ItemNearestNeighbor& item, QueryStackIterator::Data& _d) {
     return true;
 }
 
+bool handle(const ItemSparseTensorWand& item, QueryStackIterator::Data& _d) {
+    fillTermProperties(item.properties(), _d);
+    _d.itemType = ParseItem::ItemType::ITEM_SPARSE_TENSOR_WAND;
+    _d.term_view = item.query_tensor_name();
+    _d.targetHits = item.target_num_hits();
+    _d.scoreThreshold = item.score_threshold();
+    _d.arity = 0;
+    return true;
+}
+
 bool handle(const ItemGeoLocationTerm& item, QueryStackIterator::Data& _d, std::string& tmp) {
     constexpr int M = 1000000;
     fillTermProperties(item.properties(), _d);
@@ -556,8 +566,7 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
     case IC::kItemGeoLocationTerm:
         return handle(qsi.item_geo_location_term(), _d, _serialized_term);
     case IC::kItemSparseTensorWand:
-        // not supported by streaming search
-        return false;
+        return handle(qsi.item_sparse_tensor_wand(), _d);
 
     case IC::ITEM_NOT_SET:
         return false;

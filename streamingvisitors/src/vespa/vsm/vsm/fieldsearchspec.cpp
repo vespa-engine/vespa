@@ -15,6 +15,7 @@
 #include <vespa/vsm/searcher/geo_pos_field_searcher.h>
 #include <vespa/vsm/searcher/intfieldsearcher.h>
 #include <vespa/vsm/searcher/nearest_neighbor_field_searcher.h>
+#include <vespa/vsm/searcher/sparse_tensor_wand_field_searcher.h>
 #include <vespa/vsm/searcher/utf8exactstringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8flexiblestringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
@@ -125,6 +126,15 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT& fid, const std::string& fname, 
 
 void FieldSearchSpec::reconfig(const QueryTerm& term) {
     if (_reconfigured) {
+        return;
+    }
+    if (term.is_sparse_tensor_wand() && (_searchMethod == VsmfieldsConfig::Fieldspec::Searchmethod::NONE)) {
+        // Tensor fields not supporting nearest neighbor search have no dedicated search method
+        _searcher = std::make_unique<SparseTensorWandFieldSearcher>(id());
+        propagate_settings_to_searcher();
+        LOG(debug, "Reconfigured to use SparseTensorWandFieldSearcher for field '%s' with id '%d'", name().c_str(),
+            id());
+        _reconfigured = true;
         return;
     }
     switch (_searchMethod) {

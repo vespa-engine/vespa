@@ -10,6 +10,7 @@
 #include "query.h"
 #include "regexp_term.h"
 #include "same_element_query_node.h"
+#include "sparse_tensor_wand_query_node.h"
 
 #include <vespa/check_require.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
@@ -152,6 +153,9 @@ std::unique_ptr<QueryNode> QueryBuilder::build(const QueryNode* parent, const Qu
     case ParseItem::ITEM_NEAREST_NEIGHBOR:
         qn = build_nearest_neighbor_query_node(factory, queryRep);
         break;
+    case ParseItem::ITEM_SPARSE_TENSOR_WAND:
+        qn = build_sparse_tensor_wand_query_node(factory, queryRep);
+        break;
     case ParseItem::ITEM_NUMTERM:
     case ParseItem::ITEM_TERM:
     case ParseItem::ITEM_PREFIXTERM:
@@ -285,6 +289,18 @@ std::unique_ptr<QueryNode> QueryBuilder::build_nearest_neighbor_query_node(const
     double           distance_threshold = query_rep.getDistanceThreshold();
     return std::make_unique<NearestNeighborQueryNode>(factory.create(), query_tensor_name, field_name, target_hits,
                                                       distance_threshold, unique_id, weight);
+}
+
+std::unique_ptr<QueryNode> QueryBuilder::build_sparse_tensor_wand_query_node(const QueryNodeResultFactory& factory,
+                                                                             QueryStackIterator& query_rep) {
+    std::string_view query_tensor_name = query_rep.getTerm();
+    std::string      field_name = query_rep.index_as_string();
+    int32_t          unique_id = query_rep.getUniqueId();
+    auto             weight = query_rep.GetWeight();
+    uint32_t         target_hits = query_rep.getTargetHits();
+    double           score_threshold = query_rep.getScoreThreshold();
+    return std::make_unique<SparseTensorWandQueryNode>(factory.create(), query_tensor_name, field_name, target_hits,
+                                                       score_threshold, unique_id, weight);
 }
 
 void QueryBuilder::populate_multi_term(Normalizing string_normalize_mode, MultiTerm& mt,

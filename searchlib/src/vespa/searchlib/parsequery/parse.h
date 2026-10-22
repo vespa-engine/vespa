@@ -66,8 +66,10 @@ public:
         ITEM_NUMERIC_IN = 32,
         ITEM_LABEL_WRAPPER = 33,
         ITEM_STRING_RANGE_TERM = 34,
+        // only produced from the protobuf query tree; no corresponding type in Item.java
+        ITEM_SPARSE_TENSOR_WAND = 35,
         // sentinel, kept last: it moves up as item types are added
-        ITEM_UNDEF = 35,
+        ITEM_UNDEF = 36,
     };
 
     /*
@@ -138,6 +140,8 @@ public:
             return TermType::GEO_LOCATION;
         case ParseItem::ITEM_NEAREST_NEIGHBOR:
             return TermType::NEAREST_NEIGHBOR;
+        case ParseItem::ITEM_SPARSE_TENSOR_WAND:
+            return TermType::SPARSE_TENSOR_WAND;
         default:
             return TermType::WORD;
         }

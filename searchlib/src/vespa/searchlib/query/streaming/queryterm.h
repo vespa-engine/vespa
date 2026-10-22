@@ -23,6 +23,7 @@ class NearestNeighborQueryNode;
 class MultiTerm;
 class RegexpTerm;
 class SameElementQueryNode;
+class SparseTensorWandQueryNode;
 
 /**
    This is a leaf in the Query tree. All terms are leafs.
@@ -122,6 +123,7 @@ public:
     }
     void set_fuzzy_prefix_match(bool prefix_match) noexcept { _fuzzy_prefix_match = prefix_match; }
     virtual NearestNeighborQueryNode* as_nearest_neighbor_query_node() noexcept;
+    virtual SparseTensorWandQueryNode* as_sparse_tensor_wand_query_node() noexcept;
     virtual MultiTerm* as_multi_term() noexcept;
     virtual const MultiTerm* as_multi_term() const noexcept;
     virtual RegexpTerm* as_regexp_term() noexcept;
