@@ -92,6 +92,8 @@ public class ValidateNearestNeighborTestCase {
     private static final TensorType tt_dense_fvector_3 = TensorType.fromSpec("tensor<float>(x[3])");
     private static final TensorType tt_dense_matrix_xy = TensorType.fromSpec("tensor(x[3],y[1])");
     private static final TensorType tt_sparse_vector_x = TensorType.fromSpec("tensor(x{})");
+    private static final TensorType tt_sparse_fvector_x = TensorType.fromSpec("tensor<float>(x{})");
+    private static final TensorType tt_sparse_vector_y = TensorType.fromSpec("tensor(y{})");
 
     @Test
     void testValidQueryDoubleVectors() {
@@ -219,6 +221,62 @@ public class ValidateNearestNeighborTestCase {
         t = makeMatrix(tt_dense_matrix_xy);
         r = doSearch(searcher, q, t);
         assertErrMsg(desc("matrix", "qvector", 1, "tensor query(qvector) must have exactly 1, indexed dimension, but was: tensor(x[3],y[1])"), r);
+    }
+
+    private static String sparseQuery(String attributeTensor, String queryTensor) {
+        return "select * from sources * where {targetHits:10}sparseTensorWand(" + attributeTensor + ", " + queryTensor + ")";
+    }
+
+    private static String sparseDesc(String field, String qt, String errmsg) {
+        return "SPARSE_TENSOR_WAND {field=" + field + ",queryTensorName=" + qt + ",targetHits=10} " + errmsg;
+    }
+
+    private Tensor makeSparseTensor(TensorType tensorType) {
+        String dimension = tensorType.dimensions().get(0).name();
+        return Tensor.Builder.of(tensorType)
+                             .cell().label(dimension, "a").value(1.0)
+                             .cell().label(dimension, "b").value(2.0)
+                             .build();
+    }
+
+    @Test
+    void testValidSparseTensorWand() {
+        assertNull(doSearch(searcher, sparseQuery("sparse", "qvector"), makeSparseTensor(tt_sparse_vector_x)).hits().getError());
+        assertNull(doSearch(searcher, sparseQuery("threetypes", "qvector"), makeSparseTensor(tt_sparse_vector_x)).hits().getError());
+    }
+
+    @Test
+    void testSparseTensorWandRequiresSameTensorType() {
+        assertErrMsg(sparseDesc("sparse", "qvector", "field type tensor(x{}) does not match query type tensor<float>(x{})"),
+                     doSearch(searcher, sparseQuery("sparse", "qvector"), makeSparseTensor(tt_sparse_fvector_x)));
+        assertErrMsg(sparseDesc("sparse", "qvector", "field type tensor(x{}) does not match query type tensor(y{})"),
+                     doSearch(searcher, sparseQuery("sparse", "qvector"), makeSparseTensor(tt_sparse_vector_y)));
+        assertErrMsg(sparseDesc("dvector", "qvector", "field type tensor(x[3]) does not match query type tensor(x{})"),
+                     doSearch(searcher, sparseQuery("dvector", "qvector"), makeSparseTensor(tt_sparse_vector_x)));
+    }
+
+    @Test
+    void testSparseTensorWandRequiresSparseQueryTensor() {
+        assertErrMsg(sparseDesc("sparse", "qvector", "tensor query(qvector) must have exactly 1, mapped dimension, but was: tensor(x[3])"),
+                     doSearch(searcher, sparseQuery("sparse", "qvector"), makeTensor(tt_dense_dvector_3)));
+    }
+
+    @Test
+    void testSparseTensorWandInvalidFieldOrQueryTensor() {
+        Tensor t = makeSparseTensor(tt_sparse_vector_x);
+        assertErrMsg(sparseDesc("sparse", "foo", "requires a tensor rank feature named 'query(foo)' but this is not present"),
+                     doSearch(searcher, sparseQuery("sparse", "foo"), t));
+        assertErrMsg(sparseDesc("foo", "qvector", "field is not an attribute"),
+                     doSearch(searcher, sparseQuery("foo", "qvector"), t));
+        assertErrMsg(sparseDesc("simple", "qvector", "field is not a tensor"),
+                     doSearch(searcher, sparseQuery("simple", "qvector"), t));
+    }
+
+    @Test
+    void testSparseTensorWandInvalidTargetHits() {
+        String q = "select * from sources * where {targetHits:0}sparseTensorWand(sparse, qvector)";
+        assertErrMsg("SPARSE_TENSOR_WAND {field=sparse,queryTensorName=qvector,targetHits=0} has invalid targetHits 0: Must be >= 1",
+                     doSearch(searcher, q, makeSparseTensor(tt_sparse_vector_x)));
     }
 
     @Test

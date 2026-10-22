@@ -4,6 +4,7 @@ package com.yahoo.search.searchers;
 
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearestNeighborItem;
+import com.yahoo.prelude.query.SparseTensorWandItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -24,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Validates any NearestNeighborItem query items.
+ * Validates any NearestNeighborItem and SparseTensorWandItem query items.
  *
  * @author arnej
  */
@@ -72,11 +73,13 @@ public class ValidateNearestNeighborSearcher extends Searcher {
 
         @Override
         public boolean visit(Item item) {
-            if (item instanceof NearestNeighborItem) {
-                String error = validate((NearestNeighborItem)item);
-                if (error != null)
-                    errorMessage = Optional.of(ErrorMessage.createIllegalQuery(error));
-            }
+            String error = null;
+            if (item instanceof NearestNeighborItem nnItem)
+                error = validate(nnItem);
+            else if (item instanceof SparseTensorWandItem wandItem)
+                error = validate(wandItem);
+            if (error != null)
+                errorMessage = Optional.of(ErrorMessage.createIllegalQuery(error));
             return true;
         }
 
@@ -155,6 +158,38 @@ public class ValidateNearestNeighborSearcher extends Searcher {
                 }
             }
             return item + " field is not a tensor";
+        }
+
+        private static boolean isSparseWithOneMappedDimension(TensorType tt) {
+            return tt.dimensions().size() == 1 && tt.dimensions().get(0).isMapped();
+        }
+
+        /** Returns an error message if this is invalid, or null if it is valid */
+        private String validate(SparseTensorWandItem item) {
+            if (item.getTargetHits() != null && item.getTargetHits() < 1)
+                return item + " has invalid targetHits " + item.getTargetHits() + ": Must be >= 1";
+
+            if (item.getTotalTargetHits() != null && item.getTotalTargetHits() < 1)
+                return item + " has invalid totalTargetHits " + item.getTotalTargetHits() + ": Must be >= 1";
+
+            String queryFeatureName = "query(" + item.getQueryTensorName() + ")";
+            Optional<Tensor> queryTensor = query.getRanking().getFeatures().getTensor(queryFeatureName);
+            if (queryTensor.isEmpty())
+                return item + " requires a tensor rank feature named '" + queryFeatureName + "' but this is not present";
+
+            TensorType queryType = queryTensor.get().type();
+            if ( ! isSparseWithOneMappedDimension(queryType))
+                return item + " tensor " + queryFeatureName + " must have exactly 1, mapped dimension, but was: " + queryType;
+
+            if ( ! validAttributes.containsKey(item.getIndexName()))
+                return item + " field is not an attribute";
+
+            List<TensorType> allTensorTypes = validAttributes.get(item.getIndexName());
+            if (allTensorTypes.isEmpty())
+                return item + " field is not a tensor";
+            if (allTensorTypes.contains(queryType))
+                return null;
+            return item + " field type " + allTensorTypes.get(0) + " does not match query type " + queryType;
         }
 
     }

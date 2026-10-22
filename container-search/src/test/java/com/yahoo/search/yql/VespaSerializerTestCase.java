@@ -178,6 +178,14 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    void testSparseTensorWand() {
+        parseAndConfirm("sparseTensorWand(sparse_embedding, my_property)");
+        parseAndConfirm("{targetHits: 42}sparseTensorWand(sparse_embedding, my_property)");
+        parseAndConfirm("{totalTargetHits: 1000}sparseTensorWand(sparse_embedding, my_property)");
+        parseAndConfirm("{label: \"foo\", targetHits: 10, scoreThreshold: 2.5}sparseTensorWand(sparse_embedding, my_property)");
+    }
+
+    @Test
     void testNearestNeighbor() {
         parseAndConfirm("{label: \"foo\", targetHits: 1000}nearestNeighbor(semantic_embedding, my_property)");
         parseAndConfirm("{targetHits: 42}nearestNeighbor(semantic_embedding, my_property)");

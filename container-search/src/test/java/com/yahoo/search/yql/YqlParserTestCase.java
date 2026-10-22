@@ -1370,6 +1370,18 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testSparseTensorWand() {
+        assertParse("select foo from bar where sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector}");
+        assertParse("select foo from bar where {targetHits: 37, scoreThreshold: 1.5} sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector,targetHits=37,scoreThreshold=1.5}");
+        assertParse("select foo from bar where {totalTargetHits: 1000} sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector,totalTargetHits=1000}");
+        assertParse("select foo from bar where {label: \"foo\", ranked: false} sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector}");
+    }
+
+    @Test
     void testNearestNeighborWithHnswTuningParameters() {
         assertParse("select foo from bar where {targetHits: 10, hnsw.approximateThreshold: 0.05} nearestNeighbor(semantic_embedding, my_vector)",
                 "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.approximateThreshold=0.05}");
