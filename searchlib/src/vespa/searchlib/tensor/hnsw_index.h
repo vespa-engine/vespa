@@ -85,6 +85,60 @@ struct PreparedAddDoc final : public PrepareResult {
     PreparedAddDoc(PreparedAddDoc&& other) noexcept;
 };
 
+
+using InsertionGenerationType = uint64_t;
+
+struct InsertedNodeInfo {
+    uint32_t nodeid;
+
+    // Sequentially increasing number to remember when the node was added.
+    // Will be compared with the number that is taken in internal_prepare_fix_add.
+internal::InsertionGenerationType generation;
+
+    // levels_ref allows to verify if this node still exists in the graph
+    // The nodeid could have been reused!
+    vespalib::datastore::EntryRef levels_ref;
+};
+
+struct PreparedFixAddNode {
+    using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
+    std::vector<Links> connections;
+    std::vector<double> max_distances;
+    std::vector<HnswTraversalCandidateVector> selected_neighbors;
+    InsertionGenerationType prepared_at_generation;
+
+    PreparedFixAddNode() noexcept;
+    explicit PreparedFixAddNode(std::vector<Links>&& connections_in, std::vector<double>&& max_distances_in, std::vector<HnswTraversalCandidateVector>&& selected_neighbors_in, InsertionGenerationType prepared_at_generation_in) noexcept;
+    ~PreparedFixAddNode();
+    PreparedFixAddNode(PreparedFixAddNode&& other) noexcept;
+};
+
+struct PreparedFixAddDoc final : public PrepareResult {
+    using ReadGuard = vespalib::GenerationGuard;
+    uint32_t                     docid;
+    ReadGuard                    read_guard;
+    ReadGuard                    hnsw_graph_read_guard;
+    std::vector<PreparedFixAddNode> nodes;
+    PreparedFixAddDoc(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept;
+    ~PreparedFixAddDoc() override;
+    PreparedFixAddDoc(PreparedFixAddDoc&& other) noexcept;
+};
+
+struct CachedAddDoc final : public PrepareResult {
+    using ReadGuard = vespalib::GenerationGuard;
+    uint32_t                     docid;
+    ReadGuard                    read_guard;
+    ReadGuard                    hnsw_graph_read_guard;
+    std::vector<int32_t>         node_max_levels;
+
+    using DistanceCache = std::unordered_map<uint64_t, double>;
+    std::vector<DistanceCache> distance_caches;
+
+    CachedAddDoc(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept;
+    ~CachedAddDoc() override;
+    CachedAddDoc(CachedAddDoc&& other) noexcept;
+};
+
 template <HnswIndexType type> class GlobalFilterWrapper;
 
 template <> class GlobalFilterWrapper<HnswIndexType::SINGLE> {
@@ -130,6 +184,13 @@ struct SelectResult {
 };
 
 template <HnswIndexType type> class HnswIndex : public NearestNeighborIndex {
+    enum class InsertionStrategy {
+        PARALLEL,
+        PARALLEL_LAST_NODES,
+        SERIAL_CACHING
+    };
+    static constexpr InsertionStrategy insertion_strategy = InsertionStrategy::PARALLEL_LAST_NODES;
+
 public:
     uint32_t get_docid(uint32_t nodeid) const {
         if constexpr (NodeType::identity_mapping) {
@@ -175,6 +236,11 @@ protected:
     IdMapping                                _id_mapping; // mapping from docid to nodeid vector
     HnswIndexConfig                          _cfg;
 
+    static constexpr size_t NUMBER_OF_LAST_INSERTED_NODES_TO_KEEP = 512;
+    std::deque<internal::InsertedNodeInfo> _last_inserted_nodes;
+    uint64_t _current_generation; // read and written to by writer thread
+    std::atomic_uint64_t _current_generation_atomic; // written to by writer thread, read by reader threads
+
     uint32_t max_links_for_level(uint32_t level) const;
     void add_link_to(uint32_t nodeid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
         LinkArray new_links(old_links.begin(), old_links.end());
@@ -189,16 +255,18 @@ protected:
      * where the candidate is located.
      * Used by select_neighbors_heuristic().
      */
-    bool have_closer_distance(HnswTraversalCandidate              candidate,
-                              const HnswTraversalCandidateVector& curr_result) const;
+    bool have_closer_distance(Stats &stats, HnswTraversalCandidate              candidate,
+                              const HnswTraversalCandidateVector& curr_result,
+                              uint32_t new_node = 0,
+                              internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const;
     template <typename HnswCandidateVectorT>
-    SelectResult select_neighbors_heuristic(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
+    SelectResult select_neighbors_heuristic(Stats &stats, const HnswCandidateVectorT& neighbors, uint32_t max_links, uint32_t new_node = 0, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const;
     template <typename HnswCandidateVectorT>
     SelectResult select_neighbors_simple(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
     template <typename HnswCandidateVectorT>
-    SelectResult select_neighbors(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
-    void shrink_if_needed(uint32_t nodeid, uint32_t level);
-    void connect_new_node(uint32_t nodeid, const LinkArrayRef& neighbors, uint32_t level);
+    SelectResult select_neighbors(Stats &stats, const HnswCandidateVectorT& neighbors, uint32_t max_links, uint32_t new_node = 0, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const;
+    void shrink_if_needed(Stats &stats, uint32_t new_node, uint32_t nodeid, uint32_t level, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr);
+    void connect_new_node(Stats &stats, uint32_t nodeid, const LinkArrayRef& neighbors, uint32_t level, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr);
     void mutual_reconnect(const LinkArrayRef& cluster, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
@@ -224,13 +292,13 @@ protected:
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
     HnswCandidate find_nearest_in_layer(Stats& stats, const BoundDistanceFunction& df,
-                                        const HnswCandidate& entry_point, uint32_t level) const
+                                        const HnswCandidate& entry_point, uint32_t level, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const
         __attribute__((noinline));
     template <class VisitedTracker, class BestNeighbors>
     void search_layer_helper(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
                              double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors,
                              uint32_t level, const GlobalFilter* filter, uint32_t nodeid_limit,
-                             const vespalib::Deadline* const doom, uint32_t estimated_visited_nodes) const
+                             const vespalib::Deadline* const doom, uint32_t estimated_visited_nodes, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const
         __attribute__((noinline));
     template <class VisitedTracker, class BestNeighbors>
     void search_layer_filter_first_helper(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
@@ -251,7 +319,7 @@ protected:
     template <class BestNeighbors>
     void search_layer(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
                       double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors, uint32_t level,
-                      const vespalib::Deadline* const doom, const GlobalFilter* filter = nullptr) const;
+                      const vespalib::Deadline* const doom, const GlobalFilter* filter = nullptr, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const;
     template <class BestNeighbors>
     void search_layer_filter_first(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
                                    double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors,
@@ -264,13 +332,26 @@ protected:
 
     internal::PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
                                                   vespalib::GenerationGuard read_guard) const;
+    internal::PreparedFixAddDoc internal_prepare_fix_add(uint32_t docid, VectorBundle input_vectors,
+                                                  vespalib::GenerationGuard read_guard) const;
+    internal::CachedAddDoc internal_prepare_add_with_caching(uint32_t docid, VectorBundle input_vectors,
+                                                      vespalib::GenerationGuard read_guard) const;
     void internal_prepare_add_node(internal::PreparedAddDoc& op, TypedCells input_vector,
+                                   const typename GraphType::EntryNode& entry) const;
+    void internal_prepare_fix_add_node(internal::PreparedFixAddDoc& op, TypedCells input_vector,
+                                   const typename GraphType::EntryNode& entry) const;
+    void internal_prepare_add_node_with_caching(internal::CachedAddDoc::DistanceCache &distance_cache, internal::CachedAddDoc& op, TypedCells input_vector,
                                    const typename GraphType::EntryNode& entry) const;
     LinkArray filter_valid_nodeids(uint32_t level, const internal::PreparedAddNode::Links& neighbors,
                                    uint32_t self_nodeid);
     void internal_complete_add(uint32_t docid, internal::PreparedAddDoc& op);
+    void internal_complete_fix_add(uint32_t docid, internal::PreparedFixAddDoc& op);
+    void internal_complete_add_with_caching(uint32_t docid, internal::CachedAddDoc& op);
+    void internal_complete_fix_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
+                                    internal::PreparedFixAddNode& prepared_node);
     void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
                                     internal::PreparedAddNode& prepared_node);
+    void internal_complete_add_node_with_caching(internal::CachedAddDoc::DistanceCache &distance_cache, internal::CachedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry, uint32_t nodeid, uint32_t docid, uint32_t subspace);
 
     // Called from writer only.
     uint32_t get_subspaces(uint32_t docid) const noexcept;
@@ -344,6 +425,68 @@ public:
 
     static vespalib::datastore::ArrayStoreConfig make_default_level_array_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_array_store_config();
+
+    static uint64_t make_pair(uint32_t first, uint32_t second) {
+        if (first < second) {
+            return (static_cast<uint64_t>(first) << 32) | static_cast<uint64_t>(second);
+        } else {
+            return (static_cast<uint64_t>(second) << 32) | static_cast<uint64_t>(first);
+        }
+    }
+
+    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, uint32_t df_nodeid, internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid, uint32_t new_node_is) const {
+        double dist;
+        if constexpr (insertion_strategy == InsertionStrategy::SERIAL_CACHING) {
+            if (distance_cache) {
+                uint64_t pair = make_pair(df_nodeid == new_node_is ? 0 : df_nodeid, nodeid == new_node_is ? 0 : nodeid);
+                auto it = distance_cache->find(pair);
+                if (it != distance_cache->end()) {
+                    dist = it->second;
+                    stats.count_cache_hit();
+                } else {
+                    dist = calc_distance(df, nodeid);
+                    stats.count_computed_distance();
+                    (*distance_cache)[pair] = dist;
+                    stats.count_cache_miss();
+                }
+            } else {
+                dist = calc_distance(df, nodeid);
+                stats.count_computed_distance();
+            }
+        } else {
+            dist = calc_distance(df, nodeid);
+            stats.count_computed_distance();
+        }
+
+        return dist;
+    }
+
+    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, uint32_t df_nodeid, internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid, uint32_t new_node_is, uint32_t docid, uint32_t subspace) const {
+        double dist;
+        if constexpr (insertion_strategy == InsertionStrategy::SERIAL_CACHING) {
+            if (distance_cache) {
+                uint64_t pair = make_pair(df_nodeid == new_node_is ? 0 : df_nodeid, nodeid == new_node_is ? 0 : nodeid);
+                auto it = distance_cache->find(pair);
+                if (it != distance_cache->end()) {
+                    dist = it->second;
+                    stats.count_cache_hit();
+                } else {
+                    dist = calc_distance(df, docid, subspace);
+                    stats.count_computed_distance();
+                    (*distance_cache)[pair] = dist;
+                    stats.count_cache_miss();
+                }
+            } else {
+                dist = calc_distance(df, docid, subspace);
+                stats.count_computed_distance();
+            }
+        } else {
+            dist = calc_distance(df, docid, subspace);
+            stats.count_computed_distance();
+        }
+
+        return dist;
+    }
 };
 
 } // namespace search::tensor
