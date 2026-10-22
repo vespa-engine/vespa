@@ -58,14 +58,17 @@ public class Schema {
      * Looks up a field or field set by the given name or alias in this schema.
      *
      * @param fieldName the name or alias of the field or field set. If this is empty, the name "default" is looked up
-     * @return information about the field or field set with the given name, or empty if no item with this name exists
+     * @return information about the field or field set with the given name, or empty if no item with this name exists,
+     *         or it is a field set containing no fields known by this schema
      */
     public Optional<FieldInfo> fieldInfo(String fieldName) {
         if (fieldName.isEmpty())
             fieldName = "default";
         Field field = fieldsByAliases.get(fieldName);
         if (field != null) return Optional.of(field);
-        return Optional.ofNullable(fieldSets.get(fieldName));
+        FieldSet fieldSet = fieldSets.get(fieldName);
+        if (fieldSet == null || fieldSet.representativeField().isEmpty()) return Optional.empty();
+        return Optional.of(fieldSet);
     }
 
     @Override
