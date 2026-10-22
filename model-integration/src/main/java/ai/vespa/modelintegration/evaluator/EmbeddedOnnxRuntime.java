@@ -14,7 +14,6 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,6 +28,7 @@ import static com.yahoo.yolean.Exceptions.throwUnchecked;
  * @author bjorncs
  */
 public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntime {
+
     private static final Logger log = Logger.getLogger(EmbeddedOnnxRuntime.class.getName());
 
     private static final OrtEnvironmentResult ortEnvironment = getOrtEnvironment();
@@ -90,7 +90,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
             return true;
         } catch (OrtException e) {
             return e.getCode() == OrtException.OrtErrorCode.ORT_NO_SUCHFILE;
-        } catch (UnsatisfiedLinkError | RuntimeException | NoClassDefFoundError e) {
+        } catch (LinkageError | RuntimeException e) {
             return false;
         }
     }
@@ -188,7 +188,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
     private static OrtEnvironmentResult getOrtEnvironment() {
         try {
             return new OrtEnvironmentResult(OrtEnvironment.getEnvironment(), null);
-        } catch (UnsatisfiedLinkError | RuntimeException | NoClassDefFoundError e) {
+        } catch (LinkageError | RuntimeException e) {
             log.log(Level.FINE, e, () -> "Failed to load ONNX runtime");
             return new OrtEnvironmentResult(null, e);
         }
@@ -230,4 +230,5 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
             } catch (OrtException e) { throw new OnnxRuntimeException(e); }
         }
     }
+
 }
