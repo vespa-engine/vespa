@@ -165,6 +165,12 @@ private:
                                                            node.get_allow_approximate(), node.get_hnsw_params()));
     }
 
+    void visit(SparseTensorWandTerm& node) override {
+        copyState(node, _builder.add_sparse_tensor_wand_term(node.get_query_tensor_name(), node.getView(),
+                                                             node.getId(), node.getWeight(),
+                                                             node.get_target_num_hits(), node.get_score_threshold()));
+    }
+
     void visit(TrueQueryNode&) override { _builder.add_true_node(); }
 
     void visit(FalseQueryNode&) override { _builder.add_false_node(); }

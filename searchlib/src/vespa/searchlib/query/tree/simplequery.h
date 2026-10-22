@@ -141,6 +141,10 @@ struct SimpleNearestNeighborTerm : NearestNeighborTerm {
                               allow_approximate, std::move(hnsw_params)) {}
     ~SimpleNearestNeighborTerm() override;
 };
+struct SimpleSparseTensorWandTerm : SparseTensorWandTerm {
+    using SparseTensorWandTerm::SparseTensorWandTerm;
+    ~SimpleSparseTensorWandTerm() override;
+};
 struct SimpleFuzzyTerm : FuzzyTerm {
     SimpleFuzzyTerm(const Type& term, std::string view, int32_t id, Weight weight, uint32_t max_edit_distance,
                     uint32_t prefix_lock_length, bool prefix_match)
@@ -176,6 +180,7 @@ struct SimpleQueryNodeTypes {
     using PredicateQuery = SimplePredicateQuery;
     using RegExpTerm = SimpleRegExpTerm;
     using NearestNeighborTerm = SimpleNearestNeighborTerm;
+    using SparseTensorWandTerm = SimpleSparseTensorWandTerm;
     using FuzzyTerm = SimpleFuzzyTerm;
     using InTerm = SimpleInTerm;
     using WordAlternatives = SimpleWordAlternatives;

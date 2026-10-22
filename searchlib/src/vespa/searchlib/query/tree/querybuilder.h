@@ -234,6 +234,14 @@ create_nearest_neighbor_term(std::string_view query_tensor_name, std::string fie
 }
 
 template <class NodeTypes>
+typename NodeTypes::SparseTensorWandTerm*
+create_sparse_tensor_wand_term(std::string_view query_tensor_name, std::string field_name, int32_t id, Weight weight,
+                               uint32_t target_num_hits, double score_threshold) {
+    return new typename NodeTypes::SparseTensorWandTerm(query_tensor_name, field_name, id, weight, target_num_hits,
+                                                        score_threshold);
+}
+
+template <class NodeTypes>
 typename NodeTypes::FuzzyTerm* createFuzzyTerm(std::string_view term, const std::string& view, int32_t id,
                                                Weight weight, uint32_t max_edit_distance, uint32_t prefix_lock_length,
                                                bool prefix_match) {
@@ -423,6 +431,14 @@ public:
         adjustWeight(weight);
         return addTerm(create_nearest_neighbor_term<NodeTypes>(
             query_tensor_name, field_name, id, weight, target_num_hits, allow_approximate, std::move(hnsw_params)));
+    }
+    typename NodeTypes::SparseTensorWandTerm& add_sparse_tensor_wand_term(string_view query_tensor_name,
+                                                                          string field_name, int32_t id,
+                                                                          Weight weight, uint32_t target_num_hits,
+                                                                          double score_threshold) {
+        adjustWeight(weight);
+        return addTerm(create_sparse_tensor_wand_term<NodeTypes>(query_tensor_name, field_name, id, weight,
+                                                                 target_num_hits, score_threshold));
     }
     typename NodeTypes::TrueQueryNode& add_true_node() { return addTerm(create_true<NodeTypes>()); }
     typename NodeTypes::FalseQueryNode& add_false_node() { return addTerm(create_false<NodeTypes>()); }

@@ -37,6 +37,7 @@
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/queryeval/orlikesearch.h>
 #include <vespa/searchlib/queryeval/predicate_blueprint.h>
+#include <vespa/searchlib/queryeval/sparse_tensor_wand_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
@@ -789,6 +790,25 @@ public:
                 _field, std::move(calc), n.get_target_num_hits(), n.get_allow_approximate(), blueprint_hnsw_params));
         } catch (const vespalib::IllegalArgumentException& ex) {
             return fail_nearest_neighbor_term(n, ex.getMessage());
+        }
+    }
+
+    void visit(query::SparseTensorWandTerm& n) override {
+        const auto* query_tensor = getRequestContext().get_query_tensor(n.get_query_tensor_name());
+        if (query_tensor == nullptr) {
+            Issue::report("SparseTensorWandTerm(%s, %s): Query tensor was not found in request context. "
+                          "Returning empty blueprint",
+                          _field.getName().c_str(), n.get_query_tensor_name().c_str());
+            return setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
+        }
+        try {
+            const auto& attr_tensor = queryeval::SparseTensorWandBlueprint::validate(_attr, *query_tensor);
+            setResult(std::make_unique<queryeval::SparseTensorWandBlueprint>(
+                _field, attr_tensor, *query_tensor, n.get_target_num_hits(), n.get_score_threshold()));
+        } catch (const vespalib::IllegalArgumentException& ex) {
+            Issue::report("SparseTensorWandTerm(%s, %s): %s. Returning empty blueprint", _field.getName().c_str(),
+                          n.get_query_tensor_name().c_str(), ex.getMessage().c_str());
+            setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
         }
     }
 

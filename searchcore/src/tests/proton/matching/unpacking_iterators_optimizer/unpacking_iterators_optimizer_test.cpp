@@ -69,6 +69,7 @@ struct DumpQuery : QueryVisitor {
     void visit(PredicateQuery&) override {}
     void visit(RegExpTerm&) override {}
     void visit(NearestNeighborTerm&) override {}
+    void visit(SparseTensorWandTerm&) override {}
     void visit(TrueQueryNode&) override {}
     void visit(FalseQueryNode&) override {}
     void visit(FuzzyTerm&) override {}
