@@ -132,9 +132,9 @@ public class Field implements FieldInfo {
         /** Creates this from a type string on the syntax following "field [name] type " in a schema definition. */
         public static Type from(String typeString) {
             if (typeString.startsWith("annotationreference<"))
-                return new Type(Kind.ANNOTATIONREFERENCE); // TODO: Model as subclass
+                return AnnotationReferenceFieldType.from(typeString);
             if (typeString.startsWith("array<"))
-                return new Type(Kind.ARRAY); // TODO: Model as subclass
+                return ArrayFieldType.from(typeString);
             if (typeString.equals("bool"))
                 return new Type(Kind.BOOL);
             if (typeString.equals("byte"))
@@ -156,7 +156,7 @@ public class Field implements FieldInfo {
             if (typeString.equals("raw"))
                 return new Type(Kind.RAW);
             if (typeString.startsWith("reference<"))
-                return new Type(Kind.REFERENCE); // TODO: Model as subclass
+                return ReferenceFieldType.from(typeString);
             if (typeString.equals("string"))
                 return new Type(Kind.STRING);
             if (typeString.startsWith("tensor<") || typeString.startsWith("tensor("))
@@ -164,9 +164,9 @@ public class Field implements FieldInfo {
             if (typeString.equals("url"))
                 return new Type(Kind.URL);
             if (typeString.startsWith("weightedset<"))
-                return new Type(Kind.WEIGHTEDSET); // TODO: Model as subclass
+                return WeightedSetFieldType.from(typeString);
             else
-                return new Type(Kind.STRUCT); // TODO: Model as a subclass
+                return new StructFieldType(typeString);
         }
 
     }
@@ -238,6 +238,150 @@ public class Field implements FieldInfo {
             String[] parts = Arrays.stream(typeString.split(",", 2)).map(String::trim).toArray(String[]::new);
             return new MapFieldType(Type.from(parts[0]), Type.from(parts[1]));
         }
+    }
+
+    public static class ArrayFieldType extends Type {
+
+        private final Type elementType;
+
+        public ArrayFieldType(Type elementType) {
+            super(Kind.ARRAY);
+            this.elementType = elementType;
+        }
+
+        public Type elementType() { return elementType; }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            return this.elementType.equals(((ArrayFieldType)o).elementType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), elementType);
+        }
+
+        public static Type from(String typeString) {
+            return new ArrayFieldType(Type.from(typeArgument("array<", typeString)));
+        }
+
+    }
+
+    public static class WeightedSetFieldType extends Type {
+
+        private final Type elementType;
+
+        public WeightedSetFieldType(Type elementType) {
+            super(Kind.WEIGHTEDSET);
+            this.elementType = elementType;
+        }
+
+        public Type elementType() { return elementType; }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            return this.elementType.equals(((WeightedSetFieldType)o).elementType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), elementType);
+        }
+
+        public static Type from(String typeString) {
+            return new WeightedSetFieldType(Type.from(typeArgument("weightedset<", typeString)));
+        }
+
+    }
+
+    public static class ReferenceFieldType extends Type {
+
+        private final String documentType;
+
+        public ReferenceFieldType(String documentType) {
+            super(Kind.REFERENCE);
+            this.documentType = Objects.requireNonNull(documentType);
+        }
+
+        /** Returns the name of the document type referenced. */
+        public String documentType() { return documentType; }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            return this.documentType.equals(((ReferenceFieldType)o).documentType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), documentType);
+        }
+
+        public static Type from(String typeString) {
+            return new ReferenceFieldType(typeArgument("reference<", typeString));
+        }
+
+    }
+
+    public static class StructFieldType extends Type {
+
+        private final String name;
+
+        public StructFieldType(String name) {
+            super(Kind.STRUCT);
+            this.name = Objects.requireNonNull(name);
+        }
+
+        /** Returns the name of the struct type. */
+        public String name() { return name; }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            return this.name.equals(((StructFieldType)o).name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), name);
+        }
+
+    }
+
+    public static class AnnotationReferenceFieldType extends Type {
+
+        private final String annotationType;
+
+        public AnnotationReferenceFieldType(String annotationType) {
+            super(Kind.ANNOTATIONREFERENCE);
+            this.annotationType = Objects.requireNonNull(annotationType);
+        }
+
+        /** Returns the name of the annotation type referenced. */
+        public String annotationType() { return annotationType; }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            return this.annotationType.equals(((AnnotationReferenceFieldType)o).annotationType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), annotationType);
+        }
+
+        public static Type from(String typeString) {
+            return new AnnotationReferenceFieldType(typeArgument("annotationreference<", typeString));
+        }
+
+    }
+
+    /** Returns the type argument of a type string on the form prefix + argument + ">", such as {@code array<string>}. */
+    private static String typeArgument(String prefix, String typeString) {
+        return typeString.substring(prefix.length(), typeString.lastIndexOf(">")).trim();
     }
 
     /**

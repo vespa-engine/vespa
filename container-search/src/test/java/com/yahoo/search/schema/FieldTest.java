@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * @author johsol
@@ -44,6 +45,19 @@ public class FieldTest {
         var withMappedTensor = assertMapType("map<string,tensor<float>(a{},b{})>", Field.Type.Kind.STRING, Field.Type.Kind.TENSOR);
         var mappedTensorType = assertInstanceOf(Field.TensorFieldType.class, withMappedTensor.valueType());
         assertEquals(TensorType.fromSpec("tensor<float>(a{},b{})"), mappedTensorType.tensorType());
+    }
+
+    @Test
+    public void requireStructuredTypesAreParsed() {
+        assertEquals(new Field.ArrayFieldType(Field.Type.from("string")), Field.Type.from("array<string>"));
+        assertEquals(new Field.ArrayFieldType(new Field.ArrayFieldType(Field.Type.from("int"))), Field.Type.from("array<array<int>>"));
+        assertEquals(new Field.ArrayFieldType(new Field.StructFieldType("mystruct")), Field.Type.from("array<mystruct>"));
+        assertEquals(new Field.WeightedSetFieldType(Field.Type.from("string")), Field.Type.from("weightedset<string>"));
+        assertEquals(new Field.ReferenceFieldType("parent"), Field.Type.from("reference<parent>"));
+        assertEquals(new Field.StructFieldType("mystruct"), Field.Type.from("mystruct"));
+        assertEquals(new Field.AnnotationReferenceFieldType("myannotation"), Field.Type.from("annotationreference<myannotation>"));
+        assertNotEquals(Field.Type.from("array<string>"), Field.Type.from("array<int>"));
+        assertEquals(Field.Type.Kind.ARRAY, Field.Type.from("array<string>").kind());
     }
 
     /** Returns the map type for further assertions. */
