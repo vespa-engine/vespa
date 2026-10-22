@@ -111,6 +111,7 @@ public final class SchemaInfo extends Derived {
         for (var field : schema.allFieldsList()) {
             if ( ! added.add(field.getName())) continue;
             addFieldConfig(field, schemaBuilder);
+            if (field.isImportedField()) continue;
             for (var index : field.getIndices().values()) {
                 if ( ! index.getName().equals(field.getName())) // additional index
                     addFieldConfig(index, field.getDataType(), schemaBuilder);
