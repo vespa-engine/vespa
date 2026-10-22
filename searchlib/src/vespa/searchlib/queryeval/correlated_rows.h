@@ -44,16 +44,6 @@ enum class CorrelationStop { none, deadline, memory_limit };
  * sorted on the variables that are already bound when the join reaches it, so a
  * lookup never depends on how the variables are named or numbered.
  *
- * When three or more clauses share a variable, a join can try many values of
- * other variables before it finds that the shared variable has no common
- * value. So a join of three or more clauses checks once that every shared
- * variable has a value found in all its clauses. When one has none, the join
- * ends without a match, and stop_reason() is none. has_match checks at the
- * first check point after shared_values_check_rows rows, since it decides for
- * every candidate document. find_matches checks only after
- * deadline_check_interval rows, since it reads documents that already matched.
- * Most small joins finish before the check, so they do not pay for it.
- *
  * A cyclic join can take long even when it finds nothing, and independent
  * variables can multiply into very many matches. The join therefore checks the
  * deadline every 1024 visited rows, counted across evaluations so that many
@@ -81,10 +71,6 @@ class CorrelatedRows {
     size_t _memory_limit;
     size_t _match_limit;
     bool _collect;
-    // Whether this evaluation still has to check that shared variables have common values.
-    bool _check_shared_values;
-    // Set when that check found a shared variable without a common value, so the join cannot match.
-    bool _no_common_values;
     CorrelationStop _stop;
     std::vector<BindingRow> _matches;
     // Buffers kept between documents to avoid allocating for every candidate.
@@ -119,19 +105,14 @@ class CorrelatedRows {
     // Returns false, without adding the match, when the distinct matches would pass the memory limit.
     bool append_match(std::span<const uint32_t> projection);
     void sort_and_deduplicate_matches();
-    // Called every shared_values_check_rows visited rows. Checks the shared values or the
-    // deadline when they are due, and returns true to end the join, because the join cannot
-    // match or because the deadline has passed.
-    bool at_check_point();
-    bool interrupted() const noexcept { return _stop != CorrelationStop::none || _no_common_values; }
+    // Sets the stop reason when the deadline of this evaluation has passed.
+    bool deadline_passed();
 
 public:
     /** Collected matches of one evaluation may use about this many bytes. */
     static constexpr size_t default_memory_limit = size_t(64) << 20;
     /** The deadline is checked once per this many visited rows, counted across evaluations. */
     static constexpr size_t deadline_check_interval = 1024;
-    /** The join calls its check point once per this many visited rows, counted across evaluations. */
-    static constexpr size_t shared_values_check_rows = 64;
 
     explicit CorrelatedRows(uint32_t column_count, const vespalib::Doom& doom = vespalib::Doom::never(),
                             size_t memory_limit = default_memory_limit);

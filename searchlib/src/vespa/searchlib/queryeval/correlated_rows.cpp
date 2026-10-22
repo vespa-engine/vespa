@@ -51,8 +51,6 @@ CorrelatedRows::CorrelatedRows(uint32_t column_count, const vespalib::Doom& doom
       _memory_limit(memory_limit),
       _match_limit(0),
       _collect(false),
-      _check_shared_values(false),
-      _no_common_values(false),
       _stop(CorrelationStop::none),
       _matches(),
       _work(),
@@ -140,10 +138,9 @@ bool CorrelatedRows::evaluate(std::span<BindingTable> tables, bool collect, std:
         return true;
     }
     plan_join_order(!projection.empty());
-    _check_shared_values = _column_count > 2 && _work_size > 2;
-    _no_common_values = false;
+    if (_column_count > 2 && _work_size > 2 && !shared_values_overlap()) return false;
     bool found = extend(0, !collect, projection);
-    if (interrupted()) {
+    if (_stop != CorrelationStop::none) {
         _matches.clear();
         return false;
     }
@@ -200,10 +197,18 @@ bool CorrelatedRows::shared_values_overlap() {
             if (found == table.columns.end()) continue;
             size_t offset = found - table.columns.begin();
             values.clear();
-            values.reserve(table.row_count());
-            for (size_t row = 0; row < table.row_count(); ++row) values.push_back(table.row(row)[offset]);
-            std::sort(values.begin(), values.end());
-            values.erase(std::unique(values.begin(), values.end()), values.end());
+            if (offset == 0) {
+                // The rows are sorted, so the values of their first column come in order.
+                for (size_t row = 0; row < table.row_count(); ++row) {
+                    const auto& value = table.row(row)[0];
+                    if (values.empty() || values.back() != value) values.push_back(value);
+                }
+            } else {
+                values.reserve(table.row_count());
+                for (size_t row = 0; row < table.row_count(); ++row) values.push_back(table.row(row)[offset]);
+                std::sort(values.begin(), values.end());
+                values.erase(std::unique(values.begin(), values.end()), values.end());
+            }
             if (first) {
                 common.swap(values);
                 first = false;
@@ -314,7 +319,7 @@ bool CorrelatedRows::extend(size_t depth, bool exists_only, std::span<const uint
     if (!exists_only && depth == _projection_depth) {
         // Every requested variable is bound, so the remaining clauses only need one completion.
         if (!extend(depth, true, projection)) return false;
-        return interrupted() || !append_match(projection);
+        return _stop != CorrelationStop::none || !append_match(projection);
     }
     const auto& table = _work[depth];
     size_t width = table.columns.size();
@@ -348,7 +353,7 @@ bool CorrelatedRows::extend(size_t depth, bool exists_only, std::span<const uint
         last = low;
     }
     for (size_t index = first; index < last; ++index) {
-        if (++_total_visited_rows % shared_values_check_rows == 0 && at_check_point()) return true;
+        if (++_total_visited_rows % deadline_check_interval == 0 && deadline_passed()) return true;
         const BindingValue* row = table.row(index);
         for (size_t i = table.lookup_size; i < width; ++i) _binding[table.columns[i]] = row[i];
         if (extend(depth + 1, exists_only, projection)) return true;
@@ -361,22 +366,10 @@ void CorrelatedRows::sort_and_deduplicate_matches() {
     _matches.erase(std::unique(_matches.begin(), _matches.end()), _matches.end());
 }
 
-bool CorrelatedRows::at_check_point() {
-    // Checking reads only the clause rows, which the join does not change. Checking for a
-    // match decides for every candidate document, so it checks early. Collecting matches
-    // reads documents that already matched, where the check passes, so it checks late.
-    if (_check_shared_values && visited_rows() >= (_collect ? deadline_check_interval : shared_values_check_rows)) {
-        _check_shared_values = false;
-        if (!shared_values_overlap()) {
-            _no_common_values = true;
-            return true;
-        }
-    }
-    if (_total_visited_rows % deadline_check_interval == 0 && (_collect ? _doom.hard_doom() : _doom.soft_doom())) {
-        _stop = CorrelationStop::deadline;
-        return true;
-    }
-    return false;
+bool CorrelatedRows::deadline_passed() {
+    if (_collect ? !_doom.hard_doom() : !_doom.soft_doom()) return false;
+    _stop = CorrelationStop::deadline;
+    return true;
 }
 
 bool CorrelatedRows::append_match(std::span<const uint32_t> projection) {

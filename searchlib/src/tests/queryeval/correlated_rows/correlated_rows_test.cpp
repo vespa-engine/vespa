@@ -331,7 +331,7 @@ TEST(CorrelatedRowsTest, fallback_rejects_malformed_tables_and_an_unbound_priori
     EXPECT_THROW(select_first_present_rows(presence, candidates, 1, priority), std::invalid_argument);
 }
 
-TEST(CorrelatedRowsTest, rejects_disjoint_shared_values_at_a_check_instead_of_expanding_independent_variables) {
+TEST(CorrelatedRowsTest, rejects_disjoint_shared_values_before_expanding_independent_variables) {
     std::vector<BindingTable> tables;
     for (uint32_t column = 1; column <= 4; ++column) {
         BindingTable table{{0, column}, {}};
@@ -345,18 +345,17 @@ TEST(CorrelatedRowsTest, rejects_disjoint_shared_values_at_a_check_instead_of_ex
     tables.push_back(std::move(absent));
     CorrelatedRows join(6);
     // Without the check, each join would try the 30^4 zone combinations of unit 1.
-    // Checking for a match checks early, collecting matches checks late.
     EXPECT_FALSE(join.has_match(tables));
-    EXPECT_LT(join.visited_rows(), 2 * CorrelatedRows::shared_values_check_rows);
+    EXPECT_EQ(0u, join.visited_rows());
     EXPECT_TRUE(join.find_matches(tables, std::vector<uint32_t>{0}).empty());
-    EXPECT_LT(join.visited_rows(), CorrelatedRows::deadline_check_interval + CorrelatedRows::shared_values_check_rows);
+    EXPECT_EQ(0u, join.visited_rows());
     std::reverse(tables.begin(), tables.end());
     EXPECT_TRUE(join.find_matches(tables).empty());
-    EXPECT_LT(join.visited_rows(), CorrelatedRows::deadline_check_interval + CorrelatedRows::shared_values_check_rows);
+    EXPECT_EQ(0u, join.visited_rows());
     EXPECT_EQ(CorrelationStop::none, join.stop_reason());
 }
 
-TEST(CorrelatedRowsTest, a_join_with_common_shared_values_continues_after_the_check_and_finds_every_match) {
+TEST(CorrelatedRowsTest, a_join_with_common_shared_values_finds_every_match) {
     // Three clauses share unit 1 and bind 12 zones each, so the join has 12^3 matches.
     std::vector<BindingTable> tables;
     for (uint32_t column = 1; column <= 3; ++column) {
@@ -367,11 +366,10 @@ TEST(CorrelatedRowsTest, a_join_with_common_shared_values_continues_after_the_ch
     CorrelatedRows join(4);
     const auto& matches = join.find_matches(tables);
     EXPECT_EQ(12u * 12u * 12u, matches.size());
-    EXPECT_GT(join.visited_rows(), CorrelatedRows::deadline_check_interval);
     EXPECT_EQ(matches, reference_join(tables, 4));
 }
 
-TEST(CorrelatedRowsTest, a_small_join_rejects_shared_values_without_a_common_value_before_any_check) {
+TEST(CorrelatedRowsTest, shared_values_need_a_common_value_in_all_clauses) {
     std::vector<BindingTable> tables{
         {{0, 1}, {{"a"sv, int64_t(1)}, {"b"sv, int64_t(1)}}},
         {{0, 1}, {{"a"sv, int64_t(1)}, {"b"sv, int64_t(1)}}},
@@ -380,11 +378,28 @@ TEST(CorrelatedRowsTest, a_small_join_rejects_shared_values_without_a_common_val
         {{0}, {{"a"sv}, {"c"sv}}}
     };
     CorrelatedRows join(3);
-    // A small join finds this out by itself, before any check of the shared values.
     EXPECT_FALSE(join.has_match(tables));
-    EXPECT_LT(join.visited_rows(), CorrelatedRows::deadline_check_interval);
+    EXPECT_EQ(0u, join.visited_rows());
     tables[4].rows.push_back({"b"sv});
     EXPECT_EQ((std::vector<BindingRow>{{"b"sv, int64_t(1), int64_t(2)}}), join.find_matches(tables));
+}
+
+TEST(CorrelatedRowsTest, shared_values_need_a_common_value_when_the_shared_variable_is_not_the_first_column) {
+    // Variables: a = 0, b = 1, unit = 2. The unit comes after another variable in
+    // every clause but the last, so some clauses are not sorted by it.
+    std::vector<BindingTable> tables{
+        {{1, 2}, {{int64_t(1), "u1"sv}, {int64_t(2), "u2"sv}}},
+        {{1, 2}, {{int64_t(1), "u1"sv}, {int64_t(2), "u2"sv}}},
+        {{0, 2}, {{int64_t(1), "u2"sv}, {int64_t(2), "u3"sv}}},
+        {{0, 2}, {{int64_t(1), "u2"sv}, {int64_t(2), "u3"sv}}},
+        {{2}, {{"u1"sv}, {"u3"sv}}}
+    };
+    CorrelatedRows join(3);
+    EXPECT_FALSE(join.has_match(tables));
+    EXPECT_EQ(0u, join.visited_rows());
+    tables[4].rows.push_back({"u2"sv});
+    EXPECT_EQ((std::vector<BindingRow>{{int64_t(1), int64_t(2), "u2"sv}}), join.find_matches(tables));
+    EXPECT_EQ(reference_join(tables, 3), join.find_matches(tables));
 }
 
 TEST(CorrelatedRowsTest, a_projected_unit_needs_a_complete_cyclic_join) {
@@ -665,7 +680,7 @@ TEST(CorrelatedRowsTest, a_join_without_a_common_shared_value_does_not_reject_th
     CorrelatedRows join(6);
     auto disjoint = shared_unit_tables(2);
     EXPECT_FALSE(join.has_match(disjoint));
-    EXPECT_EQ(CorrelatedRows::shared_values_check_rows, join.visited_rows());
+    EXPECT_EQ(0u, join.visited_rows());
     auto overlapping = shared_unit_tables(1);
     EXPECT_TRUE(join.has_match(overlapping));
     EXPECT_EQ(CorrelationStop::none, join.stop_reason());
@@ -674,13 +689,11 @@ TEST(CorrelatedRowsTest, a_join_without_a_common_shared_value_does_not_reject_th
     EXPECT_TRUE(join.has_match(overlapping));
 }
 
-// Checking for a match checks the shared values at the first check point after
-// 64 rows of this join. Check points come every 64 rows counted across joins, so
-// earlier joins of the same object decide which row that is.
-TEST(CorrelatedRowsTest, checking_for_a_match_checks_shared_values_at_the_first_check_point_after_64_rows) {
+// Shared values are checked before the join, however many rows earlier joins of
+// the same object visited, and whether the join checks for a match or collects them.
+TEST(CorrelatedRowsTest, shared_values_without_a_common_value_are_rejected_before_any_row_after_earlier_joins) {
     auto disjoint = shared_unit_tables(2);
-    // Earlier rows, and the row of this join where the check runs.
-    for (auto [earlier, expected] : std::vector<std::pair<int64_t, size_t>>{{0, 64}, {960, 64}, {1023, 65}, {1000, 88}}) {
+    for (int64_t earlier : {0, 960, 1023}) {
         SCOPED_TRACE(earlier);
         CorrelatedRows join(6);
         auto filler = distinct_rows(earlier, 6);
@@ -688,32 +701,22 @@ TEST(CorrelatedRowsTest, checking_for_a_match_checks_shared_values_at_the_first_
             EXPECT_EQ(size_t(earlier), join.find_matches(filler).size());
         }
         EXPECT_FALSE(join.has_match(disjoint));
-        EXPECT_EQ(expected, join.visited_rows());
+        EXPECT_EQ(0u, join.visited_rows());
+        EXPECT_TRUE(join.find_matches(disjoint).empty());
+        EXPECT_EQ(0u, join.visited_rows());
         EXPECT_EQ(CorrelationStop::none, join.stop_reason());
     }
 }
 
-// Collecting matches reads documents that already matched, so it checks the
-// shared values only after 1024 rows of this join.
-TEST(CorrelatedRowsTest, collecting_matches_checks_shared_values_after_1024_rows) {
-    auto disjoint = shared_unit_tables(2);
-    CorrelatedRows join(6);
-    EXPECT_TRUE(join.find_matches(disjoint).empty());
-    EXPECT_EQ(CorrelatedRows::deadline_check_interval, join.visited_rows());
-    EXPECT_EQ(CorrelationStop::none, join.stop_reason());
-}
-
-// When the shared values and the deadline are due at the same row, a join that
-// cannot match reports no match without a deadline stop.
-TEST(CorrelatedRowsTest, a_join_without_a_common_shared_value_reports_no_deadline_stop_when_both_checks_are_due) {
+// A join that cannot match reports no match, not a deadline stop, also after the deadline.
+TEST(CorrelatedRowsTest, a_join_without_a_common_shared_value_reports_no_deadline_stop_after_the_deadline) {
     TestDoom doom(-std::chrono::seconds(2), -std::chrono::seconds(1));
     CorrelatedRows join(6, doom.doom);
-    // 960 earlier rows put row 1024 at the 64th row of the next join.
     auto filler = distinct_rows(960, 6);
     EXPECT_EQ(960u, join.find_matches(filler).size());
     auto disjoint = shared_unit_tables(2);
     EXPECT_FALSE(join.has_match(disjoint));
-    EXPECT_EQ(CorrelatedRows::shared_values_check_rows, join.visited_rows());
+    EXPECT_EQ(0u, join.visited_rows());
     EXPECT_EQ(CorrelationStop::none, join.stop_reason());
 }
 
