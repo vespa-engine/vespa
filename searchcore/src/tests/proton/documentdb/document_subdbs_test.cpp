@@ -1,7 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config-bucketspaces.h>
-#include <vespa/config-telemetry.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
@@ -32,6 +30,7 @@
 #include <vespa/searchcore/proton/server/minimal_document_retriever.h>
 #include <vespa/searchcore/proton/server/reconfig_params.h>
 #include <vespa/searchcore/proton/server/searchabledocsubdb.h>
+#include <vespa/searchcore/proton/test/bootstrap_config_set_builder.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
@@ -62,20 +61,18 @@ using namespace searchcorespi;
 using namespace vespalib;
 using namespace std::chrono_literals;
 
-using ai::vespa::telemetry::TelemetryConfig;
 using document::test::makeBucketSpace;
 using proton::bucketdb::BucketDBHandler;
 using proton::bucketdb::IBucketDBHandler;
 using proton::bucketdb::IBucketDBHandlerInitializer;
 using proton::index::IndexConfig;
+using proton::test::BootstrapConfigSetBuilder;
 using search::test::DirectoryHandler;
 using search::test::DocBuilder;
 using search::test::SchemaBuilder;
 using searchcorespi::IFlushTarget;
 using searchcorespi::index::IThreadingService;
 using storage::spi::Timestamp;
-using vespa::config::content::core::BucketspacesConfig;
-using vespa::config::search::core::ProtonConfig;
 using vespalib::HwInfo;
 using vespalib::IDestructorCallback;
 using vespalib::datastore::CompactionStrategy;
@@ -280,13 +277,10 @@ MyConfigSnapshot::MyConfigSnapshot(FNET_Transport& transport, Schema schema, con
       _builder(get_add_fields(_schema.getNumAttributeFields() > 1)),
       _cfg(),
       _bootstrap() {
-    auto documenttypesConfig = std::make_shared<DocumenttypesConfig>(_builder.get_documenttypes_config());
-    auto tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
-    _bootstrap = std::make_shared<BootstrapConfig>(
-        1, documenttypesConfig, _builder.get_repo_sp(), std::make_shared<ProtonConfig>(),
-        std::make_shared<FiledistributorrpcConfig>(), std::make_shared<BucketspacesConfig>(),
-        std::make_shared<TelemetryConfig>(), tuneFileDocumentDB,
-        HwInfo(HwInfo::Disk(128_Gi, false, false), HwInfo::Memory(16_Gi), HwInfo::Cpu(8)));
+    BootstrapConfigSetBuilder bootstrap_config_builder;
+    bootstrap_config_builder.documenttypes = _builder.get_documenttypes_config();
+    HwInfo hw_info(HwInfo::Disk(128_Gi, false, false), HwInfo::Memory(16_Gi), HwInfo::Cpu(8));
+    _bootstrap = bootstrap_config_builder.build(1, hw_info);
     ::config::DirSpec      spec(cfgDir);
     DocumentDBConfigHelper mgr(spec, "searchdocument");
     mgr.forwardConfig(_bootstrap);

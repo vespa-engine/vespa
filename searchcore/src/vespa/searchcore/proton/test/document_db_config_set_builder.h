@@ -11,6 +11,8 @@
 #include <vespa/config-ranking-expressions.h>
 #include <vespa/config-summary.h>
 #include <vespa/config/subscription/sourcespec.h>
+#include <vespa/document/config/config-documenttypes.h>
+#include <vespa/searchcore/proton/server/documentdbconfig.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 
 namespace proton::test {
@@ -28,6 +30,16 @@ struct DocumentDBConfigSetBuilder {
     using RankingConstantsConfigBuilder = vespa::config::search::core::RankingConstantsConfigBuilder;
     using RankingExpressionsConfigBuilder = vespa::config::search::core::RankingExpressionsConfigBuilder;
     using SummaryConfigBuilder = vespa::config::search::SummaryConfigBuilder;
+    using AttributesConfig = vespa::config::search::AttributesConfig;
+    using ImportedFieldsConfig = vespa::config::search::ImportedFieldsConfig;
+    using IndexschemaConfig = vespa::config::search::IndexschemaConfig;
+    using JuniperrcConfig = vespa::config::search::summary::JuniperrcConfig;
+    using OnnxModelsConfig = vespa::config::search::core::OnnxModelsConfig;
+    using RankProfilesConfig = vespa::config::search::RankProfilesConfig;
+    using RankingConstantsConfig = vespa::config::search::core::RankingConstantsConfig;
+    using RankingExpressionsConfig = vespa::config::search::core::RankingExpressionsConfig;
+    using SummaryConfig = vespa::config::search::SummaryConfig;
+    using DocumenttypesConfig = document::config::DocumenttypesConfig;
 
     AttributesConfigBuilder         attributes;
     ImportedFieldsConfigBuilder     imported_fields;
@@ -43,6 +55,11 @@ struct DocumentDBConfigSetBuilder {
     ~DocumentDBConfigSetBuilder();
 
     void add_builders(config::ConfigSet& set, const std::string& config_id);
+    std::shared_ptr<DocumentDBConfig> build(int64_t generation, const DocumenttypesConfig& documenttypes,
+                                            std::shared_ptr<const document::DocumentTypeRepo> repo,
+                                            const std::string& doc_type_name, const std::string& config_id) const;
+    std::shared_ptr<DocumentDBConfig> build(int64_t generation, const DocumenttypesConfig& documenttypes,
+                                            const std::string& doc_type_name, const std::string& config_id) const;
 };
 
 } // namespace proton::test

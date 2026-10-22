@@ -8,12 +8,12 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
-#include <vespa/config-telemetry.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
+#include <vespa/searchcore/proton/test/bootstrap_config_set_builder.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
@@ -33,7 +33,7 @@ using namespace search;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search;
 using namespace std::chrono_literals;
-using ai::vespa::telemetry::TelemetryConfig;
+using proton::test::BootstrapConfigSetBuilder;
 using search::fef::OnnxModels;
 using search::fef::RankingConstants;
 using search::fef::RankingExpressions;
@@ -52,12 +52,10 @@ std::string placeholder_document_type_name("test");
 DocumentDBConfig::SP makeBaseConfigSnapshot(FNET_Transport& transport) {
     ::config::DirSpec spec(TEST_PATH("cfg"));
 
-    DBCM                  dbcm(spec, placeholder_document_type_name);
-    DocumenttypesConfigSP dtcfg(::config::ConfigGetter<DocumenttypesConfig>::getConfig("", spec).release());
-    auto                  b = std::make_shared<BootstrapConfig>(
-        1, dtcfg, std::make_shared<DocumentTypeRepo>(*dtcfg), std::make_shared<ProtonConfig>(),
-        std::make_shared<FiledistributorrpcConfig>(), std::make_shared<BucketspacesConfig>(),
-        std::make_shared<TelemetryConfig>(), std::make_shared<TuneFileDocumentDB>(), HwInfo());
+    DBCM                      dbcm(spec, placeholder_document_type_name);
+    BootstrapConfigSetBuilder bootstrap_config_builder;
+    bootstrap_config_builder.documenttypes = *::config::ConfigGetter<DocumenttypesConfig>::getConfig("", spec);
+    auto b = bootstrap_config_builder.build(1, HwInfo());
     dbcm.forwardConfig(b);
     dbcm.nextGeneration(transport, 0ms);
     DocumentDBConfig::SP snap = dbcm.getConfig();
