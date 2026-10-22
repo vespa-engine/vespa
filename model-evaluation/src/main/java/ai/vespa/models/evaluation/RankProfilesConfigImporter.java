@@ -84,7 +84,9 @@ public class RankProfilesConfigImporter {
 
         List<OnnxModel> onnxModels = readOnnxModelsConfig(onnxModelsConfig);
         List<Constant> constants = readLargeConstants(constantsConfig);
-        Map<String, RankingExpression> largeExpressions = readLargeExpressions(expressionsConfig);
+        // Large expressions are named <profile>.<function>, so a profile only ever references its own:
+        // parse those on use rather than every profile's on every profile.
+        Map<String, FileReference> largeExpressions = largeExpressionFiles(expressionsConfig);
 
         Map<FunctionReference, ExpressionFunction> functions = new LinkedHashMap<>();
         Map<FunctionReference, ExpressionFunction> referencedFunctions = new LinkedHashMap<>();
@@ -101,7 +103,11 @@ public class RankProfilesConfigImporter {
             Optional<FunctionReference> returnType = FunctionReference.fromReturnTypeSerial(property.name());
             Optional<String> typeDeclaredFeature = fromTypeDeclarationSerial(property.name());
             if (externalReference.isPresent()) {
-                RankingExpression expression = largeExpressions.get(property.value());
+                FileReference file = largeExpressions.get(property.value());
+                if (file == null)
+                    throw new IllegalArgumentException("Rank profile '" + profile.name() + "' references large expression '" +
+                                                       property.value() + "', which is not in the ranking expressions config");
+                RankingExpression expression = readExpressionFromFile(property.value(), file);
                 ExpressionFunction function = new ExpressionFunction(externalReference.get().functionName(),
                         List.of(),
                         expression);
@@ -238,13 +244,12 @@ public class RankProfilesConfigImporter {
         return constants;
     }
 
-    private Map<String, RankingExpression> readLargeExpressions(RankingExpressionsConfig expressionsConfig) throws ParseException {
-        Map<String, RankingExpression> expressions = new HashMap<>();
-
+    private Map<String, FileReference> largeExpressionFiles(RankingExpressionsConfig expressionsConfig) {
+        Map<String, FileReference> files = new HashMap<>();
         for (RankingExpressionsConfig.Expression expression : expressionsConfig.expression()) {
-            expressions.put(expression.name(), readExpressionFromFile(expression.name(), expression.fileref()));
+            files.put(expression.name(), expression.fileref());
         }
-        return expressions;
+        return files;
     }
 
     protected final String readExpressionFromFile(File file) throws IOException {
