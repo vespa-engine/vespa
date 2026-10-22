@@ -128,6 +128,17 @@ PreparedAddDoc::~PreparedAddDoc() = default;
 
 PreparedAddDoc::PreparedAddDoc(PreparedAddDoc&& other) noexcept = default;
 
+
+CachedAddDoc::CachedAddDoc(uint32_t docid_in, ReadGuard read_guard_in,
+                               ReadGuard hnsw_graph_read_guard_in) noexcept
+    : docid(docid_in),
+      read_guard(std::move(read_guard_in)),
+      hnsw_graph_read_guard(std::move(hnsw_graph_read_guard_in)) {
+}
+
+CachedAddDoc::~CachedAddDoc() = default;
+
+CachedAddDoc::CachedAddDoc(CachedAddDoc&& other) noexcept = default;
 } // namespace internal
 
 SelectResult::SelectResult() noexcept = default;
@@ -670,6 +681,7 @@ HnswIndex<type>::HnswIndex(const DocVectorAccess& vectors, DistanceFunctionFacto
 
 template <HnswIndexType type> HnswIndex<type>::~HnswIndex() = default;
 
+using internal::CachedAddDoc;
 using internal::PreparedAddDoc;
 using internal::PreparedAddNode;
 using internal::PreparedFirstAddDoc;
@@ -702,6 +714,19 @@ PreparedAddDoc HnswIndex<type>::internal_prepare_add(uint32_t docid, VectorBundl
     }
     return op;
 }
+
+template <HnswIndexType type>
+CachedAddDoc HnswIndex<type>::internal_prepare_add_with_caching(uint32_t docid, VectorBundle input_vectors,
+                                                     GenerationGuard read_guard) const {
+    CachedAddDoc op(docid, std::move(read_guard), _graph.make_guard());
+    auto         entry = _graph.get_entry_node();
+    auto         subspaces = input_vectors.subspaces();
+    for (uint32_t subspace = 0; subspace < subspaces; ++subspace) {
+        internal_prepare_add_node_with_caching(op, input_vectors.cells(subspace), entry);
+    }
+    return op;
+}
+
 
 template <HnswIndexType type>
 void HnswIndex<type>::internal_prepare_add_node(PreparedAddDoc& op, TypedCells input_vector,
@@ -778,6 +803,19 @@ template <HnswIndexType type> void HnswIndex<type>::internal_complete_add(uint32
     }
 }
 
+template <HnswIndexType type> void HnswIndex<type>::internal_complete_add_with_caching(uint32_t docid, CachedAddDoc& op) {
+    auto         entry = _graph.get_entry_node();
+    auto input_vectors = get_vectors(docid);
+    auto subspaces = input_vectors.subspaces();
+    auto nodeids = _id_mapping.allocate_ids(docid, subspaces);
+    CHECK(nodeids.size() == subspaces);
+    uint32_t subspace = 0;
+    for (auto nodeid : nodeids) {
+        internal_complete_add_node_with_caching(op, input_vectors.cells(subspace), entry, nodeid, docid, subspace);
+        ++subspace;
+    }
+}
+
 template <HnswIndexType type>
 void HnswIndex<type>::internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
                                                  PreparedAddNode& prepared_node) {
@@ -792,32 +830,134 @@ void HnswIndex<type>::internal_complete_add_node(uint32_t nodeid, uint32_t docid
     }
 }
 
+
+template <HnswIndexType type>
+void HnswIndex<type>::internal_prepare_add_node_with_caching(CachedAddDoc& /*op*/, TypedCells input_vector,
+                                                const typename GraphType::EntryNode& entry) const {
+    Stats stats; // Not used for now. Wire this in to all places where distances are computed if to be used.
+    int   node_max_level = std::min(_level_generator->max_level(), max_max_level);
+    std::vector<PreparedAddNode::Links> connections(node_max_level + 1);
+    if (entry.nodeid == 0) {
+        // graph has no entry point
+        return;
+    }
+    int      search_level = entry.level;
+    auto     df = _distance_ff->for_insertion_vector(input_vector);
+    double   entry_dist = calc_distance(*df, entry.nodeid);
+    uint32_t entry_docid = get_docid(entry.nodeid);
+    // TODO: check if entry nodeid/levels_ref is still valid here
+    HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
+    while (search_level > node_max_level) {
+        entry_point = find_nearest_in_layer(stats, *df, entry_point, search_level);
+        --search_level;
+    }
+
+    FurthestPriQ best_neighbors;
+    best_neighbors.push(entry_point);
+    search_level = std::min(node_max_level, search_level);
+    // Find neighbors of the added document in each level it should exist in.
+    while (search_level >= 0) {
+        // Run search from best_neighbors to find new best_neighbors
+        search_layer(stats, *df, _cfg.neighbors_to_explore_at_construction(), 0.0, false, best_neighbors,
+                     search_level, nullptr);
+        // We do not do anything with the resulting best_neighbors here: we only want to build the distance cache
+        --search_level;
+    }
+}
+
+
+template <HnswIndexType type>
+void HnswIndex<type>::internal_complete_add_node_with_caching(CachedAddDoc& op, TypedCells input_vector,
+                                                const typename GraphType::EntryNode& entry, uint32_t nodeid, uint32_t docid, uint32_t subspace) {
+    Stats stats; // Not used for now. Wire this in to all places where distances are computed if to be used.
+    int32_t node_max_level = std::min(_level_generator->max_level(), max_max_level);
+    int32_t num_levels = node_max_level + 1;
+    std::vector<PreparedAddNode::Links> connections(num_levels);
+    if (entry.nodeid != 0) {
+        // graph has an entry point
+        int      search_level = entry.level;
+        auto     df = _distance_ff->for_insertion_vector(input_vector);
+        double   entry_dist = calc_distance(*df, entry.nodeid);
+        uint32_t entry_docid = get_docid(entry.nodeid);
+        // TODO: check if entry nodeid/levels_ref is still valid here
+        HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
+        while (search_level > node_max_level) {
+            entry_point = find_nearest_in_layer(stats, *df, entry_point, search_level);
+            --search_level;
+        }
+
+        FurthestPriQ best_neighbors;
+        best_neighbors.push(entry_point);
+        search_level = std::min(node_max_level, search_level);
+        // Find neighbors of the added document in each level it should exist in.
+        while (search_level >= 0) {
+            search_layer(stats, *df, _cfg.neighbors_to_explore_at_construction(), 0.0, false, best_neighbors,
+                         search_level, nullptr);
+            auto  neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
+            auto& links = connections[search_level];
+            links.reserve(neighbors.used.size());
+            for (const auto& neighbor : neighbors.used) {
+                auto neighbor_levels = _graph.get_level_array(neighbor.levels_ref);
+                if (size_t(search_level) < neighbor_levels.size()) {
+                    links.emplace_back(neighbor.nodeid, neighbor.levels_ref);
+                } else {
+                    LOG(warning, "in prepare_add(%u), selected neighbor %u is missing level %d (has %zu levels)",
+                        op.docid, neighbor.nodeid, search_level, neighbor_levels.size());
+                }
+            }
+            --search_level;
+        }
+    }
+
+    // Perform the actual insertion
+    auto    levels_ref = _graph.make_node(nodeid, docid, subspace, num_levels);
+    for (int level = 0; level < num_levels; ++level) {
+        auto neighbors = filter_valid_nodeids(level, connections[level], nodeid);
+        connect_new_node(nodeid, neighbors, level);
+    }
+    if (num_levels - 1 > get_entry_level()) {
+        _graph.set_entry_node({nodeid, levels_ref, num_levels - 1});
+    }
+}
+
 template <HnswIndexType type>
 std::unique_ptr<PrepareResult> HnswIndex<type>::prepare_add_document(uint32_t docid, VectorBundle vectors,
                                                                      GenerationGuard read_guard) const {
-    uint32_t active_nodes = _graph.get_active_nodes();
-    if (active_nodes < _cfg.min_size_before_two_phase()) {
-        // the first documents added will do all work in write thread
-        // to ensure they are linked together:
-        return std::make_unique<PreparedFirstAddDoc>();
+    if constexpr (use_caching_insertion) {
+        // No need to differentiate between first insertion and subsequent ones
+        CachedAddDoc op = internal_prepare_add_with_caching(docid, vectors, std::move(read_guard));
+        return std::make_unique<CachedAddDoc>(std::move(op));
+    } else {
+        uint32_t active_nodes = _graph.get_active_nodes();
+        if (active_nodes < _cfg.min_size_before_two_phase()) {
+            // the first documents added will do all work in write thread
+            // to ensure they are linked together:
+            return std::make_unique<PreparedFirstAddDoc>();
+        }
+        PreparedAddDoc op = internal_prepare_add(docid, vectors, std::move(read_guard));
+        return std::make_unique<PreparedAddDoc>(std::move(op));
     }
-    PreparedAddDoc op = internal_prepare_add(docid, vectors, std::move(read_guard));
-    return std::make_unique<PreparedAddDoc>(std::move(op));
 }
 
 template <HnswIndexType type>
 void HnswIndex<type>::complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) {
-    auto prepared = dynamic_cast<PreparedAddDoc*>(prepare_result.get());
-    if (prepared && (prepared->docid == docid)) {
-        internal_complete_add(docid, *prepared);
+    if constexpr (use_caching_insertion) {
+        auto prepared = dynamic_cast<CachedAddDoc*>(prepare_result.get());
+        CHECK(prepared && (prepared->docid == docid));
+        internal_complete_add_with_caching(docid, *prepared);
     } else {
-        // we expect this for the first documents added, so no warning for them
-        if (_graph.get_active_nodes() > 1.25 * _cfg.min_size_before_two_phase()) {
-            LOG(warning, "complete_add_document(%u) called with invalid prepare_result %s/%u", docid,
-                (prepared ? "valid ptr" : "nullptr"), (prepared ? prepared->docid : 0u));
+        auto prepared = dynamic_cast<PreparedAddDoc*>(prepare_result.get());
+        if (prepared && (prepared->docid == docid)) {
+            internal_complete_add(docid, *prepared);
+        } else {
+            // we expect this for the first documents added, so no warning for them
+            if (_graph.get_active_nodes() > 1.25 * _cfg.min_size_before_two_phase()) {
+                LOG(warning, "complete_add_document(%u) called with invalid prepare_result %s/%u", docid,
+                    (prepared ? "valid ptr" : "nullptr"), (prepared ? prepared->docid : 0u));
+            }
+            // fallback to normal add
+            add_document(docid);
         }
-        // fallback to normal add
-        add_document(docid);
     }
 }
 

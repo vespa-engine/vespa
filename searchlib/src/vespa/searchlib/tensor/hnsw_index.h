@@ -85,6 +85,23 @@ struct PreparedAddDoc final : public PrepareResult {
     PreparedAddDoc(PreparedAddDoc&& other) noexcept;
 };
 
+struct CachedAddDoc final : public PrepareResult {
+    using ReadGuard = vespalib::GenerationGuard;
+    uint32_t                     docid;
+    ReadGuard                    read_guard;
+    ReadGuard                    hnsw_graph_read_guard;
+
+    std::unordered_map<uint64_t, double> distance_cache;
+
+    static uint64_t make_pair(uint32_t first, uint32_t second) {
+        return (static_cast<uint64_t>(first) << 32) | static_cast<uint64_t>(second);
+    }
+
+    CachedAddDoc(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept;
+    ~CachedAddDoc() override;
+    CachedAddDoc(CachedAddDoc&& other) noexcept;
+};
+
 template <HnswIndexType type> class GlobalFilterWrapper;
 
 template <> class GlobalFilterWrapper<HnswIndexType::SINGLE> {
@@ -130,6 +147,7 @@ struct SelectResult {
 };
 
 template <HnswIndexType type> class HnswIndex : public NearestNeighborIndex {
+    static constexpr bool use_caching_insertion = true;
 public:
     uint32_t get_docid(uint32_t nodeid) const {
         if constexpr (NodeType::identity_mapping) {
@@ -264,13 +282,19 @@ protected:
 
     internal::PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
                                                   vespalib::GenerationGuard read_guard) const;
+    internal::CachedAddDoc internal_prepare_add_with_caching(uint32_t docid, VectorBundle input_vectors,
+                                                  vespalib::GenerationGuard read_guard) const;
     void internal_prepare_add_node(internal::PreparedAddDoc& op, TypedCells input_vector,
+                                   const typename GraphType::EntryNode& entry) const;
+    void internal_prepare_add_node_with_caching(internal::CachedAddDoc& op, TypedCells input_vector,
                                    const typename GraphType::EntryNode& entry) const;
     LinkArray filter_valid_nodeids(uint32_t level, const internal::PreparedAddNode::Links& neighbors,
                                    uint32_t self_nodeid);
     void internal_complete_add(uint32_t docid, internal::PreparedAddDoc& op);
+    void internal_complete_add_with_caching(uint32_t docid, internal::CachedAddDoc& op);
     void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
                                     internal::PreparedAddNode& prepared_node);
+    void internal_complete_add_node_with_caching(internal::CachedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry, uint32_t nodeid, uint32_t docid, uint32_t subspace);
 
     // Called from writer only.
     uint32_t get_subspaces(uint32_t docid) const noexcept;
