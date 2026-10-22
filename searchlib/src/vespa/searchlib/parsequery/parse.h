@@ -66,8 +66,7 @@ public:
         ITEM_NUMERIC_IN = 32,
         ITEM_LABEL_WRAPPER = 33,
         ITEM_STRING_RANGE_TERM = 34,
-        // only produced from the protobuf query tree; no corresponding type in Item.java
-        ITEM_SPARSE_TENSOR_WAND = 35,
+        ITEM_SPARSE_TENSOR_WAND = 35, // protobuf only, never in a stack dump
         // sentinel, kept last: it moves up as item types are added
         ITEM_UNDEF = 36,
     };

@@ -891,6 +891,75 @@ public class ToProtobufTest {
     }
 
     @Test
+    void testConvertFromQueryWithSparseTensorWandItem() {
+        var item = new SparseTensorWandItem("sparse_embedding", "query_vector");
+        item.setTargetHits(50);
+        item.setScoreThreshold(1.5);
+        assertConvertsToJson(item, """
+            {
+              "itemSparseTensorWand": {
+                "properties": {
+                  "index": "sparse_embedding"
+                },
+                "queryTensorName": "query_vector",
+                "targetNumHits": 50,
+                "scoreThreshold": 1.5
+              }
+            }
+            """);
+    }
+
+    @Test
+    void testConvertFromQueryWithSparseTensorWandItemTermProperties() {
+        var item = new SparseTensorWandItem("sparse_embedding", "query_vector");
+        item.setTargetHits(10);
+        item.setRanked(false);
+        item.setFilter(true);
+        item.setWeight(42);
+        assertConvertsToJson(item, """
+            {
+              "itemSparseTensorWand": {
+                "properties": {
+                  "index": "sparse_embedding",
+                  "itemWeight": 42,
+                  "doNotRank": true,
+                  "doNotHighlight": true
+                },
+                "queryTensorName": "query_vector",
+                "targetNumHits": 10
+              }
+            }
+            """);
+    }
+
+    @Test
+    void testConvertFromQueryWithSparseTensorWandItemTotalTargetHits() {
+        var item = new SparseTensorWandItem("sparse_embedding", "query_vector");
+        item.setTotalTargetHits(1000);
+        var result = ToProtobuf.convertFromQuery(item, new SerializationContext(0.25));
+        assertEquals(250, result.getItemSparseTensorWand().getTargetNumHits());
+        item.setTotalTargetHits(1);
+        result = ToProtobuf.convertFromQuery(item, new SerializationContext(0.0));
+        assertEquals(1, result.getItemSparseTensorWand().getTargetNumHits());
+    }
+
+    @Test
+    void testConvertFromQueryWithSparseTensorWandItemUsesDefaultTargetHits() {
+        var item = new SparseTensorWandItem("sparse_embedding", "query_vector");
+        assertConvertsToJson(item, """
+            {
+              "itemSparseTensorWand": {
+                "properties": {
+                  "index": "sparse_embedding"
+                },
+                "queryTensorName": "query_vector",
+                "targetNumHits": 100
+              }
+            }
+            """);
+    }
+
+    @Test
     void testConvertFromQueryWithNearestNeighborItemWithOptionalAttributes() {
         NearestNeighborItem nearestNeighbor = new NearestNeighborItem("myvector", "query_vector");
         nearestNeighbor.setTargetHits(100);

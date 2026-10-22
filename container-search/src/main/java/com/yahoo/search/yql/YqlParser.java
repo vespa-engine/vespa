@@ -70,6 +70,7 @@ import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.SparseTensorWandItem;
 import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
@@ -224,6 +225,7 @@ public class YqlParser implements Parser {
     public static final String MAP_MATCH = "mapMatch";
     public static final String SCORE_THRESHOLD = "scoreThreshold";
     public static final String SIGNIFICANCE = "significance";
+    public static final String SPARSE_TENSOR_WAND = "sparseTensorWand";
     public static final String STEM = "stem";
     public static final String SUBSTRING = "substring";
     public static final String SUFFIX = "suffix";
@@ -617,6 +619,7 @@ public class YqlParser implements Parser {
             case GEO_BOUNDING_BOX: return buildGeoBoundingBox(ast);
             case GEO_LOCATION: return buildGeoLocation(ast);
             case NEAREST_NEIGHBOR: return buildNearestNeighbor(ast);
+            case SPARSE_TENSOR_WAND: return buildSparseTensorWand(ast);
             case PREDICATE: return buildPredicate(ast);
             case RANK: return buildRank(ast, currentField);
             case LABELED: return buildLabelWrapper(ast, currentField);
@@ -636,6 +639,7 @@ public class YqlParser implements Parser {
                                                          GEO_BOUNDING_BOX,
                                                          GEO_LOCATION,
                                                          NEAREST_NEIGHBOR,
+                                                         SPARSE_TENSOR_WAND,
                                                          PREDICATE,
                                                          RANK,
                                                          LABELED,
@@ -824,6 +828,18 @@ public class YqlParser implements Parser {
             item.setLabel(label);
         }
         return item;
+    }
+
+    private Item buildSparseTensorWand(OperatorNode<ExpressionOperator> ast) {
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
+        String field = fetchFieldName(args.get(0));
+        String property = fetchLiteral(args.get(1));
+        SparseTensorWandItem item = new SparseTensorWandItem(indexFactsSession.getCanonicName(field), property);
+        item.setTargetHits(buildTargetHits(ast));
+        item.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
+        assignAnnotationAsDoubleIfNotNull(ast, SCORE_THRESHOLD, "score must be above this threshold for hit inclusion", item::setScoreThreshold);
+        return leafStyleSettings(ast, item);
     }
 
     private Item buildPredicate(OperatorNode<ExpressionOperator> ast) {

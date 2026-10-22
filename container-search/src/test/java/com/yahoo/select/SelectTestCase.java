@@ -757,6 +757,16 @@ public class SelectTestCase {
     }
 
     @Test
+    void testSparseTensorWand() {
+        assertParse("{ \"sparseTensorWand\": [ \"f1field\", \"q2prop\" ] }",
+                    "SPARSE_TENSOR_WAND {field=f1field,queryTensorName=q2prop}");
+        assertParse("{ \"sparseTensorWand\": { \"children\" : [ \"f3field\", \"q4prop\" ], \"attributes\" : {\"targetHits\": 37, \"scoreThreshold\": 1.5 } }}",
+                    "SPARSE_TENSOR_WAND {field=f3field,queryTensorName=q4prop,targetHits=37,scoreThreshold=1.5}");
+        assertParse("{ \"sparseTensorWand\": { \"children\" : [ \"f3field\", \"q4prop\" ], \"attributes\" : {\"totalTargetHits\": 1000 } }}",
+                    "SPARSE_TENSOR_WAND {field=f3field,queryTensorName=q4prop,totalTargetHits=1000}");
+    }
+
+    @Test
     void testWeakAnd() {
         assertParse("{ \"weakAnd\": [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ] }",
                 "WEAKAND a:A b:B");
