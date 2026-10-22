@@ -104,7 +104,10 @@ public class RankProfilesConfigImporter {
             Optional<String> typeDeclaredFeature = fromTypeDeclarationSerial(property.name());
             if (externalReference.isPresent()) {
                 FileReference file = largeExpressions.get(property.value());
-                RankingExpression expression = file == null ? null : readExpressionFromFile(property.value(), file);
+                if (file == null)
+                    throw new IllegalArgumentException("Rank profile '" + profile.name() + "' references large expression '" +
+                                                       property.value() + "', which is not in the ranking expressions config");
+                RankingExpression expression = readExpressionFromFile(property.value(), file);
                 ExpressionFunction function = new ExpressionFunction(externalReference.get().functionName(),
                         List.of(),
                         expression);
