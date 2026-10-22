@@ -14,14 +14,12 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ai.onnxruntime.OrtSession.SessionOptions.ExecutionMode.PARALLEL;
 import static ai.onnxruntime.OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL;
-import static com.yahoo.config.NodeVector.e;
 import static com.yahoo.yolean.Exceptions.throwUnchecked;
 
 /**
