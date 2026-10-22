@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-10-20
+Last updated: 2026-10-22
 
 ---
 
@@ -58,9 +58,9 @@ Last updated: 2026-10-20
 
 ---
 
-## @shikijs/vscode-textmate 10.0.2 — MIT
+## @shikijs/vscode-textmate 10.1.0 — MIT
 
-- Homepage: <https://github.com/shikijs/vscode-textmate#readme>
+- Homepage: <https://registry.npmjs.org/@shikijs/vscode-textmate/-/vscode-textmate-10.1.0.tgz>
 - Copyright Microsoft Corporation
 
 ---
@@ -212,6 +212,14 @@ Last updated: 2026-10-20
 ## com.fasterxml.jackson.core 2.22 — Apache 2.0
 
 - Homepage: <https://github.com/FasterXML/jackson>
+- FasterXML
+
+---
+
+## com.fasterxml.jackson.core 2.22.4 — Apache 2.0
+
+- Homepage: <http://fasterxml.com/>
+- Copyright 2007 Tatu Saloranta tatu.saloranta@iki.fi
 - FasterXML
 
 ---
