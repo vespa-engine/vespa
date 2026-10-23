@@ -4,20 +4,26 @@
 
 namespace search::queryeval {
 
-WeakAndPriorityQueue::WeakAndPriorityQueue(uint32_t scoresToTrack) : WeakAndHeap(scoresToTrack), _bestScores() {
+template <typename ScoreT>
+WeakAndPriorityQueueT<ScoreT>::WeakAndPriorityQueueT(uint32_t scoresToTrack)
+    : WeakAndHeapT<ScoreT>(scoresToTrack), _bestScores() {
 }
 
-WeakAndPriorityQueue::~WeakAndPriorityQueue() = default;
+template <typename ScoreT>
+WeakAndPriorityQueueT<ScoreT>::~WeakAndPriorityQueueT() = default;
 
-std::unique_ptr<WeakAndPriorityQueue> WeakAndPriorityQueue::createHeap(uint32_t scoresToTrack, bool thread_safe) {
+template <typename ScoreT>
+std::unique_ptr<WeakAndPriorityQueueT<ScoreT>>
+WeakAndPriorityQueueT<ScoreT>::createHeap(uint32_t scoresToTrack, bool thread_safe) {
     if (thread_safe) {
-        return std::make_unique<queryeval::SharedWeakAndPriorityQueue>(scoresToTrack);
+        return std::make_unique<SharedWeakAndPriorityQueueT<ScoreT>>(scoresToTrack);
     }
-    return std::make_unique<WeakAndPriorityQueue>(scoresToTrack);
+    return std::make_unique<WeakAndPriorityQueueT<ScoreT>>(scoresToTrack);
 }
 
-void WeakAndPriorityQueue::adjust(std::span<score_t> newScores) {
-    if (getScoresToTrack() == 0) {
+template <typename ScoreT>
+void WeakAndPriorityQueueT<ScoreT>::adjust(std::span<score_t> newScores) {
+    if (this->getScoresToTrack() == 0) {
         return;
     }
 
@@ -30,19 +36,29 @@ void WeakAndPriorityQueue::adjust(std::span<score_t> newScores) {
         }
     }
     if (is_full()) {
-        setMinScore(_bestScores.front());
+        this->setMinScore(_bestScores.front());
     }
 }
 
-SharedWeakAndPriorityQueue::SharedWeakAndPriorityQueue(uint32_t scoresToTrack)
-    : WeakAndPriorityQueue(scoresToTrack), _lock() {
+template <typename ScoreT>
+SharedWeakAndPriorityQueueT<ScoreT>::SharedWeakAndPriorityQueueT(uint32_t scoresToTrack)
+    : WeakAndPriorityQueueT<ScoreT>(scoresToTrack), _lock() {
 }
 
-SharedWeakAndPriorityQueue::~SharedWeakAndPriorityQueue() = default;
+template <typename ScoreT>
+SharedWeakAndPriorityQueueT<ScoreT>::~SharedWeakAndPriorityQueueT() = default;
 
-void SharedWeakAndPriorityQueue::adjust(std::span<score_t> newScores) {
+template <typename ScoreT>
+void SharedWeakAndPriorityQueueT<ScoreT>::adjust(std::span<score_t> newScores) {
     std::lock_guard guard(_lock);
-    WeakAndPriorityQueue::adjust(newScores);
+    WeakAndPriorityQueueT<ScoreT>::adjust(newScores);
 }
+
+template class WeakAndHeapT<int64_t>;
+template class WeakAndHeapT<double>;
+template class WeakAndPriorityQueueT<int64_t>;
+template class WeakAndPriorityQueueT<double>;
+template class SharedWeakAndPriorityQueueT<int64_t>;
+template class SharedWeakAndPriorityQueueT<double>;
 
 } // namespace search::queryeval

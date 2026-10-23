@@ -17,14 +17,16 @@
 
 #include <cmath>
 
+namespace search::queryeval::wand {
+using score_t = int64_t;
+}
 namespace search::queryeval {
-class WeakAndHeap;
+template <typename ScoreT> class WeakAndHeapT;
 }
 namespace search::queryeval::wand {
 
 //-----------------------------------------------------------------------------
 
-using score_t = int64_t;
 using docid_t = uint32_t;
 using ref_t = uint16_t;
 
@@ -66,22 +68,39 @@ public:
     [[nodiscard]] static StopWordStrategy none() noexcept { return {1.0, 1.0, 0, false}; }
 };
 
+/** Common params used to tweak the behavior of the WAND algorithm. */
+template <typename ScoreT>
+struct CommonMatchParamsT {
+    using WeakAndHeap = WeakAndHeapT<ScoreT>;
+
+    WeakAndHeap&     scores;
+    const uint32_t   scoresAdjustFrequency;
+    const uint32_t   docid_limit;
+    CommonMatchParamsT(WeakAndHeap& scores_in) noexcept
+        : CommonMatchParamsT(scores_in, DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, 0) {}
+    CommonMatchParamsT(WeakAndHeap& scores_in, uint32_t scoresAdjustFrequency_in,
+                uint32_t docid_limit_in) noexcept
+        : scores(scores_in),
+          scoresAdjustFrequency(scoresAdjustFrequency_in),
+          docid_limit(docid_limit_in) {}
+};
+
+using CommonMatchParams = CommonMatchParamsT<wand::score_t>;
+
 /**
  * Params used to tweak the behavior of the WAND algorithm.
  */
-struct MatchParams {
-    WeakAndHeap&     scores;
+struct MatchParams : public CommonMatchParams {
     StopWordStrategy stop_words;
-    const uint32_t   scoresAdjustFrequency;
-    const uint32_t   docid_limit;
     MatchParams(WeakAndHeap& scores_in) noexcept
-        : MatchParams(scores_in, StopWordStrategy::none(), DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, 0) {}
+      : CommonMatchParams(scores_in),
+        stop_words(StopWordStrategy::none())
+    {}
     MatchParams(WeakAndHeap& scores_in, StopWordStrategy stop_word_strategy, uint32_t scoresAdjustFrequency_in,
                 uint32_t docid_limit_in) noexcept
-        : scores(scores_in),
-          stop_words(stop_word_strategy),
-          scoresAdjustFrequency(scoresAdjustFrequency_in),
-          docid_limit(docid_limit_in) {}
+      : CommonMatchParams(scores_in, scoresAdjustFrequency_in, docid_limit_in),
+        stop_words(stop_word_strategy)
+    {}
 };
 
 /**

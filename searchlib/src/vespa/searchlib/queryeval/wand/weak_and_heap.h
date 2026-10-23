@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/priority_queue.h>
 
 #include <atomic>
+#include <limits>
 #include <mutex>
 #include <span>
 
@@ -17,12 +18,13 @@ namespace search::queryeval {
  * An implementation of this interface must keep the best N scores and
  * provide the threshold score (lowest score among the best N).
  */
-class WeakAndHeap {
+template <typename ScoreT>
+class WeakAndHeapT {
 public:
-    using score_t = wand::score_t;
-    explicit WeakAndHeap(uint32_t scoresToTrack) noexcept
+    using score_t = ScoreT;
+    explicit WeakAndHeapT(uint32_t scoresToTrack) noexcept
         : _minScore((scoresToTrack == 0) ? std::numeric_limits<score_t>::max() : 0), _scoresToTrack(scoresToTrack) {}
-    virtual ~WeakAndHeap() = default;
+    virtual ~WeakAndHeapT() = default;
     /**
      * Consider the given scores for insertion into the underlying structure.
      * The implementation may change the given score array to speed up execution.
@@ -48,30 +50,46 @@ private:
  * An implementation using an underlying priority queue to keep track of the N
  * best hits that can be shared among multiple search iterators.
  */
-class WeakAndPriorityQueue : public WeakAndHeap {
+template <typename ScoreT>
+class WeakAndPriorityQueueT : public WeakAndHeapT<ScoreT> {
+public:
+    using score_t = ScoreT;
 private:
     using Scores = vespalib::PriorityQueue<score_t>;
     Scores _bestScores;
 
-    bool is_full() const noexcept { return (_bestScores.size() >= getScoresToTrack()); }
+    bool is_full() const noexcept { return (_bestScores.size() >= this->getScoresToTrack()); }
 
 public:
-    explicit WeakAndPriorityQueue(uint32_t scoresToTrack);
-    ~WeakAndPriorityQueue() override;
+    explicit WeakAndPriorityQueueT(uint32_t scoresToTrack);
+    ~WeakAndPriorityQueueT() override;
     Scores& getScores() noexcept { return _bestScores; }
     void adjust(std::span<score_t> newScores) override;
-    static std::unique_ptr<WeakAndPriorityQueue> createHeap(uint32_t scoresToTrack, bool thread_safe);
-    void set_min_score(score_t min_score) noexcept { setMinScore(min_score); }
+    static std::unique_ptr<WeakAndPriorityQueueT> createHeap(uint32_t scoresToTrack, bool thread_safe);
+    void set_min_score(score_t min_score) noexcept { this->setMinScore(min_score); }
 };
 
-class SharedWeakAndPriorityQueue final : public WeakAndPriorityQueue {
+template <typename ScoreT>
+class SharedWeakAndPriorityQueueT final : public WeakAndPriorityQueueT<ScoreT> {
+public:
+    using score_t = ScoreT;
 private:
     std::mutex _lock;
 
 public:
-    explicit SharedWeakAndPriorityQueue(uint32_t scoresToTrack);
-    ~SharedWeakAndPriorityQueue() override;
+    explicit SharedWeakAndPriorityQueueT(uint32_t scoresToTrack);
+    ~SharedWeakAndPriorityQueueT() override;
     void adjust(std::span<score_t> newScores) override;
 };
+
+extern template class WeakAndHeapT<int64_t>;
+extern template class WeakAndHeapT<double>;
+extern template class WeakAndPriorityQueueT<int64_t>;
+extern template class WeakAndPriorityQueueT<double>;
+extern template class SharedWeakAndPriorityQueueT<int64_t>;
+extern template class SharedWeakAndPriorityQueueT<double>;
+
+using WeakAndPriorityQueue = WeakAndPriorityQueueT<wand::score_t>;
+using SharedWeakAndPriorityQueue = SharedWeakAndPriorityQueueT<wand::score_t>;
 
 } // namespace search::queryeval

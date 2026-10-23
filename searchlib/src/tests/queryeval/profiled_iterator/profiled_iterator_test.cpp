@@ -18,6 +18,7 @@
 #include <memory>
 
 using namespace search::queryeval;
+using WeakAndHeap = wand::MatchParams::WeakAndHeap;
 using search::FixedSourceSelector;
 using vespalib::ExecutionProfiler;
 using vespalib::Slime;
