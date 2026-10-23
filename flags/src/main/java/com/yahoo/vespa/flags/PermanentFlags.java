@@ -328,6 +328,15 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+
+    public static final UnboundBooleanFlag RELAX_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
+            "relax-strictly-increasing-cluster-state-versions", true,
+            "Whether to allow disabling the requirement that cluster state versions are strictly " +
+                    "increasing when a content cluster has only a single cluster controller configured.",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
+
     private PermanentFlags() {}
 
     public static UnboundBooleanFlag defineFeatureFlag(
