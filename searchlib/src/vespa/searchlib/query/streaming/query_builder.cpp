@@ -242,12 +242,8 @@ std::unique_ptr<QueryNode> QueryBuilder::build(const QueryNode* parent, const Qu
         }
     } break;
     case ParseItem::ITEM_STRING_IN:
-        qn = std::make_unique<InTerm>(factory.create(), queryRep.index_as_string(), queryRep.get_terms(),
-                                      factory.normalizing_mode(queryRep.index_as_view()));
-        break;
     case ParseItem::ITEM_NUMERIC_IN:
-        qn = std::make_unique<InTerm>(factory.create(), queryRep.index_as_string(), queryRep.get_terms(),
-                                      Normalizing::NONE);
+        qn = build_in_term(factory, queryRep);
         break;
     case ParseItem::ITEM_DOT_PRODUCT:
         qn = build_dot_product_term(factory, queryRep);
@@ -342,6 +338,19 @@ std::unique_ptr<QueryNode> QueryBuilder::build_weighted_set_term(const QueryNode
     ws->setUniqueId(queryRep.getUniqueId());
     populate_multi_term(factory.normalizing_mode(ws->index()), *ws, queryRep);
     return ws;
+}
+
+std::unique_ptr<QueryNode> QueryBuilder::build_in_term(const QueryNodeResultFactory& factory,
+                                                       QueryStackIterator&           queryRep) {
+    auto normalize_mode = Normalizing::NONE;
+    if (queryRep.getType() == ParseItem::ITEM_STRING_IN) {
+        normalize_mode = factory.normalizing_mode(queryRep.index_as_view());
+    }
+    auto in_term = std::make_unique<InTerm>(factory.create(), queryRep.index_as_string(), queryRep.get_terms(),
+                                            normalize_mode);
+    in_term->setWeight(queryRep.GetWeight());
+    in_term->setUniqueId(queryRep.getUniqueId());
+    return in_term;
 }
 
 std::unique_ptr<QueryNode> QueryBuilder::build_phrase_term(const QueryNodeResultFactory& factory,

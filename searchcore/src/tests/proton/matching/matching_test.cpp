@@ -31,8 +31,10 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
+#include <vespa/searchlib/query/tree/query_to_protobuf.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
+#include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/searchlib/queryeval/fake_index.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
@@ -296,6 +298,22 @@ std::string make_labeled_terms_and_wrapper_stack_dump() {
     builder.add_label_wrapper(3, 1.0);
     builder.addStringTerm("bar", "f1", 4, Weight(1));
     return StackDumpCreator::create(*builder.build());
+}
+
+// A labeled in on f1 (alternatives foo and bar) or'ed with a labeled term in f2,
+// so that a document can hit without matching the in. Serialized as protobuf,
+// since the stack dump creator does not write the unique id of multi-term items.
+SerializedQueryTreeSP make_labeled_in_or_term_query() {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addOr(2);
+    auto alternatives = std::make_unique<StringTermVector>(2);
+    alternatives->addTerm("foo");
+    alternatives->addTerm("bar");
+    builder.add_in_term(std::move(alternatives), MultiTerm::Type::STRING, "f1", 1, Weight(1));
+    builder.addStringTerm("baz", "f2", 2, Weight(1));
+    QueryToProtobuf converter;
+    auto            proto_query_tree = converter.serialize(*builder.build());
+    return SerializedQueryTree::fromProtobuf(std::make_unique<decltype(proto_query_tree)>(proto_query_tree));
 }
 
 std::string make_near_stack_dump(bool ordered, const std::string& term1, const std::string& term2) {
@@ -600,12 +618,16 @@ struct MyWorld {
         request.setSerializedQueryTree(SerializedQueryTree::fromStackDump(stack_dump));
     }
 
-    static SearchRequest::SP createRequest(const std::string& stack_dump) {
+    static SearchRequest::SP createRequest(SerializedQueryTreeSP query_tree) {
         SearchRequest::SP request(new SearchRequest);
         request->setTimeout(60s);
-        setStackDump(*request, stack_dump);
+        request->setSerializedQueryTree(std::move(query_tree));
         request->maxhits = 10;
         return request;
+    }
+
+    static SearchRequest::SP createRequest(const std::string& stack_dump) {
+        return createRequest(SerializedQueryTree::fromStackDump(stack_dump));
     }
 
     static SearchRequest::SP createSimpleRequest(const std::string& field, const std::string& term) {
@@ -1022,6 +1044,43 @@ TEST_F(MatchingTest, require_that_matches_for_labels_without_field_parameter_ign
         EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), 1.0);
         // the wrapper is unpacked, so its constant score is available as well
         EXPECT_DOUBLE_EQ(values[wrapper_score_idx].as_double(), 1.0);
+    }
+}
+
+TEST_F(MatchingTest, require_that_matches_for_labels_reports_a_labeled_in_term) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    // the in alternatives match docs 10 and 20; doc 30 only matches the term in f2
+    world.searchContext.idx(0).getFake().addResult("f1", "foo", FakeResult().doc(10));
+    world.searchContext.idx(0).getFake().addResult("f1", "bar", FakeResult().doc(20));
+    world.searchContext.idx(0).getFake().addResult("f2", "baz", FakeResult().doc(30));
+    world.setup_matches_for_labels_match_features();
+    SearchRequest::SP request = MyWorld::createRequest(make_labeled_in_or_term_query());
+    auto&             rankProperties = request->propertiesMap.lookupCreate(MapNames::RANK);
+    rankProperties.add("vespa.label.t1.id", "1");
+    rankProperties.add("vespa.label.t2.id", "2");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(reply->hits.size(), 3u);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 2u);
+    size_t tensor_idx = feature_index(names, "matches_for_labels(f1)");
+    ASSERT_LT(tensor_idx, names.size());
+    size_t slice_idx = feature_index(names, "rankingExpression(\"matches_for_labels(f1){label:t1}\")");
+    ASSERT_LT(slice_idx, names.size());
+    ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
+    const auto only_f2_hit = document::DocumentId("id:ns:searchdocument::30").getGlobalId();
+    for (size_t i = 0; i < reply->hits.size(); ++i) {
+        const auto* values = &reply->match_features.values[i * names.size()];
+        // the label of the in reaches its term; t2 searches f2, so it is never a cell here
+        bool       in_matched = (reply->hits[i].gid != only_f2_hit);
+        TensorSpec expect("tensor<float>(label{})");
+        if (in_matched) {
+            expect.add({{"label", "t1"}}, 1);
+        }
+        ASSERT_TRUE(values[tensor_idx].is_data());
+        nbostream buf(values[tensor_idx].as_data().data, values[tensor_idx].as_data().size);
+        EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), in_matched ? 1.0 : 0.0);
     }
 }
 
