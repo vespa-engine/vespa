@@ -209,7 +209,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             .setAttribute(TraceAttributes.RPC_METHOD_KEY,      RPC_METHOD)
             .setAttribute(TraceAttributes.FILL_HITS_REQUESTED, hits.size())
             .setAttribute(TraceAttributes.FILL_RETRY,          hits.get(0).getDistributionKey() != nodeId);
-        
+
         // End BEFORE enqueueing, as RpcSearchInvoker.receive does, so the same statement holds on both paths:
         // the caller thread can never observe a response whose span is still recording. It also keeps the span
         // ending even if receive() throws - responses is a BOUNDED queue and uses add(), which throws when full.
@@ -362,25 +362,36 @@ public class RpcProtobufFillInvoker extends FillInvoker {
      * that would be, so we need to try all possible nodes.
      * To avoid overloading the content layer, we only retry if the number of skipped hits
      * is below a tunable limit, and if the ratio of failed to ok hits is below another
-     * tunable limit (if too much failed on first try, it's likely not helpful to retry).
+     * tunable limit (by default practically off).
      */
     private void maybeRetry(List<FastHit> skippedHits, Result result, String summaryClass) throws InterruptedException {
+        var allNodeIds = resourcePool.knownNodeIds();
+        int numNodes = allNodeIds.size();
         int numSkipped = skippedHits.size();
+        if (numNodes < 2) {
+            // no retry if there is only one node
+            result.getQuery().trace(false, 1, "Summary fetching got " + numSkipped + " empty docsums (of " + numHitsToFill + " hits), no other node to retry on");
+            Span.current().setAttribute(TraceAttributes.FILL_SKIPPED, numSkipped)
+                          .setAttribute(TraceAttributes.FILL_RETRIED, false);
+            return;
+        }
+        int numRetryNodes = numNodes - 1;
         var query = result.getQuery();
-        double absoluteRetryLimit = query.properties().getInteger(Dispatcher.docsumRetryLimit, 10);
-        double retryLimitFactor = query.properties().getDouble(Dispatcher.docsumRetryFactor, 0.5);
-        double retryLimit = Math.min(absoluteRetryLimit, retryLimitFactor * numHitsToFill + 1);
+        double totalRetryLimit = query.properties().getInteger(Dispatcher.docsumRetryLimit, 999);
+        double retryLimitFactor = query.properties().getDouble(Dispatcher.docsumRetryFactor, 0.999);
+        double retryLimitPerNode = 1 + (totalRetryLimit / numRetryNodes);
+        double retryLimit = Math.min(retryLimitPerNode, retryLimitFactor * numHitsToFill + 1);
         if (numSkipped < retryLimit) {
             result.getQuery().trace(false, 1, "Retry summary fetching for " + numSkipped + " empty docsums (of " + numHitsToFill + " hits)");
             ListMap<Integer, FastHit> retryMap = new ListMap<>();
-            for (Integer nodeId : resourcePool.knownNodeIds()) {
+            for (Integer nodeId : allNodeIds) {
                 for (var hit : skippedHits) {
                     if (hit.getDistributionKey() != nodeId) {
                         retryMap.put(nodeId, hit);
                     }
                 }
             }
-            // no retry if there is only one node
+            // Should always be true because of numNodes check above
             if (retryMap.size() > 0) {
                 if (shouldLogRetry()) {
                     log.log(Level.INFO, "Retry docsum fetch for " + numSkipped + " hits (" + numOkFilledHits + " ok hits)");
