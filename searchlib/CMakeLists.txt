@@ -229,6 +229,7 @@ vespa_define_module(
     src/tests/queryeval/same_element
     src/tests/queryeval/simple_phrase
     src/tests/queryeval/sourceblender
+    src/tests/queryeval/sparse_tensor_wand
     src/tests/queryeval/sparse_vector_benchmark
     src/tests/queryeval/termwise_eval
     src/tests/queryeval/weak_and
