@@ -398,3 +398,41 @@ func assertDeployServerError(t *testing.T, status int, errorMessage string) {
 		"Error: error from deploy API at 127.0.0.1:19071 (status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		stderr.String())
 }
+
+func TestDeployCloudProgress(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+	cli, stdout, stderr := newTestCLI(t, "CI=true", "NO_COLOR=true")
+	client := &mock.HTTPClient{}
+	cli.httpClient = client
+	require.NoError(t, cli.Run("config", "set", "application", "t1.a1.i1"))
+	require.NoError(t, cli.Run("config", "set", "target", "cloud"))
+	require.NoError(t, cli.Run("config", "set", "progress", "true"))
+	require.NoError(t, cli.Run("auth", "api-key"))
+	require.NoError(t, cli.Run("auth", "cert", pkgDir))
+	cli.isTerminal = func() bool { return true }
+	stdout.Reset()
+	stderr.Reset()
+	client.NextResponseString(200, `{"run":42}`)
+	running := `{"active":true,"status":"running","lastId":1,"steps":{"deployReal":{"status":"unfinished","startMillis":1}},"log":{"deployReal":[{"at":1,"type":"info","message":"` + provisioningMessage + `"}]}}`
+	// Waiter probes once and then waits: replayed initial logs must be harmless.
+	client.NextResponseString(200, running)
+	client.NextResponseString(200, running)
+	require.NoError(t, cli.Run("deploy", pkgDir))
+	assert.Contains(t, stderr.String(), "Application hosts")
+	assert.Contains(t, stderr.String(), "Admin hosts")
+	assert.Contains(t, stderr.String(), "deployment may still be running")
+	assert.NotContains(t, stdout.String(), "[00:")
+	assert.True(t, client.Consumed())
+	assert.Nil(t, cli.progress)
+
+	// Explicitly opting out restores legacy output even with the saved setting enabled.
+	stdout.Reset()
+	stderr.Reset()
+	client.NextResponseString(200, `{"run":43}`)
+	client.NextResponseString(200, `{"active":false,"status":"success"}`)
+	require.NoError(t, cli.Run("deploy", "--progress=false", pkgDir))
+	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
+	assert.NotContains(t, stderr.String(), "\x1b[")
+	assert.True(t, client.Consumed())
+}

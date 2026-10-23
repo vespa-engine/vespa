@@ -35,6 +35,7 @@ const (
 	targetFlag      = "target"
 	colorFlag       = "color"
 	quietFlag       = "quiet"
+	progressFlag    = "progress"
 	debugModeFlag   = "debug"
 
 	anyTarget = iota
@@ -53,6 +54,7 @@ type CLI struct {
 	exec       executor
 	isTerminal func() bool
 	spinner    func(w io.Writer, message string, fn func() error) error
+	progress   *deploymentProgress
 
 	now           func() time.Time
 	retryInterval time.Duration
@@ -79,6 +81,7 @@ type ErrCLI struct {
 }
 
 type targetOptions struct {
+	progress *deploymentProgress
 	// logLevel sets the log level to use for this target. If empty, it defaults to "info".
 	logLevel string
 	// noCertificate declares that no client certificate should be required when using this target.
@@ -306,6 +309,7 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 		zone        string
 		color       string
 		quiet       bool
+		progress    bool
 		debugMode   bool
 	)
 	c.cmd.PersistentFlags().StringVarP(&target, targetFlag, "t", "local", `The target platform to use. Must be "local", "cloud", "hosted" or an URL`)
@@ -315,6 +319,7 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone (cloud only)")
 	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
 	c.cmd.PersistentFlags().BoolVarP(&quiet, quietFlag, "q", false, "Print only errors")
+	c.cmd.PersistentFlags().BoolVar(&progress, progressFlag, false, "Show live deployment progress in interactive terminals")
 	c.cmd.PersistentFlags().BoolVar(&debugMode, debugModeFlag, false, `Print debugging output`)
 	c.cmd.PersistentFlags().MarkHidden(debugModeFlag)
 
@@ -657,6 +662,12 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL
 		TLSOptions:  deploymentTLSOptions,
 		CustomURL:   customURL,
 		ClusterURLs: endpoints,
+	}
+	if opts.progress != nil {
+		deploymentOptions.OnProgress = func(id int64, snapshot vespa.RunProgress) {
+			opts.progress.setURL(deployment.System.ConsoleRunURL(deployment, id))
+			opts.progress.updateRun(id, snapshot)
+		}
 	}
 	logLevel := opts.logLevel
 	if logLevel == "" {
