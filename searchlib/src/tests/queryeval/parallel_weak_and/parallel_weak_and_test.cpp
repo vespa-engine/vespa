@@ -20,6 +20,7 @@ using namespace search::queryeval::test;
 
 using feature_t = search::feature_t;
 using score_t = wand::score_t;
+using WeakAndHeap = ParallelWeakAndSearch::WeakAndHeap;
 using MatchParams = ParallelWeakAndSearch::MatchParams;
 using RankParams = ParallelWeakAndSearch::RankParams;
 using search::IDirectPostingStore;
@@ -584,7 +585,7 @@ TEST(ParallelWeakAndTest, require_that_docid_limit_is_propagated_to_search_itera
     f1.spec.docIdLimit = 4050;
     SearchIterator::UP           itr = f1.iterator();
     const ParallelWeakAndSearch* wand = dynamic_cast<ParallelWeakAndSearch*>(itr.get());
-    EXPECT_EQ(4050u, wand->getMatchParams().docIdLimit);
+    EXPECT_EQ(4050u, wand->getMatchParams().docid_limit);
 }
 
 TEST(ParallelWeakAndTest, require_that_terms_are_sorted_for_maximum_skipping) {

@@ -16,23 +16,22 @@ namespace search::queryeval {
 struct ParallelWeakAndSearch : public SearchIterator {
     using score_t = wand::score_t;
     using docid_t = wand::docid_t;
+    using WeakAndHeap = WeakAndHeapT<wand::score_t>;
 
     /**
      * Params used to tweak the behavior of the WAND algorithm.
      */
-    struct MatchParams {
-        WeakAndHeap&   scores;
+    struct MatchParams : public wand::CommonMatchParams {
         score_t        scoreThreshold;
-        const uint32_t scoresAdjustFrequency;
         const double   thresholdBoostFactor;
-        const docid_t  docIdLimit;
         MatchParams(WeakAndHeap& scores_in, score_t scoreThreshold_in, double thresholdBoostFactor_in,
                     uint32_t scoresAdjustFrequency_in, uint32_t docIdLimit_in) noexcept
-            : scores(scores_in),
-              scoreThreshold(scoreThreshold_in),
-              scoresAdjustFrequency(scoresAdjustFrequency_in),
-              thresholdBoostFactor(thresholdBoostFactor_in),
-              docIdLimit(docIdLimit_in) {}
+          : wand::CommonMatchParams(scores_in,
+                                    scoresAdjustFrequency_in,
+                                    docIdLimit_in),
+            scoreThreshold(scoreThreshold_in),
+            thresholdBoostFactor(thresholdBoostFactor_in)
+        {}
     };
 
     /**
