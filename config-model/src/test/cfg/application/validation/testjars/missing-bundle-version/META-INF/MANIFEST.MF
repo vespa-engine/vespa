@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+Created-By: Path-E-Tech Management
+Bundle-ManifestVersion: 2
+Bundle-Name: ok
+Bundle-SymbolicName: ok
+
