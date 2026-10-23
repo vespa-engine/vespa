@@ -102,7 +102,7 @@ public:
         if (!_readonly_scores_heap) {
             _localScores.push_back(score);
             if (_localScores.size() == _matchParams.scoresAdjustFrequency) {
-                _matchParams.scores.adjust(&_localScores[0], &_localScores[0] + _localScores.size());
+                _matchParams.scores.adjust(_localScores);
                 _localScores.clear();
             }
         }

@@ -64,10 +64,10 @@ struct TestHeap : public WeakAndHeap {
     ScoresHistory history;
 
     explicit TestHeap(uint32_t scoresToTrack_) : WeakAndHeap(scoresToTrack_), history() {}
-    void adjust(score_t* begin, score_t* end) override {
+    void adjust(std::span<score_t> newScores) override {
         Scores scores;
-        for (score_t* itr = begin; itr != end; ++itr) {
-            scores.add(*itr);
+        for (score_t score : newScores) {
+            scores.add(score);
         }
         history.push_back(scores);
         setMinScore(1);
@@ -674,7 +674,7 @@ using RankParams = ParallelWeakAndSearch::RankParams;
 
 struct DummyHeap : public WeakAndHeap {
     DummyHeap() : WeakAndHeap(9001) {}
-    void adjust(score_t*, score_t*) override {}
+    void adjust(std::span<score_t>) override {}
 };
 
 SearchIterator::UP create_wand(bool use_dww, TermFieldMatchData& tfmd, const MatchParams& matchParams,
