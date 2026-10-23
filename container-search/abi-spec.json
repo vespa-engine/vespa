@@ -6086,13 +6086,13 @@
       "public void setWhereString(java.lang.String)",
       "public java.lang.String getWhereString()",
       "public void setGroupingString(java.lang.String)",
+      "public void resolveGrouping()",
       "public void setFieldsString(java.lang.String)",
       "public java.lang.String getFieldsString()",
       "public void setGroupingExpressionString(java.lang.String)",
       "public java.lang.String getGroupingExpressionString()",
       "public java.lang.String getGroupingString()",
       "public java.util.List getGrouping()",
-      "public void resolveGrouping()",
       "public java.lang.String toString()",
       "public java.lang.Object clone()",
       "public com.yahoo.search.query.Select cloneFor(com.yahoo.search.Query)"
@@ -9262,6 +9262,36 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.schema.Field$AnnotationReferenceFieldType" : {
+    "superClass" : "com.yahoo.search.schema.Field$Type",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String annotationType()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Field$ArrayFieldType" : {
+    "superClass" : "com.yahoo.search.schema.Field$Type",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.schema.Field$Type)",
+      "public com.yahoo.search.schema.Field$Type elementType()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.schema.Field$Builder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -9316,6 +9346,35 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Field$ReferenceFieldType" : {
+    "superClass" : "com.yahoo.search.schema.Field$Type",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String documentType()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Field$StructFieldType" : {
+    "superClass" : "com.yahoo.search.schema.Field$Type",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String name()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },
@@ -9378,6 +9437,21 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()",
+      "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Field$WeightedSetFieldType" : {
+    "superClass" : "com.yahoo.search.schema.Field$Type",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.search.schema.Field$Type)",
+      "public com.yahoo.search.schema.Field$Type elementType()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
     ],
     "fields" : [ ]
