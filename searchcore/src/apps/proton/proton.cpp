@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config-telemetry.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/file_interface.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/metrics/metricmanager.h>
+#include <vespa/opentelemetry/opentelemetry_tracer_providers.h>
 #include <vespa/searchcore/proton/server/proton.h>
 #include <vespa/searchvisitor/searchvisitor.h>
 #include <vespa/storage/storageserver/storagenode.h>
@@ -16,6 +18,9 @@
 #include <absl/debugging/failure_signal_handler.h>
 #include <absl/debugging/symbolize.h>
 #include <fcntl.h>
+#include <google/protobuf/message_lite.h>
+#include <grpc/grpc.h>
+#include <opentelemetry/trace/provider.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -28,6 +33,7 @@ LOG_SETUP("proton");
 
 using SIG = vespalib::SignalHandler;
 using vespa::config::search::core::ProtonConfig;
+using vespa_opentelemetry::OpenTelemetryTracerProviders;
 
 struct Params {
     std::string identity;
@@ -246,6 +252,13 @@ private:
     FNET_Transport _transport;
 };
 
+void emit_proton_starting_span() {
+    auto tracer = ::opentelemetry::trace::Provider::GetTracerProvider()->GetTracer("proton-tracer");
+    auto span = tracer->StartSpan("Proton process starting");
+    span->AddEvent("first event");
+    span->End();
+}
+
 } // namespace
 
 void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
@@ -264,6 +277,9 @@ void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
     if (proton.hasAbortedInit()) {
         EV_STOPPING("proton", "shutdown after aborted init");
     } else {
+        OpenTelemetryTracerProviders::init_grpc_tracer_provider("proton-service",
+                                                                *configSnapshot->get_telemetry_config_sp());
+        emit_proton_starting_span();
         const ProtonConfig& protonConfig = configSnapshot->getProtonConfig();
         std::string         basedir = protonConfig.basedir;
         std::filesystem::create_directories(std::filesystem::path(basedir));
@@ -338,6 +354,14 @@ int App::main(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
-    App app;
-    return app.main(argc, argv);
+    int result = 0;
+    grpc_init();
+    {
+        App app;
+        result = app.main(argc, argv);
+    }
+    OpenTelemetryTracerProviders::cleanup_tracer_provider();
+    grpc_shutdown_blocking();
+    google::protobuf::ShutdownProtobufLibrary();
+    return result;
 }
