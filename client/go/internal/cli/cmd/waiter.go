@@ -107,7 +107,7 @@ func (w *Waiter) maybeWaitFor(service *vespa.Service) error {
 	if err := service.Wait(0); err == nil {
 		return err
 	}
-	w.cli.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for ", service.Description(), "...")
+	w.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for ", service.Description(), "...")
 	return service.Wait(w.Timeout)
 }
 
@@ -118,7 +118,7 @@ func (w *Waiter) services(target vespa.Target) ([]*vespa.Service, error) {
 		return services, err
 	}
 	if w.Timeout > 0 {
-		w.cli.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for cluster discovery...")
+		w.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for cluster discovery...")
 	}
 	return target.ContainerServices(w.Timeout)
 }
@@ -137,7 +137,7 @@ func (w *Waiter) Deployment(target vespa.Target, wantedID int64) (int64, error) 
 	}
 	timeout := w.Timeout
 	if timeout > 0 {
-		w.cli.printInfo("Waiting up to ", color.CyanString(timeout.String()), " for deployment to converge...")
+		w.printInfo("Waiting up to ", color.CyanString(timeout.String()), " for deployment to converge...")
 	} else if w.FastWaitOn(target) {
 		// If --wait is not explicitly given, we always wait a few seconds in Cloud to catch fast failures, e.g.
 		// invalid application package
@@ -147,4 +147,12 @@ func (w *Waiter) Deployment(target vespa.Target, wantedID int64) (int64, error) 
 		return id, err
 	}
 	return target.AwaitDeployment(wantedID, timeout)
+}
+
+func (w *Waiter) printInfo(msg ...interface{}) {
+	if w.cli.progress != nil {
+		w.cli.progress.note(fmt.Sprint(msg...))
+		return
+	}
+	w.cli.printInfo(msg...)
 }

@@ -483,7 +483,7 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"deployed": true, "status": "done", "jobs": []}`),
 	})
-	skipped, skipReason, err := AwaitBuild(target, 42, time.Second, nil)
+	skipped, skipReason, err := AwaitBuild(target, 42, time.Second, nil, nil)
 	assert.Nil(t, err)
 	assert.False(t, skipped)
 	assert.Equal(t, "", skipReason)
@@ -494,7 +494,7 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"skipReason": "no changes detected"}`),
 	})
-	skipped, skipReason, err = AwaitBuild(target, 42, time.Second, nil)
+	skipped, skipReason, err = AwaitBuild(target, 42, time.Second, nil, nil)
 	assert.Nil(t, err)
 	assert.True(t, skipped)
 	assert.Equal(t, "no changes detected", skipReason)
@@ -505,7 +505,7 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"hasFailed": true, "jobs": []}`),
 	})
-	_, _, err = AwaitBuild(target, 42, time.Second, nil)
+	_, _, err = AwaitBuild(target, 42, time.Second, nil, nil)
 	require.NotNil(t, err)
 	assert.True(t, errors.Is(err, ErrDeployment))
 
@@ -520,7 +520,7 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"active": false, "status": "deploymentFailed"}`),
 	})
-	_, _, err = AwaitBuild(target, 42, time.Second, nil)
+	_, _, err = AwaitBuild(target, 42, time.Second, nil, nil)
 	require.NotNil(t, err)
 	assert.True(t, errors.Is(err, ErrDeployment))
 	assert.Contains(t, err.Error(), "production-aws-us-east-1c")
@@ -536,7 +536,7 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"active": false, "status": "testFailure"}`),
 	})
-	_, _, err = AwaitBuild(target, 42, time.Second, nil)
+	_, _, err = AwaitBuild(target, 42, time.Second, nil, nil)
 	require.NotNil(t, err)
 	assert.True(t, errors.Is(err, ErrDeployment))
 	assert.Contains(t, err.Error(), "system-test.aws-us-east-1c")
@@ -547,7 +547,7 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"absorbedIntoBuild": 99, "deployed": false, "hasFailed": false, "jobs": [], "status": "done"}`),
 	})
-	_, _, err = AwaitBuild(target, 42, time.Second, nil)
+	_, _, err = AwaitBuild(target, 42, time.Second, nil, nil)
 	require.NotNil(t, err)
 	assert.Contains(t, err.Error(), "99")
 
@@ -557,13 +557,13 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"deployed": false, "status": "deploying"}`),
 	})
-	_, _, err = AwaitBuild(target, 42, time.Millisecond, nil)
+	_, _, err = AwaitBuild(target, 42, time.Millisecond, nil, nil)
 	assert.True(t, errors.Is(err, ErrWaitTimeout))
 }
 
 func TestStreamBuildJobLogs(t *testing.T) {
 	target, client := createCloudTarget(t, io.Discard)
-	job := buildStatusJob{JobName: "production-aws-us-east-1c", RunID: 100, Instance: "i1"}
+	job := BuildJobProgress{JobName: "production-aws-us-east-1c", RunID: 100, Instance: "i1"}
 	runURI := "/application/v4/tenant/t1/application/a1/instance/i1/job/production-aws-us-east-1c/run/100?after=-1"
 
 	// Happy path: log is written and job succeeds
@@ -593,14 +593,14 @@ func TestStreamBuildJobLogs(t *testing.T) {
 func TestPrintBuildJobLog(t *testing.T) {
 	// Empty response (LastID == 0): returns last unchanged, no output
 	var buf bytes.Buffer
-	last := printBuildJobLog(runResponse{}, 10, &buf, "[job] ")
+	last := printBuildJobLog(RunProgress{}, 10, &buf, "[job] ")
 	assert.Equal(t, int64(10), last)
 	assert.Empty(t, buf.String())
 
 	// Messages sorted by timestamp and formatted with prefix
-	resp := runResponse{
+	resp := RunProgress{
 		LastID: 7,
-		Log: map[string][]logMessage{
+		Log: map[string][]RunLogEntry{
 			"step": {
 				{At: 1631707708432, Type: "warning", Message: "second"},
 				{At: 1631707708431, Type: "info", Message: "first"},
@@ -618,9 +618,9 @@ func TestPrintBuildJobLog(t *testing.T) {
 
 	// Debug messages are filtered out
 	buf.Reset()
-	resp = runResponse{
+	resp = RunProgress{
 		LastID: 8,
-		Log: map[string][]logMessage{
+		Log: map[string][]RunLogEntry{
 			"step": {
 				{At: 1631707708431, Type: "debug", Message: "should be filtered"},
 				{At: 1631707708432, Type: "info", Message: "visible"},
@@ -735,4 +735,91 @@ func TestServiceDescription(t *testing.T) {
 	assert.Equal(t, "deploy API", s.Type())
 	assert.Equal(t, "ignored", s.ServiceName())
 	assert.Equal(t, "deploy API ignored", s.Description())
+}
+
+func TestCloudDeploymentProgressAndCursor(t *testing.T) {
+	var logs bytes.Buffer
+	target, client := createCloudTarget(t, &logs)
+	var snapshots []RunProgress
+	target.(*cloudTarget).deploymentOptions.OnProgress = func(id int64, p RunProgress) { assert.EqualValues(t, 42, id); snapshots = append(snapshots, p) }
+	path := "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42"
+	client.NextResponse(mock.HTTPResponse{URI: path + "?after=-1", Status: 200, Body: []byte(`{"active":true,"status":"running","steps":{"deployReal":{"status":"unfinished"}}}`)})
+	client.NextResponse(mock.HTTPResponse{URI: path + "?after=-1", Status: 200, Body: []byte(`{"active":true,"status":"running","lastId":0,"log":{"deployReal":[{"at":1,"type":"info","message":"first"}]}}`)})
+	client.NextResponse(mock.HTTPResponse{URI: path + "?after=0", Status: 200, Body: []byte(`{"active":true,"status":"running","lastId":9,"steps":{"installReal":{"status":"unfinished","startMillis":123,"convergence":{"nodes":4,"services":12,"needNewConfig":4,"needRestart":1}}}}`)})
+	client.NextResponse(mock.HTTPResponse{URI: path + "?after=9", Status: 200, Body: []byte(`{"active":false,"status":"success"}`)})
+	id, err := target.AwaitDeployment(42, time.Second)
+	require.NoError(t, err)
+	assert.EqualValues(t, 42, id)
+	assert.Len(t, snapshots, 4)
+	assert.Equal(t, "", logs.String())
+	require.True(t, client.Consumed())
+	c := snapshots[2].Steps["installReal"].Convergence
+	require.NotNil(t, c)
+	assert.EqualValues(t, 12, c.Services)
+	assert.EqualValues(t, 4, c.NeedNewConfig)
+	assert.EqualValues(t, 1, c.NeedRestart)
+}
+
+func TestCloudDeploymentProgressPreservesFailure(t *testing.T) {
+	var logs bytes.Buffer
+	target, client := createCloudTarget(t, &logs)
+	calls := 0
+	target.(*cloudTarget).deploymentOptions.OnProgress = func(_ int64, p RunProgress) { calls++; assert.False(t, p.Active) }
+	client.NextResponseString(200, `{"active":false,"status":"deploymentFailed","lastId":3,"steps":{"deployReal":{"status":"failed"}},"log":{"deployReal":[{"at":1,"type":"info","message":"Preparing application"},{"at":2,"type":"warning","message":"Deployment failed: Invalid schema"}]}}`)
+	_, err := target.AwaitDeployment(42, 0)
+	assert.ErrorIs(t, err, ErrDeployment)
+	assert.Contains(t, err.Error(), "Invalid schema")
+	assert.Contains(t, logs.String(), "Preparing application")
+	assert.Equal(t, 1, calls)
+}
+
+func TestBuildProgressIncrementalJobDetails(t *testing.T) {
+	target, client := createCloudTarget(t, nil)
+	buildPath := "/application/v4/tenant/t1/application/a1/build-status/42"
+	runPath := "/application/v4/tenant/t1/application/a1/instance/%s/job/system-test/run/%d?after=%d"
+	build := `{"status":"deploying","jobs":[{"instance":"one","jobName":"system-test","runId":%d,"runStatus":"running"},{"instance":"two","jobName":"system-test","runId":1,"runStatus":"running"}]}`
+	for tick := range 3 {
+		runID := int64(1)
+		if tick == 2 {
+			runID = 2
+		}
+		client.NextResponse(mock.HTTPResponse{URI: buildPath, Status: 200, Body: []byte(fmt.Sprintf(build, runID))})
+		after := int64(-1)
+		if tick == 1 {
+			after = 7
+		}
+		client.NextResponse(mock.HTTPResponse{URI: fmt.Sprintf(runPath, "one", runID, after), Status: 200, Body: []byte(`{"active":true,"status":"running","lastId":7,"steps":{"deployReal":{"status":"unfinished"}}}`)})
+		// One instance has unavailable details throughout: the build must still complete.
+		client.NextResponse(mock.HTTPResponse{URI: fmt.Sprintf(runPath, "two", 1, -1), Status: 503, Body: []byte(`unavailable`)})
+	}
+	client.NextResponse(mock.HTTPResponse{URI: buildPath, Status: 200, Body: []byte(`{"deployed":true,"jobs":[{"instance":"one","jobName":"system-test","runId":2,"runStatus":"success"}]}`)})
+	var snapshots []BuildProgress
+	skipped, _, err := AwaitBuild(target, 42, 10*time.Second, nil, func(p BuildProgress) { snapshots = append(snapshots, p) })
+	require.NoError(t, err)
+	assert.False(t, skipped)
+	require.True(t, client.Consumed())
+	require.Len(t, snapshots, 4)
+	assert.NotNil(t, snapshots[0].Jobs[0].Details)
+	assert.True(t, snapshots[0].Jobs[1].DetailsUnavailable)
+	assert.True(t, snapshots[3].Deployed)
+	// Three build ticks with two active jobs, then a final build response: no detail poll on success.
+	assert.Len(t, client.Requests, 10)
+}
+
+func TestBuildProgressTerminalStates(t *testing.T) {
+	for _, body := range []string{`{"skipReason":"no changes"}`, `{"absorbedIntoBuild":43}`, `{"hasFailed":true}`, `{"deployed":true}`} {
+		t.Run(body, func(t *testing.T) {
+			target, client := createCloudTarget(t, nil)
+			client.NextResponseString(200, body)
+			calls := 0
+			_, _, _ = AwaitBuild(target, 42, time.Second, nil, func(p BuildProgress) { calls++ })
+			assert.Equal(t, 1, calls)
+			assert.Len(t, client.Requests, 1)
+			assert.True(t, client.Consumed())
+		})
+	}
+	target, client := createCloudTarget(t, nil)
+	_, err := fetchBuildJobProgress(target, BuildJobProgress{}, -1, time.Now().Add(-time.Second))
+	assert.ErrorIs(t, err, ErrWaitTimeout)
+	assert.Empty(t, client.Requests)
 }

@@ -113,6 +113,7 @@ cluster = <unset>
 color = auto
 debug = false
 default_config_scope = <unset>
+progress = false
 quiet = false
 target = cloud
 zone = <unset>
@@ -129,6 +130,7 @@ color = auto
 debug = false
 default_config_scope = <unset>
 instance = foo
+progress = false
 quiet = false
 target = cloud
 zone = <unset>
@@ -274,6 +276,7 @@ cluster = <unset>
 color = auto
 debug = false
 default_config_scope = local
+progress = false
 quiet = false
 zone = <unset>
 `, "config", "get")
@@ -483,4 +486,20 @@ func createKeyPair(t *testing.T) ([]byte, []byte, tls.Certificate) {
 		t.Fatal(err)
 	}
 	return pemCert, pemKey, kp
+}
+
+func TestProgressConfiguration(t *testing.T) {
+	configHome := t.TempDir()
+	assertConfigCommand(t, configHome, "progress = false\n", "config", "get", "progress")
+	assertConfigCommandErr(t, configHome, "Error: invalid option or value: progress = live\n", "config", "set", "progress", "live")
+	assertConfigCommand(t, configHome, successSet(configHome, "progress", "true"), "config", "set", "--global", "progress", "true")
+	assertConfigCommand(t, configHome, "progress = true\n", "config", "get", "progress")
+	_, root := mock.ApplicationPackageDir(t, false, false)
+	root = resolveSymlinks(root)
+	t.Chdir(root)
+	assertConfigCommand(t, configHome, successSetLocal(root, "progress", "false"), "config", "set", "--local", "progress", "false")
+	assertConfigCommand(t, configHome, "progress = false\n", "config", "get", "progress")
+	assertConfigCommand(t, configHome, "progress = true\n", "--progress=true", "config", "get", "progress")
+	assertConfigCommand(t, configHome, fmt.Sprintf("Success: Unset progress in local config at %s\n", filepath.Join(root, ".vespa", "config.yaml")), "config", "unset", "--local", "progress")
+	assertConfigCommand(t, configHome, "progress = true\n", "config", "get", "progress")
 }

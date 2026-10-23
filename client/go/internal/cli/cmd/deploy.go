@@ -41,6 +41,10 @@ the application package has been validated and activated on config servers. The
 process of applying it on individual nodes has started but may not have
 completed.
 
+Set 'vespa config set --global progress true' to show live deployment progress
+in interactive terminals. Use --progress=false for plain output. The --wait
+option still controls how long to monitor the deployment.
+
 If application directory is not specified, it defaults to working directory.
 
 In Vespa Cloud you may override the Vespa runtime version (--version) for your
@@ -59,9 +63,14 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 			if err != nil {
 				return err
 			}
-			target, err := cli.target(targetOptions{logLevel: logLevelArg})
+			progress := cli.startDeploymentProgress("Deploying application")
+			defer progress.close()
+			target, err := cli.target(targetOptions{logLevel: logLevelArg, progress: progress})
 			if err != nil {
 				return err
+			}
+			if progress != nil {
+				progress.setTitle("Deploying " + target.Deployment().String())
 			}
 			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 			if versionArg != "" {
@@ -93,7 +102,14 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 				return err
 			}
 			var result vespa.PrepareResult
-			err = cli.spinner(cli.Stderr, "Uploading application package...", func() error {
+			upload := cli.spinner
+			if progress != nil {
+				upload = func(_ io.Writer, _ string, fn func() error) error {
+					progress.note("Uploading application package…")
+					return fn()
+				}
+			}
+			err = upload(cli.Stderr, "Uploading application package...", func() error {
 				result, err = vespa.Deploy(opts)
 				return err
 			})
@@ -106,17 +122,24 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 				}
 				return err
 			}
-			if opts.Target.IsCloud() {
+			if opts.Target.IsCloud() && progress == nil {
 				cli.printSuccess("Triggered deployment of ", color.CyanString("'"+pkg.Path+"'"), " with run ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
-			} else {
+			} else if !opts.Target.IsCloud() {
 				cli.printSuccess("Deployed ", color.CyanString("'"+pkg.Path+"'"), " with session ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
 				printPrepareLog(cli.Stderr, result)
 			}
-			if opts.Target.IsCloud() {
+			if progress != nil {
+				progress.setURL(opts.Target.Deployment().System.ConsoleRunURL(opts.Target.Deployment(), result.ID))
+				progress.note(fmt.Sprintf("Upload complete · run %d", result.ID))
+			} else if opts.Target.IsCloud() {
 				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.CyanString("vespa status deployment"))
 				log.Print(color.CyanString(opts.Target.Deployment().System.ConsoleRunURL(opts.Target.Deployment(), result.ID)))
 			}
-			return waitForVespaReady(target, result.ID, waiter)
+			err = waitForVespaReady(target, result.ID, waiter)
+			if err == nil && progress != nil && progress.run.id > 0 && !progress.run.snapshot.Active {
+				progress.finish("✓ Deployment complete")
+			}
+			return err
 		},
 	}
 	cmd.Flags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)
