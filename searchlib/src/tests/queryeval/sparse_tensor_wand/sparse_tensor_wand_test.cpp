@@ -153,7 +153,7 @@ TEST_P(SparseTensorWandTest, initial_score_threshold_is_used) {
 }
 
 TEST_P(SparseTensorWandTest, score_threshold_is_raised_when_heap_is_full) {
-    // after docs 1 and 2 the heap is full with threshold 3; doc 4 raises it to 4, and doc 8 is not a hit
+    // scores are batched; after 4 hits (docs 1, 2, 4, 5) the heap threshold is raised to 4, and doc 8 is not a hit
     auto bp = make_blueprint(2, 0.0);
     Hits expect = {{1, 3.0}, {2, 3.0}, {4, 4.0}, {5, 13.0}};
     EXPECT_EQ(expect, find_matches(*bp, true));

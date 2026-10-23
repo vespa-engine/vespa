@@ -3,14 +3,11 @@
 #pragma once
 
 #include "searchiterator.h"
+#include "wand/weak_and_heap.h"
 
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/lazy_params.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/vespalib/util/priority_queue.h>
-
-#include <atomic>
-#include <mutex>
 
 namespace search::tensor {
 class ITensorAttribute;
@@ -21,43 +18,6 @@ struct Value;
 } // namespace vespalib::eval
 
 namespace search::queryeval {
-
-/**
- * A heap of the K best scores that can be shared between multiple search iterators.
- * The score threshold starts at the given initial value, and is raised to the
- * lowest score in the heap whenever the heap is full.
- **/
-class SparseTensorWandHeap {
-private:
-    std::mutex                      _lock;
-    size_t                          _size;
-    std::atomic<double>             _score_threshold;
-    vespalib::PriorityQueue<double> _priQ;
-
-public:
-    SparseTensorWandHeap(size_t maxSize, double score_threshold)
-        : _size(maxSize), _score_threshold(score_threshold), _priQ() {
-        _priQ.reserve(maxSize);
-    }
-    void set_score_threshold(double score_threshold) {
-        _score_threshold.store(score_threshold, std::memory_order_relaxed);
-    }
-    double score_threshold() const { return _score_threshold.load(std::memory_order_relaxed); }
-    void used(double score) {
-        std::lock_guard<std::mutex> guard(_lock);
-        if (_priQ.size() < _size) {
-            _priQ.push(score);
-        } else if (_size > 0 && score > _priQ.front()) {
-            _priQ.front() = score;
-            _priQ.adjust();
-        }
-        if (_size > 0 && _priQ.size() >= _size) {
-            if (_score_threshold.load(std::memory_order_relaxed) < _priQ.front()) {
-                _score_threshold.store(_priQ.front(), std::memory_order_relaxed);
-            }
-        }
-    }
-};
 
 /**
  * Evaluates the dot product between document tensors and a fixed query tensor,
@@ -99,6 +59,8 @@ public:
  **/
 class SparseTensorWandSearch : public SearchIterator {
 public:
+    using MatchParams = wand::CommonMatchParamsT<double>;
+
     // Whether the given type is a sparse tensor type with exactly one mapped dimension.
     static bool is_supported_type(const vespalib::eval::ValueType& type);
 
@@ -110,7 +72,7 @@ public:
                                                   const tensor::ITensorAttribute&            attr_tensor,
                                                   const vespalib::eval::InterpretedFunction& dot_product,
                                                   const vespalib::eval::Value&               query_tensor,
-                                                  SparseTensorWandHeap& scores, bool readonly_scores_heap);
+                                                  const MatchParams& match_params, bool readonly_scores_heap);
 };
 
 } // namespace search::queryeval

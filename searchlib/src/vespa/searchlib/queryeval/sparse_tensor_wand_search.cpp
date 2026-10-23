@@ -9,6 +9,8 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 
+#include <vector>
+
 using search::tensor::ITensorAttribute;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::Function;
@@ -52,7 +54,8 @@ template <bool strict, typename DocAccess> class SparseTensorWandSearchImpl fina
     fef::TermFieldMatchData& _tfmd;
     DocAccess                _doc_access;
     SparseTensorDotProduct   _dot_product;
-    SparseTensorWandHeap&    _scores;
+    const MatchParams        _matchParams;
+    std::vector<double>      _localScores;
     const bool               _readonly_scores_heap;
     double                   _last_score;
 
@@ -61,16 +64,19 @@ template <bool strict, typename DocAccess> class SparseTensorWandSearchImpl fina
 public:
     SparseTensorWandSearchImpl(fef::TermFieldMatchData& tfmd, const ITensorAttribute& attr,
                                const InterpretedFunction& dot_product, const Value& query_tensor,
-                               SparseTensorWandHeap& scores, bool readonly_scores_heap)
+                               const MatchParams& match_params, bool readonly_scores_heap)
         : _tfmd(tfmd),
           _doc_access(attr),
           _dot_product(dot_product, query_tensor),
-          _scores(scores),
+          _matchParams(match_params),
+          _localScores(),
           _readonly_scores_heap(readonly_scores_heap),
-          _last_score(0.0) {}
+          _last_score(0.0) {
+        _localScores.reserve(_matchParams.scoresAdjustFrequency);
+    }
 
     void doSeek(uint32_t docid) override {
-        double threshold = _scores.score_threshold();
+        double threshold = _matchParams.scores.getMinScore();
         while (__builtin_expect((docid < getEndId()), true)) {
             double s = score(docid);
             if (s > threshold) {
@@ -90,7 +96,11 @@ public:
     void doUnpack(uint32_t docid) override {
         _tfmd.setRawScore(docid, _last_score);
         if (!_readonly_scores_heap) {
-            _scores.used(_last_score);
+            _localScores.push_back(_last_score);
+            if (_localScores.size() == _matchParams.scoresAdjustFrequency) {
+                _matchParams.scores.adjust(_localScores);
+                _localScores.clear();
+            }
         }
     }
 
@@ -101,13 +111,14 @@ template <typename DocAccess>
 std::unique_ptr<SearchIterator> create_with_access(bool strict, fef::TermFieldMatchData& tfmd,
                                                    const ITensorAttribute&    attr,
                                                    const InterpretedFunction& dot_product, const Value& query_tensor,
-                                                   SparseTensorWandHeap& scores, bool readonly_scores_heap) {
+                                                   const SparseTensorWandSearch::MatchParams& match_params,
+                                                   bool readonly_scores_heap) {
     if (strict) {
         return std::make_unique<SparseTensorWandSearchImpl<true, DocAccess>>(tfmd, attr, dot_product, query_tensor,
-                                                                             scores, readonly_scores_heap);
+                                                                             match_params, readonly_scores_heap);
     } else {
         return std::make_unique<SparseTensorWandSearchImpl<false, DocAccess>>(tfmd, attr, dot_product, query_tensor,
-                                                                              scores, readonly_scores_heap);
+                                                                              match_params, readonly_scores_heap);
     }
 }
 
@@ -132,12 +143,12 @@ std::unique_ptr<InterpretedFunction> SparseTensorWandSearch::make_dot_product(co
 std::unique_ptr<SearchIterator>
 SparseTensorWandSearch::create(bool strict, fef::TermFieldMatchData& tfmd, const ITensorAttribute& attr_tensor,
                                const InterpretedFunction& dot_product, const Value& query_tensor,
-                               SparseTensorWandHeap& scores, bool readonly_scores_heap) {
+                               const MatchParams& match_params, bool readonly_scores_heap) {
     if (attr_tensor.supports_get_tensor_ref()) {
-        return create_with_access<TensorRefAccess>(strict, tfmd, attr_tensor, dot_product, query_tensor, scores,
+        return create_with_access<TensorRefAccess>(strict, tfmd, attr_tensor, dot_product, query_tensor, match_params,
                                                    readonly_scores_heap);
     }
-    return create_with_access<TensorCopyAccess>(strict, tfmd, attr_tensor, dot_product, query_tensor, scores,
+    return create_with_access<TensorCopyAccess>(strict, tfmd, attr_tensor, dot_product, query_tensor, match_params,
                                                 readonly_scores_heap);
 }
 

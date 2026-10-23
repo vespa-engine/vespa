@@ -27,8 +27,9 @@ SparseTensorWandBlueprint::SparseTensorWandBlueprint(const FieldSpec&           
       _dot_product(SparseTensorWandSearch::make_dot_product(attr_tensor.getTensorType())),
       _target_hits(target_hits),
       _score_threshold(score_threshold),
-      _scores(target_hits, score_threshold),
+      _scores(target_hits),
       _matching_phase(MatchingPhase::FIRST_PHASE) {
+    _scores.set_min_score(score_threshold);
     uint32_t est_hits = _attr_tensor.get_num_docs();
     setEstimate(HitEstimate(est_hits, false));
 }
@@ -68,8 +69,11 @@ std::unique_ptr<SearchIterator>
 SparseTensorWandBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const {
     CHECK(tfmda.size() == 1);
     fef::TermFieldMatchData& tfmd = *tfmda[0]; // always search in only one field
-    return SparseTensorWandSearch::create(strict(), tfmd, _attr_tensor, *_dot_product, _query_tensor, _scores,
-                                          _matching_phase != MatchingPhase::FIRST_PHASE);
+    return SparseTensorWandSearch::create(
+        strict(), tfmd, _attr_tensor, *_dot_product, _query_tensor,
+        SparseTensorWandSearch::MatchParams(_scores, wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY,
+                                            get_docid_limit()),
+        _matching_phase != MatchingPhase::FIRST_PHASE);
 }
 
 void SparseTensorWandBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const {
@@ -100,7 +104,7 @@ void SparseTensorWandBlueprint::set_matching_phase(MatchingPhase matching_phase)
          * by the first phase matching will also be considered as hits
          * by the later matching phases.
          */
-        _scores.set_score_threshold(_score_threshold);
+        _scores.set_min_score(_score_threshold);
     }
 }
 
