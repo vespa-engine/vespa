@@ -363,22 +363,7 @@ HnswCandidate HnswIndex<type>::find_nearest_in_layer(Stats& stats, const BoundDi
             auto     neighbor_ref = neighbor_node.levels_ref().load_acquire();
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
-            double   dist;
-
-            if constexpr (use_caching_insertion) {
-                if (distance_cache && distance_cache->contains(neighbor_nodeid)) {
-                    dist = distance_cache->at(neighbor_nodeid);
-                } else {
-                    dist = calc_distance(df, neighbor_docid, neighbor_subspace);
-                    stats.count_computed_distance();
-                    if (distance_cache) {
-                        (*distance_cache)[neighbor_nodeid] = dist;
-                    }
-                }
-            } else {
-                dist = calc_distance(df, neighbor_docid, neighbor_subspace);
-                stats.count_computed_distance();
-            }
+            double   dist = get_cached_or_calc_distance(stats, df, distance_cache, neighbor_nodeid, neighbor_docid, neighbor_subspace);
 
             if (_graph.still_valid(neighbor_nodeid, neighbor_ref) && dist < nearest.distance) {
                 nearest = HnswCandidate(neighbor_nodeid, neighbor_docid, neighbor_ref, dist);
@@ -457,21 +442,7 @@ void HnswIndex<type>::search_layer_helper(Stats& stats, const BoundDistanceFunct
         }
 
         for (const auto& link : neighbor_link_metas) {
-            double dist_to_input;
-            if constexpr (use_caching_insertion) {
-                if (distance_cache && distance_cache->contains(link.neighbor_nodeid)) {
-                    dist_to_input = distance_cache->at(link.neighbor_nodeid);
-                } else {
-                    dist_to_input = calc_distance(df, link.neighbor_docid, link.neighbor_subspace);
-                    stats.count_computed_distance();
-                    if (distance_cache) {
-                        (*distance_cache)[link.neighbor_nodeid] = dist_to_input;
-                    }
-                }
-            } else {
-                dist_to_input = calc_distance(df, link.neighbor_docid, link.neighbor_subspace);
-                stats.count_computed_distance();
-            }
+            double   dist_to_input = get_cached_or_calc_distance(stats, df, distance_cache, link.neighbor_nodeid, link.neighbor_docid, link.neighbor_subspace);
 
             if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
                 candidates.emplace(link.neighbor_nodeid, link.neighbor_ref, dist_to_input);
@@ -862,7 +833,7 @@ void HnswIndex<type>::internal_complete_add_node(uint32_t nodeid, uint32_t docid
 
 
 template <HnswIndexType type>
-void HnswIndex<type>::internal_prepare_add_node_with_caching(CachedAddDoc::DistanceCache &distance_cache, CachedAddDoc& /*op*/, TypedCells input_vector,
+void HnswIndex<type>::internal_prepare_add_node_with_caching(CachedAddDoc::DistanceCache &distance_cache, CachedAddDoc& op, TypedCells input_vector,
                                                 const typename GraphType::EntryNode& entry) const {
     Stats stats; // Not used for now. Wire this in to all places where distances are computed if to be used.
     int   node_max_level = std::min(_level_generator->max_level(), max_max_level);
@@ -873,7 +844,7 @@ void HnswIndex<type>::internal_prepare_add_node_with_caching(CachedAddDoc::Dista
     }
     int      search_level = entry.level;
     auto     df = _distance_ff->for_insertion_vector(input_vector);
-    double   entry_dist = calc_distance(*df, entry.nodeid);
+    double   entry_dist = get_cached_or_calc_distance(stats, *df, &distance_cache, entry.nodeid);
     uint32_t entry_docid = get_docid(entry.nodeid);
     // TODO: check if entry nodeid/levels_ref is still valid here
     HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
@@ -893,6 +864,8 @@ void HnswIndex<type>::internal_prepare_add_node_with_caching(CachedAddDoc::Dista
         // We do not do anything with the resulting best_neighbors here: we only want to build the distance cache
         --search_level;
     }
+    (void)op;
+    //LOG(info, "internal_prepare_add_node_with_caching(docid = %u): %lu cache hits, %lu cache misses", op.docid, stats.cache_hits(), stats.cache_misses());
 }
 
 
@@ -907,7 +880,7 @@ void HnswIndex<type>::internal_complete_add_node_with_caching(CachedAddDoc::Dist
         // graph has an entry point
         int      search_level = entry.level;
         auto     df = _distance_ff->for_insertion_vector(input_vector);
-        double   entry_dist = calc_distance(*df, entry.nodeid);
+        double   entry_dist = get_cached_or_calc_distance(stats, *df, &distance_cache, entry.nodeid);
         uint32_t entry_docid = get_docid(entry.nodeid);
         // TODO: check if entry nodeid/levels_ref is still valid here
         HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
@@ -948,6 +921,8 @@ void HnswIndex<type>::internal_complete_add_node_with_caching(CachedAddDoc::Dist
     if (num_levels - 1 > get_entry_level()) {
         _graph.set_entry_node({nodeid, levels_ref, num_levels - 1});
     }
+    (void)op;
+    //LOG(info, "internal_complete_add_node_with_caching(docid = %u): %lu cache hits, %lu cache misses", op.docid, stats.cache_hits(), stats.cache_misses());
 }
 
 template <HnswIndexType type>

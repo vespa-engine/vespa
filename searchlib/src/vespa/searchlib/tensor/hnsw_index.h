@@ -365,6 +365,58 @@ public:
 
     static vespalib::datastore::ArrayStoreConfig make_default_level_array_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_array_store_config();
+
+    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid) const {
+        double dist;
+        if constexpr (use_caching_insertion) {
+            if (distance_cache) {
+                auto it = distance_cache->find(nodeid);
+                if (it != distance_cache->end()) {
+                    dist = it->second;
+                    stats.count_cache_hit();
+                } else {
+                    dist = calc_distance(df, nodeid);
+                    stats.count_computed_distance();
+                    (*distance_cache)[nodeid] = dist;
+                    stats.count_cache_miss();
+                }
+            } else {
+                dist = calc_distance(df, nodeid);
+                stats.count_computed_distance();
+            }
+        } else {
+            dist = calc_distance(df, nodeid);
+            stats.count_computed_distance();
+        }
+
+        return dist;
+    }
+
+    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid, uint32_t docid, uint32_t subspace) const {
+        double dist;
+        if constexpr (use_caching_insertion) {
+            if (distance_cache) {
+                auto it = distance_cache->find(nodeid);
+                if (it != distance_cache->end()) {
+                    dist = it->second;
+                    stats.count_cache_hit();
+                } else {
+                    dist = calc_distance(df, docid, subspace);
+                    stats.count_computed_distance();
+                    (*distance_cache)[nodeid] = dist;
+                    stats.count_cache_miss();
+                }
+            } else {
+                dist = calc_distance(df, docid, subspace);
+                stats.count_computed_distance();
+            }
+        } else {
+            dist = calc_distance(df, docid, subspace);
+            stats.count_computed_distance();
+        }
+
+        return dist;
+    }
 };
 
 } // namespace search::tensor

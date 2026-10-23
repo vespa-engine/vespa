@@ -60,16 +60,25 @@ public:
         size_t _distances_computed;
         size_t _nodes_visited;
 
+        size_t _cache_misses;
+        size_t _cache_hits;
+
     public:
         Stats() { reset(); }
         void reset() {
             _distances_computed = 0;
             _nodes_visited = 0;
+            _cache_misses = 0;
+            _cache_hits = 0;
         }
         size_t distances_computed() const { return _distances_computed; }
         void count_computed_distance() { ++_distances_computed; }
         size_t nodes_visited() const { return _nodes_visited; }
         void count_visited_node() { ++_nodes_visited; }
+        size_t cache_misses() const { return _cache_misses; }
+        void count_cache_miss() { ++_cache_misses; }
+        size_t cache_hits() const { return _cache_hits; }
+        void count_cache_hit() { ++_cache_hits; }
     };
 
     using GlobalFilter = search::queryeval::GlobalFilter;
