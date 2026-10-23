@@ -149,6 +149,10 @@ func newStatusDeploymentCmd(cli *CLI) *cobra.Command {
 		Short: "Show status of a Vespa deployment",
 		Long: `Show status of a Vespa deployment.
 
+Set 'vespa config set --global progress true' to show live deployment progress
+in interactive terminals. Use --progress=false for plain output. The --wait
+option still controls how long to monitor the deployment.
+
 This commands shows whether a Vespa deployment has converged on the latest run
 (Vespa Cloud) or config generation (self-hosted). If an argument is given,
 show the convergence status of that particular run or generation.
@@ -170,13 +174,19 @@ $ vespa status deployment -t local [session-id] --wait 600
 				}
 				wantedID = n
 			}
-			t, err := cli.target(targetOptions{logLevel: "none"})
+			progress := cli.startDeploymentProgress("Deployment status")
+			defer progress.close()
+			t, err := cli.target(targetOptions{logLevel: "none", progress: progress})
 			if err != nil {
 				return err
+			}
+			if progress != nil {
+				progress.setTitle("Deployment of " + t.Deployment().String())
 			}
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			id, err := waiter.Deployment(t, wantedID)
 			if err != nil {
+				progress.finish("Monitoring stopped; deployment may still be running")
 				if errors.Is(err, vespa.ErrWaitTimeout) && t.IsCloud() {
 					cli.printInfo("Deployment is still running. See ", color.CyanString(t.Deployment().System.ConsoleRunURL(t.Deployment(), id)), " for more details")
 				}
@@ -186,7 +196,10 @@ $ vespa status deployment -t local [session-id] --wait 600
 				}
 				return ErrCLI{Status: 1, warn: true, hints: hints, error: err}
 			}
-			if t.IsCloud() {
+			if progress != nil {
+				progress.setURL(t.Deployment().System.ConsoleRunURL(t.Deployment(), id))
+				progress.finish("✓ Deployment complete")
+			} else if t.IsCloud() {
 				log.Printf("Deployment run %s has completed", color.CyanString(strconv.FormatInt(id, 10)))
 				log.Printf("See %s for more details", color.CyanString(t.Deployment().System.ConsoleRunURL(t.Deployment(), id)))
 			} else {

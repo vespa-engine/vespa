@@ -178,13 +178,26 @@ $ vespa prod deploy`,
 				deployment.Target.Deployment().System.ConsoleURL, deployment.Target.Deployment().Application.Tenant, deployment.Target.Deployment().Application.Application)))
 			if options.waitSecs > 0 {
 				log.Printf("Waiting up to %s for build pipeline to complete...\n", (time.Duration(options.waitSecs) * time.Second).String())
-				skipped, skipReason, err := vespa.AwaitBuild(target, build, time.Duration(options.waitSecs)*time.Second, cli.Stderr)
+				progress := cli.startDeploymentProgress(fmt.Sprintf("Deploying %s to production · build %d", target.Deployment().Application, build))
+				defer progress.close()
+				var onProgress func(vespa.BuildProgress)
+				if progress != nil {
+					progress.setURL(fmt.Sprintf("%s/tenant/%s/application/%s/environment/prod/deployment", target.Deployment().System.ConsoleURL, target.Deployment().Application.Tenant, target.Deployment().Application.Application))
+					onProgress = progress.updateBuild
+				}
+				skipped, skipReason, err := vespa.AwaitBuild(target, build, time.Duration(options.waitSecs)*time.Second, cli.Stderr, onProgress)
 				if err != nil {
 					return err
 				}
 				if skipped {
+					if progress != nil {
+						progress.finish("Build skipped: " + skipReason)
+					}
 					cli.printSuccess(fmt.Sprintf("Build %d skipped: %s", build, skipReason))
 				} else {
+					if progress != nil {
+						progress.finish("✓ Deployed to production")
+					}
 					cli.printSuccess(fmt.Sprintf("Build %d deployed to production", build))
 				}
 			}
