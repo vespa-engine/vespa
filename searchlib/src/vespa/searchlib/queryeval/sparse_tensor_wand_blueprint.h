@@ -3,6 +3,7 @@
 
 #include "blueprint.h"
 #include "sparse_tensor_wand_search.h"
+#include "wand/weak_and_heap.h"
 
 namespace search::attribute {
 class IAttributeVector;
@@ -32,7 +33,7 @@ private:
     std::unique_ptr<vespalib::eval::InterpretedFunction> _dot_product;
     uint32_t                                             _target_hits;
     double                                               _score_threshold;
-    mutable SparseTensorWandHeap                         _scores;
+    mutable SharedWeakAndPriorityQueueT<double>          _scores;
     MatchingPhase                                        _matching_phase;
 
 public:
