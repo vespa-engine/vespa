@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -284,6 +285,44 @@ zone = <unset>
 
 	// config get --local and --global together is an error
 	assertConfigCommandErr(t, configHome, "Error: cannot use both --local and --global flags\n", "config", "get", "--local", "--global")
+}
+
+func TestDefaultConfigScopeLocalOutsideApplication(t *testing.T) {
+	configHome := t.TempDir()
+	assertConfigCommand(t, configHome, successSet(configHome, "default_config_scope", "local"), "config", "set", "default_config_scope", "local")
+	require.Nil(t, os.WriteFile(filepath.Join(configHome, skillsPromptedMarker), []byte("1\n"), 0o600)) // Avoid skills install prompt
+
+	wd, err := os.Getwd()
+	require.Nil(t, err)
+	t.Cleanup(func() { os.Chdir(wd) })
+	require.Nil(t, os.Chdir(t.TempDir()))
+	prompt := "No application package found in current directory. Write target to global config instead? [y/N] "
+
+	// Confirming writes to global config
+	cli, stdout, _ := newTestCLI(t, "VESPA_CLI_HOME="+configHome, "NO_COLOR=1")
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("y\n")
+	require.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Equal(t, prompt+successSet(configHome, "target", "cloud"), stdout.String())
+
+	// Declining fails
+	cli, stdout, _ = newTestCLI(t, "VESPA_CLI_HOME="+configHome, "NO_COLOR=1")
+	cli.isTerminal = func() bool { return true }
+	cli.Stdin = bytes.NewBufferString("n\n")
+	assert.NotNil(t, cli.Run("config", "set", "target", "local"))
+	assert.Equal(t, prompt, stdout.String())
+
+	// Non-interactive fails without prompting
+	cli, stdout, _ = newTestCLI(t, "VESPA_CLI_HOME="+configHome, "NO_COLOR=1")
+	assert.NotNil(t, cli.Run("config", "set", "target", "local"))
+	assert.Equal(t, "", stdout.String())
+
+	// Explicit --local fails without prompting
+	cli, stdout, _ = newTestCLI(t, "VESPA_CLI_HOME="+configHome, "NO_COLOR=1")
+	cli.isTerminal = func() bool { return true }
+	assert.NotNil(t, cli.Run("config", "set", "--local", "target", "local"))
+	assert.Equal(t, "", stdout.String())
+	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "--global", "target")
 }
 
 func assertConfigCommand(t *testing.T, configHome, expected string, args ...string) {
