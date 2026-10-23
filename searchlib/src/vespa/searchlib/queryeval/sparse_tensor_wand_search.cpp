@@ -44,11 +44,14 @@ class TensorCopyAccess {
 
 public:
     explicit TensorCopyAccess(const ITensorAttribute& attr) : _attr(attr), _empty(attr.getEmptyTensor()), _tensor() {}
+    ~TensorCopyAccess();
     const Value& get(uint32_t docid) {
         _tensor = _attr.getTensor(docid);
         return _tensor ? *_tensor : *_empty;
     }
 };
+
+TensorCopyAccess::~TensorCopyAccess() = default;
 
 template <bool strict, typename DocAccess> class SparseTensorWandSearchImpl final : public SparseTensorWandSearch {
     fef::TermFieldMatchData& _tfmd;
