@@ -21,17 +21,17 @@ import (
 // shortcut: host bootstrapping counts are only available in this log message; replace with structured fields when the API supplies them.
 var hostCountsPattern = regexp.MustCompile(`(?:^|\s)(\d+)/(\d+) application hosts(?: and (\d+)/(\d+) admin hosts)? for \S+ have completed provisioning and bootstrapping`)
 
-type hostCount struct {
+type progressCount struct {
 	label        string
 	ready, total int64
 }
 
-func parseHostCounts(message string) []hostCount {
+func parseHostCounts(message string) []progressCount {
 	match := hostCountsPattern.FindStringSubmatch(message)
 	if match == nil {
 		return nil
 	}
-	var counts []hostCount
+	var counts []progressCount
 	for i, label := range []string{"Application hosts", "Admin hosts"} {
 		offset := 1 + 2*i
 		if match[offset] == "" {
@@ -45,7 +45,7 @@ func parseHostCounts(message string) []hostCount {
 		if err != nil || ready > total {
 			return nil
 		}
-		counts = append(counts, hostCount{label, ready, total})
+		counts = append(counts, progressCount{label, ready, total})
 	}
 	return counts
 }
@@ -53,7 +53,7 @@ func parseHostCounts(message string) []hostCount {
 type progressRun struct {
 	id       int64
 	snapshot vespa.RunProgress
-	hosts    map[string][]hostCount
+	hosts    map[string][]progressCount
 	updated  time.Time
 	latestAt int64
 	activity string
@@ -159,7 +159,7 @@ func (p *deploymentProgress) note(message string) {
 
 func (p *deploymentProgress) record(run *progressRun, id int64, snapshot vespa.RunProgress, key string) {
 	if run.id != id || run.hosts == nil {
-		*run = progressRun{id: id, hosts: map[string][]hostCount{}}
+		*run = progressRun{id: id, hosts: map[string][]progressCount{}}
 	}
 	run.snapshot = snapshot
 	type entry struct {
@@ -301,9 +301,13 @@ func (p *deploymentProgress) status(status string, started bool) string {
 	}
 }
 
-func (p *deploymentProgress) runLines(run *progressRun, compact bool) []string {
+func (p *deploymentProgress) runLines(run *progressRun, compact bool, labelWidth int) []string {
 	var lines []string
 	width, _ := p.size()
+	width-- // Leave the last terminal column unused to avoid automatic line wrapping.
+	if compact {
+		width -= 3
+	}
 	seen := map[string]bool{}
 	for _, step := range progressSteps {
 		state, ok := run.snapshot.Steps[step.name]
@@ -319,7 +323,8 @@ func (p *deploymentProgress) runLines(run *progressRun, compact bool) []string {
 		if state.Status == "unfinished" && state.StartMillis > 0 {
 			elapsed = " · " + progressDuration(p.cli.now().Sub(time.UnixMilli(state.StartMillis)))
 		}
-		lines = append(lines, fmt.Sprintf("%-36s %s%s", step.label, p.status(state.Status, state.StartMillis > 0), elapsed))
+		label := runewidth.FillRight(runewidth.Truncate(step.label, labelWidth, "…"), labelWidth)
+		lines = append(lines, label+" "+p.status(state.Status, state.StartMillis > 0)+elapsed)
 	}
 	var unknown []string
 	for name := range run.snapshot.Steps {
@@ -330,7 +335,8 @@ func (p *deploymentProgress) runLines(run *progressRun, compact bool) []string {
 	sort.Strings(unknown)
 	for _, name := range unknown {
 		state := run.snapshot.Steps[name]
-		lines = append(lines, name+"  "+p.status(state.Status, state.StartMillis > 0))
+		label := runewidth.FillRight(runewidth.Truncate(cleanProgressText(name), labelWidth, "…"), labelWidth)
+		lines = append(lines, label+" "+p.status(state.Status, state.StartMillis > 0))
 	}
 	for _, step := range []string{"deployInitialReal", "deployReal"} {
 		state, ok := run.snapshot.Steps[step]
@@ -343,9 +349,7 @@ func (p *deploymentProgress) runLines(run *progressRun, compact bool) []string {
 		}
 		age := progressDuration(p.cli.now().Sub(run.updated))
 		lines = append(lines, "Host provisioning and bootstrapping · last reported "+age+" ago")
-		for _, count := range counts {
-			lines = append(lines, progressBar(count.label, count.ready, count.total, width-2))
-		}
+		lines = append(lines, progressBars(width, counts...)...)
 	}
 	for _, name := range []string{"installInitialReal", "installReal"} {
 		step, ok := run.snapshot.Steps[name]
@@ -353,9 +357,14 @@ func (p *deploymentProgress) runLines(run *progressRun, compact bool) []string {
 			continue
 		}
 		c := step.Convergence
-		if c.Services > 0 && c.NeedNewConfig >= 0 && c.NeedNewConfig <= c.Services {
-			lines = append(lines, progressBar("Service configuration", c.Services-c.NeedNewConfig, c.Services, width-2))
+		var counts []progressCount
+		if c.Nodes > 0 && c.NeedPlatformUpgrade >= 0 && c.NeedPlatformUpgrade <= c.Nodes {
+			counts = append(counts, progressCount{"Platform upgrade", c.Nodes - c.NeedPlatformUpgrade, c.Nodes})
 		}
+		if c.Services > 0 && c.NeedNewConfig >= 0 && c.NeedNewConfig <= c.Services {
+			counts = append(counts, progressCount{"Service configuration", c.Services - c.NeedNewConfig, c.Services})
+		}
+		lines = append(lines, progressBars(width, counts...)...)
 		lines = append(lines, fmt.Sprintf("Nodes: %d · booting: %d · upgrading: %d · need upgrade: %d", c.Nodes, c.Booting, c.Upgrading, c.NeedPlatformUpgrade))
 		lines = append(lines, fmt.Sprintf("Restarting: %d · need restart: %d · rebooting: %d · need reboot: %d", c.Restarting, c.NeedRestart, c.Rebooting, c.NeedReboot))
 		if c.Retiring > 0 || c.UpgradingOs > 0 || c.UpgradingFirmware > 0 {
@@ -386,28 +395,55 @@ func progressBar(label string, ready, total int64, width int) string {
 	return prefix + " [" + strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled) + "]"
 }
 
+const progressBarSeparator = "  │  "
+
+func progressBars(width int, counts ...progressCount) []string {
+	var lines []string
+	for _, count := range counts {
+		bar := progressBar(count.label, count.ready, count.total, width)
+		last := len(lines) - 1
+		if last >= 0 && runewidth.StringWidth(lines[last]+progressBarSeparator+bar) <= width {
+			lines[last] += progressBarSeparator + bar
+		} else {
+			lines = append(lines, bar)
+		}
+	}
+	return lines
+}
+
 func (p *deploymentProgress) content() []string {
 	lines := []string{p.title + " · elapsed " + progressDuration(p.cli.now().Sub(p.started))}
 	if p.run.id > 0 {
 		lines = append(lines, fmt.Sprintf("Run %d", p.run.id))
-		lines = append(lines, p.runLines(&p.run, false)...)
+		lines = append(lines, p.runLines(&p.run, false, 36)...)
 	}
 	if p.jobs != nil {
 		// Keep all active jobs ahead of completed rows when the terminal is short.
 		jobs := append([]vespa.BuildJobProgress(nil), p.jobs...)
 		sort.SliceStable(jobs, func(i, j int) bool { return jobs[i].RunStatus == "running" && jobs[j].RunStatus != "running" })
-		for _, job := range jobs {
-			lines = append(lines, fmt.Sprintf("%s / %s · run %d  %s", job.Instance, job.JobName, job.RunID, p.status(job.RunStatus, true)))
+		labels := make([]string, len(jobs))
+		labelWidth := 36
+		for i, job := range jobs {
+			labels[i] = cleanProgressText(fmt.Sprintf("%s / %s · run %d", job.Instance, job.JobName, job.RunID))
+			labelWidth = max(labelWidth, runewidth.StringWidth(labels[i]))
+		}
+		width, _ := p.size()
+		// Reserve room for indentation, status and elapsed time on step rows.
+		labelWidth = min(labelWidth, max(1, width-22))
+		for i, job := range jobs {
+			label := runewidth.Truncate(labels[i]+" ", labelWidth, "…")
+			header := "── " + label + strings.Repeat("─", labelWidth-runewidth.StringWidth(label))
+			lines = append(lines, "", header+" "+p.status(job.RunStatus, true))
 			if job.RunStatus != "running" {
 				continue
 			}
 			if run := p.runs[progressJobKey(job)]; run != nil {
-				for _, line := range p.runLines(run, true) {
-					lines = append(lines, "  "+line)
+				for _, line := range p.runLines(run, true, labelWidth) {
+					lines = append(lines, "   "+line)
 				}
 			}
 			if job.DetailsUnavailable {
-				lines = append(lines, "  Details unavailable; waiting for next update")
+				lines = append(lines, "   Details unavailable; waiting for next update")
 			}
 		}
 	}
@@ -419,7 +455,7 @@ func (p *deploymentProgress) content() []string {
 		lines = append(lines, p.recentWarnings...)
 	}
 	if p.url != "" {
-		lines = append(lines, "Console: "+p.url)
+		lines = append(lines, "", "Console: "+p.url)
 	}
 	return lines
 }
@@ -493,7 +529,7 @@ func (p *deploymentProgress) render() {
 			footer = append(footer, fmt.Sprintf("Warnings/errors: %d · see Console for details", len(p.warnings)))
 		}
 		if p.url != "" {
-			footer = append(footer, "Console: "+p.url)
+			footer = append(footer, "", "Console: "+p.url)
 		}
 		keep := max(0, height-2-len(footer))
 		hidden := len(lines) - len(footer) - keep
@@ -509,30 +545,47 @@ func (p *deploymentProgress) render() {
 	}
 	for _, line := range lines {
 		line = runewidth.Truncate(cleanProgressText(line), width, "…")
-		paint := color.New()
-		switch {
-		case strings.Contains(line, "✗"), strings.HasPrefix(strings.TrimSpace(line), "Error:"):
-			paint = color.New(color.FgRed)
-		case strings.HasPrefix(strings.TrimSpace(line), "Warning"), strings.HasPrefix(line, "Monitoring stopped"):
-			paint = color.New(color.FgYellow)
-		case strings.HasPrefix(strings.TrimSpace(line), "Admin hosts"):
-			paint = color.New(color.FgMagenta)
-		case strings.HasPrefix(strings.TrimSpace(line), "Application hosts"), strings.HasPrefix(strings.TrimSpace(line), "Service configuration"), strings.Contains(line, " Running"):
-			paint = color.New(color.FgCyan)
-		case strings.Contains(line, "✓"):
-			paint = color.New(color.FgGreen)
-		case strings.Contains(line, "· Waiting"):
-			paint = color.New(color.Faint)
+		for i, part := range strings.Split(line, progressBarSeparator) {
+			if i > 0 {
+				frame.WriteString(progressBarSeparator)
+			}
+			fmt.Fprint(&frame, paintProgressLine(part))
 		}
-		if color.NoColor {
-			paint.DisableColor()
-		} else {
-			paint.EnableColor()
-		}
-		fmt.Fprintln(&frame, paint.Sprint(line))
+		frame.WriteByte('\n')
 	}
 	fmt.Fprint(p.cli.Stderr, frame.String())
 	p.lines = len(lines)
+}
+
+func paintProgressLine(line string) string {
+	paint := color.New()
+	switch {
+	case strings.Contains(line, "✗"), strings.HasPrefix(strings.TrimSpace(line), "Error:"):
+		paint = color.New(color.FgRed)
+	case strings.HasPrefix(strings.TrimSpace(line), "Warning"), strings.HasPrefix(line, "Monitoring stopped"):
+		paint = color.New(color.FgYellow)
+	case strings.HasPrefix(strings.TrimSpace(line), "Admin hosts"):
+		paint = color.New(color.FgMagenta)
+	case strings.HasPrefix(strings.TrimSpace(line), "Platform upgrade"):
+		paint = color.New(color.FgBlue)
+	case strings.HasPrefix(strings.TrimSpace(line), "Service configuration"):
+		paint = color.New(color.FgGreen)
+	case strings.HasPrefix(strings.TrimSpace(line), "Application hosts"), strings.Contains(line, " Running"):
+		paint = color.New(color.FgCyan)
+	case strings.Contains(line, "✓"):
+		paint = color.New(color.FgGreen)
+	case strings.Contains(line, "· Waiting"):
+		paint = color.New(color.Faint)
+	}
+	if strings.HasPrefix(line, "── ") {
+		paint.Add(color.Bold)
+	}
+	if color.NoColor {
+		paint.DisableColor()
+	} else {
+		paint.EnableColor()
+	}
+	return paint.Sprint(line)
 }
 
 func (p *deploymentProgress) finish(message string) {
@@ -557,7 +610,7 @@ func (p *deploymentProgress) finishLocked(message string) {
 	p.url = url
 	p.closed = true
 	if url != "" {
-		fmt.Fprintln(p.cli.Stderr, "Console: "+cleanProgressText(url))
+		fmt.Fprintln(p.cli.Stderr, "\nConsole: "+cleanProgressText(url))
 	}
 }
 

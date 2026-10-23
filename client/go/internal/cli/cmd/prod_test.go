@@ -389,6 +389,7 @@ func TestProdDeployWithProgress(t *testing.T) {
 	client.NextResponseString(200, `{"active":true,"status":"running","lastId":1,"steps":{"deployReal":{"status":"unfinished","startMillis":1}},"log":{"deployReal":[{"at":1,"type":"info","message":"`+provisioningMessage+`"}]}}`)
 	client.NextResponseString(200, `{"deployed":true,"jobs":[{"instance":"default","jobName":"system-test","runId":1,"runStatus":"success"}]}`)
 	require.NoError(t, cli.Run("prod", "deploy", "--wait", "5", "--add-cert"))
+	assert.True(t, strings.HasPrefix(stderr.String(), "\nDeploying t1.a1.i1 to production"))
 	assert.Contains(t, stderr.String(), "default / system-test")
 	assert.Contains(t, stderr.String(), "Application hosts")
 	assert.Contains(t, stderr.String(), "Admin hosts")
