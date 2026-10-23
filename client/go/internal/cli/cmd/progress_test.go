@@ -20,8 +20,8 @@ import (
 const provisioningMessage = "1/3 application hosts and 1/1 admin hosts for t1.a1.i1 have completed provisioning and bootstrapping, still waiting for host2, host3"
 
 func TestParseHostCounts(t *testing.T) {
-	assert.Equal(t, []hostCount{{"Application hosts", 1, 3}, {"Admin hosts", 1, 1}}, parseHostCounts(provisioningMessage))
-	assert.Equal(t, []hostCount{{"Application hosts", 0, 3}}, parseHostCounts("0/3 application hosts for t1.a1.i1 have completed provisioning and bootstrapping, still waiting for host1"))
+	assert.Equal(t, []progressCount{{"Application hosts", 1, 3}, {"Admin hosts", 1, 1}}, parseHostCounts(provisioningMessage))
+	assert.Equal(t, []progressCount{{"Application hosts", 0, 3}}, parseHostCounts("0/3 application hosts for t1.a1.i1 have completed provisioning and bootstrapping, still waiting for host1"))
 	for _, message := range []string{
 		"1/3 application hosts", "3/1 application hosts for t.a.i have completed provisioning and bootstrapping",
 		"0/1 application hosts and 2/1 admin hosts for t.a.i have completed provisioning and bootstrapping",
@@ -80,11 +80,13 @@ func TestProgressHostAndInstallationSnapshots(t *testing.T) {
 	assert.Contains(t, strings.Join(p.content(), "\n"), "last reported 01:00 ago")
 
 	snapshot.Steps["deployReal"] = vespa.RunStep{Status: "succeeded"}
-	snapshot.Steps["installReal"] = vespa.RunStep{Status: "unfinished", StartMillis: 1700000000000, Convergence: &vespa.RunConvergence{Nodes: 4, Services: 12, NeedNewConfig: 4, Booting: 1, NeedRestart: 1}}
+	snapshot.Steps["installReal"] = vespa.RunStep{Status: "unfinished", StartMillis: 1700000000000, Convergence: &vespa.RunConvergence{Nodes: 4, NeedPlatformUpgrade: 2, Services: 12, NeedNewConfig: 4, Booting: 1, NeedRestart: 1}}
 	p.updateRun(42, snapshot)
 	content = strings.Join(p.content(), "\n")
 	assert.NotContains(t, content, "Application hosts")
 	assert.Contains(t, content, "Service configuration")
+	assert.Contains(t, content, "Platform upgrade")
+	assert.Contains(t, content, "2/4")
 	assert.Contains(t, content, "8/12")
 	assert.Contains(t, content, "Nodes: 4 · booting: 1")
 	assert.Contains(t, content, "need restart: 1")
@@ -94,6 +96,45 @@ func TestProgressHostAndInstallationSnapshots(t *testing.T) {
 	snapshot.Steps["deployReal"] = vespa.RunStep{Status: "unfinished"}
 	p.updateRun(43, snapshot)
 	assert.NotContains(t, strings.Join(p.content(), "\n"), "0/4")
+}
+
+func TestProgressBarLayout(t *testing.T) {
+	p, _ := newProgressTest(t)
+	run := progressRun{snapshot: vespa.RunProgress{Steps: map[string]vespa.RunStep{
+		"installReal": {Status: "unfinished", Convergence: &vespa.RunConvergence{
+			Nodes: 4, NeedPlatformUpgrade: 1, Services: 10, NeedNewConfig: 1,
+		}},
+	}}}
+	for _, compact := range []bool{false, true} {
+		indent := 0
+		if compact {
+			indent = 3
+		}
+		for _, width := range []int{99 + indent, 98 + indent, 40 + indent} {
+			p.size = func() (int, int) { return width, 30 }
+			var bars []string
+			for _, line := range p.runLines(&run, compact, 36) {
+				if strings.Contains(line, "Platform upgrade") || strings.Contains(line, "Service configuration") {
+					bars = append(bars, line)
+					assert.LessOrEqual(t, runewidth.StringWidth(line)+indent, width-1)
+				}
+			}
+			if width == 99+indent {
+				require.Len(t, bars, 1)
+				assert.Contains(t, bars[0], "3/4")
+				assert.Contains(t, bars[0], "9/10")
+			} else {
+				require.Len(t, bars, 2)
+			}
+		}
+	}
+
+	// Invalid or absent counters must not imply completion.
+	run.snapshot.Steps["installReal"].Convergence.NeedPlatformUpgrade = 5
+	run.snapshot.Steps["installReal"].Convergence.Services = 0
+	content := strings.Join(p.runLines(&run, false, 36), "\n")
+	assert.NotContains(t, content, "Platform upgrade")
+	assert.NotContains(t, content, "Service configuration")
 }
 
 func TestProgressWarningsAndFailure(t *testing.T) {
@@ -146,11 +187,23 @@ func TestProgressColors(t *testing.T) {
 	p.updateRun(42, provisioningSnapshot(t))
 	assert.Contains(t, output.String(), "\x1b[36mApplication hosts")
 	assert.Contains(t, output.String(), "\x1b[35mAdmin hosts")
+	snapshot := provisioningSnapshot(t)
+	snapshot.Steps["deployReal"] = vespa.RunStep{Status: "succeeded"}
+	snapshot.Steps["installReal"] = vespa.RunStep{Status: "unfinished", Convergence: &vespa.RunConvergence{
+		Nodes: 4, NeedPlatformUpgrade: 1, Services: 10, NeedNewConfig: 1,
+	}}
+	output.Reset()
+	p.updateRun(42, snapshot)
+	assert.Contains(t, output.String(), "\x1b[34mPlatform upgrade")
+	assert.Contains(t, output.String(), "\x1b[32mService configuration")
+	assert.Contains(t, output.String(), progressBarSeparator)
 	color.NoColor = true
 	output.Reset()
 	p.lines = 0
 	p.render()
 	assert.NotContains(t, output.String(), "\x1b[36m")
+	assert.NotContains(t, output.String(), "\x1b[34m")
+	assert.NotContains(t, output.String(), "\x1b[32m")
 }
 
 func TestProgressProductionIdentityAndMissingDetails(t *testing.T) {
@@ -172,6 +225,49 @@ func TestProgressProductionIdentityAndMissingDetails(t *testing.T) {
 	assert.NotContains(t, strings.Join(p.content(), "\n"), "Application hosts")
 	p.updateBuild(vespa.BuildProgress{})
 	assert.Contains(t, strings.Join(p.content(), "\n"), "Waiting for pipeline jobs")
+}
+
+func TestProgressParallelRunLayout(t *testing.T) {
+	p, output := newProgressTest(t)
+	snapshot := provisioningSnapshot(t)
+	snapshot.Steps["installTester"] = vespa.RunStep{Status: "unfinished", StartMillis: 1700000000000}
+	jobs := []vespa.BuildJobProgress{
+		{Instance: "default", JobName: "system-test", RunID: 1, RunStatus: "running", Details: &snapshot},
+		{Instance: "東京", JobName: "staging-test", RunID: 2, RunStatus: "running", Details: &snapshot},
+		{Instance: "default", JobName: "production-aws-us-east-1c", RunID: 3, RunStatus: "running", Details: &snapshot},
+	}
+	for _, width := range []int{120, 60, 40} {
+		p.size = func() (int, int) { return width, 40 }
+		output.Reset()
+		p.updateBuild(vespa.BuildProgress{Jobs: jobs})
+		lines := p.content()
+		columns := map[int]bool{}
+		headers, statuses := 0, 0
+		for i, line := range lines {
+			if strings.HasPrefix(line, "── ") {
+				headers++
+				require.Greater(t, i, 0)
+				assert.Empty(t, lines[i-1], "separate job sections")
+			}
+			if column := strings.Index(line, " Running"); column >= 0 {
+				statuses++
+				columns[runewidth.StringWidth(line[:column])] = true
+				assert.LessOrEqual(t, runewidth.StringWidth(line), width-1)
+			}
+			if strings.HasPrefix(line, "Console:") {
+				require.Greater(t, i, 0)
+				assert.Empty(t, lines[i-1], "separate the Console link from job details")
+			}
+		}
+		assert.Equal(t, 3, headers)
+		assert.Equal(t, 9, statuses)
+		assert.Len(t, columns, 1, "headers and step statuses must align by terminal columns")
+		for _, line := range strings.Split(output.String(), "\n") {
+			assert.LessOrEqual(t, runewidth.StringWidth(cleanProgressText(line)), width-1)
+		}
+	}
+	p.finish("✓ Deployed to production")
+	assert.Contains(t, output.String(), "\n\nConsole: "+p.url+"\n")
 }
 
 func TestProgressEligibility(t *testing.T) {

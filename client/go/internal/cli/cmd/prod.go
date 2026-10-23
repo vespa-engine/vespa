@@ -182,6 +182,7 @@ $ vespa prod deploy`,
 				defer progress.close()
 				var onProgress func(vespa.BuildProgress)
 				if progress != nil {
+					fmt.Fprintln(cli.Stderr)
 					progress.setURL(fmt.Sprintf("%s/tenant/%s/application/%s/environment/prod/deployment", target.Deployment().System.ConsoleURL, target.Deployment().Application.Tenant, target.Deployment().Application.Application))
 					onProgress = progress.updateBuild
 				}
