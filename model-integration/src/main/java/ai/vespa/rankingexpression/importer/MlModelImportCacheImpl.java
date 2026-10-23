@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
@@ -31,6 +32,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
@@ -40,6 +42,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  * A cache of imported models stored on local disk, keyed by a hash of the model file content,
@@ -75,11 +78,23 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
         if ( ! importer.isCacheable()) return importer.importModel(modelName, modelPath);
 
         Optional<Path> entry = entry(modelName, modelPath, importer);
-        Optional<ImportedMlModel> cached = entry.flatMap(e -> get(e, modelName, modelPath, importer));
+        Optional<ImportedMlModel> cached = Optional.empty();
+        try {
+            cached = entry.flatMap(e -> get(e, modelName, modelPath, importer));
+        }
+        catch (RuntimeException e) {
+            log.log(Level.WARNING, "Unexpected error reading cached import of model '" + modelName + "' from " + modelPath +
+                                   ", importing it instead", e);
+        }
         if (cached.isPresent()) return cached.get();
 
-        ImportedMlModel model = importer.importModel(modelName, modelPath);
-        entry.ifPresent(e -> put(e, modelName, modelPath, model));
+        ImportedMlModel model = importer.importModel(modelName, modelPath); // Import failures should fail the deployment
+        try {
+            entry.ifPresent(e -> put(e, modelName, modelPath, model));
+        }
+        catch (RuntimeException e) {
+            log.log(Level.WARNING, "Unexpected error storing import of model '" + modelName + "' from " + modelPath + " in cache", e);
+        }
         return model;
     }
 
@@ -95,7 +110,12 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
 
     private Optional<ImportedMlModel> get(Path entry, String modelName, File modelPath, MlModelImporter importer) {
         Path modelFile = entry.resolve(modelFileName);
-        if ( ! Files.exists(modelFile)) return Optional.empty();
+        if ( ! Files.exists(modelFile)) {
+            // The existing directory has no model file, so it is a leftover, not a valid entry: remove it.
+            // Check the model file again, as the entry may have been stored after the first check.
+            if (Files.exists(entry) && ! Files.exists(modelFile)) discard(entry);
+            return Optional.empty();
+        }
 
         try {
             ImportedMlModel model = read(entry, modelName, modelPath, importer);
@@ -106,7 +126,7 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
         catch (IOException | RuntimeException e) {
             log.log(Level.INFO, "Could not read cached import of model '" + modelName + "' from " + modelPath +
                                 ", importing it instead", e);
-            IOUtils.recursiveDeleteDir(entry.toFile());
+            discard(entry);
             return Optional.empty();
         }
     }
@@ -125,7 +145,12 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
                 tmpEntry = null;
             }
             catch (FileAlreadyExistsException | DirectoryNotEmptyException e) {
-                // Stored concurrently by someone else
+                if (Files.exists(entry.resolve(modelFileName))) return; // Stored concurrently by someone else
+
+                // The existing directory has no model file, so it is a leftover, not a valid entry: replace it
+                discard(entry);
+                Files.move(tmpEntry, entry, StandardCopyOption.ATOMIC_MOVE);
+                tmpEntry = null;
             }
         }
         catch (IOException | RuntimeException e) {
@@ -134,6 +159,30 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
         finally {
             if (tmpEntry != null)
                 IOUtils.recursiveDeleteDir(tmpEntry.toFile());
+        }
+    }
+
+    /**
+     * Removes an entry. The entry is first moved to a unique name, so that concurrent readers and removers
+     * see either the whole entry or none of it, and only one of them deletes it.
+     */
+    private void discard(Path entry) {
+        Path trash = cacheDir.resolve(entry.getFileName() + ".trash-" + UUID.randomUUID());
+        try {
+            Files.move(entry, trash, StandardCopyOption.ATOMIC_MOVE);
+        }
+        catch (NoSuchFileException e) {
+            return; // Already removed by someone else
+        }
+        catch (IOException | RuntimeException e) {
+            log.log(Level.INFO, "Could not remove cache entry " + entry, e);
+            return;
+        }
+        try (Stream<Path> paths = Files.walk(trash)) {
+            paths.sorted(Comparator.reverseOrder()).forEach(path -> path.toFile().delete());
+        }
+        catch (IOException | RuntimeException e) {
+            log.log(Level.INFO, "Could not delete " + trash, e);
         }
     }
 

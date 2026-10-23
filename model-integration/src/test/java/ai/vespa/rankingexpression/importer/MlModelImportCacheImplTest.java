@@ -14,6 +14,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -30,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hmusum
@@ -101,6 +103,47 @@ public class MlModelImportCacheImplTest {
         assertEquals(2, importer.imports.get());
         assertModelsEqual(imported, cache.importModel("lightgbm", modelFile, importer));
         assertEquals(2, importer.imports.get());
+        assertEquals(entries, entries(cacheRoot), "Nothing is left over from deleting the corrupt entry");
+    }
+
+    @Test
+    void leftover_entry_directory_is_replaced(@TempDir Path cacheRoot) throws IOException {
+        var importer = new CountingImporter(new LightGBMImporter());
+        var cache = new MlModelImportCacheImpl(cacheRoot, version);
+        File modelFile = new File("src/test/models/lightgbm/regression.json");
+        Path entry = cacheRoot.resolve(version).resolve(cache.key("lightgbm", modelFile, importer));
+        Files.createDirectories(entry);
+        Files.writeString(entry.resolve("large-0.tbf"), "leftover");
+
+        cache.importModel("lightgbm", modelFile, importer);
+        assertInstanceOf(CachedMlModel.class, cache.importModel("lightgbm", modelFile, importer));
+        assertEquals(1, importer.imports.get());
+        assertEquals(List.of(entry), entries(cacheRoot));
+    }
+
+    @Test
+    void leftover_entry_directory_created_during_import_is_replaced(@TempDir Path cacheRoot) throws IOException {
+        var cache = new MlModelImportCacheImpl(cacheRoot, version);
+        File modelFile = new File("src/test/models/lightgbm/regression.json");
+        var importer = new CountingImporter(new LightGBMImporter()) {
+            @Override
+            public ImportedMlModel importModel(String modelName, File modelPath) {
+                try { // Between lookup and store
+                    Path entry = cacheRoot.resolve(version).resolve(cache.key(modelName, modelPath, this));
+                    Files.createDirectories(entry);
+                    Files.writeString(entry.resolve("large-0.tbf"), "leftover");
+                }
+                catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                return super.importModel(modelName, modelPath);
+            }
+        };
+        Path entry = cacheRoot.resolve(version).resolve(cache.key("lightgbm", modelFile, importer));
+
+        cache.importModel("lightgbm", modelFile, importer);
+        assertTrue(Files.exists(entry.resolve("model.json")));
+        assertEquals(List.of(entry), entries(cacheRoot));
     }
 
     @Test
