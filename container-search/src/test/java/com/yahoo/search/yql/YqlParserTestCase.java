@@ -914,15 +914,86 @@ public class YqlParserTestCase {
     @Test
     void testMapRangeRequiresLiteralKey() {
         assertParseFail("select * from sources * where range(my_map{key_field}, 40, 50)",
-                        new IllegalArgumentException("Expected LITERAL, got READ_FIELD."));
+                        new IllegalArgumentException("Expected LITERAL or VARREF, got READ_FIELD."));
     }
 
     @Test
     void testMapAccessRequiresLiteralKey() {
         assertParseFail("select * from sources * where my_map{key_field} contains 'bar'",
-                        new IllegalArgumentException("Expected LITERAL, got READ_FIELD."));
+                        new IllegalArgumentException("Expected LITERAL or VARREF, got READ_FIELD."));
         assertParseFail("select * from sources * where my_map{-'foo'} contains 'bar'",
-                        new IllegalArgumentException("Expected LITERAL, got NEGATE."));
+                        new IllegalArgumentException("Expected LITERAL or VARREF, got NEGATE."));
+    }
+
+    @Test
+    void testMapAccessWithParameters() {
+        // A value parameter with '=' holds a number or boolean, and becomes a numeric or boolean term.
+        assertEquals("my_map:{key:foo value:10}", parseWithParameters("my_map{'foo'} = @int").toString());
+        assertInstanceOf(IntItem.class, mapValueItem("my_map{'foo'} = @int"));
+        assertEquals("my_map:{key:foo value:-10}", parseWithParameters("my_map{'foo'} = @negative").toString());
+        assertEquals("my_map:{key:foo value:1.5}", parseWithParameters("my_map{'foo'} = @decimal").toString());
+        assertTrue(assertInstanceOf(BoolItem.class, mapValueItem("my_map{'foo'} = @yes")).value());
+        assertFalse(assertInstanceOf(BoolItem.class, mapValueItem("my_map{'foo'} = @no")).value());
+
+        // A value parameter with 'contains' is a string, also when it holds a number or boolean.
+        assertEquals("my_map:{key:foo value:bar}", parseWithParameters("my_map{'foo'} contains @string").toString());
+        assertInstanceOf(WordItem.class, mapValueItem("my_map{'foo'} contains @string"));
+        assertEquals("10", assertInstanceOf(WordItem.class, mapValueItem("my_map{'foo'} contains @int")).getWord());
+        assertEquals("true", assertInstanceOf(WordItem.class, mapValueItem("my_map{'foo'} contains @yes")).getWord());
+
+        // A key parameter is matched as a string, also when it holds a number.
+        assertEquals("my_map:{key:foo value:bar}", parseWithParameters("my_map{@key} contains 'bar'").toString());
+        assertEquals("my_map:{key:foo value:10}", parseWithParameters("my_map{@key} = @int").toString());
+        assertEquals("my_map:{key:foo value:[40;50]}", parseWithParameters("range(my_map{@key}, 40, 50)").toString());
+        WordItem key = assertInstanceOf(WordItem.class, mapKeyItem("my_map{@key} = 10"));
+        assertEquals("key", key.getIndexName());
+        assertEquals("10", assertInstanceOf(WordItem.class, mapKeyItem("my_map{@int} contains 'bar'")).getWord());
+
+        // '=' does not take a parameter holding a string or a range.
+        var exception = assertThrows(IllegalArgumentException.class, () -> parseWithParameters("my_map{'foo'} = @string"));
+        assertEquals("Expected a number or boolean value for '=' on map field 'my_map', " +
+                     "got 'bar' from parameter 'string'. Use 'contains' for string values.", exception.getMessage());
+        exception = assertThrows(IllegalArgumentException.class, () -> parseWithParameters("my_map{'foo'} = @range"));
+        assertEquals("Expected a number or boolean value for '=' on map field 'my_map', " +
+                     "got range '[1;5]' from parameter 'range'. Use range(my_map{'foo'}, lower, upper) for ranges.", exception.getMessage());
+        exception = assertThrows(IllegalArgumentException.class, () -> parseWithParameters("my_map{@key} = @openRange"));
+        assertEquals("Expected a number or boolean value for '=' on map field 'my_map', " +
+                     "got range '>5' from parameter 'openRange'. Use range(my_map{@key}, lower, upper) for ranges.", exception.getMessage());
+        exception = assertThrows(IllegalArgumentException.class, () -> parseWithParameters("my_map{1} = @range"));
+        assertEquals("Expected a number or boolean value for '=' on map field 'my_map', " +
+                     "got range '[1;5]' from parameter 'range'. Use range(my_map{1}, lower, upper) for ranges.", exception.getMessage());
+
+        // A parameter which is not set is an error.
+        var missing = assertThrows(IllegalInputException.class, () -> parseWithParameters("my_map{'foo'} = @missing"));
+        assertEquals("Input 'missing' is not set", missing.getMessage());
+        missing = assertThrows(IllegalInputException.class, () -> parseWithParameters("my_map{@missing} contains 'bar'"));
+        assertEquals("Input 'missing' is not set", missing.getMessage());
+    }
+
+    /** Parses the given where clause with a user query holding the parameters used in testMapAccessWithParameters. */
+    private QueryTree parseWithParameters(String where) {
+        var query = new Query.Builder().build();
+        query.properties().set("key", "foo");
+        query.properties().set("int", "10");
+        query.properties().set("negative", "-10");
+        query.properties().set("decimal", "1.5");
+        query.properties().set("yes", "true");
+        query.properties().set("no", "false");
+        query.properties().set("string", "bar");
+        query.properties().set("range", "[1;5]");
+        query.properties().set("openRange", ">5");
+        parser.setUserQuery(query);
+        return parse("select * from sources * where " + where);
+    }
+
+    /** Returns the key item of the map match the given where clause parses to, with the parameters of parseWithParameters. */
+    private Item mapKeyItem(String where) {
+        return ((MapMatchItem) parseWithParameters(where).getRoot()).keyItem();
+    }
+
+    /** Returns the value item of the map match the given where clause parses to, with the parameters of parseWithParameters. */
+    private Item mapValueItem(String where) {
+        return ((MapMatchItem) parseWithParameters(where).getRoot()).valueItem();
     }
 
     @Test
