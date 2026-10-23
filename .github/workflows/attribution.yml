@@ -40,7 +40,7 @@ jobs:
       # without bloating the artifact list on every successful run.
       - name: Upload raw inventory JSON (debug, on failure)
         if: ${{ failure() }}
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: inventory-debug
           path: build/inventory.json
@@ -48,7 +48,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload ATTRIBUTIONS.md
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: attributions
           path: ATTRIBUTIONS.md
