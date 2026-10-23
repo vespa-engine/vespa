@@ -91,11 +91,8 @@ struct CachedAddDoc final : public PrepareResult {
     ReadGuard                    read_guard;
     ReadGuard                    hnsw_graph_read_guard;
 
-    std::unordered_map<uint64_t, double> distance_cache;
-
-    static uint64_t make_pair(uint32_t first, uint32_t second) {
-        return (static_cast<uint64_t>(first) << 32) | static_cast<uint64_t>(second);
-    }
+    using DistanceCache = std::unordered_map<uint64_t, double>;
+    std::vector<DistanceCache> distance_caches;
 
     CachedAddDoc(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept;
     ~CachedAddDoc() override;
@@ -242,13 +239,13 @@ protected:
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
     HnswCandidate find_nearest_in_layer(Stats& stats, const BoundDistanceFunction& df,
-                                        const HnswCandidate& entry_point, uint32_t level) const
+                                        const HnswCandidate& entry_point, uint32_t level, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const
         __attribute__((noinline));
     template <class VisitedTracker, class BestNeighbors>
     void search_layer_helper(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
                              double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors,
                              uint32_t level, const GlobalFilter* filter, uint32_t nodeid_limit,
-                             const vespalib::Deadline* const doom, uint32_t estimated_visited_nodes) const
+                             const vespalib::Deadline* const doom, uint32_t estimated_visited_nodes, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const
         __attribute__((noinline));
     template <class VisitedTracker, class BestNeighbors>
     void search_layer_filter_first_helper(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
@@ -269,7 +266,7 @@ protected:
     template <class BestNeighbors>
     void search_layer(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
                       double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors, uint32_t level,
-                      const vespalib::Deadline* const doom, const GlobalFilter* filter = nullptr) const;
+                      const vespalib::Deadline* const doom, const GlobalFilter* filter = nullptr, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const;
     template <class BestNeighbors>
     void search_layer_filter_first(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
                                    double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors,
@@ -286,7 +283,7 @@ protected:
                                                   vespalib::GenerationGuard read_guard) const;
     void internal_prepare_add_node(internal::PreparedAddDoc& op, TypedCells input_vector,
                                    const typename GraphType::EntryNode& entry) const;
-    void internal_prepare_add_node_with_caching(internal::CachedAddDoc& op, TypedCells input_vector,
+    void internal_prepare_add_node_with_caching(internal::CachedAddDoc::DistanceCache &distance_cache, internal::CachedAddDoc& op, TypedCells input_vector,
                                    const typename GraphType::EntryNode& entry) const;
     LinkArray filter_valid_nodeids(uint32_t level, const internal::PreparedAddNode::Links& neighbors,
                                    uint32_t self_nodeid);
@@ -294,7 +291,7 @@ protected:
     void internal_complete_add_with_caching(uint32_t docid, internal::CachedAddDoc& op);
     void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
                                     internal::PreparedAddNode& prepared_node);
-    void internal_complete_add_node_with_caching(internal::CachedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry, uint32_t nodeid, uint32_t docid, uint32_t subspace);
+    void internal_complete_add_node_with_caching(internal::CachedAddDoc::DistanceCache &distance_cache, internal::CachedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry, uint32_t nodeid, uint32_t docid, uint32_t subspace);
 
     // Called from writer only.
     uint32_t get_subspaces(uint32_t docid) const noexcept;
