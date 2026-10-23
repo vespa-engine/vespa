@@ -34,6 +34,7 @@ import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 
 import java.io.File;
@@ -126,7 +127,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 onnxModelCost,
                 wantedDockerImageRepository,
                 modelVersion,
-                wantedNodeVespaVersion);
+                wantedNodeVespaVersion,
+                Optional.of(mlModelImportCacheDir()));
 
         ModelCreateResult result = createAndValidateModel(modelFactory, applicationId, modelVersion, modelContext);
         return new PreparedModelResult(modelVersion, result.getModel(), fileRegistry, result.getConfigChangeActions());
@@ -177,6 +179,10 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         return applicationPackage instanceof FilesApplicationPackage ?
                        Optional.of(((FilesApplicationPackage) applicationPackage).getAppDir()) :
                        Optional.empty();
+    }
+
+    private File mlModelImportCacheDir() {
+        return new File(Defaults.getDefaults().underVespaHome(configserverConfig.configServerDBDir()), "ml-model-import-cache");
     }
 
     private void validateModelHosts(HostValidator hostValidator, ApplicationId applicationId, Model model) {

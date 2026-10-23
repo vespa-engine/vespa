@@ -18,7 +18,9 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.ValidationParameters;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.io.IOUtils;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.Capacity;
@@ -29,12 +31,18 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -196,6 +204,32 @@ public class VespaModelFactoryTest {
             }
         });
         return consulted.get();
+    }
+
+    @Test
+    void modelImportCacheIsUsedOnlyWithTheFlagEnabled(@TempDir java.nio.file.Path cacheDir) throws IOException {
+        assertEquals(0, cachedModelsAfterDeploying(false, cacheDir));
+        assertEquals(3, cachedModelsAfterDeploying(true, cacheDir));
+    }
+
+    private long cachedModelsAfterDeploying(boolean flagEnabled, java.nio.file.Path cacheDir) throws IOException {
+        File appDir = new File("src/test/cfg/application/ml_models");
+        try {
+            var factory = new VespaModelFactory(new ComponentRegistry<>(), new ComponentRegistry<>(),
+                                                new ComponentRegistry<>(), new ComponentRegistry<>(), Zone.defaultZone());
+            factory.createModel(new MockModelContext(FilesApplicationPackage.fromDir(appDir, Map.of())) {
+                @Override
+                public Properties properties() { return new TestProperties().useMlModelImportCache(flagEnabled); }
+                @Override
+                public Optional<File> mlModelImportCacheDir() { return Optional.of(cacheDir.toFile()); }
+            });
+            try (Stream<java.nio.file.Path> files = Files.walk(cacheDir)) {
+                return files.filter(file -> file.getFileName().toString().equals("model.json")).count();
+            }
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(new File(appDir, ApplicationPackage.MODELS_GENERATED_DIR.getRelative()));
+        }
     }
 
     ApplicationPackage createApplicationPackageThatFailsWhenValidating() {

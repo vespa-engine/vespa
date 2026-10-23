@@ -51,6 +51,9 @@ public interface ModelContext {
     default Optional<File> appDir() { return Optional.empty(); }
     OnnxModelCost onnxModelCost();
 
+    /** Directory where imported machine-learned models can be cached between deployments, if any */
+    default Optional<File> mlModelImportCacheDir() { return Optional.empty(); }
+
     /** The Docker image repo we want to use for images for this deployment (optional, will use default if empty) */
     default Optional<DockerImage> wantedDockerImageRepo() { return Optional.empty(); }
 
@@ -142,6 +145,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum", "vekterli"}) default boolean enableLandlock() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean enableLegacyFeedHandler() { return true; }
         @ModelFeatureFlag(owners = {"sebasabe"}) default boolean productDiscovery() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useMlModelImportCache() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
