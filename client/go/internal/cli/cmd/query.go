@@ -7,6 +7,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -198,6 +199,9 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 		// Hint for timeout exception in cloud
 		if err, ok := err.(net.Error); ok && err.Timeout() && target.IsCloud() {
 			return errHint(err, "No nodes are responsive", "Check application status in the console")
+		}
+		if dnsErr := (*net.DNSError)(nil); errors.As(err, &dnsErr) && dnsErr.IsNotFound && target.IsCloud() {
+			return errHint(fmt.Errorf("request failed: %w", err), "DNS for a newly deployed application may take several minutes to propagate. Please try again later")
 		}
 		return fmt.Errorf("request failed: %w", err)
 	}

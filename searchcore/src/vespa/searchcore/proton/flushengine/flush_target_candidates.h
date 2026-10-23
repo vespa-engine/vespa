@@ -2,7 +2,8 @@
 #pragma once
 
 #include "flush_target_candidate.h"
-#include "prepare_restart_flush_strategy.h"
+#include "flushcontext.h"
+#include "prepare_restart_costs_config.h"
 
 #include <span>
 
@@ -24,33 +25,37 @@ public:
     struct TlsReplayCost {
         double bytesCost;
         double operationsCost;
-        TlsReplayCost(double bytesCost_, double operationsCost_)
+        TlsReplayCost(double bytesCost_, double operationsCost_) noexcept
             : bytesCost(bytesCost_), operationsCost(operationsCost_) {}
-        double totalCost() const { return bytesCost + operationsCost; }
+        [[nodiscard]] double totalCost() const noexcept { return bytesCost + operationsCost; }
     };
 
 private:
-    std::span<const FlushTargetCandidate> _candidates; // NOTE: ownership is handled outside
-    size_t                                _num_candidates;
-    TlsReplayCost                         _tlsReplayCost;
-    double                                _flushTargetsWriteCost;
-    double                                _flush_targets_read_cost;
-
-    using Config = PrepareRestartFlushStrategy::Config;
+    std::span<const FlushTargetCandidate>         _candidates; // NOTE: ownership is handled outside
+    size_t                                        _num_candidates;
+    TlsReplayCost                                 _tlsReplayCost;
+    double                                        _flush_targets_replay_cost;
+    double                                        _flushTargetsWriteCost;
+    double                                        _flush_targets_read_cost;
+    const flushengine::TlsStats*                  _tls_stats;
+    const flushengine::PrepareRestartCostsConfig* _prepare_restart_costs_config;
 
 public:
     using UP = std::unique_ptr<FlushTargetCandidates>;
 
-    FlushTargetCandidates(std::span<const FlushTargetCandidate> candidates, size_t num_candidates,
-                          const flushengine::TlsStats& tlsStats, const Config& cfg);
+    FlushTargetCandidates(std::span<const FlushTargetCandidate> candidates, const flushengine::TlsStats& tlsStats,
+                          const flushengine::PrepareRestartCostsConfig& cfg) noexcept;
 
-    TlsReplayCost getTlsReplayCost() const { return _tlsReplayCost; }
-    double getFlushTargetsWriteCost() const { return _flushTargetsWriteCost; }
-    double get_flush_targets_read_cost() const noexcept { return _flush_targets_read_cost; }
-    double getTotalCost() const {
+    [[nodiscard]] TlsReplayCost getTlsReplayCost() const noexcept { return _tlsReplayCost; }
+    [[nodiscard]] double get_flush_targets_replay_cost() const noexcept { return _flush_targets_replay_cost; }
+    [[nodiscard]] double getFlushTargetsWriteCost() const noexcept { return _flushTargetsWriteCost; }
+    [[nodiscard]] double get_flush_targets_read_cost() const noexcept { return _flush_targets_read_cost; }
+    [[nodiscard]] double getTotalCost() const noexcept {
         return getTlsReplayCost().totalCost() + getFlushTargetsWriteCost() + get_flush_targets_read_cost();
     }
-    FlushContext::List getCandidates() const;
+    [[nodiscard]] FlushContext::List getCandidates() const;
+    [[nodiscard]] size_t get_num_candidates() const noexcept { return _num_candidates; }
+    void inc_num_candidates() noexcept;
 };
 
 } // namespace proton

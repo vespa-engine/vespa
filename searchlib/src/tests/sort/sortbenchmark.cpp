@@ -5,6 +5,7 @@
 
 #include <cstdlib>
 #include <string>
+#include <vector>
 
 using vespalib::Array;
 using vespalib::ConstBufferRef;

@@ -5,6 +5,7 @@
 #include "bootstrapconfig.h"
 #include "threading_service_config.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
@@ -26,7 +27,6 @@
 
 #include <vespa/config/retriever/configsnapshot.hpp>
 
-#include <cassert>
 #include <cinttypes>
 #include <thread>
 
@@ -92,8 +92,9 @@ uint32_t find_document_db_index(const BootstrapConfig::SP& bootstrapConfig, cons
     uint32_t index;
     for (index = 0; index < proton.documentdb.size(); ++index) {
         const DdbConfig& ddbConfig = proton.documentdb[index];
-        if (doc_type_name == ddbConfig.inputdoctypename)
+        if (doc_type_name == ddbConfig.inputdoctypename) {
             break;
+        }
     }
 
     return index;
@@ -342,7 +343,7 @@ void DocumentDBConfigManager::update(FNET_Transport& transport, const ConfigSnap
         build_alloc_config(_bootstrapConfig->getHwInfo(), _bootstrapConfig->getProtonConfig(), _docTypeName),
         DocumentMetaStoreConfig::make(_bootstrapConfig->getProtonConfig(), document_db_index), _configId,
         _docTypeName);
-    assert(newSnapshot->valid());
+    CHECK(newSnapshot->valid());
     {
         std::lock_guard<std::mutex> lock(_pendingConfigMutex);
         _pendingConfigSnapshot = newSnapshot;
@@ -367,8 +368,9 @@ DocumentDBConfig::SP DocumentDBConfigManager::getConfig() const {
 
 void DocumentDBConfigManager::forwardConfig(const BootstrapConfig::SP& config) {
     {
-        if (!_ignoreForwardedConfig && config->getGeneration() < _bootstrapConfig->getGeneration())
+        if (!_ignoreForwardedConfig && config->getGeneration() < _bootstrapConfig->getGeneration()) {
             return; // Enforce time direction
+        }
         _bootstrapConfig = config;
         _ignoreForwardedConfig = false;
     }
@@ -383,8 +385,9 @@ DocumentDBConfigHelper::~DocumentDBConfigHelper() = default;
 
 bool DocumentDBConfigHelper::nextGeneration(FNET_Transport& transport, vespalib::duration timeout) {
     ConfigSnapshot snapshot(_retriever->getBootstrapConfigs(timeout));
-    if (snapshot.empty())
+    if (snapshot.empty()) {
         return false;
+    }
     _mgr.update(transport, snapshot);
     return true;
 }

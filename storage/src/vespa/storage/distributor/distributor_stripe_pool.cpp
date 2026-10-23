@@ -3,10 +3,9 @@
 
 #include "distributor_stripe_thread.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/vespalib/util/size_literals.h>
-
-#include <cassert>
 
 namespace storage::distributor {
 
@@ -37,7 +36,7 @@ std::unique_ptr<DistributorStripePool> DistributorStripePool::make_non_threaded_
 }
 
 void DistributorStripePool::park_all_threads() noexcept {
-    assert(!_stripes.empty());
+    CHECK(!_stripes.empty());
     if (_single_threaded_test_mode) {
         return;
     }
@@ -86,7 +85,7 @@ void DistributorStripePool::park_thread_until_released(DistributorStripeThread& 
         return;
     }
     std::unique_lock lock(_mutex);
-    assert(_parked_threads < _threads.size());
+    CHECK(_parked_threads < _threads.size());
     ++_parked_threads;
     if (_parked_threads == _threads.size()) {
         _parker_cond.notify_all();
@@ -101,9 +100,9 @@ void DistributorStripePool::park_thread_until_released(DistributorStripeThread& 
 };
 
 void DistributorStripePool::start(const std::vector<TickableStripe*>& stripes) {
-    assert(!stripes.empty());
-    assert(_stripes.empty() && _threads.empty());
-    assert(stripes.size() == adjusted_num_stripes(stripes.size()));
+    CHECK(!stripes.empty());
+    CHECK(_stripes.empty() && _threads.empty());
+    CHECK(stripes.size() == adjusted_num_stripes(stripes.size()));
     _n_stripe_bits = calc_num_stripe_bits(stripes.size());
     _stripes.reserve(stripes.size());
     _threads.reserve(stripes.size());

@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/time.h>
 
 #include <algorithm>
+#include <future>
 #include <vector>
 
 namespace search {
@@ -69,6 +70,7 @@ public:
     using SP = std::shared_ptr<IFlushTarget>;
     using List = std::vector<SP>;
     using Task = FlushTask;
+    using TaskPromise = std::promise<std::unique_ptr<Task>>;
 
     /**
      * Constructs a new instance of this class.
@@ -179,8 +181,10 @@ public:
      * @param currentSerial The current transaction serial number.
      * @return The task used to complete the flush.
      */
-    virtual Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) = 0;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token);
 
+    virtual void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
+                            TaskPromise promised_task) = 0;
     /*
      * Check if the target can flush data with the specified serial number. If the returned value is false then
      * the initFlush() will return no task unless the provided serial number is stale (i.e. feed handler having

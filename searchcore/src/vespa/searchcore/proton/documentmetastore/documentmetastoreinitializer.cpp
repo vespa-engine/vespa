@@ -4,6 +4,7 @@
 
 #include "documentmetastore.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
@@ -39,7 +40,7 @@ void DocumentMetaStoreInitializer::run() {
         if (snap.valid) {
             std::string attrFileName = _baseDir + "/" + snap.dirName + "/" + name;
             _dms->setBaseFileName(attrFileName);
-            assert(_dms->hasLoadData());
+            CHECK(_dms->hasLoadData());
             vespalib::Timer stopWatch;
             EventLogger::loadDocumentMetaStoreStart(_subDbName);
             MemoryUsageLogger::log("start load documentmetastore", _subDbName);

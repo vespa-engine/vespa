@@ -54,7 +54,9 @@ public class Xml {
         factory.setXIncludeAware(false);
 
         try {
-            // XXE prevention
+            // Prevent XXE and internal-entity expansion by disallowing DOCTYPE (matches com.yahoo.text.XML and SchemaValidator)
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            // The external-entity/DTD features below are redundant once DOCTYPE is disallowed, but kept as defense in depth.
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);

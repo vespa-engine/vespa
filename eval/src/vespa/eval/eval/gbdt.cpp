@@ -5,6 +5,7 @@
 #include "node_traverser.h"
 #include "vm_forest.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/basic_nodes.h>
 #include <vespa/eval/eval/call_nodes.h>
 #include <vespa/eval/eval/operator_nodes.h>
@@ -68,21 +69,21 @@ double TreeStats::traverse(const nodes::Node& node, size_t depth, size_t& sum_pa
         auto   inverted = nodes::as<nodes::Not>(if_node->cond());
         if (less) {
             auto symbol = nodes::as<nodes::Symbol>(less->lhs());
-            assert(symbol);
+            CHECK(symbol);
             num_params = std::max(num_params, size_t(symbol->id() + 1));
             ++num_less_checks;
         } else if (in) {
             auto symbol = nodes::as<nodes::Symbol>(in->child());
-            assert(symbol);
+            CHECK(symbol);
             num_params = std::max(num_params, size_t(symbol->id() + 1));
             ++num_in_checks;
             max_set_size = std::max(max_set_size, in->num_entries());
         } else {
-            assert(inverted);
+            CHECK(inverted);
             auto ge = nodes::as<nodes::GreaterEqual>(inverted->child());
-            assert(ge);
+            CHECK(ge);
             auto symbol = nodes::as<nodes::Symbol>(ge->lhs());
-            assert(symbol);
+            CHECK(symbol);
             num_params = std::max(num_params, size_t(symbol->id() + 1));
             ++num_inverted_checks;
         }

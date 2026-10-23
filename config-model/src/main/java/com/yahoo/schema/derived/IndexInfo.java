@@ -13,6 +13,8 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.BooleanIndexDefinition;
 import com.yahoo.schema.document.Case;
+import com.yahoo.schema.document.FastMapSearchFields;
+import com.yahoo.searchlib.document.FastMapSearch;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
@@ -25,10 +27,11 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.search.config.IndexInfoConfig;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Per-index commands which should be applied to queries prior to searching
@@ -86,6 +89,10 @@ public class IndexInfo extends Derived {
         for (Index index : schema.getExplicitIndices()) {
             derive(index, schema);
         }
+        // Must follow, as the lookup fields get the settings of the fields they look up in
+        for (ImmutableSDField field : schema.allConcreteFields()) {
+            deriveFastMapLookupFields(field);
+        }
 
         // Commands for summary fields
         // TODO: Move to schemainfo and implement differently
@@ -103,6 +110,53 @@ public class IndexInfo extends Derived {
                                 "ngram " + (sourceField.getMatching().getGramSize().orElse(NGramMatch.DEFAULT_GRAM_SIZE)));
 
             }
+        }
+    }
+
+    /**
+     * A map, or array of struct, with fast map search is queried as field.lookupName, as in
+     * field.lookupName{"key"} = value, with key and value relative to it. These names are made known to
+     * the query parser, which is the only use of them: FastMapSearcher rewrites a lookup to a term on the
+     * fieldName$lookupName attribute, and rejects any other query on them.
+     * <p>
+     * The lookup field gets the settings of the field itself. A string key or value is matched as a whole
+     * in the attribute, so it gets the matching settings of the attribute, which keep the parser from
+     * splitting it into several terms. A numeric value gets the settings of its struct field, so that it
+     * is parsed as a number or range.
+     */
+    private void deriveFastMapLookupFields(ImmutableSDField field) {
+        for (FastMapSearchFields fastMap : field.getFastMapSearches()) {
+            deriveFastMapLookupField(field, fastMap);
+        }
+    }
+
+    private void deriveFastMapLookupField(ImmutableSDField field, FastMapSearchFields fastMap) {
+        String lookupField = field.getName() + "." + fastMap.lookupName();
+        String lookupAttribute = FastMapSearch.toLookupFieldName(field.getName(), fastMap.lookupName());
+        copyIndexCommands(field.getName(), lookupField, command -> true);
+        deriveFastMapLookupSubField(field.getName() + "." + fastMap.keyField(), lookupField + "." + FastMapSearchFields.MAP_KEY,
+                                    fastMap.keyType(), lookupAttribute);
+        deriveFastMapLookupSubField(field.getName() + "." + fastMap.valueField(), lookupField + "." + FastMapSearchFields.MAP_VALUE,
+                                    fastMap.valueType(), lookupAttribute);
+    }
+
+    private void deriveFastMapLookupSubField(String structField, String lookupSubField, DataType type, String lookupAttribute) {
+        if (type.equals(DataType.STRING)) {
+            copyIndexCommands(lookupAttribute, lookupSubField, command -> ! isTypeCommand(command));
+            copyIndexCommands(structField, lookupSubField, IndexInfo::isTypeCommand);
+        } else {
+            copyIndexCommands(structField, lookupSubField, command -> true);
+        }
+    }
+
+    private static boolean isTypeCommand(String command) {
+        return command.startsWith("type ");
+    }
+
+    private void copyIndexCommands(String fromIndex, String toIndex, Predicate<String> include) {
+        for (IndexCommand command : List.copyOf(commands)) {
+            if (command.index().equals(fromIndex) && include.test(command.command()))
+                addIndexCommand(toIndex, command.command());
         }
     }
 
@@ -167,7 +221,7 @@ public class IndexInfo extends Derived {
                 addIndexCommand(field.getName(), CMD_FAST_SEARCH);
         } else if (field.doesIndexing()) {
             if (stemSomehow(field, schema)) {
-                addIndexCommand(field, stemCmd(field, schema), new StemmingOverrider(this, schema));
+                addIndexCommand(field, CMD_STEM + ":" + field.getEffectiveSearchStemming(schema).toStemMode());
             }
             if (normalizeAccents(field)) {
                 addIndexCommand(field, CMD_NORMALIZE);
@@ -223,12 +277,8 @@ public class IndexInfo extends Derived {
                 && field.getMatching().getCase().equals(Case.UNCASED));
     }
 
-    static String stemCmd(ImmutableSDField field, Schema schema) {
-        return CMD_STEM + ":" + field.getStemming(schema).toStemMode();
-    }
-
     private boolean stemSomehow(ImmutableSDField field, Schema schema) {
-        if (field.getStemming(schema).equals(Stemming.NONE)) return false;
+        if (field.getEffectiveSearchStemming(schema).equals(Stemming.NONE)) return false;
         return isTypeOrNested(field, DataType.STRING);
     }
 
@@ -237,7 +287,7 @@ public class IndexInfo extends Derived {
     }
 
     private boolean isTypeOrNested(ImmutableSDField field, DataType type) {
-        return type.equals(field.getDataType()) || type.equals(field.getDataType().getNestedType());
+        return field.isOfTypeOrNested(type);
     }
 
     private boolean isUriField(ImmutableSDField field) {
@@ -269,29 +319,17 @@ public class IndexInfo extends Derived {
         }
     }
 
-    /**
-     * Sets a command for all indices of a field
-     */
+    /** Sets a command for the given index */
     private void addIndexCommand(Index index, String command) {
         addIndexCommand(index.getName(), command);
     }
 
-    /**
-     * Sets a command for all indices of a field
-     */
+    /** Sets a command for all indices of a field */
     private void addIndexCommand(ImmutableSDField field, String command) {
-        addIndexCommand(field, command, null);
+        addIndexCommand(field.getName(), command);
     }
 
-    /**
-     * Sets a command for all indices of a field
-     */
-    private void addIndexCommand(ImmutableSDField field, String command, IndexOverrider overrider) {
-        if (overrider == null || !overrider.override(field.getName(), command, field)) {
-            addIndexCommand(field.getName(), command);
-        }
-    }
-
+    /** Sets a command for the index of the given name */
     private void addIndexCommand(String indexName, String command) {
         commands.add(new IndexCommand(indexName, command));
     }
@@ -377,7 +415,7 @@ public class IndexInfo extends Derived {
             }
             if (stemming(field)) {
                 anyStemming = true;
-                stemmingCommand = CMD_STEM + ":" + getEffectiveStemming(field).toStemMode();
+                stemmingCommand = CMD_STEM + ":" + field.getEffectiveSearchStemming(schema).toStemMode();
             }
             if (normalizeAccents(field)) {
                 anyNormalizing = true;
@@ -458,25 +496,15 @@ public class IndexInfo extends Derived {
         return false;
     }
 
-    private Stemming getEffectiveStemming(ImmutableSDField field) {
-        Stemming active = field.getStemming(schema);
-        if (field.getIndex(field.getName()) != null) {
-            if (field.getIndex(field.getName()).getStemming()!=null) {
-                active = field.getIndex(field.getName()).getStemming();
-            }
-        }
-        return Objects.requireNonNullElse(active, Stemming.BEST);
-    }
-
+    /** Returns whether this field is stemmed when searched, as the query side sees it. */
     private boolean stemming(ImmutableSDField field) {
-        if (field.getStemming() != null) {
-            return !field.getStemming().equals(Stemming.NONE);
-        }
-        if (schema.getStemming() == Stemming.NONE) return false;
-        if (field.isImportedField()) return false;
-        if (field.getIndex(field.getName())==null) return true;
-        if (field.getIndex(field.getName()).getStemming()==null) return true;
-        return !(field.getIndex(field.getName()).getStemming().equals(Stemming.NONE));
+        // A field which cannot be stemmed must not decide the stem command of a fieldset it is in:
+        // FieldSetSettings skips those fields when checking that the fields of a fieldset agree, so
+        // letting one of them win here would emit a command that check never validated. This must
+        // also be tested before anything else: ImmutableImportedSDField does not support resolving
+        // stemming at all.
+        if ( ! field.isStemmable()) return false;
+        return ! field.getEffectiveSearchStemming(schema).equals(Stemming.NONE);
     }
 
     private boolean isExactMatch(Matching m) {
@@ -513,57 +541,6 @@ public class IndexInfo extends Derived {
 
         public String toString() {
             return "index command " + command + " on index " + index;
-        }
-
-    }
-
-    /**
-     * A command which may override the command setting of a field for a particular index
-     */
-    private static abstract class IndexOverrider {
-
-        protected final IndexInfo owner;
-
-        public IndexOverrider(IndexInfo owner) {
-            this.owner = owner;
-        }
-
-        /**
-         * Override the setting of this index for this field, returns true if overriden, false if this index should be
-         * set according to the field
-         */
-        public abstract boolean override(String indexName, String command, ImmutableSDField field);
-
-    }
-
-    private static class StemmingOverrider extends IndexOverrider {
-
-        private final Schema schema;
-
-        public StemmingOverrider(IndexInfo owner, Schema schema) {
-            super(owner);
-            this.schema = schema;
-        }
-
-        public boolean override(String indexName, String command, ImmutableSDField field) {
-            if (schema == null) {
-                return false;
-            }
-
-            Index index = schema.getIndex(indexName);
-            if (index == null) {
-                return false;
-            }
-
-            Stemming indexStemming = index.getStemming();
-            if (indexStemming == null) {
-                return false;
-            }
-
-            if ( ! Stemming.NONE.equals(indexStemming)) {
-                owner.addIndexCommand(indexName, CMD_STEM + ":" + indexStemming.toStemMode());
-            }
-            return true;
         }
 
     }

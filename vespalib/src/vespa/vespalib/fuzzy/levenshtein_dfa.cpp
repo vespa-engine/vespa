@@ -6,6 +6,7 @@
 #include "table_dfa.h"
 #include "unicode_utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <memory>
@@ -109,7 +110,7 @@ std::ostream& operator<<(std::ostream& os, LevenshteinDfa::DfaType dt) {
     } else if (dt == LevenshteinDfa::DfaType::Explicit) {
         os << "Explicit";
     } else {
-        assert(dt == LevenshteinDfa::DfaType::Table);
+        CHECK(dt == LevenshteinDfa::DfaType::Table);
         os << "Table";
     }
     return os;
@@ -119,7 +120,7 @@ std::ostream& operator<<(std::ostream& os, LevenshteinDfa::Casing c) {
     if (c == LevenshteinDfa::Casing::Uncased) {
         os << "Uncased";
     } else {
-        assert(c == LevenshteinDfa::Casing::Cased);
+        CHECK(c == LevenshteinDfa::Casing::Cased);
         os << "Cased";
     }
     return os;

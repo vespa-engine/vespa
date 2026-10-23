@@ -2,15 +2,15 @@
 
 #include "match_context.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton::matching {
 
 MatchContext::MatchContext(std::unique_ptr<IAttributeContext> attrCtx,
                            std::unique_ptr<ISearchContext>    searchCtx) noexcept
     : _attrCtx(std::move(attrCtx)), _searchCtx(std::move(searchCtx)) {
-    assert(_attrCtx);
-    assert(_searchCtx);
+    CHECK(_attrCtx);
+    CHECK(_searchCtx);
 }
 
 MatchContext::MatchContext() noexcept = default;

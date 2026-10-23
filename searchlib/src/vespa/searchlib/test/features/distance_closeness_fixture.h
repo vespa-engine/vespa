@@ -57,15 +57,17 @@ struct DistanceClosenessFixture : BlueprintFactoryFixture, IndexEnvironmentFixtu
     std::vector<TermFieldHandle>                     barHandles;
     std::shared_ptr<search::tensor::TensorAttribute> tensor_attr;
     uint32_t                                         docid_limit;
+    bool                                             _quantized;
     bool                                             _failed;
-    DistanceClosenessFixture(
-        size_t fooCnt, size_t barCnt, const Labels& labels, const std::string& featureName,
-        const std::string&                query_tensor = "",
-        search::attribute::DistanceMetric distance_metric = search::attribute::DistanceMetric::Euclidean);
-    DistanceClosenessFixture(
-        const std::string& tensor_type, bool direct_tensor, size_t fooCnt, size_t barCnt, const Labels& labels,
-        const std::string& featureName, const std::string& query_tensor = "",
-        search::attribute::DistanceMetric distance_metric = search::attribute::DistanceMetric::Euclidean);
+    DistanceClosenessFixture(size_t fooCnt, size_t barCnt, const Labels& labels, const std::string& featureName,
+                             const std::string&        query_tensor = "",
+                             attribute::DistanceMetric distance_metric = attribute::DistanceMetric::Euclidean,
+                             bool                      quantized_tensor = false);
+    DistanceClosenessFixture(const std::string& tensor_type, bool direct_tensor, size_t fooCnt, size_t barCnt,
+                             const Labels& labels, const std::string& featureName,
+                             const std::string&        query_tensor = "",
+                             attribute::DistanceMetric distance_metric = attribute::DistanceMetric::Euclidean,
+                             bool                      quantized_tensor = false);
     ~DistanceClosenessFixture();
     void set_attribute_tensor(uint32_t docid, const vespalib::eval::TensorSpec& spec);
     void set_query_tensor(const std::string& query_tensor_name, const std::string& tensor_type,

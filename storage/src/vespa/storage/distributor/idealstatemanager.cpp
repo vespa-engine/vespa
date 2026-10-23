@@ -122,8 +122,9 @@ MaintenancePriorityAndType IdealStateManager::prioritize(const document::Bucket&
 IdealStateOperation::SP IdealStateManager::generateInterceptingSplit(BucketSpace                   bucketSpace,
                                                                      const BucketDatabase::Entry&  e,
                                                                      api::StorageMessage::Priority pri) {
-    if (!e.valid())
+    if (!e.valid()) {
         return {};
+    }
 
     NodeMaintenanceStatsTracker statsTracker;
     document::Bucket            bucket(bucketSpace, e.getBucketId());

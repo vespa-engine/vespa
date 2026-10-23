@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import ai.vespa.rankingexpression.importer.MlModelImportCacheImpl;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
@@ -31,6 +32,7 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
 import com.yahoo.vespa.model.application.validation.Validator;
+import com.yahoo.vespa.model.productdiscovery.ProductDiscoveryProvider;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -57,12 +59,14 @@ public class VespaModelFactory implements ModelFactory {
     private final Version version;
     private final List<Validator> additionalValidators;
     private final Optional<SidecarProvider> sidecarProvider;
+    private final Optional<ProductDiscoveryProvider> productDiscoveryProvider;
 
     /** Creates a factory for Vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                              ComponentRegistry<Validator> additionalValidators,
                              ComponentRegistry<SidecarProvider> sidecarProviders,
+                             ComponentRegistry<ProductDiscoveryProvider> productDiscoveryProviders,
                              Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder<?>> modelBuilders = new ArrayList<>();
@@ -75,6 +79,10 @@ public class VespaModelFactory implements ModelFactory {
             throw new IllegalStateException("At most one sidecar provider may be registered, got " + sidecarProviders.allComponents());
         this.configModelRegistry = new MapConfigModelRegistry(modelBuilders);
         this.sidecarProvider = sidecarProviders.allComponents().stream().findFirst();
+        if (productDiscoveryProviders.allComponents().size() > 1)
+            throw new IllegalStateException("At most one product discovery provider may be registered per config model, got " +
+                                            productDiscoveryProviders.allComponents());
+        this.productDiscoveryProvider = productDiscoveryProviders.allComponents().stream().findFirst();
         this.modelImporters = List.of(
                 new VespaImporter(),
                 new OnnxImporter(),
@@ -90,7 +98,7 @@ public class VespaModelFactory implements ModelFactory {
     protected VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
                                 ComponentRegistry<Validator> additionalValidators,
                                 Zone zone) {
-        this(pluginRegistry, additionalValidators, new ComponentRegistry<>(), zone);
+        this(pluginRegistry, additionalValidators, new ComponentRegistry<>(), new ComponentRegistry<>(), zone);
     }
 
     // For testing only
@@ -110,6 +118,7 @@ public class VespaModelFactory implements ModelFactory {
         this.modelImporters = List.of();
         this.additionalValidators = List.of();
         this.sidecarProvider = Optional.empty();
+        this.productDiscoveryProvider = Optional.empty();
         this.zone = zone;
         this.clock = clock;
     }
@@ -209,7 +218,12 @@ public class VespaModelFactory implements ModelFactory {
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
             .wantedDockerImageRepo(modelContext.wantedDockerImageRepo())
             .onnxModelCost(modelContext.onnxModelCost());
+        if (modelContext.properties().featureFlags().useMlModelImportCache())
+            modelContext.mlModelImportCacheDir().ifPresent(dir -> builder.modelImportCache(new MlModelImportCacheImpl(dir.toPath())));
         sidecarProvider.ifPresent(builder::sidecarProvider);
+        if (modelContext.properties().hostedVespa() && modelContext.properties().featureFlags().productDiscovery())
+            productDiscoveryProvider.ifPresent(provider ->
+                    builder.additionalContent(provider.additionalContent(modelContext.applicationPackage())));
         modelContext.previousModel().ifPresent(builder::previousModel);
         modelContext.reindexing().ifPresent(builder::reindexing);
         return builder.build(validationParameters);

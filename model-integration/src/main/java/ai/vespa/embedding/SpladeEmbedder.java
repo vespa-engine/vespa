@@ -64,18 +64,16 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
                 .addDefaultModel(tokenizerPath)
                 .setPadding(false);
         var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
-        if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
-            // Force truncation
-            // to max length accepted by model if tokenizer.json contains no valid truncation configuration
-            int maxLength = info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens()
-                    ? info.maxLength()
-                    : embedderConfig.transformerMaxTokens();
-            builder.setTruncation(true).setMaxLength(maxLength);
-        }
+        // Force truncation to max length accepted by model if tokenizer.json contains no valid truncation configuration
+        boolean forceTruncation = info.maxLength() == -1 || info.truncation() != LONGEST_FIRST;
+        int maxLength = ! forceTruncation ? info.maxLength() // The longest input the model gets, as the tokenizer truncates to it
+                        : info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens() ? info.maxLength()
+                        : embedderConfig.transformerMaxTokens();
+        if (forceTruncation) builder.setTruncation(true).setMaxLength(maxLength);
         this.tokenizer = builder.build();
 
         var resolver = new OnnxExternalDataResolver();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig).withAttentionMask(attentionMaskName).withMaxTokens(maxLength);
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
         this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
         
@@ -122,6 +120,7 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
 
         var encoding = tokenizer.encode(text, context.getLanguage());
         runtime.sampleSequenceLength(encoding.ids().size(), context);
+        runtime.samplePaddedSequenceLength(evaluator.paddedLength(encoding.ids().size()), context);
 
         Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1");
         Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1");

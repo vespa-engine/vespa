@@ -11,10 +11,11 @@
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
+#include "shrink_attribute_lid_space_flush_target.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
-#include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
@@ -22,7 +23,6 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/flush_token.h>
-#include <vespa/searchlib/common/threaded_compactable_lid_space.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -31,8 +31,6 @@
 #include <vespa/vespalib/util/threadexecutor.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attributemanager");
@@ -46,7 +44,6 @@ using search::attribute::BasicType;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::common::FileHeaderContext;
-using search::common::ThreadedCompactableLidSpace;
 using searchcorespi::IFlushTarget;
 using searchcorespi::common::ResourceUsage;
 using searchcorespi::common::TransientResourceUsage;
@@ -78,15 +75,13 @@ std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
 
-    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(
-        attr, executor, executor.getExecutorIdFromName(attr->getNamePrefix()));
     const std::string& name = attr->getName();
     auto               dir = diskLayout.createAttributeDir(name);
     search::SerialNum  shrinkSerialNum = estimateShrinkSerialNum(*attr);
-    return std::make_shared<ShrinkLidSpaceFlushTarget>("attribute.shrink." + name, Type::GC, Component::ATTRIBUTE,
-                                                       shrinkSerialNum, dir->getLastFlushTime(), shrinkwrap);
+    return std::make_shared<ShrinkAttributeLidSpaceFlushTarget>(
+        name, Type::GC, Component::ATTRIBUTE, shrinkSerialNum, attr, executor,
+        executor.getExecutorIdFromName(attr->getNamePrefix()));
 }
-
 } // namespace
 
 AttributeManager::AttributeWrap::AttributeWrap(AttributeVectorSP a, bool isExtra_)
@@ -135,7 +130,7 @@ void AttributeManager::addAttribute(AttributeWrap attributeWrap, const ShrinkerS
     const std::string&  name = attribute->getName();
     LOG(debug, "Adding attribute vector '%s'", name.c_str());
     _attributes[name] = std::move(attributeWrap);
-    assert(attribute->getInterlock() == _interlock);
+    CHECK(attribute->getInterlock() == _interlock);
     if (!isExtra) {
         // Flushing of extra attributes is handled elsewhere
         AttributeVector* attributeP = attribute.get();
@@ -171,9 +166,9 @@ AttributeManager::transferExistingAttributes(const AttributeManager& currMgr, Sp
                     " from current manager",
                     av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
                 auto wrap = currMgr.findFlushable(aspec.getName());
-                assert(wrap != nullptr);
+                CHECK(wrap != nullptr);
                 auto shrinker = wrap->getShrinker();
-                assert(shrinker);
+                CHECK(shrinker);
                 addAttribute(AttributeWrap::normalAttribute(av), shrinker);
                 auto id = _attributeFieldWriter.getExecutorIdFromName(av->getNamePrefix());
                 auto cfg = aspec.getConfig();
@@ -302,7 +297,7 @@ void AttributeManager::addInitializedAttributes(const std::vector<AttributeIniti
      * setup of new attribute manager.
      */
     for (const auto& result : attributes) {
-        assert(result);
+        CHECK(result);
         auto attr = result.getAttribute();
         if (attr->getCreateSerialNum() == 0) {
             /*
@@ -367,7 +362,7 @@ void AttributeManager::padAttribute(AttributeVector& v, uint32_t docIdLimit) {
     if (needCommit > 1) {
         v.commit();
     }
-    assert(v.getNumDocs() >= docIdLimit);
+    CHECK(v.getNumDocs() >= docIdLimit);
 }
 
 AttributeGuard::UP AttributeManager::getAttribute(std::string_view name) const {

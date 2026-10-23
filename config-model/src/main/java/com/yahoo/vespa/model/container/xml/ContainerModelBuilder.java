@@ -145,8 +145,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     // Default path to vip status file for container in Hosted Vespa.
     static final String HOSTED_VESPA_STATUS_FILE = Defaults.getDefaults().underVespaHome("var/vespa/load-balancer/status.html");
 
-    static final String HOSTED_VESPA_TENANT_PARENT_DOMAIN = "vespa.tenant.";
-
     //Path to vip status file for container in Hosted Vespa. Only used if set, else use HOSTED_VESPA_STATUS_FILE
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
 
@@ -409,7 +407,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             context.getDeployState().getProperties().ztsUrl(),
                             context.getDeployState().getProperties().athenzDnsSuffix(),
                             context.getDeployState().zone(),
-                            AthenzDomain.from(HOSTED_VESPA_TENANT_PARENT_DOMAIN + context.properties().applicationId().tenant().value()),
+                            AthenzDomain.from(context.properties().tenantParentDomain().value() + "." + context.properties().applicationId().tenant().value()),
                             AthenzService.from(Text.format("%s-%s", context.properties().applicationId().application().value(), appContext)));
     }
 
@@ -1050,6 +1048,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addStandaloneNode(ApplicationContainerCluster cluster, DeployState deployState) {
         ApplicationContainer container = new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), deployState);
+        cluster.setSpec(defaultSpec(cluster, deployState));
         cluster.addContainers(List.of(container));
     }
 
@@ -1148,7 +1147,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
             var xmlGcOptions = extractJvmOptions(nodes, cluster, nodesElement, context);
-            applyDefaultPreload(nodes, nodesElement);
+            applyDefaultPreload(nodes, nodesElement, context.getDeployState().getDeployLogger());
             var envVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT)).entrySet();
             for (var container : nodes) {
                 for (var entry : envVars) {
@@ -1238,6 +1237,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private List<ApplicationContainer> singleHostContainerCluster(ApplicationContainerCluster cluster, HostResource host, ConfigModelContext context) {
+        cluster.setSpec(defaultSpec(cluster, context.getDeployState()));
         ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, context.getDeployState());
         node.setHostResource(host);
         node.initService(context.getDeployState());
@@ -1280,15 +1280,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                Element nodesElement,
                                                                ConfigModelContext context) {
         NodeType type = NodeType.valueOf(nodesElement.getAttribute("type"));
-        ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(cluster.getName()))
+        ClusterSpec clusterSpec = ClusterSpec.builder(ClusterSpec.Type.container,
+                                                      ClusterSpec.Id.from(cluster.getName()),
+                                                      Capacity.fromRequiredNodeType(type),
+                                                      context.getDeployState().getWantedNodeVespaVersion())
                 .vespaVersion(context.getDeployState().getWantedNodeVespaVersion())
                 .dockerImageRepository(context.getDeployState().getWantedDockerImageRepo())
                 .availabilityZones(context.availabilityZones())
                 .build();
         Map<HostResource, ClusterMembership> hosts =
-                cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
-                                                             Capacity.fromRequiredNodeType(type),
-                                                             context.getDeployState());
+                cluster.getRoot().hostSystem().allocateHosts(clusterSpec, context.getDeployState());
         return createNodesFromHosts(hosts, clusterSpec, cluster, context.getDeployState());
     }
 
@@ -1315,8 +1316,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             nodes.add(new ContainerServiceBuilder("container." + nodeIndex, nodeIndex).build(deployState, cluster, nodeElem));
             nodeIndex++;
         }
-        cluster.setSpec(ClusterSpec.request(ClusterSpec.Type.container, cluster.id()).vespaVersion(deployState.getVespaVersion()).build());
+        cluster.setSpec(defaultSpec(cluster, deployState));
         return nodes;
+    }
+
+    /** The cluster spec to use for clusters which are not allocated from a node repository. */
+    private static ClusterSpec defaultSpec(ApplicationContainerCluster cluster, DeployState deployState) {
+        return ClusterSpec.builder(ClusterSpec.Type.container,
+                                   cluster.id(),
+                                   Capacity.unspecified(),
+                                   deployState.getVespaVersion())
+                          .build();
     }
 
     private static boolean useCpuSocketAffinity(Element nodesElement) {
@@ -1333,8 +1343,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private static void applyDefaultPreload(List<ApplicationContainer> containers, Element nodesElement) {
+    private static void applyDefaultPreload(List<ApplicationContainer> containers, Element nodesElement, DeployLogger logger) {
         if (! nodesElement.hasAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME)) return;
+        AbstractService.validateNoShellMetacharacters("preload", nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME), logger);
         for (Container container: containers)
             container.setPreLoad(nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME));
     }
@@ -1372,6 +1383,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         return result;
     }
+
     private static Collection<UserBindingPattern> userBindingPattern(String path, Set<Integer> portBindingOverride) {
         UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
         if (portBindingOverride.isEmpty()) return Set.of(bindingPattern);
@@ -1379,7 +1391,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .map(bindingPattern::withOverriddenPort)
                 .toList();
     }
-
 
     private ContainerDocumentApi buildDocumentApi(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         Element documentApiElement = XML.getChild(spec, "document-api");
@@ -1522,7 +1533,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
      */
      private static class JvmOptions {
 
-        private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:./,+*-]+");
+        private static final Pattern validPattern = Pattern.compile("-[-\\w=:./,+*]+");
         // debug port will not be available in hosted, don't allow
         private static final Pattern invalidInHostedPattern = Pattern.compile("-Xrunjdwp:transport=.*");
 
@@ -1567,6 +1578,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         private void validateJvmOptions(String jvmOptions) {
             if (jvmOptions == null || jvmOptions.isEmpty()) return;
+            AbstractService.validateNoShellMetacharacters("JVM options", jvmOptions, logger);
 
             String[] optionList = jvmOptions.split(" ");
             List<String> invalidOptions = Arrays.stream(optionList)
@@ -1599,8 +1611,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
      */
     private static class JvmGcOptions {
 
-        private static final Pattern validPattern = Pattern.compile("-XX:[+-]*[a-zA-z0-9=]+");
-        private static final Pattern invalidCMSPattern = Pattern.compile("-XX:[+-]\\w*CMS[a-zA-z0-9=]+");
+        private static final Pattern validPattern = Pattern.compile("-XX:[+-]*[\\w=]+");
+        private static final Pattern invalidCMSPattern = Pattern.compile("-XX:[+-]\\w*CMS[\\w=]+");
 
         private final DeployState deployState;
         private final String clusterName;
@@ -1622,6 +1634,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .withClusterId(ClusterSpec.Id.from(clusterName))
                     .value();
             if (jvmGcOptions != null) {
+                AbstractService.validateNoShellMetacharacters("JVM GC options", jvmGcOptions, logger);
                 options = jvmGcOptions;
                 String[] optionList = options.split(" ");
                 List<String> invalidOptions = Arrays.stream(optionList)

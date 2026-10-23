@@ -4,11 +4,11 @@
 
 #include "docsumrequest.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/unique_issues.h>
 #include <vespa/vespalib/util/memory.h>
 
-#include <cassert>
 #include <memory>
 #include <vector>
 
@@ -42,15 +42,15 @@ public:
     bool hasIssues() const { return _issues && (_issues->size() > 0); }
 
     const vespalib::Slime& slime() const {
-        assert(_slime.get());
+        CHECK(_slime.get());
         return *_slime;
     }
     const DocsumRequest& request() const {
-        assert(_request.get());
+        CHECK(_request.get());
         return *_request;
     }
     const UniqueIssues& issues() const {
-        assert(_issues.get());
+        CHECK(_issues.get());
         return *_issues;
     }
 

@@ -2,12 +2,11 @@
 
 #include "storagecomponent.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-#include <cassert>
 
 namespace storage {
 
@@ -22,7 +21,7 @@ StorageComponent::~StorageComponent() = default;
 
 void StorageComponent::setNodeInfo(std::string_view clusterName, const lib::NodeType& nodeType, uint16_t index) {
     // Assumed to not be set dynamically.
-    assert(_cluster_ctx.my_cluster_name.empty());
+    CHECK(_cluster_ctx.my_cluster_name.empty());
     _cluster_ctx.my_cluster_name = clusterName;
     _nodeType = &nodeType;
     _index = index;

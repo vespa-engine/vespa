@@ -2,7 +2,8 @@
 
 #include "stringfmt.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <memory>
 
 namespace vespalib {
@@ -18,7 +19,7 @@ std::string make_string_va(const char* fmt, va_list ap) {
     size = vsnprintf(buffer, sizeof(buffer), fmt, ap2);
     va_end(ap2);
 
-    assert(size >= 0);
+    CHECK(size >= 0);
     if (sizeof(buffer) > static_cast<size_t>(size)) {
         return std::string(buffer, size);
     }
@@ -27,7 +28,7 @@ std::string make_string_va(const char* fmt, va_list ap) {
     va_copy(ap2, ap);
     int newLen = vsnprintf(allocated.get(), size + 1, fmt, ap2);
     va_end(ap2);
-    assert(newLen == size);
+    CHECK(newLen == size);
     return std::string(allocated.get(), size);
 }
 

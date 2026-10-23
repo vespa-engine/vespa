@@ -162,7 +162,9 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUEST_REQUESTS_PER_CONNECTION, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_REQUESTS.count());
 
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT.rate());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT.rate());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS.rate());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CHIFERS.rate());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED.rate());
@@ -182,6 +184,7 @@ public class Vespa9VespaMetricSet {
         // Embedders
         addMetric(metrics, ContainerMetrics.EMBEDDER_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.EMBEDDER_SEQUENCE_LENGTH, EnumSet.of(max, sum, count));
+        addMetric(metrics, ContainerMetrics.EMBEDDER_PADDED_SEQUENCE_LENGTH, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.EMBEDDER_REQUEST_COUNT, EnumSet.of(count));
         addMetric(metrics, ContainerMetrics.EMBEDDER_REQUEST_FAILURE_COUNT, EnumSet.of(count));
         addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_SIZE, EnumSet.of(max, sum, count));
@@ -260,6 +263,7 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.DOCUMENTS_TARGET_TOTAL.count());
         addMetric(metrics, ContainerMetrics.TOTAL_HITS_PER_QUERY, EnumSet.of(sum, count, max, ninety_five_percentile, ninety_nine_percentile));
         addMetric(metrics, ContainerMetrics.EMPTY_RESULTS.rate());
+        addMetric(metrics, ContainerMetrics.REQUESTS, EnumSet.of(rate, count));
         addMetric(metrics, ContainerMetrics.REQUESTS_OVER_QUOTA, EnumSet.of(rate, count));
 
         addMetric(metrics, ContainerMetrics.RELEVANCE_AT_1, EnumSet.of(sum, count));

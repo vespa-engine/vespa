@@ -5,6 +5,7 @@ import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import com.yahoo.io.IOUtils;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.text.Text;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,7 +18,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
@@ -62,8 +65,19 @@ class TritonOnnxRuntimeTest {
     }
 
     @Test
+    void load_model_with_optional_gpu_request() {
+        var runtime = createRuntime();
+        try (var evaluator = runtime.evaluatorOf(MODEL_PATH, optsBuilder.setGpuDevice(0).build())) {
+            assertNotNull(evaluator);
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
     void load_model_with_threads() throws IOException {
-        // TritonOnnxRuntime ignores intraOpThreadsFactor
+        // Without session sharing, the intra-op threads are the CPU cores divided between the instances.
+        // The configured 16 is not used.
         var opts = optsBuilder.setThreadsFromFactors(8, 16).build();
         assertLoadModel("src/test/triton/config_with_threads.pbtxt", opts);
     }
@@ -84,7 +98,6 @@ class TritonOnnxRuntimeTest {
     void load_model_with_batching() throws IOException {
         var opts = optsBuilder
                 .setBatchingMaxSize(10)
-                .setBatchingMaxDelay(Duration.ofMillis(100))
                 .build();
         assertLoadModel("src/test/triton/config_with_batching.pbtxt", opts);
     }
@@ -106,6 +119,36 @@ class TritonOnnxRuntimeTest {
     }
 
     @Test
+    void load_model_with_shared_session() throws IOException {
+        var opts = optsBuilder
+                .setConcurrency(2, OnnxEvaluatorOptions.ConcurrencyFactorType.ABSOLUTE)
+                .build();
+        assertLoadModel("src/test/triton/config_with_shared_session.pbtxt", opts, true);
+    }
+
+    // Sharing a session between instances keeps one copy of the model.
+    // The default is then one instance per CPU core.
+    // The thread counts are the configured ones, like for EmbeddedOnnxRuntime.
+    @Test
+    void load_model_with_shared_session_defaults() throws IOException {
+        var opts = optsBuilder.build();
+        assertLoadModel("src/test/triton/config_with_shared_session_defaults.pbtxt", opts, true);
+    }
+
+    @Test
+    void load_model_with_shared_session_and_threads() throws IOException {
+        // Sequential execution uses one inter-op thread
+        var opts = optsBuilder.setThreadsFromFactors(8, 16).build();
+        assertLoadModel("src/test/triton/config_with_shared_session_threads.pbtxt", opts, true);
+    }
+
+    @Test
+    void load_model_with_shared_session_and_execution_mode() throws IOException {
+        var opts = optsBuilder.setExecutionMode(OnnxEvaluatorOptions.ExecutionMode.PARALLEL).build();
+        assertLoadModel("src/test/triton/config_with_shared_session_execution_mode.pbtxt", opts, true);
+    }
+
+    @Test
     void load_model_with_model_config_override() throws IOException {
         var configPathInput = "src/test/triton/config_with_model_config_override_input.pbtxt";
         var configPathOutput = "src/test/triton/config_with_model_config_override_output.pbtxt";
@@ -113,6 +156,16 @@ class TritonOnnxRuntimeTest {
                 .setModelConfigOverride(Optional.of(Path.of(configPathInput)))
                 .build();
         assertLoadModel(configPathOutput, opts);
+    }
+
+    @Test
+    void load_model_with_model_config_override_and_shared_session() throws IOException {
+        var configPathInput = "src/test/triton/config_with_model_config_override_input.pbtxt";
+        var configPathOutput = "src/test/triton/config_with_model_config_override_shared_session_output.pbtxt";
+        var opts = optsBuilder
+                .setModelConfigOverride(Optional.of(Path.of(configPathInput)))
+                .build();
+        assertLoadModel(configPathOutput, opts, true);
     }
 
     @Test
@@ -135,11 +188,11 @@ class TritonOnnxRuntimeTest {
 
         var modelBaseName1 = "dummy_transformer";
         var modelPath1 = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName1);
-        var modelName1 = TritonOnnxRuntime.generateModelName(modelPath1, opts);
+        var modelName1 = modelName(modelPath1, opts);
 
         var modelBaseName2 = "dummy_transformer_mlm";
         var modelPath2 = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName2);
-        var modelName2 = TritonOnnxRuntime.generateModelName(modelPath2, opts);
+        var modelName2 = modelName(modelPath2, opts);
 
         var client = createClient();
         var runtime = createRuntime();
@@ -150,7 +203,11 @@ class TritonOnnxRuntimeTest {
             var evaluator1 = runtime.evaluatorOf(modelPath1, opts);
             assertModelRepo(client, 1, Map.of(modelName1, true, modelName2, false));
 
-            var evaluator2 = runtime.evaluatorOf(modelPath1, opts);
+            // Explicit concurrency equal to the automatic default must reuse the same model.
+            var explicitOne = new OnnxEvaluatorOptions.Builder(opts)
+                    .setConcurrency(1, OnnxEvaluatorOptions.ConcurrencyFactorType.ABSOLUTE)
+                    .build();
+            var evaluator2 = runtime.evaluatorOf(modelPath1, explicitOne);
             assertModelRepo(client, 1, Map.of(modelName1, true, modelName2, false));
 
             var evaluator3 = runtime.evaluatorOf(modelPath2, opts);
@@ -191,7 +248,7 @@ class TritonOnnxRuntimeTest {
     @Test
     void restore_requested_model_when_it_was_removed_independently() {
         var opts = optsBuilder.build();
-        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts);
+        var modelName = modelName(MODEL_PATH, opts);
         var client = createClient();
         var runtime = createRuntime();
 
@@ -217,47 +274,52 @@ class TritonOnnxRuntimeTest {
     }
 
     @Test
-    void clean_model_repository_when_runtime_is_created() {
-        var opts = optsBuilder.build();
-        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts);
+    void failed_unload_keeps_files_for_startup_cleanup() {
+        var opts = optsBuilder.setModelConfigOverride(Optional.of(
+                Path.of("src/test/triton/config_with_model_config_override_input.pbtxt"))).build();
+        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts, false);
+        var runtimeClient = spy(createClient());
+        var runtime = new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT, false), runtimeClient);
 
-        var client = createClient();
-        var runtime = createRuntime();
-
-        try {
-            var evaluator = runtime.evaluatorOf(MODEL_PATH, opts);
+        try (var client = createClient()) {
             try {
-                assertModelRepo(client, 1, Map.of(modelName, true));
-
-                // A runtime is only constructed at container start, so leftovers are from a previous run.
-                var newRuntime = createRuntime();
-                try {
-                    assertModelRepo(client, 0, Map.of(modelName, false));
-                } finally {
-                    newRuntime.deconstruct();
-                }
+                runtime.evaluatorOf(MODEL_PATH, opts);
+                doThrow(new TritonOnnxClient.TritonException("unload unavailable"))
+                        .when(runtimeClient).unloadUntilModelNotReady(modelName);
             } finally {
-                evaluator.close();
+                assertDoesNotThrow(runtime::deconstruct);
             }
-        } finally {
-            runtime.deconstruct();
-            client.close();
+
+            verify(runtimeClient).close();
+            assertModelRepo(client, 1, Map.of(modelName, true));
+
+            var nextRuntime = createRuntime();
+            try {
+                assertModelRepo(client, 0, Map.of(modelName, false));
+            } finally {
+                nextRuntime.deconstruct();
+            }
         }
     }
 
     private TritonOnnxClient createClient() {
-        return new TritonOnnxClient(testConfig(TritonConfig.ModelControlMode.EXPLICIT));
+        return new TritonOnnxClient(testConfig(TritonConfig.ModelControlMode.EXPLICIT, false));
     }
 
     private TritonOnnxRuntime createRuntime() {
-        return new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT));
+        return createRuntime(false);
     }
 
-    private static TritonConfig testConfig(TritonConfig.ModelControlMode.Enum mode) {
+    private TritonOnnxRuntime createRuntime(boolean shareOnnxSessionBetweenInstances) {
+        return new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT, shareOnnxSessionBetweenInstances));
+    }
+
+    private static TritonConfig testConfig(TritonConfig.ModelControlMode.Enum mode, boolean shareOnnxSessionBetweenInstances) {
         return new TritonConfig.Builder()
                 .target(tritonContainer.getGrpcEndpoint())
                 .modelControlMode(mode)
                 .modelRepositoryPath(tritonContainer.getModelRepositoryPath().toString())
+                .shareOnnxSessionBetweenInstances(shareOnnxSessionBetweenInstances)
                 .build();
     }
 
@@ -272,14 +334,27 @@ class TritonOnnxRuntimeTest {
         assertEquals(expected, repoFiles.length);
     }
 
+    // The model name of a runtime with separate sessions
+    private static String modelName(String modelPath, OnnxEvaluatorOptions opts) {
+        var resolvedOpts = TritonOnnxRuntime.resolveInstanceCount(opts, false);
+        return TritonOnnxRuntime.generateModelName(modelPath, resolvedOpts, false);
+    }
+
     // expectedConfigPath == null means we expect an error during model loading
     private void assertLoadModel(String expectedConfigPath, OnnxEvaluatorOptions evalOpts) throws IOException {
+        assertLoadModel(expectedConfigPath, evalOpts, false);
+    }
+
+    private void assertLoadModel(String expectedConfigPath, OnnxEvaluatorOptions evalOpts, boolean shareSession)
+            throws IOException {
         var modelBaseName = "dummy_transformer";
         var testModelFilePath = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
-        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, evalOpts);
+        var resolvedOpts = evalOpts.modelConfigOverride().isPresent()
+                ? evalOpts : TritonOnnxRuntime.resolveInstanceCount(evalOpts, shareSession);
+        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, resolvedOpts, shareSession);
         var modelFilePath = Text.format("%s/1/model.onnx", modelName);
         var modelConfigPath = Text.format("%s/config.pbtxt", modelName);
-        var runtime = createRuntime();
+        var runtime = createRuntime(shareSession);
 
         try {
             ThrowingSupplier<OnnxEvaluator> evaluatorSupplier = () -> runtime.evaluatorOf(testModelFilePath, evalOpts);
@@ -299,6 +374,13 @@ class TritonOnnxRuntimeTest {
 
             var modelFile = tritonContainer.getModelRepositoryPath().resolve(modelFilePath);
             assertEquals(expectedFilePermissions, Files.getPosixFilePermissions(modelFile));
+
+            // The stock image ignores the parameter, so only the generated config can be checked there.
+            if (shareSession && tritonContainer.supportsSessionSharing()) {
+                assertTrue(tritonContainer.getLogs().contains("Reusing session for instance: " + modelName),
+                           "Triton did not reuse the session between instances of " + modelName);
+            }
+
             evaluator.close();
         } finally {
             runtime.deconstruct();
@@ -308,7 +390,7 @@ class TritonOnnxRuntimeTest {
     // Removes hash from model name before comparing configs.
     // This is to avoid updating hash in all test config files every time options are changed.
     private void assertEqualConfigs(String expectedConfig, String actualConfig) {
-        var regex = "(name:\\s*\"\\w+)_[a-f0-9]{16}\"";
+        var regex = "(name:\\s*\"\\w+)_[a-f0-9]+\"";
         var normalizedExpected = expectedConfig.replaceFirst(regex, "$1\"");
         var normalizedActual = actualConfig.replaceFirst(regex, "$1\"");
         assertEquals(normalizedExpected, normalizedActual);
@@ -345,13 +427,29 @@ class TritonOnnxRuntimeTest {
         }
     }
 
+    @Test
+    void load_and_evaluate_model_with_external_data() {
+        var runtime = createRuntime();
+        // The model has no batch dimension
+        var opts = optsBuilder.setBatchingMaxSize(0).build();
+        var model = "src/test/models/onnx/external_data/add_with_external_data.onnx";
+        try (var evaluator = runtime.evaluatorOf(model, opts)) {
+            var inputs = Map.of("input1", Tensor.from("tensor<float>(d0[1]):[1]"),
+                                "input2", Tensor.from("tensor<float>(d0[1]):[2]"));
+            // The output adds the constant 5 stored in the external data file
+            assertEquals(Tensor.from("tensor<float>(d0[1]):[8]"), evaluator.evaluate(inputs, "output"));
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
     // Hammers concurrent create and close of the same model from multiple threads,
     // exercising the deadlock and adoption races between evaluatorOf and evaluator close.
     // A deadlock fails the test through the future timeouts.
     @Test
     void concurrent_create_and_close_of_the_same_model() throws Exception {
         var opts = optsBuilder.build();
-        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts);
+        var modelName = modelName(MODEL_PATH, opts);
         var client = createClient();
         var runtime = createRuntime();
         var threads = 4;

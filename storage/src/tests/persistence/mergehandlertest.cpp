@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
@@ -530,7 +531,7 @@ void MergeHandlerTest::fillDummyApplyDiff(std::vector<api::ApplyBucketDiffComman
         memcpy(&headerBlob[0], stream.peek(), stream.size());
     }
 
-    assert(diff.size() == 3);
+    CHECK(diff.size() == 3);
     diff[0]._headerBlob = headerBlob;
     diff[1]._docName = doc->getId().toString();
     diff[2]._docName = doc->getId().toString();
@@ -934,7 +935,7 @@ void MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::beforeInvoke(MergeHand
         api::GetBucketDiffReply diffReply(*diffCmd);
         handler.handleGetBucketDiffReply(diffReply, _stub);
 
-        assert(_stub.commands.size() == 1);
+        CHECK(_stub.commands.size() == 1);
         _applyCmd = std::dynamic_pointer_cast<api::ApplyBucketDiffCommand>(_stub.commands[0]);
     } else {
         // Pretend last node in chain has data and that it will be fetched when

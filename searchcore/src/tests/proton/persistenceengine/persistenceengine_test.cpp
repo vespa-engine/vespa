@@ -369,8 +369,8 @@ struct SimpleFixture {
     HandlerSet                   hset;
     explicit SimpleFixture(BucketSpace bucketSpace2)
         : _owner(), engine(_owner, _writeFilter, _resource_usage_notifier, -1, false), hset() {
-        engine.putHandler(engine.getWLock(), makeBucketSpace(), DocTypeName(doc1->getType()), hset.phandler1);
-        engine.putHandler(engine.getWLock(), bucketSpace2, DocTypeName(doc2->getType()), hset.phandler2);
+        engine.putHandler(engine.get_unique_lock(), makeBucketSpace(), DocTypeName(doc1->getType()), hset.phandler1);
+        engine.putHandler(engine.get_unique_lock(), bucketSpace2, DocTypeName(doc2->getType()), hset.phandler2);
     }
     SimpleFixture() : SimpleFixture(makeBucketSpace()) {}
     ~SimpleFixture();

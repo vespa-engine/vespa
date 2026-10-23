@@ -13,8 +13,9 @@ namespace search {
 namespace {
 
 bool parseNumberAsInt64(const char* startp, const char* endptr, int64_t& t2) {
-    if (*startp == '+')
+    if (*startp == '+') {
         ++startp;
+    }
     auto result = std::from_chars(startp, endptr, t2);
     if (result.ec == std::errc{} && result.ptr == endptr) {
         return true;
@@ -23,8 +24,9 @@ bool parseNumberAsInt64(const char* startp, const char* endptr, int64_t& t2) {
 }
 
 bool parseNumberAsDouble(const char* startp, const char* endptr, double& target) {
-    if (startp == endptr)
+    if (startp == endptr) {
         return false;
+    }
     char*  parsed_to;
     double dv = vespalib::locale::c::strtod(startp, &parsed_to);
     if (parsed_to != endptr) [[unlikely]] {
@@ -88,8 +90,9 @@ std::unique_ptr<NumericRangeSpec> parsePartialRange(const std::string_view term)
 
 std::unique_ptr<NumericRangeSpec> parseNoRange(std::string_view term) {
     TwiceParser parsed(term);
-    if (parsed.invalid)
+    if (parsed.invalid) {
         return {};
+    }
     auto result = std::make_unique<NumericRangeSpec>();
     result->lower_inclusive = true;
     result->upper_inclusive = true;
@@ -120,10 +123,12 @@ std::unique_ptr<NumericRangeSpec> parseFullRange(std::string_view _term) {
             rest = std::string_view();
         }
     }
-    if (numParts < 2)
+    if (numParts < 2) {
         return {};
-    if (9 <= numParts)
+    }
+    if (9 <= numParts) {
         return {};
+    }
 
     result->lower_inclusive = (_term[0] == '[');
     result->upper_inclusive = (_term[_term.size() - 1] == ']');
@@ -134,8 +139,9 @@ std::unique_ptr<NumericRangeSpec> parseFullRange(std::string_view _term) {
         result->lower_inclusive = true; // <;3] is same as [;3]
     } else {
         TwiceParser parsed(parts[0]);
-        if (parsed.invalid)
+        if (parsed.invalid) {
             return {};
+        }
         valid_i = parsed.valid_i;
         result->fp_lower_limit = parsed.d;
         result->int64_lower_limit = parsed.i;
@@ -145,8 +151,9 @@ std::unique_ptr<NumericRangeSpec> parseFullRange(std::string_view _term) {
         result->upper_inclusive = true; // [3;> is same as [3;]
     } else {
         TwiceParser parsed(parts[1]);
-        if (parsed.invalid)
+        if (parsed.invalid) {
             return {};
+        }
         valid_i = valid_i && parsed.valid_i;
         result->fp_upper_limit = parsed.d;
         result->int64_upper_limit = parsed.i;

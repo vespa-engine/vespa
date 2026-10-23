@@ -81,7 +81,21 @@ ResultProcessor::Result::UP MatchMaster::match(search::engine::Trace& trace, con
                                                ThreadBundle& threadBundle, const MatchToolsFactory& mtf,
                                                ResultProcessor& resultProcessor, uint32_t distributionKey,
                                                uint32_t numSearchPartitions) {
-    vespalib::Timer             query_latency_time;
+    vespalib::Timer query_latency_time;
+    /*
+     * Recorded sort feature values stay alive across the barriers between
+     * the match threads, so such a query is admitted as a whole, before any
+     * thread starts, instead of one thread at a time.
+     */
+    QueryLimiter::Token::UP query_token;
+    double                  query_token_wait_s = 0.0;
+    if (mtf.has_sort_features()) {
+        trace.addEvent(5, "Wait for query processing token");
+        vespalib::Timer wait_time;
+        query_token = mtf.query_limiter().getQueryToken(mtf.get_request_context().getDoom(), threadBundle.size());
+        query_token_wait_s = vespalib::to_s(wait_time.elapsed());
+        trace.addEvent(5, "Got query processing token");
+    }
     vespalib::DualMergeDirector mergeDirector(threadBundle.size());
     /*
      * We need a non-const first phase rank lookup since it will be populated
@@ -98,11 +112,13 @@ ResultProcessor::Result::UP MatchMaster::match(search::engine::Trace& trace, con
         IMatchLoopCommunicator& com = (i == 0) ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
                                                : static_cast<IMatchLoopCommunicator&>(communicator);
         threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, mtf, com, *scheduler,
-                                                               resultProcessor, mergeDirector, distributionKey,
-                                                               trace));
+                                                               resultProcessor, mergeDirector, distributionKey, trace,
+                                                               bool(query_token), query_token_wait_s));
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
     threadBundle.run(threadState);
+    // the match threads, and with them the recorded sort feature values, are done
+    query_token.reset();
     auto   reply = make_reply(mtf, resultProcessor, threadBundle, threadState[0]->extract_result());
     double query_time_s = vespalib::to_s(query_latency_time.elapsed());
     double rerank_time_s = vespalib::to_s(timedCommunicator.elapsed);
@@ -118,7 +134,7 @@ ResultProcessor::Result::UP MatchMaster::match(search::engine::Trace& trace, con
     _stats.queryLatency(query_time_s);
     _stats.matchTime(match_time_s - rerank_time_s);
     _stats.rerankTime(rerank_time_s);
-    _stats.groupingTime(query_time_s - match_time_s);
+    _stats.groupingTime(query_time_s - query_token_wait_s - match_time_s);
     _stats.queries(1);
     if (mtf.match_limiter().was_limited()) {
         _stats.limited_queries(1);

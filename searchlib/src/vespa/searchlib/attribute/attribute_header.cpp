@@ -4,6 +4,7 @@
 
 #include "distance_metric_utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -99,20 +100,20 @@ void AttributeHeader::internalExtractTags(const vespalib::GenericHeader& header)
     }
     if (_collectionType.type() == attribute::CollectionType::WSET) {
         if (header.hasTag(createIfNonExistentTag)) {
-            assert(header.hasTag(removeIfZeroTag));
+            CHECK(header.hasTag(removeIfZeroTag));
             _collectionTypeParamsSet = true;
             _collectionType.createIfNonExistant(header.getTag(createIfNonExistentTag).asBool());
             _collectionType.removeIfZero(header.getTag(removeIfZeroTag).asBool());
         } else {
-            assert(!header.hasTag(removeIfZeroTag));
+            CHECK(!header.hasTag(removeIfZeroTag));
         }
     }
     if (_basicType.type() == BasicType::Type::TENSOR) {
-        assert(header.hasTag(tensorTypeTag));
+        CHECK(header.hasTag(tensorTypeTag));
         _tensorType = vespalib::eval::ValueType::from_spec(header.getTag(tensorTypeTag).asString());
         if (header.hasTag(hnsw_max_links_tag)) {
-            assert(header.hasTag(hnsw_neighbors_to_explore_tag));
-            assert(header.hasTag(hnsw_distance_metric));
+            CHECK(header.hasTag(hnsw_neighbors_to_explore_tag));
+            CHECK(header.hasTag(hnsw_distance_metric));
 
             uint32_t       max_links = header.getTag(hnsw_max_links_tag).asInteger();
             uint32_t       neighbors_to_explore = header.getTag(hnsw_neighbors_to_explore_tag).asInteger();
@@ -123,15 +124,15 @@ void AttributeHeader::internalExtractTags(const vespalib::GenericHeader& header)
     }
     if (_basicType.type() == BasicType::Type::PREDICATE) {
         if (header.hasTag(predicateArityTag)) {
-            assert(header.hasTag(predicateLowerBoundTag));
-            assert(header.hasTag(predicateUpperBoundTag));
+            CHECK(header.hasTag(predicateLowerBoundTag));
+            CHECK(header.hasTag(predicateUpperBoundTag));
             _predicateParamsSet = true;
             _predicateParams.setArity(header.getTag(predicateArityTag).asInteger());
             _predicateParams.setBounds(header.getTag(predicateLowerBoundTag).asInteger(),
                                        header.getTag(predicateUpperBoundTag).asInteger());
         } else {
-            assert(!header.hasTag(predicateLowerBoundTag));
-            assert(!header.hasTag(predicateUpperBoundTag));
+            CHECK(!header.hasTag(predicateLowerBoundTag));
+            CHECK(!header.hasTag(predicateUpperBoundTag));
         }
     }
     if (header.hasTag(doc_id_limit_tag)) {

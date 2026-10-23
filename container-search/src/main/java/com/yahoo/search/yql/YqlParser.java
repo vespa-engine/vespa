@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.yahoo.api.annotations.Beta;
@@ -41,14 +42,17 @@ import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FalseItem;
 import com.yahoo.prelude.query.FuzzyItem;
-import com.yahoo.prelude.query.ExactStringItem;
-import com.yahoo.prelude.query.IntItem;
-import com.yahoo.prelude.query.LabelWrapperItem;
-import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.GeoLocationItem;
+import com.yahoo.prelude.query.HasIndexItem;
+import com.yahoo.prelude.query.IntItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.Items;
+import com.yahoo.prelude.query.LabelWrapperItem;
+import com.yahoo.prelude.query.Limit;
+import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NotItem;
@@ -67,6 +71,7 @@ import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -100,7 +105,6 @@ import com.yahoo.search.query.Sorting.UcaSorter;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;
-import com.yahoo.search.query.parser.ParserFactory;
 
 /**
  * The YQL query language.
@@ -109,6 +113,7 @@ import com.yahoo.search.query.parser.ParserFactory;
  * Adding anything here will usually require a corresponding addition in
  * VespaSerializer.
  *
+ * @author bratseth
  * @author Steinar Knutsen
  * @author Stian Kristoffersen
  * @author Simon Thoresen Hult
@@ -124,11 +129,12 @@ public class YqlParser implements Parser {
 
     private static class IndexNameExpander {
         public String expand(String leaf) { return leaf; }
+        /** Returns the field whose element values the ELEMENT_VALUE placeholder refers to, or null if there is none here. */
+        public String elementValueField() { return null; }
     }
 
     private static final Integer DEFAULT_HITS = 10;
     private static final Integer DEFAULT_OFFSET = 0;
-    public static final Integer DEFAULT_WAND_TARGET_HITS = 10;
     private static final String ACCENT_DROP_DESCRIPTION = "setting for whether to remove accents if field implies it";
     public static final String ANNOTATIONS = "annotations";
     private static final String FILTER_DESCRIPTION = "term filter setting";
@@ -157,6 +163,8 @@ public class YqlParser implements Parser {
     private static final String NON_EMPTY = "nonEmpty";
     public static final String START_ANCHOR = "startAnchor";
     public static final String END_ANCHOR = "endAnchor";
+    public static final String KEY_FIELD_NAME = "key";
+    public static final String VALUE_FIELD_NAME = "value";
 
     public static final String SORTING_FUNCTION = "function";
     public static final String SORTING_LOCALE = "locale";
@@ -179,6 +187,8 @@ public class YqlParser implements Parser {
     public static final String DOCUMENT_FREQUENCY = "documentFrequency";
     public static final String DOT_PRODUCT = "dotProduct";
     public static final String ELEMENT_FILTER = "elementFilter";
+    /** Used in place of a field name inside sameElement to refer to the value of the element itself. */
+    public static final String ELEMENT_VALUE = "_";
     public static final String EQUIV = "equiv";
     public static final String FILTER = "filter";
     public static final String FREQUENCY = "frequency";
@@ -211,6 +221,7 @@ public class YqlParser implements Parser {
     public static final String RANK = "rank";
     public static final String RANKED = "ranked";
     public static final String SAME_ELEMENT = "sameElement";
+    public static final String MAP_MATCH = "mapMatch";
     public static final String SCORE_THRESHOLD = "scoreThreshold";
     public static final String SIGNIFICANCE = "significance";
     public static final String STEM = "stem";
@@ -254,6 +265,7 @@ public class YqlParser implements Parser {
     private Integer offset;
     private Integer timeout;
     private Query userQuery;
+    private ParameterResolver parameters;
     private Parsable currentlyParsing;
     private IndexFacts.Session indexFactsSession;
     private IndexNameExpander indexNameExpander = new IndexNameExpander();
@@ -333,6 +345,7 @@ public class YqlParser implements Parser {
         Item root = convertExpression(filterExpression, null);
         connectItems();
         userQuery = null;
+        parameters = null;
         return new QueryTree(root);
     }
 
@@ -381,6 +394,8 @@ public class YqlParser implements Parser {
         try {
             annotationStack.addFirst(ast);
             ast = rewriteIndexedAccess(ast);
+            ast = rewriteMapAccess(ast);
+            ast = rewriteMapRange(ast);
             return switch (ast.getOperator()) {
                 case AND -> buildAnd(ast, currentField);
                 case OR -> buildOr(ast, currentField);
@@ -392,7 +407,7 @@ public class YqlParser implements Parser {
                 case CONTAINS -> buildTermSearch(ast);
                 case MATCHES -> buildRegExpSearch(ast);
                 case CALL -> buildFunctionCallOrCompositeLeaf(ast, currentField);
-                case LITERAL -> buildLiteralOrNested(ast, currentField);
+                case LITERAL, NEGATE -> buildLiteralExpression(ast, currentField);
                 case NOT -> buildNot(ast);
                 case IN -> buildIn(ast);
                 default -> throw newUnexpectedArgumentException(ast.getOperator(),
@@ -440,8 +455,6 @@ public class YqlParser implements Parser {
             throw newUnexpectedArgumentException(index, ExpressionOperator.LITERAL);
         }
 
-        // TODO(johsol): Remove conversion to string when sameElement supports other values than strings.
-        value = toLiteralString(value);
         int elementIndex = convertToElementId(index.getArgument(0));
         OperatorNode<ExpressionOperator> sameElement = OperatorNode.create(
                 ast.getLocation(),
@@ -453,7 +466,138 @@ public class YqlParser implements Parser {
         return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, sameElement);
     }
 
-    // TODO(johsol): Remove conversion to string when sameElement supports other values than strings.
+    /**
+     * Recognizes and rewrites from:
+     *      field{'key'} contains 'value'   (string values)
+     *      field{'key'} = value            (numeric and boolean values)
+     * to:
+     *      field contains sameElement(key contains 'key', value contains value)
+     * where a numeric key or value becomes an equality match (key = 'key', value = value)
+     * instead of a contains match, preserving its type. As for plain fields, '=' requires a
+     * number or boolean value, and 'contains' does not accept one.
+     * <p>
+     * Expected input: CONTAINS( MAPREF ( field_name, key ), value ) or EQ( MAPREF ( field_name, key ), value )
+     */
+    private OperatorNode<ExpressionOperator> rewriteMapAccess(OperatorNode<ExpressionOperator> ast) {
+        if (ast.getOperator() != ExpressionOperator.CONTAINS && ast.getOperator() != ExpressionOperator.EQ) {
+            return ast;
+        }
+
+        OperatorNode<ExpressionOperator> lhs = ast.getArgument(0);
+        OperatorNode<ExpressionOperator> value = ast.getArgument(1);
+        if (lhs.getOperator() != ExpressionOperator.MAPREF) {
+            return ast;
+        }
+
+        OperatorNode<ExpressionOperator> field = lhs.getArgument(0);
+        OperatorNode<ExpressionOperator> key = lhs.getArgument(1);
+        if (key.getOperator() != ExpressionOperator.LITERAL && !isNumberLiteral(key)) {
+            throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL);
+        }
+        if (ast.getOperator() == ExpressionOperator.EQ && !isNumberLiteral(value) && !isBooleanLiteral(value)) {
+            throw new IllegalArgumentException("Expected a number or boolean value for '=' on map field '" + fetchFieldName(field) +
+                                               "', got " + describeMapValue(value) + ". Use 'contains' for string values.");
+        }
+        if (ast.getOperator() == ExpressionOperator.CONTAINS && (isNumberLiteral(value) || isBooleanLiteral(value))) {
+            throw new IllegalArgumentException("Expected a string value for 'contains' on map field '" + fetchFieldName(field) +
+                                               "', got " + describeMapValue(value) + ". Use '=' for number and boolean values.");
+        }
+
+        OperatorNode<ExpressionOperator> keyMatch = makeMapComponentMatch(KEY_FIELD_NAME, key);
+        OperatorNode<ExpressionOperator> valueMatch = makeMapComponentMatch(VALUE_FIELD_NAME, value);
+        OperatorNode<ExpressionOperator> mapMatch = OperatorNode.create(
+                ast.getLocation(),
+                ExpressionOperator.CALL,
+                List.of(MAP_MATCH),
+                List.of(keyMatch, valueMatch));
+
+        return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, mapMatch);
+    }
+
+    /**
+     * Recognizes and rewrites from:
+     *      range(field{'key'}, lower, upper)
+     * to:
+     *      field contains sameElement(key contains 'key', range(value, lower, upper))
+     * where a numeric key becomes an equality match (key = 'key') instead of a contains
+     * match, as for the other map access sugar.
+     * <p>
+     * Expected input: CALL( [range], [ MAPREF ( field_name, key ), lower, upper ] )
+     */
+    private OperatorNode<ExpressionOperator> rewriteMapRange(OperatorNode<ExpressionOperator> ast) {
+        if (ast.getOperator() != ExpressionOperator.CALL) {
+            return ast;
+        }
+        List<String> names = ast.getArgument(0);
+        if (names.size() != 1 || !RANGE.equals(names.get(0))) {
+            return ast;
+        }
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        if (args.isEmpty() || args.get(0).getOperator() != ExpressionOperator.MAPREF) {
+            return ast;
+        }
+        Preconditions.checkArgument(args.size() == 3, "Expected 3 arguments, got %s.", args.size());
+
+        OperatorNode<ExpressionOperator> mapRef = args.get(0);
+        OperatorNode<ExpressionOperator> field = mapRef.getArgument(0);
+        OperatorNode<ExpressionOperator> key = mapRef.getArgument(1);
+        if (key.getOperator() != ExpressionOperator.LITERAL && !isNumberLiteral(key)) {
+            throw newUnexpectedArgumentException(key.getOperator(), ExpressionOperator.LITERAL);
+        }
+
+        var valueField = OperatorNode.create(mapRef.getLocation(), ExpressionOperator.READ_FIELD, "", VALUE_FIELD_NAME);
+        var valueRange = OperatorNode.create(ast.getLocation(), ExpressionOperator.CALL,
+                                             List.of(RANGE),
+                                             List.of(valueField, args.get(1), args.get(2)));
+        OperatorNode<ExpressionOperator> mapMatch =
+                OperatorNode.create(ast.getLocation(), ExpressionOperator.CALL,
+                                    List.of(MAP_MATCH),
+                                    List.of(makeMapComponentMatch(KEY_FIELD_NAME, key), valueRange));
+
+        return OperatorNode.create(ast.getLocation(), ExpressionOperator.CONTAINS, field, mapMatch);
+    }
+
+    /**
+     * Builds the match condition for the key or value component of a map entry.
+     * The map access sugar has no operator per component, so the literal's type must decide
+     * it here: numeric and boolean literals become equality matches (numeric and boolean terms,
+     * as for field = value), everything else becomes contains matches, on string form since
+     * contains requires a string literal.
+     */
+    private static OperatorNode<ExpressionOperator> makeMapComponentMatch(String component, OperatorNode<ExpressionOperator> term) {
+        var componentField = OperatorNode.create(term.getLocation(), ExpressionOperator.READ_FIELD, "", component);
+        if (isNumberLiteral(term) || isBooleanLiteral(term)) {
+            return OperatorNode.create(term.getLocation(), ExpressionOperator.EQ, componentField, term);
+        }
+        return OperatorNode.create(term.getLocation(), ExpressionOperator.CONTAINS, componentField, toLiteralString(term));
+    }
+
+    /** Returns true if ast is a number literal. */
+    private static boolean isNumberLiteral(OperatorNode<ExpressionOperator> ast) {
+        if (ast.getOperator() == ExpressionOperator.NEGATE) {
+            return isNumberLiteral(ast.getArgument(0));
+        }
+        return ast.getOperator() == ExpressionOperator.LITERAL && ast.getArgument(0) instanceof Number;
+    }
+
+    /** Returns true if ast is a boolean literal. */
+    private static boolean isBooleanLiteral(OperatorNode<ExpressionOperator> ast) {
+        return ast.getOperator() == ExpressionOperator.LITERAL && ast.getArgument(0) instanceof Boolean;
+    }
+
+    /** Returns a description of a map access value for error messages: the literal itself, or else its operator. */
+    private static String describeMapValue(OperatorNode<ExpressionOperator> ast) {
+        if (ast.getOperator() == ExpressionOperator.NEGATE && isNumberLiteral(ast)) {
+            return "-" + describeMapValue(ast.getArgument(0));
+        }
+        if (ast.getOperator() == ExpressionOperator.LITERAL) {
+            Object literal = ast.getArgument(0);
+            return literal instanceof String ? "'" + literal + "'" : literal.toString();
+        }
+        return ast.getOperator().toString();
+    }
+
+    /** Converts non-string literals which have no typed item form, such as booleans, to string literals. */
     private static OperatorNode<ExpressionOperator> toLiteralString(OperatorNode<ExpressionOperator> ast) {
         if (ast.getOperator() == ExpressionOperator.LITERAL && !(ast.getArgument(0) instanceof String)) {
             return OperatorNode.create(ast.getLocation(), ExpressionOperator.LITERAL, ast.getArgument(0).toString());
@@ -514,19 +658,19 @@ public class YqlParser implements Parser {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        return fillWeightedSet(ast, args.get(1), new WeightedSetItem(getIndex(args.get(0))));
+        return fillWeightedSet(ast, args.get(1), new WeightedSetItem(getFieldIndex(args.get(0), WEIGHTED_SET)));
     }
 
     private Item buildDotProduct(OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        return fillWeightedSet(ast, args.get(1), new DotProductItem(getIndex(args.get(0))));
+        return fillWeightedSet(ast, args.get(1), new DotProductItem(getFieldIndex(args.get(0), DOT_PRODUCT)));
     }
 
     private Item buildIn(OperatorNode<ExpressionOperator> ast) {
         String field = getIndex(ast.getArgument(0));
-        var index = indexFactsSession.getIndex(indexNameExpander.expand(field));
+        var index = indexOf(field);
         boolean stringField = index.isString();
         if (!index.isInteger() && !stringField)
             throw new IllegalArgumentException("The in operator is only supported for integer and string fields. The field " +
@@ -544,20 +688,27 @@ public class YqlParser implements Parser {
         return nonTaggableLeafStyleSettings(ast, item);
     }
 
-    private String derefVar(OperatorNode<ExpressionOperator> ast) {
-        Preconditions.checkState(ast.getOperator() == ExpressionOperator.VARREF, "derefVar() only accepts VARREF");
-        Preconditions.checkState(userQuery != null, "Query properties are not available");
-        String propName = ast.getArgument(0, String.class);
-        String prop = userQuery.properties().getString(propName);
-        Preconditions.checkState(prop != null, "Error, missing query property: " + propName);
-        return prop;
+    /** Returns the value of the query parameter referenced by the given VARREF node, which must be set. */
+    private String resolveParameter(OperatorNode<?> varref) {
+        String value = resolveOptionalParameter(varref);
+        if (value == null) {
+            throw new IllegalInputException("Input '" + varref.getArgument(0, String.class) + "' is not set");
+        }
+        return value;
+    }
+
+    /** Returns the value of the query parameter referenced by the given VARREF node, or null if it is not set. */
+    private String resolveOptionalParameter(OperatorNode<?> varref) {
+        assertHasOperator(varref, ExpressionOperator.VARREF);
+        Preconditions.checkState(parameters != null, "Query properties are not available");
+        return parameters.get(varref.getArgument(0, String.class));
     }
 
     private Object fetchLiteralOrRef(OperatorNode<ExpressionOperator> ast) {
         return switch (ast.getOperator()) {
             case LITERAL -> ast.getArgument(0);
             case READ_FIELD -> ast.getArgument(1); // TODO: Should probably remove this option
-            case VARREF -> derefVar(ast);
+            case VARREF -> resolveParameter(ast);
             default -> throw newUnexpectedArgumentException(ast.getOperator(),
                     ExpressionOperator.LITERAL, ExpressionOperator.READ_FIELD, ExpressionOperator.VARREF);
         };
@@ -610,18 +761,32 @@ public class YqlParser implements Parser {
         return item;
     }
 
-    private Item buildLiteralOrNested(OperatorNode<ExpressionOperator> ast, String currentField) {
-        var literalOrNested = ast.getArgument(0);
-        if (Boolean.TRUE.equals(literalOrNested)) {
+    /**
+     * When {@code currentField} is not null we are inside a sameElement.
+     */
+    private Item buildLiteralExpression(OperatorNode<ExpressionOperator> ast, String currentField) {
+        if (currentField != null) {
+            // A bare literal inside sameElement is a term matching the element value:
+            // numbers (possibly negated) become numeric equality terms, everything else word terms on string form.
+            if (isNumberLiteral(ast)) {
+                return (Item)leafStyleSettings(ast, new IntItem(getNumberAsString(ast), ""));
+            }
+            if (ast.getOperator() == ExpressionOperator.LITERAL) {
+                return instantiateWordItem("", toLiteralString(ast), null);
+            }
+            throw newUnexpectedArgumentException(ast.getOperator(), ExpressionOperator.LITERAL);
+        }
+        if (ast.getOperator() != ExpressionOperator.LITERAL) {
+            throw newUnexpectedArgumentException(ast.getOperator(), ExpressionOperator.LITERAL);
+        }
+        var literal = ast.getArgument(0);
+        if (Boolean.TRUE.equals(literal)) {
             return new TrueItem();
         }
-        else if (Boolean.FALSE.equals(literalOrNested)) {
+        else if (Boolean.FALSE.equals(literal)) {
             return new FalseItem();
         }
-        else if (currentField != null) {
-            return instantiateWordItem("", ast, null);
-        }
-        throw newUnexpectedArgumentException(literalOrNested, ExpressionOperator.LITERAL);
+        throw newUnexpectedArgumentException(literal, ExpressionOperator.LITERAL);
     }
 
     @SuppressWarnings("deprecation")
@@ -666,7 +831,7 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(args.size() == 3, "Expected 3 arguments, got %s.", args.size());
 
         PredicateQueryItem item = new PredicateQueryItem();
-        item.setIndexName(getIndex(args.get(0)));
+        item.setIndexName(getFieldIndex(args.get(0), PREDICATE));
 
         addFeatures(args.get(1),
                    (key, value, subqueryBitmap) -> item.addFeature(key, (String) value, subqueryBitmap), PredicateQueryItem.ALL_SUB_QUERIES);
@@ -727,7 +892,7 @@ public class YqlParser implements Parser {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
-        WandItem out = new WandItem(getIndex(args.get(0)));
+        WandItem out = new WandItem(getFieldIndex(args.get(0), WAND));
         out.setTargetHits(buildTargetHits(ast));
         out.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
         assignAnnotationAsDoubleIfNotNull(ast, SCORE_THRESHOLD, "score must be above this threshold for hit inclusion", out::setScoreThreshold);
@@ -753,11 +918,7 @@ public class YqlParser implements Parser {
                     String tokenValue = value.getArgument(0, String.class);
                     out.addToken(tokenValue);
                 }
-                case VARREF -> {
-                    Preconditions.checkState(userQuery != null, "Query properties are not available");
-                    String varRef = value.getArgument(0, String.class);
-                    ParameterListParser.addStringTokensFromString(userQuery.properties().getString(varRef), out);
-                }
+                case VARREF -> ParameterListParser.addStringTokensFromString(resolveParameter(value), out);
                 default -> throw newUnexpectedArgumentException(value.getOperator(),
                         ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
             }
@@ -777,11 +938,7 @@ public class YqlParser implements Parser {
                     Long tokenValue = (numberTokenValue instanceof Integer) ? numberTokenValue.longValue() : Long.class.cast(numberTokenValue);
                     out.addToken(tokenValue);
                 }
-                case VARREF -> {
-                    Preconditions.checkState(userQuery != null, "Query properties are not available");
-                    String varRef = value.getArgument(0, String.class);
-                    ParameterListParser.addNumericTokensFromString(userQuery.properties().getString(varRef), out);
-                }
+                case VARREF -> ParameterListParser.addNumericTokensFromString(resolveParameter(value), out);
                 default -> throw newUnexpectedArgumentException(value.getOperator(),
                         ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
             }
@@ -790,15 +947,21 @@ public class YqlParser implements Parser {
     }
 
     private static class PrefixExpander extends IndexNameExpander {
+        private final String field;
         private final String prefix;
-        public PrefixExpander(String prefix) {
-            this.prefix = prefix + ".";
+        public PrefixExpander(String field) {
+            this.field = field;
+            this.prefix = field + ".";
         }
 
         @Override
         public String expand(String leaf) {
-            return prefix + leaf;
+            // An unset leaf name is the value of the element itself, which is a value of the field we are prefixing by
+            return leaf.isEmpty() ? field : prefix + leaf;
         }
+
+        @Override
+        public String elementValueField() { return field; }
     }
 
     private Item instantiateSameElementItem(String field, OperatorNode<ExpressionOperator> ast) {
@@ -809,13 +972,47 @@ public class YqlParser implements Parser {
 
         // All terms below sameElement are relative to this.
         IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
-        for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
-            // TODO: getIndex that is called once every term is rather expensive as it does sanity checking
-            // that is not necessary. This is an issue when having many elements
-            sameElement.addItem(convertExpression(term, field));
+        try {
+            for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
+                // TODO: getIndex that is called once every term is rather expensive as it does sanity checking
+                // that is not necessary. This is an issue when having many elements
+                sameElement.addItem(convertExpression(term, field));
+            }
         }
-        swapIndexCreator(prev);
+        finally {
+            swapIndexCreator(prev); // Also on a failed term, as this parser may be used again
+        }
         return sameElement;
+    }
+
+    private Item instantiateMapMatch(String field, OperatorNode<ExpressionOperator> ast) {
+        assertHasFunctionName(ast, MAP_MATCH);
+        Item keyItem = null, valueItem = null;
+        // All terms below mapMatch are implicitly relative to its field.
+        IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
+        try {
+            for (OperatorNode<ExpressionOperator> term : ast.<List<OperatorNode<ExpressionOperator>>> getArgument(1)) {
+                var item = convertExpression(term, field);
+                if (item instanceof HasIndexItem indexedItem) {
+                    if (indexedItem.getIndexName().equals(KEY_FIELD_NAME) && keyItem == null) {
+                        keyItem = item;
+                    } else if (indexedItem.getIndexName().equals(VALUE_FIELD_NAME) && valueItem == null) {
+                        valueItem = item;
+                    } else {
+                        throw new IllegalArgumentException("unknown or extra item inside " + MAP_MATCH + ": " + item);
+                    }
+                } else {
+                    throw new IllegalArgumentException("bad item type inside " + MAP_MATCH + ": " + item);
+                }
+            }
+        }
+        finally {
+            swapIndexCreator(prev); // Also on a failed term, as this parser may be used again
+        }
+        if (keyItem == null || valueItem == null) {
+            throw new IllegalArgumentException(MAP_MATCH + " requires both a " + KEY_FIELD_NAME + " and a " + VALUE_FIELD_NAME + " item");
+        }
+        return new MapMatchItem(field, keyItem, valueItem);
     }
 
     /** Extract custom annotations for same element */
@@ -1033,24 +1230,36 @@ public class YqlParser implements Parser {
     private Item buildTextInput(OperatorNode<ExpressionOperator> ast, String field,
                                 Query.Type defaultGrammar, boolean useModelType) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
-        String wordData = getStringContents(args.get(0));
+        String text = getStringContents(args.get(0));
         Boolean allowEmpty = getAnnotation(ast, USER_INPUT_ALLOW_EMPTY, Boolean.class,
                                            Boolean.FALSE, "flag for allowing NullItem to be returned");
-        if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();
+        if (allowEmpty && (text == null || text.isEmpty())) return new NullItem();
 
         boolean explicitLanguage = hasExplicitLanguageAnnotation(ast);
-        Language language = decideParsingLanguage(ast, wordData);
+        Language language = decideParsingLanguage(ast, text);
+        // userInput should determine the overall language if not set explicitly
+        if (userQuery != null && userQuery.getModel().getLanguage() == null)
+            userQuery.getModel().setLanguage(language);
+
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        defaultGrammar.toString(), "grammar for text processing");
         QueryType queryType = buildQueryType(ast, defaultGrammar, useModelType);
         if (USER_INPUT_GRAMMAR_RAW.equals(grammar)) {
-            return assignQueryType(instantiateWordItem(field, wordData, ast, null, SegmentWhen.NEVER, true, language),
+            return assignQueryType(instantiateWordItem(field, text, ast, null, SegmentWhen.NEVER, true, language),
                                    queryType);
         } else if (USER_INPUT_GRAMMAR_SEGMENT.equals(grammar)) {
-            return assignQueryType(instantiateWordItem(field, wordData, ast, null, SegmentWhen.ALWAYS, false, language),
+            return assignQueryType(instantiateWordItem(field, text, ast, null, SegmentWhen.ALWAYS, false, language),
                                    queryType);
         } else {
-            Item item = parseUserInput(queryType, field, wordData, language, explicitLanguage, allowEmpty);
+            Item item = Items.text(field, text, queryType, language, docTypes, Set.of(), environment);
+            if ( ! allowEmpty && (item == null || item instanceof NullItem))
+                throw new IllegalArgumentException("Parsing '" + text + "' only resulted in NullItem.");
+
+            // Mark the language used if it was explicitly set or is not the default
+            if (explicitLanguage || language != Language.ENGLISH)
+                // mark all the child items: it will be easier to figure out which item have which language
+                setLanguageRecursively(item, language);
+
             propagateUserInputAnnotationsRecursively(ast, item);
 
             // Set grammar-specific annotations
@@ -1137,15 +1346,7 @@ public class YqlParser implements Parser {
     private String getStringContents(OperatorNode<ExpressionOperator> operator) {
         return switch (operator.getOperator()) {
             case LITERAL -> operator.getArgument(0, String.class);
-            case VARREF -> {
-                Preconditions.checkState(userQuery != null,
-                        "properties must be available when trying to fetch user input");
-                String key = operator.getArgument(0, String.class);
-                String value = userQuery.properties().getString(key);
-                if (value == null)
-                    throw new IllegalInputException("Input '" + key + "' is not set");
-                yield value;
-            }
+            case VARREF -> resolveParameter(operator);
             default -> throw newUnexpectedArgumentException(operator.getOperator(),
                     ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
         };
@@ -1153,29 +1354,6 @@ public class YqlParser implements Parser {
 
     private void propagateUserInputAnnotationsRecursively(OperatorNode<ExpressionOperator> ast, Item item) {
         ToolBox.visit(new AnnotationPropagator(ast), item);
-    }
-
-    private Item parseUserInput(QueryType queryType, String defaultIndex, String wordData,
-                                Language language, boolean explicitLanguage, boolean allowNullItem) {
-        Parser parser = ParserFactory.newInstance(queryType, environment);
-        // perhaps not use already resolved doctypes, but respect source and restrict
-        Item item = parser.parse(new Parsable().setQuery(wordData)
-                                               .addSources(docTypes)
-                                               .setLanguage(language)
-                                               .setDefaultIndexName(defaultIndex)).getRoot();
-
-        if ( ! allowNullItem && (item == null || item instanceof NullItem))
-            throw new IllegalArgumentException("Parsing '" + wordData + "' only resulted in NullItem.");
-
-        // Mark the language used if it was explicitly set or is not the default
-        if (explicitLanguage || language != Language.ENGLISH)
-            // mark all the child items: it will be easier to figure out which item have which language
-            setLanguageRecursively(item, language);
-
-        // userInput should determine the overall language if not set explicitly
-        if (userQuery != null && userQuery.getModel().getLanguage() == null)
-            userQuery.getModel().setLanguage(language);
-        return item;
     }
 
     private void setLanguageRecursively(Item item, Language language) {
@@ -1216,7 +1394,8 @@ public class YqlParser implements Parser {
         OperatorNode<?> ast = toScan;
         while (ast.getOperator() == SequenceOperator.PIPE) {
             OperatorNode<ExpressionOperator> groupingAst = ast.<List<OperatorNode<ExpressionOperator>>> getArgument(2).get(0);
-            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingAst.getArgument(0));
+            Function<String, String> groupingParameters = parameters == null ? null : parameters::get;
+            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingAst.getArgument(0), groupingParameters);
             VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
             List<Object> continuations = getAnnotation(groupingAst, "continuations", List.class,
                                                        List.of(), "grouping continuations");
@@ -1233,9 +1412,7 @@ public class YqlParser implements Parser {
 
     private String dereference(Object constantOrVarref) {
         if (constantOrVarref instanceof OperatorNode<?> varref) {
-            Preconditions.checkState(userQuery != null,
-                                     "properties must be available when trying to fetch user input");
-            return userQuery.properties().getString(varref.getArgument(0, String.class));
+            return resolveParameter(varref);
         }
         else {
             return constantOrVarref.toString();
@@ -1447,11 +1624,7 @@ public class YqlParser implements Parser {
             ast = ast.getArgument(0);
         }
         return switch (ast.getOperator()) {
-            case VARREF -> {
-                Preconditions.checkState(userQuery != null,
-                        "properties must be available when trying to fetch user input");
-                yield negative + userQuery.properties().getString(ast.getArgument(0, String.class));
-            }
+            case VARREF -> negative + resolveParameter(ast);
             case LITERAL -> negative + ast.getArgument(0).toString();
             default -> throw new IllegalArgumentException("Expected VARREF or LITERAL, got " + ast.getOperator());
         };
@@ -1584,8 +1757,19 @@ public class YqlParser implements Parser {
         assertHasOperator(spec, ExpressionOperator.CALL);
         assertHasFunctionName(spec, RANGE);
 
-        IntItem range = instantiateRangeItem(spec.getArgument(1), spec);
-        return leafStyleSettings(spec, range);
+        List<OperatorNode<ExpressionOperator>> args = spec.getArgument(1);
+        Preconditions.checkArgument(args.size() == 3,
+                "Expected 3 arguments, got %s.", args.size());
+
+        var index = indexOf(getIndex(args.get(0)));
+        if (index.isString() && !index.isInteger() && !index.isNumerical()) {
+            StringRangeItem range = instantiateStringRangeItem(args, spec);
+            return leafStyleSettings(spec, range);
+        } else {
+            IntItem range = instantiateIntRangeItem(args, spec);
+            return leafStyleSettings(spec, range);
+        }
+
     }
 
     private static Number negate(Number x) {
@@ -1606,11 +1790,69 @@ public class YqlParser implements Parser {
         }
     }
 
-    private IntItem instantiateRangeItem(List<OperatorNode<ExpressionOperator>> args,
-                                         OperatorNode<ExpressionOperator> spec) {
-        Preconditions.checkArgument(args.size() == 3,
-                "Expected 3 arguments, got %s.", args.size());
+    private StringRangeItem instantiateStringRangeItem(List<OperatorNode<ExpressionOperator>> args,
+                                            OperatorNode<ExpressionOperator> spec) {
+        // Pre-condition: args.size() == 3
+        String left = getLeftStringRangeBound(args.get(1));
+        String right = getRightStringRangeBound(args.get(2));
+        String bounds = getAnnotation(spec, BOUNDS, String.class, null,
+                "whether bounds should be open or closed");
+        if (bounds == null) {
+            return new StringRangeItem(left, true, right, true, getIndex(args.get(0)), true, getSubstring(spec));
+        } else {
+            boolean leftClosed = true;
+            boolean rightClosed = true;
+            switch (bounds) {
+                case BOUNDS_OPEN -> {
+                    leftClosed = false;
+                    rightClosed = false;
+                }
+                case BOUNDS_LEFT_OPEN -> {
+                    leftClosed = false;
+                }
+                case BOUNDS_RIGHT_OPEN -> {
+                    rightClosed = false;
+                }
+                default ->
+                        throw newUnexpectedArgumentException(bounds, BOUNDS_OPEN, BOUNDS_LEFT_OPEN, BOUNDS_RIGHT_OPEN);
+            }
+            return new StringRangeItem(left, leftClosed, right, rightClosed, getIndex(args.get(0)), true, getSubstring(spec));
+        }
+    }
 
+    private String getLeftStringRangeBound(OperatorNode<ExpressionOperator> bound) {
+        if (bound.getOperator() == ExpressionOperator.NEGATE && isInfinity(bound.getArgument(0))) {
+            return null;
+        } else if (bound.getOperator() == ExpressionOperator.LITERAL) { // String in quotes
+            return bound.getArgument(0).toString();
+        } else {
+            String asString = bound.getArguments().length > 1 ? bound.getArgument(1).toString() : bound.toString(); // Try to make the error a bit prettier
+            throw new IllegalArgumentException("Expected -Infinity or a quoted string for left string range bound but got " + asString + ".");
+        }
+    }
+
+    private String getRightStringRangeBound(OperatorNode<ExpressionOperator> bound) {
+        if (isInfinity(bound)) {
+            return null;
+        } else if (bound.getOperator() == ExpressionOperator.LITERAL) { // String in quotes
+            return bound.getArgument(0).toString();
+        } else {
+            // Try to make the error a bit prettier
+            String asString = (bound.getOperator() == ExpressionOperator.NEGATE && isInfinity(bound.getArgument(0))) ? "-Infinity"
+                    : (bound.getArguments().length > 1 ? bound.getArgument(1).toString() : bound.toString());
+            throw new IllegalArgumentException("Expected Infinity or a quoted string for right string range bound but got " + asString + ".");
+        }
+    }
+
+    private boolean isInfinity(OperatorNode<ExpressionOperator> bound) {
+        return bound.getOperator() == ExpressionOperator.READ_FIELD
+                && bound.getArguments().length > 0
+                && bound.getArgument(1).toString().equals("Infinity");
+    }
+
+    private IntItem instantiateIntRangeItem(List<OperatorNode<ExpressionOperator>> args,
+                                         OperatorNode<ExpressionOperator> spec) {
+        // Pre-condition: args.size() == 3
         Number lowerArg = getRangeBound(args.get(1));
         Number upperArg = getRangeBound(args.get(2));
         String bounds = getAnnotation(spec, BOUNDS, String.class, null,
@@ -1677,6 +1919,7 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(names.size() == 1, "Expected 1 name, got %s.", names.size());
         return switch (names.get(0)) {
             case SAME_ELEMENT -> instantiateSameElementItem(field, ast);
+            case MAP_MATCH -> instantiateMapMatch(field, ast);
             case PHRASE -> instantiatePhraseItem(field, ast);
             case NEAR -> instantiateNearItem(field, ast);
             case ONEAR -> instantiateONearItem(field, ast);
@@ -1686,7 +1929,7 @@ public class YqlParser implements Parser {
             case FUZZY -> instantiateFuzzyItem(field, ast);
             case TEXT -> buildText(field, ast);
             default ->
-                    throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, SAME_ELEMENT, TEXT, URI, FUZZY);
+                    throw newUnexpectedArgumentException(names.get(0), EQUIV, NEAR, ONEAR, PHRASE, MAP_MATCH, SAME_ELEMENT, TEXT, URI, FUZZY);
         };
     }
 
@@ -2103,6 +2346,11 @@ public class YqlParser implements Parser {
             if (hitLimit != null) {
                 number.setHitLimit(hitLimit);
             }
+        } else if (leaf instanceof StringRangeItem stringRange) {
+            Integer hitLimit = getCappedRangeSearchParameter(ast);
+            if (hitLimit != null) {
+                stringRange.setHitLimit(hitLimit);
+            }
         }
 
         return leaf;
@@ -2132,7 +2380,10 @@ public class YqlParser implements Parser {
     public void setQueryParser(boolean queryParser) { this.queryParser = queryParser; }
 
     @Beta
-    public void setUserQuery(Query userQuery) { this.userQuery = userQuery; }
+    public void setUserQuery(Query userQuery) {
+        this.userQuery = userQuery;
+        this.parameters = userQuery == null ? null : ParameterResolver.of(userQuery.properties());
+    }
 
     @Beta
     public Set<String> getYqlSummaryFields() { return yqlSummaryFields; }
@@ -2214,11 +2465,39 @@ public class YqlParser implements Parser {
             case MAP -> addStringItems(ast, out);
             case ARRAY -> addLongItems(ast, out);
             case VARREF -> {
-                Preconditions.checkState(userQuery != null, "Query properties are not available");
-                ParameterListParser.addItemsFromString(userQuery.properties().getString(ast.getArgument(0, String.class)), out);
+                String value = resolveOptionalParameter(ast);
+                if (value != null) {
+                    ParameterListParser.addItemsFromString(value, out);
+                } else {
+                    addItemsFromSubProperties(ast.getArgument(0, String.class), out);
+                }
             }
             default -> throw newUnexpectedArgumentException(ast.getOperator(),
                                                             ExpressionOperator.ARRAY, ExpressionOperator.MAP);
+        }
+    }
+
+    /**
+     * Adds the items of a parameter which is passed as a JSON object. Such objects are flattened into
+     * dot-separated properties when the query is parsed, so the entries are read back as sub-properties
+     * of the parameter name.
+     */
+    private void addItemsFromSubProperties(String name, WeightedSetItem out) {
+        var entries = userQuery.properties().listProperties(name);
+        if (entries.isEmpty())
+            throw new IllegalArgumentException("No value found for query parameter '" + name + "'");
+        for (var entry : entries.entrySet())
+            out.addToken(entry.getKey(), toWeight(name, entry.getKey(), entry.getValue()));
+    }
+
+    private static int toWeight(String parameterName, String key, Object value) {
+        if (value instanceof Number number) return number.intValue();
+        try {
+            return Integer.parseInt(value.toString().trim());
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Expected an integer weight of '" + key + "' in query parameter '" +
+                                               parameterName + "', but got '" + value + "'");
         }
     }
 
@@ -2296,9 +2575,38 @@ public class YqlParser implements Parser {
 
     private String getIndex(OperatorNode<ExpressionOperator> operatorNode) {
         String index = fetchFieldName(operatorNode);
+        if (isElementValue(index)) return ""; // the element value has no field name of its own
         String expanded = indexNameExpander.expand(index);
         Preconditions.checkArgument(indexFactsSession.isIndex(expanded), "Field '%s' does not exist.", expanded);
         return indexFactsSession.getCanonicName(index);
+    }
+
+    /**
+     * Returns the index of a field named as the argument of a syntax which applies to a field as a whole, such as
+     * dotProduct or predicate, and which therefore has no form taking the value of an element instead of a field.
+     */
+    private String getFieldIndex(OperatorNode<ExpressionOperator> operatorNode, String syntax) {
+        String index = getIndex(operatorNode);
+        Preconditions.checkArgument( ! index.isEmpty(),
+                                    "%s takes a field name, but got '%s', which is the value of the element of the " +
+                                    "enclosing sameElement rather than a field.", syntax, ELEMENT_VALUE);
+        return index;
+    }
+
+    /**
+     * Returns whether the given field name is the ELEMENT_VALUE placeholder in a context where it is meaningful,
+     * that is inside a sameElement, where it refers to the value of the element itself rather than to a subfield.
+     */
+    private boolean isElementValue(String field) {
+        return ELEMENT_VALUE.equals(field) && indexNameExpander.elementValueField() != null;
+    }
+
+    /**
+     * Returns the index of a field name as returned by {@link #getIndex}, where the empty name of the element
+     * value expands to the field of the enclosing sameElement, as element values have the type of that field.
+     */
+    private Index indexOf(String field) {
+        return indexFactsSession.getIndex(indexNameExpander.expand(field));
     }
 
     private Substring getSubstring(OperatorNode<ExpressionOperator> ast) {
@@ -2358,9 +2666,7 @@ public class YqlParser implements Parser {
                                                                        && considerParents && i.hasNext();) {
             OperatorNode<?> node = i.next();
             if (node.getOperator() == ExpressionOperator.VARREF) {
-                Preconditions.checkState(userQuery != null,
-                                         "properties must be available when trying to fetch user input");
-                value = userQuery.properties().getString(ast.getArgument(0, String.class));
+                value = resolveOptionalParameter(node);
             }
             else {
                 value = node.getAnnotation(key);

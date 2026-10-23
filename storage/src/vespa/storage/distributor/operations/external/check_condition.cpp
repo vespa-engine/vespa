@@ -4,6 +4,7 @@
 #include "getoperation.h"
 #include "intermediate_message_sender.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
@@ -12,8 +13,6 @@
 #include <vespa/storage/distributor/node_supported_features_repo.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/state/clusterstate.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operations.external.check_condition");
@@ -81,7 +80,7 @@ void CheckCondition::start_and_send(DistributorStripeMessageSender& sender) {
 void CheckCondition::handle_reply(DistributorStripeMessageSender&           sender,
                                   const std::shared_ptr<api::StorageReply>& reply) {
     auto op = _sent_message_map.pop(reply->getMsgId());
-    assert(op == _cond_get_op); // We only wrap a single operation
+    CHECK(op == _cond_get_op); // We only wrap a single operation
     IntermediateMessageSender proxy_sender(_sent_message_map, _cond_get_op, sender);
     _cond_get_op->onReceive(proxy_sender, reply);
     if (proxy_sender._reply) {

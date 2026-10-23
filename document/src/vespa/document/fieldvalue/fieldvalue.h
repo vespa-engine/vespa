@@ -19,6 +19,8 @@
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/util/polymorphicarraybase.h>
 
+#include <span>
+
 namespace vespalib {
 class nbostream;
 }
@@ -156,7 +158,7 @@ public:
      * @return Returns the wrapped value if it is a raw or compatible type.
      * @throws document::InvalidDataTypeConversionException
      */
-    virtual std::pair<const char*, size_t> getAsRaw() const;
+    virtual std::span<const char> getAsRaw() const;
 
     /**
      * Will give you the leaf fieldvalue you are looking for in your fieldPath.

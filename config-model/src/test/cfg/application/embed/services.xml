@@ -22,7 +22,7 @@
       <onnx-gpu-device>1</onnx-gpu-device>
       <onnx-optimize-model>true</onnx-optimize-model>
       <pooling-strategy>mean</pooling-strategy>
-      <batching max-size="16" max-delay="100ms"/>
+      <batching max-size="16" max-delay="100ms" padding-buckets="16 64 256"/>
       <concurrency type="relative">2.0</concurrency>
       <model-config-override>files/hf_config.pbtxt</model-config-override>
     </component>

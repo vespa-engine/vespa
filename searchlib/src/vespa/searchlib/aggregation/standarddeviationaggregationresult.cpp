@@ -51,9 +51,12 @@ void StandardDeviationAggregationResult::onAggregate(const ResultNode& result) {
         static_cast<const ResultNodeVector&>(result).flattenSumOfSquared(_sumOfSquared);
         _count += static_cast<const ResultNodeVector&>(result).size();
     } else {
+        double v = result.getFloat();
+        if (std::isnan(v)) {
+            return;
+        }
         _sum.add(result);
-        FloatResultNode squared(result.getFloat());
-        squared.multiply(result);
+        FloatResultNode squared(v * v);
         _sumOfSquared.add(squared);
         _count++;
     }

@@ -15,8 +15,9 @@ namespace juniper {
 
 struct IsPunctuation {
     bool operator()(char c) {
-        if (c == '*' || c == '?')
+        if (c == '*' || c == '?') {
             return false;
+        }
 
         return ispunct(static_cast<unsigned char>(c)) != 0;
     }

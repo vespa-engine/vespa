@@ -28,51 +28,6 @@ int decodeHex(char c) {
 
 //-----------------------------------------------------------------------------
 
-template <typename A> class IsLogged {
-private:
-    A           _a;
-    std::string _name;
-
-public:
-    IsLogged(A a) : _a(a), _name(a.getName()) {}
-    bool operator()(char c) {
-        bool res = _a(c);
-        LOG(info, "%s returned %s for char '%c'", _name.c_str(), res ? "true" : "false", c);
-        return res;
-    }
-};
-
-template <typename A> class DoLog {
-private:
-    A           _a;
-    std::string _name;
-
-public:
-    DoLog(A a) : _a(a), _name(a.getName()) {}
-    bool operator()(char c) {
-        bool res = _a(c);
-        LOG(info, "%s returned %s for char '%c'", _name.c_str(), res ? "true" : "false", c);
-        return res;
-    }
-    bool done() {
-        bool res = _a.done();
-        LOG(info, "%s returned %s on done signal", _name.c_str(), res ? "true" : "false");
-        return res;
-    }
-};
-
-//-----------------------------------------------------------------------------
-
-template <typename A> IsLogged<A> isLogged(A a) {
-    return IsLogged<A>(a);
-}
-
-template <typename A> DoLog<A> doLog(A a) {
-    return DoLog<A>(a);
-}
-
-//-----------------------------------------------------------------------------
-
 class ParseContext {
 private:
     const std::string& _str;   // the input string. TODO Use std::string_view

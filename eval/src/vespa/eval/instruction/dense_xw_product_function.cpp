@@ -2,13 +2,12 @@
 
 #include "dense_xw_product_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 
 #include <cblas.h>
-
-#include <cassert>
 
 namespace vespalib::eval {
 
@@ -78,8 +77,8 @@ bool isDenseXWProduct(const ValueType& res, const ValueType& vec, const ValueTyp
         size_t vec_idx = mat.dimension_index(vec.dimensions()[0].name);
         size_t npos = ValueType::Dimension::npos;
         if ((res_idx != npos) && (vec_idx != npos) && (res_idx != vec_idx)) {
-            assert(mat.dimensions()[res_idx].size == res.dimensions()[0].size);
-            assert(mat.dimensions()[vec_idx].size == vec.dimensions()[0].size);
+            CHECK(mat.dimensions()[res_idx].size == res.dimensions()[0].size);
+            CHECK(mat.dimensions()[vec_idx].size == vec.dimensions()[0].size);
             return true;
         }
     }
@@ -100,10 +99,10 @@ struct MyXWProductOp {
         using RCT = CellValueType<RCM::value.cell_type>;
         using OCT = CellValueType<ocm.cell_type>;
         if (std::is_same_v<LCT, double> && std::is_same_v<RCT, double>) {
-            assert((std::is_same_v<OCT, double>));
+            CHECK((std::is_same_v<OCT, double>));
             return my_cblas_double_xw_product_op<CommonInner::value>;
         } else if (std::is_same_v<LCT, float> && std::is_same_v<RCT, float>) {
-            assert((std::is_same_v<OCT, float>));
+            CHECK((std::is_same_v<OCT, float>));
             return my_cblas_float_xw_product_op<CommonInner::value>;
         } else {
             return my_xw_product_op<LCT, RCT, OCT, CommonInner::value>;
@@ -130,7 +129,7 @@ DenseXWProductFunction::DenseXWProductFunction(const ValueType& result_type, con
 InterpretedFunction::Instruction DenseXWProductFunction::compile_self(const ValueBuilderFactory&,
                                                                       Stash& stash) const {
     Self& self = stash.create<Self>(result_type(), _vector_size, _result_size);
-    assert(self.result_type.cell_meta().is_scalar == false);
+    CHECK(self.result_type.cell_meta().is_scalar == false);
     using MyTypify = TypifyValue<TypifyCellMeta, vespalib::TypifyBool>;
     auto op = typify_invoke<3, MyTypify, MyXWProductOp>(lhs().result_type().cell_meta().not_scalar(),
                                                         rhs().result_type().cell_meta().not_scalar(), _common_inner);

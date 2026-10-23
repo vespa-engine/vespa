@@ -6,12 +6,12 @@
 #include "blueprintfactory.h"
 #include "featurenameparser.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <set>
 
 using vespalib::make_string_short::fmt;
@@ -209,7 +209,7 @@ struct Compiler : public Blueprint::DependencyHandler {
     }
 
     std::optional<FeatureType> resolve_input(const std::string& feature_name, Accept accept_type) override {
-        assert(self().spec.output_types.empty()); // require: 'resolve inputs' before 'define outputs'
+        CHECK(self().spec.output_types.empty()); // require: 'resolve inputs' before 'define outputs'
         auto ref = resolve_feature(feature_name, accept_type);
         if (!ref.valid()) {
             // fail silently here to avoid mutiple traces for the same root error
@@ -279,7 +279,7 @@ constexpr size_t STACK_MULTIPLIER = 1;
 } // namespace
 
 bool BlueprintResolver::compile() {
-    assert(_executorSpecs.empty()); // only one compilation allowed
+    CHECK(_executorSpecs.empty()); // only one compilation allowed
     Compiler compiler(_factory, _indexEnv, _executorSpecs, _featureMap);
 
     compiler.probe_stack();
@@ -297,6 +297,47 @@ bool BlueprintResolver::compile() {
         _warnings.emplace_back(fmt("high stack usage: %zu bytes", stack_usage));
     }
     return !compiler.failed();
+}
+
+BlueprintResolver::SP BlueprintResolver::select_seeds(const std::vector<std::string>& seeds) const {
+    auto              result = std::make_shared<BlueprintResolver>(_factory, _indexEnv);
+    std::vector<bool> keep(_executorSpecs.size(), false);
+    for (const auto& seed : seeds) {
+        auto pos = _seedMap.find(seed);
+        if (pos == _seedMap.end()) {
+            return {};
+        }
+        keep[pos->second.executor] = true;
+        result->_seedMap.insert(*pos);
+    }
+    // Inputs always have lower indexes than the executors using them.
+    for (size_t i = keep.size(); i-- > 0;) {
+        if (keep[i]) {
+            for (const auto& input : _executorSpecs[i].inputs) {
+                keep[input.executor] = true;
+            }
+        }
+    }
+    std::vector<uint32_t> new_index(keep.size(), FeatureRef::undef);
+    for (size_t i = 0; i < keep.size(); ++i) {
+        if (keep[i]) {
+            new_index[i] = result->_executorSpecs.size();
+            auto& spec = result->_executorSpecs.emplace_back(_executorSpecs[i]);
+            for (auto& input : spec.inputs) {
+                input.executor = new_index[input.executor];
+            }
+        }
+    }
+    for (const auto& [name, ref] : _featureMap) {
+        if (keep[ref.executor]) {
+            result->_featureMap.emplace_hint(result->_featureMap.end(), name,
+                                             FeatureRef(new_index[ref.executor], ref.output));
+        }
+    }
+    for (auto& entry : result->_seedMap) {
+        entry.second.executor = new_index[entry.second.executor];
+    }
+    return result;
 }
 
 } // namespace search::fef

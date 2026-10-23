@@ -106,7 +106,7 @@ public class HostedDeployNodeAllocationTest {
         int invocation = 0;
 
         @Override
-        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+        public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
             if (cluster.id().value().equals("container")) { // the container cluster from the app package: Use this to test
                 if (invocation == 0) { // Building the latest model version, 7.3: Always first
                     invocation++;
@@ -125,9 +125,9 @@ public class HostedDeployNodeAllocationTest {
             }
             else { // for other clusters just return the requested hosts
                 List<HostSpec> hosts = new ArrayList<>();
-                for (int i = 0; i < capacity.maxResources().nodes(); i++) {
+                for (int i = 0; i < cluster.capacity().maxResources().nodes(); i++) {
                     hosts.add(host(cluster.id().value() + i,
-                                   capacity.maxResources().nodeResources(),
+                                   cluster.capacity().maxResources().nodeResources(),
                                    i,
                                    cluster.vespaVersion().toString(),
                                    cluster));
@@ -137,7 +137,7 @@ public class HostedDeployNodeAllocationTest {
         }
 
         private HostSpec host(String hostname, NodeResources resources, int index, String version, ClusterSpec cluster) {
-            var membership = ClusterMembership.from(cluster.with(Optional.of(ClusterSpec.Group.from(index))), index);
+            var membership = ClusterMembership.from(cluster, index, index);
             return new HostSpec(hostname,
                                 resources,
                                 resources,

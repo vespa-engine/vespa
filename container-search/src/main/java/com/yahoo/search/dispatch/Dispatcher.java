@@ -18,7 +18,6 @@ import com.yahoo.search.dispatch.rpc.RpcConnectionPool;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.dispatch.searchcluster.AvailabilityPolicy;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -69,7 +68,6 @@ public class Dispatcher extends AbstractComponent {
     private final RpcConnectionPool rpcResourcePool;
     private final SearchCluster searchCluster;
     private final ClusterMonitor<Node> clusterMonitor;
-    private final QrSearchersConfig qrSearchersConfig;
     private final String localAvailabilityZone;
     private volatile VolatileItems volatileItems;
 
@@ -119,19 +117,17 @@ public class Dispatcher extends AbstractComponent {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     interface InvokerFactoryFactory {
-        InvokerFactory create(RpcConnectionPool rpcConnectionPool, SearchGroups searchGroups, DispatchConfig dispatchConfig, QrSearchersConfig qrSearchersConfig);
+        InvokerFactory create(RpcConnectionPool rpcConnectionPool, SearchGroups searchGroups, DispatchConfig dispatchConfig);
     }
 
     @Inject
     public Dispatcher(ComponentId clusterId,
                       DispatchConfig dispatchConfig,
-                      QrSearchersConfig qrSearchersConfig,
                       DispatchNodesConfig nodesConfig,
                       SystemInfo systemInfo,
                       VipStatus vipStatus) {
         this(clusterId,
              dispatchConfig,
-             qrSearchersConfig,
              new RpcResourcePool(dispatchConfig, nodesConfig),
              nodesConfig,
              systemInfo,
@@ -142,14 +138,12 @@ public class Dispatcher extends AbstractComponent {
 
     Dispatcher(ComponentId clusterId,
                DispatchConfig dispatchConfig,
-               QrSearchersConfig qrSearchersConfig,
                RpcConnectionPool rpcConnectionPool,
                DispatchNodesConfig nodesConfig,
                SystemInfo systemInfo,
                VipStatus vipStatus,
                InvokerFactoryFactory invokerFactories) {
         this(dispatchConfig,
-             qrSearchersConfig,
              rpcConnectionPool,
              new SearchCluster(clusterId.stringValue(),
                                AvailabilityPolicy.from(dispatchConfig),
@@ -161,13 +155,11 @@ public class Dispatcher extends AbstractComponent {
     }
 
     Dispatcher(DispatchConfig dispatchConfig,
-               QrSearchersConfig qrSearchersConfig,
                RpcConnectionPool rpcConnectionPool,
                SearchCluster searchCluster,
                SystemInfo systemInfo,
                InvokerFactoryFactory invokerFactories) {
         this(dispatchConfig,
-             qrSearchersConfig,
              rpcConnectionPool,
              searchCluster,
              new ClusterMonitor<>(searchCluster, false),
@@ -177,14 +169,12 @@ public class Dispatcher extends AbstractComponent {
     }
 
     Dispatcher(DispatchConfig dispatchConfig,
-               QrSearchersConfig qrSearchersConfig,
                RpcConnectionPool rpcConnectionPool,
                SearchCluster searchCluster,
                ClusterMonitor<Node> clusterMonitor,
                SystemInfo systemInfo,
                InvokerFactoryFactory invokerFactories) {
         this.dispatchConfig = dispatchConfig;
-        this.qrSearchersConfig = qrSearchersConfig;
         this.rpcResourcePool = rpcConnectionPool;
         this.searchCluster = searchCluster;
         this.clusterMonitor = clusterMonitor;
@@ -198,16 +188,14 @@ public class Dispatcher extends AbstractComponent {
     Dispatcher(ClusterMonitor<Node> clusterMonitor,
                SearchCluster searchCluster,
                DispatchConfig dispatchConfig,
-               QrSearchersConfig qrSearchersConfig,
                SystemInfo systemInfo,
                InvokerFactory invokerFactory) {
         this(dispatchConfig,
-             qrSearchersConfig,
              null,
              searchCluster,
              clusterMonitor,
              systemInfo,
-             (__, ___, ____, _____) -> invokerFactory);
+             (__, ___, ____) -> invokerFactory);
     }
 
     /** Returns the snapshot of volatile items that need to be kept together, incrementing its reference counter. */
@@ -270,7 +258,7 @@ public class Dispatcher extends AbstractComponent {
                                  // so nodes removed by a later reconfiguration stay resolvable until this generation drains.
                                  // The pool is null in some tests, which use invoker factories that don't need it.
                                  invokerFactories.create(rpcResourcePool == null ? null : rpcResourcePool.snapshot(),
-                                                         searchCluster.groupList(), dispatchConfig, qrSearchersConfig));
+                                                         searchCluster.groupList(), dispatchConfig));
     }
 
     private void initialWarmup(double warmupTime) {

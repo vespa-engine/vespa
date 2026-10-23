@@ -6,13 +6,13 @@
 #include "routedirective.h"
 #include "routingtable.h"
 
+#include <vespa/check_require.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/network/inetwork.h>
 #include <vespa/messagebus/tracelevel.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <stack>
 
 using vespalib::make_string;
@@ -74,7 +74,7 @@ void RoutingNode::clearChildren() {
 }
 
 void RoutingNode::discard() {
-    assert(_parent == nullptr);
+    CHECK(_parent == nullptr);
     if (_discardHandler != nullptr) {
         _discardHandler->handleDiscard(Context());
     }
@@ -206,7 +206,7 @@ void RoutingNode::notifyTransmit() {
                 if (node->hasReply()) {
                     node->notifyParent();
                 } else {
-                    assert(node->_serviceAddress);
+                    CHECK(node->_serviceAddress);
                     sendTo.push_back(node);
                 }
             } else {

@@ -6,6 +6,8 @@
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/document/bucket/bucketspace.h>
 
+#include <vector>
+
 namespace document {
 
 class Document;

@@ -6,7 +6,7 @@ import java.util.Locale;
 /**
  * The lower casing method to use in Vespa when doing string processing of data
  * which is not to be handled as natural language data, e.g. field names or
- * configuration paramaters.
+ * configuration parameters.
  *
  * @author Steinar Knutsen
  */

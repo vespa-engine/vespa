@@ -89,6 +89,9 @@ public class YQLParserTest {
             "all( group(a) order(avg(relevance()) * count()) each(output(count())) )",
             "all(group(a) order(max(attr) * count()) each(output(count())) )",
             "all( group(a) each(max(1) each(output(summary()))) )",
+            "all(group(artist) order(argmin(price, relevance)) each(output(argmin(price, relevance))))",
+            "all(group(artist) each(output(argmax(popularity, price))))",
+            "all(group(foo) filter(in(foo, \"bar\", \"baz\")) each(output(count())))",
             "all( group(a) each(max(1) output(count(), sum(b)) each(output(summary()))) )",
             "all(group(a) each(max(1) output(count(), sum(b), xor(md5(cat(a, b, c), 64))) each(output(summary()))))",
             "all( group(a) max(5) each(max(69) output(count()) each(output(summary()))) )",
@@ -118,6 +121,24 @@ public class YQLParserTest {
             // quantiles
             "all(group(customer) each(output(quantiles([0.5],price))))",
             "all(group(customer) each(output(quantiles([0.5, 0.9],price))))",
+
+            // parameters
+            "all(group(a) max(@max) precision(@precision) each(output(count())))",
+            "all(group(a) max(@my-param_1) each(output(count())))",
+            "all(group(@label) filter(regex(@pattern, a)) each(output(count())) as(@name))",
+            "all(group(a) each(output(count() as(@name))))",
+            "all(group(a) filter(in(a, @list)) each(output(count())))",
+            "all(group(a) filter(in(a, \"x\", @list, 'y')) each(output(count())))",
+            "all(group(a) filter(range(@lo, @hi, a)) each(output(count())))",
+            "all(group(a) filter(range(-10, 10, a)) each(output(count())))",
+            "all(group(fixedwidth(a, @width)) each(output(count())))",
+            "all(group(md5(a, @bits)) each(output(count())))",
+            "all(group(xorbit(a, @bits)) each(output(count())))",
+            "all(group(my_map{@key}) each(output(count())))",
+            "all(group(a) each(output(summary(@class))))",
+            "all(group(uca(a, @locale)) each(output(count())))",
+            "all(group(uca(a, @locale, @strength)) each(output(count())))",
+            "all(group(a) accuracy(@accuracy) each(output(count())))",
         };
 
         for (int i = 0; i < groupingQueries.length; i++) {

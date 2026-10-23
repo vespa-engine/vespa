@@ -33,7 +33,7 @@ schema complex {
 
         field special3 type string {
             indexing: index
-            stemming: none
+            stemming: all-stems
         }
 
         field prefixenabled type string {

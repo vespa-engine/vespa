@@ -52,8 +52,9 @@ public class GroupingQueryParser extends Searcher {
             if (reqParam == null) return execution.search(query);
 
             List<Continuation> continuations = getContinuations(query.properties().getString(PARAM_CONTINUE));
-            for (GroupingOperation operation : GroupingOperation.fromStringAsList(reqParam))
+            for (var operation : GroupingOperation.fromStringAsList(reqParam, query.properties()::getString)) {
                 createGroupingRequestIn(query, operation, continuations);
+            }
             return execution.search(query);
         }
         catch (IllegalArgumentException e) {

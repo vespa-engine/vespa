@@ -2,13 +2,12 @@
 
 #include "dense_matmul_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 
 #include <cblas.h>
-
-#include <cassert>
 
 namespace vespalib::eval {
 
@@ -96,9 +95,9 @@ const TensorFunction& create_matmul(const TensorFunction& a, const TensorFunctio
                                     const ValueType& result_type, Stash& stash) {
     size_t a_idx = a.result_type().dimension_index(reduce_dim);
     size_t b_idx = b.result_type().dimension_index(reduce_dim);
-    assert(a_idx != ValueType::Dimension::npos);
-    assert(b_idx != ValueType::Dimension::npos);
-    assert(dim(a, a_idx).size == dim(b, b_idx).size);
+    CHECK(a_idx != ValueType::Dimension::npos);
+    CHECK(b_idx != ValueType::Dimension::npos);
+    CHECK(dim(a, a_idx).size == dim(b, b_idx).size);
     bool   a_common_inner = (a_idx == 1);
     bool   b_common_inner = (b_idx == 1);
     size_t a_size = dim(a, inv(a_idx)).size;

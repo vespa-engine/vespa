@@ -38,8 +38,9 @@ private:
 
         Item(uint32_t idx, fef::TermFieldMatchData::PositionsIterator p, fef::TermFieldMatchData::PositionsIterator e)
             : elemId(IllegalElementId), termIdx(idx), pos(p), end(e) {
-            if (p != e)
+            if (p != e) {
                 elemId = p->getElementId();
+            }
         }
 
         bool operator<(const Item& other) const { return (elemId < other.elemId); }

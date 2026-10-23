@@ -15,7 +15,7 @@ plugins {
 }
 
 ext {
-    snakeYamlVersion = '2.6'
+    snakeYamlVersion = '2.7'
     shadowGradlePluginVersion = '8.1.1'
     log4jVersion = '2.26.1'
 }
@@ -59,21 +59,21 @@ dependencies {
 
     implementation("com.yahoo.vespa:vespa-feed-client:${VESPA_VERSION}")
 
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.1'
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.22.0'
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.22.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.22.4'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.22.4'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.22.4'
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.22'
 
     implementation "org.yaml:snakeyaml:${snakeYamlVersion}"
 
     testImplementation 'org.jruby:jruby-complete:9.4.15.0'
-    testImplementation 'org.jruby:jruby-core:10.1.1.0'
+    testImplementation 'org.jruby:jruby-core:10.1.2.0'
     testImplementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.mockito:mockito-core:5.23.0'
+    testImplementation 'org.mockito:mockito-core:5.24.0'
     testImplementation("com.yahoo.vespa:vespa-feed-client:${VESPA_VERSION}")
     testImplementation fileTree(dir: LOGSTASH_CORE_PATH, include: "**/logstash-core.jar")
-    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.22.0'
+    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.22.4'
 }
 
 clean {

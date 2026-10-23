@@ -5,8 +5,8 @@
 
 #include <dlfcn.h>
 #include <malloc.h>
+#include <vespamalloc/malloc/check_require.h>
 
-#include <cassert>
 #include <functional>
 
 #include <vespa/log/log.h>
@@ -176,8 +176,9 @@ MallocLibrary _env = detectLibrary();
 size_t count_mismatches(const char* v, char c, size_t count) {
     size_t errors = 0;
     for (size_t i(0); i < count; i++) {
-        if (v[i] != c)
+        if (v[i] != c) {
             errors++;
+        }
     }
     return errors;
 }
@@ -202,16 +203,18 @@ TEST(NewTest, verify_malloc_usable_size_is_sane) {
 }
 
 TEST(NewTest, verify_mallopt) {
-    if (_env == MallocLibrary::UNKNOWN)
+    if (_env == MallocLibrary::UNKNOWN) {
         return;
+    }
     EXPECT_EQ(0, mallopt(M_MMAP_MAX, 0x1000000));
     EXPECT_EQ(1, mallopt(M_MMAP_THRESHOLD, 0x1000000));
     EXPECT_EQ(1, mallopt(M_MMAP_THRESHOLD, 1_Gi));
 }
 
 TEST(NewTest, verify_mmap_limit) {
-    if (_env == MallocLibrary::UNKNOWN)
+    if (_env == MallocLibrary::UNKNOWN) {
         return;
+    }
     EXPECT_EQ(1, mallopt(M_MMAP_THRESHOLD, 0x100000));
     auto small = std::make_unique<char[]>(16_Ki);
     auto large_1 = std::make_unique<char[]>(1200_Ki);
@@ -243,8 +246,9 @@ void verifyReallocLarge(char* initial, bool expect_vespamalloc_optimization) {
 TEST(NewTest, test_realloc_large_buffers) {
     verifyReallocLarge(nullptr, _env != MallocLibrary::UNKNOWN);
     verifyReallocLarge(static_cast<char*>(malloc(2000)), _env != MallocLibrary::UNKNOWN);
-    if (_env == MallocLibrary::UNKNOWN)
+    if (_env == MallocLibrary::UNKNOWN) {
         return;
+    }
 
     EXPECT_EQ(1, mallopt(M_MMAP_THRESHOLD, 1_Mi));
     verifyReallocLarge(nullptr, false);
@@ -264,7 +268,7 @@ TEST(NewTest, realloc_from_large_to_small_constrains_copied_memory_extent) {
     constexpr size_t new_sz = 1_Ki;
     ASSERT_EQ(1, mallopt(M_MMAP_THRESHOLD, 1_Mi));
     char* buf = static_cast<char*>(malloc(old_sz));
-    assert(buf);
+    CHECK(buf);
     memset(buf, 0x5b, old_sz);
     // This will SIGSEGV (with a very high likelihood) if we don't constrain the copied
     // memory size since it will attempt to write outside a valid mapped region.
@@ -278,7 +282,7 @@ TEST(NewTest, realloc_from_large_to_small_constrains_copied_memory_extent) {
 void verify_alignment(void* ptr, size_t align, size_t min_sz) {
     EXPECT_NE(ptr, nullptr);
     EXPECT_EQ(0u, size_t(ptr) & (align - 1));
-    assert(0ul == (size_t(ptr) & (align - 1)));
+    CHECK(0ul == (size_t(ptr) & (align - 1)));
     EXPECT_GE(malloc_usable_size(ptr), min_sz);
     free(ptr);
 }

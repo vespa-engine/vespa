@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
@@ -68,7 +69,7 @@ SortData sort_data(ISortBlobWriter& writer, uint32_t lid) {
         s.emplace_back(0);
         result = writer.write(lid, s.data(), s.size());
     }
-    assert(result == (long)s.size());
+    CHECK(result == (long)s.size());
     return s;
 }
 

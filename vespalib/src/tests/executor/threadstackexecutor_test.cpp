@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/util/backtrace.h>
@@ -6,7 +7,6 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <atomic>
-#include <cassert>
 #include <thread>
 
 using namespace vespalib;
@@ -141,7 +141,7 @@ struct WaitState {
         : executor(num_threads / 2), block_task(num_threads - 2), wait_done(num_threads - 1) {
         for (auto& gate : block_task) {
             auto result = executor.execute(std::make_unique<WaitTask>(gate));
-            assert(result.get() == nullptr);
+            CHECK(result.get() == nullptr);
         }
     }
     ~WaitState();

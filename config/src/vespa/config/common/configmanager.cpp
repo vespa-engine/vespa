@@ -36,8 +36,9 @@ ConfigSubscription::SP ConfigManager::subscribe(const ConfigKey& key, vespalib::
 
     vespalib::steady_time endTime = vespalib::steady_clock::now() + timeout;
     while (vespalib::steady_clock::now() < endTime) {
-        if (holder->poll())
+        if (holder->poll()) {
             break;
+        }
         std::this_thread::sleep_for(10ms);
     }
     if (!holder->poll()) {
@@ -55,8 +56,9 @@ ConfigSubscription::SP ConfigManager::subscribe(const ConfigKey& key, vespalib::
 void ConfigManager::unsubscribe(const ConfigSubscription& subscription) {
     std::lock_guard      guard(_lock);
     const SubscriptionId id(subscription.getSubscriptionId());
-    if (_subscriptionMap.find(id) != _subscriptionMap.end())
+    if (_subscriptionMap.find(id) != _subscriptionMap.end()) {
         _subscriptionMap.erase(id);
+    }
 }
 
 void ConfigManager::reload(int64_t generation) {

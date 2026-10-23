@@ -4,6 +4,7 @@
 
 #include "documentmetastore.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
@@ -67,7 +68,7 @@ DocumentMetaStoreFlushTarget::Flusher::Flusher(DocumentMetaStoreFlushTarget& dms
     _flushDir = _writer->getSnapshotDir(syncToken);
     std::string newBaseFileName(_flushDir + "/" + dms.getName());
     _saver = dms.initSave(newBaseFileName);
-    assert(_saver);
+    CHECK(_saver);
 }
 
 DocumentMetaStoreFlushTarget::Flusher::~Flusher() = default;
@@ -199,22 +200,24 @@ IFlushTarget::Time DocumentMetaStoreFlushTarget::getLastFlushTime() const {
     return _dmsDir->getLastFlushTime();
 }
 
-IFlushTarget::Task::UP DocumentMetaStoreFlushTarget::initFlush(SerialNum currentSerial,
-                                                               std::shared_ptr<search::IFlushToken>) {
+void DocumentMetaStoreFlushTarget::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
+                                              TaskPromise task_promise) {
     // Called by document db executor
     _dms->reclaim_unused_memory();
     SerialNum syncToken = std::max(currentSerial, _dms->getStatus().getLastSyncToken());
     auto      writer = _dmsDir->tryGetWriter();
     if (!writer) {
-        return Task::UP();
+        task_promise.set_value({});
+        return;
     }
     if (syncToken <= getFlushedSerialNum()) {
         writer->setLastFlushTime(vespalib::system_clock::now());
         LOG(debug, "No document meta store to flush. Update flush time to current: lastFlushTime(%f)",
             vespalib::to_s(getLastFlushTime().time_since_epoch()));
-        return Task::UP();
+        task_promise.set_value({});
+        return;
     }
-    return std::make_unique<Flusher>(*this, syncToken, std::move(writer));
+    task_promise.set_value(std::make_unique<Flusher>(*this, syncToken, std::move(writer)));
 }
 
 bool DocumentMetaStoreFlushTarget::can_flush(SerialNum current_serial) const noexcept {

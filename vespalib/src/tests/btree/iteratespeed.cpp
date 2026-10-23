@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
@@ -57,7 +58,9 @@ void IterateSpeed::workLoop(int loops, bool enableForward, bool enableBackwards,
         (iterateMethod == IterateMethod::BACKWARDS && !enableBackwards) ||
         (iterateMethod == IterateMethod::LAMBDA && !enableLambda) ||
         (leafSlots != 0 && leafSlots != static_cast<int>(Traits::LEAF_SLOTS)))
+    {
         return;
+    }
     vespalib::GenerationHandler g;
     using Tree = BTree<int, int, btree::NoAggregated, std::less<int>, Traits>;
     using Builder = typename Tree::Builder;
@@ -70,8 +73,8 @@ void IterateSpeed::workLoop(int loops, bool enableForward, bool enableBackwards,
         builder.insert(i, 0);
     }
     tree.assign(builder);
-    assert(numEntries == tree.size());
-    assert(tree.isValid());
+    CHECK(numEntries == tree.size());
+    CHECK(tree.isValid());
     for (int l = 0; l < loops; ++l) {
         vespalib::Timer timer;
         uint64_t        sum = 0;

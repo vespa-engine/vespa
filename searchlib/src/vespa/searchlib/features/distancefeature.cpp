@@ -4,6 +4,7 @@
 
 #include "distance_calculator_bundle.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchcommon/common/datatype.h>
 #include <vespa/searchlib/common/geo_gcd.h>
@@ -49,7 +50,7 @@ ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironmen
 
 void ConvertRawscoreToDistance::execute(uint32_t docId) {
     feature_t min_distance = std::numeric_limits<feature_t>::max();
-    assert(_md);
+    CHECK(_md);
     for (const auto& elem : _bundle.elements()) {
         const TermFieldMatchData* tfmd = _md->resolveTermField(elem.handle);
         if (tfmd->has_ranking_data(docId)) {

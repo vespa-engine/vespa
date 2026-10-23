@@ -16,11 +16,13 @@ import static java.util.Objects.requireNonNull;
  */
 public final class Capacity {
 
+    private static final Capacity unspecified = Capacity.from(new ClusterResources(1, 1, NodeResources.unspecified()));
+
     /** Resources should stay between these values, inclusive */
     private final ClusterResources min, max;
     private final IntRange groupSize;
     private final boolean required;
-    private final boolean canFail;
+    private final boolean canFail; // TODO: Move out of this class since it is a transient property of a request
     private final NodeType type;
     private final double maxCostFactor;
     private final CloudAccount cloudAccount;
@@ -121,6 +123,27 @@ public final class Capacity {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if (! (o instanceof Capacity other)) return false;
+        if ( ! this.min.equals(other.min)) return false;
+        if ( ! this.max.equals(other.max)) return false;
+        if ( ! this.groupSize.equals(other.groupSize)) return false;
+        if (this.required != other.required) return false;
+        if (this.type != other.type) return false;
+        if (this.maxCostFactor != other.maxCostFactor) return false;
+        if ( ! this.cloudAccount.equals(other.cloudAccount)) return false;
+        if ( ! this.cloudResourceTags.equals(other.cloudResourceTags)) return false;
+        if ( ! this.clusterInfo.equals(other.clusterInfo)) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(min, max, groupSize, required, type, maxCostFactor, cloudAccount, cloudResourceTags, clusterInfo);
+    }
+
+    @Override
     public String toString() {
         return (required ? "required " : "") +
                (min.equals(max) ? min : "between " + min + " and " + max) +
@@ -186,6 +209,8 @@ public final class Capacity {
     public static Capacity fromRequiredNodeType(NodeType type) {
         return from(new ClusterResources(0, 1, NodeResources.unspecified()), true, false, type, Duration.ZERO);
     }
+
+    public static Capacity unspecified() { return unspecified; }
 
     private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type, Duration hostTTL) {
         return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, 1.0, CloudAccount.unspecified(),

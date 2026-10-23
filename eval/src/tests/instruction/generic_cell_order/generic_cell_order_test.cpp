@@ -47,8 +47,9 @@ void test_generic_cell_order_with(const ValueBuilderFactory& factory) {
         for (CellType in_type : CellTypeUtils::list_types()) {
             for (eval::CellOrder order : {eval::CellOrder::MAX, eval::CellOrder::MIN}) {
                 auto lhs = layout.cpy().cells(in_type);
-                if (lhs.bad_scalar())
+                if (lhs.bad_scalar()) {
                     continue;
+                }
                 SCOPED_TRACE(
                     fmt("order: %s\n===\nLHS: %s\n===\n", as_string(order).c_str(), lhs.gen().to_string().c_str()));
                 auto expect = ReferenceOperations::cell_order(lhs, order);

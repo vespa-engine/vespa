@@ -51,6 +51,9 @@ public interface ModelContext {
     default Optional<File> appDir() { return Optional.empty(); }
     OnnxModelCost onnxModelCost();
 
+    /** Directory where imported machine-learned models can be cached between deployments, if any */
+    default Optional<File> mlModelImportCacheDir() { return Optional.empty(); }
+
     /** The Docker image repo we want to use for images for this deployment (optional, will use default if empty) */
     default Optional<DockerImage> wantedDockerImageRepo() { return Optional.empty(); }
 
@@ -74,11 +77,16 @@ public interface ModelContext {
      *     * Remove references to the FeatureFlags method in the config model
      *     * Remove FeatureFlags method overrides in ModelContextImpl and TestProperties
      *     * Remove the flag definition
-     *   HOWEVER, keep and update the default method in FeatureFlags return the new default value.  Annotate the
-     *   default method with the `removeAfter` set beyond the Vespa version to be released.
+     *   HOWEVER, keep and update the default method in FeatureFlags to return the new default value.  Annotate the
+     *   default method with `unusedSince` set to the first Vespa version whose config model no longer calls it,
+     *   i.e. a version that contains this change, not the latest version at the time of writing.
      *
-     * 3)
-     *  - Remove the default method in FeatureFlags once the oldest config model in use are beyond the `removeAfter`
+     * 4)
+     * - Remove the default method in FeatureFlags once the `unusedSince` version is deprecated. The config server
+     *   loads a config model bundle for every Vespa version still in use, and older bundles call this method, so it
+     *   must stay until no such bundle can be loaded. A version is deprecated once main, public and enterprise have
+     *   all released it (or a later version) at least 30 days ago, which is what our contracts allow, and no
+     *   deployment in main or public is on an older version. Factory shows which version each release deprecates.
      */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"hakonhall"}) default boolean useNonPublicEndpointForTest() { return false; }
@@ -108,35 +116,36 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
-        @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
+        @ModelFeatureFlag(owners = {"olaa"}, unusedSince = "8.768") default boolean logserverOtelCol() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default SharedHosts sharedHosts() { return SharedHosts.empty(); }
         @ModelFeatureFlag(owners = {"bragehk"}) default boolean tokenAuthForDeploy() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default Architecture adminClusterArchitecture() { return Architecture.x86_64; }
         @ModelFeatureFlag(owners = {"arnej"}) default double logserverNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean useSimpleAnnotations() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean sendOldQueryStack() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default FeatureFlag<Boolean> useTritonFlag() { return () -> false; }
+        @ModelFeatureFlag(owners = {"glebashnik"}) default FeatureFlag<Boolean> tritonShareOnnxSessionFlag() { return () -> false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean ignoreConnectivityChecksAtStartup() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.721") default int searchCoreMaxOutstandingMoveOps() { return 100; }
-        @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.709") default double docprocHandlerThreadpool() { return 1.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean requireExplicitDocprocCluster() { return false; }
-        @ModelFeatureFlag(owners = {"glebashnik"}, removeAfter = "8.721") default boolean applyOnRestartForApplicationMetadataConfig() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.710", comment = "Use metricsProxyHeapSizeInMibFlag instead") default OptionalInt metricsProxyHeapSizeInMib() { return OptionalInt.empty(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return () -> 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return OptionalInt.empty(); }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.738") default double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) { return 0.95; }
         @ModelFeatureFlag(owners = {"toregge"}) default double searchNodeReservedMemoryFactor() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forceDisableOnnxModelOptimization() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean failWhenConfiguringIndexedMapOfArray() { return true; }
-        @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.740") default boolean protonLogWarningOnDiskCapacityChange() { return true; }
-        @ModelFeatureFlag(owners = {"johsol"}, removeAfter = "8.740") default boolean protonResampleDiskCapacity() { return true; }
-        @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}) default boolean fastMapSearch() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean relaxStrictlyIncreasingClusterStateVersions() { return false; }
+        @ModelFeatureFlag(owners = {"johsol"}, unusedSince = "8.740") default boolean protonLogWarningOnDiskCapacityChange() { return true; }
+        @ModelFeatureFlag(owners = {"johsol"}, unusedSince = "8.740") default boolean protonResampleDiskCapacity() { return true; }
+        @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}, unusedSince = "8.778") default boolean fastMapSearch() { return true; }
+        @ModelFeatureFlag(owners = {"hmusum"}, unusedSince = "8.755") default boolean relaxStrictlyIncreasingClusterStateVersions() { return true; }
+        // TODO (@sebasabe): Remove when no loaded config model version reads it; productDiscovery() replaces it
+        @ModelFeatureFlag(owners = {"sebasabe"}) default boolean commerceDiscovery() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum", "vekterli"}) default boolean enableLandlock() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean enableLegacyFeedHandler() { return true; }
+        @ModelFeatureFlag(owners = {"sebasabe"}) default boolean productDiscovery() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useMlModelImportCache() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -158,6 +167,9 @@ public interface ModelContext {
         default Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return Optional.empty(); }
 
         default Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
+
+        /** The parent of tenant Athenz domains, which hold the tenant identities of applications: {@code <parent>.<tenant>} */
+        default AthenzDomain tenantParentDomain() { return AthenzDomain.from("vespa.tenant"); }
 
         default Quota quota() { return Quota.unlimited(); }
 
@@ -237,7 +249,11 @@ public interface ModelContext {
     @Target(ElementType.METHOD)
     @interface ModelFeatureFlag {
         String[] owners();
-        String removeAfter() default ""; // On the form "8.100.10"
+        /**
+         * The first Vespa version whose config model no longer calls this method, on the form "8.100" or "8.100.10".
+         * Must be a version that contains the change removing the last call, see the removal steps on FeatureFlags.
+         */
+        String unusedSince() default "";
         String comment() default "";
     }
 

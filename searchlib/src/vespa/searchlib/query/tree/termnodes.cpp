@@ -8,7 +8,6 @@
 
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <cassert>
 #include <charconv>
 
 using vespalib::IllegalArgumentException;

@@ -14,7 +14,7 @@
 #include <vespa/searchlib/docstore/ibucketizer.h>
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace proton::bucketdb {
 class SplitBucketSession;
@@ -68,7 +68,7 @@ private:
         void set_store_full_document_id(bool value) noexcept { _dms._store_full_document_id = value; }
     };
     // maps from lid -> metadata
-    using MetadataStore = vespalib::RcuVectorBase<RawDocumentMetadata>;
+    using MetadataStore = vespalib::TypeStableVectorBase<RawDocumentMetadata>;
     using KeyComp = documentmetastore::LidGidKeyComparator;
     using OperationListenerSP = std::shared_ptr<documentmetastore::OperationListener>;
     using BucketDBOwnerSP = std::shared_ptr<bucketdb::BucketDBOwner>;

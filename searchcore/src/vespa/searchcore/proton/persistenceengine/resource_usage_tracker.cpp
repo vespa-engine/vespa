@@ -2,12 +2,11 @@
 
 #include "resource_usage_tracker.h"
 
+#include <vespa/check_require.h>
 #include <vespa/persistence/spi/i_resource_usage_listener.h>
 #include <vespa/searchcore/proton/server/i_resource_usage_notifier.h>
 #include <vespa/searchcore/proton/server/resource_usage_state.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
-
-#include <cassert>
 
 using storage::spi::AttributeResourceUsage;
 using storage::spi::ResourceUsage;
@@ -80,7 +79,7 @@ void ResourceUsageTracker::notify_resource_usage(const ResourceUsageState& state
 std::unique_ptr<vespalib::IDestructorCallback>
 ResourceUsageTracker::set_listener(storage::spi::IResourceUsageListener& listener) {
     std::lock_guard guard(_lock);
-    assert(_listener == nullptr);
+    CHECK(_listener == nullptr);
     _listener = &listener;
     listener.update_resource_usage(_resource_usage);
     return std::make_unique<ListenerGuard>(shared_from_this());

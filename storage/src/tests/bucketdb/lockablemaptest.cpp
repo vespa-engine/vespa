@@ -38,10 +38,12 @@ struct A {
     bool operator==(const A& a) const noexcept { return (_val1 == a._val1 && _val2 == a._val2 && _val3 == a._val3); }
     bool operator!=(const A& a) const noexcept { return !(*this == a); }
     bool operator<(const A& a) const noexcept {
-        if (_val1 != a._val1)
+        if (_val1 != a._val1) {
             return (_val1 < a._val1);
-        if (_val2 != a._val2)
+        }
+        if (_val2 != a._val2) {
             return (_val2 < a._val2);
+        }
         return (_val3 < a._val3);
     }
 };

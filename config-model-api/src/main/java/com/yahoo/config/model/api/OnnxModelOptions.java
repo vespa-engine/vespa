@@ -4,6 +4,7 @@ package com.yahoo.config.model.api;
 import com.yahoo.config.FileReference;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -23,7 +24,28 @@ public record OnnxModelOptions(
         Optional<String> concurrencyFactorType,
         Optional<Double> concurrencyFactor,
         Optional<FileReference> modelConfigOverride,
-        Optional<Boolean> optimizeModel) {
+        Optional<Boolean> optimizeModel,
+        List<Integer> paddingBuckets) {
+
+    public OnnxModelOptions {
+        paddingBuckets = List.copyOf(paddingBuckets);
+    }
+
+    /** Creates options without padding buckets, as before they were added. */
+    public OnnxModelOptions(Optional<String> executionMode,
+                            Optional<Integer> interOpThreads,
+                            Optional<Integer> intraOpThreads,
+                            Optional<GpuDevice> gpuDevice,
+                            Optional<Integer> batchingMaxSize,
+                            Optional<Duration> batchingMaxDelay,
+                            Optional<String> concurrencyFactorType,
+                            Optional<Double> concurrencyFactor,
+                            Optional<FileReference> modelConfigOverride,
+                            Optional<Boolean> optimizeModel) {
+        this(executionMode, interOpThreads, intraOpThreads, gpuDevice, batchingMaxSize, batchingMaxDelay,
+             concurrencyFactorType, concurrencyFactor, modelConfigOverride, optimizeModel, List.of());
+    }
+
     public OnnxModelOptions(
             Optional<String> executionMode,
             Optional<Integer> interOpThreads,
@@ -55,7 +77,8 @@ public record OnnxModelOptions(
                 builder.concurrencyFactorType,
                 builder.concurrencyFactor,
                 builder.modelConfigOverride,
-                builder.optimizeModel);
+                builder.optimizeModel,
+                builder.paddingBuckets);
     }
 
     public static OnnxModelOptions empty() {
@@ -82,6 +105,18 @@ public record OnnxModelOptions(
         return toBuilder().batchingMaxSize(batchingMaxSize).build();
     }
 
+    /**
+     * @deprecated Retained for compatibility with old config models. ONNX runtimes ignore this value.
+     */
+    @Deprecated(forRemoval = true)
+    public Optional<Duration> batchingMaxDelay() {
+        return batchingMaxDelay;
+    }
+
+    /**
+     * @deprecated Retained for compatibility with old config models. ONNX runtimes ignore this value.
+     */
+    @Deprecated(forRemoval = true)
     public OnnxModelOptions withBatchingMaxDelay(Duration batchingMaxDelay) {
         return toBuilder().batchingMaxDelay(batchingMaxDelay).build();
     }
@@ -102,6 +137,11 @@ public record OnnxModelOptions(
         return toBuilder().optimizeModel(optimizeModel).build();
     }
 
+    /** Sets the sequence lengths inputs are padded up to, so that requests of different lengths can be batched. */
+    public OnnxModelOptions withPaddingBuckets(List<Integer> paddingBuckets) {
+        return toBuilder().paddingBuckets(paddingBuckets).build();
+    }
+
     private Builder toBuilder() {
         return new Builder(this);
     }
@@ -117,6 +157,7 @@ public record OnnxModelOptions(
         private Optional<Double> concurrencyFactor = Optional.empty();
         private Optional<FileReference> modelConfigOverride = Optional.empty();
         private Optional<Boolean> optimizeModel = Optional.empty();
+        private List<Integer> paddingBuckets = List.of();
 
         Builder() {}
 
@@ -131,6 +172,7 @@ public record OnnxModelOptions(
             this.concurrencyFactor = options.concurrencyFactor;
             this.modelConfigOverride = options.modelConfigOverride;
             this.optimizeModel = options.optimizeModel;
+            this.paddingBuckets = options.paddingBuckets;
         }
 
         Builder executionMode(String executionMode) {
@@ -180,6 +222,11 @@ public record OnnxModelOptions(
 
         Builder optimizeModel(Boolean optimizeModel) {
             this.optimizeModel = Optional.ofNullable(optimizeModel);
+            return this;
+        }
+
+        Builder paddingBuckets(List<Integer> paddingBuckets) {
+            this.paddingBuckets = paddingBuckets;
             return this;
         }
 

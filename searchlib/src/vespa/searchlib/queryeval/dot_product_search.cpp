@@ -4,6 +4,7 @@
 
 #include "iterator_pack.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/objects/visit.h>
 
 using search::fef::MatchData;
@@ -50,8 +51,8 @@ public:
           _children(std::move(iteratorPack)),
           _field_is_filter(field_is_filter) {
         HEAP::require_left_heap();
-        assert(_weights.size() > 0);
-        assert(_weights.size() == _children.size());
+        CHECK(_weights.size() > 0);
+        CHECK(_weights.size() == _children.size());
         _data_space.reserve(_weights.size());
         for (size_t i = 0; i < weights.size(); ++i) {
             _data_space.push_back(i);

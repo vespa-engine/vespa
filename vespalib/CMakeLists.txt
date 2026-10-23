@@ -13,7 +13,6 @@ vespa_define_module(
     xxhash
     zstd
     ${VESPA_URING_LIB}
-    absl::stacktrace
     absl::symbolize
 
     APPS

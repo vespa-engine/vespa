@@ -2,6 +2,7 @@
 
 #include "resultconfig.h"
 
+#include "combiner_shape.h"
 #include "docsum_field_writer.h"
 #include "docsum_field_writer_factory.h"
 #include "resultclass.h"
@@ -14,6 +15,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <atomic>
+#include <span>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.resultconfig");
@@ -36,6 +38,21 @@ SummaryElementsSelector make_summary_elements_selector(const SummaryConfig::Clas
     case Select::ALL:
     default:
         return SummaryElementsSelector::select_all();
+    }
+}
+
+CombinerShape make_combiner_shape(SummaryConfig::Classes::Fields::CombinerShape shape) {
+    using ConfigShape = SummaryConfig::Classes::Fields::CombinerShape;
+    switch (shape) {
+    case ConfigShape::ARRAY_OF_STRUCT:
+        return CombinerShape::ARRAY_OF_STRUCT;
+    case ConfigShape::MAP_OF_STRUCT:
+        return CombinerShape::MAP_OF_STRUCT;
+    case ConfigShape::MAP_OF_SCALAR:
+        return CombinerShape::MAP_OF_SCALAR;
+    case ConfigShape::INFER:
+    default:
+        return CombinerShape::INFER;
     }
 }
 
@@ -122,12 +139,16 @@ bool ResultConfig::readConfig(const SummaryConfig& cfg, const std::string& confi
             std::string field_name = field.name;
             std::string command = field.command;
             std::string source_name = field.source;
+            // config::StringVector is a contiguous range of std::string, so this converts without a copy
+            // and keeps the config type from spreading past this boundary.
+            std::span<const std::string> struct_fields = field.structFields;
+            auto                         declared_shape = make_combiner_shape(field.combinerShape);
             LOG(info, "Reconfiguring class '%s' field '%s'", cfg_class.name.c_str(), field_name.c_str());
             auto factory = [&]() -> std::unique_ptr<DocsumFieldWriter> {
                 if (!command.empty()) {
                     try {
-                        return docsum_field_writer_factory.create_docsum_field_writer(field_name, command,
-                                                                                      source_name);
+                        return docsum_field_writer_factory.create_docsum_field_writer(
+                            field_name, command, source_name, struct_fields, declared_shape);
                     } catch (const vespalib::IllegalArgumentException& ex) {
                         LOG(error,
                             "Exception during setup of summary result class '%s': field='%s', command='%s', "
@@ -144,7 +165,7 @@ bool ResultConfig::readConfig(const SummaryConfig& cfg, const std::string& confi
                 auto elements_selector = make_summary_elements_selector(field.elements, source, struct_fields_mapper);
                 auto writer = factory();
                 elements_selector.maybe_apply_to(*res_class_matching_elements_fields);
-                if (!resClass->addConfigEntry(field_name, elements_selector, std::move(writer))) {
+                if (!resClass->addConfigEntry(field_name, elements_selector, std::move(writer), struct_fields)) {
                     LOG(error, "%s %s.fields: duplicate name '%s'", configId.c_str(), cfg_class.name.c_str(),
                         field_name.c_str());
                     rc = false;
@@ -156,7 +177,7 @@ bool ResultConfig::readConfig(const SummaryConfig& cfg, const std::string& confi
                 auto elements_selector = make_summary_elements_selector(field.elements, source, struct_fields_mapper);
                 auto writer = factory();
                 elements_selector.maybe_apply_to(*union_of_all_matching_elements_fields);
-                unionOfAll->addConfigEntry(field_name, elements_selector, std::move(writer));
+                unionOfAll->addConfigEntry(field_name, elements_selector, std::move(writer), struct_fields);
             }
         }
     }

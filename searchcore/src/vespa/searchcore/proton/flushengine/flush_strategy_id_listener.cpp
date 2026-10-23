@@ -4,7 +4,7 @@
 
 #include "flush_strategy_id_notifier.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton::flushengine {
 
@@ -15,13 +15,13 @@ FlushStrategyIdListener::FlushStrategyIdListener(std::shared_ptr<FlushStrategyId
 FlushStrategyIdListener::~FlushStrategyIdListener() = default;
 
 bool FlushStrategyIdListener::add_to_notifier(std::shared_ptr<FlushStrategyIdListener> self) {
-    assert(this == self.get());
+    CHECK(this == self.get());
     auto notifier = _notifier.lock();
     return notifier ? notifier->add_strategy_id_listener(std::move(self)) : false;
 }
 
 void FlushStrategyIdListener::remove_from_notifier(std::shared_ptr<FlushStrategyIdListener> self) {
-    assert(this == self.get());
+    CHECK(this == self.get());
     auto notifier = _notifier.lock();
     if (notifier) {
         notifier->remove_strategy_id_listener(std::move(self));

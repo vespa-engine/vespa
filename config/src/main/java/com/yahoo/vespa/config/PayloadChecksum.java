@@ -65,7 +65,7 @@ public class PayloadChecksum {
     public enum Type {MD5, XXHASH64}
 
     public boolean valid() {
-        if (checksum.equals("")) return true;  // Empty checksum is ok (e.g. when running 'vespa-get-config')
+        if (checksum.isEmpty()) return true;  // Empty checksum is ok (e.g. when running 'vespa-get-config')
 
         Matcher m = hexChecksumPattern.matcher(checksum);
         return m.matches();

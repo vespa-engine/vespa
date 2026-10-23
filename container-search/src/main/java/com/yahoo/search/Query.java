@@ -410,6 +410,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
 
         properties().setParentQuery(this);
+        // select.grouping may reference other query properties (@name), which may have been set after it above.
+        // Parse it eagerly here, now that all properties are set, so an invalid grouping fails at construction.
+        select.resolveGrouping();
         trace.traceProperties();
     }
 

@@ -205,8 +205,9 @@ void StressMaster::makePostingsHelper(FPFactory* postingFactory, const std::stri
     vespalib::Timer tv;
 
     postingFactory->setup(_wordSet);
-    for (size_t i = 0; i < _wordSet.words().size(); ++i)
+    for (size_t i = 0; i < _wordSet.words().size(); ++i) {
         makeSomePostings(postingFactory, _wordSet.words()[i], _postings[i], _stride, validate, verbose);
+    }
 
     LOG(info, "StressMaster::makePostingsHelper() elapsed %10.6f s for %s format", vespalib::to_s(tv.elapsed()),
         postingFormat.c_str());

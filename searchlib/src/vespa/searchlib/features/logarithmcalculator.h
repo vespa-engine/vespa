@@ -37,10 +37,12 @@ public:
      * Calculate the function for the given x.
      **/
     feature_t get(feature_t x) const {
-        if (x > _m)
+        if (x > _m) {
             x = _m;
-        if (x < 0)
+        }
+        if (x < 0) {
             x = 0;
+        }
         return (_maxLog - std::log(x + _s)) * _divMult;
     }
 

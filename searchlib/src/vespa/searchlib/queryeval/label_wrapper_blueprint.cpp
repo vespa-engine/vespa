@@ -76,6 +76,13 @@ FieldSpecBaseList LabelWrapperBlueprint::exposeFields() const {
     return {};
 }
 
+bool LabelWrapperBlueprint::always_needs_unpack() const {
+    // The raw score is set during unpack, and the handle is for the reserved
+    // "no field", so it is not exposed as a field. Without this, a parent may
+    // skip unpacking this child and the score would never be set.
+    return true;
+}
+
 void LabelWrapperBlueprint::sort(Children&, InFlow) const {
 }
 

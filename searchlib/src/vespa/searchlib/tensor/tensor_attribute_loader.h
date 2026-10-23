@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace search::attribute {
 class BlobSequenceReader;
@@ -30,7 +30,7 @@ class TensorStore;
 class TensorAttributeLoader {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using GenerationHandler = vespalib::GenerationHandler;
-    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using RefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
     TensorAttribute&      _attr;
     GenerationHandler&    _generation_handler;
     RefVector&            _ref_vector;

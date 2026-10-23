@@ -2,6 +2,7 @@
 
 #include "bucketmover_common.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/server/documentbucketmover.h>
@@ -19,10 +20,10 @@ struct MySubDbTwoBuckets : public MySubDb {
         builder.createDocs(1, 1, 6);
         builder.createDocs(2, 6, 9);
         insertDocs(builder.getDocs());
-        assert(bucket(1) != bucket(2));
-        assert(5u == docs(1).size());
-        assert(3u == docs(2).size());
-        assert(9u == _realRetriever->_docs.size());
+        CHECK(bucket(1) != bucket(2));
+        CHECK(5u == docs(1).size());
+        CHECK(3u == docs(2).size());
+        CHECK(9u == _realRetriever->_docs.size());
     }
 };
 

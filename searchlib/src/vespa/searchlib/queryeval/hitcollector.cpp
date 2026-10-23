@@ -4,10 +4,9 @@
 
 #include "first_phase_rescorer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/sort.h>
-
-#include <cassert>
 
 namespace search::queryeval {
 
@@ -378,7 +377,7 @@ std::unique_ptr<ResultSet> HitCollector::get_result_set(std::optional<double>  s
 
     if (second_phase_rank_drop_limit.has_value() && _bitVector) {
         if (dropped != nullptr) {
-            assert(dropped->empty());
+            CHECK(dropped->empty());
             add_bitvector_to_dropped(*dropped, {rs->getArray(), rs->getArrayUsed()}, *_bitVector);
         }
         _bitVector.reset();

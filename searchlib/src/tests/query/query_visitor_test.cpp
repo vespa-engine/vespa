@@ -81,8 +81,7 @@ TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     checkVisit<LocationTerm>(new SimpleLocationTerm(location, "field", 0, Weight(0)));
     checkVisit<PrefixTerm>(new SimplePrefixTerm("t", "field", 0, Weight(0)));
     checkVisit<RangeTerm>(new SimpleRangeTerm(Range(0, 1), "field", 0, Weight(0)));
-    checkVisit<StringRangeTerm>(
-        new SimpleStringRangeTerm(StringRange(std::make_unique<search::StringRangeSpec>()), "field", 0, Weight(0)));
+    checkVisit<StringRangeTerm>(new SimpleStringRangeTerm(StringRange(), "field", 0, Weight(0)));
     checkVisit<StringTerm>(new SimpleStringTerm("t", "field", 0, Weight(0)));
     checkVisit<SubstringTerm>(new SimpleSubstringTerm("t", "field", 0, Weight(0)));
     checkVisit<SuffixTerm>(new SimpleSuffixTerm("t", "field", 0, Weight(0)));

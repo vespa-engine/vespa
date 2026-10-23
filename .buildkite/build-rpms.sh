@@ -15,7 +15,7 @@ fi
 : "${VESPA_VERSION:?Environment variable VESPA_VERSION must be set (version to build)}"
 : "${LOCAL_RPM_REPO:?Environment variable LOCAL_RPM_REPO must be set (path to local RPM repo)}"
 
-echo "--- 📦 Building RPM packages"
+echo "--- 📦 Building RPM packages for version ${VESPA_VERSION}"
 ulimit -c 0
 
 echo "Creating source RPM..."

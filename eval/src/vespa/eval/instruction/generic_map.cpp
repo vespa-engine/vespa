@@ -2,13 +2,12 @@
 
 #include "generic_map.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
-
-#include <cassert>
 
 namespace vespalib::eval::instruction {
 
@@ -38,7 +37,7 @@ template <typename ICT, typename OCT, typename Func> void my_generic_map_op(Stat
         for (ICT value : input_cells) {
             *pos++ = (OCT)function(value);
         }
-        assert(pos == output_cells.data() + output_cells.size());
+        CHECK(pos == output_cells.data() + output_cells.size());
     }
     Value& result_ref = state.stash.create<ValueView>(param.res_type, a.index(), TypedCells(output_cells));
     state.pop_push(result_ref);
@@ -70,7 +69,7 @@ InterpretedFunction::Instruction GenericMap::make_instruction(const ValueType& r
                                                               const ValueType& input_type, map_fun_t function,
                                                               Stash& stash) {
     const auto& param = stash.create<MapParam>(result_type, function);
-    assert(result_type == input_type.map());
+    CHECK(result_type == input_type.map());
     auto op = typify_invoke<2, MapTypify, SelectGenericMapOp>(input_type.cell_meta(), function);
     return Instruction(op, wrap_param<MapParam>(param));
 }

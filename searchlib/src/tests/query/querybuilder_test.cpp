@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for querybuilder.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/query/proto_tree_converter.h>
@@ -43,10 +44,12 @@ const uint32_t x_aspect = 0;
 const Location location(position, max_distance, x_aspect);
 
 std::vector<StringRange> string_ranges() {
-    return {StringRange(std::make_unique<search::StringRangeSpec>("aaa", true, false, "zzz", false, false)),
-            StringRange(std::make_unique<search::StringRangeSpec>("", true, true, "zzz", true, false)),
-            StringRange(std::make_unique<search::StringRangeSpec>("aaa", false, false, "", false, true)),
-            StringRange(std::make_unique<search::StringRangeSpec>("", false, true, "", false, true))};
+    return {StringRange(std::in_place, "aaa", true, "zzz", false),
+            StringRange(std::in_place, std::nullopt, true, "zzz", true),
+            StringRange(std::in_place, "aaa", false, std::nullopt, false),
+            StringRange(std::in_place, std::nullopt, false, std::nullopt, false),
+            StringRange(std::in_place, "aaa", true, "zzz", false, 42),
+            StringRange(std::in_place, "aaa", true, "zzz", false, -42)};
 }
 
 PredicateQueryTerm::UP getPredicateQueryTerm() {
@@ -94,7 +97,7 @@ template <class NodeTypes> Node::UP createQueryTree() {
         }
         builder.addRangeTerm(range, view[9], id[9], weight[9]);
         builder.addLocationTerm(location, view[10], id[10], weight[10]);
-        builder.addWeakAnd(2, 123, view[0]);
+        builder.addWeakAnd(2, 123);
         {
             builder.addStringTerm(str[4], view[4], id[4], weight[4]);
             builder.addStringTerm(str[5], view[5], id[5], weight[5]);
@@ -130,7 +133,7 @@ template <class NodeTypes> Node::UP createQueryTree() {
         builder.addFuzzyTerm(str[5], view[5], id[5], weight[5], 3, 1, false);
     }
     Node::UP node = builder.build();
-    assert(node.get());
+    CHECK(node.get());
     return node;
 }
 
@@ -182,7 +185,7 @@ bool checkTerm(const Term* term, const typename Term::Type& t, const string& f, 
 
 template <class NodeType> NodeType* as_node(Node* node) {
     auto* result = dynamic_cast<NodeType*>(node);
-    assert(result != nullptr);
+    CHECK(result != nullptr);
     return result;
 }
 
@@ -210,7 +213,7 @@ template <class NodeTypes> void checkQueryTreeTypes(Node* node, bool skip_negati
     using FalseNode = typename NodeTypes::FalseQueryNode;
     using FuzzyTerm = typename NodeTypes::FuzzyTerm;
 
-    assert(node);
+    CHECK(node);
     auto* and_node = as_node<And>(node);
     EXPECT_EQ(13u, and_node->getChildren().size());
 
@@ -420,7 +423,7 @@ struct MyONear : ONear {
 };
 
 struct MyWeakAnd : WeakAnd {
-    MyWeakAnd(uint32_t minHits, const string& v) : WeakAnd(minHits, v) {}
+    MyWeakAnd(uint32_t minHits) : WeakAnd(minHits) {}
     ~MyWeakAnd() override;
 };
 

@@ -22,6 +22,7 @@ public:
     MockSharedThreadingService(ThreadExecutor& shared_in, size_t num_bucket_executors = 2);
     ~MockSharedThreadingService() override;
     ThreadExecutor& shared() override { return _shared; }
+    [[nodiscard]] std::shared_ptr<vespalib::Executor> shared_raw() const noexcept override { return {}; }
     vespalib::ISequencedTaskExecutor& field_writer() override { return *_field_writer; }
     vespalib::InvokeService& invokeService() override { return _invokeService; }
     FNET_Transport& transport() override { return _transport.transport(); }

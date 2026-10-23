@@ -414,7 +414,8 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.provision.Tags, com.yahoo.config.provision.CloudResourceTags, java.util.Map)",
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.provision.Tags, com.yahoo.config.provision.CloudResourceTags, java.util.Map, java.util.Map)",
+      "public java.util.Map availabilityZones()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -576,6 +577,7 @@
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Zone, com.yahoo.config.provision.ClusterSpec$Id, boolean)",
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId, com.yahoo.config.provision.ClusterSpec$Id, boolean)",
       "public java.util.List availabilityZones(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Zone)",
+      "public com.yahoo.config.application.api.DeploymentSpec$DevSpec devSpec()",
       "public java.lang.String xmlForm()",
       "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",
@@ -886,6 +888,64 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.config.model.api.AdditionalContent$DocumentTypeDeclaration" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, com.yahoo.config.model.api.AdditionalContent$Mode, boolean)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public java.lang.String type()",
+      "public com.yahoo.config.model.api.AdditionalContent$Mode mode()",
+      "public boolean global()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.AdditionalContent$Mode" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.config.model.api.AdditionalContent$Mode[] values()",
+      "public static com.yahoo.config.model.api.AdditionalContent$Mode valueOf(java.lang.String)",
+      "public java.lang.String xmlValue()"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.config.model.api.AdditionalContent$Mode INDEX",
+      "public static final enum com.yahoo.config.model.api.AdditionalContent$Mode STREAMING",
+      "public static final enum com.yahoo.config.model.api.AdditionalContent$Mode STORE_ONLY"
+    ]
+  },
+  "com.yahoo.config.model.api.AdditionalContent" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.util.List, java.util.List)",
+      "public static com.yahoo.config.model.api.AdditionalContent none()",
+      "public boolean isEmpty()",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public java.util.List schemas()",
+      "public java.util.List documents()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.config.model.api.ApplicationClusterEndpoint$AuthMethod" : {
     "superClass" : "java.lang.Enum",
     "interfaces" : [ ],
@@ -1038,6 +1098,32 @@
       "public java.lang.String applicationHostRole()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.CommerceDiscoveryProvider" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract com.yahoo.config.model.api.AdditionalContent additionalContent(com.yahoo.config.application.api.ApplicationPackage)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.CommerceDiscoverySchemaProvider" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract java.util.List schemas(com.yahoo.config.application.api.ApplicationPackage)"
     ],
     "fields" : [ ]
   },
@@ -1332,7 +1418,7 @@
     ],
     "methods" : [
       "public com.yahoo.config.provision.HostSpec allocateHost(java.lang.String)",
-      "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionLogger)",
+      "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.ProvisionContext)",
       "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionContext)"
     ],
     "fields" : [ ]
@@ -1443,28 +1529,28 @@
       "public double logserverNodeMemory()",
       "public double clusterControllerNodeMemory()",
       "public boolean useLegacyWandQueryParsing()",
-      "public boolean useSimpleAnnotations()",
       "public boolean sendOldQueryStack()",
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
       "public int maxContentNodeMaintenanceOpConcurrency()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag useTritonFlag()",
+      "public com.yahoo.config.model.api.ModelContext$FeatureFlag tritonShareOnnxSessionFlag()",
       "public boolean ignoreConnectivityChecksAtStartup()",
-      "public int searchCoreMaxOutstandingMoveOps()",
-      "public double docprocHandlerThreadpool()",
       "public boolean requireExplicitDocprocCluster()",
-      "public boolean applyOnRestartForApplicationMetadataConfig()",
-      "public java.util.OptionalInt metricsProxyHeapSizeInMib()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag metricsProxyHeapSizeInMibFlag()",
       "public java.util.OptionalInt metricsProxyAdminNodeHeapSizeInMib()",
-      "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)",
       "public double searchNodeReservedMemoryFactor()",
       "public boolean forceDisableOnnxModelOptimization()",
       "public boolean failWhenConfiguringIndexedMapOfArray()",
       "public boolean protonLogWarningOnDiskCapacityChange()",
       "public boolean protonResampleDiskCapacity()",
       "public boolean fastMapSearch()",
-      "public boolean relaxStrictlyIncreasingClusterStateVersions()"
+      "public boolean relaxStrictlyIncreasingClusterStateVersions()",
+      "public boolean commerceDiscovery()",
+      "public boolean enableLandlock()",
+      "public boolean enableLegacyFeedHandler()",
+      "public boolean productDiscovery()",
+      "public boolean useMlModelImportCache()"
     ],
     "fields" : [ ]
   },
@@ -1481,7 +1567,7 @@
     ],
     "methods" : [
       "public abstract java.lang.String[] owners()",
-      "public abstract java.lang.String removeAfter()",
+      "public abstract java.lang.String unusedSince()",
       "public abstract java.lang.String comment()"
     ],
     "fields" : [ ]
@@ -1509,6 +1595,7 @@
       "public abstract boolean isFirstTimeDeployment()",
       "public java.util.Optional endpointCertificateSecrets()",
       "public java.util.Optional athenzDomain()",
+      "public com.yahoo.config.provision.AthenzDomain tenantParentDomain()",
       "public com.yahoo.config.model.api.Quota quota()",
       "public java.util.List tenantVaults()",
       "public java.util.List tenantSecretStores()",
@@ -1556,6 +1643,7 @@
       "public abstract com.yahoo.config.model.api.ModelContext$Properties properties()",
       "public java.util.Optional appDir()",
       "public abstract com.yahoo.config.model.api.OnnxModelCost onnxModelCost()",
+      "public java.util.Optional mlModelImportCacheDir()",
       "public java.util.Optional wantedDockerImageRepo()",
       "public abstract com.yahoo.component.Version modelVespaVersion()",
       "public abstract com.yahoo.component.Version wantedNodeVespaVersion()"
@@ -1731,20 +1819,23 @@
       "record"
     ],
     "methods" : [
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.List)",
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public void <init>(java.lang.String, int, int, com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
-      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public static com.yahoo.config.model.api.OnnxModelOptions empty()",
       "public com.yahoo.config.model.api.OnnxModelOptions withExecutionMode(java.lang.String)",
       "public com.yahoo.config.model.api.OnnxModelOptions withInterOpThreads(java.lang.Integer)",
       "public com.yahoo.config.model.api.OnnxModelOptions withIntraOpThreads(java.lang.Integer)",
       "public com.yahoo.config.model.api.OnnxModelOptions withGpuDevice(com.yahoo.config.model.api.OnnxModelOptions$GpuDevice)",
       "public com.yahoo.config.model.api.OnnxModelOptions withBatchingMaxSize(java.lang.Integer)",
+      "public java.util.Optional batchingMaxDelay()",
       "public com.yahoo.config.model.api.OnnxModelOptions withBatchingMaxDelay(java.time.Duration)",
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactorType(java.lang.String)",
       "public com.yahoo.config.model.api.OnnxModelOptions withConcurrencyFactor(java.lang.Double)",
       "public com.yahoo.config.model.api.OnnxModelOptions withModelConfigOverride(com.yahoo.config.FileReference)",
       "public com.yahoo.config.model.api.OnnxModelOptions withOptimizeModel(java.lang.Boolean)",
+      "public com.yahoo.config.model.api.OnnxModelOptions withPaddingBuckets(java.util.List)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
@@ -1753,11 +1844,11 @@
       "public java.util.Optional intraOpThreads()",
       "public java.util.Optional gpuDevice()",
       "public java.util.Optional batchingMaxSize()",
-      "public java.util.Optional batchingMaxDelay()",
       "public java.util.Optional concurrencyFactorType()",
       "public java.util.Optional concurrencyFactor()",
       "public java.util.Optional modelConfigOverride()",
-      "public java.util.Optional optimizeModel()"
+      "public java.util.Optional optimizeModel()",
+      "public java.util.List paddingBuckets()"
     ],
     "fields" : [ ]
   },
@@ -1784,6 +1875,7 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public void add(com.yahoo.config.provision.ClusterSpec)",
       "public void add(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity)",
       "public java.util.Map clusters()",
       "public java.util.Map capacities()"

@@ -33,6 +33,7 @@ message Profiling {
     ProfilingParams match = 1;
     ProfilingParams first_phase = 2;
     ProfilingParams second_phase = 3;
+    ProfilingParams sort_features = 4;
 }
 
 message ProfilingParams {
@@ -164,7 +165,7 @@ message ItemOnear {
     int32 exclusion_distance = 4;
 }
 message ItemWeakAnd {
-    string index = 1;
+    string index = 1; // Note: unused
     uint32 target_num_hits = 2;
     repeated QueryTreeItem children = 3;
 }
@@ -270,6 +271,7 @@ message ItemStringRangeTerm {
     optional string upper_limit = 3;
     bool lower_inclusive = 4;
     bool upper_inclusive = 5;
+    optional int32 range_limit = 6;
 }
 
 // multi-terms:

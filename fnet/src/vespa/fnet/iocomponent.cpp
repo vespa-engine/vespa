@@ -4,7 +4,8 @@
 
 #include "transport_thread.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstring>
 
 FNET_IOComponent::FNET_IOComponent(FNET_TransportThread* owner, int socket_fd, const char* spec, bool shouldTimeOut)
@@ -21,7 +22,7 @@ FNET_IOComponent::FNET_IOComponent(FNET_TransportThread* owner, int socket_fd, c
 }
 
 FNET_IOComponent::~FNET_IOComponent() {
-    assert(_ioc_selector == nullptr);
+    CHECK(_ioc_selector == nullptr);
 }
 
 const FNET_Config& FNET_IOComponent::getConfig() const {

@@ -66,6 +66,7 @@ public:
     bool isGeoLoc() const noexcept { return (_type == Type::GEO_LOCATION); }
     bool isFuzzy() const noexcept { return (_type == Type::FUZZYTERM); }
     bool is_nearest_neighbor() const noexcept { return (_type == Type::NEAREST_NEIGHBOR); }
+    bool is_string_range() const noexcept { return (_type == Type::STRING_RANGE); }
     bool empty() const noexcept { return _term.empty(); }
     virtual void visitMembers(vespalib::ObjectVisitor& visitor) const;
     string getClassName() const;

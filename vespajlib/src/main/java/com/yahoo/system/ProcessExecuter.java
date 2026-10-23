@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import com.yahoo.collections.Pair;
@@ -29,12 +30,16 @@ public class ProcessExecuter {
      * 
      * @return retcode and stdout/stderr merged
      */
-    public Pair<Integer, String> exec(String command) throws IOException {
+    public Pair<Integer, String> exec(String command, Map<String, String> env) throws IOException {
         StringTokenizer tok = new StringTokenizer(command);
         List<String> tokens = new ArrayList<>();
         while (tok.hasMoreElements())
             tokens.add(tok.nextToken());
-        return exec(tokens.toArray(new String[0]));
+        return exec(tokens.toArray(new String[0]), env);
+    }
+
+    public Pair<Integer, String> exec(String command) throws IOException {
+        return exec(command, Map.of());
     }
     
     /**
@@ -43,9 +48,10 @@ public class ProcessExecuter {
      * @param command tokens
      * @return Retcode and stdout/stderr merged
      */
-    public Pair<Integer, String> exec(String[] command) throws IOException {
+    public Pair<Integer, String> exec(String[] command, Map<String, String> env) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(command);        
         StringBuilder ret = new StringBuilder();
+        pb.environment().putAll(env);
         pb.environment().remove("VESPA_LOG_TARGET");
         if (override_log_control) {
             pb.environment().remove("VESPA_LOG_CONTROL_FILE");
@@ -66,6 +72,10 @@ public class ProcessExecuter {
             throw new RuntimeException(e);
         }
         return new Pair<>(rc, ret.toString());
+    }
+
+    public Pair<Integer, String> exec(String[] command) throws IOException {
+        return exec(command, Map.of());
     }
 
 }

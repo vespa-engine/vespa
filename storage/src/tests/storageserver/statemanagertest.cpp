@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -88,10 +89,10 @@ void StateManagerTest::SetUp() {
 }
 
 void StateManagerTest::TearDown() {
-    assert(_lower->getNumReplies() == 0);
-    assert(_lower->getNumCommands() == 0);
-    assert(_upper->getNumReplies() == 0);
-    assert(_upper->getNumCommands() == 0);
+    CHECK(_lower->getNumReplies() == 0);
+    CHECK(_lower->getNumCommands() == 0);
+    CHECK(_upper->getNumReplies() == 0);
+    CHECK(_upper->getNumCommands() == 0);
     _manager = nullptr;
     _lower = nullptr;
     _upper->close();

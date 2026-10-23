@@ -1,19 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "log.h"
 
-#include <cassert>
-#include <cstring>
-LOG_SETUP(".log");
+#include "log-target.h"
 
 #include "internal.h"
 #include "log-target-fd.h"
 #include "log-target-file.h"
+#include "log.h"
+LOG_SETUP(".log");
+
+#include <vespa/check_require.h>
+
+#include <cstring>
 
 namespace ns_log {
 
 LogTarget::LogTarget(const char* target) {
     memset(_name, 0, sizeof(_name));
-    assert(strlen(target) < sizeof(_name));
+    CHECK(strlen(target) < sizeof(_name));
     strcpy(_name, target);
 }
 

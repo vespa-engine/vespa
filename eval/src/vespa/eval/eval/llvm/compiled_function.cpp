@@ -2,6 +2,7 @@
 
 #include "compiled_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/check_type.h>
 #include <vespa/eval/eval/gbdt.h>
 #include <vespa/eval/eval/node_traverser.h>
@@ -68,7 +69,7 @@ CompiledFunction::CompiledFunction(CompiledFunction&& rhs)
 }
 
 double CompiledFunction::estimate_cost_us(const std::vector<double>& params, double budget) const {
-    assert(params.size() == _num_params);
+    CHECK(params.size() == _num_params);
     if (_pass_params == PassParams::ARRAY) {
         auto function = get_function();
         auto empty = empty_array_function;
@@ -83,7 +84,7 @@ double CompiledFunction::estimate_cost_us(const std::vector<double>& params, dou
         auto baseline = [&]() { empty(my_resolve, const_cast<double*>(&params[0])); };
         return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
     }
-    assert(_pass_params == PassParams::SEPARATE);
+    CHECK(_pass_params == PassParams::SEPARATE);
     if (params.size() == 0) {
         auto function = get_function<0>();
         auto empty = empty_function_0;

@@ -4,13 +4,13 @@
 
 #include "sort.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/issue.h>
 
-#include <cassert>
 #include <cmath>
 
 using vespalib::Issue;
@@ -48,8 +48,9 @@ void insertion_sort(RankedHit a[], uint32_t n) {
         j = i;
         while (R(swap.getRank()) > R(a[j - 1].getRank())) {
             a[j] = a[j - 1];
-            if (!(--j))
+            if (!(--j)) {
                 break;
+            }
         }
         a[j] = swap;
     }
@@ -73,8 +74,9 @@ template <int SHIFT> void FastS_radixsort(RankedHit a[], uint32_t n, uint32_t nt
         cnt[(R(a[i + 2].getRank()) >> SHIFT) & 0xFF]++;
         cnt[(R(a[i + 3].getRank()) >> SHIFT) & 0xFF]++;
     }
-    for (; i < n; i++)
+    for (; i < n; i++) {
         cnt[(R(a[i].getRank()) >> SHIFT) & 0xFF]++;
+    }
 
     // Accumulate cnt positions
     sorted = (cnt[0] == n);
@@ -98,8 +100,9 @@ template <int SHIFT> void FastS_radixsort(RankedHit a[], uint32_t n, uint32_t nt
             }
 
             // Stop if top candidates in place
-            if (last[i] - cnt[i] >= ntop)
+            if (last[i] - cnt[i] >= ntop) {
                 break;
+            }
 
             // Grab first element to move
             j = ptr[i];
@@ -166,8 +169,9 @@ FastS_SortSpec::VectorRef::VectorRef(uint32_t type, const search::attribute::IAt
 }
 
 bool FastS_SortSpec::Add(IAttributeContext& vecMan, const FieldSortSpec& field_sort_spec) {
-    if (field_sort_spec._field.empty())
+    if (field_sort_spec._field.empty()) {
         return false;
+    }
 
     uint32_t                type = ASC_VECTOR;
     const IAttributeVector* vector(nullptr);
@@ -369,7 +373,7 @@ bool FastS_SortSpec::bind_numeric_provider(INumericSortValueProvider* provider) 
     _numeric_provider = provider;
     auto spec = _sortSpec.begin();
     for (auto& vec : _vectors) {
-        assert(spec != _sortSpec.end());
+        CHECK(spec != _sortSpec.end());
         if (spec->_is_rank_feature) {
             uint32_t ordinal =
                 (provider != nullptr) ? provider->ordinal(spec->_field) : INumericSortValueProvider::invalid_ordinal;

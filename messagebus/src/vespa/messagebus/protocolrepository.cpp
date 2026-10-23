@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "protocolrepository.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".protocolrepository");
@@ -28,14 +28,14 @@ IProtocol::SP ProtocolRepository::putProtocol(const IProtocol::SP& protocol) {
         }
     }
     if (protocolIndex == numProtocols) {
-        assert(numProtocols < MAX_PROTOCOLS);
+        CHECK(numProtocols < MAX_PROTOCOLS);
         _protocols[protocolIndex].first = name;
         _protocols[protocolIndex].second = nullptr;
         // nullptr may be observed after increment but before protocol pointer
         // update; this is fine as it has the same behavior as if the protocol
         // has not yet been added.
         const auto beforeAdd = _numProtocols.fetch_add(1, std::memory_order_release);
-        assert(beforeAdd == numProtocols); // Sanity check for racing inserters
+        CHECK(beforeAdd == numProtocols); // Sanity check for racing inserters
     } else {
         clearPolicyCache();
     }

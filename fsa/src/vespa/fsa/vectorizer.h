@@ -105,12 +105,15 @@ public:
          * @return True is this item<other item.
          */
         bool operator<(const VectorItem& v) const noexcept {
-            if (_weight > v._weight)
+            if (_weight > v._weight) {
                 return true;
-            if (_weight < v._weight)
+            }
+            if (_weight < v._weight) {
                 return false;
-            if (_term < v._term)
+            }
+            if (_term < v._term) {
                 return true;
+            }
             return false;
         }
 
@@ -123,12 +126,15 @@ public:
          * @return True is this item>other item.
          */
         bool operator>(const VectorItem& v) const {
-            if (_weight < v._weight)
+            if (_weight < v._weight) {
                 return true;
-            if (_weight > v._weight)
+            }
+            if (_weight > v._weight) {
                 return false;
-            if (_term > v._term)
+            }
+            if (_term > v._term) {
                 return true;
+            }
             return false;
         }
 
@@ -141,8 +147,9 @@ public:
          * @return True is this item==other item.
          */
         bool operator==(const VectorItem& v) const {
-            if (_weight == v._weight && _term == v._term)
+            if (_weight == v._weight && _term == v._term) {
                 return true;
+            }
             return false;
         }
 
@@ -543,11 +550,13 @@ private:
     void initIdfCount() {
         _idf_docs = 0;
         FSA::State s(_dictionary);
-        if (s.start("#IDFDOCS"))
+        if (s.start("#IDFDOCS")) {
             _idf_docs = s.nData();
+        }
 
-        if (!_idf_docs)
+        if (!_idf_docs) {
             ++_idf_docs;
+        }
     }
 
 public:

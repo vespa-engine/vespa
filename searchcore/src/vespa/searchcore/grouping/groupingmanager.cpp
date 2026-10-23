@@ -4,8 +4,8 @@
 
 #include "groupingcontext.h"
 
+#include <vespa/searchlib/aggregation/attribute_node_replacer.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
-#include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -18,7 +18,6 @@ namespace search::grouping {
 using aggregation::Grouping;
 using attribute::IAttributeContext;
 using vespalib::Issue;
-using vespalib::make_string_short::fmt;
 
 //-----------------------------------------------------------------------------
 
@@ -60,15 +59,14 @@ void GroupingManager::init(const IAttributeContext& attrCtx, const document::Doc
     std::swap(list, groupingList);
 }
 
-void GroupingManager::groupInRelevanceOrder(uint32_t distributionKey, const RankedHit* searchResults,
-                                            uint32_t binSize) {
-    _groupingContext.groupInRelevanceOrder(searchResults, binSize);
+void GroupingManager::groupInRelevanceOrder(uint32_t distributionKey, std::span<const RankedHit> hits) {
+    _groupingContext.groupInRelevanceOrder(hits);
     _groupingContext.setDistributionKey(distributionKey);
 }
 
-void GroupingManager::groupUnordered(uint32_t distributionKey, const RankedHit* searchResults, uint32_t binSize,
+void GroupingManager::groupUnordered(uint32_t distributionKey, std::span<const RankedHit> hits,
                                      const search::BitVector* overflow) {
-    _groupingContext.groupUnordered(searchResults, binSize, overflow);
+    _groupingContext.groupUnordered(hits, overflow);
     _groupingContext.setDistributionKey(distributionKey);
 }
 

@@ -147,7 +147,7 @@ public class GenericFunction {
         }
 
         if (!signatureProps.contains(propertyString.get())) {
-            String message = "This property is not available with with this signature. Available properties are: " + availableProps;
+            String message = "This property is not available with this signature. Available properties are: " + availableProps;
             diagnostics.add(new SchemaDiagnostic.Builder()
                 .setRange(propertyNode.get().getRange())
                 .setMessage(message)

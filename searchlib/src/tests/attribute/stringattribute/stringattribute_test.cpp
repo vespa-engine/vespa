@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/enumstore.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
@@ -7,6 +8,7 @@
 #include <vespa/searchlib/attribute/single_string_enum_search_context.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
+#include <vespa/searchlib/attribute/string_matcher_factory.h>
 #include <vespa/searchlib/attribute/string_range_search_helper.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/casts.h>
@@ -57,7 +59,7 @@ template <typename T0, typename T1>
 auto zipped_and_sorted_by_first(const std::vector<T0>& a, const std::vector<T1>& b)
     -> std::vector<std::pair<T0, T1>> {
     std::vector<std::pair<T0, T1>> combined;
-    assert(a.size() == b.size());
+    CHECK(a.size() == b.size());
     for (size_t i = 0; i < a.size(); ++i) {
         combined.emplace_back(a[i], b[i]);
     }
@@ -428,6 +430,38 @@ TEST_F(StringAttributeTest, testSingleValue) {
     }
 }
 
+namespace {
+
+template <typename ExpMatcher>
+bool creates_string_matcher(const std::string& term, QueryTermSimple::Type type, bool cased) {
+    return attribute::StringMatcherFactory::create_and_apply(
+        std::make_unique<QueryTermUCS4>(term, type), cased, vespalib::FuzzyMatchingAlgorithm::BruteForce,
+        []<typename Matcher>(Matcher&&) { return std::is_same_v<Matcher, ExpMatcher>; });
+}
+
+template <typename ExpMatcher>
+bool creates_string_matcher(std::unique_ptr<QueryTermSimple> term, bool cased) {
+    return attribute::StringMatcherFactory::create_and_apply(
+        std::move(term), cased, vespalib::FuzzyMatchingAlgorithm::BruteForce,
+        []<typename Matcher>(Matcher&&) { return std::is_same_v<Matcher, ExpMatcher>; });
+}
+
+} // namespace
+
+TEST_F(StringAttributeTest, test_string_matcher_factory) {
+    using QTT = QueryTermSimple::Type;
+    for (bool cased : {false, true}) {
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::WORD, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::PREFIXTERM, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("x.z", QTT::REGEXP, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::FUZZYTERM, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringRangeMatcher>(
+            std::make_unique<QueryTermUCS4>(
+                QTT::STRING_RANGE, std::make_unique<StringRangeSpec>(StringRangeSpec{"BAR", true, "FOO", true})),
+            cased));
+    }
+}
+
 TEST_F(StringAttributeTest, test_uncased_match) {
     QueryTermUCS4      xyz("xyz", QueryTermSimple::Type::WORD);
     StringSearchHelper helper(xyz, false);
@@ -542,25 +576,33 @@ TEST_F(StringAttributeTest, test_fuzzy_match) {
 }
 
 TEST_F(StringAttributeTest, test_range_match_cased) {
-    StringRangeSpec                    range = {"BAR", true, false, "FOO", true, false};
+    StringRangeSpec                    range = {"BAR", true, "FOO", true};
     attribute::StringRangeSearchHelper helper(&range, true);
 
-    // "BAR", "FOO", "bar", "foo"
-    EXPECT_TRUE(helper.is_match("BAR"));
-    EXPECT_TRUE(helper.is_match("FOO"));
-    EXPECT_FALSE(helper.is_match("bar"));
-    EXPECT_FALSE(helper.is_match("foo"));
+    auto verify = [=]<typename T>() {
+        // "BAR", "FOO", "bar", "foo"
+        EXPECT_TRUE(helper.is_match<T>("BAR"));
+        EXPECT_TRUE(helper.is_match<T>("FOO"));
+        EXPECT_FALSE(helper.is_match<T>("bar"));
+        EXPECT_FALSE(helper.is_match<T>("foo"));
+    };
+    verify.template operator()<const char*>();
+    verify.template operator()<std::string_view>();
 }
 
 TEST_F(StringAttributeTest, test_range_match_uncased) {
-    StringRangeSpec                    range = {"BAR", true, false, "FOO", true, false};
+    StringRangeSpec                    range = {"BAR", true, "FOO", true};
     attribute::StringRangeSearchHelper helper(&range, false);
 
-    // "BAR", "bar", "FOO", "foo"
-    EXPECT_TRUE(helper.is_match("BAR"));
-    EXPECT_TRUE(helper.is_match("bar"));
-    EXPECT_TRUE(helper.is_match("FOO"));
-    EXPECT_TRUE(helper.is_match("foo"));
+    auto verify = [=]<typename T>() {
+        // "BAR", "bar", "FOO", "foo"
+        EXPECT_TRUE(helper.is_match<T>("BAR"));
+        EXPECT_TRUE(helper.is_match<T>("bar"));
+        EXPECT_TRUE(helper.is_match<T>("FOO"));
+        EXPECT_TRUE(helper.is_match<T>("foo"));
+    };
+    verify.template operator()<const char*>();
+    verify.template operator()<std::string_view>();
 }
 
 namespace {
@@ -568,39 +610,43 @@ void verify_range(const StringRangeSpec& range, bool aaa, bool abb, bool acc, bo
     for (bool cased : {true, false}) {
         attribute::StringRangeSearchHelper helper(&range, cased);
 
-        EXPECT_EQ(aaa, helper.is_match("Aaa"));
-        EXPECT_EQ(abb, helper.is_match("Abb"));
-        EXPECT_EQ(acc, helper.is_match("Acc"));
-        EXPECT_EQ(add, helper.is_match("Add"));
-        EXPECT_EQ(aee, helper.is_match("Aee"));
+        auto verify = [=]<typename T>() {
+            EXPECT_EQ(aaa, helper.is_match<T>("Aaa"));
+            EXPECT_EQ(abb, helper.is_match<T>("Abb"));
+            EXPECT_EQ(acc, helper.is_match<T>("Acc"));
+            EXPECT_EQ(add, helper.is_match<T>("Add"));
+            EXPECT_EQ(aee, helper.is_match<T>("Aee"));
+        };
+        verify.template operator()<const char*>();
+        verify.template operator()<std::string_view>();
     }
 }
 } // namespace
 
 TEST_F(StringAttributeTest, test_range_is_match) {
     // ["Abb", "Add"]
-    verify_range({"Abb", true, false, "Add", true, false}, false, true, true, true, false);
+    verify_range({"Abb", true, "Add", true}, false, true, true, true, false);
 
     // ("Abb", "Add"]
-    verify_range({"Abb", false, false, "Add", true, false}, false, false, true, true, false);
+    verify_range({"Abb", false, "Add", true}, false, false, true, true, false);
 
     // ["Abb", "Add")
-    verify_range({"Abb", true, false, "Add", false, false}, false, true, true, false, false);
+    verify_range({"Abb", true, "Add", false}, false, true, true, false, false);
 
     // ("Abb", "Add")
-    verify_range({"Abb", false, false, "Add", false, false}, false, false, true, false, false);
+    verify_range({"Abb", false, "Add", false}, false, false, true, false, false);
 
     // (\infty, "Add")
-    verify_range({"Abb", false, true, "Add", false, false}, true, true, true, false, false);
+    verify_range({std::nullopt, false, "Add", false}, true, true, true, false, false);
 
     // ("Abb", \infty)
-    verify_range({"Abb", false, false, "Add", false, true}, false, false, true, true, true);
+    verify_range({"Abb", false, std::nullopt, false}, false, false, true, true, true);
 
     // (\infty, \infty)
-    verify_range({"Abb", false, true, "Add", false, true}, true, true, true, true, true);
+    verify_range({std::nullopt, false, std::nullopt, false}, true, true, true, true, true);
 
     // ["Add", "Abb"] = \varnothing
-    verify_range({"Add", true, false, "Abb", true, false}, false, false, false, false, false);
+    verify_range({"Add", true, "Abb", true}, false, false, false, false, false);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

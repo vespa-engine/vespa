@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for documentretriever.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/datatype/datatype.h>
@@ -47,8 +48,6 @@
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 using document::ArrayFieldValue;
 using document::BucketId;
@@ -180,7 +179,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         }
         const DocumentType* doc_type = r.getDocumentType(doc_type_name);
         auto                doc = std::make_unique<Document>(r, *doc_type, doc_id);
-        assert(doc != nullptr);
+        CHECK(doc != nullptr);
         doc->setValue(static_field, IntFieldValue::make(static_value));
         doc->setValue(dyn_field_i, IntFieldValue::make(static_value));
         doc->setValue(dyn_field_s, StringFieldValue::make(static_value_s));
@@ -317,7 +316,7 @@ struct Fixture {
     template <typename T> T* addAttribute(AttributeVector::SP attr_sp, Schema::DataType t,
                                           Schema::CollectionType ct) {
         T* attr = dynamic_cast<T*>(attr_sp.get());
-        assert(attr != nullptr);
+        CHECK(attr != nullptr);
         AttributeVector::DocId id;
         attr_manager.add(attr_sp);
         attr->addReservedDoc();

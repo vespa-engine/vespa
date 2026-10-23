@@ -4,11 +4,6 @@
 
 #include <google/protobuf/util/json_util.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.common.proto_to_json");
-
-//-----------------------------------------------------------------------------
-
 namespace search::common {
 
 std::string protobuf_message_to_json(const google::protobuf::Message& message) {
@@ -22,7 +17,7 @@ std::string protobuf_message_to_json(const google::protobuf::Message& message) {
     std::string output;
     auto        status = MessageToJsonString(message, &output, options);
     if (!status.ok()) {
-        LOG(warning, "MessageToJsonString returned BAD status");
+        return "protobuf MessageToJsonString FAILED, bad message";
     }
     return output;
 }

@@ -12,6 +12,7 @@ import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
+import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NumericInItem;
 import com.yahoo.prelude.query.PhraseItem;
@@ -19,6 +20,7 @@ import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -26,6 +28,7 @@ import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.GroupingRequest;
@@ -39,6 +42,7 @@ import com.yahoo.search.grouping.request.MinAggregator;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.query.SelectParser;
+import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
@@ -49,6 +53,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.yahoo.language.Language;
 
@@ -469,6 +474,12 @@ public class SelectTestCase {
 
         assertParse("{ \"contains\": [ \"baz\", {\"sameElement\" : [ { \"contains\" : [\"key\", \"a\"] }, {\"range\":[\"value.f2\",{\"=\":10}] } ]} ] }",
                 "baz:{key:a value.f2:10}");
+
+        // Negative numbers inside sameElement keep their sign.
+        assertParse("{ \"contains\": [ \"baz\", {\"sameElement\" : [ { \"contains\" : [\"key\", \"a\"] }, {\"equals\":[\"value\", -10] } ]} ] }",
+                "baz:{key:a value:-10}");
+        assertParse("{ \"contains\": [ \"baz\", {\"sameElement\" : [ {\"range\":[\"value\",{\">=\":-8, \"<=\":-1}] } ]} ] }",
+                "baz:{value:[-8;-1]}");
     }
 
     @Test
@@ -587,6 +598,66 @@ public class SelectTestCase {
     void testRangeIllegalArguments() {
         assertParseFail("{ \"range\": [\"baz\", { \">=\": \"cox\", \"<=\": -1 }] }",
                 new IllegalArgumentException("Expected a numeric argument to range, but got the string 'cox'"));
+    }
+
+    @Test
+    void testStringRange() {
+        parser = new SelectParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertParse("{ \"range\": [\"string\", { \">=\": \"aaa\", \"<=\": \"zzz\" }] }",
+                    "STRING_RANGE string:[\"aaa\";\"zzz\"]");
+        assertParse("{ \"range\": [\"string\", { \">\": \"aaa\", \"<=\": \"zzz\" }] }",
+                    "STRING_RANGE string:<\"aaa\";\"zzz\"]");
+        assertParse("{ \"range\": [\"string\", { \">=\": \"aaa\", \"<\": \"zzz\" }] }",
+                    "STRING_RANGE string:[\"aaa\";\"zzz\">");
+        assertParse("{ \"range\": [\"string\", { \">\": \"aaa\", \"<\": \"zzz\" }] }",
+                    "STRING_RANGE string:<\"aaa\";\"zzz\">");
+        assertParse("{ \"range\": [\"string\", { \"=\": \"aaa\" }] }",
+                    "STRING_RANGE string:[\"aaa\";\"aaa\"]");
+    }
+
+    @Test
+    void testUnboundedStringRange() {
+        parser = new SelectParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertParse("{ \"range\": [\"string\", { \"<=\": \"zzz\" }] }",
+                    "STRING_RANGE string:<-Infinity;\"zzz\"]");
+        assertParse("{ \"range\": [\"string\", { \"<\": \"zzz\" }] }",
+                    "STRING_RANGE string:<-Infinity;\"zzz\">");
+        assertParse("{ \"range\": [\"string\", { \">=\": \"aaa\" }] }",
+                    "STRING_RANGE string:[\"aaa\";Infinity>");
+        assertParse("{ \"range\": [\"string\", { \">\": \"aaa\" }] }",
+                    "STRING_RANGE string:<\"aaa\";Infinity>");
+
+        // Unbounded in both directions, as range(string, -Infinity, Infinity) in YQL: matches everything
+        assertParse("{ \"range\": [\"string\", { }] }",
+                    "STRING_RANGE string:<-Infinity;Infinity>");
+    }
+
+    @Test
+    void testStringRangeStyleSettings() {
+        parser = new SelectParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        QueryTree parsed = parseWhere("{ \"range\": { \"children\": [\"string\", { \">=\": \"aaa\", \"<=\": \"zzz\" }], " +
+                                      "\"attributes\": { \"filter\": true, \"label\": \"myLabel\" } } }");
+        StringRangeItem range = (StringRangeItem)parsed.getRoot();
+        assertTrue(range.isFilter());
+        assertEquals("myLabel", range.getLabel());
+    }
+
+    @Test
+    void testStringRangeProvidesOrigin() {
+        parser = new SelectParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        QueryTree parsed = parseWhere("{ \"range\": { \"children\": [\"string\", { \">=\": \"aaa\", \"<=\": \"zzz\" }], " +
+                                      "\"attributes\": { \"origin\": { \"original\": \"foo\", \"offset\": 0, \"length\": 3 } } } }");
+        StringRangeItem range = (StringRangeItem)parsed.getRoot();
+        assertEquals("foo", range.getRawWord());
+    }
+
+    @Test
+    void testStringRangeIllegalArguments() {
+        parser = new SelectParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertParseFail("{ \"range\": [\"string\", { \">=\": 1, \"<=\": \"zzz\" }] }",
+                        new IllegalArgumentException("The field 'string' is a string field, but the argument 1 to range is of type LONG"));
+        assertParseFail("{ \"range\": [\"string\", { \"<>\": \"zzz\" }] }",
+                        new IllegalArgumentException("Expected =, <, <=, > or >=, got <>."));
     }
 
     @Test
@@ -789,6 +860,8 @@ public class SelectTestCase {
         assertParse("{\"equals\": [\"public\",5]}", "public:5");
         assertParse("{\"equals\": {\"field\": \"public\", \"value\": true}}", "public:true");
         assertParse("{\"equals\": {\"field\": \"public\", \"value\": 5}}", "public:5");
+        assertParse("{\"equals\": [\"public\",-5]}", "public:-5");
+        assertParse("{\"equals\": {\"field\": \"public\", \"value\": -5}}", "public:-5");
     }
 
     @Test
@@ -808,6 +881,7 @@ public class SelectTestCase {
         var intTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 42 }}");
         var intSameElement = assertInstanceOf(SameElementItem.class, intTree.getRoot());
         assertEquals(List.of(0), intSameElement.getElementFilter());
+        assertInstanceOf(IntItem.class, intSameElement.getItem(0));
 
         // String value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 1, \"value\": \"hello\" }}",
@@ -816,6 +890,17 @@ public class SelectTestCase {
         // Double value
         assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": 3.14 }}",
                     "my_arr[0]:{3.14}");
+
+        // Negative values keep their sign and are numeric equality terms, as in YQL.
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": -42 }}",
+                    "my_arr[0]:{-42}");
+        var negativeTree = parseWhere("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": -42 }}");
+        var negativeSameElement = assertInstanceOf(SameElementItem.class, negativeTree.getRoot());
+        assertEquals(List.of(0), negativeSameElement.getElementFilter());
+        IntItem negativeValue = assertInstanceOf(IntItem.class, negativeSameElement.getItem(0));
+        assertEquals("-42", negativeValue.getNumber());
+        assertParse("{\"equals\": {\"field\": \"my_arr\", \"index\": 0, \"value\": -3.14 }}",
+                    "my_arr[0]:{-3.14}");
     }
 
     @Test
@@ -954,6 +1039,21 @@ public class SelectTestCase {
         String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"my label\", \"each\" : { \"output\" : \"count()\" } } } ]";
         GroupingOperation root = parseGrouping(grouping).get(0).getOperation(); // AllOperation
         assertEquals("my label", root.getChildren().get(0).getLabel());
+    }
+
+    @Test
+    void testGroupingLabelOnAllCanBeAParameter() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"@name\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        GroupingOperation root = parser.getGroupingSteps(grouping, Map.<String, String>of("name", "my label")::get).get(0).getOperation();
+        assertEquals("my label", root.getChildren().get(0).getLabel());
+
+        var e = assertThrows(IllegalArgumentException.class, () -> parser.getGroupingSteps(grouping, Map.<String, String>of()::get));
+        assertTrue(e.getMessage().contains("Input 'name' is not set"), e.getMessage());
+
+        // Not a parameter reference: a literal label
+        String literal = "[ { \"all\" : { \"group\" : \"a\", \"label\" : \"@1\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        root = parser.getGroupingSteps(literal, Map.<String, String>of()::get).get(0).getOperation();
+        assertEquals("@1", root.getChildren().get(0).getLabel());
     }
 
     @Test
@@ -1112,6 +1212,60 @@ public class SelectTestCase {
         query.getSelect().setGroupingString("[ { \"all\" : { \"group\" : \"time.dayofmonth(a)\", \"each\" : { \"output\" : \"count()\" } } } ]");
         assertEquals(1, query.getSelect().getGrouping().size());
         assertEquals("all(group(time.dayofmonth(a)) each(output(count())))", query.getSelect().getGrouping().get(0).getRootOperation().toString());
+    }
+
+    /** Parameters referenced in select.grouping are resolved when the query is complete, not in request parameter order. */
+    @Test
+    void testGroupingParametersAreResolvedRegardlessOfRequestParameterOrder() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"filter\" : \"regex(@pattern, a)\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        var requestMap = new java.util.LinkedHashMap<String, String>();
+        requestMap.put("select.grouping", grouping);
+        requestMap.put("pattern", "ba.*");
+        Query query = new Query(HttpRequest.createTestRequest("?", com.yahoo.jdisc.http.HttpRequest.Method.GET), requestMap, null);
+        assertEquals(1, query.getSelect().getGrouping().size());
+        assertEquals("all(group(a) filter(regex(\"ba.*\", a)) each(output(count())))",
+                     query.getSelect().getGrouping().get(0).getRootOperation().toString());
+
+        var missing = new java.util.LinkedHashMap<String, String>();
+        missing.put("select.grouping", grouping);
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> new Query(HttpRequest.createTestRequest("?", com.yahoo.jdisc.http.HttpRequest.Method.GET), missing, null));
+        assertTrue(Exceptions.toMessageString(e).contains("Input 'pattern' is not set"), Exceptions.toMessageString(e));
+    }
+
+    /** A grouping which fails to resolve stays pending, so it is not lost and can be resolved once the parameter is set. */
+    @Test
+    void testGroupingWhichFailsToResolveIsNotDiscarded() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"each\" : { \"output\" : \"count()\" } } }, " +
+                          "  { \"all\" : { \"group\" : \"b\", \"max\" : \"@max\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        Query query = new Query();
+        query.getSelect().setGroupingString(grouping);
+
+        var e = assertThrows(IllegalInputException.class, () -> query.getSelect().getGrouping());
+        assertTrue(Exceptions.toMessageString(e).contains("Input 'max' is not set"), Exceptions.toMessageString(e));
+        // Still failing on repeated access, with the same error, rather than silently returning no grouping
+        e = assertThrows(IllegalInputException.class, () -> query.getSelect().getGrouping());
+        assertTrue(Exceptions.toMessageString(e).contains("Input 'max' is not set"), Exceptions.toMessageString(e));
+
+        query.properties().set("max", "3");
+        assertEquals(2, query.getSelect().getGrouping().size());
+        assertEquals("all(group(a) each(output(count())))",
+                     query.getSelect().getGrouping().get(0).getRootOperation().toString());
+        assertEquals("all(group(b) max(3) each(output(count())))",
+                     query.getSelect().getGrouping().get(1).getRootOperation().toString());
+        // Resolved once: not re-resolved on later access
+        query.properties().set("max", "4");
+        assertEquals("all(group(b) max(3) each(output(count())))",
+                     query.getSelect().getGrouping().get(1).getRootOperation().toString());
+    }
+
+    /** A grouping without parameter references is parsed when it is set, so an invalid one fails right there. */
+    @Test
+    void testGroupingWithoutParametersFailsWhenSet() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"max\" : \"0\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        Query query = new Query();
+        var e = assertThrows(IllegalInputException.class, () -> query.getSelect().setGroupingString(grouping));
+        assertEquals("max must be a positive number, but got 0", e.getMessage());
     }
 
     @Test

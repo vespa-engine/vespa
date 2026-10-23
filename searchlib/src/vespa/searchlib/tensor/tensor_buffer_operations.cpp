@@ -4,6 +4,7 @@
 
 #include "fast_value_view.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/streamed/streamed_value_view.h>
@@ -51,7 +52,7 @@ TensorBufferOperations::TensorBufferOperations(const vespalib::eval::ValueType& 
 TensorBufferOperations::~TensorBufferOperations() = default;
 
 uint32_t TensorBufferOperations::get_num_subspaces_and_flag(std::span<const char> buf) const noexcept {
-    assert(buf.size() >= get_num_subspaces_size());
+    CHECK(buf.size() >= get_num_subspaces_size());
     const uint32_t& num_subspaces_and_flag_ref = *reinterpret_cast<const uint32_t*>(buf.data());
     return vespalib::atomic::load_ref_relaxed(num_subspaces_and_flag_ref);
 }
@@ -65,7 +66,7 @@ void TensorBufferOperations::set_skip_reclaim_labels(std::span<char> buf,
 
 void TensorBufferOperations::store_tensor(std::span<char> buf, const vespalib::eval::Value& tensor) {
     uint32_t num_subspaces = tensor.index().size();
-    assert(num_subspaces <= num_subspaces_mask);
+    CHECK(num_subspaces <= num_subspaces_mask);
     auto labels_end_offset = get_labels_offset() + get_labels_mem_size(num_subspaces);
     auto cells_size = num_subspaces * _subspace_type.size();
     auto cells_mem_size = num_subspaces * _subspace_type.mem_size(); // Size measured in bytes
@@ -73,8 +74,8 @@ void TensorBufferOperations::store_tensor(std::span<char> buf, const vespalib::e
     auto cells_start_offset = aligner.align(labels_end_offset);
     auto cells_end_offset = cells_start_offset + cells_mem_size;
     auto store_end = aligner.align(cells_end_offset);
-    assert(store_end == get_buffer_size(num_subspaces));
-    assert(buf.size() >= store_end);
+    CHECK(store_end == get_buffer_size(num_subspaces));
+    CHECK(buf.size() >= store_end);
     *reinterpret_cast<uint32_t*>(buf.data()) = num_subspaces;
     auto   labels = reinterpret_cast<string_id*>(buf.data() + get_labels_offset());
     size_t subspace = 0;
@@ -82,7 +83,7 @@ void TensorBufferOperations::store_tensor(std::span<char> buf, const vespalib::e
     auto   view = tensor.index().create_view({});
     view->lookup({});
     while (view->next_result(_addr_refs, subspace)) {
-        assert(subspace < num_subspaces);
+        CHECK(subspace < num_subspaces);
         auto subspace_labels = labels + subspace * _num_mapped_dimensions;
         for (auto& label : _addr) {
             SharedStringRepo::unsafe_copy(label); // tensor has an existing ref
@@ -91,12 +92,12 @@ void TensorBufferOperations::store_tensor(std::span<char> buf, const vespalib::e
         }
         ++num_subspaces_visited;
     }
-    assert(num_subspaces_visited == num_subspaces);
+    CHECK(num_subspaces_visited == num_subspaces);
     if (labels_end_offset != cells_start_offset) {
         memset(buf.data() + labels_end_offset, 0, cells_start_offset - labels_end_offset);
     }
     auto cells = tensor.cells();
-    assert(cells_size == cells.size);
+    CHECK(cells_size == cells.size);
     if (cells_mem_size > 0) {
         memcpy(buf.data() + cells_start_offset, cells.data, cells_mem_size);
     }
@@ -109,7 +110,7 @@ std::unique_ptr<vespalib::eval::Value>
 TensorBufferOperations::make_fast_view(std::span<const char>            buf,
                                        const vespalib::eval::ValueType& tensor_type) const {
     auto num_subspaces = get_num_subspaces(buf);
-    assert(buf.size() >= get_buffer_size(num_subspaces));
+    CHECK(buf.size() >= get_buffer_size(num_subspaces));
     std::span<const string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()),
                                       num_subspaces * _num_mapped_dimensions);
     auto                       cells_size = num_subspaces * _subspace_type.size();
@@ -117,7 +118,7 @@ TensorBufferOperations::make_fast_view(std::span<const char>            buf,
     auto                       aligner = select_aligner(cells_mem_size);
     auto                       cells_start_offset = get_cells_offset(num_subspaces, aligner);
     TypedCells                 cells(buf.data() + cells_start_offset, _subspace_type.cell_type(), cells_size);
-    assert(cells_start_offset + cells_mem_size <= buf.size());
+    CHECK(cells_start_offset + cells_mem_size <= buf.size());
     return std::make_unique<FastValueView>(tensor_type, labels, cells, _num_mapped_dimensions, num_subspaces);
 }
 
@@ -146,7 +147,7 @@ void TensorBufferOperations::encode_stored_tensor(std::span<const char>         
                                                   const vespalib::eval::ValueType& tensor_type,
                                                   vespalib::nbostream&             target) const {
     auto num_subspaces = get_num_subspaces(buf);
-    assert(buf.size() >= get_buffer_size(num_subspaces));
+    CHECK(buf.size() >= get_buffer_size(num_subspaces));
     std::span<const string_id> labels(reinterpret_cast<const string_id*>(buf.data() + get_labels_offset()),
                                       num_subspaces * _num_mapped_dimensions);
     auto                       cells_size = num_subspaces * _subspace_type.size();
@@ -154,7 +155,7 @@ void TensorBufferOperations::encode_stored_tensor(std::span<const char>         
     auto                       aligner = select_aligner(cells_mem_size);
     auto                       cells_start_offset = get_cells_offset(num_subspaces, aligner);
     TypedCells                 cells(buf.data() + cells_start_offset, _subspace_type.cell_type(), cells_size);
-    assert(cells_start_offset + cells_mem_size <= buf.size());
+    CHECK(cells_start_offset + cells_mem_size <= buf.size());
     StringIdVector    labels_copy(labels.begin(), labels.end());
     StreamedValueView streamed_value_view(tensor_type, _num_mapped_dimensions, cells, num_subspaces, labels_copy);
     vespalib::eval::encode_value(streamed_value_view, target);

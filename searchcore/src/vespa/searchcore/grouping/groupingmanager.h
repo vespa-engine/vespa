@@ -4,6 +4,8 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 
+#include <span>
+
 namespace search {
 struct RankedHit;
 class BitVector;
@@ -56,19 +58,17 @@ public:
      * @param searchResults the result set in array form
      * @param binSize size of search result array
      **/
-    void groupInRelevanceOrder(uint32_t distributionKey, const RankedHit* searchResults, uint32_t binSize);
+    void groupInRelevanceOrder(uint32_t distributionKey, std::span<const RankedHit> hits);
 
     /**
      * Perform actual grouping on the given the results.
      * The results should be in fastest access order which is normally unsorted.
      * Will only perform grouping that actually will resort.
      *
-     * @param searchResults the result set in array form
-     * @param binSize size of search result array
+     * @param hits the result set in array form
      * @param overflow The unranked hits.
      **/
-    void groupUnordered(uint32_t distributionKey, const RankedHit* searchResults, uint32_t binSize,
-                        const BitVector* overflow);
+    void groupUnordered(uint32_t distributionKey, std::span<const RankedHit> hits, const BitVector* overflow);
 
     /**
      * Merge another grouping context into the underlying context of

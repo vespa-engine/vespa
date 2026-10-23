@@ -19,6 +19,7 @@ import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.ONearItem;
 import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.TermItem;
@@ -28,6 +29,7 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 
@@ -67,8 +69,11 @@ public class NGramSearcher extends Searcher {
 
         IndexFacts.Session session = indexFacts.newSession(query);
         boolean rewritten = rewriteToNGramMatching(query.getModel().getQueryTree().getRoot(), 0, session, query);
-        if (rewritten)
+        if (rewritten) {
             query.trace("Rewritten to n-gram matching", true, 2);
+            String error = QueryCanonicalizer.canonicalize(query);
+            if (error != null) return new Result(query, ErrorMessage.createIllegalQuery(error));
+        }
 
         Result result = execution.search(query);
         recombineNGrams(result.hits().deepIterator(), session);

@@ -12,7 +12,7 @@ namespace vespalib::datastore {
  * A wrapper for std::atomic of type EntryRef that supports copy and move constructors and assignment operator,
  * and uses Release-Acquire ordering for store and load.
  *
- * Use this class when entry refs are stored in data stores or rcu vectors,
+ * Use this class when entry refs are stored in data stores or type stable vectors,
  * where copy and move constructors and assignment operator are needed when resizing underlying buffers.
  * In this case synchronization between the writer thread and reader threads
  * is handled as part of the buffer switch.

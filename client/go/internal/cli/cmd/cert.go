@@ -384,7 +384,7 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
 	if err != nil {
 		return err
 	}
-	if pkg.HasCertificate() && !overwriteCertificate {
+	if pkg.HasCertificateFile() && !overwriteCertificate {
 		return errHint(fmt.Errorf("application package '%s' already contains a certificate", pkg.Path), "Use -f to force overwriting")
 	}
 	if pkg.IsZip() {
@@ -418,6 +418,9 @@ func requireCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pk
 		return copyCertificate(tlsOptions, cli, pkg)
 	}
 	if pkg.HasCertificate() {
+		if !pkg.HasCertificateFile() {
+			return nil // Certificate is declared in services.xml and managed independently of security/clients.pem
+		}
 		if cli.isCI() {
 			return nil // A matching certificate is not required in CI environments
 		}

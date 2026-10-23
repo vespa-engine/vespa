@@ -17,6 +17,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -61,8 +62,10 @@ public class MetricsV1Handler extends HttpHandlerBase {
 
     private HttpResponse valuesResponse(String consumer) {
         try {
-            List<MetricsPacket> metrics = new ArrayList<>(valuesFetcher.fetch(consumer));
-            metrics.addAll(nodeMetricGatherer.gatherMetrics());
+            // Use the same start time for all packets, so they get the same timestamp
+            Instant startTime = Instant.now();
+            List<MetricsPacket> metrics = new ArrayList<>(valuesFetcher.fetch(consumer, startTime));
+            metrics.addAll(nodeMetricGatherer.gatherMetrics(startTime));
             return new MetricsJsonResponse(OK, toGenericJsonModel(metrics)::serialize);
         } catch (Exception e) {
             log.log(Level.WARNING, "Got exception when rendering metrics:", e);

@@ -2,6 +2,8 @@
 
 #include "policy_checking_certificate_verifier.h"
 
+#include <cstdlib>
+
 namespace vespalib::net::tls {
 
 namespace {

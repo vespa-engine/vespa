@@ -182,7 +182,12 @@ public class SessionZooKeeperClient {
     }
 
     public ApplicationId readApplicationId() {
-        return curator.getData(applicationIdPath()).map(d -> ApplicationId.fromSerializedForm(Utf8.toString(d)))
+        return readApplicationId(curator, tenantName, sessionId);
+    }
+
+    static ApplicationId readApplicationId(Curator curator, TenantName tenantName, long sessionId) {
+        return curator.getData(getSessionPath(tenantName, sessionId).append(APPLICATION_ID_PATH))
+                      .map(d -> ApplicationId.fromSerializedForm(Utf8.toString(d)))
                       .orElseThrow(() -> new NotFoundException("Could not find application id for session " + sessionId));
     }
 

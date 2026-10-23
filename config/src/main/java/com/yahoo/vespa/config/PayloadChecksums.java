@@ -79,6 +79,7 @@ public class PayloadChecksums {
     @Override
     public String toString() {
         return checksums.values().stream()
+                        .filter(checksum -> !checksum.isEmpty())
                         .map(checksum -> checksum.type().name() + ":" + checksum.asString())
                         .collect(Collectors.joining(","));
     }

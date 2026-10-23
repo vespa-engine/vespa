@@ -23,6 +23,7 @@ class StructFieldsResolver;
 class ArrayAttributeCombinerDFW : public AttributeCombinerDFW {
     std::vector<std::string> _fields;
     std::vector<std::string> _attributeNames;
+    std::vector<std::string> _element_count_attribute_names;
     bool                     _is_map_of_scalar;
 
     DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext& context,

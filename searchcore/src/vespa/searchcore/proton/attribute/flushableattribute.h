@@ -47,7 +47,7 @@ private:
     double                                   _replay_operation_cost;
     bool                                     _paged;
 
-    Task::UP internalInitFlush(SerialNum currentSerial);
+    void internal_init_flush(SerialNum currentSerial, TaskPromise task_promise);
 
 public:
     using SP = std::shared_ptr<FlushableAttribute>;
@@ -74,7 +74,8 @@ public:
     DiskGain getApproxDiskGain() const override;
     Time getLastFlushTime() const override;
     SerialNum getFlushedSerialNum() const override;
-    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    void init_flush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token,
+                    TaskPromise task_promise) override;
     [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override;

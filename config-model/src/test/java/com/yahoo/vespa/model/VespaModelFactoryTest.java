@@ -1,7 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.component.ComponentId;
+import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.config.model.api.AdditionalContent;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.model.productdiscovery.ProductDiscoveryProvider;
 import com.yahoo.config.model.MockModelContext;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -12,7 +18,9 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.ValidationParameters;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.io.IOUtils;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.Capacity;
@@ -23,13 +31,22 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,7 +68,7 @@ public class VespaModelFactoryTest {
         VespaModelFactory modelFactory =  VespaModelFactory.createTestFactory();
         Model model = modelFactory.createModel(testModelContext);
         assertNotNull(model);
-        assertTrue(model instanceof VespaModel);
+        assertInstanceOf(VespaModel.class, model);
     }
 
     // Uses an application package that throws IllegalArgumentException when validating
@@ -100,7 +117,10 @@ public class VespaModelFactoryTest {
 
         var host = new HostSpec(hostName,
                                 NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                                ClusterMembership.from(ClusterSpec.request(ClusterSpec.Type.container, new ClusterSpec.Id(routingClusterName)).vespaVersion("6.42").build(), 0),
+                                ClusterMembership.from(ClusterSpec.builder(ClusterSpec.Type.container,
+                                                                           new ClusterSpec.Id(routingClusterName),
+                                                                           Capacity.unspecified(),
+                                                                           new Version("6.42")).build(), 0, 0),
                                 Optional.empty(), Optional.empty(), Optional.empty(),
                                 AzName.defaultName());
         var mockProvisioner = new MockProvisioner(List.of(host));
@@ -135,6 +155,83 @@ public class VespaModelFactoryTest {
         };
     }
 
+    /** Without a builder, self-hosted must be told Vespa Cloud is required, and hosted that the version is unknown. */
+    @Test
+    void productDiscoveryWithoutABuilderFailsWithATailoredMessage() {
+        var services = """
+                <services version="1.0">
+                    <product-discovery version="1.1"/>
+                </services>""";
+        for (boolean hostedVespa : new boolean[] { false, true }) {
+            String message = assertThrows(IllegalArgumentException.class, () ->
+                    VespaModelFactory.createTestFactory().createModel(new MockModelContext() {
+                        @Override
+                        public ApplicationPackage applicationPackage() {
+                            return new MockApplicationPackage.Builder().withServices(services).build();
+                        }
+                        @Override
+                        public Properties properties() { return new TestProperties().setHostedVespa(hostedVespa); }
+                    })).getMessage();
+            String expected = hostedVespa ? "<product-discovery version=\"1.1\"> is not available on Vespa"
+                                          : "<product-discovery> requires Vespa Cloud";
+            assertTrue(message.contains(expected), message);
+        }
+    }
+
+    /** Lock in feature flag and hosted as gating for the provider for now. */
+    @Test
+    void productDiscoveryProviderIsConsultedOnlyInHostedVespaWithTheFlagEnabled() {
+        assertFalse(providerConsulted(false, false));
+        assertFalse(providerConsulted(true, false));
+        assertFalse(providerConsulted(false, true));
+        assertTrue(providerConsulted(true, true));
+    }
+
+    private boolean providerConsulted(boolean hostedVespa, boolean flagEnabled) {
+        AtomicBoolean consulted = new AtomicBoolean(false);
+        ProductDiscoveryProvider provider = applicationPackage -> {
+            consulted.set(true);
+            return AdditionalContent.none();
+        };
+        var providers = new ComponentRegistry<ProductDiscoveryProvider>();
+        providers.register(ComponentId.fromString("test-provider"), provider);
+        var factory = new VespaModelFactory(new ComponentRegistry<>(), new ComponentRegistry<>(),
+                                            new ComponentRegistry<>(), providers, Zone.defaultZone());
+        factory.createModel(new MockModelContext() {
+            @Override
+            public Properties properties() {
+                return new TestProperties().setHostedVespa(hostedVespa).productDiscovery(flagEnabled);
+            }
+        });
+        return consulted.get();
+    }
+
+    @Test
+    void modelImportCacheIsUsedOnlyWithTheFlagEnabled(@TempDir java.nio.file.Path cacheDir) throws IOException {
+        assertEquals(0, cachedModelsAfterDeploying(false, cacheDir));
+        assertEquals(3, cachedModelsAfterDeploying(true, cacheDir));
+    }
+
+    private long cachedModelsAfterDeploying(boolean flagEnabled, java.nio.file.Path cacheDir) throws IOException {
+        File appDir = new File("src/test/cfg/application/ml_models");
+        try {
+            var factory = new VespaModelFactory(new ComponentRegistry<>(), new ComponentRegistry<>(),
+                                                new ComponentRegistry<>(), new ComponentRegistry<>(), Zone.defaultZone());
+            factory.createModel(new MockModelContext(FilesApplicationPackage.fromDir(appDir, Map.of())) {
+                @Override
+                public Properties properties() { return new TestProperties().useMlModelImportCache(flagEnabled); }
+                @Override
+                public Optional<File> mlModelImportCacheDir() { return Optional.of(cacheDir.toFile()); }
+            });
+            try (Stream<java.nio.file.Path> files = Files.walk(cacheDir)) {
+                return files.filter(file -> file.getFileName().toString().equals("model.json")).count();
+            }
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(new File(appDir, ApplicationPackage.MODELS_GENERATED_DIR.getRelative()));
+        }
+    }
+
     ApplicationPackage createApplicationPackageThatFailsWhenValidating() {
         return new MockApplicationPackage.Builder().withEmptyHosts().withEmptyServices().failOnValidateXml().build();
     }
@@ -148,7 +245,7 @@ public class VespaModelFactoryTest {
         }
 
         @Override
-        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+        public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
             return hosts;
         }
 

@@ -2,10 +2,10 @@
 
 #include "sort_feature_store.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <numeric>
 
@@ -39,7 +39,6 @@ double sanitize(double value) {
 SortFeatureStore::SortFeatureStore(std::vector<std::string> public_names)
     : _num_features(public_names.size()),
       _rows(0),
-      _recorded_in_docid_order(true),
       _last_docid(0),
       _seek_row(~0u),
       _consume_pos(0),
@@ -48,17 +47,18 @@ SortFeatureStore::SortFeatureStore(std::vector<std::string> public_names)
       _phase(Phase::recording),
       _public_names(std::move(public_names)),
       _chunks(),
-      _read_order() {
-    assert(no_duplicates(_public_names));
+      _read_order(),
+      _run_starts() {
+    CHECK(no_duplicates(_public_names));
 }
 
 SortFeatureStore::~SortFeatureStore() = default;
 
 void SortFeatureStore::record(uint32_t docid, std::span<const double> values) {
-    assert(_phase == Phase::recording);
-    assert(values.size() == _num_features);
+    CHECK(_phase == Phase::recording);
+    CHECK(values.size() == _num_features);
     if (_rows > 0 && docid < _last_docid) {
-        _recorded_in_docid_order = false;
+        _run_starts.push_back(_rows);
     }
     _last_docid = docid;
     if (_chunks.empty() || _chunks.back()->used == chunk_rows) {
@@ -87,13 +87,35 @@ void SortFeatureStore::ensure_sorted_for_read() {
         return;
     }
     _phase = Phase::reading;
-    if (_recorded_in_docid_order || _rows == 0) {
+    if (_run_starts.empty()) {
         return;
     }
+    // Each docid range this thread matches is recorded in ascending order, so
+    // the rows form ascending runs, at most one per range. The first run
+    // usually starts with the thread's own range and holds most rows, so
+    // merge the later runs pairwise, then merge the first run with them once:
+    // about one pass over the rows. Other shapes give the same order at a
+    // higher cost, a merge sort at worst.
     _read_order.resize(_rows);
     std::iota(_read_order.begin(), _read_order.end(), 0u);
-    std::sort(_read_order.begin(), _read_order.end(),
-              [this](uint32_t a, uint32_t b) { return row_docid(a) < row_docid(b); });
+    auto less = [this](uint32_t a, uint32_t b) { return row_docid(a) < row_docid(b); };
+    auto begin = _read_order.begin();
+    // [bounds[i], bounds[i + 1]) is a run; each pass halves their number.
+    std::vector<uint32_t> bounds(_run_starts);
+    bounds.push_back(_rows);
+    while (bounds.size() > 2) {
+        size_t kept = 0;
+        size_t i = 0;
+        for (; i + 2 < bounds.size(); i += 2) {
+            std::inplace_merge(begin + bounds[i], begin + bounds[i + 1], begin + bounds[i + 2], less);
+            bounds[kept++] = bounds[i];
+        }
+        for (; i < bounds.size(); ++i) {
+            bounds[kept++] = bounds[i];
+        }
+        bounds.resize(kept);
+    }
+    std::inplace_merge(begin, begin + _run_starts.front(), _read_order.end(), less);
 }
 
 uint32_t SortFeatureStore::ordinal(std::string_view public_name) const {
@@ -191,7 +213,7 @@ double SortFeatureStore::get(uint32_t ordinal) const {
         // The caller fails the query on failed(), so this value is never presented.
         return -HUGE_VAL;
     }
-    assert(ordinal < _num_features);
+    CHECK(ordinal < _num_features);
     return row_values(_seek_row)[ordinal];
 }
 
@@ -217,6 +239,7 @@ void SortFeatureStore::clear_storage() {
     // read-order index row (and the chunk buffers) before FastS radix scratch.
     std::vector<std::unique_ptr<Chunk>>().swap(_chunks);
     std::vector<uint32_t>().swap(_read_order);
+    std::vector<uint32_t>().swap(_run_starts);
     _rows = 0;
     _seek_row = ~0u;
     _consume_pos = 0;

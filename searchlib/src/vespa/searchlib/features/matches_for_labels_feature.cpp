@@ -28,6 +28,7 @@ using fef::FeatureType;
 using fef::IllegalHandle;
 using fef::ITermData;
 using fef::ITermFieldData;
+using fef::ITermFieldRangeAdapter;
 using fef::MatchDataDetails;
 using fef::TermFieldHandle;
 using search::tensor::FastValueView;
@@ -39,8 +40,10 @@ using vespalib::eval::ValueType;
 namespace {
 
 /**
- * Executor returning 1 for each query item label whose terms matched the given field,
- * as a tensor<float>(label{}) with one cell per label that matched the document.
+ * Executor returning 1 for each query item label whose terms matched, as a
+ * tensor<float>(label{}) with one cell per label that matched the document.
+ * Which handles are considered per label is decided by the blueprint; the
+ * executor itself does not care about fields.
  */
 class MatchesForLabelsExecutor : public fef::FeatureExecutor {
     std::vector<std::vector<TermFieldHandle>> _handles_per_label; // in label order
@@ -91,7 +94,8 @@ void MatchesForLabelsExecutor::execute(uint32_t doc_id) {
         if (std::any_of(_handles_per_label[i].begin(), _handles_per_label[i].end(),
                         [this, doc_id](TermFieldHandle handle) {
                             return _md->resolveTermField(handle)->has_ranking_data(doc_id);
-                        })) {
+                        }))
+        {
             _view_labels.push_back(labels[i]);
             _view_cells.push_back(1.0f);
         }
@@ -105,19 +109,34 @@ void MatchesForLabelsExecutor::execute(uint32_t doc_id) {
     outputs().set_object(0, *_output);
 }
 
-std::vector<TermFieldHandle> collect_field_handles(const std::vector<const ITermData*>& terms, uint32_t field_id) {
+// Only the document ID is needed, so request the cheaper Interleaved details.
+// SimpleTermFieldData discards the requested detail level, so tests cannot
+// distinguish this from Normal.
+void add_handle(const ITermFieldData& tfd, std::vector<TermFieldHandle>& handles) {
+    TermFieldHandle handle = tfd.getHandle(MatchDataDetails::Interleaved);
+    if (handle != IllegalHandle) {
+        handles.push_back(handle);
+    }
+}
+
+/**
+ * Collect the handles to look at for one label. With a field id only the handle
+ * for that field is used; without one every field searched by the term counts,
+ * including the reserved "no field" used by query items searching no field.
+ */
+std::vector<TermFieldHandle> collect_handles(const std::vector<const ITermData*>& terms,
+                                             std::optional<uint32_t>              field_id) {
     std::vector<TermFieldHandle> handles;
     for (const ITermData* term : terms) {
-        const ITermFieldData* tfd = term->lookupField(field_id);
-        if (tfd == nullptr) {
-            continue;
-        }
-        // Only the document ID is needed, so request the cheaper Interleaved details.
-        // SimpleTermFieldData discards the requested detail level, so tests cannot
-        // distinguish this from Normal.
-        TermFieldHandle handle = tfd->getHandle(MatchDataDetails::Interleaved);
-        if (handle != IllegalHandle) {
-            handles.push_back(handle);
+        if (field_id.has_value()) {
+            const ITermFieldData* tfd = term->lookupField(field_id.value());
+            if (tfd != nullptr) {
+                add_handle(*tfd, handles);
+            }
+        } else {
+            for (ITermFieldRangeAdapter fields(*term); fields.valid(); fields.next()) {
+                add_handle(fields.get(), handles);
+            }
         }
     }
     return handles;
@@ -127,7 +146,7 @@ std::vector<TermFieldHandle> collect_field_handles(const std::vector<const ITerm
 
 MatchesForLabelsBlueprint::MatchesForLabelsBlueprint()
     : Blueprint("matches_for_labels"),
-      _field_id(0),
+      _field_id(),
       _value_type(ValueType::from_spec("tensor<float>(label{})")),
       _empty_output() {
 }
@@ -142,16 +161,22 @@ Blueprint::UP MatchesForLabelsBlueprint::createInstance() const {
 }
 
 fef::ParameterDescriptions MatchesForLabelsBlueprint::getDescriptions() const {
-    return fef::ParameterDescriptions().desc().field();
+    return fef::ParameterDescriptions().desc().field().desc();
 }
 
 bool MatchesForLabelsBlueprint::setup(const fef::IIndexEnvironment&, const fef::ParameterList& params) {
-    _field_id = params[0].asField()->id();
+    if (!params.empty()) {
+        _field_id = params[0].asField()->id();
+    }
     _empty_output = vespalib::eval::value_from_spec(_value_type.to_spec(), FastValueBuilderFactory::get());
     describeOutput("out",
-                   "1 for each query item label whose terms matched the given field, as a "
-                   "tensor<float>(label{}) with the labels as cell labels. Labels that did not "
-                   "match have no cell.",
+                   _field_id.has_value()
+                       ? "1 for each query item label whose terms matched the given field, as a "
+                         "tensor<float>(label{}) with the labels as cell labels. Labels that did not "
+                         "match have no cell."
+                       : "1 for each query item label whose terms matched the document in any field, as a "
+                         "tensor<float>(label{}) with the labels as cell labels. Labels that did not "
+                         "match have no cell.",
                    FeatureType::object(_value_type));
     return true;
 }
@@ -160,7 +185,7 @@ FeatureExecutor& MatchesForLabelsBlueprint::createExecutor(const fef::IQueryEnvi
                                                            vespalib::Stash&              stash) const {
     std::vector<std::pair<std::string, std::vector<TermFieldHandle>>> labeled_handles;
     for (auto& [label, terms] : util::getTermsByAllLabels(env)) {
-        auto handles = collect_field_handles(terms, _field_id);
+        auto handles = collect_handles(terms, _field_id);
         if (!handles.empty()) {
             labeled_handles.emplace_back(std::move(label), std::move(handles));
         }

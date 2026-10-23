@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 
 namespace search::attribute {
 
@@ -33,5 +34,9 @@ public:
 
     constexpr bool operator==(const QuantizationParams&) const noexcept = default;
 };
+
+constexpr std::string_view to_string(QuantizationParams::QuantizationMode mode) noexcept {
+    return mode == QuantizationParams::QuantizationMode::MSE ? "MSE" : "InnerProduct";
+}
 
 } // namespace search::attribute

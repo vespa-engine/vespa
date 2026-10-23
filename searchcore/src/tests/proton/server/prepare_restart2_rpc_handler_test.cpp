@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/connection.h>
 #include <vespa/fnet/ipacketstreamer.h>
 #include <vespa/fnet/iserveradapter.h>
@@ -12,7 +13,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <atomic>
-#include <cassert>
 #include <iostream>
 
 using proton::DetachedRpcRequestsOwner;
@@ -89,7 +89,7 @@ public:
 };
 
 void DestructGuardContext::set_destructed() noexcept {
-    assert(_allow_destruct);
+    CHECK(_allow_destruct);
     _destructed = true;
 }
 

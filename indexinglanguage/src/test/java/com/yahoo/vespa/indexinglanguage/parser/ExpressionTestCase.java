@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.parser;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.vespa.indexinglanguage.expressions.AbsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Base64DecodeExpression;
@@ -53,6 +54,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ToIntegerExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToLongExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToStringExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ToTensorExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToWsetExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TokenizeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TrimExpression;
@@ -72,6 +74,7 @@ public class ExpressionTestCase {
 
     @Test
     public void requireThatAllExpressionTypesAreParsed() throws ParseException {
+        assertExpression(AbsExpression.class, "abs");
         assertExpression(ArithmeticExpression.class, "1 + 2");
         assertExpression(AttributeExpression.class, "attribute");
         assertExpression(Base64DecodeExpression.class, "base64decode");
@@ -131,6 +134,7 @@ public class ExpressionTestCase {
         assertExpression(ToLongExpression.class, "to_long");
         assertExpression(ToPositionExpression.class, "to_pos");
         assertExpression(ToStringExpression.class, "to_string");
+        assertExpression(ToTensorExpression.class, "to_tensor chunk");
         assertExpression(ToWsetExpression.class, "to_wset");
         assertExpression(ToBoolExpression.class, "to_bool");
         assertExpression(ToWsetExpression.class, "to_wset create_if_non_existent");

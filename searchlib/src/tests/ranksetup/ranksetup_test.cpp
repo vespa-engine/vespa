@@ -942,15 +942,16 @@ TEST_F(RankSetupTest, feature_normalization) {
     }
 }
 
-TEST_F(RankSetupTest, sort_features_compile_as_numeric_one_seed_resolvers) {
+TEST_F(RankSetupTest, sort_features_compile_as_numeric_seeds) {
     {
         RankSetup rs(_factory, _indexEnv);
         rs.setFirstPhaseRank("value(1)");
         rs.add_sort_feature("value(2)");
         ASSERT_TRUE(rs.compile());
         EXPECT_TRUE(rs.has_sort_feature("value(2)"));
-        auto program = rs.create_sort_program("value(2)");
-        ASSERT_TRUE(program);
+        auto selection = rs.select_sort_features({"value(2)"});
+        ASSERT_TRUE(selection.valid());
+        EXPECT_TRUE(rs.create_sort_program(selection));
         EXPECT_FALSE(rs.has_sort_feature("value(1)"));
     }
     {
@@ -998,12 +999,15 @@ TEST_F(RankSetupTest, sort_features_reject_first_phase_rank_helpers) {
 
 class RecordingIndexEnvironment : public search::fef::test::IndexEnvironment {
 public:
+    ~RecordingIndexEnvironment() override;
     mutable std::vector<IIndexEnvironment::FeatureMotivation> hints;
     FeatureMotivation getFeatureMotivation() const override {
         return hints.empty() ? FeatureMotivation::UNKNOWN : hints.back();
     }
     void hintFeatureMotivation(FeatureMotivation motivation) const override { hints.push_back(motivation); }
 };
+
+RecordingIndexEnvironment::~RecordingIndexEnvironment() = default;
 
 TEST_F(RankSetupTest, sort_features_compile_under_rank_motivation) {
     RecordingIndexEnvironment env;
@@ -1046,11 +1050,18 @@ TEST_F(RankSetupTest, sort_features_prepare_only_selected_public_names) {
     EXPECT_TRUE(rs.has_sort_feature("countprepare"));
     EXPECT_TRUE(rs.has_sort_feature("value(2)"));
     QueryEnvironment queryEnv;
-    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"value(2)"}));
+    auto             prepare = [&](const std::vector<std::string>& public_names) {
+        auto selection = rs.select_sort_features(public_names);
+        ASSERT_TRUE(selection.valid());
+        rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), selection);
+    };
+    prepare({});
     EXPECT_EQ(0, CountPrepareBlueprint::prepares);
-    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"countprepare"}));
+    prepare({"value(2)"});
+    EXPECT_EQ(0, CountPrepareBlueprint::prepares);
+    prepare({"countprepare"});
     EXPECT_EQ(1, CountPrepareBlueprint::prepares);
-    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"countprepare", "countprepare"}));
+    prepare({"countprepare", "countprepare"});
     EXPECT_EQ(2, CountPrepareBlueprint::prepares);
 }
 
@@ -1063,20 +1074,103 @@ TEST_F(RankSetupTest, an_unknown_sort_feature_is_reported_rather_than_fatal) {
 
     // A name that was never added as a sort feature, and one that exists as a
     // rank feature but was not selected for sorting.
-    EXPECT_FALSE(rs.create_sort_program("value(3)"));
-    EXPECT_FALSE(rs.create_sort_program("value(1)"));
-
-    QueryEnvironment queryEnv;
-    EXPECT_FALSE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"value(3)"}));
-    EXPECT_FALSE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {"value(2)", "value(3)"}));
+    EXPECT_FALSE(rs.select_sort_features({"value(3)"}).valid());
+    EXPECT_FALSE(rs.select_sort_features({"value(1)"}).valid());
+    EXPECT_FALSE(rs.select_sort_features({"value(2)", "value(3)"}).valid());
 }
 
-TEST_F(RankSetupTest, preparing_no_sort_features_succeeds) {
+TEST_F(RankSetupTest, selecting_no_sort_features_succeeds) {
     RankSetup rs(_factory, _indexEnv);
     rs.setFirstPhaseRank("value(1)");
     ASSERT_TRUE(rs.compile());
+    auto selection = rs.select_sort_features({});
+    ASSERT_TRUE(selection.valid());
+    EXPECT_TRUE(selection.seed_index.empty());
     QueryEnvironment queryEnv;
-    EXPECT_TRUE(rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), {}));
+    rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), selection);
+}
+
+std::vector<double> sort_values(const RankSetup& rs, const RankSetup::SortSelection& selection) {
+    MatchDataLayout  mdl;
+    auto             match_data = mdl.createMatchData();
+    QueryEnvironment queryEnv;
+    auto             program = rs.create_sort_program(selection);
+    program->setup(*match_data, queryEnv);
+    auto                seeds = program->get_seeds();
+    std::vector<double> values;
+    for (uint32_t index : selection.seed_index) {
+        values.push_back(seeds.resolve(index).as_number(1));
+    }
+    return values;
+}
+
+TEST_F(RankSetupTest, sort_selection_follows_query_order) {
+    RankSetup rs(_factory, _indexEnv);
+    rs.setFirstPhaseRank("value(1)");
+    rs.add_sort_feature("value(4)");
+    rs.add_sort_feature("value(3)");
+    rs.add_sort_feature("value(2)");
+    ASSERT_TRUE(rs.compile());
+    // Seeds are kept sorted by name, the reverse of these queries' orders.
+    auto some = rs.select_sort_features({"value(3)", "value(2)"});
+    ASSERT_TRUE(some.valid());
+    EXPECT_EQ(2u, some.resolver->getSeedMap().size());
+    EXPECT_EQ((std::vector<double>{3.0, 2.0}), sort_values(rs, some));
+
+    auto all = rs.select_sort_features({"value(4)", "value(3)", "value(2)"});
+    ASSERT_TRUE(all.valid());
+    EXPECT_EQ((std::vector<double>{4.0, 3.0, 2.0}), sort_values(rs, all));
+    // Selecting every seed shares the profile's resolver instead of copying it.
+    EXPECT_EQ(all.resolver, rs.select_sort_features({"value(2)", "value(4)", "value(3)"}).resolver);
+}
+
+TEST_F(RankSetupTest, sort_feature_public_names_map_to_normalized_seeds) {
+    BlueprintFactory factory;
+    setup_search_features(factory);
+    factory.addPrototype(std::make_shared<CountPrepareBlueprint>());
+    CountPrepareBlueprint::prepares = 0;
+    IndexEnvironment env;
+    auto&            props = env.getProperties();
+    props.add(indexproperties::rank::FirstPhase::NAME, "value(1)");
+    props.add(indexproperties::dump::IgnoreDefaultFeatures::NAME, "true");
+    props.add(indexproperties::sort::Feature::NAME, "value( 2 )");
+    props.add(indexproperties::sort::Feature::NAME, "value(2)");
+    props.add(indexproperties::sort::Feature::NAME, "countprepare");
+    props.add(indexproperties::feature_rename::Rename::NAME, "value( 2 )");
+    props.add(indexproperties::feature_rename::Rename::NAME, "spaced");
+    props.add(indexproperties::feature_rename::Rename::NAME, "value(2)");
+    props.add(indexproperties::feature_rename::Rename::NAME, "plain");
+    RankSetup rs(factory, env);
+    rs.configure();
+    ASSERT_TRUE(rs.compile());
+    EXPECT_TRUE(rs.has_sort_feature("spaced"));
+    EXPECT_TRUE(rs.has_sort_feature("plain"));
+
+    // Two public names for one seed, with another seed unselected: no shortcut to every seed.
+    auto selection = rs.select_sort_features({"spaced", "plain"});
+    ASSERT_TRUE(selection.valid());
+    EXPECT_EQ(1u, selection.resolver->getSeedMap().size());
+    EXPECT_EQ((std::vector<uint32_t>{0, 0}), selection.seed_index);
+    EXPECT_EQ((std::vector<double>{2.0, 2.0}), sort_values(rs, selection));
+    QueryEnvironment queryEnv;
+    rs.prepare_sort_shared_state(queryEnv, queryEnv.getObjectStore(), selection);
+    EXPECT_EQ(0, CountPrepareBlueprint::prepares);
+}
+
+TEST_F(RankSetupTest, sort_feature_checks_name_the_offending_feature) {
+    BlueprintFactory factory;
+    setup_search_features(factory);
+    _indexEnv.getProperties().add("rankingExpression(uses_first).rankingScript", "firstPhaseRank + value(2)");
+    RankSetup rs(factory, _indexEnv);
+    rs.setFirstPhaseRank("value(1)");
+    rs.add_sort_feature("value(2)");
+    rs.add_sort_feature("rankingExpression(uses_first)");
+    EXPECT_FALSE(rs.compile());
+    auto warnings = rs.getJoinedWarnings();
+    EXPECT_NE(std::string::npos,
+              warnings.find("sort feature 'rankingExpression(uses_first)' cannot depend on firstPhaseRank"))
+        << warnings;
+    EXPECT_EQ(std::string::npos, warnings.find("sort feature 'value(2)'")) << warnings;
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

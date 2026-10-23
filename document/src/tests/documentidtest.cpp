@@ -44,14 +44,6 @@ TEST(DocumentIdTest, testOutput) {
     EXPECT_EQ(expected, id.toString());
 }
 
-namespace {
-template <class T> std::string getNotEqualMessage(const T& t1, const T& t2) {
-    std::ostringstream ost;
-    ost << "Expected instances to be different. This was not the case:\n" << t1 << "\n" << t2 << "\n";
-    return ost.str();
-}
-} // namespace
-
 TEST(DocumentIdTest, testEqualityOperator) {
     std::string uri("id:ns:news::crawler:http://www.yahoo.com");
 

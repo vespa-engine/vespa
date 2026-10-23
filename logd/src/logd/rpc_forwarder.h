@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "absl_wrapped_proto.h"
 #include "forwarder.h"
 #include "proto_converter.h"
 

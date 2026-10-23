@@ -21,7 +21,6 @@ import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
-import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterHosts;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DeploymentConfigStore;
@@ -29,14 +28,12 @@ import com.yahoo.config.provision.EndpointsChecker;
 import com.yahoo.config.provision.EndpointsChecker.Availability;
 import com.yahoo.config.provision.EndpointsChecker.Endpoint;
 import com.yahoo.config.provision.EndpointsChecker.HealthCheckerProvider;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.NodeSuspensionProvider;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -134,6 +131,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
+import static com.yahoo.jdisc.Response.Status.SERVICE_UNAVAILABLE;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
@@ -210,7 +208,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new ActiveTokenFingerprintsClient(),
              flagSource,
              new DeploymentMetricsRetriever(new ClusterDeploymentMetricsRetriever(),
-                     nodeSuspensionProvider(nodeSuspensionProviders), flagSource));
+                     nodeSuspensionProvider(nodeSuspensionProviders)));
     }
 
     private static NodeSuspensionProvider nodeSuspensionProvider(ComponentRegistry<NodeSuspensionProvider> registry) {
@@ -368,7 +366,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              __ -> activeTokens,
                                              flagSource,
                                              new DeploymentMetricsRetriever(new ClusterDeploymentMetricsRetriever(),
-                                                     NodeSuspensionProvider.EMPTY, flagSource));
+                                                                            NodeSuspensionProvider.EMPTY));
         }
 
     }
@@ -944,10 +942,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ServiceListResponse servicesToCheckForConfigConvergence(ApplicationId applicationId,
                                                                    Duration timeoutPerService,
                                                                    Optional<Version> vespaVersion) {
-        ServiceListResponse response = convergeChecker.checkConvergenceForAllServices(getApplication(applicationId, vespaVersion), timeoutPerService);
-        if (response.converged && ! getPendingRestarts(applicationId).isEmpty())
-            response = response.unconverged();
-        return response;
+        return convergeChecker.checkConvergenceForAllServices(getApplication(applicationId, vespaVersion), timeoutPerService)
+                              .withPendingRestarts(getPendingRestarts(applicationId));
     }
 
     public ConfigConvergenceChecker configConvergenceChecker() { return convergeChecker; }
@@ -962,14 +958,25 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public HttpResponse getLogs(ApplicationId applicationId, Optional<DomainName> hostname, Query apiParams) {
         Exception exception = null;
+        HttpResponse unavailable = null;
+        // Usually there is only one log server, but if we e.g. change ports or setup logserver in a different way between
+        // model versions there could be multiple, try them in order until one works
         for (var uri : getLogServerUris(applicationId, hostname)) {
             try {
-                return logRetriever.getLogs(uri.withQuery(apiParams), activationTime(applicationId));
+                HttpResponse response = logRetriever.getLogs(uri.withQuery(apiParams), activationTime(applicationId));
+                // Log server host might be down or retired, try the next one if there is one
+                if (response.getStatus() == SERVICE_UNAVAILABLE) {
+                    unavailable = response;
+                    continue;
+                }
+                return response;
             } catch (RuntimeException e) {
                 exception = e;
                 log.log(Level.INFO, e.getMessage());
             }
         }
+        if (unavailable != null) return unavailable;
+        if (exception == null) return HttpErrorResponse.notFoundError("No log server found for " + applicationId);
         return HttpErrorResponse.internalServerError(Exceptions.toMessageString(exception));
     }
 
@@ -1258,8 +1265,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public double getQuotaUsageRate(ApplicationId applicationId) {
         var application = getApplication(applicationId);
-        return application.getModel().provisioned().capacities().values().stream()
-                .map(Capacity::maxResources)// TODO: This may be unspecified -> 0
+        return application.getModel().provisioned().clusters().values().stream()
+                .map(cluster -> cluster.capacity().maxResources())// TODO: This may be unspecified -> 0
                 .mapToDouble(resources -> resources.nodes() * resources.nodeResources().cost())
                 .sum();
     }
@@ -1278,7 +1285,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
 
         ApplicationVersions applicationVersions = getActiveApplicationVersions(applicationId)
-                .orElseThrow(() -> new NotFoundException("Unable to get logs for for " + applicationId + " (application not found)"));
+                .orElseThrow(() -> new NotFoundException("Unable to get logs for " + applicationId + " (application not found)"));
         List<Pair<String, Integer>> hostInfo = logserverHostInfo(applicationVersions);
         return hostInfo.stream()
                 .map(h -> HttpURL.create(Scheme.http, DomainName.of(h.getFirst()), h.getSecond(), HttpURL.Path.parse("logs")))

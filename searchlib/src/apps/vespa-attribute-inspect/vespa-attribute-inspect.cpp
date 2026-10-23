@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute.h>
@@ -69,7 +70,7 @@ void LoadAttribute::printContent(const AttributePtr& ptr, std::ostream& os) {
         AttributeVector::WeightedString* buf = new AttributeVector::WeightedString[sz];
         for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
             uint32_t valueCount = ptr->get(doc, buf, sz);
-            assert(valueCount <= sz);
+            CHECK(valueCount <= sz);
             os << "doc " << doc << ": valueCount(" << valueCount << ")" << std::endl;
             for (uint32_t i = 0; i < valueCount; ++i) {
                 os << "    " << i << ": " << "[" << buf[i].getValue() << ", " << buf[i].getWeight() << "]"
@@ -81,7 +82,7 @@ void LoadAttribute::printContent(const AttributePtr& ptr, std::ostream& os) {
         std::string* buf = new std::string[ptr->getMaxValueCount()];
         for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
             uint32_t valueCount = ptr->get(doc, buf, sz);
-            assert(valueCount <= sz);
+            CHECK(valueCount <= sz);
             os << "doc " << doc << ": valueCount(" << valueCount << ")" << std::endl;
             for (uint32_t i = 0; i < valueCount; ++i) {
                 os << "    " << i << ": " << "[" << buf[i] << "]" << std::endl;

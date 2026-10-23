@@ -6,7 +6,7 @@ namespace vespalib {
 
 namespace { // left/right heap operations (code duplicated since we use old gcc)
 
-template <typename T, typename C> void left_heap_insert(T* heap, size_t pos, T value, C cmp) {
+template <typename T, typename C> [[maybe_unused]] void left_heap_insert(T* heap, size_t pos, T value, C cmp) {
     size_t parent = (pos - 1) >> 1;
     while (pos != 0 && cmp(value, *(heap + parent))) {
         *(heap + pos) = std::move(*(heap + parent));
@@ -16,7 +16,7 @@ template <typename T, typename C> void left_heap_insert(T* heap, size_t pos, T v
     *(heap + pos) = std::move(value);
 }
 
-template <typename T, typename C> void right_heap_insert(T* heap, size_t pos, T value, C cmp) {
+template <typename T, typename C> [[maybe_unused]] void right_heap_insert(T* heap, size_t pos, T value, C cmp) {
     size_t parent = (pos - 1) >> 1;
     while (pos != 0 && cmp(value, *(heap - parent))) {
         *(heap - pos) = std::move(*(heap - parent));
@@ -32,7 +32,7 @@ template <typename T, typename C> void right_heap_insert(T* heap, size_t pos, T 
 #pragma GCC push_options
 #pragma GCC optimize("no-if-conversion", "no-if-conversion2")
 #endif
-template <typename T, typename C> void left_heap_adjust(T* heap, size_t len, T value, C cmp) {
+template <typename T, typename C> [[maybe_unused]] void left_heap_adjust(T* heap, size_t len, T value, C cmp) {
     size_t pos = 0;
     size_t child2 = 2;
     while (child2 < len) {
@@ -51,7 +51,7 @@ template <typename T, typename C> void left_heap_adjust(T* heap, size_t len, T v
     left_heap_insert<T, C>(heap, pos, std::move(value), cmp);
 }
 
-template <typename T, typename C> void right_heap_adjust(T* heap, size_t len, T value, C cmp) {
+template <typename T, typename C> [[maybe_unused]] void right_heap_adjust(T* heap, size_t len, T value, C cmp) {
     size_t pos = 0;
     size_t child2 = 2;
     while (child2 < len) {
@@ -72,12 +72,12 @@ template <typename T, typename C> void right_heap_adjust(T* heap, size_t len, T 
 #pragma GCC pop_options
 #endif
 
-template <typename T, typename C> void left_heap_remove(T* heap, size_t len, T value, C cmp) {
+template <typename T, typename C> [[maybe_unused]] void left_heap_remove(T* heap, size_t len, T value, C cmp) {
     *(heap + len) = std::move(*heap);
     left_heap_adjust<T, C>(heap, len, std::move(value), cmp);
 }
 
-template <typename T, typename C> void right_heap_remove(T* heap, size_t len, T value, C cmp) {
+template <typename T, typename C> [[maybe_unused]] void right_heap_remove(T* heap, size_t len, T value, C cmp) {
     *(heap - len) = std::move(*heap);
     right_heap_adjust<T, C>(heap, len, std::move(value), cmp);
 }

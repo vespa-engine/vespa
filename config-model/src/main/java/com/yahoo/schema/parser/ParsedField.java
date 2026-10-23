@@ -2,6 +2,7 @@
 package com.yahoo.schema.parser;
 
 import com.yahoo.schema.document.Stemming;
+import com.yahoo.schema.document.TokensMode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,11 +26,13 @@ public class ParsedField extends ParsedBlock {
     private int overrideId = 0;
     private boolean isLiteral = false;
     private boolean isNormal = false;
-    private boolean fastMapSearch = false;
+    private final List<ParsedFastMapSearch> fastMapSearches = new ArrayList<>();
     private Integer weight;
     private String normalizing = null;
     private String searchLinguisticsProfile;
     private String indexLinguisticsProfile;
+    private TokensMode searchLinguisticsTokens;
+    private TokensMode indexLinguisticsTokens;
     private final ParsedMatchSettings matchInfo = new ParsedMatchSettings();
     private Stemming stemming = null;
     private ParsedIndexingOp indexingOp = null;
@@ -53,7 +56,7 @@ public class ParsedField extends ParsedBlock {
     boolean hasFilter() { return this.isFilter; }
     boolean hasLiteral() { return this.isLiteral; }
     boolean hasNormal() { return this.isNormal; }
-    boolean getFastMapSearch() { return this.fastMapSearch; }
+    List<ParsedFastMapSearch> getFastMapSearches() { return List.copyOf(fastMapSearches); }
     boolean hasIdOverride() { return overrideId != 0; }
     int idOverride() { return overrideId; }
     List<DictionaryOption> getDictionaryOptions() { return List.copyOf(dictionaryOptions); }
@@ -70,6 +73,8 @@ public class ParsedField extends ParsedBlock {
     Optional<String> getNormalizing() { return Optional.ofNullable(normalizing); }
     Optional<String> getIndexLinguisticsProfile() { return Optional.ofNullable(indexLinguisticsProfile); }
     Optional<String> getSearchLinguisticsProfile() { return Optional.ofNullable(searchLinguisticsProfile); }
+    Optional<TokensMode> getIndexLinguisticsTokens() { return Optional.ofNullable(indexLinguisticsTokens); }
+    Optional<TokensMode> getSearchLinguisticsTokens() { return Optional.ofNullable(searchLinguisticsTokens); }
     Optional<ParsedIndexingOp> getIndexing() { return Optional.ofNullable(indexingOp); }
     Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
     Map<String, String> getRankTypes() { return Collections.unmodifiableMap(rankTypes); }
@@ -123,14 +128,41 @@ public class ParsedField extends ParsedBlock {
     }
 
     public void setBolding(boolean value) { this.hasBolding = value; }
-    public void setFastMapSearch(boolean value) { this.fastMapSearch = value; }
+
+    /** Adds a 'fast-search-map-field' with the given lookup name, and returns it so that its key and value may be set. */
+    public ParsedFastMapSearch addFastMapSearch(String lookupName) {
+        for (ParsedFastMapSearch existing : fastMapSearches) {
+            if (existing.lookupName().equals(lookupName)) {
+                throw new IllegalArgumentException("'fast-search-map-field " + lookupName + "' is given more than once in field '" + name() + "'.");
+            }
+        }
+        var fastMapSearch = new ParsedFastMapSearch(name(), lookupName);
+        fastMapSearches.add(fastMapSearch);
+        return fastMapSearch;
+    }
+
     public void setFilter(boolean value) { this.isFilter = value; }
+
     public void setId(int id) { this.overrideId = id; }
     public void setLiteral(boolean value) { this.isLiteral = value; }
     public void setNormal(boolean value) { this.isNormal = value; }
     public void setNormalizing(String value) { this.normalizing = value; }
-    public void setIndexLinguisticsProfile(String profile) { this.indexLinguisticsProfile = profile; }
-    public void setSearchLinguisticsProfile(String profile) { this.searchLinguisticsProfile = profile; }
+    public void setIndexLinguisticsProfile(String profile) {
+        verifyThat(indexLinguisticsProfile == null, "already has linguistics profile for index", indexLinguisticsProfile);
+        this.indexLinguisticsProfile = profile;
+    }
+    public void setSearchLinguisticsProfile(String profile) {
+        verifyThat(searchLinguisticsProfile == null, "already has linguistics profile for search", searchLinguisticsProfile);
+        this.searchLinguisticsProfile = profile;
+    }
+    public void setIndexLinguisticsTokens(TokensMode tokens) {
+        verifyThat(indexLinguisticsTokens == null, "already has linguistics tokens for index");
+        this.indexLinguisticsTokens = tokens;
+    }
+    public void setSearchLinguisticsTokens(TokensMode tokens) {
+        verifyThat(searchLinguisticsTokens == null, "already has linguistics tokens for search");
+        this.searchLinguisticsTokens = tokens;
+    }
     public void setStemming(Stemming stemming) { this.stemming = stemming; }
     public void setWeight(int weight) { this.weight = weight; }
 
@@ -156,6 +188,35 @@ public class ParsedField extends ParsedBlock {
         String fieldName = structField.name();
         verifyThat(! structFields.containsKey(fieldName), "already has struct-field", fieldName);
         structFields.put(fieldName, structField);
+    }
+
+    /** A 'fast-search-map-field' of a field: its lookup name, and the key and value struct fields, if given. */
+    public static class ParsedFastMapSearch {
+
+        private final String fieldName;
+        private final String lookupName;
+        private String keyField = null;
+        private String valueField = null;
+
+        ParsedFastMapSearch(String fieldName, String lookupName) {
+            this.fieldName = fieldName;
+            this.lookupName = lookupName;
+        }
+
+        public String lookupName() { return lookupName; }
+        String keyField() { return keyField; }
+        String valueField() { return valueField; }
+
+        public void setKeyField(String value) { this.keyField = setOnce("key", this.keyField, value); }
+        public void setValueField(String value) { this.valueField = setOnce("value", this.valueField, value); }
+
+        private String setOnce(String setting, String current, String value) {
+            if (current != null) {
+                throw new IllegalArgumentException("'" + setting + "' is given more than once in 'fast-search-map-field' of field '" + fieldName + "'.");
+            }
+            return value;
+        }
+
     }
 
 }

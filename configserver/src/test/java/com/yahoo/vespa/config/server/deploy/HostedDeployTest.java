@@ -701,6 +701,24 @@ public class HostedDeployTest {
                                            .get(ClusterSpec.Id.from("test")).availabilityZones().toString());
     }
 
+    @Test
+    public void testDevAvailabilityZones() {
+        assertEquals("[az2]", devAvailabilityZones(RegionName.from("region1")));
+        assertEquals("[unspecified]", devAvailabilityZones(RegionName.from("region2")));
+    }
+
+    private String devAvailabilityZones(RegionName region) {
+        var zone = new Zone(Environment.dev, region);
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                                      .hostedConfigserverConfig(zone)
+                                      .zone(zone)
+                                      .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), zone))
+                                      .provisioner(new MockProvisioner().hostProvisioner(new InMemoryProvisioner(10, false)))
+                                      .build();
+        tester.deployApp("src/test/apps/availability-zones/", new PrepareParams.Builder().vespaVersion("4.5.6"));
+        return tester.provisioned().clusters().get(ClusterSpec.Id.from("container")).availabilityZones().toString();
+    }
+
     /** Create the given number of hosts using the supplied versions--the last version is repeated as needed. */
     private List<Host> createHosts(int count, String ... versions) {
         return IntStream.rangeClosed(1, count)

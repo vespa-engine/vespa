@@ -5,11 +5,11 @@
 #include "string_stuff.h"
 #include "value.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/util/string_hash.h>
 
-#include <cassert>
 #include <limits>
 #include <map>
 #include <memory>
@@ -113,7 +113,7 @@ public:
     bool is_param() const override { return true; }
     size_t id() const { return _id; }
     std::string dump(DumpContext& ctx) const override {
-        assert(size_t(_id) < ctx.param_names.size());
+        CHECK(size_t(_id) < ctx.param_names.size());
         return ctx.param_names[_id];
     }
     void accept(NodeVisitor& visitor) const override;
@@ -140,7 +140,7 @@ private:
 public:
     In(Node_UP child) : _child(std::move(child)), _entries() {}
     void add_entry(Node_UP entry) {
-        assert(entry->is_const_double());
+        CHECK(entry->is_const_double());
         _entries.push_back(std::move(entry));
     }
     size_t num_entries() const { return _entries.size(); }
@@ -149,7 +149,7 @@ public:
     size_t num_children() const override { return _child ? 1 : 0; }
     const Node& get_child(size_t idx) const override {
         (void)idx;
-        assert(idx == 0);
+        CHECK(idx == 0);
         return child();
     }
     void detach_children(NodeHandler& handler) override { handler.handle(std::move(_child)); }
@@ -181,7 +181,7 @@ public:
     size_t num_children() const override { return _child ? 1 : 0; }
     const Node& get_child(size_t idx) const override {
         (void)idx;
-        assert(idx == 0);
+        CHECK(idx == 0);
         return child();
     }
     void detach_children(NodeHandler& handler) override { handler.handle(std::move(_child)); }
@@ -207,7 +207,7 @@ public:
     size_t num_children() const override { return _child ? 1 : 0; }
     const Node& get_child(size_t idx) const override {
         (void)idx;
-        assert(idx == 0);
+        CHECK(idx == 0);
         return child();
     }
     void detach_children(NodeHandler& handler) override { handler.handle(std::move(_child)); }
@@ -238,7 +238,7 @@ public:
     bool is_tree() const override { return _is_tree; }
     size_t num_children() const override { return (_cond && _true_expr && _false_expr) ? 3 : 0; }
     const Node& get_child(size_t idx) const override {
-        assert(idx < 3);
+        CHECK(idx < 3);
         if (idx == 0) {
             return cond();
         } else if (idx == 1) {

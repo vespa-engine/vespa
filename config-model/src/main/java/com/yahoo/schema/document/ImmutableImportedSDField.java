@@ -12,6 +12,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Wraps {@link ImportedField} as {@link ImmutableSDField}.
@@ -160,6 +161,12 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     public String getSearchLinguisticsProfile() { return importedField.targetField().getSearchLinguisticsProfile(); }
 
     @Override
+    public TokensMode getIndexLinguisticsTokens() { return importedField.targetField().getIndexLinguisticsTokens(); }
+
+    @Override
+    public TokensMode getSearchLinguisticsTokens() { return importedField.targetField().getSearchLinguisticsTokens(); }
+
+    @Override
     public ImmutableSDField getStructField(String name) {
         throw createUnsupportedException("struct");
     }
@@ -176,6 +183,25 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     @Override
     public Stemming getStemming(Schema schema) {
+        throw createUnsupportedException("stemming");
+    }
+
+    // The tokens getters above delegate to the target field, as callers read them before deciding
+    // whether a field is imported. Resolving what they mean for stemming is not supported, as for
+    // getStemming(Schema): imported fields are attributes, which are never stemmed.
+
+    @Override
+    public Stemming getIndexStemming(Schema schema) {
+        throw createUnsupportedException("stemming");
+    }
+
+    @Override
+    public Stemming getSearchStemming(Schema schema) {
+        throw createUnsupportedException("stemming");
+    }
+
+    @Override
+    public Stemming getEffectiveSearchStemming(Schema schema) {
         throw createUnsupportedException("stemming");
     }
 
@@ -197,6 +223,11 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     @Override
     public int getWeight() {
         return importedField.targetField().getWeight();
+    }
+
+    @Override
+    public Optional<String> getExplanation() {
+        return importedField.targetField().getExplanation();
     }
 
     @Override
@@ -242,6 +273,11 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     @Override
     public boolean hasFastMapSearch() {
         return importedField.targetField().hasFastMapSearch();
+    }
+
+    @Override
+    public List<FastMapSearchFields> getFastMapSearches() {
+        return importedField.targetField().getFastMapSearches();
     }
 
 }

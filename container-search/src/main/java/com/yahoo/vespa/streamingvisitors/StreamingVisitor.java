@@ -19,7 +19,6 @@ import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.prelude.query.SerializationContext;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
-import com.yahoo.search.dispatch.rpc.ProtobufSerialization;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.Ranking;
@@ -148,16 +147,9 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         }
 
         EncodedData ed = new EncodedData();
-        if (context.sendOldQueryStack()) {
-            ProtobufSerialization.setProtobufAlsoSerialized(true);
-            encodeQueryData(query, 0, ed);
-            params.setLibraryParameter("query", ed.getEncodedData());
-            params.setLibraryParameter("querystackcount", String.valueOf(ed.getReturned()));
-        } else {
-            // TODO: remove dummies - it's for backwards compatibility only
-            params.setLibraryParameter("query", new byte[]{(byte) 0});
-            params.setLibraryParameter("querystackcount", "1");
-        }
+        // TODO: remove dummies - it's for backwards compatibility only
+        params.setLibraryParameter("query", new byte[]{(byte) 0});
+        params.setLibraryParameter("querystackcount", "1");
         var serializationContext = SerializationContext.ignored(); // Not tracking content share in streaming
         var protobufTree = query.getModel().getQueryTree().toProtobufQueryTree(serializationContext);
         params.setLibraryParameter("querytree", protobufTree.toByteArray());

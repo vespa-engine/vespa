@@ -64,6 +64,9 @@ public:
     friend vespalib::Deserializer& operator>>(vespalib::Deserializer& is, ExpressionTree& et);
     void swap(ExpressionTree&);
 
+    [[nodiscard]] bool has_undefined_attribute(DocId docId) const noexcept;
+    [[nodiscard]] bool has_undefined_field() const noexcept;
+
 private:
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     void selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) override;

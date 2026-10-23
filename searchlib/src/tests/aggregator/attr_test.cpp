@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/expression/arrayatlookupfunctionnode.h>
+#include <vespa/searchlib/expression/expressiontree.h>
 #include <vespa/searchlib/expression/interpolatedlookupfunctionnode.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/objectdumper.h>

@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/pem"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -17,11 +18,18 @@ import (
 )
 
 type ApplicationPackage struct {
-	Path     string
-	TestPath string
+	Path        string
+	TestPath    string
+	clientsPath string
 }
 
-func (ap *ApplicationPackage) HasCertificate() bool { return ap.hasFile("security", "clients.pem") }
+// Check both security/clients.pem and xml configured clients
+func (ap *ApplicationPackage) HasCertificate() bool {
+	return ap.HasCertificateFile() || ap.clientsPath != ""
+}
+
+// Only checks for the security/clients.pem. Use HasCertificate() to also check for xml configured clients
+func (ap *ApplicationPackage) HasCertificateFile() bool { return ap.hasFile("security", "clients.pem") }
 
 func processPEMEntries(data []byte) []*pem.Block {
 	blocks := []*pem.Block{}
@@ -105,6 +113,62 @@ func (ap *ApplicationPackage) hasZipEntry(matcher func(zipName string) bool) boo
 		}
 	}
 	return false
+}
+
+func (ap *ApplicationPackage) readServicesXML() ([]byte, error) {
+	if !ap.IsZip() {
+		return os.ReadFile(filepath.Join(ap.Path, "services.xml"))
+	}
+	r, err := zip.OpenReader(ap.Path)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+	for _, f := range r.File {
+		if f.Name == "services.xml" {
+			rc, err := f.Open()
+			if err != nil {
+				return nil, err
+			}
+			defer rc.Close()
+			return io.ReadAll(rc)
+		}
+	}
+	return nil, fmt.Errorf("no services.xml found in %s", ap.Path)
+}
+
+// clientCertificatePath returns the file declared by the first <clients><client><certificate> found in the given
+// services.xml contents, or an empty string if no such declaration exists.
+func clientCertificatePath(servicesXML []byte) string {
+	var services struct {
+		Containers []struct {
+			Clients []struct {
+				Certificates []struct {
+					File string `xml:"file,attr"`
+				} `xml:"certificate"`
+			} `xml:"clients>client"`
+		} `xml:"container"`
+	}
+	if err := xml.Unmarshal(servicesXML, &services); err != nil {
+		return ""
+	}
+	for _, container := range services.Containers {
+		for _, client := range container.Clients {
+			for _, certificate := range client.Certificates {
+				if certificate.File != "" {
+					return certificate.File
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func withClientsPath(pkg ApplicationPackage) ApplicationPackage {
+	if data, err := pkg.readServicesXML(); err == nil {
+		pkg.clientsPath = clientCertificatePath(data)
+	}
+	return pkg
 }
 
 func (ap *ApplicationPackage) IsZip() bool { return isZip(ap.Path) }
@@ -328,7 +392,7 @@ func FindApplicationPackage(zipOrDir string, options PackageOptions) (Applicatio
 
 func findApplicationPackage(zipOrDir string, options PackageOptions) (ApplicationPackage, error) {
 	if isZip(zipOrDir) {
-		return ApplicationPackage{Path: zipOrDir}, nil
+		return withClientsPath(ApplicationPackage{Path: zipOrDir}), nil
 	}
 	// Pre-packaged application. We prefer the uncompressed application because this allows us to add
 	// security/clients.pem to the package on-demand
@@ -337,7 +401,7 @@ func findApplicationPackage(zipOrDir string, options PackageOptions) (Applicatio
 		path := filepath.Join(zipOrDir, "target", "application")
 		if ioutil.Exists(path) {
 			testPath := existingPath(filepath.Join(zipOrDir, "target", "application-test"))
-			return ApplicationPackage{Path: path, TestPath: testPath}, nil
+			return withClientsPath(ApplicationPackage{Path: path, TestPath: testPath}), nil
 		}
 		if options.Compiled {
 			return ApplicationPackage{}, fmt.Errorf("found pom.xml, but %s does not exist: run 'mvn package' first", path)
@@ -346,7 +410,7 @@ func findApplicationPackage(zipOrDir string, options PackageOptions) (Applicatio
 	// Application with Maven directory structure, but with no POM or no hard requirement on packaging
 	if path := filepath.Join(zipOrDir, "src", "main", "application"); ioutil.Exists(path) {
 		testPath := existingPath(filepath.Join(zipOrDir, "src", "test", "application"))
-		return ApplicationPackage{Path: path, TestPath: testPath}, nil
+		return withClientsPath(ApplicationPackage{Path: path, TestPath: testPath}), nil
 	}
 	// Application without Maven/Java
 	if ioutil.Exists(filepath.Join(zipOrDir, "services.xml")) {
@@ -354,7 +418,7 @@ func findApplicationPackage(zipOrDir string, options PackageOptions) (Applicatio
 		if ioutil.Exists(filepath.Join(zipOrDir, "tests")) {
 			testPath = zipOrDir
 		}
-		return ApplicationPackage{Path: zipOrDir, TestPath: testPath}, nil
+		return withClientsPath(ApplicationPackage{Path: zipOrDir, TestPath: testPath}), nil
 	}
 	return ApplicationPackage{}, fmt.Errorf("could not find an application package source in '%s'", zipOrDir)
 }

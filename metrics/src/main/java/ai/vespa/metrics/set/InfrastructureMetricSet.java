@@ -63,6 +63,9 @@ public class InfrastructureMetricSet {
         // Node repository metrics
         addMetric(metrics, ConfigServerMetrics.NODES_ACTIVE.max());
         addMetric(metrics, ConfigServerMetrics.NODES_NON_ACTIVE_FRACTION.max());
+        addMetric(metrics, ConfigServerMetrics.NODES_TRUST_STORE_CA.max());
+        addMetric(metrics, ConfigServerMetrics.NODES_IDENTITY_CERT_ISSUER.max());
+        addMetric(metrics, ConfigServerMetrics.NODES_TRUST_STORE_MISSING_CA.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_COST.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_CPU.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_IDEAL_MEMORY.max());
@@ -70,6 +73,9 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_PEAK_CPU.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_PEAK_MEMORY.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_LOAD_PEAK_DISK.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_SATURATION_CPU.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_SATURATION_MEMORY.max());
+        addMetric(metrics, ConfigServerMetrics.CLUSTER_SATURATION_DISK.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_BACKUP_AGE_FRACTION.last());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_SNAPSHOT_BUSY_SECONDS.max());
         addMetric(metrics, ConfigServerMetrics.NODES_EMPTY_EXCLUSIVE.max());
@@ -132,7 +138,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.THROTTLED_NODE_FAILURES.max());
         addMetric(metrics, ConfigServerMetrics.NODE_FAIL_THROTTLING.max());
         addMetric(metrics, ConfigServerMetrics.CLUSTER_AUTOSCALED.count());
-        addMetric(metrics, ConfigServerMetrics.AUTOSCALE_SCALING_DURATION.max());
+        addMetric(metrics, ConfigServerMetrics.SCALING_DURATION.max());
 
         addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_SUCCESS.count());
         addMetric(metrics, ConfigServerMetrics.ORCHESTRATOR_LOCK_ACQUIRE_TIMEOUT.count());
@@ -151,6 +157,14 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ContainerMetrics.SERVER_STARTED_MILLIS.max());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_LATENCY.max());
         addMetric(metrics, ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.count());
+
+        // mTLS handshake failures, so a CA rotation (VESPA-28617) can be alarmed on config servers:
+        // invalid/missing client cert are the categories a signer switch produces. Lazily emitted,
+        // so alarm as increase(...invalid_client_cert_rate[..]) > 0, not on static presence.
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT.rate());
+        addMetric(metrics, ContainerMetrics.JDISC_HTTP_SSL_HANDSHAKE_FAILURE_UNKNOWN.rate());
 
         return metrics;
     }
@@ -172,6 +186,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_NODE_ALLOCATION_FAILURE.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_DEPLOYMENT_FAILURE.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_ERROR.count());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_FAILED_RUNS.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_FAILING_UPGRADES.min());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_FAILURE_PERCENTAGE.max());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_NODE_COUNT_BY_OS_VERSION.max());

@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/left_right_heap.h>
 
 #include <algorithm>
+#include <iterator>
 
 namespace search::queryeval {
 

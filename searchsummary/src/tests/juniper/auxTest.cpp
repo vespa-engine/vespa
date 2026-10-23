@@ -193,21 +193,24 @@ TEST(AuxTest, testPropertyMap) {
 TEST(AuxTest, testRerase) {
     std::list<int> ls;
 
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 10; i++) {
         ls.push_back(i);
+    }
 
     for (std::list<int>::reverse_iterator rit = ls.rbegin(); rit != ls.rend();) {
         if (*rit == 5 || *rit == 6) {
             // STL hackers heaven - puh this was cumbersome..
             std::list<int>::reverse_iterator new_it(ls.erase((++rit).base()));
             rit = new_it;
-        } else
+        } else {
             ++rit;
+        }
     }
 
     std::string s;
-    for (std::list<int>::iterator it = ls.begin(); it != ls.end(); ++it)
+    for (std::list<int>::iterator it = ls.begin(); it != ls.end(); ++it) {
         s += ('0' + *it);
+    }
     EXPECT_TRUE(s == std::string("01234789"));
 }
 
@@ -223,13 +226,15 @@ void test_dump(const char* s, unsigned int len) {
                 printf("%c", s[i]);
             }
             i++;
-            if (!(i % 100))
+            if (!(i % 100)) {
                 break;
+            }
         }
         printf("\n");
         i = start + 10;
-        for (; i < len && i % 100; i += 10)
+        for (; i < len && i % 100; i += 10) {
             printf("%7s%3d", "", i);
+        }
         printf("\n");
     }
 }
@@ -244,34 +249,37 @@ void TestUTF8(unsigned int size) {
         p = (const unsigned char*)(s + i);
         moved = Fast_UnicodeUtil::UTF8move((const unsigned char*)s, size, p, +1);
         LOG(spam, "forw. moved %d, pos %d", moved, i);
-        if (i == 0 || i == 8)
+        if (i == 0 || i == 8) {
             EXPECT_TRUE(moved == 2);
-        else if (i >= (int)size)
+        } else if (i >= (int)size) {
             EXPECT_TRUE(moved == -1);
-        else
+        } else {
             EXPECT_TRUE(moved == 1);
+        }
 
         // backward tests
         p = (const unsigned char*)(s + i);
         moved = Fast_UnicodeUtil::UTF8move((const unsigned char*)s, size, p, -1);
         LOG(spam, "backw.moved %d, pos %d", moved, i);
-        if (i == 10 || i == 9 || i == 2)
+        if (i == 10 || i == 9 || i == 2) {
             EXPECT_TRUE(moved == 2);
-        else if (i == 0 || i > (int)size)
+        } else if (i == 0 || i > (int)size) {
             EXPECT_TRUE(moved == -1);
-        else
+        } else {
             EXPECT_TRUE(moved == 1);
+        }
 
         // move-to-start tests:
         p = (const unsigned char*)(s + i);
         moved = Fast_UnicodeUtil::UTF8move((const unsigned char*)s, size, p, 0);
         LOG(spam, "to-start.moved %d, pos %d", moved, i);
-        if (i == 9 || i == 1)
+        if (i == 9 || i == 1) {
             EXPECT_TRUE(moved == 1);
-        else if (i >= (int)size)
+        } else if (i >= (int)size) {
             EXPECT_TRUE(moved == -1);
-        else
+        } else {
             EXPECT_TRUE(moved == 0);
+        }
     }
 
     // Assumption about equality of UCS4 IsWordChar and isalnum for
@@ -282,8 +290,9 @@ void TestUTF8(unsigned int size) {
         bool                 utf8res = Fast_UnicodeUtil::IsWordChar(u);
         bool                 asciires = std::isalnum(c);
         EXPECT_TRUE(utf8res == asciires);
-        if (utf8res != asciires)
+        if (utf8res != asciires) {
             fprintf(stderr, ":%c:%d != :%c:%d\n", u, utf8res, c, asciires);
+        }
     }
 }
 
@@ -347,10 +356,11 @@ TEST(AuxTest, testUTF8context) {
     separators[1] = juniper::separators::group_separator;
     separators[2] = '\0';
 
-    if (color_highlight)
+    if (color_highlight) {
         _sumconf = CreateSummaryConfig(COLOR_HIGH_ON, COLOR_HIGH_OFF, "...", separators, connectors);
-    else
+    } else {
         _sumconf = CreateSummaryConfig("<hit>", "</hit>", "...", separators, connectors);
+    }
     for (int i = 1; i <= 10; i++) {
         // Short summaries with many matches
         test_summary(m, s.c_str(), s.size(), i * 30, i / 3, i * 10, charsize);
@@ -424,15 +434,17 @@ TEST(AuxTest, testJapanese) {
         Matcher& m = *res->_matcher;
 
         res->Scan();
-        if (color_highlight)
+        if (color_highlight) {
             _sumconf = CreateSummaryConfig(COLOR_HIGH_ON, COLOR_HIGH_OFF, "...", "", connectors);
-        else
+        } else {
             _sumconf = CreateSummaryConfig("<hit>", "</hit>", "...", "", connectors);
+        }
 
         SummaryDesc* sumdesc = m.CreateSummaryDesc(256, 256, 4, 80);
         EXPECT_TRUE(sumdesc != nullptr);
-        if (!sumdesc)
+        if (!sumdesc) {
             return;
+        }
         std::string sum = BuildSummary(content, content_len, sumdesc, _sumconf, charsize);
 
         switch (i) {
@@ -523,8 +535,9 @@ TEST(AuxTest, testJuniperStack) {
     EXPECT_TRUE(strcmp(s.c_str(), "Hepp:100") == 0);
     delete q;
 
-    if (::testing::Test::HasFailure())
+    if (::testing::Test::HasFailure()) {
         fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
+    }
 
     q = new QueryNode(2, 0, 0);
     q->_arity = 0;
@@ -532,8 +545,9 @@ TEST(AuxTest, testJuniperStack) {
     std::string s1;
     EXPECT_TRUE(q == nullptr);
 
-    if (::testing::Test::HasFailure())
+    if (::testing::Test::HasFailure()) {
         fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
+    }
 }
 
 class TokenProcessor : public ITokenProcessor {
@@ -571,8 +585,9 @@ struct QB {
     QB(QB& rhs) : q(std::move(rhs.q)) {}
     QB& add(const char* t, bool st = true) {
         QueryTerm* qt = new QueryTerm(t, 0, 100);
-        if (st)
+        if (st) {
             qt->_options |= X_SPECIALTOKEN;
+        }
         q->AddChild(qt);
         return *this;
     }

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/nested_loop.h>
 #include <vespa/eval/eval/operation.h>
@@ -108,7 +109,7 @@ struct JoinParam {
           dense_plan(lhs_type, rhs_type),
           function(function_in),
           factory(factory_in) {
-        assert(!res_type.is_error());
+        CHECK(!res_type.is_error());
     }
     ~JoinParam();
 };

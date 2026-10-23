@@ -393,6 +393,55 @@ public class UserInputTestCase {
         assertEquals("select * from sources * where (foo contains \"bamse\" AND foo contains phrase(\"bamse\", \"syntactic\", \"bamse\"))", query.yqlRepresentation());
     }
 
+    /** Parameters which are JSON objects are flattened into dotted properties when the query is parsed. */
+    @Test
+    void testJsonObjectReferenceInWand() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("q_terms.7128", "34");
+        builder.setParameter("q_terms.2622", "18");
+        builder.setParameter("yql", "select * from sources * where wand(terms, @q_terms)");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where wand(terms, {\"2622\": 18, \"7128\": 34})",
+                     query.yqlRepresentation());
+    }
+
+    @Test
+    void testJsonObjectReferenceInDotProduct() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("weights.a", "1");
+        builder.setParameter("weights.b", "2");
+        builder.setParameter("yql", "select * from sources * where dotProduct(terms, @weights)");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where dotProduct(terms, {\"a\": 1, \"b\": 2})",
+                     query.yqlRepresentation());
+    }
+
+    /** Keys containing dots survive the flattening, as only the parameter name prefix is removed. */
+    @Test
+    void testJsonObjectReferenceWithDottedKeys() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("weights.a.b", "1");
+        builder.setParameter("yql", "select * from sources * where dotProduct(terms, @weights)");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where dotProduct(terms, {\"a.b\": 1})",
+                     query.yqlRepresentation());
+    }
+
+    @Test
+    void testMissingReferenceInWand() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where wand(terms, @q_terms)");
+        assertQueryFails(builder);
+    }
+
+    @Test
+    void testJsonObjectReferenceWithNonIntegerWeight() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("q_terms.7128", "notANumber");
+        builder.setParameter("yql", "select * from sources * where wand(terms, @q_terms)");
+        assertQueryFails(builder);
+    }
+
     @Test
     void testReferenceInComparison() {
         URIBuilder builder = searchUri();
@@ -414,6 +463,27 @@ public class UserInputTestCase {
     }
 
     @Test
+    void testReferenceInGrouping() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("pattern", "ba.*");
+        builder.setParameter("yql",
+                "select * from sources * where myfield contains 'token'" +
+                        "| all(group(f) filter(regex(@pattern, f)) each(output(count())))");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where myfield contains \"token\" | all(group(f) filter(regex(\"ba.*\", f)) each(output(count())))",
+                     query.yqlRepresentation());
+    }
+
+    @Test
+    void testMissingReferenceInGrouping() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql",
+                "select * from sources * where myfield contains 'token'" +
+                        "| all(group(f) filter(regex(@pattern, f)) each(output(count())))");
+        assertQueryFails(builder, "Could not create query from YQL: Input 'pattern' is not set");
+    }
+
+    @Test
     void testReferenceInEquiv() {
         URIBuilder builder = searchUri();
         builder.setParameter("term", "A");
@@ -421,6 +491,40 @@ public class UserInputTestCase {
                 "select foo from bar where fieldName contains equiv(@term,'B')");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select foo from bar where fieldName contains equiv(\"A\", \"B\")", query.yqlRepresentation());
+    }
+
+    /** A referenced value is substituted verbatim and never parsed as YQL. */
+    @Test
+    void testReferenceValueIsNotParsedAsYql() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("pattern", "foo\" or true or myfield matches \"bar");
+        builder.setParameter("yql", "select * from sources * where myfield matches @pattern");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where myfield matches \"foo\\\" or true or myfield matches \\\"bar\"",
+                     query.yqlRepresentation());
+    }
+
+    @Test
+    void testMissingReferenceInContains() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where foo contains @missing");
+        assertQueryFails(builder, "Could not create query from YQL: Input 'missing' is not set");
+    }
+
+    @Test
+    void testMissingReferenceInComparison() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where year > @missing");
+        assertQueryFails(builder, "Could not create query from YQL: Input 'missing' is not set");
+    }
+
+    @Test
+    void testMissingReferenceInContinuation() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql",
+                "select * from sources * where myfield contains 'token'" +
+                        "| {'continuations':[@missing] }all(group(f) each(output(count())))");
+        assertQueryFails(builder, "Could not create query from YQL: Input 'missing' is not set");
     }
 
     private Query searchAndAssertNoErrors(URIBuilder builder) {
@@ -495,6 +599,12 @@ public class UserInputTestCase {
     private void assertQueryFails(URIBuilder builder) {
         Result r = execution.search(new Query(builder.toString()));
         assertEquals(INVALID_QUERY_PARAMETER.code, r.hits().getError().getCode());
+    }
+
+    private void assertQueryFails(URIBuilder builder, String expectedDetailedMessage) {
+        Result r = execution.search(new Query(builder.toString()));
+        assertEquals(INVALID_QUERY_PARAMETER.code, r.hits().getError().getCode());
+        assertEquals(expectedDetailedMessage, r.hits().getError().getDetailedMessage());
     }
 
     @Test

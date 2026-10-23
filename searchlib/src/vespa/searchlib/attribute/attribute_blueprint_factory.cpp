@@ -12,6 +12,7 @@
 #include "multi_term_or_filter_search.h"
 #include "predicate_attribute.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/hit_estimate_flow_stats_adapter.h>
 #include <vespa/searchlib/common/location.h>
@@ -166,13 +167,13 @@ public:
     }
 
     SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray& tfmda) const override {
-        assert(tfmda.size() == 1);
+        CHECK(tfmda.size() == 1);
         return _search_context->createIterator(tfmda[0], strict());
     }
 
     SearchIterator::UP createSearchImpl(fef::MatchData& md) const override {
         const State& state = getState();
-        assert(state.numFields() == 1);
+        CHECK(state.numFields() == 1);
         return _search_context->createIterator(state.field(0).resolve(md), strict());
     }
 
@@ -504,7 +505,7 @@ public:
     }
 
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda) const override {
-        assert(tfmda.size() == 1);
+        CHECK(tfmda.size() == 1);
         if (_terms.empty()) {
             return std::make_unique<queryeval::EmptySearch>();
         }
@@ -536,6 +537,7 @@ std::unique_ptr<SearchIterator> DirectWandBlueprint::createFilterSearchImpl(Filt
 }
 
 void DirectWandBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept {
+    Blueprint::set_matching_phase(matching_phase);
     _matching_phase = matching_phase;
     if (matching_phase != MatchingPhase::FIRST_PHASE) {
         /*
@@ -661,8 +663,8 @@ public:
     }
 
     void visit(StringRangeTerm& n) override {
-        const StringRangeSpec* spec = n.getTerm().get_spec();
-        auto spec_for_term = spec ? std::make_unique<StringRangeSpec>(*spec) : std::make_unique<StringRangeSpec>();
+        const auto& range = n.getTerm();
+        auto spec_for_term = range ? std::make_unique<StringRangeSpec>(*range) : std::make_unique<StringRangeSpec>();
         auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(spec_for_term));
         setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term),
                                                             createContextParams(_field.isFilter())));

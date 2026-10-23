@@ -36,10 +36,12 @@ public:
     void setPrevDbDocumentId(DbDocumentId prevDbdId) { _prevDbdId = prevDbdId; }
 
     search::DocumentIdT getNewOrPrevLid(uint32_t subDbId) const {
-        if (getValidDbdId() && getSubDbId() == subDbId)
+        if (getValidDbdId() && getSubDbId() == subDbId) {
             return getLid();
-        if (getValidPrevDbdId() && getPrevSubDbId() == subDbId)
+        }
+        if (getValidPrevDbdId() && getPrevSubDbId() == subDbId) {
             return getPrevLid();
+        }
         return 0;
     }
 

@@ -4,7 +4,6 @@ package com.yahoo.search.dispatch.rpc;
 import ai.vespa.telemetry.api.trace.TraceAttributes;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.compress.CompressionType;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
@@ -154,8 +153,7 @@ class NodeSearchTracingTest {
         SpanRecorder recorder = SpanRecorder.underParentSpan("dispatch.search");
         // An empty pool: getConnection returns null, so sendSearchRequest takes the unknown-node early return.
         RpcSearchInvoker invoker = new RpcSearchInvoker(mockSearcher(), compressor, node(),
-                                                        new RpcResourcePool(ImmutableMap.of()), 1000,
-                                                        new QrSearchersConfig.Builder().build());
+                                                        new RpcResourcePool(ImmutableMap.of()), 1000);
 
         recorder.record(() -> {
             invoker.sendSearchRequest(new Query("?query=test"), 1.0, null);
@@ -181,8 +179,7 @@ class NodeSearchTracingTest {
             @Override public void close() { }
         };
         return new RpcSearchInvoker(mockSearcher(), compressor, node(),
-                                    new RpcResourcePool(ImmutableMap.of(node().key(), connection)), 1000,
-                                    new QrSearchersConfig.Builder().build());
+                                    new RpcResourcePool(ImmutableMap.of(node().key(), connection)), 1000);
     }
 
     private VespaBackend mockSearcher() {

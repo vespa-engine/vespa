@@ -4,6 +4,7 @@
 #include "distributor_bucket_space.h"
 #include "distributor_stripe_component.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -34,7 +35,7 @@ public:
     MaintenancePriority getPriority() const override { return _priority; }
 
     MaintenanceOperation::Type getType() const override {
-        assert(_operation.get());
+        CHECK(_operation.get());
         return _operation->getType();
     }
 };

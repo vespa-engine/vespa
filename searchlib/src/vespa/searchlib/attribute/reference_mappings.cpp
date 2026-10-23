@@ -4,10 +4,12 @@
 
 #include "reference.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
-#include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/type_stable_vector.hpp>
 
 namespace search::attribute {
 
@@ -70,7 +72,7 @@ void ReferenceMappings::addReverseMapping(const Reference& entry, uint32_t lid) 
 void ReferenceMappings::buildReverseMapping(const Reference&                                entry,
                                             const std::vector<ReverseMapping::KeyDataType>& adds) {
     EntryRef revMapIdx = entry.revMapIdx();
-    assert(!revMapIdx.valid());
+    CHECK(!revMapIdx.valid());
     _reverseMapping.apply(revMapIdx, adds.data(), adds.data() + adds.size(), nullptr, nullptr);
     entry.setRevMapIdx(revMapIdx);
 }

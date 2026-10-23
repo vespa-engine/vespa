@@ -111,8 +111,9 @@ private:
          * @brief Destructor.
          */
         ~TransitionList() {
-            if (_trans != nullptr)
+            if (_trans != nullptr) {
                 free(_trans);
+            }
         }
 
         /**
@@ -125,8 +126,9 @@ private:
                 _trans = (Transition*)malloc(_alloc * sizeof(Transition));
                 assert(_trans != nullptr);
             }
-            for (unsigned int i = 0; i < _size; i++)
+            for (unsigned int i = 0; i < _size; i++) {
                 _trans[i] = tl._trans[i];
+            }
         }
 
         /**
@@ -210,8 +212,9 @@ private:
          * @return Pointer to last transition, or nullptr.
          */
         Transition* last() {
-            if (_size > 0)
+            if (_size > 0) {
                 return &_trans[_size - 1];
+            }
             return nullptr;
         }
 
@@ -227,8 +230,9 @@ private:
          */
         Transition* find(symbol_t sy) {
             for (unsigned int i = 0; i < _size; i++) {
-                if (_trans[i]._symbol == sy)
+                if (_trans[i]._symbol == sy) {
                     return &_trans[i];
+                }
             }
             return nullptr;
         }
@@ -379,8 +383,9 @@ private:
          * @brief Destructor.
          */
         ~State() {
-            if (_blob != nullptr)
+            if (_blob != nullptr) {
                 delete _blob;
+            }
         }
 
         /**

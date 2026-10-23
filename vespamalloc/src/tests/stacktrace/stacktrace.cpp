@@ -2,8 +2,8 @@
 #include <dlfcn.h>
 #include <malloc.h>
 #include <pthread.h>
+#include <vespamalloc/malloc/check_require.h>
 
-#include <cassert>
 #include <cstdlib>
 
 void* run(void* arg) {
@@ -19,31 +19,31 @@ void verify_that_vespamalloc_datasegment_size_exists() {
 #if __GLIBC_PREREQ(2, 33)
     struct mallinfo2 info = mallinfo2();
     printf("Malloc used %zdm of memory\n", info.arena);
-    assert(info.arena >= 10 * 0x100000ul);
-    assert(info.arena < 10000 * 0x100000ul);
-    assert(info.fordblks == 0);
-    assert(info.fsmblks == 0);
-    assert(info.hblkhd == 0);
-    assert(info.hblks == 0);
-    assert(info.keepcost == 0);
-    assert(info.ordblks == 0);
-    assert(info.smblks == 0);
-    assert(info.uordblks > 0);
-    assert(info.usmblks > 0);
+    CHECK(info.arena >= 10 * 0x100000ul);
+    CHECK(info.arena < 10000 * 0x100000ul);
+    CHECK(info.fordblks == 0);
+    CHECK(info.fsmblks == 0);
+    CHECK(info.hblkhd == 0);
+    CHECK(info.hblks == 0);
+    CHECK(info.keepcost == 0);
+    CHECK(info.ordblks == 0);
+    CHECK(info.smblks == 0);
+    CHECK(info.uordblks > 0);
+    CHECK(info.usmblks > 0);
 #else
     struct mallinfo info = mallinfo();
     printf("Malloc used %dm of memory\n", info.arena);
-    assert(info.arena >= 10);
-    assert(info.arena < 10000);
-    assert(info.fordblks == 0);
-    assert(info.fsmblks == 0);
-    assert(info.hblkhd == 0);
-    assert(info.hblks == 0);
-    assert(info.keepcost == 0);
-    assert(info.ordblks == 0);
-    assert(info.smblks == 0);
-    assert(info.uordblks > 0);
-    assert(info.usmblks > 0);
+    CHECK(info.arena >= 10);
+    CHECK(info.arena < 10000);
+    CHECK(info.fordblks == 0);
+    CHECK(info.fsmblks == 0);
+    CHECK(info.hblkhd == 0);
+    CHECK(info.hblks == 0);
+    CHECK(info.keepcost == 0);
+    CHECK(info.ordblks == 0);
+    CHECK(info.smblks == 0);
+    CHECK(info.uordblks > 0);
+    CHECK(info.usmblks > 0);
 #endif
 }
 

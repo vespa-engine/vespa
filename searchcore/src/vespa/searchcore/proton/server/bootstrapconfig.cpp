@@ -3,6 +3,7 @@
 #include "bootstrapconfig.h"
 
 #include <vespa/config-bucketspaces.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 
 using namespace vespa::config::search;
@@ -13,8 +14,9 @@ using vespa::config::search::core::ProtonConfig;
 
 namespace {
 template <typename T> bool equals(const T* lhs, const T* rhs) {
-    if (lhs == nullptr)
+    if (lhs == nullptr) {
         return rhs == nullptr;
+    }
     return rhs != nullptr && *lhs == *rhs;
 }
 } // namespace
@@ -26,6 +28,7 @@ BootstrapConfig::BootstrapConfig(int64_t generation, const DocumenttypesConfigSP
                                  const ProtonConfigSP&                          protonConfig,
                                  const FiledistributorrpcConfigSP&              filedistRpcConfSP,
                                  const BucketspacesConfigSP&                    bucketspaces,
+                                 const std::shared_ptr<TelemetryConfig>&        telemetry,
                                  const search::TuneFileDocumentDB::SP&          tuneFileDocumentDB,
                                  const vespalib::HwInfo&                        hwInfo)
     : _documenttypes(documenttypes),
@@ -33,6 +36,7 @@ BootstrapConfig::BootstrapConfig(int64_t generation, const DocumenttypesConfigSP
       _proton(protonConfig),
       _fileDistributorRpc(filedistRpcConfSP),
       _bucketspaces(bucketspaces),
+      _telemetry(telemetry),
       _tuneFileDocumentDB(tuneFileDocumentDB),
       _hwInfo(hwInfo),
       _generation(generation) {
@@ -49,12 +53,14 @@ bool BootstrapConfig::operator==(const BootstrapConfig& rhs) const {
            _repo.get() == rhs._repo.get() && equals<ProtonConfig>(_proton.get(), rhs._proton.get()) &&
            equals<FiledistributorrpcConfig>(_fileDistributorRpc.get(), rhs._fileDistributorRpc.get()) &&
            equals<BucketspacesConfig>(_bucketspaces.get(), rhs._bucketspaces.get()) &&
+           equals<TelemetryConfig>(_telemetry.get(), rhs._telemetry.get()) &&
            equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(), rhs._tuneFileDocumentDB.get()) &&
            (_hwInfo == rhs._hwInfo);
 }
 
 bool BootstrapConfig::valid() const {
-    return _documenttypes && _repo && _proton && _fileDistributorRpc && _bucketspaces && _tuneFileDocumentDB;
+    return _documenttypes && _repo && _proton && _fileDistributorRpc && _bucketspaces && _telemetry &&
+           _tuneFileDocumentDB;
 }
 
 } // namespace proton

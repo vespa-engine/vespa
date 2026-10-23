@@ -11,6 +11,7 @@
 #include "large_array_buffer_type.hpp"
 #include "small_array_buffer_type.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/datastore/data_store_explorer.h>
 
 #include <algorithm>
@@ -35,7 +36,7 @@ template <typename ElemT, typename RefT, typename TypeMapperT>
 void ArrayStore<ElemT, RefT, TypeMapperT>::initArrayTypes(const ArrayStoreConfig&                 cfg,
                                                           std::shared_ptr<alloc::MemoryAllocator> memory_allocator) {
     _largeArrayTypeId = _store.addType(&_largeArrayType);
-    assert(_largeArrayTypeId == 0);
+    CHECK(_largeArrayTypeId == 0);
     _smallArrayTypes.reserve(_max_type_id);
     if constexpr (has_dynamic_buffer_type) {
         auto dynamic_buffer_types = _mapper.count_dynamic_buffer_types(_max_type_id);
@@ -46,7 +47,7 @@ void ArrayStore<ElemT, RefT, TypeMapperT>::initArrayTypes(const ArrayStoreConfig
     }
     for (uint32_t type_id = 1; type_id <= _max_type_id; ++type_id) {
         uint32_t act_type_id = _store.addType(initArrayType(cfg, memory_allocator, type_id));
-        assert(type_id == act_type_id);
+        CHECK(type_id == act_type_id);
     }
 }
 

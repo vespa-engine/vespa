@@ -7,7 +7,7 @@
 #include "search_context.h"
 
 #include <vespa/vespalib/util/atomic.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <limits>
 
@@ -16,7 +16,7 @@ namespace search {
 template <typename B> class SingleValueNumericAttribute final : public B {
 private:
     using T = typename B::BaseType;
-    using DataVector = vespalib::RcuVectorBase<T>;
+    using DataVector = vespalib::TypeStableVectorBase<T>;
     using DocId = typename B::DocId;
     using EnumHandle = typename B::EnumHandle;
     using Weighted = typename B::Weighted;

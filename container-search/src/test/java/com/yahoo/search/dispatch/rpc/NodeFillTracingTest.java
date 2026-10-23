@@ -3,7 +3,6 @@ package com.yahoo.search.dispatch.rpc;
 
 import ai.vespa.telemetry.api.trace.TraceAttributes;
 import com.yahoo.compress.CompressionType;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
@@ -257,8 +256,7 @@ class NodeFillTracingTest {
                                           new DocumentDatabase(schemaWithDefaultSummary()),
                                           "container.0",
                                           RpcProtobufFillInvoker.DecodePolicy.EAGER,
-                                          false,
-                                          new QrSearchersConfig.Builder().build());
+                                          false);
     }
 
     /** A schema declaring a "default" document summary, which is the class the tests ask to fill. */

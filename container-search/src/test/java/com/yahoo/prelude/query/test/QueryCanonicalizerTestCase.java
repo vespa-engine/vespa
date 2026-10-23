@@ -163,20 +163,13 @@ public class QueryCanonicalizerTestCase {
     }
 
     @Test
-    void testWeakAndCollapsingRequireSameNAndIndex() {
+    void testWeakAndCollapsingRequireSameN() {
         CompositeItem root = new WeakAndItem(Integer.valueOf(10));
         CompositeItem l1 = new WeakAndItem(Integer.valueOf(100));
-        CompositeItem l2 = new WeakAndItem(Integer.valueOf(100));
-        l2.setIndexName("other");
 
         root.addItem(l1);
-
-        l1.addItem(l2);
         l1.addItem(new WordItem("l1"));
-
-        l2.addItem(new WordItem("l2"));
-
-        assertCanonicalized("WEAKAND(10) (WEAKAND(100) (WEAKAND(100) l2) l1)", null, root);
+        assertCanonicalized("WEAKAND(10) (WEAKAND(100) l1)", null, root);
     }
 
     @Test

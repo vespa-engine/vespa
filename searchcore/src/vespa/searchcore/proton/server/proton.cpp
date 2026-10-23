@@ -24,6 +24,7 @@
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -77,6 +78,7 @@ LOG_SETUP(".proton.server.proton");
 using CpuCategory = vespalib::CpuUsage::Category;
 
 using document::DocumentTypeRepo;
+using proton::flushengine::PrepareRestartCostsConfig;
 using proton::flushengine::SetStrategyResult;
 using search::DiskSpaceCalculator;
 using search::diskindex::IPostingListCache;
@@ -236,7 +238,7 @@ ResourceUsage ProtonResourceUsageProvider::get_resource_usage() const {
 Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const std::string& creator)
     : _hostName(), _creator(creator), _cluster(), _pid(getpid()) {
     _hostName = vespalib::HostName::get();
-    assert(!_hostName.empty());
+    CHECK(!_hostName.empty());
 }
 
 Proton::ProtonFileHeaderContext::~ProtonFileHeaderContext() = default;
@@ -262,16 +264,20 @@ void Proton::ProtonFileHeaderContext::setClusterName(const std::string& clusterN
     }
     // Derive cluster name from base dir.
     size_t cpos(baseDir.rfind('/'));
-    if (cpos == std::string::npos)
+    if (cpos == std::string::npos) {
         return;
+    }
     size_t rpos(baseDir.rfind('/', cpos - 1));
-    if (rpos == std::string::npos)
+    if (rpos == std::string::npos) {
         return;
+    }
     size_t clpos(baseDir.rfind('/', rpos - 1));
-    if (clpos == std::string::npos)
+    if (clpos == std::string::npos) {
         return;
-    if (baseDir.substr(clpos + 1, 8) != "cluster.")
+    }
+    if (baseDir.substr(clpos + 1, 8) != "cluster.") {
         return;
+    }
     _cluster = baseDir.substr(clpos + 9, rpos - clpos - 9);
 }
 
@@ -339,20 +345,20 @@ Proton::Proton(FNET_Transport& transport, const config::ConfigUri& configUri, co
 }
 
 BootstrapConfig::SP Proton::init() {
-    assert(!_initStarted && !_initComplete);
+    CHECK(!_initStarted && !_initComplete);
     _initStarted = true;
     _initialization_status.start_initialization();
     _protonConfigFetcher.start();
     auto configSnapshot = _protonConfigurer.getPendingConfigSnapshot();
-    assert(configSnapshot);
+    CHECK(configSnapshot);
     auto bootstrapConfig = configSnapshot->getBootstrapConfig();
-    assert(bootstrapConfig);
+    CHECK(bootstrapConfig);
 
     return bootstrapConfig;
 }
 
 void Proton::init(const BootstrapConfig::SP& configSnapshot) {
-    assert(_initStarted && !_initComplete);
+    CHECK(_initStarted && !_initComplete);
     const ProtonConfig& protonConfig = configSnapshot->getProtonConfig();
     ensureWritableDir(protonConfig.basedir);
     const vespalib::HwInfo& hwInfo = configSnapshot->getHwInfo();
@@ -541,7 +547,7 @@ Proton::addDocumentDB(const DocTypeName& docTypeName, document::BucketSpace buck
 }
 
 Proton::~Proton() {
-    assert(_initStarted);
+    CHECK(_initStarted);
     if (!_initComplete) {
         LOG(warning, "Initialization of proton was halted. Shutdown sequence has been initiated.");
     }
@@ -740,8 +746,8 @@ DocumentDB::SP Proton::addDocumentDB(const document::DocumentType& docType, docu
     _documentDBMap[docTypeName] = ret;
     if (_persistenceEngine) {
         // Not allowed to get to service layer to call pause().
-        std::unique_lock<std::shared_mutex> persistenceWGuard(_persistenceEngine->getWLock());
-        auto                                persistenceHandler = std::make_shared<PersistenceHandlerProxy>(ret);
+        auto persistenceWGuard(_persistenceEngine->get_unique_lock());
+        auto persistenceHandler = std::make_shared<PersistenceHandlerProxy>(ret);
         if (!_isInitializing) {
             _persistenceEngine->propagateSavedClusterState(bucketSpace, *persistenceHandler);
             _persistenceEngine->populateInitialBucketDB(persistenceWGuard, bucketSpace, *persistenceHandler);
@@ -778,8 +784,8 @@ void Proton::removeDocumentDB(const DocTypeName& docTypeName) {
     if (_persistenceEngine) {
         {
             // Not allowed to get to service layer to call pause().
-            std::unique_lock<std::shared_mutex> persistenceWguard(_persistenceEngine->getWLock());
-            IPersistenceHandler::SP             oldHandler =
+            auto                    persistenceWguard(_persistenceEngine->get_unique_lock());
+            IPersistenceHandler::SP oldHandler =
                 _persistenceEngine->removeHandler(persistenceWguard, old->getBucketSpace(), docTypeName);
             if (_initComplete && oldHandler) {
                 // TODO: Fix race with bucket db modifying ops.
@@ -1093,7 +1099,11 @@ std::unique_ptr<vespalib::StateExplorer> Proton::get_child(std::string_view name
     } else if (name == DOCUMENT_DB) {
         return std::make_unique<DocumentDBMapExplorer>(_documentDBMap, _mutex);
     } else if (name == FLUSH_ENGINE && _flushEngine) {
-        return std::make_unique<FlushEngineExplorer>(*_flushEngine);
+        auto                      proton_config = getActiveConfigSnapshot()->getProtonConfigSP();
+        const auto&               cfg = proton_config->flush.preparerestart;
+        PrepareRestartCostsConfig prepare_restart_costs_config(cfg.replaycost, cfg.replayoperationcost, cfg.writecost,
+                                                               cfg.readcost);
+        return std::make_unique<FlushEngineExplorer>(*_flushEngine, prepare_restart_costs_config);
     } else if (name == TLS_NAME && _tls) {
         return std::make_unique<search::transactionlog::TransLogServerExplorer>(_tls->getTransLogServer());
     } else if (name == RESOURCE_USAGE && _diskMemUsageSampler && _persistenceEngine) {

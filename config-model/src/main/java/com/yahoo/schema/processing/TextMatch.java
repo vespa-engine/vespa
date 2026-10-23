@@ -9,7 +9,6 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.MatchType;
 import com.yahoo.schema.document.SDField;
-import com.yahoo.schema.document.Stemming;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -38,11 +37,7 @@ public class TextMatch extends Processor {
             ScriptExpression script = field.getIndexingScript();
             if (script == null) continue;
 
-            DataType fieldType = field.getDataType();
-            if (fieldType instanceof CollectionDataType) {
-                fieldType = fieldType.getNestedType();
-            }
-            if (fieldType != DataType.STRING) continue;
+            if ( ! field.isOfTypeOrNested(DataType.STRING)) continue;
 
             MyVisitor visitor = new MyVisitor();
             visitor.visit(script);
@@ -55,11 +50,7 @@ public class TextMatch extends Processor {
 
     private AnnotatorConfig findAnnotatorConfig(Schema schema, SDField field) {
         AnnotatorConfig config = new AnnotatorConfig();
-        Stemming activeStemming = field.getStemming();
-        if (activeStemming == null) {
-            activeStemming = schema.getStemming();
-        }
-        config.setStemMode(activeStemming.toStemMode());
+        config.setStemMode(field.getIndexStemming(schema).toStemMode());
         config.setRemoveAccents(field.getNormalizing().doRemoveAccents());
         config.setLowercase(field.getMatching().getCase() != Case.CASED);
         config.setProfile(field.getIndexLinguisticsProfile());

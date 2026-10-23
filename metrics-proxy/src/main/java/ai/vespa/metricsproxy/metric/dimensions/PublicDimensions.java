@@ -44,6 +44,9 @@ public final class PublicDimensions {
     // From host-admin. The OS version of the physical host.
     public static final String OS_VERSION = "osVersion";
 
+    // From host-admin. Whether retirement of the node has been requested or committed.
+    public static final String RETIRING = "retiring";
+
 
     /**  Metric specific dimensions  **/
     public static final String API = "api";                                 // feed

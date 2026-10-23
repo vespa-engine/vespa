@@ -32,7 +32,7 @@ public class TestUtil {
     }
 
     /**
-     * The metric-to-dimension mapping that config-model generates by default: host_life gets osVersion
+     * The metric-to-dimension mapping that config-model generates by default: host_life gets osVersion and retiring
      * in addition to host/parentHostname; services not listed keep only host/parentHostname.
      */
     public static MetricDimensionMapping standardDimensionMapping() {
@@ -42,7 +42,8 @@ public class TestUtil {
                 .service("host_life", s -> s
                         .dimension("host")
                         .dimension("parentHostname")
-                        .dimension("osVersion"))
+                        .dimension("osVersion")
+                        .dimension("retiring"))
                 .build());
     }
 

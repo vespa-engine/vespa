@@ -6,6 +6,7 @@
 #include "operationdonecontext.h"
 #include "removedonecontext.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
@@ -51,7 +52,7 @@ void SearchableFeedView::putIndexedFields(SerialNum serialNum, search::DocumentI
 void SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid, const Document& doc,
                                          const OnOperationDoneType& onWriteDone) {
     (void)onWriteDone;
-    assert(_writeService.index().isCurrentThread());
+    CHECK(_writeService.index().isCurrentThread());
     VLOG(getDebugLevel(lid, doc.getId()), "database(%s): performIndexPut: serialNum(%" PRIu64 "), docId(%s), lid(%d)",
          _params._docTypeName.toString().c_str(), serialNum, doc.getId().toString().c_str(), lid);
 
@@ -102,7 +103,7 @@ void SearchableFeedView::removeIndexedFields(SerialNum serialNum, search::Docume
 void SearchableFeedView::performIndexRemove(SerialNum serialNum, search::DocumentIdT lid,
                                             const OnRemoveDoneType& onWriteDone) {
     (void)onWriteDone;
-    assert(_writeService.index().isCurrentThread());
+    CHECK(_writeService.index().isCurrentThread());
     VLOG(getDebugLevel(lid, nullptr), "database(%s): performIndexRemove: serialNum(%" PRIu64 "), lid(%d)",
          _params._docTypeName.toString().c_str(), serialNum, lid);
 
@@ -112,7 +113,7 @@ void SearchableFeedView::performIndexRemove(SerialNum serialNum, search::Documen
 void SearchableFeedView::performIndexRemove(SerialNum serialNum, const LidVector& lidsToRemove,
                                             const OnWriteDoneType& onWriteDone) {
     (void)onWriteDone;
-    assert(_writeService.index().isCurrentThread());
+    CHECK(_writeService.index().isCurrentThread());
     for (const auto lid : lidsToRemove) {
         VLOG(getDebugLevel(lid, nullptr), "database(%s): performIndexRemove: serialNum(%" PRIu64 "), lid(%d)",
              _params._docTypeName.toString().c_str(), serialNum, lid);
@@ -123,8 +124,9 @@ void SearchableFeedView::performIndexRemove(SerialNum serialNum, const LidVector
 
 void SearchableFeedView::removeIndexedFields(SerialNum serialNum, const LidVector& lidsToRemove,
                                              const OnWriteDoneType& onWriteDone) {
-    if (!hasIndexedFields())
+    if (!hasIndexedFields()) {
         return;
+    }
 
     _writeService.index().execute(makeLambdaTask([this, serialNum, lidsToRemove, onWriteDone]() {
         performIndexRemove(serialNum, lidsToRemove, onWriteDone);
@@ -136,7 +138,7 @@ void SearchableFeedView::internalDeleteBucket(const DeleteBucketOperation& delOp
 }
 
 void SearchableFeedView::performIndexForceCommit(SerialNum serialNum, const OnForceCommitDoneType& onCommitDone) {
-    assert(_writeService.index().isCurrentThread());
+    CHECK(_writeService.index().isCurrentThread());
     _indexWriter->commit(serialNum, onCommitDone);
 }
 

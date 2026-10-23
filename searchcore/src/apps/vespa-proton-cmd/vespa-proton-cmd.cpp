@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config/common/configsystem.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -33,9 +34,9 @@ private:
 public:
     App() : _frt(), _target(nullptr), _req(nullptr) {}
     ~App() {
-        assert(!_frt);
-        assert(_target == nullptr);
-        assert(_req == nullptr);
+        CHECK(!_frt);
+        CHECK(_target == nullptr);
+        CHECK(_req == nullptr);
     }
 
     int usage(const char* self) {
@@ -54,12 +55,14 @@ public:
     }
 
     void invokeRPC(bool print, double timeout = 5.0) {
-        if (_req == nullptr)
+        if (_req == nullptr) {
             return;
+        }
 
         _target->InvokeSync(_req, timeout);
-        if (print || _req->IsError())
+        if (print || _req->IsError()) {
             _req->Print(0);
+        }
     }
 
     void finiRPC() {
@@ -79,8 +82,9 @@ public:
     void scanSpecs(slobrok::api::MirrorAPI::SpecList& specs, const std::string& me, std::string& service,
                    std::string& spec, int& found) {
         for (size_t j = 0; j < specs.size(); ++j) {
-            if (specs[j].first == service)
+            if (specs[j].first == service) {
                 continue;
+            }
             if (specs[j].second.compare(0, me.length(), me) == 0) {
                 service = specs[j].first;
                 spec = specs[j].second;
@@ -315,8 +319,9 @@ public:
             finiRPC();
             return usage(argv[0]);
         }
-        if (!invoked)
+        if (!invoked) {
             invokeRPC(true);
+        }
         finiRPC();
         return 0;
     }

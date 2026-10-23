@@ -76,4 +76,16 @@ public class RateLimitingSearcherTest {
         assertEquals(9, tester.tryRequests("id1"), "'rate' request are available initially");
     }
 
+    @Test
+    void testRequestsMetric() {
+        var tester = new RateLimitingTester(false);
+        tester.executeWasAllowed("id1");
+        tester.executeWasAllowed("id1");
+        assertFalse(tester.executeWasAllowed("id2", 0), "This request is also counted, although rejected");
+
+        Map<Point, UntypedMetric> map = tester.metrics().getSnapshot().getMapForMetric("requests");
+        assertEquals(2, map.get(tester.metrics().point("id", "id1")).getCount());
+        assertEquals(1, map.get(tester.metrics().point("id", "id2")).getCount());
+    }
+
 }

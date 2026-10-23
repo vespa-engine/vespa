@@ -17,12 +17,6 @@ parameters {
   }
 }
 parameters {
-  key: "enable_mem_pattern"
-  value {
-    string_value: "0"
-  }
-}
-parameters {
   key: "execution_mode"
   value {
     string_value: "0"
@@ -31,7 +25,7 @@ parameters {
 parameters {
   key: "inter_op_thread_count"
   value {
-    string_value: "2"
+    string_value: "1"
   }
 }
 parameters {

@@ -39,4 +39,9 @@
             <region fraction="0.5">us-central-1</region>
         </group>
     </bcp>
+    <dev>
+        <region name="us-east-1">
+            <availability-zone>us-east-1a</availability-zone>
+        </region>
+    </dev>
 </deployment>

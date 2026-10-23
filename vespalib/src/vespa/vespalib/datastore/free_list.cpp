@@ -2,8 +2,9 @@
 
 #include "free_list.h"
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 
 namespace vespalib::datastore {
 
@@ -11,7 +12,7 @@ FreeList::FreeList() noexcept : _free_lists() {
 }
 
 FreeList::~FreeList() {
-    assert(_free_lists.empty());
+    CHECK(_free_lists.empty());
 }
 
 void FreeList::attach(BufferFreeList& buf_list) {
@@ -24,7 +25,7 @@ void FreeList::detach(BufferFreeList& buf_list) noexcept {
         return;
     }
     auto itr = std::find(_free_lists.begin(), _free_lists.end(), &buf_list);
-    assert(itr != _free_lists.end());
+    CHECK(itr != _free_lists.end());
     _free_lists.erase(itr);
 }
 

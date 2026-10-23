@@ -276,7 +276,7 @@ public class Sorting implements Cloneable {
 
         @Override
         public boolean equals(Object other) {
-            if (!(other instanceof AttributeSorter sorter)) {
+            if (!(other instanceof AttributeSorter sorter) || getClass() != sorter.getClass()) {
                 return false;
             }
             return sorter.fieldName.equals(fieldName);

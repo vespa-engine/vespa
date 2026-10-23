@@ -117,9 +117,9 @@ public class HostSystem extends TreeConfigProducer<Host> {
         }
     }
 
-    public Map<HostResource, ClusterMembership> allocateHosts(ClusterSpec cluster, Capacity capacity, DeployState deployState) {
-        List<HostSpec> allocatedHosts = provisioner.prepare(cluster, capacity, toProvisionContext(deployState));
-        deployState.provisioned().add(cluster, capacity);
+    public Map<HostResource, ClusterMembership> allocateHosts(ClusterSpec cluster, DeployState deployState) {
+        List<HostSpec> allocatedHosts = provisioner.prepare(cluster, toProvisionContext(deployState));
+        deployState.provisioned().add(cluster);
 
         // TODO: Even if HostResource owns a set of memberships, we need to return a map because the caller needs the current membership.
         Map<HostResource, ClusterMembership> retAllocatedHosts = new LinkedHashMap<>();

@@ -526,7 +526,7 @@ void verifyJavaDocument(Document& doc) {
 
     RawFieldValue rawVal;
     EXPECT_TRUE(doc.getValue(doc.getField("rawfield"), rawVal));
-    EXPECT_TRUE(memcmp(rawVal.getAsRaw().first, "RAW DATA", 8) == 0);
+    EXPECT_TRUE(memcmp(rawVal.getAsRaw().data(), "RAW DATA", 8) == 0);
 
     Document embedDocVal;
     EXPECT_TRUE(doc.getValue(doc.getField("docfield"), embedDocVal));
@@ -735,7 +735,7 @@ TEST(DocumentTest, testReadSerializedAllVersions) {
 
         RawFieldValue rawVal;
         EXPECT_TRUE(doc.getValue(doc.getField("rawfield"), rawVal));
-        EXPECT_TRUE(memcmp(rawVal.getAsRaw().first, "RAW DATA", 8) == 0);
+        EXPECT_TRUE(memcmp(rawVal.getAsRaw().data(), "RAW DATA", 8) == 0);
 
         if (version > 6) {
             Document docInDoc;

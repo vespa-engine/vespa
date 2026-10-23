@@ -5,7 +5,7 @@
 #include "bucketdeltapair.h"
 #include "i_bucket_create_notifier.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton::bucketdb {
 
@@ -52,7 +52,7 @@ void JoinBucketsSession::applyDeltas(const BucketDeltaPair& deltas) {
 
 bool JoinBucketsSession::applyDelta(const BucketState& delta, BucketId& srcBucket, BucketState* dst) {
     if (!srcBucket.valid()) {
-        assert(delta.empty());
+        CHECK(delta.empty());
         return false;
     }
     BucketState* src = _bucketDB->getBucketStatePtr(srcBucket);
@@ -65,8 +65,8 @@ bool JoinBucketsSession::applyDelta(const BucketState& delta, BucketId& srcBucke
 
 void JoinBucketsSession::finish() {
     if (!_target.valid()) {
-        assert(_source1Delta.empty());
-        assert(_source2Delta.empty());
+        CHECK(_source1Delta.empty());
+        CHECK(_source2Delta.empty());
         return;
     }
     BucketState* targetState = _bucketDB->getBucketStatePtr(_target);

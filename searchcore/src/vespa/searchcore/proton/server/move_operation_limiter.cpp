@@ -4,7 +4,7 @@
 
 #include "i_blockable_maintenance_job.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton {
 
@@ -23,7 +23,7 @@ bool MoveOperationLimiter::isOnLimit(const LockGuard&) const {
 void MoveOperationLimiter::endOperation() {
     LockGuard guard(_mutex);
     bool      considerUnblock = isOnLimit(guard);
-    assert(_outstandingOps > 0);
+    CHECK(_outstandingOps > 0);
     --_outstandingOps;
     if (_job && considerUnblock) {
         _job->unBlock(BlockedReason::OUTSTANDING_OPS);

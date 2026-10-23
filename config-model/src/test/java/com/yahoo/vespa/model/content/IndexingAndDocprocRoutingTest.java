@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -224,6 +225,26 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().startsWith("content cluster 'musiccluster' specifies the chain 'default' as indexing chain"));
         }
+    }
+
+    @Test
+    void indexingChainMustExist() {
+        SearchClusterSpec musicCluster = new SearchClusterSpec("musiccluster", "dpmusiccluster", "nosuchchain");
+        musicCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
+        DocprocClusterSpec dpMusicCluster = new DocprocClusterSpec("dpmusiccluster", new DocprocChainSpec("dpmusicchain", "indexing"));
+        Throwable thrown = assertThrows(IllegalArgumentException.class,
+                                        () -> getIndexedContentVespaModel(List.of(dpMusicCluster), List.of(musicCluster)));
+        assertEquals("content cluster 'musiccluster' refers to docproc chain 'nosuchchain' for indexing, but this chain does not exist",
+                     thrown.getMessage());
+    }
+
+    @Test
+    void builtInIndexingChainCanBeNamedExplicitly() {
+        SearchClusterSpec musicCluster = new SearchClusterSpec("musiccluster", "dpmusiccluster", "indexing");
+        musicCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
+        DocprocClusterSpec dpMusicCluster = new DocprocClusterSpec("dpmusiccluster");
+        VespaModel model = getIndexedContentVespaModel(List.of(dpMusicCluster), List.of(musicCluster));
+        assertFeedingRoute(model, "musiccluster", "dpmusiccluster/chain.indexing");
     }
 
     @Test

@@ -31,6 +31,7 @@ public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const final;
     HitEstimate combine(const std::vector<HitEstimate>& data) const override;
     FieldSpecBaseList exposeFields() const override;
+    bool always_needs_unpack() const override;
     void sort(Children& children, InFlow in_flow) const override;
     SearchIterator::UP createIntermediateSearch(MultiSearch::Children subSearches, fef::MatchData& md) const override;
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;

@@ -10,7 +10,7 @@
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/util/generationhandler.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <chrono>
 
@@ -35,7 +35,7 @@ template <HnswIndexType type> struct HnswGraph {
 
     // Provides mapping from document id -> node reference.
     // The reference is used to lookup the node data in LevelArrayStore.
-    using NodeVector = vespalib::RcuVector<NodeType>;
+    using NodeVector = vespalib::TypeStableVector<NodeType>;
     using LevelsRef = vespalib::datastore::EntryRef;
 
     // This stores the level arrays for all nodes.

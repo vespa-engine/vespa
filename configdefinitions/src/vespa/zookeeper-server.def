@@ -17,7 +17,8 @@ dataDir string default="var/zookeeper"
 
 clientPort int default=2181
 
-snapshotCount int default=50000
+# Default for ZooKeeper 3.9 is 100 000
+snapshotCount int default=100000
 # Purge interval in hours
 autopurge.purgeInterval int default=1
 autopurge.snapRetainCount int default=15

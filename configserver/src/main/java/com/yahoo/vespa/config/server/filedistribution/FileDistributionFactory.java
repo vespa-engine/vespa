@@ -3,13 +3,20 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.FileDistribution;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
-import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.path.Path;
+import com.yahoo.yolean.concurrent.Memoized;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Factory for creating providers that are used to interact with file distribution.
@@ -21,27 +28,46 @@ public class FileDistributionFactory implements AutoCloseable {
 
     protected final ConfigserverConfig configserverConfig;
     protected final FileDirectory fileDirectory;
-    private final FlagSource flagSource;
     private final Supervisor supervisor = new Supervisor(new Transport("filedistribution"));
 
 
     @Inject
-    public FileDistributionFactory(ConfigserverConfig configserverConfig, FileDirectory fileDirectory, FlagSource flagSource) {
+    public FileDistributionFactory(ConfigserverConfig configserverConfig, FileDirectory fileDirectory) {
         this.configserverConfig = configserverConfig;
         this.fileDirectory = fileDirectory;
-        this.flagSource = flagSource;
     }
 
-    public FileRegistry createFileRegistry(File applicationPackage) {
-        return new FileDBRegistry(createFileManager(applicationPackage));
+    public FileRegistry createFileRegistry(File applicationPackage, ApplicationId owner) {
+        return new FileDBRegistry(createFileManager(applicationPackage, owner));
     }
 
     public FileDistribution createFileDistribution() {
         return new FileDistributionImpl(supervisor);
     }
 
-    public AddFileInterface createFileManager(File applicationDir) {
-        return new ApplicationFileManager(applicationDir, fileDirectory, configserverConfig.hostedVespa());
+    public AddFileInterface createFileManager(File applicationDir, ApplicationId owner) {
+        return new ApplicationFileManager(applicationDir, fileDirectory, configserverConfig.hostedVespa(), Optional.of(owner));
+    }
+
+    // A new session has no saved identity yet. Resolve it only if the loaded registry needs a new reference.
+    public AddFileInterface createFileManager(File applicationDir, Supplier<ApplicationId> owner) {
+        Supplier<AddFileInterface> manager = new Memoized<>(() -> createFileManager(applicationDir, owner.get()));
+        return new AddFileInterface() {
+            @Override
+            public FileReference addFile(Path path) throws IOException {
+                return manager.get().addFile(path);
+            }
+
+            @Override
+            public FileReference addUri(String uri, Path path) {
+                return manager.get().addUri(uri, path);
+            }
+
+            @Override
+            public FileReference addBlob(ByteBuffer blob, Path path) {
+                return manager.get().addBlob(blob, path);
+            }
+        };
     }
 
     public FileDirectory fileDirectory() { return fileDirectory; }

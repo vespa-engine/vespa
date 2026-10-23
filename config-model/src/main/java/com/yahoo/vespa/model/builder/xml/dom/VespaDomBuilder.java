@@ -114,9 +114,11 @@ public class VespaDomBuilder extends VespaModelBuilder {
             initializeProducer(t, deployState, producerSpec);
             if (producerSpec != null) {
                 if (producerSpec.hasAttribute(JVM_OPTIONS)) {
+                    AbstractService.validateNoShellMetacharacters("JVM options", producerSpec.getAttribute(JVM_OPTIONS), deployState.getDeployLogger());
                     t.appendJvmOptions(producerSpec.getAttribute(JVM_OPTIONS));
                 }
                 if (producerSpec.hasAttribute(PRELOAD_ATTRIB_NAME)) {
+                    AbstractService.validateNoShellMetacharacters("preload", producerSpec.getAttribute(PRELOAD_ATTRIB_NAME), deployState.getDeployLogger());
                     t.setPreLoad(producerSpec.getAttribute(PRELOAD_ATTRIB_NAME));
                 }
                 if (producerSpec.hasAttribute(MMAP_NOCORE_LIMIT)) {

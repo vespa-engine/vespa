@@ -491,7 +491,6 @@ public class ClusterSearcherTestCase {
                                         new ai.vespa.cloud.Node(0, "default"));
         Dispatcher dispatcher = new Dispatcher(ComponentId.createAnonymousComponentId("test-id"),
                                                dispatchConfig,
-                                               new QrSearchersConfig.Builder().build(),
                                                nodesConfig,
                                                systemInfo,
                                                vipStatus);

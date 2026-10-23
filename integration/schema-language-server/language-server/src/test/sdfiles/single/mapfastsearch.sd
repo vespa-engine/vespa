@@ -1,0 +1,38 @@
+schema mapfastsearch {
+    document mapfastsearch {
+        field plain type map<string, string> {
+            indexing: summary
+        }
+        field short_form type map<string, string> {
+            indexing: summary
+            fast-search-map-field lookup
+        }
+        field block_form type map<string, string> {
+            indexing: summary
+            fast-search-map-field lookup {
+            }
+        }
+        struct entry {
+            field mykey type string { }
+            field myvalue type int { }
+        }
+        field array_form type array<entry> {
+            indexing: summary
+            fast-search-map-field lookup {
+                key: mykey
+                value: myvalue
+            }
+        }
+        field several_lookups type array<entry> {
+            indexing: summary
+            fast-search-map-field lookup {
+                key: mykey
+                value: myvalue
+            }
+            fast-search-map-field reversed {
+                key: myvalue
+                value: mykey
+            }
+        }
+    }
+}

@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for predicate_ref_cache.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/predicate/predicate_ref_cache.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-#include <cassert>
 #include <vector>
 
 using namespace search;
@@ -15,7 +15,7 @@ namespace {
 struct MyBufferStore {
     std::vector<uint32_t> store;
     const uint32_t* getBuffer(uint32_t ref) const {
-        assert(ref < store.size());
+        CHECK(ref < store.size());
         return &store[ref];
     }
     uint32_t insert(uint32_t value) {

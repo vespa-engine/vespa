@@ -54,6 +54,8 @@ public class ParserTokensTest {
         "RANKFEATURES_SL",
         "RANKFEATURES_ML",
         "SELECT_ELEMENTS_BY_SL",
+        "SORTFEATURES_SL",
+        "SORTFEATURES_ML",
         "SUMMARYFEATURES_SL",
         "SUMMARYFEATURES_ML",
         "SUMMARYFEATURES_ML_INHERITS",

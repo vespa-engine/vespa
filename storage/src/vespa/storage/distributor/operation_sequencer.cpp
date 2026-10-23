@@ -2,11 +2,10 @@
 
 #include "operation_sequencer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
-
-#include <cassert>
 
 namespace storage::distributor {
 
@@ -54,11 +53,11 @@ bool OperationSequencer::is_blocked(const document::Bucket& bucket) const noexce
 }
 
 void OperationSequencer::release(const SequencingHandle& handle) {
-    assert(handle.valid());
+    CHECK(handle.valid());
     if (handle.has_gid()) {
         _active_gids.erase(handle.gid());
     } else {
-        assert(handle.has_bucket());
+        CHECK(handle.has_bucket());
         _active_buckets.erase(handle.bucket());
     }
 }

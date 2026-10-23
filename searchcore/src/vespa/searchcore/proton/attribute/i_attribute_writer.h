@@ -68,7 +68,8 @@ public:
     virtual void forceCommit(const CommitParam& param, const OnWriteDoneType& onWriteDone) = 0;
 
     virtual void onReplayDone(uint32_t docIdLimit) = 0;
-    virtual bool hasStructFieldAttribute() const = 0;
+    [[nodiscard]] virtual bool hasStructFieldAttribute() const = 0;
+    [[nodiscard]] virtual bool has_non_authoritative_attribute() const noexcept = 0;
     virtual void drain(const OnWriteDoneType& onWriteDone) = 0;
 };
 

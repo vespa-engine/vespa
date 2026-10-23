@@ -6,16 +6,9 @@ instance_group {
   kind: KIND_CPU
 }
 dynamic_batching {
-  max_queue_delay_microseconds: 100000
 }
 parameters {
   key: "enable_mem_arena"
-  value {
-    string_value: "0"
-  }
-}
-parameters {
-  key: "enable_mem_pattern"
   value {
     string_value: "0"
   }
@@ -29,7 +22,7 @@ parameters {
 parameters {
   key: "inter_op_thread_count"
   value {
-    string_value: "2"
+    string_value: "1"
   }
 }
 parameters {

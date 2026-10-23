@@ -1,0 +1,39 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+schema test {
+  document test {
+    field t1 type tensor(x[128]) {
+      indexing: attribute
+      attribute {
+        quantization {
+          bits: 1
+        }
+      }
+    }
+    field t2 type tensor(x[256]) {
+      indexing: attribute
+      attribute {
+        quantization {
+          bits: 2
+        }
+      }
+    }
+    field t3 type tensor(x{},y[128]) {
+      indexing: attribute
+      attribute {
+        quantization {
+          bits: 3
+        }
+      }
+    }
+    # Also include a quantized HNSW indexed field
+    field t4 type tensor(x[128]) {
+      indexing: attribute | index
+      attribute {
+        distance-metric: prenormalized-angular
+        quantization {
+          bits: 4
+        }
+      }
+    }
+  }
+}

@@ -12,6 +12,9 @@ on:
   schedule:
    - cron: '0 0 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   verify-opensource-rpm-installable:
     runs-on: ubuntu-latest

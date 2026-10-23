@@ -16,6 +16,20 @@ schema linguistics {
             indexing: index | summary
             linguistics {
                 profile: de_index_and_search
+                tokens: alternatives
+            }
+        }
+        field body type string {
+            indexing: index | summary
+            linguistics {
+                index {
+                    profile: de_index_unstemmed
+                    tokens: original
+                }
+                search {
+                    profile: de_search_stemmed
+                    tokens: original-and-alternatives
+                }
             }
         }
     }

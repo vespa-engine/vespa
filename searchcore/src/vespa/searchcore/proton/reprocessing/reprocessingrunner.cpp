@@ -58,8 +58,9 @@ double ReprocessingRunner::getProgress() const {
         weightedProgress += progress._progress * progress._weight;
         weight += progress._weight;
     }
-    if (weight == 0.0)
+    if (weight == 0.0) {
         return 1.0;
+    }
     return weightedProgress / weight;
 }
 

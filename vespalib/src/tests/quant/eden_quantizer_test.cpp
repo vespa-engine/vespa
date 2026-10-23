@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/quant/eden.h>
@@ -21,7 +22,7 @@ namespace {
 
 // Mean Squared Error (MSE)
 [[nodiscard]] float mse(std::span<const float> expected, std::span<const float> actual) noexcept {
-    assert(expected.size() == actual.size());
+    CHECK(expected.size() == actual.size());
     float sum_err_sq = 0;
     for (size_t i = 0; i < expected.size(); ++i) {
         const float diff = expected[i] - actual[i];
@@ -41,7 +42,7 @@ namespace {
 
 // Simple non-vectorized dot product (sanity check vs. vectorized functions)
 [[nodiscard]] float dot(std::span<const float> a, std::span<const float> b) noexcept {
-    assert(a.size() == b.size());
+    CHECK(a.size() == b.size());
     float d = 0;
     for (size_t i = 0; i < a.size(); ++i) {
         d += a[i] * b[i];
@@ -51,7 +52,7 @@ namespace {
 
 // Simple non-vectorized squared Euclidean distance
 [[nodiscard]] float squared_euclidean_distance(std::span<const float> a, std::span<const float> b) noexcept {
-    assert(a.size() == b.size());
+    CHECK(a.size() == b.size());
     float d = 0;
     for (size_t i = 0; i < a.size(); ++i) {
         const float delta = a[i] - b[i];
@@ -68,7 +69,7 @@ void normalize(std::span<float> v) noexcept {
 }
 
 [[nodiscard]] float extract_scale(std::span<const uint8_t> v) noexcept {
-    assert(v.size() >= 4);
+    CHECK(v.size() >= 4);
     float scale;
     memcpy(&scale, v.data(), sizeof(float));
     return scale;
@@ -177,7 +178,7 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_2_bits) {
     qtp.quant_mode = QuantMode::MSE;
     qtp.expected_scale = 4.7562151;
     qtp.expected_mse = 1.86790919;
-    qtp.expected_quant_bytes = std::vector<uint8_t>{0x29, 0x64, 0x56, 0x7A};
+    qtp.expected_quant_bytes = std::vector<uint8_t>{0x68, 0x21, 0x02, 0x3A};
     qtp.expected_dequant = std::vector<float>{
         1.0767597,  -5.38379765, 3.5919354,  -3.59193587, -6.10711145, 1.07675958, 1.0767591,  -3.23027873,
         1.25758827, -3.77276397, 3.41110682, -3.4111073,  -3.41110754, 3.41110682, 5.92628288, -3.4111073};
@@ -193,7 +194,7 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_3_bits) {
     qtp.quant_mode = QuantMode::MSE;
     qtp.expected_scale = 3.91597676;
     qtp.expected_mse = 0.524829865;
-    qtp.expected_quant_bytes = std::vector<uint8_t>{0x2A, 0x81, 0x71, 0xD5, 0xD6, 0x5A};
+    qtp.expected_quant_bytes = std::vector<uint8_t>{0x29, 0x37, 0x10, 0x0D, 0xD0, 0x3A};
     qtp.expected_dequant = std::vector<float>{
         1.48024964, -3.39981604, 5.21384239, -5.21384239, -4.36423588, 2.06201744, 1.4802494,  -4.44074869,
         3.1580379,  -4.30914736, 3.53605366, -3.53605366, -3.53605318, 3.53605366, 5.26893044, -4.11782122};
@@ -208,7 +209,7 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_4_bits) {
     qtp.quant_mode = QuantMode::MSE;
     qtp.expected_scale = 3.70460153;
     qtp.expected_mse = 0.0788929164;
-    qtp.expected_quant_bytes = std::vector<uint8_t>{0xB5, 0x09, 0x61, 0x68, 0x5A, 0x77, 0xAA, 0x4C};
+    qtp.expected_quant_bytes = std::vector<uint8_t>{0xB2, 0x79, 0x16, 0x18, 0x2A, 0x0, 0xAA, 0x3C};
     qtp.expected_dequant = std::vector<float>{
         2.81700802, -3.76831293, 5.44971228, -5.4497118,  -4.02572727, 2.86288738, 1.80706978, -3.05899167,
         3.52310324, -5.16248846, 3.78170633, -2.72374034, -2.77176738, 3.73367882, 5.37091684, -3.73153186};

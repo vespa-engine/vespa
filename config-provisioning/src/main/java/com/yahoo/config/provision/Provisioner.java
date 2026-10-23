@@ -1,9 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Interface used by the config system to acquire hosts.
@@ -17,11 +15,18 @@ public interface Provisioner {
      *
      * @param applicationId the application requesting hosts
      * @param cluster the specification of the cluster to allocate nodes for
-     * @param capacity the capacity requested
      * @param context the context this request is made in
      * @return the specification of the hosts allocated
      */
-    List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionContext context);
+    default List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, ProvisionContext context) {
+        return prepare(applicationId, cluster, cluster.capacity(), context);
+    }
+
+    @Deprecated // TODO: Remove after October 2026
+    default List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+        cluster = cluster.builder().capacity(capacity).build();
+        return prepare(applicationId, cluster, context);
+    }
 
     void activate(List<ClusterHosts> clusterHosts, ActivationContext context, ApplicationTransaction transaction);
 

@@ -4,10 +4,9 @@
 
 #include "intermediate.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 using std::string;
 using vespalib::getClassName;
@@ -49,7 +48,7 @@ void QueryBuilderBase::addCompleteNode(Node* n) {
         return;
     }
 
-    assert(_nodes.top().remaining_child_count > 0);
+    CHECK(_nodes.top().remaining_child_count > 0);
     _nodes.top().node->append(std::move(node));
     if (--_nodes.top().remaining_child_count == 0) {
         Node* completed(_nodes.top().node);

@@ -43,6 +43,7 @@ vespa_add_library(searchcore_attribute STATIC
     initialized_attributes_result.cpp
     reserved_memory_for_attribute_load_calculator.cpp
     sequential_attributes_initializer.cpp
+    shrink_attribute_lid_space_flush_target.cpp
     DEPENDS
     searchcore_flushengine
     searchcore_pcommon

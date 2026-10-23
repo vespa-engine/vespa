@@ -2,6 +2,7 @@
 
 #include "compression.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/index/postinglistparams.h>
@@ -138,7 +139,7 @@ void DecodeContext64Base::readBytes(uint8_t* buf, size_t len) {
         }
         uint64_t readOffset = getReadOffset();
         // Validate that read offset is byte aligned
-        assert((readOffset & 7) == 0);
+        CHECK((readOffset & 7) == 0);
         // Get start and end of buffer to read from, then calculate size
         const uint8_t* rbuf = reinterpret_cast<const uint8_t*>(getCompr()) + (getBitOffset() >> 3);
         const uint8_t* rbufE = reinterpret_cast<const uint8_t*>(_realValE);
@@ -146,7 +147,7 @@ void DecodeContext64Base::readBytes(uint8_t* buf, size_t len) {
         // How much to copy in this iteration of the loop
         size_t copySize = std::min(rbufSize, len);
         // Something must be copied during each iteration
-        assert(copySize > 0);
+        CHECK(copySize > 0);
         memcpy(buf, rbuf, copySize);
         buf += copySize;
         len -= copySize;
@@ -160,7 +161,7 @@ void DecodeContext64Base::readBytes(uint8_t* buf, size_t len) {
 
 uint32_t DecodeContext64Base::readHeader(vespalib::GenericHeader& header, int64_t fileSize) {
     size_t hhSize = vespalib::GenericHeader::getMinSize();
-    assert(static_cast<int64_t>(hhSize) <= fileSize);
+    CHECK(static_cast<int64_t>(hhSize) <= fileSize);
     vespalib::DataBuffer dataBuffer(32_Ki);
     dataBuffer.ensureFree(hhSize);
     readBytes(reinterpret_cast<uint8_t*>(dataBuffer.getFree()), hhSize);
@@ -169,7 +170,7 @@ uint32_t DecodeContext64Base::readHeader(vespalib::GenericHeader& header, int64_
     uint32_t                              headerLen = vespalib::GenericHeader::readSize(bufferReader);
     // Undo read from buffer
     dataBuffer.moveDeadToData(hhSize - dataBuffer.getDataLen());
-    assert(headerLen <= fileSize);
+    CHECK(headerLen <= fileSize);
     (void)fileSize;
     if (headerLen > hhSize) {
         // Read remaining header into buffer
@@ -179,8 +180,8 @@ uint32_t DecodeContext64Base::readHeader(vespalib::GenericHeader& header, int64_
     }
     uint32_t len = header.read(bufferReader);
     (void)len;
-    assert(len >= header.getSize());
-    assert(len == headerLen);
+    CHECK(len >= header.getSize());
+    CHECK(len == headerLen);
     return headerLen;
 }
 

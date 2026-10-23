@@ -55,9 +55,10 @@ public class ConfigServerMaintenance {
         maintainers.add(new ReindexingMaintainer(applicationRepository, curator,
                                                  Duration.ofMinutes(3), convergenceChecker, Clock.systemUTC()));
         if (applicationRepository.configserverConfig().hostedVespa()) {
+            var interval = Duration.ofMinutes(1);
             maintainers.add(new RestartOnDeployMaintainer(
-                    applicationRepository, curator, Clock.systemUTC(), Duration.ofSeconds(30)));
-            maintainers.add(new HostRegistryMaintainer(applicationRepository, curator, Duration.ofSeconds(30)));
+                    applicationRepository, curator, Clock.systemUTC(), interval));
+            maintainers.add(new HostRegistryMaintainer(applicationRepository, curator, interval));
         }
     }
 

@@ -15,6 +15,7 @@ UniqueStoreHashDictionaryReadSnapshot<HashDictionaryT>::UniqueStoreHashDictionar
 }
 
 template <typename HashDictionaryT> void UniqueStoreHashDictionaryReadSnapshot<HashDictionaryT>::fill() {
+    _refs.reserve(_hash.size());
     _hash.foreach_key([this](EntryRef ref) { _refs.push_back(ref); });
 }
 

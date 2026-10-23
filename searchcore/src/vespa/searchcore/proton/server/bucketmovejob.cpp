@@ -9,6 +9,7 @@
 #include "iclusterstatechangednotifier.h"
 #include "imaintenancejobrunner.h"
 
+#include <vespa/check_require.h>
 #include <vespa/persistence/spi/bucket_tasks.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_notifier.h>
@@ -121,7 +122,7 @@ std::shared_ptr<BucketMoveJob> BucketMoveJob::create(
                               bucketSpace),
             [&master](auto job) {
                 auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
-                assert(!failed);
+                CHECK(!failed);
             }};
 }
 
@@ -166,7 +167,7 @@ public:
         : _job(std::move(job)), _keys(std::move(keys)), _opsTracker(std::move(opsTracker)) {}
 
     void run(const Bucket& bucket, IDestructorCallbackSP onDone) override {
-        assert(_keys.mover().getBucket() == bucket.getBucketId());
+        CHECK(_keys.mover().getBucket() == bucket.getBucketId());
         using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallbackSP, IDestructorCallbackSP>>;
         BucketMoveJob::prepareMove(
             std::move(_job), std::move(_keys),
@@ -183,11 +184,13 @@ private:
 
 void BucketMoveJob::failOperation(std::shared_ptr<BucketMoveJob> job, BucketId bucketId) {
     auto& master = job->_master;
-    if (job->stopped())
+    if (job->stopped()) {
         return;
+    }
     master.execute(makeLambdaTask([job = std::move(job), bucketId]() {
-        if (job->stopped())
+        if (job->stopped()) {
             return;
+        }
         job->considerBucket(job->_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
     }));
 }
@@ -197,8 +200,9 @@ void BucketMoveJob::startMove(BucketMover& mover, size_t maxDocsToMove) {
     if (done) {
         mover.setAllScheduled();
     }
-    if (keys.empty())
+    if (keys.empty()) {
         return;
+    }
     mover.updateLastValidGid(keys.back()._gid);
     Bucket spiBucket(document::Bucket(_bucketSpace, mover.getBucket()));
     auto bucketTask = std::make_unique<StartMove>(shared_from_this(), std::move(keys), getLimiter().beginOperation());
@@ -207,16 +211,19 @@ void BucketMoveJob::startMove(BucketMover& mover, size_t maxDocsToMove) {
 
 void BucketMoveJob::prepareMove(std::shared_ptr<BucketMoveJob> job, BucketMover::MoveKeys keys,
                                 IDestructorCallbackSP onDone) {
-    if (job->stopped())
+    if (job->stopped()) {
         return; // TODO Remove once lidtracker is no longer in use.
+    }
     auto  moveOps = keys.createMoveOperations();
     auto& master = job->_master;
-    if (job->stopped())
+    if (job->stopped()) {
         return;
+    }
     master.execute(
         makeLambdaTask([job = std::move(job), moveOps = std::move(moveOps), onDone = std::move(onDone)]() mutable {
-            if (job->stopped())
+            if (job->stopped()) {
                 return;
+            }
             job->completeMove(std::move(moveOps), std::move(onDone));
         }));
 }
@@ -252,7 +259,7 @@ bool BucketMoveJob::checkIfMoverComplete(const BucketMover& mover) {
                 return true;
             }
         } else {
-            assert(found != _bucketsInFlight.end());
+            CHECK(found != _bucketsInFlight.end());
             _bucketsInFlight.erase(found);
             _modifiedHandler.notifyBucketModified(bucket);
         }
@@ -273,12 +280,12 @@ void BucketMoveJob::cancelBucket(BucketId bucket) {
 
 void BucketMoveJob::considerBucket(const bucketdb::Guard& guard, BucketId bucket) {
     cancelBucket(bucket);
-    assert(!_bucketsInFlight.contains(bucket));
+    CHECK(!_bucketsInFlight.contains(bucket));
     reconsiderBucket(guard, bucket);
 }
 
 void BucketMoveJob::reconsiderBucket(const bucketdb::Guard& guard, BucketId bucket) {
-    assert(!_bucketsInFlight.contains(bucket));
+    CHECK(!_bucketsInFlight.contains(bucket));
     auto [mustMove, wantReady] = needMove(bucket, BucketStateWrapper(guard->get(bucket)));
     if (mustMove) {
         _buckets2Move[bucket] = wantReady;
@@ -325,8 +332,9 @@ std::shared_ptr<BucketMover> BucketMoveJob::greedyCreateMover() {
 
 void BucketMoveJob::moveDocs(size_t maxDocsToMove) {
     backFillMovers();
-    if (_movers.empty())
+    if (_movers.empty()) {
         return;
+    }
 
     // Select mover
     size_t index = _iterateCount++ % _movers.size();
@@ -382,7 +390,7 @@ void BucketMoveJob::backFillMovers() {
         auto mover = greedyCreateMover();
         _movers.push_back(mover);
         auto bucketId = mover->getBucket();
-        assert(!_bucketsInFlight.contains(bucketId));
+        CHECK(!_bucketsInFlight.contains(bucketId));
         _bucketsInFlight[bucketId] = std::move(mover);
     }
     updatePending();

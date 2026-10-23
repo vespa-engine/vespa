@@ -7,9 +7,11 @@ import com.yahoo.text.Text;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 import java.io.File;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -235,6 +237,61 @@ public class SchemaParserTestCase {
     }
 
     @Test
+    void struct_field_select_can_be_parsed_in_document_summary() throws Exception {
+        String input = """
+          schema foo {
+            document foo {
+            }
+            document-summary bar {
+              summary baz {
+                struct-field: one
+                struct-field: two
+              }
+            }
+          }""";
+        var schema = parseString(input);
+        var summaryFields = schema.getDocumentSummaries().get(0).getSummaryFields();
+        assertEquals(1, summaryFields.size());
+        assertEquals(List.of("one", "two"), summaryFields.get(0).getStructFieldSelect());
+    }
+
+    @Test
+    void struct_field_select_can_list_several_fields_on_one_line() throws Exception {
+        String input = """
+          schema foo {
+            document foo {
+            }
+            document-summary bar {
+              summary baz {
+                struct-field: one, two
+                struct-field: three
+              }
+            }
+          }""";
+        var schema = parseString(input);
+        var summaryFields = schema.getDocumentSummaries().get(0).getSummaryFields();
+        assertEquals(1, summaryFields.size());
+        assertEquals(List.of("one", "two", "three"), summaryFields.get(0).getStructFieldSelect());
+    }
+
+    @Test
+    void struct_field_select_is_only_allowed_in_document_summary() {
+        String input = """
+          schema foo {
+            document foo {
+              field bar type array<mystruct> {
+                summary {
+                  struct-field: one
+                }
+              }
+            }
+          }""";
+        var e = assertThrows(ParseException.class, () -> parseString(input));
+        assertTrue(e.getMessage().contains("Encountered \" \"struct-field\" \"struct-field\"\" at line 5"),
+                   e.getMessage());
+    }
+
+    @Test
     void field_rank_specific_filter_threshold_can_be_parsed() throws Exception {
         String input = """
           schema foo {
@@ -291,6 +348,51 @@ public class SchemaParserTestCase {
         var field = schema.getDocument().getFields().get("bar");
         assertEquals("bar", field.name());
         assertEquals(11, field.matchSettings().getMaxTokenLength().get());
+    }
+
+    private static String quantizedTensorSchemaWithBits(int bits) {
+        return Text.format("""
+              schema foo {
+                document foo {
+                  field bar type tensor(x[128]) {
+                    indexing: attribute
+                    attribute {
+                      quantization {
+                        bits: %d
+                      }
+                    }
+                  }
+                }
+              }""", bits);
+    }
+
+    @Test
+    void out_of_range_quantization_bit_values_are_rejected() {
+        for (int bits : List.of(-1, 0, 5)) {
+            String schema = quantizedTensorSchemaWithBits(bits);
+            var e = assertThrows(IllegalArgumentException.class, () -> parseString(schema));
+            assertEquals(Text.format("quantization bits must be a value in [1, 4], was %d", bits), e.getMessage());
+        }
+    }
+
+    @Test
+    void in_range_quantization_bit_values_are_allowed() {
+        for (int bits : List.of(1, 2, 3, 4)) {
+            String schema = quantizedTensorSchemaWithBits(bits);
+            assertDoesNotThrow(() -> parseString(schema));
+        }
+    }
+
+    @Test
+    void quantization_parser_tokens_can_be_used_as_identifiers() {
+        String schema = """
+              schema foo {
+                document foo {
+                  field bits type int {}
+                  field quantization type int {}
+                }
+              }""";
+        assertDoesNotThrow(() -> parseString(schema));
     }
 
     void checkFileParses(String fileName) throws Exception {

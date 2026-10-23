@@ -150,6 +150,7 @@ private:
     vespalib::datastore::CompactionStrategy    _lastConfiguredCompactionStrategy;
 
     IFlushTargetList getFlushTargets() override;
+    void flush_document_summary(bool sync_tls);
 
 protected:
     const uint32_t                          _subDbId;

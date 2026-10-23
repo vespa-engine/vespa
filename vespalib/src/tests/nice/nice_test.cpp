@@ -6,6 +6,7 @@
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <functional>
 #include <thread>
 
@@ -41,18 +42,24 @@ std::thread run_with_init(std::function<void()> my_fun, Runnable::init_fun_t ini
     });
 }
 
-TEST(NiceTest, require_that_initial_nice_value_is_0) {
-    EXPECT_EQ(nice(0), 0);
+TEST(NiceTest, require_that_initial_nice_value_is_inherited_by_threads) {
+    int  base = nice(0);
+    auto thread = run_with_init([base] { EXPECT_EQ(nice(0), base); });
+    thread.join();
 }
 
 TEST(NiceTest, require_that_nice_value_is_tracked_per_thread) {
+    int base = nice(0);
+    if (base > 15) {
+        GTEST_SKIP() << "Need at least four nice levels of headroom to test five distinct thread values";
+    }
     ThreadMeets::Nop         barrier(5);
     std::vector<std::thread> threads;
     for (int i = 0; i < 5; ++i) {
-        threads.push_back(run_with_init([my_barrier = &barrier, i] {
+        threads.push_back(run_with_init([my_barrier = &barrier, i, base] {
             [[maybe_unused]] auto nice_result = nice(i);
             (*my_barrier)();
-            EXPECT_EQ(nice(0), i);
+            EXPECT_EQ(nice(0), base + i);
         }));
     }
     for (auto& thread : threads) {
@@ -74,19 +81,40 @@ TEST(NiceTest, require_that_max_nice_value_is_19) {
 }
 
 TEST(NiceTest, require_that_nice_value_can_be_set_with_init_function) {
-    for (int i = 0; i <= 19; ++i) {
-        auto thread = run_with_init([i]() { EXPECT_EQ(nice(0), i); }, be_nice(my_init_fun, how_nice(0, i)));
+    int base = nice(0);
+    if (base == 19) {
+        GTEST_SKIP() << "No nice headroom remains to test init-function mapping";
+    }
+    for (int target = base; target <= 19; ++target) {
+        auto thread =
+            run_with_init([target]() { EXPECT_EQ(nice(0), target); }, be_nice(my_init_fun, how_nice(base, target)));
         thread.join();
     }
 }
 
 TEST(NiceTest, require_that_niceness_can_be_nested_and_will_act_on_a_limited_nice_value_range) {
+    int base = nice(0);
+    int headroom = 19 - base;
+    if (headroom < 4) {
+        GTEST_SKIP() << "Need at least four nice levels of headroom for distinct nested targets";
+    }
+    auto scaled_target = [base, headroom](int original_target, int min_increment) {
+        return base + std::max(min_increment, original_target * headroom / 19);
+    };
+    int first_outer = scaled_target(3, 1);
+    int first_inner = scaled_target(7, first_outer - base + 1);
+    int second_outer = scaled_target(10, 2);
+    int second_inner = scaled_target(15, second_outer - base + 1);
+
     auto thread1 =
-        run_with_init([] { EXPECT_EQ(nice(0), 7); }, be_nice(be_nice(my_init_fun, how_nice(3, 7)), how_nice(0, 3)));
-    auto thread2 = run_with_init([] { EXPECT_EQ(nice(0), 15); },
-                                 be_nice(be_nice(my_init_fun, how_nice(10, 15)), how_nice(0, 10)));
-    auto thread3 = run_with_init([] { EXPECT_EQ(nice(0), 19); },
-                                 be_nice(be_nice(my_init_fun, how_nice(10, 19)), how_nice(0, 10)));
+        run_with_init([first_inner] { EXPECT_EQ(nice(0), first_inner); },
+                      be_nice(be_nice(my_init_fun, how_nice(first_outer, first_inner)), how_nice(base, first_outer)));
+    auto thread2 = run_with_init(
+        [second_inner] { EXPECT_EQ(nice(0), second_inner); },
+        be_nice(be_nice(my_init_fun, how_nice(second_outer, second_inner)), how_nice(base, second_outer)));
+    auto thread3 =
+        run_with_init([] { EXPECT_EQ(nice(0), 19); },
+                      be_nice(be_nice(my_init_fun, how_nice(second_outer, 19)), how_nice(base, second_outer)));
     thread1.join();
     thread2.join();
     thread3.join();

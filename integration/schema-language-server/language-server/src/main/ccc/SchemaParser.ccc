@@ -29,15 +29,19 @@ INJECT SchemaParser:
     import com.yahoo.schema.document.MatchAlgorithm;
     import com.yahoo.schema.document.Sorting;
     import com.yahoo.schema.document.Stemming;
+    import com.yahoo.schema.document.TokensMode;
 
     import com.yahoo.schema.fieldoperation.IndexingOperation;
 
     import com.yahoo.schema.parser.DictionaryOption;
     import com.yahoo.schema.parser.ParsedAnnotation;
     import com.yahoo.schema.parser.ParsedAttribute;
+    import com.yahoo.schema.parser.ParsedBlock;
+    import com.yahoo.schema.parser.ParsedQuantization;
     import com.yahoo.schema.parser.ParsedDocument;
     import com.yahoo.schema.parser.ParsedDocumentSummary;
     import com.yahoo.schema.parser.ParsedField;
+    import com.yahoo.schema.parser.ParsedLinguistics;
     import com.yahoo.schema.parser.ParsedFieldSet;
     import com.yahoo.schema.parser.ParsedIndex;
     import com.yahoo.schema.parser.ParsedIndexingOp;
@@ -202,6 +206,36 @@ INJECT SchemaParser:
         inputString = inputString.substring(startSplit, endSplit);
 
         return new SubLanguageData(inputString, leadingStripped);
+    }
+
+    /*
+     * ParsedLinguistics rejects contradictory settings by throwing, as the other Parsed* classes
+     * do. Report those on the offending token rather than letting them escape the parser, which
+     * would abort parsing and mark the whole document as bad.
+     */
+
+    private void setProfile(ParsedLinguistics settings, String profile, Token token) {
+        try {
+            settings.setProfile(profile);
+        } catch (IllegalArgumentException e) {
+            token.addIllegalArgumentException(e);
+        }
+    }
+
+    private void setTokens(ParsedLinguistics settings, String tokens, Token token) {
+        try {
+            settings.setTokens(TokensMode.get(tokens));
+        } catch (IllegalArgumentException e) {
+            token.addIllegalArgumentException(e);
+        }
+    }
+
+    private void openBlock(ParsedLinguistics settings, Token token) {
+        try {
+            settings.openBlock();
+        } catch (IllegalArgumentException e) {
+            token.addIllegalArgumentException(e);
+        }
     }
 }
 
@@ -500,9 +534,12 @@ TOKEN :
 | < PAGED: "paged" >
 | < FAST_RANK: "fast-rank" >
 | < FAST_SEARCH: "fast-search" >
+| < FAST_SEARCH_MAP_FIELD: "fast-search-map-field" >
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
+| < EXPLANATION_SL: "explanation" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* >
+| < EXPLANATION_ML: "explanation" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" >
@@ -550,10 +587,13 @@ TOKEN :
 | < DISTANCE_METRIC: "distance-metric" >
 | < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
 | < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
+| < QUANTIZATION: "quantization" >
+| < BITS: "bits" >
 | < MATCH_FEATURES: "match-features" >
 | < SELECT_ELEMENTS_BY: "select-elements-by" >
 | < SUMMARY_FEATURES: "summary-features" >
 | < RANK_FEATURES: "rank-features" >
+| < SORT_FEATURES: "sort-features" >
 | < EXPRESSION: "expression" >
 | < RANK_PROPERTIES: "rank-properties" >
 | < RERANK_COUNT: "rerank-count" >
@@ -659,6 +699,7 @@ ParsedSchema rootSchema :
 rootSchemaItem(ParsedSchema schema) : {}
     (
         documentElm(schema)
+       | explanationElm(schema)
        | documentIdElm(schema)
        | rawAsBase64(schema)
        | searchStemming(schema)
@@ -1173,6 +1214,7 @@ void fieldBodyElm(ParsedField field) : { }
        attributeElm(field) |
        boldingElm(field) |
        dictionaryElm(field) |
+       explanationElm(field) |
        fieldStemming(field) |
        idElm(field) |
        summaryInField(field) |
@@ -1188,7 +1230,8 @@ void fieldBodyElm(ParsedField field) : { }
        structFieldElm(field) |
        summaryToElm(field) |
        weightElm(field) |
-       weightedsetElm(field.getType())
+       weightedsetElm(field.getType()) |
+       fastSearchMapElm(field)
     )
 ;
 
@@ -1200,6 +1243,7 @@ void fieldBodyElm(ParsedField field) : { }
  */
 void structFieldBodyElm(ParsedField field) : { }
     (  summaryInField(field) |
+      explanationElm(field) |
       indexingElm(field) |
       attributeElm(field) |
       matchSettingsElm(field.matchSettings()) |
@@ -1249,27 +1293,73 @@ SubLanguageData indexingOperationElm(ParsedField field, boolean multiLine) : {
  */
 void linguisticsElm(ParsedField field) :
 {
-    String indexProfile = null;
-    String searchProfile = null;
+    ParsedLinguistics common = new ParsedLinguistics(field.name(), "linguistics");
+    ParsedLinguistics indexed = new ParsedLinguistics(field.name(), "linguistics index");
+    ParsedLinguistics searched = new ParsedLinguistics(field.name(), "linguistics search");
+    ParsedLinguistics profileBlock = new ParsedLinguistics(field.name(), "linguistics profile");
+    Token beginToken = null;
+    String str;
 }
-    <LINGUISTICS> openLbrace() <PROFILE> (
-      ( <COLON> indexProfile = identifierStr() (<NL>)* )
-      |
-      ( openLbrace()
-          (
-              ( <INDEX>  <COLON> indexProfile  = identifierStr() (<NL>)* ) |
-              ( <SEARCH> <COLON> searchProfile = identifierStr() (<NL>)* )
-          )+
-        <RBRACE> (<NL>)*
+    <LINGUISTICS> { beginToken = lastConsumedToken; } openLbrace()
+    (
+      ( <PROFILE>
+        (
+          ( <COLON> str = identifierStr() { setProfile(common, str, lastConsumedToken); } (<NL>)* )
+          |
+          // Alternative form: profile { index: ... search: ... }
+          ( openLbrace() { openBlock(profileBlock, lastConsumedToken); }
+              (
+                  ( <INDEX>  <COLON> str = identifierStr() { setProfile(indexed, str, lastConsumedToken); }  (<NL>)* ) |
+                  ( <SEARCH> <COLON> str = identifierStr() { setProfile(searched, str, lastConsumedToken); } (<NL>)* )
+              )+
+            <RBRACE> (<NL>)*
+          )
+        )
       )
-    )
+      |
+      ( <TOKENS> <COLON> str = identifierWithDashStr() { setTokens(common, str, lastConsumedToken); } (<NL>)* )
+      |
+      ( <INDEX>  openLbrace() { openBlock(indexed, lastConsumedToken); }  ( linguisticsSettingsElm(indexed)  )+ <RBRACE> (<NL>)* )
+      |
+      ( <SEARCH> openLbrace() { openBlock(searched, lastConsumedToken); } ( linguisticsSettingsElm(searched) )+ <RBRACE> (<NL>)* )
+    )+
     <RBRACE>
     {
-      if (searchProfile == null)
-          searchProfile = indexProfile;
-      field.setSearchLinguisticsProfile(searchProfile);
-      field.setIndexLinguisticsProfile(indexProfile);
+      try {
+          if (profileBlock.isOpened()) {
+              // The legacy profile { index: ... search: ... } form is a way of saying the same thing,
+              // so it cannot be combined with any other way of setting a profile
+              common.verifyNoProfile("cannot set both a profile and a profile block");
+              // In this form the search profile defaults to the index profile
+              if (searched.profile() == null && indexed.profile() != null)
+                  searched.setProfile(indexed.profile());
+          }
+          indexed.mergeDefaultsFrom(common);
+          searched.mergeDefaultsFrom(common);
+          // Only set what this block actually says, so a second linguistics block on the same
+          // field does not silently clear what the first one set
+          if (indexed.profile() != null)  field.setIndexLinguisticsProfile(indexed.profile());
+          if (searched.profile() != null) field.setSearchLinguisticsProfile(searched.profile());
+          if (indexed.tokens() != null)   field.setIndexLinguisticsTokens(indexed.tokens());
+          if (searched.tokens() != null)  field.setSearchLinguisticsTokens(searched.tokens());
+      } catch (IllegalArgumentException e) {
+          beginToken.addIllegalArgumentException(e);
+      }
     }
+;
+
+/**
+ * The settings which can be given for one side (indexing or searching) of a linguistics block.
+ */
+void linguisticsSettingsElm(ParsedLinguistics settings) :
+{
+    String str;
+}
+    (
+      ( <PROFILE> <COLON> str = identifierStr()         { setProfile(settings, str, lastConsumedToken); } )
+      |
+      ( <TOKENS>  <COLON> str = identifierWithDashStr() { setTokens(settings, str, lastConsumedToken); } )
+    ) (<NL>)*
 ;
 
 /**
@@ -1322,6 +1412,57 @@ void weightedsetElm(ParsedType fieldType) : { }
 void weightedsetBody(ParsedType type) : { }
     ( <CREATE_IF_NONEXISTENT> { type.setCreateIfNonExistent(true); }
       | <REMOVE_IF_ZERO>      { type.setRemoveIfZero(true); } )
+;
+
+/**
+ * This rule consumes a fast-search-map-field statement of a field element, which names the lookup
+ * field of a map, or of an array of struct used as a map, with the key and value fields given in a block.
+ *
+ * @param field The field to modify.
+ */
+void fastSearchMapElm(ParsedField field) :
+{
+    String name;
+    Token nameToken;
+    ParsedField.ParsedFastMapSearch fastMapSearch = null;
+}
+    <FAST_SEARCH_MAP_FIELD> name = identifierStr()
+    {
+        nameToken = lastConsumedToken;
+        try {
+            fastMapSearch = field.addFastMapSearch(name);
+        } catch (IllegalArgumentException e) {
+            nameToken.addIllegalArgumentException(e);
+        }
+    }
+    [ SCAN((<NL>)* <LBRACE>) => openLbrace() (fastSearchMapBody(fastMapSearch) | <NL>)* <RBRACE> ]
+;
+
+/**
+ * This rule consumes one body item of a fast-search-map-field block.
+ *
+ * @param fastMapSearch The fast-search-map-field to modify, or null if it was rejected.
+ */
+void fastSearchMapBody(ParsedField.ParsedFastMapSearch fastMapSearch) :
+{
+    String name;
+    Token nameToken;
+    String structFieldName;
+}
+    name = identifierStr() { nameToken = lastConsumedToken; } <COLON> structFieldName = identifierStr()
+    {
+        try {
+            if ( ! name.equals("key") && ! name.equals("value")) {
+                nameToken.addIllegalArgumentException(new IllegalArgumentException(
+                        "Expected 'key' or 'value' in 'fast-search-map-field', but got '" + name + "'."));
+            } else if (fastMapSearch != null) {
+                if (name.equals("key")) fastMapSearch.setKeyField(structFieldName);
+                else fastMapSearch.setValueField(structFieldName);
+            }
+        } catch (IllegalArgumentException e) {
+            nameToken.addIllegalArgumentException(e);
+        }
+    }
 ;
 
 /**
@@ -1410,6 +1551,26 @@ void sortingSetting(ParsedSorting sorting) :
     )
 ;
 
+void attributeQuantization(ParsedAttribute attr) :
+{
+    int bits;
+    Token bitsToken;
+}
+
+    <QUANTIZATION> ( openLbrace()
+                     <BITS> <COLON> bits = integerElm() { bitsToken = lastConsumedToken; }
+                     {
+                         try {
+                             attr.setQuantization(ParsedQuantization.ofBits(bits));
+                         } catch (IllegalArgumentException e) {
+                             bitsToken.addIllegalArgumentException(e);
+                         }
+                     }
+                     (<NL>)*
+                     <RBRACE>
+                   )
+;
+
 /**
  * This rule consumes a single attribute setting statement of an attribute element.
  *
@@ -1436,6 +1597,7 @@ void attributeSetting(ParsedAttribute attribute) :
           attribute.addAlias(aliasedName, alias);
       }
       | <DISTANCE_METRIC> <COLON> str = identifierWithDashStr { attribute.setDistanceMetric(str); }
+      | attributeQuantization(attribute)
     )
 ;
 
@@ -1459,7 +1621,7 @@ void summaryInDocument(ParsedDocumentSummary docsum) :
             psf.setHasExplicitType();
         }
     }
-    (summaryItem(psf) | <NL>)* <RBRACE>
+    (summaryInDocumentItem(psf) | <NL>)* <RBRACE>
     {
         var old = docsum.addField(psf);
         if (old != null) {
@@ -1539,6 +1701,20 @@ void summaryItem(ParsedSummaryField field) : { }
 ;
 
 /**
+ * This rule consumes an item of a summary field block inside a document-summary.
+ * These are the items allowed in any summary field block, plus struct-field selection,
+ * which is only allowed here.
+ *
+ * @param field The field to modify.
+ */
+void summaryInDocumentItem(ParsedSummaryField field) : { }
+
+    ( summaryItem(field)
+      | summaryStructFieldSelect(field)
+    )
+;
+
+/**
  * This rule consumes a transform statement for a summary field element.
  *
  * @param field            The field to modify.
@@ -1573,6 +1749,23 @@ void summaryElementsBy(ParsedSummaryField field) :
         }
         field.setSelectElementsBySummaryFeature(featureList.get(0).toString());
     }
+;
+
+/**
+ * This rule consumes a struct-field selection statement for a summary field,
+ * used to select a subset of the sub-fields of a struct (or array/map of
+ * struct) to include in the summary. Several sub-fields may be listed,
+ * separated by commas, and the statement may be repeated. Only allowed for a
+ * summary field inside a document-summary.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryStructFieldSelect(ParsedSummaryField field) :
+{
+    String str;
+}
+    <STRUCT_FIELD> <COLON> str = identifierStr() { field.addStructFieldSelect(str); }
+    (             <COMMA> str = identifierStr() { field.addStructFieldSelect(str); } )*
 ;
 
 /**
@@ -2271,7 +2464,8 @@ void rankProfile(ParsedSchema schema, ParsedRankProfile outer) :
 void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
 
     (
-        firstPhase(profile)
+        explanationElm(profile)
+       | firstPhase(profile)
        | fieldRankType(profile)
        | fieldWeight(profile)
        | fieldRankFilter(profile)
@@ -2669,7 +2863,7 @@ Node consumedFeatureListElm(boolean multiline) :
 ;
 
 /**
- * Consumes either a summary-features match-features or rank-features block of a rank profile.
+ * Consumes either a summary-features, match-features, rank-features or sort-features block of a rank profile.
  *
  * @param profile the rank profile to modify
  */
@@ -2677,7 +2871,7 @@ void featureListElm(ParsedRankProfile profile) :
 {
 }
 
-    ( summaryFeaturesElm(profile) | matchFeaturesElm(profile) | rankFeaturesElm(profile) )
+    ( summaryFeaturesElm(profile) | matchFeaturesElm(profile) | rankFeaturesElm(profile) | sortFeaturesElm(profile) )
 ;
 
 /**
@@ -2818,6 +3012,22 @@ void rankFeaturesElm(ParsedRankProfile profile) :
     Node featureListNode;
 }
     ( <RANK_FEATURES> (
+        (<COLON> featureListNode = consumedFeatureListElm(false) ) |
+        (openLbrace() featureListNode = consumedFeatureListElm(true) <RBRACE> )
+    ))
+    {
+        features = ((consumedFeatureListElm)featureListNode).getFeatureList();
+        featureListNode.setBeginOffset(featureListNode.getBeginOffset() - features.length());
+    }
+;
+
+/** Consumes a sort-features block of a rank profile */
+void sortFeaturesElm(ParsedRankProfile profile) :
+{
+    String features;
+    Node featureListNode;
+}
+    ( <SORT_FEATURES> (
         (<COLON> featureListNode = consumedFeatureListElm(false) ) |
         (openLbrace() featureListNode = consumedFeatureListElm(true) <RBRACE> )
     ))
@@ -3326,6 +3536,27 @@ double tensorCellValue() :
     { return value.doubleValue(); }
 ;
 
+/**
+ * Consumes an explanation, either on a single line after a colon or as a block:
+ * Free text describing the content and usage of the enclosing element.
+ *
+ * @param block the block to add the explanation to
+ */
+void explanationElm(ParsedBlock block) :
+{
+    String image;
+}
+
+    ( <EXPLANATION_SL> {
+          image = lastConsumedToken.toString();
+          block.setExplanation(Utils.explanationText(image.substring(image.indexOf(":") + 1)));
+      } |
+      <EXPLANATION_ML> {
+          image = lastConsumedToken.toString();
+          block.setExplanation(Utils.explanationText(image.substring(image.indexOf("{") + 1, image.lastIndexOf("}"))));
+      } )
+;
+
 /** Undocumented syntax for supplying a tensor constant value by a string prefixed by "value" */
 String tensorValuePrefixedByValue() :
 {
@@ -3463,6 +3694,7 @@ String identifierWithDashStr :
     | <FAST_ACCESS>
     | <FAST_RANK>
     | <FAST_SEARCH>
+    | <FAST_SEARCH_MAP_FIELD>
     | <FILTER_FIRST_EXPLORATION>
     | <FILTER_FIRST_THRESHOLD>
     | <FILTER_THRESHOLD>
@@ -3539,6 +3771,7 @@ String identifierStr :
       | <AS>
       | <ASCENDING>
       | <ATTRIBUTE>
+      | <BITS>
       | <BOLDING>
       | <BTREE>
       | <CASED>
@@ -3608,6 +3841,7 @@ String identifierStr :
       | <PRIMARY>
       | <PROFILE>
       | <PROPERTIES>
+      | <QUANTIZATION>
       | <QUATERNARY>
       | <QUERY>
       | <RANK>

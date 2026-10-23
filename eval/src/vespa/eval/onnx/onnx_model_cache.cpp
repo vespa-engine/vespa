@@ -2,6 +2,8 @@
 
 #include "onnx_model_cache.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::eval {
 
 std::mutex          OnnxModelCache::_lock{};
@@ -21,7 +23,7 @@ OnnxModelCache::Token::UP OnnxModelCache::load(const std::string& model_file, On
     if (pos == _cached.end()) {
         auto model = std::make_unique<Onnx>(model_file, optimize);
         auto res = _cached.emplace(std::move(key), std::move(model));
-        assert(res.second);
+        CHECK(res.second);
         pos = res.first;
     }
     return std::make_unique<Token>(pos, ctor_tag());

@@ -20,6 +20,7 @@ struct Memory {
     Memory(const char* str) noexcept : data(str), size(strlen(str)) {}
     Memory(const std::string& str) noexcept : data(str.data()), size(str.size()) {}
     Memory(std::string_view str_ref) noexcept : data(str_ref.data()), size(str_ref.size()) {}
+    Memory(std::span<const char> buffer) noexcept : data(buffer.data()), size(buffer.size()) {}
     std::string make_string() const;
     std::string_view make_stringview() const noexcept { return {data, size}; }
     bool operator==(const Memory& rhs) const noexcept {

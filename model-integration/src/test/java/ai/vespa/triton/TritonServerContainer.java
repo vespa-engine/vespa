@@ -24,12 +24,20 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
     private static final int GRPC_PORT = 8001;
     private static final int HTTP_PORT = 8000;
     private static final int METRICS_PORT = 8002;
-    private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("nvcr.io/nvidia/tritonserver:25.03-py3");
+    private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("nvcr.io/nvidia/tritonserver:26.08-py3");
+
+    // Overrides the image, e.g. to test against Vespa's Triton images: -DVESPA_TRITON_IMAGE=localhost/tritonserver:<tag>
+    private static final String IMAGE_NAME_PROPERTY = "VESPA_TRITON_IMAGE";
 
     private final Path modelRepositoryPath;
 
     public TritonServerContainer() throws IOException {
-        this(DEFAULT_IMAGE_NAME);
+        this(configuredImageName());
+    }
+
+    private static DockerImageName configuredImageName() {
+        var imageName = System.getProperty(IMAGE_NAME_PROPERTY);
+        return imageName == null ? DEFAULT_IMAGE_NAME : DockerImageName.parse(imageName).asCompatibleSubstituteFor(DEFAULT_IMAGE_NAME);
     }
 
     public TritonServerContainer(DockerImageName imageName) throws IOException {
@@ -40,6 +48,11 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
         addExposedPorts(GRPC_PORT, HTTP_PORT, METRICS_PORT);
         addFileSystemBind(modelRepositoryPath.toString(), "/models", BindMode.READ_ONLY, SelinuxContext.NONE);
         setCommandParts(new String[]{"tritonserver", "--model-repository=/models", "--model-control-mode=explicit"});
+    }
+
+    // Only Vespa's Triton images, given with the image override, support ONNX session sharing.
+    public boolean supportsSessionSharing() {
+        return System.getProperty(IMAGE_NAME_PROPERTY) != null;
     }
 
     public String getGrpcEndpoint() {

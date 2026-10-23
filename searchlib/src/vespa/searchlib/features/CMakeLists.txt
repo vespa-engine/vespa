@@ -26,6 +26,8 @@ vespa_add_library(searchlib_features OBJECT
     elementwise_blueprint.cpp
     elementwise_bm25_blueprint.cpp
     elementwise_bm25_executor.cpp
+    elementwise_matches_blueprint.cpp
+    elementwise_matches_executor.cpp
     elementwise_output.cpp
     elementwise_utils.cpp
     euclidean_distance_feature.cpp

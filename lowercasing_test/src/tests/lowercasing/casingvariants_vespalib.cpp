@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
 
-#include <cassert>
 #include <fstream>
 #include <iostream>
 
@@ -34,7 +34,7 @@ std::string getUTF8String(uint32_t ucs4Char) {
 }
 
 int main(int argc, char** argv) {
-    assert(argc == 3);
+    CHECK(argc == 3);
     (void)argc;
     std::ifstream input(argv[1]);
     std::ifstream ref(argv[2]);

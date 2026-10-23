@@ -2,6 +2,7 @@
 package com.yahoo.config.model.deploy;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.AdditionalContent;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
@@ -11,6 +12,7 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.io.reader.NamedReader;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +42,21 @@ public class DeployStateTest {
         builder.modelHostProvisioner(provisioner);
         DeployState state = builder.build();
         assertEquals(provisioner, state.getProvisioner());
+    }
+
+    @Test
+    void testAdditionalSchemasAreAdded() {
+        String schema = "schema additional {\n" +
+                        "  document additional {\n" +
+                        "    field f type string { indexing: summary }\n" +
+                        "  }\n" +
+                        "}\n";
+        DeployState state = new DeployState.Builder()
+                .applicationPackage(MockApplicationPackage.createEmpty())
+                .additionalContent(new AdditionalContent(List.of(new NamedReader("additional.sd", new StringReader(schema))), List.of()))
+                .build();
+        assertTrue(state.getSchemas().stream().anyMatch(s -> s.getName().equals("additional")),
+                   "the additional schema must be part of the application");
     }
 
     @Test

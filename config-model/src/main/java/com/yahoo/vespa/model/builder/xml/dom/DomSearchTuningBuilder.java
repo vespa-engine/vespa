@@ -95,6 +95,8 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 rt.numThreadsPerSearch = asInt(e);
             } else if (equals("summary", e)) {
                 rt.numSummaryThreads = asInt(e);
+            } else if (equals("resultprocessing", e)) {
+                rt.numResultProcessingThreads = asInt(e);
             }
         }
     }

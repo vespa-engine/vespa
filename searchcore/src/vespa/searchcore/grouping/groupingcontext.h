@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/time.h>
 
 #include <atomic>
+#include <span>
 #include <vector>
 
 namespace search::grouping {
@@ -111,14 +112,14 @@ public:
      */
     [[nodiscard]] bool needRanking() const noexcept;
 
-    void groupUnordered(const RankedHit* searchResults, uint32_t binSize, const search::BitVector* overflow);
-    void groupInRelevanceOrder(const RankedHit* searchResults, uint32_t binSize);
+    void groupUnordered(std::span<const RankedHit> hits, const search::BitVector* overflow);
+    void groupInRelevanceOrder(std::span<const RankedHit> hits);
 
 private:
-    void aggregate(Grouping& grouping, const RankedHit* rankedHit, unsigned int len, const BitVector* bv) const;
-    void aggregate(Grouping& grouping, const RankedHit* rankedHit, unsigned int len) const;
+    void aggregate(Grouping& grouping, std::span<const RankedHit> hits, const BitVector* bv) const;
+    void aggregate(Grouping& grouping, std::span<const RankedHit> hits) const;
     void aggregate(Grouping& grouping, uint32_t docId, HitRank rank) const;
-    unsigned int aggregateRanked(Grouping& grouping, const RankedHit* rankedHit, unsigned int len) const;
+    unsigned int aggregateRanked(Grouping& grouping, std::span<const RankedHit> hits) const;
     void aggregate(Grouping& grouping, const BitVector* bv, unsigned int lidLimit) const;
     void aggregate(Grouping& grouping, const BitVector* bv, unsigned int, unsigned int topN) const;
     const BitVector&                _validLids;

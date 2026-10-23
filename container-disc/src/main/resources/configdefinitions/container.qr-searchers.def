@@ -83,7 +83,9 @@ parserSettings.keepSegmentAnds bool default=false
 parserSettings.keepIdeographicPunctuation bool default=false
 
 ## send query tree as protobuf (ignored, always true)
+## TODO: Remove Oct 2026 or when no longer used in config overrides
 sendProtobufQuerytree bool default=true
 
 ## send query stack in legacy format in addition to protobuf format
+## TODO: Remove Oct 2026 or when no longer used in config overrides
 sendOldQueryStack bool default=false

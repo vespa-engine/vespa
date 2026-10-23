@@ -5,6 +5,7 @@
 #include "protobuf_includes.h"
 #include "serializationhelper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/util/bufferexceptions.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
@@ -131,9 +132,9 @@ void write_request_header(vespalib::GrowableByteBuffer& buf, const api::StorageC
 
     uint8_t dest[128]; // Only primitive fields, should be plenty large enough.
     auto    encoded_size = static_cast<uint32_t>(hdr.ByteSizeLong());
-    assert(encoded_size <= sizeof(dest));
+    CHECK(encoded_size <= sizeof(dest));
     [[maybe_unused]] bool ok = hdr.SerializeWithCachedSizesToArray(dest);
-    assert(ok);
+    CHECK(ok);
     buf.putInt(encoded_size);
     buf.putBytes(reinterpret_cast<const char*>(dest), encoded_size);
 }
@@ -150,12 +151,12 @@ void write_response_header(vespalib::GrowableByteBuffer& buf, const api::Storage
     hdr.set_priority(reply.getPriority());
 
     const auto header_size = hdr.ByteSizeLong();
-    assert(header_size <= UINT32_MAX);
+    CHECK(header_size <= UINT32_MAX);
     buf.putInt(static_cast<uint32_t>(header_size));
 
     auto*                 dest_buf = reinterpret_cast<uint8_t*>(buf.allocate(header_size));
     [[maybe_unused]] bool ok = hdr.SerializeWithCachedSizesToArray(dest_buf);
-    assert(ok);
+    CHECK(ok);
 }
 
 void decode_request_header(document::ByteBuffer& buf, protobuf::RequestHeader& hdr) {
@@ -194,12 +195,12 @@ public:
         : _out_buf(out_buf), _arena(), _proto_obj(::google::protobuf::Arena::Create<ProtobufType>(&_arena)) {}
 
     void encode() {
-        assert(_proto_obj != nullptr);
+        CHECK(_proto_obj != nullptr);
         const auto sz = _proto_obj->ByteSizeLong();
-        assert(sz <= UINT32_MAX);
+        CHECK(sz <= UINT32_MAX);
         auto*                 buf = reinterpret_cast<uint8_t*>(_out_buf.allocate(sz));
         [[maybe_unused]] bool ok = _proto_obj->SerializeWithCachedSizesToArray(buf);
-        assert(ok);
+        CHECK(ok);
         _proto_obj = nullptr;
     }
 
@@ -244,7 +245,7 @@ public:
     explicit RequestDecoder(document::ByteBuffer& in_buf)
         : _arena(), _proto_obj(::google::protobuf::Arena::Create<ProtobufType>(&_arena)) {
         decode_request_header(in_buf, _hdr);
-        assert(in_buf.getRemaining() <= INT_MAX);
+        CHECK(in_buf.getRemaining() <= INT_MAX);
         bool ok = _proto_obj->ParseFromArray(in_buf.getBufferAtPos(), in_buf.getRemaining());
         if (!ok) {
             std::string full_name_copy(ProtobufType::descriptor()->full_name());
@@ -272,7 +273,7 @@ public:
     explicit ResponseDecoder(document::ByteBuffer& in_buf)
         : _arena(), _proto_obj(::google::protobuf::Arena::Create<ProtobufType>(&_arena)) {
         decode_response_header(in_buf, _hdr);
-        assert(in_buf.getRemaining() <= INT_MAX);
+        CHECK(in_buf.getRemaining() <= INT_MAX);
         bool ok = _proto_obj->ParseFromArray(in_buf.getBufferAtPos(), in_buf.getRemaining());
         if (!ok) {
             std::string full_name_copy(ProtobufType::descriptor()->full_name());

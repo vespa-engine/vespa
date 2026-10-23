@@ -18,7 +18,6 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
@@ -213,8 +212,6 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     }
 
     private void addPayloadCheckSums(JsonGenerator jsonGenerator, PayloadChecksums checksums) throws IOException {
-        if (checksums.getForType(MD5) != null)
-            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_MD5, checksums.getForType(MD5).asString());
         if (checksums.getForType(XXHASH64) != null)
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_XXHASH64, checksums.getForType(XXHASH64).asString());
     }

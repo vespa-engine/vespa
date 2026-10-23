@@ -56,8 +56,9 @@ public class IndexingScriptChangeMessageBuilder {
     }
 
     private void checkStemming(ChangeMessageBuilder builder) {
-        Stemming currentStemming = currentField.getStemming(currentSchema);
-        Stemming nextStemming = nextField.getStemming(nextSchema);
+        // This explains a change to an indexing script, so it is the index side which matters
+        Stemming currentStemming = currentField.getIndexStemming(currentSchema);
+        Stemming nextStemming = nextField.getIndexStemming(nextSchema);
         if (currentStemming != nextStemming) {
             builder.addChange("stemming", currentStemming.getName(), nextStemming.getName());
         }

@@ -10,6 +10,7 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
+#include <vespa/searchlib/test/test_quantization_params.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using search::attribute::BasicType;
@@ -33,9 +34,14 @@ namespace {
 
 std::shared_ptr<TensorAttribute> create_tensor_attribute(const std::string& attr_name, const std::string& tensor_type,
                                                          DistanceMetric distance_metric, bool direct_tensor,
-                                                         uint32_t docid_limit) {
+                                                         bool quantized_tensor, uint32_t docid_limit) {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
-    cfg.setTensorType(ValueType::from_spec(tensor_type));
+    if (!quantized_tensor) {
+        cfg.setTensorType(ValueType::from_spec(tensor_type));
+    } else {
+        cfg.set_tensor_type_with_quantization(ValueType::from_spec(tensor_type),
+                                              ::search::test::mse_4bit_quantization_params());
+    }
     cfg.set_distance_metric(distance_metric);
     std::shared_ptr<TensorAttribute> result;
     if (cfg.tensorType().is_dense()) {
@@ -57,15 +63,15 @@ FeatureDumpFixture::~FeatureDumpFixture() = default;
 
 DistanceClosenessFixture::DistanceClosenessFixture(size_t fooCnt, size_t barCnt, const Labels& labels,
                                                    const std::string& featureName, const std::string& query_tensor,
-                                                   DistanceMetric distance_metric)
+                                                   DistanceMetric distance_metric, bool quantized_tensor)
     : DistanceClosenessFixture("tensor(x[2])", false, fooCnt, barCnt, labels, featureName, query_tensor,
-                               distance_metric) {
+                               distance_metric, quantized_tensor) {
 }
 
 DistanceClosenessFixture::DistanceClosenessFixture(const std::string& tensor_type, bool direct_tensor, size_t fooCnt,
                                                    size_t barCnt, const Labels& labels,
                                                    const std::string& featureName, const std::string& query_tensor,
-                                                   DistanceMetric distance_metric)
+                                                   DistanceMetric distance_metric, bool quantized_tensor)
     : queryEnv(&indexEnv),
       rankSetup(factory, indexEnv),
       mdl(),
@@ -75,6 +81,7 @@ DistanceClosenessFixture::DistanceClosenessFixture(const std::string& tensor_typ
       barHandles(),
       tensor_attr(),
       docid_limit(11),
+      _quantized(quantized_tensor),
       _failed(false) {
     for (size_t i = 0; i < fooCnt; ++i) {
         uint32_t fieldId = indexEnv.getFieldByName("foo")->id();
@@ -96,7 +103,8 @@ DistanceClosenessFixture::DistanceClosenessFixture(const std::string& tensor_typ
         queryEnv.getTerms().push_back(term);
     }
     if (!query_tensor.empty()) {
-        tensor_attr = create_tensor_attribute("bar", tensor_type, distance_metric, direct_tensor, docid_limit);
+        tensor_attr = create_tensor_attribute("bar", tensor_type, distance_metric, direct_tensor, quantized_tensor,
+                                              docid_limit);
         indexEnv.getAttributeMap().add(tensor_attr);
         search::fef::indexproperties::type::Attribute::set(indexEnv.getProperties(), "bar", tensor_type);
         set_query_tensor("qbar", "tensor(x[2])", TensorSpec::from_expr(query_tensor));
@@ -118,7 +126,11 @@ DistanceClosenessFixture::~DistanceClosenessFixture() = default;
 
 void DistanceClosenessFixture::set_attribute_tensor(uint32_t docid, const vespalib::eval::TensorSpec& spec) {
     auto tensor = SimpleValue::from_spec(spec);
-    tensor_attr->setTensor(docid, *tensor);
+    if (!_quantized) {
+        tensor_attr->setTensor(docid, *tensor);
+    } else {
+        tensor_attr->setTensor(docid, *tensor_attr->make_quantizer()->quantize(*tensor));
+    }
     tensor_attr->commit();
 }
 

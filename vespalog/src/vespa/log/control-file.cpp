@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "log.h"
+#include "log-indirect.h"
 
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -124,12 +124,14 @@ unsigned int ControlFile::pageAlign(unsigned int len) {
 }
 
 char* ControlFile::nextNewline(char* addr) {
-    if (addr < _mapBase)
+    if (addr < _mapBase) {
         return nullptr;
+    }
     char* end = _mapBase + _fileSize;
     while (addr < end) {
-        if (*addr == '\n')
+        if (*addr == '\n') {
             return addr;
+        }
         ++addr;
     }
     return nullptr;
@@ -285,9 +287,9 @@ unsigned int* ControlFile::defaultLevels() {
 unsigned int ControlFile::findOnOffStatus(Logger::LogLevel level, const char* levelsString) {
     const char* name = Logger::levelName(level);
     if (hasWord(name, levelsString) || (!hasNegWord(name, levelsString) && hasWord("all", levelsString))) {
-        return CHARS_TO_UINT(' ', ' ', 'O', 'N');
+        return Logger::encoded_on_value();
     } else {
-        return CHARS_TO_UINT(' ', 'O', 'F', 'F');
+        return Logger::encoded_off_value();
     }
 }
 

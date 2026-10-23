@@ -1,8 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * This class represents an update that removes a given field value from a
- * field.
- */
+
 #pragma once
 
 #include "valueupdate.h"
@@ -11,6 +8,10 @@
 
 namespace document {
 
+/**
+ * Represents an update that removes a given value from an array or weighted
+ * set field. The value must match the nested type of the collection.
+ */
 class RemoveValueUpdate final : public ValueUpdate {
     std::unique_ptr<FieldValue> _key; // The field value to remove by this update.
 

@@ -2,13 +2,13 @@
 
 #include "stackdumpiterator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/query/tree/integer_term_vector.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/vespalib/objects/nbo.h>
 #include <vespa/vespalib/util/compress.h>
 
-#include <cassert>
 #include <cstring>
 
 using search::query::IntegerTermVector;
@@ -25,30 +25,31 @@ SimpleQueryStackDumpIterator::~SimpleQueryStackDumpIterator() = default;
 
 std::string_view SimpleQueryStackDumpIterator::read_string_view(const char*& p) {
     uint64_t len = readCompressedPositiveInt(p);
-    if ((p + len) > _bufEnd)
+    if ((p + len) > _bufEnd) {
         throw false;
+    }
     std::string_view result(p, len);
     p += len;
     return result;
 }
 
 uint64_t SimpleQueryStackDumpIterator::readCompressedPositiveInt(const char*& p) {
-    if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_space(p, _bufEnd - p)) {
+    if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_positive_space(p, _bufEnd - p)) {
         throw false;
     }
     uint64_t tmp;
     p += vespalib::compress::Integer::decompressPositive(tmp, p);
-    assert(p <= _bufEnd);
+    CHECK(p <= _bufEnd);
     return tmp;
 }
 
 int64_t SimpleQueryStackDumpIterator::readCompressedInt(const char*& p) {
-    if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_positive_space(p, _bufEnd - p)) {
+    if (p > _bufEnd || !vespalib::compress::Integer::check_decompress_space(p, _bufEnd - p)) {
         throw false;
     }
     int64_t tmp;
     p += vespalib::compress::Integer::decompress(tmp, p);
-    assert(p <= _bufEnd);
+    CHECK(p <= _bufEnd);
     return tmp;
 }
 
@@ -71,9 +72,10 @@ bool SimpleQueryStackDumpIterator::next() {
 }
 
 bool SimpleQueryStackDumpIterator::readNext() {
-    if ((_buf + _currEnd) >= _bufEnd)
+    if ((_buf + _currEnd) >= _bufEnd) {
         // End of buffer, so no more items available
         return false;
+    }
 
     // Set the position to the previous end. If just starting, sets pos to _buf
     _currPos = _currEnd;
@@ -104,8 +106,9 @@ bool SimpleQueryStackDumpIterator::readNext() {
     /** flags of the current item **/
     uint8_t currFlags = 0;
     if (__builtin_expect(ParseItem::getFeature_Flags(typefield), false)) {
-        if ((p + sizeof(uint8_t)) > _bufEnd)
+        if ((p + sizeof(uint8_t)) > _bufEnd) {
             return false;
+        }
         currFlags = (uint8_t)*p++;
     }
     _d.noRankFlag = (currFlags & ParseItem::ItemFlags::IFLAG_NORANK) != 0;
@@ -290,17 +293,16 @@ void SimpleQueryStackDumpIterator::read_numeric_in(const char*& p) {
 void SimpleQueryStackDumpIterator::read_string_range_term(const char*& p) {
     uint8_t flags = read_value<uint8_t>(p);
     auto    spec = std::make_unique<StringRangeSpec>();
-    spec->left_unbounded = (flags & ParseItem::SRT_LEFT_UNBOUNDED) != 0;
-    spec->right_unbounded = (flags & ParseItem::SRT_RIGHT_UNBOUNDED) != 0;
     spec->left_closed = (flags & ParseItem::SRT_LEFT_CLOSED) != 0;
     spec->right_closed = (flags & ParseItem::SRT_RIGHT_CLOSED) != 0;
-    if (!spec->left_unbounded) {
-        spec->left = std::string(read_string_view(p));
+    if ((flags & ParseItem::SRT_LEFT_UNBOUNDED) == 0) {
+        spec->left = std::make_optional(read_string_view(p));
     }
-    if (!spec->right_unbounded) {
-        spec->right = std::string(read_string_view(p));
+    if ((flags & ParseItem::SRT_RIGHT_UNBOUNDED) == 0) {
+        spec->right = std::make_optional(read_string_view(p));
     }
-    _d.stringRangeSpec = std::move(spec);
+    spec->range_limit = static_cast<int32_t>(readCompressedInt(p));
+    _d.string_range_spec = std::move(spec);
     _d.arity = 0;
 }
 

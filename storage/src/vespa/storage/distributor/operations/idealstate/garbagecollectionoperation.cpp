@@ -2,6 +2,7 @@
 
 #include "garbagecollectionoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/cancelled_replicas_pruner.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
@@ -120,7 +121,7 @@ void GarbageCollectionOperation::onStart(DistributorStripeMessageSender& sender)
 void GarbageCollectionOperation::onReceive(DistributorStripeMessageSender&           sender,
                                            const std::shared_ptr<api::StorageReply>& reply) {
     auto* rep = dynamic_cast<api::RemoveLocationReply*>(reply.get());
-    assert(rep != nullptr);
+    CHECK(rep != nullptr);
 
     uint16_t node = _tracker.handleReply(*rep);
 
@@ -130,7 +131,7 @@ void GarbageCollectionOperation::onReceive(DistributorStripeMessageSender&      
         } else if (_phase == Phase::ReadMetadataPhase) {
             handle_ok_phase1_reply(*rep);
         } else {
-            assert(_phase == Phase::WriteRemovesPhase);
+            CHECK(_phase == Phase::WriteRemovesPhase);
             handle_ok_phase2_reply(node, *rep);
         }
     } else {
@@ -143,7 +144,7 @@ void GarbageCollectionOperation::onReceive(DistributorStripeMessageSender&      
             if (op_complete) {
                 merge_received_bucket_info_into_db();
             } else {
-                assert(_phase == Phase::ReadMetadataPhase);
+                CHECK(_phase == Phase::ReadMetadataPhase);
                 on_metadata_read_phase_done(sender);
             }
         }
@@ -176,7 +177,7 @@ GarbageCollectionOperation::steal_selection_matches_as_candidates(api::RemoveLoc
 }
 
 void GarbageCollectionOperation::handle_ok_phase1_reply(api::RemoveLocationReply& reply) {
-    assert(reply.documents_removed() == 0);
+    CHECK(reply.documents_removed() == 0);
     auto their_matches = steal_selection_matches_as_candidates(reply);
     for (auto& new_cand : their_matches) {
         auto& maybe_existing_ts = _remove_candidates[new_cand.first];
@@ -278,12 +279,12 @@ void GarbageCollectionOperation::merge_received_bucket_info_into_db() {
 void GarbageCollectionOperation::update_gc_metrics() {
     auto metric_base = _manager->getMetrics().operations[IdealStateOperation::GARBAGE_COLLECTION];
     auto gc_metrics = std::dynamic_pointer_cast<GcMetricSet>(metric_base);
-    assert(gc_metrics);
+    CHECK(gc_metrics);
     gc_metrics->documents_removed.inc(_max_documents_removed);
 }
 
 void GarbageCollectionOperation::mark_operation_complete() {
-    assert(!_is_done);
+    CHECK(!_is_done);
     if (_ok) {
         update_gc_metrics();
     }

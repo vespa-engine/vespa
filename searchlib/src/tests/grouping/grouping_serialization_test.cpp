@@ -2,17 +2,33 @@
 // Unit tests for grouping_serialization.
 
 #include <vespa/document/base/documentid.h>
-#include <vespa/searchlib/aggregation/aggregation.h>
+#include <vespa/searchlib/aggregation/argmax_aggregation_result.h>
+#include <vespa/searchlib/aggregation/averageaggregationresult.h>
+#include <vespa/searchlib/aggregation/countaggregationresult.h>
 #include <vespa/searchlib/aggregation/expressioncountaggregationresult.h>
+#include <vespa/searchlib/aggregation/grouping.h>
+#include <vespa/searchlib/aggregation/groupinglevel.h>
+#include <vespa/searchlib/aggregation/hitlist.h>
+#include <vespa/searchlib/aggregation/hitsaggregationresult.h>
+#include <vespa/searchlib/aggregation/maxaggregationresult.h>
+#include <vespa/searchlib/aggregation/minaggregationresult.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/quantile_aggregation_result.h>
+#include <vespa/searchlib/aggregation/standarddeviationaggregationresult.h>
+#include <vespa/searchlib/aggregation/sumaggregationresult.h>
+#include <vespa/searchlib/aggregation/xoraggregationresult.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/geo_distance_function_node.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <vespa/searchlib/expression/getymumchecksumfunctionnode.h>
+#include <vespa/searchlib/expression/in_predicate_node.h>
 #include <vespa/searchlib/expression/position_document_field_node.h>
+#include <vespa/searchlib/expression/regex_predicate_node.h>
+#include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+#include <vespa/vespalib/util/casts.h>
 
 #include <fstream>
 
@@ -21,7 +37,6 @@ LOG_SETUP("grouping_serialization_test");
 
 using search::HitRank;
 using vespalib::Identifiable;
-using vespalib::make_string;
 using vespalib::NBOSerializer;
 using vespalib::nbostream;
 using namespace search::aggregation;
@@ -104,10 +119,8 @@ TEST(GroupingSerializationTest, testResultTypes) {
     f.checkObject(Int64ResultNode(7));
     f.checkObject(FloatResultNode(7.3));
     f.checkObject(StringResultNode("7.3"));
-    {
-        char tmp[7] = {(char)0xe5, (char)0xa6, (char)0x82, (char)0xe6, (char)0x9e, (char)0x9c, 0};
-        f.checkObject(StringResultNode(tmp));
-    }
+    // "\u5982\u679c"; UTF-8: e5 a6 82 e6 9e 9c
+    f.checkObject(StringResultNode(u8"如果"_C));
     {
         char tmp[] = {'7', '.', '4'};
         f.checkObject(RawResultNode(tmp, 3));
@@ -238,6 +251,18 @@ TEST(GroupingSerializationTest, testAggregatorResults) {
     quantile.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(7))).aggregate(DocId(43), HitRank(21));
     quantile.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(8))).aggregate(DocId(45), HitRank(21));
     f.checkObject(quantile);
+
+    ArgmaxAggregationResult argmax;
+    argmax.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
+    argmax.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(7))).aggregate(DocId(42), HitRank(21));
+    f.checkObject(argmax);
+
+    auto argmax_values = MU<Int64ResultNodeVector>();
+    argmax_values->push_back(Int64ResultNode(7)).push_back(Int64ResultNode(8));
+    ArgmaxAggregationResult argmax_multivalue;
+    argmax_multivalue.set_key_expression(MU<ConstantNode>(MU<Int64ResultNode>(5)));
+    argmax_multivalue.setExpression(MU<ConstantNode>(std::move(argmax_values))).aggregate(DocId(42), HitRank(21));
+    f.checkObject(argmax_multivalue);
 }
 
 TEST(GroupingSerializationTest, testHitList) {
@@ -305,6 +330,16 @@ TEST(GroupingSerializationTest, testGroupingLevel) {
                       .setMaxGroups(100)
                       .setExpression(createDummyExpression())
                       .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression())));
+}
+
+TEST(GroupingSerializationTest, testFilterExpression) {
+    Fixture f("testFilterExpression");
+    f.checkObject(RegexPredicateNode("^foo.*", MU<AttributeNode>("attributeA")));
+    f.checkObject(RegexPredicateNode("^foo.*", ExpressionNode::UP()));
+    f.checkObject(InPredicateNode(MU<AttributeNode>("attributeA"), {"foo", "bar"}));
+    // "如果"; UTF-8: e5 a6 82 e6 9e 9c
+    f.checkObject(InPredicateNode(MU<AttributeNode>("attributeA"), {"\u5982\u679c"}));
+    f.checkObject(InPredicateNode(ExpressionNode::UP(), {"foo"}));
 }
 
 TEST(GroupingSerializationTest, testGroup) {

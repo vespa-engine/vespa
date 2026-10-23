@@ -131,7 +131,13 @@ Dev = element dev {
    attribute athenz-service { xsd:string }? &
    attribute tags { xsd:string }? &
    CloudResourceTags? &
-   Endpoints?
+   Endpoints? &
+   DevRegion*
+}
+
+DevRegion = element region {
+   attribute name { xsd:string } &
+   AvailabilityZone+
 }
 
 Prod = element prod {

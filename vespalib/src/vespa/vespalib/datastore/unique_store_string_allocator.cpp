@@ -4,6 +4,7 @@
 
 #include "buffer_type.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <algorithm>
@@ -64,7 +65,7 @@ void UniqueStoreSmallStringBufferType::clean_hold(void* buffer, size_t offset, E
         static_cast<UniqueStoreSmallStringEntry*>(e)->clean_hold(array_size);
         e = static_cast<char*>(e) + array_size;
     }
-    assert(e == e_end);
+    CHECK(e == e_end);
 }
 
 const vespalib::alloc::MemoryAllocator* UniqueStoreSmallStringBufferType::get_memory_allocator() const {

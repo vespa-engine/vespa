@@ -10,11 +10,10 @@
 #include "weighted_integer_term_vector.h"
 #include "weighted_string_term_vector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <vespa/searchlib/query/numeric_range_spec.h>
-
-#include <cassert>
 
 namespace search::query {
 
@@ -33,7 +32,7 @@ public:
         ProtoQueryTree tree;
         _item_stack.push_back(tree.mutable_root());
         const_cast<Node&>(node).accept(*this);
-        assert(_item_stack.size() == 1);
+        CHECK(_item_stack.size() == 1);
         return tree;
     }
 
@@ -103,7 +102,6 @@ private:
 
     void visit(WeakAnd& node) override {
         auto* item = _item_stack.back()->mutable_item_weak_and();
-        item->set_index(node.getView());
         item->set_target_num_hits(node.getTargetNumHits());
         visitNodes(node.getChildren());
     }
@@ -179,7 +177,7 @@ private:
             }
             break;
         case MultiTerm::Type::UNKNOWN:
-            assert(num_terms == 0);
+            CHECK(num_terms == 0);
             break;
         }
     }
@@ -349,20 +347,23 @@ private:
     }
 
     void visit(StringRangeTerm& node) override {
-        const auto* spec = node.getTerm().get_spec();
-        if (spec == nullptr) {
+        const auto& range = node.getTerm();
+        if (!range) {
             return;
         }
         auto* item = _item_stack.back()->mutable_item_string_range_term();
         copyTermState(node, item->mutable_properties());
-        if (!spec->left_unbounded) {
-            item->set_lower_limit(spec->left);
+        if (range->left) {
+            item->set_lower_limit(*range->left);
         }
-        if (!spec->right_unbounded) {
-            item->set_upper_limit(spec->right);
+        if (range->right) {
+            item->set_upper_limit(*range->right);
         }
-        item->set_lower_inclusive(spec->left_closed);
-        item->set_upper_inclusive(spec->right_closed);
+        item->set_lower_inclusive(range->left_closed);
+        item->set_upper_inclusive(range->right_closed);
+        if (range->has_range_limit()) {
+            item->set_range_limit(range->range_limit);
+        }
     }
 
     void visit(StringTerm& node) override {

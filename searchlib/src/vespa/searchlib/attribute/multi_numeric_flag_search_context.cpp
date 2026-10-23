@@ -28,9 +28,9 @@ template <typename T, typename M>
 std::unique_ptr<SearchIterator>
 MultiNumericFlagSearchContext<T, M>::createIterator(fef::TermFieldMatchData* matchData, bool strict) {
     if (this->valid()) {
-        if (this->_low == this->_high) {
+        if (get_low() == get_high()) {
             const AttributeVector& attr = this->attribute();
-            const BitVector*       bv(get_bit_vector(this->_low));
+            const BitVector*       bv(get_bit_vector(get_low()));
             if (bv != nullptr) {
                 return BitVectorIterator::create(bv, attr.getCommittedDocIdLimit(), *matchData, this, strict, false,
                                                  false);

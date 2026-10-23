@@ -233,14 +233,16 @@ public:
     const char* peek() const { return _rbuf.c_str() + _rp; }
     size_t rp() const { return _rp; }
     nbostream& rp(size_t pos) {
-        if (pos > _wp)
+        if (pos > _wp) {
             fail(eof);
+        }
         _rp = pos;
         return *this;
     }
     nbostream& wp(size_t pos) {
-        if (pos > _wbuf.size())
+        if (pos > _wbuf.size()) {
             fail(oob);
+        }
         _wp = pos;
         return *this;
     }

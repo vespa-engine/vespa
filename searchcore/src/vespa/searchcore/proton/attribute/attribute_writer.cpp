@@ -7,6 +7,7 @@
 #include "ifieldupdatecallback.h"
 #include "imported_attributes_repo.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -44,7 +45,7 @@ using LidVector = LidVectorContext::LidVector;
 
 namespace {
 
-bool use_two_phase_put_for_attribute(const AttributeVector& attr) {
+[[nodiscard]] bool use_two_phase_put_for_attribute(const AttributeVector& attr) noexcept {
     const auto& cfg = attr.getConfig();
     if (cfg.basicType() == search::attribute::BasicType::Type::TENSOR && cfg.hnsw_index_params().has_value() &&
         cfg.hnsw_index_params().value().multi_threaded_indexing())
@@ -54,13 +55,19 @@ bool use_two_phase_put_for_attribute(const AttributeVector& attr) {
     return false;
 }
 
+[[nodiscard]] bool is_quantized_attribute(const AttributeVector& attr) noexcept {
+    const auto& cfg = attr.getConfig();
+    return (cfg.basicType() == search::attribute::BasicType::Type::TENSOR) && cfg.quantization_params().has_value();
+}
+
 } // namespace
 
 AttributeWriter::WriteField::WriteField(AttributeVector& attribute)
     : _fieldPath(),
       _attribute(attribute),
       _structFieldAttribute(false),
-      _use_two_phase_put(use_two_phase_put_for_attribute(attribute)) {
+      _use_two_phase_put(use_two_phase_put_for_attribute(attribute)),
+      _is_quantized(is_quantized_attribute(attribute)) {
     const std::string& name = attribute.getName();
     _structFieldAttribute = search::attribute::isStructFieldAttribute(name);
 }
@@ -86,7 +93,8 @@ AttributeWriter::WriteContext::WriteContext(ExecutorId executorId) noexcept
       _data_type(nullptr),
       _two_phase_put_field_path(),
       _hasStructFieldAttribute(false),
-      _use_two_phase_put(false) {
+      _use_two_phase_put(false),
+      _has_quantized_attribute(false) {
 }
 
 AttributeWriter::WriteContext::WriteContext(WriteContext&& rhs) noexcept = default;
@@ -100,12 +108,15 @@ void AttributeWriter::WriteContext::add(AttributeVector& attr) {
     if (_fields.back().isStructFieldAttribute()) {
         _hasStructFieldAttribute = true;
     }
+    if (_fields.back().is_quantized()) {
+        _has_quantized_attribute = true;
+    }
     if (_fields.back().use_two_phase_put()) {
         // Only support for one field per context when this is true.
-        assert(_fields.size() == 1);
+        CHECK(_fields.size() == 1);
         _use_two_phase_put = true;
     } else {
-        assert(!_use_two_phase_put);
+        CHECK(!_use_two_phase_put);
     }
 }
 
@@ -317,8 +328,8 @@ void PutTask::run() {
     _wc.consider_build_field_paths(_doc);
     DocumentFieldExtractor field_extractor(_doc);
     const auto&            fields = _wc.getFields();
-    for (auto field : fields) {
-        if (_allAttributes || field.isStructFieldAttribute()) {
+    for (const auto& field : fields) {
+        if (_allAttributes || field.is_non_authoritative()) {
             AttributeVector& attr = field.getAttribute();
             if (attr.getStatus().getLastSyncToken() < _serialNum) {
                 auto fv = field_extractor.getFieldValue(field.getFieldPath());
@@ -329,7 +340,6 @@ void PutTask::run() {
 }
 
 class PreparePutTask : public vespalib::Executor::Task {
-private:
     const SerialNum                          _serial_num;
     const uint32_t                           _docid;
     AttributeVector&                         _attr;
@@ -391,7 +401,6 @@ void PreparePutTask::run() {
 }
 
 class CompletePutTask : public vespalib::Executor::Task {
-private:
     const SerialNum                         _serial_num;
     const uint32_t                          _docid;
     AttributeVector&                        _attr;
@@ -451,7 +460,6 @@ void RemoveTask::run() {
 }
 
 class BatchRemoveTask : public vespalib::Executor::Task {
-private:
     const AttributeWriter::WriteContext&   _writeCtx;
     const SerialNum                        _serialNum;
     const LidVector                        _lidsToRemove;
@@ -508,7 +516,7 @@ void CommitTask::run() {
 
 void AttributeWriter::setupWriteContexts() {
     std::vector<FieldContext> fieldContexts;
-    assert(_writeContexts.empty());
+    CHECK(_writeContexts.empty());
     for (auto attr : getWritableAttributes()) {
         fieldContexts.emplace_back(_attributeFieldWriter, attr);
     }
@@ -532,6 +540,9 @@ void AttributeWriter::setupWriteContexts() {
         if (wc.hasStructFieldAttribute()) {
             _hasStructFieldAttribute = true;
         }
+        if (wc.has_quantized_attribute()) {
+            _has_quantized_attribute = true;
+        }
     }
 }
 
@@ -539,14 +550,14 @@ void AttributeWriter::internalPut(SerialNum serialNum, const Document& doc, Docu
                                   const OnWriteDoneType& onWriteDone) {
     for (const auto& wc : _writeContexts) {
         if (allAttributes && wc.use_two_phase_put()) {
-            assert(wc.getFields().size() == 1);
+            CHECK(wc.getFields().size() == 1);
             wc.consider_build_field_paths(doc);
             auto prepare_task = std::make_unique<PreparePutTask>(serialNum, lid, wc, doc);
             auto complete_task = std::make_unique<CompletePutTask>(*prepare_task, onWriteDone);
             _shared_executor.execute(CpuUsage::wrap(std::move(prepare_task), CpuUsage::Category::WRITE));
             _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(complete_task));
         } else {
-            if (allAttributes || wc.hasStructFieldAttribute()) {
+            if (allAttributes || wc.has_non_authoritative_attribute()) {
                 auto putTask = std::make_unique<PutTask>(wc, serialNum, doc, lid, allAttributes, onWriteDone);
                 _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(putTask));
             }
@@ -567,6 +578,7 @@ AttributeWriter::AttributeWriter(proton::IAttributeManager::SP mgr)
       _shared_executor(_mgr->get_shared_executor()),
       _writeContexts(),
       _hasStructFieldAttribute(false),
+      _has_quantized_attribute(false),
       _attrMap() {
     setupWriteContexts();
     setupAttributeMapping();
@@ -586,7 +598,6 @@ AttributeWriter::~AttributeWriter() {
 }
 
 void AttributeWriter::drain(const OnWriteDoneType& onDone) {
-
     for (const auto& wc : _writeContexts) {
         _attributeFieldWriter.executeLambda(wc.getExecutorId(), [onDone]() { (void)onDone; });
     }
@@ -743,6 +754,10 @@ void AttributeWriter::compactLidSpace(uint32_t wantedLidLimit, SerialNum serialN
 
 bool AttributeWriter::hasStructFieldAttribute() const {
     return _hasStructFieldAttribute;
+}
+
+bool AttributeWriter::has_non_authoritative_attribute() const noexcept {
+    return _hasStructFieldAttribute || _has_quantized_attribute;
 }
 
 } // namespace proton

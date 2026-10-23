@@ -2,6 +2,8 @@
 
 #include "loadbalancer.h"
 
+#include <cstdlib>
+
 namespace documentapi {
 
 LoadBalancer::LoadBalancer(const string& cluster, const string& session)

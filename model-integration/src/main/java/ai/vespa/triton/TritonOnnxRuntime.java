@@ -5,6 +5,8 @@ import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
+import ai.vespa.modelintegration.evaluator.OnnxPadder;
+import ai.vespa.modelintegration.evaluator.OnnxStreamParser;
 import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.google.protobuf.TextFormat;
 import com.yahoo.component.AbstractComponent;
@@ -14,10 +16,18 @@ import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.language.process.TimeoutException;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
-import inference.ModelConfigOuterClass;
+import inference.ModelConfigOuterClass.ModelConfig;
+import inference.ModelConfigOuterClass.ModelDynamicBatching;
+import inference.ModelConfigOuterClass.ModelInstanceGroup;
+import inference.ModelConfigOuterClass.ModelInstanceGroup.Kind;
+import inference.ModelConfigOuterClass.ModelOptimizationPolicy;
+import inference.ModelConfigOuterClass.ModelParameter;
+import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,19 +41,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * ONNX Runtime implementation that uses Triton Inference Server for model inference.
- * It owns gRPC client, responsible for managing model repository and the reference-counted models loaded in Triton.
+ * ONNX Runtime implementation that uses Triton Inference Server for inference.
+ * It is responsible for managing model repository and owns reference-counted models loaded in Triton.
  * There should be only one instance of TritonOnnxRuntime component, enforced by
  * RestartOnDeployForTritonOnnxRuntimeValidator.
  *
  * @author bjorncs
  * @author glebashnik
+ * @author ingridhabrekke
  */
 public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime {
     private static final Logger log = Logger.getLogger(TritonOnnxRuntime.class.getName());
+    private static final String MODEL_FILE_NAME = "model.onnx";
 
     private final TritonOnnxClient tritonClient;
     private final boolean isModelControlExplicit;
+    private final boolean shareSessionBetweenInstances;
     private final Path modelRepositoryPath;
 
     // The key is a model name containing hash of model content and options.
@@ -67,11 +80,12 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // Injectable tritonClient for testing.
     // Takes ownership of the client: deconstruct() closes it.
     TritonOnnxRuntime(TritonConfig config, TritonOnnxClient tritonClient) {
-        log.info("Creating Triton ONNX runtime");
-
         this.tritonClient = tritonClient;
 
         isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
+        shareSessionBetweenInstances = config.shareOnnxSessionBetweenInstances();
+        log.info("Creating Triton ONNX runtime with session sharing between model instances "
+                 + (shareSessionBetweenInstances ? "enabled" : "disabled"));
         modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
 
         if (isModelControlExplicit) {
@@ -85,15 +99,37 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        var modelName = generateModelName(modelPath, options);
-        var modelReference = referenceModel(modelName, modelPath, options);
+        // Options are used as-is when this runtime does not generate the model config from them:
+        // a supplied config override owns its instance configuration, and the other model control modes
+        // leave loading to Triton.
+        var resolvedOptions = isModelControlExplicit && options.modelConfigOverride().isEmpty()
+                ? resolveInstanceCount(options, shareSessionBetweenInstances)
+                : options;
+        var modelName = generateModelName(modelPath, resolvedOptions, shareSessionBetweenInstances);
+        var modelReference = referenceModel(modelName, modelPath, resolvedOptions);
 
         try {
-            return new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit);
+            OnnxEvaluator evaluator = new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit);
+            
+            if (options.padding().isPresent() && shouldPadForBatching(modelPath, resolvedOptions))
+                evaluator = OnnxPadder.of(options.padding().get(), evaluator, modelName);
+
+            return evaluator;
         } catch (RuntimeException e) {
             modelReference.close(); // Don't leak the model when creating the evaluator fails.
             throw e;
         }
+    }
+
+    /**
+     * Returns whether to pad inputs, so that Triton's dynamic batcher can combine requests
+     * of different lengths. Padding is useful for batching on a GPU.
+     * With a model config override the batching setup is not known here, so padding is used as configured.
+     * Never for dynamic quantization, whose results padding changes.
+     */
+    static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options) {
+        return (options.modelConfigOverride().isPresent() || OnnxPadder.isBatchingOnGpu(options))
+               && ! OnnxPadder.isDynamicallyQuantized(modelPath);
     }
 
     // Returns a reference to the model, first copying and loading it into Triton if needed.
@@ -155,7 +191,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 return; // Adopt a model that Triton already has ready
             }
         } catch (TritonOnnxClient.TritonException | TimeoutException e) {
-            // Still attempt to install and load the requested model below.
+            // Still attempt to copy and load the requested model below.
         }
 
         try {
@@ -163,7 +199,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             copyModelFilesToModelRepository(modelName, modelPath, modelConfig);
             tritonClient.loadUntilModelReady(modelName);
         } catch (RuntimeException e) {
-            // A failed load must not leave the model in Triton or its files in the repository.
+            // Attempt to unload the failed model and remove its files; cleanup is best effort.
             cleanUpModel(modelName);
             throw e;
         }
@@ -193,13 +229,44 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
     }
 
-    static String generateModelName(String modelPath, OnnxEvaluatorOptions options) {
+    static OnnxEvaluatorOptions resolveInstanceCount(OnnxEvaluatorOptions options, boolean shareSession) {
+        return options.numModelInstances().isPresent()
+                ? options : options.withNumModelInstances(defaultNumModelInstances(options, shareSession));
+    }
+
+    // Hashes the supplied options without resolving defaults.
+    static String generateModelName(String modelPath, OnnxEvaluatorOptions options, boolean shareSession) {
         var fileName = Paths.get(modelPath).getFileName().toString();
-        var baseName = fileName.substring(0, fileName.lastIndexOf('.')); // remove file extension
+        var extensionIndex = fileName.lastIndexOf('.');
+        var baseName = extensionIndex < 0 ? fileName : fileName.substring(0, extensionIndex);
         var modelHash = ModelPathOrData.of(modelPath).calculateHash();
-        var optionsHash = options.calculateHash();
-        var combinedHash = Long.toHexString(31 * modelHash + optionsHash);
-        return baseName + "_" + combinedHash; // add hash to avoid conflicts
+        var optionsHash = hashOptions(options);
+        // Hash a fixed-width encoding of the model contents, options, and session-sharing setting.
+        var identity = ByteBuffer.allocate(2 * Long.BYTES + Byte.BYTES)
+                .putLong(modelHash)
+                .putLong(optionsHash)
+                .put((byte) (shareSession ? 1 : 0))
+                .array();
+        var combinedHash = XXHashFactory.fastestInstance().hash64().hash(identity, 0, identity.length, 0);
+        return baseName + "_" + Long.toHexString(combinedHash); // add hash to avoid conflicts
+    }
+
+    /**
+     * Hashes the options that are part of model configuration in Triton.
+     */
+    private static long hashOptions(OnnxEvaluatorOptions options) {
+        var encoding = "OnnxEvaluatorOptions[executionMode=" + options.executionMode() +
+                       ", interOpThreads=" + options.interOpThreads() +
+                       ", intraOpThreads=" + options.intraOpThreads() +
+                       ", gpuDeviceNumber=" + options.gpuDeviceNumber() +
+                       ", gpuDeviceRequired=" + options.gpuDeviceRequired() +
+                       ", optimizeModel=" + options.optimizeModel() +
+                       ", batchingMaxSize=" + options.batchingMaxSize() +
+                       ", numModelInstances=" + options.numModelInstances() +
+                       ", modelConfigOverride=" + options.modelConfigOverride() +
+                       ", availableProcessors=" + options.availableProcessors() + "]";
+        var bytes = encoding.getBytes(StandardCharsets.UTF_8);
+        return XXHashFactory.fastestInstance().hash64().hash(bytes, 0, bytes.length, 0);
     }
 
     private Path getModelDirInModelRepository(String modelName) {
@@ -207,13 +274,16 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     }
 
     /**
-     * Copies the model file and config to a model repository directory that Triton has access to.
+     * Copies the model file, its external data files and config to a model repository directory that Triton has
+     * access to. External data files are referenced by paths relative to the model file, so they are copied
+     * to the same relative paths in the repository.
      */
     private void copyModelFilesToModelRepository(String modelName, String externalModelPath, String modelConfig) {
         var modelDirPath = getModelDirInModelRepository(modelName);
         var modelVersionPath = modelDirPath.resolve("1");
-        var modelFilePath = modelVersionPath.resolve("model.onnx");
+        var modelFilePath = modelVersionPath.resolve(MODEL_FILE_NAME);
         var modelConfigPath = modelDirPath.resolve("config.pbtxt");
+        var sourceModelPath = Paths.get(externalModelPath);
 
         try {
             // Create directory for model name and version with correct permissions
@@ -221,7 +291,26 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                     modelVersionPath,
                     PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x")));
 
-            Files.copy(Paths.get(externalModelPath), modelFilePath, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(sourceModelPath, modelFilePath, StandardCopyOption.REPLACE_EXISTING);
+
+            var versionDirPath = modelVersionPath.normalize();
+            for (var location : OnnxStreamParser.tryGetExternalDataLocations(sourceModelPath)) {
+                var dataFilePath = versionDirPath.resolve(location).normalize();
+
+                if (!dataFilePath.startsWith(versionDirPath) || dataFilePath.equals(versionDirPath)) {
+                    throw new IllegalArgumentException(
+                            "External data file '" + location + "' is outside the directory of " + externalModelPath);
+                }
+                // Reject an external data file named model.onnx because it would overwrite the main model file.
+                if (dataFilePath.equals(versionDirPath.resolve(MODEL_FILE_NAME))) {
+                    throw new IllegalArgumentException("External data file of " + externalModelPath +
+                                                       " cannot be named " + MODEL_FILE_NAME);
+                }
+
+                Files.createDirectories(dataFilePath.getParent());
+                Files.copy(sourceModelPath.resolveSibling(location), dataFilePath, StandardCopyOption.REPLACE_EXISTING);
+                addReadPermissions(dataFilePath);
+            }
             Files.writeString(modelConfigPath, modelConfig);
 
             // Explicitly grant world read to ensure that Triton can read model files
@@ -249,78 +338,65 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         Files.setPosixFilePermissions(path, modelPerms);
     }
 
-    private static String createModelConfig(String modelName, OnnxEvaluatorOptions options) {
+    private String createModelConfig(String modelName, OnnxEvaluatorOptions options) {
         return options.modelConfigOverride()
                 .map(path -> createModelConfigFromFile(path, modelName))
                 .orElseGet(() -> createModelConfigFromOptions(modelName, options))
                 .toString();
     }
 
-    private static String createModelConfigFromOptions(String modelName, OnnxEvaluatorOptions options) {
-        // Similar to EmbeddedOnnxRuntime.overrideOptions(), relies on Triton to fall back to CPU if GPU is
-        // not available.
-        var deviceKind = options.gpuDeviceRequired()
-                ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU
-                : (options.gpuDeviceNumber() >= 0)
-                        ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO
-                        : ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
+    // Takes options with a resolved instance count, see resolveInstanceCount().
+    private String createModelConfigFromOptions(String modelName, OnnxEvaluatorOptions options) {
+        // Each model instance in Triton executes requests sequentially. Concurrency comes from the number of instances.
+        // This is different from EmbeddedOnnxRuntime, where one session handles all requests.
+        // With a shared session, the thread counts match EmbeddedOnnxRuntime.createSessionOptions().
+        // With separate sessions, the CPU cores are divided between the instances as intra-op threads.
+        // Inter-op threads only matter in parallel execution mode.
+        var executionModeValue = options.isParallel() ? "1" : "0";
+        var numModelInstances = options.numModelInstances().orElseThrow(() ->
+                new IllegalArgumentException("The number of model instances must be resolved before generating the model config"));
+        var intraOpThreadCountValue = Integer.toString(shareSessionBetweenInstances
+                ? options.intraOpThreads()
+                : intraOpThreadsForSeparateSessions(options, numModelInstances));
+        var interOpThreadCountValue = Integer.toString(options.effectiveInterOpThreads());
 
-        // Each model instance in Triton executes requests sequentially, which is different from EmbeddedOnnxRuntime
-        // where one model instance (session) handles all requests.
-        // To maximize CPU utilization with Triton, available cores are ca. divided between model instances,
-        // Rounding up is used because it is better to overutilize CPU than to underutilize.
-        // Intra-op threads parallelize execution of each operator improving performance for any model.
-        var intraOpThreadCountValue = Integer.toString(
-                Math.max(1, (int) Math.ceil(1d * options.availableProcessors() / options.numModelInstances())));
-
-        var executionModeValue = options.executionMode() == OnnxEvaluatorOptions.ExecutionMode.PARALLEL ? "1" : "0";
-
-        var configBuilder = ModelConfigOuterClass.ModelConfig.newBuilder()
+        var configBuilder = ModelConfig.newBuilder()
                 .setName(modelName)
-                .addInstanceGroup(ModelConfigOuterClass.ModelInstanceGroup.newBuilder()
-                        .setCount(options.numModelInstances())
-                        .setKind(deviceKind)
-                        .build())
+                .addInstanceGroup(createInstanceGroup(options, numModelInstances))
                 .setPlatform("onnxruntime_onnx")
                 .setMaxBatchSize(options.batchingMaxSize())
                 .putParameters(
                         "execution_mode",
-                        ModelConfigOuterClass.ModelParameter.newBuilder()
+                        ModelParameter.newBuilder()
                                 .setStringValue(executionModeValue)
                                 .build())
                 .putParameters(
                         "enable_mem_arena",
-                        ModelConfigOuterClass.ModelParameter.newBuilder()
-                                .setStringValue("0")
-                                .build())
-                .putParameters(
-                        "enable_mem_pattern",
-                        ModelConfigOuterClass.ModelParameter.newBuilder()
+                        ModelParameter.newBuilder()
                                 .setStringValue("0")
                                 .build())
                 .putParameters(
                         "intra_op_thread_count",
-                        ModelConfigOuterClass.ModelParameter.newBuilder()
+                        ModelParameter.newBuilder()
                                 .setStringValue(intraOpThreadCountValue)
                                 .build())
                 .putParameters(
                         "inter_op_thread_count",
-                        ModelConfigOuterClass.ModelParameter.newBuilder()
-                                .setStringValue(Integer.toString(options.interOpThreads()))
+                        ModelParameter.newBuilder()
+                                .setStringValue(interOpThreadCountValue)
                                 .build());
 
+        addSessionSharingParameter(configBuilder);
+
         if (options.batchingMaxSize() > 1) {
-            var dynamicBatchingBuilder = ModelConfigOuterClass.ModelDynamicBatching.newBuilder();
-            options.batchingMaxDelay()
-                    .ifPresent(delay -> dynamicBatchingBuilder.setMaxQueueDelayMicroseconds(delay.toMillis() * 1000L));
-            configBuilder.setDynamicBatching(dynamicBatchingBuilder.build());
+            configBuilder.setDynamicBatching(ModelDynamicBatching.newBuilder().build());
         }
 
         // Triton's ONNX Runtime backend enables all optimizations when the graph optimization level is unspecified,
         // and maps level 2 to disabling all optimizations (ORT_DISABLE_ALL).
         if (!options.optimizeModel()) {
-            configBuilder.setOptimization(ModelConfigOuterClass.ModelOptimizationPolicy.newBuilder()
-                    .setGraph(ModelConfigOuterClass.ModelOptimizationPolicy.Graph.newBuilder()
+            configBuilder.setOptimization(ModelOptimizationPolicy.newBuilder()
+                    .setGraph(ModelOptimizationPolicy.Graph.newBuilder()
                             .setLevel(2)
                             .build())
                     .build());
@@ -329,7 +405,46 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         return configBuilder.build().toString();
     }
 
-    private static String createModelConfigFromFile(Path configPath, String modelName) {
+    // Instances with separate sessions each hold a copy of the model, so there is one instance by default.
+    // Instances sharing a session share its thread pool. Each instance adds one calling thread.
+    // Use one instance per CPU core, regardless of which device Triton selects.
+    // availableProcessors is this container's core count, which is assumed to match the Triton sidecar's.
+    static int defaultNumModelInstances(OnnxEvaluatorOptions options, boolean shareSession) {
+        return shareSession ? Math.max(1, options.availableProcessors()) : 1;
+    }
+
+    // Instances with separate sessions each have their own thread pool, so the CPU cores are divided between them.
+    // A negative thread factor is exactly that division, rounding up because it is better to
+    // overutilize CPU than to underutilize.
+    static int intraOpThreadsForSeparateSessions(OnnxEvaluatorOptions options, int numModelInstances) {
+        return OnnxEvaluatorOptions.calculateThreads(-numModelInstances, options.availableProcessors());
+    }
+
+    static ModelInstanceGroup createInstanceGroup(OnnxEvaluatorOptions options, int numModelInstances) {
+        var kind = options.gpuDeviceRequired() ? Kind.KIND_GPU
+                : options.requestingGpu() ? Kind.KIND_AUTO : Kind.KIND_CPU;
+        // The GPU list is left empty so Triton uses all GPUs, and can fall back to CPU for AUTO.
+        return ModelInstanceGroup.newBuilder()
+                .setCount(numModelInstances)
+                .setKind(kind)
+                .build();
+    }
+
+    // Sharing one session per device loads the model weights once per device instead of once per instance.
+    // The parameter requires a patched Triton ONNX backend.
+    private void addSessionSharingParameter(ModelConfig.Builder configBuilder) {
+        if (!shareSessionBetweenInstances) {
+            return;
+        }
+
+        configBuilder.putParameters(
+                "share_session_between_instances",
+                ModelParameter.newBuilder()
+                        .setStringValue("true")
+                        .build());
+    }
+
+    private String createModelConfigFromFile(Path configPath, String modelName) {
         String configStr;
 
         try {
@@ -338,16 +453,18 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             throw new IllegalArgumentException("Failed to read model config override file: " + configPath, e);
         }
 
-        ModelConfigOuterClass.ModelConfig config;
+        ModelConfig config;
 
         try {
-            config = TextFormat.parse(configStr, ModelConfigOuterClass.ModelConfig.class);
+            config = TextFormat.parse(configStr, ModelConfig.class);
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed to parse model config override:\n" + configStr, e);
         }
 
-        // Replaces model name with the one that includes model content and options hash to avoid conflicts.
-        return config.toBuilder().setName(modelName).build().toString();
+        // Replace model name with the one that includes model content and options hash to avoid conflicts.
+        var configBuilder = config.toBuilder().setName(modelName);
+        addSessionSharingParameter(configBuilder);
+        return configBuilder.build().toString();
     }
 
     private void deleteAllModelFilesFromModelRepository() {

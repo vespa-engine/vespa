@@ -2,7 +2,8 @@
 
 #include "integer_term_vector.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <charconv>
 
 namespace search::query {
@@ -15,7 +16,7 @@ IntegerTermVector::~IntegerTermVector() = default;
 
 void IntegerTermVector::addTerm(std::string_view, Weight) {
     // Will/should never happen
-    assert(false);
+    CHECK(false);
 }
 
 void IntegerTermVector::addTerm(int64_t term, Weight) {

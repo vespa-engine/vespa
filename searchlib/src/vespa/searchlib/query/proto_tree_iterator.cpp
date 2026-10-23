@@ -288,8 +288,6 @@ bool handle(const ItemStringRangeTerm& item, QueryStackIterator::Data& _d) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_STRING_RANGE_TERM;
     auto spec = std::make_unique<StringRangeSpec>();
-    spec->left_unbounded = !item.has_lower_limit();
-    spec->right_unbounded = !item.has_upper_limit();
     if (item.has_lower_limit()) {
         spec->left = item.lower_limit();
     }
@@ -298,7 +296,8 @@ bool handle(const ItemStringRangeTerm& item, QueryStackIterator::Data& _d) {
     }
     spec->left_closed = item.lower_inclusive();
     spec->right_closed = item.upper_inclusive();
-    _d.stringRangeSpec = std::move(spec);
+    spec->range_limit = item.range_limit();
+    _d.string_range_spec = std::move(spec);
     return true;
 }
 
@@ -400,8 +399,9 @@ bool handle(const ItemGeoLocationTerm& item, QueryStackIterator::Data& _d, std::
         int n = std::round(item.n() * M);
         tmp = std::format("[2,{},{},{},{}]", w, s, e, n);
     }
-    if (tmp == "")
+    if (tmp == "") {
         return false;
+    }
     _d.term_view = tmp;
     return true;
 }

@@ -4,6 +4,7 @@
 
 #include "temporary_vector_store.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/int8float.h>
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
@@ -77,15 +78,15 @@ public:
                                           const uint64_t seed)
         : _quantizer(dimensions, bits, seed), _tmp_space(lhs.size), _lhs(_tmp_space.storeLhs(lhs)) {
         if constexpr (!QuantAccessParams::pre_quantized_lhs) { // full precision format
-            assert(lhs.size == _quantizer.dimensions());
+            CHECK(lhs.size == _quantizer.dimensions());
             // Quantized vectors are all in rotated space, so pre-rotate the query vector once
             // so that it is in the same frame of reference. This avoids having to rotate the
             // _quantized_ vectors when performing distance calcs. Note: this aliases `_lhs`.
             _quantizer.rotate_vector_inplace(_tmp_space.mutable_lhs_buf());
         } else {
             static_assert(std::is_same_v<LhsFloatType, vespalib::eval::Int8Float>);
-            assert(lhs.type == vespalib::eval::CellType::INT8);
-            assert(lhs.size == _quantizer.quantized_size());
+            CHECK(lhs.type == vespalib::eval::CellType::INT8);
+            CHECK(lhs.size == _quantizer.quantized_size());
         }
     }
     ~QuantizedDistanceFunctionVectorAccess();
@@ -98,7 +99,7 @@ public:
     // Rhs is always a quantized i8 vector
     [[nodiscard]] std::span<const vespalib::eval::Int8Float>
     convert_rhs(vespalib::eval::TypedCells rhs) const noexcept {
-        assert(rhs.size == quantized_size());
+        CHECK(rhs.size == quantized_size());
         return rhs.typify<vespalib::eval::Int8Float>();
     }
 

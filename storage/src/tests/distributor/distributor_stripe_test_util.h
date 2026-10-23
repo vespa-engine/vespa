@@ -3,6 +3,7 @@
 
 #include "distributor_message_sender_stub.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/distributor/memory_usage_token.h>
@@ -205,18 +206,18 @@ public:
     template <typename CmdType>
         requires std::is_base_of_v<api::StorageCommand, CmdType>
     [[nodiscard]] std::shared_ptr<CmdType> sent_command(size_t idx) {
-        assert(idx < _sender.commands().size());
+        CHECK(idx < _sender.commands().size());
         auto cmd = std::dynamic_pointer_cast<CmdType>(_sender.command(idx));
-        assert(cmd != nullptr);
+        CHECK(cmd != nullptr);
         return cmd;
     }
 
     template <typename ReplyType>
         requires std::is_base_of_v<api::StorageReply, ReplyType>
     [[nodiscard]] std::shared_ptr<ReplyType> sent_reply(size_t idx) {
-        assert(idx < _sender.replies().size());
+        CHECK(idx < _sender.replies().size());
         auto reply = std::dynamic_pointer_cast<ReplyType>(_sender.reply(idx));
-        assert(reply != nullptr);
+        CHECK(reply != nullptr);
         return reply;
     }
 

@@ -5,7 +5,7 @@
 #include "distributor_stripe_pool.h"
 #include "tickable_stripe.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace storage::distributor {
 
@@ -45,7 +45,7 @@ void DistributorStripeThread::run() {
 
 void DistributorStripeThread::signal_wants_park() noexcept {
     std::lock_guard lock(_mutex);
-    assert(!should_park_relaxed());
+    CHECK(!should_park_relaxed());
     _should_park.store(true, std::memory_order_relaxed);
     if (_waiting_for_event) {
         _event_cond.notify_one();
@@ -54,7 +54,7 @@ void DistributorStripeThread::signal_wants_park() noexcept {
 
 void DistributorStripeThread::unpark_thread() noexcept {
     std::lock_guard lock(_mutex);
-    assert(should_park_relaxed());
+    CHECK(should_park_relaxed());
     _should_park.store(false, std::memory_order_relaxed);
     _park_cond.notify_one();
 }
@@ -83,7 +83,7 @@ void DistributorStripeThread::notify_event_has_triggered() noexcept {
 
 void DistributorStripeThread::signal_should_stop() noexcept {
     std::unique_lock lock(_mutex);
-    assert(!should_park_relaxed());
+    CHECK(!should_park_relaxed());
     _should_stop.store(true, std::memory_order_relaxed);
     if (_waiting_for_event) {
         _event_cond.notify_one();

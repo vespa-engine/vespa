@@ -15,7 +15,9 @@ import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IndexedItem;
+import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.MapMatchItem;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
 import com.yahoo.prelude.query.NearestNeighborItem;
@@ -28,6 +30,7 @@ import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
 import com.yahoo.prelude.query.StringInItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -495,6 +498,103 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testSameElementWithBareNumericChild() {
+        // A bare number inside sameElement is a numeric equality term on the element value.
+        assertParse("select * from sources * where ints contains sameElement(2)", "ints:{2}");
+        assertParse("select * from sources * where ints contains sameElement(-2)", "ints:{-2}");
+        assertParse("select * from sources * where doubles contains sameElement(-1.5)", "doubles:{-1.5}");
+        IntItem value = assertInstanceOf(IntItem.class,
+                ((SameElementItem) parse("select * from sources * where ints contains sameElement(-2)").getRoot()).getItem(0));
+        assertEquals("-2", value.getNumber());
+        assertCanonicalParse("select * from sources * where ints contains sameElement(-2)", "ints:{-2}");
+
+        // With a space the minus is a negation of a positive literal rather than part of the number.
+        assertParse("select * from sources * where ints contains sameElement(- 2)", "ints:{-2}");
+        assertParse("select * from sources * where doubles contains sameElement(- 1.5)", "doubles:{-1.5}");
+
+        // A negated literal is only meaningful as a number.
+        assertParseFail("select * from sources * where strings contains sameElement(-'a')",
+                        new IllegalArgumentException("Expected LITERAL, got NEGATE."));
+        assertParseFail("select * from sources * where strings contains sameElement(-true)",
+                        new IllegalArgumentException("Expected LITERAL, got NEGATE."));
+    }
+
+    @Test
+    void testSameElementValuePlaceholder() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        // "_" stands for the value of the element itself, so the term gets no field name of its own.
+        assertParse("select * from sources * where field contains ({elementFilter:[1]} sameElement(_ >= 2))",
+                    "field[1]:{[2;]}");
+        assertParse("select * from sources * where field contains sameElement(_ > 2)",
+                    "field:{>2}");
+        assertParse("select * from sources * where field contains sameElement(range(_, 2, 5))",
+                    "field:{[2;5]}");
+        assertParse("select * from sources * where field contains sameElement(_ = 2)",
+                    "field:{2}");
+        assertParse("select * from sources * where field contains sameElement(_ >= 2 and _ <= 5)",
+                    "field:{(AND [2;] [;5])}");
+        IntItem number = assertInstanceOf(IntItem.class,
+                ((SameElementItem) parse("select * from sources * where field contains sameElement(_ >= 2)").getRoot()).getItem(0));
+        assertEquals("", number.getIndexName());
+
+        // The element values have the type of the field of the sameElement, so a range on a string field
+        // is a string range even though the placeholder itself is not a field.
+        assertParse("select * from sources * where string contains sameElement(range(_, \"a\", \"b\"))",
+                    "string:{STRING_RANGE [\"a\";\"b\"]}");
+        StringRangeItem stringRange = assertInstanceOf(StringRangeItem.class,
+                ((SameElementItem) parse("select * from sources * where string contains sameElement(range(_, \"a\", \"b\"))").getRoot()).getItem(0));
+        assertEquals("", stringRange.getIndexName());
+
+        // It works with the other syntaxes taking a field name as well.
+        assertParse("select * from sources * where string contains sameElement(_ contains \"foo\")",
+                    "string:{foo}");
+        assertParse("select * from sources * where string contains sameElement(_ matches \"f.*\")",
+                    "string:{REGEXP f.*}");
+        assertParse("select * from sources * where field contains sameElement(_ in (1, 2))",
+                    "field:{NUMERIC_IN {1,2}}");
+        assertParse("select * from sources * where string contains sameElement(_ in (\"a\", \"b\"))",
+                    "string:{STRING_IN {\"a\",\"b\"}}");
+
+        // A boolean has no typed item form of its own, but is still a term on the element value.
+        assertParse("select * from sources * where field contains sameElement(_ = true)",
+                    "field:{true}");
+
+        // Outside sameElement the placeholder is an ordinary field name, so it must be a field.
+        assertParseFail("select * from sources * where _ >= 2",
+                        new IllegalArgumentException("Field '_' does not exist."));
+        assertParseFail("select * from sources * where field contains sameElement(string contains \"foo\")",
+                        new IllegalArgumentException("Field 'field.string' does not exist."));
+    }
+
+    @Test
+    void testElementValueIsRejectedWhereAFieldIsRequired() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        // These apply to a field as a whole, so the value of an element is not something they can take
+        for (String syntax : List.of("dotProduct", "weightedSet", "wand")) {
+            assertParseFail("select * from sources * where string contains sameElement(" + syntax + "(_, {\"a\": 1}))",
+                            new IllegalArgumentException(syntax + " takes a field name, but got '_', which is the " +
+                                                         "value of the element of the enclosing sameElement rather " +
+                                                         "than a field."));
+        }
+        assertParseFail("select * from sources * where string contains sameElement(predicate(_, {\"a\":\"b\"}, {}))",
+                        new IllegalArgumentException("predicate takes a field name, but got '_', which is the value " +
+                                                     "of the element of the enclosing sameElement rather than a field."));
+    }
+
+    @Test
+    void testFailedSameElementTermDoesNotLeakTheFieldPrefix() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        // A term which fails to convert must leave the index name expander as it found it, as the parser is usable after
+        assertParseFail("select * from sources * where string contains sameElement(nosuchfield contains \"a\")",
+                        new IllegalArgumentException("Field 'string.nosuchfield' does not exist."));
+        assertParse("select * from sources * where string contains sameElement(_ contains \"foo\")",
+                    "string:{foo}");
+    }
+
+    @Test
     void testSameElementWithNestedAnd() {
         assertParse("select * from sources * where myStringArray contains sameElement('a' and 'b' and near('c', 'd'))",
                     "myStringArray:{(AND a b (NEAR(2) c d))}");
@@ -570,12 +670,259 @@ public class YqlParserTestCase {
         assertEquals("ints", se.getFieldName());
         assertEquals(List.of(1), se.getElementFilter());
         assertEquals(1, se.getItemCount());
+        IntItem intValue = assertInstanceOf(IntItem.class, se.getItem(0));
+        assertEquals("2", intValue.getNumber());
 
+        // Doubles are also numeric equality terms.
+        qt = parse("select * from sources * where doubles[0] = 1.5");
+        se = (SameElementItem) qt.getRoot();
+        assertEquals("doubles", se.getFieldName());
+        assertEquals(List.of(0), se.getElementFilter());
+        assertEquals(1, se.getItemCount());
+        IntItem doubleValue = assertInstanceOf(IntItem.class, se.getItem(0));
+        assertEquals("1.5", doubleValue.getNumber());
+
+        // Negative numbers are numeric equality terms with the sign preserved.
+        qt = parse("select * from sources * where ints[1] = -2");
+        se = (SameElementItem) qt.getRoot();
+        assertEquals(List.of(1), se.getElementFilter());
+        IntItem negativeValue = assertInstanceOf(IntItem.class, se.getItem(0));
+        assertEquals("-2", negativeValue.getNumber());
+        assertParse("select * from sources * where ints[1] = -2", "ints[1]:{-2}");
+        assertCanonicalParse("select * from sources * where ints[1] = -2", "ints[1]:{-2}");
+
+        qt = parse("select * from sources * where doubles[0] = -1.5");
+        se = (SameElementItem) qt.getRoot();
+        IntItem negativeDouble = assertInstanceOf(IntItem.class, se.getItem(0));
+        assertEquals("-1.5", negativeDouble.getNumber());
+        assertCanonicalParse("select * from sources * where doubles[0] = -1.5", "doubles[0]:{-1.5}");
+
+        // With a space the minus is a negation of a positive literal rather than part of the number.
+        assertParse("select * from sources * where ints[1] = - 2", "ints[1]:{-2}");
+        IntItem negatedValue = assertInstanceOf(IntItem.class,
+                ((SameElementItem) parse("select * from sources * where ints[1] = - 2").getRoot()).getItem(0));
+        assertEquals("-2", negatedValue.getNumber());
+        assertParse("select * from sources * where doubles[0] = - 1.5", "doubles[0]:{-1.5}");
+
+        // Booleans have no typed item form and become word terms, not TrueItem/FalseItem.
         qt = parse("select * from sources * where bools[0] = true");
         se = (SameElementItem) qt.getRoot();
         assertEquals("bools", se.getFieldName());
         assertEquals(List.of(0), se.getElementFilter());
         assertEquals(1, se.getItemCount());
+        WordItem boolValue = assertInstanceOf(WordItem.class, se.getItem(0));
+        assertEquals("true", boolValue.getWord());
+    }
+
+    @Test
+    void testMapAccessRewritesToSameElement() {
+        // my_map{'foo'} contains 'bar' should rewrite to my_map contains sameElement(key contains 'foo', value contains 'bar')
+        assertParse("select * from sources * where my_map{'foo'} contains 'bar'",
+                    "my_map:{key:foo value:bar}");
+
+        // Numeric values use '=', as for plain fields, and become numeric equality terms.
+        assertParse("select * from sources * where my_map{'foo'} = 10",
+                    "my_map:{key:foo value:10}");
+        assertInstanceOf(IntItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{'foo'} = 10").getRoot()).valueItem());
+
+        // Negative numeric values are also numeric equality terms, with the sign preserved.
+        assertParse("select * from sources * where my_map{'foo'} = -10",
+                    "my_map:{key:foo value:-10}");
+        IntItem negativeValue = assertInstanceOf(IntItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{'foo'} = -10").getRoot()).valueItem());
+        assertEquals("-10", negativeValue.getNumber());
+        assertCanonicalParse("select * from sources * where my_map{'foo'} = -10",
+                             "my_map:{key:foo value:-10}");
+        assertParse("select * from sources * where my_map{'foo'} = -1.5",
+                    "my_map:{key:foo value:-1.5}");
+        assertCanonicalParse("select * from sources * where my_map{'foo'} = -1.5",
+                             "my_map:{key:foo value:-1.5}");
+
+        // Negative numeric keys, for maps with numeric key types.
+        assertParse("select * from sources * where my_map{-1} contains 'bar'",
+                    "my_map:{key:-1 value:bar}");
+        IntItem negativeKey = assertInstanceOf(IntItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{-1} contains 'bar'").getRoot()).keyItem());
+        assertEquals("-1", negativeKey.getNumber());
+        assertCanonicalParse("select * from sources * where my_map{-1} = -10",
+                             "my_map:{key:-1 value:-10}");
+
+        // With a space the minus is a negation of a positive literal rather than part of the number.
+        assertParse("select * from sources * where my_map{'foo'} = - 10",
+                    "my_map:{key:foo value:-10}");
+        assertParse("select * from sources * where my_map{- 1} contains 'bar'",
+                    "my_map:{key:-1 value:bar}");
+        assertParse("select * from sources * where my_map{- 1} = - 1.5",
+                    "my_map:{key:-1 value:-1.5}");
+        assertInstanceOf(IntItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{- 1} = - 10").getRoot()).keyItem());
+        assertInstanceOf(IntItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{- 1} = - 10").getRoot()).valueItem());
+
+        // Numeric keys become numeric equality terms, for maps with numeric key types.
+        assertParse("select * from sources * where my_map{1} contains 'bar'",
+                    "my_map:{key:1 value:bar}");
+        assertInstanceOf(IntItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{1} contains 'bar'").getRoot()).keyItem());
+
+        // Boolean values become boolean terms, as for field = true, for maps with a bool value type.
+        assertParse("select * from sources * where my_map{'foo'} = true",
+                    "my_map:{key:foo value:true}");
+        assertInstanceOf(BoolItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{'foo'} = true").getRoot()).valueItem());
+        BoolItem falseValue = assertInstanceOf(BoolItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{1} = false").getRoot()).valueItem());
+        assertFalse(falseValue.value());
+
+        // Boolean keys become boolean terms too, for maps with a bool key type.
+        assertParse("select * from sources * where my_map{true} contains 'bar'",
+                    "my_map:{key:true value:bar}");
+        assertInstanceOf(BoolItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{true} contains 'bar'").getRoot()).keyItem());
+        assertInstanceOf(BoolItem.class,
+                         ((MapMatchItem) parse("select * from sources * where my_map{false} = 10").getRoot()).keyItem());
+
+        // The rewritten tree serializes and re-parses to the same tree.
+        assertCanonicalParse("select * from sources * where my_map{'foo'} contains 'bar'",
+                             "my_map:{key:foo value:bar}");
+        assertCanonicalParse("select * from sources * where my_map{'foo'} = 10",
+                             "my_map:{key:foo value:10}");
+        assertCanonicalParse("select * from sources * where my_map{'foo'} = true",
+                             "my_map:{key:foo value:true}");
+        assertCanonicalParse("select * from sources * where my_map{true} contains 'bar'",
+                             "my_map:{key:true value:bar}");
+    }
+
+    @Test
+    void testMapAccessValueTypeMustMatchOperator() {
+        // As for plain fields, 'contains' takes a string value ...
+        assertParseFail("select * from sources * where my_map{'foo'} contains 10",
+                        new IllegalArgumentException("Expected a string value for 'contains' on map field 'my_map', got 10. " +
+                                                     "Use '=' for number and boolean values."));
+        assertParseFail("select * from sources * where my_map{'foo'} contains -1.5",
+                        new IllegalArgumentException("Expected a string value for 'contains' on map field 'my_map', got -1.5. " +
+                                                     "Use '=' for number and boolean values."));
+        assertParseFail("select * from sources * where my_map{'foo'} contains true",
+                        new IllegalArgumentException("Expected a string value for 'contains' on map field 'my_map', got true. " +
+                                                     "Use '=' for number and boolean values."));
+
+        // ... and '=' a number or boolean value.
+        assertParseFail("select * from sources * where my_map{'foo'} = 'bar'",
+                        new IllegalArgumentException("Expected a number or boolean value for '=' on map field 'my_map', got 'bar'. " +
+                                                     "Use 'contains' for string values."));
+        assertParseFail("select * from sources * where my_map{'foo'} = phrase('new', 'york')",
+                        new IllegalArgumentException("Expected a number or boolean value for '=' on map field 'my_map', got CALL. " +
+                                                     "Use 'contains' for string values."));
+        assertParseFail("select * from sources * where my_map.lookup{'foo'} = 'bar'",
+                        new IllegalArgumentException("Expected a number or boolean value for '=' on map field 'my_map.lookup', got 'bar'. " +
+                                                     "Use 'contains' for string values."));
+    }
+
+    @Test
+    void testMapRangeRewritesToSameElement() {
+        // range(my_map{'foo'}, 40, 50) should rewrite to
+        // my_map contains sameElement(key contains 'foo', range(value, 40, 50))
+        assertParse("select * from sources * where range(my_map{'foo'}, 40, 50)",
+                    "my_map:{key:foo value:[40;50]}");
+
+        MapMatchItem mapMatch = (MapMatchItem) parse("select * from sources * where range(my_map{'foo'}, 40, 50)").getRoot();
+        assertEquals("my_map", mapMatch.getFieldName());
+        WordItem key = assertInstanceOf(WordItem.class, mapMatch.keyItem());
+        assertEquals("foo", key.getWord());
+        assertEquals("key", key.getIndexName());
+        IntItem value = assertInstanceOf(IntItem.class, mapMatch.valueItem());
+        assertEquals("value", value.getIndexName());
+
+        // The bounds annotation applies to the rewritten range.
+        assertParse("select * from sources * where ({bounds:\"open\"}range(my_map{'foo'}, 40, 50))",
+                    "my_map:{key:foo value:<40;50>}");
+        assertParse("select * from sources * where ({bounds:\"leftOpen\"}range(my_map{'foo'}, 40, 50))",
+                    "my_map:{key:foo value:<40;50]}");
+        assertParse("select * from sources * where ({bounds:\"rightOpen\"}range(my_map{'foo'}, 40, 50))",
+                    "my_map:{key:foo value:[40;50>}");
+
+        // Unbounded ends are kept as infinities.
+        assertParse("select * from sources * where range(my_map{'foo'}, 40, Infinity)",
+                    "my_map:{key:foo value:[40;]}");
+        assertParse("select * from sources * where range(my_map{'foo'}, -Infinity, 50)",
+                    "my_map:{key:foo value:[;50]}");
+
+        // Numeric keys become numeric equality terms, as for the other map access sugar.
+        assertParse("select * from sources * where range(my_map{1}, 40, 50)",
+                    "my_map:{key:1 value:[40;50]}");
+        assertInstanceOf(IntItem.class,
+                         ((MapMatchItem) parse("select * from sources * where range(my_map{1}, 40, 50)").getRoot()).keyItem());
+
+        // The rewritten tree serializes and re-parses to the same tree.
+        assertCanonicalParse("select * from sources * where range(my_map{'foo'}, 40, 50)",
+                             "my_map:{key:foo value:[40;50]}");
+    }
+
+    @Test
+    void testMapAccessProducesMapMatch() {
+        for (String where : List.of("my_map{'foo'} contains 'bar'", "my_map{'foo'} = 10", "range(my_map{'foo'}, 40, 50)",
+                                    "my_map contains mapMatch(key contains 'foo', value contains 'bar')",
+                                    "my_map contains mapMatch(value contains 'bar', key contains 'foo')")) {
+            MapMatchItem mapMatch = assertInstanceOf(MapMatchItem.class, parse("select * from sources * where " + where).getRoot(), where);
+            assertEquals("my_map", mapMatch.getFieldName(), where);
+            assertEquals("key", ((IndexedItem) mapMatch.keyItem()).getIndexName(), where);
+            assertEquals("foo", ((WordItem) mapMatch.keyItem()).getWord(), where);
+            assertEquals("value", ((IndexedItem) mapMatch.valueItem()).getIndexName(), where);
+        }
+
+        // The key and value are the first and second child, whatever order they are given in
+        assertParse("select * from sources * where my_map contains mapMatch(value contains 'bar', key contains 'foo')",
+                    "my_map:{key:foo value:bar}");
+
+        // A dotted field name, as for the lookup field of a map with fast search, is kept as is
+        MapMatchItem lookup = assertInstanceOf(MapMatchItem.class,
+                                               parse("select * from sources * where my_map.lookup{'foo'} = 10").getRoot());
+        assertEquals("my_map.lookup", lookup.getFieldName());
+        assertEquals("my_map.lookup:{key:foo value:10}", lookup.toString());
+
+        // A plain sameElement is not a map lookup
+        assertEquals(SameElementItem.class,
+                     parse("select * from sources * where my_map contains sameElement(key contains 'foo', value contains 'bar')").getRoot().getClass());
+    }
+
+    @Test
+    void testMapAccessWithCompositeValue() {
+        assertParse("select * from sources * where my_map{'foo'} contains phrase('new', 'york')",
+                    "my_map:{key:foo value:\"new york\"}");
+        MapMatchItem mapMatch = assertInstanceOf(MapMatchItem.class,
+                                                 parse("select * from sources * where my_map{'foo'} contains phrase('new', 'york')").getRoot());
+        assertInstanceOf(PhraseItem.class, mapMatch.valueItem());
+    }
+
+    @Test
+    void testMapMatchRequiresOneKeyAndOneValue() {
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo')",
+                        new IllegalArgumentException("mapMatch requires both a key and a value item"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(value contains 'bar')",
+                        new IllegalArgumentException("mapMatch requires both a key and a value item"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', key contains 'baz', value contains 'bar')",
+                        new IllegalArgumentException("unknown or extra item inside mapMatch: key:baz"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', value contains 'bar', value contains 'baz')",
+                        new IllegalArgumentException("unknown or extra item inside mapMatch: value:baz"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', other contains 'bar')",
+                        new IllegalArgumentException("unknown or extra item inside mapMatch: other:bar"));
+        assertParseFail("select * from sources * where my_map contains mapMatch(key contains 'foo', value contains 'bar' and value contains 'baz')",
+                        new IllegalArgumentException("bad item type inside mapMatch: AND value:bar value:baz"));
+    }
+
+    @Test
+    void testMapRangeRequiresLiteralKey() {
+        assertParseFail("select * from sources * where range(my_map{key_field}, 40, 50)",
+                        new IllegalArgumentException("Expected LITERAL, got READ_FIELD."));
+    }
+
+    @Test
+    void testMapAccessRequiresLiteralKey() {
+        assertParseFail("select * from sources * where my_map{key_field} contains 'bar'",
+                        new IllegalArgumentException("Expected LITERAL, got READ_FIELD."));
+        assertParseFail("select * from sources * where my_map{-'foo'} contains 'bar'",
+                        new IllegalArgumentException("Expected LITERAL, got NEGATE."));
     }
 
     @Test
@@ -845,6 +1192,36 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testStringRange() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertEquals("STRING_RANGE string:[\"aaa\";\"zzz\"]", parse("select foo from sources default where range(string,'aaa','zzz')").toString());
+        assertEquals("STRING_RANGE string:[\"aaa\";\"zzz\"]", parse("select foo from sources default where range(string,\"aaa\",\"zzz\")").toString());
+        assertEquals("STRING_RANGE string:<\"aaa\";\"zzz\"]", parse("select foo from sources default where ({bounds:\"leftOpen\"}range(string,\"aaa\",\"zzz\"))").toString());
+        assertEquals("STRING_RANGE string:[\"aaa\";\"zzz\">", parse("select foo from sources default where ({bounds:\"rightOpen\"}range(string,\"aaa\",\"zzz\"))").toString());
+        assertEquals("STRING_RANGE string:<\"aaa\";\"zzz\">", parse("select foo from sources default where ({bounds:\"open\"}range(string,\"aaa\",\"zzz\"))").toString());
+        assertEquals("STRING_RANGE string:<-Infinity;\"zzz\"]", parse("select foo from sources default where range(string,-Infinity,\"zzz\")").toString());
+        assertEquals("STRING_RANGE string:<-Infinity;Infinity>", parse("select foo from sources default where range(string,-Infinity,Infinity)").toString());
+    }
+
+    @Test
+    void testStringRangeIllegalArguments() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertParseFail("select foo from sources default where ({bounds:\"foo\"}range(string,\"aaa\",\"zzz\"))", new IllegalArgumentException("Expected open, leftOpen or rightOpen, got foo."));
+        assertParseFail("select foo from sources default where range(string,aaa,\"zzz\")", new IllegalArgumentException("Expected -Infinity or a quoted string for left string range bound but got aaa."));
+        assertParseFail("select foo from sources default where range(string,\"aaa\",zzz)", new IllegalArgumentException("Expected Infinity or a quoted string for right string range bound but got zzz."));
+        assertParseFail("select foo from sources default where range(string,Infinity,\"zzz\")", new IllegalArgumentException("Expected -Infinity or a quoted string for left string range bound but got Infinity."));
+        assertParseFail("select foo from sources default where range(string,\"aaa\",-Infinity)", new IllegalArgumentException("Expected Infinity or a quoted string for right string range bound but got -Infinity."));
+        assertParseFail("select foo from sources default where range(string,\"aaa\")", new IllegalArgumentException("Expected 3 arguments, got 2."));
+    }
+
+    @Test
+    void testStringRangeProvidesOrigin() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        var string_range = (StringRangeItem)parse("select foo from sources default where ({origin: {original:\"foo\", offset: 0, length: 3}}range(string, \"aaa\", \"zzz\"))").getRoot();
+        assertEquals("foo", string_range.getRawWord());
+    }
+
+    @Test
     void testNear() {
         assertParse("select foo from bar where description contains near(\"a\", \"b\")",
                 "NEAR(2) description:a description:b");
@@ -954,9 +1331,9 @@ public class YqlParserTestCase {
         assertEquals("GEO_LOCATION mypos:(2,17123456,42123456,90133,0,1,0,3185582897)", qt.toString());
         parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
         parser.setUserQuery(query);
-        var ex = assertThrows(IllegalStateException.class,
+        var ex = assertThrows(IllegalInputException.class,
             () -> parse("select * from sources * where geoLocation(mypos, @mylatitude, @bad, @myradius);"));
-        assertTrue(ex.getMessage().contains("missing"));
+        assertEquals("Input 'bad' is not set", ex.getMessage());
     }
 
     @Test
@@ -1592,6 +1969,13 @@ public class YqlParserTestCase {
         parser.setUserQuery(createUserQuery());
         query = parse("select * from sources * where string in ('a','b', @foostring)");
         assertStringInItem("string", new String[]{"a","b","might","this", "work"}, query);
+
+        parser.setUserQuery(createUserQuery());
+        assertParseFail("select * from sources * where field in (42, @missing)",
+                new IllegalInputException("Input 'missing' is not set"));
+        parser.setUserQuery(createUserQuery());
+        assertParseFail("select * from sources * where string in ('a', @missing)",
+                new IllegalInputException("Input 'missing' is not set"));
         parser.setUserQuery(null);
 
         query = parse("select * from sources * where {ranked:false}string in ('a','b')");
@@ -1613,6 +1997,25 @@ public class YqlParserTestCase {
         assertParseFail("select * from sources * where mixed in (25)",
                 new IllegalArgumentException("The in operator is not supported for fieldsets with a mix of integer " +
                         "and string fields. The fieldset mixed has both"));
+    }
+
+    /** Parameters passed as arrays in a POSTed JSON query are seen as JSON arrays here. */
+    @Test
+    void testInWithJsonArrayParameters() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        var query = new Query.Builder().build();
+        query.properties().set("foonumeric", "[26, 25, -11, 24]");
+        query.properties().set("foostring", "['this', \"might\", work]");
+
+        parser.setUserQuery(query);
+        assertNumericInItem("field", new long[]{-11, 24, 25, 26, 42},
+                            parse("select * from sources * where field in (42, @foonumeric)"));
+
+        parser.setUserQuery(query);
+        assertStringInItem("string", new String[]{"a", "might", "this", "work"},
+                           parse("select * from sources * where string in ('a', @foostring)"));
+        parser.setUserQuery(null);
     }
 
     // TODO: Put this in the documentation
@@ -1917,6 +2320,25 @@ public class YqlParserTestCase {
         QueryTree tree = parse("select * from sources * where x contains \"hello\"");
         assertInstanceOf(WordItem.class, tree.getRoot(),
                 "Top-level field x is not exact, so should produce WordItem");
+    }
+
+    @Test
+    void testElementValueUsesEnclosingFieldSettings() {
+        SearchDefinition sd = new SearchDefinition("default");
+        Index exactArray = new Index("exactArray");
+        exactArray.setExact(true, null);
+        exactArray.setString(true);
+        sd.addIndex(exactArray);
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(new IndexFacts(new IndexModel(sd))));
+
+        // The element value has no subfield name of its own, so it must resolve to the enclosing sameElement field
+        // rather than to a non-existent "exactArray." index, both as a bare literal and through the placeholder
+        for (String query : List.of("select * from sources * where exactArray contains sameElement(\"hello\")",
+                                    "select * from sources * where exactArray contains sameElement(_ contains \"hello\")")) {
+            SameElementItem sameElement = (SameElementItem) parse(query).getRoot();
+            assertInstanceOf(ExactStringItem.class, sameElement.getItem(0),
+                             "exactArray is exact, so its element value should produce ExactStringItem: " + query);
+        }
     }
 
 }

@@ -14,6 +14,7 @@ import com.yahoo.slime.SlimeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -338,6 +339,26 @@ public class YqlJsonQueryFeatureParityTest {
         assertGroupingParity(
                 "all(group(predefined(price, bucket[1, 2>, bucket[3, 4>)))",
                 "[ { 'all' : { 'group' : { 'predefined' : [ 'price', { 'bucket' : [1, 2] }, { 'bucket' : [3, 4] } ] } } } ]");
+    }
+
+    @Test
+    void testGroupingWithParameters() {
+        Map<String, String> parameters = Map.of("pattern", "ba.*", "zones", "x, y");
+        Query query = new Query();
+        parameters.forEach((name, value) -> query.properties().set(name, value));
+        yqlParser.setUserQuery(query);
+        yqlParser.parse(new Parsable().setQuery("select * from sources * where true | " +
+                                                "all(group(a) filter(regex(@pattern, a) and in(a, @zones)) each(output(count())))"));
+        var yqlSteps = yqlParser.getGroupingSteps();
+
+        var json = "[ { 'all' : { 'group' : 'a', 'filter' : 'regex(@pattern, a) and in(a, @zones)', 'each' : { 'output' : 'count()' } } } ]";
+        var selectSteps = selectParser.getGroupingSteps(new String(SlimeUtils.toJson(SlimeUtils.jsonToSlime(json))),
+                                                        parameters::get);
+
+        assertEquals(1, selectSteps.size());
+        assertEquals("all(group(a) filter((regex(\"ba.*\", a) and in(a, \"x\", \"y\"))) each(output(count())))",
+                     selectSteps.get(0).getOperation().toString());
+        assertEquals(yqlSteps.get(0).getOperation().toString(), selectSteps.get(0).getOperation().toString());
     }
 
     @Test

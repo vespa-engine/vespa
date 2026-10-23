@@ -174,7 +174,7 @@ $ vespa prod deploy`,
 				return fmt.Errorf("could not deploy application: %w", err)
 			}
 			cli.printSuccess(fmt.Sprintf("Submitted '%s' with build number %s", color.CyanString(pkg.Path), color.CyanString(strconv.FormatInt(build, 10))))
-			log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/prod/deployment",
+			log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/environment/prod/deployment",
 				deployment.Target.Deployment().System.ConsoleURL, deployment.Target.Deployment().Application.Tenant, deployment.Target.Deployment().Application.Application)))
 			if options.waitSecs > 0 {
 				log.Printf("Waiting up to %s for build pipeline to complete...\n", (time.Duration(options.waitSecs) * time.Second).String())

@@ -2,7 +2,8 @@
 
 #include "simpleresult.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <ostream>
 
 namespace search::queryeval {
@@ -23,7 +24,7 @@ SimpleResult& SimpleResult::search(SearchIterator& sb, uint32_t docIdLimit) {
     sb.initRange(docid, docIdLimit);
     while (!sb.isAtEnd(docid)) {
         if (sb.seek(docid)) {
-            assert(sb.getDocId() == docid);
+            CHECK(sb.getDocId() == docid);
             sb.unpack(docid);
             _hits.push_back(docid);
         }

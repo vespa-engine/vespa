@@ -2,6 +2,7 @@
 
 #include "fieldsearchspec.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
@@ -20,7 +21,6 @@
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
 
-#include <cassert>
 #include <regex>
 
 #include <vespa/log/log.h>
@@ -134,7 +134,7 @@ void FieldSearchSpec::reconfig(const QueryTerm& term) {
     case VsmfieldsConfig::Fieldspec::Searchmethod::SSE2UTF8:
         if ((term.isSubstring() && _arg1 != "substring") || (term.isSuffix() && _arg1 != "suffix") ||
             (term.isExactstring() && _arg1 != "exact") || (term.isPrefix() && _arg1 == "suffix") ||
-            (term.isRegex() || term.isFuzzy()))
+            (term.isRegex() || term.isFuzzy() || term.is_string_range()))
         {
             _searcher = std::make_unique<UTF8FlexibleStringFieldSearcher>(id());
             propagate_settings_to_searcher();
@@ -295,8 +295,8 @@ void FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle&                c
      * in parallel, take each id from the index environment. Field id 0 is the
      * reserved "no field" in both id spaces and never denotes a vsm field.
      */
-    assert(index_env.getNumFields() > 0);
-    assert(index_env.getField(0)->is_no_field());
+    CHECK(index_env.getNumFields() > 0);
+    CHECK(index_env.getField(0)->is_no_field());
     LOG(spam, "Parsing %zd fields", conf->fieldspec.size());
     for (const VsmfieldsConfig::Fieldspec& cfs : conf->fieldspec) {
         LOG(spam, "Parsing %s", cfs.name.c_str());

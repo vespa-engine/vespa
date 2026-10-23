@@ -10,9 +10,14 @@ namespace search::attribute {
  * NumericSearchContext is an abstract base class for search contexts
  * handling a query term on a numeric attribute vector.
  */
-template <typename Matcher> class NumericSearchContext : public SearchContext, public Matcher {
+template <typename Matcher> class NumericSearchContext : public SearchContext {
+    Matcher _matcher;
+
 protected:
     using MatcherType = Matcher;
+
+    Matcher& matcher() noexcept { return _matcher; }
+    const Matcher& matcher() const noexcept { return _matcher; }
 
 public:
     NumericSearchContext(const AttributeVector& to_be_searched, const QueryTermSimple& query_term,

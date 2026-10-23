@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/messagebus/testlib/slobrok.h>
@@ -85,7 +86,7 @@ struct SetStateFixture : FixtureBase {
 
     void create_request(const lib::ClusterStateBundle& bundle) {
         // Only 1 request allowed per fixture due to lifetime handling snags
-        assert(bound_request == nullptr);
+        CHECK(bound_request == nullptr);
         auto encoded_bundle = codec.encode(bundle);
         bind_request_params(encoded_bundle, encoded_bundle._uncompressed_length);
     }
@@ -227,7 +228,7 @@ struct ActivateStateFixture : FixtureBase {
 
     void create_request(uint32_t activate_version) {
         // Only 1 request allowed per fixture due to lifetime handling snags
-        assert(bound_request == nullptr);
+        CHECK(bound_request == nullptr);
         bind_request_params(activate_version);
     }
 

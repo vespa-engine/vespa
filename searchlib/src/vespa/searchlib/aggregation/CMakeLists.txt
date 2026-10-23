@@ -1,7 +1,9 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchlib_aggregation OBJECT
     SOURCES
-    aggregation.cpp
+    aggregationresult.cpp
+    argmax_aggregation_result.cpp
+    attribute_node_replacer.cpp
     averageaggregationresult.cpp
     countaggregationresult.cpp
     expressioncountaggregationresult.cpp
@@ -14,9 +16,7 @@ vespa_add_library(searchlib_aggregation OBJECT
     hitsaggregationresult.cpp
     maxaggregationresult.cpp
     minaggregationresult.cpp
-    modifiers.cpp
     quantile_aggregation_result.cpp
-    rawrank.cpp
     standarddeviationaggregationresult.cpp
     sumaggregationresult.cpp
     vdshit.cpp

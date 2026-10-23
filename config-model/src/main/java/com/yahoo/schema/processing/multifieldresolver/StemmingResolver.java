@@ -28,11 +28,13 @@ public class StemmingResolver extends MultiFieldResolver {
         Stemming stemming = null;
         SDField stemmingField = null;
         for (SDField field : fields) {
-            if (stemming == null && stemmingField==null) {
-                stemming = field.getStemming(schema);
+            // These fields are indexed into a shared index, so it is the index side which must agree
+            Stemming fieldStemming = field.getIndexStemming(schema);
+            if (stemming == null && stemmingField == null) {
+                stemming = fieldStemming;
                 stemmingField = field;
-            } else if (stemming != field.getStemming(schema)) {
-                deployLogger.logApplicationPackage(Level.WARNING, "Field '" + field.getName() + "' has " + field.getStemming(schema) +
+            } else if (stemming != fieldStemming) {
+                deployLogger.logApplicationPackage(Level.WARNING, "Field '" + field.getName() + "' has " + fieldStemming +
                                                                   ", whereas field '" + stemmingField.getName() + "' has " + stemming +
                                                                   ". All fields indexing to the index '" + indexName + "' must have the same stemming." +
                                                                   " This should be corrected as it will make indexing fail in a few cases.");

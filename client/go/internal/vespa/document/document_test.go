@@ -225,6 +225,19 @@ func TestDocumentDecoderInvalid(t *testing.T) {
 	if !errors.Is(err, ErrMissingId) {
 		t.Errorf("want error %q, got %q", ErrMissingId, err.Error())
 	}
+
+	jsonLike2 := `
+{
+  "text": "foo",
+  "fields": {"foo": "123"}
+}
+`
+	dec = NewDecoder(strings.NewReader(jsonLike2))
+	_, err = dec.Decode()
+	wantErr = "invalid operation at byte offset 11: unexpected json format. See https://docs.vespa.ai/en/reference/schemas/document-json-format.html#document-operations"
+	if err.Error() != wantErr {
+		t.Errorf("want error %q, got %q", wantErr, err.Error())
+	}
 }
 
 func benchmarkDocumentDecoder(b *testing.B, size int) {

@@ -4,6 +4,7 @@
 
 #include "utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/param_usage.h>
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
@@ -372,11 +373,11 @@ fef::FeatureExecutor& RankingExpressionBlueprint::createExecutor(const fef::IQue
         std::span<float> param_space = stash.create_array<float>(_input_is_object.size(), 0.0);
         return stash.create<FastForestExecutor>(param_space, *_fast_forest);
     }
-    assert(_compile_token.get() != nullptr); // will be nullptr for VERIFY_SETUP feature motivation
+    CHECK(_compile_token.get() != nullptr); // will be nullptr for VERIFY_SETUP feature motivation
     if (_compile_token->get().pass_params() == PassParams::ARRAY) {
         return stash.create<CompiledRankingExpressionExecutor>(_compile_token->get());
     } else {
-        assert(_compile_token->get().pass_params() == PassParams::LAZY);
+        CHECK(_compile_token->get().pass_params() == PassParams::LAZY);
         return stash.create<LazyCompiledRankingExpressionExecutor>(_compile_token->get());
     }
 }

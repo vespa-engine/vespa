@@ -16,3 +16,5 @@ maxReplacementCharacters int default=5000
 ilscript[].doctype    string
 ilscript[].docfield[] string
 ilscript[].content[]  string
+ilscript[].complexfield[].name string
+ilscript[].complexfield[].why  enum { FAST_MAP_SEARCH }

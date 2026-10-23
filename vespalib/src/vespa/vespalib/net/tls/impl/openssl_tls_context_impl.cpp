@@ -346,21 +346,23 @@ bool has_embedded_nulls(const char* data, size_t size) {
 // to specify multiple. We'll only report the last occurring one.
 bool fill_certificate_common_name(::X509* cert, PeerCredentials& creds) {
     // We're only after CN entries of the subject name
-    ::X509_NAME* subj_name = ::X509_get_subject_name(cert); // _not_ owned by us, never nullptr
-    int          pos = -1;
+    const ::X509_NAME* subj_name = ::X509_get_subject_name(cert); // _not_ owned by us, never nullptr
+    int                pos = -1;
     // X509_NAME_get_index_by_NID returns -1 if there are no further indices containing
     // an entry with the given NID _after_ pos. -1 must be passed as the initial pos value,
     // since index 0 might be valid.
     while ((pos = ::X509_NAME_get_index_by_NID(subj_name, NID_commonName, pos)) >= 0) {
-        ::X509_NAME_ENTRY* entry = ::X509_NAME_get_entry(subj_name, pos);
+        const ::X509_NAME_ENTRY* entry = ::X509_NAME_get_entry(subj_name, pos);
         if (!entry) {
             LOG(error, "Got X509 peer certificate with invalid CN entry");
             return false;
         }
-        ::ASN1_STRING* cn_asn1 = ::X509_NAME_ENTRY_get_data(entry);
-        if ((cn_asn1 != nullptr) && (cn_asn1->data != nullptr) && (cn_asn1->length > 0)) {
-            const auto* data = char_p_cast<char>(cn_asn1->data);
-            const auto  size = static_cast<size_t>(cn_asn1->length);
+        const ::ASN1_STRING* cn_asn1 = ::X509_NAME_ENTRY_get_data(entry);
+        if ((cn_asn1 != nullptr) && (::ASN1_STRING_get0_data(cn_asn1) != nullptr) &&
+            (::ASN1_STRING_length(cn_asn1) > 0))
+        {
+            const auto* data = char_p_cast<char>(::ASN1_STRING_get0_data(cn_asn1));
+            const auto  size = static_cast<size_t>(::ASN1_STRING_length(cn_asn1));
             if (has_embedded_nulls(data, size)) {
                 LOG(warning, "Got X509 peer certificate with embedded nulls in CN field");
                 return false;
@@ -377,7 +379,9 @@ struct GeneralNamesDeleter {
 
 // Returns empty string if unsupported type or bad content.
 std::string get_ia5_string(const ASN1_IA5STRING* ia5_str) {
-    if ((ia5_str->type == V_ASN1_IA5STRING) && (ia5_str->data != nullptr) && (ia5_str->length > 0)) {
+    if ((::ASN1_STRING_type(ia5_str) == V_ASN1_IA5STRING) && (::ASN1_STRING_get0_data(ia5_str) != nullptr) &&
+        (::ASN1_STRING_length(ia5_str) > 0))
+    {
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
         const char* data = char_p_cast<char>(::ASN1_STRING_get0_data(ia5_str));
 #else

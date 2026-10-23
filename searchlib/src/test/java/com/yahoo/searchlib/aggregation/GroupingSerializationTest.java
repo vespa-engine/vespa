@@ -5,7 +5,6 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.GlobalId;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.searchlib.aggregation.hll.SparseSketch;
-import java.nio.charset.StandardCharsets;
 import com.yahoo.searchlib.expression.AddFunctionNode;
 import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.CatFunctionNode;
@@ -23,7 +22,9 @@ import com.yahoo.searchlib.expression.GeoDistanceFunctionNode;
 import com.yahoo.searchlib.expression.GetDocIdNamespaceSpecificFunctionNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNodeVector;
+import com.yahoo.searchlib.expression.InPredicateNode;
 import com.yahoo.searchlib.expression.IntegerResultNode;
+import com.yahoo.searchlib.expression.IntegerResultNodeVector;
 import com.yahoo.searchlib.expression.MD5BitFunctionNode;
 import com.yahoo.searchlib.expression.MaxFunctionNode;
 import com.yahoo.searchlib.expression.MinFunctionNode;
@@ -91,9 +92,7 @@ public class GroupingSerializationTest {
             t.assertMatch(new IntegerResultNode(7));
             t.assertMatch(new FloatResultNode(7.3));
             t.assertMatch(new StringResultNode("7.3"));
-            t.assertMatch(new StringResultNode(
-                    new String(new byte[]{(byte)0xe5, (byte)0xa6, (byte)0x82, (byte)0xe6, (byte)0x9e, (byte)0x9c},
-                               StandardCharsets.UTF_8)));
+            t.assertMatch(new StringResultNode("\u5982\u679C"));
             t.assertMatch(new RawResultNode(new byte[]{'7', '.', '4'}));
             t.assertMatch(new IntegerBucketResultNode());
             t.assertMatch(new FloatBucketResultNode());
@@ -223,6 +222,14 @@ public class GroupingSerializationTest {
                     .updateSketch(7)
                     .updateSketch(8)
                     .setExpression(new ConstantNode(new IntegerResultNode(8))));
+            t.assertMatch(new ArgmaxAggregationResult(new IntegerResultNode(5), new IntegerResultNode(7))
+                    .setKeyExpression(new ConstantNode(new IntegerResultNode(5)))
+                    .setExpression(new ConstantNode(new IntegerResultNode(7))));
+            IntegerResultNodeVector argminValues = new IntegerResultNodeVector();
+            argminValues.add(new IntegerResultNode(7)).add(new IntegerResultNode(8));
+            t.assertMatch(new ArgmaxAggregationResult(new IntegerResultNode(5), argminValues)
+                    .setKeyExpression(new ConstantNode(new IntegerResultNode(5)))
+                    .setExpression(new ConstantNode((IntegerResultNodeVector)argminValues.clone())));
         }
     }
 
@@ -282,6 +289,16 @@ public class GroupingSerializationTest {
                             new SumAggregationResult()
                                     .setExpression(createDummyExpression()));
             t.assertMatch(withFilter);
+
+            GroupingLevel withInFilter = new GroupingLevel();
+            withInFilter.setMaxGroups(100)
+                    .setExpression(createDummyExpression())
+                    .setFilter(new InPredicateNode(new AttributeNode("attributeA"), List.of("foo", "bar")))
+                    .getGroupPrototype()
+                    .addAggregationResult(
+                            new SumAggregationResult()
+                                    .setExpression(createDummyExpression()));
+            t.assertMatch(withInFilter);
         }
     }
 
@@ -358,6 +375,9 @@ public class GroupingSerializationTest {
         try (SerializationTester t = new SerializationTester("testFilterExpression")) {
             t.assertMatch(new RegexPredicateNode("^foo.*", new AttributeNode("attributeA")));
             t.assertMatch(new RegexPredicateNode("^foo.*", null));
+            t.assertMatch(new InPredicateNode(new AttributeNode("attributeA"), List.of("foo", "bar")));
+            t.assertMatch(new InPredicateNode(new AttributeNode("attributeA"), List.of("\u5982\u679C")));
+            t.assertMatch(new InPredicateNode(null, List.of("foo")));
         }
     }
 

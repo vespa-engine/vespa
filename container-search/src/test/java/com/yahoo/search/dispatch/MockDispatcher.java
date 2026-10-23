@@ -7,7 +7,6 @@ import ai.vespa.cloud.Cluster;
 import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.SystemInfo;
 import ai.vespa.cloud.Zone;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
@@ -61,7 +60,7 @@ public class MockDispatcher extends Dispatcher {
              searchCluster,
              dispatchConfig,
              systemInfo,
-             new RpcInvokerFactory(rpcResourcePool, searchCluster.groupList(), dispatchConfig, new QrSearchersConfig.Builder().build()));
+             new RpcInvokerFactory(rpcResourcePool, searchCluster.groupList(), dispatchConfig));
     }
 
     private MockDispatcher(ClusterMonitor clusterMonitor,
@@ -72,7 +71,6 @@ public class MockDispatcher extends Dispatcher {
         super(clusterMonitor,
               searchCluster,
               dispatchConfig,
-              new QrSearchersConfig.Builder().build(),
               systemInfo,
               invokerFactory);
         this.clusterMonitor = clusterMonitor;

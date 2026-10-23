@@ -2,7 +2,7 @@
 
 #include "invokeserviceimpl.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 
@@ -20,7 +20,7 @@ InvokeServiceImpl::InvokeServiceImpl(duration napTime)
 InvokeServiceImpl::~InvokeServiceImpl() {
     {
         std::lock_guard guard(_lock);
-        assert(_toInvoke.empty());
+        CHECK(_toInvoke.empty());
         _closed = true;
         _cond.notify_all();
     }
@@ -50,7 +50,7 @@ std::unique_ptr<IDestructorCallback> InvokeServiceImpl::registerInvoke(InvokeFun
 void InvokeServiceImpl::unregister(uint64_t id) {
     std::lock_guard guard(_lock);
     auto found = std::find_if(_toInvoke.begin(), _toInvoke.end(), [id](const IdAndFunc& a) { return id == a.first; });
-    assert(found != _toInvoke.end());
+    CHECK(found != _toInvoke.end());
     _toInvoke.erase(found);
     _cond.notify_all();
 }

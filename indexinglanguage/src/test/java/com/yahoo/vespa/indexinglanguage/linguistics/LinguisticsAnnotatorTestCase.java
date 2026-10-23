@@ -92,6 +92,26 @@ public class LinguisticsAnnotatorTestCase {
     }
 
     @Test
+    public void requireThatIndexableTokenStringsAreAnnotatedWithStemmingALL_STEMS() {
+        SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
+        var span1 = expected.spanList().span(0, 6);
+        span1.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("tesla")));
+        var span2 = expected.spanList().span(0, 4);
+        span2.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("car")));
+        var span3 = expected.spanList().span(0, 8);
+        span3.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("mdlx")));
+        span3.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("modelx")));
+        span3.annotate(new Annotation(AnnotationTypes.TERM, new StringFieldValue("mex")));
+        for (TokenType type : TokenType.values()) {
+            if (!type.isIndexable()) continue;
+            assertAnnotations(expected, "Tesla cars", new AnnotatorConfig().setStemMode("ALL_STEMS"),
+                              token("Teslas", "tesla", type),
+                              token("cars", "car", type),
+                              SimpleToken.fromStems("ModelXes", List.of("mdlx", "modelx", "mex")));
+        }
+    }
+
+    @Test
     public void requireThatTokenizationCanPreserveCaseWithStemmingALL() {
         SpanTree expected = new SpanTree(SpanTrees.LINGUISTICS);
         var span1 = expected.spanList().span(0, 6);

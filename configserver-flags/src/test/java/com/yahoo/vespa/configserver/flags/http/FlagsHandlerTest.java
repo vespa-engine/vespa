@@ -173,8 +173,8 @@ public class FlagsHandlerTest {
         assertTrue(handle(Method.PUT, "/data/" + FLAG1.id(), "{}", 400).
                 contains("Flag ID missing"));
 
-        assertTrue(handle(Method.PUT, "/data/" + FLAG1.id(), "{\"id\": \"id1\",\"rules\": [{\"value\":\"string\"}]}", 400).
-                contains("Wrong type of JsonNode: STRING"));
+        assertEquals(handle(Method.PUT, "/data/" + FLAG1.id(), "{\"id\": \"id1\",\"rules\": [{\"value\":\"string\"}]}", 400),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Failed to deserialize value of flag id1: Found \\\"string\\\" of invalid type STRING\"}");
 
         assertEquals(handle(Method.PUT, "/data/" + FLAG1.id() + "?force=true", "{\"id\": \"id1\",\"rules\": [{\"value\":\"string\"}]}", 200),
                 "{}");

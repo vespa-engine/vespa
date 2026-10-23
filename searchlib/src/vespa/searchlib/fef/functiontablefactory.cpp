@@ -6,6 +6,7 @@
 #include <vespa/vespalib/text/stringtokenizer.h>
 
 #include <cmath>
+#include <cstdlib>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.functiontablefactory");

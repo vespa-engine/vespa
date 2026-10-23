@@ -5,13 +5,12 @@
 #include "attributevector.h"
 #include "load_utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/filesizecalculator.h>
 #include <vespa/vespalib/util/size_literals.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.attribute.readerbase");
@@ -77,7 +76,7 @@ ReaderBase::~ReaderBase() = default;
 
 size_t ReaderBase::getEnumCount() const {
     size_t dataSize = _datFile.data_size();
-    assert((dataSize % sizeof(uint32_t)) == 0);
+    CHECK((dataSize % sizeof(uint32_t)) == 0);
     return dataSize / sizeof(uint32_t);
 }
 
@@ -111,7 +110,7 @@ size_t ReaderBase::getNumValues() {
     } else {
         if (_fixedWidth > 0) {
             size_t dataSize = _datFile.data_size();
-            assert((dataSize % _fixedWidth) == 0);
+            CHECK((dataSize % _fixedWidth) == 0);
             return dataSize / _fixedWidth;
         } else {
             // TODO. This limits the number of multivalues to 2^32-1

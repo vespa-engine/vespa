@@ -4,6 +4,8 @@
 
 #include "rpcnetwork.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
 
 namespace mbus {
@@ -11,7 +13,7 @@ namespace mbus {
 RPCServicePool::RPCServicePool(const slobrok::api::IMirrorAPI& mirror, uint32_t maxSize)
     : _mirror(mirror), _lock(), _lru(std::make_unique<ServiceCache>(maxSize)), _updateGen(0), _maxSize(maxSize) {
     _lru->reserve(maxSize);
-    assert(maxSize > 0);
+    CHECK(maxSize > 0);
 }
 
 RPCServicePool::~RPCServicePool() = default;

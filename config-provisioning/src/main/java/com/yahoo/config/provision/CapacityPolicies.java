@@ -61,27 +61,37 @@ public class CapacityPolicies {
         this.cpuCap = cpuCap;
     }
 
+    // TODO: Remove after October 2026
     public Capacity applyOn(Capacity capacity, boolean exclusive) {
-        var min = applyOn(capacity.minResources(), capacity, exclusive);
-        var max = applyOn(capacity.maxResources(), capacity, exclusive);
+        return applyOn(capacity, exclusive, 1);
+    }
+
+    public Capacity applyOn(ClusterSpec cluster) {
+        return applyOn(cluster.capacity(), cluster.isExclusive(), cluster.availabilityZones().size());
+    }
+
+    private Capacity applyOn(Capacity capacity, boolean exclusive, int availabilityZoneCount) {
+        var min = applyOn(capacity.minResources(), capacity, exclusive, availabilityZoneCount);
+        var max = applyOn(capacity.maxResources(), capacity, exclusive, availabilityZoneCount);
         var groupSize = capacity.groupSize().fromAtMost(max.nodes() / min.groups())
-                                            .toAtLeast(min.nodes() / max.groups());
+                                .toAtLeast(min.nodes() / max.groups());
         return capacity.withLimits(min, max, groupSize);
     }
 
-    private ClusterResources applyOn(ClusterResources resources, Capacity capacity, boolean exclusive) {
-        int nodes = decideCount(resources.nodes(), capacity.isRequired(), applicationId.instance().isTester());
+    private ClusterResources applyOn(ClusterResources resources, Capacity capacity, boolean exclusive, int availabilityZoneCount) {
+        int nodes = decideCount(resources.nodes(), capacity.isRequired(), applicationId.instance().isTester(), availabilityZoneCount);
         int groups = decideGroups(resources.nodes(), resources.groups(), nodes);
         var nodeResources = decideNodeResources(resources.nodeResources(), capacity.isRequired(), exclusive);
         return new ClusterResources(nodes, groups, nodeResources);
     }
 
-    private int decideCount(int requested, boolean required, boolean isTester) {
+    private int decideCount(int requested, boolean required, boolean isTester, int availabilityZoneCount) {
         if (isTester) return 1;
 
         if (required) return requested;
         return switch (zone.environment()) {
-            case dev, test -> 1;
+            case dev -> Math.min(requested, availabilityZoneCount);
+            case test -> 1;
             case perf -> Math.min(requested, 3);
             case staging -> requested <= 1 ? requested : Math.max(2, (int)(0.05 * requested));
             case prod -> requested;
@@ -231,9 +241,9 @@ public class CapacityPolicies {
     }
 
     /** Returns whether the nodes requested can share physical host with other applications */
-    public ClusterSpec decideExclusivity(Capacity capacity, ClusterSpec requestedCluster) {
-        if ( ! capacity.cloudAccount().isUnspecified()) return requestedCluster.withExclusivity(true); // Implicit exclusive
-        boolean exclusive = requestedCluster.isExclusive() && (capacity.isRequired() || zone.environment() == Environment.prod);
+    public ClusterSpec decideExclusivity(ClusterSpec requestedCluster) {
+        if ( ! requestedCluster.capacity().cloudAccount().isUnspecified()) return requestedCluster.withExclusivity(true); // Implicit exclusive
+        boolean exclusive = requestedCluster.isExclusive() && (requestedCluster.capacity().isRequired() || zone.environment() == Environment.prod);
         return requestedCluster.withExclusivity(exclusive);
     }
 

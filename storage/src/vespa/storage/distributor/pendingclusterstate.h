@@ -6,6 +6,7 @@
 #include "outdated_nodes_map.h"
 #include "pending_bucket_space_db_transition_entry.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
@@ -84,7 +85,7 @@ public:
      * request bucket info commands. Only used for debug logging.
      */
     void setNodeReplied(uint16_t nodeIdx) {
-        assert(nodeIdx < _requestedNodes.size());
+        CHECK(nodeIdx < _requestedNodes.size());
         _requestedNodes[nodeIdx] = true;
     }
 

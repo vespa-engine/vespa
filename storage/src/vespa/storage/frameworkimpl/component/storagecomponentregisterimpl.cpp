@@ -2,9 +2,8 @@
 
 #include "storagecomponentregisterimpl.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.component.register");
@@ -29,7 +28,7 @@ StorageComponentRegisterImpl::~StorageComponentRegisterImpl() = default;
 void StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc) {
     std::lock_guard lock(_componentLock);
     _components.push_back(&smc);
-    assert(_nodeType != nullptr);
+    CHECK(_nodeType != nullptr);
     smc.setNodeInfo(_clusterName, *_nodeType, _index);
     if (_nodeStateUpdater != nullptr) {
         smc.setNodeStateUpdater(*_nodeStateUpdater);

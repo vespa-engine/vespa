@@ -6,6 +6,7 @@ import com.yahoo.config.model.test.TestUtil;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.derived.AttributeFields;
+import com.yahoo.schema.derived.TestableDeployLogger;
 import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.Dictionary;
 import com.yahoo.schema.document.ImmutableSDField;
@@ -13,8 +14,11 @@ import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -103,9 +107,91 @@ public class DictionaryTestCase {
         assertEquals(expectedCaseCfg, getConfig(schema).attribute().get(0).dictionary().match());
     }
 
+    /** Casing only decides how strings are compared, so it is ignored with a warning on a numeric field. */
     @Test
-    void testCasedBtreeSettings() throws ParseException {
-        verifyDictionaryControl(Dictionary.Type.BTREE, "int", "dictionary:cased");
+    void testCasingIsIgnoredForNumericFields() throws ParseException {
+        assertEquals("For schema 'test', field 'n1': 'dictionary: cased' is only used for string fields, ignoring it.",
+                verifyNumericCasingIsIgnored("dictionary:cased"));
+        assertEquals("For schema 'test', field 'n1': 'dictionary: uncased' is only used for string fields, ignoring it.",
+                verifyNumericCasingIsIgnored("dictionary { btree\nuncased\n}"));
+        assertEquals("For schema 'test', field 'n1': 'match: cased' is only used for string fields, ignoring it.",
+                verifyNumericCasingIsIgnored("match:cased"));
+        assertEquals("For schema 'test', field 'n1': 'match: uncased' is only used for string fields, ignoring it.",
+                verifyNumericCasingIsIgnored("match:uncased"));
+    }
+
+    /**
+     * A struct field inherits its match casing from the enclosing field, which is not the same as the user
+     * setting it on that field, so a numeric subfield must not warn about a setting it never had.
+     */
+    @Test
+    void testCasingInheritedByNumericStructFieldsIsIgnoredSilently() throws ParseException {
+        String def = TestUtil.joinLines(
+                "schema test {",
+                "    document test {",
+                "        struct elem {",
+                "            field name type string {}",
+                "            field weight type int {}",
+                "        }",
+                "        field arr type array<elem> {",
+                "            indexing: summary",
+                "            match: cased",
+                "            struct-field name { indexing: attribute }",
+                "            struct-field weight { indexing: attribute }",
+                "        }",
+                "    }",
+                "}");
+        var logger = new TestableDeployLogger();
+        var builder = new ApplicationBuilder(logger);
+        builder.addSchema(def);
+        builder.build(true);
+        assertEquals(List.of(), logger.warnings);
+        var attributes = getConfig(builder.getSchema()).attribute();
+        assertEquals(List.of("arr.name", "arr.weight"),
+                attributes.stream().map(AttributesConfig.Attribute::name).toList());
+        assertEquals(AttributesConfig.Attribute.Match.CASED, attributes.get(0).match());
+        assertEquals(AttributesConfig.Attribute.Match.UNCASED, attributes.get(1).match());
+    }
+
+    /** Ignoring the casing leaves the dictionary type alone. */
+    @Test
+    void testCasingIsIgnoredButTypeIsKeptForNumericFields() throws ParseException {
+        Schema schema = createSearch(numericSchema("dictionary { hash\ncased\n}"));
+        assertEquals(Dictionary.Type.HASH, schema.getAttribute("n1").getDictionary().getType());
+        assertEquals(Case.UNCASED, schema.getAttribute("n1").getDictionary().getMatch());
+        assertEquals(AttributesConfig.Attribute.Dictionary.Type.HASH,
+                getConfig(schema).attribute().get(0).dictionary().type());
+        assertEquals(AttributesConfig.Attribute.Dictionary.Match.UNCASED,
+                getConfig(schema).attribute().get(0).dictionary().match());
+        assertEquals(AttributesConfig.Attribute.Match.UNCASED, getConfig(schema).attribute().get(0).match());
+    }
+
+    private String numericSchema(String ... cfg) {
+        return TestUtil.joinLines(
+                "schema test {",
+                "    document test {",
+                "        field n1 type int {",
+                "            indexing: summary | attribute",
+                "            attribute:fast-search",
+                TestUtil.joinLines(cfg),
+                "        }",
+                "    }",
+                "}");
+    }
+
+    /** Builds a numeric field with the given settings, and returns the single warning it produced. */
+    private String verifyNumericCasingIsIgnored(String ... cfg) throws ParseException {
+        var logger = new TestableDeployLogger();
+        var builder = new ApplicationBuilder(logger);
+        builder.addSchema(numericSchema(cfg));
+        builder.build(true);
+        Schema schema = builder.getSchema();
+        assertEquals(Case.UNCASED, schema.getAttribute("n1").getCase());
+        assertEquals(AttributesConfig.Attribute.Match.UNCASED, getConfig(schema).attribute().get(0).match());
+        assertEquals(AttributesConfig.Attribute.Dictionary.Match.UNCASED,
+                getConfig(schema).attribute().get(0).dictionary().match());
+        assertEquals(1, logger.warnings.size(), logger.warnings.toString());
+        return logger.warnings.get(0);
     }
 
     @Test
@@ -187,14 +273,27 @@ public class DictionaryTestCase {
         }
     }
 
+    /** A hash dictionary can not be folded, so it requires cased match also when combined with a btree. */
     @Test
-    void testStringBtreeHashSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED, "dictionary{hash\nbtree\n}");
+    void testStringBtreeHashSettings() {
+        assertEquals("For schema 'test', field 'n1': hash dictionary require cased match",
+                assertThrows(IllegalArgumentException.class,
+                        () -> verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED,
+                                                            "dictionary{hash\nbtree\n}")).getMessage());
     }
 
     @Test
-    void testStringBtreeHashUnCasedSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED, "dictionary { hash\nbtree\nuncased\n}");
+    void testStringBtreeHashUnCasedSettings() {
+        assertEquals("For schema 'test', field 'n1': hash dictionary require cased match",
+                assertThrows(IllegalArgumentException.class,
+                        () -> verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED,
+                                                            "dictionary { hash\nbtree\nuncased\n}")).getMessage());
+    }
+
+    @Test
+    void testStringBtreeHashBothCasedSettings() throws ParseException {
+        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.CASED, Case.CASED,
+                                      "dictionary { hash\nbtree\ncased\n}", "match:cased");
     }
 
     @Test
@@ -269,5 +368,41 @@ public class DictionaryTestCase {
         assertEquals(AttributesConfig.Attribute.Match.UNCASED, getConfig(schema).attribute().get(0).match());
         assertEquals(AttributesConfig.Attribute.Match.UNCASED, getConfig(schema).attribute().get(1).match());
         assertEquals(AttributesConfig.Attribute.Match.CASED, getConfig(schema).attribute().get(2).match());
+    }
+
+    /**
+     * The match casing of a struct field is inherited from the enclosing field, which does not carry its
+     * dictionary along. The dictionary casing must still follow, or a cased search would match the folded
+     * posting lists of an uncased dictionary.
+     */
+    @Test
+    void testCasingInheritedByStructFieldsIsReflectedInDictionary() throws ParseException {
+        String def = TestUtil.joinLines(
+                "schema test {",
+                "    document test {",
+                "        struct elem {",
+                "            field name type string {}",
+                "        }",
+                "        field arr type array<elem> {",
+                "            indexing: summary",
+                "            match: cased",
+                "            struct-field name { indexing: attribute }",
+                "        }",
+                "        field m type map<string,string> {",
+                "            indexing: summary",
+                "            match: cased",
+                "            struct-field key { indexing: attribute }",
+                "            struct-field value { indexing: attribute }",
+                "        }",
+                "    }",
+                "}");
+        Schema schema = createSearch(def);
+        var attributes = getConfig(schema).attribute();
+        assertEquals(List.of("arr.name", "m.key", "m.value"),
+                attributes.stream().map(AttributesConfig.Attribute::name).toList());
+        for (var attribute : attributes) {
+            assertEquals(AttributesConfig.Attribute.Match.CASED, attribute.match(), attribute.name());
+            assertEquals(AttributesConfig.Attribute.Dictionary.Match.CASED, attribute.dictionary().match(), attribute.name());
+        }
     }
 }

@@ -12,11 +12,12 @@ NumericPostingSearchContext<BaseSC, AttrT, DataT>::NumericPostingSearchContext(B
                                                                                const AttrT&  toBeSearched)
     : Parent(std::move(base_sc), params_in.useBitVector(), toBeSearched), _params(params_in) {
     if (valid()) {
-        if (_low == _high) {
-            auto comp = _enumStore.make_comparator(_low);
+        if (matcher().get_low() == matcher().get_high()) {
+            auto comp = _enumStore.make_comparator(matcher().get_low());
             this->lookupTerm(comp);
-        } else if (_low < _high) {
-            bool shouldApplyRangeLimit = (params().diversityAttribute() == nullptr) && (this->getRangeLimit() != 0);
+        } else if (matcher().get_low() < matcher().get_high()) {
+            bool shouldApplyRangeLimit =
+                (params().diversityAttribute() == nullptr) && (matcher().getRangeLimit() != 0);
             getIterators(shouldApplyRangeLimit);
         }
         if (this->_uniqueValues == 1u) {
@@ -29,26 +30,26 @@ template <typename BaseSC, typename AttrT, typename DataT>
 void NumericPostingSearchContext<BaseSC, AttrT, DataT>::getIterators(bool shouldApplyRangeLimit) {
     bool isFloat =
         _toBeSearched.getBasicType() == BasicType::FLOAT || _toBeSearched.getBasicType() == BasicType::DOUBLE;
-    search::Range<BaseType> capped = this->template cappedRange<BaseType>(isFloat);
+    search::Range<BaseType> capped = matcher().template cappedRange<BaseType>(isFloat);
 
     auto compLow = _enumStore.make_comparator(capped.lower());
     auto compHigh = _enumStore.make_comparator(capped.upper());
 
     this->lookupRange(compLow, compHigh);
     if (!this->_dictionary.get_has_btree_dictionary()) {
-        _low = capped.lower();
-        _high = capped.upper();
+        matcher().set_low(capped.lower());
+        matcher().set_high(capped.upper());
         return;
     }
     if (shouldApplyRangeLimit) {
-        this->applyRangeLimit(this->getRangeLimit());
+        this->applyRangeLimit(matcher().getRangeLimit());
     }
 
     if (this->_lowerDictItr != this->_upperDictItr) {
-        _low = _enumStore.get_value(this->_lowerDictItr.getKey().load_acquire());
+        matcher().set_low(_enumStore.get_value(this->_lowerDictItr.getKey().load_acquire()));
         auto last = this->_upperDictItr;
         --last;
-        _high = _enumStore.get_value(last.getKey().load_acquire());
+        matcher().set_high(_enumStore.get_value(last.getKey().load_acquire()));
     }
 }
 

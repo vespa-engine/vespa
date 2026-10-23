@@ -8,7 +8,6 @@ import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Counter;
-import com.yahoo.metrics.simple.Point;
 
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
@@ -21,7 +20,6 @@ import com.yahoo.search.searchchain.Execution;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A simple rate limiter.
@@ -45,8 +43,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>
  * If either 'rate.id' or 'rate.quota' is not set in Query.properties this searcher will do nothing.
  * <p>
- * Metrics: This will emit the count metric requestsOverQuota with the dimension [rate.idDimension=rate.id]
- * counting rejected requests.
+ * Metrics: This will emit the count metrics requests and requestsOverQuota, both with the dimension
+ * [rate.idDimension=rate.id]. requests counts all requests checked by this searcher, and requestsOverQuota
+ * counts the subset of those that were rejected (or would have been rejected, in dryRun mode).
  * <p>
  * Ordering: This searcher Provides rateLimiting
  *
@@ -64,6 +63,7 @@ public class RateLimitingSearcher extends Searcher {
     public static final CompoundName idDimensionKey = CompoundName.from("rate.idDimension");
     public static final CompoundName dryRunKey = CompoundName.from("rate.dryRun");
 
+    private static final String requestsMetricName = ContainerMetrics.REQUESTS.baseName();
     private static final String requestsOverQuotaMetricName = ContainerMetrics.REQUESTS_OVER_QUOTA.baseName();
 
     /** Used to divide quota by nodes. Assumption: All nodes get the same share of traffic. */
@@ -78,6 +78,7 @@ public class RateLimitingSearcher extends Searcher {
     private final ThreadLocal<Map<String, Double>> allocatedCapacity = new ThreadLocal<>();
 
     /** For emitting metrics */
+    private final Counter requestsCounter;
     private final Counter overQuotaCounter;
 
     /**
@@ -85,9 +86,6 @@ public class RateLimitingSearcher extends Searcher {
      * A higher value means less contention and less accuracy.
      */
     private final double capacityIncrement;
-
-    /** How often to check for new capacity if we have run out */
-    private final double recheckForCapacityProbability;
 
     @Inject
     public RateLimitingSearcher(RateLimitingConfig rateLimitingConfig, ClusterInfoConfig clusterInfoConfig, MetricReceiver metric) {
@@ -100,12 +98,12 @@ public class RateLimitingSearcher extends Searcher {
                                 MetricReceiver metric,
                                 Clock clock) {
         this.capacityIncrement = rateLimitingConfig.capacityIncrement();
-        this.recheckForCapacityProbability = rateLimitingConfig.recheckForCapacityProbability();
         this.availableCapacity = new AvailableCapacity(rateLimitingConfig.maxAvailableCapacity(), clock);
         this.localRate = rateLimitingConfig.localRate();
 
         this.nodeCount = clusterInfoConfig.nodeCount();
 
+        this.requestsCounter = metric.declareCounter(requestsMetricName);
         this.overQuotaCounter = metric.declareCounter(requestsOverQuotaMetricName);
     }
 
@@ -118,6 +116,8 @@ public class RateLimitingSearcher extends Searcher {
             return execution.search(query);
         }
 
+        increaseMetric(requestsCounter, id, query);
+
         if ( ! localRate)
             rate = rate / nodeCount;
 
@@ -126,17 +126,14 @@ public class RateLimitingSearcher extends Searcher {
         if (allocatedCapacity.get().get(id) == null) // new id in this thread
             requestCapacity(id, rate);
 
-        // Check if there is capacity available. Cannot check for exact cost as it may be computed after execution
-        // no capacity means we're over rate. Only recheck occasionally to limit synchronization.
-        if (getAllocatedCapacity(id) <= 0 && ThreadLocalRandom.current().nextDouble() < recheckForCapacityProbability) {
+        if (getAllocatedCapacity(id) <= 0)
             requestCapacity(id, rate);
-        }
 
         boolean reject = rate == 0 || getAllocatedCapacity(id) <= 0;
         boolean dryRun = query.properties().getBoolean(dryRunKey, false);
 
         if (reject)
-            increaseRejectMetric(id, query);
+            increaseMetric(overQuotaCounter, id, query);
 
         Result result;
         if (reject && !dryRun)
@@ -153,18 +150,16 @@ public class RateLimitingSearcher extends Searcher {
         return result;
     }
 
-    private void increaseRejectMetric(String id, Query query) {
+    private void increaseMetric(Counter counter, String id, Query query) {
         String idDimension = query.properties().getString(idDimensionKey, null);
         if (idDimension == null)
-            overQuotaCounter.add(1);
+            counter.add(1);
         else
-            overQuotaCounter.add(1, overQuotaCounter.builder().set(idDimension, id).build());
+            counter.add(1, counter.builder().set(idDimension, id).build());
     }
 
     private double getAllocatedCapacity(String id) {
-        Double value = allocatedCapacity.get().get(id);
-        if (value == null) return 0;
-        return value;
+        return allocatedCapacity.get().getOrDefault(id, 0.0);
     }
 
     private void addAllocatedCapacity(String id, double newCapacity) {
@@ -182,7 +177,7 @@ public class RateLimitingSearcher extends Searcher {
 
     /**
      * This keeps track of the current "capacity" (total cost) available to each client (rate id)
-     * across all threads. Capacity is supplied at the rate per second given by the clients quota.
+     * across all threads. Capacity is supplied at the rate per second given by the client's quota.
      * When all the capacity is spent, no further capacity will be handed out, leading to request rejection.
      * Capacity has a max value it will never exceed to avoid clients saving capacity for future overspending.
      */

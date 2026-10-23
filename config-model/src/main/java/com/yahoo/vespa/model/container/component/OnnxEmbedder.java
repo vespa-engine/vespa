@@ -7,6 +7,7 @@ import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 import static com.yahoo.text.XML.getChild;
@@ -18,11 +19,13 @@ import static com.yahoo.text.XML.getChildValue;
  * Extracts common ONNX parameters from XML to construct {@link OnnxModelOptions} and {@link OnnxEvaluatorConfig}.
  * 
  * @author glebashnik
+ * @author ingridhabrekke
  */
 abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfig.Producer {
     final protected OnnxModelOptions onnxModelOptions;
     private final boolean forceDisableOptimization;
 
+    @SuppressWarnings("removal") // Retain deprecated batching max delay in config models for compatibility.
     protected OnnxEmbedder(String className, String bundle, Element xml, DeployState state) {
         super(className, bundle, xml);
         this.forceDisableOptimization = state.featureFlags().forceDisableOnnxModelOptimization();
@@ -57,6 +60,7 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
         if (batchingConfig != null) {
             opts = opts.withBatchingMaxSize(batchingConfig.maxSize());
             opts = opts.withBatchingMaxDelay(batchingConfig.maxDelay());
+            opts = opts.withPaddingBuckets(batchingConfig.paddingBuckets());
         }
 
         var concurrencyElement = getChild(xml, "concurrency");
@@ -77,11 +81,29 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
                 .map(value -> state.getFileRegistry().addFile(value))
                 .map(opts::withModelConfigOverride)
                 .orElse(opts);
-        
+
         onnxModelOptions = opts;
+
+    }
+
+    /**
+     * Reads the pooling-strategy element as one of the values the embedder's config supports.
+     * The schema allows the union of all embedders' values, so unsupported ones are rejected here.
+     */
+    protected static <E extends Enum<E>> Optional<E> parsePoolingStrategy(Element xml, Class<E> supported) {
+        return getChildValue(xml, "pooling-strategy").map(value -> {
+            try {
+                return Enum.valueOf(supported, value);
+            } catch (IllegalArgumentException e) {
+                var supportedNames = Arrays.stream(supported.getEnumConstants()).map(Enum::name).toList();
+                throw new IllegalArgumentException("Unsupported pooling-strategy '" + value + "' for " +
+                                                   xml.getAttribute("type") + ", supported values are " + supportedNames);
+            }
+        });
     }
 
     @Override
+    @SuppressWarnings("removal") // Retain deprecated batching max delay in generated config for compatibility.
     public void getConfig(OnnxEvaluatorConfig.Builder builder) {
         onnxModelOptions
                 .executionMode()
@@ -92,6 +114,7 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
         onnxModelOptions.gpuDevice().ifPresent(value -> builder.gpuDevice(value.deviceNumber()));
         onnxModelOptions.batchingMaxSize().ifPresent(builder.batching::maxSize);
         onnxModelOptions.batchingMaxDelay().ifPresent(delay -> builder.batching.maxDelayMillis(delay.toMillis()));
+        builder.batching.paddingBuckets(onnxModelOptions.paddingBuckets());
         onnxModelOptions
                 .concurrencyFactorType()
                 .ifPresent(value ->

@@ -18,6 +18,13 @@ public class IndexFieldNames extends Processor {
 
     private static final String FIELD_NAME_REGEXP = "[a-zA-Z]\\w*";
 
+    /**
+     * Names beginning with this are reserved for names given a meaning by the query syntax, such as "_",
+     * the name of the value of an element itself in a sameElement query. Top level fields cannot begin with
+     * it by {@link #FIELD_NAME_REGEXP}, which requires a name to begin with a letter.
+     */
+    private static final String RESERVED_NAME_PREFIX = "_";
+
     public IndexFieldNames(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
@@ -30,7 +37,24 @@ public class IndexFieldNames extends Processor {
             if ( ! field.getName().matches(FIELD_NAME_REGEXP) && !field.isInternalField()) {
                 fail(schema, field, " Not a legal field name. Legal expression: " + FIELD_NAME_REGEXP);
             }
+            validateStructFieldNames(field);
         }
+    }
+
+    /** Validates the names of the struct fields of the given field, recursively. */
+    private void validateStructFieldNames(SDField field) {
+        for (SDField structField : field.getStructFields()) {
+            if (leafNameOf(structField).startsWith(RESERVED_NAME_PREFIX) && ! structField.isInternalField()) {
+                fail(schema, structField, " Not a legal field name: starting with '" + RESERVED_NAME_PREFIX + "' is reserved.");
+            }
+            validateStructFieldNames(structField);
+        }
+    }
+
+    /** Returns the name of the given struct field within its struct, as struct fields are named by their path. */
+    private static String leafNameOf(SDField structField) {
+        String name = structField.getName();
+        return name.substring(name.lastIndexOf('.') + 1);
     }
 
 }

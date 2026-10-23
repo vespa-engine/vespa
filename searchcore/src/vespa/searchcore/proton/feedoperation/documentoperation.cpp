@@ -2,9 +2,8 @@
 
 #include "documentoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
-
-#include <cassert>
 
 using document::BucketId;
 using document::DocumentId;
@@ -46,11 +45,11 @@ void DocumentOperation::assertValidBucketId(const document::DocumentId& docId) c
 }
 
 void DocumentOperation::assertValidBucketId(const document::GlobalId& gid) const {
-    assert(_bucketId.valid());
+    CHECK(_bucketId.valid());
     uint8_t  bucketUsedBits = _bucketId.getUsedBits();
     BucketId verId(gid.convertToBucketId());
     verId.setUsedBits(bucketUsedBits);
-    assert(_bucketId.getRawId() == verId.getRawId() || _bucketId.getRawId() == verId.getId());
+    CHECK(_bucketId.getRawId() == verId.getRawId() || _bucketId.getRawId() == verId.getId());
 }
 
 std::string DocumentOperation::docArgsToString() const {

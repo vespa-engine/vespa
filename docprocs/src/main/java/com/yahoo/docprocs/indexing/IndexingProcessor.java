@@ -41,6 +41,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
+ * Document processor applying indexing scripts to incoming {@link DocumentPut} and
+ * {@link DocumentUpdate} operations.
+ *
  * @author Simon Thoresen Hult
  */
 @Provides({ IndexingProcessor.PROVIDED_NAME })

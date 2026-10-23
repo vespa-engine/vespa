@@ -18,6 +18,7 @@ import java.util.Optional;
 public class Schema {
 
     private final String name;
+    private final Optional<String> explanation;
     private final Map<String, Field> fields;
     private final Map<String, FieldSet> fieldSets;
     private final Map<String, RankProfile> rankProfiles;
@@ -28,6 +29,7 @@ public class Schema {
 
     private Schema(Builder builder) {
         this.name = builder.name;
+        this.explanation = Optional.ofNullable(builder.explanation);
         this.fields = Collections.unmodifiableMap(builder.fields);
         this.fieldSets = Collections.unmodifiableMap(builder.fieldSets);
         this.rankProfiles = Collections.unmodifiableMap(builder.rankProfiles);
@@ -49,18 +51,24 @@ public class Schema {
     public Map<String, RankProfile> rankProfiles() { return rankProfiles; }
     public Map<String, DocumentSummary> documentSummaries() { return documentSummaries; }
 
+    /** Returns the free text explanation of the content and usage of this schema, if any. */
+    public Optional<String> explanation() { return explanation; }
+
     /**
      * Looks up a field or field set by the given name or alias in this schema.
      *
      * @param fieldName the name or alias of the field or field set. If this is empty, the name "default" is looked up
-     * @return information about the field or field set with the given name, or empty if no item with this name exists
+     * @return information about the field or field set with the given name, or empty if no item with this name exists,
+     *         or it is a field set containing no fields known by this schema
      */
     public Optional<FieldInfo> fieldInfo(String fieldName) {
         if (fieldName.isEmpty())
             fieldName = "default";
         Field field = fieldsByAliases.get(fieldName);
         if (field != null) return Optional.of(field);
-        return Optional.ofNullable(fieldSets.get(fieldName));
+        FieldSet fieldSet = fieldSets.get(fieldName);
+        if (fieldSet == null || fieldSet.representativeField().isEmpty()) return Optional.empty();
+        return Optional.of(fieldSet);
     }
 
     @Override
@@ -68,6 +76,7 @@ public class Schema {
         if (o == this) return true;
         if ( ! (o instanceof Schema other)) return false;
         if ( ! other.name.equals(this.name)) return false;
+        if ( ! other.explanation.equals(this.explanation)) return false;
         if ( ! other.fields.equals(this.fields)) return false;
         if ( ! other.fieldSets.equals(this.fieldSets)) return false;
         if ( ! other.rankProfiles.equals(this.rankProfiles)) return false;
@@ -77,7 +86,7 @@ public class Schema {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, rankProfiles, documentSummaries);
+        return Objects.hash(name, explanation, rankProfiles, documentSummaries);
     }
 
     @Override
@@ -88,6 +97,7 @@ public class Schema {
     public static class Builder {
 
         private final String name;
+        private String explanation = null;
         private final Map<String, Field> fields = new LinkedHashMap<>();
         private final Map<String, FieldSet> fieldSets = new LinkedHashMap<>();
         private final Map<String, RankProfile> rankProfiles = new LinkedHashMap<>();
@@ -95,6 +105,12 @@ public class Schema {
 
         public Builder(String name) {
             this.name = Objects.requireNonNull(name);
+        }
+
+        /** Sets a free text explanation of the content and usage of this schema. */
+        public Builder setExplanation(String explanation) {
+            this.explanation = Objects.requireNonNull(explanation);
+            return this;
         }
 
         public Builder add(Field field) {

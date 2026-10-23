@@ -113,7 +113,9 @@ public abstract class IndexedTensor implements Tensor {
     public double get(TensorAddress address) {
         // optimize for fast lookup within bounds:
         try {
-            return get(toValueIndex(address, dimensionSizes, type));
+            long index = toValueIndex(address, dimensionSizes, type);
+            if (index < 0) return 0.0; // Non-numeric labels are represented as negative numbers
+            return get(index);
         }
         catch (IllegalArgumentException e) {
             return 0.0;

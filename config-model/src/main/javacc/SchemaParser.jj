@@ -34,6 +34,7 @@ import com.yahoo.schema.document.MatchAlgorithm;
 import com.yahoo.schema.document.HnswIndexParams;
 import com.yahoo.schema.document.Sorting;
 import com.yahoo.schema.document.Stemming;
+import com.yahoo.schema.document.TokensMode;
 import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.fieldoperation.IndexingOperation;
 import com.yahoo.search.schema.RankProfile.InputType;
@@ -275,6 +276,7 @@ TOKEN :
 | < PAGED: "paged" >
 | < FAST_RANK: "fast-rank" >
 | < FAST_SEARCH: "fast-search" >
+| < FAST_SEARCH_MAP_FIELD: "fast-search-map-field" >
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
@@ -316,6 +318,8 @@ TOKEN :
 | < DISTANCE_METRIC: "distance-metric" >
 | < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
 | < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
+| < QUANTIZATION: "quantization" >
+| < BITS: "bits" >
 | < MATCHFEATURES_SL: "match-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < MATCHFEATURES_ML: "match-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < MATCHFEATURES_ML_INHERITS: "match-features inherits " (<IDENTIFIER_WITH_DASH> ("," (" ")* <IDENTIFIER_WITH_DASH>)* ) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
@@ -329,6 +333,8 @@ TOKEN :
 | < SORTFEATURES_ML: "sort-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
 | < EXPRESSION_ML: "expression" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
+| < EXPLANATION_SL: "explanation" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* >
+| < EXPLANATION_ML: "explanation" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" >
@@ -435,6 +441,7 @@ ParsedSchema rootSchema() :
 void rootSchemaItem(ParsedSchema schema) : { }
 {
     ( document(schema)
+      | explanation(schema)
       | documentId(schema)
       | rawAsBase64(schema)
       | searchStemming(schema)
@@ -877,6 +884,7 @@ void fieldBody(ParsedField field) : { }
       attribute(field) |
       bolding(field) |
       dictionary(field) |
+      explanation(field) |
       fieldSorting(field) |
       fieldStemming(field) |
       id(field) |
@@ -893,7 +901,7 @@ void fieldBody(ParsedField field) : { }
       summaryTo(field) |
       weight(field) |
       weightedset(field.getType()) |
-      map(field) )
+      fastSearchMap(field) )
 }
 
 /**
@@ -905,6 +913,7 @@ void fieldBody(ParsedField field) : { }
 void structFieldBody(ParsedField field) : { }
 {
     ( summaryInField(field) |
+      explanation(field) |
       indexing(field) |
       attribute(field) |
       matchSettings(field.matchSettings()) |
@@ -943,28 +952,70 @@ void indexingOperation(ParsedField field, boolean multiLine) : { }
  */
 void linguistics(ParsedField field) :
 {
-    String indexProfile = null;
-    String searchProfile = null;
+    ParsedLinguistics common = new ParsedLinguistics(field.name(), "linguistics");
+    ParsedLinguistics indexed = new ParsedLinguistics(field.name(), "linguistics index");
+    ParsedLinguistics searched = new ParsedLinguistics(field.name(), "linguistics search");
+    ParsedLinguistics profileBlock = new ParsedLinguistics(field.name(), "linguistics profile");
+    String str;
 }
 {
-    <LINGUISTICS> lbrace() <PROFILE> (
-      ( <COLON> indexProfile = identifier() (<NL>)* )
-      |
-      ( lbrace()
-          (
-              ( <INDEX>  <COLON> indexProfile  = identifier() (<NL>)* ) |
-              ( <SEARCH> <COLON> searchProfile = identifier() (<NL>)* )
-          )+
-        <RBRACE> (<NL>)*
+    <LINGUISTICS> lbrace()
+    (
+      ( <PROFILE>
+        (
+          ( <COLON> str = identifier() { common.setProfile(str); } (<NL>)* )
+          |
+          // Alternative form: profile { index: ... search: ... }
+          ( lbrace() { profileBlock.openBlock(); }
+              (
+                  ( <INDEX>  <COLON> str = identifier() { indexed.setProfile(str); }  (<NL>)* ) |
+                  ( <SEARCH> <COLON> str = identifier() { searched.setProfile(str); } (<NL>)* )
+              )+
+            <RBRACE> (<NL>)*
+          )
+        )
       )
-    )
+      |
+      ( <TOKENS> <COLON> str = identifierWithDash() { common.setTokens(TokensMode.get(str)); } (<NL>)* )
+      |
+      ( <INDEX>  lbrace() { indexed.openBlock(); }  ( linguisticsSettings(indexed)  )+ <RBRACE> (<NL>)* )
+      |
+      ( <SEARCH> lbrace() { searched.openBlock(); } ( linguisticsSettings(searched) )+ <RBRACE> (<NL>)* )
+    )+
     <RBRACE>
     {
-      if (searchProfile == null)
-          searchProfile = indexProfile;
-      field.setSearchLinguisticsProfile(searchProfile);
-      field.setIndexLinguisticsProfile(indexProfile);
+      if (profileBlock.isOpened()) {
+          // The legacy profile { index: ... search: ... } form is a way of saying the same thing,
+          // so it cannot be combined with any other way of setting a profile
+          common.verifyNoProfile("cannot set both a profile and a profile block");
+          // In this form the search profile defaults to the index profile
+          if (searched.profile() == null && indexed.profile() != null)
+              searched.setProfile(indexed.profile());
+      }
+      indexed.mergeDefaultsFrom(common);
+      searched.mergeDefaultsFrom(common);
+      // Only set what this block actually says, so a second linguistics block on the same
+      // field does not silently clear what the first one set
+      if (indexed.profile() != null)  field.setIndexLinguisticsProfile(indexed.profile());
+      if (searched.profile() != null) field.setSearchLinguisticsProfile(searched.profile());
+      if (indexed.tokens() != null)   field.setIndexLinguisticsTokens(indexed.tokens());
+      if (searched.tokens() != null)  field.setSearchLinguisticsTokens(searched.tokens());
     }
+}
+
+/**
+ * The settings which can be given for one side (indexing or searching) of a linguistics block.
+ */
+void linguisticsSettings(ParsedLinguistics settings) :
+{
+    String str;
+}
+{
+    (
+      ( <PROFILE> <COLON> str = identifier()         { settings.setProfile(str); } )
+      |
+      ( <TOKENS>  <COLON> str = identifierWithDash() { settings.setTokens(TokensMode.get(str)); } )
+    ) (<NL>)*
 }
 
 /**
@@ -1023,24 +1074,50 @@ void weightedsetBody(ParsedType type) : { }
 }
 
 /**
- * This rule consumes a map statement of a field element.
+ * This rule consumes a fast-search-map-field statement of a field element, which names the lookup
+ * field of a map, or of an array of struct used as a map, with the key and value fields given in a block.
+ * A field may have several, with different lookup names.
  *
  * @param field The field to modify.
  */
-void map(ParsedField field) : { }
+void fastSearchMap(ParsedField field) :
 {
-    <MAP> ( (<COLON> mapBody(field))
-                | (lbrace() (mapBody(field) (<NL>)*)* <RBRACE>) )
+    String name;
+    ParsedField.ParsedFastMapSearch fastMapSearch;
+}
+{
+    <FAST_SEARCH_MAP_FIELD> name = identifier()
+    {
+        try {
+            fastMapSearch = field.addFastMapSearch(name);
+        } catch (IllegalArgumentException e) {
+            throw new ParseException(e.getMessage());
+        }
+    }
+    [ LOOKAHEAD((<NL>)* <LBRACE>) lbrace() (fastSearchMapBody(fastMapSearch) (<NL>)*)* <RBRACE> ]
 }
 
 /**
- * This rule consumes one body item of a map block.
+ * This rule consumes one body item of a fast-search-map-field block.
  *
- * @param field The field to modify.
+ * @param fastMapSearch The fast-search-map-field to modify.
  */
-void mapBody(ParsedField field) : { }
+void fastSearchMapBody(ParsedField.ParsedFastMapSearch fastMapSearch) :
 {
-    ( <FAST_SEARCH> { field.setFastMapSearch(true); } )
+    String name;
+    String structFieldName;
+}
+{
+    name = identifier() <COLON> structFieldName = identifier()
+    {
+        try {
+            if (name.equals("key")) fastMapSearch.setKeyField(structFieldName);
+            else if (name.equals("value")) fastMapSearch.setValueField(structFieldName);
+            else throw new ParseException("Expected 'key' or 'value' in 'fast-search-map-field', but got '" + name + "'.");
+        } catch (IllegalArgumentException e) {
+            throw new ParseException(e.getMessage());
+        }
+    }
 }
 
 /**
@@ -1126,6 +1203,21 @@ void sortingSetting(ParsedSorting sorting) :
     )
 }
 
+void attributeQuantization(ParsedAttribute attr) :
+{
+    int bits;
+}
+{
+    <QUANTIZATION> ( lbrace()
+                     <BITS> <COLON> bits = integer()
+                     {
+                         attr.setQuantization(ParsedQuantization.ofBits(bits));
+                     }
+                     (<NL>)*
+                     <RBRACE>
+                   )
+}
+
 /**
  * This rule consumes a single attribute setting statement of an attribute element.
  *
@@ -1149,6 +1241,7 @@ void attributeSetting(ParsedAttribute attribute) :
           attribute.addAlias(aliasedName, alias);
       }
       | <DISTANCE_METRIC> <COLON> str = identifierWithDash() { attribute.setDistanceMetric(str); }
+      | attributeQuantization(attribute)
     )
 }
 
@@ -1172,7 +1265,7 @@ void summaryInDocument(ParsedDocumentSummary docsum) :
 	    psf.setHasExplicitType();
 	}
     }
-    (summaryItem(psf) (<NL>)*)* <RBRACE>
+    (summaryInDocumentItem(psf) (<NL>)*)* <RBRACE>
     {
         var old = docsum.addField(psf);
         if (old != null) {
@@ -1252,6 +1345,20 @@ void summaryItem(ParsedSummaryField field) : { }
 }
 
 /**
+ * This rule consumes an item of a summary field block inside a document-summary.
+ * These are the items allowed in any summary field block, plus struct-field selection,
+ * which is only allowed here.
+ *
+ * @param field The field to modify.
+ */
+void summaryInDocumentItem(ParsedSummaryField field) : { }
+{
+    ( summaryItem(field)
+      | summaryStructFieldSelect(field)
+    )
+}
+
+/**
  * This rule consumes a transform statement for a summary field element.
  *
  * @param field            The field to modify.
@@ -1285,6 +1392,24 @@ void summaryElementsBy(ParsedSummaryField field) :
         }
         field.setSelectElementsBySummaryFeature(featureList.get(0).toString());
     }
+}
+
+/**
+ * This rule consumes a struct-field selection statement for a summary field,
+ * used to select a subset of the sub-fields of a struct (or array/map of
+ * struct) to include in the summary. Several sub-fields may be listed,
+ * separated by commas, and the statement may be repeated. Only allowed for a
+ * summary field inside a document-summary.
+ *
+ * @param field The summary field to modify.
+ */
+void summaryStructFieldSelect(ParsedSummaryField field) :
+{
+    String str;
+}
+{
+    <STRUCT_FIELD> <COLON> str = identifier() { field.addStructFieldSelect(str); }
+    (             <COMMA> str = identifier() { field.addStructFieldSelect(str); } )*
 }
 
 /**
@@ -1863,7 +1988,8 @@ void rankProfile(ParsedSchema schema, ParsedRankProfile outer) :
  */
 void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
 {
-    ( fieldRankType(profile)
+    ( explanation(profile)
+      | fieldRankType(profile)
       | fieldWeight(profile)
       | fieldRankFilter(profile)
       | firstPhase(profile)
@@ -2954,6 +3080,19 @@ String expression() :
     { return exp.trim(); }
 }
 
+/**
+ * Consumes an explanation, either on a single line after a colon or as a block:
+ * Free text describing the content and usage of the enclosing element.
+ *
+ * @param block the block to add the explanation to
+ */
+void explanation(ParsedBlock block) : { }
+{
+    ( <EXPLANATION_SL> { block.setExplanation(Utils.explanationText(token.image.substring(token.image.indexOf(":") + 1))); } |
+      <EXPLANATION_ML> { block.setExplanation(Utils.explanationText(token.image.substring(token.image.indexOf("{") + 1,
+                                                                                         token.image.lastIndexOf("}")))); } )
+}
+
 String identifierWithDash() :
 {
     String identifier;
@@ -2983,6 +3122,7 @@ String identifierWithDash() :
     | <FAST_ACCESS>
     | <FAST_RANK>
     | <FAST_SEARCH>
+    | <FAST_SEARCH_MAP_FIELD>
     | <FILTER_FIRST_EXPLORATION>
     | <FILTER_FIRST_THRESHOLD>
     | <FILTER_THRESHOLD>
@@ -3056,6 +3196,7 @@ String identifier() : { }
       | <AS>
       | <ASCENDING>
       | <ATTRIBUTE>
+      | <BITS>
       | <BOLDING>
       | <BTREE>
       | <CASED>
@@ -3123,6 +3264,7 @@ String identifier() : { }
       | <PRIMARY>
       | <PROFILE>
       | <PROPERTIES>
+      | <QUANTIZATION>
       | <QUATERNARY>
       | <QUERY>
       | <RANK>

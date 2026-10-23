@@ -5,6 +5,7 @@
 #include "bucketownership.h"
 #include "ideal_service_layer_nodes_bundle.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
@@ -63,11 +64,11 @@ public:
     DistributorBucketSpace& operator=(DistributorBucketSpace&&) = delete;
 
     BucketDatabase& getBucketDatabase() noexcept {
-        assert(_bucketDatabase);
+        CHECK(_bucketDatabase);
         return *_bucketDatabase;
     }
     const BucketDatabase& getBucketDatabase() const noexcept {
-        assert(_bucketDatabase);
+        CHECK(_bucketDatabase);
         return *_bucketDatabase;
     }
 

@@ -4,9 +4,10 @@
 
 #include "common.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <optional>
 
@@ -76,7 +77,7 @@ struct SimpleIndexConfig {
 };
 
 template <typename Posting, typename Key, typename DocId> class PostingVectorIterator {
-    using PostingVector = vespalib::RcuVectorBase<Posting>;
+    using PostingVector = vespalib::TypeStableVectorBase<Posting>;
 
     const Posting* const _vector;
     const size_t         _size;
@@ -92,7 +93,7 @@ public:
 
     explicit PostingVectorIterator(const PostingVector& vector, size_t size)
         : _vector(&vector.acquire_elem_ref(0)), _size(size) {
-        assert(_size <= vector.get_size()); // Data race: not writer
+        CHECK(_size <= vector.get_size()); // Data race: not writer
         linearSeek(1);
     }
 
@@ -131,7 +132,7 @@ public:
     using BTreeStore = vespalib::btree::BTreeStore<DocId, Posting, vespalib::btree::NoAggregated, std::less<DocId>,
                                                    vespalib::btree::BTreeDefaultTraits>;
     using BTreeIterator = typename BTreeStore::ConstIterator;
-    using PostingVector = vespalib::RcuVectorBase<Posting>;
+    using PostingVector = vespalib::TypeStableVectorBase<Posting>;
     using VectorStore = vespalib::btree::BTree<Key, std::shared_ptr<PostingVector>, vespalib::btree::NoAggregated>;
     using VectorIterator = PostingVectorIterator<Posting, Key, DocId>;
 

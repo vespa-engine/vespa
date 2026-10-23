@@ -6,12 +6,13 @@
 #include "round_up_to_page_size.h"
 #include "stringfmt.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include <cassert>
 #include <filesystem>
 
 using vespalib::make_string_short::fmt;
@@ -39,21 +40,21 @@ MmapFileAllocator::MmapFileAllocator(std::string dir_name, uint32_t small_limit,
 }
 
 MmapFileAllocator::~MmapFileAllocator() {
-    assert(_small_allocations.empty());
-    assert(_allocations.size() == _premmapped_areas.size());
+    CHECK(_small_allocations.empty());
+    CHECK(_allocations.size() == _premmapped_areas.size());
     for (auto& area : _premmapped_areas) {
         auto offset = area.first;
         auto ptr = area.second;
         auto itr = _allocations.find(ptr);
-        assert(itr != _allocations.end());
-        assert(itr->first == ptr);
-        assert(itr->second.offset == offset);
+        CHECK(itr != _allocations.end());
+        CHECK(itr->first == ptr);
+        CHECK(itr->second.offset == offset);
         auto size = itr->second.size;
         _small_freelist.remove_premmapped_area(offset, size);
         free_large({ptr, size});
     }
     _premmapped_areas.clear();
-    assert(_allocations.empty());
+    CHECK(_allocations.empty());
     _file.close();
     _file.unlink();
     fs::remove_all(fs::path(_dir_name));
@@ -94,15 +95,15 @@ PtrAndSize MmapFileAllocator::alloc_large(size_t sz) const {
                               getLastErrorString().c_str()),
                           IoException::getErrorType(errno), VESPA_STRLOC);
     }
-    assert(buf != nullptr);
+    CHECK(buf != nullptr);
     // Register allocation
     auto ins_res = _allocations.insert(std::make_pair(buf, SizeAndOffset(sz, offset)));
-    assert(ins_res.second);
+    CHECK(ins_res.second);
     int retval = madvise(buf, sz, MADV_RANDOM);
-    assert(retval == 0);
+    CHECK(retval == 0);
 #ifdef __linux__
     retval = madvise(buf, sz, MADV_DONTDUMP);
-    assert(retval == 0);
+    CHECK(retval == 0);
 #endif
     return {buf, sz};
 }
@@ -110,14 +111,14 @@ PtrAndSize MmapFileAllocator::alloc_large(size_t sz) const {
 void* MmapFileAllocator::map_premapped_offset_to_ptr(uint64_t offset, size_t size) const {
     auto itr = _premmapped_areas.lower_bound(offset);
     if (itr == _premmapped_areas.end() || itr->first > offset) {
-        assert(itr != _premmapped_areas.begin());
+        CHECK(itr != _premmapped_areas.begin());
         --itr;
     }
     auto aitr = _allocations.find(itr->second);
-    assert(aitr != _allocations.end());
-    assert(aitr->first == itr->second);
-    assert(offset >= aitr->second.offset);
-    assert(offset + size <= aitr->second.offset + aitr->second.size);
+    CHECK(aitr != _allocations.end());
+    CHECK(aitr->first == itr->second);
+    CHECK(offset >= aitr->second.offset);
+    CHECK(offset + size <= aitr->second.offset + aitr->second.size);
     return static_cast<char*>(itr->second) + (offset - aitr->second.offset);
 }
 
@@ -125,29 +126,29 @@ PtrAndSize MmapFileAllocator::alloc_small(size_t sz) const {
     uint64_t offset = _small_freelist.alloc(sz);
     if (offset == FileAreaFreeList::bad_offset) {
         auto new_premmap = alloc_large(_premmap_size);
-        assert(new_premmap.size() >= _premmap_size);
+        CHECK(new_premmap.size() >= _premmap_size);
         auto itr = _allocations.find(new_premmap.get());
-        assert(itr != _allocations.end());
-        assert(itr->first == new_premmap.get());
+        CHECK(itr != _allocations.end());
+        CHECK(itr->first == new_premmap.get());
         _small_freelist.add_premmapped_area(itr->second.offset, itr->second.size);
         auto ins_res = _premmapped_areas.emplace(itr->second.offset, new_premmap.get());
-        assert(ins_res.second);
+        CHECK(ins_res.second);
         offset = _small_freelist.alloc(sz);
-        assert(offset != FileAreaFreeList::bad_offset);
+        CHECK(offset != FileAreaFreeList::bad_offset);
     }
     auto ptr = map_premapped_offset_to_ptr(offset, sz);
     // Register allocation
     auto ins_res = _small_allocations.insert(std::make_pair(ptr, SizeAndOffset(sz, offset)));
-    assert(ins_res.second);
+    CHECK(ins_res.second);
     return {ptr, sz};
 }
 
 void MmapFileAllocator::free(PtrAndSize alloc) const noexcept {
     if (alloc.size() == 0) {
-        assert(alloc.get() == nullptr);
+        CHECK(alloc.get() == nullptr);
         return; // empty allocation
     }
-    assert(alloc.get() != nullptr);
+    CHECK(alloc.get() != nullptr);
     if (alloc.size() >= _small_limit) {
         free_large(alloc);
     } else {
@@ -158,9 +159,9 @@ void MmapFileAllocator::free(PtrAndSize alloc) const noexcept {
 uint64_t MmapFileAllocator::remove_allocation(PtrAndSize alloc, Allocations& allocations) const noexcept {
     // Check that matching allocation is registered
     auto itr = allocations.find(alloc.get());
-    assert(itr != allocations.end());
-    assert(itr->first == alloc.get());
-    assert(itr->second.size == alloc.size());
+    CHECK(itr != allocations.end());
+    CHECK(itr->first == alloc.get());
+    CHECK(itr->second.size == alloc.size());
     auto offset = itr->second.offset;
     allocations.erase(itr);
     return offset;
@@ -169,9 +170,9 @@ uint64_t MmapFileAllocator::remove_allocation(PtrAndSize alloc, Allocations& all
 void MmapFileAllocator::free_large(PtrAndSize alloc) const noexcept {
     auto offset = remove_allocation(alloc, _allocations);
     int  retval = madvise(alloc.get(), alloc.size(), MADV_DONTNEED);
-    assert(retval == 0);
+    CHECK(retval == 0);
     retval = munmap(alloc.get(), alloc.size());
-    assert(retval == 0);
+    CHECK(retval == 0);
     _freelist.free(offset, alloc.size());
 }
 

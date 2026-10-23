@@ -49,6 +49,6 @@ public class RegexPredicate extends FilterExpression {
     public String getPattern() { return pattern; }
     public GroupingExpression getExpression() { return expression; }
 
-    @Override public String toString() { return Text.format("regex(\"%s\", %s)", pattern, expression); }
+    @Override public String toString() { return Text.format("regex(%s, %s)", GroupingExpression.asImage(pattern), expression); }
     @Override public FilterExpression copy() { return new RegexPredicate(pattern, expression.copy()); }
 }

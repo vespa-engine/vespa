@@ -5,6 +5,7 @@
 #include "activecopy.h"
 #include "node_supported_features_repo.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
@@ -368,7 +369,7 @@ StateChecker::Result JoinBucketsStateChecker::check(const Context& c) const {
     }
 
     document::Bucket joinedBucket(computeJoinBucket(c));
-    assert(joinedBucket.getBucketId().getUsedBits() < c.getBucketId().getUsedBits());
+    CHECK(joinedBucket.getBucketId().getUsedBits() < c.getBucketId().getUsedBits());
 
     std::vector<document::BucketId> sourceBuckets;
     if (c.getSiblingEntry().valid()) {
@@ -395,7 +396,7 @@ bool SplitInconsistentStateChecker::isLeastSplitBucket(const document::BucketId&
                                                        const std::vector<BucketDatabase::Entry>& entries) {
     // Figure out if any other buckets are less split than the current one.
     for (const auto& e : entries) {
-        assert(e.valid());
+        CHECK(e.valid());
 
         if (e.getBucketId().getUsedBits() < bucket.getUsedBits()) {
             return false;
@@ -694,7 +695,7 @@ StateChecker::Result SynchronizeAndMoveStateChecker::check(const Context& c) con
         return Result::noMaintenanceNeeded();
     }
 
-    assert(c.entry()->getNodeCount() > 0);
+    CHECK(c.entry()->getNodeCount() > 0);
 
     MergeNodes result(c.entry());
     result += checkForNodesMissingFromIdealState(c);
@@ -767,7 +768,7 @@ uint32_t DeleteExtraCopiesStateChecker::numberOfIdealCopiesPresent(const Context
 void DeleteExtraCopiesStateChecker::removeRedundantEmptyOrConsistentCopies(const Context&         c,
                                                                            std::vector<uint16_t>& removedCopies,
                                                                            vespalib::asciistream& reasons) {
-    assert(removedCopies.empty());
+    CHECK(removedCopies.empty());
     const bool     copiesAreConsistent = c.entry()->validAndConsistent();
     const uint32_t cnt = c.entry()->getNodeCount();
     // Always keep all ideal copies
@@ -838,11 +839,13 @@ bool shouldSkipActivationDueToMaintenanceOrGatherOperationNodes(const ActiveList
                                                                 std::vector<uint16_t>&       operationNodes) {
     for (uint32_t i = 0; i < activeNodes.size(); ++i) {
         const ActiveCopy& active = activeNodes[i];
-        if (!active.entryIndex().valid())
+        if (!active.entryIndex().valid()) {
             continue;
+        }
         const BucketCopy& cp(c.entry()->getNodeRef(active.entryIndex()));
-        if (cp.active())
+        if (cp.active()) {
             continue;
+        }
 
         const auto node_index = active.nodeIndex();
         if (!cp.ready()) {
@@ -853,8 +856,9 @@ bool shouldSkipActivationDueToMaintenanceOrGatherOperationNodes(const ActiveList
                 // If copy is not ready, we don't want to activate it if a node
                 // is set in maintenance. Doing so would imply that we want proton
                 // to start background indexing.
-                if (containsMaintenanceNode(c.idealState(), c))
+                if (containsMaintenanceNode(c.idealState(), c)) {
                     return true;
+                }
             } // else: activation does not imply indexing, so we can safely do it at any time.
         }
         operationNodes.push_back(node_index);

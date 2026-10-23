@@ -28,6 +28,9 @@ defaults:
     # Ref: https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
     shell: bash
 
+permissions:
+  contents: read
+
 jobs:
   prepare:
     runs-on: ubuntu-latest
@@ -37,8 +40,9 @@ jobs:
       build-version: ${{ steps.meta.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           fetch-depth: 0 # Fetch all history for git operations.
 
       - name: Define Build Version
@@ -108,9 +112,13 @@ jobs:
       HAS_CHANGES: ${{ needs.prepare.outputs.changes-detected }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: client/go/go.mod
 
       - name: build
         run: |
@@ -120,7 +128,7 @@ jobs:
         run: |
           make test
 
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: vespa-cli
           path: client/go/dist
@@ -148,13 +156,14 @@ jobs:
 
     steps:
       - name: Checkout Repository at tagged version
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           fetch-depth: 0
           # Prefix the version with "v" to checkout the tag.
           ref: "v${{ needs.prepare.outputs.build-version }}"
 
-      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: vespa-cli
           path: client/go/dist

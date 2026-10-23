@@ -8,6 +8,8 @@
 #include "resultconfig.h"
 #include "slime_filler_filter.h"
 
+#include <vespa/check_require.h>
+#include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/boolfieldvalue.h>
@@ -29,8 +31,6 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
-#include <cassert>
 
 using document::AnnotationReferenceFieldValue;
 using document::ArrayFieldValue;
@@ -70,20 +70,24 @@ private:
     Cursor&                     _array;
     Symbol                      _key_sym;
     Symbol                      _val_sym;
+    bool                        _render_key;
     SlimeFillerFilter::Iterator _filter;
 
 public:
-    MapFieldValueInserter(Inserter& parent_inserter, SlimeFillerFilter::Iterator filter)
+    MapFieldValueInserter(Inserter& parent_inserter, bool render_key, SlimeFillerFilter::Iterator filter)
         : _array(parent_inserter.insertArray()),
           _key_sym(_array.resolve("key")),
           _val_sym(_array.resolve("value")),
+          _render_key(render_key),
           _filter(filter) {}
     void insert_entry(const FieldValue& key, const FieldValue& value) {
-        Cursor&              c = _array.addObject();
-        ObjectSymbolInserter ki(c, _key_sym);
-        SlimeFiller          key_conv(ki);
+        Cursor& c = _array.addObject();
+        if (_render_key) {
+            ObjectSymbolInserter ki(c, _key_sym);
+            SlimeFiller          key_conv(ki);
 
-        key.accept(key_conv);
+            key.accept(key_conv);
+        }
         if (_filter.should_render()) {
             ObjectSymbolInserter vi(c, _val_sym);
             SlimeFiller          val_conv(vi, ElementIds::select_all(), nullptr, _filter);
@@ -138,9 +142,17 @@ void SlimeFiller::visit(const MapFieldValue& v) {
     if (empty_or_empty_after_filtering(v)) {
         return;
     }
-    MapFieldValueInserter map_inserter(_inserter, _filter.check_field("value"));
+    // For a map of struct the key is the structural key of the map and always part of the output, with a
+    // struct field selection applying to the sub-fields of the value struct, "value.<name>". For a map of
+    // scalar both "key" and "value" are ordinary sub-fields which a selection may leave out. This is the
+    // same split as the one indexed search makes, cf.
+    // StructFieldsResolver::apply_struct_field_selection().
+    const auto*           map_type = v.getDataType()->cast_map();
+    bool                  value_is_struct = (map_type != nullptr) && map_type->getValueType().isStructured();
+    bool                  render_key = value_is_struct || _filter.check_field("key").should_render();
+    MapFieldValueInserter map_inserter(_inserter, render_key, _filter.check_field("value"));
     if (filter_matching_elements()) {
-        assert(v.has_no_erased_keys());
+        CHECK(v.has_no_erased_keys());
         for (uint32_t id_to_keep : _selected_elements) {
             auto entry = v[id_to_keep];
             map_inserter.insert_entry(*entry.first, *entry.second);
@@ -218,8 +230,7 @@ void SlimeFiller::visit(const PredicateFieldValue& value) {
 }
 
 void SlimeFiller::visit(const RawFieldValue& value) {
-    std::pair<const char*, size_t> buf = value.getAsRaw();
-    _inserter.insertData(Memory(buf.first, buf.second));
+    _inserter.insertData(Memory(value.getAsRaw()));
 }
 
 void SlimeFiller::visit(const StructFieldValue& value) {

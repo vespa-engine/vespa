@@ -4,6 +4,7 @@
 
 #include "weighted_type_test_utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -133,7 +134,7 @@ struct ImportedAttributeFixture {
 
     template <typename AttrVecType> std::shared_ptr<AttrVecType> target_attr_as() {
         auto ptr = std::dynamic_pointer_cast<AttrVecType>(target_attr);
-        assert(ptr.get() != nullptr);
+        CHECK(ptr.get() != nullptr);
         return ptr;
     }
 

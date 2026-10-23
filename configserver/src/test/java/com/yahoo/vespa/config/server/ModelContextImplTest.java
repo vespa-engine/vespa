@@ -16,6 +16,7 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
@@ -81,7 +82,8 @@ public class ModelContextImplTest {
                 OnnxModelCost.disabled(),
                 Optional.empty(),
                 new Version(7),
-                new Version(8));
+                new Version(8),
+                Optional.empty());
         assertTrue(context.applicationPackage() instanceof MockApplicationPackage);
         assertEquals(hostProvisioner, context.getHostProvisioner());
         assertFalse(context.previousModel().isPresent());
@@ -93,6 +95,7 @@ public class ModelContextImplTest {
         assertFalse(context.properties().hostedVespa());
         assertEquals(endpoints, context.properties().endpoints());
         assertFalse(context.properties().isFirstTimeDeployment());
+        assertEquals(AthenzDomain.from("vespa.tenant"), context.properties().tenantParentDomain());
 
         assertEquals(Optional.empty(), context.wantedDockerImageRepo());
         assertEquals(new Version(7), context.modelVespaVersion());

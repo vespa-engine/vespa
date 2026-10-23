@@ -7,6 +7,7 @@
 #include "i_document_db_reference.h"
 #include "i_document_db_reference_registry.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/referencedatatype.h>
@@ -42,14 +43,14 @@ namespace {
 std::string getTargetDocTypeName(const std::string& attrName, const DocumentType& thisDocType) {
     const DataType&          attrType = thisDocType.getField(attrName).getDataType();
     const ReferenceDataType* refType = dynamic_cast<const ReferenceDataType*>(&attrType);
-    assert(refType != nullptr);
+    CHECK(refType != nullptr);
     return refType->getTargetType().getName();
 }
 
 ReferenceAttribute::SP getReferenceAttribute(const std::string& name, const IAttributeManager& attrMgr) {
     AttributeGuard::UP guard = attrMgr.getAttribute(name);
-    assert(guard.get());
-    assert(guard->get()->getBasicType() == BasicType::REFERENCE);
+    CHECK(guard.get());
+    CHECK(guard->get()->getBasicType() == BasicType::REFERENCE);
     return std::dynamic_pointer_cast<ReferenceAttribute>(guard->getSP());
 }
 
@@ -61,7 +62,7 @@ std::vector<ReferenceAttribute::SP> getReferenceAttributes(const IAttributeManag
         AttributeVector& attr = *guard;
         if (attr.getBasicType() == BasicType::REFERENCE) {
             auto refAttr = std::dynamic_pointer_cast<ReferenceAttribute>(guard.getSP());
-            assert(refAttr);
+            CHECK(refAttr);
             result.push_back(std::move(refAttr));
         }
     }

@@ -47,22 +47,28 @@ public:
     static constexpr uint32_t enumRange = 3u;
 
     uint32_t toEnum() const {
-        if (this == &Result::Invalid)
+        if (this == &Result::Invalid) {
             return 0u;
-        if (this == &Result::False)
+        }
+        if (this == &Result::False) {
             return 1u;
-        if (this == &Result::True)
+        }
+        if (this == &Result::True) {
             return 2u;
+        }
         HDR_ABORT("should not be reached");
     }
 
     static const Result& fromEnum(uint32_t val) {
-        if (val == 0u)
+        if (val == 0u) {
             return Result::Invalid;
-        if (val == 1u)
+        }
+        if (val == 1u) {
             return Result::False;
-        if (val == 2u)
+        }
+        if (val == 2u) {
             return Result::True;
+        }
         HDR_ABORT("should not be reached");
     }
 

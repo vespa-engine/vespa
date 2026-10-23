@@ -24,8 +24,9 @@ template <typename ostream, typename NodeAllocator> class BTreePrinter {
         _levelFirst = false;
         _os << "{";
         for (uint32_t i = 0; i < n.validSlots(); ++i) {
-            if (i > 0)
+            if (i > 0) {
                 _os << ",";
+            }
             _os << n.getKey(i) << ":" << n.getData(i);
         }
         printAggregated(_os, n.getAggregated());
@@ -39,8 +40,9 @@ template <typename ostream, typename NodeAllocator> class BTreePrinter {
         _levelFirst = false;
         _os << "{";
         for (uint32_t i = 0; i < n.validSlots(); ++i) {
-            if (i > 0)
+            if (i > 0) {
                 _os << ",";
+            }
             _os << n.getKey(i);
         }
         printAggregated(_os, n.getAggregated());

@@ -73,7 +73,7 @@ LoadedBufferUP LoadUtils::loadUDAT(const AttributeVector& attr) {
                                                    std::span<const uint32_t>, Saver)
 #define INSTANTIATE_SINGLE(ValueType, Saver)                                                          \
     template void loadFromEnumeratedSingleValue(                                                      \
-        vespalib::RcuVectorBase<ValueType>&, vespalib::GenerationHolder&, ReaderBase&,                \
+        vespalib::TypeStableVectorBase<ValueType>&, vespalib::GenerationHolder&, ReaderBase&,         \
         std::span<const atomic_utils::NonAtomicValue_t<ValueType>>, std::span<const uint32_t>, Saver)
 
 #define INSTANTIATE_SINGLE_ARRAY_WSET(ValueType, Saver) \

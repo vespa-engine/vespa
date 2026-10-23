@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.SchemaLanguageServer;
 import ai.vespa.schemals.context.EventCompletionContext;
@@ -18,9 +19,11 @@ import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.common.completion.CompletionUtils;
 import ai.vespa.schemals.lsp.schema.hover.SchemaHover;
 import ai.vespa.schemals.parser.ast.NL;
+import ai.vespa.schemals.parser.ast.RBRACE;
 import ai.vespa.schemals.parser.ast.expressionElm;
 import ai.vespa.schemals.parser.ast.featureListElm;
 import ai.vespa.schemals.parser.ast.openLbrace;
+import ai.vespa.schemals.parser.ast.sortFeaturesElm;
 import ai.vespa.schemals.parser.rankingexpression.ast.feature;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.BuiltInFunctions;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.FunctionSignature;
@@ -29,6 +32,7 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.SpecificFunctio
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.EnumArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
+import ai.vespa.schemals.schemadocument.resolvers.ValidateSortFeatures;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -88,6 +92,23 @@ public class RankingExpressionCompletion implements CompletionProvider {
         Node clean = CSTUtils.getLastCleanNode(context.document.getRootNode(), context.position);
         if (clean == null) return List.of();
 
+        // Empty inline/block lists often have no ranking-expression node yet.
+        // A cursor immediately before `}` (auto-paired braces) lands on the RBRACE token;
+        // a cursor after it does too — only the latter is outside the list.
+        Node sortFeaturePosition = clean;
+        if ((clean.isASTInstance(NL.class) || cursorOnClosingBrace(clean, context.position))
+                && context.position.getCharacter() > 0) {
+            Node stepped = CSTUtils.getLastCleanNode(context.document.getRootNode(),
+                CSTUtils.subtractOneChar(context.position));
+            if (stepped != null) {
+                sortFeaturePosition = stepped;
+            }
+        }
+        if (isInsideSortFeaturesList(sortFeaturePosition, context.position)) {
+            if (context.triggerCharacter.equals('.')) return List.of();
+            return getSortFeatures(context, sortFeaturePosition);
+        }
+
         List<CompletionItem> result = new ArrayList<>();
         if (matchFunctionCompletion(context,clean)) {
 
@@ -100,6 +121,17 @@ public class RankingExpressionCompletion implements CompletionProvider {
         return result;
 	}
 
+    private static boolean cursorOnClosingBrace(Node node, Position position) {
+        return node.isASTInstance(RBRACE.class) && CSTUtils.positionInRange(node.getRange(), position);
+    }
+
+    private static boolean isInsideSortFeaturesList(Node node, Position position) {
+        if (node == null) return false;
+        if (node.isASTInstance(RBRACE.class) && !CSTUtils.positionInRange(node.getRange(), position)) {
+            return false;
+        }
+        return CSTUtils.findASTClassAncestor(node, sortFeaturesElm.class) != null;
+    }
 
     private boolean matchFunctionCompletion(EventCompletionContext context, Node clean) {
         if (context.triggerCharacter.equals('.')) return false;
@@ -152,6 +184,43 @@ public class RankingExpressionCompletion implements CompletionProvider {
             );
         }
         return ret;
+    }
+
+    /**
+     * Bare-identifier completions for {@code sort-features}. Resolve the effective
+     * function in the current rank profile, then keep only zero-argument names.
+     */
+    private List<CompletionItem> getSortFeatures(EventCompletionContext context, Node node) {
+        Symbol profile = CSTUtils.findScope(node).orElse(null);
+        while (profile != null && profile.getType() != SymbolType.RANK_PROFILE) {
+            profile = profile.getScope();
+        }
+        if (profile == null) return List.of();
+
+        List<CompletionItem> result = new ArrayList<>();
+        Set<String> added = new HashSet<>();
+
+        for (Symbol candidate : context.schemaIndex.listSymbolsInScope(profile, SymbolType.FUNCTION)) {
+            String name = candidate.getShortIdentifier();
+            if (!added.add(name)) continue;
+            if (!ValidateSortFeatures.SCHEMA_IDENTIFIER.matcher(name).matches()) continue;
+            List<Symbol> definitions = context.schemaIndex.findSymbolsInScope(profile, SymbolType.FUNCTION, name);
+            if (definitions.size() != 1) continue;
+            Symbol effective = definitions.get(0);
+            if (!context.schemaIndex.listSymbolsInScope(effective, SymbolType.PARAMETER).isEmpty()) continue;
+            result.add(CompletionUtils.constructFunction(name, "", effective.getPrettyIdentifier()));
+        }
+
+        for (var entry : BuiltInFunctions.rankExpressionBuiltInFunctions.entrySet()) {
+            String name = entry.getKey();
+            if (!ValidateSortFeatures.SCHEMA_IDENTIFIER.matcher(name).matches()) continue;
+            if (!context.schemaIndex.findSymbolsInScope(profile, SymbolType.FUNCTION, name).isEmpty()) continue;
+            boolean zeroArg = entry.getValue().getSignatures().stream()
+                .anyMatch(signature -> !signature.isHidden() && signature.getArgumentList().isEmpty());
+            if (!zeroArg) continue;
+            result.add(CompletionUtils.constructFunction(name, "", "builtin"));
+        }
+        return result;
     }
 
     List<CompletionItem> getFunctionPropertyCompletion(EventCompletionContext context, Node startOfWordNode) {

@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Fetch dependency inventory
         uses: vespa-engine/gh-actions/mend-inventory@217825ab3497a98c67134a9e8bb30f04329e82fe # v1

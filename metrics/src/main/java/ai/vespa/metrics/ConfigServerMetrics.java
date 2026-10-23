@@ -58,6 +58,9 @@ public enum ConfigServerMetrics implements VespaMetrics {
     NODES_NON_ACTIVE_FRACTION("nodes.nonActiveFraction", Unit.NODE, "The fraction of non-active nodes vs total nodes in a cluster"),
     NODES_EXCLUSIVE_SWITCH_FRACTION("nodes.exclusiveSwitchFraction", Unit.FRACTION, "The fraction of nodes in a cluster on exclusive network switches"),
     NODES_EMPTY_EXCLUSIVE("nodes.emptyExclusive", Unit.NODE, "The number of exclusive hosts that do not have any nodes allocated to them"),
+    NODES_TRUST_STORE_CA("nodes.trustStore.ca", Unit.NODE, "The number of nodes whose reported trust store contains the CA certificate with the given fingerprint, or reports no trust store"),
+    NODES_IDENTITY_CERT_ISSUER("nodes.identityCert.issuer", Unit.NODE, "The number of nodes whose reported identity certificate was issued by the given CA, or report no identity certificate"),
+    NODES_TRUST_STORE_MISSING_CA("nodes.trustStore.missingCa", Unit.SECONDS_SINCE_EPOCH, "Set per active node whose reported trust store lacks a CA certificate that other active nodes in the zone trust, or that reports no trust store. The value is when the node became active, in seconds since epoch"),
     NODES_EXPIRED_DEPROVISIONED("nodes.expired.deprovisioned", Unit.NODE, "The number of deprovisioned nodes that have expired"),
     NODES_EXPIRED_DIRTY("nodes.expired.dirty", Unit.NODE, "The number of dirty nodes that have expired"),
     NODES_EXPIRED_INACTIVE("nodes.expired.inactive", Unit.NODE, "The number of inactive nodes that have expired"),
@@ -71,6 +74,9 @@ public enum ConfigServerMetrics implements VespaMetrics {
     CLUSTER_LOAD_PEAK_CPU("cluster.load.peak.cpu", Unit.FRACTION, "The peak cpu load in the period considered of a certain cluster"),
     CLUSTER_LOAD_PEAK_MEMORY("cluster.load.peak.memory", Unit.FRACTION, "The peak memory load in the period considered of a certain cluster"),
     CLUSTER_LOAD_PEAK_DISK("cluster.load.peak.disk", Unit.FRACTION, "The peak disk load in the period considered of a certain cluster"),
+    CLUSTER_SATURATION_CPU("cluster.saturation.cpu", Unit.FRACTION, "The fraction of the max configured total cpu resources currently active in a certain cluster"),
+    CLUSTER_SATURATION_MEMORY("cluster.saturation.memory", Unit.FRACTION, "The fraction of the max configured total memory resources currently active in a certain cluster"),
+    CLUSTER_SATURATION_DISK("cluster.saturation.disk", Unit.FRACTION, "The fraction of the max configured total disk resources currently active in a certain cluster"),
     CLUSTER_BACKUP_AGE_FRACTION("cluster.backup.age", Unit.FRACTION, "Age of the most recent cluster backup as a fraction of the backup interval"),
     CLUSTER_SNAPSHOT_BUSY_SECONDS("cluster.snapshot.busySeconds", Unit.SECOND, "The maximum time a snapshot has been busy (creating or restoring) for a cluster"),
 
@@ -155,7 +161,7 @@ public enum ConfigServerMetrics implements VespaMetrics {
     THROTTLED_NODE_FAILURES("throttledNodeFailures", Unit.HOST, "Number of node failures stopped due to throttling"),
     NODE_FAIL_THROTTLING("nodeFailThrottling", Unit.BINARY, "Metric indicating when node failure throttling is active. The value 1 means active, 0 means inactive"),
     CLUSTER_AUTOSCALED("clusterAutoscaled", Unit.OPERATION, "Number of times a cluster has been rescaled by the autoscaler"),
-    AUTOSCALE_SCALING_DURATION("clusterAutoscaleDuration", Unit.SECOND, "The currently predicted duration of a rescaling of this cluster"),
+    SCALING_DURATION("clusterScalingDuration", Unit.SECOND, "The currently predicted duration of a rescaling of this cluster"),
 
     DEPLOYMENT_PREPARE_MILLIS("deployment.prepareMillis", Unit.MILLISECOND, "Duration of deployment preparations"),
     DEPLOYMENT_ACTIVATE_MILLIS("deployment.activateMillis", Unit.MILLISECOND, "Duration of deployment activations"),

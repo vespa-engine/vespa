@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config-bucketspaces.h>
 #include <vespa/config/subscription/sourcespec.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
@@ -25,6 +23,7 @@
 #include <vespa/searchcore/proton/server/feedhandler.h>
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
+#include <vespa/searchcore/proton/test/bootstrap_config_set_builder.h>
 #include <vespa/searchcore/proton/test/dummydbowner.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
 #include <vespa/searchcore/proton/test/port_numbers.h>
@@ -43,7 +42,6 @@
 #include <filesystem>
 #include <iostream>
 
-using namespace cloud::config::filedistribution;
 using namespace proton;
 using namespace vespalib::slime;
 using namespace std::chrono_literals;
@@ -51,6 +49,7 @@ using namespace std::chrono_literals;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::test::makeBucketSpace;
+using proton::test::BootstrapConfigSetBuilder;
 using search::SerialNum;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
@@ -58,8 +57,6 @@ using search::index::Schema;
 using search::transactionlog::TransLogServer;
 using searchcorespi::IFlushTarget;
 using searchcorespi::index::IndexFlushTarget;
-using vespa::config::content::core::BucketspacesConfig;
-using vespa::config::search::core::ProtonConfig;
 using vespalib::HwInfo;
 using vespalib::Slime;
 
@@ -133,15 +130,13 @@ Fixture::Fixture(bool file_config)
       _fileHeaderContext(),
       _tls(_shared_service.transport(), "tmp", tls_port, ".", _fileHeaderContext),
       _queryLimiter() {
-    auto                   documenttypesConfig = std::make_shared<DocumenttypesConfig>();
-    DocumentType           docType("typea", 0);
-    auto                   repo = std::make_shared<DocumentTypeRepo>(docType);
-    auto                   tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
-    config::DirSpec        spec(TEST_PATH("cfg"));
-    DocumentDBConfigHelper mgr(spec, "typea");
-    auto b = std::make_shared<BootstrapConfig>(1, documenttypesConfig, repo, std::make_shared<ProtonConfig>(),
-                                               std::make_shared<FiledistributorrpcConfig>(),
-                                               std::make_shared<BucketspacesConfig>(), tuneFileDocumentDB, HwInfo());
+    DocumentType docType("typea", 0);
+    auto         repo = std::make_shared<DocumentTypeRepo>(docType);
+
+    config::DirSpec           spec(TEST_PATH("cfg"));
+    DocumentDBConfigHelper    mgr(spec, "typea");
+    BootstrapConfigSetBuilder bootstrap_config_builder;
+    auto                      b = bootstrap_config_builder.build(1, repo, _hwInfo);
     mgr.forwardConfig(b);
     mgr.nextGeneration(_shared_service.transport(), 0ms);
     _db = DocumentDB::create(".", mgr.getConfig(), tls_port_spec(), _queryLimiter, DocTypeName("typea"),

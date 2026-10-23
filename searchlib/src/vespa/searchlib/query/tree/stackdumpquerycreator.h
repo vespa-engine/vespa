@@ -88,7 +88,7 @@ private:
             t = &builder.add_word_alternatives(std::move(words), std::string(view), id, weight);
         } else if (type == ParseItem::ITEM_WEAK_AND) {
             uint32_t targetNumHits = queryStack.getTargetHits();
-            builder.addWeakAnd(arity, targetNumHits, queryStack.index_as_string());
+            builder.addWeakAnd(arity, targetNumHits);
             pureTermView = queryStack.index_as_view();
         } else if (type == ParseItem::ITEM_EQUIV) {
             int32_t id = queryStack.getUniqueId();
@@ -209,7 +209,12 @@ private:
             } else if (type == ParseItem::ITEM_NUMERIC_IN) {
                 t = &builder.add_in_term(queryStack.get_terms(), MultiTerm::Type::INTEGER, view, id, weight);
             } else if (type == ParseItem::ITEM_STRING_RANGE_TERM) {
-                t = &builder.add_string_range_term(StringRange(queryStack.get_string_range_spec()), view, id, weight);
+                std::unique_ptr<StringRangeSpec> string_range_spec = queryStack.get_string_range_spec();
+                if (!string_range_spec) {
+                    vespalib::Issue::report("query builder: missing StringRangeSpec");
+                }
+                t = &builder.add_string_range_term(
+                    string_range_spec ? StringRange(*string_range_spec) : StringRange(), view, id, weight);
             } else {
                 vespalib::Issue::report("query builder: Unable to create query tree from stack dump. node type = %d.",
                                         type);

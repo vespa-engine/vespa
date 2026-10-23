@@ -2,7 +2,8 @@
 
 #include "document_inverter_context.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <optional>
 
 namespace search::memoryindex {
@@ -62,18 +63,18 @@ public:
 
     void add_mapping(const std::vector<uint32_t>& fields, uint32_t pusher_id) {
         for (auto field_id : fields) {
-            assert(field_id < _pushers.size());
+            CHECK(field_id < _pushers.size());
             auto& opt_pusher = _pushers[field_id];
-            assert(!opt_pusher.has_value());
+            CHECK(!opt_pusher.has_value());
             opt_pusher = pusher_id;
         }
     }
 
     void use_mapping(const std::vector<uint32_t>& fields, std::vector<uint32_t>& pushers) {
         for (auto field_id : fields) {
-            assert(field_id < _pushers.size());
+            CHECK(field_id < _pushers.size());
             auto& opt_pusher = _pushers[field_id];
-            assert(opt_pusher.has_value());
+            CHECK(opt_pusher.has_value());
             pushers.emplace_back(opt_pusher.value());
         }
     }

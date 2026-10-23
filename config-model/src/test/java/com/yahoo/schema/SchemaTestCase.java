@@ -6,7 +6,9 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.derived.DerivedConfiguration;
+import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.Stemming;
+import com.yahoo.schema.document.TokensMode;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.schema.processing.ImportedFieldsResolver;
 import com.yahoo.schema.processing.OnnxModelTypeResolver;
@@ -23,6 +25,8 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -571,6 +575,10 @@ public class SchemaTestCase {
                         indexing: input domain | hash | attribute
                     }
 
+                    field domain_bucket type int {
+                        indexing: input domain | hash | _ % 1000 | abs | attribute
+                    }
+
                     document page {
 
                         field domain type string {
@@ -590,6 +598,38 @@ public class SchemaTestCase {
         var documentModel = new DocumentModelBuilder();
         var documentManager = documentModel.build(List.of(application.schemas().get("page")));
         var documentConfig = new DocumentManager().produce(documentManager, new DocumentmanagerConfig.Builder());
+    }
+
+    @Test
+    void testHashWithArithmeticAndAbs() throws Exception {
+        String schema =
+                """
+                schema page {
+
+                    field domain_bucket type int {
+                        indexing: input domain | hash | _ % 1000 | attribute
+                    }
+
+                    field domain_abs_bucket type int {
+                        indexing: input domain | hash | _ % 1000 | abs | attribute
+                    }
+
+                    field domain_long_bucket type long {
+                        indexing: input domain | hash | _ % 1000 | attribute
+                    }
+
+                    field domain_long_abs_bucket type long {
+                        indexing: input domain | hash | abs | _ % 1000 | attribute
+                    }
+
+                    document page {
+
+                        field domain type string {
+                            indexing: summary
+                        }
+                    }
+                }""";
+        ApplicationBuilder.createFromStrings(new DeployLoggerStub(), schema);
     }
 
     @Test
@@ -736,6 +776,371 @@ public class SchemaTestCase {
         assertCommand("s3", "linguistics-profile p3", config);
         assertNoCommand("s3", "linguistics-profile p4", config);
         assertCommand("fs1", "linguistics-profile p3", config);
+    }
+
+    @Test
+    void testLinguisticsTokens() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                            linguistics {
+                                profile: p1
+                                tokens: alternatives
+                            }
+                        }
+                        field s2 type string {
+                            indexing: index
+                            linguistics {
+                                index {
+                                    profile: p2
+                                    tokens: alternatives
+                                }
+                                search {
+                                    profile: p3
+                                    tokens: original-and-alternatives
+                                }
+                            }
+                        }
+                        field s3 type string {
+                            indexing: index
+                            linguistics {
+                                tokens: original
+                            }
+                        }
+                        field s4 type string {
+                            indexing: index
+                            linguistics {
+                                profile: p4
+                                tokens: first-alternative
+                                search {
+                                    tokens: original
+                                }
+                            }
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+
+        var ilConfigBuilder = new IlscriptsConfig.Builder();
+        derived.getIndexingScript().getConfig(ilConfigBuilder);
+        var ilscript = ilConfigBuilder.build().ilscript().get(0);
+        assertEquals("clear_state | guard { input s1 | tokenize normalize profile:\"p1\" stem:\"ALL_STEMS\" | index s1; }",
+                     ilscript.content(0));
+        assertEquals("clear_state | guard { input s2 | tokenize normalize profile:\"p2\" stem:\"ALL_STEMS\" | index s2; }",
+                     ilscript.content(1));
+        // tokens: original means no stemming, which is not written to the script
+        assertEquals("clear_state | guard { input s3 | tokenize normalize | index s3; }",
+                     ilscript.content(2));
+        // the common setting applies to indexing, the search block only overrides searching
+        assertEquals("clear_state | guard { input s4 | tokenize normalize profile:\"p4\" stem:\"BEST\" | index s4; }",
+                     ilscript.content(3));
+
+        var indexInfoConfigBuilder = new IndexInfoConfig.Builder();
+        derived.getIndexInfo().getConfig(indexInfoConfigBuilder);
+        var config = indexInfoConfigBuilder.build();
+        assertCommand("s1", "stem:ALL_STEMS", config);
+        assertCommand("s2", "stem:ALL", config);
+        assertCommand("s2", "linguistics-profile p3", config);
+        assertNoCommand("s3", "stem:NONE", config);
+        assertNoCommand("s3", "stem:BEST", config);
+        assertNoCommand("s4", "stem:BEST", config);
+    }
+
+    @Test
+    void testLinguisticsTokensOverridesStemming() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                            stemming: shortest
+                            linguistics {
+                                tokens: alternatives
+                            }
+                        }
+                    }
+                }""";
+        var logger = new DeployLoggerStub();
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+
+        var ilConfigBuilder = new IlscriptsConfig.Builder();
+        derived.getIndexingScript().getConfig(ilConfigBuilder);
+        assertEquals("clear_state | guard { input s1 | tokenize normalize stem:\"ALL_STEMS\" | index s1; }",
+                     ilConfigBuilder.build().ilscript().get(0).content(0));
+        assertTrue(logger.entries.stream().anyMatch(entry -> entry.message.contains("stemming: shortest is ignored")),
+                   "Expected a warning about the ignored stemming setting, got " + logger.entries);
+    }
+
+    @Test
+    void testLinguisticsTokensSetForOneSideOnly() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                            linguistics {
+                                index {
+                                    tokens: alternatives
+                                }
+                            }
+                        }
+                        field s2 type string {
+                            indexing: index
+                            linguistics {
+                                search {
+                                    tokens: alternatives
+                                }
+                            }
+                        }
+                        field s3 type string {
+                            indexing: index
+                            linguistics {
+                                tokens: alternatives
+                            }
+                        }
+                    }
+                }""";
+        var logger = new DeployLoggerStub();
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
+        builder.addSchema(schema);
+        builder.build(true);
+
+        assertEquals(List.of("For schema 'doc', field 's1': tokens is set for indexing but not for searching, " +
+                             "which will use the stemming setting instead. This may lead to recall issues.",
+                             "For schema 'doc', field 's2': tokens is set for searching but not for indexing, " +
+                             "which will use the stemming setting instead. This may lead to recall issues."),
+                     logger.entries.stream().map(entry -> entry.message).toList());
+    }
+
+    @Test
+    void testIllegalLinguisticsTokens() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                            linguistics {
+                                tokens: shortest
+                            }
+                        }
+                    }
+                }""";
+        try {
+            ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+            builder.addSchema(schema);
+            builder.build(true);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("'shortest' is not a valid tokens setting"),
+                       "Unexpected message: " + e.getMessage());
+        }
+    }
+
+    @Test
+    void testDuplicateLinguisticsTokensIsIllegal() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                            linguistics {
+                                tokens: alternatives
+                                tokens: original
+                            }
+                        }
+                    }
+                }""";
+        try {
+            ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+            builder.addSchema(schema);
+            builder.build(true);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("linguistics 's1' error: already has tokens alternatives"),
+                       "Unexpected message: " + e.getMessage());
+        }
+    }
+
+    @Test
+    void testDuplicateLinguisticsProfileIsIllegal() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                            linguistics {
+                                profile: p1
+                                profile: p2
+                            }
+                        }
+                    }
+                }""";
+        try {
+            ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+            builder.addSchema(schema);
+            builder.build(true);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("linguistics 's1' error: already has profile p1"),
+                       "Unexpected message: " + e.getMessage());
+        }
+    }
+
+    @Test
+    void testRepeatedLinguisticsIndexBlockIsIllegal() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                            linguistics {
+                                index {
+                                    tokens: alternatives
+                                }
+                                index {
+                                    tokens: original
+                                }
+                            }
+                        }
+                    }
+                }""";
+        try {
+            ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+            builder.addSchema(schema);
+            builder.build(true);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("linguistics index 's1' error: is given more than once"),
+                       "Unexpected message: " + e.getMessage());
+        }
+    }
+
+    @Test
+    void testDuplicateLinguisticsProfileForIndexIsIllegal() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                            linguistics {
+                                profile {
+                                    index: p1
+                                    index: p2
+                                }
+                            }
+                        }
+                    }
+                }""";
+        try {
+            ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+            builder.addSchema(schema);
+            builder.build(true);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("linguistics index 's1' error: already has profile p1"),
+                       "Unexpected message: " + e.getMessage());
+        }
+    }
+
+    @Test
+    void testLinguisticsProfileBlockCombinedWithOtherSettings() throws Exception {
+        // The profile { index: ... } form defaults the search profile to the index profile
+        var field = linguisticsField("linguistics { profile { index: p1 } }");
+        assertEquals("p1", field.getIndexLinguisticsProfile());
+        assertEquals("p1", field.getSearchLinguisticsProfile());
+
+        // ... but an explicit search profile wins, regardless of the order of the two blocks
+        for (var block : List.of("linguistics { profile { index: p1 } search { profile: p3 } }",
+                                 "linguistics { search { profile: p3 } profile { index: p1 } }")) {
+            field = linguisticsField(block);
+            assertEquals("p1", field.getIndexLinguisticsProfile(), block);
+            assertEquals("p3", field.getSearchLinguisticsProfile(), block);
+        }
+
+        // A search block which sets something else does not stop the defaulting
+        field = linguisticsField("linguistics { profile { index: p1 } search { tokens: original } }");
+        assertEquals("p1", field.getIndexLinguisticsProfile());
+        assertEquals("p1", field.getSearchLinguisticsProfile());
+        assertEquals(TokensMode.ORIGINAL, field.getSearchLinguisticsTokens());
+
+        // The profile block is a way of saying the same thing as a flat profile, so combining
+        // the two is rejected rather than given a precedence nobody would guess
+        for (var block : List.of("linguistics { profile: p1 profile { index: p2 } }",
+                                 "linguistics { profile { index: p2 } profile: p1 }",
+                                 "linguistics { profile { index: p2 } index { profile: p1 } }")) {
+            var e = assertThrows(IllegalArgumentException.class, () -> linguisticsField(block), block);
+            assertTrue(e.getMessage().contains("cannot set both a profile and a profile block") ||
+                       e.getMessage().contains("already has profile"),
+                       "Unexpected message for " + block + ": " + e.getMessage());
+        }
+    }
+
+    @Test
+    void testRepeatedLinguisticsBlockDoesNotClearEarlierSettings() throws Exception {
+        // A second linguistics block used to silently null out what the first one set
+        var field = linguisticsField("linguistics { profile: p1 }\n                            linguistics { tokens: original }");
+        assertEquals("p1", field.getIndexLinguisticsProfile());
+        assertEquals("p1", field.getSearchLinguisticsProfile());
+        assertEquals(TokensMode.ORIGINAL, field.getIndexLinguisticsTokens());
+
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> linguisticsField("linguistics { profile: p1 }\n                            linguistics { profile: p2 }"));
+        assertTrue(e.getMessage().contains("already has linguistics profile for index"),
+                   "Unexpected message: " + e.getMessage());
+    }
+
+    /** Returns the 's1' field of a schema having the given linguistics block on it */
+    private ImmutableSDField linguisticsField(String linguistics) throws Exception {
+        String schema =
+                """
+                schema doc {
+                    document doc {
+                        field s1 type string {
+                            indexing: index
+                            %s
+                        }
+                    }
+                }""".formatted(linguistics);
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        return builder.build(true).schemas().get("doc").getField("s1");
     }
 
     @Test
@@ -1079,6 +1484,351 @@ public class SchemaTestCase {
         assertNotNull(schema.temporaryImportedFields().get().fields().get("parent_imported"));
         assertTrue(schema.documentIdAttributeEnabled());
         assertTrue(schema.isRawAsBase64());
+    }
+
+    @Test
+    void testLinguisticsTokensIsIgnoredWhenAlternativesAreImpossible() throws Exception {
+        // Word, exact and gram matching, and uri fields, cannot produce alternatives to the
+        // original token: WordMatch, ExactMatch, NGramMatch and UriHack all force stemming to
+        // NONE for them. A tokens setting must not be able to sneak stemming back in on the
+        // query side only, which would give zero recall for any stemmable term.
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                            match: word
+                            linguistics { tokens: alternatives }
+                        }
+                        field s2 type string {
+                            indexing: index
+                            match: exact
+                            linguistics { tokens: alternatives }
+                        }
+                        field s3 type string {
+                            indexing: index
+                            match {
+                                gram
+                                gram-size: 3
+                            }
+                            linguistics { tokens: alternatives }
+                        }
+                        field s4 type uri {
+                            indexing: index
+                            linguistics { tokens: alternatives }
+                        }
+                        field s5 type int {
+                            indexing: attribute
+                            linguistics { tokens: alternatives }
+                        }
+                    }
+                }""";
+        var logger = new DeployLoggerStub();
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+
+        var indexInfoConfigBuilder = new IndexInfoConfig.Builder();
+        derived.getIndexInfo().getConfig(indexInfoConfigBuilder);
+        var config = indexInfoConfigBuilder.build();
+        for (String field : List.of("s1", "s2", "s3", "s4")) {
+            assertNoCommand(field, "stem:ALL_STEMS", config);
+            assertNoCommand(field, "stem:BEST", config);
+        }
+        assertCommand("s1", "word", config);
+
+        // The setting is cleared, so every place resolving stemming agrees
+        var doc = application.schemas().get("doc");
+        for (String field : List.of("s1", "s2", "s3", "s4", "s5")) {
+            assertNull(doc.getField(field).getIndexLinguisticsTokens(), field);
+            assertNull(doc.getField(field).getSearchLinguisticsTokens(), field);
+        }
+
+        assertEquals(List.of("For schema 'doc', field 's1': tokens is set in the linguistics block, but matching is word, which produces a single token, so it is ignored.",
+                             "For schema 'doc', field 's2': tokens is set in the linguistics block, but matching is exact, which produces a single token, so it is ignored.",
+                             "For schema 'doc', field 's3': tokens is set in the linguistics block, but matching is gram, which produces a single token, so it is ignored.",
+                             "For schema 'doc', field 's4': tokens is set in the linguistics block, but this is a uri field, which is not tokenized by the linguistics implementation, so it is ignored.",
+                             "For schema 'doc', field 's5': tokens is set in the linguistics block, but this is not a string field, so it is ignored."),
+                     logger.entries.stream().map(entry -> entry.message)
+                                            .filter(message -> message.contains("tokens is set in the linguistics block"))
+                                            .toList());
+    }
+
+    @Test
+    void testLinguisticsTokensOverridesIndexStemming() throws Exception {
+        // An index level stemming setting loses to the tokens setting of the field, as the field
+        // level stemming setting does. Say so rather than dropping it silently.
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                            linguistics { tokens: alternatives }
+                        }
+                    }
+                    index s1 {
+                        stemming: none
+                    }
+                }""";
+        var logger = new DeployLoggerStub();
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+
+        var indexInfoConfigBuilder = new IndexInfoConfig.Builder();
+        derived.getIndexInfo().getConfig(indexInfoConfigBuilder);
+        assertCommand("s1", "stem:ALL_STEMS", indexInfoConfigBuilder.build());
+        assertEquals(List.of("For schema 'doc', field 's1': stemming: none of index 's1' is ignored " +
+                             "because this field sets tokens in its linguistics block."),
+                     logger.entries.stream().map(entry -> entry.message).toList());
+    }
+
+    @Test
+    void testNoWarningWhenStemmingAgreesWithLinguisticsTokens() throws Exception {
+        // A stemming setting saying the same as tokens is redundant, not ignored: no warning
+        assertEquals(List.of(), linguisticsWarnings("""
+                field s1 type string {
+                    indexing: index
+                    stemming: none
+                    linguistics { tokens: original }
+                }
+                """, """
+                index s1 {
+                    stemming: none
+                }
+                """));
+        // ... which is decided per side when tokens differ between indexing and searching
+        assertEquals(List.of("For schema 'doc', field 's1': stemming: none is ignored when searching " +
+                             "because this field sets tokens in its linguistics block."),
+                     linguisticsWarnings("""
+                field s1 type string {
+                    indexing: index
+                    stemming: none
+                    linguistics {
+                        index { tokens: original }
+                        search { tokens: alternatives }
+                    }
+                }
+                """, ""));
+        // An index level setting agreeing with tokens is not warned about either
+        assertEquals(List.of(), linguisticsWarnings("""
+                field s1 type string {
+                    indexing: index
+                    linguistics { tokens: alternatives }
+                }
+                """, """
+                index s1 {
+                    stemming: all-stems
+                }
+                """));
+    }
+
+    /** Returns the warnings from building a schema 'doc' with the given fields in its document, and the given content outside it */
+    private List<String> linguisticsWarnings(String documentFields, String schemaContent) throws Exception {
+        String schema =
+                """
+                schema doc {
+                    document doc {
+                        %s
+                    }
+                    %s
+                }""".formatted(documentFields, schemaContent);
+        var logger = new DeployLoggerStub();
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
+        builder.addSchema(schema);
+        builder.build(true);
+        return logger.entries.stream().map(entry -> entry.message).toList();
+    }
+
+    @Test
+    void testImportedFieldWithLinguisticsTokensOnTargetIsNotStemmed() throws Exception {
+        // An imported field is an attribute and is never stemmed, whatever its target says.
+        // Its tokens getters delegate to the target, so every place resolving stemming must
+        // check for an imported field first: resolving stemming for one is not supported.
+        String parent =
+                """
+                schema parent {
+                    document parent {
+                        field name type string {
+                            indexing: attribute
+                            match: text  # keep tokens: implicit word matching would clear it
+                            linguistics { tokens: alternatives }
+                        }
+                    }
+                }""";
+        String child =
+                """
+                schema child {
+                    document child {
+                        field parent_ref type reference<parent> {
+                            indexing: attribute
+                        }
+                        field title type string {
+                            indexing: index
+                        }
+                    }
+                    import field parent_ref.name as imported_name {}
+                    fieldset fs {
+                        fields: title, imported_name
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(parent);
+        builder.addSchema(child);
+        var application = builder.build(true);
+        var childSchema = application.schemas().get("child");
+        var importedName = childSchema.getField("imported_name");
+        assertTrue(importedName.isImportedField());
+        assertEquals(TokensMode.ALTERNATIVES, importedName.getSearchLinguisticsTokens());
+        assertThrows(UnsupportedOperationException.class, () -> importedName.getEffectiveSearchStemming(childSchema));
+
+        var derived = new DerivedConfiguration(childSchema, application.rankProfileRegistry());
+        var indexInfoConfigBuilder = new IndexInfoConfig.Builder();
+        derived.getIndexInfo().getConfig(indexInfoConfigBuilder);
+        var config = indexInfoConfigBuilder.build();
+        assertNoCommand("imported_name", "stem:ALL_STEMS", config);
+        assertNoCommand("imported_name", "stem:BEST", config);
+        assertCommand("fs", "stem:BEST", config);
+    }
+
+    @Test
+    void testIndexLevelStemmingAppliesEquallyToFieldsAndFieldsets() throws Exception {
+        // The stem command of a fieldset must agree with that of its fields, whichever way the
+        // stemming of those fields was set. Both go through ImmutableSDField.getEffectiveSearchStemming.
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field s1 type string {
+                            indexing: index
+                        }
+                        field s2 type string {
+                            indexing: index
+                            index {
+                                stemming: shortest
+                            }
+                        }
+                        field s3 type string {
+                            indexing: index
+                            stemming: none
+                            index {
+                                stemming: best
+                            }
+                        }
+                    }
+                    index s1 {
+                        stemming: shortest
+                    }
+                    fieldset shortest {
+                        fields: s1, s2
+                    }
+                    fieldset none {
+                        fields: s3
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+
+        var indexInfoConfigBuilder = new IndexInfoConfig.Builder();
+        derived.getIndexInfo().getConfig(indexInfoConfigBuilder);
+        var config = indexInfoConfigBuilder.build();
+        // A schema level index block counts as much as one in the field, for fields and fieldsets alike
+        assertCommand("s1", "stem:SHORTEST", config);
+        assertCommand("s2", "stem:SHORTEST", config);
+        assertCommand("shortest", "stem:SHORTEST", config);
+        assertNoCommand("shortest", "stem:BEST", config);
+        // An index level setting cannot turn stemming on for a field which has it off
+        assertNoCommand("s3", "stem:BEST", config);
+        assertNoCommand("none", "stem:BEST", config);
+    }
+
+    @Test
+    void testOnlyStemmableFieldsDecideTheStemCommandOfAFieldset() throws Exception {
+        // A field which cannot be stemmed must not decide the stem command of a fieldset it is in.
+        // FieldSetSettings skips such fields when checking that the fields of a fieldset agree on
+        // what the query side should do, so if one of them could still win here, index-info would
+        // emit a stem command which that check never validated, and which contradicts the tokens
+        // setting of the field which does decide it.
+        //
+        // The fields of a fieldset are ordered by Field.compareTo, which compares the hash of the
+        // field name, so which field is seen last is a property of the names: 'n26' is a name which
+        // sorts after 's1' and therefore reproduces this, while for instance 'i1' does not.
+        for (String nonStemmableField : List.of("n26", "i1")) {
+            String schema =
+                    """
+                    schema doc {
+
+                        document doc {
+
+                            field %s type int {
+                                indexing: attribute
+                            }
+                            field s1 type string {
+                                indexing: index
+                                linguistics { tokens: alternatives }
+                            }
+                        }
+                        fieldset fs {
+                            fields: %s, s1
+                        }
+                    }""".formatted(nonStemmableField, nonStemmableField);
+            ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+            builder.addSchema(schema);
+            var application = builder.build(true);
+            var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+
+            var indexInfoConfigBuilder = new IndexInfoConfig.Builder();
+            derived.getIndexInfo().getConfig(indexInfoConfigBuilder);
+            var config = indexInfoConfigBuilder.build();
+            assertCommand("s1", "stem:ALL_STEMS", config);
+            assertCommand("fs", "stem:ALL_STEMS", config);
+            assertNoCommand("fs", "stem:BEST", config);
+        }
+    }
+
+    @Test
+    void testFieldsetOfNonStemmableFieldsOnlyGetsNoStemCommand() throws Exception {
+        // With no stemmable field there is nothing to tell the query side to stem
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field i1 type int {
+                            indexing: attribute
+                        }
+                        field s1 type string {
+                            indexing: index
+                            match: word
+                        }
+                    }
+                    fieldset fs {
+                        fields: i1, s1
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+
+        var indexInfoConfigBuilder = new IndexInfoConfig.Builder();
+        derived.getIndexInfo().getConfig(indexInfoConfigBuilder);
+        var config = indexInfoConfigBuilder.build();
+        for (var stemMode : List.of("NONE", "BEST", "SHORTEST", "ALL_STEMS", "ALL"))
+            assertNoCommand("fs", "stem:" + stemMode, config);
     }
 
     private void assertCommand(String field, String command, IndexInfoConfig config) {

@@ -4,6 +4,7 @@
 
 #include "memory_usage_stuff.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/hashtable.h>
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/util/string_id.h>
@@ -117,13 +118,13 @@ public:
     constexpr size_t addr_size() const noexcept { return _labels.addr_size; }
     const StringIdVector& labels() const noexcept { return _labels.labels; }
     template <typename T> size_t lookup(std::span<const T> addr, uint32_t hash) const noexcept {
-        // assert(addr_size() == addr.size());
+        // CHECK(addr_size() == addr.size());
         AltKey<T> key{addr, hash};
         auto      pos = _map.find(key);
         return (pos == _map.end()) ? npos() : pos->tag.idx;
     }
     size_t lookup_singledim(string_id addr) const noexcept {
-        // assert(addr_size() == 1);
+        // CHECK(addr_size() == 1);
         auto pos = _map.find(addr);
         return (pos == _map.end()) ? npos() : pos->tag.idx;
     }

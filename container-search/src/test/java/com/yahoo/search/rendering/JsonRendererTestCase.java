@@ -22,6 +22,7 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.prelude.fastsearch.DocsumDefinition;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.prelude.hitfield.RawData;
@@ -44,6 +45,7 @@ import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.search.result.StructuredData;
+import com.yahoo.search.schema.DocumentSummary;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import com.yahoo.search.statistics.ElapsedTimeTestCase;
@@ -959,6 +961,28 @@ public class JsonRendererTestCase {
         r.hits().addError(ErrorMessage.createInternalServerError("boom"));
         String summary = render(execution, r);
         assertEqualJsonContent(expected, summary);
+    }
+
+    @Test
+    void testRenderingOfLongstringAndFeatureDataSummaryFields() throws IOException, InterruptedException, ExecutionException {
+        var summary = new DocumentSummary.Builder("default");
+        summary.add(new DocumentSummary.Field("text", "longstring"));
+        summary.add(new DocumentSummary.Field("summaryfeatures", "featuredata"));
+        Slime slime = new Slime();
+        Cursor fields = slime.setObject();
+        fields.setString("text", "quote \" backslash \\ newline \n æøå");
+        fields.setObject("summaryfeatures").setDouble("f", 0.5);
+        FastHit hit = new FastHit("id:test:test::1", 1.0);
+        hit.addSummary(new DocsumDefinition(summary.build()), new SlimeAdapter(slime.get()));
+        Result r = new Result(new Query("/?query=a"));
+        r.hits().add(hit);
+        String expected = """
+                {"root": {"id": "toplevel", "relevance": 1.0, "fields": {"totalCount": 0},
+                          "children": [{"id": "id:test:test::1", "relevance": 1.0, "types": ["summary"],
+                                        "fields": {"text": "quote \\" backslash \\\\ newline \\n æøå",
+                                                   "summaryfeatures": {"f": 0.5}}}]}}
+                """;
+        assertEqualJson(expected, render(r));
     }
 
     void verifyCoverage(Coverage coverage) throws InterruptedException, ExecutionException, IOException {

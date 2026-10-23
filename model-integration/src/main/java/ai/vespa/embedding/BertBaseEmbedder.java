@@ -63,7 +63,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         tokenizer = new WordPieceEmbedder.Builder(embedderConfig.tokenizerVocab().toString()).build();
         
         var resolver = new OnnxExternalDataResolver();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig).withAttentionMask(attentionMaskName).withMaxTokens(maxTokens);
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
         this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
         
@@ -110,6 +110,7 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         }
         List<Integer> tokens = embedWithSeparatorTokens(text, context, maxTokens);
         runtime.sampleSequenceLength(tokens.size(), context);
+        runtime.samplePaddedSequenceLength(evaluator.paddedLength(tokens.size()), context);
         var embedding = embedTokens(tokens, type, OnnxEmbedderTimeout.remainingOrThrow(context));
         runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return embedding;
@@ -125,18 +126,17 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
 
     Tensor embedTokens(List<Integer> tokens, TensorType type, Duration timeout) {
         Tensor inputSequence = createTensorRepresentation(tokens, "d1");
-        Tensor attentionMask = createAttentionMask(inputSequence);
+        Tensor attentionMask = createAttentionMask(inputSequence).expand("d0");
         Tensor tokenTypeIds = createTokenTypeIds(inputSequence);
-
-
+        
         Map<String, Tensor> inputs;
         if (!"".equals(tokenTypeIdsName)) {
             inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
-                                            attentionMaskName, attentionMask.expand("d0"),
+                                            attentionMaskName, attentionMask,
                                             tokenTypeIdsName, tokenTypeIds.expand("d0"));
         } else {
             inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
-                                 attentionMaskName, attentionMask.expand("d0"));
+                                 attentionMaskName, attentionMask);
         }
         Map<String, Tensor> outputs = evaluator.evaluate(inputs, timeout);
 

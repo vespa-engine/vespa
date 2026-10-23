@@ -26,9 +26,14 @@ function report()
   echo "Reporting...."
   if [[ $BUILDKITE == true ]]; then
       if [[ -f $LOG_DIR/error-$STEP.log ]]; then
-          # shellcheck disable=2016
-          (echo '```term'; tail -100 "$LOG_DIR/error-$STEP.log" | head -80; echo '```') \
-          | buildkite-agent annotate --style 'error' --context 'ctx-error'
+          # Read by the factory-reporter plugin, which shows it in Factory
+          buildkite-agent meta-data set "failure-description-${BUILDKITE_JOB_ID:-}" \
+              "$("$MYDIR/failure-summary.sh" --short "$STEP" "$LOG_DIR/error-$STEP.log")" \
+          || echo "Failed to set failure description"
+          # Per step and make target, so parallel jobs and targets don't overwrite each other
+          "$MYDIR/failure-summary.sh" "$STEP" "$LOG_DIR/error-$STEP.log" \
+          | buildkite-agent annotate --style 'error' --context "ctx-error-${BUILDKITE_STEP_KEY:-${BUILDKITE_JOB_ID:-}}-$STEP" \
+          || echo "Failed to create failure annotation"
       fi
   fi
 }
@@ -36,7 +41,7 @@ trap report EXIT
 
 echo "--- 🚀 Executing step: $STEP"
 START=$(date '+%s')
-/usr/bin/time -v -p "$MYDIR/$STEP.sh" &> "$LOG_DIR/$STEP.log" || (cp -a "$LOG_DIR/$STEP.log" "$LOG_DIR/error-$STEP.log" && cat "$LOG_DIR/$STEP.log" && false)
+/usr/bin/time -v -p "$MYDIR/$STEP.sh" &> "$LOG_DIR/$STEP.log" || (cp -a "$LOG_DIR/$STEP.log" "$LOG_DIR/error-$STEP.log" && cat "$LOG_DIR/$STEP.log" && echo "^^^ +++" && false)
 
 if [[ -n $VERBOSE ]]; then
     cat "$LOG_DIR/$STEP.log"

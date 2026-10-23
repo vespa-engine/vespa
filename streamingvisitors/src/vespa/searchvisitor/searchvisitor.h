@@ -12,7 +12,8 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
-#include <vespa/searchlib/aggregation/aggregation.h>
+#include <vespa/searchlib/aggregation/grouping.h>
+#include <vespa/searchlib/aggregation/hitsaggregationresult.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>

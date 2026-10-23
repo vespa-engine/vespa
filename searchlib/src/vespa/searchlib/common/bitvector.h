@@ -9,7 +9,7 @@
 
 #include <algorithm>
 #if VESPA_ENABLE_BITVECTOR_RANGE_CHECK
-#include <cassert>
+#include <vespa/check_require.h>
 #endif
 #include <span>
 
@@ -140,7 +140,7 @@ public:
     }
     void range_check(Index idx) const noexcept {
 #if VESPA_ENABLE_BITVECTOR_RANGE_CHECK
-        assert(!_enable_range_check || (idx >= _startOffset && idx < _sz));
+        CHECK(!_enable_range_check || (idx >= _startOffset && idx < _sz));
 #else
         (void)idx;
 #endif
@@ -338,11 +338,13 @@ private:
     bool hasTrueBitsInternal() const;
     template <typename FunctionType, typename WordConverter>
     void foreach(FunctionType func, WordConverter conv, Index start, Index end) const {
-        if ((end <= start) || (size() == 0))
+        if ((end <= start) || (size() == 0)) {
             return;
+        }
         Index last = std::min(end, size()) - 1;
-        if (start < getStartIndex())
+        if (start < getStartIndex()) {
             start = getStartIndex();
+        }
 
         Index index(wordNum(start));
         Index lastIndex(wordNum(last));

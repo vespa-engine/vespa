@@ -2,6 +2,7 @@
 #pragma once
 
 #include "iflushstrategy.h"
+#include "prepare_restart_costs_config.h"
 
 #include <map>
 #include <string>
@@ -19,14 +20,7 @@ namespace proton {
  */
 class PrepareRestartFlushStrategy : public IFlushStrategy {
 public:
-    struct Config {
-        double tlsReplayByteCost;
-        double tlsReplayOperationCost;
-        double flushTargetWriteCost;
-        double flush_target_read_cost;
-        Config(double tlsReplayByteCost_, double tlsReplayOperationCost_, double flushTargetWriteCost_,
-               double flush_target_read_cost_);
-    };
+    using Config = flushengine::PrepareRestartCostsConfig;
 
 private:
     Config _cfg;

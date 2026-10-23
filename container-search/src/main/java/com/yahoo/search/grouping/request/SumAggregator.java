@@ -2,7 +2,7 @@
 package com.yahoo.search.grouping.request;
 
 /**
- * This class represents an sum-aggregator in a {@link GroupingExpression}. It evaluates to the sum of the values that
+ * This class represents a sum-aggregator in a {@link GroupingExpression}. It evaluates to the sum of the values that
  * the contained expression evaluated to over all the inputs.
  *
  * @author Simon Thoresen Hult

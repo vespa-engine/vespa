@@ -1,0 +1,126 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+schema structsummaries {
+
+    struct s1 {
+            field s1a type string {}
+            field s1b type int {}
+            field s1c type array<string> {}
+            field s1d type string {}
+    }
+
+    struct s2 {
+            field s2a type string {}
+            field s2b type int {}
+    }
+
+    document structsummaries {
+
+        field a type string {
+            indexing: summary | attribute
+        }
+
+        field b type array<s1> {
+            indexing: summary
+            struct-field s1a {
+                    indexing: attribute
+            }
+            struct-field s1b {
+                    indexing: attribute
+            }
+            struct-field s1d {
+                    indexing: attribute
+            }
+        }
+
+        field c type array<s2> {
+            indexing: summary
+            struct-field s2a {
+                    indexing: attribute
+            }
+            struct-field s2b {
+                    indexing: attribute
+            }
+        }
+
+        field d type map<string, int> {
+            indexing: summary
+            struct-field key {
+                    indexing: attribute
+            }
+            struct-field value {
+                    indexing: attribute
+            }
+        }
+
+        field e type map<string, s2> {
+            indexing: summary
+            struct-field key {
+                    indexing: attribute
+            }
+            struct-field value.s2a {
+                    indexing: attribute
+            }
+            struct-field value.s2b {
+                    indexing: attribute
+            }
+        }
+
+        # no struct field attributes at all, as in a streaming schema
+        field f type array<s2> {
+            indexing: summary
+        }
+    }
+
+    document-summary one {
+        summary a {}
+    }
+
+    document-summary two {
+        summary b {}
+    }
+
+    # subset of the struct fields, where the full set is not usable as attributes:
+    document-summary three {
+        summary b {
+            struct-field: s1a, s1d
+        }
+    }
+
+    # all struct fields, no selection:
+    document-summary four {
+        summary c {}
+    }
+
+    # the key and the value of a map of primitive type, which is all a selection from such a map can be:
+    document-summary five {
+        summary d {
+            struct-field: key, value
+        }
+    }
+
+    # all the sub-fields of the value struct of a map:
+    document-summary six {
+        summary e {
+            struct-field: key, value.s2a, value.s2b
+        }
+    }
+
+    # only one sub-field of the value struct of a map:
+    document-summary seven {
+        summary e {
+            struct-field: key, value.s2a
+        }
+    }
+
+    # inherits the selection made in "three":
+    document-summary eight inherits three {
+    }
+
+    # a selection on a source with no struct field attributes, applied when filling from the document:
+    document-summary nine {
+        summary f {
+            struct-field: s2a
+        }
+    }
+
+}

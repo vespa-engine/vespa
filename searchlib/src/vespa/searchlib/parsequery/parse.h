@@ -132,6 +132,8 @@ public:
             return TermType::SUFFIXTERM;
         case ParseItem::ITEM_FUZZY:
             return TermType::FUZZYTERM;
+        case ParseItem::ITEM_STRING_RANGE_TERM:
+            return TermType::STRING_RANGE;
         case ParseItem::ITEM_GEO_LOCATION_TERM:
             return TermType::GEO_LOCATION;
         case ParseItem::ITEM_NEAREST_NEIGHBOR:

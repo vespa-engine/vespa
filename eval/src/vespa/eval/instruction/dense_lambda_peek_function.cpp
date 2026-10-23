@@ -4,6 +4,7 @@
 
 #include "index_lookup_table.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::eval {
@@ -17,7 +18,7 @@ struct Self {
     IndexLookupTable::Token::UP table_token;
     Self(const ValueType& result_type_in, const Function& function)
         : result_type(result_type_in), table_token(IndexLookupTable::create(function, result_type_in)) {
-        assert(table_token->get().size() == result_type.dense_subspace_size());
+        CHECK(table_token->get().size() == result_type.dense_subspace_size());
     }
 };
 
@@ -53,7 +54,7 @@ InterpretedFunction::Instruction DenseLambdaPeekFunction::compile_self(const Val
     using MyTypify = TypifyCellType;
     auto op =
         typify_invoke<2, MyTypify, MyLambdaPeekOp>(result_type().cell_type(), child().result_type().cell_type());
-    assert(child().result_type().is_dense());
+    CHECK(child().result_type().is_dense());
     return InterpretedFunction::Instruction(op, wrap_param<Self>(self));
 }
 

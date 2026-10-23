@@ -14,6 +14,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.OpenTelemetryConfiguration;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -41,6 +42,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private ApplicationId applicationId = ApplicationId.defaultId();
     private List<ConfigServerSpec> configServerSpecs = List.of();
     private boolean hostedVespa = false;
+    private AthenzDomain tenantParentDomain = AthenzDomain.from("vespa.tenant");
     private Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
     private String jvmGCOptions = null;
@@ -74,18 +76,22 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private CloudAccount cloudAccount = CloudAccount.unspecified();
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
-    private boolean logserverOtelCol = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private final Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
+    private boolean tritonShareOnnxSession = false;
     private OptionalInt metricsProxyHeapSizeInMib = OptionalInt.empty();
     private OptionalInt metricsProxyAdminNodeHeapSizeInMib = OptionalInt.empty();
     private boolean ignoreConnectivityChecksAtStartup = false;
     private double searchNodeReservedMemoryFactor = 0.0;
     private boolean failWhenConfiguringIndexedMapOfArray = true;
-    private boolean fastMapSearch = false;
-    private boolean relaxStrictlyIncreasingClusterStateVersions = false;
+    private boolean commerceDiscovery = false;
+    private boolean enableLandlock = false;
+    private boolean enableLegacyFeedHandler = true;
+    private boolean productDiscovery = false;
+    private boolean useMlModelImportCache = false;
+    private OpenTelemetryConfiguration opentelemetrySdk = OpenTelemetrySettings.createDisabled();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -95,6 +101,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public URI ztsUrl() { return null; }
     @Override public AthenzDomain tenantSecretDomain() { return null; }
     @Override public String athenzDnsSuffix() { return null; }
+    @Override public AthenzDomain tenantParentDomain() { return tenantParentDomain; }
     @Override public boolean hostedVespa() { return hostedVespa; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
     @SuppressWarnings("removal")
@@ -134,21 +141,24 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public CloudAccount getCloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
-    @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
     @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
     }
     @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return () -> useTriton; }
-    @Override public OptionalInt metricsProxyHeapSizeInMib() { return metricsProxyHeapSizeInMib; }
+    @Override public ModelContext.FeatureFlag<Boolean> tritonShareOnnxSessionFlag() { return () -> tritonShareOnnxSession; }
     @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return () -> metricsProxyHeapSizeInMib.orElse(0); }
     @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return metricsProxyAdminNodeHeapSizeInMib; }
     @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
     @Override public double searchNodeReservedMemoryFactor() { return searchNodeReservedMemoryFactor; }
     @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
-    @Override public boolean fastMapSearch() { return fastMapSearch; }
-    @Override public boolean relaxStrictlyIncreasingClusterStateVersions() { return relaxStrictlyIncreasingClusterStateVersions; }
+    @Override public boolean commerceDiscovery() { return commerceDiscovery; }
+    @Override public boolean enableLandlock() { return enableLandlock; }
+    @Override public boolean enableLegacyFeedHandler() { return enableLegacyFeedHandler; }
+    @Override public boolean productDiscovery() { return productDiscovery; }
+    @Override public boolean useMlModelImportCache() { return useMlModelImportCache; }
+    @Override public OpenTelemetryConfiguration opentelemetrySdk() { return opentelemetrySdk; }
 
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -196,6 +206,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
+        return this;
+    }
+
+    public TestProperties setTenantParentDomain(AthenzDomain tenantParentDomain) {
+        this.tenantParentDomain = tenantParentDomain;
         return this;
     }
 
@@ -320,11 +335,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setLogserverOtelCol(boolean logserverOtelCol) {
-        this.logserverOtelCol = logserverOtelCol;
-        return this;
-    }
-
     public TestProperties setContainerEndpoints(Set<ContainerEndpoint> containerEndpoints) {
         this.endpoints = containerEndpoints;
         return this;
@@ -360,6 +370,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
+    public TestProperties setTritonShareOnnxSession(boolean value) {
+        this.tritonShareOnnxSession = value;
+        return this;
+    }
+
     public TestProperties setIgnoreConnectivityChecksAtStartup(boolean value) {
         this.ignoreConnectivityChecksAtStartup = value;
         return this;
@@ -375,13 +390,33 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties fastMapSearch(boolean value) {
-        this.fastMapSearch = value;
+    public TestProperties commerceDiscovery(boolean value) {
+        this.commerceDiscovery = value;
         return this;
     }
 
-    public TestProperties relaxStrictlyIncreasingClusterStateVersions(boolean value) {
-        this.relaxStrictlyIncreasingClusterStateVersions = value;
+    public TestProperties enableLandlock(boolean value) {
+        this.enableLandlock = value;
+        return this;
+    }
+
+    public TestProperties enableLegacyFeedHandler(boolean value) {
+        this.enableLegacyFeedHandler = value;
+        return this;
+    }
+
+    public TestProperties productDiscovery(boolean value) {
+        this.productDiscovery = value;
+        return this;
+    }
+
+    public TestProperties useMlModelImportCache(boolean value) {
+        this.useMlModelImportCache = value;
+        return this;
+    }
+
+    public TestProperties opentelemetrySdk(OpenTelemetryConfiguration value) {
+        this.opentelemetrySdk = value;
         return this;
     }
 
@@ -425,6 +460,23 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
             this.configServerPort = configServerPort;
             this.zooKeeperPort = zooKeeperPort;
         }
+    }
+
+    public static class OpenTelemetrySettings implements OpenTelemetryConfiguration {
+        private final boolean enabled;
+        private final double samplingRatio;
+
+        public static OpenTelemetrySettings createDisabled() {
+            return new OpenTelemetrySettings(false, null);
+        }
+
+        public OpenTelemetrySettings(Boolean enabled, Double samplingRatio) {
+            this.enabled = enabled != null && enabled;
+            this.samplingRatio = samplingRatio != null ? samplingRatio : 1.0;
+        }
+
+        @Override public boolean enabled()      { return enabled; }
+        @Override public double samplingRatio() { return samplingRatio; }
     }
 
 }

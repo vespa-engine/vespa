@@ -43,12 +43,12 @@ public class MockProvisioner implements Provisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+    public List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, ProvisionContext context) {
         if (transientFailureOnPrepare) {
             throw new LoadBalancerServiceException("Unable to create load balancer", new Exception("some internal exception"));
         }
         if (hostProvisioner != null) {
-            return hostProvisioner.prepare(cluster, capacity, context);
+            return hostProvisioner.prepare(cluster, context);
         }
         throw new UnsupportedOperationException("This mock does not support prepare");
     }

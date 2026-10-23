@@ -38,7 +38,7 @@ typedef FPFactory*(FPFactoryMaker)(const index::Schema& schema);
 
 using FPFactoryMapEntry = std::pair<const std::string, FPFactoryMaker* const>;
 
-template <class F> static FPFactory* makeFPFactory(const index::Schema& schema) {
+template <class F> [[maybe_unused]] static FPFactory* makeFPFactory(const index::Schema& schema) {
     return new F(schema);
 }
 

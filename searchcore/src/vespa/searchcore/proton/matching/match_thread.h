@@ -72,11 +72,14 @@ private:
     double                                       total_time_s;
     double                                       match_time_s;
     double                                       wait_time_s;
+    bool                                         query_token_held;
+    double                                       query_token_wait_s;
     bool                                         match_with_ranking;
     std::unique_ptr<Trace>                       trace;
     std::unique_ptr<vespalib::ExecutionProfiler> match_profiler;
     std::unique_ptr<vespalib::ExecutionProfiler> first_phase_profiler;
     std::unique_ptr<vespalib::ExecutionProfiler> second_phase_profiler;
+    std::unique_ptr<vespalib::ExecutionProfiler> sort_features_profiler;
     UniqueIssues                                 my_issues;
 
     class Context {
@@ -147,7 +150,8 @@ private:
 public:
     MatchThread(size_t thread_id_in, size_t num_threads_in, const MatchParams& mp, const MatchToolsFactory& mtf,
                 IMatchLoopCommunicator& com, DocidRangeScheduler& sched, ResultProcessor& rp,
-                vespalib::DualMergeDirector& md, uint32_t distributionKey, const Trace& parent_trace);
+                vespalib::DualMergeDirector& md, uint32_t distributionKey, const Trace& parent_trace,
+                bool query_token_held_in, double query_token_wait_s_in);
     void run() override;
     const MatchingStats::Partition& get_thread_stats() const { return thread_stats; }
     double get_match_time() const { return match_time_s; }

@@ -7,6 +7,7 @@
 #include "sort_feature_store.h"
 #include "tag_needed_handles.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/attribute/diversity.h>
@@ -23,7 +24,6 @@
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
-#include <cassert>
 #include <cstdlib>
 
 using search::SerializedQueryTree;
@@ -108,7 +108,8 @@ void MatchTools::setup(std::unique_ptr<RankProgram> rank_program, ExecutionProfi
 MatchTools::MatchTools(QueryLimiter& queryLimiter, const vespalib::Doom& doom, const Query& query,
                        MaybeMatchPhaseLimiter& match_limiter_in, const QueryEnvironment& queryEnv,
                        const MatchDataLayout& mdl, const RankSetup& rankSetup, const Properties& featureOverrides,
-                       const HandleRecorder::HandleMap& needed_handles, std::vector<std::string> sort_public_names)
+                       const HandleRecorder::HandleMap& needed_handles, std::vector<std::string> sort_public_names,
+                       SortSelection sort_selection)
     : _queryLimiter(queryLimiter),
       _doom(doom),
       _query(query),
@@ -122,7 +123,8 @@ MatchTools::MatchTools(QueryLimiter& queryLimiter, const vespalib::Doom& doom, c
       _used_handles(),
       _needed_handles(needed_handles),
       _sort_public_names(std::move(sort_public_names)),
-      _sort_programs(),
+      _sort_selection(std::move(sort_selection)),
+      _sort_program(),
       _sort_seeds(),
       _sort_store(),
       _search_has_changed(false),
@@ -140,48 +142,21 @@ void MatchTools::setup_first_phase(ExecutionProfiler* profiler) {
           TermwiseLimit::lookup(_queryEnv.getProperties(), _rankSetup.get_termwise_limit()));
 }
 
-void MatchTools::setup_first_phase_and_sort(ExecutionProfiler* first_phase_profiler, bool match_with_ranking) {
-    _sort_programs.clear();
+void MatchTools::setup_first_phase_and_sort(ExecutionProfiler* first_phase_profiler,
+                                            ExecutionProfiler* sort_features_profiler, bool match_with_ranking) {
     _sort_seeds.clear();
-    _sort_store.reset();
-    _sort_needs_unpack = false;
-    _sort_programs.reserve(_sort_public_names.size());
-    _sort_seeds.reserve(_sort_public_names.size());
+    _sort_seeds.reserve(_sort_selection.seed_index.size());
+    _sort_program = _rankSetup.create_sort_program(_sort_selection);
     HandleRecorder recorder(_needed_handles);
-    bool           sort_setup_failed = false;
     {
         HandleRecorder::Binder bind(recorder);
-        for (const auto& public_name : _sort_public_names) {
-            auto program = _rankSetup.create_sort_program(public_name);
-            if (!program) {
-                // Leaving the store uncreated means nothing supplies the sort
-                // values, and the result processor fails the query when it
-                // cannot bind them. Matching itself still has to run.
-                sort_setup_failed = true;
-                break;
-            }
-            program->setup(*_match_data, _queryEnv, _featureOverrides, nullptr);
-            search::fef::FeatureResolver seeds(program->get_seeds());
-            if (seeds.num_features() != 1u) {
-                // RankSetup::compile() rejects sort features that do not resolve
-                // to a single seed, so this should be unreachable.
-                vespalib::Issue::report("sort feature '%s' resolved to %zu values instead of one",
-                                        public_name.c_str(), seeds.num_features());
-                sort_setup_failed = true;
-                break;
-            }
-            _sort_seeds.push_back(seeds.resolve(0));
-            _sort_programs.push_back(std::move(program));
+        _sort_program->setup(*_match_data, _queryEnv, _featureOverrides, sort_features_profiler);
+        search::fef::FeatureResolver seeds(_sort_program->get_seeds());
+        for (uint32_t index : _sort_selection.seed_index) {
+            _sort_seeds.push_back(seeds.resolve(index));
         }
-        if (sort_setup_failed) {
-            _sort_seeds.clear();
-            _sort_programs.clear();
-            // Nothing is evaluated during matching, so nothing needs unpack.
-            _sort_needs_unpack = false;
-        } else {
-            // Re-registering an existing handle still means sort evaluation needs unpack.
-            _sort_needs_unpack = recorder.registration_attempted();
-        }
+        // Re-registering an existing handle still means sort evaluation needs unpack.
+        _sort_needs_unpack = recorder.registration_attempted();
         if (match_with_ranking) {
             _rank_program = _rankSetup.create_first_phase_program();
             _rank_program->setup(*_match_data, _queryEnv, _featureOverrides, first_phase_profiler);
@@ -193,14 +168,12 @@ void MatchTools::setup_first_phase_and_sort(ExecutionProfiler* first_phase_profi
     _search = _query.createSearch(*_match_data);
     _used_handles = std::move(recorder).steal_handles();
     _search_has_changed = false;
-    if (!sort_setup_failed) {
-        _sort_store = std::make_unique<SortFeatureStore>(_sort_public_names);
-    }
+    _sort_store = std::make_unique<SortFeatureStore>(_sort_public_names);
 }
 
-void MatchTools::release_sort_programs() {
+void MatchTools::release_sort_program() {
     _sort_seeds.clear();
-    _sort_programs.clear();
+    _sort_program.reset();
 }
 
 void MatchTools::setup_second_phase(ExecutionProfiler* profiler) {
@@ -246,7 +219,8 @@ MatchToolsFactory::MatchToolsFactory(
       _object_store(nullptr),
       _metaStore(metaStore),
       _needed_handles(),
-      _sort_public_names() {
+      _sort_public_names(),
+      _sort_selection() {
     if (doom.soft_doom()) {
         return;
     }
@@ -326,16 +300,20 @@ MatchToolsFactory::MatchToolsFactory(
 MatchToolsFactory::~MatchToolsFactory() = default;
 
 MatchTools::UP MatchToolsFactory::createMatchTools() const {
-    assert(_valid);
+    CHECK(_valid);
     return std::make_unique<MatchTools>(_queryLimiter, _requestContext.getDoom(), _query, *_match_limiter, _queryEnv,
-                                        _mdl, _rankSetup, _featureOverrides, _needed_handles, _sort_public_names);
+                                        _mdl, _rankSetup, _featureOverrides, _needed_handles, _sort_public_names,
+                                        _sort_selection);
 }
 
 bool MatchToolsFactory::prepare_and_install_sort_features(const std::vector<std::string>& public_names) {
-    assert(_object_store != nullptr);
-    if (!_rankSetup.prepare_sort_shared_state(_queryEnv, *_object_store, public_names)) {
+    CHECK(_object_store != nullptr);
+    auto selection = _rankSetup.select_sort_features(public_names);
+    if (!selection.valid()) {
         return false;
     }
+    _rankSetup.prepare_sort_shared_state(_queryEnv, *_object_store, selection);
+    _sort_selection = std::move(selection);
     _sort_public_names = public_names;
     return true;
 }

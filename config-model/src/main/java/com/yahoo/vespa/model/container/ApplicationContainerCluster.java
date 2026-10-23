@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
+import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
 import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
@@ -74,6 +75,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         MetricsProxyApiConfig.Producer,
         ZookeeperServerConfig.Producer,
         DocumentOperationExecutorConfig.Producer,
+        TritonConfig.Producer,
         ApplicationClusterInfo {
 
     public static final String METRICS_V2_HANDLER_CLASS = MetricsV2Handler.class.getName();
@@ -106,6 +108,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private int zookeeperSessionTimeoutSeconds = 30;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
+    private final boolean tritonShareOnnxSession;
     private int maxDocumentOperationRequestSizeMib = new DocumentOperationExecutorConfig.Builder().build().maxDocumentOperationRequestSizeMib();
 
     /** The heap size % of total memory available to the JVM process. */
@@ -149,6 +152,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addTestrunnerComponentsIfTester(deployState);
         transport_connections_per_target = deployState.featureFlags().mbusJavaRpcNumTargets();
         transport_events_before_wakeup = deployState.featureFlags().mbusJavaEventsBeforeWakeup();
+        tritonShareOnnxSession = deployState.featureFlags().tritonShareOnnxSessionFlag()
+                                            .withClusterType(ClusterSpec.Type.container)
+                                            .withClusterId(id())
+                                            .value();
         var heapSizeFromFlag = deployState.featureFlags().heapSizePercentage(Optional.of(getName()));
         heapSizePercentageOfAvailableMemory = heapSizeFromFlag > 0
                 ? Math.min(99, heapSizeFromFlag)
@@ -451,6 +458,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public void getConfig(DocumentOperationExecutorConfig.Builder builder) {
         builder.maxDocumentOperationRequestSizeMib(maxDocumentOperationRequestSizeMib);
+    }
+
+    @Override
+    public void getConfig(TritonConfig.Builder builder) {
+        builder.shareOnnxSessionBetweenInstances(tritonShareOnnxSession);
     }
 
     public static class MbusParams {

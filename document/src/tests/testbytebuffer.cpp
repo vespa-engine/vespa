@@ -11,14 +11,6 @@
 using namespace document;
 using vespalib::GrowableByteBuffer;
 
-namespace {
-
-template <typename S> void assign(S& lhs, const S& rhs) {
-    lhs = rhs;
-}
-
-} // namespace
-
 TEST(ByteBuffer_Test, test_constructors) {
     ByteBuffer less_simple("hei", 3);
     EXPECT_TRUE(strcmp(less_simple.getBufferAtPos(), "hei") == 0);

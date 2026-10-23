@@ -7,8 +7,6 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
-#include <cassert>
-
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.query_term_filter_factory");
 

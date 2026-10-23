@@ -36,8 +36,9 @@ const char* JsonStream::getStateName(const State& s) {
 }
 
 JsonStream::JsonStream(asciistream& as, bool createIndents) : _writer(as) {
-    if (createIndents)
+    if (createIndents) {
         _writer.setPretty();
+    }
     push({State::ROOT});
 }
 

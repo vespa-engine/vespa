@@ -38,11 +38,12 @@ DocsumStoreFieldValue DocsumStoreDocument::get_field_value(const std::string& fi
 }
 
 void DocsumStoreDocument::insert_summary_field(const std::string& field_name, ElementIds selected_elements,
-                                               vespalib::slime::Inserter& inserter,
-                                               IStringFieldConverter*     converter) const {
+                                               vespalib::slime::Inserter& inserter, IStringFieldConverter* converter,
+                                               const SlimeFillerFilter* struct_fields_filter) const {
     auto field_value = get_field_value(field_name);
     if (field_value) {
-        SlimeFiller::insert_summary_field(*field_value, selected_elements, inserter, converter);
+        SlimeFiller::insert_summary_field_with_field_filter(*field_value, selected_elements, inserter, converter,
+                                                            struct_fields_filter);
     }
 }
 

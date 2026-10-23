@@ -2,6 +2,7 @@
 
 #include "domainpart.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
@@ -9,7 +10,6 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -210,8 +210,9 @@ int64_t DomainPart::buildPacketMapping(bool allowTruncate) {
         try {
             FileHeader::FileReader fr(transLog);
             uint32_t               header2Len = FileHeader::readSize(fr);
-            if (header2Len <= fSize)
+            if (header2Len <= fSize) {
                 e.throwSelf(); // header not truncated
+            }
         } catch (const IllegalHeaderException& e2) {
         }
         if (fSize > 0) {
@@ -291,8 +292,8 @@ DomainPart::DomainPart(const string& name, const string& baseDir, SerialNum s,
     handleSync(*_transLog);
     _writtenSerial = get_range_to();
     _syncedSerial = _writtenSerial;
-    assert(int64_t(byteSize()) == _transLog->getSize());
-    assert(int64_t(byteSize()) == _transLog->getPosition());
+    CHECK(int64_t(byteSize()) == _transLog->getSize());
+    CHECK(int64_t(byteSize()) == _transLog->getPosition());
 }
 
 DomainPart::~DomainPart() {
@@ -302,9 +303,9 @@ DomainPart::~DomainPart() {
 void DomainPart::writeHeader(const FileHeaderContext& fileHeaderContext) {
     using Tag = vespalib::GenericHeader::Tag;
     FileHeader header;
-    assert(_transLog->IsOpened());
-    assert(_transLog->IsWriteMode());
-    assert(_transLog->getPosition() == 0);
+    CHECK(_transLog->IsOpened());
+    CHECK(_transLog->IsWriteMode());
+    CHECK(_transLog->getPosition() == 0);
     fileHeaderContext.addTags(header, _transLog->GetFileName());
     header.putTag(Tag("desc", "Transaction log domain part file"));
     _headerLen = header.writeFile(*_transLog);
@@ -347,8 +348,9 @@ bool DomainPart::openAndFind(FastOS_FileInterface& file, const SerialNum& from) 
         int64_t         pos(_headerLen);
         std::lock_guard guard(_lock);
         for (const auto& skipInfo : _skipList) {
-            if (skipInfo.id() > from)
+            if (skipInfo.id() > from) {
                 break;
+            }
             pos = skipInfo.filePos();
         }
         retval = file.SetPosition(pos);
@@ -374,7 +376,7 @@ void DomainPart::commit(const SerializedChunk& serialized) {
     SerialNumRange range = serialized.range();
 
     int64_t firstPos(byteSize());
-    assert(get_range_to() < range.to());
+    CHECK(get_range_to() < range.to());
     set_size(size() + serialized.getNumEntries());
     set_range_to(range.to());
     if (get_range_from() == 0) {

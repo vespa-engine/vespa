@@ -26,13 +26,16 @@ AddValueUpdate::AddValueUpdate(std::unique_ptr<FieldValue> value, int weight)
 AddValueUpdate::~AddValueUpdate() = default;
 
 bool AddValueUpdate::operator==(const ValueUpdate& other) const {
-    if (other.getType() != Add)
+    if (other.getType() != Add) {
         return false;
+    }
     const AddValueUpdate& o(static_cast<const AddValueUpdate&>(other));
-    if (*_value != *o._value)
+    if (*_value != *o._value) {
         return false;
-    if (_weight != o._weight)
+    }
+    if (_weight != o._weight) {
         return false;
+    }
     return true;
 }
 
@@ -60,10 +63,10 @@ void AddValueUpdate::print(std::ostream& out, bool, const std::string& indent) c
 // Apply this update to the given document.
 bool AddValueUpdate::applyTo(FieldValue& value) const {
     if (value.isA(FieldValue::Type::ARRAY)) {
-        ArrayFieldValue& doc(static_cast<ArrayFieldValue&>(value));
+        auto& doc = static_cast<ArrayFieldValue&>(value);
         doc.add(*_value);
     } else if (value.isA(FieldValue::Type::WSET)) {
-        WeightedSetFieldValue& doc(static_cast<WeightedSetFieldValue&>(value));
+        auto& doc = static_cast<WeightedSetFieldValue&>(value);
         doc.add(*_value, _weight);
     } else {
         std::string err = make_string("Unable to add a value to a \"%s\" field value.", value.className());

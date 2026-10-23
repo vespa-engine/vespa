@@ -2,6 +2,7 @@
 
 #include "mock_attribute_manager.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/array_bool_attribute.h>
@@ -12,8 +13,6 @@
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/test_quantization_params.h>
-
-#include <cassert>
 
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
@@ -30,9 +29,9 @@ template <typename AttributeType>
 std::shared_ptr<AttributeType> MockAttributeManager::create_and_register_attribute(const std::string&       name,
                                                                                    const attribute::Config& cfg) {
     auto attr_base = AttributeFactory::createAttribute(name, cfg);
-    assert(attr_base);
+    CHECK(attr_base);
     auto attr = std::dynamic_pointer_cast<AttributeType>(attr_base);
-    assert(attr);
+    CHECK(attr);
     attr->addReservedDoc();
     _mgr.add(attr);
     return attr;
@@ -56,7 +55,7 @@ void MockAttributeManager::build_attribute(const std::string& name, BasicType ty
                 attr->append(docId, value, 1);
             }
         } else if (!docValues.empty()) {
-            assert(docValues.size() == 1);
+            CHECK(docValues.size() == 1);
             attr->update(docId, docValues[0]);
         }
         attr->commit();

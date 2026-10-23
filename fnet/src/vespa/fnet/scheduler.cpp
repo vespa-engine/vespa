@@ -23,8 +23,9 @@ FNET_Scheduler::FNET_Scheduler(vespalib::steady_time* sampler)
       _tailPt(nullptr),
       _performing(nullptr),
       _waitTask(false) {
-    for (int i = 0; i < NUM_SLOTS; i++)
+    for (int i = 0; i < NUM_SLOTS; i++) {
         _slots[i] = nullptr;
+    }
     _slots[NUM_SLOTS] = nullptr;
     _now = _sampler ? *_sampler : vespalib::steady_clock::now();
     _next = _now + tick_ms;
@@ -68,8 +69,9 @@ void FNET_Scheduler::Schedule(FNET_Task* task, double seconds) {
 
     std::lock_guard<std::mutex> guard(_lock);
     if (!task->_killed) {
-        if (IsActive(task))
+        if (IsActive(task)) {
             LinkOut(task);
+        }
         task->_task_slot = (ticks + _currSlot) & SLOTS_MASK;
         task->_task_iter = _currIter + ((ticks + _currSlot) >> SLOTS_SHIFT);
         LinkIn(task);
@@ -79,8 +81,9 @@ void FNET_Scheduler::Schedule(FNET_Task* task, double seconds) {
 void FNET_Scheduler::ScheduleNow(FNET_Task* task) {
     std::lock_guard<std::mutex> guard(_lock);
     if (!task->_killed) {
-        if (IsActive(task))
+        if (IsActive(task)) {
             LinkOut(task);
+        }
         task->_task_slot = NUM_SLOTS;
         task->_task_iter = 0;
         LinkIn(task);
@@ -90,15 +93,17 @@ void FNET_Scheduler::ScheduleNow(FNET_Task* task) {
 void FNET_Scheduler::Unschedule(FNET_Task* task) {
     std::unique_lock<std::mutex> guard(_lock);
     WaitTask(guard, task);
-    if (IsActive(task))
+    if (IsActive(task)) {
         LinkOut(task);
+    }
 }
 
 void FNET_Scheduler::Kill(FNET_Task* task) {
     std::unique_lock<std::mutex> guard(_lock);
     WaitTask(guard, task);
-    if (IsActive(task))
+    if (IsActive(task)) {
         LinkOut(task);
+    }
     task->_killed = true;
 }
 
@@ -174,18 +179,20 @@ void FNET_Scheduler::LinkIn(FNET_Task* task) {
 void FNET_Scheduler::LinkOut(FNET_Task* task) {
     FNET_Task** head = &(_slots[task->_task_slot]);
 
-    if (task == _currPt)
+    if (task == _currPt) {
         AdjustCurrPt();
-    else if (task == _tailPt)
+    } else if (task == _tailPt) {
         AdjustTailPt();
+    }
 
     if (task->_task_next == task) {
         (*head) = nullptr;
     } else {
         task->_task_prev->_task_next = task->_task_next;
         task->_task_next->_task_prev = task->_task_prev;
-        if ((*head) == task)
+        if ((*head) == task) {
             (*head) = task->_task_next;
+        }
     }
     task->_task_next = nullptr;
     task->_task_prev = nullptr;

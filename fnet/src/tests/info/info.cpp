@@ -14,10 +14,12 @@ struct RPC : public FRT_Invokable {
     void GetInfo(FRT_RPCRequest* req) {
         req->GetReturn()->AddString(FNET_Info::GetFNETVersion());
         const char* endian_str = "UNKNOWN";
-        if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE)
+        if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE) {
             endian_str = "LITTLE";
-        if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_BIG)
+        }
+        if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_BIG) {
             endian_str = "BIG";
+        }
         req->GetReturn()->AddString(endian_str);
         req->GetReturn()->AddInt32(FD_SETSIZE);
         req->GetReturn()->AddInt32(sizeof(FRT_RPCRequest));

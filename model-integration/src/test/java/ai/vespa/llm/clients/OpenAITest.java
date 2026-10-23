@@ -97,6 +97,28 @@ public class OpenAITest {
     }
 
     @Test
+    public void testJsonSchemaStrictOption() {
+        var prompt = StringPrompt.from("hello");
+        var schema = "{\"type\": \"object\", \"properties\": {\"answer\": {\"type\": \"string\"}}, " +
+                     "\"required\": [\"answer\"], \"additionalProperties\": false}";
+        var options = new InferenceParameters(Map.of(InferenceParameters.OPTION_JSON_SCHEMA, schema)::get);
+
+        // Not set: strict is not sent to the API
+        var openai = new OpenAI(new LlmClientConfig.Builder().apiKeySecretName("openai").build(), new MockSecrets());
+        var jsonSchema = openai.getChatCompletionCreateParams(options, prompt)
+                .responseFormat().orElseThrow().asJsonSchema().jsonSchema();
+        assertTrue(jsonSchema.strict().isEmpty());
+
+        // Set in component config
+        var strictOpenai = new OpenAI(
+                new LlmClientConfig.Builder().apiKeySecretName("openai").jsonSchemaStrict(true).build(),
+                new MockSecrets());
+        jsonSchema = strictOpenai.getChatCompletionCreateParams(options, prompt)
+                .responseFormat().orElseThrow().asJsonSchema().jsonSchema();
+        assertEquals(true, jsonSchema.strict().orElseThrow());
+    }
+
+    @Test
     public void testClientCaching() {
         // Create OpenAI instance
         var config = new LlmClientConfig.Builder()
@@ -169,11 +191,12 @@ public class OpenAITest {
         // Override with null API key
         var parameters = new InferenceParameters(null, key -> null);
         
-        // Verify the correct exception is thrown 
-        org.junit.jupiter.api.Assertions.assertThrows(
-                UnauthorizedException.class,
+        var exception = org.junit.jupiter.api.Assertions.assertThrows(
+                LanguageModelException.class,
                 () -> openai.complete(prompt, parameters)
         );
+        assertEquals(401, exception.code());
+        assertTrue(exception.getCause() instanceof UnauthorizedException);
     }
     
     @Test
@@ -191,21 +214,15 @@ public class OpenAITest {
         CompletableFuture<Completion.FinishReason> future = 
                 openai.completeAsync(prompt, parameters, completion -> result.append(completion.text()));
         
-        // Verify the future completed exceptionally
-        // We need to check if the cause is UnauthorizedException, as CompletableFuture wraps exceptions
         CompletionException exception = org.junit.jupiter.api.Assertions.assertThrows(
             CompletionException.class,
-                () -> future.join() // This will throw the wrapped exception
+                () -> future.join()
         );
         Throwable cause = exception.getCause();
-        // Debug info in case of failure
-        System.out.println("Exception class: " + exception.getClass().getName());
-        if (exception.getCause() != null) {
-            System.out.println("Cause class: " + exception.getCause().getClass().getName());
-        }
-        
-        assertTrue(cause instanceof UnauthorizedException, 
-                   "Expected UnauthorizedException but got: " + cause.getClass().getName());
+        assertTrue(cause instanceof LanguageModelException,
+                   "Expected LanguageModelException but got: " + cause.getClass().getName());
+        assertEquals(401, ((LanguageModelException) cause).code());
+        assertTrue(cause.getCause() instanceof UnauthorizedException);
     }
 
     @Test
@@ -221,14 +238,14 @@ public class OpenAITest {
         var prompt = StringPrompt.from("This should fail");
         var parameters = new InferenceParameters(key -> null);
         
-        UnauthorizedException exception = org.junit.jupiter.api.Assertions.assertThrows(
-                UnauthorizedException.class,
+        LanguageModelException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                LanguageModelException.class,
                 () -> openai.complete(prompt, parameters)
         );
         
-        // Verify the exception message contains information about the invalid API key
+        assertEquals(401, exception.code());
         assertTrue(exception.getMessage().contains("Incorrect API key provided"));
-        assertEquals(401, exception.statusCode());
+        assertTrue(exception.getCause() instanceof UnauthorizedException);
     }
     
     @Test
@@ -245,11 +262,12 @@ public class OpenAITest {
         var parameters = new InferenceParameters(API_KEY, key -> null);
         parameters.setEndpoint(endpoint);
         
-        // An exception should be thrown when attempting to use the invalid endpoint
-        org.junit.jupiter.api.Assertions.assertThrows(
-            OpenAIIoException.class,
+        LanguageModelException exception = org.junit.jupiter.api.Assertions.assertThrows(
+            LanguageModelException.class,
                 () -> openai.complete(prompt, parameters)
         );
+        assertEquals(503, exception.code());
+        assertTrue(exception.getCause() instanceof OpenAIIoException);
     }
 
     @Test

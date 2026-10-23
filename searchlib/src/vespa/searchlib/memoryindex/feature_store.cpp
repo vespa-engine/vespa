@@ -2,6 +2,7 @@
 
 #include "feature_store.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/vespalib/datastore/compacting_buffers.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
@@ -23,13 +24,13 @@ using vespalib::datastore::EntryRef;
 uint64_t FeatureStore::writeFeatures(uint32_t packedIndex, const DocIdAndFeatures& features) {
     _f._fieldsParams = &_fieldsParams[packedIndex];
     uint64_t oldOffset = _f.getWriteOffset();
-    assert((oldOffset & 63) == 0);
+    CHECK((oldOffset & 63) == 0);
     if (oldOffset > 2000) {
         _f.setupWrite(_fctx);
         oldOffset = 0;
-        assert(_f.getWriteOffset() == oldOffset);
+        CHECK(_f.getWriteOffset() == oldOffset);
     }
-    assert(!features.has_raw_data());
+    CHECK(!features.has_raw_data());
     _f.writeFeatures(features);
     return oldOffset;
 }
@@ -51,11 +52,11 @@ EntryRef FeatureStore::addFeatures(const uint8_t* src, uint64_t byteLen) {
 
 std::pair<EntryRef, uint64_t> FeatureStore::addFeatures(uint64_t beginOffset, uint64_t endOffset) {
     uint64_t bitLen = (endOffset - beginOffset);
-    assert(static_cast<int64_t>(bitLen) > 0);
+    CHECK(static_cast<int64_t>(bitLen) > 0);
     uint64_t wordLen = (bitLen + 63) / 64;
     uint64_t byteLen = (bitLen + 7) / 8;
-    assert(wordLen > 0);
-    assert(byteLen > 0);
+    CHECK(wordLen > 0);
+    CHECK(byteLen > 0);
     const uint8_t* src = reinterpret_cast<const uint8_t*>(_f._valI - wordLen);
     EntryRef       ref = addFeatures(src, byteLen);
     return std::make_pair(ref, bitLen);
@@ -121,7 +122,7 @@ size_t FeatureStore::bitSize(uint32_t packedIndex, EntryRef ref) {
     _d.skipFeatures(1);
     uint64_t newOffset = _d.getReadOffset();
     uint64_t bitLen = (newOffset - oldOffset);
-    assert(static_cast<int64_t>(bitLen) > 0);
+    CHECK(static_cast<int64_t>(bitLen) > 0);
     return bitLen;
 }
 

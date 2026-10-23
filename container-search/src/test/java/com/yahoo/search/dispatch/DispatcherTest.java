@@ -7,7 +7,6 @@ import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.SystemInfo;
 import ai.vespa.cloud.Zone;
 import com.yahoo.compress.CompressionType;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
@@ -76,7 +75,6 @@ public class DispatcherTest {
         Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false),
                                          cl,
                                          dispatchConfig,
-                                         new QrSearchersConfig.Builder().build(),
                                          systemInfo("default"),
                                          invokerFactory);
         SearchInvoker invoker = disp.getSearchInvoker(q, null);
@@ -97,7 +95,6 @@ public class DispatcherTest {
         Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false),
                                          cl,
                                          dispatchConfig,
-                                         new QrSearchersConfig.Builder().build(),
                                          systemInfo("default"),
                                          invokerFactory);
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
@@ -120,7 +117,6 @@ public class DispatcherTest {
         Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false),
                                          cl,
                                          dispatchConfig,
-                                         new QrSearchersConfig.Builder().build(),
                                          systemInfo("default"),
                                          invokerFactory);
         SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
@@ -138,7 +134,6 @@ public class DispatcherTest {
             Dispatcher disp = new Dispatcher(new ClusterMonitor<>(cl, false),
                                              cl,
                                              dispatchConfig,
-                                             new QrSearchersConfig.Builder().build(),
                                              systemInfo("default"),
                                              invokerFactory);
             disp.getSearchInvoker(new Query(), null);
@@ -156,7 +151,6 @@ public class DispatcherTest {
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false),
                                                cluster,
                                                dispatchConfig,
-                                               new QrSearchersConfig.Builder().build(),
                                                systemInfo("default"),
                                                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
@@ -171,7 +165,6 @@ public class DispatcherTest {
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false),
                                                cluster,
                                                dispatchConfig,
-                                               new QrSearchersConfig.Builder().build(),
                                                systemInfo("default"),
                                                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
@@ -187,7 +180,6 @@ public class DispatcherTest {
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false),
                                                cluster,
                                                dispatchConfig,
-                                               new QrSearchersConfig.Builder().build(),
                                                systemInfo("default"),
                                                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
@@ -203,7 +195,6 @@ public class DispatcherTest {
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false),
                                                cluster,
                                                dispatchConfig,
-                                               new QrSearchersConfig.Builder().build(),
                                                systemInfo("default"),
                                                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
@@ -274,7 +265,7 @@ public class DispatcherTest {
         };
 
         // This factory just forwards search to the dummy RPC layer above, nothing more.
-        InvokerFactoryFactory invokerFactories = (rpcConnectionPool, searchGroups, dispatchConfig, qrSearchersConfig) -> new InvokerFactory(searchGroups, dispatchConfig) {
+        InvokerFactoryFactory invokerFactories = (rpcConnectionPool, searchGroups, dispatchConfig) -> new InvokerFactory(searchGroups, dispatchConfig) {
             @Override protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackend searcher, Query query, int maxHits, Node node) {
                 return Optional.of(new SearchInvoker(Optional.of(node)) {
                     @Override protected Object sendSearchRequest(Query query, double contentShare, Object context) {
@@ -297,7 +288,6 @@ public class DispatcherTest {
         };
 
         Dispatcher dispatcher = new Dispatcher(dispatchConfig,
-                                               new QrSearchersConfig.Builder().build(),
                                                rpcPool,
                                                cluster,
                                                systemInfo("default"),

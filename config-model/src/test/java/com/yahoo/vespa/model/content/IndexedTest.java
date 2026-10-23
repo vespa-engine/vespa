@@ -221,6 +221,40 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
+    void requireThatResultProcessingThreadsSetsQueryLimiter() {
+        String services =
+                "<services version='1.0'>" +
+                        "<admin version='2.0'><adminserver hostalias='node0' /></admin>" +
+                        "<content id='docstore' version='1.0'>\n" +
+                        "    <redundancy>1</redundancy>\n" +
+                        "    <documents>\n" +
+                        "      <document mode='index' type='docstorebench'/>\n" +
+                        "    </documents>\n" +
+                        "    <group>\n" +
+                        "      <node distribution-key='0' hostalias='node0'/>\n" +
+                        "    </group>\n" +
+                        "    <engine>\n" +
+                        "      <proton>\n" +
+                        "        <tuning>\n" +
+                        "          <searchnode>\n" +
+                        "            <requestthreads>\n" +
+                        "              <resultprocessing>7</resultprocessing>\n" +
+                        "            </requestthreads>\n" +
+                        "          </searchnode>\n" +
+                        "        </tuning>\n" +
+                        "      </proton>\n" +
+                        "    </engine>\n" +
+                        "  </content>\n" +
+                        "  </services>";
+
+        List<String> sds = ApplicationPackageUtils.generateSchemas("docstorebench");
+        VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(), services, sds).create();
+        ProtonConfig.Builder pb = new ProtonConfig.Builder();
+        model.getConfig(pb, "docstore/search/cluster.docstore/0");
+        assertEquals(7, new ProtonConfig(pb).search().memory().limiter().maxthreads());
+    }
+
+    @Test
     void testMixedIndexAndStoreOnly() {
         String services =
                 "<services version='1.0'>" +

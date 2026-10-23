@@ -19,6 +19,8 @@ public record FileReference(String value) {
 
     public FileReference {
         Objects.requireNonNull(value);
+        if (containsControlCharacter(value))
+            throw new IllegalArgumentException("File reference value may not contain control characters, but got '" + value + "'");
         if (Path.of(value).normalize().startsWith(".."))
             throw new IllegalArgumentException("Path may not start with '..' but got '" + value + "'");
     }
@@ -48,6 +50,17 @@ public record FileReference(String value) {
         if (! file.exists())
             throw new IllegalArgumentException("File '" + file.getAbsolutePath() + "' does not exist.");
         return new FileReference(file.getPath());
+    }
+
+    /**
+     * Returns true if the string contains any control characters (0x00-0x1F and 0x7F), false otherwise.
+     */
+    private static boolean containsControlCharacter(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c < 0x20 || c == 0x7F) return true;
+        }
+        return false;
     }
 
 }

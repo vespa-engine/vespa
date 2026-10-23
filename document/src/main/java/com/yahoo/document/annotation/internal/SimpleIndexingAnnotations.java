@@ -27,8 +27,9 @@ public final class SimpleIndexingAnnotations {
     private static final Logger log = Logger.getLogger(SimpleIndexingAnnotations.class.getName());
 
     /**
-     * Global feature flag to enable/disable simple annotations representation.
+     * Global flag to enable/disable simple annotations representation.
      * When enabled, uses SimpleIndexingAnnotations (flat arrays) instead of full SpanTree objects.
+     * Currently always true (except for some unit tests for backwards compatibility).
      */
     private static volatile boolean enabled = true;
 
@@ -45,7 +46,10 @@ public final class SimpleIndexingAnnotations {
      * @param value true to enable simple annotations, false to disable
      */
     public static void setEnabled(boolean value) {
-        log.info("SimpleIndexingAnnotations enabled? " + enabled + " -> " + value);
+        if (enabled != value) {
+            // should only happen in unit tests:
+            log.info("SimpleIndexingAnnotations enabled? " + enabled + " -> " + value);
+        }
         enabled = value;
     }
 

@@ -20,7 +20,16 @@ public class SystemNameTest {
 
     @Test
     void allOf() {
-        assertEquals(Set.of(SystemName.cd, SystemName.PublicCd, SystemName.kubernetesCd), SystemName.allOf(SystemName::isCdLike));
-        assertEquals(Set.of(SystemName.PublicCd, SystemName.Public), SystemName.allOf(SystemName::isPublicCloudLike));
+        assertEquals(Set.of(SystemName.cd, SystemName.PublicCd, SystemName.kubernetesCd, SystemName.DevCloud), SystemName.allOf(SystemName::isCdLike));
+        assertEquals(Set.of(SystemName.PublicCd, SystemName.Public, SystemName.DevCloud), SystemName.allOf(SystemName::isPublicCloudLike));
+        assertEquals(Set.of(SystemName.DevCloud), SystemName.allOf(SystemName::isDevCloud));
+    }
+
+    @Test
+    void devCloud() {
+        assertEquals(SystemName.DevCloud, SystemName.from("devcloud"));
+        assertEquals(false, SystemName.DevCloud.isProductionLike());
+        assertEquals(true, SystemName.DevCloud.isHostedLike());
+        assertEquals(true, SystemName.hostedVespa().contains(SystemName.DevCloud));
     }
 }

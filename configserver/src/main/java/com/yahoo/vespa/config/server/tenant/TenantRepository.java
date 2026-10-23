@@ -150,7 +150,7 @@ public class TenantRepository {
              metrics,
              new StripedExecutor<>(),
              new StripedExecutor<>(),
-             new FileDistributionFactory(configserverConfig, fileDirectory, flagSource),
+             new FileDistributionFactory(configserverConfig, fileDirectory),
              flagSource,
              Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())),
              hostProvisionerProvider,

@@ -105,3 +105,38 @@ TEST(StreamingQueryBuilderTest, onear_with_negative_terms) {
     EXPECT_FALSE(terms[1]->isRanked()); // "x" is NOT ranked (negative term)
     EXPECT_FALSE(terms[2]->isRanked()); // "y" is NOT ranked (negative term)
 }
+
+TEST(StreamingQueryBuilderTest, string_range_term_is_constructed) {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+
+    builder.add_string_range_term(search::query::StringRange(std::in_place, "aaa", true, "zzz", false, 100), "", 42,
+                                  Weight(24));
+    auto node = builder.build();
+
+    // Convert to protobuf
+    search::query::QueryToProtobuf converter;
+    auto                           protoQueryTree = converter.serialize(*node);
+
+    // Build streaming query from protobuf
+    auto serializedQueryTree =
+        SerializedQueryTree::fromProtobuf(std::make_unique<decltype(protoQueryTree)>(protoQueryTree));
+    QueryNodeResultFactory empty;
+    Query                  q(empty, *serializedQueryTree);
+
+    // Verify the term is a ranked string-range term
+    auto& string_range_term = dynamic_cast<search::streaming::QueryTerm&>(q.getRoot());
+    EXPECT_TRUE(string_range_term.is_string_range());
+    EXPECT_TRUE(string_range_term.isRanked());
+    EXPECT_EQ(42, string_range_term.uniqueId());
+    EXPECT_EQ(Weight(24), string_range_term.weight());
+
+    // Verify the string-range specs
+    auto term_spec = string_range_term.get_string_range_spec();
+    ASSERT_TRUE(term_spec);
+    ASSERT_TRUE(term_spec->left);
+    EXPECT_EQ("aaa", *term_spec->left);
+    EXPECT_TRUE(term_spec->left_closed);
+    ASSERT_TRUE(term_spec->right);
+    EXPECT_EQ("zzz", *term_spec->right);
+    EXPECT_FALSE(term_spec->right_closed);
+}

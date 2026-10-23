@@ -4,7 +4,6 @@ package com.yahoo.search.dispatch.rpc;
 import ai.vespa.telemetry.api.trace.TraceAttributes;
 import ai.vespa.telemetry.api.trace.OtelTracing;
 import com.yahoo.compress.Compressor;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.InvokerResult;
@@ -39,7 +38,6 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
     private final BlockingQueue<Client.ResponseOrError<ProtobufResponse>> responses;
     private final int maxHits;
     private final CompressPayload compressor;
-    private final QrSearchersConfig qrSearchersConfig;
 
     private Query query;
 
@@ -47,7 +45,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
      *  Created on the worker thread, ended on whichever thread learns the outcome — Span is thread-safe. */
     private Span span = Span.getInvalid();
 
-    RpcSearchInvoker(VespaBackend searcher, CompressPayload compressor, Node node, RpcConnectionPool resourcePool, int maxHits, QrSearchersConfig qrSearchersConfig) {
+    RpcSearchInvoker(VespaBackend searcher, CompressPayload compressor, Node node, RpcConnectionPool resourcePool, int maxHits) {
         super(Optional.of(node));
         this.searcher = searcher;
         this.node = node;
@@ -55,7 +53,6 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         this.responses = new LinkedBlockingQueue<>(1);
         this.maxHits = maxHits;
         this.compressor = compressor;
-        this.qrSearchersConfig = qrSearchersConfig;
     }
 
     @Override
@@ -174,7 +171,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
                                    ProtobufSerialization.serializeSearchRequest(query,
                                                                                 Math.min(query.getHits(), maxHits),
                                                                                 searcher.getServerId(), contentShare,
-                                                                                requestTimeout, qrSearchersConfig));
+                                                                                requestTimeout));
     }
 
     private boolean newSerializationWillBeSimilar(double newContentShare, SerializedQuery serializedQuery) {

@@ -7,7 +7,6 @@ import ai.vespa.telemetry.api.trace.OtelTracing;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.yahoo.collections.ListMap;
 import com.yahoo.compress.Compressor;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.protect.Error;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.slime.SlimeAdapter;
@@ -63,7 +62,6 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     private final String serverId;
     private final CompressPayload compressor;
     private final DecodePolicy decodePolicy;
-    private final QrSearchersConfig qrSearchersConfig;
 
     private record ResponseAndHits(Client.ResponseOrError<ProtobufResponse> response, List<FastHit> hits) {}
 
@@ -82,15 +80,13 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     private static final AtomicInteger retryTimeoutCounter = new AtomicInteger();
 
     RpcProtobufFillInvoker(RpcConnectionPool resourcePool, CompressPayload compressor, DocumentDatabase documentDb,
-                           String serverId, DecodePolicy decodePolicy, boolean summaryNeedsQuery,
-                           QrSearchersConfig qrSearchersConfig) {
+                           String serverId, DecodePolicy decodePolicy, boolean summaryNeedsQuery) {
         this.documentDb = documentDb;
         this.resourcePool = resourcePool;
         this.serverId = serverId;
         this.summaryNeedsQuery = summaryNeedsQuery;
         this.compressor = compressor;
         this.decodePolicy = decodePolicy;
-        this.qrSearchersConfig = qrSearchersConfig;
         this.partialSummaryHandler = new PartialSummaryHandler(documentDb);
     }
 
@@ -131,7 +127,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         String askForSummary = partialSummaryHandler.askForSummary();
         Set<String> onlyFields = partialSummaryHandler.askForFields();
         var builder = ProtobufSerialization.createDocsumRequestBuilder(
-                result.getQuery(), serverId, askForSummary, onlyFields, summaryNeedsQuery, timeout.request(), qrSearchersConfig);
+                result.getQuery(), serverId, askForSummary, onlyFields, summaryNeedsQuery, timeout.request());
         hitsByNode.forEach((nodeId, hits) -> {
             var payload = ProtobufSerialization.serializeDocsumRequest(builder, hits);
             sendDocsumsRequest(nodeId, hits, payload, result, timeout.client());

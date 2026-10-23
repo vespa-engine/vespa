@@ -4,6 +4,7 @@
 
 #include "match_tools.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchlib/fef/rank_program.h>
@@ -42,8 +43,8 @@ struct MyChunk : Runnable {
             FeatureValues& result_in, const Doom& doom_in)
         : begin(begin_in), end(end_in), result(result_in), doom(doom_in) {}
     void calculate_features(SearchIterator& search, const FeatureResolver& resolver) {
-        assert(end > begin);
-        assert(resolver.num_features() == result.names.size());
+        CHECK(end > begin);
+        CHECK(resolver.num_features() == result.names.size());
         search.initRange(begin[0].first, end[-1].first + 1);
         for (auto pos = begin; pos != end; ++pos) {
             if (doom.hard_doom()) {
@@ -129,7 +130,7 @@ FeatureValues ExtractFeatures::get_match_features(const MatchToolsFactory& mtf, 
         }
         idx += chunk_size;
     }
-    assert(idx == docs.size());
+    CHECK(idx == docs.size());
     thread_bundle.run(chunks);
     return result;
 }

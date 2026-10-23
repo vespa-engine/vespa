@@ -20,16 +20,32 @@ class SchemaInfoConfigurer {
 
     static Schema toSchema(SchemaInfoConfig.Schema schemaInfoConfig) {
         Schema.Builder schemaBuilder = new Schema.Builder(schemaInfoConfig.name());
+        if ( ! schemaInfoConfig.explanation().isEmpty())
+            schemaBuilder.setExplanation(schemaInfoConfig.explanation());
 
         for (var fieldConfig : schemaInfoConfig.field()) {
             Field.Builder fieldBuilder = new Field.Builder(fieldConfig.name(), fieldConfig.type());
             fieldBuilder.setAttribute(fieldConfig.attribute());
             fieldBuilder.setIndex(fieldConfig.index());
-            fieldBuilder.setBitPacked(fieldConfig.index());
-            fieldBuilder.setFastMapSearch(fieldConfig.fastMapSearch());
+            fieldBuilder.setBitPacked(fieldConfig.bitPacked());
+            if ( ! fieldConfig.explanation().isEmpty())
+                fieldBuilder.setExplanation(fieldConfig.explanation());
+            for (var fastMapConfig : fieldConfig.fastMapSearchFields())
+                fieldBuilder.addFastMapSearch(new Field.FastMapSearchFields(fastMapConfig.lookupName(),
+                                                                            fastMapConfig.keyField(),
+                                                                            Field.Type.from(fastMapConfig.keyType()),
+                                                                            fastMapConfig.valueField(),
+                                                                            Field.Type.from(fastMapConfig.valueType())));
             for (var alias : fieldConfig.alias())
                 fieldBuilder.addAlias(alias);
             schemaBuilder.add(fieldBuilder.build());
+        }
+
+        for (var fieldSetConfig : schemaInfoConfig.fieldset()) {
+            FieldSet.Builder fieldSetBuilder = new FieldSet.Builder(fieldSetConfig.name());
+            for (String fieldName : fieldSetConfig.field())
+                fieldSetBuilder.addField(fieldName);
+            schemaBuilder.add(fieldSetBuilder.build());
         }
 
         for (var profileConfig : schemaInfoConfig.rankprofile()) {
@@ -37,6 +53,8 @@ class SchemaInfoConfigurer {
                     .setHasSummaryFeatures(profileConfig.hasSummaryFeatures())
                     .setHasRankFeatures(profileConfig.hasRankFeatures())
                     .setUseSignificanceModel(profileConfig.significance().useModel());
+            if ( ! profileConfig.explanation().isEmpty())
+                profileBuilder.setExplanation(profileConfig.explanation());
             if (profileConfig.keepRankCount() >= 0)
                 profileBuilder.setKeepRankCount(profileConfig.keepRankCount());
             if (profileConfig.totalKeepRankCount() >= 0)

@@ -4,7 +4,6 @@ package com.yahoo.search.dispatch.rpc;
 
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.google.protobuf.ByteString;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.document.GlobalId;
 import com.yahoo.document.idstring.IdString;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -12,6 +11,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.InvokerResult;
 import com.yahoo.search.dispatch.LeanHit;
 import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,7 @@ public class ProtobufSerializationTest {
                 .setRequest("?query=test&ranking.features.query(tensor_1)=[1.200]")
                 .build();
 
-        SearchProtocol.SearchRequest request1 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
+        SearchProtocol.SearchRequest request1 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 1.0, 0.5);
         assertEquals(9, request1.getHits());
         assertEquals(0, request1.getRankPropertiesCount());
         assertEquals(0, request1.getTensorRankPropertiesCount());
@@ -52,7 +52,7 @@ public class ProtobufSerializationTest {
         assertFalse(request1.hasProfiling());
 
         query.prepare(); // calling prepare() moves "overrides" to "features" - content stays the same
-        SearchProtocol.SearchRequest request2 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
+        SearchProtocol.SearchRequest request2 = ProtobufSerialization.convertFromQuery(query, 9, "serverId", 1.0, 0.5);
         assertEquals(9, request2.getHits());
         assertEquals(0, request2.getRankPropertiesCount());
         assertEquals(2, request2.getTensorRankPropertiesCount());
@@ -67,8 +67,7 @@ public class ProtobufSerializationTest {
     @Test
     void testDocsumSerialization() {
         Query q = new Query("search/?query=test&hits=10&offset=3");
-        var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", Set.of("f1", "f2"),true, 0.5,
-                                                                       new QrSearchersConfig.Builder().sendProtobufQuerytree(true).build());
+        var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", Set.of("f1", "f2"), true, 0.5);
         builder.setTimeout(0);
         var hit = new FastHit(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId(), 0, OptionalInt.of(0), 0, 0);
         var bytes = ProtobufSerialization.serializeDocsumRequest(builder, List.of(hit));
@@ -153,33 +152,73 @@ public class ProtobufSerializationTest {
         var q = new Query("?query=test&trace.level=1&" +
                 "trace.profiling.matching.depth=3&" +
                 "trace.profiling.firstPhaseRanking.depth=5&" +
-                "trace.profiling.secondPhaseRanking.depth=-7");
-        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
+                "trace.profiling.secondPhaseRanking.depth=-7&" +
+                "trace.profiling.sortFeatures.depth=-4");
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
         assertEquals(3, req.getProfiling().getMatch().getDepth());
         assertEquals(5, req.getProfiling().getFirstPhase().getDepth());
         assertEquals(-7, req.getProfiling().getSecondPhase().getDepth());
+        assertEquals(-4, req.getProfiling().getSortFeatures().getDepth());
     }
 
     @Test
     void only_set_profiling_parameters_are_serialized_in_search_request() {
         var q = new Query("?query=test&trace.level=1&" +
                 "trace.profiling.matching.depth=3");
-        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
         assertEquals(3, req.getProfiling().getMatch().getDepth());
+        assertFalse(req.getProfiling().hasFirstPhase());
+        assertFalse(req.getProfiling().hasSecondPhase());
+        assertFalse(req.getProfiling().hasSortFeatures());
+    }
+
+    @Test
+    void profiling_parameters_are_serialized_when_query_profile_is_used() {
+        var q = new Query("?query=test&trace.level=1&" +
+                          "trace.profiling.matching.depth=3",
+                          new QueryProfile("test").compile(null));
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
+        assertEquals(3, req.getProfiling().getMatch().getDepth());
+        assertFalse(req.getProfiling().hasFirstPhase());
+        assertFalse(req.getProfiling().hasSecondPhase());
+        assertFalse(req.getProfiling().hasSortFeatures());
+    }
+
+    @Test
+    void sort_features_profiling_is_serialized_when_query_profile_is_used() {
+        var q = new Query("?query=test&trace.level=1&" +
+                          "trace.profiling.sortFeatures.depth=3",
+                          new QueryProfile("test").compile(null));
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
+        assertEquals(3, req.getProfiling().getSortFeatures().getDepth());
+        assertFalse(req.getProfiling().hasMatch());
         assertFalse(req.getProfiling().hasFirstPhase());
         assertFalse(req.getProfiling().hasSecondPhase());
     }
 
     @Test
+    void clearing_profile_depth_omits_profiling_from_search_request() {
+        var q = new Query("?query=test&trace.level=1&" +
+                "trace.profiling.sortFeatures.depth=2");
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
+        assertEquals(2, req.getProfiling().getSortFeatures().getDepth());
+
+        q.getTrace().setProfileDepth(0);
+        req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
+        assertFalse(req.hasProfiling());
+        assertEquals(0, req.getProfileDepth());
+    }
+
+    @Test
     void feature_sort_is_serialized_as_opaque_field() {
         Query q = new Query("?query=test&sorting=-feature(foo)");
-        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
+        var req = ProtobufSerialization.convertFromQuery(q, 1, "serverId", 1.0, 0.5);
         assertEquals(1, req.getSortingCount());
         assertEquals("feature(foo)", req.getSorting(0).getField());
         assertFalse(req.getSorting(0).getAscending());
 
         Query ascending = new Query("?query=test&sorting=feature(foo)");
-        var req2 = ProtobufSerialization.convertFromQuery(ascending, 1, "serverId", 1.0, 0.5, new QrSearchersConfig.Builder().build());
+        var req2 = ProtobufSerialization.convertFromQuery(ascending, 1, "serverId", 1.0, 0.5);
         assertEquals("feature(foo)", req2.getSorting(0).getField());
         assertTrue(req2.getSorting(0).getAscending());
     }

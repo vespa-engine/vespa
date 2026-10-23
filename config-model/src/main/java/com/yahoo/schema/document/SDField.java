@@ -33,11 +33,13 @@ import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 
 /**
@@ -54,7 +56,7 @@ public class SDField extends Field implements ImmutableSDField {
     private boolean indexStructureField = false;
 
     /** Whether a synthetic key+value field should be built (with fast search structure) */
-    private boolean fastMapSearch = false;
+    private final List<FastMapSearchFields> fastMapSearches = new ArrayList<>();
 
     /** The indexing statements to be applied to this value during indexing */
     private ScriptExpression indexingScript = new ScriptExpression();
@@ -80,6 +82,8 @@ public class SDField extends Field implements ImmutableSDField {
      */
     private int weight = 100;
 
+    private String explanation = null;
+
     /**
      * Indicates what kind of matching should be done on this field
      */
@@ -101,6 +105,8 @@ public class SDField extends Field implements ImmutableSDField {
 
     private String indexLinguisticsProfile;
     private String searchLinguisticsProfile;
+    private TokensMode indexLinguisticsTokens;
+    private TokensMode searchLinguisticsTokens;
 
     /** Extra query commands of this field */
     private final List<String> queryCommands = new java.util.ArrayList<>(0);
@@ -508,14 +514,20 @@ public class SDField extends Field implements ImmutableSDField {
         this.indexStructureField = indexStructureField;
     }
 
-    /** Returns whether a fast search structure should be built for the synthetic key value field */
+    /** Returns whether a fast search structure should be built for at least one synthetic key value field */
     @Override
     public boolean hasFastMapSearch() {
-        return fastMapSearch;
+        return ! fastMapSearches.isEmpty();
     }
 
-    public void setFastMapSearch(boolean fastMapSearch) {
-        this.fastMapSearch = fastMapSearch;
+    /** Returns the key and value fields of each fast map search of this field, or an empty list if it has none */
+    @Override
+    public List<FastMapSearchFields> getFastMapSearches() {
+        return List.copyOf(fastMapSearches);
+    }
+
+    public void addFastMapSearch(FastMapSearchFields fastMapSearch) {
+        this.fastMapSearches.add(fastMapSearch);
     }
 
     @Override
@@ -540,6 +552,13 @@ public class SDField extends Field implements ImmutableSDField {
     /** Returns the weight of this field, or 0 if nothing is set */
     @Override
     public int getWeight() { return weight; }
+
+    /** Sets a free text explanation of the content and usage of this field, or null to remove it. */
+    public void setExplanation(String explanation) { this.explanation = explanation; }
+
+    /** Returns the free text explanation of the content and usage of this field, if any. Explanations are not inherited. */
+    @Override
+    public Optional<String> getExplanation() { return Optional.ofNullable(explanation); }
 
     /** Returns what kind of matching type should be applied. */
     @Override
@@ -576,7 +595,15 @@ public class SDField extends Field implements ImmutableSDField {
     public void setMatchingCase(Case casing) {
         this.getMatching().setCase(casing);
         for (SDField structField : getStructFields()) {
-            structField.setMatchingCase(casing);
+            structField.inheritMatchingCase(casing);
+        }
+    }
+
+    /** Set the matching casing for this field and all subfields, as inherited from the enclosing field. */
+    private void inheritMatchingCase(Case casing) {
+        this.getMatching().inheritCase(casing);
+        for (SDField structField : getStructFields()) {
+            structField.inheritMatchingCase(casing);
         }
     }
 
@@ -784,6 +811,16 @@ public class SDField extends Field implements ImmutableSDField {
 
     @Override
     public String getSearchLinguisticsProfile() { return searchLinguisticsProfile; }
+
+    public void setIndexLinguisticsTokens(TokensMode tokens) { this.indexLinguisticsTokens = tokens; }
+
+    @Override
+    public TokensMode getIndexLinguisticsTokens() { return indexLinguisticsTokens; }
+
+    public void setSearchLinguisticsTokens(TokensMode tokens) { this.searchLinguisticsTokens = tokens; }
+
+    @Override
+    public TokensMode getSearchLinguisticsTokens() { return searchLinguisticsTokens; }
 
     public void addQueryCommand(String name) {
        queryCommands.add(name);

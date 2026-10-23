@@ -887,3 +887,125 @@
    fun:OPENSSL_strlcat
    ...
 }
+{
+   for vespa-openssl on EL9/EL10 (optimized string scanning in namemap)
+   Memcheck:Cond
+   fun:ossl_namemap_name2num
+   obj:*/libcrypto.so*
+   obj:*/libcrypto.so*
+   ...
+}
+{
+   for vespa-openssl on EL9/EL10 (optimized string scanning in namemap)
+   Memcheck:Cond
+   fun:namemap_add_name
+   obj:*/libcrypto.so*
+   obj:*/libcrypto.so*
+   ...
+}
+{
+   for vespa-openssl on EL9/EL10 (optimized string scanning in namemap)
+   Memcheck:Cond
+   fun:ossl_namemap_name2num
+   obj:*/libcrypto.so*
+   obj:*/libssl.so*
+   ...
+}
+{
+   for grpc
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:_GLOBAL__sub_I_config_vars.cc
+   ...
+}
+{
+   grpc_telemetry_static_init_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:*grpc_core*InstrumentIndex*Register*
+   ...
+   fun:_GLOBAL__sub_I_telemetry.cc
+}
+{
+   grpc_tls_telemetry_static_init_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:*grpc_core*InstrumentIndex*Register*
+   ...
+   fun:_GLOBAL__sub_I_tls_telemetry.cc
+}
+{
+   grpc_subchannel_metrics_static_init_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:*grpc_core*InstrumentIndex*Register*
+   ...
+   fun:_GLOBAL__sub_I_subchannel_metrics.cc
+}
+{
+   abseil_cpp_stack_unwind_on_x86_64
+   Memcheck:Cond
+   fun:_Z10UnwindImplILb0ELb0EEiPPvPmPiiiPKvS3_
+   fun:Unwind<false, false>
+}
+{
+   grpc_channel_create_using_static_hash_map_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   ...
+   fun:grpc_channel_create
+}
+{
+   grpc_endpoint_address_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   ...
+   fun:_ZNK9grpc_core29EndpointAddressesListIterator7ForEachEN4absl12lts_2026010711FunctionRefIFvRKNS_17EndpointAddressesEEEE
+}
+{
+   grpc_client_channel_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:make_unique<grpc_core::ClientChannelFilter::ResolverResultHandler, grpc_core::ClientChannelFilter*>
+   ...
+   fun:_ZZN9grpc_core12_GLOBAL__N_120ThreadInternalsPosixC4EPKcPFvPvES4_PbRKNS_6Thread7OptionsEENUlS4_E_4_FUNES4_
+}
+{
+   gprc_event_engine_leak_1
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   ...
+   fun:_ZN17grpc_event_engine12experimental22WorkStealingThreadPool11ThreadState4StepEv
+}
+{
+   grpc_event_engine_leak_2
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   ...
+   fun:_ZN17grpc_event_engine12experimental22WorkStealingThreadPool11ThreadState10ThreadBodyEv
+}
+{
+   grpc_event_engine_factory_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   fun:_ZN17grpc_event_engine12experimental25DefaultEventEngineFactoryEv
+}
+{
+   opentelemetry_batch_span_processor_leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   fun:_ZN13opentelemetry2v23sdk5trace25BatchSpanProcessorFactory6CreateEOSt10unique_ptrINS2_12SpanExporterESt14default_deleteIS5_EERKNS2_25BatchSpanProcessorOptionsE
+}

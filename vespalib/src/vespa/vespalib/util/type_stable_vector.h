@@ -1,0 +1,189 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include "alloc.h"
+#include "array.h"
+#include "generationholder.h"
+#include "growstrategy.h"
+#include "memoryusage.h"
+
+#include <span>
+
+namespace vespalib {
+
+template <typename T> class TypeStableVectorHeld : public GenerationHeldBase {
+    T _data;
+
+public:
+    TypeStableVectorHeld(size_t size, T&& data) noexcept;
+    ~TypeStableVectorHeld() override;
+};
+
+/**
+ * Vector class for elements of type T that ensures reader threads
+ * will have a consistent view of the vector while the update thread is
+ * inserting new elements.
+ *
+ * The update thread is also responsible for updating the current
+ * generation of the vector, and initiating removing of old underlying
+ * data vectors.
+ **/
+template <typename T> class TypeStableVectorBase {
+private:
+    static_assert(std::is_trivially_destructible<T>::value, "Value type must be trivially destructible");
+
+    using ArrayType = Array<T>;
+    using Alloc = alloc::Alloc;
+
+protected:
+    using GenerationHolderType = GenerationHolder;
+
+private:
+    ArrayType             _data;
+    std::atomic<const T*> _vector_start;
+    GrowStrategy          _growStrategy;
+    GenerationHolderType& _genHolder;
+
+    size_t calcNewSize(size_t baseSize) const noexcept;
+    size_t calcNewSize() const noexcept;
+    void expand(size_t newCapacity);
+    void expandAndInsert(const T& v);
+    void update_vector_start() noexcept;
+
+protected:
+    virtual void onReallocation();
+
+public:
+    using ValueType = T;
+
+    /**
+     * Construct a new vector with the given initial capacity and grow
+     * parameters.
+     *
+     * New capacity is calculated based on old capacity and grow parameters:
+     * nc = oc + (oc * growPercent / 100) + growDelta.
+     **/
+    TypeStableVectorBase(GrowStrategy growStrategy, GenerationHolderType& genHolder,
+                         const Alloc& initialAlloc = Alloc::alloc());
+
+    virtual ~TypeStableVectorBase();
+
+    /**
+     * Return whether all capacity has been used.  If true the next
+     * call to push_back() will cause an expand of the underlying
+     * data.
+     * isFull() should be called from writer only.
+     * Const type qualifier removed to prevent call from readers.
+     **/
+    bool isFull() noexcept { return _data.size() == _data.capacity(); }
+
+    /**
+     * Return the combined memory usage for this instance.
+     **/
+    virtual MemoryUsage getMemoryUsage() const noexcept;
+
+    // vector interface
+    // no swap method, use reset() to forget old capacity and holds
+    // NOTE: Unsafe resize/reserve may invalidate data references held by readers!
+    void unsafe_resize(size_t n);
+    void unsafe_reserve(size_t n);
+    void ensure_size(size_t n, T fill = T());
+    void reserve(size_t n) {
+        if (n > capacity()) {
+            expand(calcNewSize(n));
+        }
+    }
+    void push_back(const T& v) {
+        if (_data.size() < _data.capacity()) {
+            _data.push_back(v);
+        } else {
+            expandAndInsert(v);
+        }
+    }
+
+    bool empty() const noexcept { return _data.empty(); }
+    /*
+     * size() should be called from writer only.
+     * Const type qualifier removed to prevent call from readers.
+     */
+    size_t size() noexcept { return _data.size(); }
+    /*
+     * get_size() should be called from writer only or with proper lock held.
+     * Used in predicate attribute by reader (causing data race).
+     */
+    size_t get_size() const noexcept { return _data.size(); }
+    /*
+     * capacity() should be called from writer only.
+     * Const type qualifier removed to prevent call from readers.
+     */
+    size_t capacity() noexcept { return _data.capacity(); }
+    void clear() { _data.clear(); }
+    /*
+     * operator[]() should be called from writer only.
+     * Overload with const type qualifier removed to prevent call from readers.
+     */
+    T& operator[](size_t i) noexcept { return _data[i]; }
+    /*
+     * Readers holding a generation guard can call acquire_elem_ref(i)
+     * to get a const reference to element i. Array bound must be handled
+     * by reader, cf. committed docid limit in attribute vectors.
+     */
+    const T& acquire_elem_ref(size_t i) const noexcept {
+        return *(_vector_start.load(std::memory_order_acquire) + i);
+    }
+
+    const T& get_elem_ref(size_t i) const noexcept { return _data[i]; } // Called from writer only
+
+    void prefetch_elem_ref(size_t i) const noexcept {
+        __builtin_prefetch(_vector_start.load(std::memory_order_acquire) + i);
+    }
+
+    /*
+     * Readers holding a generation guard can call make_read_view() to
+     * get a read view to the type stable vector. Array bound (read_size) must
+     * be specified by reader, cf. committed docid limit in attribute vectors.
+     */
+    std::span<const T> make_read_view(size_t read_size) const noexcept {
+        return std::span<const T>(&acquire_elem_ref(0), read_size);
+    }
+
+    void reset();
+    void shrink(size_t newSize) __attribute__((noinline));
+    void replaceVector(ArrayType replacement);
+    ArrayType create_replacement_vector() const { return _data.create(); }
+};
+
+template <typename T> class TypeStableVector final : public TypeStableVectorBase<T> {
+private:
+    using GenerationHolderType = typename TypeStableVectorBase<T>::GenerationHolderType;
+    Generation           _generation;
+    GenerationHolderType _genHolderStore;
+
+    void onReallocation() override;
+
+public:
+    TypeStableVector();
+
+    /**
+     * Construct a new vector with the given initial capacity and grow
+     * parameters.
+     *
+     * New capacity is calculated based on old capacity and grow parameters:
+     * nc = oc + (oc * growPercent / 100) + growDelta.
+     **/
+    explicit TypeStableVector(GrowStrategy growStrategy);
+    ~TypeStableVector() override;
+
+    Generation getGeneration() const noexcept { return _generation; }
+    void setGeneration(Generation generation) noexcept { _generation = generation; }
+
+    /**
+     * Remove all old data vectors where generation < firstUsed.
+     **/
+    void reclaim_memory(Generation oldest_used_gen);
+
+    MemoryUsage getMemoryUsage() const noexcept override;
+};
+
+} // namespace vespalib

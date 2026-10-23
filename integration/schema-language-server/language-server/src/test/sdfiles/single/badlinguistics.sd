@@ -1,0 +1,35 @@
+# Contradictory linguistics settings. Each must be reported on its own, without aborting the
+# parse of the rest of the file: the field after them must still be parsed and indexed.
+schema badlinguistics {
+    document badlinguistics {
+        field bad_tokens_value type string {
+            indexing: index
+            linguistics {
+                tokens: shortest
+            }
+        }
+        field duplicate_tokens type string {
+            indexing: index
+            linguistics {
+                tokens: original
+                tokens: alternatives
+            }
+        }
+        field combined_profile_forms type string {
+            indexing: index
+            linguistics {
+                profile: p1
+                profile {
+                    index: p2
+                }
+            }
+        }
+        field fine type string {
+            indexing: index
+            linguistics {
+                profile: p3
+                tokens: alternatives
+            }
+        }
+    }
+}

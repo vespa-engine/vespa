@@ -48,6 +48,7 @@ import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -79,6 +80,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.PREFIX_LENGTH;
@@ -328,11 +330,29 @@ public class SelectParser implements Parser {
         };
     }
 
-    public List<VespaGroupingStep> getGroupingSteps(String grouping){
+    public List<VespaGroupingStep> getGroupingSteps(String grouping) {
+        return getGroupingSteps(grouping, null);
+    }
+
+    /**
+     * Returns the grouping steps of the given JSON grouping, resolving parameter references on the form @name
+     * using the given function, see {@link GroupingOperation#fromStringAsList(String, Function)}.
+     */
+    public List<VespaGroupingStep> getGroupingSteps(String grouping, Function<String, String> parameters) {
         List<VespaGroupingStep> groupingSteps = new ArrayList<>();
         List<String> groupingOperations = toGroupingRequests(grouping);
         for (String groupingString : groupingOperations) {
-            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingString);
+            GroupingOperation groupingOperation;
+            try {
+                groupingOperation = GroupingOperation.fromString(groupingString, parameters);
+            }
+            catch (IllegalInputException e) {
+                throw e;
+            }
+            catch (IllegalArgumentException e) {
+                // An invalid grouping is illegal input, also when it is first parsed after the query is constructed
+                throw new IllegalInputException(e.getMessage(), e);
+            }
             VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
             groupingSteps.add(groupingStep);
         }
@@ -396,7 +416,7 @@ public class SelectParser implements Parser {
                     if (isOperationBody && "each".equals(name)) {
                         directEachSeen[0] = true;
                         if (label != null) {
-                            b.append(" as(").append(UnicodeUtilities.quote(label, '"')).append(")");
+                            b.append(" as(").append(asLabelImage(label)).append(")");
                         }
                     }
                     b.append(" ");
@@ -414,6 +434,17 @@ public class SelectParser implements Parser {
                 b.append(groupingJson.toString());
                 break;
         }
+    }
+
+    /**
+     * Returns a JSON label as it must be written in the grouping language: a parameter reference (@name) as is,
+     * so it is resolved like a parameter anywhere else in the grouping, and any other label as a quoted string.
+     */
+    private static String asLabelImage(String label) {
+        if (label.matches("@[A-Za-z_][A-Za-z0-9_-]*")) {
+            return label;
+        }
+        return UnicodeUtilities.quote(label, '"');
     }
 
     /** Describes where a misplaced "label" was found (only reached when isOperationBody is false). */
@@ -774,7 +805,11 @@ public class SelectParser implements Parser {
                 if (hitLimit != null) {
                     number.setHitLimit(hitLimit);
                 }
-
+            } else if (out instanceof StringRangeItem stringRange && annotations != null) {
+                Integer hitLimit = getCappedRangeSearchParameter(annotations);
+                if (hitLimit != null) {
+                    stringRange.setHitLimit(hitLimit);
+                }
             }
         }
 
@@ -875,16 +910,15 @@ public class SelectParser implements Parser {
     private Item buildSameElementWithElementFilter(EqualsParams params) {
         int elementIndex = YqlParser.convertToElementId(params.index.asLong());
         var value = params.value;
-        // Convert value to string — sameElement only supports string children (consistent with YqlParser).
-        String stringValue = switch (value.type()) {
-            case BOOL -> String.valueOf(value.asBool());
-            case LONG -> String.valueOf(value.asLong());
-            case DOUBLE -> String.valueOf(value.asDouble());
-            case STRING -> value.asString();
+        // Numbers become numeric equality terms, other values word terms (consistent with YqlParser).
+        Item valueItem = switch (value.type()) {
+            case LONG -> new IntItem(String.valueOf(value.asLong()), "", true);
+            case DOUBLE -> new IntItem(String.valueOf(value.asDouble()), "", true);
+            case BOOL -> new WordItem(String.valueOf(value.asBool()), "", true);
+            case STRING -> new WordItem(value.asString(), "", true);
             default -> throw new IllegalArgumentException("'value' in 'equals' should be a boolean, integer, double, " +
                                                           "or string but was " + value.type());
         };
-        Item valueItem = new WordItem(stringValue, "", true);
 
         SameElementItem sameElement = new SameElementItem(params.field.asString());
         sameElement.setElementFilter(List.of(elementIndex));
@@ -945,8 +979,6 @@ public class SelectParser implements Parser {
         Map<Integer, Inspector> children = childMap(value);
         Inspector annotations = getAnnotations(value);
 
-        boolean[] equals = {false};
-
         String field;
         Inspector boundInspector;
         if (children.get(0).type() == STRING){
@@ -956,6 +988,48 @@ public class SelectParser implements Parser {
             field = getIndex(children.get(1).asString());
             boundInspector = children.get(0);
         }
+
+        var index = indexOf(field);
+        if (index.isString() && !index.isInteger() && !index.isNumerical())
+            return leafStyleSettings(annotations, buildStringRange(field, boundInspector, annotations));
+        else
+            return leafStyleSettings(annotations, buildIntRange(field, boundInspector));
+    }
+
+    /**
+     * Builds a lexical range over a string field, e.g. {"range": ["title", {">=": "aaa", "<": "zzz"}]}.
+     * Omitting a bound makes the interval unbounded in that direction, as -Infinity and Infinity do in YQL,
+     * such that an empty bound object matches everything.
+     */
+    private StringRangeItem buildStringRange(String field, Inspector boundInspector, Inspector annotations) {
+        String[] bounds = {null, null};
+        boolean[] inclusive = {false, false};
+        boundInspector.traverse((ObjectTraverser) (operator, bound) -> {
+            if (bound.type() != STRING) {
+                throw new IllegalArgumentException("The field '" + field + "' is a string field, but the argument "
+                                                   + bound + " to range is of type " + bound.type());
+            }
+            switch (operator) {
+                case "=" -> {
+                    bounds[0] = bounds[1] = bound.asString();
+                    inclusive[0] = inclusive[1] = true;
+                }
+                case ">=", ">" -> {
+                    bounds[0] = bound.asString();
+                    inclusive[0] = operator.equals(">=");
+                }
+                case "<=", "<" -> {
+                    bounds[1] = bound.asString();
+                    inclusive[1] = operator.equals("<=");
+                }
+                default -> throw newUnexpectedArgumentException(operator, "=", "<", "<=", ">", ">=");
+            }
+        });
+        return new StringRangeItem(bounds[0], inclusive[0], bounds[1], inclusive[1], field, true, getOrigin(annotations));
+    }
+
+    private IntItem buildIntRange(String field, Inspector boundInspector) {
+        boolean[] equals = {false};
         Number[] bounds = {null, null};
         String[] operators = {null, null};
         boundInspector.traverse((ObjectTraverser) (operator, bound) -> {
@@ -994,7 +1068,7 @@ public class SelectParser implements Parser {
             range = instantiateRangeItem(bounds[0], bounds[1], field, operators[0].equals(">"), operators[1].equals("<"));
         }
 
-        return leafStyleSettings(annotations, range);
+        return range;
     }
 
     private IntItem buildGreaterThanOrEquals(String field, String bound) {
@@ -1726,6 +1800,11 @@ public class SelectParser implements Parser {
         String expanded = indexNameExpander.expand(field);
         Preconditions.checkArgument(indexFactsSession.isIndex(expanded), "Field '%s' does not exist.", expanded);
         return indexFactsSession.getCanonicName(field);
+    }
+
+    /** Returns the index of a field name as returned by {@link #getIndex}. */
+    private Index indexOf(String field) {
+        return indexFactsSession.getIndex(indexNameExpander.expand(field));
     }
 
     private static void assertHasOperator(String key, String expectedKey) {

@@ -6,6 +6,7 @@
 #include "multi_numeric_flag_search_context.h"
 #include "multinumericattribute.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/query/query_term_simple.h>
@@ -29,7 +30,7 @@ public:
 
     void save(uint32_t e, uint32_t docId, int32_t weight) {
         (void)weight;
-        assert(e < _map.size());
+        CHECK(e < _map.size());
         _fa.setNewBVValue(docId, _map[e]);
     }
 };
@@ -68,16 +69,17 @@ template <typename B> bool FlagAttributeT<B>::onLoadEnumerated(ReaderBase& attrR
     uint32_t numDocs = attrReader.getNumIdx() - 1;
     uint64_t numValues = attrReader.getNumValues();
     uint64_t enumCount = attrReader.getEnumCount();
-    assert(numValues == enumCount);
+    CHECK(numValues == enumCount);
     (void)enumCount;
 
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
-    if (numValues > 0)
+    if (numValues > 0) {
         _bitVectorSize = numDocs;
+    }
 
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
-    assert((udatBuffer->size() % sizeof(TT)) == 0);
+    CHECK((udatBuffer->size() % sizeof(TT)) == 0);
     std::span<const TT> map(reinterpret_cast<const TT*>(udatBuffer->buffer()), udatBuffer->size() / sizeof(TT));
     SaveBits<FlagAttributeT<B>, TT> saver(map, *this);
     uint32_t                        maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map,
@@ -107,7 +109,7 @@ template <typename B> void FlagAttributeT<B>::setNewValues(DocId doc, const std:
         uint32_t          offset = getOffset(value);
         BitVector*        bv = _bitVectors[offset].load_relaxed();
         if (bv == nullptr) {
-            assert(_bitVectorSize >= this->getNumDocs());
+            CHECK(_bitVectorSize >= this->getNumDocs());
             _bitVectorStore[offset] =
                 std::make_shared<GrowableBitVector>(_bitVectorSize, _bitVectorSize, _bitVectorHolder);
             _bitVectors[offset].store_release(&_bitVectorStore[offset]->writer());
@@ -123,7 +125,7 @@ void FlagAttributeT<B>::setNewBVValue(DocId doc, multivalue::ValueType_t<typenam
     uint32_t   offset = getOffset(value);
     BitVector* bv = _bitVectors[offset].load_relaxed();
     if (bv == nullptr) {
-        assert(_bitVectorSize >= this->getNumDocs());
+        CHECK(_bitVectorSize >= this->getNumDocs());
         _bitVectorStore[offset] =
             std::make_shared<GrowableBitVector>(_bitVectorSize, _bitVectorSize, _bitVectorHolder);
         _bitVectors[offset].store_release(&_bitVectorStore[offset]->writer());

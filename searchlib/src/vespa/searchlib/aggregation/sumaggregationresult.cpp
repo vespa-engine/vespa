@@ -46,6 +46,9 @@ void SumAggregationResult::onAggregate(const ResultNode& result) {
     if (result.isMultiValue()) {
         static_cast<const ResultNodeVector&>(result).flattenSum(*_sum);
     } else {
+        if (std::isnan(result.getFloat())) {
+            return;
+        }
         _sum->add(result);
     }
 }

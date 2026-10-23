@@ -4,9 +4,8 @@
 
 #include "attributemanager.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-
-#include <cassert>
 namespace proton {
 
 void AttributesInitializerBase::considerPadAttribute(search::AttributeVector&         attribute,
@@ -36,7 +35,7 @@ void AttributesInitializerBase::considerPadAttribute(search::AttributeVector&   
     if (!currentSerialNum.has_value() || attribute.getStatus().getLastSyncToken() < currentSerialNum.value()) {
         AttributeManager::padAttribute(attribute, newDocIdLimit);
         attribute.commit();
-        assert(newDocIdLimit <= attribute.getNumDocs());
+        CHECK(newDocIdLimit <= attribute.getNumDocs());
     }
 }
 

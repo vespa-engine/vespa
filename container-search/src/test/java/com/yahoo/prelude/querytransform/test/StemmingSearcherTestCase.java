@@ -262,14 +262,20 @@ public class StemmingSearcherTestCase {
     }
 
     @Test
-    void testMultipleStemming() {
-        assertStemmed("WEAKAND WORD_ALTERNATIVES foobar:[ tree(0.7) trees(1.0) ] " +
-                      "foobar:\"" + (
-                              "WORD_ALTERNATIVES foobar:[ noun(0.7) nouns(1.0) ] " +
-                              "WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]\" " ) +
-                      "WORD_ALTERNATIVES foobar:[ flower(0.7) flowers(1.0) ] " +
-                      "foobar:\"a WORD_ALTERNATIVES foobar:[ verb(0.7) verbs(1.0) ] a\" WORD_ALTERNATIVES foobar:[ girl(0.7) girls(1.0) ]",
-                      "/search?language=en&search=four&query=trees \"nouns girls\" flowers \"a verbs a\" girls&default-index=foobar");
+    void testMultipleStemming() { // "multiple" == all stems + original
+        assertStemmed("WEAKAND WORD_ALTERNATIVES field1:[ tree(0.7) trees(1.0) ] " +
+                      "field1:\"" + (
+                              "WORD_ALTERNATIVES field1:[ noun(0.7) nouns(1.0) ] " +
+                              "WORD_ALTERNATIVES field1:[ girl(0.7) girls(1.0) ]\" " ) +
+                      "WORD_ALTERNATIVES field1:[ flower(0.7) flowers(1.0) ] " +
+                      "field1:\"a WORD_ALTERNATIVES field1:[ verb(0.7) verbs(1.0) ] a\" WORD_ALTERNATIVES field1:[ girl(0.7) girls(1.0) ]",
+                      "/search?language=en&search=four&query=trees \"nouns girls\" flowers \"a verbs a\" girls&default-index=field1");
+    }
+
+    @Test
+    void testAllStems() {
+        assertStemmed("WEAKAND field1:tree field1:\"noun girl\" field1:flower field1:\"a verb a\" field1:girl",
+                      "/search?language=en&search=five&query=trees \"nouns girls\" flowers \"a verbs a\" girls&default-index=field1");
     }
 
     @Test

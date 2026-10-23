@@ -5,7 +5,7 @@
 #include "raw_attribute.h"
 #include "raw_buffer_store.h"
 
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace search::attribute {
 
@@ -15,7 +15,7 @@ namespace search::attribute {
 class SingleRawAttribute : public RawAttribute {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
-    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using RefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
 
     RefVector             _ref_vector;
     RawBufferStore        _raw_store;

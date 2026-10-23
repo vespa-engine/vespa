@@ -40,7 +40,7 @@ void AverageAggregationResult::initForUnitTest(const ResultNode& result) {
 }
 
 void AverageAggregationResult::onMerge(const AggregationResult& b) {
-    const auto& avg(static_cast<const AverageAggregationResult&>(b));
+    const auto& avg = static_cast<const AverageAggregationResult&>(b);
     _sum->add(*avg._sum);
     _count += avg._count;
 }
@@ -50,6 +50,9 @@ void AverageAggregationResult::onAggregate(const ResultNode& result) {
         static_cast<const ResultNodeVector&>(result).flattenSum(*_sum);
         _count += static_cast<const ResultNodeVector&>(result).size();
     } else {
+        if (std::isnan(result.getFloat())) {
+            return;
+        }
         _sum->add(result);
         _count++;
     }

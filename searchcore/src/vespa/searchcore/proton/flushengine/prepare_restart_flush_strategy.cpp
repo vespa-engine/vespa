@@ -21,20 +21,11 @@ using searchcorespi::IFlushTarget;
 
 using Config = PrepareRestartFlushStrategy::Config;
 using FlushContextsMap = std::map<std::string, FlushContext::List>;
-using FlushTargetCandidatesList = std::vector<FlushTargetCandidates::UP>;
 
 namespace {
 
 const std::string strategy_name("prepare_restart");
 
-}
-
-PrepareRestartFlushStrategy::Config::Config(double tlsReplayByteCost_, double tlsReplayOperationCost_,
-                                            double flushTargetWriteCost_, double flush_target_read_cost_)
-    : tlsReplayByteCost(tlsReplayByteCost_),
-      tlsReplayOperationCost(tlsReplayOperationCost_),
-      flushTargetWriteCost(flushTargetWriteCost_),
-      flush_target_read_cost(flush_target_read_cost_) {
 }
 
 PrepareRestartFlushStrategy::PrepareRestartFlushStrategy(const Config& cfg) : IFlushStrategy(), _cfg(cfg) {
@@ -102,16 +93,20 @@ FlushContext::List findBestTargetsToFlush(const FlushContext::List&    unsortedF
     }
     sortByOldestFlushedSerialNumber(candidates);
 
-    FlushTargetCandidates bestSet(candidates, 0, tlsStats, cfg);
+    FlushTargetCandidates bestSet(candidates, tlsStats, cfg);
+    auto                  nextSet = bestSet;
     for (size_t numCandidates = 1; numCandidates <= candidates.size(); ++numCandidates) {
-        FlushTargetCandidates nextSet(candidates, numCandidates, tlsStats, cfg);
-        LOG(debug,
-            "findBestTargetsToFlush(): Created candidate set: "
-            "flushTargets=[%s], tlsReplayBytesCost=%f, tlsReplayOperationsCost=%f, "
-            "flushTargetsWriteCost=%f, flush_targets_read_cost=%f, totalCost=%f",
-            toString(nextSet.getCandidates()).c_str(), nextSet.getTlsReplayCost().bytesCost,
-            nextSet.getTlsReplayCost().operationsCost, nextSet.getFlushTargetsWriteCost(),
-            nextSet.get_flush_targets_read_cost(), nextSet.getTotalCost());
+        nextSet.inc_num_candidates();
+        if (LOG_WOULD_LOG(debug)) {
+            LOG(debug,
+                "findBestTargetsToFlush(): Created candidate set: "
+                "flushTargets=[%s], tlsReplayBytesCost=%f, tlsReplayOperationsCost=%f, "
+                "flush_targets_replay_cost=%f, "
+                "flushTargetsWriteCost=%f, flush_targets_read_cost=%f, totalCost=%f",
+                toString(nextSet.getCandidates()).c_str(), nextSet.getTlsReplayCost().bytesCost,
+                nextSet.getTlsReplayCost().operationsCost, nextSet.get_flush_targets_replay_cost(),
+                nextSet.getFlushTargetsWriteCost(), nextSet.get_flush_targets_read_cost(), nextSet.getTotalCost());
+        }
         if (nextSet.getTotalCost() < bestSet.getTotalCost()) {
             bestSet = nextSet;
         }
@@ -119,10 +114,11 @@ FlushContext::List findBestTargetsToFlush(const FlushContext::List&    unsortedF
     LOG(info,
         "findBestTargetsToFlush(): Best candidate set: "
         "flushTargets=[%s], tlsReplayBytesCost=%f, tlsReplayOperationsCost=%f, "
+        "flush_targets_replay_cost=%f, "
         "flushTargetsWriteCost=%f, flush_targets_read_cost=%f, totalCost=%f",
         toString(bestSet.getCandidates()).c_str(), bestSet.getTlsReplayCost().bytesCost,
-        bestSet.getTlsReplayCost().operationsCost, bestSet.getFlushTargetsWriteCost(),
-        bestSet.get_flush_targets_read_cost(), bestSet.getTotalCost());
+        bestSet.getTlsReplayCost().operationsCost, bestSet.get_flush_targets_replay_cost(),
+        bestSet.getFlushTargetsWriteCost(), bestSet.get_flush_targets_read_cost(), bestSet.getTotalCost());
     return bestSet.getCandidates();
 }
 

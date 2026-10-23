@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "log.h"
+#include "logger.h"
 
 #include <string>
 #include <string_view>

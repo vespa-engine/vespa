@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.rpc;
 
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -22,7 +21,6 @@ public class RpcInvokerFactory extends InvokerFactory {
     private final RpcConnectionPool rpcResourcePool;
     private final CompressPayload compressor;
     private final RpcProtobufFillInvoker.DecodePolicy decodeType;
-    private final QrSearchersConfig qrSearchersConfig;
 
     private static RpcProtobufFillInvoker.DecodePolicy convert(DispatchConfig.SummaryDecodePolicy.Enum decoding) {
         return switch (decoding) {
@@ -31,17 +29,16 @@ public class RpcInvokerFactory extends InvokerFactory {
         };
     }
 
-    public RpcInvokerFactory(RpcConnectionPool rpcResourcePool, SearchGroups cluster, DispatchConfig dispatchConfig, QrSearchersConfig qrSearchersConfig) {
+    public RpcInvokerFactory(RpcConnectionPool rpcResourcePool, SearchGroups cluster, DispatchConfig dispatchConfig) {
         super(cluster, dispatchConfig);
         this.rpcResourcePool = rpcResourcePool;
         this.compressor = new CompressService();
         this.decodeType = convert(dispatchConfig.summaryDecodePolicy());
-        this.qrSearchersConfig = qrSearchersConfig;
     }
 
     @Override
     protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackend searcher, Query query, int maxHits, Node node) {
-        return Optional.of(new RpcSearchInvoker(searcher, compressor, node, rpcResourcePool, maxHits, qrSearchersConfig));
+        return Optional.of(new RpcSearchInvoker(searcher, compressor, node, rpcResourcePool, maxHits));
     }
 
     @Override
@@ -49,7 +46,7 @@ public class RpcInvokerFactory extends InvokerFactory {
         Query query = result.getQuery();
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
         return new RpcProtobufFillInvoker(rpcResourcePool, compressor, searcher.getDocumentDatabase(query),
-                                          searcher.getServerId(), decodeType, summaryNeedsQuery, qrSearchersConfig);
+                                          searcher.getServerId(), decodeType, summaryNeedsQuery);
     }
 
 }

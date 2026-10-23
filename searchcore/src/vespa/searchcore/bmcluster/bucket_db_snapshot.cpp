@@ -2,11 +2,10 @@
 
 #include "bucket_db_snapshot.h"
 
+#include <vespa/check_require.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
-
-#include <cassert>
 
 using document::BucketId;
 using document::BucketSpace;
@@ -22,10 +21,10 @@ BucketDbSnapshot::~BucketDbSnapshot() = default;
 
 void BucketDbSnapshot::populate(BucketSpace bucket_space, PersistenceProvider& provider) {
     auto bucket_list = provider.listBuckets(bucket_space);
-    assert(!bucket_list.hasError());
+    CHECK(!bucket_list.hasError());
     for (auto& id : bucket_list.getList()) {
         auto info = provider.getBucketInfo(storage::spi::Bucket(document::Bucket(bucket_space, id)));
-        assert(!info.hasError());
+        CHECK(!info.hasError());
         _buckets.insert(std::make_pair(id, info.getBucketInfo()));
     }
 }

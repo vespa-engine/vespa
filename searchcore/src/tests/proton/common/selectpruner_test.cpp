@@ -94,8 +94,9 @@ std::string rsString(const ResultSet& s) {
     uint32_t           erange = Result::enumRange;
     for (uint32_t e = 0; e < erange; ++e) {
         if (s.hasEnum(e)) {
-            if (!first)
+            if (!first) {
                 os << ",";
+            }
             first = false;
             Result::fromEnum(e).print(os, false, "");
         }
@@ -107,14 +108,18 @@ std::string rsString(const ResultSet& s) {
 }
 
 const char* csString(const SelectPruner& pruner) {
-    if (!pruner.isConst())
+    if (!pruner.isConst()) {
         return "not const";
-    if (pruner.isFalse())
+    }
+    if (pruner.isFalse()) {
         return "const false";
-    if (pruner.isTrue())
+    }
+    if (pruner.isTrue()) {
         return "const true";
-    if (pruner.isInvalid())
+    }
+    if (pruner.isInvalid()) {
         return "const invalid";
+    }
     return "const something";
 }
 
@@ -218,12 +223,15 @@ void SelectPrunerTest::testPrune(const string& selection, const string& exp, con
               << ", rs=" << rsString(pruner.getResultSet()) << std::endl;
     if (pruner.isConst()) {
         ResultSet t;
-        if (pruner.isFalse())
+        if (pruner.isFalse()) {
             t.add(Result::False);
-        if (pruner.isTrue())
+        }
+        if (pruner.isTrue()) {
             t.add(Result::True);
-        if (pruner.isInvalid())
+        }
+        if (pruner.isInvalid()) {
             t.add(Result::Invalid);
+        }
         ASSERT_TRUE(t == pruner.getResultSet());
     }
     CloningVisitor cv;

@@ -1,16 +1,23 @@
 package ai.vespa.schemals.lsp.schema.completion.provider;
 
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+
+import com.yahoo.schema.parser.ParsedType;
+import com.yahoo.schema.parser.ParsedType.Variant;
 
 import ai.vespa.schemals.SchemaLanguageServer;
 import ai.vespa.schemals.context.EventCompletionContext;
@@ -23,6 +30,7 @@ import ai.vespa.schemals.parser.ast.RBRACE;
 import ai.vespa.schemals.parser.ast.RootRankProfile;
 import ai.vespa.schemals.parser.ast.annotationBody;
 import ai.vespa.schemals.parser.ast.attributeElm;
+import ai.vespa.schemals.parser.ast.dataType;
 import ai.vespa.schemals.parser.ast.dictionaryElm;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.fieldElm;
@@ -32,11 +40,15 @@ import ai.vespa.schemals.parser.ast.globalPhase;
 import ai.vespa.schemals.parser.ast.hnswIndex;
 import ai.vespa.schemals.parser.ast.indexInsideField;
 import ai.vespa.schemals.parser.ast.indexOutsideDoc;
+import ai.vespa.schemals.parser.ast.INDEX;
 import ai.vespa.schemals.parser.ast.linguisticsElm;
+import ai.vespa.schemals.parser.ast.fastSearchMapElm;
 import ai.vespa.schemals.parser.ast.onnxModel;
 import ai.vespa.schemals.parser.ast.openLbrace;
+import ai.vespa.schemals.parser.ast.PROFILE;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.parser.ast.SEARCH;
 import ai.vespa.schemals.parser.ast.secondPhase;
 import ai.vespa.schemals.parser.ast.significanceElm;
 import ai.vespa.schemals.parser.ast.sortingElm;
@@ -152,6 +164,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructSnippet("rank-properties", "rank-properties {\n\t$0\n}"),
             CompletionUtils.constructSnippet("second-phase", "second-phase {\n\t$0\n}"),
             CompletionUtils.constructSnippet("significance", "significance {\n\tuse-model: ${1|true,false|}\n}"),
+            CompletionUtils.constructSnippet("sort-features", "sort-features {\n\t$0\n}", "sort-features {}"),
+            CompletionUtils.constructSnippet("sort-features", "sort-features: $0", "sort-features:"),
             CompletionUtils.constructSnippet("summary-features", "summary-features {\n\t$0\n}", "summary-features {}"),
             CompletionUtils.constructSnippet("summary-features", "summary-features: $0", "summary-features:"),
             CompletionUtils.constructSnippet("target-hits-max-adjustment-factor", "target-hits-max-adjustment-factor: $0"),
@@ -235,22 +249,112 @@ public class BodyKeywordCompletion implements CompletionProvider {
         put(indexInsideField.class, FixedKeywordBodies.INDEX.completionItems());
         put(indexOutsideDoc.class, FixedKeywordBodies.INDEX.completionItems());
 
-        Path schemaHoverPath = SchemaLanguageServer.getDefaultDocumentationPath().resolve("schema");
-        // compute docs
         for (var entry : this.entrySet()) {
-            for (CompletionItem item : entry.getValue()) {
-                String markdownKey = item.getLabel().toUpperCase(Locale.ROOT).replaceAll("-", "_");
-                Optional<Hover> hover = SchemaHover.getFileHoverInformation(schemaHoverPath, markdownKey, new Range());
-                if (hover.isPresent() && hover.get().getContents().isRight()) {
-                    item.setDocumentation(hover.get().getContents().getRight());
-                }
-            }
+            withDocumentation(entry.getValue());
         }
     }};
 
+    /**
+     * Attaches hover documentation to each completion item, looked up by the item label.
+     * The documentation files are named as the labels in upper case, with dashes and spaces replaced by
+     * underscores, as in FAST_SEARCH_MAP_FIELD.md for 'fast-search-map-field'.
+     * Returns the same list to allow use in field initializers.
+     */
+    private static List<CompletionItem> withDocumentation(List<CompletionItem> items) {
+        Path schemaHoverPath = SchemaLanguageServer.getDefaultDocumentationPath().resolve("schema");
+        for (CompletionItem item : items) {
+            String markdownKey = item.getLabel().toUpperCase(Locale.ROOT).replaceAll("[- ]", "_");
+            Optional<Hover> hover = SchemaHover.getFileHoverInformation(schemaHoverPath, markdownKey, new Range());
+            if (hover.isPresent() && hover.get().getContents().isRight()) {
+                item.setDocumentation(hover.get().getContents().getRight());
+            }
+        }
+        return items;
+    }
+
+    /**
+     * The config model only accepts 'fast-search-map-field' on maps whose key and value types are among these,
+     * see CreateFastMapSearch and ConvertParsedFields in config-model.
+     */
+    private static final Set<String> FAST_MAP_SEARCH_KEY_TYPES = Set.of("string", "int", "long");
+    private static final Set<String> FAST_MAP_SEARCH_VALUE_TYPES = Set.of("string", "int", "long", "float", "double");
+
+    private static final String FAST_SEARCH_MAP_FIELD = "fast-search-map-field";
+
+    /** Snippet for the fast-search-map-field statement, only offered in map fields where fast map search is allowed. */
+    private static final List<CompletionItem> mapFieldSnippets = withDocumentation(List.of(
+        CompletionUtils.constructSnippet(FAST_SEARCH_MAP_FIELD, FAST_SEARCH_MAP_FIELD + " $0", FAST_SEARCH_MAP_FIELD + " name")
+    ));
+
+    /**
+     * Snippet for the fast-search-map-field statement in an array of struct field, where the struct fields
+     * holding the key and the value must be given in its block.
+     */
+    private static final List<CompletionItem> arrayOfStructMapFieldSnippets = withDocumentation(List.of(
+        CompletionUtils.constructSnippet(FAST_SEARCH_MAP_FIELD, FAST_SEARCH_MAP_FIELD + " $1 {\n\tkey: $2\n\tvalue: $3\n}",
+                                         FAST_SEARCH_MAP_FIELD + " name {}")
+    ));
+
+    /** Items inside the fast-search-map-field block of an array of struct field. */
+    private static final List<CompletionItem> arrayOfStructMapBodySnippets = List.of(
+        CompletionUtils.constructSnippet("key", "key: $0", "key:"),
+        CompletionUtils.constructSnippet("value", "value: $0", "value:")
+    );
+
+    private static boolean isFastMapSearchType(ParsedType type, Set<String> allowedTypes) {
+        return type != null
+            && type.getVariant() == Variant.BUILTIN
+            && allowedTypes.contains(type.name());
+    }
+
+    /** Returns the parsed type of the given field element, or null if it has none. */
+    private static ParsedType fieldType(Node fieldNode) {
+        for (Node child : fieldNode) {
+            if (!child.isASTInstance(dataType.class)) {
+                continue;
+            }
+            if (!(child.getSchemaNode().getOriginalSchemaNode() instanceof dataType typeNode)) {
+                return null;
+            }
+            return typeNode.getParsedType();
+        }
+        return null;
+    }
+
+    /**
+     * Returns true if the given field element has a map type on which 'fast-search-map-field' can be set.
+     */
+    private static boolean supportsFastMapSearch(Node fieldNode) {
+        ParsedType type = fieldType(fieldNode);
+        if (type == null || type.getVariant() != Variant.MAP) {
+            return false;
+        }
+        return isFastMapSearchType(type.mapKeyType(), FAST_MAP_SEARCH_KEY_TYPES)
+            && isFastMapSearchType(type.mapValueType(), FAST_MAP_SEARCH_VALUE_TYPES);
+    }
+
+    /**
+     * Returns true if the given field element is an array of struct, on which 'fast-search-map-field' with
+     * 'key' and 'value' can be set. A struct is referenced by name, which is not resolved to a struct at this point,
+     * so any array of a type which is not built in is taken to be an array of struct.
+     */
+    private static boolean isArrayOfStruct(Node fieldNode) {
+        ParsedType type = fieldType(fieldNode);
+        if (type == null || type.getVariant() != Variant.ARRAY) {
+            return false;
+        }
+        Variant nested = type.nestedType().getVariant();
+        return nested == Variant.STRUCT || nested == Variant.UNKNOWN;
+    }
+
+    private static final String TOKENS_MODE_CHOICE = "${1|original,first-alternative,alternatives,original-and-alternatives|}";
+
     private static final List<CompletionItem> linguisticsBodySnippets = List.of(
         CompletionUtils.constructSnippet("profile", "profile: $0", "profile:"),
-        CompletionUtils.constructSnippet("profile", "profile {\n\tindex: $1\n\tsearch: $0\n}", "profile {}")
+        CompletionUtils.constructSnippet("profile", "profile {\n\tindex: $1\n\tsearch: $0\n}", "profile {}"),
+        CompletionUtils.constructSnippet("tokens", "tokens: " + TOKENS_MODE_CHOICE, "tokens:"),
+        CompletionUtils.constructSnippet("index", "index {\n\t$0\n}", "index {}"),
+        CompletionUtils.constructSnippet("search", "search {\n\t$0\n}", "search {}")
     );
 
     private static final List<CompletionItem> linguisticsProfileBodySnippets = List.of(
@@ -258,21 +362,39 @@ public class BodyKeywordCompletion implements CompletionProvider {
         CompletionUtils.constructSnippet("search", "search: $0")
     );
 
+    private static final List<CompletionItem> linguisticsSettingsBodySnippets = List.of(
+        CompletionUtils.constructSnippet("profile", "profile: $0"),
+        CompletionUtils.constructSnippet("tokens", "tokens: " + TOKENS_MODE_CHOICE)
+    );
+
     /**
-     * A linguistics element holds two nested bodies, <code>linguistics { profile { ... } }</code>,
-     * which the grammar represents as a single flat node. Which keywords are valid therefore depends on
-     * the brace depth at the cursor rather than on the enclosing AST class alone.
+     * A linguistics element holds nested bodies, e.g. <code>linguistics { profile { ... } }</code> or
+     * <code>linguistics { index { ... } }</code>, which the grammar represents as a single flat node.
+     * Which keywords are valid therefore depends on which keyword opened the brace enclosing the cursor
+     * (tracked here as a stack), not just the brace depth.
      */
     private static List<CompletionItem> linguisticsCompletionItems(Node linguisticsNode, Position position) {
-        int braceDepth = 0;
+        Deque<String> blockStack = new ArrayDeque<>();
+        String pendingKeyword = null;
         for (Node child : linguisticsNode) {
             if (CSTUtils.positionLT(position, child.getRange().getStart())) break;
-            if (child.isASTInstance(openLbrace.class) || child.isASTInstance(LBRACE.class)) ++braceDepth;
-            else if (child.isASTInstance(RBRACE.class)) --braceDepth;
+            if (child.isASTInstance(PROFILE.class)) pendingKeyword = "profile";
+            else if (child.isASTInstance(INDEX.class)) pendingKeyword = "index";
+            else if (child.isASTInstance(SEARCH.class)) pendingKeyword = "search";
+            else if (child.isASTInstance(openLbrace.class) || child.isASTInstance(LBRACE.class)) {
+                // The very first brace is the outer 'linguistics {' body itself, not a keyword-tagged
+                // sub-block, and has no preceding PROFILE/INDEX/SEARCH keyword: don't push a context for it.
+                if (pendingKeyword != null) blockStack.push(pendingKeyword);
+                pendingKeyword = null;
+            } else if (child.isASTInstance(RBRACE.class)) {
+                if (!blockStack.isEmpty()) blockStack.pop();
+            }
         }
 
-        if (braceDepth == 1) return linguisticsBodySnippets;
-        if (braceDepth == 2) return linguisticsProfileBodySnippets;
+        if (blockStack.isEmpty()) return linguisticsBodySnippets;
+        if (blockStack.size() == 1) {
+            return "profile".equals(blockStack.peek()) ? linguisticsProfileBodySnippets : linguisticsSettingsBodySnippets;
+        }
         return List.of();
     }
 
@@ -297,8 +419,28 @@ public class BodyKeywordCompletion implements CompletionProvider {
 
         if (searchNode.isASTInstance(linguisticsElm.class)) return linguisticsCompletionItems(searchNode, searchPos);
 
+        if (searchNode.isASTInstance(fastSearchMapElm.class)) {
+            Node fieldNode = searchNode.getParent();
+            while (fieldNode != null && !fieldNode.isASTInstance(fieldElm.class)) {
+                fieldNode = fieldNode.getParent();
+            }
+            // The key and value of a map are always named key and value, so there is nothing to suggest.
+            return (fieldNode != null && isArrayOfStruct(fieldNode)) ? arrayOfStructMapBodySnippets : List.of();
+        }
+
         List<CompletionItem> result = bodyKeywordSnippets.get(searchNode.getASTClass());
         if (result == null) return List.of();
+
+        if (searchNode.isASTInstance(fieldElm.class) && supportsFastMapSearch(searchNode)) {
+            List<CompletionItem> withMap = new ArrayList<>(result);
+            withMap.addAll(mapFieldSnippets);
+            return withMap;
+        }
+        if (searchNode.isASTInstance(fieldElm.class) && isArrayOfStruct(searchNode)) {
+            List<CompletionItem> withMap = new ArrayList<>(result);
+            withMap.addAll(arrayOfStructMapFieldSnippets);
+            return withMap;
+        }
         return result;
     }
 }

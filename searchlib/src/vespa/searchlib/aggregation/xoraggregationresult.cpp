@@ -9,8 +9,6 @@
 #include <vespa/searchlib/aggregation/aggregation.hpp>
 #include <vespa/vespalib/objects/visit.hpp>
 
-using search::expression::FloatResultNode;
-using search::expression::NumericResultNode;
 using search::expression::ResultNodeVector;
 using vespalib::Deserializer;
 using vespalib::Serializer;
@@ -47,8 +45,9 @@ void XorAggregationResult::onMerge(const AggregationResult& b) {
 
 void XorAggregationResult::onAggregate(const ResultNode& result) {
     if (result.isMultiValue()) {
-        for (size_t i(0), m(static_cast<const ResultNodeVector&>(result).size()); i < m; i++) {
-            _xor.xorOp(static_cast<const ResultNodeVector&>(result).get(i));
+        const auto& vec = static_cast<const ResultNodeVector&>(result);
+        for (const auto& elem : vec) {
+            _xor.xorOp(elem);
         }
     } else {
         _xor.xorOp(result);

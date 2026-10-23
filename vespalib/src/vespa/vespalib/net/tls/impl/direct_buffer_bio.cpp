@@ -4,7 +4,6 @@
 #include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/util/backtrace.h>
 
-#include <cassert>
 #include <utility>
 
 #include <vespa/log/log.h>

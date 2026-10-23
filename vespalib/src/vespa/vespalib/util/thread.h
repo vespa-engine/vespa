@@ -6,6 +6,7 @@
 
 #include <concepts>
 #include <thread>
+#include <vector>
 
 namespace vespalib {
 

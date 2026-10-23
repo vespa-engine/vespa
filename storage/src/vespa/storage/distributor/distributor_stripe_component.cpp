@@ -7,6 +7,7 @@
 #include "pendingmessagetracker.h"
 #include "storage_node_up_states.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/storageutil/utils.h>
@@ -101,7 +102,7 @@ void DistributorStripeComponent::update_bucket_database(const document::Bucket& 
                                                         const std::vector<BucketCopy>& changed_nodes,
                                                         uint32_t                       update_flags) {
     auto& bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    assert(!(bucket.getBucketId() == document::BucketId()));
+    CHECK(!(bucket.getBucketId() == document::BucketId()));
 
     BucketOwnership ownership(bucketSpace.check_ownership_in_pending_and_current_state(bucket.getBucketId()));
     if (!ownership.isOwned()) {

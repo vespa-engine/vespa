@@ -2,10 +2,9 @@
 
 #include "countcompression.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/diskindex/features_size_flush.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
-
-#include <cassert>
 
 namespace search::bitcompression {
 
@@ -87,7 +86,7 @@ void PostingListCountFileDecodeContext::copyParams(const PostingListCountFileDec
 
 void PostingListCountFileEncodeContext::writeCounts(const PostingListCounts& counts) {
     uint32_t numDocs = counts._numDocs;
-    assert(numDocs > 0);
+    CHECK(numDocs > 0);
     /*
      * Posting list chunks might have few documents but the number of chunks should still be written when flushing due
      * to features size. A marker value is needed to keep readers in sync.

@@ -66,20 +66,20 @@ inline size_t autovec_binary_hamming_distance(const void* lhs, const void* rhs, 
 template <typename T, unsigned ChunkSize> T get(const void* base, bool invert) __attribute__((no_sanitize("thread")));
 #endif
 
-template <typename T, unsigned ChunkSize> T get(const void* base, bool invert) {
+template <typename T, unsigned ChunkSize> [[maybe_unused]] T get(const void* base, bool invert) {
     static_assert(sizeof(T) == ChunkSize, "sizeof(T) == ChunkSize");
     T v;
     memcpy(&v, base, sizeof(T));
     return __builtin_expect(invert, false) ? ~v : v;
 }
 
-template <typename T, unsigned ChunkSize> const T* cast(const void* ptr, size_t offsetBytes) {
+template <typename T, unsigned ChunkSize> [[maybe_unused]] const T* cast(const void* ptr, size_t offsetBytes) {
     static_assert(sizeof(T) == ChunkSize, "sizeof(T) == ChunkSize");
     return static_cast<const T*>(static_cast<const void*>(static_cast<const char*>(ptr) + offsetBytes));
 }
 
 template <unsigned ChunkSize, unsigned Chunks>
-void andChunks(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) {
+[[maybe_unused]] void andChunks(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) {
     typedef uint64_t Chunk __attribute__((vector_size(ChunkSize)));
     static_assert(sizeof(Chunk) == ChunkSize, "sizeof(Chunk) == ChunkSize");
     static_assert(ChunkSize * Chunks == 128, "ChunkSize*Chunks == 128");
@@ -97,7 +97,7 @@ void andChunks(size_t offset, const std::vector<std::pair<const void*, bool>>& s
 }
 
 template <unsigned ChunkSize, unsigned Chunks>
-void orChunks(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) {
+[[maybe_unused]] void orChunks(size_t offset, const std::vector<std::pair<const void*, bool>>& src, void* dest) {
     typedef uint64_t Chunk __attribute__((vector_size(ChunkSize)));
     static_assert(sizeof(Chunk) == ChunkSize, "sizeof(Chunk) == ChunkSize");
     static_assert(ChunkSize * Chunks == 128, "ChunkSize*Chunks == 128");

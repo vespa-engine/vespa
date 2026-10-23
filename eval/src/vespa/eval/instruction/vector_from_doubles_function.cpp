@@ -2,6 +2,7 @@
 
 #include "vector_from_doubles_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::eval {
@@ -51,7 +52,7 @@ void flatten_into(const TensorFunction& child, std::vector<Child>& vec) {
         std::vector<Child::CREF> tmp;
         child.push_children(tmp);
         for (const Child& c : tmp) {
-            assert(c.get().result_type().is_double());
+            CHECK(c.get().result_type().is_double());
             vec.push_back(c);
         }
     }
@@ -90,7 +91,7 @@ const TensorFunction& VectorFromDoublesFunction::optimize(const TensorFunction& 
         size_t             b_size = vector_size(concat->rhs(), dimension);
         if ((a_size > 0) && (b_size > 0)) {
             auto children = flatten(concat->lhs(), concat->rhs());
-            assert(children.size() == (a_size + b_size));
+            CHECK(children.size() == (a_size + b_size));
             return stash.create<VectorFromDoublesFunction>(std::move(children), expr.result_type());
         }
     }

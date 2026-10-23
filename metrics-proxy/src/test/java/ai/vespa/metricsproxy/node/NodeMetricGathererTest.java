@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -72,6 +73,25 @@ public class NodeMetricGathererTest {
         assertEquals("host1", hostLife.dimensions().get(toDimensionId(PublicDimensions.HOSTNAME)));
         assertEquals("parent1", hostLife.dimensions().get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
         assertEquals("8.4.0", hostLife.dimensions().get(toDimensionId(PublicDimensions.OS_VERSION)));
+    }
+
+    @Test
+    public void host_life_packet_gets_the_given_start_time() {
+        ApplicationDimensions applicationDimensions =
+                new ApplicationDimensions(new ApplicationDimensionsConfig.Builder().build());
+        NodeDimensions nodeDimensions =
+                new NodeDimensions(new NodeDimensionsConfig.Builder().build());
+        MetricsConsumers consumers = new MetricsConsumers(new ConsumersConfig.Builder().build());
+        MetricsManager metricsManager = TestUtil.createMetricsManager(
+                new VespaServices(List.of()), consumers, applicationDimensions, nodeDimensions);
+        NodeMetricGatherer gatherer = new NodeMetricGatherer(metricsManager, applicationDimensions, nodeDimensions);
+
+        Instant startTime = Instant.now().plusSeconds(30);
+        MetricsPacket hostLife = gatherer.gatherMetrics(startTime).stream()
+                .filter(p -> p.service().id.equals("host_life"))
+                .findFirst().orElseThrow();
+
+        assertEquals(startTime, hostLife.timestamp());
     }
 
     private JsonNode generateHostLifePacket() {

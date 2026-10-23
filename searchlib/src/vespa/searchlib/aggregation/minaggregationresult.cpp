@@ -12,7 +12,6 @@
 #include <limits>
 
 using search::expression::FloatResultNode;
-using search::expression::NumericResultNode;
 using search::expression::ResultNodeVector;
 using vespalib::Deserializer;
 using vespalib::Serializer;

@@ -6,7 +6,7 @@
 #include "search_context.h"
 
 #include <vespa/vespalib/util/atomic.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <limits>
 
@@ -34,7 +34,7 @@ private:
     uint32_t _valueShiftMask;  // 0x1f, 0x0f or 0x07
     uint32_t _wordShift;       // 0x05, 0x04 or 0x03
 
-    using DataVector = vespalib::RcuVectorBase<Word>;
+    using DataVector = vespalib::TypeStableVectorBase<Word>;
     DataVector _wordData;
 
     T getFromEnum(EnumHandle) const override { return T(); }

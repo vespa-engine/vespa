@@ -42,8 +42,9 @@ public:
             << "autoreply = " << (_autoReply ? "on" : "off") << ", dispatch = " << (_useDispatch ? "on" : "off")
             << ", " << _commands.size() << " commands"
             << ", " << _replies.size() << " replies";
-        if (_injected.size() > 0)
+        if (_injected.size() > 0) {
             ost << ", " << _injected.size() << " injected";
+        }
         ost << ")";
     }
 

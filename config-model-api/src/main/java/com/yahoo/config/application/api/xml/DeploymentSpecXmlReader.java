@@ -930,7 +930,16 @@ public class DeploymentSpecXmlReader {
                 readDevZoneEndpoint(endpointElement, endpoints);
             }
         }
-        return new DevSpec(athenzService, Optional.of(cloudAccounts), hostTTL, tags, cloudResourceTags, endpoints);
+        Map<RegionName, List<AzName>> availabilityZones = new LinkedHashMap<>();
+        for (Element regionElement : XML.getChildren(devElement, regionTag)) {
+            RegionName region = RegionName.from(requireStringAttribute("name", regionElement));
+            List<AzName> zones = readAvailabilityZones(regionElement);
+            if (zones.isEmpty())
+                illegal("At least one <availability-zone> must be specified for region '" + region + "' in <dev>");
+            if (availabilityZones.put(region, zones) != null)
+                illegal("Region '" + region + "' is declared multiple times in <dev>");
+        }
+        return new DevSpec(athenzService, Optional.of(cloudAccounts), hostTTL, tags, cloudResourceTags, endpoints, availabilityZones);
     }
 
     // TODO: if the other readEndpoints is ever refactored, factor in this, too.

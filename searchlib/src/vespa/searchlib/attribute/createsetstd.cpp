@@ -5,6 +5,8 @@
 #include "multinumericattribute.h"
 #include "multistringattribute.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.create_set_std");
 
@@ -18,7 +20,7 @@ using attribute::BasicType;
 #define CREATEFLOATSET(T, fname, info) static_cast<AttributeVector*>(new FLOATSET(T)(fname, info))
 
 AttributeVector::SP AttributeFactory::createSetStd(std::string name, const Config& info) {
-    assert(info.collectionType().type() == attribute::CollectionType::WSET);
+    CHECK(info.collectionType().type() == attribute::CollectionType::WSET);
     AttributeVector::SP ret;
     switch (info.basicType().type()) {
     case BasicType::BOOL:

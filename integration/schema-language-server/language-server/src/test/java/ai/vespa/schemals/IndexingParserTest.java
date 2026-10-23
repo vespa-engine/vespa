@@ -8,12 +8,17 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
+import com.yahoo.vespa.indexinglanguage.expressions.AbsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.DocumentIdExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ChunkExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EmbedExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex16EncodeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8EncodeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8FloatEncodeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex16DoubleEncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
@@ -23,6 +28,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.NormalizeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.PackBitsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ToTensorExpression;
 
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParser;
 
@@ -71,13 +77,50 @@ public class IndexingParserTest {
             IndexExpression.class}, "input text | chunk fixed-length 1024 | embed | pack_bits | attribute | index");
 
         assertEqualsParsedFlattened(new Class<?>[] {
-                StatementExpression.class,
-                DocumentIdExpression.class,
-                AttributeExpression.class}, "documentid namespace | attribute");
+            StatementExpression.class,
+            InputExpression.class,
+            ToTensorExpression.class,
+            AttributeExpression.class}, "input tensor_array | to_tensor chunk | attribute");
+
         assertEqualsParsedFlattened(new Class<?>[] {
-                StatementExpression.class,
-                DocumentIdExpression.class,
-                AttributeExpression.class}, "documentid | attribute");
+            StatementExpression.class,
+            DocumentIdExpression.class,
+            AttributeExpression.class}, "documentid namespace | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            DocumentIdExpression.class,
+            AttributeExpression.class}, "documentid | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            InputExpression.class,
+            ExcessHex8EncodeExpression.class,
+            AttributeExpression.class}, "input weight_src | exhex8encode | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            InputExpression.class,
+            ExcessHex16EncodeExpression.class,
+            AttributeExpression.class}, "input weight_src | exhex16encode | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            InputExpression.class,
+            ExcessHex8FloatEncodeExpression.class,
+            AttributeExpression.class}, "input weight_src | exhex8floatencode | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            InputExpression.class,
+            ExcessHex16DoubleEncodeExpression.class,
+            AttributeExpression.class}, "input weight_src | exhex16doubleencode | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            InputExpression.class,
+            AbsExpression.class,
+            AttributeExpression.class}, "input weight_src | abs | attribute");
     }
 
     private static void assertEqualsParsedFlattened(Class<?>[] expectedFlattened, String input) {
