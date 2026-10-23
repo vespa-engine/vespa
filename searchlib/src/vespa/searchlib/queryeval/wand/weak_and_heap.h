@@ -7,6 +7,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <span>
 
 namespace search::queryeval {
 
@@ -26,7 +27,7 @@ public:
      * Consider the given scores for insertion into the underlying structure.
      * The implementation may change the given score array to speed up execution.
      */
-    virtual void adjust(score_t* begin, score_t* end) = 0;
+    virtual void adjust(std::span<score_t> newScores) = 0;
 
     /**
      * The number of scores this heap is tracking.
@@ -58,7 +59,7 @@ public:
     explicit WeakAndPriorityQueue(uint32_t scoresToTrack);
     ~WeakAndPriorityQueue() override;
     Scores& getScores() noexcept { return _bestScores; }
-    void adjust(score_t* begin, score_t* end) override;
+    void adjust(std::span<score_t> newScores) override;
     static std::unique_ptr<WeakAndPriorityQueue> createHeap(uint32_t scoresToTrack, bool thread_safe);
     void set_min_score(score_t min_score) noexcept { setMinScore(min_score); }
 };
@@ -70,7 +71,7 @@ private:
 public:
     explicit SharedWeakAndPriorityQueue(uint32_t scoresToTrack);
     ~SharedWeakAndPriorityQueue() override;
-    void adjust(score_t* begin, score_t* end) override;
+    void adjust(std::span<score_t> newScores) override;
 };
 
 } // namespace search::queryeval

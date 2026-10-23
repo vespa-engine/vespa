@@ -15,7 +15,7 @@ struct Scores : public std::vector<score_t> {
 
 void adjust(WeakAndHeap& heap, const Scores& scores) {
     Scores tmp = scores;
-    heap.adjust(&tmp[0], &tmp[0] + tmp.size());
+    heap.adjust(tmp);
 }
 
 void assertScores(const Scores& exp, SharedWeakAndPriorityQueue& heap) {
