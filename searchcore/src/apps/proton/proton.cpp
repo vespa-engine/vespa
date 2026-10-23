@@ -252,13 +252,6 @@ private:
     FNET_Transport _transport;
 };
 
-void emit_proton_starting_span() {
-    auto tracer = ::opentelemetry::trace::Provider::GetTracerProvider()->GetTracer("proton-tracer");
-    auto span = tracer->StartSpan("Proton process starting");
-    span->AddEvent("first event");
-    span->End();
-}
-
 } // namespace
 
 void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
@@ -279,28 +272,34 @@ void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
     } else {
         OpenTelemetryTracerProviders::init_grpc_tracer_provider("proton-service",
                                                                 *configSnapshot->get_telemetry_config_sp());
-        emit_proton_starting_span();
+        auto tracer = ::opentelemetry::trace::Provider::GetTracerProvider()->GetTracer("proton-tracer");
+        auto span = tracer->StartSpan("Proton process starting");
         const ProtonConfig& protonConfig = configSnapshot->getProtonConfig();
         std::string         basedir = protonConfig.basedir;
         std::filesystem::create_directories(std::filesystem::path(basedir));
         {
             ExitOnSignal exit_on_signal;
+            span->AddEvent("Starting proton");
             proton.init(configSnapshot);
         }
         std::string file_distributor_connection_spec = configSnapshot->getFiledistributorrpcConfig().connectionspec;
         std::unique_ptr<ProtonServiceLayerProcess> spiProton;
 
         if (!params.serviceidentity.empty()) {
+            span->AddEvent("Starting service layer");
             spiProton = std::make_unique<ProtonServiceLayerProcess>(
                 identityUri.createWithNewId(params.serviceidentity), proton, transport,
                 file_distributor_connection_spec, configSnapshot->getHwInfo());
             spiProton->setupConfig(subscribeTimeout);
             spiProton->createNode();
+            span->AddEvent("Started service layer");
             EV_STARTED("servicelayer");
         } else {
             proton.getMetricManager().init(identityUri);
         }
         configSnapshot.reset();
+        span->AddEvent("Started proton");
+        span->End();
         EV_STARTED("proton");
         while (!(SIG::INT.check() || SIG::TERM.check() || (spiProton && spiProton->getNode().attemptedStopped()))) {
             std::this_thread::sleep_for(1000ms);
