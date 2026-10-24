@@ -66,7 +66,7 @@
         <apache.httpclient5.vespa.version>5.6.5</apache.httpclient5.vespa.version>
         <apache.httpcore5.vespa.version>5.4.4</apache.httpcore5.vespa.version>
         <apiguardian.vespa.version>1.1.2</apiguardian.vespa.version>
-        <asm.vespa.version>9.11</asm.vespa.version>
+        <asm.vespa.version>9.11.1</asm.vespa.version>
         <assertj.vespa.version>3.27.7</assertj.vespa.version>
         <bouncycastle.vespa.version>1.86</bouncycastle.vespa.version>
         <bouncycastle.bcprov.vespa.version>1.86</bouncycastle.bcprov.vespa.version>
