@@ -92,6 +92,11 @@ public final class ClusterSpec {
         return Optional.ofNullable(profile);
     }
 
+    public ClusterSpec with(CloudAccount account) {
+        return new ClusterSpec(type, id, capacity.with(account), vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
+                               stateful, sidecars, availabilityZones, profile);
+    }
+
     public ClusterSpec withExclusivity(boolean exclusive) {
         return new ClusterSpec(type, id, capacity, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
                                stateful, sidecars, availabilityZones, profile);
@@ -106,7 +111,6 @@ public final class ClusterSpec {
         return new ClusterSpec(type, id, capacity, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
                                stateful, sidecars, availabilityZones, profile);
     }
-
 
     /** Creates a ClusterSpec builder that builds this spec. */
     public Builder builder() {

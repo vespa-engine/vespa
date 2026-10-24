@@ -25,9 +25,9 @@ public final class Capacity {
     private final boolean canFail; // TODO: Move out of this class since it is a transient property of a request
     private final NodeType type;
     private final double maxCostFactor;
-    private final CloudAccount cloudAccount;
-    private final CloudResourceTags cloudResourceTags;
-    private final ClusterInfo clusterInfo;
+    private final CloudAccount cloudAccount; // TODO: Move to ClusterSpec
+    private final CloudResourceTags cloudResourceTags;  // TODO: Move to ClusterSpec
+    private final ClusterInfo clusterInfo;  // TODO: Move to ClusterSpec
 
     private Capacity(ClusterResources min,
                      ClusterResources max,
@@ -108,6 +108,10 @@ public final class Capacity {
     }
 
     public ClusterInfo clusterInfo() { return clusterInfo; }
+
+    Capacity with(CloudAccount account) {
+        return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, account, cloudResourceTags, clusterInfo);
+    }
 
     public Capacity withLimits(ClusterResources min, ClusterResources max) {
         return withLimits(min, max, IntRange.empty());
