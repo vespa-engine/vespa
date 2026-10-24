@@ -329,10 +329,10 @@ public class PermanentFlags {
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
 
-    public static final UnboundBooleanFlag RELAX_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
-            "relax-strictly-increasing-cluster-state-versions", true,
-            "Whether to allow disabling the requirement that cluster state versions are strictly " +
-                    "increasing when a content cluster has only a single cluster controller configured.",
+    public static final UnboundBooleanFlag REQUIRE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
+            "require-strictly-increasing-cluster-state-versions", true,
+            "Whether to require that cluster state versions are strictly " +
+                    "increasing. Single cluster controllers never requires this and are not affected by this flag.",
             "Takes effect at redeployment",
             INSTANCE_ID
     );

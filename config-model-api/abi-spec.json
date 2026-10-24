@@ -1545,7 +1545,7 @@
       "public boolean protonLogWarningOnDiskCapacityChange()",
       "public boolean protonResampleDiskCapacity()",
       "public boolean fastMapSearch()",
-      "public boolean relaxStrictlyIncreasingClusterStateVersions()",
+      "public boolean requireStrictlyIncreasingClusterStateVersions()",
       "public boolean commerceDiscovery()",
       "public boolean enableLandlock()",
       "public boolean enableLegacyFeedHandler()",
