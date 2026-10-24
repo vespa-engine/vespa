@@ -13,8 +13,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -38,8 +36,7 @@ public class ConfigResponseTest {
         assertNotNull(payload);
         assertEquals("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}", payload);
         assertEquals(3L, response.getGeneration());
-        assertEquals(payloadChecksums.getForType(MD5), response.getPayloadChecksums().getForType(MD5));
-        assertEquals(payloadChecksums.getForType(XXHASH64), response.getPayloadChecksums().getForType(XXHASH64));
+        assertEquals(payloadChecksums.xxhash64(), response.getPayloadChecksums().xxhash64());
 
         baos = new ByteArrayOutputStream();
         response.serialize(baos, CompressionType.UNCOMPRESSED);

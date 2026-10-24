@@ -12,7 +12,6 @@ import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.JRTMethods;
-import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.util.ConfigUtils;
@@ -22,8 +21,6 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
  * Represents version 3 config request for config clients. Provides methods for inspecting request and response
@@ -257,8 +254,7 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         log.log(Level.FINE, () -> "new checksums for " + getConfigKey() + ": " + newChecksums);
         if (newChecksums.isEmpty()) return false;
 
-        PayloadChecksum respXxhash64 = newChecksums.getForType(XXHASH64);
-        return respXxhash64 != null &&  ! requestConfigChecksums.getForType(XXHASH64).equals(respXxhash64);
+        return ! requestConfigChecksums.matches(newChecksums);
     }
 
     @Override

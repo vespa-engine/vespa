@@ -9,12 +9,8 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
-
 /**
- * Checksums of config definition payload or config payload,
- * md5 and xxhash64 are the supported types at the moment.
+ * Checksum (xxhash64) of config payload.
  *
  * @author hmusum
  */
@@ -23,46 +19,26 @@ public class PayloadChecksum {
     private static final Pattern hexChecksumPattern = Pattern.compile("[0-9a-fA-F]+");
 
     private final String checksum;
-    private final Type type;
 
-    public PayloadChecksum(String checksum, Type type) {
+    public PayloadChecksum(String checksum) {
         this.checksum = checksum;
-        this.type = type;
     }
 
-    public static PayloadChecksum empty(Type type) {
-        return new PayloadChecksum("", type);
+    public static PayloadChecksum empty() {
+        return new PayloadChecksum("");
     }
 
-    public static PayloadChecksum fromPayload(Payload payload, Type type) {
-        switch (type) {
-            case MD5: return fromMd5Data(payload.getData());
-            case XXHASH64: return fromXxhash64Data(payload.getData());
-            default: throw new IllegalArgumentException("Unknown type " + type);
-        }
+    public static PayloadChecksum fromPayload(Payload payload) {
+        return fromData(payload.getData());
     }
 
-    private static PayloadChecksum fromMd5Data(AbstractUtf8Array data) {
-        return new PayloadChecksum(ConfigUtils.getMd5(data), MD5);
+    public static PayloadChecksum fromData(AbstractUtf8Array data) {
+        return new PayloadChecksum(ConfigUtils.getXxhash64(data));
     }
 
-    private static PayloadChecksum fromXxhash64Data(AbstractUtf8Array data) {
-        return new PayloadChecksum(ConfigUtils.getXxhash64(data), XXHASH64);
-    }
-
-    public boolean isEmpty() {
-        switch (type) {
-            case MD5: return this.equals(empty(MD5));
-            case XXHASH64: return this.equals(empty(XXHASH64));
-            default: throw new IllegalArgumentException("Unknown type " + type);
-        }
-    }
+    public boolean isEmpty() { return checksum.isEmpty(); }
 
     public String asString() { return checksum; }
-
-    public Type type() { return type; }
-
-    public enum Type {MD5, XXHASH64}
 
     public boolean valid() {
         if (checksum.isEmpty()) return true;  // Empty checksum is ok (e.g. when running 'vespa-get-config')
@@ -73,7 +49,7 @@ public class PayloadChecksum {
 
     @Override
     public int hashCode() {
-        return Objects.hash(checksum, type);
+        return Objects.hash(checksum);
     }
 
     @Override
@@ -81,11 +57,11 @@ public class PayloadChecksum {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PayloadChecksum that = (PayloadChecksum) o;
-        return Objects.equals(checksum, that.checksum) && type == that.type;
+        return Objects.equals(checksum, that.checksum);
     }
 
     @Override
     public String toString() {
-        return type.name() + ":" + checksum;
+        return "XXHASH64:" + checksum;
     }
 }

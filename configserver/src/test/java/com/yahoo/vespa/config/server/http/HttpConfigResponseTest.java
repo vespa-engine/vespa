@@ -23,7 +23,7 @@ public class HttpConfigResponseTest {
         ConfigResponse configResponse = SlimeConfigResponse.fromConfigPayload(payload,
                                                                               generation,
                                                                               false,
-                                                                              PayloadChecksums.from("", "595f44fec1e92a71d"));
+                                                                              PayloadChecksums.from("595f44fec1e92a71d"));
         HttpConfigResponse response = HttpConfigResponse.createFromConfig(configResponse);
         assertEquals(SessionHandlerTest.getRenderedString(response), "{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}");
     }

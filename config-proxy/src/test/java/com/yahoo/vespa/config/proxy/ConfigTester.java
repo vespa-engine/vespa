@@ -20,9 +20,6 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
-
 /**
  * @author bratseth
  */
@@ -46,8 +43,7 @@ public class ConfigTester {
 
         long generation = 1;
         String defMd5 = ConfigUtils.getDefMd5(defContent);
-        PayloadChecksums payloadChecksums = PayloadChecksums.from(PayloadChecksum.empty(MD5),
-                                                                  PayloadChecksum.fromPayload(Payload.from(fooConfigPayload), XXHASH64));
+        PayloadChecksums payloadChecksums = PayloadChecksums.from(PayloadChecksum.fromPayload(fooPayload));
         fooConfig = new RawConfig(configKey, defMd5, fooPayload, payloadChecksums,
                                   generation, false, defContent, Optional.empty());
 

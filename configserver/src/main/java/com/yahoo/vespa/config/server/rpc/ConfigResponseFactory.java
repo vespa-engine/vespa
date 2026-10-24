@@ -7,9 +7,6 @@ import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
-import com.yahoo.vespa.config.util.ConfigUtils;
-
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
  * Represents a component that creates config responses from a payload. Different implementations
@@ -41,10 +38,9 @@ public interface ConfigResponseFactory {
                                   boolean applyOnRestart,
                                   PayloadChecksums requestsPayloadChecksums);
 
-    /** Generates payload checksums based on what type of checksums exist in request */
+    /** Generates payload checksums for the given payload */
     default PayloadChecksums generatePayloadChecksums(AbstractUtf8Array rawPayload, PayloadChecksums requestsPayloadChecksums) {
-        PayloadChecksum xxhash64 = new PayloadChecksum(ConfigUtils.getXxhash64(rawPayload), XXHASH64);
-        return PayloadChecksums.from(xxhash64);
+        return PayloadChecksums.from(PayloadChecksum.fromData(rawPayload));
     }
 
 }

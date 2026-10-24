@@ -18,12 +18,10 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
-
 /**
  * The V3 config protocol implemented on the server side. The V3 protocol uses 2 fields:
  *
- * * A metadata field containing json data describing config generation, md5 and compression info
+ * * A metadata field containing json data describing config generation, checksum and compression info
  * * A data field containing compressed or uncompressed json config payload
  *
  * The implementation of addOkResponse is optimized for doing as little copying of payload data as possible, ensuring
@@ -212,8 +210,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     }
 
     private void addPayloadCheckSums(JsonGenerator jsonGenerator, PayloadChecksums checksums) throws IOException {
-        if (checksums.getForType(XXHASH64) != null)
-            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_XXHASH64, checksums.getForType(XXHASH64).asString());
+        setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_XXHASH64, checksums.xxhash64().asString());
     }
 
     private void addPayload(Payload responsePayload, ByteArrayOutputStream byteArrayOutputStream) {

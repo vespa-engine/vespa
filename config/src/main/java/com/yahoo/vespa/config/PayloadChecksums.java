@@ -2,86 +2,47 @@
 package com.yahoo.vespa.config;
 
 import com.yahoo.vespa.config.protocol.Payload;
-import com.yahoo.vespa.config.util.ConfigUtils;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
-
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 
 /**
- * Checksums for config payload, typically 1 for each PayloadChecksum type (md5 and xxhash64).
- * Initialized with empty checksum for each existing type.
+ * Checksums for config payload, only xxhash64 at the moment.
  *
  * @author hmusum
  */
 public class PayloadChecksums {
 
-    private final Map<PayloadChecksum.Type, PayloadChecksum> checksums = new LinkedHashMap<>();
+    private final PayloadChecksum xxhash64;
 
-    private PayloadChecksums() {
-        this(false);
+    private PayloadChecksums(PayloadChecksum xxhash64) {
+        this.xxhash64 = Objects.requireNonNull(xxhash64);
     }
 
-    private PayloadChecksums(boolean addEmptyChecksumForAllTypes) {
-        if (addEmptyChecksumForAllTypes)
-            Arrays.stream(PayloadChecksum.Type.values())
-                  .forEach(type -> checksums.put(type, PayloadChecksum.empty(type)));
+    public static PayloadChecksums empty() { return new PayloadChecksums(PayloadChecksum.empty()); }
+
+    public static PayloadChecksums from(PayloadChecksum xxhash64) {
+        return new PayloadChecksums(xxhash64);
     }
 
-    public static PayloadChecksums empty() { return new PayloadChecksums(true); }
-
-    public static PayloadChecksums from(PayloadChecksum... checksums) {
-        PayloadChecksums payloadChecksums = new PayloadChecksums();
-        Arrays.stream(checksums).filter(Objects::nonNull).forEach(payloadChecksums::add);
-        return payloadChecksums;
-    }
-
-    public static PayloadChecksums from(String configMd5, String configXxhash64) {
-        return new PayloadChecksums()
-                .add(new PayloadChecksum(configMd5, MD5))
-                .add(new PayloadChecksum(configXxhash64, XXHASH64));
+    public static PayloadChecksums from(String xxhash64) {
+        return new PayloadChecksums(new PayloadChecksum(xxhash64));
     }
 
     public static PayloadChecksums fromPayload(Payload payload) {
-        return new PayloadChecksums()
-                .add(new PayloadChecksum(ConfigUtils.getMd5(payload.getData()), MD5))
-                .add(new PayloadChecksum(ConfigUtils.getXxhash64(payload.getData()), XXHASH64));
+        return new PayloadChecksums(PayloadChecksum.fromPayload(payload));
     }
 
-    private PayloadChecksums add(PayloadChecksum checksum) {
-        checksums.put(checksum.type(), checksum);
-        return this;
-    }
+    public PayloadChecksum xxhash64() { return xxhash64; }
 
-    public void removeChecksumsOfType(PayloadChecksum.Type type) { checksums.remove(type); }
+    public boolean valid() { return xxhash64.valid(); }
 
-    public PayloadChecksum getForType(PayloadChecksum.Type type) {
-        return checksums.get(type);
-    }
+    public boolean isEmpty() { return xxhash64.isEmpty(); }
 
-    public boolean valid() {
-        return checksums.values().stream().allMatch(PayloadChecksum::valid);
-    }
-
-    public boolean isEmpty() { return this.equals(empty()); }
-
-    public boolean matches(PayloadChecksums other) {
-        if (getForType(XXHASH64) != null) return getForType(XXHASH64).equals(other.getForType(XXHASH64));
-        if (getForType(MD5) != null) return getForType(MD5).equals(other.getForType(MD5));
-        return true;
-    }
+    public boolean matches(PayloadChecksums other) { return xxhash64.equals(other.xxhash64); }
 
     @Override
     public String toString() {
-        return checksums.values().stream()
-                        .filter(checksum -> !checksum.isEmpty())
-                        .map(checksum -> checksum.type().name() + ":" + checksum.asString())
-                        .collect(Collectors.joining(","));
+        return xxhash64.isEmpty() ? "" : xxhash64.toString();
     }
 
     @Override
@@ -89,12 +50,12 @@ public class PayloadChecksums {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PayloadChecksums that = (PayloadChecksums) o;
-        return Objects.equals(checksums, that.checksums);
+        return Objects.equals(xxhash64, that.xxhash64);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(checksums);
+        return Objects.hash(xxhash64);
     }
 
 }

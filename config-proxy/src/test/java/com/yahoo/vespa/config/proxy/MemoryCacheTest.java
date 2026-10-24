@@ -34,7 +34,7 @@ public class MemoryCacheTest {
     private final String configId2 = "clients/gateways/gateway/component/com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation";
     private static final String defMd52 = "a2";
     private static final String differentDefMd5 = "09ef";
-    private static final PayloadChecksums checksums = PayloadChecksums.from("b", "");
+    private static final PayloadChecksums checksums = PayloadChecksums.from("b");
     private final ConfigKey<?> configKey = new ConfigKey<>(defName, configId, namespace);
     private final ConfigKey<?> configKey2 = new ConfigKey<>(defName2, configId2, namespace2);
     private ConfigCacheKey cacheKey;

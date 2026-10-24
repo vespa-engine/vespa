@@ -25,7 +25,6 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -105,7 +104,7 @@ public class JRTConfigRequestV3Test {
         serverReq.addErrorResponse(ErrorCode.OUTDATED_CONFIG, "error message");
         JRTClientConfigRequest next = clientReq.nextRequest(6);
         // Should use config checksums and generation from the request (not the response) when there are errors
-        assertThat(next.getRequestConfigChecksums().getForType(XXHASH64), is(clientReq.getRequestConfigChecksums().getForType(XXHASH64)));
+        assertThat(next.getRequestConfigChecksums().xxhash64(), is(clientReq.getRequestConfigChecksums().xxhash64()));
         assertThat(next.getRequestGeneration(), is(clientReq.getRequestGeneration()));
     }
 
@@ -118,7 +117,7 @@ public class JRTConfigRequestV3Test {
         assertTrue(clientReq.validateResponse());
         assertThat(clientReq.getNewPayload().withCompression(CompressionType.UNCOMPRESSED).getData().toString(), is(payload.getData().toString()));
         assertThat(clientReq.getNewGeneration(), is(4L));
-        assertThat(clientReq.getNewChecksums().getForType(XXHASH64).asString(), is(xxhash64));
+        assertThat(clientReq.getNewChecksums().xxhash64().asString(), is(xxhash64));
         assertTrue(clientReq.hasUpdatedConfig());
         assertTrue(clientReq.hasUpdatedGeneration());
     }
@@ -213,7 +212,7 @@ public class JRTConfigRequestV3Test {
         assertTrue(sub.nextConfig(120_0000));
         sub.close();
         JRTClientConfigRequest nextReq = createReq(sub, Trace.createNew());
-        assertEquals(nextReq.getRequestConfigChecksums().getForType(XXHASH64).asString(), sub.getConfigState().getChecksums().getForType(XXHASH64).asString());
+        assertEquals(nextReq.getRequestConfigChecksums().xxhash64().asString(), sub.getConfigState().getChecksums().xxhash64().asString());
         assertEquals(nextReq.getRequestGeneration(), currentGeneration);
     }
 
@@ -234,7 +233,7 @@ public class JRTConfigRequestV3Test {
         assertTrue(serverReq.validateParameters());
         assertValidationFail(createReq("35#$#!$@#", defNamespace, hostname, configId, payloadChecksums, currentGeneration, timeout, trace));
         assertValidationFail(createReq(defName, "abcd.o#$*(!&$", hostname, configId, payloadChecksums, currentGeneration, timeout, trace));
-        assertValidationFail(createReq(defName, defNamespace, hostname, configId, PayloadChecksums.from("1234", "opnq"), currentGeneration, timeout, trace));
+        assertValidationFail(createReq(defName, defNamespace, hostname, configId, PayloadChecksums.from("opnq"), currentGeneration, timeout, trace));
         assertValidationFail(createReq(defName, defNamespace, hostname, configId, payloadChecksums, -34, timeout, trace));
         assertValidationFail(createReq(defName, defNamespace, hostname, configId, payloadChecksums, currentGeneration, -23, trace));
         assertValidationFail(createReq(defName, defNamespace, "", configId, payloadChecksums, currentGeneration, timeout, trace));
@@ -301,7 +300,7 @@ public class JRTConfigRequestV3Test {
         assertThat(serverReq.getDefContent().asStringArray(), is(configDefinition));
         assertFalse(serverReq.noCache());
         assertTrue(serverReq.getRequestTrace().toString().contains("hi"));
-        assertThat(serverReq.getRequestConfigChecksums().getForType(XXHASH64), is(payloadChecksums.getForType(XXHASH64)));
+        assertThat(serverReq.getRequestConfigChecksums().xxhash64(), is(payloadChecksums.xxhash64()));
         assertThat(serverReq.getRequestGeneration(), is(currentGeneration));
     }
 

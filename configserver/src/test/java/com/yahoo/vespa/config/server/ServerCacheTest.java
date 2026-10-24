@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
@@ -60,16 +59,16 @@ public class ServerCacheTest {
         assertEquals(def, cache.getDef(fooBarDefKey));
         assertEquals("mynode", cache.getDef(fooBimDefKey).getCNode().getName());
         ConfigResponse raw = cache.get(fooBarCacheKey);
-        assertEquals(xxhash64, raw.getPayloadChecksums().getForType(XXHASH64).asString());
+        assertEquals(xxhash64, raw.getPayloadChecksums().xxhash64().asString());
     }
 
     @Test
     public void testThatCacheWorksWithSameKeyDifferentMd5() {
         assertEquals(def, cache.getDef(fooBarDefKey));
         ConfigResponse raw = cache.get(fooBarCacheKey);
-        assertEquals(xxhash64, raw.getPayloadChecksums().getForType(XXHASH64).asString());
+        assertEquals(xxhash64, raw.getPayloadChecksums().xxhash64().asString());
         raw = cache.get(fooBarCacheKeyDifferentMd5);
-        assertEquals(xxhash64_2, raw.getPayloadChecksums().getForType(XXHASH64).asString());
+        assertEquals(xxhash64_2, raw.getPayloadChecksums().xxhash64().asString());
     }
 
     @Test
@@ -79,7 +78,7 @@ public class ServerCacheTest {
 
     SlimeConfigResponse createResponse(String xxhash64) {
         return SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false,
-                                                     PayloadChecksums.from("", xxhash64));
+                                                     PayloadChecksums.from(xxhash64));
     }
 
 }

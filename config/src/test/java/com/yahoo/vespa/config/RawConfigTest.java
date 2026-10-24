@@ -11,8 +11,6 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,7 +28,7 @@ public class RawConfigTest {
     private static final ConfigKey<?> key = new ConfigKey<>("foo", "id", "bar");
     private static final List<String> defContent = List.of("version=1", "anInt int");
     private static final String defMd5 = ConfigUtils.getDefMd5FromRequest("", defContent);
-    private static final PayloadChecksums payloadChecksums = PayloadChecksums.from("", "012345");
+    private static final PayloadChecksums payloadChecksums = PayloadChecksums.from("012345");
     private static final Payload payload = Payload.from(new Utf8String("anInt 1"), CompressionInfo.uncompressed());
     private static final long generation = 1L;
 
@@ -70,7 +68,7 @@ public class RawConfigTest {
 
         // different config md5 and with vespa version
         final VespaVersion vespaVersion = VespaVersion.fromString("5.37.38");
-        RawConfig config3 = new RawConfig(key, defMd5, payload, PayloadChecksums.from("9999", ""), generation, false, defContent, Optional.of(vespaVersion));
+        RawConfig config3 = new RawConfig(key, defMd5, payload, PayloadChecksums.from("9999"), generation, false, defContent, Optional.of(vespaVersion));
         assertThat(config, is(not(config3)));
         assertThat(config.hashCode(), is(not(config3.hashCode())));
         // Check that vespa version is set correctly
@@ -99,8 +97,7 @@ public class RawConfigTest {
     public void payload() {
         RawConfig config = new RawConfig(key, defMd5, payload, payloadChecksums, generation, false, defContent, Optional.empty());
         assertEquals(config.getPayload(), payload);
-        assertEquals(config.getPayloadChecksums().getForType(XXHASH64), payloadChecksums.getForType(XXHASH64));
-        assertEquals(config.getPayloadChecksums().getForType(MD5), payloadChecksums.getForType(MD5));
+        assertEquals(config.getPayloadChecksums().xxhash64(), payloadChecksums.xxhash64());
         assertEquals(config.getGeneration(), generation);
         assertEquals(config.getDefContent(), defContent);
     }
