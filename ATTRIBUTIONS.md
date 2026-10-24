@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-10-22
+Last updated: 2026-10-24
 
 ---
 
@@ -938,9 +938,10 @@ Last updated: 2026-10-22
 
 ---
 
-## org.apache.maven.plugin-tools 3.15.2 — Apache 2.0
+## org.apache.maven.plugin-tools 3.16.0 — Apache 2.0
 
 - Homepage: <https://maven.apache.org/plugin-tools>
+- Copyright 2004-2026 The Apache Software Foundation
 - The Apache Software Foundation
 
 ---
