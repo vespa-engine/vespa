@@ -51,6 +51,7 @@ public:
     virtual void visit(typename NodeTypes::PredicateQuery&) = 0;
     virtual void visit(typename NodeTypes::RegExpTerm&) = 0;
     virtual void visit(typename NodeTypes::NearestNeighborTerm&) = 0;
+    virtual void visit(typename NodeTypes::SparseTensorWandTerm&) = 0;
     virtual void visit(typename NodeTypes::TrueQueryNode&) = 0;
     virtual void visit(typename NodeTypes::FalseQueryNode&) = 0;
     virtual void visit(typename NodeTypes::FuzzyTerm&) = 0;
@@ -85,6 +86,7 @@ private:
     using TPredicateQuery = typename NodeTypes::PredicateQuery;
     using TRegExpTerm = typename NodeTypes::RegExpTerm;
     using TNearestNeighborTerm = typename NodeTypes::NearestNeighborTerm;
+    using TSparseTensorWandTerm = typename NodeTypes::SparseTensorWandTerm;
     using TTrueQueryNode = typename NodeTypes::TrueQueryNode;
     using TFalseQueryNode = typename NodeTypes::FalseQueryNode;
     using TFuzzyTerm = typename NodeTypes::FuzzyTerm;
@@ -116,6 +118,7 @@ private:
     void visit(PredicateQuery& n) override { visit(static_cast<TPredicateQuery&>(n)); }
     void visit(RegExpTerm& n) override { visit(static_cast<TRegExpTerm&>(n)); }
     void visit(NearestNeighborTerm& n) override { visit(static_cast<TNearestNeighborTerm&>(n)); }
+    void visit(SparseTensorWandTerm& n) override { visit(static_cast<TSparseTensorWandTerm&>(n)); }
     void visit(TrueQueryNode& n) override { visit(static_cast<TTrueQueryNode&>(n)); }
     void visit(FalseQueryNode& n) override { visit(static_cast<TFalseQueryNode&>(n)); }
     void visit(FuzzyTerm& n) override { visit(static_cast<TFuzzyTerm&>(n)); }

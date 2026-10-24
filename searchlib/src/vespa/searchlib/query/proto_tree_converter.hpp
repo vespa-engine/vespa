@@ -533,6 +533,19 @@ public:
         return true;
     }
 
+    bool handle(const ItemSparseTensorWand& item) {
+        auto  d = fillTermProperties(item.properties());
+        auto& term = _builder.add_sparse_tensor_wand_term(item.query_tensor_name(), d.index_view, d.uniqueId,
+                                                          d.weight, item.target_num_hits(), item.score_threshold());
+        if (d.noRankFlag) {
+            term.setRanked(false);
+        }
+        if (d.noPositionDataFlag) {
+            term.setPositionData(false);
+        }
+        return true;
+    }
+
     bool handle(const ItemPredicateQuery& item) {
         auto d = fillTermProperties(item.properties());
 
@@ -770,6 +783,8 @@ public:
             return handle(qti.item_nearest_neighbor());
         case IC::kItemGeoLocationTerm:
             return handle(qti.item_geo_location_term());
+        case IC::kItemSparseTensorWand:
+            return handle(qti.item_sparse_tensor_wand());
 
         case IC::ITEM_NOT_SET:
             LOG(error, "missing item in serialized query tree");

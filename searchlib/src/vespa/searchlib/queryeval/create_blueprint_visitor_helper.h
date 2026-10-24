@@ -92,6 +92,8 @@ public:
     void visit(query::SuffixTerm& n) override = 0;
     void visit(query::RegExpTerm& n) override = 0;
     void visit(query::NearestNeighborTerm& n) override = 0;
+    // Only supported for tensor attributes; gives an empty blueprint unless overridden.
+    void visit(query::SparseTensorWandTerm&) override {}
     void visit(query::FuzzyTerm& n) override = 0;
 
     void visit(query::TrueQueryNode&) final override;
