@@ -57,8 +57,8 @@ template <bool strict, typename DocAccess> class SparseTensorWandSearchImpl fina
     fef::TermFieldMatchData& _tfmd;
     DocAccess                _doc_access;
     SparseTensorDotProduct   _dot_product;
-    const MatchParams        _matchParams;
-    std::vector<double>      _localScores;
+    const MatchParams        _match_params;
+    std::vector<double>      _local_scores;
     const bool               _readonly_scores_heap;
     double                   _last_score;
 
@@ -71,15 +71,15 @@ public:
         : _tfmd(tfmd),
           _doc_access(attr),
           _dot_product(dot_product, query_tensor),
-          _matchParams(match_params),
-          _localScores(),
+          _match_params(match_params),
+          _local_scores(),
           _readonly_scores_heap(readonly_scores_heap),
           _last_score(0.0) {
-        _localScores.reserve(_matchParams.scoresAdjustFrequency);
+        _local_scores.reserve(_match_params.scoresAdjustFrequency);
     }
 
     void doSeek(uint32_t docid) override {
-        double threshold = _matchParams.scores.getMinScore();
+        double threshold = _match_params.scores.getMinScore();
         while (__builtin_expect((docid < getEndId()), true)) {
             double s = score(docid);
             if (s > threshold) {
@@ -99,10 +99,10 @@ public:
     void doUnpack(uint32_t docid) override {
         _tfmd.setRawScore(docid, _last_score);
         if (!_readonly_scores_heap) {
-            _localScores.push_back(_last_score);
-            if (_localScores.size() == _matchParams.scoresAdjustFrequency) {
-                _matchParams.scores.adjust(_localScores);
-                _localScores.clear();
+            _local_scores.push_back(_last_score);
+            if (_local_scores.size() == _match_params.scoresAdjustFrequency) {
+                _match_params.scores.adjust(_local_scores);
+                _local_scores.clear();
             }
         }
     }
