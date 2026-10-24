@@ -7,6 +7,7 @@ import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.schema.DocumentSummary;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.test.SpanRecorder;
@@ -163,13 +164,17 @@ class NodeFillTracingTest {
 
     @Test
     void a_retry_declined_by_the_limit_is_recorded_as_retried_false() throws Exception {
-        // retryLimit = min(docsumRetryLimit 10, 0.5 * numHitsToFill + 1). With two hits that is 2.0, and two
+        var result = resultWithHitsOn(0, 0);
+        result.getQuery().properties().set(Dispatcher.docsumRetryLimit, 10);
+        result.getQuery().properties().set(Dispatcher.docsumRetryFactor, 0.5);
+
+        // retryLimit = min(1 + docsumRetryLimit 10 / (2 nodes - 1), 0.5 * numHitsToFill + 1). With two hits that is 2.0, and two
         // skipped hits is not < 2.0, so Vespa gives up - those docsums are lost for this query.
         SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
         RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWith(emptyDocsumsFor(2)),
                                                             1, replyingWith(emptyDocsumsFor(2))));
 
-        recorder.record(() -> invoker.fill(resultWithHitsOn(0, 0), "default"));
+        recorder.record(() -> invoker.fill(result, "default"));
 
         var attrs = recorder.spanNamed("dispatch.fill").getAttributes();
         assertEquals(2L, attrs.get(TraceAttributes.FILL_SKIPPED).longValue());
