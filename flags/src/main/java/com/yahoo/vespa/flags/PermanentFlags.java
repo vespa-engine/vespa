@@ -328,6 +328,15 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+
+    public static final UnboundBooleanFlag REQUIRE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
+            "require-strictly-increasing-cluster-state-versions", true,
+            "Whether to require that cluster state versions are strictly " +
+                    "increasing. Single cluster controllers never requires this and are not affected by this flag.",
+            "Takes effect at redeployment",
+            INSTANCE_ID
+    );
+
     private PermanentFlags() {}
 
     public static UnboundBooleanFlag defineFeatureFlag(
