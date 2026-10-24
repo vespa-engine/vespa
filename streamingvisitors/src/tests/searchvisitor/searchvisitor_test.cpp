@@ -3,10 +3,17 @@
 #include <vespa/check_require.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/fnet/databuffer.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/persistence/spi/docentry.h>
+#include <vespa/searchlib/query/tree/query_to_protobuf.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
@@ -16,6 +23,7 @@
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/test/test_path.h>
 
 #include <string>
@@ -27,6 +35,8 @@ using namespace document;
 using namespace search::query;
 using namespace search;
 using namespace storage;
+using vespalib::eval::SimpleValue;
+using vespalib::eval::TensorSpec;
 
 namespace streaming {
 
@@ -38,15 +48,31 @@ std::string src_cfg(std::string_view prefix, std::string_view suffix) {
     return std::string(prefix) + TEST_PATH("cfg") + std::string(suffix);
 }
 
+void set_tensor_field(Document& doc, const std::string& field_name, const std::string& spec_expr) {
+    if (spec_expr.empty()) {
+        return;
+    }
+    const auto& data_type = dynamic_cast<const TensorDataType&>(doc.getField(field_name).getDataType());
+    auto        fv = std::make_unique<TensorFieldValue>(data_type);
+    *fv = SimpleValue::from_spec(TensorSpec::from_expr(spec_expr));
+    doc.setValue(field_name, std::move(fv));
+}
+
 /**
  * This class reflects the document type defined in cfg/test.sd.
  */
 struct MyDocument {
-    int id;
-    MyDocument(int id_in) : id(id_in) {}
+    int         id;
+    std::string vec;
+    std::string vec2;
+    MyDocument(int id_in) : id(id_in), vec(), vec2() {}
+    MyDocument(int id_in, std::string vec_in, std::string vec2_in = "")
+        : id(id_in), vec(std::move(vec_in)), vec2(std::move(vec2_in)) {}
     std::unique_ptr<Document> to_document(const DocumentTypeRepo& repo, const DataType& doc_type) const {
         auto result = std::make_unique<Document>(repo, doc_type, DocumentId(get_doc_id(id)));
         result->setValue("id", std::make_unique<IntFieldValue>(id));
+        set_tensor_field(*result, "vec", vec);
+        set_tensor_field(*result, "vec2", vec2);
         return result;
     }
 };
@@ -72,11 +98,30 @@ std::ostream& operator<<(std::ostream& oss, const MyHit& hit) {
 class RequestBuilder {
 private:
     vdslib::Parameters                 _params;
-    QueryBuilder<SimpleQueryNodeTypes> _builder;
-    int32_t                            _term_id;
+    QueryBuilder<SimpleQueryNodeTypes>               _builder;
+    int32_t                                          _term_id;
+    bool                                             _use_protobuf;
+    std::vector<std::pair<std::string, std::string>> _rank_properties;
+
+    void encode_rank_properties() {
+        // Same format as decoded by SearchVisitor: a count followed by FS4Properties
+        FNET_DataBuffer buf;
+        auto            write_string = [&buf](const std::string& str) {
+            buf.WriteInt32(str.size());
+            buf.WriteBytes(str.data(), str.size());
+        };
+        buf.WriteInt32(1);
+        write_string("rank");
+        buf.WriteInt32(_rank_properties.size());
+        for (const auto& [key, value] : _rank_properties) {
+            write_string(key);
+            write_string(value);
+        }
+        _params.set("rankproperties", std::string_view(buf.GetData(), buf.GetDataLen()));
+    }
 
 public:
-    RequestBuilder() : _params(), _builder(), _term_id(1) {
+    RequestBuilder() : _params(), _builder(), _term_id(1), _use_protobuf(false), _rank_properties() {
         search_cluster("mycl");
         rank_profile("default");
         summary_class("default");
@@ -100,10 +145,37 @@ public:
         _builder.addNumberTerm(term, field, _term_id++, Weight(100));
         return *this;
     }
+    // Sparse tensor WAND is only supported by the protobuf query tree
+    RequestBuilder& sparse_tensor_wand_term(const std::string& query_tensor_name, const std::string& field,
+                                            uint32_t target_hits, double score_threshold) {
+        _builder.add_sparse_tensor_wand_term(query_tensor_name, field, _term_id++, Weight(100), target_hits,
+                                             score_threshold);
+        _use_protobuf = true;
+        return *this;
+    }
+    RequestBuilder& query_tensor(const std::string& name, const std::string& spec_expr) {
+        vespalib::nbostream stream;
+        vespalib::eval::encode_value(*SimpleValue::from_spec(TensorSpec::from_expr(spec_expr)), stream);
+        _rank_properties.emplace_back("query(" + name + ")", std::string(stream.peek(), stream.size()));
+        return *this;
+    }
+    RequestBuilder& dump_features() {
+        constexpr int32_t QFLAG_DUMP_FEATURES = 0x00040000;
+        _params.set("queryflags", QFLAG_DUMP_FEATURES);
+        return *this;
+    }
     vdslib::Parameters build() {
         auto node = _builder.build();
-        auto query_stack_dump = StackDumpCreator::create(*node);
-        _params.set("query", std::string(query_stack_dump.data(), query_stack_dump.size()));
+        if (_use_protobuf) {
+            QueryToProtobuf converter;
+            _params.set("querytree", converter.serialize(*node).SerializeAsString());
+        } else {
+            auto query_stack_dump = StackDumpCreator::create(*node);
+            _params.set("query", std::string(query_stack_dump.data(), query_stack_dump.size()));
+        }
+        if (!_rank_properties.empty()) {
+            encode_rank_properties();
+        }
         return _params;
     }
 };
@@ -238,6 +310,62 @@ TEST_F(SearchVisitorTest, match_features_returned_in_search_result) {
     expect_hits({{7, 17.0}, {5, 15.0}}, *res);
     // Raw match features are ordered in matching order.
     expect_match_features({"attribute(id)", "myfunc"}, {{5.0}, {25.0}, {7.0}, {27.0}}, *res);
+}
+
+TEST_F(SearchVisitorTest, sparse_tensor_wand_ranks_documents_by_dot_product) {
+    auto res = execute_query(RequestBuilder()
+                                 .rank_profile("sparse_tensor_wand")
+                                 .sparse_tensor_wand_term("qt", "vec", 10, 0.0)
+                                 .query_tensor("qt", "tensor(x{}):{a:1,b:2}")
+                                 .build(),
+                             {{1, "tensor(x{}):{a:1}"},
+                              {2, "tensor(x{}):{b:3}"},
+                              {3, "tensor(x{}):{c:5}"},
+                              {4, "tensor(x{}):{a:2,b:1}"},
+                              {5}});
+    // Documents 3 (no overlapping labels) and 5 (no tensor) do not match
+    expect_hits({{2, 6.0}, {4, 4.0}, {1, 1.0}}, *res);
+}
+
+namespace {
+
+void check_score_threshold_raised_by_hits(SearchVisitorTest& test, bool dump_features) {
+    SCOPED_TRACE(dump_features ? "dump features" : "no dump features");
+    RequestBuilder builder;
+    builder.rank_profile("sparse_tensor_wand")
+        .sparse_tensor_wand_term("qt", "vec", 2, 0.0)
+        .query_tensor("qt", "tensor(x{}):{a:1,b:2}");
+    if (dump_features) {
+        // Unpacks match data a second time for the dump processor, which must not add the hit to the heap again
+        builder.dump_features();
+    }
+    auto res = test.execute_query(builder.build(), {{1, "tensor(x{}):{b:4}"},
+                                                    {2, "tensor(x{}):{b:3}"},
+                                                    {3, "tensor(x{}):{a:5}"},
+                                                    {4, "tensor(x{}):{a:7}"}});
+    // After documents 1 and 2 the heap is full with threshold 6, so document 3 does not match
+    expect_hits({{1, 8.0}, {4, 7.0}, {2, 6.0}}, *res);
+}
+
+} // namespace
+
+TEST_F(SearchVisitorTest, sparse_tensor_wand_score_threshold_is_raised_by_hits) {
+    check_score_threshold_raised_by_hits(*this, false);
+    check_score_threshold_raised_by_hits(*this, true);
+}
+
+TEST_F(SearchVisitorTest, sparse_tensor_wand_searching_fieldset_sets_raw_score_per_field) {
+    auto res = execute_query(RequestBuilder()
+                                 .rank_profile("sparse_tensor_wand")
+                                 .sparse_tensor_wand_term("qt", "vecs", 1, 0.0)
+                                 .query_tensor("qt", "tensor(x{}):{a:1,b:2}")
+                                 .build(),
+                             {{1, "tensor(x{}):{a:1}", "tensor(x{}):{b:1}"},
+                              {2, "tensor(x{}):{a:3}"},
+                              {3, "", "tensor(x{}):{a:2.5}"}});
+    // Rank is rawScore(vec) + 1000 * rawScore(vec2). The best field score of document 1 (2) sets the
+    // threshold, which document 2 (3) raises, so document 3 (2.5) does not match.
+    expect_hits({{1, 2001.0}, {2, 3.0}}, *res);
 }
 
 TEST_F(SearchVisitorTest, visitor_only_require_weak_read_consistency) {
