@@ -264,7 +264,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double searchNodeReservedMemoryFactor() { return flag(Flags.SEARCHNODE_RESERVED_MEMORY_FACTOR).value(); }
         @Override public boolean forceDisableOnnxModelOptimization() { return flag(PermanentFlags.FORCE_DISABLE_ONNX_MODEL_OPTIMIZATION).value(); }
         @Override public boolean failWhenConfiguringIndexedMapOfArray() { return flag(Flags.FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY).value(); }
-        @Override public boolean relaxStrictlyIncreasingClusterStateVersions() { return flag(PermanentFlags.RELAX_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS).value(); }
+        @Override public boolean requireStrictlyIncreasingClusterStateVersions() { return flag(PermanentFlags.REQUIRE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS).value(); }
         @Override public boolean commerceDiscovery() { return flag(Flags.COMMERCE_DISCOVERY).value(); }
         @Override public boolean enableLandlock() { return flag(Flags.ENABLE_LANDLOCK).value(); }
         @Override public boolean enableLegacyFeedHandler() { return flag(Flags.ENABLE_LEGACY_FEED_HANDLER).value(); }

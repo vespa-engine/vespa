@@ -86,7 +86,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean ignoreConnectivityChecksAtStartup = false;
     private double searchNodeReservedMemoryFactor = 0.0;
     private boolean failWhenConfiguringIndexedMapOfArray = true;
-    private boolean relaxStrictlyIncreasingClusterStateVersions = false;
+    private boolean requireStrictlyIncreasingClusterStateVersions = true;
     private boolean commerceDiscovery = false;
     private boolean enableLandlock = false;
     private boolean enableLegacyFeedHandler = true;
@@ -154,7 +154,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
     @Override public double searchNodeReservedMemoryFactor() { return searchNodeReservedMemoryFactor; }
     @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
-    @Override public boolean relaxStrictlyIncreasingClusterStateVersions() { return relaxStrictlyIncreasingClusterStateVersions; }
+    @Override public boolean requireStrictlyIncreasingClusterStateVersions() { return requireStrictlyIncreasingClusterStateVersions; }
     @Override public boolean commerceDiscovery() { return commerceDiscovery; }
     @Override public boolean enableLandlock() { return enableLandlock; }
     @Override public boolean enableLegacyFeedHandler() { return enableLegacyFeedHandler; }
@@ -422,8 +422,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties relaxStrictlyIncreasingClusterStateVersions(boolean value) {
-        this.relaxStrictlyIncreasingClusterStateVersions = value;
+    public TestProperties requireStrictlyIncreasingClusterStateVersions(boolean value) {
+        this.requireStrictlyIncreasingClusterStateVersions = value;
         return this;
     }
 
