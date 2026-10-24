@@ -150,7 +150,16 @@ func resolveWriteConfig(cli *CLI, local, global bool, optionName string) (cfg *C
 	cfg = cli.config
 	if useLocal {
 		if _, err := cli.applicationPackageFrom(nil, vespa.PackageOptions{}); err != nil {
-			return nil, false, false, false, fmt.Errorf("failed to write local configuration: %w", err)
+			writeErr := fmt.Errorf("failed to write local configuration: %w", err)
+			if local {
+				return nil, false, false, false, writeErr
+			}
+			// Scope came from default_config_scope, so offer global config instead
+			ok, confirmErr := cli.confirm("No application package found in current directory. Write "+optionName+" to global config instead?", false)
+			if confirmErr != nil || !ok {
+				return nil, false, false, false, writeErr
+			}
+			return cfg, false, implicitScope, scopeIsSet, nil
 		}
 		cfg = cli.config.local
 	}
