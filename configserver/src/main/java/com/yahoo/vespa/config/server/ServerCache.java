@@ -41,7 +41,7 @@ public class ServerCache {
     }
 
     private void put(ConfigCacheKey key, ConfigResponse config) {
-        PayloadChecksum xxhash64 = config.getPayloadChecksums().xxhash64();
+        PayloadChecksum xxhash64 = config.getPayloadChecksum();
         checksums.put(key, xxhash64);
         checksumToConfig.put(xxhash64, config);
     }

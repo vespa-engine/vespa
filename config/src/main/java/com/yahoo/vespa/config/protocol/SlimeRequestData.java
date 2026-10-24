@@ -8,7 +8,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.PayloadChecksum;
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
 import java.util.Optional;
@@ -79,15 +78,11 @@ class SlimeRequestData {
 
     String getRequestDefMd5() { return getRequestField(REQUEST_DEF_MD5).asString(); }
 
-    PayloadChecksum getRequestConfigXxhash64() {
+    PayloadChecksum getRequestConfigChecksum() {
         Inspector xxhash64Field = getRequestField(REQUEST_CONFIG_XXHASH64);
         return xxhash64Field.valid()
                 ? new PayloadChecksum(xxhash64Field.asString())
                 : PayloadChecksum.empty();
-    }
-
-    PayloadChecksums getRequestConfigChecksums() {
-        return PayloadChecksums.from(getRequestConfigXxhash64());
     }
 
     long getRequestGeneration() {
@@ -97,7 +92,7 @@ class SlimeRequestData {
     static Slime encodeRequest(ConfigKey<?> key,
                                String hostname,
                                DefContent defSchema,
-                               PayloadChecksums payloadChecksums,
+                               PayloadChecksum payloadChecksum,
                                long generation,
                                long timeout,
                                Trace trace,
@@ -113,7 +108,7 @@ class SlimeRequestData {
         request.setString(REQUEST_CLIENT_CONFIGID, key.getConfigId());
         request.setString(REQUEST_CLIENT_HOSTNAME, hostname);
         defSchema.serialize(request.setArray(REQUEST_DEF_CONTENT));
-        request.setString(REQUEST_CONFIG_XXHASH64, payloadChecksums.xxhash64().asString());
+        request.setString(REQUEST_CONFIG_XXHASH64, payloadChecksum.asString());
         request.setLong(REQUEST_CURRENT_GENERATION, generation);
         request.setLong(REQUEST_TIMEOUT, timeout);
         request.setString(REQUEST_COMPRESSION_TYPE, compressionType.name());

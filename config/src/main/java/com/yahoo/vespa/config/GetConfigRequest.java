@@ -45,10 +45,10 @@ public interface GetConfigRequest {
     String getRequestDefMd5();
 
     /**
-     * Returns the payload checksums from the config request.
+     * Returns the payload checksum from the config request.
      *
-     * @return the payload checksums from request.
+     * @return the payload checksum from request.
      */
-    PayloadChecksums configPayloadChecksums();
+    PayloadChecksum configPayloadChecksum();
 
 }

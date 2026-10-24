@@ -62,6 +62,6 @@ public class PayloadChecksum {
 
     @Override
     public String toString() {
-        return "XXHASH64:" + checksum;
+        return checksum.isEmpty() ? "" : "XXHASH64:" + checksum;
     }
 }

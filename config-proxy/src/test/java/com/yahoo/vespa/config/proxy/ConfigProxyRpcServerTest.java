@@ -100,7 +100,7 @@ public class ConfigProxyRpcServerTest {
         ret = req.returnValues().get(0).asStringArray();
         assertEquals(1, ret.length);
         assertEquals(config.getNamespace() + "." + config.getName() + "," + config.getConfigId() + "," +
-                                 config.getGeneration() + "," + config.getPayloadChecksums(),
+                                 config.getGeneration() + "," + config.getPayloadChecksum(),
                                  ret[0]);
     }
 
@@ -125,7 +125,7 @@ public class ConfigProxyRpcServerTest {
         ret = req.returnValues().get(0).asStringArray();
         assertEquals(1, ret.length);
         assertEquals(config.getNamespace() + "." + config.getName() + "," + config.getConfigId() + "," +
-                                 config.getGeneration() + "," + config.getPayloadChecksums() + "," + config.getPayload().getData(),
+                                 config.getGeneration() + "," + config.getPayloadChecksum() + "," + config.getPayload().getData(),
                                  ret[0]);
     }
 

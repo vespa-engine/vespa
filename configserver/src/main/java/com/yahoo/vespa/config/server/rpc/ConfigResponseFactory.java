@@ -5,7 +5,6 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.PayloadChecksum;
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 
 /**
@@ -30,17 +29,17 @@ public interface ConfigResponseFactory {
      * @param generation                the payload generation
      * @param applyOnRestart            true if this config change should only be applied on restart,
      *                                  false if it should be applied immediately
-     * @param requestsPayloadChecksums  payload checksums from requests
+     * @param requestPayloadChecksum  payload checksum from request
      * @return a {@link ConfigResponse} that can be sent to the client
      */
     ConfigResponse createResponse(AbstractUtf8Array rawPayload,
                                   long generation,
                                   boolean applyOnRestart,
-                                  PayloadChecksums requestsPayloadChecksums);
+                                  PayloadChecksum requestPayloadChecksum);
 
-    /** Generates payload checksums for the given payload */
-    default PayloadChecksums generatePayloadChecksums(AbstractUtf8Array rawPayload, PayloadChecksums requestsPayloadChecksums) {
-        return PayloadChecksums.from(PayloadChecksum.fromData(rawPayload));
+    /** Generates payload checksum for the given payload */
+    default PayloadChecksum generatePayloadChecksum(AbstractUtf8Array rawPayload, PayloadChecksum requestPayloadChecksum) {
+        return PayloadChecksum.fromData(rawPayload);
     }
 
 }

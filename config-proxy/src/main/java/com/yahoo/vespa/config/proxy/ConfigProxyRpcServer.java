@@ -312,7 +312,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
             sb.append(",");
             sb.append(config.getGeneration());
             sb.append(",");
-            sb.append(config.getPayloadChecksums());
+            sb.append(config.getPayloadChecksum());
             if (full) {
                 sb.append(",");
                 sb.append(config.getPayload());

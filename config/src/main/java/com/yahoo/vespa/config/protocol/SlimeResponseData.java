@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.vespa.config.PayloadChecksum;
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -60,15 +59,11 @@ class SlimeResponseData {
         return trace.valid() ? Trace.fromSlime(trace) : Trace.createDummy();
     }
 
-    PayloadChecksum getResponseConfigXxhash64() {
+    PayloadChecksum getResponseConfigChecksum() {
         Inspector xxhash64Field = getResponseField(RESPONSE_CONFIG_XXHASH64);
         return xxhash64Field.valid()
                 ? new PayloadChecksum(xxhash64Field.asString())
                 : PayloadChecksum.empty();
-    }
-
-    PayloadChecksums getResponseConfigChecksums() {
-        return PayloadChecksums.from(getResponseConfigXxhash64());
     }
 
     CompressionInfo getCompressionInfo() {
