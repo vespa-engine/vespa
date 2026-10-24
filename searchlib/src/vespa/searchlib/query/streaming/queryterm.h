@@ -122,16 +122,16 @@ public:
         _fuzzy_prefix_lock_length = fuzzy_prefix_length;
     }
     void set_fuzzy_prefix_match(bool prefix_match) noexcept { _fuzzy_prefix_match = prefix_match; }
-    virtual NearestNeighborQueryNode* as_nearest_neighbor_query_node() noexcept;
-    virtual SparseTensorWandQueryNode* as_sparse_tensor_wand_query_node() noexcept;
-    virtual MultiTerm* as_multi_term() noexcept;
-    virtual const MultiTerm* as_multi_term() const noexcept;
-    virtual RegexpTerm* as_regexp_term() noexcept;
-    virtual FuzzyTerm* as_fuzzy_term() noexcept;
-    virtual const EquivQueryNode* as_equiv_query_node() const noexcept;
-    virtual bool is_same_element_query_node() const noexcept;
-    virtual SameElementQueryNode* as_same_element_query_node() noexcept;
-    virtual const SameElementQueryNode* as_same_element_query_node() const noexcept;
+    [[nodiscard]] virtual NearestNeighborQueryNode* as_nearest_neighbor_query_node() noexcept;
+    [[nodiscard]] virtual SparseTensorWandQueryNode* as_sparse_tensor_wand_query_node() noexcept;
+    [[nodiscard]] virtual MultiTerm* as_multi_term() noexcept;
+    [[nodiscard]] virtual const MultiTerm* as_multi_term() const noexcept;
+    [[nodiscard]] virtual RegexpTerm* as_regexp_term() noexcept;
+    [[nodiscard]] virtual FuzzyTerm* as_fuzzy_term() noexcept;
+    [[nodiscard]] virtual const EquivQueryNode* as_equiv_query_node() const noexcept;
+    [[nodiscard]] virtual bool is_same_element_query_node() const noexcept;
+    [[nodiscard]] virtual SameElementQueryNode* as_same_element_query_node() noexcept;
+    [[nodiscard]] virtual const SameElementQueryNode* as_same_element_query_node() const noexcept;
     void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
                            search::common::ElementIds element_ids) override;
     void unpack_match_data(uint32_t docid, fef::MatchData& match_data, const fef::IIndexEnvironment& index_env,
