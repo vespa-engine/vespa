@@ -20,6 +20,7 @@ using namespace search::queryeval::test;
 
 using feature_t = search::feature_t;
 using score_t = wand::score_t;
+using WeakAndHeap = ParallelWeakAndSearch::WeakAndHeap;
 using MatchParams = ParallelWeakAndSearch::MatchParams;
 using RankParams = ParallelWeakAndSearch::RankParams;
 using search::IDirectPostingStore;
@@ -64,10 +65,10 @@ struct TestHeap : public WeakAndHeap {
     ScoresHistory history;
 
     explicit TestHeap(uint32_t scoresToTrack_) : WeakAndHeap(scoresToTrack_), history() {}
-    void adjust(score_t* begin, score_t* end) override {
+    void adjust(std::span<score_t> newScores) override {
         Scores scores;
-        for (score_t* itr = begin; itr != end; ++itr) {
-            scores.add(*itr);
+        for (score_t score : newScores) {
+            scores.add(score);
         }
         history.push_back(scores);
         setMinScore(1);
@@ -584,7 +585,7 @@ TEST(ParallelWeakAndTest, require_that_docid_limit_is_propagated_to_search_itera
     f1.spec.docIdLimit = 4050;
     SearchIterator::UP           itr = f1.iterator();
     const ParallelWeakAndSearch* wand = dynamic_cast<ParallelWeakAndSearch*>(itr.get());
-    EXPECT_EQ(4050u, wand->getMatchParams().docIdLimit);
+    EXPECT_EQ(4050u, wand->getMatchParams().docid_limit);
 }
 
 TEST(ParallelWeakAndTest, require_that_terms_are_sorted_for_maximum_skipping) {
@@ -674,7 +675,7 @@ using RankParams = ParallelWeakAndSearch::RankParams;
 
 struct DummyHeap : public WeakAndHeap {
     DummyHeap() : WeakAndHeap(9001) {}
-    void adjust(score_t*, score_t*) override {}
+    void adjust(std::span<score_t>) override {}
 };
 
 SearchIterator::UP create_wand(bool use_dww, TermFieldMatchData& tfmd, const MatchParams& matchParams,

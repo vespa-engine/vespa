@@ -23,6 +23,8 @@ vespa_add_executable(searchcore_proton_app
     searchcore_grouping
     searchcore_proton_metrics
     storageserver_storageapp
+    vespa_opentelemetry
+    gRPC::grpc
     absl::failure_signal_handler
     absl::symbolize
 )

@@ -101,7 +101,7 @@ public:
             score_t score = _algo.get_upper_bound();
             _localScores.push_back(score);
             if (_localScores.size() == _matchParams.scoresAdjustFrequency) {
-                _matchParams.scores.adjust(&_localScores[0], &_localScores[0] + _localScores.size());
+                _matchParams.scores.adjust(_localScores);
                 _localScores.clear();
             }
         }
