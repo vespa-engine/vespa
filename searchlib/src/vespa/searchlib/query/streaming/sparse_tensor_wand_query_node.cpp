@@ -37,6 +37,7 @@ bool SparseTensorWandQueryNode::evaluate() {
 
 void SparseTensorWandQueryNode::reset() {
     _field_scores.clear();
+    _last_hit_docid.reset();
 }
 
 SparseTensorWandQueryNode* SparseTensorWandQueryNode::as_sparse_tensor_wand_query_node() noexcept {
