@@ -87,6 +87,12 @@ precedence over the instance specified as part of the 'application' option.
 This has no default value and is only relevant for the "cloud" and "hosted"
 targets. Example: instance2
 
+progress
+
+Show live deployment progress in interactive terminals. Defaults to false.
+Use 'vespa config set --global progress true' to enable for future deployments.
+Redirected output retains the existing plain format.
+
 quiet
 
 Suppress informational output. Errors are still printed.
@@ -828,7 +834,7 @@ func (c *Config) set(option, value string) error {
 			c.config.Set(option, value)
 			return nil
 		}
-	case quietFlag:
+	case quietFlag, progressFlag:
 		switch value {
 		case "true", "false":
 			c.config.Set(option, value)

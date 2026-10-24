@@ -2,6 +2,7 @@
 package vespa
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,7 +30,8 @@ type CloudDeploymentOptions struct {
 	Deployment  Deployment
 	TLSOptions  TLSOptions
 	CustomURL   string
-	ClusterURLs map[string]string // Endpoints keyed on cluster name
+	ClusterURLs map[string]string        // Endpoints keyed on cluster name
+	OnProgress  func(int64, RunProgress) // Optional observer; suppresses ordinary run logs while active
 }
 
 type cloudTarget struct {
@@ -67,16 +69,38 @@ type clusterTarget struct {
 	AuthMethod string
 }
 
-type runResponse struct {
-	Active bool                    `json:"active"`
-	Status string                  `json:"status"`
-	Log    map[string][]logMessage `json:"log"`
-	Steps  map[string]stepStatus   `json:"steps"`
-	LastID int64                   `json:"lastId"`
+// RunProgress is a snapshot of a deployment run, with incremental logs.
+type RunProgress struct {
+	Active bool                     `json:"active"`
+	Status string                   `json:"status"`
+	Log    map[string][]RunLogEntry `json:"log"`
+	Steps  map[string]RunStep       `json:"steps"`
+	LastID int64                    `json:"lastId"`
 }
 
-type stepStatus struct {
-	Status string `json:"status"`
+// RunStep describes the state and optional installation counters of one step.
+type RunStep struct {
+	Status      string          `json:"status"`
+	StartMillis int64           `json:"startMillis"`
+	Convergence *RunConvergence `json:"convergence,omitempty"`
+}
+
+// RunConvergence contains the counters reported by the controller.
+// These counters overlap: they must not be summed into a number of ready nodes.
+type RunConvergence struct {
+	Nodes               int64 `json:"nodes"`
+	Services            int64 `json:"services"`
+	NeedNewConfig       int64 `json:"needNewConfig"`
+	NeedPlatformUpgrade int64 `json:"needPlatformUpgrade"`
+	Upgrading           int64 `json:"upgrading"`
+	NeedReboot          int64 `json:"needReboot"`
+	Rebooting           int64 `json:"rebooting"`
+	NeedRestart         int64 `json:"needRestart"`
+	Restarting          int64 `json:"restarting"`
+	Booting             int64 `json:"booting"`
+	Retiring            int64 `json:"retiring"`
+	UpgradingOs         int64 `json:"upgradingOs"`
+	UpgradingFirmware   int64 `json:"upgradingFirmware"`
 }
 
 type jobResponse struct {
@@ -87,26 +111,31 @@ type jobsResponse struct {
 	Runs []jobResponse `json:"runs"`
 }
 
-type logMessage struct {
+// RunLogEntry is a deployment log message.
+type RunLogEntry struct {
 	At      int64  `json:"at"`
 	Type    string `json:"type"`
 	Message string `json:"message"`
 }
 
-type buildStatusResponse struct {
-	Deployed          bool             `json:"deployed"`
-	Status            string           `json:"status"`
-	SkipReason        string           `json:"skipReason,omitempty"`
-	AbsorbedIntoBuild int64            `json:"absorbedIntoBuild,omitempty"`
-	Jobs              []buildStatusJob `json:"jobs"`
-	HasFailed         bool             `json:"hasFailed"`
+// BuildProgress is a production pipeline snapshot.
+type BuildProgress struct {
+	Deployed          bool               `json:"deployed"`
+	Status            string             `json:"status"`
+	SkipReason        string             `json:"skipReason,omitempty"`
+	AbsorbedIntoBuild int64              `json:"absorbedIntoBuild,omitempty"`
+	Jobs              []BuildJobProgress `json:"jobs"`
+	HasFailed         bool               `json:"hasFailed"`
 }
 
-type buildStatusJob struct {
-	JobName   string `json:"jobName"`
-	RunStatus string `json:"runStatus"`
-	RunID     int64  `json:"runId"`
-	Instance  string `json:"instance"`
+// BuildJobProgress identifies a job and optionally includes its latest run details.
+type BuildJobProgress struct {
+	JobName            string       `json:"jobName"`
+	RunStatus          string       `json:"runStatus"`
+	RunID              int64        `json:"runId"`
+	Instance           string       `json:"instance"`
+	Details            *RunProgress `json:"-"`
+	DetailsUnavailable bool         `json:"-"`
 }
 
 // CloudTarget creates a Target for the Vespa Cloud or hosted Vespa platform.
@@ -303,9 +332,12 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		if ok, err := isOK(status); !ok {
 			return ok, err
 		}
-		var resp runResponse
+		resp := RunProgress{LastID: -1}
 		if err := json.Unmarshal(response, &resp); err != nil {
 			return false, err
+		}
+		if t.deploymentOptions.OnProgress != nil {
+			t.deploymentOptions.OnProgress(runID, resp)
 		}
 		for step, msgs := range resp.Log {
 			for _, msg := range msgs {
@@ -325,8 +357,10 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 			}
 			return false, fmt.Errorf("%w: run %d ended with unsuccessful status: %s", ErrDeployment, runID, resp.Status)
 		}
-		if t.logOptions.Writer != nil {
+		if t.deploymentOptions.OnProgress == nil && t.logOptions.Writer != nil {
 			lastID = t.printLog(resp, lastID, "")
+		} else if resp.LastID > lastID {
+			lastID = resp.LastID
 		}
 		if resp.Active {
 			return false, nil
@@ -344,7 +378,7 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 	return runID, nil
 }
 
-func failedStep(steps map[string]stepStatus) string {
+func failedStep(steps map[string]RunStep) string {
 	for name, s := range steps {
 		if s.Status == "failed" {
 			return name
@@ -353,11 +387,11 @@ func failedStep(steps map[string]stepStatus) string {
 	return ""
 }
 
-func (t *cloudTarget) printLog(response runResponse, last int64, muteStep string) int64 {
-	if response.LastID == 0 {
+func (t *cloudTarget) printLog(response RunProgress, last int64, muteStep string) int64 {
+	if response.LastID <= 0 {
 		return last
 	}
-	var msgs []logMessage
+	var msgs []RunLogEntry
 	for step, stepMsgs := range response.Log {
 		for _, msg := range stepMsgs {
 			if step == muteStep && (msg.Type == "warning" || msg.Type == "error") {
@@ -378,11 +412,11 @@ func (t *cloudTarget) printLog(response runResponse, last int64, muteStep string
 	return response.LastID
 }
 
-func printBuildJobLog(response runResponse, last int64, writer io.Writer, prefix string) int64 {
-	if response.LastID == 0 {
+func printBuildJobLog(response RunProgress, last int64, writer io.Writer, prefix string) int64 {
+	if response.LastID <= 0 {
 		return last
 	}
-	var msgs []logMessage
+	var msgs []RunLogEntry
 	for _, stepMsgs := range response.Log {
 		for _, msg := range stepMsgs {
 			if LogLevel(msg.Type) == 3 { // skip debug
@@ -410,7 +444,7 @@ func (s *syncWriter) Write(p []byte) (n int, err error) {
 	return s.w.Write(p)
 }
 
-func streamBuildJobLogs(target Target, job buildStatusJob, timeout time.Duration, writer io.Writer, retryInterval time.Duration) error {
+func streamBuildJobLogs(target Target, job BuildJobProgress, timeout time.Duration, writer io.Writer, retryInterval time.Duration) error {
 	d := target.Deployment()
 	runURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s/run/%d",
 		d.System.URL, d.Application.Tenant, d.Application.Application,
@@ -425,7 +459,7 @@ func streamBuildJobLogs(target Target, job buildStatusJob, timeout time.Duration
 		if ok, err := isOK(status); !ok {
 			return ok, err
 		}
-		var resp runResponse
+		resp := RunProgress{LastID: -1}
 		if err := json.Unmarshal(response, &resp); err != nil {
 			return false, err
 		}
@@ -451,7 +485,7 @@ func streamBuildJobLogs(target Target, job buildStatusJob, timeout time.Duration
 // AwaitBuild waits for a production build to deploy by polling the build-status endpoint
 // and streaming per-job run logs. Returns skipped=true if the build was skipped due to no
 // changes or being manually cancelled. logWriter may be nil to suppress log output.
-func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter io.Writer) (skipped bool, skipReason string, _ error) {
+func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter io.Writer, onProgress func(BuildProgress)) (skipped bool, skipReason string, _ error) {
 	if !target.IsCloud() {
 		return false, "", fmt.Errorf("AwaitBuild is only supported for cloud targets")
 	}
@@ -461,18 +495,50 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 	if err != nil {
 		return false, "", err
 	}
-	sw := io.Writer(&syncWriter{w: logWriter})
+	writer := logWriter
+	if writer == nil {
+		writer = io.Discard
+	}
+	sw := io.Writer(&syncWriter{w: writer})
 	var isSkipped bool
 	var observedSkipReason string
 	retryInterval := 2 * time.Second
 	lastStatus := map[string]string{}
+	deadline := time.Now().Add(timeout)
+	cursors := map[string]int64{}
 	statusFunc := func(status int, response []byte) (bool, error) {
 		if ok, err := isOK(status); !ok {
 			return ok, err
 		}
-		var resp buildStatusResponse
+		var resp BuildProgress
 		if err := json.Unmarshal(response, &resp); err != nil {
 			return false, err
+		}
+		if onProgress != nil {
+			// Only active jobs need extra requests. Failures retain the existing diagnostic path below.
+			if !resp.HasFailed && !resp.Deployed && resp.SkipReason == "" && resp.AbsorbedIntoBuild == 0 {
+				for i := range resp.Jobs {
+					job := &resp.Jobs[i]
+					if job.RunID <= 0 || job.RunStatus != "running" {
+						continue
+					}
+					key := fmt.Sprintf("%s/%s/%d", job.Instance, job.JobName, job.RunID)
+					after, ok := cursors[key]
+					if !ok {
+						after = -1
+					}
+					details, err := fetchBuildJobProgress(target, *job, after, deadline)
+					if err != nil {
+						job.DetailsUnavailable = true
+						continue
+					}
+					job.Details = &details
+					if details.LastID > after {
+						cursors[key] = details.LastID
+					}
+				}
+			}
+			onProgress(resp)
 		}
 		if resp.AbsorbedIntoBuild != 0 {
 			return true, fmt.Errorf("build was batched with another deployment, check build %d instead", resp.AbsorbedIntoBuild)
@@ -480,7 +546,7 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 		for _, job := range resp.Jobs {
 			if lastStatus[job.JobName] != job.RunStatus {
 				lastStatus[job.JobName] = job.RunStatus
-				if logWriter != nil {
+				if logWriter != nil && onProgress == nil {
 					fmt.Fprintf(sw, "[%s] %s: %s\n", time.Now().Format("15:04:05"), job.JobName, job.RunStatus)
 				}
 			}
@@ -501,7 +567,7 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 		for _, job := range resp.Jobs {
 			if job.RunID > 0 {
 				wg.Add(1)
-				go func(j buildStatusJob) {
+				go func(j BuildJobProgress) {
 					defer wg.Done()
 					if err := streamBuildJobLogs(target, j, timeout, sw, retryInterval); err != nil && !errors.Is(err, ErrWaitTimeout) {
 						mu.Lock()
@@ -522,6 +588,39 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 		return false, "", mainErr
 	}
 	return isSkipped, observedSkipReason, nil
+}
+
+// Detail requests share the build's wait budget and never determine its outcome.
+func fetchBuildJobProgress(target Target, job BuildJobProgress, after int64, deadline time.Time) (RunProgress, error) {
+	progress := RunProgress{LastID: -1}
+	remaining := time.Until(deadline)
+	if remaining <= 0 {
+		return progress, ErrWaitTimeout
+	}
+	d := target.Deployment()
+	runURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s/run/%d?after=%d",
+		d.System.URL, d.Application.Tenant, d.Application.Application, job.Instance, job.JobName, job.RunID, after)
+	req, err := http.NewRequest("GET", runURL, nil)
+	if err != nil {
+		return progress, err
+	}
+	ctx, cancel := context.WithDeadline(req.Context(), deadline)
+	defer cancel()
+	req = req.WithContext(ctx)
+	service, err := target.DeployService()
+	if err != nil {
+		return progress, err
+	}
+	response, err := service.Do(req, min(remaining, 10*time.Second))
+	if err != nil {
+		return progress, err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return progress, fmt.Errorf("got status %d", response.StatusCode)
+	}
+	err = json.NewDecoder(response.Body).Decode(&progress)
+	return progress, err
 }
 
 func (t *cloudTarget) discoverPrivateServices(timeout time.Duration) (map[string]*PrivateServiceInfo, error) {

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -533,4 +534,36 @@ func TestStatusWithoutPrivateServices(t *testing.T) {
 	assert.Nil(t, err, "Should produce valid JSON")
 	_, hasPrivateService := output["privateService"]
 	assert.False(t, hasPrivateService, "Should not have privateService field when not configured")
+}
+
+func TestStatusDeploymentProgress(t *testing.T) {
+	cli, stdout, stderr := newTestCLI(t, "CI=true", "NO_COLOR=true")
+	require.NoError(t, cli.Run("config", "set", "application", "t1.a1.i1"))
+	require.NoError(t, cli.Run("config", "set", "target", "cloud"))
+	require.NoError(t, cli.Run("config", "set", "progress", "true"))
+	require.NoError(t, cli.Run("auth", "api-key"))
+	cli.isTerminal = func() bool { return true }
+	client := &mock.HTTPClient{}
+	cli.httpClient = client
+	stdout.Reset()
+	stderr.Reset()
+	client.NextResponseString(200, `{"active":false,"status":"success","steps":{"installReal":{"status":"succeeded"}}}`)
+	require.NoError(t, cli.Run("status", "deployment", "42"))
+	assert.Contains(t, stderr.String(), "✓ Deployment complete")
+	assert.Contains(t, stderr.String(), "Run 42")
+	assert.Contains(t, stderr.String(), "Console:")
+	assert.Empty(t, stdout.String())
+	assert.True(t, client.Consumed())
+	assert.Nil(t, cli.progress)
+
+	stdout.Reset()
+	stderr.Reset()
+	for range 2 {
+		client.NextResponseString(200, `{"active":true,"status":"running"}`)
+	}
+	require.Error(t, cli.Run("status", "deployment", "42"))
+	assert.Contains(t, stderr.String(), "Monitoring stopped; deployment may still be running")
+	assert.Contains(t, stderr.String(), "Warning: wait deadline reached")
+	assert.True(t, client.Consumed())
+	assert.Nil(t, cli.progress)
 }
