@@ -193,6 +193,15 @@ SslCtxPtr new_tls_ctx_with_auto_init() {
 #endif
 }
 
+size_t WRAPPED_ASN1_STRING_get_length(const ::ASN1_STRING* x) {
+#if OPENSSL_VERSION_NUMBER >= 0x40100000L
+    return ::ASN1_STRING_get_length(x);
+#else
+    // Deprecated in OpenSSL 4.1
+    return static_cast<size_t>(::ASN1_STRING_length(x));
+#endif
+}
+
 } // namespace
 
 OpenSslTlsContextImpl::OpenSslTlsContextImpl(const TransportSecurityOptions&                  ts_opts,
@@ -359,10 +368,10 @@ bool fill_certificate_common_name(::X509* cert, PeerCredentials& creds) {
         }
         const ::ASN1_STRING* cn_asn1 = ::X509_NAME_ENTRY_get_data(entry);
         if ((cn_asn1 != nullptr) && (::ASN1_STRING_get0_data(cn_asn1) != nullptr) &&
-            (::ASN1_STRING_length(cn_asn1) > 0))
+            (WRAPPED_ASN1_STRING_get_length(cn_asn1) > 0))
         {
             const auto* data = char_p_cast<char>(::ASN1_STRING_get0_data(cn_asn1));
-            const auto  size = static_cast<size_t>(::ASN1_STRING_length(cn_asn1));
+            const auto  size = WRAPPED_ASN1_STRING_get_length(cn_asn1);
             if (has_embedded_nulls(data, size)) {
                 LOG(warning, "Got X509 peer certificate with embedded nulls in CN field");
                 return false;
@@ -380,14 +389,14 @@ struct GeneralNamesDeleter {
 // Returns empty string if unsupported type or bad content.
 std::string get_ia5_string(const ASN1_IA5STRING* ia5_str) {
     if ((::ASN1_STRING_type(ia5_str) == V_ASN1_IA5STRING) && (::ASN1_STRING_get0_data(ia5_str) != nullptr) &&
-        (::ASN1_STRING_length(ia5_str) > 0))
+        (WRAPPED_ASN1_STRING_get_length(ia5_str) > 0))
     {
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
         const char* data = char_p_cast<char>(::ASN1_STRING_get0_data(ia5_str));
 #else
         const char* data = char_p_cast<char>(::ASN1_STRING_data(ia5_str));
 #endif
-        const auto length = static_cast<size_t>(::ASN1_STRING_length(ia5_str));
+        const auto length = WRAPPED_ASN1_STRING_get_length(ia5_str);
         if (has_embedded_nulls(data, length)) {
             LOG(warning, "Got X509 peer certificate with embedded nulls in SAN field");
             return {};
