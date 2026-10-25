@@ -166,7 +166,11 @@ void toGmtDateAndTime(time_t t, struct tm& target) {
     target.tm_isdst = 0;
     target.tm_gmtoff = 0;
     // note: tm_zone is 'char *' (not 'const char *') on BSD/macOS
+#ifdef __APPLE__
+    static char gmt_name[] = "UTC";
+#else
     static char gmt_name[] = "GMT";
+#endif
     target.tm_zone = gmt_name;
 }
 
