@@ -102,6 +102,7 @@
         <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
         <grpc.vespa.version>1.83.0</grpc.vespa.version> <!-- Keep in sync with grpc version in com.google.cloud:libraries-bom -->
         <gen-grpc-java.vespa.version>1.80.0</gen-grpc-java.vespa.version> <!-- Used for protoc-gen-grpc-java only, can be older -->
+        <gson.vespa.version>2.14.0</gson.vespa.version> <!-- Keep in sync with gson version in com.google.cloud:libraries-bom -->
         <hamcrest.vespa.version>3.0</hamcrest.vespa.version>
         <hdrhistogram.vespa.version>2.2.2</hdrhistogram.vespa.version>
         <huggingface.vespa.version>0.33.0</huggingface.vespa.version>
