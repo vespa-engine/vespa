@@ -48,6 +48,7 @@ import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.SparseTensorWandItem;
 import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
@@ -131,6 +132,7 @@ import static com.yahoo.search.yql.YqlParser.RANKED;
 import static com.yahoo.search.yql.YqlParser.SAME_ELEMENT;
 import static com.yahoo.search.yql.YqlParser.SCORE_THRESHOLD;
 import static com.yahoo.search.yql.YqlParser.SIGNIFICANCE;
+import static com.yahoo.search.yql.YqlParser.SPARSE_TENSOR_WAND;
 import static com.yahoo.search.yql.YqlParser.STEM;
 import static com.yahoo.search.yql.YqlParser.SUBSTRING;
 import static com.yahoo.search.yql.YqlParser.SUFFIX;
@@ -191,7 +193,7 @@ public class SelectParser implements Parser {
     private IndexNameExpander indexNameExpander = new IndexNameExpander();
     private boolean insideSameElement = false;
 
-    private static final List<String> FUNCTION_CALLS = List.of(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_BOUNDING_BOX, GEO_LOCATION, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
+    private static final List<String> FUNCTION_CALLS = List.of(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_BOUNDING_BOX, GEO_LOCATION, NEAREST_NEIGHBOR, SPARSE_TENSOR_WAND, PREDICATE, RANK, WEAK_AND);
     private static final Set<String> OPERATOR_KEYS = Set.of(AND, AND_NOT, CONTAINS, EQ, IN, MATCHES, NOT, OR, RANGE);
     private static final Set<String> COMPOSITE_LEAF_KEYS = Set.of(PHRASE, NEAR, ONEAR, EQUIV, FUZZY, ALTERNATIVES);
 
@@ -475,11 +477,12 @@ public class SelectParser implements Parser {
             case GEO_BOUNDING_BOX -> buildGeoBoundingBox(key, value);
             case GEO_LOCATION -> buildGeoLocation(key, value);
             case NEAREST_NEIGHBOR -> buildNearestNeighbor(key, value);
+            case SPARSE_TENSOR_WAND -> buildSparseTensorWand(key, value);
             case PREDICATE -> buildPredicate(key, value);
             case RANK -> buildRank(key, value);
             case WEAK_AND -> buildWeakAnd(key, value);
             default ->
-                    throw newUnexpectedArgumentException(key, DOT_PRODUCT, NEAREST_NEIGHBOR, RANK, WAND, WEAK_AND, WEIGHTED_SET, PREDICATE);
+                    throw newUnexpectedArgumentException(key, DOT_PRODUCT, NEAREST_NEIGHBOR, SPARSE_TENSOR_WAND, RANK, WAND, WEAK_AND, WEIGHTED_SET, PREDICATE);
         };
     }
 
@@ -710,6 +713,22 @@ public class SelectParser implements Parser {
             });
         }
         return item;
+    }
+
+    private Item buildSparseTensorWand(String key, Inspector value) {
+        HashMap<String, Inspector> annotations = getAnnotationMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
+        Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
+        String field = children.get(0).asString();
+        String property = children.get(1).asString();
+        SparseTensorWandItem item = new SparseTensorWandItem(indexFactsSession.getCanonicName(field), property);
+        item.setTargetHits(getIntegerAnnotation(TARGET_HITS, annotations, null));
+        item.setTotalTargetHits(getIntegerAnnotation(TOTAL_TARGET_HITS, annotations, null));
+        Double scoreThreshold = getDoubleAnnotation(SCORE_THRESHOLD, annotations, null);
+        if (scoreThreshold != null) {
+            item.setScoreThreshold(scoreThreshold);
+        }
+        return leafStyleSettings(getAnnotations(value), item);
     }
 
     private CompositeItem buildWeakAnd(String key, Inspector value) {

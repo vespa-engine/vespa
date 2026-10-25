@@ -301,6 +301,18 @@ public class YqlJsonQueryFeatureParityTest {
     }
 
     @Test
+    void testSparseTensorWand() {
+        assertWhereParity("sparseTensorWand(f1field, q2prop)",
+                "{ 'sparseTensorWand' : ['f1field', 'q2prop'] }");
+    }
+
+    @Test
+    void testSparseTensorWandWithAnnotations() {
+        assertWhereParity("{label: 'foo', ranked: false, targetHits: 37, scoreThreshold: 1.5}sparseTensorWand(f1field, q2prop)",
+                "{ 'sparseTensorWand' : { 'children' : ['f1field', 'q2prop'], 'attributes' : { 'label' : 'foo', 'ranked' : false, 'targetHits' : 37, 'scoreThreshold' : 1.5 } } }");
+    }
+
+    @Test
     void testTrueClause() {
         assertWhereParity("true", "true");
     }

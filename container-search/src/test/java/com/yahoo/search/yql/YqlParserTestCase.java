@@ -29,6 +29,7 @@ import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.SparseTensorWandItem;
 import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
@@ -1367,6 +1368,29 @@ public class YqlParserTestCase {
             "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=7,distanceThreshold=45.0}");
         assertParse("select foo from bar where {totalTargetHits: 100, minTargetHits: 11} nearestNeighbor(semantic_embedding, my_vector)",
                     "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,totalTargetHits=100,minTargetHits=11}");
+    }
+
+    @Test
+    void testSparseTensorWand() {
+        assertParse("select foo from bar where sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector}");
+        assertParse("select foo from bar where {targetHits: 37, scoreThreshold: 1.5} sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector,targetHits=37,scoreThreshold=1.5}");
+        assertParse("select foo from bar where {totalTargetHits: 1000} sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector,totalTargetHits=1000}");
+        assertParse("select foo from bar where {label: \"foo\", ranked: false} sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector}");
+    }
+
+    @Test
+    void testSparseTensorWandLeafSettings() {
+        var item = assertInstanceOf(SparseTensorWandItem.class,
+                                    parse("select foo from bar where {label: \"foo\", ranked: false, filter: true, weight: 42} " +
+                                          "sparseTensorWand(sparse_embedding, my_vector)").getRoot());
+        assertEquals("foo", item.getLabel());
+        assertFalse(item.isRanked());
+        assertTrue(item.isFilter());
+        assertEquals(42, item.getWeight());
     }
 
     @Test

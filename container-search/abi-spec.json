@@ -806,6 +806,7 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType NUMERIC_IN",
       "public static final enum com.yahoo.prelude.query.Item$ItemType LABEL_WRAPPER",
       "public static final enum com.yahoo.prelude.query.Item$ItemType STRING_RANGE",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType SPARSE_TENSOR_WAND",
       "public final int code"
     ]
   },
@@ -1731,6 +1732,34 @@
       "public void setDocumentFrequency(com.yahoo.prelude.query.DocumentFrequency)",
       "public java.util.Optional getDocumentFrequency()",
       "public boolean hasUniqueID()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.prelude.query.SparseTensorWandItem" : {
+    "superClass" : "com.yahoo.prelude.query.SimpleTaggableItem",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public java.lang.String getIndexName()",
+      "public java.lang.String getQueryTensorName()",
+      "public java.lang.Integer getTargetHits()",
+      "public java.lang.Integer getTotalTargetHits()",
+      "public double getScoreThreshold()",
+      "public void setTargetHits(java.lang.Integer)",
+      "public void setTotalTargetHits(java.lang.Integer)",
+      "public void setScoreThreshold(double)",
+      "public void setIndexName(java.lang.String)",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public int getTermCount()",
+      "public int encode(java.nio.ByteBuffer, com.yahoo.prelude.query.SerializationContext)",
+      "protected void appendBodyString(java.lang.StringBuilder)",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },
