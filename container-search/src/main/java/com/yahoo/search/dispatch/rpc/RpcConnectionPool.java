@@ -33,4 +33,6 @@ public interface RpcConnectionPool extends AutoCloseable {
 
     default Collection<Integer> knownNodeIds() { return List.of(); }
 
+    /** Returns the group layout of the known nodes; by default all known nodes are in one group. */
+    default NodeGroupsInfo getNodeGroups() { return NodeGroupsInfo.singleGroup(knownNodeIds()); }
 }

@@ -23,6 +23,7 @@ public class RpcResourcePool implements RpcConnectionPool {
 
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private volatile Map<Integer, NodeConnectionPool> nodeConnectionPools = Map.of();
+    private volatile NodeGroupsInfo nodeGroupsInfo;
     private final int numConnections;
     private final RpcClient rpcClient;
 
@@ -30,6 +31,7 @@ public class RpcResourcePool implements RpcConnectionPool {
         var builder = new HashMap<Integer, NodeConnectionPool>();
         nodeConnections.forEach((key, connection) -> builder.put(key, new NodeConnectionPool(List.of(connection))));
         this.nodeConnectionPools = Map.copyOf(builder);
+        this.nodeGroupsInfo = NodeGroupsInfo.singleGroup(nodeConnections.keySet());
         this.rpcClient = null;
         this.numConnections = 1;
     }
@@ -62,9 +64,14 @@ public class RpcResourcePool implements RpcConnectionPool {
                 nextPools.put(node.key(), new NodeConnectionPool(connections));
             }
         }
+        var nextInfo = NodeGroupsInfo.create(nodesConfig.node());
         this.nodeConnectionPools = Map.copyOf(nextPools);
+        this.nodeGroupsInfo = nextInfo;
         return currentPools.values();
     }
+
+    @Override
+    public NodeGroupsInfo getNodeGroups() { return nodeGroupsInfo; }
 
     @Override
     public NodeConnection getConnection(int nodeId) {
@@ -78,7 +85,7 @@ public class RpcResourcePool implements RpcConnectionPool {
 
     @Override
     public RpcConnectionPool snapshot() {
-        return new View(nodeConnectionPools);
+        return new View(nodeConnectionPools, nodeGroupsInfo);
     }
 
     /**
@@ -89,8 +96,12 @@ public class RpcResourcePool implements RpcConnectionPool {
     private static class View implements RpcConnectionPool {
 
         private final Map<Integer, NodeConnectionPool> pools;
+        private final NodeGroupsInfo nodeGroupsInfo;
 
-        View(Map<Integer, NodeConnectionPool> pools) { this.pools = Map.copyOf(pools); }
+        View(Map<Integer, NodeConnectionPool> pools, NodeGroupsInfo nodeGroupsInfo) {
+            this.pools = Map.copyOf(pools);
+            this.nodeGroupsInfo = nodeGroupsInfo;
+        }
 
         @Override
         public NodeConnection getConnection(int nodeId) {
@@ -100,6 +111,9 @@ public class RpcResourcePool implements RpcConnectionPool {
 
         @Override
         public Collection<Integer> knownNodeIds() { return pools.keySet(); }
+
+        @Override
+        public NodeGroupsInfo getNodeGroups() { return nodeGroupsInfo; }
 
         @Override
         public RpcConnectionPool snapshot() { return this; }

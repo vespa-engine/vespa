@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -129,7 +130,8 @@ class NodeFillTracingTest {
     @Test
     void the_retry_wave_produces_its_own_spans_marked_as_retries() throws Exception {
         // A node answering with an EMPTY docsum is what a redistribution looks like from the container. Vespa
-        // does not know where the document moved to, so it re-asks every OTHER known node - maybeRetry:346.
+        // does not know where the document moved to, so it re-asks alternative nodes - with a single group
+        // that is every OTHER known node, see NodeGroupsInfo.FillRetrySelection.
         SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
         RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWith(emptyDocsumsFor(1)),
                                                             1, replyingWith(emptyDocsumsFor(1))));
@@ -163,13 +165,13 @@ class NodeFillTracingTest {
     }
 
     @Test
-    void a_retry_declined_by_the_limit_is_recorded_as_retried_false() throws Exception {
+    void a_retry_declined_by_the_limits_is_recorded_as_retried_false() throws Exception {
         var result = resultWithHitsOn(0, 0);
-        result.getQuery().properties().set(Dispatcher.docsumRetryLimit, 10);
-        result.getQuery().properties().set(Dispatcher.docsumRetryFactor, 0.5);
+        result.getQuery().properties().set(Dispatcher.docsumBlowupFactor, 0.5);
 
-        // retryLimit = min(1 + docsumRetryLimit 10 / (2 nodes - 1), 0.5 * numHitsToFill + 1). With two hits that is 2.0, and two
-        // skipped hits is not < 2.0, so Vespa gives up - those docsums are lost for this query.
+        // The skipped hit limit is min(10, 0.5 * numHitsToFill + 1) = 2, and two skipped hits is not < 2. The work
+        // limit is 0.5 * numHitsToFill = 1.0, and (two skipped hits - 1) times one alternative node is not < 1.0.
+        // Both limits decline, so Vespa gives up - those docsums are lost for this query.
         SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
         RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWith(emptyDocsumsFor(2)),
                                                             1, replyingWith(emptyDocsumsFor(2))));
@@ -180,6 +182,54 @@ class NodeFillTracingTest {
         assertEquals(2L, attrs.get(TraceAttributes.FILL_SKIPPED).longValue());
         assertEquals(false, attrs.get(TraceAttributes.FILL_RETRIED), "considered and declined, which is not the same as never needed");
         assertEquals(1, recorder.countSpans("node.fill"), "no second wave was sent");
+
+        recorder.close();
+    }
+
+    @Test
+    void a_retry_within_the_blowup_limit_is_sent_even_if_the_skipped_hit_limit_declines() throws Exception {
+        var result = resultWithHitsOn(0);
+        result.getQuery().properties().set(Dispatcher.docsumRetryLimit, 0);
+
+        // The skipped hit limit of 0 declines, but (one skipped hit - 1) times one alternative node is 0,
+        // which is within the default work limit, so the hit is still retried.
+        SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
+        RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWith(emptyDocsumsFor(1)),
+                                                            1, replyingWith(emptyDocsumsFor(1))));
+
+        recorder.record(() -> invoker.fill(result, "default"));
+
+        var attrs = recorder.spanNamed("dispatch.fill").getAttributes();
+        assertEquals(1L, attrs.get(TraceAttributes.FILL_SKIPPED).longValue());
+        assertEquals(true, attrs.get(TraceAttributes.FILL_RETRIED));
+        assertEquals(2, recorder.countSpans("node.fill"), "a second wave was sent");
+
+        recorder.close();
+    }
+
+    @Test
+    void a_retry_with_no_alternative_node_is_recorded_as_retried_false() throws Exception {
+        // Node 0 is missing from the group info, so no node is known to be an alternative for its hits and
+        // no retry is sent. That must be recorded as declined, and the trace must not claim a retry happened.
+        RpcConnectionPool pool = new RpcConnectionPool() {
+            final RpcConnectionPool connections = new RpcResourcePool(new HashMap<>(Map.of(0, replyingWith(emptyDocsumsFor(1)))));
+            @Override public Client.NodeConnection getConnection(int nodeId) { return connections.getConnection(nodeId); }
+            @Override public NodeGroupsInfo getNodeGroups() { return NodeGroupsInfo.singleGroup(List.of(1, 2)); }
+            @Override public void close() { }
+        };
+        var result = resultFor(new Query("?query=test&tracelevel=1"), 0);
+        SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
+        RpcProtobufFillInvoker invoker = invokerOver(pool);
+
+        recorder.record(() -> invoker.fill(result, "default"));
+
+        var attrs = recorder.spanNamed("dispatch.fill").getAttributes();
+        assertEquals(1L, attrs.get(TraceAttributes.FILL_SKIPPED).longValue());
+        assertEquals(false, attrs.get(TraceAttributes.FILL_RETRIED));
+        assertEquals(1, recorder.countSpans("node.fill"), "no second wave was sent");
+        String trace = result.getQuery().getContext(false).getTrace().toString();
+        assertTrue(trace.contains("no other node to retry on"), trace);
+        assertFalse(trace.contains("Retry summary fetching"), trace);
 
         recorder.close();
     }
@@ -256,12 +306,17 @@ class NodeFillTracingTest {
     private static final CompressService COMPRESSOR = new CompressService();
 
     private RpcProtobufFillInvoker invokerOver(Map<Integer, Client.NodeConnection> connections) {
-        return new RpcProtobufFillInvoker(new RpcResourcePool(new HashMap<>(connections)),
+        return invokerOver(new RpcResourcePool(new HashMap<>(connections)));
+    }
+
+    private RpcProtobufFillInvoker invokerOver(RpcConnectionPool pool) {
+        return new RpcProtobufFillInvoker(pool,
                                           COMPRESSOR,
                                           new DocumentDatabase(schemaWithDefaultSummary()),
                                           "container.0",
                                           RpcProtobufFillInvoker.DecodePolicy.EAGER,
-                                          false);
+                                          false,
+                                          group -> true);
     }
 
     /** A schema declaring a "default" document summary, which is the class the tests ask to fill. */

@@ -56,12 +56,27 @@ public class Dispatcher extends AbstractComponent {
     private static final String TOP_K_PROBABILITY = "topKProbability";
     private static final String DOCSUM_RETRY_LIMIT = "docsumRetryLimit";
     private static final String DOCSUM_RETRY_FACTOR  = "docsumRetryFactor";
+    private static final String DOCSUM_BLOWUP_FACTOR = "docsumBlowupFactor";
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
 
     /** If set will control computation of how many hits will be fetched from each partition.*/
     public static final CompoundName topKProbability = CompoundName.from(DISPATCH + "." + TOP_K_PROBABILITY);
+    /**
+     * Empty docsums (e.g. for documents being redistributed) are retried on other nodes if fewer hits
+     * were skipped than this (default 10), and than docsumRetryFactor allows; or if docsumBlowupFactor allows it.
+     */
     public static final CompoundName docsumRetryLimit = CompoundName.from(DISPATCH + "." + DOCSUM_RETRY_LIMIT);
+    /**
+     * Empty docsums are retried on other nodes if fewer hits were skipped than this factor (default 0.5)
+     * times the number of hits to fill, plus one, and than docsumRetryLimit; or if docsumBlowupFactor allows it.
+     */
     public static final CompoundName docsumRetryFactor  = CompoundName.from(DISPATCH + "." + DOCSUM_RETRY_FACTOR);
+    /**
+     * Empty docsums are retried on other nodes if the retry work, counted as hit requests to other nodes beyond
+     * those for the most expensive skipped hit, is below this factor (default 25.0) times the number of hits to fill;
+     * or if docsumRetryLimit and docsumRetryFactor allow it. Set this and one of those to 0 to disable retries.
+     */
+    public static final CompoundName docsumBlowupFactor = CompoundName.from(DISPATCH + "." + DOCSUM_BLOWUP_FACTOR);
 
     private final InvokerFactoryFactory invokerFactories;
     private final DispatchConfig dispatchConfig;
@@ -111,6 +126,7 @@ public class Dispatcher extends AbstractComponent {
         argumentType.addField(new FieldDescription(TOP_K_PROBABILITY, FieldType.doubleType));
         argumentType.addField(new FieldDescription(DOCSUM_RETRY_LIMIT, FieldType.integerType));
         argumentType.addField(new FieldDescription(DOCSUM_RETRY_FACTOR, FieldType.doubleType));
+        argumentType.addField(new FieldDescription(DOCSUM_BLOWUP_FACTOR, FieldType.doubleType));
         argumentType.freeze();
     }
 

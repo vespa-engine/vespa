@@ -36,6 +36,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntPredicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,6 +57,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     private final DocumentDatabase documentDb;
     private final RpcConnectionPool resourcePool;
+    /** Tells whether a group is healthy, preferred when choosing other groups to retry fills on */
+    private final IntPredicate isHealthyGroup;
     private boolean summaryNeedsQuery;
     private final PartialSummaryHandler partialSummaryHandler;
 
@@ -80,9 +83,11 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     private static final AtomicInteger retryTimeoutCounter = new AtomicInteger();
 
     RpcProtobufFillInvoker(RpcConnectionPool resourcePool, CompressPayload compressor, DocumentDatabase documentDb,
-                           String serverId, DecodePolicy decodePolicy, boolean summaryNeedsQuery) {
+                           String serverId, DecodePolicy decodePolicy, boolean summaryNeedsQuery,
+                           IntPredicate isHealthyGroup) {
         this.documentDb = documentDb;
         this.resourcePool = resourcePool;
+        this.isHealthyGroup = isHealthyGroup;
         this.serverId = serverId;
         this.summaryNeedsQuery = summaryNeedsQuery;
         this.compressor = compressor;
@@ -359,74 +364,106 @@ public class RpcProtobufFillInvoker extends FillInvoker {
      * The content layer may return some empty docsums when redistribution is in progress,
      * and in that case the document should be present on some other node, and we should
      * be able to get the docsum from that node if we retry.  But we don't know where
-     * that would be, so we need to try all possible nodes.
+     * that would be, so we try the nodes that NodeGroupsInfo selects as alternatives:
+     * the other nodes in the hit's own group, plus all nodes in one or two other groups.
      * To avoid overloading the content layer, we only retry if the number of skipped hits
-     * is below a tunable limit, and if the ratio of failed to ok hits is below another
-     * tunable limit (by default practically off).
+     * is below a tunable limit (dispatch.docsumRetryLimit), and if the ratio of failed to ok
+     * hits is below another tunable limit (dispatch.docsumRetryFactor), since if too much failed
+     * on first try, it's likely not helpful to retry. We also retry if the retry work beyond
+     * the most expensive skipped hit (the number of hit requests to alternative nodes, minus those
+     * for the hit with the most alternatives) is below dispatch.docsumBlowupFactor times the
+     * number of hits to fill, even if the skipped hit limits are exceeded.
      */
     private void maybeRetry(List<FastHit> skippedHits, Result result, String summaryClass) throws InterruptedException {
-        var allNodeIds = resourcePool.knownNodeIds();
-        int numNodes = allNodeIds.size();
         int numSkipped = skippedHits.size();
-        if (numNodes < 2) {
-            // no retry if there is only one node
-            result.getQuery().trace(false, 1, "Summary fetching got " + numSkipped + " empty docsums (of " + numHitsToFill + " hits), no other node to retry on");
-            Span.current().setAttribute(TraceAttributes.FILL_SKIPPED, numSkipped)
-                          .setAttribute(TraceAttributes.FILL_RETRIED, false);
+        NodeGroupsInfo nodeGroups = resourcePool.getNodeGroups();
+        if (nodeGroups.numNodes() < 2) {
+            recordNoRetry(result, numSkipped, "no other node to retry on");
             return;
         }
-        int numRetryNodes = numNodes - 1;
-        var query = result.getQuery();
-        double totalRetryLimit = query.properties().getInteger(Dispatcher.docsumRetryLimit, 999);
-        double retryLimitFactor = query.properties().getDouble(Dispatcher.docsumRetryFactor, 0.999);
-        double retryLimitPerNode = 1 + (totalRetryLimit / numRetryNodes);
-        double retryLimit = Math.min(retryLimitPerNode, retryLimitFactor * numHitsToFill + 1);
-        if (numSkipped < retryLimit) {
-            result.getQuery().trace(false, 1, "Retry summary fetching for " + numSkipped + " empty docsums (of " + numHitsToFill + " hits)");
-            ListMap<Integer, FastHit> retryMap = new ListMap<>();
-            for (Integer nodeId : allNodeIds) {
-                for (var hit : skippedHits) {
-                    if (hit.getDistributionKey() != nodeId) {
-                        retryMap.put(nodeId, hit);
-                    }
-                }
-            }
-            // Should always be true because of numNodes check above
-            if (retryMap.size() > 0) {
-                if (shouldLogRetry()) {
-                    log.log(Level.INFO, "Retry docsum fetch for " + numSkipped + " hits (" + numOkFilledHits + " ok hits)");
-                }
-                summaryNeedsQuery = true;
-                sendFillRequestByNode(result, summaryClass, retryMap);
-                while (outstandingResponses > 0 && numOkFilledHits < numHitsToFill) {
-                    var responseAndHits = getNextResponse(query.getTimeLeft());
-                    if (responseAndHits == null) {
-                        if (shouldLogRetryTimeout()) {
-                            log.log(Level.WARNING, "Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
-                        }
-                        break;
-                    }
-                    processOneResponse(result, responseAndHits, true);
-                    outstandingResponses--;
-                }
-                skippedHits.removeIf(hit -> !partialSummaryHandler.needFill(hit));
-
-                // Span.current() here IS dispatch.fill: FillInvoker.fill -> getFillResults -> processResponses
-                // -> maybeRetry is synchronous on one thread, so the span needs no plumbing to reach.
-                Span.current().setAttribute(TraceAttributes.FILL_SKIPPED,     numSkipped)
-                              .setAttribute(TraceAttributes.FILL_RETRIED,     true)
-                              .setAttribute(TraceAttributes.FILL_RETRY_NODES, retryMap.size())
-                              .setAttribute(TraceAttributes.FILL_UNFILLED,    skippedHits.size());
-            }
-        } else {
-            result.getQuery().trace(false, 1, "Summary fetching got " + numSkipped + " empty docsums (of " + numHitsToFill + " hits), no retry");
+        RetryTargets targets = retryTargets(skippedHits, nodeGroups);
+        ListMap<Integer, FastHit> retryMap = targets.byNode();
+        if (retryMap.size() == 0) {
+            // the skipped hits are on nodes not present in the group info
+            log.log(Level.FINE, () -> "No alternative nodes known for " + numSkipped + " skipped hits");
+            recordNoRetry(result, numSkipped, "no other node to retry on");
+            return;
+        }
+        if ( ! isRetryWithinLimit(result.getQuery(), numSkipped, targets.workBeyondCostliestHit())) {
             if (shouldLogNoRetry()) {
                 log.log(Level.WARNING, "Docsum fetch failed for " + numSkipped + " hits (" + numOkFilledHits + " ok hits), no retry");
             }
-            // Declined by the retry limit: these docsums are lost for this query. Recorded as retried=false
-            // rather than left absent, so "considered and declined" is distinguishable from "never needed".
-            Span.current().setAttribute(TraceAttributes.FILL_SKIPPED, numSkipped)
-                          .setAttribute(TraceAttributes.FILL_RETRIED, false);
+            recordNoRetry(result, numSkipped, "retry limits exceeded");
+            return;
+        }
+        result.getQuery().trace(false, 1, "Retry summary fetching for " + numSkipped + " empty docsums (of " + numHitsToFill + " hits)");
+        if (shouldLogRetry()) {
+            log.log(Level.INFO, "Retry docsum fetch for " + numSkipped + " hits (" + numOkFilledHits + " ok hits)");
+        }
+        summaryNeedsQuery = true;
+        sendFillRequestByNode(result, summaryClass, retryMap);
+        awaitRetryResponses(result);
+        skippedHits.removeIf(hit -> !partialSummaryHandler.needFill(hit));
+
+        // Span.current() here IS dispatch.fill: FillInvoker.fill -> getFillResults -> processResponses
+        // -> maybeRetry is synchronous on one thread, so the span needs no plumbing to reach.
+        Span.current().setAttribute(TraceAttributes.FILL_SKIPPED,     numSkipped)
+                      .setAttribute(TraceAttributes.FILL_RETRIED,     true)
+                      .setAttribute(TraceAttributes.FILL_RETRY_NODES, retryMap.size())
+                      .setAttribute(TraceAttributes.FILL_UNFILLED,    skippedHits.size());
+    }
+
+    /**
+     * Records that skipped hits were not retried: these docsums are lost for this query. Recorded as retried=false
+     * rather than left absent, so "considered and declined" is distinguishable from "never needed".
+     */
+    private void recordNoRetry(Result result, int numSkipped, String reason) {
+        result.getQuery().trace(false, 1, "Summary fetching got " + numSkipped + " empty docsums (of " + numHitsToFill + " hits), " + reason);
+        Span.current().setAttribute(TraceAttributes.FILL_SKIPPED, numSkipped)
+                      .setAttribute(TraceAttributes.FILL_RETRIED, false);
+    }
+
+    private boolean isRetryWithinLimit(Query query, int numSkipped, long retryWork) {
+        double absoluteRetryLimit = query.properties().getInteger(Dispatcher.docsumRetryLimit, 10);
+        double retryLimitFactor = query.properties().getDouble(Dispatcher.docsumRetryFactor, 0.5);
+        double retryLimit = Math.min(absoluteRetryLimit, retryLimitFactor * numHitsToFill + 1);
+        double retryBlowupFactor = query.properties().getDouble(Dispatcher.docsumBlowupFactor, 25.0);
+        return numSkipped < retryLimit || retryWork < retryBlowupFactor * numHitsToFill;
+    }
+
+    /**
+     * The skipped hits to ask for, by the alternative nodes to ask, and the retry work this
+     * means beyond the hit with the most alternatives, counted as hit requests to nodes.
+     */
+    private record RetryTargets(ListMap<Integer, FastHit> byNode, long workBeyondCostliestHit) { }
+
+    private RetryTargets retryTargets(List<FastHit> skippedHits, NodeGroupsInfo nodeGroups) {
+        var selection = nodeGroups.newFillRetrySelection(isHealthyGroup);
+        ListMap<Integer, FastHit> retryMap = new ListMap<>();
+        long totalWork = 0;
+        int maxWorkPerHit = 0;
+        for (var hit : skippedHits) {
+            List<Integer> alternatives = selection.alternativesForFill(hit.getDistributionKey());
+            for (Integer nodeId : alternatives) {
+                retryMap.put(nodeId, hit);
+            }
+            totalWork += alternatives.size();
+            maxWorkPerHit = Math.max(maxWorkPerHit, alternatives.size());
+        }
+        return new RetryTargets(retryMap, totalWork - maxWorkPerHit);
+    }
+
+    private void awaitRetryResponses(Result result) throws InterruptedException {
+        while (outstandingResponses > 0 && numOkFilledHits < numHitsToFill) {
+            var responseAndHits = getNextResponse(result.getQuery().getTimeLeft());
+            if (responseAndHits == null) {
+                if (shouldLogRetryTimeout()) {
+                    log.log(Level.WARNING, "Timed out waiting for summary data. " + outstandingResponses + " responses outstanding.");
+                }
+                return;
+            }
+            processOneResponse(result, responseAndHits, true);
+            outstandingResponses--;
         }
     }
 
