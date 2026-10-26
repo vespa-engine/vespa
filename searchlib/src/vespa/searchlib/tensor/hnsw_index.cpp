@@ -134,6 +134,7 @@ CachedAddDoc::CachedAddDoc(uint32_t docid_in, ReadGuard read_guard_in,
     : docid(docid_in),
       read_guard(std::move(read_guard_in)),
       hnsw_graph_read_guard(std::move(hnsw_graph_read_guard_in)),
+      node_max_level(0),
       distance_caches() {
 }
 
@@ -842,6 +843,7 @@ void HnswIndex<type>::internal_prepare_add_node_with_caching(CachedAddDoc::Dista
                                                 const typename GraphType::EntryNode& entry) const {
     Stats stats; // Not used for now. Wire this in to all places where distances are computed if to be used.
     int   node_max_level = std::min(_level_generator->max_level(), max_max_level);
+    op.node_max_level = node_max_level;
     std::vector<PreparedAddNode::Links> connections(node_max_level + 1);
     if (entry.nodeid == 0) {
         // graph has no entry point
@@ -880,7 +882,7 @@ template <HnswIndexType type>
 void HnswIndex<type>::internal_complete_add_node_with_caching(CachedAddDoc::DistanceCache &distance_cache, CachedAddDoc& op, TypedCells input_vector,
                                                 const typename GraphType::EntryNode& entry, uint32_t nodeid, uint32_t docid, uint32_t subspace) {
     Stats stats; // Not used for now. Wire this in to all places where distances are computed if to be used.
-    int32_t node_max_level = std::min(_level_generator->max_level(), max_max_level);
+    int32_t node_max_level = op.node_max_level;
     int32_t num_levels = node_max_level + 1;
     std::vector<PreparedAddNode::Links> connections(num_levels);
     if (entry.nodeid != 0) {

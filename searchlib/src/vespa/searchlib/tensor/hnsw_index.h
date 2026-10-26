@@ -90,6 +90,7 @@ struct CachedAddDoc final : public PrepareResult {
     uint32_t                     docid;
     ReadGuard                    read_guard;
     ReadGuard                    hnsw_graph_read_guard;
+    int32_t node_max_level;
 
     using DistanceCache = std::unordered_map<uint64_t, double>;
     std::vector<DistanceCache> distance_caches;
