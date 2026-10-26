@@ -72,6 +72,41 @@ inline void convert_bfloat16_to_float(const uint16_t* src, float* dest, size_t s
     dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(convert_bfloat16_to_float)(src, dest, sz);
 }
 
+/*
+ * Computes the number of bytes that `pack(raw, packed, bits, n)` will write into `packed` when
+ * packing `n` u8 elements from `raw`, using `bits` number of bits per element. This number includes
+ * any required padding at the end. All implementations of pack_bits/unpack_bits must adhere to this.
+ */
+[[nodiscard]] constexpr size_t packed_bytes(const uint8_t bits, const size_t n) noexcept {
+    return ((n * bits) / 8) + (((n * bits) % 8) != 0 ? 1 : 0);
+}
+
+/*
+ * Packs `sz` u8 values from `raw` into `packed_bytes(bits, sz)` bytes in the destination `packed` buffer.
+ * The output format must be bitwise identical across implementations and must not change across
+ * Vespa versions (unless format versioning is added to the API).
+ *
+ * Preconditions:
+ *  - `raw` must not contain any values greater than 2**bits - 1.
+ *  - `raw` and `packed` must not alias.
+ *  - `packed` must be valid for at least `packed_bytes(bits, sz)` bytes.
+ */
+inline void pack_bits(const uint8_t* raw, uint8_t* packed, uint8_t bits, size_t sz) noexcept {
+    dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(pack_bits)(raw, packed, bits, sz);
+}
+
+/*
+ * Unpacks `sz` u8 values from `packed` into the destination `raw` buffer.
+ *
+ * Preconditions:
+ *  - `packed` must be valid for at least `packed_bytes(bits, sz)` bytes.
+ *  - `raw` must be able to hold at least `sz` bytes.
+ *  - `packed` and `raw` must not alias.
+ */
+inline void unpack_bits(const uint8_t* packed, uint8_t* raw, uint8_t bits, size_t sz) noexcept {
+    dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(unpack_bits)(packed, raw, bits, sz);
+}
+
 inline void or_bit(void* a, const void* b, size_t bytes) noexcept {
     dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(or_bit)(a, b, bytes);
 }
