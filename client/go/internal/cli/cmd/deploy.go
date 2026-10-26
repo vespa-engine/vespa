@@ -41,10 +41,6 @@ the application package has been validated and activated on config servers. The
 process of applying it on individual nodes has started but may not have
 completed.
 
-Set 'vespa config set --global progress true' to show live deployment progress
-in interactive terminals. Use --progress=false for plain output. The --wait
-option still controls how long to monitor the deployment.
-
 If application directory is not specified, it defaults to working directory.
 
 In Vespa Cloud you may override the Vespa runtime version (--version) for your

@@ -271,15 +271,14 @@ func TestProgressParallelRunLayout(t *testing.T) {
 }
 
 func TestProgressEligibility(t *testing.T) {
-	for _, scenario := range []string{"default", "redirected", "quiet", "dumb", "screwdriver", "local", "override"} {
+	for _, scenario := range []string{"default", "disabled", "redirected", "quiet", "dumb", "screwdriver", "local", "override"} {
 		t.Run(scenario, func(t *testing.T) {
 			cli, _, _ := newTestCLI(t)
 			require.NoError(t, cli.config.set(targetFlag, "cloud"))
-			require.NoError(t, cli.config.set(progressFlag, "true"))
 			cli.isTerminal = func() bool { return true }
 			switch scenario {
-			case "default":
-				require.NoError(t, cli.config.unset(progressFlag))
+			case "disabled":
+				require.NoError(t, cli.config.set(progressFlag, "false"))
 			case "redirected":
 				cli.isTerminal = func() bool { return false }
 			case "quiet":
@@ -293,7 +292,13 @@ func TestProgressEligibility(t *testing.T) {
 			case "override":
 				require.NoError(t, cli.cmd.PersistentFlags().Set(progressFlag, "false"))
 			}
-			assert.Nil(t, cli.startDeploymentProgress("test"))
+			p := cli.startDeploymentProgress("test")
+			if scenario == "default" {
+				require.NotNil(t, p)
+				t.Cleanup(p.close)
+			} else {
+				assert.Nil(t, p)
+			}
 		})
 	}
 }

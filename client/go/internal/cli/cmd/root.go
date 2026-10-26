@@ -319,7 +319,7 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone (cloud only)")
 	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
 	c.cmd.PersistentFlags().BoolVarP(&quiet, quietFlag, "q", false, "Print only errors")
-	c.cmd.PersistentFlags().BoolVar(&progress, progressFlag, false, "Show live deployment progress in interactive terminals")
+	c.cmd.PersistentFlags().BoolVar(&progress, progressFlag, true, "Show live deployment progress in interactive terminals")
 	c.cmd.PersistentFlags().BoolVar(&debugMode, debugModeFlag, false, `Print debugging output`)
 	c.cmd.PersistentFlags().MarkHidden(debugModeFlag)
 

@@ -114,7 +114,7 @@ cluster = <unset>
 color = auto
 debug = false
 default_config_scope = <unset>
-progress = false
+progress = true
 quiet = false
 target = cloud
 zone = <unset>
@@ -131,7 +131,7 @@ color = auto
 debug = false
 default_config_scope = <unset>
 instance = foo
-progress = false
+progress = true
 quiet = false
 target = cloud
 zone = <unset>
@@ -277,7 +277,7 @@ cluster = <unset>
 color = auto
 debug = false
 default_config_scope = local
-progress = false
+progress = true
 quiet = false
 zone = <unset>
 `, "config", "get")
@@ -529,7 +529,8 @@ func createKeyPair(t *testing.T) ([]byte, []byte, tls.Certificate) {
 
 func TestProgressConfiguration(t *testing.T) {
 	configHome := t.TempDir()
-	assertConfigCommand(t, configHome, "progress = false\n", "config", "get", "progress")
+	assertConfigCommand(t, configHome, "progress = true\n", "config", "get", "progress")
+	assertConfigCommand(t, configHome, "progress = false\n", "--progress=false", "config", "get", "progress")
 	assertConfigCommandErr(t, configHome, "Error: invalid option or value: progress = live\n", "config", "set", "progress", "live")
 	assertConfigCommand(t, configHome, successSet(configHome, "progress", "true"), "config", "set", "--global", "progress", "true")
 	assertConfigCommand(t, configHome, "progress = true\n", "config", "get", "progress")
