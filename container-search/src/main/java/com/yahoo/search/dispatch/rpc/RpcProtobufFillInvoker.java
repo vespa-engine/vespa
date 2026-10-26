@@ -70,8 +70,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     private BlockingQueue<ResponseAndHits> responses;
 
-    /** Whether we have already logged/notified about an error - to avoid spamming */
-    private boolean hasReportedError = false;
+    // The first error in the first round, reported if hits are still missing after retry
+    private String pendingBackendError = null;
 
     /** The number of responses we should receive (and process) before this is complete */
     private int outstandingResponses;
@@ -160,6 +160,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             result.hits().setSorted(false);
             result.analyzeHits();
         } catch (TimeoutException e) {
+            reportPendingBackendError(result);
             result.hits().addError(ErrorMessage.createTimeout("Summary data is incomplete: " + e.getMessage()));
         }
         // After the catch, so a fill that timed out still reports how much it did manage to fetch - which is
@@ -261,6 +262,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             }
             maybeRetry(skippedHits, result, summaryClass);
             if (! skippedHits.isEmpty()) {
+                reportPendingBackendError(result);
                 result.hits().addError(ErrorMessage
                         .createEmptyDocsums("Missing hit summary data for summary " + summaryClass + " for " + skippedHits + " hits"));
             }
@@ -274,19 +276,25 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                                              boolean isRetry) {
         var responseOrError = responseAndHits.response();
         if (responseOrError.error().isPresent()) {
-            if (hasReportedError || isRetry) {
+            if (isRetry) {
                 return List.of();
             }
-            String error = responseOrError.error().get();
-            result.hits().addError(ErrorMessage.createBackendCommunicationError(error));
-            log.log(Level.WARNING, "Error fetching summary data: " + error);
-            hasReportedError = true;
+            if (pendingBackendError == null) {
+                pendingBackendError = responseOrError.error().get();
+            }
+            return responseAndHits.hits();
         } else {
             Client.ProtobufResponse response = responseOrError.response().get();
             byte[] responseBytes = compressor.decompress(response);
             return fill(result, responseAndHits.hits(), responseBytes, isRetry);
         }
-        return List.of();
+    }
+
+    private void reportPendingBackendError(Result result) {
+        if (pendingBackendError == null) return;
+        result.hits().addError(ErrorMessage.createBackendCommunicationError(pendingBackendError));
+        log.log(Level.WARNING, "Error fetching summary data: " + pendingBackendError);
+        pendingBackendError = null;
     }
 
     private void addErrors(Result result, com.yahoo.slime.Inspector errors) {
@@ -366,6 +374,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
      * be able to get the docsum from that node if we retry.  But we don't know where
      * that would be, so we try the nodes that FillRetrySelector selects as alternatives:
      * the other nodes in the hit's own group, plus all nodes in one other group.
+     * Hits from a node that answered with an error (for example a connection closed
+     * while scaling down) are retried the same way.
      * To avoid overloading the content layer, we only retry if the retry work beyond the
      * most expensive skipped hit (the number of hit requests to alternative nodes, minus those
      * for the hit with the most alternatives) is below dispatch.docsumBlowupFactor times the

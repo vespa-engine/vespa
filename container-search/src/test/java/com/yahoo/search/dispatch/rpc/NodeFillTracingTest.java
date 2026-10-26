@@ -49,8 +49,8 @@ class NodeFillTracingTest {
     @Test
     void one_client_span_per_node_that_is_asked() throws Exception {
         SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
-        RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWithError("nope"),
-                                                            3, replyingWithError("nope")));
+        RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWith(emptyDocsumReply()),
+                                                            3, replyingWith(emptyDocsumReply())));
 
         recorder.record(() -> invoker.fill(resultWithHitsOn(0, 3), "default"));
 
@@ -148,6 +148,48 @@ class NodeFillTracingTest {
     }
 
     @Test
+    void a_transport_error_is_retried_on_another_node() throws Exception {
+        // A connection closed while scaling down looks like an error, not an empty docsum, but the
+        // hits are just as likely to be found on another node.
+        SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
+        RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWithError("connection closed"),
+                                                            1, replyingWith(emptyDocsumsFor(1))));
+
+        recorder.record(() -> invoker.fill(resultWithHitsOn(0), "default"));
+
+        var attrs = recorder.spanNamed("dispatch.fill").getAttributes();
+        assertEquals(1L, attrs.get(TraceAttributes.FILL_SKIPPED).longValue(), "the hit on the failing node");
+        assertEquals(true, attrs.get(TraceAttributes.FILL_RETRIED));
+        assertEquals(2, recorder.countSpans("node.fill"), "a second wave was sent");
+
+        recorder.close();
+    }
+
+    @Test
+    void a_transport_error_recovered_by_the_retry_is_not_reported() throws Exception {
+        Result result = resultWithHitsOn(0);
+        RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWithError("connection closed"),
+                                                            1, replyingWith(filledDocsumsFor(1))));
+
+        invoker.fill(result, "default");
+
+        assertNull(result.hits().getError(), "the retry filled the hit, so there is nothing to report");
+    }
+
+    @Test
+    void a_transport_error_not_recovered_by_the_retry_is_reported() throws Exception {
+        Result result = resultWithHitsOn(0);
+        RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWithError("connection closed"),
+                                                            1, replyingWith(emptyDocsumsFor(1))));
+
+        invoker.fill(result, "default");
+
+        String errors = result.hits().getErrorHit().errors().stream().map(Object::toString).toList().toString();
+        assertTrue(errors.contains("connection closed"), errors);
+        assertTrue(errors.contains("Missing hit summary data"), errors);
+    }
+
+    @Test
     void the_dispatch_span_records_that_a_retry_happened_and_how_wide_it_went() throws Exception {
         SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
         RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWith(emptyDocsumsFor(1)),
@@ -237,7 +279,7 @@ class NodeFillTracingTest {
     @Test
     void a_fill_that_needs_no_retry_records_no_retry_attributes_at_all() throws Exception {
         SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
-        RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWithError("nope")));
+        RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWith(emptyDocsumReply())));
 
         recorder.record(() -> invoker.fill(resultWithHitsOn(0), "default"));
 
@@ -370,6 +412,17 @@ class NodeFillTracingTest {
         Cursor root = slime.setObject();
         Cursor docsums = root.setArray("docsums");
         for (int i = 0; i < n; i++) docsums.addObject();
+        byte[] payload = ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.DocsumReply.newBuilder()
+                .setSlimeSummaries(com.google.protobuf.ByteString.copyFrom(BinaryFormat.encode(slime)))
+                .build().toByteArray();
+        return new Client.ProtobufResponse(CompressionType.NONE.getCode(), payload.length, payload);
+    }
+
+    /** A reply carrying n docsums with a title, as a node holding the documents would answer. */
+    private static Client.ProtobufResponse filledDocsumsFor(int n) {
+        Slime slime = new Slime();
+        Cursor docsums = slime.setObject().setArray("docsums");
+        for (int i = 0; i < n; i++) docsums.addObject().setObject("docsum").setString("title", "title " + i);
         byte[] payload = ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.DocsumReply.newBuilder()
                 .setSlimeSummaries(com.google.protobuf.ByteString.copyFrom(BinaryFormat.encode(slime)))
                 .build().toByteArray();
