@@ -34,6 +34,8 @@ public abstract class InvokerFactory {
         this.hitEstimator = new TopKEstimator(30.0, dispatchConfig.topKProbability(), SKEW_FACTOR);
     }
 
+    protected SearchGroups searchGroups() { return cluster; }
+
     protected abstract Optional<SearchInvoker> createNodeSearchInvoker(VespaBackend searcher,
                                                                        Query query,
                                                                        int maxHits,

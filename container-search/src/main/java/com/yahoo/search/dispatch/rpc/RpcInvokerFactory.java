@@ -7,6 +7,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InvokerFactory;
 import com.yahoo.search.dispatch.SearchInvoker;
+import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.SearchGroups;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -46,7 +47,12 @@ public class RpcInvokerFactory extends InvokerFactory {
         Query query = result.getQuery();
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
         return new RpcProtobufFillInvoker(rpcResourcePool, compressor, searcher.getDocumentDatabase(query),
-                                          searcher.getServerId(), decodeType, summaryNeedsQuery);
+                                          searcher.getServerId(), decodeType, summaryNeedsQuery, this::groupHasSufficientCoverage);
+    }
+
+    private boolean groupHasSufficientCoverage(int groupId) {
+        Group group = searchGroups().get(groupId);
+        return group != null && group.hasSufficientCoverage();
     }
 
 }
