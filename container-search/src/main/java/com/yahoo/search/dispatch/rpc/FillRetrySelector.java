@@ -55,12 +55,12 @@ class FillRetrySelector {
      * Selects alternative nodes for retrying fills: the nodes in the hit's own group, plus
      * nodes from 1 other group chosen randomly.
      */
-    List<Integer> alternativesForGroupOf(int nodeId, IntPredicate isHealthyGroup) {
-        return alternativesForGroupOf(nodeId, isHealthyGroup, ThreadLocalRandom.current());
+    List<Integer> alternativesForGroupOf(int nodeId, IntPredicate groupHasSufficientCoverage) {
+        return alternativesForGroupOf(nodeId, groupHasSufficientCoverage, ThreadLocalRandom.current());
     }
 
     /** As above, but with the given random generator for choosing the other group */
-    List<Integer> alternativesForGroupOf(int nodeId, IntPredicate isHealthyGroup, Random random) {
+    List<Integer> alternativesForGroupOf(int nodeId, IntPredicate groupHasSufficientCoverage, Random random) {
         List<Integer> result = new ArrayList<>();
         Integer hadGroup = groupOf(nodeId);
         final int oldGroup = (hadGroup != null) ? hadGroup : -1;
@@ -68,9 +68,9 @@ class FillRetrySelector {
             result.addAll(keysByGroup.get(oldGroup));
         }
         List<Integer> otherGroups = keysByGroup.keySet().stream().filter(g -> g != oldGroup).sorted().toList();
-        List<Integer> healthyGroups = otherGroups.stream().filter(isHealthyGroup::test).toList();
-        if ( ! healthyGroups.isEmpty()) {
-            otherGroups = healthyGroups;
+        List<Integer> sufficientGroups = otherGroups.stream().filter(groupHasSufficientCoverage::test).toList();
+        if ( ! sufficientGroups.isEmpty()) {
+            otherGroups = sufficientGroups;
         }
         if (otherGroups.isEmpty()) {
             return List.copyOf(result);

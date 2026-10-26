@@ -18,31 +18,31 @@ public class FillRetrySelectorTest {
 
     // group ids above 127 to catch Integer identity comparisons
     private static final int FIRST_GROUP = 1000;
-    private static final IntPredicate ALL_HEALTHY = group -> true;
+    private static final IntPredicate ALL_SUFFICIENT = group -> true;
 
 
     @Test
     void unknownNodeGetsOneOfTheOtherGroups() {
         var selector = groups(2, 3);
-        assertEquals(Set.of(0, 1, 2), Set.copyOf(selector.alternativesForGroupOf(99, ALL_HEALTHY, fixedSlot(0))));
-        assertEquals(Set.of(3, 4, 5), Set.copyOf(selector.alternativesForGroupOf(99, ALL_HEALTHY, fixedSlot(1))));
+        assertEquals(Set.of(0, 1, 2), Set.copyOf(selector.alternativesForGroupOf(99, ALL_SUFFICIENT, fixedSlot(0))));
+        assertEquals(Set.of(3, 4, 5), Set.copyOf(selector.alternativesForGroupOf(99, ALL_SUFFICIENT, fixedSlot(1))));
     }
 
     @Test
     void unknownNodeInSingleGroupGetsAllNodes() {
         var selector = groups(1, 3);
-        assertEquals(Set.of(0, 1, 2), Set.copyOf(selector.alternativesForGroupOf(99, ALL_HEALTHY)));
+        assertEquals(Set.of(0, 1, 2), Set.copyOf(selector.alternativesForGroupOf(99, ALL_SUFFICIENT)));
     }
 
     @Test
     void singleGroupUsesAllNodes() {
         var selector = groups(1, 4);
-        assertEquals(Set.of(0, 1, 2, 3), Set.copyOf(selector.alternativesForGroupOf(1, ALL_HEALTHY)));
+        assertEquals(Set.of(0, 1, 2, 3), Set.copyOf(selector.alternativesForGroupOf(1, ALL_SUFFICIENT)));
     }
 
     @Test
     void ownNodeIsIncludedOnlyOnce() {
-        var alternatives = groups(3, 2).alternativesForGroupOf(0, ALL_HEALTHY);
+        var alternatives = groups(3, 2).alternativesForGroupOf(0, ALL_SUFFICIENT);
         assertEquals(alternatives.size(), Set.copyOf(alternatives).size());
         assertTrue(alternatives.contains(0));
     }
@@ -50,27 +50,27 @@ public class FillRetrySelectorTest {
     @Test
     void twoSmallGroupsUseAllNodes() {
         var selector = groups(2, 5);
-        assertEquals(Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), Set.copyOf(selector.alternativesForGroupOf(4, ALL_HEALTHY)));
+        assertEquals(Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), Set.copyOf(selector.alternativesForGroupOf(4, ALL_SUFFICIENT)));
     }
 
     @Test
     void twoLargeGroupsUseAllNodes() {
         var selector = groups(2, 6);
-        assertEquals(Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), Set.copyOf(selector.alternativesForGroupOf(0, ALL_HEALTHY)));
+        assertEquals(Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), Set.copyOf(selector.alternativesForGroupOf(0, ALL_SUFFICIENT)));
     }
 
     @Test
     void threeGroupsUseOwnAndOneOtherGroup() {
         var selector = groups(3, 5);
-        assertEquals(Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), Set.copyOf(selector.alternativesForGroupOf(7, ALL_HEALTHY, fixedSlot(0))));
-        assertEquals(Set.of(5, 6, 7, 8, 9, 10, 11, 12, 13, 14), Set.copyOf(selector.alternativesForGroupOf(7, ALL_HEALTHY, fixedSlot(1))));
+        assertEquals(Set.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), Set.copyOf(selector.alternativesForGroupOf(7, ALL_SUFFICIENT, fixedSlot(0))));
+        assertEquals(Set.of(5, 6, 7, 8, 9, 10, 11, 12, 13, 14), Set.copyOf(selector.alternativesForGroupOf(7, ALL_SUFFICIENT, fixedSlot(1))));
     }
 
     @Test
     void manyGroupsWithSmallGroupsUseOwnAndOneOtherGroup() {
         var selector = groups(5, 2);
         for (int slot = 0; slot < 4; slot++) {
-            var alternatives = selector.alternativesForGroupOf(0, ALL_HEALTHY, fixedSlot(slot));
+            var alternatives = selector.alternativesForGroupOf(0, ALL_SUFFICIENT, fixedSlot(slot));
             assertEquals(4, alternatives.size());
             assertTrue(alternatives.containsAll(List.of(0, 1)));
             assertEquals(2, groupsUsed(selector, alternatives).size());
@@ -81,7 +81,7 @@ public class FillRetrySelectorTest {
     void manyGroupsWithLargeGroupsUseOwnAndOneOtherGroup() {
         var selector = groups(4, 6);
         for (int slot = 0; slot < 3; slot++) {
-            var alternatives = selector.alternativesForGroupOf(0, ALL_HEALTHY, fixedSlot(slot));
+            var alternatives = selector.alternativesForGroupOf(0, ALL_SUFFICIENT, fixedSlot(slot));
             assertEquals(12, alternatives.size());
             assertTrue(alternatives.containsAll(List.of(0, 1, 2, 3, 4, 5)));
             assertEquals(2, groupsUsed(selector, alternatives).size());
@@ -93,8 +93,8 @@ public class FillRetrySelectorTest {
         var selector = groups(10, 2);
         Set<List<Integer>> seen = new HashSet<>();
         for (int slot = 0; slot < 9; slot++) {
-            var fromNode0 = selector.alternativesForGroupOf(0, ALL_HEALTHY, fixedSlot(slot));
-            var fromNode1 = selector.alternativesForGroupOf(1, ALL_HEALTHY, fixedSlot(slot));
+            var fromNode0 = selector.alternativesForGroupOf(0, ALL_SUFFICIENT, fixedSlot(slot));
+            var fromNode1 = selector.alternativesForGroupOf(1, ALL_SUFFICIENT, fixedSlot(slot));
             assertTrue(fromNode0.containsAll(List.of(0, 1)), "own group is included");
             assertEquals(fromNode0, fromNode1, "same old group and random choice gives same alternatives");
             seen.add(fromNode0.stream().filter(k -> k > 1).toList());
@@ -103,22 +103,22 @@ public class FillRetrySelectorTest {
     }
 
     @Test
-    void healthyOtherGroupsArePreferred() {
+    void otherGroupsWithSufficientCoverageArePreferred() {
         var selector = groups(4, 6);
-        IntPredicate onlyThirdHealthy = group -> group == FIRST_GROUP + 2;
+        IntPredicate onlyThirdSufficient = group -> group == FIRST_GROUP + 2;
         for (int slot = 0; slot < 3; slot++) {
-            var alternatives = selector.alternativesForGroupOf(0, onlyThirdHealthy, fixedSlot(slot));
+            var alternatives = selector.alternativesForGroupOf(0, onlyThirdSufficient, fixedSlot(slot));
             assertEquals(Set.of(0, 1, 2, 3, 4, 5, 12, 13, 14, 15, 16, 17), Set.copyOf(alternatives));
         }
     }
 
     @Test
-    void allGroupsAreCandidatesIfNoOtherGroupIsHealthy() {
+    void allGroupsAreCandidatesIfNoOtherGroupHasSufficientCoverage() {
         var selector = groups(4, 6);
-        IntPredicate onlyOwnHealthy = group -> group == FIRST_GROUP;
+        IntPredicate onlyOwnSufficient = group -> group == FIRST_GROUP;
         Set<Integer> otherGroupsSeen = new HashSet<>();
         for (int slot = 0; slot < 3; slot++) {
-            var alternatives = selector.alternativesForGroupOf(0, onlyOwnHealthy, fixedSlot(slot));
+            var alternatives = selector.alternativesForGroupOf(0, onlyOwnSufficient, fixedSlot(slot));
             assertEquals(12, alternatives.size());
             var otherGroups = groupsUsed(selector, alternatives);
             otherGroups.remove(FIRST_GROUP);
@@ -135,7 +135,7 @@ public class FillRetrySelectorTest {
         for (int[] shape : SHAPES) {
             var selector = groups(shape[0], shape[1]);
             for (int slot = 0; slot < Math.max(1, shape[0] - 1); slot++) {
-                var alternatives = selector.alternativesForGroupOf(0, ALL_HEALTHY, fixedSlot(slot));
+                var alternatives = selector.alternativesForGroupOf(0, ALL_SUFFICIENT, fixedSlot(slot));
                 String name = shape[0] + " groups of " + shape[1] + " nodes";
                 for (int key = 0; key < shape[1]; key++) {
                     assertTrue(alternatives.contains(key), name + " asks own group node " + key);

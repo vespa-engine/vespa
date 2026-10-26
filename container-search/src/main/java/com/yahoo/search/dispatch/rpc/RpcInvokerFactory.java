@@ -47,10 +47,10 @@ public class RpcInvokerFactory extends InvokerFactory {
         Query query = result.getQuery();
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
         return new RpcProtobufFillInvoker(rpcResourcePool, compressor, searcher.getDocumentDatabase(query),
-                                          searcher.getServerId(), decodeType, summaryNeedsQuery, this::isHealthyGroup);
+                                          searcher.getServerId(), decodeType, summaryNeedsQuery, this::groupHasSufficientCoverage);
     }
 
-    private boolean isHealthyGroup(int groupId) {
+    private boolean groupHasSufficientCoverage(int groupId) {
         Group group = searchGroups().get(groupId);
         return group != null && group.hasSufficientCoverage();
     }

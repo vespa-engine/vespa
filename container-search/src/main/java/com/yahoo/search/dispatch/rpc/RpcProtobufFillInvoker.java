@@ -57,8 +57,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     private final DocumentDatabase documentDb;
     private final RpcConnectionPool resourcePool;
-    /** Tells whether a group is healthy, preferred when choosing other groups to retry fills on */
-    private final IntPredicate isHealthyGroup;
+    /** Tells whether a group has sufficient coverage, preferred when choosing other groups to retry fills on */
+    private final IntPredicate groupHasSufficientCoverage;
     private boolean summaryNeedsQuery;
     private final PartialSummaryHandler partialSummaryHandler;
 
@@ -70,7 +70,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     private BlockingQueue<ResponseAndHits> responses;
 
-    // The first error in the first round, reported if hits are still missing after retry
+    /** The first error in the first round, reported if hits are still missing after retry */
     private String pendingBackendError = null;
 
     /** The number of responses we should receive (and process) before this is complete */
@@ -84,10 +84,10 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     RpcProtobufFillInvoker(RpcConnectionPool resourcePool, CompressPayload compressor, DocumentDatabase documentDb,
                            String serverId, DecodePolicy decodePolicy, boolean summaryNeedsQuery,
-                           IntPredicate isHealthyGroup) {
+                           IntPredicate groupHasSufficientCoverage) {
         this.documentDb = documentDb;
         this.resourcePool = resourcePool;
-        this.isHealthyGroup = isHealthyGroup;
+        this.groupHasSufficientCoverage = groupHasSufficientCoverage;
         this.serverId = serverId;
         this.summaryNeedsQuery = summaryNeedsQuery;
         this.compressor = compressor;
@@ -439,7 +439,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     private RetryTargets retryTargets(List<FastHit> skippedHits, FillRetrySelector retrySelector) {
         // we know that all hits come from the same group, so we can select alternate groups once:
         int firstSkippedNodeId = skippedHits.get(0).getDistributionKey();
-        List<Integer> alternatives = retrySelector.alternativesForGroupOf(firstSkippedNodeId, isHealthyGroup);
+        List<Integer> alternatives = retrySelector.alternativesForGroupOf(firstSkippedNodeId, groupHasSufficientCoverage);
         ListMap<Integer, FastHit> retryMap = new ListMap<>();
         long totalWork = 0;
         int maxWorkPerHit = 0;
