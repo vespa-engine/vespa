@@ -166,8 +166,10 @@ template <HnswIndexType type> uint32_t HnswIndex<type>::max_links_for_level(uint
 }
 
 template <HnswIndexType type>
-bool HnswIndex<type>::have_closer_distance(HnswTraversalCandidate              candidate,
-                                           const HnswTraversalCandidateVector& result) const {
+bool HnswIndex<type>::have_closer_distance(Stats &stats, HnswTraversalCandidate              candidate,
+                                           const HnswTraversalCandidateVector& result,
+                                           internal::CachedAddDoc::DistanceCache* distance_cache
+                                           ) const {
     auto candidate_vector = get_vector(candidate.nodeid);
     if (candidate_vector.non_existing_attribute_value()) {
         /*
@@ -179,7 +181,7 @@ bool HnswIndex<type>::have_closer_distance(HnswTraversalCandidate              c
     }
     auto df = _distance_ff->for_insertion_vector(candidate_vector);
     for (const auto& neighbor : result) {
-        double dist = calc_distance(*df, neighbor.nodeid);
+        double dist = get_cached_or_calc_distance(stats, *df, candidate.nodeid, distance_cache, neighbor.nodeid);
         if (dist < candidate.distance) {
             return true;
         }
@@ -206,8 +208,10 @@ SelectResult HnswIndex<type>::select_neighbors_simple(const HnswCandidateVectorT
 
 template <HnswIndexType type>
 template <typename HnswCandidateVectorT>
-SelectResult HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVectorT& neighbors,
-                                                         uint32_t                    max_links) const {
+SelectResult HnswIndex<type>::select_neighbors_heuristic(Stats &stats, const HnswCandidateVectorT& neighbors,
+                                                         uint32_t                    max_links,
+                                                         internal::CachedAddDoc::DistanceCache* distance_cache
+                                                         ) const {
     SelectResult result;
     NearestPriQ  nearest;
     for (const auto& entry : neighbors) {
@@ -216,7 +220,7 @@ SelectResult HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVect
     while (!nearest.empty()) {
         auto candidate = nearest.top();
         nearest.pop();
-        if (have_closer_distance(candidate, result.used)) {
+        if (have_closer_distance(stats, candidate, result.used, distance_cache)) {
             result.unused.push_back(candidate.nodeid);
             continue;
         }
@@ -234,15 +238,15 @@ SelectResult HnswIndex<type>::select_neighbors_heuristic(const HnswCandidateVect
 
 template <HnswIndexType type>
 template <typename HnswCandidateVectorT>
-SelectResult HnswIndex<type>::select_neighbors(const HnswCandidateVectorT& neighbors, uint32_t max_links) const {
+SelectResult HnswIndex<type>::select_neighbors(Stats &stats, const HnswCandidateVectorT& neighbors, uint32_t max_links, internal::CachedAddDoc::DistanceCache* distance_cache) const {
     if (_cfg.heuristic_select_neighbors()) {
-        return select_neighbors_heuristic(neighbors, max_links);
+        return select_neighbors_heuristic(stats, neighbors, max_links, distance_cache);
     } else {
         return select_neighbors_simple(neighbors, max_links);
     }
 }
 
-template <HnswIndexType type> void HnswIndex<type>::shrink_if_needed(uint32_t nodeid, uint32_t level) {
+template <HnswIndexType type> void HnswIndex<type>::shrink_if_needed(Stats &stats, uint32_t nodeid, uint32_t level, internal::CachedAddDoc::DistanceCache* distance_cache) {
     auto     old_links = _graph.get_link_array(nodeid, level);
     uint32_t max_links = max_links_for_level(level);
     if (old_links.size() > max_links) {
@@ -250,10 +254,10 @@ template <HnswIndexType type> void HnswIndex<type>::shrink_if_needed(uint32_t no
         neighbors.reserve(old_links.size());
         auto df = _distance_ff->for_insertion_vector(get_vector(nodeid));
         for (uint32_t neighbor_nodeid : old_links) {
-            double dist = calc_distance(*df, neighbor_nodeid);
+            double dist = get_cached_or_calc_distance(stats, *df, nodeid, distance_cache, neighbor_nodeid);
             neighbors.emplace_back(neighbor_nodeid, dist);
         }
-        auto      split = select_neighbors(neighbors, max_links);
+        auto      split = select_neighbors(stats, neighbors, max_links, distance_cache);
         LinkArray new_links;
         new_links.reserve(split.used.size());
         for (const auto& neighbor : split.used) {
@@ -267,14 +271,14 @@ template <HnswIndexType type> void HnswIndex<type>::shrink_if_needed(uint32_t no
 }
 
 template <HnswIndexType type>
-void HnswIndex<type>::connect_new_node(uint32_t nodeid, const LinkArrayRef& neighbors, uint32_t level) {
+void HnswIndex<type>::connect_new_node(Stats &stats, uint32_t nodeid, const LinkArrayRef& neighbors, uint32_t level, internal::CachedAddDoc::DistanceCache* distance_cache) {
     _graph.set_link_array(nodeid, level, neighbors);
     for (uint32_t neighbor_nodeid : neighbors) {
         auto old_links = _graph.get_link_array(neighbor_nodeid, level);
         add_link_to(neighbor_nodeid, level, old_links, nodeid);
     }
     for (uint32_t neighbor_nodeid : neighbors) {
-        shrink_if_needed(neighbor_nodeid, level);
+        shrink_if_needed(stats, neighbor_nodeid, level, distance_cache);
     }
 }
 
@@ -363,7 +367,7 @@ HnswCandidate HnswIndex<type>::find_nearest_in_layer(Stats& stats, const BoundDi
             auto     neighbor_ref = neighbor_node.levels_ref().load_acquire();
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
-            double   dist = get_cached_or_calc_distance(stats, df, distance_cache, neighbor_nodeid, neighbor_docid, neighbor_subspace);
+            double   dist = get_cached_or_calc_distance(stats, df, 0, distance_cache, neighbor_nodeid, neighbor_docid, neighbor_subspace);
 
             if (_graph.still_valid(neighbor_nodeid, neighbor_ref) && dist < nearest.distance) {
                 nearest = HnswCandidate(neighbor_nodeid, neighbor_docid, neighbor_ref, dist);
@@ -442,7 +446,7 @@ void HnswIndex<type>::search_layer_helper(Stats& stats, const BoundDistanceFunct
         }
 
         for (const auto& link : neighbor_link_metas) {
-            double   dist_to_input = get_cached_or_calc_distance(stats, df, distance_cache, link.neighbor_nodeid, link.neighbor_docid, link.neighbor_subspace);
+            double   dist_to_input = get_cached_or_calc_distance(stats, df, 0, distance_cache, link.neighbor_nodeid, link.neighbor_docid, link.neighbor_subspace);
 
             if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
                 candidates.emplace(link.neighbor_nodeid, link.neighbor_ref, dist_to_input);
@@ -759,7 +763,7 @@ void HnswIndex<type>::internal_prepare_add_node(PreparedAddDoc& op, TypedCells i
     while (search_level >= 0) {
         search_layer(stats, *df, _cfg.neighbors_to_explore_at_construction(), 0.0, false, best_neighbors,
                      search_level, nullptr);
-        auto  neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
+        auto  neighbors = select_neighbors(stats, best_neighbors.peek(), _cfg.max_links_on_inserts());
         auto& links = connections[search_level];
         links.reserve(neighbors.used.size());
         for (const auto& neighbor : neighbors.used) {
@@ -820,11 +824,12 @@ template <HnswIndexType type> void HnswIndex<type>::internal_complete_add_with_c
 template <HnswIndexType type>
 void HnswIndex<type>::internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
                                                  PreparedAddNode& prepared_node) {
+    Stats stats;
     int32_t num_levels = prepared_node.connections.size();
     auto    levels_ref = _graph.make_node(nodeid, docid, subspace, num_levels);
     for (int level = 0; level < num_levels; ++level) {
         auto neighbors = filter_valid_nodeids(level, prepared_node.connections[level], nodeid);
-        connect_new_node(nodeid, neighbors, level);
+        connect_new_node(stats, nodeid, neighbors, level);
     }
     if (num_levels - 1 > get_entry_level()) {
         _graph.set_entry_node({nodeid, levels_ref, num_levels - 1});
@@ -844,7 +849,7 @@ void HnswIndex<type>::internal_prepare_add_node_with_caching(CachedAddDoc::Dista
     }
     int      search_level = entry.level;
     auto     df = _distance_ff->for_insertion_vector(input_vector);
-    double   entry_dist = get_cached_or_calc_distance(stats, *df, &distance_cache, entry.nodeid);
+    double   entry_dist = get_cached_or_calc_distance(stats, *df, 0, &distance_cache, entry.nodeid);
     uint32_t entry_docid = get_docid(entry.nodeid);
     // TODO: check if entry nodeid/levels_ref is still valid here
     HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
@@ -861,6 +866,8 @@ void HnswIndex<type>::internal_prepare_add_node_with_caching(CachedAddDoc::Dista
         // Run search from best_neighbors to find new best_neighbors
         search_layer(stats, *df, _cfg.neighbors_to_explore_at_construction(), 0.0, false, best_neighbors,
                      search_level, nullptr, nullptr, &distance_cache);
+        auto  neighbors = select_neighbors(stats, best_neighbors.peek(), _cfg.max_links_on_inserts(), &distance_cache);
+        (void) neighbors;
         // We do not do anything with the resulting best_neighbors here: we only want to build the distance cache
         --search_level;
     }
@@ -880,7 +887,7 @@ void HnswIndex<type>::internal_complete_add_node_with_caching(CachedAddDoc::Dist
         // graph has an entry point
         int      search_level = entry.level;
         auto     df = _distance_ff->for_insertion_vector(input_vector);
-        double   entry_dist = get_cached_or_calc_distance(stats, *df, &distance_cache, entry.nodeid);
+        double   entry_dist = get_cached_or_calc_distance(stats, *df, 0, &distance_cache, entry.nodeid);
         uint32_t entry_docid = get_docid(entry.nodeid);
         // TODO: check if entry nodeid/levels_ref is still valid here
         HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
@@ -896,7 +903,7 @@ void HnswIndex<type>::internal_complete_add_node_with_caching(CachedAddDoc::Dist
         while (search_level >= 0) {
             search_layer(stats, *df, _cfg.neighbors_to_explore_at_construction(), 0.0, false, best_neighbors,
                          search_level, nullptr, nullptr, &distance_cache);
-            auto  neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
+            auto  neighbors = select_neighbors(stats, best_neighbors.peek(), _cfg.max_links_on_inserts(), &distance_cache);
             auto& links = connections[search_level];
             links.reserve(neighbors.used.size());
             for (const auto& neighbor : neighbors.used) {
@@ -916,7 +923,7 @@ void HnswIndex<type>::internal_complete_add_node_with_caching(CachedAddDoc::Dist
     auto    levels_ref = _graph.make_node(nodeid, docid, subspace, num_levels);
     for (int level = 0; level < num_levels; ++level) {
         auto neighbors = filter_valid_nodeids(level, connections[level], nodeid);
-        connect_new_node(nodeid, neighbors, level);
+        connect_new_node(stats, nodeid, neighbors, level, &distance_cache);
     }
     if (num_levels - 1 > get_entry_level()) {
         _graph.set_entry_node({nodeid, levels_ref, num_levels - 1});
@@ -1272,11 +1279,12 @@ template <HnswIndexType type> HnswTestNode HnswIndex<type>::get_node(uint32_t no
 }
 
 template <HnswIndexType type> void HnswIndex<type>::set_node(uint32_t nodeid, const HnswTestNode& node) {
+    Stats stats;
     size_t num_levels = node.size();
     CHECK(num_levels > 0);
     auto levels_ref = _graph.make_node(nodeid, nodeid, 0, num_levels);
     for (size_t level = 0; level < num_levels; ++level) {
-        connect_new_node(nodeid, node.level(level), level);
+        connect_new_node(stats, nodeid, node.level(level), level);
     }
     int max_level = num_levels - 1;
     if (get_entry_level() < max_level) {

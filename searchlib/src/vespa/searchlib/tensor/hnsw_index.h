@@ -204,16 +204,17 @@ protected:
      * where the candidate is located.
      * Used by select_neighbors_heuristic().
      */
-    bool have_closer_distance(HnswTraversalCandidate              candidate,
-                              const HnswTraversalCandidateVector& curr_result) const;
+    bool have_closer_distance(Stats &stats, HnswTraversalCandidate              candidate,
+                              const HnswTraversalCandidateVector& curr_result,
+                              internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const;
     template <typename HnswCandidateVectorT>
-    SelectResult select_neighbors_heuristic(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
+    SelectResult select_neighbors_heuristic(Stats &stats, const HnswCandidateVectorT& neighbors, uint32_t max_links, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const;
     template <typename HnswCandidateVectorT>
     SelectResult select_neighbors_simple(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
     template <typename HnswCandidateVectorT>
-    SelectResult select_neighbors(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
-    void shrink_if_needed(uint32_t nodeid, uint32_t level);
-    void connect_new_node(uint32_t nodeid, const LinkArrayRef& neighbors, uint32_t level);
+    SelectResult select_neighbors(Stats &stats, const HnswCandidateVectorT& neighbors, uint32_t max_links, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr) const;
+    void shrink_if_needed(Stats &stats, uint32_t nodeid, uint32_t level, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr);
+    void connect_new_node(Stats &stats, uint32_t nodeid, const LinkArrayRef& neighbors, uint32_t level, internal::CachedAddDoc::DistanceCache* distance_cache = nullptr);
     void mutual_reconnect(const LinkArrayRef& cluster, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
@@ -366,18 +367,23 @@ public:
     static vespalib::datastore::ArrayStoreConfig make_default_level_array_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_array_store_config();
 
-    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid) const {
+    static uint64_t make_pair(uint32_t first, uint32_t second) {
+        return (static_cast<uint64_t>(first) << 32) | static_cast<uint64_t>(second);
+    }
+
+    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, uint32_t df_nodeid, internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid) const {
         double dist;
         if constexpr (use_caching_insertion) {
             if (distance_cache) {
-                auto it = distance_cache->find(nodeid);
+                uint64_t pair = make_pair(df_nodeid, nodeid);
+                auto it = distance_cache->find(pair);
                 if (it != distance_cache->end()) {
                     dist = it->second;
                     stats.count_cache_hit();
                 } else {
                     dist = calc_distance(df, nodeid);
                     stats.count_computed_distance();
-                    (*distance_cache)[nodeid] = dist;
+                    (*distance_cache)[pair] = dist;
                     stats.count_cache_miss();
                 }
             } else {
@@ -392,18 +398,19 @@ public:
         return dist;
     }
 
-    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid, uint32_t docid, uint32_t subspace) const {
+    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, uint32_t df_nodeid, internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid, uint32_t docid, uint32_t subspace) const {
         double dist;
         if constexpr (use_caching_insertion) {
             if (distance_cache) {
-                auto it = distance_cache->find(nodeid);
+                uint64_t pair = make_pair(df_nodeid, nodeid);
+                auto it = distance_cache->find(pair);
                 if (it != distance_cache->end()) {
                     dist = it->second;
                     stats.count_cache_hit();
                 } else {
                     dist = calc_distance(df, docid, subspace);
                     stats.count_computed_distance();
-                    (*distance_cache)[nodeid] = dist;
+                    (*distance_cache)[pair] = dist;
                     stats.count_cache_miss();
                 }
             } else {
