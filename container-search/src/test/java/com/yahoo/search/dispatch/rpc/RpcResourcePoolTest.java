@@ -67,14 +67,14 @@ public class RpcResourcePoolTest {
     }
 
     @Test
-    void snapshotKeepsNodeGroupsOfItsGeneration() {
+    void snapshotKeepsFillRetrySelectorOfItsGeneration() {
         var pool = new RpcResourcePool(dispatchConfig(), nodesConfig(0, 1));
         var oldGeneration = pool.snapshot();
 
         pool.updateNodes(nodesConfig(0));
 
-        assertEquals(2, oldGeneration.getNodeGroups().numNodes());
-        assertEquals(1, pool.snapshot().getNodeGroups().numNodes());
+        assertEquals(2, oldGeneration.getFillRetrySelector().numNodes());
+        assertEquals(1, pool.snapshot().getFillRetrySelector().numNodes());
         pool.close();
     }
 

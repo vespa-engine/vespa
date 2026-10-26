@@ -61,20 +61,15 @@ public class Dispatcher extends AbstractComponent {
 
     /** If set will control computation of how many hits will be fetched from each partition.*/
     public static final CompoundName topKProbability = CompoundName.from(DISPATCH + "." + TOP_K_PROBABILITY);
-    /**
-     * Empty docsums (e.g. for documents being redistributed) are retried on other nodes if fewer hits
-     * were skipped than this (default 10), and than docsumRetryFactor allows; or if docsumBlowupFactor allows it.
-     */
+
+    /** No longer used, ignored */
     public static final CompoundName docsumRetryLimit = CompoundName.from(DISPATCH + "." + DOCSUM_RETRY_LIMIT);
-    /**
-     * Empty docsums are retried on other nodes if fewer hits were skipped than this factor (default 0.5)
-     * times the number of hits to fill, plus one, and than docsumRetryLimit; or if docsumBlowupFactor allows it.
-     */
+    /** No longer used, ignored */
     public static final CompoundName docsumRetryFactor  = CompoundName.from(DISPATCH + "." + DOCSUM_RETRY_FACTOR);
     /**
-     * Empty docsums are retried on other nodes if the retry work, counted as hit requests to other nodes beyond
-     * those for the most expensive skipped hit, is below this factor (default 25.0) times the number of hits to fill;
-     * or if docsumRetryLimit and docsumRetryFactor allow it. Set this and one of those to 0 to disable retries.
+     * Empty docsums are retried on other nodes if the "extra" requested work
+     * (empty count - 1) * (nodes asked per hit) is below this factor times the original fill work.
+     * Default 25.0; set this to 0.0 to disable retries.
      */
     public static final CompoundName docsumBlowupFactor = CompoundName.from(DISPATCH + "." + DOCSUM_BLOWUP_FACTOR);
 

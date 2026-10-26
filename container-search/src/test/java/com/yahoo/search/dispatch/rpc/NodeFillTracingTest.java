@@ -131,7 +131,7 @@ class NodeFillTracingTest {
     void the_retry_wave_produces_its_own_spans_marked_as_retries() throws Exception {
         // A node answering with an EMPTY docsum is what a redistribution looks like from the container. Vespa
         // does not know where the document moved to, so it re-asks alternative nodes - with a single group
-        // that is every OTHER known node, see NodeGroupsInfo.FillRetrySelection.
+        // that is every OTHER known node, see FillRetrySelector.alternativesForGroupOf.
         SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
         RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWith(emptyDocsumsFor(1)),
                                                             1, replyingWith(emptyDocsumsFor(1))));
@@ -209,12 +209,12 @@ class NodeFillTracingTest {
 
     @Test
     void a_retry_with_no_alternative_node_is_recorded_as_retried_false() throws Exception {
-        // Node 0 is missing from the group info, so no node is known to be an alternative for its hits and
+        // Node 0 is the only node in the group info, so there is no alternative node for its hits and
         // no retry is sent. That must be recorded as declined, and the trace must not claim a retry happened.
         RpcConnectionPool pool = new RpcConnectionPool() {
             final RpcConnectionPool connections = new RpcResourcePool(new HashMap<>(Map.of(0, replyingWith(emptyDocsumsFor(1)))));
             @Override public Client.NodeConnection getConnection(int nodeId) { return connections.getConnection(nodeId); }
-            @Override public NodeGroupsInfo getNodeGroups() { return NodeGroupsInfo.singleGroup(List.of(1, 2)); }
+            @Override public FillRetrySelector getFillRetrySelector() { return FillRetrySelector.singleGroup(List.of(0)); }
             @Override public void close() { }
         };
         var result = resultFor(new Query("?query=test&tracelevel=1"), 0);

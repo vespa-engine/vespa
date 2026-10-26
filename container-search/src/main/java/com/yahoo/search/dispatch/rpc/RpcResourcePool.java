@@ -23,7 +23,7 @@ public class RpcResourcePool implements RpcConnectionPool {
 
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private volatile Map<Integer, NodeConnectionPool> nodeConnectionPools = Map.of();
-    private volatile NodeGroupsInfo nodeGroupsInfo;
+    private volatile FillRetrySelector fillRetrySelector;
     private final int numConnections;
     private final RpcClient rpcClient;
 
@@ -31,7 +31,7 @@ public class RpcResourcePool implements RpcConnectionPool {
         var builder = new HashMap<Integer, NodeConnectionPool>();
         nodeConnections.forEach((key, connection) -> builder.put(key, new NodeConnectionPool(List.of(connection))));
         this.nodeConnectionPools = Map.copyOf(builder);
-        this.nodeGroupsInfo = NodeGroupsInfo.singleGroup(nodeConnections.keySet());
+        this.fillRetrySelector = FillRetrySelector.singleGroup(nodeConnections.keySet());
         this.rpcClient = null;
         this.numConnections = 1;
     }
@@ -64,14 +64,14 @@ public class RpcResourcePool implements RpcConnectionPool {
                 nextPools.put(node.key(), new NodeConnectionPool(connections));
             }
         }
-        var nextInfo = NodeGroupsInfo.create(nodesConfig.node());
+        var nextSelector = FillRetrySelector.create(nodesConfig.node());
         this.nodeConnectionPools = Map.copyOf(nextPools);
-        this.nodeGroupsInfo = nextInfo;
+        this.fillRetrySelector = nextSelector;
         return currentPools.values();
     }
 
     @Override
-    public NodeGroupsInfo getNodeGroups() { return nodeGroupsInfo; }
+    public FillRetrySelector getFillRetrySelector() { return fillRetrySelector; }
 
     @Override
     public NodeConnection getConnection(int nodeId) {
@@ -85,7 +85,7 @@ public class RpcResourcePool implements RpcConnectionPool {
 
     @Override
     public RpcConnectionPool snapshot() {
-        return new View(nodeConnectionPools, nodeGroupsInfo);
+        return new View(nodeConnectionPools, fillRetrySelector);
     }
 
     /**
@@ -96,11 +96,11 @@ public class RpcResourcePool implements RpcConnectionPool {
     private static class View implements RpcConnectionPool {
 
         private final Map<Integer, NodeConnectionPool> pools;
-        private final NodeGroupsInfo nodeGroupsInfo;
+        private final FillRetrySelector fillRetrySelector;
 
-        View(Map<Integer, NodeConnectionPool> pools, NodeGroupsInfo nodeGroupsInfo) {
+        View(Map<Integer, NodeConnectionPool> pools, FillRetrySelector fillRetrySelector) {
             this.pools = Map.copyOf(pools);
-            this.nodeGroupsInfo = nodeGroupsInfo;
+            this.fillRetrySelector = fillRetrySelector;
         }
 
         @Override
@@ -113,7 +113,7 @@ public class RpcResourcePool implements RpcConnectionPool {
         public Collection<Integer> knownNodeIds() { return pools.keySet(); }
 
         @Override
-        public NodeGroupsInfo getNodeGroups() { return nodeGroupsInfo; }
+        public FillRetrySelector getFillRetrySelector() { return fillRetrySelector; }
 
         @Override
         public RpcConnectionPool snapshot() { return this; }

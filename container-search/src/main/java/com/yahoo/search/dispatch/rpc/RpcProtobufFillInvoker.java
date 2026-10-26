@@ -364,35 +364,24 @@ public class RpcProtobufFillInvoker extends FillInvoker {
      * The content layer may return some empty docsums when redistribution is in progress,
      * and in that case the document should be present on some other node, and we should
      * be able to get the docsum from that node if we retry.  But we don't know where
-     * that would be, so we try the nodes that NodeGroupsInfo selects as alternatives:
-     * the other nodes in the hit's own group, plus all nodes in one or two other groups.
-     * To avoid overloading the content layer, we only retry if the number of skipped hits
-     * is below a tunable limit (dispatch.docsumRetryLimit), and if the ratio of failed to ok
-     * hits is below another tunable limit (dispatch.docsumRetryFactor), since if too much failed
-     * on first try, it's likely not helpful to retry. We also retry if the retry work beyond
-     * the most expensive skipped hit (the number of hit requests to alternative nodes, minus those
+     * that would be, so we try the nodes that FillRetrySelector selects as alternatives:
+     * the other nodes in the hit's own group, plus all nodes in one other group.
+     * To avoid overloading the content layer, we only retry if the retry work beyond the
+     * most expensive skipped hit (the number of hit requests to alternative nodes, minus those
      * for the hit with the most alternatives) is below dispatch.docsumBlowupFactor times the
-     * number of hits to fill, even if the skipped hit limits are exceeded.
+     * number of hits to fill. So a single skipped hit is always retried, unless
+     * docsumBlowupFactor is 0, which disables retries.
      */
     private void maybeRetry(List<FastHit> skippedHits, Result result, String summaryClass) throws InterruptedException {
         int numSkipped = skippedHits.size();
-        NodeGroupsInfo nodeGroups = resourcePool.getNodeGroups();
-        if (nodeGroups.numNodes() < 2) {
+        FillRetrySelector retrySelector = resourcePool.getFillRetrySelector();
+        if (retrySelector.numNodes() < 2) {
             recordNoRetry(result, numSkipped, "no other node to retry on");
             return;
         }
-        RetryTargets targets = retryTargets(skippedHits, nodeGroups);
+        RetryTargets targets = retryTargets(skippedHits, retrySelector);
         ListMap<Integer, FastHit> retryMap = targets.byNode();
-        if (retryMap.size() == 0) {
-            // the skipped hits are on nodes not present in the group info
-            log.log(Level.FINE, () -> "No alternative nodes known for " + numSkipped + " skipped hits");
-            recordNoRetry(result, numSkipped, "no other node to retry on");
-            return;
-        }
-        if ( ! isRetryWithinLimit(result.getQuery(), numSkipped, targets.workBeyondCostliestHit())) {
-            if (shouldLogNoRetry()) {
-                log.log(Level.WARNING, "Docsum fetch failed for " + numSkipped + " hits (" + numOkFilledHits + " ok hits), no retry");
-            }
+        if ( ! isRetryWithinLimit(result.getQuery(), targets.workBeyondCostliestHit())) {
             recordNoRetry(result, numSkipped, "retry limits exceeded");
             return;
         }
@@ -418,17 +407,17 @@ public class RpcProtobufFillInvoker extends FillInvoker {
      * rather than left absent, so "considered and declined" is distinguishable from "never needed".
      */
     private void recordNoRetry(Result result, int numSkipped, String reason) {
+        if (shouldLogNoRetry()) {
+            log.log(Level.WARNING, "Docsum fetch failed for " + numSkipped + " hits (" + numOkFilledHits + " ok hits), no retry");
+        }
         result.getQuery().trace(false, 1, "Summary fetching got " + numSkipped + " empty docsums (of " + numHitsToFill + " hits), " + reason);
         Span.current().setAttribute(TraceAttributes.FILL_SKIPPED, numSkipped)
                       .setAttribute(TraceAttributes.FILL_RETRIED, false);
     }
 
-    private boolean isRetryWithinLimit(Query query, int numSkipped, long retryWork) {
-        double absoluteRetryLimit = query.properties().getInteger(Dispatcher.docsumRetryLimit, 10);
-        double retryLimitFactor = query.properties().getDouble(Dispatcher.docsumRetryFactor, 0.5);
-        double retryLimit = Math.min(absoluteRetryLimit, retryLimitFactor * numHitsToFill + 1);
+    private boolean isRetryWithinLimit(Query query, long retryWork) {
         double retryBlowupFactor = query.properties().getDouble(Dispatcher.docsumBlowupFactor, 25.0);
-        return numSkipped < retryLimit || retryWork < retryBlowupFactor * numHitsToFill;
+        return retryWork < retryBlowupFactor * numHitsToFill;
     }
 
     /**
@@ -437,18 +426,23 @@ public class RpcProtobufFillInvoker extends FillInvoker {
      */
     private record RetryTargets(ListMap<Integer, FastHit> byNode, long workBeyondCostliestHit) { }
 
-    private RetryTargets retryTargets(List<FastHit> skippedHits, NodeGroupsInfo nodeGroups) {
-        var selection = nodeGroups.newFillRetrySelection(isHealthyGroup);
+    private RetryTargets retryTargets(List<FastHit> skippedHits, FillRetrySelector retrySelector) {
+        // we know that all hits come from the same group, so we can select alternate groups once:
+        int firstSkippedNodeId = skippedHits.get(0).getDistributionKey();
+        List<Integer> alternatives = retrySelector.alternativesForGroupOf(firstSkippedNodeId, isHealthyGroup);
         ListMap<Integer, FastHit> retryMap = new ListMap<>();
         long totalWork = 0;
         int maxWorkPerHit = 0;
         for (var hit : skippedHits) {
-            List<Integer> alternatives = selection.alternativesForFill(hit.getDistributionKey());
+            int workForHit = 0;
             for (Integer nodeId : alternatives) {
-                retryMap.put(nodeId, hit);
+                if (nodeId != hit.getDistributionKey()) {
+                    retryMap.put(nodeId, hit);
+                    ++totalWork;
+                    ++workForHit;
+                }
             }
-            totalWork += alternatives.size();
-            maxWorkPerHit = Math.max(maxWorkPerHit, alternatives.size());
+            maxWorkPerHit = Math.max(maxWorkPerHit, workForHit);
         }
         return new RetryTargets(retryMap, totalWork - maxWorkPerHit);
     }
