@@ -1,11 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/value.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
+
+#include <map>
 
 using namespace search;
 using CompressionConfig = vespalib::compression::CompressionConfig;
@@ -65,6 +70,100 @@ TEST(DocumentStoreTest, require_that_cached_docstore_lookups_are_counted) {
     EXPECT_EQ(0u, f3.getCacheStats().misses);
     f3.read(1, repo);
     EXPECT_EQ(1u, f3.getCacheStats().misses);
+}
+
+namespace {
+
+/*
+ * Data store keeping serialized documents in memory, counting reads.
+ */
+struct MemoryDataStore : NullDataStore {
+    std::map<uint32_t, std::vector<char>> _docs;
+    mutable uint32_t                      _reads = 0;
+    ~MemoryDataStore() override;
+    ssize_t read(uint32_t lid, vespalib::DataBuffer& buffer) const override {
+        ++_reads;
+        auto itr = _docs.find(lid);
+        if (itr == _docs.end()) {
+            return 0;
+        }
+        buffer.writeBytes(itr->second.data(), itr->second.size());
+        return itr->second.size();
+    }
+    void write(uint64_t, uint32_t lid, const void* buffer, size_t sz) override {
+        auto* data = static_cast<const char*>(buffer);
+        _docs[lid].assign(data, data + sz);
+    }
+    void remove(uint64_t, uint32_t lid) override { _docs.erase(lid); }
+};
+
+MemoryDataStore::~MemoryDataStore() = default;
+
+std::unique_ptr<document::DocumentTypeRepo> make_test_repo() {
+    document::new_config_builder::NewConfigBuilder builder;
+    builder.document("test", 4711);
+    return std::make_unique<document::DocumentTypeRepo>(builder.config());
+}
+
+std::unique_ptr<document::Document> make_test_doc(const document::DocumentTypeRepo& test_repo) {
+    return std::make_unique<document::Document>(test_repo, *test_repo.getDocumentType("test"),
+                                                document::DocumentId("id:ns:test::1"));
+}
+
+} // namespace
+
+TEST(DocumentStoreTest, require_that_move_keeps_cached_document_cached_under_new_lid) {
+    auto                  test_repo = make_test_repo();
+    DocumentStore::Config config(CompressionConfig::NONE, 100000);
+    MemoryDataStore       backing_store;
+    DocumentStore         store(config, backing_store);
+    store.write(1, 2, *make_test_doc(*test_repo));
+    EXPECT_TRUE(store.read(2, *test_repo));
+    EXPECT_TRUE(store.read(2, *test_repo));
+    EXPECT_EQ(1u, backing_store._reads);
+    EXPECT_EQ(1u, store.getCacheStats().hits);
+    EXPECT_EQ(1u, store.getCacheStats().elements);
+
+    // Move document from lid 2 to lid 1, as done by lid space compaction
+    store.move(2, 2, 1, *make_test_doc(*test_repo));
+    EXPECT_EQ(1u, backing_store._docs.count(1)); // Written through to backing store
+    store.remove(3, 2);
+    EXPECT_EQ(1u, store.getCacheStats().elements);
+
+    auto doc = store.read(1, *test_repo);
+    ASSERT_TRUE(doc);
+    EXPECT_EQ("id:ns:test::1", doc->getId().toString());
+    EXPECT_EQ(1u, backing_store._reads); // Served from cache
+    EXPECT_EQ(2u, store.getCacheStats().hits);
+    EXPECT_FALSE(store.read(2, *test_repo));
+    EXPECT_EQ(2u, backing_store._reads);
+}
+
+TEST(DocumentStoreTest, require_that_move_of_uncached_lid_is_plain_write) {
+    auto                  test_repo = make_test_repo();
+    DocumentStore::Config config(CompressionConfig::NONE, 100000);
+    MemoryDataStore       backing_store;
+    DocumentStore         store(config, backing_store);
+    store.write(1, 2, *make_test_doc(*test_repo));
+    store.move(2, 2, 1, *make_test_doc(*test_repo));
+    store.remove(3, 2);
+    EXPECT_EQ(0u, store.getCacheStats().elements);
+    EXPECT_TRUE(store.read(1, *test_repo));
+    EXPECT_EQ(1u, backing_store._reads);
+    EXPECT_EQ(0u, store.getCacheStats().hits);
+}
+
+TEST(DocumentStoreTest, require_that_move_works_when_cache_is_disabled) {
+    auto                  test_repo = make_test_repo();
+    DocumentStore::Config config(CompressionConfig::NONE, 0);
+    MemoryDataStore       backing_store;
+    DocumentStore         store(config, backing_store);
+    store.write(1, 2, *make_test_doc(*test_repo));
+    EXPECT_TRUE(store.read(2, *test_repo));
+    store.move(2, 2, 1, *make_test_doc(*test_repo));
+    store.remove(3, 2);
+    EXPECT_TRUE(store.read(1, *test_repo));
+    EXPECT_EQ(2u, backing_store._reads);
 }
 
 TEST(DocumentStoreTest, require_that_DocumentStore_Config_equality_operator_detects_inequality) {

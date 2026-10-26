@@ -42,13 +42,19 @@ private:
     std::atomic<int>& _rmCount;
     std::atomic<int>& _putCount;
     std::atomic<int>& _heartbeatCount;
+    std::atomic<int>& _moveCount;
 
 public:
-    MySummaryAdapter(std::atomic<int>& removeCount, std::atomic<int>& putCount,
-                     std::atomic<int>& heartbeatCount) noexcept
-        : _rmCount(removeCount), _putCount(putCount), _heartbeatCount(heartbeatCount) {}
+    MySummaryAdapter(std::atomic<int>& removeCount, std::atomic<int>& putCount, std::atomic<int>& heartbeatCount,
+                     std::atomic<int>& moveCount) noexcept
+        : _rmCount(removeCount), _putCount(putCount), _heartbeatCount(heartbeatCount), _moveCount(moveCount) {}
     void put(SerialNum, DocumentIdT, const Document&) override { ++_putCount; }
     void put(SerialNum, DocumentIdT, const vespalib::nbostream&) override { ++_putCount; }
+    // A move within the document store is also a put to the new lid.
+    void move(SerialNum, DocumentIdT, DocumentIdT, const Document&) override {
+        ++_moveCount;
+        ++_putCount;
+    }
 
     void remove(SerialNum, DocumentIdT) override { ++_rmCount; }
     void heartBeat(SerialNum) override { ++_heartbeatCount; }
@@ -197,6 +203,7 @@ template <typename FeedViewType> struct FixtureBase {
     std::atomic<int>                       removeCount;
     std::atomic<int>                       putCount;
     std::atomic<int>                       heartbeatCount;
+    std::atomic<int>                       summaryMoveCount;
     std::atomic<int>                       outstandingMoveOps;
     DocumentMetaStore::SP                  metaStore;
     TransportAndExecutorService            _service;
@@ -208,6 +215,7 @@ template <typename FeedViewType> struct FixtureBase {
         : removeCount(0),
           putCount(0),
           heartbeatCount(0),
+          summaryMoveCount(0),
           outstandingMoveOps(0),
           metaStore(std::make_shared<DocumentMetaStore>(std::make_shared<bucketdb::BucketDBOwner>(),
                                                         DocumentMetaStore::getFixedName(), search::GrowStrategy(),
@@ -218,7 +226,8 @@ template <typename FeedViewType> struct FixtureBase {
           serial_num(2u) {
         StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), subdb_id, subDbType);
         metaStore->constructFreeList();
-        ISummaryAdapter::SP adapter = std::make_shared<MySummaryAdapter>(removeCount, putCount, heartbeatCount);
+        ISummaryAdapter::SP adapter =
+            std::make_shared<MySummaryAdapter>(removeCount, putCount, heartbeatCount, summaryMoveCount);
         feedview = std::make_unique<FeedViewType>(adapter, metaStore, _service.write(), params, pendingLidsForCommit,
                                                   outstandingMoveOps);
     }
@@ -333,6 +342,7 @@ TEST(StoreOnlyFeedViewTest,
         {
             SCOPED_TRACE("after move here");
             f.assertPutCount(1);
+            EXPECT_EQ(0, f.summaryMoveCount); // Plain put, since document comes from another sub db
             f.assertAndClearMoveOp();
         }
         lid = op->getDbDocumentId().getLid();
@@ -382,6 +392,7 @@ TEST(StoreOnlyFeedViewTest,
         SCOPED_TRACE("after move within");
         f.assertPutCount(1);
         f.assertRemoveCount(1);
+        EXPECT_EQ(1, f.summaryMoveCount);
         f.assertAndClearMoveOp();
     }
     uint32_t lid = op->getDbDocumentId().getLid();

@@ -56,6 +56,16 @@ void SummaryAdapter::remove(SerialNum serialNum, const DocumentIdT lid) {
     }
 }
 
+void SummaryAdapter::move(SerialNum serialNum, const DocumentIdT prevLid, const DocumentIdT lid,
+                          const Document& doc) {
+    if (!ignore(serialNum)) {
+        LOG(spam, "SummaryAdapter::move(serialnum = '%" PRIu64 "', prevLid = %u, lid = %u, docId = '%s')", serialNum,
+            prevLid, lid, doc.getId().toString().c_str());
+        _mgr->moveDocument(serialNum, prevLid, lid, doc);
+        _lastSerial = serialNum;
+    }
+}
+
 void SummaryAdapter::heartBeat(SerialNum serialNum) {
     if (serialNum > _lastSerial) {
         remove(serialNum, 0u); // XXX: Misused lid 0
