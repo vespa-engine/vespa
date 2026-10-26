@@ -1535,6 +1535,7 @@
       "public int maxContentNodeMaintenanceOpConcurrency()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag useTritonFlag()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag tritonShareOnnxSessionFlag()",
+      "public com.yahoo.config.model.api.ModelContext$FeatureFlag tritonOnnxPoolingFlag()",
       "public boolean ignoreConnectivityChecksAtStartup()",
       "public boolean requireExplicitDocprocCluster()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag metricsProxyHeapSizeInMibFlag()",

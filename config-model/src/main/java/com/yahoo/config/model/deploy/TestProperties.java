@@ -81,6 +81,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
     private boolean tritonShareOnnxSession = false;
+    private boolean tritonOnnxPooling = false;
     private OptionalInt metricsProxyHeapSizeInMib = OptionalInt.empty();
     private OptionalInt metricsProxyAdminNodeHeapSizeInMib = OptionalInt.empty();
     private boolean ignoreConnectivityChecksAtStartup = false;
@@ -148,6 +149,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return () -> useTriton; }
     @Override public ModelContext.FeatureFlag<Boolean> tritonShareOnnxSessionFlag() { return () -> tritonShareOnnxSession; }
+    @Override public ModelContext.FeatureFlag<Boolean> tritonOnnxPoolingFlag() { return () -> tritonOnnxPooling; }
     @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return () -> metricsProxyHeapSizeInMib.orElse(0); }
     @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return metricsProxyAdminNodeHeapSizeInMib; }
     @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
@@ -372,6 +374,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setTritonShareOnnxSession(boolean value) {
         this.tritonShareOnnxSession = value;
+        return this;
+    }
+
+    public TestProperties setTritonOnnxPooling(boolean value) {
+        this.tritonOnnxPooling = value;
         return this;
     }
 

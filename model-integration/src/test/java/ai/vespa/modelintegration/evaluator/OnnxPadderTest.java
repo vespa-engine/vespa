@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -150,11 +151,11 @@ class OnnxPadderTest {
         var padded = padded(evaluator, 8);
         var outputs = padded.evaluate(inputs(3));
         assertEquals(8, evaluator.lastInputLength());
-        assertEquals(Tensor.from("tensor<float>(d0[1],d1[3]):[1, 1, 1]"), outputs.get("logits"), "Cut back to the real tokens");
+        assertEquals(Tensor.from("tensor<float>(d0[1],d1[3]):[1, 1, 1]"), outputs.get("logits"), "Unpadded to the real tokens");
         assertEquals(FakeEvaluator.hidden(3), outputs.get("last_hidden_state"), "Each row keeps the real tokens");
         assertEquals(FakeEvaluator.POOLED, outputs.get("pooled"), "Not a sequence output");
         assertEquals(FakeEvaluator.SCORES, outputs.get("scores"),
-                     "An output of the padded length which verification found not to be over the sequence is not cut");
+                     "An output of the padded length which verification found not to be over the sequence is not unpadded");
 
         assertEquals(Tensor.from("tensor<float>(d0[1],d1[3]):[1, 1, 1]"), padded.evaluate(inputs(3), "logits"), "Also when evaluating one output");
 
@@ -163,7 +164,19 @@ class OnnxPadderTest {
         assertEquals(Tensor.from("tensor<float>(d0[2],d1[2]):[[1, 1], [1, 1]]"), twoRows.get("logits"));
 
         var unpadded = padded.evaluate(inputs(8));
-        assertEquals(8, ((IndexedTensor) unpadded.get("logits")).shape()[1], "Nothing to cut");
+        assertEquals(8, ((IndexedTensor) unpadded.get("logits")).shape()[1], "Nothing to unpad");
+    }
+
+    @Test
+    void anOutputPooledByTheRuntimeIsNotASequenceOutput() {
+        var evaluator = new FakeEvaluator(0);
+        evaluator.runtimePooling = Optional.of(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "scores", "attention_mask"));
+        var padded = padderOf(evaluator, 8);
+        assertEquals(evaluator.runtimePooling(), padded.runtimePooling(), "The padding reports the evaluator's pooling");
+        var outputs = padded.evaluate(inputs(3));
+        assertEquals(FakeEvaluator.SCORES, outputs.get("scores"),
+                     "Pooled by the runtime to [batch, embedding], which happens to be the padded length: not unpadded");
+        assertEquals(FakeEvaluator.hidden(3), outputs.get("last_hidden_state"), "The sequence outputs still are");
     }
 
     @Test
@@ -242,7 +255,7 @@ class OnnxPadderTest {
         assertFalse(padderOf(evaluator, 8).verify());
 
         var sequenceFirst = new FakeEvaluator(0);
-        sequenceFirst.sequenceFirstOutput = true; // Like a model outputting [sequence, batch, hidden], which cannot be cut
+        sequenceFirst.sequenceFirstOutput = true; // Like a model outputting [sequence, batch, hidden], which cannot be unpadded
         assertFalse(padderOf(sequenceFirst, 8).verify());
     }
 
@@ -325,6 +338,7 @@ class OnnxPadderTest {
         /** Outputs last_hidden_state as [sequence, batch, 16] instead of [batch, sequence, 16] */
         boolean sequenceFirstOutput = false;
         boolean closed = false;
+        Optional<OnnxPoolingOptions> runtimePooling = Optional.empty();
 
         /** Outputs 1 for each real token, multiplied by 1 + change when padded: a relative difference of change. */
         FakeEvaluator(double change) {
@@ -406,6 +420,7 @@ class OnnxPadderTest {
         @Override public Map<String, IdAndType> getOutputs() { throw new UnsupportedOperationException(); }
         @Override public Map<String, TensorType> getInputInfo() { return inputTypes; }
         @Override public Map<String, TensorType> getOutputInfo() { return outputTypes; }
+        @Override public Optional<OnnxPoolingOptions> runtimePooling() { return runtimePooling; }
         @Override public void close() { closed = true; }
 
     }

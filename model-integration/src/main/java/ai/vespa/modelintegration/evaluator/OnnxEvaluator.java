@@ -7,6 +7,7 @@ import com.yahoo.tensor.TensorType;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Evaluator for ONNX models.
@@ -39,6 +40,9 @@ public interface OnnxEvaluator extends AutoCloseable {
      * For an {@link OnnxPadder} this is a bucket length; evaluators which do not pad return the length unchanged.
      */
     default int paddedLength(int length) { return length; }
+
+    /** Returns the pooling this evaluator's model is configured with, or empty if it returns the output as is. */
+    default Optional<OnnxPoolingOptions> runtimePooling() { return Optional.empty(); }
 
     @Override void close();
 

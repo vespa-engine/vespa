@@ -10,8 +10,8 @@ import java.util.function.UnaryOperator;
 
 /**
  * Session options for ONNX Runtime evaluation.
- * The padding options, present when padding buckets are configured, are used by runtimes which batch requests
- * to wrap their evaluators in an {@link OnnxPadder}.
+ * Runtimes that batch requests use the padding options, present when padding buckets are configured.
+ * Runtimes that can pool use the runtime pooling, present when an embedder asks the runtime to pool a model output.
  *
  * @author lesters
  * @author bjorncs
@@ -28,6 +28,7 @@ public record OnnxEvaluatorOptions(
         Optional<Integer> numModelInstances,
         Optional<Path> modelConfigOverride,
         Optional<OnnxPadderOptions> padding,
+        Optional<OnnxPoolingOptions> runtimePooling,
         int availableProcessors
 ) {
 
@@ -36,6 +37,7 @@ public record OnnxEvaluatorOptions(
         Objects.requireNonNull(numModelInstances, "numModelInstances cannot be null");
         Objects.requireNonNull(modelConfigOverride, "modelConfigOverride cannot be null");
         Objects.requireNonNull(padding, "padding cannot be null");
+        Objects.requireNonNull(runtimePooling, "runtimePooling cannot be null");
     }
 
     public static OnnxEvaluatorOptions createDefault() {
@@ -101,6 +103,7 @@ public record OnnxEvaluatorOptions(
         private Optional<Integer> numModelInstances;
         private Optional<Path> modelConfigOverride;
         private Optional<OnnxPadderOptions> padding;
+        private Optional<OnnxPoolingOptions> runtimePooling;
 
         // Used to calculate number of threads
         private int availableProcessors;
@@ -121,6 +124,7 @@ public record OnnxEvaluatorOptions(
             numModelInstances = Optional.empty();
             modelConfigOverride = Optional.empty();
             padding = Optional.empty();
+            runtimePooling = Optional.empty();
 
             this.availableProcessors = availableProcessors;
         }
@@ -136,6 +140,7 @@ public record OnnxEvaluatorOptions(
             this.numModelInstances = options.numModelInstances();
             this.modelConfigOverride = options.modelConfigOverride;
             this.padding = options.padding();
+            this.runtimePooling = options.runtimePooling();
             this.availableProcessors = options.availableProcessors();
         }
 
@@ -231,6 +236,11 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
+        public Builder setRuntimePooling(Optional<OnnxPoolingOptions> runtimePooling) {
+            this.runtimePooling = runtimePooling;
+            return this;
+        }
+
         public OnnxEvaluatorOptions build() {
             return new OnnxEvaluatorOptions(
                     executionMode,
@@ -243,6 +253,7 @@ public record OnnxEvaluatorOptions(
                     numModelInstances,
                     modelConfigOverride,
                     padding,
+                    runtimePooling,
                     availableProcessors
             );
         }
@@ -295,5 +306,13 @@ public record OnnxEvaluatorOptions(
 
     private OnnxEvaluatorOptions withPadding(UnaryOperator<OnnxPadderOptions> operator) {
         return padding.isEmpty() ? this : new Builder(this).setPadding(padding.map(operator)).build();
+    }
+
+    public OnnxEvaluatorOptions withRuntimePooling(OnnxPoolingOptions pooling) {
+        return new Builder(this).setRuntimePooling(Optional.of(pooling)).build();
+    }
+
+    public OnnxEvaluatorOptions withoutRuntimePooling() {
+        return runtimePooling.isEmpty() ? this : new Builder(this).setRuntimePooling(Optional.empty()).build();
     }
 }

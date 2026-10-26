@@ -87,15 +87,19 @@ public class OnnxEvaluatorOptionsTest {
         assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
                 options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
                 options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
-                options.batchingMaxSize(), null, options.modelConfigOverride(), options.padding(), options.availableProcessors()));
+                options.batchingMaxSize(), options.numModelInstances(), options.modelConfigOverride(), options.padding(), null, options.availableProcessors()));
         assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
                 options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
                 options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
-                options.batchingMaxSize(), options.numModelInstances(), null, options.padding(), options.availableProcessors()));
+                options.batchingMaxSize(), null, options.modelConfigOverride(), options.padding(), options.runtimePooling(), options.availableProcessors()));
         assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
                 options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
                 options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
-                options.batchingMaxSize(), options.numModelInstances(), options.modelConfigOverride(), null, options.availableProcessors()));
+                options.batchingMaxSize(), options.numModelInstances(), null, options.padding(), options.runtimePooling(), options.availableProcessors()));
+        assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
+                options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
+                options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
+                options.batchingMaxSize(), options.numModelInstances(), options.modelConfigOverride(), null, options.runtimePooling(), options.availableProcessors()));
     }
 
     @Test

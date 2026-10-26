@@ -2,6 +2,7 @@
 package ai.vespa.triton;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import ai.vespa.modelintegration.evaluator.OnnxPoolingOptions;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -9,6 +10,7 @@ import com.yahoo.tensor.TensorType;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,6 +27,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     private final ResourceReference modelReference;
     private final TritonOnnxClient tritonClient;
     private final boolean isExplicitControl;
+    private final Optional<OnnxPoolingOptions> runtimePooling;
 
     private TritonOnnxClient.ModelMetadata modelMetadata;
 
@@ -32,12 +35,25 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
             String modelName,
             ResourceReference modelReference,
             TritonOnnxClient tritonClient,
-            boolean isExplicitControl) {
+            boolean isExplicitControl,
+            Optional<OnnxPoolingOptions> runtimePooling) {
         this.modelName = modelName;
         this.modelReference = modelReference;
         this.tritonClient = tritonClient;
         this.isExplicitControl = isExplicitControl;
+        this.runtimePooling = runtimePooling;
         modelMetadata = tritonClient.getModelMetadata(modelName);
+        runtimePooling.ifPresent(this::requirePooled);
+    }
+
+    // A backend without pooling support ignores the pooling parameters and loads the model as is.
+    private void requirePooled(OnnxPoolingOptions pooling) {
+        var type = modelMetadata.outputs.get(pooling.outputName());
+        if (type == null || type.dimensions().size() == 2) return; // A missing output is reported by the caller
+        throw new IllegalArgumentException("Triton did not pool output '" + pooling.outputName() + "' of model " + modelName +
+                                           ": got type " + type + " instead of [batch, embedding]. " +
+                                           "The Triton image does not support pooling. Disable triton-onnx-pooling, " +
+                                           "or use an image whose ONNX Runtime backend supports it.");
     }
 
     @Override
@@ -86,6 +102,11 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     @Override
     public Map<String, TensorType> getOutputInfo() {
         return modelMetadata.outputs;
+    }
+
+    @Override
+    public Optional<OnnxPoolingOptions> runtimePooling() {
+        return runtimePooling;
     }
 
     @Override

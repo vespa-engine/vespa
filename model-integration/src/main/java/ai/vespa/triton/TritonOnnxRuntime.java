@@ -4,6 +4,7 @@ package ai.vespa.triton;
 import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.OnnxPoolingOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.modelintegration.evaluator.OnnxPadder;
 import ai.vespa.modelintegration.evaluator.OnnxStreamParser;
@@ -34,6 +35,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,9 +58,13 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     private static final Logger log = Logger.getLogger(TritonOnnxRuntime.class.getName());
     private static final String MODEL_FILE_NAME = "model.onnx";
 
+    // The attention mask input Triton pools with unless the config names another.
+    private static final String DEFAULT_POOLING_ATTENTION_MASK = "attention_mask";
+
     private final TritonOnnxClient tritonClient;
     private final boolean isModelControlExplicit;
     private final boolean shareSessionBetweenInstances;
+    private final boolean runtimePoolingEnabled;
     private final Path modelRepositoryPath;
 
     // The key is a model name containing hash of model content and options.
@@ -84,8 +92,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
         isModelControlExplicit = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
         shareSessionBetweenInstances = config.shareOnnxSessionBetweenInstances();
+        runtimePoolingEnabled = config.onnxPooling();
         log.info("Creating Triton ONNX runtime with session sharing between model instances "
-                 + (shareSessionBetweenInstances ? "enabled" : "disabled"));
+                 + (shareSessionBetweenInstances ? "enabled" : "disabled")
+                 + " and runtime pooling " + (runtimePoolingEnabled ? "enabled" : "disabled"));
         modelRepositoryPath = Path.of(Defaults.getDefaults().underVespaHome(config.modelRepositoryPath()));
 
         if (isModelControlExplicit) {
@@ -101,16 +111,19 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
         // Options are used as-is when this runtime does not generate the model config from them:
         // a supplied config override owns its instance configuration, and the other model control modes
-        // leave loading to Triton.
-        var resolvedOptions = isModelControlExplicit && options.modelConfigOverride().isEmpty()
-                ? resolveInstanceCount(options, shareSessionBetweenInstances)
-                : options;
-        var modelName = generateModelName(modelPath, resolvedOptions, shareSessionBetweenInstances);
-        var modelReference = referenceModel(modelName, modelPath, resolvedOptions);
+        // leave loading to Triton. Likewise, the pooling the options ask for applies only to a generated config.
+        var generatesConfig = isModelControlExplicit && options.modelConfigOverride().isEmpty();
+        var resolvedOptions = generatesConfig ? resolveInstanceCount(options, shareSessionBetweenInstances) : options;
+        var pooling = runtimePoolingEnabled && generatesConfig ? options.runtimePooling() : Optional.<OnnxPoolingOptions>empty();
+        if (runtimePoolingEnabled && ! generatesConfig && options.runtimePooling().isPresent())
+            log.info("Not pooling " + modelPath + " in Triton: " +
+                     (options.modelConfigOverride().isPresent() ? "it has a model config override" : "the model control mode is not EXPLICIT"));
+        var modelName = generateModelName(modelPath, resolvedOptions, shareSessionBetweenInstances, pooling);
+        var modelReference = referenceModel(modelName, modelPath, resolvedOptions, pooling);
 
         try {
-            OnnxEvaluator evaluator = new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit);
-            
+            OnnxEvaluator evaluator = new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit, pooling);
+
             if (options.padding().isPresent() && shouldPadForBatching(modelPath, resolvedOptions))
                 evaluator = OnnxPadder.of(options.padding().get(), evaluator, modelName);
 
@@ -134,9 +147,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     // Returns a reference to the model, first copying and loading it into Triton if needed.
     // The map's per-key compute serializes this with a concurrent release of the same model.
-    private ResourceReference referenceModel(String modelName, String modelPath, OnnxEvaluatorOptions options) {
+    private ResourceReference referenceModel(
+            String modelName, String modelPath, OnnxEvaluatorOptions options, Optional<OnnxPoolingOptions> pooling) {
         modelResources.compute(modelName, (key, modelResource) -> {
-            ensureModelReady(modelName, modelPath, options);
+            ensureModelReady(modelName, modelPath, options, pooling);
 
             if (modelResource == null) {
                 modelResource = new TritonModelResource();
@@ -181,7 +195,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     // Uses an already-ready model, or copies the model into the repository and loads it into Triton.
     // A load failure only fails the reconfiguration requesting this model; cleanup is best effort.
-    private void ensureModelReady(String modelName, String modelPath, OnnxEvaluatorOptions options) {
+    private void ensureModelReady(
+            String modelName, String modelPath, OnnxEvaluatorOptions options, Optional<OnnxPoolingOptions> pooling) {
         if (!isModelControlExplicit) {
             return;
         }
@@ -195,7 +210,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         }
 
         try {
-            var modelConfig = createModelConfig(modelName, options);
+            var modelConfig = createModelConfig(modelName, options, pooling);
             copyModelFilesToModelRepository(modelName, modelPath, modelConfig);
             tritonClient.loadUntilModelReady(modelName);
         } catch (RuntimeException e) {
@@ -235,19 +250,21 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     }
 
     // Hashes the supplied options without resolving defaults.
-    static String generateModelName(String modelPath, OnnxEvaluatorOptions options, boolean shareSession) {
+    static String generateModelName(
+            String modelPath, OnnxEvaluatorOptions options, boolean shareSession, Optional<OnnxPoolingOptions> pooling) {
         var fileName = Paths.get(modelPath).getFileName().toString();
         var extensionIndex = fileName.lastIndexOf('.');
         var baseName = extensionIndex < 0 ? fileName : fileName.substring(0, extensionIndex);
         var modelHash = ModelPathOrData.of(modelPath).calculateHash();
         var optionsHash = hashOptions(options);
-        // Hash a fixed-width encoding of the model contents, options, and session-sharing setting.
-        var identity = ByteBuffer.allocate(2 * Long.BYTES + Byte.BYTES)
+        // Hash a fixed-width encoding of the model contents, options, session-sharing setting and pooling.
+        // Without pooling, the encoding does not change, so existing model names stay the same.
+        var identity = ByteBuffer.allocate(2 * Long.BYTES + Byte.BYTES + (pooling.isPresent() ? Long.BYTES : 0))
                 .putLong(modelHash)
                 .putLong(optionsHash)
-                .put((byte) (shareSession ? 1 : 0))
-                .array();
-        var combinedHash = XXHashFactory.fastestInstance().hash64().hash(identity, 0, identity.length, 0);
+                .put((byte) (shareSession ? 1 : 0));
+        pooling.ifPresent(p -> identity.putLong(hash(poolingIdentity(p).getBytes(StandardCharsets.UTF_8))));
+        var combinedHash = hash(identity.array());
         return baseName + "_" + Long.toHexString(combinedHash); // add hash to avoid conflicts
     }
 
@@ -265,8 +282,21 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                        ", numModelInstances=" + options.numModelInstances() +
                        ", modelConfigOverride=" + options.modelConfigOverride() +
                        ", availableProcessors=" + options.availableProcessors() + "]";
-        var bytes = encoding.getBytes(StandardCharsets.UTF_8);
+        return hash(encoding.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static long hash(byte[] bytes) {
         return XXHashFactory.fastestInstance().hash64().hash(bytes, 0, bytes.length, 0);
+    }
+
+    // Returns the pooling parameters as the model config gets them. Embedders whose pooling differs only
+    // in what the config leaves out, like the attention mask with CLS pooling, then share one model.
+    static String poolingIdentity(OnnxPoolingOptions pooling) {
+        var builder = ModelConfig.newBuilder();
+        addPoolingParameters(builder, pooling);
+        return new TreeMap<>(builder.getParametersMap()).entrySet().stream()
+                .map(entry -> entry.getKey() + "=" + entry.getValue().getStringValue())
+                .collect(Collectors.joining(","));
     }
 
     private Path getModelDirInModelRepository(String modelName) {
@@ -338,15 +368,16 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         Files.setPosixFilePermissions(path, modelPerms);
     }
 
-    private String createModelConfig(String modelName, OnnxEvaluatorOptions options) {
+    private String createModelConfig(String modelName, OnnxEvaluatorOptions options, Optional<OnnxPoolingOptions> pooling) {
         return options.modelConfigOverride()
                 .map(path -> createModelConfigFromFile(path, modelName))
-                .orElseGet(() -> createModelConfigFromOptions(modelName, options))
+                .orElseGet(() -> createModelConfigFromOptions(modelName, options, pooling))
                 .toString();
     }
 
     // Takes options with a resolved instance count, see resolveInstanceCount().
-    private String createModelConfigFromOptions(String modelName, OnnxEvaluatorOptions options) {
+    private String createModelConfigFromOptions(
+            String modelName, OnnxEvaluatorOptions options, Optional<OnnxPoolingOptions> pooling) {
         // Each model instance in Triton executes requests sequentially. Concurrency comes from the number of instances.
         // This is different from EmbeddedOnnxRuntime, where one session handles all requests.
         // With a shared session, the thread counts match EmbeddedOnnxRuntime.createSessionOptions().
@@ -387,6 +418,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                                 .build());
 
         addSessionSharingParameter(configBuilder);
+        pooling.ifPresent(p -> addPoolingParameters(configBuilder, p));
 
         if (options.batchingMaxSize() > 1) {
             configBuilder.setDynamicBatching(ModelDynamicBatching.newBuilder().build());
@@ -442,6 +474,30 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 ModelParameter.newBuilder()
                         .setStringValue("true")
                         .build());
+    }
+
+    // Triton replaces the output with the pooled embeddings. The caller normalizes, since it may truncate
+    // the embeddings first. The parameters require an ONNX Runtime backend that supports pooling.
+    static void addPoolingParameters(ModelConfig.Builder configBuilder, OnnxPoolingOptions pooling) {
+        configBuilder
+                .putParameters(
+                        "pooling_strategy",
+                        ModelParameter.newBuilder()
+                                .setStringValue(pooling.strategy().configName())
+                                .build())
+                .putParameters(
+                        "pooling_output",
+                        ModelParameter.newBuilder()
+                                .setStringValue(pooling.outputName())
+                                .build());
+
+        // Without the parameter, Triton uses the default attention mask input if the model has it.
+        // Otherwise it attends to all tokens, like the embedders do for a model without a mask input.
+        // A named mask input the model lacks fails the model load.
+        if (pooling.strategy() == OnnxPoolingOptions.Strategy.CLS || pooling.attentionMaskName().equals(DEFAULT_POOLING_ATTENTION_MASK)) return;
+        configBuilder.putParameters(
+                "pooling_attention_mask",
+                ModelParameter.newBuilder().setStringValue(pooling.attentionMaskName()).build());
     }
 
     private String createModelConfigFromFile(Path configPath, String modelName) {

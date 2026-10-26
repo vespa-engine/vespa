@@ -3,8 +3,11 @@ package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.OnnxPoolingOptions;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.google.protobuf.TextFormat;
+import com.yahoo.jdisc.ResourceReference;
+import com.yahoo.tensor.TensorType;
 import inference.ModelConfigOuterClass.ModelConfig;
 import inference.ModelConfigOuterClass.ModelInstanceGroup.Kind;
 import onnx.Onnx;
@@ -18,7 +21,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 import static ai.vespa.triton.TritonOnnxRuntime.intraOpThreadsForSeparateSessions;
 import static ai.vespa.triton.TritonOnnxRuntime.resolveInstanceCount;
@@ -33,7 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -131,7 +138,7 @@ class TritonOnnxRuntimeDefaultsTest {
 
     private static String modelName(OnnxEvaluatorOptions options, boolean shareSession) {
         var resolvedOptions = resolveInstanceCount(options, shareSession);
-        return TritonOnnxRuntime.generateModelName(MODEL_PATH, resolvedOptions, shareSession);
+        return TritonOnnxRuntime.generateModelName(MODEL_PATH, resolvedOptions, shareSession, Optional.empty());
     }
 
     @Test
@@ -142,12 +149,16 @@ class TritonOnnxRuntimeDefaultsTest {
 
         // A fixed expected name detects changes in hashing or encoding across runs.
         assertEquals("model_98ad6a1dc766eee5",
-                     TritonOnnxRuntime.generateModelName(model.toString(), options, SHARED_SESSION));
+                     TritonOnnxRuntime.generateModelName(model.toString(), options, SHARED_SESSION, Optional.empty()));
+
+        // The pooling parameters are part of the name, in their own encoding.
+        assertEquals("model_614d5bfbd056302f",
+                     TritonOnnxRuntime.generateModelName(model.toString(), options, SHARED_SESSION, Optional.of(MEAN_POOLING)));
 
         // A model file without an extension keeps its whole name.
         var modelWithoutExtension = Files.writeString(directory.resolve("model"), "model contents");
         assertEquals("model_98ad6a1dc766eee5",
-                     TritonOnnxRuntime.generateModelName(modelWithoutExtension.toString(), options, SHARED_SESSION));
+                     TritonOnnxRuntime.generateModelName(modelWithoutExtension.toString(), options, SHARED_SESSION, Optional.empty()));
     }
 
     @Test
@@ -155,11 +166,11 @@ class TritonOnnxRuntimeDefaultsTest {
         for (var options : List.of(options(8).build(), options(8).setGpuDevice(0).build())) {
             for (boolean shareSession : List.of(SEPARATE_SESSIONS, SHARED_SESSION)) {
                 var name = assertDoesNotThrow(() ->
-                        TritonOnnxRuntime.generateModelName(MODEL_PATH, options, shareSession));
-                assertEquals(name, TritonOnnxRuntime.generateModelName(MODEL_PATH, options, shareSession));
+                        TritonOnnxRuntime.generateModelName(MODEL_PATH, options, shareSession, Optional.empty()));
+                assertEquals(name, TritonOnnxRuntime.generateModelName(MODEL_PATH, options, shareSession, Optional.empty()));
                 var defaultCount = TritonOnnxRuntime.defaultNumModelInstances(options, shareSession);
                 assertNotEquals(name, TritonOnnxRuntime.generateModelName(
-                        MODEL_PATH, options.withNumModelInstances(defaultCount), shareSession));
+                        MODEL_PATH, options.withNumModelInstances(defaultCount), shareSession, Optional.empty()));
             }
         }
     }
@@ -169,13 +180,13 @@ class TritonOnnxRuntimeDefaultsTest {
         var model = Files.writeString(directory.resolve("model.onnx"), "model contents");
         var options = options(8).build().withNumModelInstances(1);
         var originalName = TritonOnnxRuntime.generateModelName(model.toString(), options,
-                                                               SEPARATE_SESSIONS);
+                                                               SEPARATE_SESSIONS, Optional.empty());
 
         Files.writeString(model, "updated model contents");
 
         assertNotEquals(originalName,
                         TritonOnnxRuntime.generateModelName(model.toString(), options,
-                                                            SEPARATE_SESSIONS));
+                                                            SEPARATE_SESSIONS, Optional.empty()));
     }
 
     @Test
@@ -248,7 +259,7 @@ class TritonOnnxRuntimeDefaultsTest {
                 var config = Files.writeString(directory.resolve("override.pbtxt"),
                         "platform: \"onnxruntime_onnx\"\ninstance_group { " + group + " }");
                 var options = options(8).setGpuDevice(2).setModelConfigOverride(Optional.of(config)).build();
-                var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, true);
+                var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, true, Optional.empty());
                 try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options)) {
                     var generated = TextFormat.parse(Files.readString(
                             directory.resolve("repository").resolve(name).resolve("config.pbtxt")), ModelConfig.class);
@@ -355,7 +366,7 @@ class TritonOnnxRuntimeDefaultsTest {
                 var client = mock(TritonOnnxClient.class);
                 var runtime = new TritonOnnxRuntime(new TritonConfig.Builder().modelControlMode(mode)
                         .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), client);
-                var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, true);
+                var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, true, Optional.empty());
                 try {
                     runtime.evaluatorOf(MODEL_PATH, options).close();
                     verify(client).getModelMetadata(name);
@@ -371,5 +382,142 @@ class TritonOnnxRuntimeDefaultsTest {
                 }
             }
         }
+    }
+
+    private static final OnnxPoolingOptions MEAN_POOLING =
+            new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "last_hidden_state", "attention_mask");
+
+    @Test
+    void model_name_depends_on_pooling() {
+        var options = options(8).build().withNumModelInstances(1);
+        var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, SHARED_SESSION, Optional.empty());
+
+        var meanName = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, SHARED_SESSION, Optional.of(MEAN_POOLING));
+        var clsName = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, SHARED_SESSION, Optional.of(
+                new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.CLS, "last_hidden_state", "attention_mask")));
+        assertNotEquals(name, meanName);
+        assertNotEquals(meanName, clsName);
+    }
+
+    @Test
+    void model_name_depends_only_on_the_pooling_parameters_the_config_gets() {
+        var options = options(8).build().withNumModelInstances(1);
+        // The config leaves out the mask input for CLS and for the default name, so the mask does not tell models apart.
+        assertEquals(modelName(options, OnnxPoolingOptions.Strategy.CLS, "attention_mask"),
+                     modelName(options, OnnxPoolingOptions.Strategy.CLS, "mask"));
+        assertNotEquals(modelName(options, OnnxPoolingOptions.Strategy.MEAN, "attention_mask"),
+                        modelName(options, OnnxPoolingOptions.Strategy.MEAN, "mask"));
+        assertEquals("pooling_output=last_hidden_state,pooling_strategy=cls",
+                     TritonOnnxRuntime.poolingIdentity(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.CLS, "last_hidden_state", "mask")));
+    }
+
+    private static String modelName(OnnxEvaluatorOptions options, OnnxPoolingOptions.Strategy strategy, String mask) {
+        return TritonOnnxRuntime.generateModelName(MODEL_PATH, options, SHARED_SESSION,
+                                                    Optional.of(new OnnxPoolingOptions(strategy, "last_hidden_state", mask)));
+    }
+
+    @Test
+    void enabled_pooling_adds_parameters_to_generated_config(@TempDir Path directory) throws IOException {
+        var repository = directory.resolve("repository");
+        var client = mock(TritonOnnxClient.class);
+        when(client.getModelMetadata(any())).thenReturn(pooledMetadata());
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                .modelRepositoryPath(repository.toString()).onnxPooling(true).build(), client);
+        var options = options(8).build();
+        try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options.withRuntimePooling(MEAN_POOLING))) {
+            assertEquals(Optional.of(MEAN_POOLING), evaluator.runtimePooling());
+            var name = TritonOnnxRuntime.generateModelName(
+                    MODEL_PATH, resolveInstanceCount(options, SEPARATE_SESSIONS), SEPARATE_SESSIONS, Optional.of(MEAN_POOLING));
+            var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
+            // The config leaves the default mask input to Triton, which also handles a model without it.
+            assertEquals(Map.of("pooling_strategy", "mean", "pooling_output", "last_hidden_state"),
+                         poolingParameters(config));
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    /** The metadata of a model whose output Triton pooled to [batch, embedding] */
+    private static TritonOnnxClient.ModelMetadata pooledMetadata() {
+        var tokens = TensorType.fromSpec("tensor<float>(d0[],d1[])");
+        return new TritonOnnxClient.ModelMetadata(Map.of("input_ids", tokens, "attention_mask", tokens),
+                                                  Map.of("last_hidden_state", TensorType.fromSpec("tensor<float>(d0[],d1[4])")));
+    }
+
+    @Test
+    void evaluator_fails_when_triton_did_not_pool() {
+        var client = mock(TritonOnnxClient.class);
+        var tokenEmbeddings = TensorType.fromSpec("tensor<float>(d0[],d1[],d2[4])");
+        when(client.getModelMetadata(any())).thenReturn(new TritonOnnxClient.ModelMetadata(Map.of(), Map.of("last_hidden_state", tokenEmbeddings)));
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, true, Optional.of(MEAN_POOLING)));
+        assertEquals("Triton did not pool output 'last_hidden_state' of model model_1: got type " + tokenEmbeddings +
+                     " instead of [batch, embedding]. The Triton image does not support pooling. " +
+                     "Disable triton-onnx-pooling, or use an image whose ONNX Runtime backend supports it.",
+                     exception.getMessage());
+        // A missing output is left to the caller, which reports it
+        assertDoesNotThrow(() -> new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, true,
+                                                         Optional.of(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "no_such_output", "attention_mask"))));
+    }
+
+    @Test
+    void pooling_parameters_name_only_a_non_default_mask_used_by_the_strategy() {
+        assertEquals(Map.of("pooling_strategy", "mean", "pooling_output", "token_embeddings",
+                            "pooling_attention_mask", "mask"),
+                     poolingParameters(OnnxPoolingOptions.Strategy.MEAN, "token_embeddings", "mask"));
+        assertEquals(Map.of("pooling_strategy", "last", "pooling_output", "last_hidden_state",
+                            "pooling_attention_mask", "mask"),
+                     poolingParameters(OnnxPoolingOptions.Strategy.LAST, "last_hidden_state", "mask"));
+        assertEquals(Map.of("pooling_strategy", "last", "pooling_output", "last_hidden_state"),
+                     poolingParameters(OnnxPoolingOptions.Strategy.LAST, "last_hidden_state", "attention_mask"));
+        // CLS pooling does not use the mask.
+        assertEquals(Map.of("pooling_strategy", "cls", "pooling_output", "last_hidden_state"),
+                     poolingParameters(OnnxPoolingOptions.Strategy.CLS, "last_hidden_state", "mask"));
+    }
+
+    private static Map<String, String> poolingParameters(OnnxPoolingOptions.Strategy strategy, String output, String mask) {
+        var builder = ModelConfig.newBuilder();
+        TritonOnnxRuntime.addPoolingParameters(builder, new OnnxPoolingOptions(strategy, output, mask));
+        return poolingParameters(builder.build());
+    }
+
+    @Test
+    void pooling_is_ignored_when_disabled_or_config_is_not_generated(@TempDir Path directory) throws IOException {
+        var repository = directory.resolve("repository");
+        var override = Files.writeString(directory.resolve("override.pbtxt"), "platform: \"onnxruntime_onnx\"");
+        for (var enabled : List.of(false, true)) {
+            for (var options : List.of(options(8).build(), options(8).setModelConfigOverride(Optional.of(override)).build())) {
+                if (enabled && options.modelConfigOverride().isEmpty()) continue; // the case where pooling applies
+                var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                        .modelRepositoryPath(repository.toString()).onnxPooling(enabled).build(), mock(TritonOnnxClient.class));
+                try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options.withRuntimePooling(MEAN_POOLING))) {
+                    assertTrue(evaluator.runtimePooling().isEmpty());
+                    var resolved = options.modelConfigOverride().isPresent()
+                            ? options : resolveInstanceCount(options, SEPARATE_SESSIONS);
+                    var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, resolved, SEPARATE_SESSIONS, Optional.empty());
+                    var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
+                    assertEquals(Map.of(), poolingParameters(config));
+                } finally {
+                    runtime.deconstruct();
+                }
+            }
+        }
+        for (var mode : List.of(TritonConfig.ModelControlMode.NONE, TritonConfig.ModelControlMode.POLL)) {
+            var runtime = new TritonOnnxRuntime(new TritonConfig.Builder().modelControlMode(mode)
+                    .modelRepositoryPath(repository.toString()).onnxPooling(true).build(), mock(TritonOnnxClient.class));
+            try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options(8).build().withRuntimePooling(MEAN_POOLING))) {
+                assertTrue(evaluator.runtimePooling().isEmpty());
+            } finally {
+                runtime.deconstruct();
+            }
+        }
+    }
+
+    private static Map<String, String> poolingParameters(ModelConfig config) {
+        var result = new TreeMap<String, String>();
+        config.getParametersMap().forEach((key, value) -> {
+            if (key.startsWith("pooling_")) result.put(key, value.getStringValue());
+        });
+        return result;
     }
 }
