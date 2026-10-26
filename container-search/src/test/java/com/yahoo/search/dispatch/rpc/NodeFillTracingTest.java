@@ -211,9 +211,9 @@ class NodeFillTracingTest {
         var result = resultWithHitsOn(0, 0);
         result.getQuery().properties().set(Dispatcher.docsumBlowupFactor, 0.5);
 
-        // The skipped hit limit is min(10, 0.5 * numHitsToFill + 1) = 2, and two skipped hits is not < 2. The work
-        // limit is 0.5 * numHitsToFill = 1.0, and (two skipped hits - 1) times one alternative node is not < 1.0.
-        // Both limits decline, so Vespa gives up - those docsums are lost for this query.
+        // The work limit is 0.5 * numHitsToFill = 1.0. Each skipped hit has one alternative node, so the retry work
+        // beyond the costliest hit is 2 - 1 = 1, which is not < 1.0. The retry is declined, so Vespa gives up -
+        // those docsums are lost for this query.
         SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
         RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWith(emptyDocsumsFor(2)),
                                                             1, replyingWith(emptyDocsumsFor(2))));
@@ -229,12 +229,12 @@ class NodeFillTracingTest {
     }
 
     @Test
-    void a_retry_within_the_blowup_limit_is_sent_even_if_the_skipped_hit_limit_declines() throws Exception {
+    void a_single_skipped_hit_is_retried_even_with_docsum_retry_limit_0() throws Exception {
         var result = resultWithHitsOn(0);
         result.getQuery().properties().set(Dispatcher.docsumRetryLimit, 0);
 
-        // The skipped hit limit of 0 declines, but (one skipped hit - 1) times one alternative node is 0,
-        // which is within the default work limit, so the hit is still retried.
+        // docsumRetryLimit is no longer used, so setting it to 0 does not stop retries. Only the work limit
+        // applies, and the retry work beyond the costliest hit is 1 - 1 = 0, which is within the default limit.
         SpanRecorder recorder = SpanRecorder.underParentSpan("cluster.fill");
         RpcProtobufFillInvoker invoker = invokerOver(Map.of(0, replyingWith(emptyDocsumsFor(1)),
                                                             1, replyingWith(emptyDocsumsFor(1))));
