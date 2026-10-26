@@ -667,7 +667,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
      * Returns whether cluster state versions received by content nodes must be strictly increasing.
      * This safety check can only be relaxed when this deployment has exactly one cluster controller
      * configured OR the {@code require-strictly-increasing-cluster-state-versions}
-     * feature flag is enabled.
+     * feature flag is disabled.
      */
     public boolean requireStrictlyIncreasingClusterStateVersions() {
         if (singleClusterController) {
