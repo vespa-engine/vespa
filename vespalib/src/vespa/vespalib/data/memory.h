@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <ostream>
+#include <span>
 #include <string>
 
 namespace vespalib {
