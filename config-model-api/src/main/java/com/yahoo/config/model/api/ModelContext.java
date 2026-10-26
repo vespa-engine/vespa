@@ -140,7 +140,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"johsol"}, unusedSince = "8.740") default boolean protonLogWarningOnDiskCapacityChange() { return true; }
         @ModelFeatureFlag(owners = {"johsol"}, unusedSince = "8.740") default boolean protonResampleDiskCapacity() { return true; }
         @ModelFeatureFlag(owners = {"johsol", "boeker", "arnej"}, unusedSince = "8.778") default boolean fastMapSearch() { return true; }
-        @ModelFeatureFlag(owners = {"hmusum"}, unusedSince = "8.755") default boolean relaxStrictlyIncreasingClusterStateVersions() { return true; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean requireStrictlyIncreasingClusterStateVersions() { return true; }
         // TODO (@sebasabe): Remove when no loaded config model version reads it; productDiscovery() replaces it
         @ModelFeatureFlag(owners = {"sebasabe"}) default boolean commerceDiscovery() { return false; }
         @ModelFeatureFlag(owners = {"hmusum", "vekterli"}) default boolean enableLandlock() { return false; }
