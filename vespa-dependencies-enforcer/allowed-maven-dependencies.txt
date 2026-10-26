@@ -40,9 +40,10 @@ com.networknt:json-schema-validator:2.0.0
 com.openai:openai-java-client-okhttp:${openai-java.vespa.version}
 com.openai:openai-java-core:${openai-java.vespa.version}
 com.openai:openai-java:${openai-java.vespa.version}
+com.squareup.okhttp3:logging-interceptor:${okhttp.vespa.version}
 com.squareup.okhttp3:logging-interceptor:4.12.0
 com.squareup.okhttp3:mockwebserver:${okhttp.vespa.version}
-com.squareup.okhttp3:okhttp:4.12.0
+com.squareup.okhttp3:okhttp:${okhttp.vespa.version}
 com.squareup.okio:okio-jvm:3.6.0
 com.squareup.okio:okio:3.6.0
 com.sun.activation:javax.activation:${sun.javax.activation.vespa.version}

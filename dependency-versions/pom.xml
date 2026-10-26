@@ -133,7 +133,7 @@
         <mojo-executor.vespa.version>2.4.1</mojo-executor.vespa.version>
         <netty.vespa.version>4.2.19.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.84.Final</netty-tcnative.vespa.version>
-        <okhttp.vespa.version>4.12.0</okhttp.vespa.version>
+        <okhttp.vespa.version>4.12.1</okhttp.vespa.version>
         <onnxruntime.vespa.version>1.31.0</onnxruntime.vespa.version>
         <openai-java.vespa.version>1.6.1</openai-java.vespa.version>
         <opentelemetry.vespa.version>1.66.0</opentelemetry.vespa.version>
