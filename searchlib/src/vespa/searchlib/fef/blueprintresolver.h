@@ -40,9 +40,9 @@ public:
         uint32_t                  output;
         static constexpr uint32_t undef = -1;
 
-        FeatureRef() : executor(undef), output(0) {}
-        FeatureRef(uint32_t executor_in, uint32_t output_in) : executor(executor_in), output(output_in) {}
-        [[nodiscard]] bool valid() const { return (executor != undef); }
+        FeatureRef() noexcept : executor(undef), output(0) {}
+        FeatureRef(uint32_t executor_in, uint32_t output_in) noexcept : executor(executor_in), output(output_in) {}
+        [[nodiscard]] bool valid() const noexcept { return (executor != undef); }
     };
     using FeatureMap = std::map<std::string, FeatureRef>;
 
@@ -101,7 +101,7 @@ public:
      * @param factory blueprint factory
      * @param indexEnv index environment
      **/
-    BlueprintResolver(const BlueprintFactory& factory, const IIndexEnvironment& indexEnv);
+    BlueprintResolver(const BlueprintFactory& factory, const IIndexEnvironment& indexEnv) noexcept;
 
     // Describe a feature based on its name (intended for log messages)
     //

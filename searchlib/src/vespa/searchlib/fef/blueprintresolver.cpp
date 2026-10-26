@@ -250,7 +250,7 @@ BlueprintResolver::ExecutorSpec::ExecutorSpec(const ExecutorSpec&) = default;
 BlueprintResolver::ExecutorSpec::~ExecutorSpec() = default;
 BlueprintResolver::~BlueprintResolver() = default;
 
-BlueprintResolver::BlueprintResolver(const BlueprintFactory& factory, const IIndexEnvironment& indexEnv)
+BlueprintResolver::BlueprintResolver(const BlueprintFactory& factory, const IIndexEnvironment& indexEnv) noexcept
     : _factory(factory), _indexEnv(indexEnv), _seeds(), _executorSpecs(), _featureMap(), _seedMap(), _warnings() {
 }
 
