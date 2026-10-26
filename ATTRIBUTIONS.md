@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-10-22
+Last updated: 2026-10-26
 
 ---
 
@@ -938,9 +938,10 @@ Last updated: 2026-10-22
 
 ---
 
-## org.apache.maven.plugin-tools 3.15.2 — Apache 2.0
+## org.apache.maven.plugin-tools 3.16.0 — Apache 2.0
 
 - Homepage: <https://maven.apache.org/plugin-tools>
+- Copyright 2004-2026 The Apache Software Foundation
 - The Apache Software Foundation
 
 ---
@@ -1046,7 +1047,7 @@ Last updated: 2026-10-22
 
 ---
 
-## org.ow2.asm 9.11 — BSD 3
+## org.ow2.asm 9.11.1 — BSD 3
 
 - Homepage: <http://www.ow2.org/>
 - Copyright 2000-2011 INRIA
@@ -1071,13 +1072,6 @@ Last updated: 2026-10-22
 
 - Homepage: <https://mojo-executor.github.io/mojo-executor/>
 - Copyright 2008-2013 Don Brown
-
----
-
-## org.vafer 2.10 — Apache 2.0
-
-- Homepage: <http://github.com/tcurdt/jdependency>
-- Copyright 2010-2023 Copyright
 
 ---
 
@@ -1352,19 +1346,19 @@ Last updated: 2026-10-22
 
 ---
 
-## unist-util-visit 5.1.0 — MIT
+## unist-util-visit 5.2.0 — MIT
 
 - Homepage: <https://github.com/syntax-tree/unist-util-visit#readme>
 - Copyright Titus Wormer
-- Copyright 2015 Titus Wormer <tituswormer@gmail.com>
+- Copyright Titus Wormer <tituswormer@gmail.com>
 
 ---
 
-## unist-util-visit-parents 6.0.2 — MIT
+## unist-util-visit-parents 6.1.0 — MIT
 
 - Homepage: <https://github.com/syntax-tree/unist-util-visit-parents#readme>
 - Copyright Titus Wormer
-- Copyright 2016 Titus Wormer <tituswormer@gmail.com>
+- Copyright Titus Wormer <tituswormer@gmail.com>
 
 ---
 
