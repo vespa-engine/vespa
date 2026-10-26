@@ -61,7 +61,7 @@ Hint: Pass --add-cert to use the certificate of the current application
 	warning := apiKeyWarning + "Warning: Application package does not contain security/clients.pem, which is required for deployments to Vespa Cloud\n"
 	assert.Equal(t, warning+strings.Repeat("Error: please answer 'y' or 'n'\n", 3)+certError, stderr.String())
 	buf.WriteString("y\n")
-	require.Nil(t, cli.Run("deploy", "--add-cert=false", "--wait=0", pkgDir2))
+	require.Nil(t, cli.Run("deploy", "--progress=false", "--add-cert=false", "--wait=0", pkgDir2))
 	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
 
 	// Missing application certificate is detected
@@ -407,7 +407,6 @@ func TestDeployCloudProgress(t *testing.T) {
 	cli.httpClient = client
 	require.NoError(t, cli.Run("config", "set", "application", "t1.a1.i1"))
 	require.NoError(t, cli.Run("config", "set", "target", "cloud"))
-	require.NoError(t, cli.Run("config", "set", "progress", "true"))
 	require.NoError(t, cli.Run("auth", "api-key"))
 	require.NoError(t, cli.Run("auth", "cert", pkgDir))
 	cli.isTerminal = func() bool { return true }
@@ -426,7 +425,7 @@ func TestDeployCloudProgress(t *testing.T) {
 	assert.True(t, client.Consumed())
 	assert.Nil(t, cli.progress)
 
-	// Explicitly opting out restores legacy output even with the saved setting enabled.
+	// Explicitly opting out restores plain output.
 	stdout.Reset()
 	stderr.Reset()
 	client.NextResponseString(200, `{"run":43}`)

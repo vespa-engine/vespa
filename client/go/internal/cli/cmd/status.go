@@ -149,10 +149,6 @@ func newStatusDeploymentCmd(cli *CLI) *cobra.Command {
 		Short: "Show status of a Vespa deployment",
 		Long: `Show status of a Vespa deployment.
 
-Set 'vespa config set --global progress true' to show live deployment progress
-in interactive terminals. Use --progress=false for plain output. The --wait
-option still controls how long to monitor the deployment.
-
 This commands shows whether a Vespa deployment has converged on the latest run
 (Vespa Cloud) or config generation (self-hosted). If an argument is given,
 show the convergence status of that particular run or generation.

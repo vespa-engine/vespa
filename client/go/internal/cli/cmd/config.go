@@ -89,9 +89,8 @@ targets. Example: instance2
 
 progress
 
-Show live deployment progress in interactive terminals. Defaults to false.
-Use 'vespa config set --global progress true' to enable for future deployments.
-Redirected output retains the existing plain format.
+Show live deployment progress in interactive terminals. Defaults to true.
+Use 'vespa config set --global progress false' for legacy progress format.
 
 quiet
 
