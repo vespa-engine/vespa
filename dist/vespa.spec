@@ -33,7 +33,7 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
 %global _vespa_abseil_cpp_version 20260817.0.1
-%global _vespa_build_dependencies_version 1.23.0
+%global _vespa_build_dependencies_version 1.23.1
 %global _vespa_gtest_version 1.18.0
 %global _vespa_protobuf_version 7.36.2
 %global _vespa_openblas_version 0.3.27
@@ -45,8 +45,8 @@
 %global _vespa_re2_version 20251105
 %global _vespa_xxhash_version 0.8.1
 %global _vespa_openssl_version 3.5.9
-%global _vespa_opentelemetry_cpp_version 1.29.0
-%global _vespa_grpc_version 1.84.0
+%global _vespa_opentelemetry_cpp_version 1.30.0
+%global _vespa_grpc_version 1.84.1
 %global _use_vespa_abseil_cpp 1
 %global _vespa_abseil_excludes |absl_[a-z_0-9]*
 %global _use_vespa_gtest 1
