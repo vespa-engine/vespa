@@ -249,6 +249,13 @@ public class Flags {
             "Takes effect on the next deployment.",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+    public static final UnboundIntFlag ML_MODEL_IMPORT_CACHE_TTL_HOURS = defineIntFlag(
+            "ml-model-import-cache-ttl-hours", 7 * 24,
+            List.of("hmusum"), "2026-10-26", "2027-04-26",
+            "Number of hours since last use before an imported ML model is removed from the config server cache, " +
+            "0 or less disables removal.",
+            "Takes effect on next run of MlModelImportCacheMaintainer");
+
     public static final UnboundBooleanFlag PRODUCT_DISCOVERY = defineFeatureFlag(
             "product-discovery", false,
             List.of("sebasabe"), "2026-10-09", "2027-10-09",

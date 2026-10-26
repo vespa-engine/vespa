@@ -4,6 +4,7 @@ package ai.vespa.rankingexpression.importer;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImportCache;
+import ai.vespa.rankingexpression.importer.configmodelview.MlModelImportCacheLayout;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.component.Vtag;
 import com.yahoo.io.GrowableByteBuffer;
@@ -21,8 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -38,7 +38,6 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,7 +48,7 @@ import java.util.stream.Stream;
  * the model name, the importer and the Vespa version, so that unchanged models are not imported again
  * when an application is deployed again or when models for several Vespa versions are built.
  *
- * Paths are built as cacheRoot/vespaVersion/key/{model.json, constant-files}
+ * See {@link MlModelImportCacheLayout} for the disk layout.
  *
  * @author hmusum
  */
@@ -58,8 +57,6 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
     private static final Logger log = Logger.getLogger(MlModelImportCacheImpl.class.getName());
 
     private static final int formatVersion = 1;
-
-    private static final String modelFileName = "model.json";
 
     private final Path cacheDir;
     private final String vespaVersion;
@@ -70,7 +67,7 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
 
     MlModelImportCacheImpl(Path cacheRoot, String vespaVersion) {
         this.vespaVersion = vespaVersion;
-        this.cacheDir = cacheRoot.resolve(vespaVersion);
+        this.cacheDir = MlModelImportCacheLayout.versionDir(cacheRoot, vespaVersion);
     }
 
     @Override
@@ -109,7 +106,7 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
     }
 
     private Optional<ImportedMlModel> get(Path entry, String modelName, File modelPath, MlModelImporter importer) {
-        Path modelFile = entry.resolve(modelFileName);
+        Path modelFile = MlModelImportCacheLayout.modelFile(entry);
         if ( ! Files.exists(modelFile)) {
             // The existing directory has no model file, so it is a leftover, not a valid entry: remove it.
             // Check the model file again, as the entry may have been stored after the first check.
@@ -137,15 +134,18 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
         Path tmpEntry = null;
         try {
             Files.createDirectories(cacheDir);
-            tmpEntry = cacheDir.resolve(entry.getFileName() + ".tmp-" + UUID.randomUUID());
+            tmpEntry = MlModelImportCacheLayout.tmpEntry(entry);
             Files.createDirectory(tmpEntry);
             write(tmpEntry, importedModel);
             try {
                 Files.move(tmpEntry, entry, StandardCopyOption.ATOMIC_MOVE);
                 tmpEntry = null;
             }
-            catch (FileAlreadyExistsException | DirectoryNotEmptyException e) {
-                if (Files.exists(entry.resolve(modelFileName))) return; // Stored concurrently by someone else
+            catch (FileSystemException e) {
+                // Moving onto a non-empty directory may fail with a plain FileSystemException (ENOTEMPTY),
+                // not FileAlreadyExistsException or DirectoryNotEmptyException
+                if ( ! Files.exists(entry)) throw e;
+                if (Files.exists(MlModelImportCacheLayout.modelFile(entry))) return; // Stored concurrently by someone else
 
                 // The existing directory has no model file, so it is a leftover, not a valid entry: replace it
                 discard(entry);
@@ -167,7 +167,7 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
      * see either the whole entry or none of it, and only one of them deletes it.
      */
     private void discard(Path entry) {
-        Path trash = cacheDir.resolve(entry.getFileName() + ".trash-" + UUID.randomUUID());
+        Path trash = MlModelImportCacheLayout.trashEntry(entry);
         try {
             Files.move(entry, trash, StandardCopyOption.ATOMIC_MOVE);
         }
@@ -229,7 +229,7 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
         writeConstants(entry, "small", model.smallConstantTensors(), root.setObject("smallConstants"));
         writeConstants(entry, "large", model.largeConstantTensors(), root.setObject("largeConstants"));
 
-        Files.write(entry.resolve(modelFileName), SlimeUtils.toJsonBytes(slime));
+        Files.write(MlModelImportCacheLayout.modelFile(entry), SlimeUtils.toJsonBytes(slime));
     }
 
     /** Writes constants to files with generated names, as constant names may not be valid file names */
@@ -243,7 +243,7 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
     }
 
     private static ImportedMlModel read(Path entry, String modelName, File modelPath, MlModelImporter importer) throws IOException {
-        Inspector root = SlimeUtils.jsonToSlimeOrThrow(Files.readAllBytes(entry.resolve(modelFileName))).get();
+        Inspector root = SlimeUtils.jsonToSlimeOrThrow(Files.readAllBytes(MlModelImportCacheLayout.modelFile(entry))).get();
         if ( ! modelName.equals(root.field("name").asString()))
             throw new IllegalStateException("Cached model has name '" + root.field("name").asString() +
                                             "', expected '" + modelName + "'");
