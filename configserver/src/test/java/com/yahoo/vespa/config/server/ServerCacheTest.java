@@ -5,14 +5,13 @@ import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
@@ -60,16 +59,16 @@ public class ServerCacheTest {
         assertEquals(def, cache.getDef(fooBarDefKey));
         assertEquals("mynode", cache.getDef(fooBimDefKey).getCNode().getName());
         ConfigResponse raw = cache.get(fooBarCacheKey);
-        assertEquals(xxhash64, raw.getPayloadChecksums().getForType(XXHASH64).asString());
+        assertEquals(xxhash64, raw.getPayloadChecksum().asString());
     }
 
     @Test
     public void testThatCacheWorksWithSameKeyDifferentMd5() {
         assertEquals(def, cache.getDef(fooBarDefKey));
         ConfigResponse raw = cache.get(fooBarCacheKey);
-        assertEquals(xxhash64, raw.getPayloadChecksums().getForType(XXHASH64).asString());
+        assertEquals(xxhash64, raw.getPayloadChecksum().asString());
         raw = cache.get(fooBarCacheKeyDifferentMd5);
-        assertEquals(xxhash64_2, raw.getPayloadChecksums().getForType(XXHASH64).asString());
+        assertEquals(xxhash64_2, raw.getPayloadChecksum().asString());
     }
 
     @Test
@@ -79,7 +78,7 @@ public class ServerCacheTest {
 
     SlimeConfigResponse createResponse(String xxhash64) {
         return SlimeConfigResponse.fromConfigPayload(ConfigPayload.empty(), 2, false,
-                                                     PayloadChecksums.from("", xxhash64));
+                                                     new PayloadChecksum(xxhash64));
     }
 
 }

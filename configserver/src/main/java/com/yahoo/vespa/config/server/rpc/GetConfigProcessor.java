@@ -9,7 +9,7 @@ import com.yahoo.jrt.Request;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ErrorCode;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.UnknownConfigIdException;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
@@ -34,8 +34,8 @@ class GetConfigProcessor implements Runnable {
 
     private static final Logger log = Logger.getLogger(GetConfigProcessor.class.getName());
     private static final String localHostName = HostName.getLocalhost();
-    private static final PayloadChecksums emptyApplicationBundlesConfigChecksums =
-            PayloadChecksums.fromPayload(Payload.from(ConfigPayload.fromInstance(new ApplicationBundlesConfig.Builder().build())));
+    private static final PayloadChecksum emptyApplicationBundlesConfigChecksum =
+            PayloadChecksum.fromPayload(Payload.from(ConfigPayload.fromInstance(new ApplicationBundlesConfig.Builder().build())));
 
     private final JRTServerConfigRequest request;
     /* True only when this request has expired its server timeout and we need to respond to the client */
@@ -123,18 +123,18 @@ class GetConfigProcessor implements Runnable {
         }
 
         // config == null is not an error, but indicates that the config will be returned later.
-        if ((config != null) && (    ! config.getPayloadChecksums().matches(request.getRequestConfigChecksums())
+        if ((config != null) && (    ! config.getPayloadChecksum().equals(request.getRequestConfigChecksum())
                                   ||   config.hasNewerGeneration(request)
                                   ||   forceResponse)) {
             if (     ApplicationBundlesConfig.class.equals(request.getConfigKey().getConfigClass())  // If it's a Java container ...
                 && ! context.requestHandler().compatibleWith(vespaVersion, context.applicationId())  // ... with a runtime version incompatible with the deploying version ...
-                && ! emptyApplicationBundlesConfigChecksums.matches(config.getPayloadChecksums())) { // ... and there actually are incompatible user bundles, then return no config:
+                && ! emptyApplicationBundlesConfigChecksum.equals(config.getPayloadChecksum())) { // ... and there actually are incompatible user bundles, then return no config:
                 handleError(request, ErrorCode.INCOMPATIBLE_VESPA_VERSION, "Version " + printableVespaVersion(vespaVersion) + " is binary incompatible with the latest deployed version");
                 return Optional.empty();
             }
 
             // debugLog(trace, "config response before encoding:" + config.toString());
-            request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.applyOnRestart(), config.getPayloadChecksums());
+            request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.applyOnRestart(), config.getPayloadChecksum());
             debugLog(trace, "return response: " + request.getShortDescription());
             respond(request);
         } else {
@@ -174,8 +174,8 @@ class GetConfigProcessor implements Runnable {
         ConfigResponse config = fromConfigPayload(emptyPayload,
                                                   0,
                                                   false,
-                                                  PayloadChecksums.fromPayload(Payload.from(emptyPayload)));
-        request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), false, config.getPayloadChecksums());
+                                                  PayloadChecksum.fromPayload(Payload.from(emptyPayload)));
+        request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), false, config.getPayloadChecksum());
         respond(request);
     }
 

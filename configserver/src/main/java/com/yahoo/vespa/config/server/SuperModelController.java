@@ -47,7 +47,7 @@ public class SuperModelController {
         return responseFactory.createResponse(model.getConfig(configKey).toUtf8Array(true),
                                               generation,
                                               false,
-                                              request.configPayloadChecksums());
+                                              request.configPayloadChecksum());
     }
 
     private void validateConfigDefinition(ConfigKey<?> configKey, DefContent defContent) {

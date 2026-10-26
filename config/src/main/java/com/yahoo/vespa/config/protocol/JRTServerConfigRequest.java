@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.GetConfigRequest;
 
 /**
@@ -35,9 +35,9 @@ public interface JRTServerConfigRequest extends JRTConfigRequest, GetConfigReque
      * @param generation The config generation of the given payload.
      * @param applyOnRestart true if this config should only be applied on the next restart,
      *                       false if it should be applied right away
-     * @param payloadChecksums checksums of the given payload.
+     * @param payloadChecksum checksum of the given payload.
      */
-    void addOkResponse(Payload payload, long generation, boolean applyOnRestart, PayloadChecksums payloadChecksums);
+    void addOkResponse(Payload payload, long generation, boolean applyOnRestart, PayloadChecksum payloadChecksum);
 
     /**
      * Returns the md5 of the config definition in the request.
@@ -80,10 +80,10 @@ public interface JRTServerConfigRequest extends JRTConfigRequest, GetConfigReque
 
 
     /**
-     * Returns the payload checksums from the config request.
+     * Returns the payload checksum from the config request.
      *
-     * @return the payload checksumss from request.
+     * @return the payload checksum from request.
      */
-    PayloadChecksums configPayloadChecksums();
+    PayloadChecksum configPayloadChecksum();
 
 }

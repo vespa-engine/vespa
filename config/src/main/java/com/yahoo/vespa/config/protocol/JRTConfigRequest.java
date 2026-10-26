@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
 
@@ -42,7 +42,7 @@ public interface JRTConfigRequest {
      *
      * @return a config checksum.
      */
-    PayloadChecksums getRequestConfigChecksums();
+    PayloadChecksum getRequestConfigChecksum();
 
     /**
      * Returns the generation of the requested config. If none has been given, 0 should be returned.

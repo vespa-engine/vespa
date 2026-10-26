@@ -10,7 +10,7 @@ import com.yahoo.jrt.Value;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ErrorCode;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -18,12 +18,10 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
-
 /**
  * The V3 config protocol implemented on the server side. The V3 protocol uses 2 fields:
  *
- * * A metadata field containing json data describing config generation, md5 and compression info
+ * * A metadata field containing json data describing config generation, checksum and compression info
  * * A data field containing compressed or uncompressed json config payload
  *
  * The implementation of addOkResponse is optimized for doing as little copying of payload data as possible, ensuring
@@ -69,7 +67,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     }
 
     @Override
-    public void addOkResponse(Payload payload, long generation, boolean applyOnRestart, PayloadChecksums checksums) {
+    public void addOkResponse(Payload payload, long generation, boolean applyOnRestart, PayloadChecksum checksum) {
         this.applyOnRestart = applyOnRestart;
         Payload responsePayload = payload.withCompression(getCompressionType());
         if (responsePayload == null)
@@ -81,7 +79,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
             jsonGenerator.writeStartObject();
 
             addCommonReturnValues(jsonGenerator);
-            addPayloadCheckSums(jsonGenerator, checksums);
+            addPayloadChecksum(jsonGenerator, checksum);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_GENERATION, generation);
             setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_APPLY_ON_RESTART, applyOnRestart);
             jsonGenerator.writeObjectFieldStart(SlimeResponseData.RESPONSE_COMPRESSION_INFO);
@@ -128,7 +126,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
         StringBuilder sb = new StringBuilder();
         sb.append("request='").append(getConfigKey())
                 .append(",").append(getClientHostName())
-                .append(",").append(getRequestConfigChecksums())
+                .append(",").append(getRequestConfigChecksum())
                 .append(",").append(getRequestGeneration())
                 .append(",").append(getTimeout()).append("'\n");
         return sb.toString();
@@ -172,7 +170,7 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     @Override
     public String getRequestDefMd5() { return requestData.getRequestDefMd5(); }
 
-    public PayloadChecksums getRequestConfigChecksums() { return requestData.getRequestConfigChecksums(); }
+    public PayloadChecksum getRequestConfigChecksum() { return requestData.getRequestConfigChecksum(); }
 
     private void addErrorResponse(int errorCode) {
         addErrorResponse(errorCode, ErrorCode.getName(errorCode));
@@ -211,9 +209,8 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
         jsonGenerator.writeRawValue(getRequestTrace().toString(true));
     }
 
-    private void addPayloadCheckSums(JsonGenerator jsonGenerator, PayloadChecksums checksums) throws IOException {
-        if (checksums.getForType(XXHASH64) != null)
-            setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_XXHASH64, checksums.getForType(XXHASH64).asString());
+    private void addPayloadChecksum(JsonGenerator jsonGenerator, PayloadChecksum checksum) throws IOException {
+        setResponseField(jsonGenerator, SlimeResponseData.RESPONSE_CONFIG_XXHASH64, checksum.asString());
     }
 
     private void addPayload(Payload responsePayload, ByteArrayOutputStream byteArrayOutputStream) {
@@ -266,6 +263,6 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
     public Optional<VespaVersion> getVespaVersion() { return requestData.getVespaVersion(); }
 
     @Override
-    public PayloadChecksums configPayloadChecksums() { return requestData.getRequestConfigChecksums(); }
+    public PayloadChecksum configPayloadChecksum() { return requestData.getRequestConfigChecksum(); }
 
 }
