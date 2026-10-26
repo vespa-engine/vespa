@@ -170,7 +170,7 @@ class OnnxPadderTest {
     @Test
     void anOutputPooledByTheRuntimeIsNotASequenceOutput() {
         var evaluator = new FakeEvaluator(0);
-        evaluator.runtimePooling = Optional.of(new OnnxPoolingOptions("mean", "scores", "attention_mask"));
+        evaluator.runtimePooling = Optional.of(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "scores", "attention_mask"));
         var padded = padderOf(evaluator, 8);
         assertEquals(evaluator.runtimePooling(), padded.runtimePooling(), "The padding reports the evaluator's pooling");
         var outputs = padded.evaluate(inputs(3));

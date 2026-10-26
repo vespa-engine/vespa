@@ -280,6 +280,7 @@ public record OnnxEvaluatorOptions(
         return executionMode == ExecutionMode.PARALLEL;
     }
 
+    /** Returns the inter-op threads ONNX Runtime uses. It uses one thread in sequential execution mode. */
     public int effectiveInterOpThreads() {
         return isParallel() ? interOpThreads : 1;
     }
@@ -288,14 +289,17 @@ public record OnnxEvaluatorOptions(
         return new Builder(this).setNumModelInstances(numModelInstances).build();
     }
 
+    /** Returns these options padding with the given attention mask input, if padding is configured */
     public OnnxEvaluatorOptions withAttentionMask(String name) {
         return withPadding(padding -> padding.withAttentionMask(name));
     }
 
+    /** Returns these options padding to at most the given max tokens, the longest input, if padding is configured */
     public OnnxEvaluatorOptions withMaxTokens(int maxTokens) {
         return withPadding(padding -> padding.withMaxTokens(maxTokens));
     }
 
+    /** Returns these options without padding, which runtimes that do not pad key their sessions on */
     public OnnxEvaluatorOptions withoutPadding() {
         return padding.isEmpty() ? this : new Builder(this).setPadding(Optional.empty()).build();
     }

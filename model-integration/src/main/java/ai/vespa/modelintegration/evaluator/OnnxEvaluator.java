@@ -41,7 +41,7 @@ public interface OnnxEvaluator extends AutoCloseable {
      */
     default int paddedLength(int length) { return length; }
 
-    /** Returns the pooling this evaluator applies to the model output, or empty if it returns the output as is. */
+    /** Returns the pooling this evaluator's model is configured with, or empty if it returns the output as is. */
     default Optional<OnnxPoolingOptions> runtimePooling() { return Optional.empty(); }
 
     @Override void close();

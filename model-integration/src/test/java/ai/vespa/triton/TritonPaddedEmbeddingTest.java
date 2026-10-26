@@ -82,7 +82,7 @@ class TritonPaddedEmbeddingTest {
     /** With runtime pooling, Vespa pads the inputs and Triton pools them. The padding must stay out of the embedding. */
     @Test
     void huggingFaceEmbedsTheSameThroughTritonWithPaddingAndPooling() {
-        assumeTrue(tritonContainer.supportsPooling(), "Needs a Vespa Triton image that supports pooling");
+        assumeTrue(tritonContainer.isVespaImage(), "Needs a Vespa Triton image that supports pooling");
         for (var pooling : HuggingFaceEmbedderConfig.PoolingStrategy.Enum.values()) {
             if (pooling == HuggingFaceEmbedderConfig.PoolingStrategy.Enum.none) continue; // Needs a model output without tokens
             var config = new HuggingFaceEmbedderConfig.Builder()

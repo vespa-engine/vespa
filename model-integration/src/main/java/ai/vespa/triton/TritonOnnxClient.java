@@ -97,6 +97,11 @@ public class TritonOnnxClient implements AutoCloseable {
         // Only used by `evaluate` inside the client, thus `private`.
         private final List<GrpcService.ModelMetadataResponse.TensorMetadata> tritonInputs;
 
+        /** For tests of code which only reads the types */
+        ModelMetadata(Map<String, TensorType> inputs, Map<String, TensorType> outputs) {
+            this(inputs, outputs, List.of());
+        }
+
         private ModelMetadata(
                 Map<String, TensorType> inputs,
                 Map<String, TensorType> outputs,

@@ -286,11 +286,11 @@ public class HuggingFaceEmbedderTest {
     @Test
     public void testRuntimePoolingIsRequestedForEveryStrategyButNone() {
         var mean = HuggingFaceEmbedderConfig.PoolingStrategy.Enum.mean;
-        assertEquals(Optional.of(new OnnxPoolingOptions("mean", "last_hidden_state", "attention_mask")),
+        assertEquals(Optional.of(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "last_hidden_state", "attention_mask")),
                      HuggingFaceEmbedder.runtimePooling(configWithPooling(mean)));
-        assertEquals("cls",
+        assertEquals(OnnxPoolingOptions.Strategy.CLS,
                      HuggingFaceEmbedder.runtimePooling(configWithPooling(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.cls)).orElseThrow().strategy());
-        assertEquals("last",
+        assertEquals(OnnxPoolingOptions.Strategy.LAST,
                      HuggingFaceEmbedder.runtimePooling(configWithPooling(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.last)).orElseThrow().strategy());
         assertEquals(Optional.empty(), HuggingFaceEmbedder.runtimePooling(configWithPooling(HuggingFaceEmbedderConfig.PoolingStrategy.Enum.none)));
     }
@@ -312,7 +312,7 @@ public class HuggingFaceEmbedderTest {
         var embedder = new HuggingFaceEmbedder(recording, Embedder.Runtime.testInstance(), config,
                                                new OnnxEvaluatorConfig.Builder().build(), new MockModelPathHelper());
         try {
-            assertEquals(List.of(Optional.of(new OnnxPoolingOptions("mean", "last_hidden_state", "attention_mask"))),
+            assertEquals(List.of(Optional.of(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "last_hidden_state", "attention_mask"))),
                          requested.stream().map(OnnxEvaluatorOptions::runtimePooling).toList());
         } finally {
             embedder.deconstruct();
@@ -325,7 +325,7 @@ public class HuggingFaceEmbedderTest {
                 .transformerOutput("token_embeddings")
                 .transformerAttentionMask("mask")
                 .build();
-        assertEquals(Optional.of(new OnnxPoolingOptions("mean", "token_embeddings", "mask")),
+        assertEquals(Optional.of(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "token_embeddings", "mask")),
                      HuggingFaceEmbedder.runtimePooling(config));
     }
 

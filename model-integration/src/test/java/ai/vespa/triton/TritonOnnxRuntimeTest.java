@@ -4,6 +4,7 @@ package ai.vespa.triton;
 import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.OnnxPoolingOptions;
 import com.yahoo.io.IOUtils;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.text.Text;
@@ -30,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -45,6 +47,7 @@ import org.junit.jupiter.api.function.ThrowingSupplier;
 class TritonOnnxRuntimeTest {
 
     private static final String MODEL_PATH = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+    private static final String MASKED_MODEL_PATH = "src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx";
 
     private static TritonServerContainer tritonContainer;
     private final OnnxEvaluatorOptions.Builder optsBuilder =
@@ -62,6 +65,22 @@ class TritonOnnxRuntimeTest {
     void load_model_with_defaults() throws IOException {
         var opts = optsBuilder.build();
         assertLoadModel("src/test/triton/config_with_defaults.pbtxt", opts);
+    }
+
+    @Test
+    void pooling_fails_at_load_on_an_image_without_pooling_support() {
+        assumeFalse(tritonContainer.isVespaImage(), "Needs the stock Triton image, which ignores the pooling parameters");
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder(testConfig(TritonConfig.ModelControlMode.EXPLICIT, false))
+                                                    .onnxPooling(true).build());
+        var pooling = new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "last_hidden_state", "attention_mask");
+        try {
+            var exception = assertThrows(IllegalArgumentException.class,
+                    () -> runtime.evaluatorOf(MASKED_MODEL_PATH, optsBuilder.build().withRuntimePooling(pooling)));
+            assertTrue(exception.getMessage().startsWith("Triton did not pool output 'last_hidden_state'"), exception.getMessage());
+            assertTrue(exception.getMessage().contains("Disable triton-onnx-pooling"), exception.getMessage());
+        } finally {
+            runtime.deconstruct();
+        }
     }
 
     @Test
@@ -376,7 +395,7 @@ class TritonOnnxRuntimeTest {
             assertEquals(expectedFilePermissions, Files.getPosixFilePermissions(modelFile));
 
             // The stock image ignores the parameter, so only the generated config can be checked there.
-            if (shareSession && tritonContainer.supportsSessionSharing()) {
+            if (shareSession && tritonContainer.isVespaImage()) {
                 assertTrue(tritonContainer.getLogs().contains("Reusing session for instance: " + modelName),
                            "Triton did not reuse the session between instances of " + modelName);
             }

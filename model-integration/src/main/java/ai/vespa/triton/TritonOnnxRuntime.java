@@ -115,6 +115,9 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var generatesConfig = isModelControlExplicit && options.modelConfigOverride().isEmpty();
         var resolvedOptions = generatesConfig ? resolveInstanceCount(options, shareSessionBetweenInstances) : options;
         var pooling = runtimePoolingEnabled && generatesConfig ? options.runtimePooling() : Optional.<OnnxPoolingOptions>empty();
+        if (runtimePoolingEnabled && ! generatesConfig && options.runtimePooling().isPresent())
+            log.info("Not pooling " + modelPath + " in Triton: " +
+                     (options.modelConfigOverride().isPresent() ? "it has a model config override" : "the model control mode is not EXPLICIT"));
         var modelName = generateModelName(modelPath, resolvedOptions, shareSessionBetweenInstances, pooling);
         var modelReference = referenceModel(modelName, modelPath, resolvedOptions, pooling);
 
@@ -480,7 +483,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 .putParameters(
                         "pooling_strategy",
                         ModelParameter.newBuilder()
-                                .setStringValue(pooling.strategy())
+                                .setStringValue(pooling.strategy().configName())
                                 .build())
                 .putParameters(
                         "pooling_output",
@@ -491,7 +494,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         // Without the parameter, Triton uses the default attention mask input if the model has it.
         // Otherwise it attends to all tokens, like the embedders do for a model without a mask input.
         // A named mask input the model lacks fails the model load.
-        if (pooling.strategy().equals("cls") || pooling.attentionMaskName().equals(DEFAULT_POOLING_ATTENTION_MASK)) return;
+        if (pooling.strategy() == OnnxPoolingOptions.Strategy.CLS || pooling.attentionMaskName().equals(DEFAULT_POOLING_ATTENTION_MASK)) return;
         configBuilder.putParameters(
                 "pooling_attention_mask",
                 ModelParameter.newBuilder().setStringValue(pooling.attentionMaskName()).build());

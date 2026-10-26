@@ -43,6 +43,17 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
         this.isExplicitControl = isExplicitControl;
         this.runtimePooling = runtimePooling;
         modelMetadata = tritonClient.getModelMetadata(modelName);
+        runtimePooling.ifPresent(this::requirePooled);
+    }
+
+    // A backend without pooling support ignores the pooling parameters and loads the model as is.
+    private void requirePooled(OnnxPoolingOptions pooling) {
+        var type = modelMetadata.outputs.get(pooling.outputName());
+        if (type == null || type.dimensions().size() == 2) return; // A missing output is reported by the caller
+        throw new IllegalArgumentException("Triton did not pool output '" + pooling.outputName() + "' of model " + modelName +
+                                           ": got type " + type + " instead of [batch, embedding]. " +
+                                           "The Triton image does not support pooling. Disable triton-onnx-pooling, " +
+                                           "or use an image whose ONNX Runtime backend supports it.");
     }
 
     @Override

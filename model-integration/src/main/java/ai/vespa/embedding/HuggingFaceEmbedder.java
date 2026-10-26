@@ -147,10 +147,14 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
      * since it may truncate the embedding to the target type first.
      */
     static Optional<OnnxPoolingOptions> runtimePooling(HuggingFaceEmbedderConfig config) {
-        if (config.poolingStrategy() == HuggingFaceEmbedderConfig.PoolingStrategy.Enum.none) return Optional.empty();
-        return Optional.of(new OnnxPoolingOptions(config.poolingStrategy().toString(),
-                                                  config.transformerOutput(),
-                                                  config.transformerAttentionMask()));
+        var strategy = switch (config.poolingStrategy()) {
+            case mean -> OnnxPoolingOptions.Strategy.MEAN;
+            case cls -> OnnxPoolingOptions.Strategy.CLS;
+            case last -> OnnxPoolingOptions.Strategy.LAST;
+            case none -> null;
+        };
+        return Optional.ofNullable(strategy)
+                       .map(s -> new OnnxPoolingOptions(s, config.transformerOutput(), config.transformerAttentionMask()));
     }
 
     private static void validateName(Map<String, TensorType> types, String name, String type) {
