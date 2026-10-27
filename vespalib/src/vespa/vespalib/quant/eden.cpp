@@ -21,16 +21,16 @@ using hwaccelerated::sum_indexed_unrolled;
 
 namespace {
 
+constexpr size_t scale_bytes = sizeof(float);
+
 [[nodiscard]] size_t compute_quantized_buffer_size(const size_t dimensions, const uint8_t bits) noexcept {
-    (void)bits;
-    constexpr size_t scale_bytes = sizeof(float); // TODO configurable scale factor precision (f16 vs f32)?
-    const size_t     dim_bytes =
-        with_packer_for_bit_count(bits, [dimensions](auto bp) { return decltype(bp)::packed_bytes(dimensions); });
+    const size_t dim_bytes = hwaccelerated::packed_bytes(bits, dimensions);
     return scale_bytes + dim_bytes;
 }
 
-// Precondition: buf must be valid for at least sizeof(float) bytes
+// Precondition: buf must be valid for at least `scale_bytes` bytes
 [[nodiscard]] float extract_scale_factor(const uint8_t* buf) noexcept {
+    static_assert(scale_bytes == sizeof(float));
     float scale;
     memcpy(&scale, buf, sizeof(float));
     return scale;
@@ -38,13 +38,13 @@ namespace {
 
 // Given an input ptr `buf` that is at the start of the "raw" quantized buffer, returns
 // an adjusted ptr that points to the first byte of the sequence of quantized bits.
-// Precondition: buf must be valid for at least sizeof(float) bytes
+// Precondition: buf must be valid for at least `scale_bytes` bytes
 [[nodiscard]] const uint8_t* packed_bits_buf(const uint8_t* buf) noexcept {
-    return buf + sizeof(float); // Just skip past the scale factor
+    return buf + scale_bytes; // Just skip past the scale factor
 }
 
 [[nodiscard]] uint8_t* packed_bits_buf(uint8_t* buf) noexcept {
-    return buf + sizeof(float);
+    return buf + scale_bytes;
 }
 
 } // namespace
@@ -70,11 +70,9 @@ std::span<const float> EdenQuantizer::my_codebook() const noexcept {
 EdenQuantizer::ScaleAndCentroidIndexesPtr
 EdenQuantizer::unary_unpack_bits_to_scratch_space(std::span<const uint8_t> buf) noexcept {
     CHECK(buf.size() == _quantized_size);
-    const float scale = extract_scale_factor(buf.data());
-    with_packer_for_bit_count(_bits, [&](auto bp) {
-        const uint8_t* in_bits = packed_bits_buf(buf.data());
-        decltype(bp)::unpack(lhs_scratch_idx_space(), in_bits, _dimensions);
-    });
+    const float    scale = extract_scale_factor(buf.data());
+    const uint8_t* in_bits = packed_bits_buf(buf.data());
+    hwaccelerated::unpack_bits(in_bits, lhs_scratch_idx_space(), _bits, _dimensions);
     return {scale, lhs_scratch_idx_space()};
 }
 
@@ -86,10 +84,8 @@ EdenQuantizer::binary_unpack_bits_to_scratch_space(std::span<const uint8_t> lhs,
     // We have left room for an additional vector bit unpacking run in _idx_tmp
     uint8_t* lhs_idx = lhs_scratch_idx_space();
     uint8_t* rhs_idx = rhs_scratch_idx_space();
-    with_packer_for_bit_count(_bits, [&](auto bp) {
-        decltype(bp)::unpack(lhs_idx, packed_bits_buf(lhs.data()), _dimensions);
-        decltype(bp)::unpack(rhs_idx, packed_bits_buf(rhs.data()), _dimensions);
-    });
+    hwaccelerated::unpack_bits(packed_bits_buf(lhs.data()), lhs_idx, _bits, _dimensions);
+    hwaccelerated::unpack_bits(packed_bits_buf(rhs.data()), rhs_idx, _bits, _dimensions);
     const float lhs_scale = extract_scale_factor(lhs.data());
     const float rhs_scale = extract_scale_factor(rhs.data());
     return {{lhs_scale, lhs_idx}, {rhs_scale, rhs_idx}};
@@ -161,10 +157,7 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
         }
         scale = yq_dot / q_norm2;
     }
-    with_packer_for_bit_count(_bits, [&](auto bp) {
-        uint8_t* out_bits = packed_bits_buf(q_x.data());
-        decltype(bp)::pack(out_bits, idx_buf, _dimensions);
-    });
+    hwaccelerated::pack_bits(idx_buf, packed_bits_buf(q_x.data()), _bits, _dimensions);
     memcpy(q_x.data(), &scale, sizeof(float));
 }
 
