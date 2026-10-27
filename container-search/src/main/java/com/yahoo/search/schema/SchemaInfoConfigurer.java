@@ -28,7 +28,6 @@ class SchemaInfoConfigurer {
             Field.Builder fieldBuilder = new Field.Builder(fieldConfig.name(), fieldConfig.type());
             fieldBuilder.setAttribute(fieldConfig.attribute());
             fieldBuilder.setIndex(fieldConfig.index());
-            fieldBuilder.setBitPacked(fieldConfig.bitPacked());
             if ( ! fieldConfig.explanation().isEmpty())
                 fieldBuilder.setExplanation(fieldConfig.explanation());
             for (var fastMapConfig : fieldConfig.fastMapSearchFields())

@@ -12,7 +12,10 @@ schema[].field[].type string
 schema[].field[].alias[] string
 schema[].field[].attribute bool
 schema[].field[].index bool
-schema[].field[].bitPacked bool
+
+## Not used. TODO: Remove on Vespa 9
+schema[].field[].bitPacked bool default=false
+
 ## A free text explanation of the content and usage of this field, or empty if none
 schema[].field[].explanation string default=""
 ## Present (with a single entry) if this field has fast map search, i.e. does 'fast-search-map-field',

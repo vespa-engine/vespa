@@ -126,11 +126,11 @@ public class SchemaInfoTester {
         schemaA.explanation("Schema a");
 
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field1").type("string")
-                                                                 .index(true).attribute(false).bitPacked(false)
+                                                                 .index(true).attribute(false)
                                                                  .alias("alias1").alias("alias2")
                                                                  .explanation("Field 1\nin schema a"));
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field2").type("int")
-                                                                 .index(false).attribute(true).bitPacked(false));
+                                                                 .index(false).attribute(true));
 
         schemaA.fieldset(new SchemaInfoConfig.Schema.Fieldset.Builder().name("default").field("field1"));
         schemaA.fieldset(new SchemaInfoConfig.Schema.Fieldset.Builder().name("structFields").field("struct1.x").field("struct1.y"));
