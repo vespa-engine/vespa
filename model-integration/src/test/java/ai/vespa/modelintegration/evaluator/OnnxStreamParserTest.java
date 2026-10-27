@@ -129,7 +129,7 @@ class OnnxStreamParserTest {
              var session = OrtEnvironment.getEnvironment().createSession(model.toString(), options)) {
             var shapes = new ArrayList<NodeInfo>(session.getInputInfo().values());
             shapes.addAll(session.getOutputInfo().values());
-            // Triton's ONNX Runtime backend batches only when every input and output has a variable first dimension
+            // Triton's ONNX Runtime backend batches only when every input and output has a first dimension of variable size
             return shapes.stream().map(info -> ((TensorInfo) info.getInfo()).getShape())
                     .allMatch(shape -> shape.length > 0 && shape[0] == -1);
         }

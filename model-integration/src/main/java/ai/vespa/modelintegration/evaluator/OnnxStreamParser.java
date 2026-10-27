@@ -44,8 +44,8 @@ public class OnnxStreamParser {
     }
 
     /**
-     * Returns whether every input and output of the model has a batch dimension, a variable first dimension.
-     * A model exported with a [1, features] input, for example, has a fixed first dimension instead.
+     * Returns whether every input and output of the model has a batch dimension: a first dimension of variable size.
+     * A model exported with a [1, features] input, for example, has a first dimension of fixed size instead.
      * Triton's ONNX Runtime backend refuses to batch a model without a batch dimension.
      * The backend judges the shapes that ONNX Runtime reports, so this method reads them the same way.
      */
@@ -93,7 +93,7 @@ public class OnnxStreamParser {
         if (shape.getDimCount() == 0) return false;
         var first = shape.getDim(0);
         // Some converters write a variable size as -1.
-        // ONNX Runtime treats it as variable.
+        // ONNX Runtime treats -1 as a variable size.
         return !first.hasDimValue() || first.getDimValue() == -1;
     }
 
