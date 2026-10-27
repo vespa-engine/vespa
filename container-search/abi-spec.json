@@ -9603,6 +9603,7 @@
       "public com.yahoo.search.schema.RankProfile$Builder setHasSummaryFeatures(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder setHasRankFeatures(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder addInput(java.lang.String, com.yahoo.search.schema.RankProfile$InputType)",
+      "public com.yahoo.search.schema.RankProfile$Builder addInput(com.yahoo.search.schema.RankProfile$Input)",
       "public com.yahoo.search.schema.RankProfile$Builder setUseSignificanceModel(boolean)",
       "public com.yahoo.search.schema.RankProfile$Builder setKeepRankCount(int)",
       "public com.yahoo.search.schema.RankProfile$Builder setTotalKeepRankCount(int)",
@@ -9610,6 +9611,25 @@
       "public com.yahoo.search.schema.RankProfile$Builder setSecondPhase(com.yahoo.search.schema.SecondPhase)",
       "public com.yahoo.search.schema.RankProfile$Builder addSortFeature(java.lang.String)",
       "public com.yahoo.search.schema.RankProfile build()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.schema.RankProfile$Input" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, com.yahoo.search.schema.RankProfile$InputType, java.util.Optional)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public java.lang.String name()",
+      "public com.yahoo.search.schema.RankProfile$InputType type()",
+      "public java.util.Optional explanation()"
     ],
     "fields" : [ ]
   },
@@ -9646,6 +9666,7 @@
       "public boolean hasRankFeatures()",
       "public boolean useSignificanceModel()",
       "public java.util.Map inputs()",
+      "public java.util.Map inputDetails()",
       "public java.util.OptionalInt keepRankCount()",
       "public java.util.OptionalInt totalKeepRankCount()",
       "public com.yahoo.search.schema.MatchPhase matchPhase()",

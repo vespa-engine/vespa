@@ -226,6 +226,7 @@ public final class SchemaInfo extends Derived {
                 var inputConfig = new SchemaInfoConfig.Schema.Rankprofile.Input.Builder();
                 inputConfig.name(input.getKey().toString());
                 inputConfig.type(input.getValue().type().toString());
+                Optional.ofNullable(rankProfile.inputExplanations().get(input.getKey())).ifPresent(inputConfig::explanation);
                 rankProfileConfig.input(inputConfig);
             }
             schemaBuilder.rankprofile(rankProfileConfig);
@@ -271,10 +272,12 @@ public final class SchemaInfo extends Derived {
         private final Map<Reference, RankProfile.Input> inputs;
         private final List<String> sortFeatures;
         private final Optional<String> explanation;
+        private final Map<Reference, String> inputExplanations;
 
         public RankProfileInfo(RankProfile profile) {
             this.name = profile.name();
             this.explanation = profile.getExplanation();
+            this.inputExplanations = profile.getInputExplanations();
             this.hasSummaryFeatures =  ! profile.getSummaryFeatures().isEmpty();
             this.hasRankFeatures =  ! profile.getRankFeatures().isEmpty();
             this.inputs = profile.inputs();
@@ -303,6 +306,7 @@ public final class SchemaInfo extends Derived {
         public Map<Reference, RankProfile.Input> inputs() { return inputs; }
         public List<String> sortFeatures() { return sortFeatures; }
         public Optional<String> explanation() { return explanation; }
+        public Map<Reference, String> inputExplanations() { return inputExplanations; }
 
     }
 

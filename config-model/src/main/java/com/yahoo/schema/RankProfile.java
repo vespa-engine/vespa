@@ -179,6 +179,8 @@ public class RankProfile implements Cloneable {
 
     private String explanation = null;
 
+    private Map<Reference, String> inputExplanations = Map.of();
+
     private final ApplicationPackage applicationPackage;
     private final DeployLogger deployLogger;
 
@@ -259,6 +261,17 @@ public class RankProfile implements Cloneable {
 
     /** Returns the free text explanation of the content and usage of this rank profile, if any. Explanations are not inherited. */
     public Optional<String> getExplanation() { return Optional.ofNullable(explanation); }
+
+    /**
+     * Sets free text explanations of inputs of this rank profile.
+     * The inputs may be declared in this or an inherited profile.
+     */
+    public void setInputExplanations(Map<Reference, String> inputExplanations) {
+        this.inputExplanations = Map.copyOf(inputExplanations);
+    }
+
+    /** Returns the free text explanations of inputs given in this rank profile. Input explanations are not inherited. */
+    public Map<Reference, String> getInputExplanations() { return inputExplanations; }
 
     public void setUseSignificanceModel(Boolean useSignificanceModel) {
         this.useSignificanceModel = useSignificanceModel;
@@ -1274,6 +1287,7 @@ public class RankProfile implements Cloneable {
 
     private void compileThis(QueryProfileRegistry queryProfiles, ImportedMlModels importedModels) {
         checkNameCollisions(getFunctions(), constants());
+        checkInputExplanations();
         ExpressionTransforms expressionTransforms = new ExpressionTransforms();
 
         Map<Reference, TensorType> featureTypes = featureTypes();
@@ -1344,6 +1358,14 @@ public class RankProfile implements Cloneable {
                 }
             }
             addImplicitMatchFeatures(addIfMissing);
+        }
+    }
+
+    private void checkInputExplanations() {
+        for (var input : inputExplanations.keySet()) {
+            if ( ! inputs().containsKey(input))
+                throw new IllegalArgumentException("The explanation has '@input " + input + "', but this profile " +
+                                                   "has no such input. Inputs must be declared in an inputs block");
         }
     }
 
