@@ -3,12 +3,16 @@ package com.yahoo.schema;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.derived.Summaries;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -162,6 +166,139 @@ public class ExplanationTestCase {
 
     private SchemaInfoConfig.Schema.Rankprofile rankProfileConfig(String name, SchemaInfoConfig.Schema schema) {
         return schema.rankprofile().stream().filter(profile -> profile.name().equals(name)).findFirst().orElseThrow();
+    }
+
+    @Test
+    void testInputExplanations() throws ParseException {
+        var registry = new RankProfileRegistry();
+        var builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+                          schema test {
+                              document test {
+                                  field embedding type tensor<float>(x[3]) {
+                                      indexing: attribute
+                                  }
+                              }
+                              rank-profile parent {
+                                  explanation {
+                                      Semantic similarity with **one** query vector.
+
+                                      ```java
+                                      @input notATag This is code, not a tag
+                                      ```
+                                      @input query(q1) The query embedding,
+                                        made with the *same* model as the documents.
+                                      @input q2
+                                          The second input.
+                                  }
+                                  inputs {
+                                      query(q1) tensor<float>(x[3])
+                                      q2 double
+                                  }
+                                  first-phase {
+                                      expression: closeness(field, embedding) + query(q2)
+                                  }
+                              }
+                              rank-profile child inherits parent {
+                                  explanation {
+                                      @input q1 The inherited query embedding.
+                                  }
+                              }
+                          }
+                          """);
+        builder.build(true);
+        Schema schema = builder.getSchema();
+
+        var parent = registry.get(schema, "parent");
+        assertEquals(Optional.of("""
+                                 Semantic similarity with **one** query vector.
+
+                                 ```java
+                                 @input notATag This is code, not a tag
+                                 ```"""),
+                     parent.getExplanation());
+        // Continuation lines are dedented relative to each other
+        assertEquals(Map.of(Reference.simple("query", "q1"), "The query embedding,\nmade with the *same* model as the documents.",
+                            Reference.simple("query", "q2"), "The second input."),
+                     parent.getInputExplanations());
+
+        var child = registry.get(schema, "child");
+        assertEquals(Optional.empty(), child.getExplanation());
+        assertEquals(Map.of(Reference.simple("query", "q1"), "The inherited query embedding."),
+                     child.getInputExplanations());
+
+        var schemaInfo = new SchemaInfo(schema, "index", registry,
+                                        new Summaries(schema, new BaseDeployLogger(), new TestProperties()));
+        var configBuilder = new SchemaInfoConfig.Builder();
+        schemaInfo.getConfig(configBuilder);
+        var config = configBuilder.build().schema(0);
+        var childConfig = rankProfileConfig("child", config);
+        assertEquals("query(q1)", childConfig.input(0).name());
+        assertEquals("The inherited query embedding.", childConfig.input(0).explanation());
+        assertEquals("query(q2)", childConfig.input(1).name());
+        assertEquals("", childConfig.input(1).explanation());
+        assertEquals("The second input.", rankProfileConfig("parent", config).input(1).explanation());
+    }
+
+    @Test
+    void testUnknownTagBeforeTagSectionIsText() throws ParseException {
+        var registry = new RankProfileRegistry();
+        var builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+                          schema test {
+                              document test {
+                              }
+                              rank-profile text {
+                                  explanation {
+                                      @inputs is not a tag
+                                  }
+                              }
+                          }
+                          """);
+        builder.build(true);
+        var profile = registry.get(builder.getSchema(), "text");
+        assertEquals(Optional.of("@inputs is not a tag"), profile.getExplanation());
+        assertEquals(Map.of(), profile.getInputExplanations());
+    }
+
+    @Test
+    void testInvalidInputExplanationsAreRejected() {
+        assertInvalidInputExplanation("@input q The query\n@inputs q Again",
+                                      "Unknown tag '@inputs' in explanation: Only '@input' is supported");
+        assertInvalidInputExplanation("@input q The query\n@since 8",
+                                      "Unknown tag '@since' in explanation: Only '@input' is supported");
+        assertInvalidInputExplanation("@input",
+                                      "'@input' in explanation must be followed by an input name and its explanation, but got '@input'");
+        assertInvalidInputExplanation("@input q",
+                                      "'@input q' in explanation has no explanation");
+        assertInvalidInputExplanation("@input q The query\n@input query(q) Again",
+                                      "'@input q' is given more than once in explanation");
+        assertInvalidInputExplanation("@input other The other",
+                                      "The explanation has '@input query(other)', but this profile has no such input. " +
+                                      "Inputs must be declared in an inputs block");
+    }
+
+    private void assertInvalidInputExplanation(String explanation, String expectedMessage) {
+        var e = assertThrows(IllegalArgumentException.class, () -> {
+            var builder = new ApplicationBuilder();
+            builder.addSchema("""
+                              schema test {
+                                  document test {
+                                  }
+                                  rank-profile text {
+                                      explanation {
+                                          %s
+                                      }
+                                      inputs {
+                                          q double
+                                      }
+                                  }
+                              }
+                              """.formatted(explanation.replace("\n", "\n            ")));
+            builder.build(true);
+            new DerivedConfiguration(builder.getSchema(), builder.getRankProfileRegistry()); // compiles rank profiles
+        });
+        assertTrue(Exceptions.toMessageString(e).endsWith(expectedMessage), Exceptions.toMessageString(e));
     }
 
     @Test

@@ -61,6 +61,12 @@ public class SchemaInfoTest {
         assertEquals(Optional.of("Profile with parameters"), schemaA.rankProfiles().get("withParameters").explanation());
         assertEquals(Optional.empty(), schemaA.rankProfiles().get("commonProfile").explanation());
         assertEquals(Optional.empty(), SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("b").explanation());
+
+        var bOnly = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("b").rankProfiles().get("bOnly");
+        assertEquals(new RankProfile.Input("query(myTensor1)", RankProfile.InputType.fromSpec("tensor(a{},b{})"), Optional.of("The first tensor")),
+                     bOnly.inputDetails().get("query(myTensor1)"));
+        assertEquals(RankProfile.InputType.fromSpec("tensor(a{},b{})"), bOnly.inputs().get("query(myTensor1)"));
+        assertEquals(Optional.empty(), schemaA.rankProfiles().get("commonProfile").inputDetails().get("query(myTensor1)").explanation());
     }
 
     @Test

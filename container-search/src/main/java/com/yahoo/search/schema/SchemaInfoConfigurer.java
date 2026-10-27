@@ -6,6 +6,7 @@ import com.yahoo.search.config.SchemaInfoConfig;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Translation between schema info configuration and schema objects.
@@ -60,7 +61,10 @@ class SchemaInfoConfigurer {
             if (profileConfig.totalKeepRankCount() >= 0)
                 profileBuilder.setTotalKeepRankCount(profileConfig.totalKeepRankCount());
             for (var inputConfig : profileConfig.input())
-                profileBuilder.addInput(inputConfig.name(), RankProfile.InputType.fromSpec(inputConfig.type()));
+                profileBuilder.addInput(new RankProfile.Input(inputConfig.name(),
+                                                              RankProfile.InputType.fromSpec(inputConfig.type()),
+                                                              inputConfig.explanation().isEmpty() ? Optional.empty()
+                                                                                                  : Optional.of(inputConfig.explanation())));
             for (String sortFeature : profileConfig.sortFeature())
                 profileBuilder.addSortFeature(sortFeature);
 
