@@ -132,8 +132,13 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 				log.Print(color.CyanString(opts.Target.Deployment().System.ConsoleRunURL(opts.Target.Deployment(), result.ID)))
 			}
 			err = waitForVespaReady(target, result.ID, waiter)
-			if err == nil && progress != nil && progress.run.id > 0 && !progress.run.snapshot.Active {
-				progress.finish("✓ Deployment complete")
+			if err == nil && progress != nil {
+				if progress.run.id > 0 && !progress.run.snapshot.Active {
+					progress.finish("✓ Deployment complete")
+				} else {
+					progress.finish(fmt.Sprintf("Deployment run %d is still running", result.ID))
+					log.Printf("\nUse %s for deployment status", color.CyanString("vespa status deployment"))
+				}
 			}
 			return err
 		},

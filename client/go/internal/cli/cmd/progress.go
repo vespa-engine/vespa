@@ -75,7 +75,7 @@ type deploymentProgress struct {
 	jobs                 []vespa.BuildJobProgress
 	runs                 map[string]*progressRun
 	warnings             map[string]string
-	recentWarnings       []string
+	warningLog           []string
 	lines                int
 	closed               bool
 	size                 func() (int, int)
@@ -198,8 +198,7 @@ func (p *deploymentProgress) record(run *progressRun, id int64, snapshot vespa.R
 			}
 			if _, seen := p.warnings[id]; !seen {
 				p.warnings[id] = label + cleanProgressText(msg.Message)
-				p.recentWarnings = append(p.recentWarnings, p.warnings[id])
-				p.recentWarnings = p.recentWarnings[max(0, len(p.recentWarnings)-2):]
+				p.warningLog = append(p.warningLog, p.warnings[id])
 			}
 		}
 	}
@@ -216,7 +215,7 @@ func (p *deploymentProgress) updateRun(id int64, snapshot vespa.RunProgress) {
 	p.render()
 	failed := !snapshot.Active && snapshot.Status != "success"
 	if failed {
-		p.finishLocked("✗ Deployment ended: " + snapshot.Status)
+		p.finishLocked("✗ Deployment ended: "+snapshot.Status, false)
 	}
 	p.mu.Unlock()
 	if failed {
@@ -259,7 +258,7 @@ func (p *deploymentProgress) updateBuild(snapshot vespa.BuildProgress) {
 	}
 	p.render()
 	if snapshot.HasFailed {
-		p.finishLocked("✗ Build reported a failure; fetching deployment diagnostics…")
+		p.finishLocked("✗ Build reported a failure; fetching deployment diagnostics…", false)
 	}
 	p.mu.Unlock()
 	if snapshot.HasFailed {
@@ -452,7 +451,7 @@ func (p *deploymentProgress) content() []string {
 	}
 	if len(p.warnings) > 0 {
 		lines = append(lines, fmt.Sprintf("Warnings/errors: %d", len(p.warnings)))
-		lines = append(lines, p.recentWarnings...)
+		lines = append(lines, p.warningLog[max(0, len(p.warningLog)-2):]...)
 	}
 	if p.url != "" {
 		lines = append(lines, "", "Console: "+p.url)
@@ -593,22 +592,33 @@ func (p *deploymentProgress) finish(message string) {
 		return
 	}
 	p.mu.Lock()
-	p.finishLocked(message)
+	p.finishLocked(message, true)
 	p.mu.Unlock()
 	p.stopAnimation()
 }
 
-func (p *deploymentProgress) finishLocked(message string) {
+// finishLocked draws the final frame. Unless the caller prints full logs afterwards,
+// every warning and error is written below it, as the frame only shows the latest two.
+func (p *deploymentProgress) finishLocked(message string, printWarnings bool) {
 	if p.closed {
 		return
 	}
 	p.activity = message
 	// Print the complete URL after the last redraw so long links remain usable.
-	url := p.url
+	url, warnings := p.url, p.warnings
 	p.url = ""
+	if printWarnings {
+		p.warnings = nil
+	}
 	p.render()
-	p.url = url
+	p.url, p.warnings = url, warnings
 	p.closed = true
+	if printWarnings && len(p.warningLog) > 0 {
+		fmt.Fprintf(p.cli.Stderr, "\nWarnings/errors: %d\n", len(p.warningLog))
+		for _, w := range p.warningLog {
+			fmt.Fprintln(p.cli.Stderr, paintProgressLine(w))
+		}
+	}
 	if url != "" {
 		fmt.Fprintln(p.cli.Stderr, "\nConsole: "+cleanProgressText(url))
 	}
@@ -620,7 +630,7 @@ func (p *deploymentProgress) close() {
 	}
 	p.mu.Lock()
 	if !p.closed && p.lines > 0 {
-		p.finishLocked("Monitoring stopped; deployment may still be running")
+		p.finishLocked("Monitoring stopped; deployment may still be running", true)
 	}
 	p.closed = true
 	p.mu.Unlock()
