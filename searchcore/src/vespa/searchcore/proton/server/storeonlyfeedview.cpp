@@ -698,15 +698,14 @@ void StoreOnlyFeedView::handleMove(const MoveOperation& moveOp, const DoneCallba
          doc->toString(true).c_str());
 
     adjustMetaStore(moveOp, docId.getGlobalId(), docId);
-    // Since movingLidIfInSameSubDb() holds, a document already in this sub db always changes lid.
-    const bool docAlreadyExists = moveOp.getValidPrevDbdId(_params._subDbId);
+    bool docAlreadyExists = moveOp.getValidPrevDbdId(_params._subDbId);
     if (moveOp.getValidDbdId(_params._subDbId)) {
         if (moveOp.changedDbdId() && useDocumentMetaStore(serialNum)) {
             _gidToLidChangeHandler.notifyPut(FeedToken(), docId.getGlobalId(), moveOp.getLid(), serialNum);
         }
         auto onWriteDone =
             createPutDoneContext({}, doneCtx, _pendingLidsForCommit->produce(moveOp.getLid()), doc, moveOp.getLid());
-        if (docAlreadyExists) {
+        if (docAlreadyExists && moveOp.changedDbdId()) {
             // Moving lid within this sub db (e.g. lid space compaction). Keep the cached summary.
             moveSummary(serialNum, moveOp.getPrevLid(), moveOp.getLid(), doc, onWriteDone);
         } else {
@@ -715,7 +714,7 @@ void StoreOnlyFeedView::handleMove(const MoveOperation& moveOp, const DoneCallba
         putAttributes(serialNum, moveOp.getLid(), *doc, onWriteDone);
         putIndexedFields(serialNum, moveOp.getLid(), doc, onWriteDone);
     }
-    if (docAlreadyExists) {
+    if (docAlreadyExists && moveOp.changedDbdId()) {
         internalRemove({}, doneCtx, _pendingLidsForCommit->produce(moveOp.getPrevLid()), serialNum,
                        moveOp.getPrevLid());
     }
