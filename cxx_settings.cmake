@@ -117,6 +117,10 @@ if (VESPA_USE_SANITIZER)
         # Many false positives when checking vptr due to limited visibility
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-sanitize=vptr")
     endif()
+    if (VESPA_USE_SANITIZER MATCHES "address")
+        # Keep protobuf ClassData layout compatible with non-ASan libprotobuf from vespa-deps
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPROTOBUF_MESSAGE_GLOBALS_TEMPORARY_OPTOUT")
+    endif()
 endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} ${CXX_SPECIFIC_WARN_OPTS} -fdiagnostics-color=auto ${EXTRA_CXX_FLAGS}")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
