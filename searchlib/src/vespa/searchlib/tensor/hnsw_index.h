@@ -85,6 +85,30 @@ struct PreparedAddDoc final : public PrepareResult {
     PreparedAddDoc(PreparedAddDoc&& other) noexcept;
 };
 
+
+struct PreparedFixAddNode {
+    using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
+    std::vector<Links> connections;
+    std::vector<double> max_distances;
+    std::vector<HnswTraversalCandidateVector> selected_neighbors;
+
+    PreparedFixAddNode() noexcept;
+    explicit PreparedFixAddNode(std::vector<Links>&& connections_in, std::vector<double>&& max_distances_in, std::vector<HnswTraversalCandidateVector>&& selected_neighbors_in) noexcept;
+    ~PreparedFixAddNode();
+    PreparedFixAddNode(PreparedFixAddNode&& other) noexcept;
+};
+
+struct PreparedFixAddDoc final : public PrepareResult {
+    using ReadGuard = vespalib::GenerationGuard;
+    uint32_t                     docid;
+    ReadGuard                    read_guard;
+    ReadGuard                    hnsw_graph_read_guard;
+    std::vector<PreparedFixAddNode> nodes;
+    PreparedFixAddDoc(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept;
+    ~PreparedFixAddDoc() override;
+    PreparedFixAddDoc(PreparedFixAddDoc&& other) noexcept;
+};
+
 struct CachedAddDoc final : public PrepareResult {
     using ReadGuard = vespalib::GenerationGuard;
     uint32_t                     docid;
@@ -145,7 +169,29 @@ struct SelectResult {
 };
 
 template <HnswIndexType type> class HnswIndex : public NearestNeighborIndex {
-    static constexpr bool use_caching_insertion = true;
+    enum class InsertionStrategy {
+        PARALLEL,
+        PARALLEL_LAST_NODES,
+        SERIAL_CACHING
+    };
+    static constexpr InsertionStrategy insertion_strategy = InsertionStrategy::PARALLEL_LAST_NODES;
+
+
+    static constexpr size_t NUM_LAST_INSERTED_NODES_TO_BUFFER = 512;
+    using NodeGenerationType = uint64_t;
+    struct InsertedNodeInfo {
+        uint32_t nodeid;
+
+        // Sequentially increasing number to remember when the node was added.
+        //
+        NodeGenerationType generation;
+
+        // levels_ref allows to verify if this node still exists in the graph
+        // The nodeid could have been reused!
+        vespalib::datastore::EntryRef levels_ref;
+    };
+    std::deque<uint32_t> last_inserted_nodes;
+
 public:
     uint32_t get_docid(uint32_t nodeid) const {
         if constexpr (NodeType::identity_mapping) {
@@ -282,16 +328,23 @@ protected:
 
     internal::PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
                                                   vespalib::GenerationGuard read_guard) const;
-    internal::CachedAddDoc internal_prepare_add_with_caching(uint32_t docid, VectorBundle input_vectors,
+    internal::PreparedFixAddDoc internal_prepare_fix_add(uint32_t docid, VectorBundle input_vectors,
                                                   vespalib::GenerationGuard read_guard) const;
+    internal::CachedAddDoc internal_prepare_add_with_caching(uint32_t docid, VectorBundle input_vectors,
+                                                      vespalib::GenerationGuard read_guard) const;
     void internal_prepare_add_node(internal::PreparedAddDoc& op, TypedCells input_vector,
+                                   const typename GraphType::EntryNode& entry) const;
+    void internal_prepare_fix_add_node(internal::PreparedFixAddDoc& op, TypedCells input_vector,
                                    const typename GraphType::EntryNode& entry) const;
     void internal_prepare_add_node_with_caching(internal::CachedAddDoc::DistanceCache &distance_cache, internal::CachedAddDoc& op, TypedCells input_vector,
                                    const typename GraphType::EntryNode& entry) const;
     LinkArray filter_valid_nodeids(uint32_t level, const internal::PreparedAddNode::Links& neighbors,
                                    uint32_t self_nodeid);
     void internal_complete_add(uint32_t docid, internal::PreparedAddDoc& op);
+    void internal_complete_fix_add(uint32_t docid, internal::PreparedFixAddDoc& op);
     void internal_complete_add_with_caching(uint32_t docid, internal::CachedAddDoc& op);
+    void internal_complete_fix_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
+                                    internal::PreparedFixAddNode& prepared_node);
     void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
                                     internal::PreparedAddNode& prepared_node);
     void internal_complete_add_node_with_caching(internal::CachedAddDoc::DistanceCache &distance_cache, internal::CachedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry, uint32_t nodeid, uint32_t docid, uint32_t subspace);
@@ -379,7 +432,7 @@ public:
 
     double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, uint32_t df_nodeid, internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid, uint32_t new_node_is) const {
         double dist;
-        if constexpr (use_caching_insertion) {
+        if constexpr (insertion_strategy == InsertionStrategy::SERIAL_CACHING) {
             if (distance_cache) {
                 uint64_t pair = make_pair(df_nodeid == new_node_is ? 0 : df_nodeid, nodeid == new_node_is ? 0 : nodeid);
                 auto it = distance_cache->find(pair);
@@ -406,7 +459,7 @@ public:
 
     double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, uint32_t df_nodeid, internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid, uint32_t new_node_is, uint32_t docid, uint32_t subspace) const {
         double dist;
-        if constexpr (use_caching_insertion) {
+        if constexpr (insertion_strategy == InsertionStrategy::SERIAL_CACHING) {
             if (distance_cache) {
                 uint64_t pair = make_pair(df_nodeid == new_node_is ? 0 : df_nodeid, nodeid == new_node_is ? 0 : nodeid);
                 auto it = distance_cache->find(pair);
