@@ -365,6 +365,17 @@ void StoreOnlyFeedView::putSummary(SerialNum serialNum, Lid lid, Document::SP do
             _summaryAdapter->put(serialNum, lid, *doc);
         }));
 }
+void StoreOnlyFeedView::moveSummary(SerialNum serialNum, Lid prevLid, Lid lid, Document::SP doc,
+                                    const OnOperationDoneType& onDone) {
+    summaryExecutor().execute(
+        makeLambdaTask([serialNum, doc = std::move(doc), trackerToken = _pendingLidsForDocStore.produce(lid), onDone,
+                        prevLid, lid, this] {
+            (void)onDone;
+            (void)trackerToken;
+            _summaryAdapter->move(serialNum, prevLid, lid, *doc);
+        }));
+}
+
 void StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, const OnWriteDoneType& onDone) {
     summaryExecutor().execute(
         makeLambdaTask([serialNum, lid, onDone, trackerToken = _pendingLidsForDocStore.produce(lid), this] {
@@ -694,7 +705,12 @@ void StoreOnlyFeedView::handleMove(const MoveOperation& moveOp, const DoneCallba
         }
         auto onWriteDone =
             createPutDoneContext({}, doneCtx, _pendingLidsForCommit->produce(moveOp.getLid()), doc, moveOp.getLid());
-        putSummary(serialNum, moveOp.getLid(), doc, onWriteDone);
+        if (docAlreadyExists && moveOp.changedDbdId()) {
+            // Moving lid within this sub db (e.g. lid space compaction). Keep the cached summary.
+            moveSummary(serialNum, moveOp.getPrevLid(), moveOp.getLid(), doc, onWriteDone);
+        } else {
+            putSummary(serialNum, moveOp.getLid(), doc, onWriteDone);
+        }
         putAttributes(serialNum, moveOp.getLid(), *doc, onWriteDone);
         putIndexedFields(serialNum, moveOp.getLid(), doc, onWriteDone);
     }

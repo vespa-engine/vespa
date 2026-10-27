@@ -91,6 +91,14 @@ public:
     virtual void remove(uint64_t syncToken, DocumentIdT lid) = 0;
 
     /**
+     * Write a document that has been moved from fromLid to toLid (e.g. by lid space compaction).
+     * Same as write(syncToken, toLid, doc), but if the document at fromLid is cached, the document
+     * is cached at toLid as well instead of the cached copy being lost when fromLid is removed.
+     * The document at fromLid is not removed.
+     **/
+    virtual void move(uint64_t syncToken, DocumentIdT fromLid, DocumentIdT toLid, const document::Document& doc);
+
+    /**
      * Flush all in-memory updates to disk.
      **/
     virtual void flush(uint64_t syncToken) = 0;
