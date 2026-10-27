@@ -73,20 +73,20 @@ public class SchemaInfoTest {
     void testFastMapSearchConfiguration() {
         var schemaConfig = new SchemaInfoConfig.Schema.Builder().name("a");
         schemaConfig.field(new SchemaInfoConfig.Schema.Field.Builder().name("plain").type("map<string,string>")
-                                                                      .index(false).attribute(false).bitPacked(false));
+                                                                      .index(false).attribute(false));
         schemaConfig.field(new SchemaInfoConfig.Schema.Field.Builder().name("fastmap").type("map<string,int>")
-                                                                      .index(false).attribute(false).bitPacked(false)
+                                                                      .index(false).attribute(false)
                                                                       .fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
                                                                                                    .lookupName("maplookup")
                                                                                                    .keyType("string").valueType("int")));
         schemaConfig.field(new SchemaInfoConfig.Schema.Field.Builder().name("fastarray").type("array<entry>")
-                                                                      .index(false).attribute(false).bitPacked(false)
+                                                                      .index(false).attribute(false)
                                                                       .fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
                                                                                                    .lookupName("arraylookup")
                                                                                                    .keyField("mykey").keyType("string")
                                                                                                    .valueField("myvalue").valueType("long")));
         schemaConfig.field(new SchemaInfoConfig.Schema.Field.Builder().name("twolookups").type("array<entry>")
-                                                                      .index(false).attribute(false).bitPacked(false)
+                                                                      .index(false).attribute(false)
                                                                       .fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
                                                                                                    .lookupName("lookup")
                                                                                                    .keyField("mykey").keyType("string")

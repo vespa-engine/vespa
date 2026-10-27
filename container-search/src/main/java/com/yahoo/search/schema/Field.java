@@ -22,7 +22,6 @@ public class Field implements FieldInfo {
     private final Type type;
     private final boolean isAttribute;
     private final boolean isIndex;
-    private final boolean bitPacked;
     private final List<FastMapSearchFields> fastMapSearches;
     private final Set<String> aliases;
     private final Optional<String> explanation;
@@ -32,7 +31,6 @@ public class Field implements FieldInfo {
         this.type = builder.type;
         this.isAttribute = builder.isAttribute;
         this.isIndex = builder.isIndex;
-        this.bitPacked = builder.isBitPacked;
         this.fastMapSearches = List.copyOf(builder.fastMapSearches);
         this.aliases = Set.copyOf(builder.aliases);
         this.explanation = Optional.ofNullable(builder.explanation);
@@ -412,7 +410,6 @@ public class Field implements FieldInfo {
         private final Set<String> aliases = new HashSet<>();
         private boolean isAttribute;
         private boolean isIndex;
-        private boolean isBitPacked;
         private final List<FastMapSearchFields> fastMapSearches = new ArrayList<>();
         private String explanation = null;
 
@@ -439,11 +436,6 @@ public class Field implements FieldInfo {
 
         public Builder setIndex(boolean isIndex) {
             this.isIndex = isIndex;
-            return this;
-        }
-
-        public Builder setBitPacked(boolean isBitPacked) {
-            this.isBitPacked = isBitPacked;
             return this;
         }
 

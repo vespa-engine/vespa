@@ -238,14 +238,6 @@ public class SDField extends Field implements ImmutableSDField {
         return containsExpression(IndexExpression.class);
     }
 
-    /** Returns true if (there is strong evidence that) the value stored by this field is bit-packed. */
-    @Override
-    public boolean doesBitPacking() {
-        return getDataType() instanceof TensorDataType tensor &&
-               tensor.getTensorType().valueType() == TensorType.Value.INT8 &&
-               containsExpression(PackBitsExpression.class);
-    }
-
     public boolean doesSummarying() {
         if (usesStruct()) {
             for (SDField structField : getStructFields()) {
