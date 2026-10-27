@@ -86,14 +86,29 @@ struct PreparedAddDoc final : public PrepareResult {
 };
 
 
+using InsertionGenerationType = uint64_t;
+
+struct InsertedNodeInfo {
+    uint32_t nodeid;
+
+    // Sequentially increasing number to remember when the node was added.
+    // Will be compared with the number that is taken in internal_prepare_fix_add.
+internal::InsertionGenerationType generation;
+
+    // levels_ref allows to verify if this node still exists in the graph
+    // The nodeid could have been reused!
+    vespalib::datastore::EntryRef levels_ref;
+};
+
 struct PreparedFixAddNode {
     using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
     std::vector<Links> connections;
     std::vector<double> max_distances;
     std::vector<HnswTraversalCandidateVector> selected_neighbors;
+    InsertionGenerationType prepared_at_generation;
 
     PreparedFixAddNode() noexcept;
-    explicit PreparedFixAddNode(std::vector<Links>&& connections_in, std::vector<double>&& max_distances_in, std::vector<HnswTraversalCandidateVector>&& selected_neighbors_in) noexcept;
+    explicit PreparedFixAddNode(std::vector<Links>&& connections_in, std::vector<double>&& max_distances_in, std::vector<HnswTraversalCandidateVector>&& selected_neighbors_in, InsertionGenerationType prepared_at_generation_in) noexcept;
     ~PreparedFixAddNode();
     PreparedFixAddNode(PreparedFixAddNode&& other) noexcept;
 };
@@ -176,22 +191,6 @@ template <HnswIndexType type> class HnswIndex : public NearestNeighborIndex {
     };
     static constexpr InsertionStrategy insertion_strategy = InsertionStrategy::PARALLEL_LAST_NODES;
 
-
-    static constexpr size_t NUM_LAST_INSERTED_NODES_TO_BUFFER = 512;
-    using NodeGenerationType = uint64_t;
-    struct InsertedNodeInfo {
-        uint32_t nodeid;
-
-        // Sequentially increasing number to remember when the node was added.
-        //
-        NodeGenerationType generation;
-
-        // levels_ref allows to verify if this node still exists in the graph
-        // The nodeid could have been reused!
-        vespalib::datastore::EntryRef levels_ref;
-    };
-    std::deque<uint32_t> last_inserted_nodes;
-
 public:
     uint32_t get_docid(uint32_t nodeid) const {
         if constexpr (NodeType::identity_mapping) {
@@ -236,6 +235,11 @@ protected:
     RandomLevelGenerator::UP                 _level_generator;
     IdMapping                                _id_mapping; // mapping from docid to nodeid vector
     HnswIndexConfig                          _cfg;
+
+    static constexpr size_t NUMBER_OF_LAST_INSERTED_NODES_TO_KEEP = 512;
+    std::deque<internal::InsertedNodeInfo> _last_inserted_nodes;
+    uint64_t _current_generation; // read and written to by writer thread
+    std::atomic_uint64_t _current_generation_atomic; // written to by writer thread, read by reader threads
 
     uint32_t max_links_for_level(uint32_t level) const;
     void add_link_to(uint32_t nodeid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
