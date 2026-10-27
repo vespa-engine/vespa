@@ -13,6 +13,12 @@
       "include": "#string-single"
     },
     {
+      "include": "#explanation-block"
+    },
+    {
+      "include": "#explanation-inline"
+    },
+    {
       "include": "#tensor-type"
     },
     {
@@ -688,6 +694,70 @@
           "include": "#ranking-expression"
         }
       ]
+    },
+    "explanation-tag": {
+      "match": "^\\s*(@input)\\b(?:\\s+(query\\(\\s*[a-zA-Z_]\\w*\\s*\\)|[a-zA-Z_]\\w*))?",
+      "captures": {
+        "1": {
+          "name": "storage.type.class.documentation.vespa"
+        },
+        "2": {
+          "name": "variable.parameter.documentation.vespa"
+        }
+      }
+    },
+    "explanation-braces": {
+      "begin": "\\{",
+      "end": "\\}",
+      "patterns": [
+        {
+          "include": "#explanation-tag"
+        },
+        {
+          "include": "#explanation-braces"
+        }
+      ]
+    },
+    "explanation-block": {
+      "name": "meta.block.explanation.vespa",
+      "contentName": "comment.block.documentation.vespa",
+      "begin": "\\b(explanation)\\s*(\\{)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.vespa"
+        },
+        "2": {
+          "name": "punctuation.section.block.begin.vespa"
+        }
+      },
+      "end": "(\\})",
+      "endCaptures": {
+        "1": {
+          "name": "punctuation.section.block.end.vespa"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#explanation-tag"
+        },
+        {
+          "include": "#explanation-braces"
+        }
+      ]
+    },
+    "explanation-inline": {
+      "name": "meta.inline.explanation.vespa",
+      "contentName": "comment.line.documentation.vespa",
+      "begin": "\\b(explanation)\\s*(:)",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.vespa"
+        },
+        "2": {
+          "name": "punctuation.separator.vespa"
+        }
+      },
+      "end": "$"
     },
     "feature-list-block": {
       "name": "meta.block.feature-list.vespa",
