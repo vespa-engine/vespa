@@ -2,6 +2,7 @@
 package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
+import ai.vespa.modelintegration.evaluator.BatchDimensionTestModels;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxPoolingOptions;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
@@ -62,7 +63,7 @@ class TritonOnnxRuntimeDefaultsTest {
     }
 
     private static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options) {
-        return TritonOnnxRuntime.shouldPadForBatching(modelPath, options);
+        return TritonOnnxRuntime.shouldPadForBatching(modelPath, options, TritonOnnxRuntime.hasBatchDimension(modelPath));
     }
 
     @Test
@@ -72,7 +73,32 @@ class TritonOnnxRuntimeDefaultsTest {
         assertTrue(shouldPadForBatching(float32, options(16).setBatchingMaxSize(8).setGpuDevice(0, true).build()));
         assertFalse(shouldPadForBatching(float32, options(16).setBatchingMaxSize(8).build()), "Should not pad on CPU");
         assertFalse(shouldPadForBatching(float32, options(16).setGpuDevice(0).build()), "Should not pad without batching");
+        assertFalse(shouldPadForBatching(float32, options(16).setBatchingMaxSize(0).setGpuDevice(0).build()), "Should not pad without batching");
         assertTrue(shouldPadForBatching("not-a-local-file", options(16).setBatchingMaxSize(8).setGpuDevice(0).build()));
+    }
+
+    @Test
+    void models_without_batch_dimension_are_not_padded_since_they_are_not_batched() {
+        var options = options(16).setBatchingMaxSize(8).setGpuDevice(0).build();
+        assertFalse(shouldPadForBatching("src/test/models/onnx/add_float.onnx", options));
+        assertFalse(shouldPadForBatching("src/test/models/onnx/catboost/catboost_regressor.onnx", options));
+    }
+
+    @Test
+    void rerankers_are_padded_and_batched_only_with_a_batch_dimension(@TempDir Path directory) throws IOException {
+        var batched = Files.write(directory.resolve("cross_encoder.onnx"),
+                                  BatchDimensionTestModels.crossEncoder(true).toByteArray()).toString();
+        var fixed = Files.write(directory.resolve("cross_encoder_fixed.onnx"),
+                                BatchDimensionTestModels.crossEncoder(false).toByteArray()).toString();
+        var batchingOnGpu = options(16).setBatchingMaxSize(8).setGpuDevice(0).build();
+        assertTrue(shouldPadForBatching(batched, batchingOnGpu));
+        assertFalse(shouldPadForBatching(fixed, batchingOnGpu));
+
+        // RankProfilesConfigImporter builds these options for global-phase ranking, without batching or padding
+        var globalPhase = new OnnxEvaluatorOptions.Builder().setGpuDevice(0, false).build();
+        assertFalse(shouldPadForBatching(batched, globalPhase));
+        assertEquals(1, TritonOnnxRuntime.maxBatchSize(batched, globalPhase, TritonOnnxRuntime.hasBatchDimension(batched)));
+        assertEquals(0, TritonOnnxRuntime.maxBatchSize(fixed, globalPhase, TritonOnnxRuntime.hasBatchDimension(fixed)));
     }
 
     @Test
@@ -266,6 +292,36 @@ class TritonOnnxRuntimeDefaultsTest {
                     assertEquals(TextFormat.parse(Files.readString(config), ModelConfig.class).getInstanceGroup(0),
                                  generated.getInstanceGroup(0));
                 }
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    // Triton fails to load a model whose inputs or outputs have no batch dimension with a non-zero max batch size.
+    @Test
+    void model_without_batch_dimension_is_not_batched(@TempDir Path directory) throws IOException {
+        var unbatched = "src/test/models/onnx/add_float.onnx";
+        for (var batchingMaxSize : List.of(1, 8)) {
+            var options = options(8).setBatchingMaxSize(batchingMaxSize).build();
+            assertEquals(0, TritonOnnxRuntime.maxBatchSize(unbatched, options, TritonOnnxRuntime.hasBatchDimension(unbatched)));
+            assertEquals(batchingMaxSize,
+                         TritonOnnxRuntime.maxBatchSize(MODEL_PATH, options, TritonOnnxRuntime.hasBatchDimension(MODEL_PATH)));
+        }
+
+        var repository = directory.resolve("repository");
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                .modelRepositoryPath(repository.toString())
+                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class));
+        try {
+            var options = options(8).setBatchingMaxSize(8).build();
+            var name = TritonOnnxRuntime.generateModelName(
+                    unbatched, resolveInstanceCount(options, true), true, Optional.empty());
+            try (var evaluator = runtime.evaluatorOf(unbatched, options)) {
+                var config = TextFormat.parse(Files.readString(
+                        repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
+                assertEquals(0, config.getMaxBatchSize());
+                assertFalse(config.hasDynamicBatching());
             }
         } finally {
             runtime.deconstruct();
