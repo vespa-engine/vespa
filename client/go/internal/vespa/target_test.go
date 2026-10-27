@@ -773,6 +773,20 @@ func TestCloudDeploymentProgressPreservesFailure(t *testing.T) {
 	assert.Equal(t, 1, calls)
 }
 
+func TestCloudDeploymentProgressPrintsEarlierLogsOnFailure(t *testing.T) {
+	var logs bytes.Buffer
+	target, client := createCloudTarget(t, &logs)
+	target.(*cloudTarget).deploymentOptions.OnProgress = func(int64, RunProgress) {}
+	client.NextResponseString(200, `{"active":true,"status":"running","lastId":1,"steps":{"deployReal":{"status":"unfinished"}},"log":{"deployReal":[{"at":1,"type":"info","message":"Preparing application"},{"at":2,"type":"warning","message":"Field is deprecated"}]}}`)
+	client.NextResponseString(200, `{"active":false,"status":"deploymentFailed","lastId":3,"steps":{"deployReal":{"status":"failed"}},"log":{"deployReal":[{"at":3,"type":"error","message":"Deployment failed: Invalid schema"}]}}`)
+	_, err := target.AwaitDeployment(42, 10*time.Second)
+	assert.ErrorIs(t, err, ErrDeployment)
+	assert.Contains(t, err.Error(), "Invalid schema")
+	assert.Contains(t, logs.String(), "Preparing application")
+	assert.NotContains(t, logs.String(), "Invalid schema") // already in the error
+	assert.True(t, client.Consumed())
+}
+
 func TestBuildProgressIncrementalJobDetails(t *testing.T) {
 	target, client := createCloudTarget(t, nil)
 	buildPath := "/application/v4/tenant/t1/application/a1/build-status/42"

@@ -328,6 +328,7 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 	}
 	success := false
 	failureMsgs := make(map[string][]string)
+	history := RunProgress{Log: make(map[string][]RunLogEntry), LastID: -1}
 	jobSuccessFunc := func(status int, response []byte) (bool, error) {
 		if ok, err := isOK(status); !ok {
 			return ok, err
@@ -338,6 +339,10 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		}
 		if t.deploymentOptions.OnProgress != nil {
 			t.deploymentOptions.OnProgress(runID, resp)
+			for step, msgs := range resp.Log {
+				history.Log[step] = append(history.Log[step], msgs...)
+			}
+			history.LastID = max(history.LastID, resp.LastID)
 		}
 		for step, msgs := range resp.Log {
 			for _, msg := range msgs {
@@ -348,7 +353,9 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		}
 		if !resp.Active && resp.Status != "success" {
 			failed := failedStep(resp.Steps)
-			if t.logOptions.Writer != nil {
+			if t.logOptions.Writer != nil && t.deploymentOptions.OnProgress != nil {
+				t.printLog(history, -1, failed)
+			} else if t.logOptions.Writer != nil {
 				t.printLog(resp, lastID, failed)
 			}
 			if msgs := failureMsgs[failed]; len(msgs) > 0 {

@@ -144,7 +144,7 @@ func TestProgressWarningsAndFailure(t *testing.T) {
 	p.updateRun(42, snapshot)
 	p.updateRun(42, snapshot)
 	require.Len(t, p.warnings, 1)
-	require.Len(t, p.recentWarnings, 1)
+	require.Len(t, p.warningLog, 1)
 	assert.Contains(t, strings.Join(p.content(), "\n"), "Warning: Check the schema")
 	snapshot.Active = false
 	snapshot.Status = "deploymentFailed"
@@ -153,6 +153,19 @@ func TestProgressWarningsAndFailure(t *testing.T) {
 	assert.Contains(t, output.String(), "Deployment ended: deploymentFailed")
 	p.close()
 	assert.Nil(t, p.cli.progress)
+}
+
+func TestProgressPrintsAllWarningsOnFinish(t *testing.T) {
+	p, output := newProgressTest(t)
+	snapshot := provisioningSnapshot(t)
+	for i, msg := range []string{"first", "second", "third"} {
+		snapshot.Log["deployReal"] = append(snapshot.Log["deployReal"], vespa.RunLogEntry{At: int64(i + 2), Type: "warning", Message: msg})
+	}
+	p.updateRun(42, snapshot)
+	assert.NotContains(t, strings.Join(p.content(), "\n"), "Warning: first")
+	p.finish("✓ Deployment complete")
+	tail := output.String()[strings.LastIndex(output.String(), "Deployment complete"):]
+	assert.Contains(t, tail, "Warnings/errors: 3\nWarning: first\nWarning: second\nWarning: third\n")
 }
 
 func TestProgressTerminalSafetyAndBounds(t *testing.T) {
