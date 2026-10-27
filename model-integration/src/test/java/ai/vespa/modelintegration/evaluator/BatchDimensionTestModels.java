@@ -26,7 +26,7 @@ public class BatchDimensionTestModels {
                 new Case("minus_one", identity(tensor("x", -1, 3), tensor("y", -1, 3)), true),
                 // ONNX Runtime infers the shape of an output without one
                 new Case("unshaped_output", identity(tensor("x", "batch", 3), unshaped("y")), true),
-                // Before IR version 4, models list their initializers as inputs too, with fixed shapes
+                // Before ONNX intermediate representation (IR) version 4, models list their initializers as inputs too, with fixed shapes
                 new Case("initializer_input_ir3", matMulWithInitializerAsInput(3, 8), true),
                 // From IR version 4, such an initializer is a default that a request may override
                 new Case("initializer_input_ir8", matMulWithInitializerAsInput(8, 13), true),

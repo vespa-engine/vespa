@@ -1,7 +1,7 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 # Generates a CatBoost regressor with CatBoost's own ONNX exporter.
-# The export has IR version 3, only the ai.onnx.ml domain and one TreeEnsembleRegressor.
+# The export has ONNX intermediate representation (IR) version 3, only the ai.onnx.ml domain and one TreeEnsembleRegressor.
 # The regressor trains on synthetic data.
 # Its shapes are fixed to [1, 4] -> [1, 1], as in a model exported to score one row at a time.
 # The model therefore has no batch dimension.
