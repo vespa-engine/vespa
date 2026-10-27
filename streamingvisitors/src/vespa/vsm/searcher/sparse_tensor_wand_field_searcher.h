@@ -20,12 +20,10 @@ namespace vsm {
 class SparseTensorWandFieldSearcher : public FieldSearcher {
 private:
     struct NodeAndDotProduct {
-        search::streaming::SparseTensorWandQueryNode*        node;
-        std::unique_ptr<vespalib::eval::InterpretedFunction> function;
-        search::queryeval::SparseTensorDotProduct            dot_product;
-        NodeAndDotProduct(search::streaming::SparseTensorWandQueryNode*        node_in,
-                          std::unique_ptr<vespalib::eval::InterpretedFunction> function_in,
-                          const vespalib::eval::Value&                         query_tensor);
+        search::streaming::SparseTensorWandQueryNode* node;
+        search::queryeval::SparseTensorDotProduct     dot_product;
+        NodeAndDotProduct(search::streaming::SparseTensorWandQueryNode* node_in,
+                          const vespalib::eval::Value&                  query_tensor);
         ~NodeAndDotProduct();
     };
     std::vector<std::unique_ptr<NodeAndDotProduct>> _nodes;

@@ -15,10 +15,9 @@ using search::streaming::SparseTensorWandQueryNode;
 
 namespace vsm {
 
-SparseTensorWandFieldSearcher::NodeAndDotProduct::NodeAndDotProduct(
-    SparseTensorWandQueryNode* node_in, std::unique_ptr<vespalib::eval::InterpretedFunction> function_in,
-    const vespalib::eval::Value& query_tensor)
-    : node(node_in), function(std::move(function_in)), dot_product(*function, query_tensor) {
+SparseTensorWandFieldSearcher::NodeAndDotProduct::NodeAndDotProduct(SparseTensorWandQueryNode*   node_in,
+                                                                    const vespalib::eval::Value& query_tensor)
+    : node(node_in), dot_product(query_tensor) {
 }
 
 SparseTensorWandFieldSearcher::NodeAndDotProduct::~NodeAndDotProduct() = default;
@@ -73,8 +72,7 @@ void SparseTensorWandFieldSearcher::prepare(search::streaming::QueryTermList& qt
                                     field_type.to_spec().c_str(), tensor_value->type().to_spec().c_str());
             continue;
         }
-        _nodes.push_back(std::make_unique<NodeAndDotProduct>(
-            wand_term, SparseTensorWandSearch::make_dot_product(field_type), *tensor_value));
+        _nodes.push_back(std::make_unique<NodeAndDotProduct>(wand_term, *tensor_value));
     }
 }
 
