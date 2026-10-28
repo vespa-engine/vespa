@@ -13,6 +13,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Text;
 import com.yahoo.language.process.TimeoutException;
+import com.yahoo.yolean.Exceptions;
 import inference.GRPCInferenceServiceGrpc;
 import inference.GrpcService;
 import io.grpc.ManagedChannel;
@@ -226,6 +227,10 @@ public class TritonOnnxClient implements AutoCloseable {
                     return;
                 }
             } catch (TritonException | TimeoutException e) {
+                // Triton rejects batching for a model the same way on every attempt.
+                if (e instanceof TritonException tritonException && isBatchingRejection(tritonException)) {
+                    throw tritonException;
+                }
                 lastException = e;
             }
 
@@ -242,6 +247,16 @@ public class TritonOnnxClient implements AutoCloseable {
         var waitMillis = System.currentTimeMillis() - startMillis;
         var exceptionMessage = "Failed loading model " + modelName + " after " + waitMillis + " ms";
         throw new TritonException(exceptionMessage, lastException);
+    }
+
+    /**
+     * Returns whether the error is Triton's ONNX Runtime backend refusing to load a model with a non-zero max batch size,
+     * since an input or output of the model has no batch dimension.
+     * Only Triton's auto-complete reports this error.
+     * The configs that TritonOnnxRuntime generates list no inputs or outputs, so they need auto-complete anyway.
+     */
+    public static boolean isBatchingRejection(TritonException e) {
+        return Exceptions.toMessageString(e).contains("does not support batching while non-zero max_batch_size");
     }
 
     /**

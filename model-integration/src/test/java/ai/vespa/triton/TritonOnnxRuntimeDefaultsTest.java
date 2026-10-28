@@ -40,7 +40,9 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -54,6 +56,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 class TritonOnnxRuntimeDefaultsTest {
 
     private static final String MODEL_PATH = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+    private static final String REJECTS_BATCHING = "Failed loading model: failed to load 'model' version 1: Invalid argument: " +
+            "autofill failed for model 'model': model does not support batching while non-zero max_batch_size is specified";
 
     private static final boolean SHARED_SESSION = true;
     private static final boolean SEPARATE_SESSIONS = false;
@@ -63,7 +67,7 @@ class TritonOnnxRuntimeDefaultsTest {
     }
 
     private static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options) {
-        return TritonOnnxRuntime.shouldPadForBatching(modelPath, options, TritonOnnxRuntime.hasBatchDimension(modelPath));
+        return TritonOnnxRuntime.shouldPadForBatching(modelPath, options, () -> TritonOnnxRuntime.declaresBatchDimension(modelPath));
     }
 
     @Test
@@ -97,8 +101,8 @@ class TritonOnnxRuntimeDefaultsTest {
         // RankProfilesConfigImporter builds these options for global-phase ranking, without batching or padding
         var globalPhase = new OnnxEvaluatorOptions.Builder().setGpuDevice(0, false).build();
         assertFalse(shouldPadForBatching(batched, globalPhase));
-        assertEquals(1, TritonOnnxRuntime.maxBatchSize(batched, globalPhase, TritonOnnxRuntime.hasBatchDimension(batched)));
-        assertEquals(0, TritonOnnxRuntime.maxBatchSize(fixed, globalPhase, TritonOnnxRuntime.hasBatchDimension(fixed)));
+        assertTrue(TritonOnnxRuntime.declaresBatchDimension(batched));
+        assertFalse(TritonOnnxRuntime.declaresBatchDimension(fixed));
     }
 
     @Test
@@ -298,30 +302,79 @@ class TritonOnnxRuntimeDefaultsTest {
         }
     }
 
+    // ONNX Runtime's shape inference can remove a batch dimension that the model file declares.
+    // Triton then rejects batching, and the runtime loads the model again with a max batch size of 0.
+    @Test
+    void model_is_loaded_again_without_batching_when_triton_rejects_batching(@TempDir Path directory) throws IOException {
+        var model = Files.write(directory.resolve("reduced_output.onnx"),
+                                BatchDimensionTestModels.casesWhereShapeInferenceRemovesBatchDimension().get(0).model().toByteArray()).toString();
+        var options = options(8).setBatchingMaxSize(8).build();
+        var name = TritonOnnxRuntime.generateModelName(model, resolveInstanceCount(options, true), true, Optional.empty());
+        var repository = directory.resolve("repository");
+        var client = mock(TritonOnnxClient.class);
+        doThrow(new TritonOnnxClient.TritonException(REJECTS_BATCHING)).doNothing().when(client).loadUntilModelReady(name);
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), client);
+        try (var evaluator = runtime.evaluatorOf(model, options)) {
+            verify(client, times(2)).loadUntilModelReady(name);
+            var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
+            assertEquals(0, config.getMaxBatchSize());
+            assertFalse(config.hasDynamicBatching());
+            // Padding follows the batch dimension Triton loaded the model with, not the one in the model file
+            assertEquals(Optional.of(false), runtime.supportsBatching(name));
+            assertTrue(TritonOnnxRuntime.declaresBatchDimension(model));
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void model_is_not_loaded_again_for_other_errors_or_with_a_model_config_override(@TempDir Path directory)
+            throws IOException {
+        var model = Files.write(directory.resolve("reduced_output.onnx"),
+                                BatchDimensionTestModels.casesWhereShapeInferenceRemovesBatchDimension().get(0).model().toByteArray()).toString();
+        var override = Files.writeString(directory.resolve("override.pbtxt"), "max_batch_size: 8");
+        var cases = Map.of(options(8).setBatchingMaxSize(8).build(), "some other error",
+                           options(8).setModelConfigOverride(Optional.of(override)).build(), REJECTS_BATCHING);
+        for (var entry : cases.entrySet()) {
+            var options = entry.getKey();
+            var resolved = options.modelConfigOverride().isPresent() ? options : resolveInstanceCount(options, true);
+            var name = TritonOnnxRuntime.generateModelName(model, resolved, true, Optional.empty());
+            var client = mock(TritonOnnxClient.class);
+            doThrow(new TritonOnnxClient.TritonException(entry.getValue())).when(client).loadUntilModelReady(name);
+            var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                    .modelRepositoryPath(directory.resolve("repository").toString())
+                    .shareOnnxSessionBetweenInstances(true).build(), client);
+            try {
+                assertThrows(TritonOnnxClient.TritonException.class, () -> runtime.evaluatorOf(model, options));
+                verify(client, times(1)).loadUntilModelReady(name);
+            } finally {
+                runtime.deconstruct();
+            }
+        }
+    }
+
     // Triton fails to load a model whose inputs or outputs have no batch dimension with a non-zero max batch size.
     @Test
     void model_without_batch_dimension_is_not_batched(@TempDir Path directory) throws IOException {
         var unbatched = "src/test/models/onnx/add_float.onnx";
-        for (var batchingMaxSize : List.of(1, 8)) {
-            var options = options(8).setBatchingMaxSize(batchingMaxSize).build();
-            assertEquals(0, TritonOnnxRuntime.maxBatchSize(unbatched, options, TritonOnnxRuntime.hasBatchDimension(unbatched)));
-            assertEquals(batchingMaxSize,
-                         TritonOnnxRuntime.maxBatchSize(MODEL_PATH, options, TritonOnnxRuntime.hasBatchDimension(MODEL_PATH)));
-        }
-
         var repository = directory.resolve("repository");
         var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
                 .modelRepositoryPath(repository.toString())
                 .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class));
         try {
-            var options = options(8).setBatchingMaxSize(8).build();
-            var name = TritonOnnxRuntime.generateModelName(
-                    unbatched, resolveInstanceCount(options, true), true, Optional.empty());
-            try (var evaluator = runtime.evaluatorOf(unbatched, options)) {
-                var config = TextFormat.parse(Files.readString(
-                        repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
-                assertEquals(0, config.getMaxBatchSize());
-                assertFalse(config.hasDynamicBatching());
+            for (var batchingMaxSize : List.of(1, 8)) {
+                var options = options(8).setBatchingMaxSize(batchingMaxSize).build();
+                for (var model : List.of(unbatched, MODEL_PATH)) {
+                    var name = TritonOnnxRuntime.generateModelName(
+                            model, resolveInstanceCount(options, true), true, Optional.empty());
+                    try (var evaluator = runtime.evaluatorOf(model, options)) {
+                        var config = TextFormat.parse(Files.readString(
+                                repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
+                        assertEquals(model.equals(unbatched) ? 0 : batchingMaxSize, config.getMaxBatchSize(), model);
+                        assertEquals(!model.equals(unbatched) && batchingMaxSize > 1, config.hasDynamicBatching(), model);
+                    }
+                }
             }
         } finally {
             runtime.deconstruct();

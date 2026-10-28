@@ -44,21 +44,21 @@ public class OnnxStreamParser {
     }
 
     /**
-     * Returns whether every input and output of the model has a batch dimension: a first dimension of variable size.
+     * Returns whether every input and output of the model declares a batch dimension: a first dimension of variable size.
      * A model exported with a [1, features] input, for example, has a first dimension of fixed size instead.
      * Triton's ONNX Runtime backend refuses to batch a model without a batch dimension.
      * The backend judges the shapes that ONNX Runtime reports, so this method reads them the same way.
      */
-    public static boolean hasBatchDimension(Path model) throws IOException {
+    public static boolean declaresBatchDimension(Path model) throws IOException {
         try (var bis = new BufferedInputStream(Files.newInputStream(model))) {
             var stream = CodedInputStream.newInstance(bis);
             while (!stream.isAtEnd()) {
                 var tag = stream.readTag();
                 if (WireFormat.getTagFieldNumber(tag) == 0) break;
                 if (WireFormat.getTagFieldNumber(tag) == Onnx.ModelProto.GRAPH_FIELD_NUMBER) {
-                    var graph = new GraphInterface();
-                    parseDelimited(stream, s -> parseGraphInterface(s, graph));
-                    return graph.hasBatchDimension();
+                    var graph = new GraphInputsAndOutputs();
+                    parseDelimited(stream, s -> parseGraphInputsAndOutputs(s, graph));
+                    return graph.declaresBatchDimension();
                 }
                 stream.skipField(tag);
             }
@@ -68,21 +68,21 @@ public class OnnxStreamParser {
 
     // Holds only what decides batching.
     // The nodes and weights of a large model then stay out of memory.
-    private static class GraphInterface {
+    private static class GraphInputsAndOutputs {
         final List<Onnx.ValueInfoProto> inputs = new ArrayList<>();
         final List<Onnx.ValueInfoProto> outputs = new ArrayList<>();
         final Set<String> initializerNames = new HashSet<>();
 
-        boolean hasBatchDimension() {
+        boolean declaresBatchDimension() {
             // Models may list initializers as inputs.
             // ONNX Runtime does not take them as inputs.
             return inputs.stream().filter(input -> !initializerNames.contains(input.getName()))
-                           .allMatch(input -> OnnxStreamParser.hasBatchDimension(input, true))
-                   && outputs.stream().allMatch(output -> OnnxStreamParser.hasBatchDimension(output, false));
+                           .allMatch(input -> OnnxStreamParser.declaresBatchDimension(input, true))
+                   && outputs.stream().allMatch(output -> OnnxStreamParser.declaresBatchDimension(output, false));
         }
     }
 
-    private static boolean hasBatchDimension(Onnx.ValueInfoProto value, boolean isInput) {
+    private static boolean declaresBatchDimension(Onnx.ValueInfoProto value, boolean isInput) {
         var type = value.getType();
         // Triton's ONNX Runtime backend rejects inputs and outputs that are not tensors, whatever the batching.
         if (!type.hasTensorType()) return true;
@@ -97,7 +97,7 @@ public class OnnxStreamParser {
         return !first.hasDimValue() || first.getDimValue() == -1;
     }
 
-    private static void parseGraphInterface(CodedInputStream stream, GraphInterface graph) throws IOException {
+    private static void parseGraphInputsAndOutputs(CodedInputStream stream, GraphInputsAndOutputs graph) throws IOException {
         while (!stream.isAtEnd()) {
             var tag = stream.readTag();
             if (WireFormat.getTagFieldNumber(tag) == 0) return;

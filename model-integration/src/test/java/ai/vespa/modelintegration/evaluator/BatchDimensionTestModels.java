@@ -14,10 +14,13 @@ import java.util.List;
  */
 public class BatchDimensionTestModels {
 
-    /** A model, and whether ONNX Runtime reports a batch dimension for all its inputs and outputs */
-    public record Case(String name, Onnx.ModelProto model, boolean hasBatchDimension) {}
+    /**
+     * A model, and whether Triton supports batching for it.
+     * Triton supports batching when ONNX Runtime reports a batch dimension for all inputs and outputs of the model.
+     */
+    public record Case(String name, Onnx.ModelProto model, boolean supportsBatching) {}
 
-    /** Models whose batch dimension {@link OnnxStreamParser#hasBatchDimension} reads as ONNX Runtime reports it */
+    /** Models whose batch dimension {@link OnnxStreamParser#declaresBatchDimension} reads as ONNX Runtime reports it */
     public static List<Case> cases() {
         return List.of(
                 new Case("named", identity(tensor("x", "batch", 3), tensor("y", "batch", 3)), true),
@@ -44,10 +47,10 @@ public class BatchDimensionTestModels {
 
     /**
      * Models whose output ONNX Runtime infers to have no batch dimension, although the declared output has one.
-     * {@link OnnxStreamParser#hasBatchDimension} reads only declared shapes, so it reports a batch dimension for these.
-     * Vespa then configures a non-zero max batch size, and Triton fails to load them.
+     * {@link OnnxStreamParser#declaresBatchDimension} reads only declared shapes, so it reports a batch dimension for these.
+     * Triton then fails to load them with a non-zero max batch size, and TritonOnnxRuntime loads them again with 0.
      */
-    public static List<Case> missedCases() {
+    public static List<Case> casesWhereShapeInferenceRemovesBatchDimension() {
         var reduce = Onnx.GraphProto.newBuilder()
                 .addNode(Onnx.NodeProto.newBuilder().setOpType("ReduceSum").addInput("x").addInput("axes").addOutput("y"))
                 .addInitializer(Onnx.TensorProto.newBuilder().setName("axes").setDataType(7).addDims(1).addInt64Data(0))
@@ -71,9 +74,9 @@ public class BatchDimensionTestModels {
      * With a batch dimension, the shapes are [batch, sequence] -> [batch, 1].
      * Without one, they are [1, 8] -> [1, 1].
      */
-    public static Onnx.ModelProto crossEncoder(boolean hasBatchDimension) {
-        Object[] tokens = hasBatchDimension ? new Object[] {"batch", "sequence"} : new Object[] {1, 8};
-        Object[] logits = hasBatchDimension ? new Object[] {"batch", 1} : new Object[] {1, 1};
+    public static Onnx.ModelProto crossEncoder(boolean withBatchDimension) {
+        Object[] tokens = withBatchDimension ? new Object[] {"batch", "sequence"} : new Object[] {1, 8};
+        Object[] logits = withBatchDimension ? new Object[] {"batch", 1} : new Object[] {1, 1};
         var embeddings = Onnx.TensorProto.newBuilder().setName("embeddings").setDataType(1).addDims(10).addDims(2);
         for (int i = 0; i < 20; i++) embeddings.addFloatData(i * 0.1f);
         var graph = Onnx.GraphProto.newBuilder()

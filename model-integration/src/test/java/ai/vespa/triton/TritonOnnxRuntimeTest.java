@@ -484,7 +484,7 @@ class TritonOnnxRuntimeTest {
             for (var testCase : BatchDimensionTestModels.cases()) {
                 var model = Files.write(directory.resolve(testCase.name() + ".onnx"), testCase.model().toByteArray());
                 try (var evaluator = runtime.evaluatorOf(model.toString(), opts)) {
-                    assertEquals(testCase.hasBatchDimension() ? 8 : 0,
+                    assertEquals(testCase.supportsBatching() ? 8 : 0,
                                  maxBatchSizeInTriton(modelName(model.toString(), opts)), testCase.name());
                 }
             }
@@ -494,20 +494,19 @@ class TritonOnnxRuntimeTest {
     }
 
     // ONNX Runtime infers that these models have an output without a batch dimension.
-    // OnnxStreamParser reads only declared shapes, so Vespa configures a non-zero max batch size.
-    // Triton then fails to load the models.
+    // OnnxStreamParser reads only declared shapes, so the first load with a non-zero max batch size fails.
+    // The runtime then loads the models again with a max batch size of 0.
     @Test
-    void triton_fails_to_load_models_whose_missing_batch_dimension_the_parser_misses(@TempDir Path directory)
-            throws IOException {
+    void triton_loads_models_without_batching_when_only_shape_inference_finds_no_batch_dimension(@TempDir Path directory)
+            throws Exception {
         var runtime = createRuntime();
         var opts = optsBuilder.setBatchingMaxSize(8).build();
         try {
-            for (var testCase : BatchDimensionTestModels.missedCases()) {
+            for (var testCase : BatchDimensionTestModels.casesWhereShapeInferenceRemovesBatchDimension()) {
                 var model = Files.write(directory.resolve(testCase.name() + ".onnx"), testCase.model().toByteArray());
-                var exception = assertThrows(TritonOnnxClient.TritonException.class,
-                                             () -> runtime.evaluatorOf(model.toString(), opts), testCase.name());
-                var message = Exceptions.toMessageString(exception);
-                assertTrue(message.contains("does not support batching"), testCase.name() + ": " + message);
+                try (var evaluator = runtime.evaluatorOf(model.toString(), opts)) {
+                    assertEquals(0, maxBatchSizeInTriton(modelName(model.toString(), opts)), testCase.name());
+                }
             }
         } finally {
             runtime.deconstruct();
@@ -522,9 +521,9 @@ class TritonOnnxRuntimeTest {
         var runtime = createRuntime();
         var opts = optsBuilder.build();
         try {
-            for (var hasBatchDimension : new boolean[] {true, false}) {
-                var model = Files.write(directory.resolve("cross_encoder_" + hasBatchDimension + ".onnx"),
-                                        BatchDimensionTestModels.crossEncoder(hasBatchDimension).toByteArray()).toString();
+            for (var withBatchDimension : new boolean[] {true, false}) {
+                var model = Files.write(directory.resolve("cross_encoder_" + withBatchDimension + ".onnx"),
+                                        BatchDimensionTestModels.crossEncoder(withBatchDimension).toByteArray()).toString();
                 Tensor expected;
                 try (var embedded = EmbeddedOnnxRuntime.createTestInstance().evaluatorOf(model)) {
                     expected = embedded.evaluate(inputs, "logits");
@@ -533,7 +532,7 @@ class TritonOnnxRuntimeTest {
                     var actual = evaluator.evaluate(inputs, "logits");
                     assertEquals(expected.type(), actual.type(), model);
                     assertEquals(expected.sum().asDouble(), actual.sum().asDouble(), 1e-6, model);
-                    assertEquals(hasBatchDimension ? 1 : 0, maxBatchSizeInTriton(modelName(model, opts)), model);
+                    assertEquals(withBatchDimension ? 1 : 0, maxBatchSizeInTriton(modelName(model, opts)), model);
                 }
             }
         } finally {

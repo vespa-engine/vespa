@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -78,6 +79,9 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     // when combined with synchronization through modelResources.
     private static class TritonModelResource {
         int referenceCount = 0;
+        // Whether Triton accepts a non-zero max batch size for the model.
+        // Known only for a model that this runtime loaded with a generated config.
+        Optional<Boolean> supportsBatching = Optional.empty();
     }
 
     @Inject
@@ -119,16 +123,13 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             log.info("Not pooling " + modelPath + " in Triton: " +
                      (options.modelConfigOverride().isPresent() ? "it has a model config override" : "the model control mode is not EXPLICIT"));
         var modelName = generateModelName(modelPath, resolvedOptions, shareSessionBetweenInstances, pooling);
-        // A model config override pads as configured, whatever the batch dimension, see shouldPadForBatching().
-        var padsOnGpu = options.padding().isPresent() && OnnxPadder.isBatchingOnGpu(resolvedOptions)
-                        && options.modelConfigOverride().isEmpty();
-        var hasBatchDimension = !(generatesConfig || padsOnGpu) || hasBatchDimension(modelPath);
-        var modelReference = referenceModel(modelName, modelPath, resolvedOptions, pooling, hasBatchDimension);
+        var modelReference = referenceModel(modelName, modelPath, resolvedOptions, pooling);
 
         try {
             OnnxEvaluator evaluator = new TritonOnnxEvaluator(modelName, modelReference, tritonClient, isModelControlExplicit, pooling);
 
-            if (options.padding().isPresent() && shouldPadForBatching(modelPath, resolvedOptions, hasBatchDimension))
+            if (options.padding().isPresent() && shouldPadForBatching(modelPath, resolvedOptions,
+                    () -> supportsBatching(modelName).orElseGet(() -> declaresBatchDimension(modelPath))))
                 evaluator = OnnxPadder.of(options.padding().get(), evaluator, modelName);
 
             return evaluator;
@@ -142,24 +143,27 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
      * Returns whether to pad inputs, so that Triton's dynamic batcher can combine requests
      * of different lengths. Padding is useful for batching on a GPU.
      * With a model config override the batching setup is not known here, so padding is used as configured.
-     * A model without a batch dimension is never padded, since Triton does not batch it, see {@link #maxBatchSize}.
+     * A model that does not support batching is never padded, since Triton does not batch it.
      * A dynamically quantized model is never padded, since padding changes its results.
      */
-    static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options, boolean hasBatchDimension) {
+    static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options, BooleanSupplier supportsBatching) {
         return (options.modelConfigOverride().isPresent()
-                || (OnnxPadder.isBatchingOnGpu(options) && hasBatchDimension))
+                || (OnnxPadder.isBatchingOnGpu(options) && supportsBatching.getAsBoolean()))
                && ! OnnxPadder.isDynamicallyQuantized(modelPath);
     }
 
     // Returns a reference to the model, first copying and loading it into Triton if needed.
     // The map's per-key compute serializes this with a concurrent release of the same model.
-    private ResourceReference referenceModel(String modelName, String modelPath, OnnxEvaluatorOptions options,
-                                             Optional<OnnxPoolingOptions> pooling, boolean hasBatchDimension) {
+    private ResourceReference referenceModel(
+            String modelName, String modelPath, OnnxEvaluatorOptions options, Optional<OnnxPoolingOptions> pooling) {
         modelResources.compute(modelName, (key, modelResource) -> {
-            ensureModelReady(modelName, modelPath, options, pooling, hasBatchDimension);
+            var supportsBatching = ensureModelReady(modelName, modelPath, options, pooling);
 
             if (modelResource == null) {
                 modelResource = new TritonModelResource();
+            }
+            if (supportsBatching.isPresent()) {
+                modelResource.supportsBatching = supportsBatching;
             }
 
             modelResource.referenceCount++;
@@ -201,22 +205,56 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     // Uses an already-ready model, or copies the model into the repository and loads it into Triton.
     // A load failure only fails the reconfiguration requesting this model; cleanup is best effort.
-    private void ensureModelReady(String modelName, String modelPath, OnnxEvaluatorOptions options,
-                                  Optional<OnnxPoolingOptions> pooling, boolean hasBatchDimension) {
+    // Returns whether Triton supports batching for a model that it loads with a generated config.
+    private Optional<Boolean> ensureModelReady(
+            String modelName, String modelPath, OnnxEvaluatorOptions options, Optional<OnnxPoolingOptions> pooling) {
         if (!isModelControlExplicit) {
-            return;
+            return Optional.empty();
         }
 
         try {
             if (tritonClient.isModelReady(modelName)) {
-                return; // Adopt a model that Triton already has ready
+                return Optional.empty(); // Adopt a model that Triton already has ready
             }
         } catch (TritonOnnxClient.TritonException | TimeoutException e) {
             // Still attempt to copy and load the requested model below.
         }
 
+        // A model config override sets the batching itself, so loadModel does not use the batching argument.
+        if (options.modelConfigOverride().isPresent()) {
+            loadModel(modelName, modelPath, options, pooling, true);
+            return Optional.empty();
+        }
+
+        var supportsBatching = declaresBatchDimension(modelPath);
+        if (!supportsBatching && options.batchingMaxSize() > 1) {
+            log.warning("Not batching model " + modelPath + " in Triton although batching max size is " +
+                        options.batchingMaxSize() + ": an input or output of the model has no batch dimension");
+        }
         try {
-            var modelConfig = createModelConfig(modelName, modelPath, options, pooling, hasBatchDimension);
+            loadModel(modelName, modelPath, options, pooling, supportsBatching);
+            return Optional.of(supportsBatching);
+        } catch (TritonOnnxClient.TritonException e) {
+            if (!supportsBatching || !TritonOnnxClient.isBatchingRejection(e)) throw e;
+            // OnnxStreamParser reads declared shapes, but Triton decides from the shapes ONNX Runtime infers.
+            // Triton rejects batching only for a model without a batch dimension, so the model loads without batching.
+            log.warning("Loading model " + modelPath + " in Triton without batching, since Triton rejected batching: " +
+                        Exceptions.toMessageString(e));
+            loadModel(modelName, modelPath, options, pooling, false);
+            return Optional.of(false);
+        }
+    }
+
+    // Callers hold a reference to the model, so its resource is in the map.
+    Optional<Boolean> supportsBatching(String modelName) {
+        var modelResource = modelResources.get(modelName);
+        return modelResource == null ? Optional.empty() : modelResource.supportsBatching;
+    }
+
+    private void loadModel(String modelName, String modelPath, OnnxEvaluatorOptions options,
+                           Optional<OnnxPoolingOptions> pooling, boolean supportsBatching) {
+        try {
+            var modelConfig = createModelConfig(modelName, options, pooling, supportsBatching);
             copyModelFilesToModelRepository(modelName, modelPath, modelConfig);
             tritonClient.loadUntilModelReady(modelName);
         } catch (RuntimeException e) {
@@ -374,36 +412,21 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         Files.setPosixFilePermissions(path, modelPerms);
     }
 
-    private String createModelConfig(String modelName, String modelPath, OnnxEvaluatorOptions options,
-                                     Optional<OnnxPoolingOptions> pooling, boolean hasBatchDimension) {
+    private String createModelConfig(String modelName, OnnxEvaluatorOptions options,
+                                     Optional<OnnxPoolingOptions> pooling, boolean supportsBatching) {
         return options.modelConfigOverride()
                 .map(path -> createModelConfigFromFile(path, modelName))
-                .orElseGet(() -> createModelConfigFromOptions(modelName, modelPath, options, pooling, hasBatchDimension))
+                .orElseGet(() -> createModelConfigFromOptions(modelName, options, pooling, supportsBatching))
                 .toString();
-    }
-
-    /**
-     * Returns the max batch size for the model's Triton config.
-     * Returns 0, which means no batching, for a model with an input or output without a batch dimension.
-     * Triton's ONNX Runtime backend fails to load such a model with any other max batch size.
-     * Otherwise returns the max batch size in the options.
-     */
-    static int maxBatchSize(String modelPath, OnnxEvaluatorOptions options, boolean hasBatchDimension) {
-        if (hasBatchDimension) return options.batchingMaxSize();
-        if (options.batchingMaxSize() > 1) {
-            log.warning("Not batching model " + modelPath + " in Triton although batching max size is " +
-                        options.batchingMaxSize() + ": an input or output of the model has no batch dimension");
-        }
-        return 0;
     }
 
     // Assumes a batch dimension when the model cannot be read.
     // The model then gets the configured max batch size, and Triton reports any problem with the model.
-    static boolean hasBatchDimension(String modelPath) {
+    static boolean declaresBatchDimension(String modelPath) {
         var path = Path.of(modelPath);
         if (!Files.isRegularFile(path)) return true;
         try {
-            return OnnxStreamParser.hasBatchDimension(path);
+            return OnnxStreamParser.declaresBatchDimension(path);
         } catch (IOException e) {
             log.log(Level.WARNING, "Could not read the input and output shapes of model " + modelPath +
                                    ", assuming they have a batch dimension", e);
@@ -412,9 +435,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     }
 
     // Takes options with a resolved instance count, see resolveInstanceCount().
-    private String createModelConfigFromOptions(String modelName, String modelPath, OnnxEvaluatorOptions options,
-                                                Optional<OnnxPoolingOptions> pooling, boolean hasBatchDimension) {
-        // Each model instance in Triton executes requests sequentially. Concurrency comes from the number of instances.
+    private String createModelConfigFromOptions(String modelName, OnnxEvaluatorOptions options,
+                                                Optional<OnnxPoolingOptions> pooling, boolean supportsBatching) {
+        // Each model instance in Triton executes requests sequentially.
+        // Concurrency comes from the number of instances.
         // This is different from EmbeddedOnnxRuntime, where one session handles all requests.
         // With a shared session, the thread counts match EmbeddedOnnxRuntime.createSessionOptions().
         // With separate sessions, the CPU cores are divided between the instances as intra-op threads.
@@ -426,7 +450,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
                 ? options.intraOpThreads()
                 : intraOpThreadsForSeparateSessions(options, numModelInstances));
         var interOpThreadCountValue = Integer.toString(options.effectiveInterOpThreads());
-        var maxBatchSize = maxBatchSize(modelPath, options, hasBatchDimension);
+        // Triton's ONNX Runtime backend fails to load a model that does not support batching with a non-zero max batch size.
+        // 0 means no batching.
+        // For a model that supports batching, Triton's auto-complete would replace 0 with its own default and dynamic batching.
+        var maxBatchSize = supportsBatching ? options.batchingMaxSize() : 0;
 
         var configBuilder = ModelConfig.newBuilder()
                 .setName(modelName)

@@ -106,8 +106,8 @@ class OnnxStreamParserTest {
     void finds_batch_dimension_as_onnx_runtime_reports_it(@TempDir Path directory) throws IOException, OrtException {
         for (var testCase : BatchDimensionTestModels.cases()) {
             var model = Files.write(directory.resolve(testCase.name() + ".onnx"), testCase.model().toByteArray());
-            assertEquals(testCase.hasBatchDimension(), onnxRuntimeReportsBatchDimension(model), testCase.name());
-            assertEquals(testCase.hasBatchDimension(), OnnxStreamParser.hasBatchDimension(model), testCase.name());
+            assertEquals(testCase.supportsBatching(), onnxRuntimeReportsBatchDimension(model), testCase.name());
+            assertEquals(testCase.supportsBatching(), OnnxStreamParser.declaresBatchDimension(model), testCase.name());
         }
     }
 
@@ -117,10 +117,10 @@ class OnnxStreamParserTest {
     @Test
     void misses_outputs_that_onnx_runtime_infers_without_batch_dimension(@TempDir Path directory)
             throws IOException, OrtException {
-        for (var testCase : BatchDimensionTestModels.missedCases()) {
+        for (var testCase : BatchDimensionTestModels.casesWhereShapeInferenceRemovesBatchDimension()) {
             var model = Files.write(directory.resolve(testCase.name() + ".onnx"), testCase.model().toByteArray());
             assertFalse(onnxRuntimeReportsBatchDimension(model), testCase.name());
-            assertTrue(OnnxStreamParser.hasBatchDimension(model), testCase.name());
+            assertTrue(OnnxStreamParser.declaresBatchDimension(model), testCase.name());
         }
     }
 
@@ -137,9 +137,9 @@ class OnnxStreamParserTest {
 
     @Test
     void finds_batch_dimension_in_model_files() throws IOException {
-        assertFalse(OnnxStreamParser.hasBatchDimension(Path.of("src/test/models/onnx/add_float.onnx")));
-        assertFalse(OnnxStreamParser.hasBatchDimension(Path.of("src/test/models/onnx/catboost/catboost_regressor.onnx")));
-        assertTrue(OnnxStreamParser.hasBatchDimension(Path.of("src/test/models/onnx/transformer/dummy_transformer.onnx")));
+        assertFalse(OnnxStreamParser.declaresBatchDimension(Path.of("src/test/models/onnx/add_float.onnx")));
+        assertFalse(OnnxStreamParser.declaresBatchDimension(Path.of("src/test/models/onnx/catboost/catboost_regressor.onnx")));
+        assertTrue(OnnxStreamParser.declaresBatchDimension(Path.of("src/test/models/onnx/transformer/dummy_transformer.onnx")));
     }
 
     private static byte[] modelWithExternalData(String location) {
