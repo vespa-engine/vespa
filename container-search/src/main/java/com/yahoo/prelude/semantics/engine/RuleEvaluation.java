@@ -283,6 +283,13 @@ public class RuleEvaluation {
         return nonreferencedMatches.get(index);
     }
 
+    /** Returns the first nonreferenced match, or the first referenced match if none, or null if there are no matches */
+    public Match getFirstMatch() {
+        if ( ! nonreferencedMatches.isEmpty()) return nonreferencedMatches.get(0);
+        if ( ! referencedMatchesList.isEmpty()) return referencedMatchesList.get(0).matchIterator().next();
+        return null;
+    }
+
     public void trace(int level,String string) {
         evaluation.trace(level, string);
     }
