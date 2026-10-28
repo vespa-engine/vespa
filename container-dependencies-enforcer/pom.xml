@@ -159,7 +159,7 @@
                                         <include>com.openai:openai-java-client-okhttp:${openai-java.vespa.version}:test</include>
                                         <include>com.openai:openai-java-core:${openai-java.vespa.version}:test</include>
                                         <include>com.squareup.okhttp3:logging-interceptor:4.12.0:test</include>
-                                        <include>com.squareup.okhttp3:okhttp:4.12.0:test</include>
+                                        <include>com.squareup.okhttp3:okhttp:${okhttp.vespa.version}:test</include>
                                         <include>com.squareup.okio:okio:3.6.0:test</include>
                                         <include>com.squareup.okio:okio-jvm:3.6.0:test</include>
                                         <include>com.thaiopensource:jing:20091111:test</include>
