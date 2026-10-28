@@ -32,6 +32,7 @@ class QueryBuilder {
     std::unique_ptr<QueryNode> build_wand_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
     std::unique_ptr<QueryNode> build_weighted_set_term(const QueryNodeResultFactory& factory,
                                                        QueryStackIterator&           queryRep);
+    std::unique_ptr<QueryNode> build_in_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
     std::unique_ptr<QueryNode> build_phrase_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
     std::unique_ptr<QueryNode> build_equiv_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep,
                                                 bool allow_rewrite);
