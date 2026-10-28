@@ -12,6 +12,8 @@
 #include <vespa/vespalib/hwaccelerated/highway.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 
+#include <vespa/vespalib/hwaccelerated/scalar_block_bit_packing.hpp>
+
 #include <gmock/gmock.h>
 
 #include <limits>
@@ -321,6 +323,141 @@ TEST_F(HwAcceleratedTest, binary_hamming_distance_with_alignments) {
     for (const auto& [lhs_unalign, rhs_unalign] : lhs_rhs_unalignments) {
         ASSERT_NO_FATAL_FAILURE(check_with_sizes(accelerators, lhs_unalign, rhs_unalign));
     }
+}
+
+namespace {
+
+// We make the assumption that the scalar "reference" code is correct, and that
+// all other implementations must be bitwise identical in their packed output.
+void bit_pack_reference_output(const uint8_t* raw, uint8_t* packed, const uint8_t bits, size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return scalar_block_bit_pack<1>(raw, packed, sz);
+    case 2:
+        return scalar_block_bit_pack<2>(raw, packed, sz);
+    case 3:
+        return scalar_block_bit_pack<3>(raw, packed, sz);
+    case 4:
+        return scalar_block_bit_pack<4>(raw, packed, sz);
+    default:
+        abort();
+    }
+}
+
+} // namespace
+
+// TODO dedupe with MultiBitPacker tests, possibly by removing the latter code entirely...!
+
+void do_test_bit_packing_of_all_representable_values(const uint8_t bits, std::span<const IAccelerated*> accels) {
+    SCOPED_TRACE("bit packing of all representable values");
+    for (uint8_t v = 0; v < (1u << bits); ++v) {
+        // Test a range of sizes that includes multiple full 128-bit blocks with and without remainders.
+        for (size_t n = 0; n < 48; ++n) {
+            // Test with destination arrays (both for packing and unpacking) that
+            // are all zeroes and all ones to ensure we do not accidentally leave
+            // dirty bits behind from the destination.
+            for (const uint8_t packed_init_value : {0x00, 0xff}) {
+                for (const uint8_t unpacked_init_value : {0x00, 0xff}) {
+                    std::vector<uint8_t> in(n, v);
+                    std::vector<uint8_t> reference_packed(packed_bytes(bits, n));
+                    std::vector<uint8_t> accel_packed(packed_bytes(bits, n), packed_init_value);
+                    std::vector<uint8_t> accel_unpacked(n, unpacked_init_value);
+
+                    bit_pack_reference_output(in.data(), reference_packed.data(), bits, n);
+                    for (const auto* accel : accels) {
+                        SCOPED_TRACE(accel->target_info().to_string());
+                        ScopedFnTableOverride fn_scope(accel->fn_table());
+
+                        pack_bits(in.data(), accel_packed.data(), bits, n);
+                        ASSERT_THAT(accel_packed, ElementsAreArray(reference_packed))
+                            << "n=" << n << ", v=" << int(v) << ", packed_init_value=" << int(packed_init_value)
+                            << ", unpacked_init_value=" << int(unpacked_init_value);
+
+                        unpack_bits(accel_packed.data(), accel_unpacked.data(), bits, n);
+                        ASSERT_THAT(accel_unpacked, ElementsAreArray(in))
+                            << "n=" << n << ", v=" << int(v) << ", packed_init_value=" << int(packed_init_value)
+                            << ", unpacked_init_value=" << int(unpacked_init_value);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Just testing with the same value for all packed/unpacked elements hides
+// possible permutation errors, so also test with random element values.
+void do_test_bit_packing_of_randomized_values(const uint8_t bits, std::span<const IAccelerated*> accels) {
+    SCOPED_TRACE("bit packing of randomized values");
+    const uint64_t         seed = std::random_device{}();
+    Xoshiro256PlusPlusPrng prng(seed);
+
+    auto gen_rand_value = [&prng, bits]() noexcept { return prng() & ((1u << bits) - 1); };
+
+    for (size_t n = 1; n < 64; ++n) {
+        // Reuse vectors across rounds to help catch any dirty bit reuse
+        std::vector<uint8_t> in(n);
+        std::vector<uint8_t> reference_packed(packed_bytes(bits, n));
+        std::vector<uint8_t> accel_packed(packed_bytes(bits, n));
+        std::vector<uint8_t> accel_unpacked(n);
+        constexpr size_t     N = 1'000;
+
+        for (size_t i = 0; i < N; ++i) {
+            std::ranges::generate(in, gen_rand_value);
+            bit_pack_reference_output(in.data(), reference_packed.data(), bits, n);
+
+            for (const auto* accel : accels) {
+                SCOPED_TRACE(accel->target_info().to_string());
+                ScopedFnTableOverride fn_scope(accel->fn_table());
+
+                pack_bits(in.data(), accel_packed.data(), bits, n);
+                ASSERT_THAT(accel_packed, ElementsAreArray(reference_packed))
+                    << "n=" << n << ", seed=" << std::hex << seed;
+
+                unpack_bits(accel_packed.data(), accel_unpacked.data(), bits, n);
+                ASSERT_THAT(accel_unpacked, ElementsAreArray(in)) << "n=" << n << ", seed=" << std::hex << seed;
+            }
+        }
+    }
+}
+
+void do_test_remainder_bits_are_zeroed(const uint8_t bits, std::span<const IAccelerated*> accels) {
+    SCOPED_TRACE("remainder bits are zeroed");
+    ASSERT_EQ(packed_bytes(bits, 1), 1);
+    for (const auto* accel : accels) {
+        SCOPED_TRACE(accel->target_info().to_string());
+        ScopedFnTableOverride fn_scope(accel->fn_table());
+
+        std::array<uint8_t, 1> dst{};
+        std::array<uint8_t, 1> src = {uint8_t((1u << bits) - 1)};
+        pack_bits(src.data(), dst.data(), bits, 1);
+        // Every 1-element packing fits within a byte and should live in its LSBs.
+        // The MSBs should then consequently be zero. This is not an exhaustive test.
+        const uint8_t msb_mask = static_cast<uint8_t>(0xff << bits);
+        ASSERT_EQ(dst[0] & msb_mask, 0);
+    }
+}
+
+void do_run_bit_pack_unpack_tests(const uint8_t bits) {
+    auto accelerators = all_accelerators_to_test();
+    ASSERT_NO_FATAL_FAILURE(do_test_bit_packing_of_all_representable_values(bits, accelerators));
+    ASSERT_NO_FATAL_FAILURE(do_test_bit_packing_of_randomized_values(bits, accelerators));
+    ASSERT_NO_FATAL_FAILURE(do_test_remainder_bits_are_zeroed(bits, accelerators));
+}
+
+TEST_F(HwAcceleratedTest, can_pack_and_unpack_1_bit_values) {
+    do_run_bit_pack_unpack_tests(1);
+}
+
+TEST_F(HwAcceleratedTest, can_pack_and_unpack_2_bit_values) {
+    do_run_bit_pack_unpack_tests(2);
+}
+
+TEST_F(HwAcceleratedTest, can_pack_and_unpack_3_bit_values) {
+    do_run_bit_pack_unpack_tests(3);
+}
+
+TEST_F(HwAcceleratedTest, can_pack_and_unpack_4_bit_values) {
+    do_run_bit_pack_unpack_tests(4);
 }
 
 using namespace dispatch;
