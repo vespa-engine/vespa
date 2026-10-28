@@ -185,6 +185,25 @@ class TritonOnnxClientTest {
     }
 
     @Test
+    void loadUntilModelReady_fails_without_retrying_when_triton_rejects_batching() {
+        var modelName = "test-model";
+
+        try (var tritonClient = createTritonClient()) {
+            var client = spy(tritonClient);
+
+            var exception = new TritonOnnxClient.TritonException(
+                    "Failed to load model", new RuntimeException("autofill failed for model 'test-model': " +
+                            "model does not support batching while non-zero max_batch_size is specified"));
+            doThrow(exception).when(client).loadModel(modelName);
+
+            var thrown = assertThrows(TritonOnnxClient.TritonException.class, () -> client.loadUntilModelReady(modelName));
+
+            assertTrue(TritonOnnxClient.isBatchingRejection(thrown));
+            verify(client, times(1)).loadModel(modelName);
+        }
+    }
+
+    @Test
     void loadUntilModelReady_fails_when_load_always_fails() {
         var modelName = "test-model";
 
