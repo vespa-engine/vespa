@@ -720,7 +720,7 @@ using internal::PreparedFixAddDoc;
 using internal::PreparedFixAddNode;
 
 template <HnswIndexType type> void HnswIndex<type>::add_document(uint32_t docid) {
-    if (insertion_strategy == InsertionStrategy::PARALLEL_LAST_NODES) {
+    if constexpr (insertion_strategy == InsertionStrategy::PARALLEL_LAST_NODES) {
         // TODO Avoid duplication
         GenerationGuard no_guard_needed;
         GenerationGuard no_hnsw_graph_guard_needed;
