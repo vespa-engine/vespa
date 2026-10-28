@@ -1011,24 +1011,45 @@ void HnswIndex<type>::internal_complete_fix_add_node(uint32_t nodeid, uint32_t d
                 // Check if the node is present on this level
                 if (size_t(level) < levels.size()) {
                     uint32_t nodeid_to_check = node_info.nodeid;
-                    // TODO De-duplication (select neighbors heuristic does this due to duplicates having distance zero)
-                    // TODO Remove invalidated neighbors (Could just do this later)
-                    selected_neighbors.emplace_back(nodeid_to_check, node_info.levels_ref, distance);
-                    selected_neighbors_updated = true;
+
+                    // Faster de-duplication via binary search?
+                    bool already_present = false;
+                    for (auto& candidate : selected_neighbors) {
+                        if (candidate.nodeid == nodeid_to_check && _graph.still_valid(candidate.nodeid, candidate.levels_ref)) {
+                            already_present = true;
+                            break;
+                        }
+                    }
+
+                    if (!already_present) {
+                        selected_neighbors.emplace_back(nodeid_to_check, node_info.levels_ref, distance);
+                        selected_neighbors_updated = true;
+                    }
                 }
             }
         }
 
         if (selected_neighbors_updated) {
+            // Remove no-longer-valid neighbors before using select
+            size_t to = 0;
+            for (size_t from = 0; from < selected_neighbors.size(); ++from) {
+                auto& node_to = selected_neighbors[to];
+                auto& node_from = selected_neighbors[from];
+
+                if (_graph.still_valid(node_from.nodeid, node_from.levels_ref)) {
+                    node_to = node_from;
+                    ++to;
+                }
+            }
+            selected_neighbors.resize(to, {0, 0.0});
+
             auto  neighbors = select_neighbors(stats, prepared_node.selected_neighbors[level], _cfg.max_links_on_inserts());
             auto& links = prepared_node.connections[level];
             links.clear();
             for (const auto& neighbor : neighbors.used) {
-                if (_graph.still_valid(neighbor.nodeid, neighbor.levels_ref)) {
-                    auto neighbor_levels = _graph.get_level_array(neighbor.levels_ref);
-                    if (size_t(level) < neighbor_levels.size()) {
-                        links.emplace_back(neighbor.nodeid, neighbor.levels_ref);
-                    }
+                auto neighbor_levels = _graph.get_level_array(neighbor.levels_ref);
+                if (size_t(level) < neighbor_levels.size()) {
+                    links.emplace_back(neighbor.nodeid, neighbor.levels_ref);
                 }
             }
         }
