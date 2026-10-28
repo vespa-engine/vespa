@@ -27,8 +27,8 @@ public class CompositeItemCondition extends CompositeCondition {
 
     @Override
     protected String toInnerString() {
-        if (getLabel()!=null)
-            return getLabel() + ":(" + toInnerStringBody() + ")";
+        if ( ! getLabels().isEmpty())
+            return getLabelString() + "(" + toInnerStringBody() + ")";
         else if (useParentheses())
             return "(" + toInnerStringBody() + ")";
         else

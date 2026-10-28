@@ -95,6 +95,7 @@ public class ReferenceTermProduction extends TermProduction {
         }
 
         var match = referencedMatches.matchIterator().next();
+        String label = getLabel(match);
         if (produceAll) {
             // produce all terms in the condition
             NamedCondition namedCondition = e.getEvaluation().ruleBase().getCondition(referencedMatches.getContextName());
@@ -103,12 +104,12 @@ public class ReferenceTermProduction extends TermProduction {
             for (Iterator<Condition> i = choices.conditionIterator(); i.hasNext();) {
                 Condition condition = i.next();
                 if (condition instanceof TermCondition) {
-                    items.add(match.toItem(getLabel(), ((TermCondition)condition).term()));
+                    items.add(match.toItem(label, ((TermCondition)condition).term()));
                 }
                 else if (condition instanceof SequenceCondition) {
-                    PhraseItem phrase = new PhraseItem(getLabel());
+                    PhraseItem phrase = new PhraseItem(label);
                     for (var term : ((SequenceCondition)condition).conditions())
-                        phrase.addItem(match.toItem(getLabel(), ((TermCondition)term).term()));
+                        phrase.addItem(match.toItem(label, ((TermCondition)term).term()));
                     items.add(phrase);
                 }
                 else {
@@ -121,7 +122,7 @@ public class ReferenceTermProduction extends TermProduction {
         }
         else {
             // produce just the matching term
-            produce(e, match, List.of(referencedMatches.toItem(getLabel())), 0);
+            produce(e, match, List.of(referencedMatches.toItem(label)), 0);
         }
     }
 

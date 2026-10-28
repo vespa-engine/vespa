@@ -6,6 +6,10 @@ import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.engine.FlattenedItem;
 import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
 /**
  * Superclass of all kinds of conditions of production rules
  *
@@ -17,11 +21,11 @@ public abstract class Condition {
     private CompositeCondition parent = null;
 
     /**
-     * The label of this condition, or null if none.
-     * Specified by label:condition
+     * The alternative labels of this condition, or empty if none.
+     * Specified by label:condition, or (label1, label2, ...):condition
      * The label is also the default context is no context is speficied explicitly
      */
-    private String label;
+    private List<String> labels;
 
     /**
      * The name space refered by this match, or null if the default (query)
@@ -57,7 +61,7 @@ public abstract class Condition {
     }
 
     public Condition(String label, String context) {
-        this.label = label;
+        setLabel(label);
         this.contextName = context;
     }
 
@@ -76,11 +80,17 @@ public abstract class Condition {
     /** Returns whether this is referable, returns context!=null by default */
     protected boolean isReferable() { return contextName != null; }
 
-    /** Sets the label of this. Set to null to use the default */
-    public String getLabel() { return label; }
+    /** Returns the label of this, or null if none (the default) or if this has multiple alternative labels */
+    public String getLabel() { return labels.size() == 1 ? labels.get(0) : null; }
 
-    /** Returns the label of this, or null if none (the default) */
-    public void setLabel(String label) { this.label = label; }
+    /** Sets the label of this. Set to null to use the default */
+    public void setLabel(String label) { this.labels = label == null ? List.of() : List.of(label); }
+
+    /** Returns the alternative labels of this, any of which may match. This is empty if none (the default) */
+    public List<String> getLabels() { return labels; }
+
+    /** Sets the alternative labels of this, any of which may match. Set to empty to use the default */
+    public void setLabels(List<String> labels) { this.labels = List.copyOf(labels); }
 
     /** Returns the name of the namespace of this, or null if default (query) */
     public String getNameSpace() { return nameSpace; }
@@ -115,14 +125,14 @@ public abstract class Condition {
             if (!matchesStartAnchor(e)) return false;
 
             String higherLabel = e.getCurrentLabel();
-            if (getLabel() != null)
-                e.setCurrentLabel(getLabel());
-
-            boolean matches = doesMatch(e);
-            while ( ! matches && hasOpenChoicepoint(e)) {
+            boolean matches = false;
+            for (Iterator<String> i = (labels.isEmpty() ? Collections.singletonList(higherLabel) : labels).iterator(); i.hasNext() && ! matches; ) {
+                e.setCurrentLabel(i.next());
                 matches = doesMatch(e);
+                while ( ! matches && hasOpenChoicepoint(e)) {
+                    matches = doesMatch(e);
+                }
             }
-
             e.setCurrentLabel(higherLabel);
 
             if ( ! matchesEndAnchor(e)) return false;
@@ -212,8 +222,9 @@ public abstract class Condition {
     public void makeReferences(RuleBase rules) { }
 
     protected String getLabelString() {
-        if (label == null) return "";
-        return label + ":";
+        if (labels.isEmpty()) return "";
+        if (labels.size() == 1) return labels.get(0) + ":";
+        return "(" + String.join(", ", labels) + "):";
     }
 
     /** Whether the label matches the current item, true if there is no current item */
