@@ -81,7 +81,8 @@ public class SessionStateWatcher {
                     sessionStatusChanged(newStatus);
                 }
             } catch (NotFoundException e) {
-                log.log(Level.INFO, "Session or application not found when handling session change to " + newStatus.name() + " for session " + sessionId);
+                //log.log(Level.INFO, "Session or application not found when handling session change to " + newStatus.name() + " for session " + sessionId);
+                log.log(Level.SEVERE, "Session or application not found when handling session change to " + newStatus.name() + " for session " + sessionId, e);
                 metrics.incSessionChangeErrors();
             } catch (Exception e) {
                 log.log(Level.WARNING, "Error handling session change to " + newStatus.name() + " for session " + sessionId, e);
