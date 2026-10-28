@@ -971,16 +971,18 @@ void HnswIndex<type>::internal_complete_fix_add_node(uint32_t nodeid, uint32_t d
     size_t check_last_inserted_nodes_from = 0;
     // The generations in last_inserted are sequentally increassing, not need for binary search or anything
     if (!_last_inserted_nodes.empty()) {
-        internal::InsertionGenerationType first_generation = _last_inserted_nodes.front().generation;
+        internal::InsertionGenerationType earliest_generation = _last_inserted_nodes.front().generation;
         internal::InsertionGenerationType prepared_at_generation = prepared_node.prepared_at_generation;
 
-        // If the preparation happened before the first generation we have, then we have lost something
+        // If the preparation happened before the earliest generation we have, then we have lost something
         // Print warning?
-        if (first_generation <= prepared_at_generation) {
+        if (earliest_generation <= prepared_at_generation) {
             // If the preparation happened at generation n,
             // then a node prepared at n might not have been in the graph at that point
-            check_last_inserted_nodes_from = prepared_at_generation - first_generation;
+            check_last_inserted_nodes_from = prepared_at_generation - earliest_generation;
             CHECK(check_last_inserted_nodes_from <= _last_inserted_nodes.size());
+        } else {
+            LOG(warning, "HNSW insertion preparation happened before earliest kept generation: earliest_generation = %lu > prepared_at_generation = %lu", earliest_generation, prepared_at_generation);
         }
     }
 
