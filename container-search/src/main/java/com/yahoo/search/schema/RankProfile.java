@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.schema;
 
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Collections;
@@ -127,11 +128,12 @@ public class RankProfile {
     }
 
     /** An input (query rank feature) accepted by a rank profile. */
-    public record Input(String name, InputType type, Optional<String> explanation) {
+    public record Input(String name, InputType type, Optional<Tensor> defaultValue, Optional<String> explanation) {
 
         public Input {
             Objects.requireNonNull(name);
             Objects.requireNonNull(type);
+            Objects.requireNonNull(defaultValue);
             Objects.requireNonNull(explanation);
         }
 
@@ -191,7 +193,7 @@ public class RankProfile {
         }
 
         public Builder addInput(String name, InputType type) {
-            return addInput(new Input(name, type, Optional.empty()));
+            return addInput(new Input(name, type, Optional.empty(), Optional.empty()));
         }
 
         public Builder addInput(Input input) {

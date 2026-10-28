@@ -65,5 +65,7 @@ schema[].rankprofile[].sortFeature[] string
 schema[].rankprofile[].input[].name string
 # The tensor type of an input (query rank feature) accepted by this profile
 schema[].rankprofile[].input[].type string
+# The default value of an input (query rank feature) accepted by this profile, as a tensor literal including its type, or empty if none
+schema[].rankprofile[].input[].defaultValue string default=""
 # A free text explanation of an input (query rank feature) accepted by this profile, or empty if none
 schema[].rankprofile[].input[].explanation string default=""

@@ -2,6 +2,7 @@
 package com.yahoo.search.schema;
 
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
@@ -63,10 +64,12 @@ public class SchemaInfoTest {
         assertEquals(Optional.empty(), SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("b").explanation());
 
         var bOnly = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("b").rankProfiles().get("bOnly");
-        assertEquals(new RankProfile.Input("query(myTensor1)", RankProfile.InputType.fromSpec("tensor(a{},b{})"), Optional.of("The first tensor")),
+        assertEquals(new RankProfile.Input("query(myTensor1)", RankProfile.InputType.fromSpec("tensor(a{},b{})"),
+                                           Optional.of(Tensor.from("tensor(a{},b{}):{{a:x,b:y}:1.0}")), Optional.of("The first tensor")),
                      bOnly.inputDetails().get("query(myTensor1)"));
         assertEquals(RankProfile.InputType.fromSpec("tensor(a{},b{})"), bOnly.inputs().get("query(myTensor1)"));
         assertEquals(Optional.empty(), schemaA.rankProfiles().get("commonProfile").inputDetails().get("query(myTensor1)").explanation());
+        assertEquals(Optional.empty(), schemaA.rankProfiles().get("commonProfile").inputDetails().get("query(myTensor1)").defaultValue());
     }
 
     @Test
