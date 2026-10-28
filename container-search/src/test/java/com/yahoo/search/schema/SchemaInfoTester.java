@@ -5,6 +5,7 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.schema.RankProfile.InputType;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
@@ -100,7 +101,9 @@ public class SchemaInfoTester {
                                          .setUseSignificanceModel(true)
                                          .addInput(new RankProfile.Input("query(myTensor1)",
                                                                          InputType.fromSpec("tensor(a{},b{})"),
-                                                                         Optional.of("The first tensor")))
+                                                                         Optional.of(Tensor.from("tensor(a{},b{}):{{a:x,b:y}:1.0}")),
+                                                                         Optional.of("The first tensor")
+                                         ))
                                          .build())
                             .build());
         List<Cluster> clusters = new ArrayList<>();
@@ -183,8 +186,10 @@ public class SchemaInfoTester {
         var rankProfileBOnly = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileBOnly.name("bOnly")
                 .significance(new SchemaInfoConfig.Schema.Rankprofile.Significance.Builder().useModel(true));
-        rankProfileBOnly.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})")
-                                                                                     .explanation("The first tensor"));
+        rankProfileBOnly.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)")
+                                                                                      .type("tensor(a{},b{})")
+                                                                                      .defaultValue("tensor(a{},b{}):{{a:x,b:y}:1.0}")
+                                                                                      .explanation("The first tensor"));
         schemaB.rankprofile(rankProfileBOnly);
 
         schemaInfoInfoConfig.schema(schemaB);

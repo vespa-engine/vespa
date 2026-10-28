@@ -224,6 +224,7 @@ public final class SchemaInfo extends Derived {
                 inputConfig.name(input.getKey().toString());
                 inputConfig.type(input.getValue().type().toString());
                 Optional.ofNullable(rankProfile.inputExplanations().get(input.getKey())).ifPresent(inputConfig::explanation);
+                input.getValue().defaultValue().ifPresent(value -> inputConfig.defaultValue(value.toString(true, true)));
                 rankProfileConfig.input(inputConfig);
             }
             schemaBuilder.rankprofile(rankProfileConfig);

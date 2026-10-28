@@ -9622,12 +9622,13 @@
       "record"
     ],
     "methods" : [
-      "public void <init>(java.lang.String, com.yahoo.search.schema.RankProfile$InputType, java.util.Optional)",
+      "public void <init>(java.lang.String, com.yahoo.search.schema.RankProfile$InputType, java.util.Optional, java.util.Optional)",
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
       "public java.lang.String name()",
       "public com.yahoo.search.schema.RankProfile$InputType type()",
+      "public java.util.Optional defaultValue()",
       "public java.util.Optional explanation()"
     ],
     "fields" : [ ]

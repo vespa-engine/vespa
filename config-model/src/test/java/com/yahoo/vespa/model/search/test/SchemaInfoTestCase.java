@@ -6,6 +6,7 @@ import com.yahoo.schema.Index;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
@@ -220,6 +221,10 @@ public class SchemaInfoTestCase {
                              RankProfilesConfig.Rankprofile rankProfilesProfile) {
         assertEquals(name, schemaInfoProfile.input(index).name());
         assertEquals(type, schemaInfoProfile.input(index).type());
+        if (defaultValue == null)
+            assertEquals("", schemaInfoProfile.input(index).defaultValue());
+        else
+            assertEquals(Tensor.from(type, defaultValue), Tensor.from(schemaInfoProfile.input(index).defaultValue()));
         if (defaultValue != null) {
             boolean found = false;
             for (var property : rankProfilesProfile.fef().property()) {

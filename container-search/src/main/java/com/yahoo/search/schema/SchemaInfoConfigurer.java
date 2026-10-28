@@ -3,6 +3,7 @@ package com.yahoo.search.schema;
 
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.tensor.Tensor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,8 +63,10 @@ class SchemaInfoConfigurer {
             for (var inputConfig : profileConfig.input())
                 profileBuilder.addInput(new RankProfile.Input(inputConfig.name(),
                                                               RankProfile.InputType.fromSpec(inputConfig.type()),
-                                                              inputConfig.explanation().isEmpty() ? Optional.empty()
-                                                                                                  : Optional.of(inputConfig.explanation())));
+                                                              inputConfig.defaultValue().isEmpty() ? Optional.empty()
+                                                                                                   : Optional.of(Tensor.from(inputConfig.defaultValue())), inputConfig.explanation().isEmpty() ? Optional.empty()
+                                                                                                                                                                                               : Optional.of(inputConfig.explanation())
+                ));
             for (String sortFeature : profileConfig.sortFeature())
                 profileBuilder.addSortFeature(sortFeature);
 
