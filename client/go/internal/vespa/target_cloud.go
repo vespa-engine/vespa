@@ -2,7 +2,6 @@
 package vespa
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -136,6 +135,16 @@ type BuildJobProgress struct {
 	Instance           string       `json:"instance"`
 	Details            *RunProgress `json:"-"`
 	DetailsUnavailable bool         `json:"-"`
+}
+
+// Key identifies this run of the job.
+func (j BuildJobProgress) Key() string {
+	return fmt.Sprintf("%s/%s/%d", j.Instance, j.JobName, j.RunID)
+}
+
+func buildJobRunURL(d Deployment, job BuildJobProgress) string {
+	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s/run/%d",
+		d.System.URL, d.Application.Tenant, d.Application.Application, job.Instance, job.JobName, job.RunID)
 }
 
 // CloudTarget creates a Target for the Vespa Cloud or hosted Vespa platform.
@@ -353,10 +362,12 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		}
 		if !resp.Active && resp.Status != "success" {
 			failed := failedStep(resp.Steps)
-			if t.logOptions.Writer != nil && t.deploymentOptions.OnProgress != nil {
-				t.printLog(history, -1, failed)
-			} else if t.logOptions.Writer != nil {
-				t.printLog(resp, lastID, failed)
+			src, last := resp, lastID
+			if t.deploymentOptions.OnProgress != nil {
+				src, last = history, -1
+			}
+			if t.logOptions.Writer != nil {
+				t.printLog(src, last, failed)
 			}
 			if msgs := failureMsgs[failed]; len(msgs) > 0 {
 				combined := strings.Join(msgs, "\n")
@@ -452,11 +463,7 @@ func (s *syncWriter) Write(p []byte) (n int, err error) {
 }
 
 func streamBuildJobLogs(target Target, job BuildJobProgress, timeout time.Duration, writer io.Writer, retryInterval time.Duration) error {
-	d := target.Deployment()
-	runURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s/run/%d",
-		d.System.URL, d.Application.Tenant, d.Application.Application,
-		job.Instance, job.JobName, job.RunID)
-	req, err := http.NewRequest("GET", runURL, nil)
+	req, err := http.NewRequest("GET", buildJobRunURL(target.Deployment(), job), nil)
 	if err != nil {
 		return err
 	}
@@ -524,24 +531,37 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 		if onProgress != nil {
 			// Only active jobs need extra requests. Failures retain the existing diagnostic path below.
 			if !resp.HasFailed && !resp.Deployed && resp.SkipReason == "" && resp.AbsorbedIntoBuild == 0 {
+				service, serviceErr := target.DeployService()
+				var wg sync.WaitGroup
 				for i := range resp.Jobs {
 					job := &resp.Jobs[i]
 					if job.RunID <= 0 || job.RunStatus != "running" {
 						continue
 					}
-					key := fmt.Sprintf("%s/%s/%d", job.Instance, job.JobName, job.RunID)
-					after, ok := cursors[key]
-					if !ok {
-						after = -1
-					}
-					details, err := fetchBuildJobProgress(target, *job, after, deadline)
-					if err != nil {
+					if serviceErr != nil {
 						job.DetailsUnavailable = true
 						continue
 					}
-					job.Details = &details
-					if details.LastID > after {
-						cursors[key] = details.LastID
+					after, ok := cursors[job.Key()]
+					if !ok {
+						after = -1
+					}
+					wg.Go(func() {
+						details, err := fetchBuildJobProgress(target, service, *job, after, deadline)
+						if err != nil {
+							job.DetailsUnavailable = true
+							return
+						}
+						job.Details = &details
+					})
+				}
+				wg.Wait()
+				for _, job := range resp.Jobs {
+					if job.Details == nil {
+						continue
+					}
+					if after, ok := cursors[job.Key()]; !ok || job.Details.LastID > after {
+						cursors[job.Key()] = job.Details.LastID
 					}
 				}
 			}
@@ -598,23 +618,13 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 }
 
 // Detail requests share the build's wait budget and never determine its outcome.
-func fetchBuildJobProgress(target Target, job BuildJobProgress, after int64, deadline time.Time) (RunProgress, error) {
+func fetchBuildJobProgress(target Target, service *Service, job BuildJobProgress, after int64, deadline time.Time) (RunProgress, error) {
 	progress := RunProgress{LastID: -1}
 	remaining := time.Until(deadline)
 	if remaining <= 0 {
 		return progress, ErrWaitTimeout
 	}
-	d := target.Deployment()
-	runURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/job/%s/run/%d?after=%d",
-		d.System.URL, d.Application.Tenant, d.Application.Application, job.Instance, job.JobName, job.RunID, after)
-	req, err := http.NewRequest("GET", runURL, nil)
-	if err != nil {
-		return progress, err
-	}
-	ctx, cancel := context.WithDeadline(req.Context(), deadline)
-	defer cancel()
-	req = req.WithContext(ctx)
-	service, err := target.DeployService()
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s?after=%d", buildJobRunURL(target.Deployment(), job), after), nil)
 	if err != nil {
 		return progress, err
 	}

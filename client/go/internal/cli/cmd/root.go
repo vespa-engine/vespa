@@ -81,7 +81,6 @@ type ErrCLI struct {
 }
 
 type targetOptions struct {
-	progress *deploymentProgress
 	// logLevel sets the log level to use for this target. If empty, it defaults to "info".
 	logLevel string
 	// noCertificate declares that no client certificate should be required when using this target.
@@ -426,6 +425,10 @@ func (c *CLI) printSuccess(msg ...interface{}) {
 }
 
 func (c *CLI) printInfo(msg ...interface{}) {
+	if c.progress != nil {
+		c.progress.printAbove(fmt.Sprint(msg...))
+		return
+	}
 	fmt.Fprintln(c.Stderr, fmt.Sprint(msg...))
 }
 
@@ -442,10 +445,16 @@ func (c *CLI) printDebug(msg ...interface{}) {
 }
 
 func (c *CLI) printWarning(msg interface{}, hints ...string) {
-	fmt.Fprintln(c.Stderr, color.YellowString("Warning:"), msg)
+	var out strings.Builder
+	fmt.Fprint(&out, color.YellowString("Warning:"), " ", msg)
 	for _, hint := range hints {
-		fmt.Fprintln(c.Stderr, color.CyanString("Hint:"), hint)
+		fmt.Fprint(&out, "\n", color.CyanString("Hint:"), " ", hint)
 	}
+	if c.progress != nil {
+		c.progress.printAbove(out.String())
+		return
+	}
+	fmt.Fprintln(c.Stderr, out.String())
 }
 
 func (c *CLI) confirm(question string, confirmByDefault bool) (bool, error) {
@@ -663,15 +672,16 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL
 		CustomURL:   customURL,
 		ClusterURLs: endpoints,
 	}
-	if opts.progress != nil {
-		deploymentOptions.OnProgress = func(id int64, snapshot vespa.RunProgress) {
-			opts.progress.setURL(deployment.System.ConsoleRunURL(deployment, id))
-			opts.progress.updateRun(id, snapshot)
-		}
-	}
 	logLevel := opts.logLevel
 	if logLevel == "" {
 		logLevel = "info"
+	}
+	if progress := c.progress; progress != nil {
+		progress.copyLogLevel = vespa.LogLevel(logLevel)
+		deploymentOptions.OnProgress = func(id int64, snapshot vespa.RunProgress) {
+			progress.setURL(deployment.System.ConsoleRunURL(deployment, id))
+			progress.updateRun(id, snapshot)
+		}
 	}
 	logOptions := vespa.LogOptions{
 		Writer: c.Stdout,

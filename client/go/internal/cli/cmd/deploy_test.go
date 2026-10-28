@@ -402,7 +402,7 @@ func assertDeployServerError(t *testing.T, status int, errorMessage string) {
 func TestDeployCloudProgress(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, false, false)
-	cli, stdout, stderr := newTestCLI(t, "CI=true", "NO_COLOR=true")
+	cli, stdout, stderr := newTestCLI(t, "NO_COLOR=true")
 	client := &mock.HTTPClient{}
 	cli.httpClient = client
 	require.NoError(t, cli.Run("config", "set", "application", "t1.a1.i1"))
@@ -424,6 +424,15 @@ func TestDeployCloudProgress(t *testing.T) {
 	assert.Contains(t, stdout.String(), "vespa status deployment")
 	assert.NotContains(t, stdout.String(), "[00:")
 	assert.True(t, client.Consumed())
+	assert.Nil(t, cli.progress)
+
+	// A rejected upload does not claim that a deployment may be running.
+	stdout.Reset()
+	stderr.Reset()
+	client.NextResponseString(400, `{"error-code":"BAD_REQUEST","message":"invalid"}`)
+	require.Error(t, cli.Run("deploy", pkgDir))
+	assert.Contains(t, stderr.String(), "✗ Upload failed")
+	assert.NotContains(t, stderr.String(), "may still be running")
 	assert.Nil(t, cli.progress)
 
 	// Explicitly opting out restores plain output.

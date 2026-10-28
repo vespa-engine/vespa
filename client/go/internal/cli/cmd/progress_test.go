@@ -4,6 +4,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 	"testing/synctest"
@@ -168,6 +169,29 @@ func TestProgressPrintsAllWarningsOnFinish(t *testing.T) {
 	assert.Contains(t, tail, "Warnings/errors: 3\nWarning: first\nWarning: second\nWarning: third\n")
 }
 
+func TestProgressFiltersCopiedVespaLogs(t *testing.T) {
+	p, _ := newProgressTest(t)
+	p.copyLogLevel = vespa.LogLevel("error")
+	snapshot := provisioningSnapshot(t)
+	snapshot.Log["copyVespaLogs"] = []vespa.RunLogEntry{{At: 2, Type: "warning", Message: "node noise"}, {At: 3, Type: "error", Message: "node failure"}}
+	p.updateRun(42, snapshot)
+	assert.Equal(t, []string{"Error: node failure"}, p.warningLog)
+}
+
+func TestProgressEndMessage(t *testing.T) {
+	p, _ := newProgressTest(t)
+	assert.Equal(t, "Monitoring stopped; deployment may still be running", p.endMessage())
+	p.url = ""
+	assert.Equal(t, "Monitoring stopped", p.endMessage())
+	snapshot := provisioningSnapshot(t)
+	p.updateRun(42, snapshot)
+	assert.Equal(t, "Deployment run 42 is still running", p.endMessage())
+	snapshot.Active, snapshot.Status = false, "success"
+	p.updateRun(42, snapshot)
+	assert.True(t, p.succeeded())
+	assert.Equal(t, "✓ Deployment complete", p.endMessage())
+}
+
 func TestProgressTerminalSafetyAndBounds(t *testing.T) {
 	assert.Equal(t, "safe red link", cleanProgressText("safe \x1b[31mred\x1b[0m \x1b]8;;https://evil.test\alink\x1b]8;;\a"))
 	assert.Equal(t, "a b c", cleanProgressText("a\nb\rc"))
@@ -180,12 +204,15 @@ func TestProgressTerminalSafetyAndBounds(t *testing.T) {
 	for _, line := range strings.Split(frame, "\n") {
 		assert.LessOrEqual(t, runewidth.StringWidth(cleanProgressText(line)), 39)
 	}
-	assert.Contains(t, frame, "detail lines hidden")
+	assert.Contains(t, frame, "more lines shown when done")
 	assert.Contains(t, frame, "Console:")
+	assert.NotContains(t, frame, "Application hosts")
 	assert.Contains(t, progressBar("Application hosts", 1, 3, 38), "1/3")
 	assert.LessOrEqual(t, runewidth.StringWidth(progressBar("Application hosts", 1, 3, 38)), 38)
 	p.finish("Monitoring stopped; deployment may still be running")
 	assert.True(t, p.closed)
+	// The final frame is not redrawn, so nothing is left out.
+	assert.Contains(t, output.String()[len(frame):], "Application hosts")
 	// Tiny terminals must not panic or exceed their available rows.
 	p.closed = false
 	p.size = func() (int, int) { return 1, 2 }
@@ -284,7 +311,7 @@ func TestProgressParallelRunLayout(t *testing.T) {
 }
 
 func TestProgressEligibility(t *testing.T) {
-	for _, scenario := range []string{"default", "disabled", "redirected", "quiet", "dumb", "screwdriver", "local", "override"} {
+	for _, scenario := range []string{"default", "disabled", "redirected", "quiet", "dumb", "ci", "screwdriver", "local", "override"} {
 		t.Run(scenario, func(t *testing.T) {
 			cli, _, _ := newTestCLI(t)
 			require.NoError(t, cli.config.set(targetFlag, "cloud"))
@@ -298,6 +325,8 @@ func TestProgressEligibility(t *testing.T) {
 				require.NoError(t, cli.config.set(quietFlag, "true"))
 			case "dumb":
 				cli.Environment["TERM"] = "dumb"
+			case "ci":
+				cli.Environment["CI"] = "true"
 			case "screwdriver":
 				cli.Environment["SCREWDRIVER"] = "true"
 			case "local":
@@ -365,4 +394,35 @@ func TestProgressAnimationBetweenPolls(t *testing.T) {
 		synctest.Wait()
 		assert.Empty(t, takeOutput(), "redraws must stop before diagnostics or final output")
 	})
+}
+
+func TestProgressHiddenLineCount(t *testing.T) {
+	p, output := newProgressTest(t)
+	p.size = func() (int, int) { return 60, 10 }
+	snapshot := provisioningSnapshot(t)
+	for i, msg := range []string{"first", "second", "third"} {
+		snapshot.Log["deployReal"] = append(snapshot.Log["deployReal"], vespa.RunLogEntry{At: int64(i + 2), Type: "warning", Message: msg})
+	}
+	p.updateRun(42, snapshot)
+	lines := strings.Split(output.String(), "\n")
+	for i, line := range lines {
+		if strings.Contains(line, "more lines") {
+			// Every body line is either shown above the marker or counted by it.
+			assert.Contains(t, line, fmt.Sprintf("… %d more lines", len(p.body())-i))
+			return
+		}
+	}
+	t.Fatalf("no hidden-lines marker in %q", output.String())
+}
+
+func TestProgressPrintAbove(t *testing.T) {
+	p, output := newProgressTest(t)
+	p.updateRun(42, provisioningSnapshot(t))
+	frameLines := p.lines
+	output.Reset()
+	p.cli.printWarning("vault is unavailable", "configure it manually")
+	out := output.String()
+	assert.True(t, strings.HasPrefix(out, fmt.Sprintf("\x1b[%dA\r\x1b[J", frameLines)), out)
+	assert.Contains(t, out, "Warning: vault is unavailable\nHint: configure it manually\nDeploying")
+	assert.Equal(t, frameLines, p.lines)
 }

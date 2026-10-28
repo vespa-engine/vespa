@@ -537,7 +537,7 @@ func TestStatusWithoutPrivateServices(t *testing.T) {
 }
 
 func TestStatusDeploymentProgress(t *testing.T) {
-	cli, stdout, stderr := newTestCLI(t, "CI=true", "NO_COLOR=true")
+	cli, stdout, stderr := newTestCLI(t, "NO_COLOR=true")
 	require.NoError(t, cli.Run("config", "set", "application", "t1.a1.i1"))
 	require.NoError(t, cli.Run("config", "set", "target", "cloud"))
 	require.NoError(t, cli.Run("config", "set", "progress", "true"))
@@ -562,7 +562,7 @@ func TestStatusDeploymentProgress(t *testing.T) {
 		client.NextResponseString(200, `{"active":true,"status":"running"}`)
 	}
 	require.Error(t, cli.Run("status", "deployment", "42"))
-	assert.Contains(t, stderr.String(), "Monitoring stopped; deployment may still be running")
+	assert.Contains(t, stderr.String(), "Deployment run 42 is still running")
 	assert.Contains(t, stderr.String(), "Warning: wait deadline reached")
 	assert.True(t, client.Consumed())
 	assert.Nil(t, cli.progress)

@@ -74,17 +74,18 @@ type deploymentProgress struct {
 	run                  progressRun
 	jobs                 []vespa.BuildJobProgress
 	runs                 map[string]*progressRun
-	warnings             map[string]string
+	warnings             map[string]bool // dedup keys for warningLog
 	warningLog           []string
+	copyLogLevel         int // like printLog, copyVespaLogs entries are filtered by --log-level
 	lines                int
-	closed               bool
+	final, closed        bool
 	size                 func() (int, int)
 }
 
 func (c *CLI) startDeploymentProgress(title string) *deploymentProgress {
 	enabled, _ := c.config.get(progressFlag)
 	_, screwdriver := c.Environment["SCREWDRIVER"]
-	if enabled != "true" || c.config.isQuiet() || !c.isTerminal() || screwdriver || c.Environment["TERM"] == "dumb" {
+	if enabled != "true" || c.config.isQuiet() || !c.isTerminal() || c.isCI() || screwdriver || c.Environment["TERM"] == "dumb" {
 		return nil
 	}
 	target, err := c.targetType(anyTarget)
@@ -94,7 +95,7 @@ func (c *CLI) startDeploymentProgress(title string) *deploymentProgress {
 	p := &deploymentProgress{
 		cli: c, title: title, started: c.now(),
 		stop: make(chan struct{}), done: make(chan struct{}),
-		runs: map[string]*progressRun{}, warnings: map[string]string{},
+		runs: map[string]*progressRun{}, warnings: map[string]bool{}, copyLogLevel: vespa.LogLevel("debug"),
 		size: func() (int, int) {
 			width, height, err := term.GetSize(int(os.Stderr.Fd()))
 			if err != nil {
@@ -133,12 +134,18 @@ func (p *deploymentProgress) stopAnimation() {
 }
 
 func (p *deploymentProgress) setTitle(title string) {
+	if p == nil {
+		return
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.title = title
 }
 
 func (p *deploymentProgress) setURL(url string) {
+	if p == nil {
+		return
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.url = url
@@ -190,15 +197,15 @@ func (p *deploymentProgress) record(run *progressRun, id int64, snapshot vespa.R
 			run.latestAt = msg.At
 			run.activity = cleanProgressText(msg.Message)
 		}
-		if msg.Type == "warning" || msg.Type == "error" {
+		if (msg.Type == "warning" || msg.Type == "error") && (entry.step != "copyVespaLogs" || vespa.LogLevel(msg.Type) <= p.copyLogLevel) {
 			id := fmt.Sprintf("%s/%d/%s/%d/%s/%s", key, run.id, entry.step, msg.At, msg.Type, msg.Message)
 			label := "Warning: "
 			if msg.Type == "error" {
 				label = "Error: "
 			}
-			if _, seen := p.warnings[id]; !seen {
-				p.warnings[id] = label + cleanProgressText(msg.Message)
-				p.warningLog = append(p.warningLog, p.warnings[id])
+			if !p.warnings[id] {
+				p.warnings[id] = true
+				p.warningLog = append(p.warningLog, label+cleanProgressText(msg.Message))
 			}
 		}
 	}
@@ -223,10 +230,6 @@ func (p *deploymentProgress) updateRun(id int64, snapshot vespa.RunProgress) {
 	}
 }
 
-func progressJobKey(job vespa.BuildJobProgress) string {
-	return fmt.Sprintf("%s/%s/%d", job.Instance, job.JobName, job.RunID)
-}
-
 func (p *deploymentProgress) updateBuild(snapshot vespa.BuildProgress) {
 	p.mu.Lock()
 	if p.closed {
@@ -234,27 +237,25 @@ func (p *deploymentProgress) updateBuild(snapshot vespa.BuildProgress) {
 		return
 	}
 	p.jobs = snapshot.Jobs
+	// Keep only runs of current jobs.
 	current := map[string]*progressRun{}
 	for _, job := range p.jobs {
-		if run := p.runs[progressJobKey(job)]; run != nil {
-			current[progressJobKey(job)] = run
+		key := job.Key()
+		run := p.runs[key]
+		if run == nil && job.Details != nil {
+			run = &progressRun{}
+		}
+		if run != nil {
+			current[key] = run
+		}
+		if job.Details != nil {
+			p.record(run, job.RunID, *job.Details, key)
 		}
 	}
 	p.runs = current
 	p.activity = ""
 	if len(p.jobs) == 0 {
 		p.activity = "Waiting for pipeline jobs"
-	}
-	for _, job := range p.jobs {
-		key := progressJobKey(job)
-		if job.Details != nil {
-			run := p.runs[key]
-			if run == nil {
-				run = &progressRun{}
-				p.runs[key] = run
-			}
-			p.record(run, job.RunID, *job.Details, key)
-		}
 	}
 	p.render()
 	if snapshot.HasFailed {
@@ -267,13 +268,20 @@ func (p *deploymentProgress) updateBuild(snapshot vespa.BuildProgress) {
 }
 
 var progressSteps = []struct{ name, label string }{
-	{"deployTester", "Deploy tester"}, {"installTester", "Install tester"},
-	{"deployInitialReal", "Deploy initial application"}, {"installInitialReal", "Install initial application"},
-	{"startStagingSetup", "Start staging setup"}, {"endStagingSetup", "Run staging setup"},
-	{"deployReal", "Provision and deploy application"}, {"installReal", "Install application"},
-	{"startTests", "Start tests"}, {"startProductionTests", "Run production tests"},
-	{"endTests", "Run tests"}, {"copyVespaLogs", "Collect deployment logs"},
-	{"deactivateReal", "Deactivate test application"}, {"deactivateTester", "Deactivate tester"},
+	{"deployTester", "Deploy tester"},
+	{"installTester", "Install tester"},
+	{"deployInitialReal", "Deploy initial application"},
+	{"installInitialReal", "Install initial application"},
+	{"startStagingSetup", "Start staging setup"},
+	{"endStagingSetup", "Run staging setup"},
+	{"deployReal", "Provision and deploy application"},
+	{"installReal", "Install application"},
+	{"startTests", "Start tests"},
+	{"startProductionTests", "Run production tests"},
+	{"endTests", "Run tests"},
+	{"copyVespaLogs", "Collect deployment logs"},
+	{"deactivateReal", "Deactivate test application"},
+	{"deactivateTester", "Deactivate tester"},
 	{"report", "Report result"},
 }
 
@@ -411,6 +419,10 @@ func progressBars(width int, counts ...progressCount) []string {
 }
 
 func (p *deploymentProgress) content() []string {
+	return append(p.body(), p.footer(false)...)
+}
+
+func (p *deploymentProgress) body() []string {
 	lines := []string{p.title + " · elapsed " + progressDuration(p.cli.now().Sub(p.started))}
 	if p.run.id > 0 {
 		lines = append(lines, fmt.Sprintf("Run %d", p.run.id))
@@ -436,7 +448,7 @@ func (p *deploymentProgress) content() []string {
 			if job.RunStatus != "running" {
 				continue
 			}
-			if run := p.runs[progressJobKey(job)]; run != nil {
+			if run := p.runs[job.Key()]; run != nil {
 				for _, line := range p.runLines(run, true, labelWidth) {
 					lines = append(lines, "   "+line)
 				}
@@ -446,14 +458,24 @@ func (p *deploymentProgress) content() []string {
 			}
 		}
 	}
+	return lines
+}
+
+// footer returns the activity, warnings and console lines; compact summarizes warnings on one line.
+func (p *deploymentProgress) footer(compact bool) []string {
+	var lines []string
 	if p.activity != "" {
 		lines = append(lines, p.activity)
 	}
-	if len(p.warnings) > 0 {
-		lines = append(lines, fmt.Sprintf("Warnings/errors: %d", len(p.warnings)))
-		lines = append(lines, p.warningLog[max(0, len(p.warningLog)-2):]...)
+	if len(p.warningLog) > 0 && !p.final {
+		if compact {
+			lines = append(lines, fmt.Sprintf("Warnings/errors: %d · see Console for details", len(p.warningLog)))
+		} else {
+			lines = append(lines, fmt.Sprintf("Warnings/errors: %d", len(p.warningLog)))
+			lines = append(lines, p.warningLog[max(0, len(p.warningLog)-2):]...)
+		}
 	}
-	if p.url != "" {
+	if p.url != "" && !p.final {
 		lines = append(lines, "", "Console: "+p.url)
 	}
 	return lines
@@ -513,35 +535,27 @@ func cleanProgressText(text string) string {
 }
 
 func (p *deploymentProgress) render() {
-	if p == nil || p.closed {
+	if p.closed {
 		return
 	}
 	width, height := p.size()
 	width, height = max(1, width-1), max(2, height)
 	lines := p.content()
-	if len(lines) > height-1 {
-		footer := []string{}
-		if p.activity != "" {
-			footer = append(footer, p.activity)
-		}
-		if len(p.warnings) > 0 {
-			footer = append(footer, fmt.Sprintf("Warnings/errors: %d · see Console for details", len(p.warnings)))
-		}
-		if p.url != "" {
-			footer = append(footer, "", "Console: "+p.url)
-		}
+	// A live frame must fit the screen to be redrawn in place; the final frame is never redrawn, so it is printed in full.
+	if len(lines) > height-1 && !p.final {
+		body, footer := p.body(), p.footer(true)
 		keep := max(0, height-2-len(footer))
-		hidden := len(lines) - len(footer) - keep
-		lines = append(lines[:keep], fmt.Sprintf("… %d detail lines hidden", hidden))
+		lines = body
+		if hidden := len(body) - keep; hidden > 0 {
+			lines = append(body[:keep], fmt.Sprintf("… %d more lines shown when done", hidden))
+		}
 		lines = append(lines, footer...)
 		if len(lines) > height-1 {
 			lines = lines[len(lines)-(height-1):]
 		}
 	}
 	var frame strings.Builder
-	if p.lines > 0 {
-		fmt.Fprintf(&frame, "\x1b[%dA\r\x1b[J", min(p.lines, max(1, height-1)))
-	}
+	frame.WriteString(p.clearFrame())
 	for _, line := range lines {
 		line = runewidth.Truncate(cleanProgressText(line), width, "…")
 		for i, part := range strings.Split(line, progressBarSeparator) {
@@ -556,20 +570,43 @@ func (p *deploymentProgress) render() {
 	p.lines = len(lines)
 }
 
+// clearFrame returns the escape sequence that erases the previously drawn frame.
+func (p *deploymentProgress) clearFrame() string {
+	if p.lines == 0 {
+		return ""
+	}
+	_, height := p.size()
+	return fmt.Sprintf("\x1b[%dA\r\x1b[J", min(p.lines, max(1, height-1)))
+}
+
+// printAbove prints text above the live frame so the next redraw does not erase it.
+func (p *deploymentProgress) printAbove(text string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.closed || p.lines == 0 {
+		fmt.Fprintln(p.cli.Stderr, text)
+		return
+	}
+	fmt.Fprintln(p.cli.Stderr, p.clearFrame()+text)
+	p.lines = 0
+	p.render()
+}
+
 func paintProgressLine(line string) string {
 	paint := color.New()
+	trimmed := strings.TrimSpace(line)
 	switch {
-	case strings.Contains(line, "✗"), strings.HasPrefix(strings.TrimSpace(line), "Error:"):
+	case strings.Contains(line, "✗"), strings.HasPrefix(trimmed, "Error:"):
 		paint = color.New(color.FgRed)
-	case strings.HasPrefix(strings.TrimSpace(line), "Warning"), strings.HasPrefix(line, "Monitoring stopped"):
+	case strings.HasPrefix(trimmed, "Warning"), strings.HasPrefix(line, "Monitoring stopped"):
 		paint = color.New(color.FgYellow)
-	case strings.HasPrefix(strings.TrimSpace(line), "Admin hosts"):
+	case strings.HasPrefix(trimmed, "Admin hosts"):
 		paint = color.New(color.FgMagenta)
-	case strings.HasPrefix(strings.TrimSpace(line), "Platform upgrade"):
+	case strings.HasPrefix(trimmed, "Platform upgrade"):
 		paint = color.New(color.FgBlue)
-	case strings.HasPrefix(strings.TrimSpace(line), "Service configuration"):
+	case strings.HasPrefix(trimmed, "Service configuration"):
 		paint = color.New(color.FgGreen)
-	case strings.HasPrefix(strings.TrimSpace(line), "Application hosts"), strings.Contains(line, " Running"):
+	case strings.HasPrefix(trimmed, "Application hosts"), strings.Contains(line, " Running"):
 		paint = color.New(color.FgCyan)
 	case strings.Contains(line, "✓"):
 		paint = color.New(color.FgGreen)
@@ -578,11 +615,6 @@ func paintProgressLine(line string) string {
 	}
 	if strings.HasPrefix(line, "── ") {
 		paint.Add(color.Bold)
-	}
-	if color.NoColor {
-		paint.DisableColor()
-	} else {
-		paint.EnableColor()
 	}
 	return paint.Sprint(line)
 }
@@ -597,21 +629,16 @@ func (p *deploymentProgress) finish(message string) {
 	p.stopAnimation()
 }
 
-// finishLocked draws the final frame. Unless the caller prints full logs afterwards,
-// every warning and error is written below it, as the frame only shows the latest two.
+// finishLocked draws the final frame, then prints the complete URL so long links remain usable.
+// The frame only shows the latest warnings, so all of them are printed unless printWarnings is false.
+// Failure paths pass false: AwaitDeployment and AwaitBuild print the full run log after a failure.
 func (p *deploymentProgress) finishLocked(message string, printWarnings bool) {
 	if p.closed {
 		return
 	}
 	p.activity = message
-	// Print the complete URL after the last redraw so long links remain usable.
-	url, warnings := p.url, p.warnings
-	p.url = ""
-	if printWarnings {
-		p.warnings = nil
-	}
+	p.final = true
 	p.render()
-	p.url, p.warnings = url, warnings
 	p.closed = true
 	if printWarnings && len(p.warningLog) > 0 {
 		fmt.Fprintf(p.cli.Stderr, "\nWarnings/errors: %d\n", len(p.warningLog))
@@ -619,9 +646,27 @@ func (p *deploymentProgress) finishLocked(message string, printWarnings bool) {
 			fmt.Fprintln(p.cli.Stderr, paintProgressLine(w))
 		}
 	}
-	if url != "" {
-		fmt.Fprintln(p.cli.Stderr, "\nConsole: "+cleanProgressText(url))
+	if p.url != "" {
+		fmt.Fprintln(p.cli.Stderr, "\nConsole: "+cleanProgressText(p.url))
 	}
+}
+
+// succeeded returns whether the observed dev run completed successfully.
+func (p *deploymentProgress) succeeded() bool {
+	return p.run.id > 0 && !p.run.snapshot.Active && p.run.snapshot.Status == "success"
+}
+
+func (p *deploymentProgress) endMessage() string {
+	switch {
+	case p.succeeded():
+		return "✓ Deployment complete"
+	case p.run.id > 0 && p.run.snapshot.Active:
+		return fmt.Sprintf("Deployment run %d is still running", p.run.id)
+	case p.url == "":
+		// Nothing was submitted or observed yet.
+		return "Monitoring stopped"
+	}
+	return "Monitoring stopped; deployment may still be running"
 }
 
 func (p *deploymentProgress) close() {
@@ -630,7 +675,7 @@ func (p *deploymentProgress) close() {
 	}
 	p.mu.Lock()
 	if !p.closed && p.lines > 0 {
-		p.finishLocked("Monitoring stopped; deployment may still be running", true)
+		p.finishLocked(p.endMessage(), true)
 	}
 	p.closed = true
 	p.mu.Unlock()

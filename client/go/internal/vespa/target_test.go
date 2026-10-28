@@ -789,6 +789,7 @@ func TestCloudDeploymentProgressPrintsEarlierLogsOnFailure(t *testing.T) {
 
 func TestBuildProgressIncrementalJobDetails(t *testing.T) {
 	target, client := createCloudTarget(t, nil)
+	client.MatchURI = true // job details are fetched concurrently
 	buildPath := "/application/v4/tenant/t1/application/a1/build-status/42"
 	runPath := "/application/v4/tenant/t1/application/a1/instance/%s/job/system-test/run/%d?after=%d"
 	build := `{"status":"deploying","jobs":[{"instance":"one","jobName":"system-test","runId":%d,"runStatus":"running"},{"instance":"two","jobName":"system-test","runId":1,"runStatus":"running"}]}`
@@ -833,7 +834,7 @@ func TestBuildProgressTerminalStates(t *testing.T) {
 		})
 	}
 	target, client := createCloudTarget(t, nil)
-	_, err := fetchBuildJobProgress(target, BuildJobProgress{}, -1, time.Now().Add(-time.Second))
+	_, err := fetchBuildJobProgress(target, nil, BuildJobProgress{}, -1, time.Now().Add(-time.Second))
 	assert.ErrorIs(t, err, ErrWaitTimeout)
 	assert.Empty(t, client.Requests)
 }

@@ -61,13 +61,11 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 			}
 			progress := cli.startDeploymentProgress("Deploying application")
 			defer progress.close()
-			target, err := cli.target(targetOptions{logLevel: logLevelArg, progress: progress})
+			target, err := cli.target(targetOptions{logLevel: logLevelArg})
 			if err != nil {
 				return err
 			}
-			if progress != nil {
-				progress.setTitle("Deploying " + target.Deployment().String())
-			}
+			progress.setTitle("Deploying " + target.Deployment().String())
 			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 			if versionArg != "" {
 				version, err := version.Parse(versionArg)
@@ -98,18 +96,17 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 				return err
 			}
 			var result vespa.PrepareResult
-			upload := cli.spinner
 			if progress != nil {
-				upload = func(_ io.Writer, _ string, fn func() error) error {
-					progress.note("Uploading application package…")
-					return fn()
-				}
-			}
-			err = upload(cli.Stderr, "Uploading application package...", func() error {
+				progress.note("Uploading application package…")
 				result, err = vespa.Deploy(opts)
-				return err
-			})
+			} else {
+				err = cli.spinner(cli.Stderr, "Uploading application package...", func() error {
+					result, err = vespa.Deploy(opts)
+					return err
+				})
+			}
 			if err != nil {
+				progress.finish("✗ Upload failed")
 				if target.IsCloud() && errors.Is(err, vespa.ErrUnauthorized) {
 					return errHint(err,
 						"You do not have access to the tenant "+color.CyanString(target.Deployment().Application.Tenant),
@@ -132,11 +129,13 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 				log.Print(color.CyanString(opts.Target.Deployment().System.ConsoleRunURL(opts.Target.Deployment(), result.ID)))
 			}
 			err = waitForVespaReady(target, result.ID, waiter)
-			if err == nil && progress != nil {
-				if progress.run.id > 0 && !progress.run.snapshot.Active {
-					progress.finish("✓ Deployment complete")
-				} else {
-					progress.finish(fmt.Sprintf("Deployment run %d is still running", result.ID))
+			if progress != nil {
+				succeeded := progress.succeeded()
+				if succeeded && err != nil {
+					progress.finish("✗ Deployed, but services did not become ready")
+				}
+				progress.close()
+				if err == nil && !succeeded {
 					log.Printf("\nUse %s for deployment status", color.CyanString("vespa status deployment"))
 				}
 			}
