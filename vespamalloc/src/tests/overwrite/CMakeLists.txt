@@ -11,7 +11,10 @@ vespa_add_executable(vespamalloc_expectsignal-overwrite_app
     expectsignal.cpp
     DEPENDS
 )
-vespa_add_test(NAME vespamalloc_overwrite_test_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/overwrite_test.sh
+configure_file(overwrite_test.sh.in overwrite_test.sh
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    @ONLY)
+vespa_add_test(NAME vespamalloc_overwrite_test_app NO_VALGRIND COMMAND ${CMAKE_CURRENT_BINARY_DIR}/overwrite_test.sh
                DEPENDS vespamalloc_overwrite_test_app vespamalloc_expectsignal-overwrite_app
                        vespamalloc vespamallocd)
 
