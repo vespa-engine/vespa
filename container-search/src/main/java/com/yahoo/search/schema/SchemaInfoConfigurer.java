@@ -31,6 +31,7 @@ class SchemaInfoConfigurer {
             fieldBuilder.setIndex(fieldConfig.index());
             if ( ! fieldConfig.explanation().isEmpty())
                 fieldBuilder.setExplanation(fieldConfig.explanation());
+            fieldBuilder.setMatchType(Field.MatchType.valueOf(fieldConfig.matchType().name()));
             for (var fastMapConfig : fieldConfig.fastMapSearchFields())
                 fieldBuilder.addFastMapSearch(new Field.FastMapSearchFields(fastMapConfig.lookupName(),
                                                                             fastMapConfig.keyField(),

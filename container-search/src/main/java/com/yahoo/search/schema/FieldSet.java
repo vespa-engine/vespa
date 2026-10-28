@@ -50,6 +50,11 @@ public class FieldSet implements FieldInfo {
         return false;
     }
 
+    @Override
+    public Field.MatchType matchType() {
+        return representativeField().map(Field::matchType).orElse(Field.MatchType.NONE);
+    }
+
     void setSchema(Schema schema) {
         if ( this.schema != null)
             throw new IllegalStateException("Cannot add field set '" + name + "' to schema '" + schema.name() +

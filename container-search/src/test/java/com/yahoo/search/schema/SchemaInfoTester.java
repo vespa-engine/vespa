@@ -66,7 +66,8 @@ public class SchemaInfoTester {
                             .setExplanation("Schema a")
                             .add(common.build())
                             .add(new Field.Builder("field1", "string").setIndex(true).addAlias("alias1").addAlias("alias2")
-                                                                      .setExplanation("Field 1\nin schema a").build())
+                                                                      .setExplanation("Field 1\nin schema a")
+                                                                      .setMatchType(Field.MatchType.TEXT).build())
                             .add(new Field.Builder("field2", "int").setAttribute(true).build())
                             .add(new FieldSet.Builder("default").addField("field1").build())
                             .add(new FieldSet.Builder("structFields").addField("struct1.x").addField("struct1.y").build())
@@ -131,7 +132,8 @@ public class SchemaInfoTester {
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field1").type("string")
                                                                  .index(true).attribute(false)
                                                                  .alias("alias1").alias("alias2")
-                                                                 .explanation("Field 1\nin schema a"));
+                                                                 .explanation("Field 1\nin schema a")
+                                                                 .matchType(SchemaInfoConfig.Schema.Field.MatchType.TEXT));
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field2").type("int")
                                                                  .index(false).attribute(true));
 
