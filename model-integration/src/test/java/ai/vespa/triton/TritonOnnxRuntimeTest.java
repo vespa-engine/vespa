@@ -560,12 +560,10 @@ class TritonOnnxRuntimeTest {
     private static int maxBatchSizeInTriton(String modelName) throws IOException, InterruptedException {
         var request = HttpRequest.newBuilder(
                 URI.create(tritonContainer.getHttpEndpoint() + "/v2/models/" + modelName + "/config")).build();
-        try (var client = HttpClient.newHttpClient()) {
-            var config = client.send(request, HttpResponse.BodyHandlers.ofString()).body();
-            var matcher = Pattern.compile("\"max_batch_size\":(\\d+)").matcher(config);
-            assertTrue(matcher.find(), config);
-            return Integer.parseInt(matcher.group(1));
-        }
+        var config = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString()).body();
+        var matcher = Pattern.compile("\"max_batch_size\":(\\d+)").matcher(config);
+        assertTrue(matcher.find(), config);
+        return Integer.parseInt(matcher.group(1));
     }
 
     // A tree model exported to score one row at a time, see catboost_regressor.py.
