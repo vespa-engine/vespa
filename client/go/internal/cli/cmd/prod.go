@@ -174,8 +174,9 @@ $ vespa prod deploy`,
 				return fmt.Errorf("could not deploy application: %w", err)
 			}
 			cli.printSuccess(fmt.Sprintf("Submitted '%s' with build number %s", color.CyanString(pkg.Path), color.CyanString(strconv.FormatInt(build, 10))))
-			log.Printf("See %s for deployment progress\n", color.CyanString(fmt.Sprintf("%s/tenant/%s/application/%s/environment/prod/deployment",
-				deployment.Target.Deployment().System.ConsoleURL, deployment.Target.Deployment().Application.Tenant, deployment.Target.Deployment().Application.Application)))
+			consoleURL := fmt.Sprintf("%s/tenant/%s/application/%s/environment/prod/deployment",
+				deployment.Target.Deployment().System.ConsoleURL, deployment.Target.Deployment().Application.Tenant, deployment.Target.Deployment().Application.Application)
+			log.Printf("See %s for deployment progress\n", color.CyanString(consoleURL))
 			if options.waitSecs > 0 {
 				log.Printf("Waiting up to %s for build pipeline to complete...\n", (time.Duration(options.waitSecs) * time.Second).String())
 				progress := cli.startDeploymentProgress(fmt.Sprintf("Deploying %s to production · build %d", target.Deployment().Application, build))
@@ -183,7 +184,7 @@ $ vespa prod deploy`,
 				var onProgress func(vespa.BuildProgress)
 				if progress != nil {
 					fmt.Fprintln(cli.Stderr)
-					progress.setURL(fmt.Sprintf("%s/tenant/%s/application/%s/environment/prod/deployment", target.Deployment().System.ConsoleURL, target.Deployment().Application.Tenant, target.Deployment().Application.Application))
+					progress.setURL(consoleURL)
 					onProgress = progress.updateBuild
 				}
 				skipped, skipReason, err := vespa.AwaitBuild(target, build, time.Duration(options.waitSecs)*time.Second, cli.Stderr, onProgress)
@@ -191,14 +192,10 @@ $ vespa prod deploy`,
 					return err
 				}
 				if skipped {
-					if progress != nil {
-						progress.finish("Build skipped: " + skipReason)
-					}
+					progress.finish("Build skipped: " + skipReason)
 					cli.printSuccess(fmt.Sprintf("Build %d skipped: %s", build, skipReason))
 				} else {
-					if progress != nil {
-						progress.finish("✓ Deployed to production")
-					}
+					progress.finish("✓ Deployed to production")
 					cli.printSuccess(fmt.Sprintf("Build %d deployed to production", build))
 				}
 			}

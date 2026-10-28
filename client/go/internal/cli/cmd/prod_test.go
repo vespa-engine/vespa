@@ -371,7 +371,7 @@ func TestProdDeployWarnsOnInstance(t *testing.T) {
 func TestProdDeployWithProgress(t *testing.T) {
 	pkgDir := filepath.Join(t.TempDir(), "app")
 	createApplication(t, pkgDir, false, false)
-	cli, stdout, stderr := newTestCLI(t, "CI=true", "NO_COLOR=true")
+	cli, stdout, stderr := newTestCLI(t, "NO_COLOR=true")
 	client := &mock.HTTPClient{}
 	cli.httpClient = client
 	require.NoError(t, cli.Run("config", "set", "application", "t1.a1.i1"))

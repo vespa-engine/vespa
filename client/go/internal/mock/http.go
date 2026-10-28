@@ -8,15 +8,22 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
 type HTTPClient struct {
+	mu sync.Mutex
+
 	// The responses to return for future requests. Once a response is consumed, it's removed from this slice.
 	nextResponses []HTTPResponse
 
 	// The errors to return for future requests. If non-nil, these errors are returned before any responses in nextResponses.
 	nextErrors []error
+
+	// MatchURI makes each request consume the first queued response with a matching URI, instead of the next one.
+	// Use it when requests are sent concurrently.
+	MatchURI bool
 
 	// LogRequests enables logging of all requests made through this client.
 	LogRequests bool
@@ -49,20 +56,30 @@ func (c *HTTPClient) NextResponseString(status int, body string) {
 }
 
 func (c *HTTPClient) NextResponseBytes(status int, body []byte) {
-	c.nextResponses = append(c.nextResponses, HTTPResponse{Status: status, Body: body})
+	c.NextResponse(HTTPResponse{Status: status, Body: body})
 }
 
 func (c *HTTPClient) NextResponse(response HTTPResponse) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.nextResponses = append(c.nextResponses, response)
 }
 
 func (c *HTTPClient) NextResponseError(err error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.nextErrors = append(c.nextErrors, err)
 }
 
-func (c *HTTPClient) Consumed() bool { return len(c.nextResponses) == 0 }
+func (c *HTTPClient) Consumed() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return len(c.nextResponses) == 0
+}
 
 func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.LogRequests {
 		fmt.Fprintf(os.Stderr, "Sending request %+v\n", request)
 	}
@@ -74,11 +91,18 @@ func (c *HTTPClient) Do(request *http.Request, timeout time.Duration) (*http.Res
 	}
 	response := HTTPResponse{Status: 200}
 	if len(c.nextResponses) > 0 {
-		response = c.nextResponses[0]
+		i := 0
+		for j, r := range c.nextResponses {
+			if !c.MatchURI || r.URI == "" || r.URI == request.URL.RequestURI() {
+				i = j
+				break
+			}
+		}
+		response = c.nextResponses[i]
 		if response.URI != "" && response.URI != request.URL.RequestURI() {
 			return nil, fmt.Errorf("uri of response is %s, which does not match request uri %s", response.URI, request.URL.RequestURI())
 		}
-		c.nextResponses = c.nextResponses[1:]
+		c.nextResponses = append(c.nextResponses[:i], c.nextResponses[i+1:]...)
 	}
 	if c.ReadBody && request.Body != nil {
 		body, err := io.ReadAll(request.Body)

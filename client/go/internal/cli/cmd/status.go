@@ -172,18 +172,17 @@ $ vespa status deployment -t local [session-id] --wait 600
 			}
 			progress := cli.startDeploymentProgress("Deployment status")
 			defer progress.close()
-			t, err := cli.target(targetOptions{logLevel: "none", progress: progress})
+			t, err := cli.target(targetOptions{logLevel: "none"})
 			if err != nil {
 				return err
 			}
-			if progress != nil {
-				progress.setTitle("Deployment of " + t.Deployment().String())
-			}
+			progress.setTitle("Deployment of " + t.Deployment().String())
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			id, err := waiter.Deployment(t, wantedID)
 			if err != nil {
-				progress.finish("Monitoring stopped; deployment may still be running")
-				if errors.Is(err, vespa.ErrWaitTimeout) && t.IsCloud() {
+				progress.close()
+				// A drawn frame already ends with the run state and console URL.
+				if errors.Is(err, vespa.ErrWaitTimeout) && t.IsCloud() && (progress == nil || progress.lines == 0) {
 					cli.printInfo("Deployment is still running. See ", color.CyanString(t.Deployment().System.ConsoleRunURL(t.Deployment(), id)), " for more details")
 				}
 				var hints []string
