@@ -13,7 +13,7 @@
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
-#include <vespa/searchcore/proton/attribute/document_field_extractor.h>
+#include <vespa/searchlib/common/document_field_extractor.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::ArrayDataType;
@@ -34,7 +34,7 @@ using document::StructDataType;
 using document::StructFieldValue;
 using document::WeightedSetDataType;
 using document::WeightedSetFieldValue;
-using proton::DocumentFieldExtractor;
+using search::DocumentFieldExtractor;
 
 namespace {
 

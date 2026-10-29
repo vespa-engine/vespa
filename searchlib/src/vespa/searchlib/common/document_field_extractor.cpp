@@ -42,7 +42,7 @@ using search::attribute::getUndefined;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
 
-namespace proton {
+namespace search {
 
 namespace {
 
@@ -235,4 +235,4 @@ std::unique_ptr<FieldValue> DocumentFieldExtractor::getFieldValue(const FieldPat
     return std::unique_ptr<FieldValue>();
 }
 
-} // namespace proton
+} // namespace search

@@ -1,5 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#pragma once
+
 #include <vespa/vespalib/stllike/hash_map.h>
 
 #include <memory>
@@ -14,7 +16,7 @@ class FieldPathEntry;
 
 } // namespace document
 
-namespace proton {
+namespace search {
 
 /**
  * Class used to extract a field value from a document field or from a
@@ -43,4 +45,4 @@ public:
     static bool isSupported(const document::FieldPath& fieldPath);
 };
 
-} // namespace proton
+} // namespace search
