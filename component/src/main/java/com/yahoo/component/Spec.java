@@ -30,11 +30,14 @@ final class Spec<VERSION> {
         this.namespace = namespace;
     }
 
-    String createStringValue() {
+    String createStringValue() { return createStringValue(false); }
+    String createFullValue() { return createStringValue(true); }
+
+    private String createStringValue(boolean full) {
         if (isNonEmpty(version) || (namespace != null)) {
             StringBuilder builder = new StringBuilder(name);
             if (isNonEmpty(version))
-                builder.append(':').append(version);
+                builder.append(':').append(full && version instanceof Version v ? v.toFullString() : version);
             if (namespace != null)
                 builder.append('@').append(namespace.stringValue());
             return builder.toString();

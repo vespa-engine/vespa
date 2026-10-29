@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
+import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.BackedOverridableQueryProfile;
 import com.yahoo.search.query.profile.QueryProfile;
@@ -97,9 +98,9 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         QueryProfilesConfig.Queryprofile.Builder qB = new QueryProfilesConfig.Queryprofile.Builder();
         qB.id(profile.getId().stringValue());
         if (profile.getType() != null)
-            qB.type(profile.getType().getId().stringValue());
+            qB.type(profile.getType().getId().fullValue());
         for (QueryProfile inherited : profile.inherited())
-            qB.inherit(inherited.getId().stringValue());
+            qB.inherit(inherited.getId().fullValue());
 
         if (profile.getVariants() != null) {
             for (String dimension : profile.getVariants().getDimensions())
@@ -158,7 +159,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
             }
             else { // Reference to an id'ed profile - output reference plus any local overrides
                 QueryProfilesConfig.Queryprofile.Reference.Builder refB = new QueryProfilesConfig.Queryprofile.Reference.Builder();
-                createReferenceFieldConfig(refB, profile, fullName, field.getKey(), ((BackedOverridableQueryProfile) subProfile).getBacking().getId().stringValue());
+                createReferenceFieldConfig(refB, profile, fullName, field.getKey(), ((BackedOverridableQueryProfile) subProfile).getBacking().getId().fullValue());
                 qpB.reference(refB);
                 addFieldChildren(qpB, subProfile,fullName + ".");
             }
@@ -177,7 +178,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
             }
             else { // Reference to an id'ed profile - output reference plus any local overrides
                 QueryProfilesConfig.Queryprofile.Queryprofilevariant.Reference.Builder refB = new QueryProfilesConfig.Queryprofile.Queryprofilevariant.Reference.Builder();
-                createVariantReferenceFieldConfig(refB, fullName, ((BackedOverridableQueryProfile) subProfile).getBacking().getId().stringValue());
+                createVariantReferenceFieldConfig(refB, fullName, ((BackedOverridableQueryProfile) subProfile).getBacking().getId().fullValue());
                 qpB.reference(refB);
                 addVariantFieldChildren(qpB, subProfile, fullName + ".");
             }
@@ -198,7 +199,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
                 varB.fordimensionvalues(dimensionValue);
             }
             for (QueryProfile inherited : variant.inherited())
-                varB.inherit(inherited.getId().stringValue());
+                varB.inherit(inherited.getId().fullValue());
 
             List<Map.Entry<String,Object>> content = new ArrayList<>(variant.getValues().entrySet());
             content.sort(new MapEntryKeyComparator());
@@ -266,7 +267,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         if (profileType.getDeclaredMatchAsPath())
             qtB.matchaspath(true);
         for (QueryProfileType inherited : profileType.inherited())
-            qtB.inherit(inherited.getId().stringValue());
+            qtB.inherit(inherited.getId().fullValue());
         List<FieldDescription> fields = new ArrayList<>(profileType.declaredFields().values());
         Collections.sort(fields);
         for (FieldDescription field : fields)
