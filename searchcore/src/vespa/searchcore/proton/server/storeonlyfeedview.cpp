@@ -9,6 +9,8 @@
 #include "updatedonecontext.h"
 
 #include <vespa/check_require.h>
+#include <vespa/document/base/exceptions.h>
+#include <vespa/document/base/fieldpath.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/fieldpathupdate.h>
@@ -17,6 +19,7 @@
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
+#include <vespa/searchlib/index/struct_field_index.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -208,14 +211,33 @@ StoreOnlyFeedView::StoreOnlyFeedView(Context ctx, const PersistentParams& params
     _docType = _repo->getDocumentType(_params._docTypeName.getName());
     if (_schema && _docType) {
         for (const auto& indexField : _schema->getIndexFields()) {
-            size_t dotPos = indexField.getName().find('.');
-            if ((dotPos == std::string::npos) || _schema->is_uri_part(indexField.getName())) {
-                document::FieldPath fieldPath;
-                _docType->buildFieldPath(fieldPath, indexField.getName().substr(0, dotPos));
-                _indexedFields.insert(fieldPath.back().getFieldRef().getId());
-            } else {
-                throw IllegalStateException("Field '%s' is not a valid index name", indexField.getName().c_str());
+            // An index name with '.' is either part of a uri field, or a struct field in an array of struct or map
+            // field, which are both indexed from the document field named by the part before the first '.'.
+            const std::string& indexName = indexField.getName();
+            size_t             dotPos = indexName.find('.');
+            std::string_view   fieldName = std::string_view(indexName).substr(0, dotPos);
+            if (!_docType->hasField(fieldName)) {
+                throw document::FieldNotFoundException(
+                    std::string(fieldName), fmt("Index '%s' does not belong to a field in document type '%s'",
+                                                indexName.c_str(), _docType->getName().c_str()));
             }
+            if (dotPos != std::string::npos && !_schema->is_uri_part(indexName)) {
+                // Use the same rule as the memory index, so that only indexes it can invert are accepted.
+                auto structFieldPath = search::index::get_struct_field_path(*_docType, indexName);
+                if (!structFieldPath) {
+                    throw IllegalStateException(
+                        fmt("Index '%s' in document type '%s' is neither part of a uri field nor a field in an "
+                            "array of struct or map field",
+                            indexName.c_str(), _docType->getName().c_str()));
+                }
+                auto problem = search::index::get_struct_field_index_problem(indexField, *structFieldPath);
+                if (!problem.empty()) {
+                    throw IllegalStateException(fmt("Index '%s' in document type '%s' is not a valid struct field "
+                                                    "index: %s",
+                                                    indexName.c_str(), _docType->getName().c_str(), problem.c_str()));
+                }
+            }
+            _indexedFields.insert(_docType->getField(fieldName).getId());
         }
     }
 }

@@ -9,6 +9,9 @@
 
 #include <set>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.matching.indexenvironment");
+
 using namespace search::fef;
 
 namespace {
@@ -24,13 +27,16 @@ void consider_field_for_extraction(const std::string& field_name, StringSet& vir
     }
 }
 
-StringSet extract_virtual_fields(const std::vector<search::fef::FieldInfo>& fields) {
-    // Fields that are represented by a set of attributes (normal and imported) in the backend are considered virtual
-    // fields. Currently, this is map or array of struct fields (from the SD file) with struct-field attributes. These
-    // attributes have '.' in their names, example: my_map.key and my_map.value represent a map<int, string>.
+StringSet extract_virtual_fields(const std::vector<search::fef::FieldInfo>& fields,
+                                 const search::index::Schema&               schema) {
+    // Fields that are represented by a set of attributes (normal and imported) and/or indexes in the backend are
+    // considered virtual fields. Currently, this is map or array of struct fields (from the SD file) with
+    // struct-field attributes or indexes. These have '.' in their names, example: my_map.key and my_map.value
+    // represent a map<int, string>. Indexes with '.' in their names may also be parts of an uri field, which is not
+    // virtual.
     StringSet result;
     for (const auto& field : fields) {
-        if (field.hasAttribute()) {
+        if (field.hasAttribute() || (field.type() == FieldType::INDEX && !schema.is_uri_part(field.name()))) {
             consider_field_for_extraction(field.name(), result);
         }
     }
@@ -92,7 +98,14 @@ void IndexEnvironment::extractFields(const search::index::Schema& schema) {
         fieldInfo.setFilter(true);
         insertField(fieldInfo);
     }
-    for (const auto& field : extract_virtual_fields(_fields)) {
+    for (const auto& field : extract_virtual_fields(_fields, schema)) {
+        if (_fieldNames.contains(field)) {
+            // A real field wins over a virtual field with the same name, as queries and rank features refer to it.
+            // This is a guard only: a schema from the config model never has such a collision, as a field with
+            // struct field attributes or indexes can not itself be an attribute or index.
+            LOG(error, "Virtual field '%s' not added, as there is already a field with that name", field.c_str());
+            continue;
+        }
         FieldInfo info(FieldType::VIRTUAL, FieldInfo::CollectionType::ARRAY, field, _fields.size());
         info.set_data_type(FieldInfo::DataType::COMBINED);
         insertField(info);
