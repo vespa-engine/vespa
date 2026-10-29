@@ -7,6 +7,7 @@ import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Case;
+import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.MatchType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
@@ -48,7 +49,8 @@ public class TextMatch extends Processor {
         }
     }
 
-    private AnnotatorConfig findAnnotatorConfig(Schema schema, SDField field) {
+    /** Returns the annotator config to use when tokenizing the given field for indexing. */
+    public static AnnotatorConfig findAnnotatorConfig(Schema schema, ImmutableSDField field) {
         AnnotatorConfig config = new AnnotatorConfig();
         config.setStemMode(field.getIndexStemming(schema).toStemMode());
         config.setRemoveAccents(field.getNormalizing().doRemoveAccents());
