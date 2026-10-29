@@ -4,6 +4,8 @@
 
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/fast_value_index.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/node_types.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
@@ -11,6 +13,7 @@
 #include <vespa/vespalib/util/typify.h>
 
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 using search::tensor::ITensorAttribute;
@@ -21,6 +24,9 @@ using vespalib::eval::CellType;
 using vespalib::eval::FastAddrMap;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::FastValueIndex;
+using vespalib::eval::Function;
+using vespalib::eval::InterpretedFunction;
+using vespalib::eval::NodeTypes;
 using vespalib::eval::TypedCells;
 using vespalib::eval::TypifyCellType;
 using vespalib::eval::Value;
@@ -113,24 +119,48 @@ public:
     SerializedTensorRef get(uint32_t docid) const { return _attr.get_serialized_tensor_ref(docid); }
 };
 
-template <bool strict, typename DocAccess> class SparseTensorWandSearchImpl final : public SparseTensorWandSearch {
-    fef::TermFieldMatchData&      _tfmd;
+/**
+ * Scores documents by calculating the dot product directly.
+ */
+template <typename DocAccess> class DirectScorer {
     DocAccess                     _doc_access;
     const SparseTensorDotProduct& _dot_product;
-    const MatchParams             _match_params;
-    std::vector<double>           _local_scores;
-    const bool                    _readonly_scores_heap;
-    double                        _last_score;
-
-    double score(uint32_t docid) { return _dot_product.eval(_doc_access.get(docid)); }
 
 public:
-    SparseTensorWandSearchImpl(fef::TermFieldMatchData& tfmd, const ITensorAttribute& attr,
-                               const SparseTensorDotProduct& dot_product, const MatchParams& match_params,
-                               bool readonly_scores_heap)
+    DirectScorer(const ITensorAttribute& attr, const SparseTensorDotProduct& dot_product)
+        : _doc_access(attr), _dot_product(dot_product) {}
+    double score(uint32_t docid) { return _dot_product.eval(_doc_access.get(docid)); }
+};
+
+/**
+ * Scores documents by evaluating the dot product with an interpreted function (fast-search attributes).
+ */
+class InterpretedScorer {
+    TensorRefAccess                   _doc_access;
+    InterpretedSparseTensorDotProduct _dot_product;
+
+public:
+    InterpretedScorer(const ITensorAttribute& attr, const InterpretedFunction& dot_product, const Value& query_tensor)
+        : _doc_access(attr), _dot_product(dot_product, query_tensor) {}
+    double score(uint32_t docid) { return _dot_product.eval(_doc_access.get(docid)); }
+};
+
+template <bool strict, typename Scorer> class SparseTensorWandSearchImpl final : public SparseTensorWandSearch {
+    fef::TermFieldMatchData& _tfmd;
+    Scorer                   _scorer;
+    const MatchParams        _match_params;
+    std::vector<double>      _local_scores;
+    const bool               _readonly_scores_heap;
+    double                   _last_score;
+
+    double score(uint32_t docid) { return _scorer.score(docid); }
+
+public:
+    template <typename... ScorerArgs>
+    SparseTensorWandSearchImpl(fef::TermFieldMatchData& tfmd, const MatchParams& match_params,
+                               bool readonly_scores_heap, ScorerArgs&&... scorer_args)
         : _tfmd(tfmd),
-          _doc_access(attr),
-          _dot_product(dot_product),
+          _scorer(std::forward<ScorerArgs>(scorer_args)...),
           _match_params(match_params),
           _local_scores(),
           _readonly_scores_heap(readonly_scores_heap),
@@ -170,17 +200,16 @@ public:
     Trinary is_strict() const override { return strict ? Trinary::True : Trinary::False; }
 };
 
-template <typename DocAccess>
-std::unique_ptr<SearchIterator>
-create_with_access(bool strict, fef::TermFieldMatchData& tfmd, const ITensorAttribute& attr,
-                   const SparseTensorDotProduct& dot_product, const SparseTensorWandSearch::MatchParams& match_params,
-                   bool readonly_scores_heap) {
+template <typename Scorer, typename... ScorerArgs>
+std::unique_ptr<SearchIterator> create_with_scorer(bool strict, fef::TermFieldMatchData& tfmd,
+                                                   const SparseTensorWandSearch::MatchParams& match_params,
+                                                   bool readonly_scores_heap, ScorerArgs&&... scorer_args) {
     if (strict) {
-        return std::make_unique<SparseTensorWandSearchImpl<true, DocAccess>>(tfmd, attr, dot_product, match_params,
-                                                                             readonly_scores_heap);
+        return std::make_unique<SparseTensorWandSearchImpl<true, Scorer>>(tfmd, match_params, readonly_scores_heap,
+                                                                          std::forward<ScorerArgs>(scorer_args)...);
     } else {
-        return std::make_unique<SparseTensorWandSearchImpl<false, DocAccess>>(tfmd, attr, dot_product, match_params,
-                                                                              readonly_scores_heap);
+        return std::make_unique<SparseTensorWandSearchImpl<false, Scorer>>(tfmd, match_params, readonly_scores_heap,
+                                                                           std::forward<ScorerArgs>(scorer_args)...);
     }
 }
 
@@ -226,8 +255,21 @@ double SparseTensorDotProduct::eval(const SerializedTensorRef& doc_tensor) const
                                                             _query_float_cells, doc_tensor.get_labels(), doc_cells);
 }
 
+InterpretedSparseTensorDotProduct::InterpretedSparseTensorDotProduct(const InterpretedFunction& function,
+                                                                     const Value&               query_tensor)
+    : _function(function), _ctx(function), _params(query_tensor) {
+}
+
+InterpretedSparseTensorDotProduct::~InterpretedSparseTensorDotProduct() = default;
+
 bool SparseTensorWandSearch::is_supported_type(const ValueType& type) {
     return type.is_sparse() && (type.count_mapped_dimensions() == 1);
+}
+
+std::unique_ptr<InterpretedFunction> SparseTensorWandSearch::make_dot_product(const ValueType& type) {
+    auto      function = Function::parse({"a", "b"}, "reduce(join(a,b,f(x,y)(x*y)),sum)");
+    NodeTypes types(*function, {type, type});
+    return std::make_unique<InterpretedFunction>(FastValueBuilderFactory::get(), *function, types);
 }
 
 std::unique_ptr<SearchIterator> SparseTensorWandSearch::create(bool strict, fef::TermFieldMatchData& tfmd,
@@ -236,11 +278,20 @@ std::unique_ptr<SearchIterator> SparseTensorWandSearch::create(bool strict, fef:
                                                                const MatchParams&            match_params,
                                                                bool                          readonly_scores_heap) {
     if (attr_tensor.supports_get_tensor_ref()) {
-        return create_with_access<TensorRefAccess>(strict, tfmd, attr_tensor, dot_product, match_params,
-                                                   readonly_scores_heap);
+        return create_with_scorer<DirectScorer<TensorRefAccess>>(strict, tfmd, match_params, readonly_scores_heap,
+                                                                 attr_tensor, dot_product);
     }
-    return create_with_access<SerializedTensorRefAccess>(strict, tfmd, attr_tensor, dot_product, match_params,
-                                                         readonly_scores_heap);
+    return create_with_scorer<DirectScorer<SerializedTensorRefAccess>>(strict, tfmd, match_params,
+                                                                       readonly_scores_heap, attr_tensor, dot_product);
+}
+
+std::unique_ptr<SearchIterator> SparseTensorWandSearch::create(bool strict, fef::TermFieldMatchData& tfmd,
+                                                               const ITensorAttribute&    attr_tensor,
+                                                               const InterpretedFunction& dot_product,
+                                                               const Value& query_tensor, const MatchParams& match_params,
+                                                               bool readonly_scores_heap) {
+    return create_with_scorer<InterpretedScorer>(strict, tfmd, match_params, readonly_scores_heap, attr_tensor,
+                                                 dot_product, query_tensor);
 }
 
 } // namespace search::queryeval

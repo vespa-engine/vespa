@@ -12,6 +12,7 @@ namespace search::tensor {
 class ITensorAttribute;
 }
 namespace vespalib::eval {
+class InterpretedFunction;
 struct Value;
 } // namespace vespalib::eval
 
@@ -27,13 +28,14 @@ namespace search::queryeval {
  */
 class SparseTensorWandBlueprint : public ComplexLeafBlueprint {
 private:
-    const tensor::ITensorAttribute&             _attr_tensor;
-    const vespalib::eval::Value&                _query_tensor;
-    SparseTensorDotProduct                      _dot_product;
-    uint32_t                                    _target_hits;
-    double                                      _score_threshold;
-    mutable SharedWeakAndPriorityQueueT<double> _scores;
-    MatchingPhase                               _matching_phase;
+    const tensor::ITensorAttribute&                      _attr_tensor;
+    const vespalib::eval::Value&                         _query_tensor;
+    std::unique_ptr<vespalib::eval::InterpretedFunction> _interpreted_dot_product; // fast-search attributes
+    std::unique_ptr<SparseTensorDotProduct>              _dot_product;             // other attributes
+    uint32_t                                             _target_hits;
+    double                                               _score_threshold;
+    mutable SharedWeakAndPriorityQueueT<double>          _scores;
+    MatchingPhase                                        _matching_phase;
 
 public:
     SparseTensorWandBlueprint(const FieldSpec& field, const tensor::ITensorAttribute& attr_tensor,
