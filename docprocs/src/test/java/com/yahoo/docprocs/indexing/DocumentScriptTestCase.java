@@ -13,6 +13,7 @@ import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
@@ -23,11 +24,16 @@ import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
+import com.yahoo.vespa.indexinglanguage.expressions.PassthroughExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.TokenizeExpression;
+import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
+import com.yahoo.language.simple.SimpleLinguistics;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -35,6 +41,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -232,6 +239,86 @@ public class DocumentScriptTestCase {
         AssignFieldPathUpdate assignUpdate = (AssignFieldPathUpdate)update.fieldPathUpdates().iterator().next();
         assertEquals("structfield.title", assignUpdate.getOriginalFieldPath());
         assertEquals(newTitleValue, assignUpdate.getFieldValue());
+    }
+
+    @Test
+    public void requireThatIndexedStructFieldsAreAnnotatedInPlace() {
+        DocumentType docType = newStructFieldIndexType();
+        Document doc = new Document(docType, "id:ns:myDocumentType::");
+        Array<Struct> array = new Array<>(docType.getField("myArray").getDataType());
+        array.add(newElement(docType, "foo bar", "baz"));
+        doc.setFieldValue("myArray", array);
+
+        doc = newStructFieldIndexScript(docType).execute(fieldValuesFactory, doc, false, null);
+
+        Struct element = ((Array<Struct>)doc.getFieldValue("myArray")).get(0);
+        assertSpanTrees(element.getFieldValue("myvalue"), SpanTrees.LINGUISTICS);
+        assertNull(((StringFieldValue)element.getFieldValue("other")).getSpanTree(SpanTrees.LINGUISTICS));
+    }
+
+    @Test
+    public void requireThatAddingElementsToFieldWithIndexedStructFieldsAnnotatesThem() {
+        DocumentType docType = newStructFieldIndexType();
+        DocumentUpdate update = new DocumentUpdate(docType, "id:ns:myDocumentType::");
+        update.addFieldUpdate(FieldUpdate.createAdd(docType.getField("myArray"), newElement(docType, "foo bar", "baz")));
+
+        update = newStructFieldIndexScript(docType).execute(fieldValuesFactory, update, null);
+
+        Struct element = (Struct)update.getFieldUpdate("myArray").getValueUpdate(0).getValue();
+        assertSpanTrees(element.getFieldValue("myvalue"), SpanTrees.LINGUISTICS);
+        assertNull(((StringFieldValue)element.getFieldValue("other")).getSpanTree(SpanTrees.LINGUISTICS));
+    }
+
+    @Test
+    public void requireThatElementUpdatesOfFieldWithIndexedStructFieldsAreRejected() {
+        DocumentType docType = newStructFieldIndexType();
+        DocumentUpdate fieldPathUpdate = new DocumentUpdate(docType, "id:ns:myDocumentType::");
+        fieldPathUpdate.addFieldPathUpdate(new AssignFieldPathUpdate(docType, "myArray[0].myvalue", new StringFieldValue("foo")));
+        assertFail("Field 'myArray' has struct fields with 'indexing: index', which does not support field path updates " +
+                   "into the field. Assign the whole field instead.",
+                   () -> newStructFieldIndexScript(docType).execute(fieldValuesFactory, fieldPathUpdate, null));
+
+        DocumentUpdate elementUpdate = new DocumentUpdate(docType, "id:ns:myDocumentType::");
+        elementUpdate.addFieldUpdate(FieldUpdate.createMap(docType.getField("myArray"), new IntegerFieldValue(0),
+                                                           ValueUpdate.createAssign(newElement(docType, "foo", "bar"))));
+        assertFail("Field 'myArray' has struct fields with 'indexing: index', which does not support updating single " +
+                   "elements. Assign the whole field, or add or remove elements, instead.",
+                   () -> newStructFieldIndexScript(docType).execute(fieldValuesFactory, elementUpdate, null));
+    }
+
+    private static DocumentType newStructFieldIndexType() {
+        StructDataType elementType = new StructDataType("element");
+        elementType.addField(new Field("myvalue", DataType.STRING));
+        elementType.addField(new Field("other", DataType.STRING));
+        DocumentType docType = new DocumentType("myDocumentType");
+        docType.addField("myArray", DataType.getArray(elementType));
+        return docType;
+    }
+
+    private static Struct newElement(DocumentType docType, String myvalue, String other) {
+        var elementType = (StructDataType)((ArrayDataType)docType.getField("myArray").getDataType()).getNestedType();
+        Struct element = new Struct(elementType);
+        element.setFieldValue("myvalue", new StringFieldValue(myvalue));
+        element.setFieldValue("other", new StringFieldValue(other));
+        return element;
+    }
+
+    /** Returns a script as derived for an array of struct field where the "myvalue" struct field has 'indexing: index'. */
+    private static DocumentScript newStructFieldIndexScript(DocumentType docType) {
+        var tokenize = new TokenizeExpression(new SimpleLinguistics(), new AnnotatorConfig());
+        var statement = new StatementExpression(new InputExpression("myArray"),
+                                                new ForEachFieldExpression("myvalue", tokenize),
+                                                new PassthroughExpression("myArray"));
+        return new DocumentScript(docType, List.of("myArray"), new ScriptExpression(statement), Set.of());
+    }
+
+    private static void assertFail(String expectedMessage, Runnable runnable) {
+        try {
+            runnable.run();
+            fail("Expected exception");
+        } catch (InvalidInputException e) {
+            assertEquals(expectedMessage, e.getMessage());
+        }
     }
 
     private static FieldValue processDocument(FieldValue fieldValue) {

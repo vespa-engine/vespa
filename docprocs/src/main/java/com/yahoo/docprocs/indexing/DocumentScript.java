@@ -19,11 +19,15 @@ import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.RemoveValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
+import com.yahoo.vespa.indexinglanguage.ExpressionSearcher;
 import com.yahoo.vespa.indexinglanguage.FieldPathUpdateHelper;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachFieldExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -45,6 +49,7 @@ class DocumentScript {
     private final Set<String> inputFields;
     private final ScriptExpression expression;
     private final Set<String> fastMapSearchFields;
+    private final Set<String> structFieldIndexFields;
 
     DocumentScript(DocumentType documentType, Collection<String> inputFields, ScriptExpression expression,
                    Set<String> fastMapSearchFields) {
@@ -52,7 +57,21 @@ class DocumentScript {
         this.inputFields = new HashSet<>(inputFields);
         this.expression = expression;
         this.fastMapSearchFields = Set.copyOf(fastMapSearchFields);
+        this.structFieldIndexFields = structFieldIndexFields(expression);
         expression.resolve(documentType);
+    }
+
+    /**
+     * Returns the input fields of the statements annotating struct fields in place (see {@link ForEachFieldExpression}),
+     * which is how struct fields with 'indexing: index' are indexed.
+     */
+    private static Set<String> structFieldIndexFields(ScriptExpression script) {
+        var fields = new HashSet<String>();
+        for (StatementExpression statement : script.asList()) {
+            if (new ExpressionSearcher<>(ForEachFieldExpression.class).containedIn(statement))
+                fields.addAll(InputExpression.InputFieldNameExtractor.runOn(statement));
+        }
+        return Set.copyOf(fields);
     }
 
     ScriptExpression getExpression() { return expression; }
@@ -96,14 +115,19 @@ class DocumentScript {
      * Assigning the whole field is fine, as it is turned into a regular field update which reruns the script.
      */
     private void requireThatFieldPathUpdateIsSupported(Field field, FieldPathUpdate fieldUpdate) {
-        if (field == null || !fastMapSearchFields.contains(field.getName())) {
+        if (field == null || FieldPathUpdateHelper.isFieldValues(fieldUpdate)) {
             return;
         }
-        if (FieldPathUpdateHelper.isFieldValues(fieldUpdate)) {
-            return;
+        if (fastMapSearchFields.contains(field.getName())) {
+            throw new InvalidInputException("Field '" + field.getName() + "' has 'fast-search-map-field', which does not " +
+                                            "support field path updates into the field. Assign the whole field instead.");
         }
-        throw new InvalidInputException("Field '" + field.getName() + "' has 'fast-search-map-field', which does not " +
-                                        "support field path updates into the field. Assign the whole field instead.");
+        // The updated values would not be annotated, so they would not be indexed
+        if (structFieldIndexFields.contains(field.getName())) {
+            throw new InvalidInputException("Field '" + field.getName() + "' has struct fields with 'indexing: index', " +
+                                            "which does not support field path updates into the field. " +
+                                            "Assign the whole field instead.");
+        }
     }
 
     /**
@@ -114,7 +138,13 @@ class DocumentScript {
      */
     private void requireThatFieldUpdateIsSupported(FieldUpdate fieldUpdate) {
         Field field = fieldUpdate.getField();
-        if (field == null || !fastMapSearchFields.contains(field.getName())) {
+        if (field == null) {
+            return;
+        }
+        if (structFieldIndexFields.contains(field.getName())) {
+            requireNoElementUpdates(fieldUpdate);
+        }
+        if (!fastMapSearchFields.contains(field.getName())) {
             return;
         }
         if (!(field.getDataType() instanceof ArrayDataType)) {
@@ -125,6 +155,21 @@ class DocumentScript {
                 throw new InvalidInputException("Field '" + field.getName() + "' has 'fast-search-map-field', which does " +
                                                 "not support updating or removing single array elements. " +
                                                 "Assign the whole field instead.");
+            }
+        }
+    }
+
+    /**
+     * A field with struct field indexes has its indexed struct fields annotated by running the script on the whole
+     * field, or on the elements added. Updating a single element (or map value) does not run the script on it,
+     * so the updated element would not be indexed.
+     */
+    private static void requireNoElementUpdates(FieldUpdate fieldUpdate) {
+        for (ValueUpdate<?> valueUpdate : fieldUpdate.getValueUpdates()) {
+            if (valueUpdate instanceof MapValueUpdate) {
+                throw new InvalidInputException("Field '" + fieldUpdate.getField().getName() + "' has struct fields with " +
+                                                "'indexing: index', which does not support updating single elements. " +
+                                                "Assign the whole field, or add or remove elements, instead.");
             }
         }
     }
