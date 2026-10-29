@@ -85,6 +85,46 @@ struct PreparedAddDoc final : public PrepareResult {
     PreparedAddDoc(PreparedAddDoc&& other) noexcept;
 };
 
+using InsertionGenerationType = uint64_t;
+
+struct InsertedNodeInfo {
+    uint32_t nodeid;
+
+    // Sequentially increasing number to remember when the node was added.
+    // Will be compared with the number that is taken in internal_prepare_fix_and_add.
+    internal::InsertionGenerationType generation;
+
+    // levels_ref allows to verify if this node still exists in the graph
+    // The nodeid could have been reused!
+    vespalib::datastore::EntryRef levels_ref;
+};
+
+struct PreparedFixAndAddNode {
+    using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
+    std::vector<Links>                        connections;
+    std::vector<double>                       max_distances;
+    std::vector<HnswTraversalCandidateVector> selected_neighbors;
+    InsertionGenerationType                   prepared_at_generation;
+
+    PreparedFixAndAddNode() noexcept;
+    explicit PreparedFixAndAddNode(std::vector<Links>&& connections_in, std::vector<double>&& max_distances_in,
+                                   std::vector<HnswTraversalCandidateVector>&& selected_neighbors_in,
+                                   InsertionGenerationType                     prepared_at_generation_in) noexcept;
+    ~PreparedFixAndAddNode();
+    PreparedFixAndAddNode(PreparedFixAndAddNode&& other) noexcept;
+};
+
+struct PreparedFixAndAddDoc final : public PrepareResult {
+    using ReadGuard = vespalib::GenerationGuard;
+    uint32_t                           docid;
+    ReadGuard                          read_guard;
+    ReadGuard                          hnsw_graph_read_guard;
+    std::vector<PreparedFixAndAddNode> nodes;
+    PreparedFixAndAddDoc(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept;
+    ~PreparedFixAndAddDoc() override;
+    PreparedFixAndAddDoc(PreparedFixAndAddDoc&& other) noexcept;
+};
+
 template <HnswIndexType type> class GlobalFilterWrapper;
 
 template <> class GlobalFilterWrapper<HnswIndexType::SINGLE> {
@@ -130,6 +170,9 @@ struct SelectResult {
 };
 
 template <HnswIndexType type> class HnswIndex : public NearestNeighborIndex {
+    enum class InsertionStrategy { PARALLEL_ADD, PARALLEL_FIX_AND_ADD };
+    static constexpr InsertionStrategy insertion_strategy = InsertionStrategy::PARALLEL_FIX_AND_ADD;
+
 public:
     uint32_t get_docid(uint32_t nodeid) const {
         if constexpr (NodeType::identity_mapping) {
@@ -174,6 +217,11 @@ protected:
     RandomLevelGenerator::UP                 _level_generator;
     IdMapping                                _id_mapping; // mapping from docid to nodeid vector
     HnswIndexConfig                          _cfg;
+
+    static constexpr size_t                NODES_TO_KEEP_FOR_FIX_AND_ADD = 512;
+    std::deque<internal::InsertedNodeInfo> _last_inserted_nodes;
+    uint64_t                               _current_generation; // read and written to by writer thread
+    std::atomic_uint64_t _current_generation_atomic;            // written to by writer thread, read by reader threads
 
     uint32_t max_links_for_level(uint32_t level) const;
     void add_link_to(uint32_t nodeid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
@@ -264,11 +312,18 @@ protected:
 
     internal::PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
                                                   vespalib::GenerationGuard read_guard) const;
+    internal::PreparedFixAndAddDoc internal_prepare_fix_and_add(uint32_t docid, VectorBundle input_vectors,
+                                                                vespalib::GenerationGuard read_guard) const;
     void internal_prepare_add_node(internal::PreparedAddDoc& op, TypedCells input_vector,
                                    const typename GraphType::EntryNode& entry) const;
+    void internal_prepare_fix_and_add_node(internal::PreparedFixAndAddDoc& op, TypedCells input_vector,
+                                           const typename GraphType::EntryNode& entry) const;
     LinkArray filter_valid_nodeids(uint32_t level, const internal::PreparedAddNode::Links& neighbors,
                                    uint32_t self_nodeid);
     void internal_complete_add(uint32_t docid, internal::PreparedAddDoc& op);
+    void internal_complete_fix_and_add(uint32_t docid, internal::PreparedFixAndAddDoc& op);
+    void internal_complete_fix_and_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
+                                            internal::PreparedFixAndAddNode& prepared_node);
     void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
                                     internal::PreparedAddNode& prepared_node);
 
