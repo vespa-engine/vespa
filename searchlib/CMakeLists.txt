@@ -107,6 +107,7 @@ vespa_define_module(
     src/tests/bitcompression/expgolomb
     src/tests/bitvector
     src/tests/common/bitvector
+    src/tests/common/document_field_extractor
     src/tests/common/geogcd
     src/tests/common/location
     src/tests/common/location_iterator

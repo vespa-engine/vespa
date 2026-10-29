@@ -42,7 +42,7 @@ using search::attribute::getUndefined;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
 
-namespace proton {
+namespace search {
 
 namespace {
 
@@ -103,7 +103,10 @@ const DataType* getArrayType(const DataType& fieldType) {
 
 std::unique_ptr<ArrayFieldValue> makeArray(const FieldPathEntry& fieldPathEntry, size_t size) {
     const auto arrayType = getArrayType(fieldPathEntry.getDataType());
-    auto       array = std::make_unique<ArrayFieldValue>(*arrayType);
+    if (arrayType == nullptr) {
+        return {};
+    }
+    auto array = std::make_unique<ArrayFieldValue>(*arrayType);
     array->resize(size);
     return array;
 }
@@ -135,6 +138,9 @@ bool DocumentFieldExtractor::isSupported(const FieldPath& fieldPath) {
     } else if (fieldPath.size() > 3) {
         return false;
     }
+    if (fieldPath.size() > 1 && getArrayType(fieldPath.back().getDataType()) == nullptr) {
+        return false;
+    }
     return true;
 }
 
@@ -162,7 +168,10 @@ std::unique_ptr<FieldValue> extractFieldFromMap(const FieldValue* outerFieldValu
     if (outerFieldValue && outerFieldValue->isA(FieldValue::Type::MAP)) {
         const auto outerMap = static_cast<const MapFieldValue*>(outerFieldValue);
         auto       array = makeArray(innerEntry, outerMap->size());
-        uint32_t   arrayIndex = 0;
+        if (!array) {
+            return {};
+        }
+        uint32_t arrayIndex = 0;
         for (const auto& mapElem : *outerMap) {
             (*array)[arrayIndex++].assign(*extractor(mapElem));
         }
@@ -178,7 +187,10 @@ extractFieldFromStructCollection(const FieldValue* outerFieldValue, FieldValue::
     if (outerFieldValue && outerFieldValue->isA(expectedType)) {
         const auto* outerCollection = static_cast<const CollectionFieldValueT*>(outerFieldValue);
         auto        array = makeArray(innerEntry, outerCollection->size());
-        uint32_t    arrayIndex = 0;
+        if (!array) {
+            return {};
+        }
+        uint32_t arrayIndex = 0;
         for (const auto& outerElem : *outerCollection) {
             auto&       arrayElem = (*array)[arrayIndex++];
             const auto& structElem = static_cast<const StructFieldValue&>(*extractor(&outerElem));
@@ -204,14 +216,12 @@ std::unique_ptr<FieldValue> DocumentFieldExtractor::extractKeyFieldFromMap(const
                                [](const auto& elem) { return elem.first; });
 }
 
-std::unique_ptr<document::FieldValue>
-DocumentFieldExtractor::extractValueFieldFromPrimitiveMap(const FieldPath& fieldPath) {
+std::unique_ptr<FieldValue> DocumentFieldExtractor::extractValueFieldFromPrimitiveMap(const FieldPath& fieldPath) {
     return extractFieldFromMap(getCachedFieldValue(fieldPath[0]), fieldPath[1],
                                [](const auto& elem) { return elem.second; });
 }
 
-std::unique_ptr<document::FieldValue>
-DocumentFieldExtractor::extractValueFieldFromStructMap(const FieldPath& fieldPath) {
+std::unique_ptr<FieldValue> DocumentFieldExtractor::extractValueFieldFromStructMap(const FieldPath& fieldPath) {
     return extractFieldFromStructCollection<MapFieldValue>(getCachedFieldValue(fieldPath[0]), FieldValue::Type::MAP,
                                                            fieldPath[2],
                                                            [](const auto* elem) { return elem->second; });
@@ -235,4 +245,4 @@ std::unique_ptr<FieldValue> DocumentFieldExtractor::getFieldValue(const FieldPat
     return std::unique_ptr<FieldValue>();
 }
 
-} // namespace proton
+} // namespace search
