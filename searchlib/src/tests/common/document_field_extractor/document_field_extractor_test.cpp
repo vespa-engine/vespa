@@ -13,7 +13,7 @@
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
-#include <vespa/searchcore/proton/attribute/document_field_extractor.h>
+#include <vespa/searchlib/common/document_field_extractor.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::ArrayDataType;
@@ -34,7 +34,7 @@ using document::StructDataType;
 using document::StructFieldValue;
 using document::WeightedSetDataType;
 using document::WeightedSetFieldValue;
-using proton::DocumentFieldExtractor;
+using search::DocumentFieldExtractor;
 
 namespace {
 
@@ -338,6 +338,26 @@ TEST(DocumentFieldExtractorTest, require_that_primitive_map_field_gives_array_va
     f.makeDoc({{"foo", 10}, {"", 20}, {"bar", noInt}});
     EXPECT_EQ(WrapValue(makeStringArray({"foo", "", "bar"})), f.extract("map.key"));
     EXPECT_EQ(WrapValue(makeIntArray({10, 20, noInt})), f.extract("map.value"));
+}
+
+TEST(DocumentFieldExtractorTest, require_that_nested_field_of_non_primitive_type_is_not_supported) {
+    FixtureBase    f(false);
+    StructDataType structType("struct");
+    Field          tagsField("tags", 3, arrayTypeString);
+    structType.addField(tagsField);
+    ArrayDataType structArrayType(structType);
+    Field         structArrayField("s", 11, structArrayType);
+    f.type.addField(structArrayField);
+    auto             doc = f.makeDoc();
+    StructFieldValue structValue(structType);
+    structValue.setValue(tagsField, *makeStringArray({"a", "b"}));
+    ArrayFieldValue structArrayValue(structArrayType);
+    structArrayValue.add(structValue);
+    doc->setValue(structArrayField, structArrayValue);
+    FieldPath fieldPath;
+    f.type.buildFieldPath(fieldPath, "s.tags");
+    EXPECT_FALSE(DocumentFieldExtractor::isSupported(fieldPath));
+    EXPECT_EQ(WrapValue(), WrapValue(f.extractor->getFieldValue(fieldPath)));
 }
 
 TEST(DocumentFieldExtractorTest, require_that_unknown_field_gives_null_value) {
