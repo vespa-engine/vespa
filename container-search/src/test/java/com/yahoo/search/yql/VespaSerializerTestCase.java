@@ -694,6 +694,8 @@ public class VespaSerializerTestCase {
         parseAndConfirm("field in (2, 3)");
         parseAndConfirm("field in (9000000000L, 12000000000L)");
         parseAndConfirm("string in (\"a\", \"b\")");
+        parseAndConfirm("({filter: true, ranked: false, label: \"color\", weight: 250}string in (\"a\", \"b\"))");
+        parseAndConfirm("({filter: true, ranked: false, label: \"yr\", weight: 250}field in (2, 3))");
     }
 
     @Test

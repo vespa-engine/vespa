@@ -645,7 +645,7 @@
     ]
   },
   "com.yahoo.prelude.query.InItem" : {
-    "superClass" : "com.yahoo.prelude.query.Item",
+    "superClass" : "com.yahoo.prelude.query.SimpleTaggableItem",
     "interfaces" : [ ],
     "attributes" : [
       "public",
@@ -9330,6 +9330,7 @@
     "methods" : [
       "public void <init>(java.lang.String, java.lang.String)",
       "public com.yahoo.search.schema.Field$Builder setExplanation(java.lang.String)",
+      "public com.yahoo.search.schema.Field$Builder setMatchType(com.yahoo.search.schema.Field$MatchType)",
       "public com.yahoo.search.schema.Field$Builder addAlias(java.lang.String)",
       "public com.yahoo.search.schema.Field$Builder setAttribute(boolean)",
       "public com.yahoo.search.schema.Field$Builder setIndex(boolean)",
@@ -9376,6 +9377,26 @@
       "public static com.yahoo.search.schema.Field$Type from(java.lang.String)"
     ],
     "fields" : [ ]
+  },
+  "com.yahoo.search.schema.Field$MatchType" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.search.schema.Field$MatchType[] values()",
+      "public static com.yahoo.search.schema.Field$MatchType valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.search.schema.Field$MatchType NONE",
+      "public static final enum com.yahoo.search.schema.Field$MatchType TEXT",
+      "public static final enum com.yahoo.search.schema.Field$MatchType WORD",
+      "public static final enum com.yahoo.search.schema.Field$MatchType EXACT",
+      "public static final enum com.yahoo.search.schema.Field$MatchType GRAM"
+    ]
   },
   "com.yahoo.search.schema.Field$ReferenceFieldType" : {
     "superClass" : "com.yahoo.search.schema.Field$Type",
@@ -9501,6 +9522,7 @@
       "public boolean isAttribute()",
       "public boolean isIndex()",
       "public boolean hasFastMapSearch()",
+      "public com.yahoo.search.schema.Field$MatchType matchType()",
       "public java.util.List fastMapSearches()",
       "public java.util.Optional fastMapSearch(java.lang.String)",
       "public boolean equals(java.lang.Object)",
@@ -9522,7 +9544,8 @@
       "public abstract com.yahoo.search.schema.Field$Type type()",
       "public abstract boolean isAttribute()",
       "public abstract boolean isIndex()",
-      "public abstract boolean hasFastMapSearch()"
+      "public abstract boolean hasFastMapSearch()",
+      "public abstract com.yahoo.search.schema.Field$MatchType matchType()"
     ],
     "fields" : [ ]
   },
@@ -9553,6 +9576,7 @@
       "public boolean isAttribute()",
       "public boolean isIndex()",
       "public boolean hasFastMapSearch()",
+      "public com.yahoo.search.schema.Field$MatchType matchType()",
       "public java.util.Set fieldNames()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",

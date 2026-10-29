@@ -1261,6 +1261,7 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, StringInItem item, Scope scope) {
+            boolean addedAnnotations = addAnnotations(destination, item, "");
             destination.append(scope.requiredIndexName(item.getIndexName())).append(" in (");
             int initLen = destination.length();
             List<String> tokens = new ArrayList<>(item.getTokens());
@@ -1272,6 +1273,8 @@ public class VespaSerializer {
                 destination.append("\"");
             }
             destination.append(")");
+            if (addedAnnotations)
+                destination.append(')');
             return false;
         }
     }
@@ -1283,6 +1286,7 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, NumericInItem item, Scope scope) {
+            boolean addedAnnotations = addAnnotations(destination, item, "");
             destination.append(scope.requiredIndexName(item.getIndexName())).append(" in (");
             int initLen = destination.length();
             List<Long> tokens = new ArrayList<>(item.getTokens());
@@ -1294,6 +1298,8 @@ public class VespaSerializer {
                     destination.append("L");
             }
             destination.append(")");
+            if (addedAnnotations)
+                destination.append(')');
             return false;
         }
     }
@@ -1636,11 +1642,11 @@ public class VespaSerializer {
     }
 
     /** Adds annotations and returns whether any were added */
-    private static boolean addAnnotations(StringBuilder destination, WeightedSetItem weightedSet,
+    private static boolean addAnnotations(StringBuilder destination, TaggableItem item,
                                           String optionalAnnotations) {
         int preAnnotationValueLen;
         int incomingLen = destination.length();
-        String annotations = leafAnnotations(weightedSet);
+        String annotations = leafAnnotations(item);
 
         if (!optionalAnnotations.isEmpty() || !annotations.isEmpty()) {
             destination.append("({");

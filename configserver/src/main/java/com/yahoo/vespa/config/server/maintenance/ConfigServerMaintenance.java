@@ -52,6 +52,7 @@ public class ConfigServerMaintenance {
     public void startAfterBootstrap() {
         maintainers.add(new FileDistributionMaintainer(applicationRepository, curator, interval, fileDirectory));
         maintainers.add(new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30)));
+        maintainers.add(new MlModelImportCacheMaintainer(applicationRepository, curator, interval));
         maintainers.add(new ReindexingMaintainer(applicationRepository, curator,
                                                  Duration.ofMinutes(3), convergenceChecker, Clock.systemUTC()));
         if (applicationRepository.configserverConfig().hostedVespa()) {

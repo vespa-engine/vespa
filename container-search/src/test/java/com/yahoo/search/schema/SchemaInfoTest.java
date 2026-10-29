@@ -54,6 +54,16 @@ public class SchemaInfoTest {
     }
 
     @Test
+    void testMatchType() {
+        var schemaA = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("a");
+        assertEquals(Field.MatchType.TEXT, schemaA.fields().get("field1").matchType());
+        assertEquals(Field.MatchType.NONE, schemaA.fields().get("field2").matchType());
+        assertEquals(Field.MatchType.TEXT, schemaA.fieldInfo("default").get().matchType());
+        assertEquals(Field.MatchType.NONE, schemaA.fieldInfo("mixed").get().matchType());
+        assertEquals(Field.MatchType.NONE, schemaA.fieldSets().get("structFields").matchType());
+    }
+
+    @Test
     void testExplanations() {
         var schemaA = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("a");
         assertEquals(Optional.of("Schema a"), schemaA.explanation());

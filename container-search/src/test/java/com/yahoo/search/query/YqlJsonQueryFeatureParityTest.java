@@ -4,6 +4,7 @@ package com.yahoo.search.query;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.WordItem;
+import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -130,6 +131,33 @@ public class YqlJsonQueryFeatureParityTest {
                 "{ 'in' : ['field', 42, 22] }");
         assertWhereParity("string in ('a', 'b')",
                 "{ 'in' : ['string', 'a', 'b'] }");
+    }
+
+    @Test
+    void testInWithAnnotations() {
+        assertWhereParity("{label: \"color\", ranked: false, weight: 250}string in ('a', 'b')",
+                "{ 'in' : { 'children' : ['string', 'a', 'b'], 'attributes' : { 'label' : 'color', 'ranked' : false, 'weight' : 250 } } }");
+        assertWhereParity("{label: \"yr\", ranked: false, weight: 250}field in (42, 22)",
+                "{ 'in' : { 'children' : ['field', 42, 22], 'attributes' : { 'label' : 'yr', 'ranked' : false, 'weight' : 250 } } }");
+    }
+
+    @Test
+    void testLabeledJsonInEmitsLabelId() {
+        assertJsonInLabelId("color",
+                            "{ 'in' : { 'children' : ['string', 'red', 'blue'], 'attributes' : { 'label' : 'color' } } }");
+        assertJsonInLabelId("yr",
+                            "{ 'in' : { 'children' : ['field', 2020, 2021], 'attributes' : { 'label' : 'yr' } } }");
+    }
+
+    private void assertJsonInLabelId(String label, String jsonWhere) {
+        var normalizedJson = SlimeUtils.toJson(SlimeUtils.jsonToSlime(jsonWhere));
+        var selectTree = selectParser.parse(new Parsable().setSelect(new Select(normalizedJson, "", new Query())));
+        var query = new Query();
+        query.getModel().getQueryTree().setRoot(selectTree.getRoot());
+        query.prepare();
+        var item = (TaggableItem) selectTree.getRoot();
+        assertEquals(String.valueOf(item.getUniqueID()),
+                     query.getRanking().getProperties().get("vespa.label." + label + ".id").get(0));
     }
 
     @Test

@@ -114,11 +114,11 @@ public final class SchemaInfo extends Derived {
             if (field.isImportedField()) continue;
             for (var index : field.getIndices().values()) {
                 if ( ! index.getName().equals(field.getName())) // additional index
-                    addFieldConfig(index, field.getDataType(), schemaBuilder);
+                    addFieldConfig(index, field, schemaBuilder);
             }
             for (var attribute : field.getAttributes().values()) {
                 if ( ! attribute.getName().equals(field.getName())) // additional attribute
-                    addFieldConfig(attribute, field.getDataType(), schemaBuilder);
+                    addFieldConfig(attribute, field, schemaBuilder);
             }
         }
     }
@@ -133,6 +133,7 @@ public final class SchemaInfo extends Derived {
         }
         fieldBuilder.attribute(field.doesAttributing());
         fieldBuilder.index(field.doesIndexing());
+        fieldBuilder.matchType(toMatchType(field, field.isSearchable()));
         field.getExplanation().ifPresent(fieldBuilder::explanation);
         for (var fastMapFields : field.getFastMapSearches()) {
             fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
@@ -146,27 +147,42 @@ public final class SchemaInfo extends Derived {
     }
 
     // TODO: Make fields and indexes 1-1 so that this can be removed
-    private void addFieldConfig(Index index, DataType type, SchemaInfoConfig.Schema.Builder schemaBuilder) {
+    private void addFieldConfig(Index index, ImmutableSDField field, SchemaInfoConfig.Schema.Builder schemaBuilder) {
         var fieldBuilder = new SchemaInfoConfig.Schema.Field.Builder();
         fieldBuilder.name(index.getName());
-        fieldBuilder.type(toTypeSpec(type));
+        fieldBuilder.type(toTypeSpec(field.getDataType()));
         for (Iterator<String> i = index.aliasIterator(); i.hasNext(); )
             fieldBuilder.alias(i.next());
         fieldBuilder.attribute(false);
         fieldBuilder.index(true);
+        fieldBuilder.matchType(toMatchType(field, true));
         schemaBuilder.field(fieldBuilder);
     }
 
     // TODO: Make fields and attributes 1-1 so that this can be removed
-    private void addFieldConfig(Attribute attribute, DataType type, SchemaInfoConfig.Schema.Builder schemaBuilder) {
+    private void addFieldConfig(Attribute attribute, ImmutableSDField field, SchemaInfoConfig.Schema.Builder schemaBuilder) {
         var fieldBuilder = new SchemaInfoConfig.Schema.Field.Builder();
         fieldBuilder.name(attribute.getName());
-        fieldBuilder.type(toTypeSpec(type));
+        fieldBuilder.type(toTypeSpec(field.getDataType()));
         for (var alias : attribute.getAliases())
             fieldBuilder.alias(alias);
         fieldBuilder.attribute(true);
         fieldBuilder.index(false);
+        fieldBuilder.matchType(toMatchType(field, true));
         schemaBuilder.field(fieldBuilder);
+    }
+
+    private SchemaInfoConfig.Schema.Field.MatchType.Enum toMatchType(ImmutableSDField field, boolean searchable) {
+        if (!searchable)
+            return SchemaInfoConfig.Schema.Field.MatchType.NONE;
+        if (field.getDataType().getPrimitiveType() != PrimitiveDataType.STRING)
+            return SchemaInfoConfig.Schema.Field.MatchType.NONE;
+        return switch (field.getMatching().getType()) {
+            case TEXT -> SchemaInfoConfig.Schema.Field.MatchType.TEXT;
+            case WORD -> SchemaInfoConfig.Schema.Field.MatchType.WORD;
+            case EXACT -> SchemaInfoConfig.Schema.Field.MatchType.EXACT;
+            case GRAM -> SchemaInfoConfig.Schema.Field.MatchType.GRAM;
+        };
     }
 
     private void addFieldSetConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {

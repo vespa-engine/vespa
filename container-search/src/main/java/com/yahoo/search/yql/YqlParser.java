@@ -683,13 +683,11 @@ public class YqlParser implements Parser {
             throw new IllegalArgumentException("The in operator is not supported for fieldsets with a mix of integer and string fields. The fieldset " +
                         field + " has both");
         }
-        Item item;
         if (stringField) {
-            item = fillStringIn(ast, ast.getArgument(1), new StringInItem(field));
+            return leafStyleSettings(ast, fillStringIn(ast, ast.getArgument(1), new StringInItem(field)));
         } else {
-            item = fillNumericIn(ast, ast.getArgument(1), new NumericInItem(field));
+            return leafStyleSettings(ast, fillNumericIn(ast, ast.getArgument(1), new NumericInItem(field)));
         }
-        return nonTaggableLeafStyleSettings(ast, item);
     }
 
     /** Returns the value of the query parameter referenced by the given VARREF node, which must be set. */

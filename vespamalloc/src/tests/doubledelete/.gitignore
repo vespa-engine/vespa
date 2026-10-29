@@ -1,6 +1,7 @@
 .depend
 Makefile
 doubledelete_test
+doubledelete_test.sh
 doubledelete_testd
 expectsignal
 vespamalloc_doubledelete_test_app

@@ -1,7 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search.test;
 
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DataType;
+import com.yahoo.schema.ApplicationBuilder;
+import com.yahoo.schema.RankProfileRegistry;
+import com.yahoo.schema.derived.Summaries;
+import com.yahoo.schema.parser.ParseException;
 import com.yahoo.schema.Index;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.SDField;
@@ -35,6 +41,7 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
+    schema[0].field[0].matchType NONE
     schema[0].field[0].explanation ""
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
@@ -60,12 +67,14 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
+    schema[0].field[0].matchType NONE
     schema[0].field[0].explanation ""
     schema[0].field[1].name "f2"
     schema[0].field[1].type "string"
     schema[0].field[1].attribute false
     schema[0].field[1].index false
     schema[0].field[1].bitPacked false
+    schema[0].field[1].matchType NONE
     schema[0].field[1].explanation ""
     schema[0].fieldset[0].name "fs1"
     schema[0].fieldset[0].field[0] "f1"
@@ -95,6 +104,7 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
+    schema[0].field[0].matchType NONE
     schema[0].field[0].explanation ""
     schema[0].field[1].name "f1Index"
     schema[0].field[1].type "string"
@@ -103,6 +113,7 @@ public class SchemaInfoTestCase {
     schema[0].field[1].attribute false
     schema[0].field[1].index true
     schema[0].field[1].bitPacked false
+    schema[0].field[1].matchType TEXT
     schema[0].field[1].explanation ""
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
@@ -127,6 +138,7 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
+    schema[0].field[0].matchType NONE
     schema[0].field[0].explanation ""
     schema[0].field[1].name "f1Attribute"
     schema[0].field[1].type "int"
@@ -135,12 +147,65 @@ public class SchemaInfoTestCase {
     schema[0].field[1].attribute true
     schema[0].field[1].index false
     schema[0].field[1].bitPacked false
+    schema[0].field[1].matchType NONE
     schema[0].field[1].explanation ""
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
     schema[0].summaryclass[0].fields[0].type "longstring"
     schema[0].summaryclass[0].fields[0].dynamic false""",
                      schemaInfoTester.schemaInfoConfig(schema));
+    }
+
+    @Test
+    void testMatchTypeExporting() throws ParseException {
+        var registry = new RankProfileRegistry();
+        var builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+                          schema test {
+                              document test {
+                                  field text type string {
+                                      indexing: index
+                                  }
+                                  field implicitWord type array<string> {
+                                      indexing: attribute
+                                  }
+                                  field word type string {
+                                      indexing: index
+                                      match: word
+                                  }
+                                  field exact type string {
+                                      indexing: index
+                                      match: exact
+                                  }
+                                  field gram type string {
+                                      indexing: index
+                                      match: gram
+                                  }
+                                  field number type int {
+                                      indexing: attribute
+                                  }
+                              }
+                          }
+                          """);
+        builder.build(true);
+        var schema = builder.getSchema();
+        var schemaInfo = new com.yahoo.schema.derived.SchemaInfo(schema, "index", registry,
+                                                                 new Summaries(schema, new BaseDeployLogger(), new TestProperties()));
+        var configBuilder = new SchemaInfoConfig.Builder();
+        schemaInfo.getConfig(configBuilder);
+        var config = configBuilder.build().schema(0);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.TEXT, "text", config);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.WORD, "implicitWord", config);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.WORD, "word", config);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.EXACT, "exact", config);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.GRAM, "gram", config);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.NONE, "number", config);
+    }
+
+    private void assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.Enum expected, String fieldName,
+                                 SchemaInfoConfig.Schema schema) {
+        var field = schema.field().stream().filter(f -> f.name().equals(fieldName)).findFirst().orElseThrow();
+        assertEquals(expected, field.matchType(), "Match type of " + fieldName);
     }
 
     /** Schema-info should contain all schemas, independent of clusters. */

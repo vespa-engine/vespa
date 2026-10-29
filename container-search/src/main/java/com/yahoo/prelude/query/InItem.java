@@ -10,7 +10,7 @@ import static java.util.Objects.requireNonNullElse;
  *
  * @author toregge
  */
-public abstract class InItem extends Item {
+public abstract class InItem extends SimpleTaggableItem {
 
     private String indexName;
 
