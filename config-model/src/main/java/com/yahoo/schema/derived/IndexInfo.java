@@ -13,6 +13,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.BooleanIndexDefinition;
 import com.yahoo.schema.document.Case;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.FastMapSearchFields;
 import com.yahoo.searchlib.document.FastMapSearch;
 import com.yahoo.schema.document.FieldSet;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Per-index commands which should be applied to queries prior to searching
@@ -66,6 +68,8 @@ public class IndexInfo extends Derived {
     private final Map<String, String> aliases = new java.util.LinkedHashMap<>();
     private final Map<String, FieldSet> fieldSets;
     private Schema schema;
+    /** The names of the supported struct field indexes of the top level field being derived (indexed mode only). */
+    private Set<String> supportedStructFieldIndexes = Set.of();
 
     public IndexInfo(Schema schema, boolean isStreaming) {
         this.isStreaming = isStreaming;
@@ -169,6 +173,10 @@ public class IndexInfo extends Derived {
 
     @Override
     protected void derive(ImmutableSDField field, Schema schema) {
+        supportedStructFieldIndexes = isStreaming ? Set.of()
+                                                  : ComplexIndexFieldUtils.supportedIndexedStructFields(field).stream()
+                                                                          .map(ImmutableSDField::getName)
+                                                                          .collect(Collectors.toSet());
         derive(field, schema, null);
     }
 
@@ -206,7 +214,10 @@ public class IndexInfo extends Derived {
             addIndexCommand(index.getName(), CMD_INDEX); // List the indices
         }
 
-        if (needLowerCase(field)) {
+        // The indexing script of a struct field may be replaced by that of its parent, so check the configured setting
+        boolean doesIndexing = field.doesIndexing() || supportedStructFieldIndexes.contains(field.getName());
+
+        if (needLowerCase(field, doesIndexing)) {
             addIndexCommand(field, CMD_LOWERCASE);
         }
 
@@ -215,11 +226,11 @@ public class IndexInfo extends Derived {
         }
 
         Attribute attribute = field.getAttribute();
-        if ((field.doesAttributing() || (attribute != null && !isPositionField(parent))) && !field.doesIndexing()) {
+        if ((field.doesAttributing() || (attribute != null && !isPositionField(parent))) && !doesIndexing) {
             addIndexCommand(field.getName(), CMD_ATTRIBUTE);
             if (attribute != null && attribute.isFastSearch())
                 addIndexCommand(field.getName(), CMD_FAST_SEARCH);
-        } else if (field.doesIndexing()) {
+        } else if (doesIndexing) {
             if (stemSomehow(field, schema)) {
                 addIndexCommand(field, CMD_STEM + ":" + field.getEffectiveSearchStemming(schema).toStemMode());
             }
@@ -270,7 +281,11 @@ public class IndexInfo extends Derived {
     }
 
     private static boolean needLowerCase(ImmutableSDField field) {
-        return ( field.doesIndexing() && field.getMatching().getCase() != Case.CASED) ||
+        return needLowerCase(field, field.doesIndexing());
+    }
+
+    private static boolean needLowerCase(ImmutableSDField field, boolean doesIndexing) {
+        return ( doesIndexing && field.getMatching().getCase() != Case.CASED) ||
                field.doesLowerCasing() ||
                ((field.doesAttributing() || (field.getAttribute() != null)) &&
                 isAnyChildString(field.getDataType())

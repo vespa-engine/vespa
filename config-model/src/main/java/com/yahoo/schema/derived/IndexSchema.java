@@ -8,6 +8,7 @@ import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
@@ -82,6 +83,13 @@ public class IndexSchema extends Derived {
         addFieldToCollection(field.getName(), field.getName()); // implicit
     }
 
+    /** Each supported struct field index is an array of string, with one element per element in the complex field. */
+    private void deriveStructFieldIndexes(ImmutableSDField field, Schema schema) {
+        for (ImmutableSDField structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field)) {
+            deriveIndexFields(new Field(structField.getName(), DataType.getArray(DataType.STRING)), schema);
+        }
+    }
+
     private FieldCollection getCollection(String collectionName) {
         FieldCollection retval = collections.get(collectionName);
         if (retval == null) {
@@ -99,7 +107,8 @@ public class IndexSchema extends Derived {
     @Override
     protected void derive(ImmutableSDField field, Schema schema) {
         if (field.usesStructOrMap()) {
-            return; // unsupported
+            deriveStructFieldIndexes(field, schema);
+            return;
         }
         deriveIndexFields(field, schema);
     }

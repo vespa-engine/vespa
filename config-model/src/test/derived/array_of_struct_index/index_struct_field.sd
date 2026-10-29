@@ -49,5 +49,21 @@ schema index_struct_field {
                 indexing: index
             }
         }
+
+        # This should give indexes named "map_string_to_normal.key"
+        # and "map_string_to_normal.value.myvalue", and an attribute
+        # named "map_string_to_normal.value.mykey"
+        field map_string_to_normal type map<string, normal> {
+            indexing: summary
+            struct-field key {
+                indexing: index
+            }
+            struct-field value.mykey {
+                indexing: attribute
+            }
+            struct-field value.myvalue {
+                indexing: index
+            }
+        }
     }
 }

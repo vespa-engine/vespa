@@ -46,6 +46,9 @@ public class SchemaDataTypeValidatorTestCase {
         } catch (IllegalArgumentException e) {
             assertEquals("For cluster 'content', schema 'simple': The following complex fields have struct fields " +
                                  "with 'indexing: index' which is not supported: baz (baz.key, baz.value). " +
+                                 "Only supported for string struct fields with text, word or exact matching, " +
+                                 "in array of struct and map (of primitive type to string or struct), " +
+                                 "not named like parts of an uri index (all, scheme, host, port, path, query, fragment, hostname). " +
                                  "Remove setting or change to 'indexing: attribute' if needed for matching.",
                          e.getMessage());
         }

@@ -1560,7 +1560,7 @@ public class RankProfile implements Cloneable {
      * Returns whether the field may be represented as a virtual field in the backend, which is what
      * elementwise(matches(field),...) requires. Position fields are never virtual fields. Whether the struct-fields
      * make the field virtual depends on the indexing mode (indexed search requires at least one struct-field
-     * attribute, streaming search does not), which is not known here, so that is checked by the backend.
+     * attribute or index, streaming search does not), which is not known here, so that is checked by the backend.
      */
     private static boolean isArrayOfStructOrMap(ImmutableSDField field) {
         var type = field.getDataType();
