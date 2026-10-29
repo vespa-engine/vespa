@@ -193,6 +193,7 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
         Map<String, JdiscBindingsConfig.Handlers> handlers = bindingsConfig.handlers();
         Map<String, List<String>> expectedHandlerMappings = Map.of(
                 "com.yahoo.search.handler.SearchHandler", List.of("/search", "/search/*"),
+                SkillHandler.HANDLER_CLASSNAME, List.of("/skill/v1", "/skill/v1/*"),
                 "com.yahoo.document.restapi.resource.DocumentV1ApiHandler", List.of("/document/v1/*", "/document/v1/*/"),
                 "com.yahoo.vespa.http.server.FeedHandler", List.of("/reserved-for-internal-use/feedapi", "/reserved-for-internal-use/feedapi/"),
                 "FooHandler", List.of("/foo"));
@@ -223,6 +224,7 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
         Map<String, JdiscBindingsConfig.Handlers> handlers = bindingsConfig.handlers();
         Map<String, List<String>> expectedHandlerMappings = Map.of(
                 "com.yahoo.search.handler.SearchHandler", List.of("/search-binding/"),
+                SkillHandler.HANDLER_CLASSNAME, List.of("/skill/v1", "/skill/v1/*"),
                 "com.yahoo.document.restapi.resource.DocumentV1ApiHandler", List.of("/docapi-binding/document/v1/*", "/docapi-binding/document/v1/*/"),
                 "com.yahoo.vespa.http.server.FeedHandler", List.of("/docapi-binding/reserved-for-internal-use/feedapi", "/docapi-binding/reserved-for-internal-use/feedapi/"));
         expectedHandlerMappings.forEach((handler, bindings) -> validateHandler(handlers.get(handler), bindingPrefix, bindings));
