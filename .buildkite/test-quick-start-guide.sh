@@ -7,14 +7,27 @@ set -xeuo pipefail
 
 echo "--- 📖 Testing Vespa quick start guide"
 TESTDIR=$(mktemp -d)
-# shellcheck disable=SC2064
-trap "rm -rf $TESTDIR" EXIT
+trap 'rm -rf -- "$TESTDIR"' EXIT
 
 cd "$TESTDIR"
 
 echo "Setting up documentation test environment..."
 # Clone and setup doc tests
-git clone -q --depth 1 https://github.com/vespa-engine/documentation
+for attempt in 1 2 3; do
+  if timeout --kill-after=10s 300s git clone -q --depth 1 \
+      https://github.com/vespa-engine/documentation "$TESTDIR/documentation"; then
+    break
+  else
+    status=$?
+  fi
+  # A failed clone may leave a partial checkout behind.
+  rm -rf -- "$TESTDIR/documentation"
+  if [[ "$attempt" == 3 ]]; then
+    exit "$status"
+  fi
+  echo "Documentation clone failed (attempt $attempt/3); retrying in 2 seconds" >&2
+  sleep 2
+done
 cd documentation
 
 testfile="en/basics/deploy-an-application-local.html"
@@ -29,13 +42,19 @@ echo -e "urls:\n    - ${testfile}" > test/_deploy-an-application-local.yaml
 
 echo "Downloading Vespa CLI..."
 # Get the required vespa CLI
-VESPA_CLI_VERSION=$(curl -fsSL https://api.github.com/repos/vespa-engine/vespa/releases/latest | grep -Po '"tag_name": "v\K.*?(?=")')
+download() {
+  curl -fsSL --connect-timeout 20 --max-time 120 \
+      --retry 2 --retry-delay 2 --retry-max-time 300 --output "$2" "$1"
+}
+download https://api.github.com/repos/vespa-engine/vespa/releases/latest "$TESTDIR/release.json"
+VESPA_CLI_VERSION=$(grep -Po '"tag_name": "v\K.*?(?=")' "$TESTDIR/release.json")
 if [[ $(arch) == x86_64 ]]; then
   GO_ARCH=amd64
 else
   GO_ARCH=arm64
 fi
-curl -fsSL "https://github.com/vespa-engine/vespa/releases/download/v${VESPA_CLI_VERSION}/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}.tar.gz" | tar -zxf - -C /opt
+download "https://github.com/vespa-engine/vespa/releases/download/v${VESPA_CLI_VERSION}/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}.tar.gz" "$TESTDIR/vespa-cli.tar.gz"
+tar -zxf "$TESTDIR/vespa-cli.tar.gz" -C /opt
 ln -sf "/opt/vespa-cli_${VESPA_CLI_VERSION}_linux_${GO_ARCH}/bin/vespa" /usr/local/bin/
 
 echo "Running deploy an application locally test..."
