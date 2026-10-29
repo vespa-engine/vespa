@@ -113,6 +113,11 @@ public final class Capacity {
         return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, account, cloudResourceTags, clusterInfo);
     }
 
+    /** Returns a copy of this with the given canFail. canFail is false if and only if this is a bootstrap deployment. */
+    public Capacity withCanFail(boolean canFail) {
+        return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, cloudAccount, cloudResourceTags, clusterInfo);
+    }
+
     public Capacity withLimits(ClusterResources min, ClusterResources max) {
         return withLimits(min, max, IntRange.empty());
     }
