@@ -1,0 +1,53 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+schema index_struct_field {
+    struct simple {
+        field myvalue type string {}
+    }
+    struct normal {
+        field mykey type int {}
+        field myvalue type string {}
+    }
+    document index_struct_field {
+
+        field array_of_int type array<int> {
+            indexing: attribute
+        }
+
+        field array_of_string type array<string> {
+            indexing: index
+        }
+
+        # This should give basically same result as above,
+        # only with an index named "array_of_simple.myvalue"
+        field array_of_simple type array<simple> {
+            struct-field myvalue {
+                indexing: index
+            }
+        }
+
+        # This should give basically the same as
+        # array_of_int + array_of_string, with
+        # an attribute named "array_of_normal.mykey"
+        # and an index named "array_of_normal.myvalue"
+        field array_of_normal type array<normal> {
+            struct-field mykey {
+                indexing: attribute
+            }
+            struct-field myvalue {
+                indexing: index
+            }
+        }
+
+        # This should give the same as the above, with
+        # an attribute named "map_int_to_string.key"
+        # and an index named "map_int_to_string.value"
+        field map_int_to_string type map<int, string> {
+            struct-field key {
+                indexing: attribute
+            }
+            struct-field value {
+                indexing: index
+            }
+        }
+    }
+}
