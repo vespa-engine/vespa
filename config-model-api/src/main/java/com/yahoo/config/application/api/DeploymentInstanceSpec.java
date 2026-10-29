@@ -212,26 +212,32 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         }
     }
 
-    /** Returns whether an upgrade starting at the given instant can reach all production regions, in order, within deadline */
+    /** Returns whether an upgrade starting at the given instant can reach all production regions within deadline */
     private boolean canUpgradeWithinDeadline(Instant instant) {
         instant = instant.truncatedTo(ChronoUnit.HOURS);
-        Duration step = Duration.ofHours(1);
         Instant deadline = instant.plus(Duration.ofDays(maxUpgradeBlockingDays));
-        // Parallel regions are treated as serial, which is conservative
-        List<Optional<RegionName>> regions = zones().stream()
-                                                    .filter(zone -> zone.environment().isProduction())
-                                                    .map(DeploymentSpec.DeclaredZone::region)
-                                                    .distinct()
-                                                    .toList();
+        Instant readyAt = concerns(prod) ? upgradeReadyAt(this, instant, deadline)
+                                         : upgradeReadyAt(instant, deadline, Optional.empty());
+        return ! readyAt.isAfter(deadline);
+    }
+
+    private Instant upgradeReadyAt(DeploymentSpec.Step step, Instant instant, Instant deadline) {
+        if (step instanceof DeploymentSpec.DeclaredZone zone && zone.environment().isProduction())
+            return upgradeReadyAt(instant, deadline, zone.region());
+
         Instant current = instant;
-        for (Optional<RegionName> region : regions.isEmpty() ? List.of(Optional.<RegionName>empty()) : regions) {
-            for ( ; ! canUpgradeAt(current, region); current = current.plus(step)) {
-                if (current.isAfter(deadline)) {
-                    return false;
-                }
-            }
+        for (DeploymentSpec.Step nested : step.steps()) {
+            Instant readyAt = upgradeReadyAt(nested, step.isOrdered() ? current : instant, deadline);
+            if (readyAt.isAfter(current)) current = readyAt;
+            if (current.isAfter(deadline)) break;
         }
-        return true;
+        return current;
+    }
+
+    private Instant upgradeReadyAt(Instant instant, Instant deadline, Optional<RegionName> region) {
+        while ( ! instant.isAfter(deadline) && ! canUpgradeAt(instant, region))
+            instant = instant.plus(1, ChronoUnit.HOURS);
+        return instant;
     }
 
     /** Returns the upgrade policy of this, which is {@link DeploymentSpec.UpgradePolicy#defaultPolicy} by default */
