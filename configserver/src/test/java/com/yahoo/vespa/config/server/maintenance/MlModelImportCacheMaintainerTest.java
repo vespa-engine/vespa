@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -53,7 +54,9 @@ public class MlModelImportCacheMaintainerTest {
         assertFalse(Files.exists(oldEntry));
         assertTrue(Files.exists(MlModelImportCacheLayout.modelFile(usedEntry)));
         assertTrue(Files.exists(usedEntry.resolve("large-0.tbf")));
-        assertEquals(1, Files.list(oldEntry.getParent()).count()); // No trash left behind
+        try (Stream<Path> paths = Files.list(oldEntry.getParent())) {
+            assertEquals(1, paths.count()); // No trash left behind
+        }
 
         // TTL is changed by flag
         flagSource.withIntFlag(Flags.ML_MODEL_IMPORT_CACHE_TTL_HOURS.id(), 1);
@@ -68,11 +71,11 @@ public class MlModelImportCacheMaintainerTest {
         Instant old = now.minus(Duration.ofDays(8));
         Path oldIncomplete = dir("8.1.0", "incomplete", old);
         Path newIncomplete = dir("8.1.0", "incomplete2", now);
-        Path oldTmp = dir(MlModelImportCacheLayout.tmpEntry(path("8.1.0", "a")), old);
-        Path newTmp = dir(MlModelImportCacheLayout.tmpEntry(path("8.1.0", "b")), now);
-        Path oldTrash = dir(MlModelImportCacheLayout.trashEntry(path("8.1.0", "c")), old);
+        Path oldTmp = dir(MlModelImportCacheLayout.newTmpEntry(path("8.1.0", "a")), old);
+        Path newTmp = dir(MlModelImportCacheLayout.newTmpEntry(path("8.1.0", "b")), now);
+        Path oldTrash = dir(MlModelImportCacheLayout.newTrashEntry(path("8.1.0", "c")), old);
         // An old tmp directory with a model file is expired based on the directory, not the model file
-        Path oldTmpWithModel = entry(MlModelImportCacheLayout.tmpEntry(path("8.1.0", "d")), now);
+        Path oldTmpWithModel = entry(MlModelImportCacheLayout.newTmpEntry(path("8.1.0", "d")), now);
         setModified(oldTmpWithModel, old);
 
         maintainer.maintain();

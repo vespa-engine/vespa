@@ -62,7 +62,7 @@ public class MlModelImportCacheMaintainer extends ConfigServerMaintainer {
                 if (remove(entry)) removed++;
                 else failures++;
             }
-            // Remove empty directories for old Vespa versions, but only when old, to avoid racing with a new entry being stored
+            // Remove an empty version directory only when unmodified for the TTL, as a concurrent put may just have created it
             if (list(versionDir).isEmpty() && isOlderThan(versionDir, expiry)) {
                 try {
                     Files.delete(versionDir);
@@ -102,7 +102,7 @@ public class MlModelImportCacheMaintainer extends ConfigServerMaintainer {
     private boolean remove(Path entry) {
         Path trash = entry;
         if ( ! MlModelImportCacheLayout.isTrashEntry(entry)) {
-            trash = MlModelImportCacheLayout.trashEntry(entry);
+            trash = MlModelImportCacheLayout.newTrashEntry(entry);
             try {
                 Files.move(entry, trash, StandardCopyOption.ATOMIC_MOVE);
             }

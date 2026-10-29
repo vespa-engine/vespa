@@ -32,10 +32,10 @@ public final class MlModelImportCacheLayout {
     public static Path modelFile(Path entry) { return entry.resolve(modelFileName); }
 
     /** Returns a new, unique path for a temporary directory used when writing the given entry */
-    public static Path tmpEntry(Path entry) { return entry.resolveSibling(entry.getFileName() + tmpInfix + UUID.randomUUID()); }
+    public static Path newTmpEntry(Path entry) { return entry.resolveSibling(entry.getFileName() + tmpInfix + UUID.randomUUID()); }
 
     /** Returns a new, unique path for a trash directory used when removing the given entry */
-    public static Path trashEntry(Path entry) { return entry.resolveSibling(entry.getFileName() + trashInfix + UUID.randomUUID()); }
+    public static Path newTrashEntry(Path entry) { return entry.resolveSibling(entry.getFileName() + trashInfix + UUID.randomUUID()); }
 
     /** Returns whether the given path is a temporary directory */
     public static boolean isTmpEntry(Path path) { return path.getFileName().toString().contains(tmpInfix); }

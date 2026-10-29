@@ -134,7 +134,7 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
         Path tmpEntry = null;
         try {
             Files.createDirectories(cacheDir);
-            tmpEntry = MlModelImportCacheLayout.tmpEntry(entry);
+            tmpEntry = MlModelImportCacheLayout.newTmpEntry(entry);
             Files.createDirectory(tmpEntry);
             write(tmpEntry, importedModel);
             try {
@@ -167,7 +167,7 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
      * see either the whole entry or none of it, and only one of them deletes it.
      */
     private void discard(Path entry) {
-        Path trash = MlModelImportCacheLayout.trashEntry(entry);
+        Path trash = MlModelImportCacheLayout.newTrashEntry(entry);
         try {
             Files.move(entry, trash, StandardCopyOption.ATOMIC_MOVE);
         }
