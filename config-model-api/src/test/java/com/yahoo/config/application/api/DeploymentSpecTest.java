@@ -1035,6 +1035,32 @@ public class DeploymentSpecTest {
         DeploymentSpec.fromXml(regionsSpec(blockers, "ap-northeast-1", "us-west-1"));
     }
 
+    @Test
+    public void regionSpecificChangeBlockersAllowParallelRolloutInEitherOrder() {
+        String blockers = "<block-change from-date='2017-09-01' to-date='2017-09-20'><region>us-west-1</region></block-change>" +
+                          "<block-change from-date='2017-09-18' to-date='2017-10-07'><region>ap-northeast-1</region></block-change>";
+        for (String regions : List.of("<region>us-west-1</region><region>ap-northeast-1</region>",
+                                      "<region>ap-northeast-1</region><region>us-west-1</region>")) {
+            DeploymentSpec.fromXml("<deployment><instance id='default'>" + blockers +
+                                   "<prod><parallel>" + regions + "</parallel></prod></instance></deployment>");
+        }
+    }
+
+    @Test
+    public void regionSpecificChangeBlockersRespectOrderingWithinAndAfterParallelSteps() {
+        String blockers = "<block-change from-date='2017-09-01' to-date='2017-09-20'><region>us-west-1</region></block-change>" +
+                          "<block-change from-date='2017-09-18' to-date='2017-10-07'><region>ap-northeast-1</region></block-change>";
+        for (String steps : List.of("<parallel><steps><region>us-west-1</region><region>ap-northeast-1</region></steps>" +
+                                     "<region>eu-west-1</region></parallel>",
+                                     "<parallel><region>us-west-1</region><region>eu-west-1</region></parallel>" +
+                                     "<region>ap-northeast-1</region>")) {
+            assertEquals("Cannot block Vespa upgrades for longer than 21 consecutive days",
+                         assertThrows(IllegalArgumentException.class,
+                                      () -> DeploymentSpec.fromXml("<deployment><instance id='default'>" + blockers +
+                                                                   "<prod>" + steps + "</prod></instance></deployment>")).getMessage());
+        }
+    }
+
     private static String regionsSpec(String blockers, String... regions) {
         StringBuilder xml = new StringBuilder("<deployment><instance id='default'>").append(blockers).append("<prod>");
         for (String region : regions) xml.append("<region>").append(region).append("</region>");
