@@ -29,6 +29,7 @@ import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
+import com.yahoo.prelude.query.InItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
@@ -991,7 +992,7 @@ public class SelectParser implements Parser {
             item = numericInItem;
         }
 
-        return item;
+        return leafStyleSettings(getAnnotations(value), (InItem) item);
     }
 
     private Item buildRange(String key, Inspector value) {

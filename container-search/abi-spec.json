@@ -645,7 +645,7 @@
     ]
   },
   "com.yahoo.prelude.query.InItem" : {
-    "superClass" : "com.yahoo.prelude.query.Item",
+    "superClass" : "com.yahoo.prelude.query.SimpleTaggableItem",
     "interfaces" : [ ],
     "attributes" : [
       "public",

@@ -2023,6 +2023,47 @@ public class YqlParserTestCase {
                         "and string fields. The fieldset mixed has both"));
     }
 
+    @Test
+    void testLabeledInEmitsLabelId() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertInLabelId("color",
+                        "select * from sources * where {label:\"color\"}string in ('red', 'blue')",
+                        StringInItem.class);
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertInLabelId("yr",
+                        "select * from sources * where {label:\"yr\"}field in (2020, 2021)",
+                        NumericInItem.class);
+    }
+
+    @Test
+    void testInParsesIdAndSignificance() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        var stringIn = assertInstanceOf(StringInItem.class,
+                                        parse("select * from sources * where {id: 23, significance: 23.0}string in ('a')").getRoot());
+        assertEquals(23, stringIn.getUniqueID());
+        assertEquals(23.0, stringIn.getSignificance(), 1E-6);
+        assertTrue(stringIn.hasExplicitSignificance());
+
+        var numericIn = assertInstanceOf(NumericInItem.class,
+                                         parse("select * from sources * where {id: 9, significance: 1.5}field in (42)").getRoot());
+        assertEquals(9, numericIn.getUniqueID());
+        assertEquals(1.5, numericIn.getSignificance(), 1E-6);
+        assertTrue(numericIn.hasExplicitSignificance());
+    }
+
+    private void assertInLabelId(String label, String yql, Class<? extends Item> type) {
+        Item item = parse(yql).getRoot();
+        assertEquals(type, item.getClass());
+        Query query = new Query();
+        query.getModel().getQueryTree().setRoot(item);
+        query.prepare();
+        assertEquals(String.valueOf(((TaggableItem) item).getUniqueID()),
+                     query.getRanking().getProperties().get("vespa.label." + label + ".id").get(0));
+        String rendered = query.yqlRepresentation();
+        assertTrue(rendered.contains("label: \"" + label + "\""), rendered);
+        assertTrue(rendered.contains("id: " + ((TaggableItem) item).getUniqueID()), rendered);
+    }
+
     /** Parameters passed as arrays in a POSTed JSON query are seen as JSON arrays here. */
     @Test
     void testInWithJsonArrayParameters() {
