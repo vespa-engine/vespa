@@ -1,8 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/datatype.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/structdatatype.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/mapfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
@@ -23,8 +29,12 @@
 
 namespace search::memoryindex {
 
+using document::ArrayDataType;
 using document::DataType;
 using document::Document;
+using document::MapFieldValue;
+using document::StructDataType;
+using document::StructFieldValue;
 using index::FieldLengthCalculator;
 using index::Schema;
 using search::test::DocBuilder;
@@ -87,6 +97,59 @@ Document::UP makeDoc15(DocBuilder& b) {
     return b.make_document("id:ns:searchdocument::15");
 }
 
+Schema make_default_schema(DocBuilder& b) {
+    return SchemaBuilder(b).add_all_indexes().build();
+}
+
+DocBuilder::AddFieldsType make_struct_add_fields() {
+    return [](auto& builder, auto& doc) noexcept {
+        using namespace document::new_config_builder;
+        auto elem = doc.createStruct("elem")
+                        .addField("name", builder.stringTypeRef())
+                        .addField("other", builder.stringTypeRef())
+                        .ref();
+        auto elem_array = doc.createArray(elem).ref();
+        auto string_map = doc.createMap(builder.stringTypeRef(), builder.stringTypeRef()).ref();
+        doc.addField("sa", elem_array).addField("m", string_map);
+    };
+}
+
+/*
+ * Indexes of struct fields in an array of struct and a map, as derived by the config model
+ * for struct fields with 'indexing: index'.
+ */
+Schema make_struct_schema(DocBuilder&) {
+    using search::index::schema::CollectionType;
+    using search::index::schema::DataType;
+    Schema schema;
+    schema.addIndexField({"sa.name", DataType::STRING, CollectionType::ARRAY});
+    schema.addIndexField({"m.key", DataType::STRING, CollectionType::ARRAY});
+    schema.addIndexField({"m.value", DataType::STRING, CollectionType::ARRAY});
+    return schema;
+}
+
+Document::UP make_struct_doc(DocBuilder& b) {
+    StringFieldBuilder sfb(b);
+    auto               doc = b.make_document("id:ns:searchdocument::20");
+    auto               array = b.make_array("sa");
+    const auto& elem_type = dynamic_cast<const StructDataType&>(array.getNestedType());
+    StructFieldValue   elem0(elem_type);
+    elem0.setValue("name", sfb.tokenize("foo bar").build());
+    elem0.setValue("other", sfb.tokenize("not indexed").build());
+    array.add(elem0);
+    StructFieldValue elem1(elem_type); // name is missing, but the element must still be counted
+    elem1.setValue("other", sfb.tokenize("not indexed").build());
+    array.add(elem1);
+    StructFieldValue elem2(elem_type);
+    elem2.setValue("name", sfb.tokenize("baz").build());
+    array.add(elem2);
+    doc->setValue("sa", array);
+    MapFieldValue map(b.get_document_type().getField("m").getDataType());
+    map.put(sfb.tokenize("key").build(), sfb.tokenize("value").build());
+    doc->setValue("m", map);
+    return doc;
+}
+
 } // namespace
 
 VESPA_THREAD_STACK_TAG(invert_executor)
@@ -105,9 +168,11 @@ struct DocumentInverterTest : public ::testing::Test {
     DocumentInverterContext                 _inv_context;
     DocumentInverter                        _inv;
 
-    DocumentInverterTest()
-        : _b(make_add_fields()),
-          _schema(SchemaBuilder(_b).add_all_indexes().build()),
+    DocumentInverterTest() : DocumentInverterTest(make_add_fields(), make_default_schema) {}
+
+    DocumentInverterTest(DocBuilder::AddFieldsType add_fields, Schema (*make_schema)(DocBuilder&))
+        : _b(std::move(add_fields)),
+          _schema(make_schema(_b)),
           _invertThreads(SequencedTaskExecutor::create(invert_executor, 1)),
           _pushThreads(SequencedTaskExecutor::create(push_executor, 1)),
           _word_store(),
@@ -256,6 +321,33 @@ TEST_F(DocumentInverterTest, require_that_mix_of_add_and_remove_works) {
 TEST_F(DocumentInverterTest, require_that_empty_document_can_be_inverted) {
     auto doc15 = makeDoc15(_b);
     _inv.invertDocument(15, *doc15, {});
+    pushDocuments();
+    EXPECT_EQ("", _inserter_backend.toStr());
+}
+
+struct StructFieldDocumentInverterTest : public DocumentInverterTest {
+    StructFieldDocumentInverterTest() : DocumentInverterTest(make_struct_add_fields(), make_struct_schema) {}
+};
+
+TEST_F(StructFieldDocumentInverterTest, require_that_struct_fields_in_array_of_struct_and_map_are_inverted) {
+    auto doc = make_struct_doc(_b);
+    _inv.invertDocument(20, *doc, {});
+    _inserter_backend.setVerbose();
+    pushDocuments();
+    EXPECT_EQ("f=0,"
+              "w=bar,a=20(e=0,w=1,l=2[1]),"
+              "w=baz,a=20(e=2,w=1,l=1[0]),"
+              "w=foo,a=20(e=0,w=1,l=2[0]),"
+              "f=1,"
+              "w=key,a=20(e=0,w=1,l=1[0]),"
+              "f=2,"
+              "w=value,a=20(e=0,w=1,l=1[0])",
+              _inserter_backend.toStr());
+}
+
+TEST_F(StructFieldDocumentInverterTest, require_that_missing_complex_fields_give_no_words) {
+    auto doc = _b.make_document("id:ns:searchdocument::21");
+    _inv.invertDocument(21, *doc, {});
     pushDocuments();
     EXPECT_EQ("", _inserter_backend.toStr());
 }

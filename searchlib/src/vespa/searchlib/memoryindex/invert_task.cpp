@@ -8,6 +8,9 @@
 #include "url_field_inverter.h"
 
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/searchlib/common/document_field_extractor.h>
+
+#include <optional>
 
 namespace search::memoryindex {
 
@@ -44,9 +47,21 @@ InvertTask::~InvertTask() = default;
 void InvertTask::run() {
     _context.set_data_type(_inv_context, _doc);
     auto document_field_itr = _context.get_document_fields().begin();
+    auto document_field_path_itr = _context.get_document_field_paths().begin();
+    // Values extracted from struct fields may refer to buffers owned by the extractor, so it must outlive inverting
+    std::optional<DocumentFieldExtractor> field_extractor;
     for (auto field_id : _context.get_fields()) {
-        _inverters[field_id]->invertField(_lid, get_field_value(_doc, *document_field_itr), _doc);
+        auto& field_path = *document_field_path_itr;
+        if (field_path) {
+            if (!field_extractor.has_value()) {
+                field_extractor.emplace(_doc);
+            }
+            _inverters[field_id]->invertField(_lid, field_extractor->getFieldValue(*field_path), _doc);
+        } else {
+            _inverters[field_id]->invertField(_lid, get_field_value(_doc, *document_field_itr), _doc);
+        }
         ++document_field_itr;
+        ++document_field_path_itr;
     }
     auto document_uri_field_itr = _context.get_document_uri_fields().begin();
     for (auto uri_field_id : _context.get_uri_fields()) {
