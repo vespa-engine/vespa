@@ -976,6 +976,84 @@ public class DeploymentSpecTest {
     }
 
     @Test
+    public void regionSpecificChangeBlocker() {
+        DeploymentSpec spec = DeploymentSpec.fromXml(regionBlockerSpec("days='mon' hours='8-17' time-zone='Asia/Tokyo'", "ap-northeast-1"));
+        var blocker = spec.requireInstance("default").changeBlocker().get(0);
+        assertEquals(Set.of(RegionName.from("ap-northeast-1")), blocker.regions());
+        assertTrue(blocker.appliesTo(Optional.of(RegionName.from("ap-northeast-1"))));
+        assertFalse(blocker.appliesTo(Optional.of(RegionName.from("us-west-1"))));
+        assertFalse(blocker.appliesTo(Optional.empty()));
+        assertTrue(blocker.toString().endsWith(" regions=[ap-northeast-1]"));
+        // Region-specific blockers don't block the instance as a whole
+        assertTrue(spec.requireInstance("default").canUpgradeAt(Instant.parse("2017-09-18T00:00:00.00Z")));
+
+        assertEquals("<block-change> refers to undeclared production region 'eu-west-1'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml(regionBlockerSpec("days='mon'", "eu-west-1"))).getMessage());
+        assertEquals("Cannot block Vespa upgrades for longer than 21 consecutive days",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml(regionBlockerSpec("from-date='2017-09-01' to-date='2017-10-01'", "us-west-1"))).getMessage());
+    }
+
+    @Test
+    public void regionSpecificChangeBlockerMustReferToRegionOfItsInstance() {
+        String instanceLevel = "<deployment>" +
+                               "   <instance id='a'>" +
+                               "      <block-change days='mon'><region>eu-west-1</region></block-change>" +
+                               "      <prod><region>us-east-3</region></prod>" +
+                               "   </instance>" +
+                               "   <instance id='b'>" +
+                               "      <prod><region>eu-west-1</region></prod>" +
+                               "   </instance>" +
+                               "</deployment>";
+        assertEquals("<block-change> refers to undeclared production region 'eu-west-1'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml(instanceLevel)).getMessage());
+
+        // Root level blockers apply to all instances, so any instance may deploy to their regions
+        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>" +
+                                                     "   <block-change days='mon'><region>eu-west-1</region></block-change>" +
+                                                     "   <instance id='a'>" +
+                                                     "      <prod><region>us-east-3</region></prod>" +
+                                                     "   </instance>" +
+                                                     "   <instance id='b'>" +
+                                                     "      <prod><region>eu-west-1</region></prod>" +
+                                                     "   </instance>" +
+                                                     "</deployment>");
+        assertEquals(Set.of(RegionName.from("eu-west-1")), spec.requireInstance("b").changeBlocker().get(0).regions());
+    }
+
+    @Test
+    public void regionSpecificChangeBlockersCannotTogetherBlockRolloutBeyondDeadline() {
+        String blockers = "      <block-change from-date='2017-09-01' to-date='2017-09-20'><region>us-west-1</region></block-change>" +
+                          "      <block-change from-date='2017-09-18' to-date='2017-10-07'><region>ap-northeast-1</region></block-change>";
+        // us-west-1 opens on 2017-09-21, after which ap-northeast-1 is blocked until 2017-10-08
+        assertEquals("Cannot block Vespa upgrades for longer than 21 consecutive days",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml(regionsSpec(blockers, "us-west-1", "ap-northeast-1"))).getMessage());
+        // In the opposite order, each region opens within the deadline
+        DeploymentSpec.fromXml(regionsSpec(blockers, "ap-northeast-1", "us-west-1"));
+    }
+
+    private static String regionsSpec(String blockers, String... regions) {
+        StringBuilder xml = new StringBuilder("<deployment><instance id='default'>").append(blockers).append("<prod>");
+        for (String region : regions) xml.append("<region>").append(region).append("</region>");
+        return xml.append("</prod></instance></deployment>").toString();
+    }
+
+    private static StringReader regionBlockerSpec(String windowAttributes, String region) {
+        return new StringReader("<deployment>" +
+                                "   <instance id='default'>" +
+                                "      <block-change " + windowAttributes + "><region>" + region + "</region></block-change>" +
+                                "      <prod>" +
+                                "         <region>us-west-1</region>" +
+                                "         <region>ap-northeast-1</region>" +
+                                "      </prod>" +
+                                "   </instance>" +
+                                "</deployment>");
+    }
+
+    @Test
     public void changeBlockerInheritance() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +

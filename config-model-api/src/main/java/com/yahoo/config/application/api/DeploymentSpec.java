@@ -875,12 +875,18 @@ public final class DeploymentSpec {
         private final boolean version;
         private final boolean maintenance;
         private final TimeWindow window;
+        private final Set<RegionName> regions;
 
         public ChangeBlocker(boolean revision, boolean version, boolean maintenance, TimeWindow window) {
+            this(revision, version, maintenance, window, Set.of());
+        }
+
+        public ChangeBlocker(boolean revision, boolean version, boolean maintenance, TimeWindow window, Set<RegionName> regions) {
             this.revision = revision;
             this.version = version;
             this.maintenance = maintenance;
             this.window = window;
+            this.regions = Set.copyOf(regions);
         }
 
         public boolean blocksRevisions() { return revision; }
@@ -888,9 +894,18 @@ public final class DeploymentSpec {
         public boolean blocksMaintenance() { return maintenance; }
         public TimeWindow window() { return window; }
 
+        /** The regions this blocks changes in, or empty if it blocks changes in all regions */
+        public Set<RegionName> regions() { return regions; }
+
+        /** Whether this applies to the given region, or, if empty, to changes not specific to a region */
+        public boolean appliesTo(Optional<RegionName> region) {
+            return regions.isEmpty() || region.map(regions::contains).orElse(false);
+        }
+
         @Override
         public String toString() {
-            return "change blocker revision=" + revision + " version=" + version + " maintenance=" + maintenance + " window=" + window;
+            return "change blocker revision=" + revision + " version=" + version + " maintenance=" + maintenance + " window=" + window +
+                   (regions.isEmpty() ? "" : " regions=" + regions.stream().map(RegionName::value).sorted().toList());
         }
 
     }

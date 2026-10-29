@@ -79,6 +79,25 @@ public class DeploymentConfigStoreTest {
     }
 
     @Test
+    public void stores_region_specific_block_windows_only_in_their_regions() {
+        CapturingDeploymentConfigStore store = new CapturingDeploymentConfigStore();
+        Zone prodZone = new Zone(Environment.prod, RegionName.from("us-south-1"));
+
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .hostedConfigserverConfig(prodZone)
+                .modelFactory(createHostedModelFactory())
+                .deploymentConfigStore(store)
+                .build();
+
+        tester.deployApp("src/test/apps/hosted-with-backup/");
+
+        assertEquals(1, store.calls.size());
+        List<BlockWindow> windows = store.calls.get(0).blockWindows();
+        assertEquals(2, windows.size());
+        assertEquals(List.of(DayOfWeek.SATURDAY), windows.get(1).days());
+    }
+
+    @Test
     public void stores_telemetry_export_config_for_prod_deployment() {
         CapturingDeploymentConfigStore store = new CapturingDeploymentConfigStore();
         Zone prodZone = new Zone(Environment.prod, RegionName.from("us-north-1"));

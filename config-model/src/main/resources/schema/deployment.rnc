@@ -93,7 +93,8 @@ BlockChange = element block-change {
     attribute hours { xsd:string }? &
     attribute from-date { xsd:string }? &
     attribute to-date { xsd:string }? &
-    attribute time-zone { xsd:string }?
+    attribute time-zone { xsd:string }? &
+    element region { xsd:string }*
 }
 
 Notifications = element notifications {

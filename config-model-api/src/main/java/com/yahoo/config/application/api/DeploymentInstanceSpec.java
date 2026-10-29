@@ -206,21 +206,29 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                                                                            .toInstant())
                                                                           .orElse(now))
                                                      .distinct();
-        if (!blockingFrom.allMatch(this::canUpgradeWithinDeadline)) {
+        if ( ! blockingFrom.allMatch(this::canUpgradeWithinDeadline)) {
             throw new IllegalArgumentException("Cannot block Vespa upgrades for longer than " +
                                                maxUpgradeBlockingDays + " consecutive days");
         }
     }
 
-    /** Returns whether this allows upgrade within deadline, relative to given instant */
+    /** Returns whether an upgrade starting at the given instant can reach all production regions, in order, within deadline */
     private boolean canUpgradeWithinDeadline(Instant instant) {
         instant = instant.truncatedTo(ChronoUnit.HOURS);
         Duration step = Duration.ofHours(1);
-        Duration max = Duration.ofDays(maxUpgradeBlockingDays);
-        for (Instant current = instant; ! canUpgradeAt(current); current = current.plus(step)) {
-            Duration blocked = Duration.between(instant, current);
-            if (blocked.compareTo(max) > 0) {
-                return false;
+        Instant deadline = instant.plus(Duration.ofDays(maxUpgradeBlockingDays));
+        // Parallel regions are treated as serial, which is conservative
+        List<Optional<RegionName>> regions = zones().stream()
+                                                    .filter(zone -> zone.environment().isProduction())
+                                                    .map(DeploymentSpec.DeclaredZone::region)
+                                                    .distinct()
+                                                    .toList();
+        Instant current = instant;
+        for (Optional<RegionName> region : regions.isEmpty() ? List.of(Optional.<RegionName>empty()) : regions) {
+            for ( ; ! canUpgradeAt(current, region); current = current.plus(step)) {
+                if (current.isAfter(deadline)) {
+                    return false;
+                }
             }
         }
         return true;
@@ -250,21 +258,28 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     /** Returns time windows where upgrades are disallowed for these instances */
     public List<DeploymentSpec.ChangeBlocker> changeBlocker() { return changeBlockers; }
 
-    /** Returns whether the instances in this step can upgrade at the given instant */
+    /** Returns whether the instances in this step can upgrade at the given instant, ignoring region-specific blockers */
     public boolean canUpgradeAt(Instant instant) {
+        return canUpgradeAt(instant, Optional.empty());
+    }
+
+    private boolean canUpgradeAt(Instant instant, Optional<RegionName> region) {
         return changeBlockers.stream().filter(DeploymentSpec.ChangeBlocker::blocksVersions)
+                                      .filter(block -> block.appliesTo(region))
                                       .noneMatch(block -> block.window().includes(instant));
     }
 
-    /** Returns whether an application revision change for these instances can occur at the given instant */
+    /** Returns whether an application revision change for these instances can occur at the given instant, ignoring region-specific blockers */
     public boolean canChangeRevisionAt(Instant instant) {
         return changeBlockers.stream().filter(DeploymentSpec.ChangeBlocker::blocksRevisions)
+                             .filter(block -> block.regions().isEmpty())
                              .noneMatch(block -> block.window().includes(instant));
     }
 
-    /** Returns whether maintenance can be performed on these instances at the given instant */
+    /** Returns whether maintenance can be performed on these instances at the given instant, ignoring region-specific blockers */
     public boolean canPerformMaintenanceAt(Instant instant) {
         return changeBlockers.stream().filter(DeploymentSpec.ChangeBlocker::blocksMaintenance)
+                             .filter(block -> block.regions().isEmpty())
                              .noneMatch(block -> block.window().includes(instant));
     }
 
