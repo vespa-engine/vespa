@@ -28,6 +28,50 @@ public class IndexInfoTestCase {
         assertEquals(0, cmds.stream().filter(c -> c.indexname().equals(F) && c.command().equals("normalize")).count());
     }
 
+    @Test
+    void testThatStructFieldsInMapValueAreMultivalue() {
+        String documentContent = String.join("\n",
+                "struct elem {",
+                "  field name type string {}",
+                "  field weight type int {}",
+                "}",
+                "field elem_map type map<string, elem> {",
+                "  indexing: summary",
+                "  struct-field key { indexing: attribute }",
+                "  struct-field value.name { indexing: attribute }",
+                "  struct-field value.weight { indexing: attribute }",
+                "}");
+        var cmds = createIndexInfo("sda", documentContent, false).indexinfo(0).command();
+        assertMultivalue(cmds, "elem_map");
+        assertMultivalue(cmds, "elem_map.key");
+        assertMultivalue(cmds, "elem_map.value");
+        assertMultivalue(cmds, "elem_map.value.name");
+        assertMultivalue(cmds, "elem_map.value.weight");
+    }
+
+    @Test
+    void testThatNestedStructFieldsInArrayOfStructAreMultivalue() {
+        String documentContent = String.join("\n",
+                "struct inner {",
+                "  field name type string {}",
+                "}",
+                "struct outer {",
+                "  field in type inner {}",
+                "}",
+                "field outer_array type array<outer> {",
+                "  indexing: summary",
+                "}");
+        var cmds = createIndexInfo("sda", documentContent, false).indexinfo(0).command();
+        assertMultivalue(cmds, "outer_array");
+        assertMultivalue(cmds, "outer_array.in");
+        assertMultivalue(cmds, "outer_array.in.name");
+    }
+
+    private static void assertMultivalue(List<IndexInfoConfig.Indexinfo.Command> cmds, String indexName) {
+        assertEquals(1, cmds.stream().filter(c -> c.indexname().equals(indexName) && c.command().equals("multivalue")).count(),
+                     "Expected multivalue for " + indexName);
+    }
+
     private static List<IndexInfoConfig.Indexinfo.Command> createIndexCmds(boolean isStreaming) {
         final String SD = "sda";
         String documentContent = "field " + F + " type string {indexing:index | summary}";
