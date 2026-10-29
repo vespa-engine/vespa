@@ -64,7 +64,7 @@ EdenQuantizer::EdenQuantizer(const size_t dimensions, const uint8_t bits, const 
 EdenQuantizer::~EdenQuantizer() = default;
 
 std::span<const float> EdenQuantizer::my_codebook() const noexcept {
-    return {codebooks::unit_norm_centroids_f32[_bits - 1], 1u << _bits};
+    return {codebooks::unit_norm_centroids_bf16_as_f32[_bits - 1], 1u << _bits};
 }
 
 EdenQuantizer::ScaleAndCentroidIndexesPtr

@@ -130,10 +130,10 @@ void do_test_4_bit_quantized_roundtrip_of_dense_indexed_floating_point_tensor() 
     // We can use the same expected floating point values for double/float/BFloat16, since doubles
     // are implicitly converted to floats (and thus have no more actual precision) and BFloat16 is
     // implicitly mantissa-truncated before comparison.
-    std::vector<CT> mse_expected = {-0.36424255, 11.988836, 1.243578, -0.30136871, -0.40498352, 8.7953281};
+    std::vector<CT> mse_expected = {-0.35178, 11.99714, 1.26159, -0.28538, -0.40829, 8.78029};
     EXPECT_THAT(dq.mse_dequant->cells().template typify<CT>(), Pointwise(FloatNear(0.00001), mse_expected));
 
-    std::vector<CT> ip_expected = {-0.36747026, 12.095058, 1.2545962, -0.30403852, -0.40857196, 8.8732548};
+    std::vector<CT> ip_expected = {-0.35495, 12.10537, 1.27297, -0.28795, -0.41197, 8.85950};
     EXPECT_THAT(dq.ip_dequant->cells().template typify<CT>(), Pointwise(FloatNear(0.00001), ip_expected));
 }
 
@@ -156,12 +156,12 @@ void do_test_4_bit_quantized_roundtrip_of_mixed_floating_point_tensor() {
     auto dq = quantize_mixed_tensor_roundtrip(vespalib::eval::get_cell_type<CT>(), 4);
 
     // As with indexed tensors, we can reuse the expected values across FP cell types.
-    std::vector<CT> mse_expected = {-0.4283701, 4.92065,  0.228362, -0.08518672, -3.048389,  -0.005629063,
-                                    -0.3642426, 11.98884, 1.243578, -0.3013687,  -0.4049835, 8.795328};
+    std::vector<CT> mse_expected = {-0.43210, 4.92168,  0.22640, -0.08581, -3.04600, -0.00669,
+                                    -0.35178, 11.99714, 1.26159, -0.28538, -0.40829, 8.78029};
     EXPECT_THAT(dq.mse_dequant->cells().template typify<CT>(), Pointwise(DoubleNear(0.00001), mse_expected));
 
-    std::vector<CT> ip_expected = {-0.4315633, 4.957332, 0.2300643, -0.08582163, -3.071113, -0.005670905,
-                                   -0.3674703, 12.09506, 1.254596,  -0.3040385,  -0.408572, 8.873255};
+    std::vector<CT> ip_expected = {-0.435347, 4.958665,  0.228097, -0.086456, -3.068891, -0.006745,
+                                   -0.354951, 12.105372, 1.272974, -0.287951, -0.411970, 8.859503};
     EXPECT_THAT(dq.ip_dequant->cells().template typify<CT>(), Pointwise(DoubleNear(0.00001), ip_expected));
 }
 
