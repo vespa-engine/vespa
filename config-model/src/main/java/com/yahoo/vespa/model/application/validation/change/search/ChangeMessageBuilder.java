@@ -32,4 +32,11 @@ public class ChangeMessageBuilder {
         return this;
     }
 
+    public ChangeMessageBuilder addChanges(ChangeMessageBuilder other) {
+        changes.addAll(other.changes);
+        return this;
+    }
+
+    public boolean isEmpty() { return changes.isEmpty(); }
+
 }

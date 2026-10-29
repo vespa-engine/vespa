@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change.search;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.derived.IndexingScript;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -27,11 +28,21 @@ public class IndexingScriptChangeValidator {
     private final ClusterSpec.Id id;
     private final Schema currentSchema;
     private final Schema nextSchema;
+    private final boolean currentStreaming;
+    private final boolean nextStreaming;
 
     public IndexingScriptChangeValidator(ClusterSpec.Id id, Schema currentSchema, Schema nextSchema) {
+        this(id, currentSchema, false, nextSchema, false);
+    }
+
+    public IndexingScriptChangeValidator(ClusterSpec.Id id,
+                                         Schema currentSchema, boolean currentStreaming,
+                                         Schema nextSchema, boolean nextStreaming) {
         this.id = id;
         this.currentSchema = currentSchema;
         this.nextSchema = nextSchema;
+        this.currentStreaming = currentStreaming;
+        this.nextStreaming = nextStreaming;
     }
 
     public List<VespaConfigChangeAction> validate() {
@@ -53,15 +64,37 @@ public class IndexingScriptChangeValidator {
     }
 
     private Optional<VespaConfigChangeAction> validateScripts(ImmutableSDField currentField, ImmutableSDField nextField) {
+        boolean changed = false;
+        ChangeMessageBuilder messageBuilder = new ChangeMessageBuilder(nextField.getName());
+        var changeMessageBuilder = new IndexingScriptChangeMessageBuilder(currentSchema, currentField, nextSchema, nextField);
         ScriptExpression currentScript = currentField.getIndexingScript();
         ScriptExpression nextScript = nextField.getIndexingScript();
         if ( ! equalScripts(currentScript, nextScript)) {
-            ChangeMessageBuilder messageBuilder = new ChangeMessageBuilder(nextField.getName());
-            new IndexingScriptChangeMessageBuilder(currentSchema, currentField, nextSchema, nextField).populate(messageBuilder);
+            changeMessageBuilder.populate(messageBuilder);
             messageBuilder.addChange("indexing script", currentScript.toString(), nextScript.toString());
-            return Optional.of(VespaReindexAction.of(id, ValidationId.indexingChange, messageBuilder.build()));
+            changed = true;
         }
-        return Optional.empty();
+        // Struct fields with 'indexing: index' are indexed by a script derived for the complex field as a whole
+        ScriptExpression currentStructFieldScript = structFieldIndexingScript(currentField, currentSchema, currentStreaming);
+        ScriptExpression nextStructFieldScript = structFieldIndexingScript(nextField, nextSchema, nextStreaming);
+        if ( ! currentStructFieldScript.equals(nextStructFieldScript)) {
+            ChangeMessageBuilder structFieldMessageBuilder = new ChangeMessageBuilder(nextField.getName());
+            changeMessageBuilder.populateStructFieldIndexes(structFieldMessageBuilder);
+            if (structFieldMessageBuilder.isEmpty()) // a change not described by the message builder
+                messageBuilder.addChange("struct field indexing script",
+                                         currentStructFieldScript.toString(), nextStructFieldScript.toString());
+            else
+                messageBuilder.addChanges(structFieldMessageBuilder);
+            changed = true;
+        }
+        if ( ! changed) return Optional.empty();
+        return Optional.of(VespaReindexAction.of(id, ValidationId.indexingChange, messageBuilder.build()));
+    }
+
+    /** Returns the struct field indexing script which is used for the given field, which is none in streaming mode. */
+    private static ScriptExpression structFieldIndexingScript(ImmutableSDField field, Schema schema, boolean streaming) {
+        if (streaming) return new ScriptExpression();
+        return IndexingScript.structFieldIndexingScript(field, schema);
     }
 
     static boolean equalScripts(ScriptExpression currentScript, ScriptExpression nextScript) {
