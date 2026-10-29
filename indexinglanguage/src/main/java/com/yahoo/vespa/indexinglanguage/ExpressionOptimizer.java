@@ -7,6 +7,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EchoExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetVarExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.HostNameExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
@@ -74,8 +75,9 @@ public class ExpressionOptimizer extends ExpressionConverter {
     }
 
     static boolean ignoresInput(Expression exp) {
-        if (exp instanceof SwitchExpression || exp instanceof ScriptExpression || exp instanceof ForEachExpression) {
-            return false;  // Switch and script never ignores input.
+        if (exp instanceof SwitchExpression || exp instanceof ScriptExpression ||
+            exp instanceof ForEachExpression || exp instanceof ForEachFieldExpression) {
+            return false;  // Switch, script and for_each(_field) never ignore input.
         }
         if (exp instanceof CompositeExpression) {
             return new IgnoresInputVisitor().ignoresInput(exp);

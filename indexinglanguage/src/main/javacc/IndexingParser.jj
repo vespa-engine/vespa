@@ -62,6 +62,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExpressionList;
 import com.yahoo.vespa.indexinglanguage.expressions.FlattenExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GenerateExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetLanguageExpression;
@@ -273,6 +274,7 @@ TOKEN :
     <EXHEX16_DOUBLE_ENCODE: "exhex16doubleencode"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
+    <FOR_EACH_FIELD: "for_each_field"> |
     <GET_FIELD: "get_field"> |
     <GET_LANGUAGE: "get_language"> |
     <GET_VALUE: "get_value"> |
@@ -436,6 +438,7 @@ Expression value() :
       val = exHex16DoubleEncodeExp() |
       val = flattenExp()            |
       val = forEachExp()            |
+      val = forEachFieldExp()       |
       val = getFieldExp()           |
       val = getLanguageExp()        |
       val = getValueExp()           |
@@ -619,6 +622,16 @@ Expression forEachExp() :
 {
     ( <FOR_EACH> <LCURLY> nl() val = statement() nl() <RCURLY> )
     { return new ForEachExpression(val); }
+}
+
+Expression forEachFieldExp() :
+{
+    String path;
+    Expression val;
+}
+{
+    ( <FOR_EACH_FIELD> path = string() <LCURLY> nl() val = statement() nl() <RCURLY> )
+    { return new ForEachFieldExpression(path, val); }
 }
 
 Expression getFieldExp() :
@@ -1081,6 +1094,7 @@ String identifier() :
         <EMBED>                  |
         <FLATTEN>                |
         <FOR_EACH>               |
+        <FOR_EACH_FIELD>         |
         <GENERATE>               |
         <GET_FIELD>              |
         <GET_LANGUAGE>           |

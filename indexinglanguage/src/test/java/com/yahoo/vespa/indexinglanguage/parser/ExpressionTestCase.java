@@ -18,6 +18,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ExactExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.FlattenExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetVarExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GuardExpression;
@@ -86,6 +87,8 @@ public class ExpressionTestCase {
         assertExpression(ExactExpression.class, "exact max-token-length: 10", Optional.of("exact max-token-length:10"));
         assertExpression(FlattenExpression.class, "flatten");
         assertExpression(ForEachExpression.class, "for_each { 1 }");
+        assertExpression(ForEachFieldExpression.class, "for_each_field \"a.value\" { 1 }");
+        assertExpression(ForEachFieldExpression.class, "for_each_field \"a\" { lowercase | trim | tokenize }");
         assertExpression(GetFieldExpression.class, "get_field field1");
         assertExpression(GetVarExpression.class, "get_var myvar1");
         assertExpression(GuardExpression.class, "guard { 1 }");
