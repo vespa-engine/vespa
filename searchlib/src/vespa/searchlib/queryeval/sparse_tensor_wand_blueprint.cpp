@@ -3,7 +3,6 @@
 #include "sparse_tensor_wand_blueprint.h"
 
 #include <vespa/check_require.h>
-#include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
@@ -24,7 +23,7 @@ SparseTensorWandBlueprint::SparseTensorWandBlueprint(const FieldSpec&           
     : ComplexLeafBlueprint(field),
       _attr_tensor(attr_tensor),
       _query_tensor(query_tensor),
-      _dot_product(SparseTensorWandSearch::make_dot_product(attr_tensor.getTensorType())),
+      _dot_product(query_tensor),
       _target_hits(target_hits),
       _score_threshold(score_threshold),
       _scores(target_hits),
@@ -70,7 +69,7 @@ SparseTensorWandBlueprint::createLeafSearch(const search::fef::TermFieldMatchDat
     CHECK(tfmda.size() == 1);
     fef::TermFieldMatchData& tfmd = *tfmda[0]; // always search in only one field
     return SparseTensorWandSearch::create(
-        strict(), tfmd, _attr_tensor, *_dot_product, _query_tensor,
+        strict(), tfmd, _attr_tensor, _dot_product,
         SparseTensorWandSearch::MatchParams(_scores, wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY,
                                             get_docid_limit()),
         _matching_phase != MatchingPhase::FIRST_PHASE);
