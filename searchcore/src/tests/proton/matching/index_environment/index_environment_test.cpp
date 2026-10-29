@@ -211,6 +211,38 @@ TEST(IndexEnvironmentTest, virtual_fields_are_extracted_in_index_environment) {
     f.assert_id_matches_index();
 }
 
+Schema::UP schema_with_virtual_fields_from_indexes() {
+    // These index fields represent struct fields with 'indexing: index' in the following fields:
+    //   * field person_array type array<person>, where the person struct has the fields name and year
+    //     (with year as a struct field attribute).
+    //   * field string_map type map<string, string>
+    //
+    // 'person_array' and 'string_map' are virtual fields, while uri parts (url.hostname) are not.
+    auto result = std::make_unique<Schema>();
+    result->addAttributeField(SAF("person_array.year", DataType::INT32, CollectionType::ARRAY));
+    result->addIndexField(SIF("person_array.name", DataType::STRING, CollectionType::ARRAY));
+    result->addIndexField(SIF("string_map.key", DataType::STRING, CollectionType::ARRAY));
+    result->addIndexField(SIF("string_map.value", DataType::STRING, CollectionType::ARRAY));
+    result->addIndexField(SIF("url.hostname", DataType::STRING, CollectionType::SINGLE));
+    return result;
+}
+
+TEST(IndexEnvironmentTest, virtual_fields_are_extracted_from_struct_field_indexes_in_index_environment) {
+    Fixture f(schema_with_virtual_fields_from_indexes());
+    ASSERT_EQ(9u, f.env.getNumFields());
+    f.assertAttributeField(1, "person_array.year", DataType::INT32, CollectionType::ARRAY);
+    f.assertField(2, "person_array.name", DataType::STRING, CollectionType::ARRAY);
+    f.assertField(3, "string_map.key", DataType::STRING, CollectionType::ARRAY);
+    f.assertField(4, "string_map.value", DataType::STRING, CollectionType::ARRAY);
+    f.assertField(5, "url.hostname", DataType::STRING, CollectionType::SINGLE);
+    EXPECT_EQ("[documentmetastore]", f.env.getField(6)->name());
+    f.assert_virtual_field(7, "person_array");
+    f.assert_virtual_field(8, "string_map");
+    EXPECT_EQ(nullptr, f.env.getFieldByName("url"));
+    f.assert_no_field_is_first();
+    f.assert_id_matches_index();
+}
+
 TEST(IndexEnvironmentTest, require_that_onnx_model_config_can_be_obtained) {
     Fixture f1(buildEmptySchema());
     {

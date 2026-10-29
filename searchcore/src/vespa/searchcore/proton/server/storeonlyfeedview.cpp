@@ -16,7 +16,6 @@
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
-#include <vespa/searchlib/index/uri_field.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -194,14 +193,12 @@ StoreOnlyFeedView::StoreOnlyFeedView(Context ctx, const PersistentParams& params
     _docType = _repo->getDocumentType(_params._docTypeName.getName());
     if (_schema && _docType) {
         for (const auto& indexField : _schema->getIndexFields()) {
-            size_t dotPos = indexField.getName().find('.');
-            if ((dotPos == std::string::npos) || search::index::UriField::mightBePartofUri(indexField.getName())) {
-                document::FieldPath fieldPath;
-                _docType->buildFieldPath(fieldPath, indexField.getName().substr(0, dotPos));
-                _indexedFields.insert(fieldPath.back().getFieldRef().getId());
-            } else {
-                throw IllegalStateException("Field '%s' is not a valid index name", indexField.getName().c_str());
-            }
+            // An index name with '.' is either part of an uri field, or a struct field in an array of struct or map
+            // field, which are both indexed from the document field named by the part before the first '.'.
+            size_t              dotPos = indexField.getName().find('.');
+            document::FieldPath fieldPath;
+            _docType->buildFieldPath(fieldPath, indexField.getName().substr(0, dotPos));
+            _indexedFields.insert(fieldPath.back().getFieldRef().getId());
         }
     }
 }

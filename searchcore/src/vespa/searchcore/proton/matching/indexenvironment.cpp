@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/searchlib/index/uri_field.h>
 
 #include <set>
 
@@ -25,12 +26,15 @@ void consider_field_for_extraction(const std::string& field_name, StringSet& vir
 }
 
 StringSet extract_virtual_fields(const std::vector<search::fef::FieldInfo>& fields) {
-    // Fields that are represented by a set of attributes (normal and imported) in the backend are considered virtual
-    // fields. Currently, this is map or array of struct fields (from the SD file) with struct-field attributes. These
-    // attributes have '.' in their names, example: my_map.key and my_map.value represent a map<int, string>.
+    // Fields that are represented by a set of attributes (normal and imported) and/or indexes in the backend are
+    // considered virtual fields. Currently, this is map or array of struct fields (from the SD file) with struct-field
+    // attributes or indexes. These have '.' in their names, example: my_map.key and my_map.value represent a
+    // map<int, string>. Indexes with '.' in their names may also be parts of an uri field, which is not virtual.
     StringSet result;
     for (const auto& field : fields) {
-        if (field.hasAttribute()) {
+        if (field.hasAttribute() ||
+            (field.type() == FieldType::INDEX && !search::index::UriField::mightBePartofUri(field.name())))
+        {
             consider_field_for_extraction(field.name(), result);
         }
     }
