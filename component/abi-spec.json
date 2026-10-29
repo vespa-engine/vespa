@@ -63,6 +63,7 @@
       "public com.yahoo.component.Version getVersion()",
       "public com.yahoo.component.ComponentId getNamespace()",
       "public java.lang.String stringValue()",
+      "public java.lang.String fullValue()",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
