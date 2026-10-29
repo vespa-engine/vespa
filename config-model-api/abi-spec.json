@@ -326,10 +326,13 @@
     ],
     "methods" : [
       "public void <init>(boolean, boolean, boolean, com.yahoo.config.application.api.TimeWindow)",
+      "public void <init>(boolean, boolean, boolean, com.yahoo.config.application.api.TimeWindow, java.util.Set)",
       "public boolean blocksRevisions()",
       "public boolean blocksVersions()",
       "public boolean blocksMaintenance()",
       "public com.yahoo.config.application.api.TimeWindow window()",
+      "public java.util.Set regions()",
+      "public boolean appliesTo(java.util.Optional)",
       "public java.lang.String toString()"
     ],
     "fields" : [ ]

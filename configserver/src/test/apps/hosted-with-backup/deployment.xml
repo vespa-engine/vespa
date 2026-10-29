@@ -3,8 +3,12 @@
   <backup frequency='24h' granularity='cluster' />
   <block-change revision='true' version='false' days='mon,tue' hours='8-10' time-zone='UTC'
                 from-date='2026-01-01T09:00' to-date='2026-12-31T17:30' />
+  <block-change days='sat'>
+    <region>us-south-1</region>
+  </block-change>
   <memory-dump heap-dump-redaction='basic' />
   <prod>
     <region>us-north-1</region>
+    <region>us-south-1</region>
   </prod>
 </deployment>

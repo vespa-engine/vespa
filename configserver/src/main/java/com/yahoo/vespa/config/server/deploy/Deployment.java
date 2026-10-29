@@ -20,6 +20,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
@@ -254,7 +255,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         Optional<BackupConfig> backup = instanceSpec.get().backup()
                 .map(b -> new BackupConfig(b.frequency(), BackupConfig.Granularity.valueOf(b.granularity().name())));
 
+        Optional<RegionName> region = Optional.of(RegionName.from(applicationRepository.configserverConfig().region()));
         List<BlockWindow> blockWindows = instanceSpec.get().changeBlocker().stream()
+                .filter(cb -> cb.appliesTo(region))
                 .map(cb -> new BlockWindow(
                         cb.blocksRevisions(), cb.blocksVersions(), cb.blocksMaintenance(),
                         cb.window().days(),

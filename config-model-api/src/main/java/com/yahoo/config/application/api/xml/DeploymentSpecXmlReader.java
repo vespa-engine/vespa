@@ -170,6 +170,7 @@ public class DeploymentSpecXmlReader {
                 }
             }
             readEndpoints(root, Optional.empty(), steps, applicationEndpoints, Map.of());
+            validateChangeBlockerRegions(root, steps);
         }
         DevSpec devSpec = readDevSpec(root);
 
@@ -237,6 +238,7 @@ public class DeploymentSpecXmlReader {
         readEndpoints(instanceElement, Optional.of(instanceNameString), steps, endpoints, zoneEndpoints);
         Bcp bcp = complete(readBcp(instanceElement, Optional.of(instanceNameString), steps, endpoints, zoneEndpoints).orElse(defaultBcp), steps);
         validateEndpoints(endpoints);
+        validateChangeBlockerRegions(instanceElement, steps);
 
         // Build and return instances with these values
         Instant now = clock.instant();
@@ -826,7 +828,23 @@ public class DeploymentSpecXmlReader {
         String dateEnd = tag.getAttribute("to-date");
 
         return new DeploymentSpec.ChangeBlocker(blockRevisions, blockVersions, blockMaintenance,
-                                                TimeWindow.from(daySpec, hourSpec, zoneSpec, dateStart, dateEnd));
+                                                TimeWindow.from(daySpec, hourSpec, zoneSpec, dateStart, dateEnd),
+                                                readChangeBlockerRegions(tag));
+    }
+
+    private static Set<RegionName> readChangeBlockerRegions(Element tag) {
+        return XML.getChildren(tag, regionTag).stream()
+                  .map(region -> RegionName.from(readRegionName(region)))
+                  .collect(Collectors.toSet());
+    }
+
+    /** Validates that the change blockers declared directly in the given element only refer to production regions in the given steps */
+    private static void validateChangeBlockerRegions(Element parent, List<Step> steps) {
+        for (Element tag : XML.getChildren(parent, blockChangeTag))
+            for (RegionName region : readChangeBlockerRegions(tag))
+                if (steps.stream().flatMap(step -> step.zones().stream())
+                         .noneMatch(zone -> zone.concerns(Environment.prod, Optional.of(region))))
+                    illegal("<block-change> refers to undeclared production region '" + region.value() + "'");
     }
 
     private Optional<DeploymentSpec.BackupSpec> readBackup(Element instanceElement) {
