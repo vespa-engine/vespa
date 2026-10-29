@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change.search;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.derived.IndexingScript;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -59,6 +60,15 @@ public class IndexingScriptChangeValidator {
             ChangeMessageBuilder messageBuilder = new ChangeMessageBuilder(nextField.getName());
             new IndexingScriptChangeMessageBuilder(currentSchema, currentField, nextSchema, nextField).populate(messageBuilder);
             messageBuilder.addChange("indexing script", currentScript.toString(), nextScript.toString());
+            return Optional.of(VespaReindexAction.of(id, ValidationId.indexingChange, messageBuilder.build()));
+        }
+        // Struct fields with 'indexing: index' are indexed by a script derived for the complex field as a whole
+        ScriptExpression currentStructFieldScript = IndexingScript.structFieldIndexingScript(currentField, currentSchema);
+        ScriptExpression nextStructFieldScript = IndexingScript.structFieldIndexingScript(nextField, nextSchema);
+        if ( ! currentStructFieldScript.equals(nextStructFieldScript)) {
+            ChangeMessageBuilder messageBuilder = new ChangeMessageBuilder(nextField.getName());
+            messageBuilder.addChange("struct field indexing script",
+                                     currentStructFieldScript.toString(), nextStructFieldScript.toString());
             return Optional.of(VespaReindexAction.of(id, ValidationId.indexingChange, messageBuilder.build()));
         }
         return Optional.empty();

@@ -96,6 +96,40 @@ public class IndexingScriptChangeValidatorTest {
                 "{ input f1 | tokenize normalize stem:\"BEST\" | index f1 | summary f1; }"));
     }
 
+    private static final String STRUCT_FIELD = "struct s { field a type string {} field b type string {} }\n" +
+                                               "field f1 type array<s>";
+
+    private static VespaConfigChangeAction expectedStructFieldReindexingAction(String fromScript, String toScript) {
+        return VespaReindexAction.of(ClusterSpec.Id.from("test"),
+                                     ValidationId.indexingChange,
+                                     "Field 'f1' changed: struct field indexing script: '" + fromScript + "' -> '" + toScript + "'");
+    }
+
+    @Test
+    void requireThatAddingStructFieldIndexRequireReindexing() throws Exception {
+        new Fixture(STRUCT_FIELD + " { indexing: summary \n struct-field a { indexing: attribute } }",
+                    STRUCT_FIELD + " { indexing: summary \n struct-field a { indexing: attribute } \n struct-field b { indexing: index } }").
+                assertValidation(expectedStructFieldReindexingAction(
+                        "{  }",
+                        "{ input f1 | for_each_field \"b\" { tokenize normalize stem:\"BEST\" } | passthrough f1; }"));
+    }
+
+    @Test
+    void requireThatChangingStructFieldIndexMatchingRequireReindexing() throws Exception {
+        new Fixture(STRUCT_FIELD + " { struct-field b { indexing: index } }",
+                    STRUCT_FIELD + " { struct-field b { indexing: index \n match: exact } }").
+                assertValidation(expectedStructFieldReindexingAction(
+                        "{ input f1 | for_each_field \"b\" { tokenize normalize stem:\"BEST\" } | passthrough f1; }",
+                        "{ input f1 | for_each_field \"b\" { exact } | passthrough f1; }"));
+    }
+
+    @Test
+    void requireThatUnchangedStructFieldIndexDoesNotRequireReindexing() throws Exception {
+        new Fixture(STRUCT_FIELD + " { indexing: summary \n struct-field b { indexing: index } }",
+                    STRUCT_FIELD + " { indexing: summary \n struct-field b { indexing: index } }").
+                assertValidation();
+    }
+
     @Test
     void requireThatRemovingIndexAspectRequireReindexing() throws Exception {
         new Fixture(FIELD + " { indexing: index | summary }",
