@@ -133,7 +133,7 @@ public final class SchemaInfo extends Derived {
         }
         fieldBuilder.attribute(field.doesAttributing());
         fieldBuilder.index(field.doesIndexing());
-        fieldBuilder.matchType(toMatchType(field));
+        fieldBuilder.matchType(toMatchType(field, field.isSearchable()));
         field.getExplanation().ifPresent(fieldBuilder::explanation);
         for (var fastMapFields : field.getFastMapSearches()) {
             fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
@@ -155,7 +155,7 @@ public final class SchemaInfo extends Derived {
             fieldBuilder.alias(i.next());
         fieldBuilder.attribute(false);
         fieldBuilder.index(true);
-        fieldBuilder.matchType(toMatchType(field));
+        fieldBuilder.matchType(toMatchType(field, true));
         schemaBuilder.field(fieldBuilder);
     }
 
@@ -168,12 +168,13 @@ public final class SchemaInfo extends Derived {
             fieldBuilder.alias(alias);
         fieldBuilder.attribute(true);
         fieldBuilder.index(false);
-        fieldBuilder.matchType(toMatchType(field));
+        fieldBuilder.matchType(toMatchType(field, true));
         schemaBuilder.field(fieldBuilder);
     }
 
-    /** Returns the match type of a string field (including collections of strings), or NONE for other fields. */
-    private SchemaInfoConfig.Schema.Field.MatchType.Enum toMatchType(ImmutableSDField field) {
+    private SchemaInfoConfig.Schema.Field.MatchType.Enum toMatchType(ImmutableSDField field, boolean searchable) {
+        if (!searchable)
+            return SchemaInfoConfig.Schema.Field.MatchType.NONE;
         if (field.getDataType().getPrimitiveType() != PrimitiveDataType.STRING)
             return SchemaInfoConfig.Schema.Field.MatchType.NONE;
         return switch (field.getMatching().getType()) {

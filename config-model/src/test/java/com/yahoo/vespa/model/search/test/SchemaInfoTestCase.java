@@ -41,7 +41,7 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
-    schema[0].field[0].matchType TEXT
+    schema[0].field[0].matchType NONE
     schema[0].field[0].explanation ""
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
@@ -67,14 +67,14 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
-    schema[0].field[0].matchType TEXT
+    schema[0].field[0].matchType NONE
     schema[0].field[0].explanation ""
     schema[0].field[1].name "f2"
     schema[0].field[1].type "string"
     schema[0].field[1].attribute false
     schema[0].field[1].index false
     schema[0].field[1].bitPacked false
-    schema[0].field[1].matchType TEXT
+    schema[0].field[1].matchType NONE
     schema[0].field[1].explanation ""
     schema[0].fieldset[0].name "fs1"
     schema[0].fieldset[0].field[0] "f1"
@@ -104,7 +104,7 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
-    schema[0].field[0].matchType TEXT
+    schema[0].field[0].matchType NONE
     schema[0].field[0].explanation ""
     schema[0].field[1].name "f1Index"
     schema[0].field[1].type "string"
