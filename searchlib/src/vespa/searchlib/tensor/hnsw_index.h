@@ -101,15 +101,17 @@ struct InsertedNodeInfo {
 
 struct PreparedFixAndAddNode {
     using Links = std::vector<std::pair<uint32_t, vespalib::datastore::EntryRef>>;
-    std::vector<Links>                        connections;
-    std::vector<double>                       max_distances;
-    std::vector<HnswTraversalCandidateVector> selected_neighbors;
-    InsertionGenerationType                   prepared_at_generation;
+    struct LevelData {
+        Links                        connections;
+        double                       max_distance_considered = std::numeric_limits<double>::infinity();
+        HnswTraversalCandidateVector selected_neighbors;
+    };
+    std::vector<LevelData>  levels;
+    InsertionGenerationType prepared_at_generation;
 
     PreparedFixAndAddNode() noexcept;
-    explicit PreparedFixAndAddNode(std::vector<Links>&& connections_in, std::vector<double>&& max_distances_in,
-                                   std::vector<HnswTraversalCandidateVector>&& selected_neighbors_in,
-                                   InsertionGenerationType                     prepared_at_generation_in) noexcept;
+    explicit PreparedFixAndAddNode(std::vector<LevelData>&& levels_in,
+                                   InsertionGenerationType  prepared_at_generation_in) noexcept;
     ~PreparedFixAndAddNode();
     PreparedFixAndAddNode(PreparedFixAndAddNode&& other) noexcept;
 };

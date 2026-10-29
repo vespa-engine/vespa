@@ -128,16 +128,11 @@ PreparedAddDoc::~PreparedAddDoc() = default;
 
 PreparedAddDoc::PreparedAddDoc(PreparedAddDoc&& other) noexcept = default;
 
-PreparedFixAndAddNode::PreparedFixAndAddNode() noexcept : connections() {
+PreparedFixAndAddNode::PreparedFixAndAddNode() noexcept : levels() {
 }
-PreparedFixAndAddNode::PreparedFixAndAddNode(std::vector<Links>&&                        connections_in,
-                                             std::vector<double>&&                       max_distances_in,
-                                             std::vector<HnswTraversalCandidateVector>&& selected_neighbors_in,
-                                             InsertionGenerationType prepared_at_generation_in) noexcept
-    : connections(std::move(connections_in)),
-      max_distances(std::move(max_distances_in)),
-      selected_neighbors(std::move(selected_neighbors_in)),
-      prepared_at_generation(prepared_at_generation_in) {
+PreparedFixAndAddNode::PreparedFixAndAddNode(std::vector<LevelData>&& levels_in,
+                                             InsertionGenerationType  prepared_at_generation_in) noexcept
+    : levels(std::move(levels_in)), prepared_at_generation(prepared_at_generation_in) {
 }
 PreparedFixAndAddNode::~PreparedFixAndAddNode() = default;
 PreparedFixAndAddNode::PreparedFixAndAddNode(PreparedFixAndAddNode&& other) noexcept = default;
@@ -815,14 +810,11 @@ void HnswIndex<type>::internal_prepare_fix_and_add_node(PreparedFixAndAddDoc& op
     Stats stats; // Not used for now. Wire this in to all places where distances are computed if to be used.
     internal::InsertionGenerationType prepared_at_generation(
         _current_generation_atomic.load(std::memory_order_acquire));
-    int                                 node_max_level = std::min(_level_generator->max_level(), max_max_level);
-    std::vector<PreparedAddNode::Links> connections(node_max_level + 1);
-    std::vector<double>                 max_distances(node_max_level + 1, std::numeric_limits<double>::infinity());
-    std::vector<HnswTraversalCandidateVector> selected_neighbors(node_max_level + 1);
+    int node_max_level = std::min(_level_generator->max_level(), max_max_level);
+    std::vector<internal::PreparedFixAndAddNode::LevelData> level_data(node_max_level + 1);
     if (entry.nodeid == 0) {
         // graph has no entry point
-        op.nodes.emplace_back(std::move(connections), std::move(max_distances), std::move(selected_neighbors),
-                              prepared_at_generation);
+        op.nodes.emplace_back(std::move(level_data), prepared_at_generation);
         return;
     }
     int      search_level = entry.level;
@@ -846,10 +838,10 @@ void HnswIndex<type>::internal_prepare_fix_and_add_node(PreparedFixAndAddDoc& op
         // Remember the distances up to which we considered nodes
         // The completion step uses this to decide whether to re-select neighbors with recently added nodes included
         if (best_neighbors.size() >= _cfg.neighbors_to_explore_at_construction()) {
-            max_distances[search_level] = best_neighbors.top().distance;
+            level_data[search_level].max_distance_considered = best_neighbors.top().distance;
         }
         auto  neighbors = select_neighbors(best_neighbors.peek(), _cfg.max_links_on_inserts());
-        auto& links = connections[search_level];
+        auto& links = level_data[search_level].connections;
         links.reserve(neighbors.used.size());
         for (const auto& neighbor : neighbors.used) {
             auto neighbor_levels = _graph.get_level_array(neighbor.levels_ref);
@@ -862,11 +854,10 @@ void HnswIndex<type>::internal_prepare_fix_and_add_node(PreparedFixAndAddDoc& op
         }
         // Also save the candidate set, not just the links
         // The completion step can decide to re-select neighbors with recently added nodes included
-        selected_neighbors[search_level] = std::move(neighbors.used);
+        level_data[search_level].selected_neighbors = std::move(neighbors.used);
         --search_level;
     }
-    op.nodes.emplace_back(std::move(connections), std::move(max_distances), std::move(selected_neighbors),
-                          prepared_at_generation);
+    op.nodes.emplace_back(std::move(level_data), prepared_at_generation);
 }
 
 template <HnswIndexType type>
@@ -926,7 +917,7 @@ void HnswIndex<type>::internal_complete_add_node(uint32_t nodeid, uint32_t docid
 template <HnswIndexType type>
 void HnswIndex<type>::internal_complete_fix_and_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
                                                          PreparedFixAndAddNode& prepared_node) {
-    int32_t num_levels = prepared_node.connections.size();
+    int32_t num_levels = prepared_node.levels.size();
 
     // Find recently inserted nodes that were (possibly) missed during the prepare step
     // because they were not part of the graph yet
@@ -965,14 +956,14 @@ void HnswIndex<type>::internal_complete_fix_and_add_node(uint32_t nodeid, uint32
 
     // Check if the missed nodes would have been included in the set from which neighbors were selected
     for (int level = 0; level < num_levels; ++level) {
-        double max_distance = prepared_node.max_distances[level];
-        auto&  selected_neighbors = prepared_node.selected_neighbors[level];
+        auto& level_data = prepared_node.levels[level];
+        auto& selected_neighbors = level_data.selected_neighbors;
 
         bool selected_neighbors_updated = false;
         for (size_t t = 0; t < nodes_to_check; ++t) {
             double distance = distances[t];
             // Would the node have been used in select_neighbors (and still valid levels_ref)?
-            if (distance < max_distance) {
+            if (distance < level_data.max_distance_considered) {
                 auto& node_info = _last_inserted_nodes[check_last_inserted_nodes_from + t];
                 auto  levels = _graph.get_level_array(node_info.levels_ref);
                 // Is the node present on this level?
@@ -1017,7 +1008,7 @@ void HnswIndex<type>::internal_complete_fix_and_add_node(uint32_t nodeid, uint32
 
             // Re-select neighbors
             auto  neighbors = select_neighbors(selected_neighbors, _cfg.max_links_on_inserts());
-            auto& links = prepared_node.connections[level];
+            auto& links = level_data.connections;
             links.clear();
             for (const auto& neighbor : neighbors.used) {
                 auto neighbor_levels = _graph.get_level_array(neighbor.levels_ref);
@@ -1032,7 +1023,7 @@ void HnswIndex<type>::internal_complete_fix_and_add_node(uint32_t nodeid, uint32
     auto levels_ref = _graph.make_node(nodeid, docid, subspace, num_levels);
     for (int level = 0; level < num_levels; ++level) {
         // TODO The filtering is only needed if we did not re-select nodes
-        auto neighbors = filter_valid_nodeids(level, prepared_node.connections[level], nodeid);
+        auto neighbors = filter_valid_nodeids(level, prepared_node.levels[level].connections, nodeid);
         connect_new_node(nodeid, neighbors, level);
     }
     if (num_levels - 1 > get_entry_level()) {
