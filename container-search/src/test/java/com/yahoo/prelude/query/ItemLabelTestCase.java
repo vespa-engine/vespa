@@ -113,6 +113,33 @@ public class ItemLabelTestCase {
     }
 
     @Test
+    final void testInLabelReachesRankProperties() {
+        StringInItem tags = new StringInItem("tags");
+        tags.addToken("red");
+        tags.addToken("blue");
+        tags.setLabel("color");
+
+        NumericInItem year = new NumericInItem("year");
+        year.addToken(2020L);
+        year.addToken(2021L);
+        year.setLabel("yr");
+
+        OrItem or = new OrItem();
+        or.addItem(tags);
+        or.addItem(year);
+        Query query = new Query();
+        query.getModel().getQueryTree().setRoot(or);
+        query.prepare();
+
+        assertTrue(tags.getUniqueID() > 0);
+        assertTrue(year.getUniqueID() > 0);
+        assertEquals(String.valueOf(tags.getUniqueID()),
+                     query.getRanking().getProperties().get("vespa.label.color.id").get(0));
+        assertEquals(String.valueOf(year.getUniqueID()),
+                     query.getRanking().getProperties().get("vespa.label.yr.id").get(0));
+    }
+
+    @Test
     final void testSharedLabelEncodesAllUniqueIds() {
         WordItem w1 = new WordItem("w1");
         WordItem w2 = new WordItem("w2");
