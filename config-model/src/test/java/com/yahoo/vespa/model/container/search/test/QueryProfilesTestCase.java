@@ -70,6 +70,29 @@ public class QueryProfilesTestCase {
     }
 
     @Test
+    void testInheritingVersionWithTrailingZeros() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+
+        QueryProfile parent = new QueryProfile("hybrid:1.0.0");
+        parent.set("a", "parent-value", registry);
+        registry.register(parent);
+
+        QueryProfile child = new QueryProfile("hybrid:1.0.1");
+        child.addInherited(parent);
+        child.set("b", "child-value", registry);
+        registry.register(child);
+
+        QueryProfiles profiles = new QueryProfiles(registry, new TestableDeployLogger());
+        QueryProfileRegistry registryFromConfig = QueryProfileConfigurer.createFromConfig(profiles.getConfig());
+        QueryProfile childFromConfig = registryFromConfig.findQueryProfile("hybrid:1.0.1");
+        assertEquals(1, childFromConfig.inherited().size());
+        assertEquals(parent.getId(), childFromConfig.inherited().get(0).getId());
+        CompiledQueryProfile compiled = registryFromConfig.compile().getComponent("hybrid:1.0.1");
+        assertEquals("parent-value", new Query("?", compiled).properties().get("a"));
+        assertEquals("child-value", new Query("?", compiled).properties().get("b"));
+    }
+
+    @Test
     void testVariants() {
         QueryProfileRegistry registry = new QueryProfileXMLReader().read(root + "variants");
         QueryProfiles profiles = new QueryProfiles(registry, new TestableDeployLogger());
