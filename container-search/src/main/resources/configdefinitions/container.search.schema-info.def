@@ -16,8 +16,12 @@ schema[].field[].index bool
 ## Not used. TODO: Remove on Vespa 9
 schema[].field[].bitPacked bool default=false
 
+## How a string field is matched, or NONE if this is not a string field
+schema[].field[].matchType enum { NONE, TEXT, WORD, EXACT, GRAM } default=NONE
+
 ## A free text explanation of the content and usage of this field, or empty if none
 schema[].field[].explanation string default=""
+
 ## Present (with a single entry) if this field has fast map search, i.e. does 'fast-search-map-field',
 ## either on a map, or on an array of struct with the key and value struct fields given here
 ## The name given to the lookup field in 'fast-search-map-field'

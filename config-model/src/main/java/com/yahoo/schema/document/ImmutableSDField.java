@@ -28,6 +28,8 @@ public interface ImmutableSDField {
 
     boolean doesIndexing();
 
+    default boolean isSearchable() { return doesAttributing() || doesIndexing(); }
+
     boolean doesLowerCasing();
 
     boolean isExtraField();

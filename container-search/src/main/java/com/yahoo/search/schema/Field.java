@@ -24,6 +24,7 @@ public class Field implements FieldInfo {
     private final boolean isIndex;
     private final List<FastMapSearchFields> fastMapSearches;
     private final Set<String> aliases;
+    private final MatchType matchType;
     private final Optional<String> explanation;
 
     public Field(Builder builder) {
@@ -33,6 +34,7 @@ public class Field implements FieldInfo {
         this.isIndex = builder.isIndex;
         this.fastMapSearches = List.copyOf(builder.fastMapSearches);
         this.aliases = Set.copyOf(builder.aliases);
+        this.matchType = builder.matchType;
         this.explanation = Optional.ofNullable(builder.explanation);
     }
 
@@ -43,9 +45,6 @@ public class Field implements FieldInfo {
     public Type type() { return type; }
 
     public Set<String> aliases() { return aliases; }
-
-    /** Returns the free text explanation of the content and usage of this field, if any. */
-    public Optional<String> explanation() { return explanation; }
 
     /** Returns whether this field is an attribute, i.e. does indexing: attribute. */
     @Override
@@ -59,6 +58,12 @@ public class Field implements FieldInfo {
     public boolean hasFastMapSearch() {
         return ! fastMapSearches.isEmpty();
     }
+
+    @Override
+    public MatchType matchType() { return matchType; }
+
+    /** Returns the free text explanation of the content and usage of this field, if any. */
+    public Optional<String> explanation() { return explanation; }
 
     /** Returns the key and value fields of each fast map search of this field, or an empty list if it has none. */
     public List<FastMapSearchFields> fastMapSearches() {
@@ -79,17 +84,34 @@ public class Field implements FieldInfo {
         if ( this.isIndex != other.isIndex) return false;
         if ( ! this.fastMapSearches.equals(other.fastMapSearches)) return false;
         if ( ! this.aliases.equals(other.aliases)) return false;
+        if ( ! this.matchType.equals(other.matchType)) return false;
         if ( ! this.explanation.equals(other.explanation)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, isAttribute, isIndex, fastMapSearches, aliases, explanation);
+        return Objects.hash(name, type, isAttribute, isIndex, fastMapSearches, aliases, matchType, explanation);
     }
 
     @Override
     public String toString() { return "field '" + name + "'"; }
+
+    /** How a field is matched. */
+    public enum MatchType {
+
+        /** This is not a string field, so match type is not applicable. */
+        NONE,
+        /** Matched as text: Text is tokenized, and query tokens match tokens in the field. */
+        TEXT,
+        /** Matched as a single word: A query term matches an entire field value, or an entire element of a collection. */
+        WORD,
+        /** Like WORD, but without normalizing the value (except lowercasing, unless the field is cased). */
+        EXACT,
+        /** Matched as n-grams, such that query text can match substrings of field values. */
+        GRAM
+
+    }
 
     public static class Type {
 
@@ -412,6 +434,7 @@ public class Field implements FieldInfo {
         private boolean isIndex;
         private final List<FastMapSearchFields> fastMapSearches = new ArrayList<>();
         private String explanation = null;
+        private MatchType matchType = MatchType.NONE;
 
         public Builder(String name, String typeString) {
             this.name = name;
@@ -421,6 +444,12 @@ public class Field implements FieldInfo {
         /** Sets a free text explanation of the content and usage of this field. */
         public Builder setExplanation(String explanation) {
             this.explanation = Objects.requireNonNull(explanation);
+            return this;
+        }
+
+        /** Sets how this field is matched. This should be NONE (the default) for fields which are not strings. */
+        public Builder setMatchType(MatchType matchType) {
+            this.matchType = Objects.requireNonNull(matchType);
             return this;
         }
 
