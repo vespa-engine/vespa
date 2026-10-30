@@ -67,10 +67,8 @@ public class ElementAssignFieldPathUpdateFieldValues implements UpdateFieldValue
         FieldValue processed = doc.getFieldValue(targetField());
         if (processed instanceof Array<?> array && array.size() == 1) {
             // Element-wise processing (see class comment) maps the single input element to this one
-            // Cloning the field path update, restoring the original element index
-            String path = targetField().getName() + "[" + elementIndex() + "]";
-            var newValue = array.getFieldValue(0);
-            var assign = new AssignFieldPathUpdate(update.getDocumentType(), path, newValue);
+            var assign = new AssignFieldPathUpdate(update.getDocumentType(), update.getOriginalFieldPath(),
+                                                   array.getFieldValue(0));
             assign.setCreateMissingPath(update.getCreateMissingPath());
             assign.setRemoveIfZero(update.getRemoveIfZero());
             out.addFieldPathUpdate(assign);
@@ -90,11 +88,6 @@ public class ElementAssignFieldPathUpdateFieldValues implements UpdateFieldValue
     /** The field that the original document update was targeting. */
     private Field targetField() {
         return update.getFieldPath().get(0).getFieldRef();
-    }
-
-    /** The index that the original field path update was targeting. */
-    private int elementIndex() {
-        return update.getFieldPath().get(1).getLookupIndex();
     }
 
     @Override
