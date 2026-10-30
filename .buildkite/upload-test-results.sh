@@ -35,7 +35,7 @@ fi
 [[ -n "${DEBUG:-}" ]] && set -o xtrace
 
 upload_result() {
-    curl \
+    curl --silent --show-error \
         -X POST \
         -H "Authorization: Token token=\"$BUILDKITE_ANALYTICS_TOKEN\"" \
         -F "data=@$1" \

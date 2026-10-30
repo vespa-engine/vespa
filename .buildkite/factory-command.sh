@@ -21,8 +21,8 @@ COMMAND=$1
 FACTORY_API="https://api.factory.vespa.ai/factory/v1"
 
 IDENTITY_PATH="${ATHENZ_KEY_AND_CERT_PATH:-/workspace/identity}"
-CURL="curl -sL --key $IDENTITY_PATH/key --cert $IDENTITY_PATH/cert"
-TOKEN=$(curl -sL --key "$IDENTITY_PATH/key" --cert "$IDENTITY_PATH/cert" -X POST -H "Content-Type: application/x-www-form-urlencoded" -d"grant_type=client_credentials&scope=vespa.factory%3Adomain" "https://zts.athenz.vespa-cloud.com:4443/zts/v1/oauth2/token" | jq -re '.access_token')
+CURL="curl --fail --silent --show-error -L --key $IDENTITY_PATH/key --cert $IDENTITY_PATH/cert"
+TOKEN=$(curl --fail --silent --show-error -L --key "$IDENTITY_PATH/key" --cert "$IDENTITY_PATH/cert" -X POST -H "Content-Type: application/x-www-form-urlencoded" -d"grant_type=client_credentials&scope=vespa.factory%3Adomain" "https://zts.athenz.vespa-cloud.com:4443/zts/v1/oauth2/token" | jq -re '.access_token')
 
 shift
 case $COMMAND in

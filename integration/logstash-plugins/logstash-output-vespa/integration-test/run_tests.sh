@@ -123,7 +123,7 @@ run_test() {
     # Wait for Logstash to start by pinging its monitoring endpoint
     echo -e "${ORANGE}Waiting for Logstash to start...${NC}"
     DONE_ALREADY=false
-    while ! curl -s -o /dev/null --fail "localhost:9600/_node/stats"; do
+    while ! curl --fail --silent --show-error -o /dev/null "localhost:9600/_node/stats"; do
         sleep 1
         if ! kill -0 $logstash_pid 2>/dev/null; then
             echo -e "${ORANGE}Logstash already done and exited, moving on...${NC}"
@@ -151,7 +151,7 @@ run_test() {
         echo -e "${ORANGE}Waiting for Vespa to be ready...${NC}"
         max_attempts=30
         attempt=1
-        while ! curl --output /dev/null --silent --fail "$VESPA_URL"; do
+        while ! curl --fail --silent --show-error --output /dev/null "$VESPA_URL"; do
             if [ $attempt -eq $max_attempts ]; then
                 echo -e "${RED}Error: Vespa not available after $max_attempts attempts${NC}"
                 exit 1
@@ -163,7 +163,7 @@ run_test() {
         echo -e "${GREEN}Vespa is ready${NC}"
     else
         echo -e "${ORANGE}Checking if document exists...${NC}"
-        status=$(curl -s -o /dev/null -w "%{http_code}" "$VESPA_URL/document/v1/doctype/doctype/docid/$expected_doc_id")
+        status=$(curl --silent --show-error -o /dev/null -w "%{http_code}" "$VESPA_URL/document/v1/doctype/doctype/docid/$expected_doc_id")
         
         if [ "$status" = "$expected_status" ]; then
             echo -e "${GREEN}✓ Test passed${NC}"

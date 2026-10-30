@@ -48,7 +48,7 @@ echo "Checking Vespa availability..."
 max_attempts=30
 
 attempt=1
-while ! curl --output /dev/null --silent --fail "$VESPA_URL"; do
+while ! curl --fail --silent --show-error --output /dev/null "$VESPA_URL"; do
     if [ $attempt -eq $max_attempts ]; then
         echo -e "${RED}Error: Vespa not available after $max_attempts attempts${NC}"
         exit 1
@@ -73,7 +73,7 @@ run_test() {
     echo "Test: $test_name"
 
     # Feed document to Vespa
-    curl -X POST -H "Content-Type:application/json" --data "$doc_content" \
+    curl --fail --silent --show-error -X POST -H "Content-Type:application/json" --data "$doc_content" \
         "$VESPA_URL/document/v1/cars/$VESPA_CLUSTER/docid/$doc_id"
     
     # Create config file with actual ID
