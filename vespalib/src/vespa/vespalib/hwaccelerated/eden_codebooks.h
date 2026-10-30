@@ -2,7 +2,10 @@
 
 #pragma once
 
-namespace vespalib::quant::codebooks {
+#include <cstdint>
+#include <span>
+
+namespace vespalib::hwaccelerated::codebooks {
 
 /*
  * Precomputed codebooks that are optimal for minimizing Mean Squared Error (MSE)
@@ -21,12 +24,24 @@ namespace vespalib::quant::codebooks {
  * Important: for a vector with `d` dimensions, these centroids must be scaled with
  * 1/sqrt(d) to fit the expected distribution
  */
-extern const float unit_norm_centroids_f32[4][16];
+extern const float eden_unit_norm_centroids_f32[4][16];
 
 /*
  * These are the same centroids as `unit_norm_centroids_f32`, but each centroid
  * value has been truncated to BFloat16 precision.
  */
-extern const float unit_norm_centroids_bf16_as_f32[4][16];
+extern const float eden_unit_norm_centroids_bf16_as_f32[4][16];
 
-} // namespace vespalib::quant::codebooks
+// Precondition: `bits` is in [1, 4]
+[[nodiscard]] inline std::span<const float> eden_f32_codebook(const uint8_t bits) noexcept {
+    const float* bits_buf = eden_unit_norm_centroids_f32[bits - 1];
+    return {bits_buf, 1u << bits};
+}
+
+// Precondition: `bits` is in [1, 4]
+[[nodiscard]] inline std::span<const float> eden_bf16_codebook(const uint8_t bits) noexcept {
+    const float* bits_buf = eden_unit_norm_centroids_bf16_as_f32[bits - 1];
+    return {bits_buf, 1u << bits};
+}
+
+} // namespace vespalib::hwaccelerated::codebooks

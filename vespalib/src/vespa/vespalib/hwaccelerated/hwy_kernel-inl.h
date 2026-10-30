@@ -23,13 +23,43 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 // Accumulator adding by arithmetic sum of two vectors
 struct VecAdd {
-    HWY_INLINE auto operator()(auto lhs, auto rhs) const noexcept { return hn::Add(lhs, rhs); }
+    // Can't use HWY_API since it implies `static`
+    HWY_INLINE HWY_FLATTEN auto operator()(auto lhs, auto rhs) const noexcept { return hn::Add(lhs, rhs); }
 };
 
 // Accumulator reduction by summing across all vector lanes of `accu`.
 struct LaneReduceSum {
-    HWY_INLINE auto operator()(auto d0, auto accu) const noexcept { return hn::ReduceSum(d0, accu); }
+    HWY_INLINE HWY_FLATTEN auto operator()(auto d0, auto accu) const noexcept { return hn::ReduceSum(d0, accu); }
 };
+
+template <typename AccuReducerFn, typename AccuV>
+HWY_API AccuV parallel_reduce_accumulators(AccuReducerFn accu_reducer_fn, AccuV accu0, AccuV accu1, AccuV accu2,
+                                           AccuV accu3) noexcept {
+    // 4-way reduction tree:
+    //  0 + 1 => 0, 2 + 3 => 2
+    //  0 + 2 => result
+    accu0 = accu_reducer_fn(accu0, accu1);
+    accu2 = accu_reducer_fn(accu2, accu3);
+    return accu_reducer_fn(accu0, accu2);
+}
+
+template <typename AccuReducerFn, typename AccuV>
+HWY_API AccuV parallel_reduce_accumulators(AccuReducerFn accu_reducer_fn, AccuV accu0, AccuV accu1, AccuV accu2,
+                                           AccuV accu3, AccuV accu4, AccuV accu5, AccuV accu6, AccuV accu7) noexcept {
+    // 8-way reduction tree:
+    //  first 0+1 => 0, 2+3 => 2, 4+5 => 4, 6+7 => 6
+    //  then  0+2 => 0, 4+6 => 4
+    //  then  0+4 => result
+    accu0 = accu_reducer_fn(accu0, accu1);
+    accu2 = accu_reducer_fn(accu2, accu3);
+    accu4 = accu_reducer_fn(accu4, accu5);
+    accu6 = accu_reducer_fn(accu6, accu7);
+
+    accu0 = accu_reducer_fn(accu0, accu2);
+    accu4 = accu_reducer_fn(accu4, accu6);
+
+    return accu_reducer_fn(accu0, accu4);
+}
 
 // The counter for the current intra-loop trip counter in an unrolled loop body.
 // E.g. for a loop with an unroll factor of 4, the dispatcher function will
@@ -513,17 +543,6 @@ struct HwyReduceKernel<UsesNAccumulators<4>, UnrolledByT, FnHasAccuArityT> {
     static constexpr size_t UnrollFactor = UnrolledByT::unrolled_by_v;
     static constexpr size_t Arity = FnHasAccuArityT::fn_has_accu_arity_v;
 
-    template <typename AccuReducerFn, typename AccuV>
-    HWY_INLINE static AccuV parallel_reduce_accumulators(AccuReducerFn accu_reducer_fn, AccuV accu0, AccuV accu1,
-                                                         AccuV accu2, AccuV accu3) noexcept {
-        // 4-way reduction tree:
-        //  0 + 1 => 0, 2 + 3 => 2
-        //  0 + 2 => result
-        accu0 = accu_reducer_fn(accu0, accu1);
-        accu2 = accu_reducer_fn(accu2, accu3);
-        return accu_reducer_fn(accu0, accu2);
-    }
-
     template <typename D, typename DA, typename T = hn::TFromD<D>, typename R = hn::TFromD<DA>, typename KernelFn,
               typename AccuReducerFn, typename LaneReducerFn>
     [[nodiscard]] static R elementwise(const D d, const DA da, const T* HWY_RESTRICT a, const size_t n_elems,
@@ -564,25 +583,6 @@ struct HwyReduceKernel<UsesNAccumulators<8>, UnrolledByT, FnHasAccuArityT> {
     static constexpr size_t AccumulatorCount = 8;
     static constexpr size_t UnrollFactor = UnrolledByT::unrolled_by_v;
     static constexpr size_t Arity = FnHasAccuArityT::fn_has_accu_arity_v;
-
-    template <typename AccuReducerFn, typename AccuV>
-    HWY_INLINE static AccuV parallel_reduce_accumulators(AccuReducerFn accu_reducer_fn, AccuV accu0, AccuV accu1,
-                                                         AccuV accu2, AccuV accu3, AccuV accu4, AccuV accu5,
-                                                         AccuV accu6, AccuV accu7) noexcept {
-        // 8-way reduction tree:
-        //  first 0+1 => 0, 2+3 => 2, 4+5 => 4, 6+7 => 6
-        //  then  0+2 => 0, 4+6 => 4
-        //  then  0+4 => result
-        accu0 = accu_reducer_fn(accu0, accu1);
-        accu2 = accu_reducer_fn(accu2, accu3);
-        accu4 = accu_reducer_fn(accu4, accu5);
-        accu6 = accu_reducer_fn(accu6, accu7);
-
-        accu0 = accu_reducer_fn(accu0, accu2);
-        accu4 = accu_reducer_fn(accu4, accu6);
-
-        return accu_reducer_fn(accu0, accu4);
-    }
 
     template <typename D, typename DA, typename T = hn::TFromD<D>, typename R = hn::TFromD<DA>, typename KernelFn,
               typename AccuReducerFn, typename LaneReducerFn>
