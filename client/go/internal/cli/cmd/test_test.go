@@ -68,6 +68,23 @@ func TestIllegalFileReference(t *testing.T) {
 	assert.Equal(t, "\nError: error in Step 2: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: See https://docs.vespa.ai/en/reference/applications/testing.html\n", stderr.String())
 }
 
+func TestSymlinkFileReference(t *testing.T) {
+	testsDir := filepath.Join(t.TempDir(), "system-test")
+	require.Nil(t, os.Mkdir(testsDir, 0755))
+	target, err := filepath.Abs("testdata/tests/body.json")
+	require.Nil(t, err)
+	require.Nil(t, os.Symlink(target, filepath.Join(testsDir, "body.json")))
+	testJson := `{"steps": [{"request": {"uri": "https://domain.tld", "body": "body.json"}}]}`
+	require.Nil(t, os.WriteFile(filepath.Join(testsDir, "test.json"), []byte(testJson), 0644))
+
+	client := &mock.HTTPClient{}
+	cli, _, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.NotNil(t, cli.Run("test", filepath.Join(testsDir, "test.json")))
+	assert.Empty(t, client.Requests)
+	assert.Contains(t, stderr.String(), "path may not contain symlinks, but 'body.json' does")
+}
+
 func TestIllegalRequestUri(t *testing.T) {
 	client := &mock.HTTPClient{}
 	client.NextStatus(200)
