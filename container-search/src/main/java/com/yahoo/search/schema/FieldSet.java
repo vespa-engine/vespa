@@ -65,7 +65,6 @@ public class FieldSet implements FieldInfo {
     /**
      * Returns the first field in this which is known by the schema, which is used to determine the properties of this.
      * Any inconsistency between the fields will have been warned about on deploy.
-     * Fields may be unknown since field sets may contain struct fields, which are not included in schemas.
      */
     Optional<Field> representativeField() {
         if (schema == null) return Optional.empty();

@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class SchemaInfoTestCase {
@@ -154,6 +156,80 @@ public class SchemaInfoTestCase {
     schema[0].summaryclass[0].fields[0].type "longstring"
     schema[0].summaryclass[0].fields[0].dynamic false""",
                      schemaInfoTester.schemaInfoConfig(schema));
+    }
+
+    @Test
+    void testStructFieldExporting() throws ParseException {
+        var registry = new RankProfileRegistry();
+        var builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+                          schema test {
+                              document test {
+                                  struct inner {
+                                      field code type string {}
+                                  }
+                                  struct person {
+                                      field name type string {}
+                                      field age type int {}
+                                      field address type inner {}
+                                  }
+                                  field people type array<person> {
+                                      indexing: summary
+                                      struct-field name {
+                                          indexing: attribute
+                                          explanation: The name of the person
+                                      }
+                                      struct-field age {
+                                          indexing: attribute
+                                      }
+                                  }
+                                  field tags type map<string, int> {
+                                      indexing: summary
+                                      struct-field key {
+                                          indexing: attribute
+                                      }
+                                  }
+                                  field location type position {
+                                      indexing: attribute
+                                  }
+                              }
+                          }
+                          """);
+        builder.build(true);
+        var schema = builder.getSchema();
+        var schemaInfo = new com.yahoo.schema.derived.SchemaInfo(schema, "index", registry,
+                                                                 new Summaries(schema, new BaseDeployLogger(), new TestProperties()));
+        var configBuilder = new SchemaInfoConfig.Builder();
+        schemaInfo.getConfig(configBuilder);
+        var config = configBuilder.build().schema(0);
+        assertEquals(List.of("location_zcurve",
+                             "people", "people.name", "people.age", "people.address", "people.address.code",
+                             "tags", "tags.key", "tags.value",
+                             "location"),
+                     config.field().stream().map(SchemaInfoConfig.Schema.Field::name).toList());
+
+        var name = field("people.name", config);
+        assertEquals("string", name.type());
+        assertTrue(name.attribute());
+        assertFalse(name.index());
+        assertEquals(SchemaInfoConfig.Schema.Field.MatchType.WORD, name.matchType());
+        assertEquals("The name of the person", name.explanation());
+
+        var age = field("people.age", config);
+        assertEquals("int", age.type());
+        assertTrue(age.attribute());
+        assertEquals(SchemaInfoConfig.Schema.Field.MatchType.NONE, age.matchType());
+
+        var code = field("people.address.code", config);
+        assertFalse(code.attribute());
+        assertFalse(code.index());
+
+        assertTrue(field("tags.key", config).attribute());
+        assertFalse(field("tags.value", config).attribute());
+    }
+
+    private SchemaInfoConfig.Schema.Field field(String name, SchemaInfoConfig.Schema schema) {
+        return schema.field().stream().filter(f -> f.name().equals(name)).findFirst().orElseThrow();
     }
 
     @Test

@@ -13,6 +13,7 @@ import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.FieldSet;
+import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.schema.Index;
@@ -110,7 +111,8 @@ public final class SchemaInfo extends Derived {
         Set<String> added = new HashSet<>();
         for (var field : schema.allFieldsList()) {
             if ( ! added.add(field.getName())) continue;
-            addFieldConfig(field, schemaBuilder);
+            addFieldConfig(field, field.doesAttributing(), schemaBuilder);
+            addStructFieldsConfig(field, added, schemaBuilder);
             if (field.isImportedField()) continue;
             for (var index : field.getIndices().values()) {
                 if ( ! index.getName().equals(field.getName())) // additional index
@@ -123,7 +125,19 @@ public final class SchemaInfo extends Derived {
         }
     }
 
-    private void addFieldConfig(ImmutableSDField field, SchemaInfoConfig.Schema.Builder schemaBuilder) {
+    /** Adds the struct fields of the given field, recursively, by their full name, e.g. "myStruct.myField". */
+    private void addStructFieldsConfig(ImmutableSDField field, Set<String> added, SchemaInfoConfig.Schema.Builder schemaBuilder) {
+        if ( ! field.usesStructOrMap()) return;
+        if (GeoPos.isAnyPos(field.getDataType())) return;
+        for (var structField : field.getStructFields()) {
+            if ( ! added.add(structField.getName())) continue;
+            // Struct fields may have attributes without doing attributing themselves, if their parent field has indexing
+            addFieldConfig(structField, structField.getAttributes().containsKey(structField.getName()), schemaBuilder);
+            addStructFieldsConfig(structField, added, schemaBuilder);
+        }
+    }
+
+    private void addFieldConfig(ImmutableSDField field, boolean isAttribute, SchemaInfoConfig.Schema.Builder schemaBuilder) {
         var fieldBuilder = new SchemaInfoConfig.Schema.Field.Builder();
         fieldBuilder.name(field.getName());
         fieldBuilder.type(toTypeSpec(field.getDataType()));
@@ -131,9 +145,9 @@ public final class SchemaInfo extends Derived {
             if (alias.getValue().equals(field.getName()))
                 fieldBuilder.alias(alias.getKey());
         }
-        fieldBuilder.attribute(field.doesAttributing());
+        fieldBuilder.attribute(isAttribute);
         fieldBuilder.index(field.doesIndexing());
-        fieldBuilder.matchType(toMatchType(field, field.isSearchable()));
+        fieldBuilder.matchType(toMatchType(field, isAttribute || field.doesIndexing()));
         field.getExplanation().ifPresent(fieldBuilder::explanation);
         for (var fastMapFields : field.getFastMapSearches()) {
             fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
