@@ -40,6 +40,13 @@ namespace vespalib::hwaccelerated {
     return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(dot_product_f64)(a, b, sz);
 }
 
+// `lhs` must have been previously rotated into the same frame of reference as the
+// quantized vector `packed_rhs`, or the result will be bogus.
+[[nodiscard]] inline float eden_f32_q_dot_product(const float* lhs, const uint8_t* packed_rhs, const uint8_t bits,
+                                                  size_t sz) noexcept {
+    return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(eden_f32_q_dot_product)(lhs, packed_rhs, bits, sz);
+}
+
 [[nodiscard]] inline double squared_euclidean_distance(const int8_t* a, const int8_t* b, size_t sz) noexcept {
     return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(squared_euclidean_distance_i8)(a, b, sz);
 }

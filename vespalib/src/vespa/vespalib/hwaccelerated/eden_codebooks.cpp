@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "codebooks.h"
+#include "eden_codebooks.h"
 
-namespace vespalib::quant::codebooks {
+namespace vespalib::hwaccelerated::codebooks {
 
 // clang-format off: intentional array element indents
 
@@ -42,7 +42,7 @@ namespace vespalib::quant::codebooks {
  * number of distinct centroid values, implicitly negating a centroid value if its
  * index is less than |centroids|/2
  */
-const float unit_norm_centroids_f32[4][16] = {
+const float eden_unit_norm_centroids_f32[4][16] = {
     // 1 bit:
     {-0.7978845608028653,  0.7978845608028653},
     // 2 bits:
@@ -59,16 +59,16 @@ const float unit_norm_centroids_f32[4][16] = {
 
 // clang-format on
 
-// Hex floats are used to ensure we're bitwise exact with the truncated floats.
-const float unit_norm_centroids_bf16_as_f32[4][16] = {
+// These floats all have a bitwise representation where the 16 LSBs are zero.
+const float eden_unit_norm_centroids_bf16_as_f32[4][16] = {
     // 1 bit:
-    {-0x1.98p-1, 0x1.98p-1},
+    {-0.796875, 0.796875},
     // 2 bits:
-    {-0x1.cep-2, -0x1.82p+0, 0x1.cep-2, 0x1.82p+0},
+    {-0.45117188, -1.5078125, 0.45117188, 1.5078125},
     // 3 bits:
-    {-0x1.f4p-3, -0x1.82p-1, -0x1.58p+0, -0x1.12p+1, 0x1.f4p-3, 0x1.82p-1, 0x1.58p+0, 0x1.12p+1},
+    {-0.24414062, -0.75390625, -1.34375, -2.140625, 0.24414062, 0.75390625, 1.34375, 2.140625},
     // 4 bits:
-    {-0x1.06p-3, -0x1.8cp-2, -0x1.5p-1, -0x1.e2p-1, -0x1.4p+0, -0x1.9ep+0, -0x1.08p+1, -0x1.5cp+1, 0x1.06p-3,
-     0x1.8cp-2, 0x1.5p-1, 0x1.e2p-1, 0x1.4p+0, 0x1.9ep+0, 0x1.08p+1, 0x1.5cp+1}};
+    {-0.12792969, -0.38671875, -0.65625, -0.94140625, -1.25, -1.6171875, -2.0625, -2.71875, 0.12792969, 0.38671875,
+     0.65625, 0.94140625, 1.25, 1.6171875, 2.0625, 2.71875}};
 
-} // namespace vespalib::quant::codebooks
+} // namespace vespalib::hwaccelerated::codebooks

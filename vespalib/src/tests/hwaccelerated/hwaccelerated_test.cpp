@@ -5,6 +5,7 @@
 
 #include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/hwaccelerated/eden_codebooks.h>
 #include <vespa/vespalib/hwaccelerated/float4.h>
 #include <vespa/vespalib/hwaccelerated/float8_luts.h>
 #include <vespa/vespalib/hwaccelerated/fn_table.h>
@@ -458,6 +459,106 @@ TEST_F(HwAcceleratedTest, can_pack_and_unpack_3_bit_values) {
 
 TEST_F(HwAcceleratedTest, can_pack_and_unpack_4_bit_values) {
     do_run_bit_pack_unpack_tests(4);
+}
+
+namespace {
+
+void check_f32_q_dot_product_eq(std::span<const IAccelerated*> accels, std::span<const float> lhs,
+                                std::span<const uint8_t> packed_rhs, const uint8_t bits, const size_t sz,
+                                const float expected) {
+    for (const auto* accel : accels) {
+        SCOPED_TRACE(accel->target_info().to_string());
+        ScopedFnTableOverride fn_scope(accel->fn_table());
+        const float           actual = eden_f32_q_dot_product(lhs.data(), packed_rhs.data(), bits, sz);
+        // Floating point errors compound with dimensionality, so fudge the epsilon a bit to compensate.
+        ASSERT_THAT(actual, FloatNear(expected, 0.000001 * sz)) << "with bits=" << int(bits) << ", length=" << sz;
+    }
+}
+
+// SIMD quantized vector processing requires juggling multiple vector BF16 LUT lookups and
+// fusing them into new, wider vectors. Getting things wrong here (e.g. wrong high/low vector
+// part extraction, wrong lane interleaving etc.) is uncomfortably easy. This test does its
+// best to explicitly test that each f32 and quantized dimension is properly aligned during
+// vectorized dot product computation.
+void verify_eden_f32_q_dot_product_no_lane_confusion(std::span<const IAccelerated*> accels, const uint8_t bits,
+                                                     const size_t test_length) {
+    CHECK(bits >= 1 && bits <= 4);
+    const auto codebook = codebooks::eden_bf16_codebook(bits);
+
+    std::vector<float>   lhs(test_length);
+    std::vector<uint8_t> rhs_idx(test_length);
+    const uint8_t        highest_centroid_idx = (1u << bits) - 1; // also has the highest centroid _value_
+    std::ranges::fill(rhs_idx, highest_centroid_idx);
+
+    std::vector<uint8_t> packed(packed_bytes(bits, test_length));
+    bit_pack_reference_output(rhs_idx.data(), packed.data(), bits, test_length);
+
+    const float c = codebook[highest_centroid_idx];
+    const float expected = 100.0f * c;
+    for (size_t i = 0; i < test_length; ++i) {
+        // Only have a non-zero f32 element in a single position. The full dot product
+        // should then always be equal to that value*the matching centroid value.
+        lhs[i] = 100.0f;
+        ASSERT_NO_FATAL_FAILURE(check_f32_q_dot_product_eq(accels, lhs, packed, bits, test_length, expected));
+        // Conversely, zeroing out this position should result in a dot product of zero.
+        // This also conveniently leaves us with an all-zero vector for the next iteration.
+        lhs[i] = 0.0f;
+        ASSERT_NO_FATAL_FAILURE(check_f32_q_dot_product_eq(accels, lhs, packed, bits, test_length, 0));
+    }
+}
+
+void verify_eden_f32_q_dot_product(std::span<const IAccelerated*> accels, const uint8_t bits,
+                                   const size_t test_length) {
+    CHECK(bits >= 1 && bits <= 4);
+    CHECK(test_length >= 32); // Due to boundary testing
+    const auto             codebook = codebooks::eden_bf16_codebook(bits);
+    Xoshiro256PlusPlusPrng prng(0x1baaadf00000d);
+
+    std::uniform_real_distribution<float> f_dist(-1, 1);
+
+    std::vector<float>   lhs(test_length), rhs(test_length);
+    std::vector<uint8_t> rhs_idx(test_length);
+    std::vector<uint8_t> packed(packed_bytes(bits, test_length));
+
+    constexpr size_t rounds = 100;
+    for (size_t i = 0; i < rounds; ++i) {
+        std::ranges::generate(lhs, [&] noexcept { return f_dist(prng); });
+        std::ranges::generate(rhs_idx, [&] noexcept { return prng() & ((1u << bits) - 1); });
+        std::ranges::transform(rhs_idx.begin(), rhs_idx.end(), rhs.begin(),
+                               [&](const uint8_t idx) noexcept { return codebook[idx]; });
+        for (size_t j = 0; j < 32; j++) {
+            const size_t           trunc_length = test_length - j;
+            std::span<const float> trunc_lhs(lhs.data() + j, trunc_length);
+            std::span<uint8_t>     trunc_packed(packed.data(), packed_bytes(bits, trunc_length));
+            bit_pack_reference_output(rhs_idx.data() + j, trunc_packed.data(), bits, trunc_length);
+            const float real_dot = dot_product(lhs.data() + j, rhs.data() + j, trunc_length);
+            ASSERT_NO_FATAL_FAILURE(
+                check_f32_q_dot_product_eq(accels, trunc_lhs, trunc_packed, bits, trunc_length, real_dot));
+        }
+    }
+}
+
+} // namespace
+
+TEST_F(HwAcceleratedTest, eden_f32_q_dot_product_does_not_have_lane_confusion) {
+    auto accelerators = all_accelerators_to_test();
+    for (uint8_t bits : {1, 2, 3, 4}) {
+        for (ssize_t sz : {2, 8, 32, 128, 512, 2048}) {
+            for (ssize_t boundary : {-1, 0, 1}) {
+                ASSERT_NO_FATAL_FAILURE(
+                    verify_eden_f32_q_dot_product_no_lane_confusion(accelerators, bits, sz + boundary));
+            }
+        }
+    }
+}
+
+TEST_F(HwAcceleratedTest, eden_f32_q_dot_product_impls_match_source_of_truth) {
+    auto accelerators = all_accelerators_to_test();
+    for (uint8_t bits : {1, 2, 3, 4}) {
+        for (size_t sz : {32, 64, 128, 256, 1024, 4096, 8192}) {
+            ASSERT_NO_FATAL_FAILURE(verify_eden_f32_q_dot_product(accelerators, bits, sz));
+        }
+    }
 }
 
 using namespace dispatch;
