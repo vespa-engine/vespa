@@ -13,6 +13,7 @@ import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
@@ -23,6 +24,7 @@ import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
+import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
@@ -241,6 +243,38 @@ public class DocumentScriptTestCase {
         doc.setFieldValue("myField", fieldValue.clone());
         doc = newScript(docType).execute(fieldValuesFactory, doc, false, null);
         return doc.getFieldValue("myField");
+    }
+
+    @Test
+    public void requireThatElementUpdateOfArrayAttributeIsRejected() {
+        DocumentType docType = new DocumentType("myDocumentType");
+        docType.addField("myArray", DataType.getArray(DataType.STRING));
+        var script = new DocumentScript(docType, List.of("myArray"),
+                                        new ScriptExpression(new StatementExpression(new InputExpression("myArray"),
+                                                                                     new AttributeExpression("myArray"))),
+                                        Set.of());
+        DocumentUpdate update = new DocumentUpdate(docType, "id:ns:myDocumentType::");
+        update.addFieldUpdate(FieldUpdate.createMap(docType.getField("myArray"), new IntegerFieldValue(0),
+                                                    ValueUpdate.createAssign(new StringFieldValue("value"))));
+        try {
+            script.execute(fieldValuesFactory, update, null);
+            fail("Expected exception");
+        }
+        catch (InvalidInputException e) {
+            assertEquals("Field 'myArray' is an array attribute, and updating single elements of it is not supported " +
+                         "yet. This is being worked on. Assign the whole field instead.",
+                         e.getMessage());
+        }
+    }
+
+    @Test
+    public void requireThatElementUpdateOfArrayIndexIsAccepted() {
+        DocumentType docType = new DocumentType("myDocumentType");
+        docType.addField("myArray", DataType.getArray(DataType.STRING));
+        DocumentUpdate update = new DocumentUpdate(docType, "id:ns:myDocumentType::");
+        update.addFieldUpdate(FieldUpdate.createMap(docType.getField("myArray"), new IntegerFieldValue(0),
+                                                    ValueUpdate.createAssign(new StringFieldValue("value"))));
+        newScript(docType).execute(fieldValuesFactory, update, null);
     }
 
     private static ValueUpdate<?> processFieldUpdate(FieldValue fieldValue) {

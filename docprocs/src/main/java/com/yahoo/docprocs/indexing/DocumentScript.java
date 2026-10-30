@@ -21,6 +21,7 @@ import com.yahoo.document.update.RemoveValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.FieldPathUpdateHelper;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
+import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
@@ -70,6 +71,7 @@ class DocumentScript {
         for (FieldUpdate fieldUpdate : update.fieldUpdates()) {
             requireThatFieldIsDeclaredInDocument(fieldUpdate.getField());
             requireThatFieldUpdateIsSupported(fieldUpdate);
+            requireThatNotElementUpdateOfArrayAttribute(fieldUpdate);
             for (ValueUpdate<?> valueUpdate : fieldUpdate.getValueUpdates()) {
                 removeAnyLinguisticsSpanTree(valueUpdate);
             }
@@ -126,6 +128,29 @@ class DocumentScript {
                                                 "not support updating or removing single array elements. " +
                                                 "Assign the whole field instead.");
             }
+        }
+    }
+
+    /**
+     * Updating a single element of an array attribute is not supported by the content nodes yet.
+     * TODO: Remove when it is.
+     */
+    private void requireThatNotElementUpdateOfArrayAttribute(FieldUpdate fieldUpdate) {
+        Field field = fieldUpdate.getField();
+        if (field == null || !(field.getDataType() instanceof ArrayDataType)) {
+            return;
+        }
+        if (fieldUpdate.getValueUpdates().stream().noneMatch(valueUpdate -> valueUpdate instanceof MapValueUpdate)) {
+            return;
+        }
+        // Array, as the lambda below cannot assign to a local variable
+        boolean[] isAttribute = { false };
+        expression.select(obj -> obj instanceof AttributeExpression attribute && attribute.getFieldName().equals(field.getName()),
+                          obj -> isAttribute[0] = true);
+        if (isAttribute[0]) {
+            throw new InvalidInputException("Field '" + field.getName() + "' is an array attribute, and updating " +
+                                            "single elements of it is not supported yet. This is being worked on. " +
+                                            "Assign the whole field instead.");
         }
     }
 
