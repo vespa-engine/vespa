@@ -15,12 +15,14 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -138,6 +140,15 @@ public class ElementAssignUpdateTestCase {
         var out = (AssignFieldPathUpdate)upd.fieldPathUpdates().iterator().next();
         assertEquals("my_structs[1]", out.getOriginalFieldPath());
         assertEquals(element, out.getNewValue());
+    }
+
+    @Test
+    public void require_that_only_statements_outputting_to_target_field_are_kept() throws ParseException {
+        var script = ScriptExpression.fromString("{ input my_str | for_each { lowercase } | index my_str; " +
+                                                 "input my_str | trim | index my_other; }");
+        assertEquals(ScriptExpression.fromString("{ input my_str | for_each { lowercase } | index my_str; }"),
+                     ElementAssignFieldPathUpdateFieldValues.statementsOutputting(script, "my_str"));
+        assertNull(ElementAssignFieldPathUpdateFieldValues.statementsOutputting(script, "my_int"));
     }
 
     // -------------- HELPERS ---------------------

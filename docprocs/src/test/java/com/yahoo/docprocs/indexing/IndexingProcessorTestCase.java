@@ -574,6 +574,23 @@ public class IndexingProcessorTestCase {
         assertTrue(output.fieldUpdates().isEmpty());
     }
 
+    /** Statements writing other fields are not run, as their output is dropped and they may be expensive or fail. */
+    @Test
+    public void requireThatElementAssignDoesNotRunStatementsForOtherFields() {
+        var tester = elementAssignTester("input a | for_each { lowercase } | index a",
+                                         "input a | embed | attribute e");
+        DocumentType type = tester.getDocumentType("test");
+        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
+        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new StringFieldValue("HELLO")));
+
+        DocumentUpdate output = (DocumentUpdate)tester.process(input);
+        assertEquals(1, output.fieldPathUpdates().size());
+        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
+        assertEquals("a[2]", assign.getOriginalFieldPath());
+        assertEquals(new StringFieldValue("hello"), assign.getNewValue());
+        assertTrue(output.fieldUpdates().isEmpty());
+    }
+
     /** When the script routes the target field elsewhere only, there is no processed element to emit. */
     @Test
     public void requireThatElementAssignIsPassedOnWhenScriptDoesNotOutputTargetField() {
@@ -595,13 +612,15 @@ public class IndexingProcessorTestCase {
         test.addField("a", DataType.getArray(DataType.STRING));
         test.addField("b", DataType.STRING);
         test.addField("c", DataType.getArray(DataType.STRING));
+        test.addField("e", new TensorDataType(TensorType.fromSpec("tensor<float>(p{},x[4])")));
         documentTypes.register(test);
 
         var ilscript = new IlscriptsConfig.Ilscript.Builder()
                                                    .doctype("test")
                                                    .docfield("a")
                                                    .docfield("b")
-                                                   .docfield("c");
+                                                   .docfield("c")
+                                                   .docfield("e");
 
         for (String content : ilscriptContents) {
             ilscript.content(content);

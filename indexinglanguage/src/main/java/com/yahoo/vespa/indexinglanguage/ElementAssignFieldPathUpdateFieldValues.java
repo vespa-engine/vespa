@@ -11,6 +11,8 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.FieldValues;
+import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -89,7 +91,29 @@ public class ElementAssignFieldPathUpdateFieldValues implements UpdateFieldValue
 
     @Override
     public Expression getExpression(Expression expression) {
-        return optimizedExpression != null ? optimizedExpression : expression;
+        if (optimizedExpression != null) return optimizedExpression;
+        Expression statements = statementsOutputting(expression, targetField().getName());
+        return statements != null ? statements : new ScriptExpression();
+    }
+
+    /**
+     * Returns the statements of the given expression which output to the given field, or null if there are none.
+     *
+     * Only the assigned element of the target field is emitted, so statements writing other (derived) fields
+     * would run for nothing. Some, like embed or generate, are expensive and may fail the whole update.
+     */
+    public static Expression statementsOutputting(Expression expression, String fieldName) {
+        if (expression instanceof ScriptExpression script) {
+            var statements = script.asList().stream().filter(statement -> outputsTo(statement, fieldName)).toList();
+            return statements.isEmpty() ? null : new ScriptExpression(statements);
+        }
+        return outputsTo(expression, fieldName) ? expression : null;
+    }
+
+    private static boolean outputsTo(Expression expression, String fieldName) {
+        var extractor = new OutputExpression.OutputFieldNameExtractor();
+        expression.select(extractor, extractor);
+        return extractor.getOutputFieldNames().contains(fieldName);
     }
 
     @Override
