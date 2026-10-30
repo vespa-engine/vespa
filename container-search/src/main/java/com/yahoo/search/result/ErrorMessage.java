@@ -34,6 +34,9 @@ public class ErrorMessage extends com.yahoo.processing.request.ErrorMessage {
     /** The source producing this error, not always set */
     private String source = null;
 
+    /** Whether other nodes searching the same content answered despite this error, see {@link #isPartial} */
+    private boolean partial = false;
+
     public ErrorMessage(int code, String message) {
         super(code, message);
     }
@@ -202,9 +205,21 @@ public class ErrorMessage extends com.yahoo.processing.request.ErrorMessage {
     /** Returns the source producing this error, or null if no source is specified */
     public String getSource() { return source; }
 
+    /**
+     * Sets whether this error left the rest of its content cluster's search intact: the nodes it
+     * names failed, but other nodes searching the same content answered. This is not rendered.
+     */
+    public void setPartial(boolean partial) { this.partial = partial; }
+
+    /**
+     * Returns whether this error left the rest of its content cluster's search intact.
+     * A result whose errors are all partial is a degraded success rather than a failure.
+     */
+    public boolean isPartial() { return partial; }
+
     @Override
     public int hashCode() {
-        return super.hashCode() + (source == null ? 0 : 31 * source.hashCode());
+        return super.hashCode() + (source == null ? 0 : 31 * source.hashCode()) + (partial ? 1 : 0);
     }
 
     @Override
@@ -212,6 +227,7 @@ public class ErrorMessage extends com.yahoo.processing.request.ErrorMessage {
         if (!super.equals(o)) return false;
 
         ErrorMessage other = (ErrorMessage) o;
+        if (this.partial != other.partial) return false;
         if (this.source != null) {
             if (!this.source.equals(other.source)) return false;
         } else {

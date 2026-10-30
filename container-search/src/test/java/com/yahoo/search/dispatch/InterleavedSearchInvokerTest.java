@@ -42,6 +42,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
+import static com.yahoo.container.protect.Error.BACKEND_COMMUNICATION_ERROR;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_ANN_TIMEOUT;
@@ -259,6 +260,44 @@ public class InterleavedSearchInvokerTest {
             assertFalse(cov.isDegraded());
             assertFalse(cov.isDegradedByNonIdealState());
             assertFalse(cov.isDegradedByTimeout());
+        }
+    }
+
+    @Test
+    void connectionFailureDuringQueryIsPartialWhenOtherNodesAnswer() throws IOException {
+        invokers.add(new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError("Connection reset"), failedNodeCoverage()));
+        invokers.add(new MockInvoker(1, createCoverage(49845, 49845, 49845, 1, 1, 0)));
+        try (SearchInvoker invoker = createInterleavedInvoker(new Group(0, List.of()), 0)) {
+
+            // The failed node answers first, before it is known whether any other node will
+            expectedEvents.add(new Event(null, 100, 0));
+            expectedEvents.add(new Event(null, 200, 1));
+
+            Result result = invoker.search(query, 1.0);
+
+            assertEquals(1, result.hits().getErrorHit().errors().size());
+            ErrorMessage error = result.hits().getError();
+            assertEquals(BACKEND_COMMUNICATION_ERROR.code, error.getCode());
+            assertTrue(error.isPartial(), "Another node in the group answered");
+            assertEquals(1, result.getCoverage(false).getNodes());
+            assertEquals(2, result.getCoverage(false).getNodesTried());
+        }
+    }
+
+    @Test
+    void connectionFailuresDuringQueryAreNotPartialWhenNoNodeAnswers() throws IOException {
+        invokers.add(new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError("Connection reset"), failedNodeCoverage()));
+        invokers.add(new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError("Connection refused"), failedNodeCoverage()));
+        try (SearchInvoker invoker = createInterleavedInvoker(new Group(0, List.of()), 0)) {
+
+            expectedEvents.add(new Event(null, 100, 0));
+            expectedEvents.add(new Event(null, 200, 1));
+
+            Result result = invoker.search(query, 1.0);
+
+            Set<ErrorMessage> errors = result.hits().getErrorHit().errors();
+            assertEquals(2, errors.size());
+            assertTrue(errors.stream().noneMatch(ErrorMessage::isPartial), "No node in the group searched");
         }
     }
 
@@ -580,6 +619,12 @@ public class InterleavedSearchInvokerTest {
         coverage.setTargetActive(targetActiveDocs);
         coverage.setNodesTried(nodesTried);
         coverage.setDegradedReason(degradedReason);
+        return coverage;
+    }
+
+    private static Coverage failedNodeCoverage() {
+        Coverage coverage = new Coverage(0, 0, 0);
+        coverage.setNodesTried(1);
         return coverage;
     }
 
