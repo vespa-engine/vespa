@@ -113,6 +113,10 @@ public final class Capacity {
         return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, account, cloudResourceTags, clusterInfo);
     }
 
+    public Capacity withCanFail(boolean canFail) {
+        return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, cloudAccount, cloudResourceTags, clusterInfo);
+    }
+
     public Capacity withLimits(ClusterResources min, ClusterResources max) {
         return withLimits(min, max, IntRange.empty());
     }
