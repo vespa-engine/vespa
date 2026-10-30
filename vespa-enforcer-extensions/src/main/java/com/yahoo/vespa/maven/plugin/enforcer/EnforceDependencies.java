@@ -6,9 +6,8 @@ import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.apache.maven.artifact.versioning.VersionRange;
-import org.apache.maven.enforcer.rule.api.EnforcerRule;
+import org.apache.maven.enforcer.rule.api.AbstractEnforcerRule;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
-import org.apache.maven.enforcer.rule.api.EnforcerRuleHelper;
 import org.apache.maven.enforcer.rules.utils.ArtifactMatcher;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.DefaultProjectBuildingRequest;
@@ -17,9 +16,9 @@ import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
-import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
-import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,16 +34,27 @@ import java.util.regex.Pattern;
  *
  * @author bjorncs
  */
-@SuppressWarnings("deprecation")
-public class EnforceDependencies implements EnforcerRule {
+@Named("enforceDependencies")
+public class EnforceDependencies extends AbstractEnforcerRule {
+
+    private final MavenProject project;
+    private final MavenSession session;
+    private final DependencyGraphBuilder graphBuilder;
 
     private List<String> allowedDependencies = List.of();
     private boolean failOnUnmatched = true;
 
+    @Inject
+    public EnforceDependencies(MavenProject project, MavenSession session, DependencyGraphBuilder graphBuilder) {
+        this.project = project;
+        this.session = session;
+        this.graphBuilder = graphBuilder;
+    }
+
     @Override
-    public void execute(EnforcerRuleHelper helper) throws EnforcerRuleException {
-        validateDependencies(getAllDependencies(helper), Set.copyOf(allowedDependencies), failOnUnmatched);
-        helper.getLog().info("The 'enforceDependencies' validation completed successfully");
+    public void execute() throws EnforcerRuleException {
+        validateDependencies(getAllDependencies(), Set.copyOf(allowedDependencies), failOnUnmatched);
+        getLog().info("The 'enforceDependencies' validation completed successfully");
     }
 
     static void validateDependencies(Set<Artifact> dependencies, Set<String> allowedRules, boolean failOnUnmatched)
@@ -80,17 +90,14 @@ public class EnforceDependencies implements EnforcerRule {
         }
     }
 
-    private static Set<Artifact> getAllDependencies(EnforcerRuleHelper helper) throws EnforcerRuleException {
+    private Set<Artifact> getAllDependencies() throws EnforcerRuleException {
         try {
-            MavenProject project = (MavenProject) helper.evaluate("${project}");
-            MavenSession session = (MavenSession) helper.evaluate("${session}");
-            DependencyGraphBuilder graphBuilder = helper.getComponent(DependencyGraphBuilder.class);
             ProjectBuildingRequest buildingRequest =
                     new DefaultProjectBuildingRequest(session.getProjectBuildingRequest());
             buildingRequest.setProject(project);
             DependencyNode root = graphBuilder.buildDependencyGraph(buildingRequest, null);
             return getAllRecursive(root);
-        } catch (ExpressionEvaluationException | DependencyGraphBuilderException | ComponentLookupException e) {
+        } catch (DependencyGraphBuilderException e) {
             throw new EnforcerRuleException(e.getMessage(), e);
         }
     }
@@ -157,10 +164,5 @@ public class EnforceDependencies implements EnforcerRule {
     public List<String> getAllowed() { return allowedDependencies; }
     public void setFailOnUnmatchedRule(boolean enabled) { this.failOnUnmatched = enabled; }
     public boolean isFailOnUnmatchedRule() { return failOnUnmatched; }
-
-    // Mark rule as not cachable
-    @Override public boolean isCacheable() { return false; }
-    @Override public boolean isResultValid(EnforcerRule enforcerRule) { return false; }
-    @Override public String getCacheId() { return ""; }
 
 }

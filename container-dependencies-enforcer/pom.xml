@@ -59,7 +59,7 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.EnforceDependencies">
+                                <enforceDependencies>
                                     <allowed>
                                         <include>aopalliance:aopalliance:${aopalliance.vespa.version}:provided</include>
                                         <include>com.fasterxml.jackson.core:jackson-annotations:${jackson-annotations.vespa.version}:provided</include>
