@@ -47,6 +47,10 @@ constexpr size_t scale_bytes = sizeof(float);
     return buf + scale_bytes;
 }
 
+[[nodiscard]] std::span<const float> f32_codebook(uint8_t bits) noexcept {
+    return {codebooks::unit_norm_centroids_f32[bits - 1], 1u << bits};
+}
+
 } // namespace
 
 EdenQuantizer::EdenQuantizer(const size_t dimensions, const uint8_t bits, const uint64_t seed)
@@ -118,6 +122,11 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
     _rotator.rotate_forward(_rot_tmp);
     // By convention, `y <- Rx`, i.e. the result of rotating `x` by matrix `R`
     const float* y = _rot_tmp.data();
+    // Use two codebooks, one higher precision for selecting the nearest centroids
+    // (meaning ever so slightly more statistically optimal threshold placement), and
+    // one for mapping the resulting centroid index to a lower precision floating
+    // point value.
+    const auto   selection_codebook = f32_codebook(_bits);
     const auto   codebook = my_codebook();
     // Normalization factor to bring each rotated coordinate into expected N(0, 1).
     // Moving the sqrt(d) factor here means that we don't have to precompute scaled
@@ -140,7 +149,7 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
     uint8_t* idx_buf = lhs_scratch_idx_space();
     if (quant_mode == QuantMode::InnerProduct) { // EDEN-unbiased
         for (size_t i = 0; i < d; ++i) {
-            const uint8_t idx = closest_centroid_index<float>(y[i] * nx, codebook);
+            const uint8_t idx = closest_centroid_index<float>(y[i] * nx, selection_codebook);
             const float   c_i = codebook[idx];
             yq_dot += y[i] * c_i;
             idx_buf[i] = idx;
@@ -149,7 +158,7 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
     } else /* MSE/EDEN-biased */ {
         float q_norm2 = 0; // _squared_ Euclidean norm
         for (size_t i = 0; i < d; ++i) {
-            const uint8_t idx = closest_centroid_index<float>(y[i] * nx, codebook);
+            const uint8_t idx = closest_centroid_index<float>(y[i] * nx, selection_codebook);
             const float   c_i = codebook[idx];
             yq_dot += y[i] * c_i;
             q_norm2 += c_i * c_i;
