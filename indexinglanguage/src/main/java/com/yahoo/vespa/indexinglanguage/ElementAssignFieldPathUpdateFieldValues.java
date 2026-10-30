@@ -21,10 +21,17 @@ import java.util.logging.Logger;
  * Adapts a field path update with assign method to execute an indexing script on it.
  *
  * Transforms field path update { "assign": { "arr[index]": value } } to a partial document
- * with an array of size 1. The index is temporarily set to 0 to perform the indexing script
- * on the partial document. This is necessary because assigning to an index out of bounds, in
- * this case over 0, would be no-op for field path updates. The getOutput then reassembles the
- * new assign field path update.
+ * holding the value as the only element of the array, at index 0, and runs the indexing script
+ * on that. The update itself cannot be applied to build the partial document, as assigning to an
+ * index beyond the array size is a no-op for field path updates. The getOutput then reassembles
+ * an assign of the processed element to the original field path.
+ *
+ * This assumes the statements outputting to the target field process each element independently
+ * of the others, e.g. <code>for_each { ... }</code>, <code>index</code>, <code>attribute</code>,
+ * <code>summary</code> or <code>passthrough</code>, as the statements generated from a schema do.
+ * The element is then processed the same way as it would be in a put of the whole array. A statement
+ * whose output for an element depends on the rest of the array, its size or the element's position
+ * sees only a one-element array here and would silently produce a different value than in a put.
  *
  * @author johsol
  */
@@ -59,6 +66,7 @@ public class ElementAssignFieldPathUpdateFieldValues implements UpdateFieldValue
         DocumentUpdate out = new DocumentUpdate(doc.getDataType(), doc.getId());
         FieldValue processed = doc.getFieldValue(targetField());
         if (processed instanceof Array<?> array && array.size() == 1) {
+            // Element-wise processing (see class comment) maps the single input element to this one
             // Cloning the field path update, restoring the original element index
             String path = targetField().getName() + "[" + elementIndex() + "]";
             var newValue = array.getFieldValue(0);
