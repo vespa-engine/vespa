@@ -45,9 +45,7 @@ public class SchemaDataTypeValidatorTestCase {
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("For cluster 'content', schema 'simple': The following complex fields have struct fields " +
-                                 "with 'indexing: index' which is not supported: " +
-                                 "baz (baz.key: the complex field itself has 'indexing: index'; " +
-                                 "baz.value: the complex field itself has 'indexing: index'). " +
+                                 "with 'indexing: index' which is not supported: baz (baz.key, baz.value). " +
                                  "Remove setting or change to 'indexing: attribute' if needed for matching.",
                          e.getMessage());
         }

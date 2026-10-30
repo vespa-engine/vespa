@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.model.deploy.TestDeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
+import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.content.utils.SchemaBuilder;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 
@@ -47,6 +50,13 @@ public abstract class ContentClusterFixture {
         return new ContentClusterBuilder().build(
                 ContentClusterUtils.createMockRoot(
                         List.of(new SchemaBuilder().content(sdContent).build())));
+    }
+
+    protected static ContentCluster createCluster(String sdContent, DocType docType, TestProperties properties) {
+        return new ContentClusterBuilder().docTypes(List.of(docType)).build(
+                ContentClusterUtils.createMockRoot(
+                        List.of(new SchemaBuilder().content(sdContent).build()),
+                        TestDeployState.createBuilder().properties(properties)));
     }
 
     protected DocumentDatabase currentDb() {

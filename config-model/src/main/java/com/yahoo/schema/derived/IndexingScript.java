@@ -97,10 +97,11 @@ public final class IndexingScript extends Derived {
      * This is only used in indexed mode, as streaming search tokenizes struct fields itself.
      */
     public static ScriptExpression structFieldIndexingScript(ImmutableSDField field, Schema schema) {
-        if ( ! ComplexIndexFieldUtils.hasSupportedIndexedStructFields(field)) return new ScriptExpression();
+        var structFields = ComplexIndexFieldUtils.supportedIndexedStructFields(field, ComplexIndexFieldUtils.Mode.of(schema));
+        if (structFields.isEmpty()) return new ScriptExpression();
         var expressions = new ArrayList<Expression>();
         expressions.add(new InputExpression(field.getName()));
-        for (ImmutableSDField structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field)) {
+        for (ImmutableSDField structField : structFields) {
             expressions.add(new ForEachFieldExpression(ComplexAttributeFieldUtils.localStructFieldName(field, structField),
                                                        annotateExpression(structField, schema)));
         }

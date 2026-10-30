@@ -117,6 +117,7 @@ public class ComplexFieldsValidatorTestCase {
             "struct topic {",
             "  field id type string {}",
             "  field count type int {}",
+            "  field label type string {}",
             "  field desc type string {}",
             "}",
             "struct outer {",
@@ -126,6 +127,7 @@ public class ComplexFieldsValidatorTestCase {
             "  indexing: summary",
             "  struct-field id { indexing: index }",
             "  struct-field count { indexing: index | attribute }",
+            "  struct-field label { indexing: index | attribute }",
             "  struct-field desc { indexing: attribute }",
             "}",
             "field single type topic {",
@@ -145,10 +147,14 @@ public class ComplexFieldsValidatorTestCase {
             "}");
 
     private static final String unsupportedStructFieldIndexFields =
-            "topics (topics.count: type int is not string), " +
+            "topics (topics.count: type int is not string; " +
+            "topics.label: having both 'indexing: index' and 'indexing: attribute' is not supported), " +
             "single (single.id: only supported in array of struct and map), " +
             "nested (nested.inner.id: only struct fields directly in the array elements can be indexed), " +
             "grams (grams.id: gram matching is not supported)";
+
+    private static final String allStructFieldIndexFields =
+            "topics (topics.id, topics.count, topics.label), single (single.id), nested (nested.inner.id), grams (grams.id)";
 
     private static final String removeSettingMessage =
             "Remove setting or change to 'indexing: attribute' if needed for matching.";
@@ -156,12 +162,39 @@ public class ComplexFieldsValidatorTestCase {
     @Test
     void throws_when_complex_fields_have_unsupported_struct_fields_with_index() {
         var exception = assertThrows(IllegalArgumentException.class, () -> {
-            createModelAndValidate(unsupportedStructFieldIndexSchema, null, true);
+            createModelAndValidate(unsupportedStructFieldIndexSchema, null, "allow_alone");
         });
 
         assertEquals("For cluster 'mycluster', schema 'test': " +
                      "The following complex fields have struct fields with 'indexing: index' which is not supported: " +
                      unsupportedStructFieldIndexFields + ". " + removeSettingMessage,
+                     exception.getMessage());
+    }
+
+    @Test
+    void throws_when_complex_fields_have_unsupported_struct_fields_with_index_also_when_allowing_attributes() {
+        var exception = assertThrows(IllegalArgumentException.class, () -> {
+            createModelAndValidate(unsupportedStructFieldIndexSchema, null, "allow");
+        });
+
+        assertEquals("For cluster 'mycluster', schema 'test': " +
+                     "The following complex fields have struct fields with 'indexing: index' which is not supported: " +
+                     "topics (topics.count: type int is not string), " +
+                     "single (single.id: only supported in array of struct and map), " +
+                     "nested (nested.inner.id: only struct fields directly in the array elements can be indexed), " +
+                     "grams (grams.id: gram matching is not supported). " + removeSettingMessage,
+                     exception.getMessage());
+    }
+
+    @Test
+    void throws_when_struct_field_indexes_are_disallowed() {
+        var exception = assertThrows(IllegalArgumentException.class, () -> {
+            createModelAndValidate(unsupportedStructFieldIndexSchema, null, "disallow");
+        });
+
+        assertEquals("For cluster 'mycluster', schema 'test': " +
+                     "The following complex fields have struct fields with 'indexing: index' which is not supported: " +
+                     allStructFieldIndexFields + ". " + removeSettingMessage,
                      exception.getMessage());
     }
 
@@ -174,13 +207,13 @@ public class ComplexFieldsValidatorTestCase {
     }
 
     @Test
-    void logs_warning_when_complex_fields_have_unsupported_struct_fields_with_index() throws IOException, SAXException {
+    void logs_warning_when_struct_field_indexes_are_ignored() throws IOException, SAXException {
         var logger = new MyLogger();
-        createModelAndValidate(unsupportedStructFieldIndexSchema, logger, false);
+        createModelAndValidate(unsupportedStructFieldIndexSchema, logger, "ignore");
         assertTrue(logger.message.toString().contains(
                 "For cluster 'mycluster', schema 'test': " +
                 "The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: " +
-                unsupportedStructFieldIndexFields + ". " + removeSettingMessage));
+                allStructFieldIndexFields + ". " + removeSettingMessage));
     }
 
     @Test
@@ -198,7 +231,7 @@ public class ComplexFieldsValidatorTestCase {
                 "field topics type array<topic> {",
                 "  indexing: summary",
                 "  struct-field id { indexing: index }",
-                "  struct-field label { indexing: index | attribute }",
+                "  struct-field label { indexing: attribute }",
                 "  struct-field desc { indexing: attribute }",
                 "  struct-field fragment { indexing: index }",
                 "}",
@@ -213,7 +246,7 @@ public class ComplexFieldsValidatorTestCase {
                 "}",
                 "}"),
                                logger,
-                               true);
+                               "allow_alone");
         assertFalse(logger.message.toString().contains("indexing: index"));
     }
 
@@ -224,7 +257,7 @@ public class ComplexFieldsValidatorTestCase {
                 "  document test {",
                 "    field nesteds type array<nested> {",
                 "      struct-field foo {",
-                "        indexing: attribute | index",
+                "        indexing: index",
                 "        match {",
                 "          exact",
                 "          exact-terminator: '@@'",
@@ -237,7 +270,7 @@ public class ComplexFieldsValidatorTestCase {
                 "  }",
                 "}"),
                                null,
-                               true);
+                               "allow_alone");
     }
 
     @Test
@@ -269,13 +302,13 @@ public class ComplexFieldsValidatorTestCase {
     }
 
     private static void createModelAndValidate(String schema, DeployLogger logger) throws IOException, SAXException {
-        createModelAndValidate(schema, logger, false);
+        createModelAndValidate(schema, logger, "disallow");
     }
 
     private static void createModelAndValidate(String schema,
                                                DeployLogger logger,
-                                               boolean failWhenConfiguringIndexedMapOfArray) throws IOException, SAXException {
-        DeployState deployState = createDeployState(servicesXml(), schema, logger, failWhenConfiguringIndexedMapOfArray);
+                                               String allowStructFieldIndex) throws IOException, SAXException {
+        DeployState deployState = createDeployState(servicesXml(), schema, logger, allowStructFieldIndex);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         ValidationParameters validationParameters = new ValidationParameters(CheckRouting.FALSE);
         new Validation().validate(model, validationParameters, deployState);
@@ -284,12 +317,12 @@ public class ComplexFieldsValidatorTestCase {
     private static DeployState createDeployState(String servicesXml,
                                                  String schema,
                                                  DeployLogger logger,
-                                                 boolean failWhenConfiguringIndexedMapOfArray) {
+                                                 String allowStructFieldIndex) {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .withSchemas(List.of(schema))
                 .build();
-        var properties = new TestProperties().failWhenConfiguringIndexedMapOfArray(failWhenConfiguringIndexedMapOfArray);
+        var properties = new TestProperties().allowStructFieldIndex(allowStructFieldIndex);
         var builder = TestDeployState.createBuilder()
                                      .applicationPackage(app)
                                      .properties(properties);

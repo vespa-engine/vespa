@@ -2,15 +2,12 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
-import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.content.utils.DocType;
-import com.yahoo.vespa.model.content.utils.SchemaBuilder;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -113,22 +110,22 @@ public class IndexingScriptChangeValidatorTest {
                                      "Field 'f1' changed: " + changedMsg);
     }
 
-    private static class StreamingFixture extends ContentClusterFixture {
+    /** Sets up clusters with struct field indexes enabled by the given values of the feature flag 'allow-struct-field-index'. */
+    private static class StructFieldFixture extends ContentClusterFixture {
         IndexingScriptChangeValidator validator;
 
-        public StreamingFixture(String currentSd, String nextSd) {
-            super(createStreamingCluster(currentSd), createStreamingCluster(nextSd));
+        public StructFieldFixture(String currentSd, String nextSd) {
+            this(currentSd, "allow_alone", nextSd, "allow_alone", DocType.index("test"));
+        }
+
+        public StructFieldFixture(String currentSd, String currentFlag, String nextSd, String nextFlag, DocType docType) {
+            super(createCluster(currentSd, docType, new TestProperties().allowStructFieldIndex(currentFlag)),
+                  createCluster(nextSd, docType, new TestProperties().allowStructFieldIndex(nextFlag)));
             validator = new IndexingScriptChangeValidator(ClusterSpec.Id.from("test"),
                                                           currentDb().getDerivedConfiguration().getSchema(),
                                                           currentDb().getDerivedConfiguration().isStreaming(),
                                                           nextDb().getDerivedConfiguration().getSchema(),
                                                           nextDb().getDerivedConfiguration().isStreaming());
-        }
-
-        private static ContentCluster createStreamingCluster(String sdContent) {
-            return new ContentClusterBuilder().docTypes(List.of(DocType.streaming("test")))
-                                              .build(ContentClusterUtils.createMockRoot(
-                                                      List.of(new SchemaBuilder().content(sdContent).build())));
         }
 
         @Override
@@ -139,22 +136,22 @@ public class IndexingScriptChangeValidatorTest {
 
     @Test
     void requireThatAddingStructFieldIndexRequireReindexing() throws Exception {
-        new Fixture(STRUCT_FIELD + " { indexing: summary \n struct-field a { indexing: attribute } }",
-                    STRUCT_FIELD + " { indexing: summary \n struct-field a { indexing: attribute } \n struct-field b { indexing: index } }").
+        new StructFieldFixture(STRUCT_FIELD + " { indexing: summary \n struct-field a { indexing: attribute } }",
+                               STRUCT_FIELD + " { indexing: summary \n struct-field a { indexing: attribute } \n struct-field b { indexing: index } }").
                 assertValidation(expectedStructFieldReindexingAction("add index aspect for struct field 'f1.b'"));
     }
 
     @Test
     void requireThatRemovingStructFieldIndexRequireReindexing() throws Exception {
-        new Fixture(STRUCT_FIELD + " { indexing: summary \n struct-field a { indexing: index } \n struct-field b { indexing: index } }",
-                    STRUCT_FIELD + " { indexing: summary \n struct-field a { indexing: index } }").
+        new StructFieldFixture(STRUCT_FIELD + " { indexing: summary \n struct-field a { indexing: index } \n struct-field b { indexing: index } }",
+                               STRUCT_FIELD + " { indexing: summary \n struct-field a { indexing: index } }").
                 assertValidation(expectedStructFieldReindexingAction("remove index aspect for struct field 'f1.b'"));
     }
 
     @Test
     void requireThatChangingStructFieldIndexMatchingRequireReindexing() throws Exception {
-        new Fixture(STRUCT_FIELD + " { struct-field b { indexing: index } }",
-                    STRUCT_FIELD + " { struct-field b { indexing: index \n match: exact } }").
+        new StructFieldFixture(STRUCT_FIELD + " { struct-field b { indexing: index } }",
+                               STRUCT_FIELD + " { struct-field b { indexing: index \n match: exact } }").
                 assertValidation(expectedStructFieldReindexingAction(
                         "struct field 'f1.b' matching: 'text' -> 'exact', " +
                         "struct field 'f1.b' stemming: 'best' -> 'none', " +
@@ -163,8 +160,8 @@ public class IndexingScriptChangeValidatorTest {
 
     @Test
     void requireThatChangingMapStructFieldIndexRequireReindexing() throws Exception {
-        new Fixture(STRUCT_MAP_FIELD + " { indexing: summary \n struct-field key { indexing: index } \n struct-field value.b { indexing: index } }",
-                    STRUCT_MAP_FIELD + " { indexing: summary \n struct-field value.a { indexing: index } \n struct-field value.b { indexing: index \n match: word } }").
+        new StructFieldFixture(STRUCT_MAP_FIELD + " { indexing: summary \n struct-field key { indexing: index } \n struct-field value.b { indexing: index } }",
+                               STRUCT_MAP_FIELD + " { indexing: summary \n struct-field value.a { indexing: index } \n struct-field value.b { indexing: index \n match: word } }").
                 assertValidation(expectedStructFieldReindexingAction(
                         "remove index aspect for struct field 'f1.key', " +
                         "add index aspect for struct field 'f1.value.a', " +
@@ -175,8 +172,8 @@ public class IndexingScriptChangeValidatorTest {
 
     @Test
     void requireThatFieldAndStructFieldIndexChangesAreReportedTogether() throws Exception {
-        new Fixture(STRUCT_FIELD + " { indexing: summary }",
-                    STRUCT_FIELD + " { struct-field b { indexing: index } }").
+        new StructFieldFixture(STRUCT_FIELD + " { indexing: summary }",
+                               STRUCT_FIELD + " { struct-field b { indexing: index } }").
                 assertValidation(expectedStructFieldReindexingAction(
                         "indexing script: '{ input f1 | summary f1; }' -> '{  }', " +
                         "add index aspect for struct field 'f1.b'"));
@@ -184,15 +181,28 @@ public class IndexingScriptChangeValidatorTest {
 
     @Test
     void requireThatStructFieldIndexChangesInStreamingDoNotRequireReindexing() throws Exception {
-        new StreamingFixture(STRUCT_FIELD + " { indexing: summary }",
-                             STRUCT_FIELD + " { indexing: summary \n struct-field b { indexing: index \n match: exact } }").
+        new StructFieldFixture(STRUCT_FIELD + " { indexing: summary }", "allow_alone",
+                               STRUCT_FIELD + " { indexing: summary \n struct-field b { indexing: index \n match: exact } }", "allow_alone",
+                               DocType.streaming("test")).
                 assertValidation();
     }
 
     @Test
+    void requireThatEnablingStructFieldIndexesRequireReindexing() throws Exception {
+        String sd = STRUCT_FIELD + " { indexing: summary \n struct-field a { indexing: index } \n struct-field b { indexing: index | attribute } }";
+        new StructFieldFixture(sd, "ignore", sd, "allow_alone", DocType.index("test")).
+                assertValidation(expectedStructFieldReindexingAction("add index aspect for struct field 'f1.a'"));
+        new StructFieldFixture(sd, "allow_alone", sd, "allow", DocType.index("test")).
+                assertValidation(expectedStructFieldReindexingAction("add index aspect for struct field 'f1.b'"));
+        new StructFieldFixture(sd, "allow", sd, "ignore", DocType.index("test")).
+                assertValidation(expectedStructFieldReindexingAction(
+                        "remove index aspect for struct field 'f1.a', remove index aspect for struct field 'f1.b'"));
+    }
+
+    @Test
     void requireThatUnchangedStructFieldIndexDoesNotRequireReindexing() throws Exception {
-        new Fixture(STRUCT_FIELD + " { indexing: summary \n struct-field b { indexing: index } }",
-                    STRUCT_FIELD + " { indexing: summary \n struct-field b { indexing: index } }").
+        new StructFieldFixture(STRUCT_FIELD + " { indexing: summary \n struct-field b { indexing: index } }",
+                               STRUCT_FIELD + " { indexing: summary \n struct-field b { indexing: index } }").
                 assertValidation();
     }
 

@@ -35,14 +35,15 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
     }
 
     private static void validateComplexFields(String clusterName, Schema schema, Context context) {
+        var mode = ComplexIndexFieldUtils.Mode.of(schema);
         String unsupportedFields = schema.allFields()
-                .filter(field -> ! ComplexIndexFieldUtils.unsupportedIndexedStructFields(field).isEmpty())
-                .map(ComplexFieldsWithStructFieldIndexesValidator::toString)
+                .filter(field -> ! ComplexIndexFieldUtils.unsupportedIndexedStructFields(field, mode).isEmpty())
+                .map(field -> toString(field, mode))
                 .collect(Collectors.joining(", "));
 
         if (unsupportedFields.isEmpty()) return;
 
-        if (context.deployState().featureFlags().failWhenConfiguringIndexedMapOfArray()) {
+        if (mode != ComplexIndexFieldUtils.Mode.IGNORE) {
             throw new IllegalArgumentException(Text.format(
                     "For cluster '%s', schema '%s': The following complex fields have struct fields with 'indexing: index' " +
                             "which is not supported: %s. " +
@@ -60,11 +61,15 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
 
     }
 
-    private static String toString(ImmutableSDField field) {
-        return field.getName() + " (" + ComplexIndexFieldUtils.unsupportedIndexedStructFields(field).stream()
-                                                              .map(structField -> structField.getName() + ": " +
-                                                                                  ComplexIndexFieldUtils.unsupportedReason(field, structField).orElseThrow())
-                                                              .collect(Collectors.joining("; ")) + ")";
+    private static String toString(ImmutableSDField field, ComplexIndexFieldUtils.Mode mode) {
+        var structFields = ComplexIndexFieldUtils.unsupportedIndexedStructFields(field, mode);
+        // When struct field indexes are not enabled at all, the reason is the same for all of them
+        if ( ! mode.allowsIndexing())
+            return field.getName() + " (" + structFields.stream().map(ImmutableSDField::getName).collect(Collectors.joining(", ")) + ")";
+        return field.getName() + " (" + structFields.stream()
+                                                    .map(structField -> structField.getName() + ": " +
+                                                                        ComplexIndexFieldUtils.unsupportedReason(field, structField, mode).orElseThrow())
+                                                    .collect(Collectors.joining("; ")) + ")";
     }
 
 }

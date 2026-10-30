@@ -100,7 +100,7 @@ public class IndexSchema extends Derived {
 
     /** Each supported struct field index is an array of string, with one element per element in the complex field. */
     private void deriveStructFieldIndexes(ImmutableSDField field, Schema schema) {
-        for (ImmutableSDField structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field)) {
+        for (ImmutableSDField structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field, ComplexIndexFieldUtils.Mode.of(schema))) {
             deriveIndexFields(new Field(structField.getName(), DataType.getArray(DataType.STRING)), schema);
         }
     }

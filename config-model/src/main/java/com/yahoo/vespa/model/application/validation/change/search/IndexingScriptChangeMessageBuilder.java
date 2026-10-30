@@ -46,8 +46,8 @@ public class IndexingScriptChangeMessageBuilder {
 
     /** Describes changes to the struct field indexes of the field, which are indexed by a script derived for the field. */
     public void populateStructFieldIndexes(ChangeMessageBuilder builder) {
-        Map<String, ImmutableSDField> currentStructFields = supportedIndexedStructFields(currentField);
-        Map<String, ImmutableSDField> nextStructFields = supportedIndexedStructFields(nextField);
+        Map<String, ImmutableSDField> currentStructFields = supportedIndexedStructFields(currentField, currentSchema);
+        Map<String, ImmutableSDField> nextStructFields = supportedIndexedStructFields(nextField, nextSchema);
         for (ImmutableSDField currentStructField : currentStructFields.values()) {
             if ( ! nextStructFields.containsKey(currentStructField.getName()))
                 builder.addChange("remove index aspect for struct field '" + currentStructField.getName() + "'");
@@ -65,9 +65,9 @@ public class IndexingScriptChangeMessageBuilder {
         }
     }
 
-    private static Map<String, ImmutableSDField> supportedIndexedStructFields(ImmutableSDField field) {
+    private static Map<String, ImmutableSDField> supportedIndexedStructFields(ImmutableSDField field, Schema schema) {
         Map<String, ImmutableSDField> result = new LinkedHashMap<>();
-        for (ImmutableSDField structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field))
+        for (ImmutableSDField structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field, ComplexIndexFieldUtils.Mode.of(schema)))
             result.put(structField.getName(), structField);
         return result;
     }
