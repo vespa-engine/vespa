@@ -23,4 +23,10 @@ namespace vespalib::quant::codebooks {
  */
 extern const float unit_norm_centroids_f32[4][16];
 
+/*
+ * These are the same centroids as `unit_norm_centroids_f32`, but each centroid
+ * value has been truncated to BFloat16 precision.
+ */
+extern const float unit_norm_centroids_bf16_as_f32[4][16];
+
 } // namespace vespalib::quant::codebooks

@@ -137,22 +137,22 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_1_bit) {
     qtp.in_v = my_16d_test_vector();
     qtp.seed = 0x1337beef;
     qtp.quant_mode = QuantMode::MSE;
-    qtp.expected_scale = 3.79910803;
+    qtp.expected_scale = 3.80392146;
     qtp.expected_mse = 6.12402296;
     qtp.expected_quant_bytes = std::vector<uint8_t>{0xDA, 0x41};
     // "We have vector at home":
-    qtp.expected_dequant = std::vector<float>{
-        1.51562476,     -7.57812405,     1.51562476, -1.51562476, -1.51562476, 1.51562476, 1.51562476, -4.54687452,
-        1.78813934e-07, -2.38418579e-07, 3.03124976, -3.03124976, -3.03124976, 3.03124976, 3.03124976, -3.03124976};
+    qtp.expected_dequant =
+        std::vector<float>{1.515625, -7.578125, 1.515625, -1.515625, -1.515625, 1.515625, 1.515625, -4.546875,
+                           0,        -0,        3.03125,  -3.03125,  -3.03125,  3.03125,  3.03125,  -3.03125};
     ASSERT_NO_FATAL_FAILURE(do_test_quantization_roundtrip(qtp));
 
     qtp.quant_mode = QuantMode::InnerProduct;
     // Quantization bits shall be the same as for MSE; only the scaling factor differs.
-    qtp.expected_scale = 6.33117437;
+    qtp.expected_scale = 6.33919525;
     qtp.expected_mse = 10.2056208;
     qtp.expected_dequant = std::vector<float>{
-        2.52577353,      -12.6288662,    2.52577353, -2.52577353, -2.52577353, 2.52577353, 2.52577353, -7.57731962,
-        -3.57627869e-07, 4.76837158e-07, 5.05154657, -5.05154657, -5.05154657, 5.05154657, 5.05154657, -5.051546576};
+        2.52577305, -12.6288652, 2.52577305, -2.52577305, -2.52577305, 2.52577305, 2.52577305, -7.57731915,
+        0,          -0,          5.0515461,  -5.0515461,  -5.0515461,  5.0515461,  5.0515461,  -5.0515461};
     ASSERT_NO_FATAL_FAILURE(do_test_quantization_roundtrip(qtp));
 
     // Different seed results in different rotations. We only test multiple seeds for 1 bit
@@ -161,12 +161,11 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_1_bit) {
     // of tests.
     qtp.seed = 0xdeadbeef;
     qtp.quant_mode = QuantMode::MSE;
-    qtp.expected_scale = 3.83827376;
+    qtp.expected_scale = 3.84313726;
     qtp.expected_mse = 5.93359375;
     qtp.expected_quant_bytes = std::vector<uint8_t>{0x4C, 0xD6};
-    qtp.expected_dequant = std::vector<float>{
-        3.06249952, -3.06249952, 3.06249952, -3.06249952, -6.12499905, 0,          1.1920929e-07, -1.1920929e-07,
-        3.06249952, -3.06249952, 3.06249952, -3.06249952, -0,          6.12499905, 1.1920929e-07, -1.1920929e-07};
+    qtp.expected_dequant = std::vector<float>{3.0625, -3.0625, 3.0625, -3.0625, -6.125, 0,     -0, 0,
+                                              3.0625, -3.0625, 3.0625, -3.0625, -0,     6.125, -0, -0};
     ASSERT_NO_FATAL_FAILURE(do_test_quantization_roundtrip(qtp));
 }
 
@@ -176,12 +175,12 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_2_bits) {
     qtp.in_v = my_16d_test_vector();
     qtp.seed = 0x1337beef;
     qtp.quant_mode = QuantMode::MSE;
-    qtp.expected_scale = 4.7562151;
-    qtp.expected_mse = 1.86790919;
+    qtp.expected_scale = 4.76700592;
+    qtp.expected_mse = 1.86718082;
     qtp.expected_quant_bytes = std::vector<uint8_t>{0xA4, 0x82, 0xCA, 0x01};
     qtp.expected_dequant = std::vector<float>{
-        1.0767597,  -5.38379765, 3.5919354,  -3.59193587, -6.10711145, 1.07675958, 1.0767591,  -3.23027873,
-        1.25758827, -3.77276397, 3.41110682, -3.4111073,  -3.41110754, 3.41110682, 5.92628288, -3.4111073};
+        1.07536983, -5.37684774, 3.59387541, -3.59387565, -6.11238098, 1.07536983, 1.0753696,  -3.22610784,
+        1.25925303, -3.77775908, 3.40999222, -3.40999246, -3.40999198, 3.40999222, 5.92849827, -3.40999198};
     ASSERT_NO_FATAL_FAILURE(do_test_quantization_roundtrip(qtp));
     // InnerProduct only differs in scale, so we assume testing that for 1 bit is sufficient.
 }
@@ -192,12 +191,12 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_3_bits) {
     qtp.in_v = my_16d_test_vector();
     qtp.seed = 0x1337beef;
     qtp.quant_mode = QuantMode::MSE;
-    qtp.expected_scale = 3.91597676;
-    qtp.expected_mse = 0.524829865;
+    qtp.expected_scale = 3.93120503;
+    qtp.expected_mse = 0.52801168;
     qtp.expected_quant_bytes = std::vector<uint8_t>{0xE9, 0x0D, 0x44, 0x83, 0x2B, 0x28};
     qtp.expected_dequant = std::vector<float>{
-        1.48024964, -3.39981604, 5.21384239, -5.21384239, -4.36423588, 2.06201744, 1.4802494,  -4.44074869,
-        3.1580379,  -4.30914736, 3.53605366, -3.53605366, -3.53605318, 3.53605366, 5.26893044, -4.11782122};
+        1.48188,    -3.40141392, 5.20961428, -5.2096138,  -4.36501932, 2.04622269, 1.48187971, -4.44564,
+        3.14803529, -4.30743361, 3.54345942, -3.54345894, -3.54345894, 3.54345942, 5.2672,     -4.10780191};
     ASSERT_NO_FATAL_FAILURE(do_test_quantization_roundtrip(qtp));
 }
 
@@ -207,12 +206,12 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_4_bits) {
     qtp.in_v = my_16d_test_vector();
     qtp.seed = 0x1337beef;
     qtp.quant_mode = QuantMode::MSE;
-    qtp.expected_scale = 3.70460153;
-    qtp.expected_mse = 0.0788929164;
+    qtp.expected_scale = 3.71809769;
+    qtp.expected_mse = 0.0785451531;
     qtp.expected_quant_bytes = std::vector<uint8_t>{0x62, 0x1B, 0x89, 0x17, 0xAA, 0xA2, 0xC0, 0x30};
     qtp.expected_dequant = std::vector<float>{
-        2.81700802, -3.76831293, 5.44971228, -5.4497118,  -4.02572727, 2.86288738, 1.80706978, -3.05899167,
-        3.52310324, -5.16248846, 3.78170633, -2.72374034, -2.77176738, 3.73367882, 5.37091684, -3.73153186};
+        2.81671309, -3.76802373, 5.45097113, -5.45097065, -4.0112977, 2.86391544, 1.80549192, -3.07451057,
+        3.51839471, -5.15232468, 3.78708601, -2.72684669, -2.7758646, 3.73806763, 5.37018156, -3.73625231};
     ASSERT_NO_FATAL_FAILURE(do_test_quantization_roundtrip(qtp));
 }
 
@@ -245,7 +244,7 @@ TEST(EdenQuantizerTest, can_compute_dot_product_with_pre_rotated_vector) {
     q.quantize(v, v_q, QuantMode::InnerProduct);
     // First let's do a silly dot product between a _non-rotated_ query and its quantized
     // version; the result should be completely uncorrelated.
-    EXPECT_THAT(q.pre_rotated_query_dot_product(v, v_q), FloatEq(-0.30234611));
+    EXPECT_THAT(q.pre_rotated_query_dot_product(v, v_q), FloatEq(-0.302687526));
     // Now let's do it properly
     std::vector q_rot = v;
     q.rotate_vector_inplace(q_rot);
