@@ -527,15 +527,8 @@ public class IndexingProcessorTestCase {
     @Test
     public void requireThatElementAssignIsProcessedByIndexingScript() {
         var tester = elementAssignTester("input a | for_each { lowercase } | index a");
-        DocumentType type = tester.getDocumentType("test");
-        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
-        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new StringFieldValue("HELLO")));
-
-        DocumentUpdate output = (DocumentUpdate)tester.process(input);
-        assertEquals(1, output.fieldPathUpdates().size());
-        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
-        assertEquals("a[2]", assign.getOriginalFieldPath());
-        assertEquals(new StringFieldValue("hello"), assign.getNewValue());
+        var output = (DocumentUpdate)tester.process(elementAssign(tester, "a[2]", new StringFieldValue("HELLO")));
+        assertSingleElementAssign(output, "a[2]", "hello");
     }
 
     /**
@@ -545,15 +538,8 @@ public class IndexingProcessorTestCase {
     @Test
     public void requireThatElementAssignOfFieldWithoutIndexingStatementIsPassedOn() {
         var tester = elementAssignTester("input b | index b");
-        DocumentType type = tester.getDocumentType("test");
-        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
-        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new StringFieldValue("HELLO")));
-
-        DocumentUpdate output = (DocumentUpdate)tester.process(input);
-        assertEquals(1, output.fieldPathUpdates().size());
-        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
-        assertEquals("a[2]", assign.getOriginalFieldPath());
-        assertEquals(new StringFieldValue("HELLO"), assign.getNewValue());
+        var output = (DocumentUpdate)tester.process(elementAssign(tester, "a[2]", new StringFieldValue("HELLO")));
+        assertSingleElementAssign(output, "a[2]", "HELLO");
     }
 
     /**
@@ -565,15 +551,8 @@ public class IndexingProcessorTestCase {
     public void requireThatElementAssignEmitsOnlyTheTargetField() {
         var tester = elementAssignTester("input a | for_each { lowercase } | index a",
                                          "input a | for_each { lowercase } | index c");
-        DocumentType type = tester.getDocumentType("test");
-        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
-        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new StringFieldValue("HELLO")));
-
-        DocumentUpdate output = (DocumentUpdate)tester.process(input);
-        assertEquals(1, output.fieldPathUpdates().size());
-        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
-        assertEquals("a[2]", assign.getOriginalFieldPath());
-        assertEquals(new StringFieldValue("hello"), assign.getNewValue());
+        var output = (DocumentUpdate)tester.process(elementAssign(tester, "a[2]", new StringFieldValue("HELLO")));
+        assertSingleElementAssign(output, "a[2]", "hello");
         assertTrue(output.fieldUpdates().isEmpty());
     }
 
@@ -582,15 +561,8 @@ public class IndexingProcessorTestCase {
     public void requireThatElementAssignDoesNotRunStatementsForOtherFields() {
         var tester = elementAssignTester("input a | for_each { lowercase } | index a",
                                          "input a | embed | attribute e");
-        DocumentType type = tester.getDocumentType("test");
-        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
-        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new StringFieldValue("HELLO")));
-
-        DocumentUpdate output = (DocumentUpdate)tester.process(input);
-        assertEquals(1, output.fieldPathUpdates().size());
-        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
-        assertEquals("a[2]", assign.getOriginalFieldPath());
-        assertEquals(new StringFieldValue("hello"), assign.getNewValue());
+        var output = (DocumentUpdate)tester.process(elementAssign(tester, "a[2]", new StringFieldValue("HELLO")));
+        assertSingleElementAssign(output, "a[2]", "hello");
         assertTrue(output.fieldUpdates().isEmpty());
     }
 
@@ -598,43 +570,42 @@ public class IndexingProcessorTestCase {
     @Test
     public void requireThatElementAssignIsPassedOnWhenScriptDoesNotOutputTargetField() {
         var tester = elementAssignTester("input a | for_each { lowercase } | index c");
-        DocumentType type = tester.getDocumentType("test");
-        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
-        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new StringFieldValue("HELLO")));
-
-        DocumentUpdate output = (DocumentUpdate)tester.process(input);
-        assertEquals(1, output.fieldPathUpdates().size());
-        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
-        assertEquals("a[2]", assign.getOriginalFieldPath());
-        assertEquals(new StringFieldValue("HELLO"), assign.getNewValue());
+        var output = (DocumentUpdate)tester.process(elementAssign(tester, "a[2]", new StringFieldValue("HELLO")));
+        assertSingleElementAssign(output, "a[2]", "HELLO");
     }
 
     @Test
     public void requireThatElementAssignOfWrongTypeIsRejectedAsInvalidInput() {
         var tester = elementAssignTester("input a | for_each { lowercase } | index a");
-        DocumentType type = tester.getDocumentType("test");
-        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
-        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new IntegerFieldValue(5)));
-
-        var progress = tester.processForProgress(input);
-        assertEquals(DocumentProcessor.Progress.INVALID_INPUT, progress);
-        assertEquals("Operation on 'id:ns:test::1' contains invalid input: " +
-                     "Cannot assign a value of type int to 'a[2]': The elements of 'a' are of type string",
-                     progress.getReason().get());
+        var progress = tester.processForProgress(elementAssign(tester, "a[2]", new IntegerFieldValue(5)));
+        assertInvalidInput("Cannot assign a value of type int to 'a[2]': The elements of 'a' are of type string", progress);
     }
 
     /** The value is validated even when there is no script to process it, rather than passing it on to fail later. */
     @Test
     public void requireThatElementAssignWithoutValueIsRejectedAsInvalidInputAlsoWithoutIndexingStatement() {
         var tester = elementAssignTester("input b | index b");
-        DocumentType type = tester.getDocumentType("test");
-        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
-        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", (FieldValue)null));
+        var progress = tester.processForProgress(elementAssign(tester, "a[2]", null));
+        assertInvalidInput("Cannot assign to 'a[2]': No value given", progress);
+    }
 
-        var progress = tester.processForProgress(input);
+    private static DocumentUpdate elementAssign(IndexingProcessorTester tester, String fieldPath, FieldValue value) {
+        DocumentType type = tester.getDocumentType("test");
+        DocumentUpdate update = new DocumentUpdate(type, "id:ns:test::1");
+        update.addFieldPathUpdate(new AssignFieldPathUpdate(type, fieldPath, "", value));
+        return update;
+    }
+
+    private static void assertSingleElementAssign(DocumentUpdate output, String fieldPath, String value) {
+        assertEquals(1, output.fieldPathUpdates().size());
+        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
+        assertEquals(fieldPath, assign.getOriginalFieldPath());
+        assertEquals(new StringFieldValue(value), assign.getNewValue());
+    }
+
+    private static void assertInvalidInput(String message, DocumentProcessor.Progress progress) {
         assertEquals(DocumentProcessor.Progress.INVALID_INPUT, progress);
-        assertEquals("Operation on 'id:ns:test::1' contains invalid input: Cannot assign to 'a[2]': No value given",
-                     progress.getReason().get());
+        assertEquals("Operation on 'id:ns:test::1' contains invalid input: " + message, progress.getReason().get());
     }
 
     private static IndexingProcessorTester elementAssignTester(String... ilscriptContents) {
