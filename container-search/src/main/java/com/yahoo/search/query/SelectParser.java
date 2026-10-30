@@ -25,6 +25,7 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.BlockItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.ExactStringItem;
@@ -102,7 +103,10 @@ import static com.yahoo.search.yql.YqlParser.ASCENDING_HITS_ORDER;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_ID;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
 import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
+import static com.yahoo.search.yql.YqlParser.COUNT;
 import static com.yahoo.search.yql.YqlParser.DESCENDING_HITS_ORDER;
+import static com.yahoo.search.yql.YqlParser.DOCUMENT_FREQUENCY;
+import static com.yahoo.search.yql.YqlParser.FREQUENCY;
 import static com.yahoo.search.yql.YqlParser.DISTANCE;
 import static com.yahoo.search.yql.YqlParser.DISTANCE_THRESHOLD;
 import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
@@ -778,6 +782,9 @@ public class SelectParser implements Parser {
                             out.setSignificance(annotation_value.asDouble());
                         }
                     }
+                    if (DOCUMENT_FREQUENCY.equals(annotation_name)) {
+                        out.setDocumentFrequency(readDocumentFrequency(annotation_value));
+                    }
                     if (UNIQUE_ID.equals(annotation_name)) {
                         if (annotation_value != null) {
                             out.setUniqueID((int)annotation_value.asLong());
@@ -834,6 +841,28 @@ public class SelectParser implements Parser {
         }
 
         return out;
+    }
+
+    /**
+     * Reads a {@code documentFrequency} annotation the way YQL does: an object with
+     * integer {@code frequency} and {@code count}, both required.
+     */
+    private static DocumentFrequency readDocumentFrequency(Inspector value) {
+        Preconditions.checkArgument(value != null && value.type() == OBJECT,
+                "Expected an object for annotation '%s', got %s.",
+                DOCUMENT_FREQUENCY, value == null ? "null" : value.type());
+        return new DocumentFrequency(documentFrequencyEntry(value, FREQUENCY),
+                                     documentFrequencyEntry(value, COUNT));
+    }
+
+    private static long documentFrequencyEntry(Inspector value, String key) {
+        Inspector entry = value.field(key);
+        Preconditions.checkArgument(entry.valid(),
+                "Map annotation '%s' must contain an entry with key '%s'.", DOCUMENT_FREQUENCY, key);
+        Preconditions.checkArgument(entry.type() == LONG,
+                "Expected Long or Integer for entry '%s' in map annotation '%s', got %s.",
+                key, DOCUMENT_FREQUENCY, entry.type());
+        return entry.asLong();
     }
 
     private Integer getCappedRangeSearchParameter(Inspector annotations) {

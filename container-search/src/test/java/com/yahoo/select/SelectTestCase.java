@@ -465,6 +465,20 @@ public class SelectTestCase {
     }
 
     @Test
+    void testDocumentFrequency() {
+        assertParseFail("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"documentFrequency\" : {\"frequency\" : 13} } } }",
+                new IllegalArgumentException("Map annotation 'documentFrequency' must contain an entry with key 'count'."));
+        assertParseFail("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"documentFrequency\" : {\"count\" : 101} } } }",
+                new IllegalArgumentException("Map annotation 'documentFrequency' must contain an entry with key 'frequency'."));
+        assertParseFail("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"documentFrequency\" : {\"frequency\" : 13.5, \"count\" : 101} } } }",
+                new IllegalArgumentException("Expected Long or Integer for entry 'frequency' in map annotation 'documentFrequency', got DOUBLE."));
+        assertParseFail("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"documentFrequency\" : {\"frequency\" : \"13\", \"count\" : 101} } } }",
+                new IllegalArgumentException("Expected Long or Integer for entry 'frequency' in map annotation 'documentFrequency', got STRING."));
+        assertParseFail("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"documentFrequency\" : 13 } } }",
+                new IllegalArgumentException("Expected an object for annotation 'documentFrequency', got LONG."));
+    }
+
+    @Test
     void testSameElement() {
         assertParse("{ \"contains\": [ \"baz\", {\"sameElement\" : [ { \"contains\" : [\"f1\", \"a\"] }, { \"contains\" : [\"f2\", \"b\"] } ]} ] }",
                 "baz:{f1:a f2:b}");

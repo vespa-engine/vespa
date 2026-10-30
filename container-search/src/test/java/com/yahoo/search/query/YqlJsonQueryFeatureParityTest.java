@@ -2,6 +2,8 @@
 package com.yahoo.search.query;
 
 import com.yahoo.prelude.Index;
+import com.yahoo.prelude.query.DocumentFrequency;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,6 +38,28 @@ public class YqlJsonQueryFeatureParityTest {
         var env = new ParserEnvironment().setIndexFacts(createIndexFacts());
         yqlParser = new YqlParser(env);
         selectParser = new SelectParser(env);
+    }
+
+    @Test
+    void testDocumentFrequency() {
+        var yqlWord = (WordItem) yqlParser.parse(new Parsable().setQuery(
+                "select * from sources * where title contains ({documentFrequency: {frequency: 13, count: 101}}\"colors\")")).getRoot();
+        var json = "{ \"contains\": { \"children\": [\"title\", \"colors\"], \"attributes\": {\"documentFrequency\": {\"frequency\": 13, \"count\": 101}} } }";
+        var jsonWord = (WordItem) selectParser.parse(new Parsable().setSelect(new Select(json, "", new Query()))).getRoot();
+
+        assertEquals(Optional.of(new DocumentFrequency(13, 101)), jsonWord.getDocumentFrequency());
+        assertEquals(yqlWord.getDocumentFrequency(), jsonWord.getDocumentFrequency());
+
+        Query yqlQuery = new Query();
+        yqlQuery.getModel().getQueryTree().setRoot(yqlWord);
+        yqlQuery.prepare();
+        Query selectQuery = new Query();
+        selectQuery.getModel().getQueryTree().setRoot(jsonWord);
+        selectQuery.prepare();
+        assertEquals(yqlQuery.getRanking().getProperties().get("vespa.term.1.docfreq"),
+                     selectQuery.getRanking().getProperties().get("vespa.term.1.docfreq"));
+        assertEquals("13", selectQuery.getRanking().getProperties().get("vespa.term.1.docfreq").get(0));
+        assertEquals("101", selectQuery.getRanking().getProperties().get("vespa.term.1.docfreq").get(1));
     }
 
     @Test
