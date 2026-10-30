@@ -3,6 +3,7 @@ package com.yahoo.docprocs.indexing;
 
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.subscription.ConfigGetter;
+import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentType;
@@ -72,6 +73,13 @@ public class IndexingProcessorTester {
         if (operations.isEmpty()) return null;
         assertEquals(1, operations.size());
         return operations.get(0);
+    }
+
+    /** Processes the given operation and returns the resulting progress, e.g. to verify why it was rejected. */
+    public DocumentProcessor.Progress processForProgress(DocumentOperation input) {
+        Processing proc = new Processing();
+        proc.getDocumentOperations().add(input);
+        return indexer.process(proc);
     }
 
     @SuppressWarnings("deprecation")

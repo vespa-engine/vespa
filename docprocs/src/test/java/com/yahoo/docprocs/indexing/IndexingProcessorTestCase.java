@@ -2,6 +2,7 @@
 package com.yahoo.docprocs.indexing;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
@@ -12,6 +13,8 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.TensorDataType;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.update.AssignValueUpdate;
@@ -604,6 +607,34 @@ public class IndexingProcessorTestCase {
         AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
         assertEquals("a[2]", assign.getOriginalFieldPath());
         assertEquals(new StringFieldValue("HELLO"), assign.getNewValue());
+    }
+
+    @Test
+    public void requireThatElementAssignOfWrongTypeIsRejectedAsInvalidInput() {
+        var tester = elementAssignTester("input a | for_each { lowercase } | index a");
+        DocumentType type = tester.getDocumentType("test");
+        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
+        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", new IntegerFieldValue(5)));
+
+        var progress = tester.processForProgress(input);
+        assertEquals(DocumentProcessor.Progress.INVALID_INPUT, progress);
+        assertEquals("Operation on 'id:ns:test::1' contains invalid input: " +
+                     "Cannot assign a value of type int to 'a[2]': The elements of 'a' are of type string",
+                     progress.getReason().get());
+    }
+
+    /** The value is validated even when there is no script to process it, rather than passing it on to fail later. */
+    @Test
+    public void requireThatElementAssignWithoutValueIsRejectedAsInvalidInputAlsoWithoutIndexingStatement() {
+        var tester = elementAssignTester("input b | index b");
+        DocumentType type = tester.getDocumentType("test");
+        DocumentUpdate input = new DocumentUpdate(type, "id:ns:test::1");
+        input.addFieldPathUpdate(new AssignFieldPathUpdate(type, "a[2]", "", (FieldValue)null));
+
+        var progress = tester.processForProgress(input);
+        assertEquals(DocumentProcessor.Progress.INVALID_INPUT, progress);
+        assertEquals("Operation on 'id:ns:test::1' contains invalid input: Cannot assign to 'a[2]': No value given",
+                     progress.getReason().get());
     }
 
     private static IndexingProcessorTester elementAssignTester(String... ilscriptContents) {

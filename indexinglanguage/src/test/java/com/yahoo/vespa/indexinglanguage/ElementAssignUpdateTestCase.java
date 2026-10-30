@@ -15,6 +15,7 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -149,6 +151,25 @@ public class ElementAssignUpdateTestCase {
         assertEquals(ScriptExpression.fromString("{ input my_str | for_each { lowercase } | index my_str; }"),
                      ElementAssignFieldPathUpdateFieldValues.statementsOutputting(script, "my_str"));
         assertNull(ElementAssignFieldPathUpdateFieldValues.statementsOutputting(script, "my_int"));
+    }
+
+    @Test
+    public void require_that_element_assign_without_value_is_rejected() {
+        var upd = new DocumentUpdate(docType, "id:scheme:my_type::");
+        upd.addFieldPathUpdate(update("my_str[0]", (FieldValue)null));
+        var e = assertThrows(InvalidInputException.class,
+                             () -> execute("input my_str | for_each { lowercase } | index my_str", upd));
+        assertEquals("Cannot assign to 'my_str[0]': No value given", e.getMessage());
+    }
+
+    @Test
+    public void require_that_element_assign_of_wrong_type_is_rejected() {
+        var upd = new DocumentUpdate(docType, "id:scheme:my_type::");
+        upd.addFieldPathUpdate(update("my_str[0]", 5));
+        var e = assertThrows(InvalidInputException.class,
+                             () -> execute("input my_str | for_each { lowercase } | index my_str", upd));
+        assertEquals("Cannot assign a value of type int to 'my_str[0]': The elements of 'my_str' are of type string",
+                     e.getMessage());
     }
 
     // -------------- HELPERS ---------------------

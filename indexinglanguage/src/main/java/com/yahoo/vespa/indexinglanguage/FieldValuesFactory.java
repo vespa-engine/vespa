@@ -99,6 +99,7 @@ public class FieldValuesFactory {
      */
     private UpdateFieldValues newElementAssignFieldValues(DocumentType docType, DocumentId docId, Document complete,
                                                           AssignFieldPathUpdate elementAssign) {
+        FieldPathUpdateHelper.requireValidElementAssign(elementAssign);
         String fieldName = elementAssign.getFieldPath().get(0).getFieldRef().getName();
         Expression expression;
         try {
