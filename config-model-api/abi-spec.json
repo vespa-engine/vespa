@@ -1546,6 +1546,7 @@
       "public double searchNodeReservedMemoryFactor()",
       "public boolean forceDisableOnnxModelOptimization()",
       "public boolean failWhenConfiguringIndexedMapOfArray()",
+      "public java.lang.String allowStructFieldIndex()",
       "public boolean protonLogWarningOnDiskCapacityChange()",
       "public boolean protonResampleDiskCapacity()",
       "public boolean fastMapSearch()",

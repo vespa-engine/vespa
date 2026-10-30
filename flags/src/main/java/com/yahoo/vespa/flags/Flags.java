@@ -222,6 +222,17 @@ public class Flags {
             INSTANCE_ID
     );
 
+    public static final UnboundStringFlag ALLOW_STRUCT_FIELD_INDEX = defineStringFlag(
+            "allow-struct-field-index", "disallow",
+            List.of("arnej"), "2026-10-30", "2027-12-01",
+            "How struct fields with 'indexing: index' are handled in indexed search: " +
+            "'ignore' (warn, and do not index them), 'disallow' (fail deployment), " +
+            "'allow_alone' (index them, except when also attributes), or 'allow' (index them)",
+            "Takes effect at redeployment (adding or removing indexes requires reindexing)",
+            List.of("ignore", "disallow", "allow_alone", "allow")::contains,
+            INSTANCE_ID
+    );
+
     // TODO (@sebasabe): Remove when no loaded config model version reads it (models older than the release adding PRODUCT_DISCOVERY), together with its flag data
     public static final UnboundBooleanFlag COMMERCE_DISCOVERY = defineFeatureFlag(
             "commerce-discovery", false,
