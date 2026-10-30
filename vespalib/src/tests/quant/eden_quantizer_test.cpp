@@ -232,9 +232,17 @@ TEST(EdenQuantizerTest, zero_norm_vector_emits_zero_scale_and_quantization_index
     EXPECT_THAT(v_dq, Each(Eq(0.0f)));
 }
 
-// TODO extend this test to all bit widths
-TEST(EdenQuantizerTest, can_compute_dot_product_with_pre_rotated_vector) {
-    EdenQuantizer        q(16, 4, 0xbeefd00d);
+namespace {
+
+template <std::uniform_random_bit_generator Rng>
+void fill_random(std::span<float> v, Rng& rng) noexcept {
+    std::uniform_real_distribution dist(-1.f, 1.f);
+    std::ranges::generate(v, [&] { return dist(rng); });
+}
+
+void do_test_mixed_dot_product_preserves_magnitude_and_relative_angles(const uint8_t bits) {
+    SCOPED_TRACE("do_test_mixed_dot_product_preserves_magnitude_and_relative_angles");
+    EdenQuantizer        q(16, bits, 0xbeefd00d);
     std::vector<uint8_t> v_q(q.quantized_size());
 
     std::vector v = my_16d_test_vector();
@@ -244,7 +252,7 @@ TEST(EdenQuantizerTest, can_compute_dot_product_with_pre_rotated_vector) {
     q.quantize(v, v_q, QuantMode::InnerProduct);
     // First let's do a silly dot product between a _non-rotated_ query and its quantized
     // version; the result should be completely uncorrelated.
-    EXPECT_THAT(q.pre_rotated_query_dot_product(v, v_q), FloatEq(-0.302687526));
+    EXPECT_THAT(q.pre_rotated_query_dot_product(v, v_q), Lt(0));
     // Now let's do it properly
     std::vector q_rot = v;
     q.rotate_vector_inplace(q_rot);
@@ -259,13 +267,57 @@ TEST(EdenQuantizerTest, can_compute_dot_product_with_pre_rotated_vector) {
     EXPECT_THAT(q.pre_rotated_query_dot_product(q_rot, v_q), FloatEq(-1));
 }
 
-namespace {
+void do_test_mixed_dot_product_equal_to_explicitly_dequantized_dot(const size_t dimensions, const uint8_t bits) {
+    SCOPED_TRACE("do_test_mixed_dot_product_equal_to_explicitly_dequantized_dot");
+    Xoshiro256PlusPlusPrng prng(0xabcdef123456789);
+    EdenQuantizer          q(dimensions, bits, prng());
 
-template <std::uniform_random_bit_generator Rng>
-void fill_random(std::span<float> v, Rng& rng) noexcept {
-    std::uniform_real_distribution<float> dist(-1.f, 1.f);
-    std::ranges::generate(v, [&]() mutable { return dist(rng); });
+    std::vector<float>   lhs(dimensions);
+    std::vector<float>   rhs(dimensions), rhs_dq(dimensions);
+    std::vector<uint8_t> rhs_q(q.quantized_size());
+
+    const size_t rounds = 100;
+    for (size_t i = 0; i < rounds; ++i) {
+        fill_random(lhs, prng);
+        fill_random(rhs, prng);
+
+        q.quantize(rhs, rhs_q, QuantMode::InnerProduct);
+        q.dequantize(rhs_q, rhs_dq);
+
+        const float real_f32_q_dot = dot(lhs, rhs_dq);
+        std::vector q_rot = lhs;
+        q.rotate_vector_inplace(q_rot);
+        const float q_dot = q.pre_rotated_query_dot_product(q_rot, rhs_q);
+        ASSERT_THAT(q_dot, FloatNear(real_f32_q_dot, 0.00005)) << "with dims=" << dimensions;
+    }
 }
+
+void do_run_mixed_dot_product_tests(const uint8_t bits) {
+    ASSERT_NO_FATAL_FAILURE(do_test_mixed_dot_product_preserves_magnitude_and_relative_angles(1));
+    for (size_t dims : {1, 2, 3, 15, 16, 17, 64, 127, 128, 129, 1024}) {
+        ASSERT_NO_FATAL_FAILURE(do_test_mixed_dot_product_equal_to_explicitly_dequantized_dot(dims, bits));
+    }
+}
+
+} // namespace
+
+TEST(EdenQuantizerTest, can_compute_dot_product_with_pre_rotated_vector_1_bit) {
+    do_run_mixed_dot_product_tests(1);
+}
+
+TEST(EdenQuantizerTest, can_compute_dot_product_with_pre_rotated_vector_2_bits) {
+    do_run_mixed_dot_product_tests(2);
+}
+
+TEST(EdenQuantizerTest, can_compute_dot_product_with_pre_rotated_vector_3_bits) {
+    do_run_mixed_dot_product_tests(3);
+}
+
+TEST(EdenQuantizerTest, can_compute_dot_product_with_pre_rotated_vector_4_bits) {
+    do_run_mixed_dot_product_tests(4);
+}
+
+namespace {
 
 void do_test_quantized_vectors_dot_product(const size_t dimensions, const uint8_t bits) {
     Xoshiro256PlusPlusPrng prng(0x123456789abcdef); // Fixed seed due to floating point testing

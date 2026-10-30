@@ -153,6 +153,27 @@ void register_unpack_bits_benchmark(const uint8_t bits) {
         });
 }
 
+void register_eden_f32_q_dot_product_benchmark(const uint8_t bits) {
+    auto input_fn = [bits](const size_t sz) {
+        Xoshiro256PlusPlusPrng prng(1234567 * bits);
+        std::vector<float>     f32_lhs = create_and_fill_float<float>(prng, sz);
+        std::vector<uint8_t>   packed_rhs(packed_bytes(bits, sz));
+        std::ranges::generate(packed_rhs, [&] noexcept { return static_cast<uint8_t>(prng() & 0xff); });
+        return std::make_pair(std::move(f32_lhs), std::move(packed_rhs));
+    };
+    auto dot_product_fn = [bits](const float* f32_lhs, const uint8_t* packed_rhs, const size_t sz) noexcept {
+        return eden_f32_q_dot_product(f32_lhs, packed_rhs, bits, sz);
+    };
+    register_benchmark_for_all_accels(
+        FnTable::FnId::EDEN_F32_Q_DOT_PRODUCT, dot_product_fn, [input_fn, bits](auto accel, auto bench_fn) {
+            auto        target_info = accel->target_info();
+            std::string instance_name =
+                std::format("EDEN F32vQ dot product/{} {}/{}/{}", int(bits), bits > 1 ? "bits" : "bit",
+                            target_info.implementation_name(), target_info.target_name());
+            register_accel_binary_arg_benchmark<uint8_t>(instance_name, std::move(accel), input_fn, bench_fn);
+        });
+}
+
 void register_all_benchmark_suites() {
     auto euclidean_dist_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
         return squared_euclidean_distance(lhs, rhs, my_sz);
@@ -178,6 +199,11 @@ void register_all_benchmark_suites() {
     register_benchmarks<float>("Dot Product", FnTable::FnId::DOT_PRODUCT_F32, dot_product_fn);
     register_benchmarks<BFloat16>("Dot Product", FnTable::FnId::DOT_PRODUCT_BF16, dot_product_fn);
     register_benchmarks<int8_t>("Dot Product", FnTable::FnId::DOT_PRODUCT_I8, dot_product_fn);
+    for (const uint8_t bits : {1, 2, 3, 4}) {
+        register_eden_f32_q_dot_product_benchmark(bits);
+        register_pack_bits_benchmark(bits);
+        register_unpack_bits_benchmark(bits);
+    }
 
     auto binary_hamming_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
         return binary_hamming_distance(lhs, rhs, my_sz);
@@ -190,10 +216,6 @@ void register_all_benchmark_suites() {
         return population_count(lhs, my_sz);
     };
     register_benchmarks<uint64_t>("Popcount", FnTable::FnId::POPULATION_COUNT, popcount_fn);
-    for (const uint8_t bits : {1, 2, 3, 4}) {
-        register_pack_bits_benchmark(bits);
-        register_unpack_bits_benchmark(bits);
-    }
     auto and_fn = [](auto* lhs, const auto* rhs, size_t my_sz) { and_bit(lhs, rhs, my_sz); };
     register_benchmarks<uint8_t>("Bitwise AND", FnTable::FnId::AND_BIT, and_fn);
 

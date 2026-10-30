@@ -186,18 +186,12 @@ void EdenQuantizer::rotate_vector_inplace(std::span<float> vec) const noexcept {
 }
 
 float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   query,
-                                                   std::span<const uint8_t> quant_vec) noexcept {
+                                                   std::span<const uint8_t> quant_vec) const noexcept {
     CHECK(query.size() == _dimensions);
-    const auto [scale, centroid_idx] = unary_unpack_bits_to_scratch_space(quant_vec);
-    const auto codebook = my_codebook();
-    // Taunt the auto-vectorizer by explicitly running parallel fp accumulators.
-    // 8x is only slightly faster than 4x (on M3 AArch64), but 4x is by itself ~4x
-    // faster than the naive scalar loop version.
-    // clang-format off: lambda formatting
-    return scale * sum_indexed_unrolled<8, float>(_dimensions, [&](size_t idx) noexcept {
-        return query[idx] * codebook[centroid_idx[idx]];
-    });
-    // clang-format on
+    CHECK(quant_vec.size() == _quantized_size);
+    const float    scale = extract_scale_factor(quant_vec.data());
+    const uint8_t* in_bits = packed_bits_buf(quant_vec.data());
+    return scale * hwaccelerated::eden_f32_q_dot_product(query.data(), in_bits, _bits, _dimensions);
 }
 
 float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,

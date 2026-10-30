@@ -12,6 +12,8 @@
 #include "private_helpers.hpp"
 #include "scalar_block_bit_packing.hpp"
 
+#include <vespa/check_require.h>
+
 #include <cblas.h>
 
 namespace vespalib::hwaccelerated {
@@ -130,6 +132,29 @@ __attribute__((noinline)) void scalar_block_bit_unpack_4(const uint8_t* __restri
                                                          uint8_t* __restrict__ raw, const size_t sz) noexcept {
     scalar_block_bit_unpack<4>(packed, raw, sz);
 }
+// TODO consolidate centroid LUTs
+constexpr float unit_norm_centroids_bf16_as_f32[4][16] = {
+    {-0x1.98p-1, 0x1.98p-1},
+    {-0x1.cep-2, -0x1.82p+0, 0x1.cep-2, 0x1.82p+0},
+    {-0x1.f4p-3, -0x1.82p-1, -0x1.58p+0, -0x1.12p+1, 0x1.f4p-3, 0x1.82p-1, 0x1.58p+0, 0x1.12p+1},
+    {-0x1.06p-3, -0x1.8cp-2, -0x1.5p-1, -0x1.e2p-1, -0x1.4p+0, -0x1.9ep+0, -0x1.08p+1, -0x1.5cp+1, 0x1.06p-3,
+     0x1.8cp-2, 0x1.5p-1, 0x1.e2p-1, 0x1.4p+0, 0x1.9ep+0, 0x1.08p+1, 0x1.5cp+1}};
+
+template <uint8_t Bits>
+__attribute__((noinline)) float do_eden_f32_q_dot_product(const float* lhs, const uint8_t* packed_rhs,
+                                                          const size_t sz) noexcept {
+    const auto codebook = std::span{unit_norm_centroids_bf16_as_f32[Bits - 1], 1u << Bits};
+    size_t     i = 0;
+    float      dot = 0;
+    scalar_block_bit_unpack_lambda<Bits>(packed_rhs, sz, [&](const uint8_t* idx, const size_t chunk_sz) noexcept {
+        dot += sum_indexed_unrolled<4, float>(chunk_sz, [&](const size_t j) noexcept {
+            const float c_j = codebook[idx[j]];
+            return lhs[i + j] * c_j;
+        });
+        i += chunk_sz;
+    });
+    return dot;
+}
 
 int64_t my_dot_product_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
     return helper::multiplyAdd(a, b, sz);
@@ -155,6 +180,21 @@ float my_dot_product_f32(const float* a, const float* b, size_t sz) noexcept {
 }
 double my_dot_product_f64(const double* a, const double* b, size_t sz) noexcept {
     return cblas_ddot(sz, a, 1, b, 1);
+}
+float my_eden_f32_q_dot_product(const float* lhs, const uint8_t* packed_rhs, const uint8_t bits,
+                                const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return do_eden_f32_q_dot_product<1>(lhs, packed_rhs, sz);
+    case 2:
+        return do_eden_f32_q_dot_product<2>(lhs, packed_rhs, sz);
+    case 3:
+        return do_eden_f32_q_dot_product<3>(lhs, packed_rhs, sz);
+    case 4:
+        return do_eden_f32_q_dot_product<4>(lhs, packed_rhs, sz);
+    default:
+        abort();
+    }
 }
 double my_squared_euclidean_distance_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
     return helper::squaredEuclideanDistance(a, b, sz);

@@ -583,4 +583,49 @@ void scalar_block_bit_unpack(const uint8_t* __restrict__ packed, uint8_t* __rest
     }
 }
 
+template <uint8_t Bits, typename Fn>
+void scalar_block_bit_unpack_lambda(const uint8_t* __restrict__ packed, const size_t sz, Fn fn) noexcept {
+    static_assert(Bits >= 1 && Bits <= 4, "Unsupported bit count");
+    constexpr uint8_t B = Bits;
+    using BlockBitPacker = ScalarVerticalBlockBitPacker<B>;
+    using RemainderBitPacker = ScalarHorizontalRemainderBitPacker<B>;
+
+    alignas(16) uint8_t tmp_raw[128];
+
+    size_t i = 0;
+    for (; i + 128 <= sz; i += 128, packed += 16 * B) {
+        BlockBitPacker::template unpack<16>(packed, tmp_raw);
+        fn(tmp_raw, 128);
+    }
+    size_t rem = sz - i;
+    if (rem >= 64) { // <= 127
+        BlockBitPacker::template unpack<8>(packed, tmp_raw);
+        fn(tmp_raw, 64);
+        packed += 8 * B;
+        rem -= 64;
+    }
+    if (rem >= 32) { // <= 63
+        BlockBitPacker::template unpack<4>(packed, tmp_raw);
+        fn(tmp_raw, 32);
+        packed += 4 * B;
+        rem -= 32;
+    }
+    if (rem >= 16) { // <= 31
+        BlockBitPacker::template unpack<2>(packed, tmp_raw);
+        fn(tmp_raw, 16);
+        packed += 2 * B;
+        rem -= 16;
+    }
+    if (rem >= 8) { // <= 15
+        BlockBitPacker::template unpack<1>(packed, tmp_raw);
+        fn(tmp_raw, 8);
+        packed += 1 * B;
+        rem -= 8;
+    }
+    if (rem > 0 && rem < 8) { // <= 7
+        RemainderBitPacker::unpack1_to_7(packed, tmp_raw, rem);
+        fn(tmp_raw, rem);
+    }
+}
+
 } // namespace vespalib::hwaccelerated
