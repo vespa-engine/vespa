@@ -21,7 +21,8 @@ public class ConnectorFactoryRegistryModule implements Module {
     private final ConnectorConfig config;
 
     public ConnectorFactoryRegistryModule(ConnectorConfig config) {
-        this.config = config;
+        // Without SO_REUSEADDR the OS won't assign a random port which another process has bound on loopback
+        this.config = new ConnectorConfig(new ConnectorConfig.Builder(config).reuseAddress(false));
     }
 
     public ConnectorFactoryRegistryModule() {
