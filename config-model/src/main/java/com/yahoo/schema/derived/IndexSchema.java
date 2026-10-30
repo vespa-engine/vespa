@@ -2,6 +2,7 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructuredDataType;
@@ -15,9 +16,11 @@ import com.yahoo.vespa.config.search.IndexschemaConfig;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Deriver of indexschema config containing information of all text index fields with name and data type.
@@ -29,6 +32,7 @@ public class IndexSchema extends Derived {
     private final List<IndexField> fields = new ArrayList<>();
     private final Map<String, FieldCollection> collections = new LinkedHashMap<>();
     private final Map<String, FieldSet> fieldSets = new LinkedHashMap<>();
+    private final Set<String> uriFields = new LinkedHashSet<>();
 
     public IndexSchema(Schema schema) {
         fieldSets.putAll(schema.fieldSets().userFieldSets());
@@ -48,6 +52,14 @@ public class IndexSchema extends Derived {
         return field.getDataType() instanceof TensorDataType;
     }
 
+    private static boolean isUriField(ImmutableSDField field) {
+        DataType type = field.getDataType();
+        if (type instanceof CollectionDataType collectionType) {
+            type = collectionType.getNestedType();
+        }
+        return type == DataType.URI;
+    }
+
     private void deriveIndexFields(ImmutableSDField field, Schema schema) {
         // Note: Indexes for tensor fields are NOT part of the index schema for text fields.
         if ((!field.doesIndexing() && !field.isIndexStructureField()) ||
@@ -60,6 +72,9 @@ public class IndexSchema extends Derived {
             return;
         }
         String fieldName = field.getName();
+        if (isUriField(field)) {
+            uriFields.add(fieldName);
+        }
         for (Field flatField : lst) {
             deriveIndexFields(flatField, schema);
         }
@@ -135,6 +150,8 @@ public class IndexSchema extends Derived {
         // Replace
         icB.indexfield(fields.stream().map(IndexSchema::createIndexFieldConfig).toList());
         icB.fieldset(fieldSets.values().stream().map(IndexSchema::createFieldSetConfig).toList());
+        icB.urifield(uriFields.stream().map(name -> new IndexschemaConfig.Urifield.Builder().name(name)).toList());
+        icB.explicituris(true);
     }
 
     public void export(String toDirectory) throws IOException {

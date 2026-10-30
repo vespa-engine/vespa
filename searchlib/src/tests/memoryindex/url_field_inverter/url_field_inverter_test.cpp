@@ -288,6 +288,42 @@ TEST_F(WeightedSetInverterTest, require_that_empty_weighted_set_field_works) {
     EXPECT_EQ("", _inserter_backend.toStr());
 }
 
+TEST(SchemaIndexFieldsTest, require_that_uri_fields_are_given_by_schema) {
+    Schema schema;
+    // Struct field indexes for an array of struct field whose struct fields have the same names as uri parts.
+    for (const char* suffix : {"scheme", "host", "port", "path", "query", "fragment", "hostname"}) {
+        schema.addIndexField(
+            Schema::IndexField("files." + std::string(suffix), DataType::STRING, CollectionType::ARRAY));
+    }
+    {
+        // Without explicit uri fields, this is detected as a broken uri field, and none of the fields are indexed.
+        SchemaIndexFields fields;
+        fields.setup(schema);
+        EXPECT_EQ(0u, fields._uriFields.size());
+        EXPECT_EQ(0u, fields._textFields.size());
+    }
+    schema.set_explicit_uri_fields(true);
+    {
+        SchemaIndexFields fields;
+        fields.setup(schema);
+        EXPECT_EQ(0u, fields._uriFields.size());
+        EXPECT_EQ(7u, fields._textFields.size());
+    }
+}
+
+TEST(SchemaIndexFieldsTest, require_that_explicit_uri_fields_are_set_up) {
+    Schema schema;
+    schema.addUriIndexFields(Schema::IndexField("url", DataType::STRING));
+    schema.addIndexField(Schema::IndexField("title", DataType::STRING));
+    EXPECT_TRUE(schema.has_explicit_uri_fields());
+    SchemaIndexFields fields;
+    fields.setup(schema);
+    ASSERT_EQ(1u, fields._uriFields.size());
+    EXPECT_EQ(schema.getIndexFieldId("url"), fields._uriFields[0]._all);
+    EXPECT_EQ(schema.getIndexFieldId("url.hostname"), fields._uriFields[0]._hostname);
+    EXPECT_EQ(std::vector<uint32_t>({schema.getIndexFieldId("title")}), fields._textFields);
+}
+
 } // namespace memoryindex
 } // namespace search
 

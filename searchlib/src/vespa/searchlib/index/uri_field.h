@@ -33,7 +33,6 @@ public:
     bool valid(const Schema& schema, const Schema::CollectionType& collectionType) const;
     void setup(const Schema& schema, const std::string& field);
     void markUsed(UsedFieldsMap& usedFields) const;
-    static bool mightBePartofUri(std::string_view name);
 };
 
 } // namespace search::index
