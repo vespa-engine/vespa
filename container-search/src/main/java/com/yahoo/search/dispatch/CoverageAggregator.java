@@ -51,6 +51,8 @@ public class CoverageAggregator {
         return answeredNodes;
     }
     public boolean hasNoAnswers() { return answeredNodes == 0; }
+    /** Returns whether any node searched, as opposed to all answers being errors */
+    public boolean hasParticipatingAnswers() { return answeredNodesParticipated > 0; }
 
     public void setFailedNodes(int failedNodes) {
         this.failedNodes = failedNodes;
