@@ -172,6 +172,32 @@ public class ElementAssignUpdateTestCase {
                      e.getMessage());
     }
 
+    /** Without an expression selector, a field only input to other fields is passed on as fed. */
+    @Test
+    public void require_that_element_assign_of_field_without_outputting_statement_is_passed_on() throws ParseException {
+        var fpupd = update("my_str[0]", "HELLO");
+        var upd = new DocumentUpdate(docType, "id:scheme:my_type::");
+        upd.addFieldPathUpdate(fpupd);
+
+        var out = execute("input my_str | for_each { lowercase } | index my_other", upd);
+
+        assertNotNull(out);
+        assertEquals(1, out.fieldPathUpdates().size());
+        assertEquals(fpupd, out.fieldPathUpdates().iterator().next());
+    }
+
+    /** A script which does not map the element to a single processed element leaves nothing to assign. */
+    @Test
+    public void require_that_element_assign_is_rejected_when_not_processed_to_single_element() {
+        var upd = new DocumentUpdate(docType, "id:scheme:my_type::");
+        upd.addFieldPathUpdate(update("my_str[0]", "HELLO WORLD"));
+        var e = assertThrows(InvalidInputException.class,
+                             () -> execute("input my_str | join \" \" | split \" \" | index my_str", upd));
+        assertEquals("Cannot assign to 'my_str[0]': The indexing statements of 'my_str' must output a single " +
+                     "element for an element assign, but got an array of 2 elements",
+                     e.getMessage());
+    }
+
     // -------------- HELPERS ---------------------
 
     private static DocumentType newDocumentType() {
@@ -180,6 +206,7 @@ public class ElementAssignUpdateTestCase {
         docType.addField(new Field("my_int", DataType.getArray(DataType.INT)));
         docType.addField(new Field("my_structs", DataType.getArray(newStructType())));
         docType.addField(new Field("my_map", new MapDataType(DataType.STRING, DataType.INT)));
+        docType.addField(new Field("my_other", DataType.getArray(DataType.STRING)));
         return docType;
     }
 

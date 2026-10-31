@@ -581,6 +581,15 @@ public class IndexingProcessorTestCase {
         assertInvalidInput("Cannot assign a value of type int to 'a[2]': The elements of 'a' are of type string", progress);
     }
 
+    /** A script not outputting a single element for the assigned one leaves nothing to assign. */
+    @Test
+    public void requireThatElementAssignNotProcessedToSingleElementIsRejectedAsInvalidInput() {
+        var tester = elementAssignTester("input a | join \" \" | split \" \" | index a");
+        var progress = tester.processForProgress(elementAssign(tester, "a[2]", new StringFieldValue("HELLO WORLD")));
+        assertInvalidInput("Cannot assign to 'a[2]': The indexing statements of 'a' must output a single element " +
+                           "for an element assign, but got an array of 2 elements", progress);
+    }
+
     /** The value is validated even when there is no script to process it, rather than passing it on to fail later. */
     @Test
     public void requireThatElementAssignWithoutValueIsRejectedAsInvalidInputAlsoWithoutIndexingStatement() {
