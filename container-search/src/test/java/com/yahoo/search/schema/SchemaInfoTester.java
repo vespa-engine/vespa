@@ -69,6 +69,7 @@ public class SchemaInfoTester {
                                                                       .setExplanation("Field 1\nin schema a")
                                                                       .setMatchType(Field.MatchType.TEXT).build())
                             .add(new Field.Builder("field2", "int").setAttribute(true).build())
+                            .add(new Field.Builder("field3", "tensor<float>(x[5])").setAttribute(true).setInputExpression("embed(e5, @input)").build())
                             .add(new FieldSet.Builder("default").addField("field1").build())
                             .add(new FieldSet.Builder("structFields").addField("struct1.x").addField("struct1.y").build())
                             .add(new FieldSet.Builder("mixed").addField("struct1.x").addField("field2").build())
@@ -136,6 +137,9 @@ public class SchemaInfoTester {
                                                                  .matchType(SchemaInfoConfig.Schema.Field.MatchType.TEXT));
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field2").type("int")
                                                                  .index(false).attribute(true));
+        schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field3").type("tensor<float>(x[5])")
+                                                                 .index(false).attribute(true)
+                                                                 .inputExpression("embed(e5, @input)"));
 
         schemaA.fieldset(new SchemaInfoConfig.Schema.Fieldset.Builder().name("default").field("field1"));
         schemaA.fieldset(new SchemaInfoConfig.Schema.Fieldset.Builder().name("structFields").field("struct1.x").field("struct1.y"));

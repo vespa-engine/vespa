@@ -25,6 +25,7 @@ public class Field implements FieldInfo {
     private final List<FastMapSearchFields> fastMapSearches;
     private final Set<String> aliases;
     private final MatchType matchType;
+    private final Optional<String> inputExpression;
     private final Optional<String> explanation;
 
     public Field(Builder builder) {
@@ -35,6 +36,7 @@ public class Field implements FieldInfo {
         this.fastMapSearches = List.copyOf(builder.fastMapSearches);
         this.aliases = Set.copyOf(builder.aliases);
         this.matchType = builder.matchType;
+        this.inputExpression = Optional.ofNullable(builder.inputExpression);
         this.explanation = Optional.ofNullable(builder.explanation);
     }
 
@@ -62,6 +64,12 @@ public class Field implements FieldInfo {
     @Override
     public MatchType matchType() { return matchType; }
 
+    /**
+     * Returns the expression to use in queries to produce an input to match against this field, where the
+     * value to convert is referenced as "@input", e.g. "embed(myEmbedder, @input)", or empty if none.
+     */
+    public Optional<String> inputExpression() { return inputExpression; }
+
     /** Returns the free text explanation of the content and usage of this field, if any. */
     public Optional<String> explanation() { return explanation; }
 
@@ -85,13 +93,14 @@ public class Field implements FieldInfo {
         if ( ! this.fastMapSearches.equals(other.fastMapSearches)) return false;
         if ( ! this.aliases.equals(other.aliases)) return false;
         if ( ! this.matchType.equals(other.matchType)) return false;
+        if ( ! this.inputExpression.equals(other.inputExpression)) return false;
         if ( ! this.explanation.equals(other.explanation)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, isAttribute, isIndex, fastMapSearches, aliases, matchType, explanation);
+        return Objects.hash(name, type, isAttribute, isIndex, fastMapSearches, aliases, matchType, inputExpression, explanation);
     }
 
     @Override
@@ -435,6 +444,7 @@ public class Field implements FieldInfo {
         private final List<FastMapSearchFields> fastMapSearches = new ArrayList<>();
         private String explanation = null;
         private MatchType matchType = MatchType.NONE;
+        private String inputExpression = null;
 
         public Builder(String name, String typeString) {
             this.name = name;
@@ -450,6 +460,12 @@ public class Field implements FieldInfo {
         /** Sets how this field is matched. This should be NONE (the default) for fields which are not strings. */
         public Builder setMatchType(MatchType matchType) {
             this.matchType = Objects.requireNonNull(matchType);
+            return this;
+        }
+
+        /** Sets the expression to use in queries to produce an input to match against this field, e.g. "embed(myEmbedder, @input)". */
+        public Builder setInputExpression(String inputExpression) {
+            this.inputExpression = Objects.requireNonNull(inputExpression);
             return this;
         }
 

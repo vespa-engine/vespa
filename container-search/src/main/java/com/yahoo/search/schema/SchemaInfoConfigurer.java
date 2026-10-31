@@ -29,9 +29,11 @@ class SchemaInfoConfigurer {
             Field.Builder fieldBuilder = new Field.Builder(fieldConfig.name(), fieldConfig.type());
             fieldBuilder.setAttribute(fieldConfig.attribute());
             fieldBuilder.setIndex(fieldConfig.index());
+            fieldBuilder.setMatchType(Field.MatchType.valueOf(fieldConfig.matchType().name()));
+            if ( ! fieldConfig.inputExpression().isEmpty())
+                fieldBuilder.setInputExpression(fieldConfig.inputExpression());
             if ( ! fieldConfig.explanation().isEmpty())
                 fieldBuilder.setExplanation(fieldConfig.explanation());
-            fieldBuilder.setMatchType(Field.MatchType.valueOf(fieldConfig.matchType().name()));
             for (var fastMapConfig : fieldConfig.fastMapSearchFields())
                 fieldBuilder.addFastMapSearch(new Field.FastMapSearchFields(fastMapConfig.lookupName(),
                                                                             fastMapConfig.keyField(),
