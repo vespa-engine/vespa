@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-10-29
+Last updated: 2026-10-31
 
 ---
 
@@ -221,14 +221,6 @@ Last updated: 2026-10-29
 - Homepage: <http://fasterxml.com/>
 - Copyright 2007 Tatu Saloranta tatu.saloranta@iki.fi
 - FasterXML
-
----
-
-## com.fasterxml.woodstox 7.3.0 — Apache 2.0
-
-- Homepage: <http://fasterxml.com>
-- Copyright 2004 Tatu Saloranta
--  tatu.saloranta@iki.fi
 
 ---
 
@@ -621,7 +613,7 @@ Last updated: 2026-10-29
 
 ---
 
-## hast-util-to-html 9.0.5 — MIT
+## hast-util-to-html 9.0.6 — MIT
 
 - Homepage: <https://github.com/syntax-tree/hast-util-to-html#readme>
 - Copyright Titus Wormer
@@ -923,21 +915,6 @@ Last updated: 2026-10-29
 
 ---
 
-## org.apache.maven 4.0.0-rc-6 — Apache 2.0
-
-- Homepage: <https://maven.apache.org/ref/4.0.0-rc-6/>
-- The Apache Software Foundation
-
----
-
-## org.apache.maven 4.0.0-rc-7 — Apache 2.0
-
-- Homepage: <https://www.apache.org/>
-- Copyright 2001-2026 The Apache Software Foundation
-- The Apache Software Foundation
-
----
-
 ## org.apache.maven.plugin-tools 3.16.0 — Apache 2.0
 
 - Homepage: <https://maven.apache.org/plugin-tools>
@@ -1014,14 +991,6 @@ Last updated: 2026-10-29
 - Copyright 2006 Javolution http://javolution.org
 - Codehaus Plexus
 - Copyright The Codehaus Foundation
-
----
-
-## org.codehaus.woodstox 4.3.2 — BSD 2
-
-- Homepage: <http://fasterxml.com>
-- Copyright 2008 FasterXML, LLC
-- Copyright 2008 FasterXML LLC "info@fasterxml.com" mailto:info@fasterxml.com
 
 ---
 
