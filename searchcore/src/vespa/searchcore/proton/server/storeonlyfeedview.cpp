@@ -11,6 +11,7 @@
 #include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/fieldpathupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
@@ -21,6 +22,8 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
+
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.storeonlyfeedview");
@@ -159,6 +162,18 @@ UpdateScope::UpdateScope(const vespalib::hash_set<int32_t>& indexedFields, const
     : _indexedFields(indexedFields),
       _nonAttributeFields(!upd.getFieldPathUpdates().empty()),
       _hasIndexedFields(false) {
+    // Field path updates are not seen by onUpdateField(), so check if any of them touch an indexed field.
+    // Otherwise the updated document is only written to the document store and the index is left stale.
+    for (const auto& fieldPathUpdate : upd.getFieldPathUpdates()) {
+        const std::string& path = fieldPathUpdate->getOriginalFieldPath();
+        std::string_view fieldName(path.data(), std::min(path.find_first_of("[{."), path.size()));
+        const auto& docType = upd.getType();
+        if (docType.hasField(fieldName) &&
+            (_indexedFields.find(docType.getField(fieldName).getId()) != _indexedFields.end())) {
+            _hasIndexedFields = true;
+            break;
+        }
+    }
 }
 
 void UpdateScope::onUpdateField(const document::Field& field, const search::AttributeVector* attr) {

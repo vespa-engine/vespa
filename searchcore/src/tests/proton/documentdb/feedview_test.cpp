@@ -4,6 +4,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/newconfigbuilder.h>
+#include <vespa/document/update/assignfieldpathupdate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
@@ -1122,6 +1123,34 @@ TEST(FeedViewTest, update_to_quantized_tensor_attribute_updates_document_store_a
     f.maw._attrs.insert("a4"); // mark a4 as attribute field
     f.maw._has_non_authoritative_attr = true;
     check_update_writes_document_to_attribute_and_document_store(f, "a4");
+}
+
+namespace {
+
+std::string put_document_and_assign_by_field_path(SearchableFeedViewFixture& f, const std::string& field_path) {
+    DocumentContext dc1 = f.doc1();
+    f.putAndWait(dc1);
+    DocumentContext dc2("id:ns:searchdocument::1", 20, f.getBuilder());
+    dc2.upd->addFieldPathUpdate(std::make_unique<document::AssignFieldPathUpdate>(
+        f.getBuilder().get_document_type(), field_path, "", std::make_unique<StringFieldValue>("foo")));
+    f.updateAndWait(dc2);
+    return f.get_trace();
+}
+
+} // namespace
+
+TEST(FeedViewTest, field_path_update_to_indexed_field_updates_index) {
+    SearchableFeedViewFixture f;
+    auto trace = put_document_and_assign_by_field_path(f, "i1");
+    EXPECT_NE(std::string::npos, trace.find("put(adapter=index,serialNum=2,lid=1)")) << trace;
+    EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
+}
+
+TEST(FeedViewTest, field_path_update_to_non_indexed_field_does_not_update_index) {
+    SearchableFeedViewFixture f;
+    auto trace = put_document_and_assign_by_field_path(f, "s1");
+    EXPECT_EQ(std::string::npos, trace.find("put(adapter=index,serialNum=2")) << trace;
+    EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
 }
 
 TEST(
