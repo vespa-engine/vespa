@@ -56,4 +56,18 @@ public class SimpleDocumentFieldValuesTestCase {
         }
         assertNull(adapter.getInputValue("foo"));
     }
+
+    @Test
+    public void requireThatToStringShowsTheDocumentOnceWhenInputIsOutput() {
+        DocumentType docType = new DocumentType("my_doc");
+        docType.addField("foo", DataType.STRING);
+        Document doc = new Document(docType, "id:scheme:my_doc::");
+        doc.setFieldValue("foo", "bar");
+
+        assertEquals("document field values: document 'id:scheme:my_doc::' of type 'my_doc' with 1 fields",
+                     new SimpleDocumentFieldValues(doc, doc).toString());
+        assertEquals("document field values: input document 'id:scheme:my_doc::' of type 'my_doc' with 1 fields, " +
+                     "output document 'id:scheme:my_doc::' of type 'my_doc' with 0 fields",
+                     new SimpleDocumentFieldValues(doc).toString());
+    }
 }

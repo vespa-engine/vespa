@@ -77,7 +77,10 @@ public class SimpleDocumentFieldValues implements DocumentFieldValues {
 
     @Override
     public String toString() {
-        return "document field values: " + output + " with " + output.getFieldCount() + " fields";
+        if (input == output)
+            return "document field values: " + output + " with " + output.getFieldCount() + " fields";
+        return "document field values: input " + input + " with " + input.getFieldCount() + " fields, output " +
+               output + " with " + output.getFieldCount() + " fields";
     }
 
 }
