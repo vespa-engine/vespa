@@ -21,10 +21,16 @@ import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
+import com.yahoo.vespa.indexinglanguage.expressions.EmbedExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -109,9 +115,10 @@ public final class SchemaInfo extends Derived {
     private void addFieldsConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {
         // Extra fields which are attributes are also added to the document type, so they are listed twice
         Set<String> added = new HashSet<>();
+        Map<String, String> inputExpressions = inputExpressions();
         for (var field : schema.allFieldsList()) {
             if ( ! added.add(field.getName())) continue;
-            addFieldConfig(field, field.doesAttributing(), schemaBuilder);
+            addFieldConfig(field, field.doesAttributing(), Optional.ofNullable(inputExpressions.get(field.getName())), schemaBuilder);
             addStructFieldsConfig(field, added, schemaBuilder);
             if (field.isImportedField()) continue;
             for (var index : field.getIndices().values()) {
@@ -125,6 +132,24 @@ public final class SchemaInfo extends Derived {
         }
     }
 
+    /**
+     * Returns the expression to use in queries to produce an input to match against each field which receives
+     * the output of an embed expression, e.g. "embed(myEmbedder, @input)".
+     * If a field receives output from multiple embed expressions, the first one is used.
+     */
+    private Map<String, String> inputExpressions() {
+        Map<String, String> inputExpressions = new HashMap<>();
+        for (var field : schema.allFieldsList()) {
+        if (field.isImportedField()) continue;
+            var visitor = new EmbedderVisitor();
+            visitor.visit(field.getIndexingScript());
+            if (visitor.inputExpression == null) continue;
+            for (var outputField : visitor.outputFields)
+                inputExpressions.putIfAbsent(outputField, visitor.inputExpression);
+        }
+        return inputExpressions;
+    }
+
     /** Adds the struct fields of the given field, recursively, by their full name, e.g. "myStruct.myField". */
     private void addStructFieldsConfig(ImmutableSDField field, Set<String> added, SchemaInfoConfig.Schema.Builder schemaBuilder) {
         if ( ! field.usesStructOrMap()) return;
@@ -132,12 +157,13 @@ public final class SchemaInfo extends Derived {
         for (var structField : field.getStructFields()) {
             if ( ! added.add(structField.getName())) continue;
             // Struct fields may have attributes without doing attributing themselves, if their parent field has indexing
-            addFieldConfig(structField, structField.getAttributes().containsKey(structField.getName()), schemaBuilder);
+            addFieldConfig(structField, structField.getAttributes().containsKey(structField.getName()), Optional.empty(), schemaBuilder);
             addStructFieldsConfig(structField, added, schemaBuilder);
         }
     }
 
-    private void addFieldConfig(ImmutableSDField field, boolean isAttribute, SchemaInfoConfig.Schema.Builder schemaBuilder) {
+    private void addFieldConfig(ImmutableSDField field, boolean isAttribute, Optional<String> inputExpression,
+                                SchemaInfoConfig.Schema.Builder schemaBuilder) {
         var fieldBuilder = new SchemaInfoConfig.Schema.Field.Builder();
         fieldBuilder.name(field.getName());
         fieldBuilder.type(toTypeSpec(field.getDataType()));
@@ -149,6 +175,7 @@ public final class SchemaInfo extends Derived {
         fieldBuilder.index(field.doesIndexing());
         fieldBuilder.matchType(toMatchType(field, isAttribute || field.doesIndexing()));
         field.getExplanation().ifPresent(fieldBuilder::explanation);
+        inputExpression.ifPresent(fieldBuilder::inputExpression);
         for (var fastMapFields : field.getFastMapSearches()) {
             fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
                                                      .lookupName(fastMapFields.lookupName())
@@ -282,6 +309,22 @@ public final class SchemaInfo extends Derived {
         if (dataType instanceof WeightedSetDataType weightedSetDataType)
             return "weightedset<" + toTypeSpec(weightedSetDataType.getNestedType()) + ">";
         throw new IllegalArgumentException("Unknown data type " + dataType + " class " + dataType.getClass());
+    }
+
+    /** Collects the query input expression corresponding to the first embed expression, and the names of the output fields. */
+    private static class EmbedderVisitor extends ExpressionVisitor {
+
+        String inputExpression = null;
+        final List<String> outputFields = new ArrayList<>();
+
+        @Override
+        protected void doVisit(Expression expression) {
+            if (expression instanceof EmbedExpression embed && inputExpression == null)
+                inputExpression = embed.requestedEmbedderId().map(id -> "embed(" + id + ", @input)").orElse("embed(@input)");
+            else if (expression instanceof OutputExpression output)
+                outputFields.add(output.getFieldName());
+        }
+
     }
 
     /** A store of a *small* (in memory) amount of rank profile info. */
