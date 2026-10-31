@@ -160,7 +160,7 @@ public class PermanentFlags {
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundStringFlag ADMIN_CLUSTER_NODE_ARCHITECTURE = defineStringFlag(
-            "admin-cluster-node-architecture", "x86_64",
+            "admin-cluster-node-architecture", "any",
             "Architecture to use for node resources. Used when implicitly creating admin clusters " +
             "(logserver and clustercontroller clusters).",
             "Takes effect on next redeployment",
