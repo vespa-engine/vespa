@@ -23,3 +23,11 @@ indexfield[].interleavedfeatures bool default=false
 fieldset[].name string
 ## The name of the index field that are part of this collection.
 fieldset[].field[].name string
+
+## The name of a uri field. A uri field 'x' is indexed as the index fields
+## 'x', 'x.scheme', 'x.host', 'x.port', 'x.path', 'x.query', 'x.fragment' and 'x.hostname'.
+urifield[].name string
+
+## Set when uri fields are listed in urifield[]. When false (config from an
+## older config model), uri fields are detected from the index field names.
+explicituris bool default=false

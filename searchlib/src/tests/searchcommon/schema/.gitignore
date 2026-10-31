@@ -7,3 +7,5 @@ searchcommon_schema_test_app
 /schema-without-timestamps.txt
 /schema.txt
 /schema2.txt
+/schema-legacy-uri-fields.txt
+/schema-uri-fields.txt

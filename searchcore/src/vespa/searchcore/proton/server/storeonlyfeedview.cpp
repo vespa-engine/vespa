@@ -16,7 +16,6 @@
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
-#include <vespa/searchlib/index/uri_field.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -195,7 +194,7 @@ StoreOnlyFeedView::StoreOnlyFeedView(Context ctx, const PersistentParams& params
     if (_schema && _docType) {
         for (const auto& indexField : _schema->getIndexFields()) {
             size_t dotPos = indexField.getName().find('.');
-            if ((dotPos == std::string::npos) || search::index::UriField::mightBePartofUri(indexField.getName())) {
+            if ((dotPos == std::string::npos) || _schema->is_uri_part(indexField.getName())) {
                 document::FieldPath fieldPath;
                 _docType->buildFieldPath(fieldPath, indexField.getName().substr(0, dotPos));
                 _indexedFields.insert(fieldPath.back().getFieldRef().getId());

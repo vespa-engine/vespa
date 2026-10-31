@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/config-indexschema.h>
 #include <vespa/config/common/configparser.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
@@ -12,6 +13,7 @@
 LOG_SETUP("schema_test");
 
 using std::string;
+using vespa::config::search::IndexschemaConfigBuilder;
 
 namespace search::index {
 
@@ -318,6 +320,163 @@ TEST(SchemaTest, test_load_from_saved_schema_with_summary_fields) {
     Schema s2;
     EXPECT_TRUE(s2.loadFromFile(schema_name));
     assertSchema(s, s2);
+}
+
+using StringVector = std::vector<std::string>;
+
+Schema make_uri_schema() {
+    Schema s;
+    s.addUriIndexFields(SIF("url", DataType::STRING));
+    // Struct field index for the struct field 'path' in an array of struct field 'files'.
+    s.addIndexField(SIF("files.path", DataType::STRING, CollectionType::ARRAY));
+    return s;
+}
+
+IndexschemaConfigBuilder make_uri_config(bool explicit_uris) {
+    IndexschemaConfigBuilder cfg;
+    auto                     add_index = [&cfg](const std::string& name) {
+        IndexschemaConfigBuilder::Indexfield field;
+        field.name = name;
+        cfg.indexfield.push_back(field);
+    };
+    add_index("url");
+    for (const char* suffix : {"scheme", "host", "port", "path", "query", "fragment", "hostname"}) {
+        add_index("url." + std::string(suffix));
+    }
+    add_index("files.path");
+    cfg.indexfield.back().collectiontype = IndexschemaConfigBuilder::Indexfield::Collectiontype::ARRAY;
+    if (explicit_uris) {
+        IndexschemaConfigBuilder::Urifield uri_field;
+        uri_field.name = "url";
+        cfg.urifield.push_back(uri_field);
+    }
+    cfg.explicituris = explicit_uris;
+    return cfg;
+}
+
+TEST(SchemaTest, require_that_uri_parts_are_identified_from_uri_fields) {
+    Schema s = make_uri_schema();
+    EXPECT_TRUE(s.has_explicit_uri_fields());
+    EXPECT_EQ(StringVector({"url"}), s.get_uri_fields());
+    EXPECT_TRUE(s.is_uri_part("url"));
+    EXPECT_TRUE(s.is_uri_part("url.host"));
+    EXPECT_TRUE(s.is_uri_part("url.hostname"));
+    EXPECT_FALSE(s.is_uri_part("url.other"));
+    EXPECT_FALSE(s.is_uri_part("files"));
+    EXPECT_FALSE(s.is_uri_part("files.path"));
+}
+
+TEST(SchemaTest, require_that_uri_fields_are_detected_from_index_field_names_when_not_explicit) {
+    Schema s;
+    s.addIndexField(SIF("url", DataType::STRING));
+    s.addIndexField(SIF("url.scheme", DataType::STRING));
+    s.addIndexField(SIF("url.host", DataType::STRING));
+    s.addIndexField(SIF("files.path", DataType::STRING, CollectionType::ARRAY));
+    EXPECT_FALSE(s.has_explicit_uri_fields());
+    EXPECT_EQ(StringVector({"url"}), s.get_uri_fields());
+    EXPECT_TRUE(s.is_uri_part("url.host"));
+    EXPECT_FALSE(s.is_uri_part("files.path"));
+    s.set_explicit_uri_fields(true);
+    EXPECT_EQ(StringVector(), s.get_uri_fields());
+    EXPECT_FALSE(s.is_uri_part("url.host"));
+}
+
+TEST(SchemaTest, require_that_uri_fields_are_built_from_config) {
+    Schema s;
+    SchemaBuilder::build(make_uri_config(true), s);
+    EXPECT_TRUE(s.has_explicit_uri_fields());
+    EXPECT_EQ(StringVector({"url"}), s.get_uri_fields());
+    EXPECT_TRUE(s == make_uri_schema());
+}
+
+TEST(SchemaTest, require_that_uri_fields_are_detected_for_config_without_explicit_uri_fields) {
+    Schema s;
+    SchemaBuilder::build(make_uri_config(false), s);
+    EXPECT_FALSE(s.has_explicit_uri_fields());
+    EXPECT_EQ(StringVector({"url"}), s.get_uri_fields());
+    // Equal to a schema with the same explicit uri fields.
+    EXPECT_TRUE(s == make_uri_schema());
+}
+
+TEST(SchemaTest, require_that_uri_fields_are_saved_and_loaded) {
+    const std::string fileName = "schema-uri-fields.txt";
+    {
+        Schema s = make_uri_schema();
+        ASSERT_TRUE(s.saveToFile(fileName));
+    }
+    {
+        Schema s;
+        ASSERT_TRUE(s.loadFromFile(fileName));
+        EXPECT_TRUE(s.has_explicit_uri_fields());
+        EXPECT_EQ(StringVector({"url"}), s.get_uri_fields());
+        EXPECT_TRUE(s == make_uri_schema());
+    }
+    {
+        Schema s;
+        s.set_explicit_uri_fields(true);
+        ASSERT_TRUE(s.saveToFile(fileName));
+        Schema s2;
+        ASSERT_TRUE(s2.loadFromFile(fileName));
+        EXPECT_TRUE(s2.has_explicit_uri_fields());
+        EXPECT_EQ(StringVector(), s2.get_uri_fields());
+    }
+}
+
+TEST(SchemaTest, require_that_schema_without_explicit_uri_fields_is_saved_and_loaded_as_such) {
+    const std::string fileName = "schema-legacy-uri-fields.txt";
+    Schema            s;
+    SchemaBuilder::build(make_uri_config(false), s);
+    ASSERT_TRUE(s.saveToFile(fileName));
+    Schema s2;
+    s2.add_uri_field("other"); // load should clear the current uri fields
+    ASSERT_TRUE(s2.loadFromFile(fileName));
+    EXPECT_FALSE(s2.has_explicit_uri_fields());
+    EXPECT_EQ(StringVector({"url"}), s2.get_uri_fields());
+}
+
+TEST(SchemaTest, require_that_uri_fields_are_kept_by_schema_set_operations) {
+    Schema legacy;
+    SchemaBuilder::build(make_uri_config(false), legacy);
+    Schema uri = make_uri_schema();
+    Schema no_uri;
+    no_uri.addIndexField(SIF("files.path", DataType::STRING, CollectionType::ARRAY));
+
+    auto intersection = Schema::intersect(uri, legacy);
+    EXPECT_TRUE(intersection->has_explicit_uri_fields());
+    EXPECT_EQ(StringVector({"url"}), intersection->get_uri_fields());
+
+    intersection = Schema::intersect(uri, no_uri);
+    EXPECT_TRUE(intersection->has_explicit_uri_fields());
+    EXPECT_EQ(StringVector(), intersection->get_uri_fields());
+
+    intersection = Schema::intersect(legacy, legacy);
+    EXPECT_FALSE(intersection->has_explicit_uri_fields());
+    EXPECT_EQ(StringVector({"url"}), intersection->get_uri_fields());
+
+    auto sum = Schema::make_union(no_uri, legacy);
+    EXPECT_FALSE(sum->has_explicit_uri_fields());
+    EXPECT_EQ(StringVector({"url"}), sum->get_uri_fields());
+
+    no_uri.set_explicit_uri_fields(true);
+    sum = Schema::make_union(no_uri, legacy);
+    EXPECT_TRUE(sum->has_explicit_uri_fields());
+    EXPECT_EQ(StringVector({"url"}), sum->get_uri_fields());
+
+    auto diff = Schema::set_difference(uri, no_uri);
+    EXPECT_TRUE(diff->has_explicit_uri_fields());
+    EXPECT_EQ(StringVector({"url"}), diff->get_uri_fields());
+
+    diff = Schema::set_difference(uri, legacy);
+    EXPECT_TRUE(diff->has_explicit_uri_fields());
+    EXPECT_EQ(StringVector(), diff->get_uri_fields());
+
+    // A uri field without its main index field is kept, so its remaining parts are recognized as a broken uri field.
+    Schema url_parts;
+    url_parts.addIndexField(SIF("url.scheme", DataType::STRING));
+    url_parts.addIndexField(SIF("url.host", DataType::STRING));
+    intersection = Schema::intersect(uri, url_parts);
+    EXPECT_FALSE(intersection->isIndexField("url"));
+    EXPECT_EQ(StringVector({"url"}), intersection->get_uri_fields());
 }
 
 } // namespace search::index
