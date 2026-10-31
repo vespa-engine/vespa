@@ -75,8 +75,10 @@
                                         <include>com.google.j2objc:j2objc-annotations:[3.0.0, 4):provided</include>
                                         <include>com.google.inject:guice:jar:${guice.vespa.version}:provided</include>
                                         <include>com.sun.activation:javax.activation:[1.2.0, 2):provided</include>
+                                        <include>com.sun.activation:jakarta.activation:[1.2.2, 2):provided</include>
                                         <include>com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}:provided</include>
                                         <include>com.sun.xml.bind:jaxb-impl:${jaxb-impl.vespa.version}:provided</include>
+                                        <include>jakarta.xml.bind:jakarta.xml.bind-api:2.3.3:provided</include>
                                         <include>javax.inject:javax.inject:${javax.inject.vespa.version}:provided</include>
                                         <include>javax.servlet:javax.servlet-api:${javax.servlet-api.vespa.version}:provided</include>
                                         <include>javax.ws.rs:javax.ws.rs-api:${javax.ws.rs-api.vespa.version}:provided</include>

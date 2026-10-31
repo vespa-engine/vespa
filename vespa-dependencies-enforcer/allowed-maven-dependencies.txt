@@ -46,6 +46,7 @@ com.squareup.okhttp3:mockwebserver:${okhttp.vespa.version}
 com.squareup.okhttp3:okhttp:${okhttp.vespa.version}
 com.squareup.okio:okio-jvm:3.6.0
 com.squareup.okio:okio:3.6.0
+com.sun.activation:jakarta.activation:1.2.2
 com.sun.activation:javax.activation:${sun.javax.activation.vespa.version}
 com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}
 com.sun.xml.bind:jaxb-impl:${jaxb-impl.vespa.version}
@@ -109,6 +110,7 @@ io.prometheus:simpleclient_tracer_common:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_otel:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_otel_agent:${prometheus.client.vespa.version}
 jakarta.inject:jakarta.inject-api:${jakarta.inject.vespa.version}
+jakarta.xml.bind:jakarta.xml.bind-api:2.3.3
 javax.activation:javax.activation-api:${javax.activation-api.vespa.version}
 javax.annotation:javax.annotation-api:1.3.2
 javax.inject:javax.inject:${javax.inject.vespa.version}
