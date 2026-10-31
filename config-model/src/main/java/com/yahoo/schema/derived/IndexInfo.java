@@ -169,10 +169,14 @@ public class IndexInfo extends Derived {
 
     @Override
     protected void derive(ImmutableSDField field, Schema schema) {
-        derive(field, schema, null);
+        derive(field, schema, null, false);
     }
 
-    protected void derive(ImmutableSDField field, Schema schema, ImmutableSDField parent) {
+    /**
+     * @param parent the struct or map field containing this, or null if this is a top level field
+     * @param insideMultivalue whether any ancestor of this field is multivalue (e.g. the map of a map.value.f field)
+     */
+    private void derive(ImmutableSDField field, Schema schema, ImmutableSDField parent, boolean insideMultivalue) {
         if (field.getDataType().equals(DataType.PREDICATE)) {
             addIndexCommand(field, CMD_PREDICATE);
             Index index = field.getIndex(field.getName());
@@ -193,8 +197,9 @@ public class IndexInfo extends Derived {
             addIndexAlias(alias, name);
         }
         if (field.usesStructOrMap()) {
+            boolean childInsideMultivalue = insideMultivalue || isMultivalueField(field);
             for (ImmutableSDField structField : field.getStructFields()) {
-                derive(structField, schema, field); // Recursion
+                derive(structField, schema, field, childInsideMultivalue); // Recursion
             }
         }
 
@@ -210,7 +215,7 @@ public class IndexInfo extends Derived {
             addIndexCommand(field, CMD_LOWERCASE);
         }
 
-        if (isMultivalueField(field) || isMultivalueField(parent)) {
+        if (isMultivalueField(field) || insideMultivalue) {
             addIndexCommand(field, CMD_MULTIVALUE);
         }
 
