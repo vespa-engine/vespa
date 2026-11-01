@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -76,6 +77,11 @@ public class ParserTokensTest {
         "OCTAL"
     );
 
+    // Tokens that are renamed in CongoCC parsers, e.g. because the name is reserved by CongoCC
+    public static Map<String, String> congoCCRenamedTokens = Map.of(
+        "THIS", "THIS_KEYWORD" // THIS is an alias for the current production node in CongoCC
+    );
+
     public static Set<String> antlrSpecialTokens = Set.of(
         "COMMENT",
         "WS"
@@ -87,7 +93,7 @@ public class ParserTokensTest {
         for (Field field : javaCCFields) {
             if (!field.getType().equals(int.class)) continue;
 
-            String tokenName = field.getName();
+            String tokenName = congoCCRenamedTokens.getOrDefault(field.getName(), field.getName());
             if (javaCCSpecialTokens.contains(tokenName)) continue;
 
             if (!congoCCTokenStrings.contains(tokenName))missing.add(tokenName);
