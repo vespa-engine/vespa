@@ -2,6 +2,9 @@
 
 #include "opentelemetry_tracer_providers.h"
 
+#include "opentelemetry/context/propagation/global_propagator.h"
+#include "opentelemetry/trace/propagation/http_trace_context.h"
+
 #include <vespa/config-telemetry.h>
 #include <vespa/defaults.h>
 #include <vespa/vespalib/component/vtag.h>
@@ -88,6 +91,8 @@ void OpenTelemetryTracerProviders::init_grpc_tracer_provider(
     std::shared_ptr<opentelemetry::trace::TracerProvider> provider =
         opentelemetry::sdk::trace::TracerProviderFactory::Create(std::move(processor), resource);
     opentelemetry::trace::Provider::SetTracerProvider(provider);
+    opentelemetry::context::propagation::GlobalTextMapPropagator::SetGlobalPropagator(
+        std::make_shared<opentelemetry::trace::propagation::HttpTraceContext>());
 }
 
 void OpenTelemetryTracerProviders::init_grpc_tracer_provider(const std::string& service_name,

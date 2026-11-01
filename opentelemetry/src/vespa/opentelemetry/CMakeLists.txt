@@ -2,6 +2,8 @@
 vespa_add_library(vespa_opentelemetry
     SOURCES
     opentelemetry_tracer_providers.cpp
+    proto_telemetry_carrier.cpp
+    rpc_server_tools.cpp
     INSTALL lib64
     DEPENDS
     opentelemetry-cpp::api

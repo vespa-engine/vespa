@@ -9,6 +9,7 @@ vespa_define_module(
     vespa_metrics
     vespa_document
     vespa_config
+    vespa_opentelemetry
 
     EXTERNAL_DEPENDS
     ${VESPA_GLIBC_RT_LIB}

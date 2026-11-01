@@ -11,12 +11,19 @@
 #include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/opentelemetry/rpc_server_tools.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
 
+#include <opentelemetry/trace/provider.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".engine.proto_rpc_adapter");
+
+using opentelemetry::trace::Provider;
+using vespa_opentelemetry::ProtoTelemetryCarrier;
+using vespa_opentelemetry::RpcServerTools;
 
 namespace search::engine {
 
@@ -33,6 +40,8 @@ using QueryStats = SearchProtocolMetrics::QueryStats;
 using DocsumStats = SearchProtocolMetrics::DocsumStats;
 
 namespace {
+
+const std::string proton_rpc_server("proton rpc server");
 
 CompressionConfig get_compression_config() {
     using search::fs4transport::FS4PersistentPacketStreamer;
@@ -93,7 +102,20 @@ struct SearchRequestDecoder : SearchRequest::Source::Decoder {
         stats.request_size = (*rpc.GetParams())[2]._data._len;
         if (!decode_message(*rpc.GetParams(), msg)) {
             LOG(warning, "got bad protobuf search request over rpc (unable to decode)");
-            return std::unique_ptr<SearchRequest>(nullptr);
+            return {};
+        }
+        // Note: Decoding here is delayed
+        ProtoTelemetryCarrier carrier(msg.metadata().trace_context());
+        auto                  request_context = RpcServerTools::make_optional_request_context(carrier);
+        if (request_context.has_value()) {
+            auto provider = Provider::GetTracerProvider();
+            auto tracer = provider->GetTracer(proton_rpc_server);
+            auto server_span =
+                RpcServerTools::make_server_span(request_context.value(), *tracer, "vespa.searchprotocol.search");
+            {
+                auto scope = tracer->WithActiveSpan(server_span);
+            }
+            server_span->End();
         }
         auto req = std::make_unique<SearchRequest>(std::move(relative_time));
         ProtoConverter::search_request_from_proto(msg, *req);
@@ -139,6 +161,19 @@ struct DocsumRequestDecoder : DocsumRequest::Source::Decoder {
         if (!decode_message(*rpc.GetParams(), msg)) {
             LOG(warning, "got bad protobuf docsum request over rpc (unable to decode)");
             return std::unique_ptr<DocsumRequest>(nullptr);
+        }
+        // Note: Decoding here is delayed
+        ProtoTelemetryCarrier carrier(msg.metadata().trace_context());
+        auto                  request_context = RpcServerTools::make_optional_request_context(carrier);
+        if (request_context.has_value()) {
+            auto provider = Provider::GetTracerProvider();
+            auto tracer = provider->GetTracer(proton_rpc_server);
+            auto server_span =
+                RpcServerTools::make_server_span(request_context.value(), *tracer, "vespa.searchprotocol.getDocsums");
+            {
+                auto scope = tracer->WithActiveSpan(server_span);
+            }
+            server_span->End();
         }
         stats.requested_documents = msg.global_ids_size();
         auto req = std::make_unique<DocsumRequest>(std::move(relative_time));
@@ -260,6 +295,19 @@ void ProtoRpcAdapter::rpc_ping(FRT_RPCRequest* rpc) {
     rpc->Detach();
     ProtoMonitorRequest msg;
     if (decode_message(*rpc->GetParams(), msg)) {
+        // Note: Decoding here is delayed
+        ProtoTelemetryCarrier carrier(msg.metadata().trace_context());
+        auto                  request_context = RpcServerTools::make_optional_request_context(carrier);
+        if (request_context.has_value()) {
+            auto provider = Provider::GetTracerProvider();
+            auto tracer = provider->GetTracer(proton_rpc_server);
+            auto server_span =
+                RpcServerTools::make_server_span(request_context.value(), *tracer, "vespa.searchprotocol.ping");
+            {
+                auto scope = tracer->WithActiveSpan(server_span);
+            }
+            server_span->End();
+        }
         auto req = std::make_unique<MonitorRequest>();
         ProtoConverter::monitor_request_from_proto(msg, *req);
         auto& client = rpc->getStash().create<PingCompletionHandler>(*rpc);
