@@ -159,7 +159,7 @@ public class AbstractHttpEmbedderTest {
         var exception = assertThrows(RuntimeException.class, this::call);
         assertTrue(exception.getMessage().startsWith("Embedding API call failed:"));
         assertEquals(List.of(0), runtime.sampledFailures);
-        assertEquals(4, mockServer.getRequestCount()); // 1 initial + 3 retries
+        assertEquals(6, mockServer.getRequestCount()); // 1 initial + 5 retries
     }
 
     @Test
@@ -172,7 +172,7 @@ public class AbstractHttpEmbedderTest {
         assertEquals("Embedding API request failed with status 503: {\"error\":{\"message\":\"unavailable\"}}",
                 exception.getMessage());
         assertEquals(List.of(503), runtime.sampledFailures);
-        assertEquals(4, mockServer.getRequestCount()); // 1 initial + 3 retries
+        assertEquals(6, mockServer.getRequestCount()); // 1 initial + 5 retries
     }
 
     @Test
