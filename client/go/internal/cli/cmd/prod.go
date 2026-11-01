@@ -111,6 +111,7 @@ type prodDeployOptions struct {
 	description string
 	authorEmail string
 	sourceURL   string
+	skipTests   bool
 	waitSecs    int
 }
 
@@ -168,6 +169,7 @@ $ vespa prod deploy`,
 				Description: options.description,
 				AuthorEmail: options.authorEmail,
 				SourceURL:   options.sourceURL,
+				SkipTests:   options.skipTests,
 			}
 			build, err := vespa.Submit(deployment, submission)
 			if err != nil {
@@ -208,6 +210,7 @@ $ vespa prod deploy`,
 	cmd.Flags().StringVarP(&options.description, "description", "", "", "Description of the source code being deployed. For example a git commit message")
 	cmd.Flags().StringVarP(&options.authorEmail, "author-email", "", "", "Email of the author of the commit being deployed")
 	cmd.Flags().StringVarP(&options.sourceURL, "source-url", "", "", "URL which points to the source code being deployed. For example the build job running the submission")
+	cmd.Flags().BoolVarP(&options.skipTests, "skip-tests", "", false, "Skip system and staging tests when deploying this build to production. Tests still run for platform upgrades")
 	cmd.Flags().IntVarP(&options.waitSecs, "wait", "", 0, "Seconds to wait for the build to complete before returning (0 to return immediately)")
 	return cmd
 }

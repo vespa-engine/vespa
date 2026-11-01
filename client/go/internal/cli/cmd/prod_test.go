@@ -220,6 +220,14 @@ func prodDeploy(pkgDir string, t *testing.T) {
 	assert.Nil(t, cli.Run("prod", "submit", "--add-cert")) // old variant also works
 	assert.Contains(t, stdout.String(), "Success: Submitted '.' with build number 43")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/environment/prod/deployment for deployment progress")
+	require.Nil(t, httpClient.LastRequest.ParseMultipartForm(1<<20))
+	assert.Equal(t, "{}", httpClient.LastRequest.FormValue("submitOptions"))
+	stdout.Reset()
+	httpClient.NextResponseString(200, `{"build": 44}`)
+	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert", "--skip-tests"))
+	assert.Contains(t, stdout.String(), "Success: Submitted '.' with build number 44")
+	require.Nil(t, httpClient.LastRequest.ParseMultipartForm(1<<20))
+	assert.Equal(t, `{"skipTests":true}`, httpClient.LastRequest.FormValue("submitOptions"))
 }
 
 func TestProdDeployWithProductionTests(t *testing.T) {
