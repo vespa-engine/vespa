@@ -156,7 +156,7 @@ class HttpFeedClient implements FeedClient {
     private void verifyConnection(FeedClientBuilderImpl builder, ClusterFactory clusterFactory) throws IOException {
         Instant start = Instant.now();
         try (Cluster cluster = clusterFactory.create()) {
-            var timeout = Duration.ofSeconds(30);
+            var timeout = Duration.ofSeconds(75);
             HttpRequest request = new HttpRequest("POST",
                                                   getPath(DocumentId.of("feeder", "handshake", "dummy")),
                                                   getQuery(empty(), true),
