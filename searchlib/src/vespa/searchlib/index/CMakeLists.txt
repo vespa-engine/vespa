@@ -13,6 +13,7 @@ vespa_add_library(searchlib_searchlib_index OBJECT
     postinglistparams.cpp
     schemautil.cpp
     schema_index_fields.cpp
+    struct_field_index.cpp
     uri_field.cpp
     DEPENDS
 )

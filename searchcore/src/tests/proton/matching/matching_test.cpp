@@ -205,12 +205,22 @@ std::string make_simple_stack_dump(const std::string& field, const std::string& 
     return StackDumpCreator::create(*builder.build());
 }
 
-std::string make_same_element_stack_dump(const std::string& a1_term, const std::string& f1_term) {
+std::string make_same_element_stack_dump(const std::string& view, const std::string& field1, const std::string& term1,
+                                         const std::string& field2, const std::string& term2) {
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addSameElement(2, "my", 0, Weight(1));
-    builder.addStringTerm(a1_term, "a1", 1, Weight(1));
-    builder.addStringTerm(f1_term, "f1", 2, Weight(1));
+    builder.addSameElement(2, view, 0, Weight(1));
+    builder.addStringTerm(term1, field1, 1, Weight(1));
+    builder.addStringTerm(term2, field2, 2, Weight(1));
     return StackDumpCreator::create(*builder.build());
+}
+
+std::string make_same_element_stack_dump(const std::string& a1_term, const std::string& f1_term) {
+    return make_same_element_stack_dump("my", "a1", a1_term, "f1", f1_term);
+}
+
+// sameElement over the virtual field 'ix', which only has struct field indexes (no struct field attributes).
+std::string make_index_only_same_element_stack_dump(const std::string& f1_term, const std::string& f2_term) {
+    return make_same_element_stack_dump("ix", "f1", f1_term, "f2", f2_term);
 }
 
 std::string make_two_term_and_stack_dump(const std::string& field, const std::string& term1,
@@ -590,6 +600,22 @@ struct MyWorld {
         auto my_f1_0_result = make_elem_result({{10, {2}}, {20, {1, 2}}, {21, {2}}});
         searchContext.attr().addResult("my.a1", my_a1_term, my_a1_result);
         searchContext.idx(0).getFake().addResult("my.f1", my_f1_0_term, my_f1_0_result);
+    }
+
+    // Struct field indexes 'ix.f1' and 'ix.f2' (e.g. from an array of struct field 'ix'), without any struct field
+    // attributes, so the virtual field 'ix' is made from indexes only.
+    void add_index_only_struct_fields() {
+        schema.addIndexField(Schema::IndexField("ix.f1", DataType::STRING, schema::CollectionType::ARRAY));
+        schema.addIndexField(Schema::IndexField("ix.f2", DataType::STRING, schema::CollectionType::ARRAY));
+    }
+
+    // doc 10: ix.f1 and ix.f2 match in different elements, so no same element match.
+    // doc 20: ix.f1 matches elements {0,2} and ix.f2 matches element {2}; only element 2 matches both.
+    void add_index_only_same_element_results(const std::string& f1_term, const std::string& f2_term) {
+        auto f1_result = make_elem_result({{10, {1}}, {20, {0, 2}}});
+        auto f2_result = make_elem_result({{10, {0}}, {20, {2}}});
+        searchContext.idx(0).getFake().addResult("ix.f1", f1_term, f1_result);
+        searchContext.idx(0).getFake().addResult("ix.f2", f2_term, f2_result);
     }
 
     void add_near_result() {
@@ -2131,6 +2157,36 @@ TEST_F(MatchingTest, require_that_elementwise_matches_reports_matching_elements_
     EXPECT_EQ(decode("elementwise(matches(my),x)"), TensorSpec("tensor<float>(x{})").add({{"x", "2"}}, 1.0));
 }
 
+TEST_F(MatchingTest, require_that_same_element_search_works_for_virtual_field_with_only_indexes) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_struct_fields();
+    world.add_index_only_same_element_results("foo", "bar");
+    auto            request = MyWorld::createRequest(make_index_only_same_element_stack_dump("foo", "bar"));
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(1u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
+}
+
+TEST_F(MatchingTest, require_that_elementwise_matches_reports_matching_elements_for_virtual_field_with_only_indexes) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_struct_fields();
+    world.add_index_only_same_element_results("foo", "bar");
+    world.config.add(indexproperties::match::Feature::NAME, "elementwise(matches(ix),x)");
+    auto            request = MyWorld::createRequest(make_index_only_same_element_stack_dump("foo", "bar"));
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(1u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 1u);
+    ASSERT_EQ(reply->match_features.values.size(), names.size());
+    const auto& value = reply->match_features.values[feature_index(names, "elementwise(matches(ix),x)")];
+    ASSERT_TRUE(value.is_data());
+    nbostream buf(value.as_data().data, value.as_data().size);
+    EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), TensorSpec("tensor<float>(x{})").add({{"x", "2"}}, 1.0));
+}
+
 TEST_F(MatchingTest, require_that_invalid_queries_are_handled) {
     MyWorld world(shared_state());
     world.basicSetup();
@@ -2149,6 +2205,23 @@ TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_f
     fields.add_mapping("my", "my.f1");
     auto        result = world.get_matching_elements(*request, fields);
     const auto& list = result->get_matching_elements(20, "my");
+    ASSERT_EQ(list.size(), 1u);
+    EXPECT_EQ(list[0], 2u);
+}
+
+TEST_F(MatchingTest,
+       require_that_docsum_matcher_can_extract_matching_elements_from_same_element_blueprint_with_only_indexes) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_struct_fields();
+    world.add_index_only_same_element_results("foo", "bar");
+    auto request = MyWorld::create_docsum_request(make_index_only_same_element_stack_dump("foo", "bar"), {10, 20});
+    MatchingElementsFields fields;
+    fields.add_mapping("ix", "ix.f1");
+    fields.add_mapping("ix", "ix.f2");
+    auto result = world.get_matching_elements(*request, fields);
+    EXPECT_TRUE(result->get_matching_elements(10, "ix").empty());
+    const auto& list = result->get_matching_elements(20, "ix");
     ASSERT_EQ(list.size(), 1u);
     EXPECT_EQ(list[0], 2u);
 }
