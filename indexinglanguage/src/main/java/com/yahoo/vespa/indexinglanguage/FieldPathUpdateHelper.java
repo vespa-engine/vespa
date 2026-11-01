@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.Field;
@@ -14,6 +15,7 @@ import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
+import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
 
 /**
  * @author Simon Thoresen Hult
@@ -49,6 +51,25 @@ public abstract class FieldPathUpdateHelper {
                && path.get(0).getType() == FieldPathEntry.Type.STRUCT_FIELD
                && path.get(0).getFieldRef().getDataType() instanceof ArrayDataType
                && path.get(1).getType() == FieldPathEntry.Type.ARRAY_INDEX;
+    }
+
+    /**
+     * Throws an {@link InvalidInputException} if the given element assign has no value, or a value which
+     * cannot be an element of the target array field. The update cannot be processed then, and passing it
+     * on would only make it fail later, in a less understandable way.
+     */
+    public static void requireValidElementAssign(AssignFieldPathUpdate update) {
+        FieldValue value = update.getNewValue();
+        if (value == null) {
+            throw new InvalidInputException("Cannot assign to '" + update.getOriginalFieldPath() + "': No value given");
+        }
+        Field field = update.getFieldPath().get(0).getFieldRef();
+        DataType elementType = ((ArrayDataType)field.getDataType()).getNestedType();
+        if ( ! elementType.isValueCompatible(value)) {
+            throw new InvalidInputException("Cannot assign a value of type " + value.getDataType().getName() +
+                                            " to '" + update.getOriginalFieldPath() + "': The elements of '" +
+                                            field.getName() + "' are of type " + elementType.getName());
+        }
     }
 
     public static void applyUpdate(FieldPathUpdate update, Document doc) {

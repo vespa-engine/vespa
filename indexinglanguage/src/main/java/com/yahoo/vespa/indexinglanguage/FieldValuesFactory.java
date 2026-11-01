@@ -93,11 +93,13 @@ public class FieldValuesFactory {
     }
 
     /**
-     * Returns values which run the assigned element through the indexing script, or - if this field has
-     * no indexing statement taking only it as input - values which pass the update on unchanged.
+     * Returns values which run the assigned element through the indexing statements outputting to its field,
+     * or - if this field has no indexing statement taking only it as input and outputting to it - values
+     * which pass the update on unchanged.
      */
     private UpdateFieldValues newElementAssignFieldValues(DocumentType docType, DocumentId docId, Document complete,
                                                           AssignFieldPathUpdate elementAssign) {
+        FieldPathUpdateHelper.requireValidElementAssign(elementAssign);
         String fieldName = elementAssign.getFieldPath().get(0).getFieldRef().getName();
         Expression expression;
         try {
@@ -106,6 +108,13 @@ public class FieldValuesFactory {
             // There is no script to run the element through, so pass the update on as fed rather
             // than failing the entire update.
             return new IdentityFieldPathUpdateFieldValues(elementAssign, newDocumentAdapter(complete, true));
+        }
+        if (expression != null) {
+            expression = ElementAssignFieldPathUpdateFieldValues.statementsOutputting(expression, fieldName);
+            if (expression == null) {
+                // The field is only input to other fields, so there is nothing to process the element for.
+                return new IdentityFieldPathUpdateFieldValues(elementAssign, newDocumentAdapter(complete, true));
+            }
         }
         Document partial = FieldPathUpdateHelper.newElementAssignPartialDocument(docId, elementAssign);
         return new ElementAssignFieldPathUpdateFieldValues(expression, newDocumentAdapter(partial, true), elementAssign);
