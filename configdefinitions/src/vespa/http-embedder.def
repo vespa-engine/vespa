@@ -3,7 +3,7 @@
 package=ai.vespa.embedding.config
 
 # Maximum number of retry attempts for failed HTTP requests
-maxRetries               int default=3
+maxRetries               int default=5
 
 # HTTP client timeout in milliseconds for read/write operations
-timeout                  int default=60000
+timeout                  int default=150000
