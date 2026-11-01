@@ -122,7 +122,7 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
         }
         catch (IOException | RuntimeException e) {
             log.log(Level.INFO, "Could not read cached import of model '" + modelName + "' from " + modelPath +
-                                ", importing it instead", e);
+                                ", importing it instead: " + e);
             discard(entry);
             return Optional.empty();
         }
