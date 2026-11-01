@@ -71,6 +71,7 @@ vespa_define_module(
     src/tests/proton/common/operation_rate_tracker
     src/tests/proton/common/timer
     src/tests/proton/docsummary
+    src/tests/proton/docsummary/summary_setup
     src/tests/proton/document_iterator
     src/tests/proton/documentdb
     src/tests/proton/documentdb/feedhandler

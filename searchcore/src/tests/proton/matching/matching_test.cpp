@@ -223,6 +223,27 @@ std::string make_index_only_same_element_stack_dump(const std::string& f1_term, 
     return make_same_element_stack_dump("ix", "f1", f1_term, "f2", f2_term);
 }
 
+std::string make_equiv_stack_dump(const std::string& field1, const std::string& term1, const std::string& field2,
+                                  const std::string& term2) {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addEquiv(2, 1, Weight(1));
+    builder.addStringTerm(term1, field1, 2, Weight(1));
+    builder.addStringTerm(term2, field2, 3, Weight(1));
+    return StackDumpCreator::create(*builder.build());
+}
+
+// sameElement(ix.f1:f1_term, ix.f2:f2_term) OR ix.f1:single_term
+std::string make_index_only_same_element_or_term_stack_dump(const std::string& f1_term, const std::string& f2_term,
+                                                            const std::string& single_term) {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addOr(2);
+    builder.addSameElement(2, "ix", 0, Weight(1));
+    builder.addStringTerm(f1_term, "f1", 1, Weight(1));
+    builder.addStringTerm(f2_term, "f2", 2, Weight(1));
+    builder.addStringTerm(single_term, "ix.f1", 3, Weight(1));
+    return StackDumpCreator::create(*builder.build());
+}
+
 std::string make_two_term_and_stack_dump(const std::string& field, const std::string& term1,
                                          const std::string& term2) {
     QueryBuilder<ProtonNodeTypes> builder;
@@ -326,7 +347,8 @@ SerializedQueryTreeSP make_labeled_in_or_term_query() {
     return SerializedQueryTree::fromProtobuf(std::make_unique<decltype(proto_query_tree)>(proto_query_tree));
 }
 
-std::string make_near_stack_dump(bool ordered, const std::string& term1, const std::string& term2) {
+std::string make_near_stack_dump(bool ordered, const std::string& term1, const std::string& term2,
+                                 const std::string& field = "f3") {
     QueryBuilder<ProtonNodeTypes> builder;
     constexpr int                 child_count = 2;
     constexpr size_t              distance = 10;
@@ -337,8 +359,8 @@ std::string make_near_stack_dump(bool ordered, const std::string& term1, const s
     } else {
         builder.addNear(child_count, distance, num_negative_children, exclusion_distance);
     }
-    builder.addStringTerm(term1, "f3", 1, Weight(1));
-    builder.addStringTerm(term2, "f3", 2, Weight(1));
+    builder.addStringTerm(term1, field, 1, Weight(1));
+    builder.addStringTerm(term2, field, 2, Weight(1));
     return StackDumpCreator::create(*builder.build());
 }
 
@@ -618,6 +640,69 @@ struct MyWorld {
         searchContext.idx(0).getFake().addResult("ix.f2", f2_term, f2_result);
     }
 
+    // doc 10: ix.f1 matches elements {1}, ix.f2 matches elements {0, 3}.
+    // doc 20: ix.f1 matches elements {0, 2}, ix.f2 matches element {2}.
+    void add_index_only_single_term_results(const std::string& term) {
+        searchContext.idx(0).getFake().addResult("ix.f1", term, make_elem_result({{10, {1}}, {20, {0, 2}}}));
+        searchContext.idx(0).getFake().addResult("ix.f2", term, make_elem_result({{10, {0, 3}}, {20, {2}}}));
+    }
+
+    // Map of struct field 'mm' (map<string, struct{name, title}>) with indexes on the key and a nested struct field.
+    void add_index_only_map_of_struct_fields() {
+        schema.addIndexField(Schema::IndexField("mm.key", DataType::STRING, schema::CollectionType::ARRAY));
+        schema.addIndexField(Schema::IndexField("mm.value.name", DataType::STRING, schema::CollectionType::ARRAY));
+    }
+
+    // doc 10: mm.key matches element {0}, mm.value.name matches elements {2}.
+    // doc 20: mm.key matches no element, mm.value.name matches elements {1, 3}.
+    void add_index_only_map_of_struct_results(const std::string& term) {
+        searchContext.idx(0).getFake().addResult("mm.key", term, make_elem_result({{10, {0}}}));
+        searchContext.idx(0).getFake().addResult("mm.value.name", term, make_elem_result({{10, {2}}, {20, {1, 3}}}));
+    }
+
+    // Fieldset 'ix_all' over the struct field indexes 'ix.f1' and 'ix.f2'.
+    void add_index_only_fieldset() {
+        Schema::FieldSet ix_all("ix_all");
+        ix_all.addField("ix.f1").addField("ix.f2");
+        schema.addFieldSet(ix_all);
+    }
+
+    // doc 10: A near B in element 1 of 'ix.f1' and in element 3 of 'ix.f2'.
+    void add_index_only_near_result_in_both_struct_fields() {
+        auto ix_f1_field = get_field_info("ix.f1")->id();
+        auto ix_f2_field = get_field_info("ix.f2")->id();
+        auto docs = FakeIndex()
+                        .doc(10)
+                        .field(ix_f1_field)
+                        .elem(0, "A")
+                        .elem(1, "AB")
+                        .elem(2, "B")
+                        .field(ix_f2_field)
+                        .elem(0, "A")
+                        .elem(2, "B")
+                        .elem(3, "BA");
+        for (char term : {'A', 'B'}) {
+            searchContext.idx(0).getFake().addResult("ix.f1", std::string(1, term), docs.lookup(term, ix_f1_field));
+            searchContext.idx(0).getFake().addResult("ix.f2", std::string(1, term), docs.lookup(term, ix_f2_field));
+        }
+    }
+
+    // Same positions as add_near_result(), but in the struct field index 'ix.f1'.
+    void add_index_only_near_result() {
+        auto ix_f1_field = get_field_info("ix.f1")->id();
+        auto docs = FakeIndex()
+                        .field(ix_f1_field)
+                        .doc(10)
+                        .elem(1, ".ABC")
+                        .elem(2, "AC")
+                        .elem(3, "BAC")
+                        .elem(4, "CA")
+                        .elem(5, "BCB")
+                        .elem(6, "AC");
+        searchContext.idx(0).getFake().addResult("ix.f1", "A", docs.lookup('A', ix_f1_field));
+        searchContext.idx(0).getFake().addResult("ix.f1", "B", docs.lookup('B', ix_f1_field));
+    }
+
     void add_near_result() {
         auto f3_field = get_field_info("f3")->id();
         auto docs = FakeIndex()
@@ -822,6 +907,7 @@ protected:
     static MatchingTestSharedState& shared_state();
     void assert_near_elements(bool ordered, search::fef::ElementGap element_gap,
                               std::vector<uint32_t> expected_elements);
+    void assert_near_on_struct_field_index(bool ordered, std::vector<uint32_t> expected_elements);
 };
 
 MatchingTest::MatchingTest() = default;
@@ -856,6 +942,39 @@ void MatchingTest::assert_near_elements(bool ordered, search::fef::ElementGap el
     auto        result = world.get_matching_elements(*request, fields);
     const auto& list = result->get_matching_elements(10, "f3");
     EXPECT_EQ(expected_elements, list);
+}
+
+namespace {
+
+// What matched-elements-only on the summary field 'ix' gives (see StructFieldsMapper and SummaryElementsSelector):
+// the field 'ix' itself, and each struct field (attribute or index) mapped to it.
+MatchingElementsFields make_ix_fields() {
+    MatchingElementsFields fields;
+    fields.add_mapping("ix", "ix.f1");
+    fields.add_mapping("ix", "ix.f2");
+    return fields;
+}
+
+// What matched-elements-only on the summary field 'mm' gives: the nested struct field index 'mm.value.name' is mapped
+// to the outermost field 'mm', as is 'mm.key'.
+MatchingElementsFields make_mm_fields() {
+    MatchingElementsFields fields;
+    fields.add_mapping("mm", "mm.key");
+    fields.add_mapping("mm", "mm.value.name");
+    return fields;
+}
+
+} // namespace
+
+void MatchingTest::assert_near_on_struct_field_index(bool ordered, std::vector<uint32_t> expected_elements) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_struct_fields();
+    world.add_index_only_near_result();
+    auto request = MyWorld::create_docsum_request(make_near_stack_dump(ordered, "A", "B", "ix.f1"), {10});
+    auto result = world.get_matching_elements(*request, make_ix_fields());
+    EXPECT_EQ(expected_elements, result->get_matching_elements(10, "ix"));
+    EXPECT_TRUE(result->get_matching_elements(10, "ix.f1").empty());
 }
 
 std::unique_ptr<MatchingTestSharedState> MatchingTest::_shared_state;
@@ -2184,7 +2303,8 @@ TEST_F(MatchingTest, require_that_elementwise_matches_reports_matching_elements_
     const auto& value = reply->match_features.values[feature_index(names, "elementwise(matches(ix),x)")];
     ASSERT_TRUE(value.is_data());
     nbostream buf(value.as_data().data, value.as_data().size);
-    EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), TensorSpec("tensor<float>(x{})").add({{"x", "2"}}, 1.0));
+    EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)),
+              TensorSpec("tensor<float>(x{})").add({{"x", "2"}}, 1.0));
 }
 
 TEST_F(MatchingTest, require_that_invalid_queries_are_handled) {
@@ -2224,6 +2344,93 @@ TEST_F(MatchingTest,
     const auto& list = result->get_matching_elements(20, "ix");
     ASSERT_EQ(list.size(), 1u);
     EXPECT_EQ(list[0], 2u);
+}
+
+TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_single_struct_field_index_term) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_struct_fields();
+    world.add_index_only_single_term_results("foo");
+    auto request = MyWorld::create_docsum_request(make_simple_stack_dump("ix.f1", "foo"), {10, 20});
+    auto result = world.get_matching_elements(*request, make_ix_fields());
+    EXPECT_EQ((std::vector<uint32_t>{1}), result->get_matching_elements(10, "ix"));
+    EXPECT_EQ((std::vector<uint32_t>{0, 2}), result->get_matching_elements(20, "ix"));
+    EXPECT_TRUE(result->get_matching_elements(20, "ix.f1").empty());
+}
+
+TEST_F(MatchingTest,
+       require_that_docsum_matcher_can_extract_matching_elements_from_nested_map_of_struct_field_index_term) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_map_of_struct_fields();
+    world.add_index_only_map_of_struct_results("foo");
+    auto request = MyWorld::create_docsum_request(make_simple_stack_dump("mm.value.name", "foo"), {10, 20});
+    auto result = world.get_matching_elements(*request, make_mm_fields());
+    EXPECT_EQ((std::vector<uint32_t>{2}), result->get_matching_elements(10, "mm"));
+    EXPECT_EQ((std::vector<uint32_t>{1, 3}), result->get_matching_elements(20, "mm"));
+    EXPECT_TRUE(result->get_matching_elements(10, "mm.value").empty());
+    EXPECT_TRUE(result->get_matching_elements(10, "mm.value.name").empty());
+}
+
+TEST_F(MatchingTest, require_that_docsum_matcher_merges_matching_elements_from_map_key_and_nested_map_value_index) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_map_of_struct_fields();
+    world.add_index_only_map_of_struct_results("foo");
+    auto request =
+        MyWorld::create_docsum_request(make_equiv_stack_dump("mm.key", "foo", "mm.value.name", "foo"), {10, 20});
+    auto result = world.get_matching_elements(*request, make_mm_fields());
+    EXPECT_EQ((std::vector<uint32_t>{0, 2}), result->get_matching_elements(10, "mm"));
+    EXPECT_EQ((std::vector<uint32_t>{1, 3}), result->get_matching_elements(20, "mm"));
+}
+
+TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_near_on_struct_field_index) {
+    assert_near_on_struct_field_index(false, {1, 3});
+}
+
+TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_onear_on_struct_field_index) {
+    assert_near_on_struct_field_index(true, {1});
+}
+
+TEST_F(MatchingTest,
+       require_that_docsum_matcher_merges_matching_elements_from_near_on_fieldset_over_struct_field_indexes) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_struct_fields();
+    world.add_index_only_fieldset();
+    world.add_index_only_near_result_in_both_struct_fields();
+    auto request = MyWorld::create_docsum_request(make_near_stack_dump(false, "A", "B", "ix_all"), {10});
+    auto result = world.get_matching_elements(*request, make_ix_fields());
+    EXPECT_EQ((std::vector<uint32_t>{1, 3}), result->get_matching_elements(10, "ix"));
+    EXPECT_TRUE(result->get_matching_elements(10, "ix.f1").empty());
+    EXPECT_TRUE(result->get_matching_elements(10, "ix.f2").empty());
+}
+
+TEST_F(MatchingTest, require_that_docsum_matcher_merges_matching_elements_from_equiv_over_struct_field_indexes) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_struct_fields();
+    world.add_index_only_single_term_results("foo");
+    auto request = MyWorld::create_docsum_request(make_equiv_stack_dump("ix.f1", "foo", "ix.f2", "foo"), {10, 20});
+    auto result = world.get_matching_elements(*request, make_ix_fields());
+    EXPECT_EQ((std::vector<uint32_t>{0, 1, 3}), result->get_matching_elements(10, "ix"));
+    EXPECT_EQ((std::vector<uint32_t>{0, 2}), result->get_matching_elements(20, "ix"));
+}
+
+TEST_F(MatchingTest,
+       require_that_docsum_matcher_merges_matching_elements_from_same_element_and_single_struct_field_index_term) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_struct_fields();
+    world.add_index_only_same_element_results("foo", "bar");
+    world.add_index_only_single_term_results("baz");
+    auto request = MyWorld::create_docsum_request(
+        make_index_only_same_element_or_term_stack_dump("foo", "bar", "baz"), {10, 20});
+    auto result = world.get_matching_elements(*request, make_ix_fields());
+    // doc 10: no same element match, 'baz' in ix.f1 element 1.
+    EXPECT_EQ((std::vector<uint32_t>{1}), result->get_matching_elements(10, "ix"));
+    // doc 20: same element match in element 2, 'baz' in ix.f1 elements {0, 2}.
+    EXPECT_EQ((std::vector<uint32_t>{0, 2}), result->get_matching_elements(20, "ix"));
 }
 
 TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_single_attribute_term) {

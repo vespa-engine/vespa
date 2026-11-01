@@ -238,6 +238,13 @@ public:
     bool is_uri_part(std::string_view name) const;
 
     /**
+     * Check if the index field with the given name is a struct field index ('x.y' for struct field 'y' in an array of
+     * struct or map field 'x'). This is based on the index field name only: a dotted index field name that is not
+     * part of a uri field.
+     **/
+    bool is_struct_field_index(std::string_view name) const;
+
+    /**
      * Obtain the number of index fields in this schema.
      *
      * @return number of fields

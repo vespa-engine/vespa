@@ -10,6 +10,9 @@
 namespace search::attribute {
 class IAttributeContext;
 }
+namespace search::index {
+class Schema;
+}
 
 namespace search::docsummary {
 
@@ -25,7 +28,10 @@ public:
     StructFieldsMapper(StructFieldsMapper&& rhs) noexcept;
     ~StructFieldsMapper();
     void add(const std::string& field);
+    // Adds the struct field attributes (e.g. 'persons.age').
     void setup(const search::attribute::IAttributeContext& ctx);
+    // Adds the struct field indexes (e.g. 'persons.name'), see Schema::is_struct_field_index().
+    void setup(const search::index::Schema& schema);
     std::vector<std::string> get_struct_fields(const std::string& field) const;
 };
 

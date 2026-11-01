@@ -36,7 +36,8 @@ StringSet extract_virtual_fields(const std::vector<search::fef::FieldInfo>& fiel
     // virtual.
     StringSet result;
     for (const auto& field : fields) {
-        if (field.hasAttribute() || (field.type() == FieldType::INDEX && !schema.is_uri_part(field.name()))) {
+        if (field.hasAttribute() || (field.type() == FieldType::INDEX && schema.is_struct_field_index(field.name())))
+        {
             consider_field_for_extraction(field.name(), result);
         }
     }

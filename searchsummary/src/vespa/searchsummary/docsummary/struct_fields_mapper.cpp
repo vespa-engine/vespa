@@ -3,6 +3,7 @@
 #include "struct_fields_mapper.h"
 
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchcommon/common/schema.h>
 
 namespace search::docsummary {
 
@@ -26,6 +27,14 @@ void StructFieldsMapper::setup(const search::attribute::IAttributeContext& ctx) 
     ctx.getAttributeList(attrv);
     for (auto& attr : attrv) {
         add(attr->getName());
+    }
+}
+
+void StructFieldsMapper::setup(const search::index::Schema& schema) {
+    for (const auto& index_field : schema.getIndexFields()) {
+        if (schema.is_struct_field_index(index_field.getName())) {
+            add(index_field.getName());
+        }
     }
 }
 
