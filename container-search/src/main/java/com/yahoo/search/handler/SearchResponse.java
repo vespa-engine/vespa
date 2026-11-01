@@ -42,7 +42,9 @@ public class SearchResponse {
     }
 
     static boolean isSuccess(Result result) {
-        if (result.hits().getErrorHit() == null) return true;
+        ErrorHit errorHit = result.hits().getErrorHit();
+        if (errorHit == null) return true;
+        if (errorHit.errors().stream().allMatch(ErrorMessage::isPartial)) return true;
         for (Hit hit : result.hits()) {
             if (hit.isMeta()) continue;
             if ( ! hit.isFillable() || ! hit.getFilled().isEmpty()) return true;
