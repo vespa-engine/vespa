@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-10-31
+Last updated: 2026-11-01
 
 ---
 
@@ -432,10 +432,10 @@ Last updated: 2026-10-31
 
 ---
 
-## github.com/fxamacker/cbor/v2 v2.9.6 — MIT
+## github.com/fxamacker/cbor/v2 v2.10.0 — MIT
 
-- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.9.6>
-- Copyright 2019-2024 Faye Amacker
+- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.10.0>
+- Copyright 2019-2026 Faye Amacker
 - Copyright 2019 Faye Amacker
 
 ---
