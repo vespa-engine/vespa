@@ -116,14 +116,14 @@ INJECT SchemaParser:
         int braceLevel = 0;
 
         while (
-            nextTokenType() != TokenType.EOF &&
+            getToken(1).getType() != TokenType.EOF &&
             (
                 braceLevel > 0 ||
-                nextTokenType() != TokenType.NL
+                getToken(1).getType() != TokenType.NL
             ) &&
             !(
                 braceLevel == 0 &&
-                nextTokenType() == TokenType.RBRACE
+                getToken(1).getType() == TokenType.RBRACE
             )
         ) {
             lastConsumedToken = nextToken(lastConsumedToken);
@@ -182,14 +182,14 @@ INJECT SchemaParser:
 
         int braceLevel = (multiline ? 1 : 0);
 
-        while (nextTokenType() != TokenType.EOF) {
-            if (!multiline && nextTokenType() == TokenType.NL) break;
+        while (getToken(1).getType() != TokenType.EOF) {
+            if (!multiline && getToken(1).getType() == TokenType.NL) break;
 
-            if (nextTokenType() == TokenType.LBRACE) {
+            if (getToken(1).getType() == TokenType.LBRACE) {
                 ++braceLevel;
             }
 
-            if (nextTokenType() == TokenType.RBRACE) {
+            if (getToken(1).getType() == TokenType.RBRACE) {
                 --braceLevel;
             }
 

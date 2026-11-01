@@ -235,7 +235,7 @@ TOKEN :
     <SUBSTRING: "substring"> |
     <SUMMARY: "summary"> |
     <SWITCH: "switch"> |
-    <THIS: "this"> |
+    <THIS_KEYWORD: "this"> |
     <TOKENIZE: "tokenize"> |
     <TO_ARRAY: "to_array"> |
     <TO_BOOL: "to_bool"> |
@@ -830,7 +830,7 @@ Expression switchExp() :
 
 Expression thisExp() : { }
  
-    ( <THIS> )
+    ( <THIS_KEYWORD> )
     { return new ThisExpression(); }
 ;
 
@@ -1053,7 +1053,7 @@ String identifierStr() :
         <SUBSTRING>              |
         <SUMMARY>                |
         <SWITCH>                 |
-        <THIS>                   |
+        <THIS_KEYWORD>           |
         <TO_ARRAY>               |
         <TO_BOOL>                |
         <TO_BYTE>                |
