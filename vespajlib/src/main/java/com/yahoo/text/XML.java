@@ -421,7 +421,7 @@ public class XML {
 
             valid = codepoint == '\u00B7'
                     || inclusiveWithin(codepoint, 0x300, 0x36F)
-                    || inclusiveWithin(codepoint, 0x023F, 0x2040);
+                    || inclusiveWithin(codepoint, 0x203F, 0x2040);
         }
         return valid;
     }
