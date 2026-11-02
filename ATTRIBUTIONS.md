@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-11-01
+Last updated: 2026-11-02
 
 ---
 
@@ -231,10 +231,11 @@ Last updated: 2026-11-01
 
 ---
 
-## com.google.errorprone 2.50.0 — Apache 2.0
+## com.google.errorprone 2.51.0 — Apache 2.0
 
-- Homepage: <https://errorprone.info>
+- Homepage: <https://www.google.com>
 - Copyright 2015 The Error Prone Authors
+- Copyright The Error Prone
 
 ---
 
