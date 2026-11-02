@@ -139,8 +139,42 @@ struct CachedAddDoc final : public PrepareResult {
     ReadGuard            hnsw_graph_read_guard;
     std::vector<int32_t> node_max_levels;
 
-    // Distances between node pairs, filled during prepare and consulted during complete (see DistanceCacheMode).
-    using DistanceCache = vespalib::hash_map<uint64_t, double>;
+    // Distances filled during prepare and consulted during complete (see DistanceCacheMode).
+    struct DistanceCache {
+        // Distances from the node being inserted to existing nodes, keyed by the existing node.
+        vespalib::hash_map<uint32_t, double> to_new_node;
+
+        // Distances between pairs of existing nodes (select_neighbors_heuristic), grouped by the first node:
+        // pair_heads maps a node to the (index + 1) of the newest entry of its chain in pair_entries,
+        // and each entry links to the (index + 1) of the next entry in the chain (0 terminates).
+        struct PairEntry {
+            uint32_t other;
+            uint32_t next;
+            double   distance;
+        };
+        vespalib::hash_map<uint32_t, uint32_t> pair_heads;
+        std::vector<PairEntry>                 pair_entries;
+
+        // FILL: start (or extend) the chain of first; returns the chain head to pass to add_pair().
+        uint32_t& pair_chain(uint32_t first) { return pair_heads[first]; }
+        void add_pair(uint32_t& head, uint32_t other, double distance) {
+            pair_entries.push_back({other, head, distance});
+            head = pair_entries.size();
+        }
+        // LOOKUP: head of the chain of first (0 if none), and search within a chain.
+        uint32_t find_pair_chain(uint32_t first) const {
+            auto it = pair_heads.find(first);
+            return (it != pair_heads.end()) ? it->second : 0;
+        }
+        const double* find_pair(uint32_t head, uint32_t other) const {
+            for (uint32_t i = head; i != 0; i = pair_entries[i - 1].next) {
+                if (pair_entries[i - 1].other == other) {
+                    return &pair_entries[i - 1].distance;
+                }
+            }
+            return nullptr;
+        }
+    };
     std::vector<DistanceCache> distance_caches;
 
     CachedAddDoc(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept;
@@ -450,41 +484,30 @@ public:
     static vespalib::datastore::ArrayStoreConfig make_default_level_array_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_array_store_config();
 
-    static uint64_t make_pair(uint32_t first, uint32_t second) {
-        if (first < second) {
-            return (static_cast<uint64_t>(first) << 32) | static_cast<uint64_t>(second);
-        } else {
-            return (static_cast<uint64_t>(second) << 32) | static_cast<uint64_t>(first);
-        }
-    }
-
+    // Distance from the node being inserted to an existing node, via distance_cache->to_new_node.
     template <internal::DistanceCacheMode cache_mode, typename CalcDistance>
-    static double cached_or_calc_distance_helper(Stats& stats, uint32_t df_nodeid,
-                                                 internal::CachedAddDoc::DistanceCache* distance_cache,
-                                                 uint32_t nodeid, uint32_t new_node_is, CalcDistance&& calc) {
+    static double cached_or_calc_new_node_distance(Stats&                                 stats,
+                                                   internal::CachedAddDoc::DistanceCache* distance_cache,
+                                                   uint32_t nodeid, CalcDistance&& calc) {
         using Mode = internal::DistanceCacheMode;
         if constexpr (cache_mode == Mode::FILL) {
             // Prepare: compute unconditionally, only store (duplicate keys keep the first, identical value).
             double dist = calc();
             stats.count_computed_distance();
-            distance_cache->insert(std::make_pair(
-                make_pair(df_nodeid == new_node_is ? 0 : df_nodeid, nodeid == new_node_is ? 0 : nodeid), dist));
+            distance_cache->to_new_node.insert(std::make_pair(nodeid, dist));
             return dist;
         } else {
             if constexpr (cache_mode == Mode::LOOKUP) {
                 // Complete: use cached distance if present, otherwise compute without storing.
-                auto it = distance_cache->find(
-                    make_pair(df_nodeid == new_node_is ? 0 : df_nodeid, nodeid == new_node_is ? 0 : nodeid));
-                if (it != distance_cache->end()) {
+                auto it = distance_cache->to_new_node.find(nodeid);
+                if (it != distance_cache->to_new_node.end()) {
                     stats.count_cache_hit();
                     return it->second;
                 }
                 stats.count_cache_miss();
             } else {
-                (void)df_nodeid;
                 (void)distance_cache;
                 (void)nodeid;
-                (void)new_node_is;
             }
             double dist = calc();
             stats.count_computed_distance();
@@ -492,20 +515,59 @@ public:
         }
     }
 
+    // Distance between the node being inserted (df) and an existing node.
     template <internal::DistanceCacheMode cache_mode>
-    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, uint32_t df_nodeid,
-                                       internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid,
-                                       uint32_t new_node_is) const {
-        return cached_or_calc_distance_helper<cache_mode>(stats, df_nodeid, distance_cache, nodeid, new_node_is,
-                                                          [&]() { return calc_distance(df, nodeid); });
+    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df,
+                                       internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid) const {
+        return cached_or_calc_new_node_distance<cache_mode>(stats, distance_cache, nodeid,
+                                                            [&]() { return calc_distance(df, nodeid); });
     }
 
     template <internal::DistanceCacheMode cache_mode>
-    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df, uint32_t df_nodeid,
+    double get_cached_or_calc_distance(Stats& stats, const BoundDistanceFunction& df,
                                        internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t nodeid,
-                                       uint32_t new_node_is, uint32_t docid, uint32_t subspace) const {
-        return cached_or_calc_distance_helper<cache_mode>(stats, df_nodeid, distance_cache, nodeid, new_node_is,
-                                                          [&]() { return calc_distance(df, docid, subspace); });
+                                       uint32_t docid, uint32_t subspace) const {
+        return cached_or_calc_new_node_distance<cache_mode>(stats, distance_cache, nodeid,
+                                                            [&]() { return calc_distance(df, docid, subspace); });
+    }
+
+    // Distance between two nodes, where df is bound to the vector of first.
+    // If either node is new_node, the distance is a distance to the node being inserted.
+    template <internal::DistanceCacheMode cache_mode>
+    double get_cached_or_calc_pair_distance(Stats& stats, const BoundDistanceFunction& df,
+                                            internal::CachedAddDoc::DistanceCache* distance_cache, uint32_t first,
+                                            uint32_t second, uint32_t new_node) const {
+        using Mode = internal::DistanceCacheMode;
+        auto calc = [&]() { return calc_distance(df, second); };
+        if constexpr (cache_mode == Mode::NONE) {
+            (void)distance_cache;
+            (void)first;
+            (void)new_node;
+            stats.count_computed_distance();
+            return calc();
+        } else {
+            if (first == new_node) {
+                return cached_or_calc_new_node_distance<cache_mode>(stats, distance_cache, second, calc);
+            }
+            if (second == new_node) {
+                return cached_or_calc_new_node_distance<cache_mode>(stats, distance_cache, first, calc);
+            }
+            if constexpr (cache_mode == Mode::FILL) {
+                double dist = calc();
+                stats.count_computed_distance();
+                distance_cache->add_pair(distance_cache->pair_chain(first), second, dist);
+                return dist;
+            } else {
+                if (const double* cached = distance_cache->find_pair(distance_cache->find_pair_chain(first), second))
+                {
+                    stats.count_cache_hit();
+                    return *cached;
+                }
+                stats.count_cache_miss();
+                stats.count_computed_distance();
+                return calc();
+            }
+        }
     }
 };
 

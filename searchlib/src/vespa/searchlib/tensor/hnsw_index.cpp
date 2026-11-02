@@ -204,15 +204,84 @@ bool HnswIndex<type>::have_closer_distance(Stats& stats, HnswTraversalCandidate 
          */
         return true;
     }
-    auto df = _distance_ff->for_insertion_vector(candidate_vector);
-    for (const auto& neighbor : result) {
-        double dist = get_cached_or_calc_distance<cache_mode>(stats, *df, candidate.nodeid, distance_cache,
-                                                              neighbor.nodeid, new_node);
-        if (dist < candidate.distance) {
-            return true;
+    using Mode = internal::DistanceCacheMode;
+    if constexpr (cache_mode == Mode::NONE) {
+        auto df = _distance_ff->for_insertion_vector(candidate_vector);
+        for (const auto& neighbor : result) {
+            double dist = get_cached_or_calc_pair_distance<cache_mode>(stats, *df, distance_cache, candidate.nodeid,
+                                                                       neighbor.nodeid, new_node);
+            if (dist < candidate.distance) {
+                return true;
+            }
+        }
+        return false;
+    } else {
+        if (result.empty()) {
+            return false;
+        }
+        if (candidate.nodeid == new_node) {
+            // All distances are distances to the node being inserted.
+            auto df = _distance_ff->for_insertion_vector(candidate_vector);
+            for (const auto& neighbor : result) {
+                double dist = get_cached_or_calc_pair_distance<cache_mode>(
+                    stats, *df, distance_cache, candidate.nodeid, neighbor.nodeid, new_node);
+                if (dist < candidate.distance) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if constexpr (cache_mode == Mode::FILL) {
+            // Prepare: compute all distances and append them to the chain of the candidate (one hash lookup).
+            auto      df = _distance_ff->for_insertion_vector(candidate_vector);
+            uint32_t& head = distance_cache->pair_chain(candidate.nodeid);
+            for (const auto& neighbor : result) {
+                double dist;
+                if (neighbor.nodeid == new_node) {
+                    dist = get_cached_or_calc_pair_distance<cache_mode>(stats, *df, distance_cache, candidate.nodeid,
+                                                                        neighbor.nodeid, new_node);
+                } else {
+                    dist = calc_distance(*df, neighbor.nodeid);
+                    stats.count_computed_distance();
+                    distance_cache->add_pair(head, neighbor.nodeid, dist);
+                }
+                if (dist < candidate.distance) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            // Complete: look up the chain of the candidate once, compute (without storing) on misses.
+            // The distance function is only created if a distance is missing.
+            uint32_t head = distance_cache->find_pair_chain(candidate.nodeid);
+            decltype(_distance_ff->for_insertion_vector(candidate_vector)) df;
+            for (const auto& neighbor : result) {
+                double        dist;
+                const double* cached =
+                    (neighbor.nodeid == new_node) ? nullptr : distance_cache->find_pair(head, neighbor.nodeid);
+                if (cached != nullptr) {
+                    stats.count_cache_hit();
+                    dist = *cached;
+                } else {
+                    if (!df) {
+                        df = _distance_ff->for_insertion_vector(candidate_vector);
+                    }
+                    if (neighbor.nodeid == new_node) {
+                        dist = get_cached_or_calc_pair_distance<cache_mode>(
+                            stats, *df, distance_cache, candidate.nodeid, neighbor.nodeid, new_node);
+                    } else {
+                        stats.count_cache_miss();
+                        dist = calc_distance(*df, neighbor.nodeid);
+                        stats.count_computed_distance();
+                    }
+                }
+                if (dist < candidate.distance) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
-    return false;
 }
 
 template <HnswIndexType type>
@@ -285,8 +354,8 @@ void HnswIndex<type>::shrink_if_needed(Stats& stats, uint32_t new_node, uint32_t
         neighbors.reserve(old_links.size());
         auto df = _distance_ff->for_insertion_vector(get_vector(nodeid));
         for (uint32_t neighbor_nodeid : old_links) {
-            double dist = get_cached_or_calc_distance<cache_mode>(stats, *df, nodeid, distance_cache, neighbor_nodeid,
-                                                                  new_node);
+            double dist = get_cached_or_calc_pair_distance<cache_mode>(stats, *df, distance_cache, nodeid,
+                                                                       neighbor_nodeid, new_node);
             neighbors.emplace_back(neighbor_nodeid, dist);
         }
         auto      split = select_neighbors<cache_mode>(stats, neighbors, max_links, new_node, distance_cache);
@@ -403,7 +472,7 @@ HnswCandidate HnswIndex<type>::find_nearest_in_layer(Stats& stats, const BoundDi
             auto     neighbor_ref = neighbor_node.levels_ref().load_acquire();
             uint32_t neighbor_docid = acquire_docid(neighbor_node, neighbor_nodeid);
             uint32_t neighbor_subspace = neighbor_node.acquire_subspace();
-            double   dist = get_cached_or_calc_distance<cache_mode>(stats, df, 0, distance_cache, neighbor_nodeid, 0,
+            double   dist = get_cached_or_calc_distance<cache_mode>(stats, df, distance_cache, neighbor_nodeid,
                                                                     neighbor_docid, neighbor_subspace);
 
             if (_graph.still_valid(neighbor_nodeid, neighbor_ref) && dist < nearest.distance) {
@@ -485,7 +554,7 @@ void HnswIndex<type>::search_layer_helper(Stats& stats, const BoundDistanceFunct
 
         for (const auto& link : neighbor_link_metas) {
             double dist_to_input = get_cached_or_calc_distance<cache_mode>(
-                stats, df, 0, distance_cache, link.neighbor_nodeid, 0, link.neighbor_docid, link.neighbor_subspace);
+                stats, df, distance_cache, link.neighbor_nodeid, link.neighbor_docid, link.neighbor_subspace);
 
             if (dist_to_input < (1.0 + exploration_slack) * limit_dist) {
                 candidates.emplace(link.neighbor_nodeid, link.neighbor_ref, dist_to_input);
@@ -1118,8 +1187,8 @@ void HnswIndex<type>::internal_prepare_add_node_with_caching(CachedAddDoc::Dista
     }
     int    search_level = entry.level;
     auto   df = _distance_ff->for_insertion_vector(input_vector);
-    double entry_dist = get_cached_or_calc_distance<internal::DistanceCacheMode::FILL>(stats, *df, 0, &distance_cache,
-                                                                                       entry.nodeid, 0);
+    double entry_dist =
+        get_cached_or_calc_distance<internal::DistanceCacheMode::FILL>(stats, *df, &distance_cache, entry.nodeid);
     uint32_t entry_docid = get_docid(entry.nodeid);
     // TODO: check if entry nodeid/levels_ref is still valid here
     HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
@@ -1163,7 +1232,7 @@ void HnswIndex<type>::internal_complete_add_node_with_caching(CachedAddDoc::Dist
         int    search_level = entry.level;
         auto   df = _distance_ff->for_insertion_vector(input_vector);
         double entry_dist = get_cached_or_calc_distance<internal::DistanceCacheMode::LOOKUP>(
-            stats, *df, 0, &distance_cache, entry.nodeid, 0);
+            stats, *df, &distance_cache, entry.nodeid);
         uint32_t entry_docid = get_docid(entry.nodeid);
         // TODO: check if entry nodeid/levels_ref is still valid here
         HnswCandidate entry_point(entry.nodeid, entry_docid, entry.levels_ref, entry_dist);
@@ -1714,5 +1783,3 @@ template class HnswIndex<HnswIndexType::SINGLE>;
 template class HnswIndex<HnswIndexType::MULTI>;
 
 } // namespace search::tensor
-
-VESPALIB_HASH_MAP_INSTANTIATE(uint64_t, double);
