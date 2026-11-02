@@ -184,6 +184,10 @@
       </significance>
     </search>
 
+    <skills>
+      <schemas/>
+    </skills>
+
     <processing>
       <processor id='processor1' class='com.yahoo.test.Processor1' />
       <chain id='default'>

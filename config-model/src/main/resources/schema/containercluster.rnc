@@ -27,7 +27,8 @@ ContainerServices =
     GenericConfig* &
     Clients? &
     Inference? &
-    Threadpool?
+    Threadpool? &
+    Skills?
 
 # TODO(ogronnesby): Change this configuration syntax
 ClientAuthorize = element client-authorize { empty }
@@ -160,6 +161,10 @@ Threadpool = element threadpool {
 
 Significance = element significance {
     element model { ModelReference }*
+}
+
+Skills = element skills {
+    element schemas { empty }?
 }
 
 Clients = element clients {
