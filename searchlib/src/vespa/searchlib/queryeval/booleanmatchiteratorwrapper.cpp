@@ -32,10 +32,12 @@ BooleanMatchIteratorWrapper::~BooleanMatchIteratorWrapper() = default;
 
 void BooleanMatchIteratorWrapper::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) {
     _search->get_element_ids(docid, element_ids);
+    setDocId(_search->getDocId()); // propagate current iterator docid
 }
 
 void BooleanMatchIteratorWrapper::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) {
     _search->and_element_ids_into(docid, element_ids);
+    setDocId(_search->getDocId()); // propagate current iterator docid
 }
 
 void BooleanMatchIteratorWrapper::visitMembers(vespalib::ObjectVisitor& visitor) const {
