@@ -187,8 +187,8 @@ float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   quer
     CHECK(query.size() == _dimensions);
     CHECK(quant_vec.size() == _quantized_size);
     const float    scale = extract_scale_factor(quant_vec.data());
-    const uint8_t* in_bits = packed_bits_buf(quant_vec.data());
-    return scale * hwaccelerated::eden_f32_q_dot_product(query.data(), in_bits, _bits, _dimensions);
+    const uint8_t* bit_buf = packed_bits_buf(quant_vec.data());
+    return scale * hwaccelerated::eden_f32_q_dot_product(query.data(), bit_buf, _bits, _dimensions);
 }
 
 float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
