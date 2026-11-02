@@ -7,6 +7,12 @@ schema index_struct_field {
         field mykey type int {}
         field myvalue type string {}
     }
+    struct complex {
+        field a type int {}
+        field b type string {}
+        field c type string {}
+        field d type string {}
+    }
     document index_struct_field {
 
         field array_of_int type array<int> {
@@ -63,6 +69,23 @@ schema index_struct_field {
             }
             struct-field value.myvalue {
                 indexing: index
+            }
+        }
+
+        field array_of_complex type array<complex> {
+            struct-field a {
+                indexing: attribute
+            }
+            struct-field b {
+                indexing: index
+            }
+            struct-field c {
+                indexing: index
+                rank: filter
+            }
+            struct-field d {
+                indexing: index
+                match: exact
             }
         }
     }

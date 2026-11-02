@@ -5,6 +5,7 @@ import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
+import com.yahoo.schema.ImmutableSchema;
 import com.yahoo.schema.Schema;
 
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ public class ComplexIndexFieldUtils {
         }
 
         /** Returns the mode set for the deployment the given schema is part of. */
-        public static Mode of(Schema schema) {
+        public static Mode of(ImmutableSchema schema) {
             if (schema.getDeployProperties() == null) return DISALLOW;
             return fromFlagValue(schema.getDeployProperties().featureFlags().allowStructFieldIndex());
         }

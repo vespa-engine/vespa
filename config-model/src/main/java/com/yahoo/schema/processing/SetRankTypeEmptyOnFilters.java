@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.RankType;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -24,6 +25,11 @@ public class SetRankTypeEmptyOnFilters extends Processor {
         for (SDField field : schema.allConcreteFields()) {
             if (field.getRanking().isFilter()) {
                 field.setRankType(RankType.EMPTY);
+            }
+            for (var structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field, ComplexIndexFieldUtils.Mode.of(schema))) {
+                if (structField.getRanking().isFilter()) {
+                    ((SDField) structField).setRankType(RankType.EMPTY);
+                }
             }
         }
     }
