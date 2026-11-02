@@ -8,6 +8,7 @@ import com.yahoo.search.schema.FieldSet;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
+import com.yahoo.searchlib.document.FastMapSearch;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * An agent skill describing the schemas of this application, telling agents what they can query and how,
@@ -26,8 +28,10 @@ import java.util.stream.Collectors;
  */
 public class SchemaSkill extends AbstractComponent {
 
-    static final String name = "vespa-application-schemas";
-    private static final String zCurveSuffix = "_zcurve";
+    static final String NAME = "vespa-application-schemas";
+    static final String DESCRIPTION = "The schemas, fields and rank profiles of this Vespa application, " +
+                                      "with notes from its authors. Use this when writing queries against this application.";
+    private static final String Z_CURVE_SUFFIX = "_zcurve";
 
     private final SchemaInfo schemaInfo;
     private final Map<String, String> schemaDocuments = new LinkedHashMap<>();
@@ -47,9 +51,8 @@ public class SchemaSkill extends AbstractComponent {
     public String overview(List<String> searchPaths, Function<String, String> schemaLink) {
         var md = new StringBuilder();
         md.append("---\n")
-          .append("name: ").append(name).append("\n")
-          .append("description: The schemas, fields and rank profiles of this Vespa application, ")
-          .append("with notes from its authors. Use this when writing queries against this application.\n")
+          .append("name: ").append(NAME).append("\n")
+          .append("description: ").append(DESCRIPTION).append("\n")
           .append("---\n\n");
         md.append("# Querying this application\n\n")
           .append("Query this application with YQL")
@@ -75,17 +78,19 @@ public class SchemaSkill extends AbstractComponent {
         md.append("# Schema `").append(schema.name()).append("`\n");
         appendSchemaInfo(schema, schemaInfo, md);
 
-        List<Field> fields = schema.fields().values().stream().filter(field -> ! isInternal(field)).toList();
+        List<Field> fields = schema.fields().values().stream()
+                                   .filter(field -> ! isInternal(field, schema))
+                                   .filter(field -> ! isStructField(field, schema))
+                                   .toList();
         if ( ! fields.isEmpty()) {
             md.append("\n## Fields\n\n");
             for (Field field : fields) {
-                md.append("- `").append(field.name()).append("` (").append(typeName(field.type()))
-                  .append("; ").append(matching(field, schema));
-                if ( ! field.aliases().isEmpty())
-                    md.append("; aliases: ").append(field.aliases().stream().map(SchemaSkill::code).collect(Collectors.joining(", ")));
-                md.append(")");
-                appendExplanation(field.explanation(), md, 1);
-                md.append("\n");
+                appendField(field, schema, md, 0);
+                // The searchable struct fields at any depth, by full name, as their parents may not be listed
+                if (hasStructFields(field.type()))
+                    structFields(field, schema).filter(SchemaSkill::isSearchable)
+                                               .forEach(structField -> appendField(structField, schema, md, 1));
+                field.fastMapSearches().forEach(fastMap -> appendLookup(field, fastMap, md));
             }
         }
 
@@ -126,8 +131,30 @@ public class SchemaSkill extends AbstractComponent {
     }
 
     /**
-     * Appends an explanation to a list item at the given nesting level (1 for top level items),
-     * indenting any following lines so they stay in the item.
+     * Appends a field as a list item at the given nesting level (0 for top level fields, 1 for their struct fields),
+     * with its type, how it is matched, any aliases and any explanation.
+     */
+    private static void appendField(Field field, Schema schema, StringBuilder md, int level) {
+        md.append("  ".repeat(level)).append("- `").append(field.name()).append("` (").append(typeName(field.type()))
+          .append("; ").append(matching(field, schema));
+        if (isSearchable(field) && field.matchType() != Field.MatchType.NONE)
+            md.append("; match: ").append(field.matchType().name().toLowerCase(Locale.ROOT)); // as in the schema
+        if ( ! field.aliases().isEmpty())
+            md.append("; aliases: ").append(field.aliases().stream().map(SchemaSkill::code).collect(Collectors.joining(", ")));
+        md.append(")");
+        appendExplanation(field.explanation(), md, level + 1);
+        md.append("\n");
+    }
+
+    /** Appends a lookup of a field with fast map search, which is how it is searched, as a list item under the field. */
+    private static void appendLookup(Field field, Field.FastMapSearchFields fastMap, StringBuilder md) {
+        md.append("  - `").append(field.name()).append(".").append(fastMap.lookupName()).append("{key}` (lookup; key: ")
+          .append(typeName(fastMap.keyType())).append(", value: ").append(typeName(fastMap.valueType())).append(")\n");
+    }
+
+    /**
+     * Appends an explanation to a list item, indenting any following lines to the given level
+     * (1 for top level items) so they stay in the item.
      */
     private static void appendExplanation(Optional<String> explanation, StringBuilder md, int level) {
         explanation.map(String::strip)
@@ -149,12 +176,18 @@ public class SchemaSkill extends AbstractComponent {
     /**
      * Returns whether this is a field Vespa generates to implement another field, which is queried through that field:
      * the lookup field of a map with fast search (map$lookup) and the z-curve attribute of a position (position_zcurve).
-     * These are not in the [internal] field set in all cases, and that set also contains fields which can be queried,
-     * such as the parts of a uri field (url.hostname).
+     * These are not in the [internal] field set in all cases.
      */
-    private static boolean isInternal(Field field) {
-        return field.name().contains("$")
-               || (field.name().endsWith(zCurveSuffix) && field.type().kind() == Field.Type.Kind.LONG);
+    private static boolean isInternal(Field field, Schema schema) {
+        return isFastMapLookup(field, schema)
+               || (field.name().endsWith(Z_CURVE_SUFFIX) && field.type().kind() == Field.Type.Kind.LONG);
+    }
+
+    private static boolean isFastMapLookup(Field field, Schema schema) {
+        return schema.fields().values().stream()
+                     .flatMap(map -> map.fastMapSearches().stream()
+                                        .map(fastMap -> FastMapSearch.toLookupFieldName(map.name(), fastMap.lookupName())))
+                     .anyMatch(field.name()::equals);
     }
 
     private static boolean isStreaming(Schema schema, SchemaInfo schemaInfo) {
@@ -163,20 +196,39 @@ public class SchemaSkill extends AbstractComponent {
     }
 
     private static String matching(Field field, Schema schema) {
-        if (field.type().kind() == Field.Type.Kind.POSITION && schema.fields().containsKey(field.name() + zCurveSuffix))
+        if (field.type().kind() == Field.Type.Kind.POSITION && schema.fields().containsKey(field.name() + Z_CURVE_SUFFIX))
             return "attribute"; // implemented by its z-curve attribute
         if (field.isIndex() && field.isAttribute()) return "index, attribute";
         if (field.isIndex()) return "index";
         if (field.isAttribute()) return "attribute";
-        // Struct fields with attributes or indexes are not in schema info yet, so we can't tell whether there are any
-        if (hasStructFields(field.type())) return "searchable only through its struct fields, if any";
+        boolean hasSearchableStructFields = hasStructFields(field.type()) && structFields(field, schema).anyMatch(SchemaSkill::isSearchable);
+        if (hasSearchableStructFields && field.hasFastMapSearch()) return "searchable through its struct fields and by lookup";
+        if (hasSearchableStructFields) return "searchable through its struct fields";
+        if (field.hasFastMapSearch()) return "searchable by lookup";
         return "not searchable";
+    }
+
+    private static boolean isSearchable(Field field) {
+        return field.isIndex() || field.isAttribute();
     }
 
     private static boolean hasStructFields(Field.Type type) {
         return type instanceof Field.MapFieldType
                || type instanceof Field.StructFieldType
                || (type instanceof Field.ArrayFieldType arrayType && arrayType.elementType() instanceof Field.StructFieldType);
+    }
+
+    /** Returns the struct fields of the given field, recursively, which schema info names by their full name, e.g. "myStruct.myField". */
+    private static Stream<Field> structFields(Field field, Schema schema) {
+        return schema.fields().values().stream().filter(structField -> structField.name().startsWith(field.name() + "."));
+    }
+
+    /** Returns whether this is a field inside a struct or map field, such as "myStruct.myField" or "myMap.key". */
+    private static boolean isStructField(Field field, Schema schema) {
+        int lastDot = field.name().lastIndexOf('.');
+        if (lastDot < 0) return false;
+        Field parent = schema.fields().get(field.name().substring(0, lastDot));
+        return parent != null && hasStructFields(parent.type());
     }
 
     private static String typeName(Field.Type type) {

@@ -220,12 +220,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addSearch(deployState, spec, cluster, context);
         addDocproc(deployState, spec, cluster);
         addDocumentApi(deployState, spec, cluster, context);  // NOTE: Must be done after addSearch
+        addSkills(deployState, spec, cluster); // NOTE: Must be done after addSearch
         addDefaultThreadpool(deployState, spec, cluster);
 
         cluster.addDefaultHandlersExceptStatus();
         addStatusHandlers(cluster, context.getDeployState().isHosted());
         addUserHandlers(deployState, cluster, spec, context);
-        addSkillHandler(cluster); // NOTE: Must be done after addSearch and addUserHandlers
 
         addClients(deployState, spec, cluster);
         addHttp(deployState, spec, cluster, context);
@@ -1365,43 +1365,22 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
 
-    /**
-     * Adds the agent skill component and its handler to clusters with search, unless the application configures
-     * them itself. The handler is bound where the search handler is.
-     */
-    private void addSkillHandler(ApplicationContainerCluster cluster) {
-        List<Handler> declaredSkillHandlers = cluster.getHandlers().stream().filter(SkillHandler::isSkillHandler).toList();
-        declaredSkillHandlers.forEach(SkillHandler::validateBindings);
-        if (cluster.getSearch() == null) {
-            // The skill is made from the schema info, which only clusters with search have
-            if ( ! declaredSkillHandlers.isEmpty())
-                throw new IllegalArgumentException("Handler '" + declaredSkillHandlers.get(0).getComponentId() +
-                                                   "' requires search, but container cluster '" + cluster.getName() +
-                                                   "' has no <search>");
+    /** Adds the schemas skill if <skills> enables it, and the handler serving it where search is. */
+    private void addSkills(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
+        Element skills = XML.getChild(spec, "skills");
+        if (skills == null || XML.getChild(skills, "schemas") == null) return;
+        if (cluster.getSearch() == null)
+            throw new IllegalArgumentException("The 'schemas' skill requires search, but container cluster '" +
+                                               cluster.getName() + "' has no <search>");
+
+        var skillHandler = new SkillHandler(cluster);
+        if (skillHandler.getServerBindings().isEmpty()) {
+            deployState.getDeployLogger().logApplicationPackage(WARNING, "The 'schemas' skill in container cluster '" +
+                                                                         cluster.getName() + "' is not served, as search has no bindings");
             return;
         }
-
-        // The skill component, injected by the built-in handler and by any the application declares.
-        // There can only be one, as it is injected by class
-        if ( ! cluster.getComponentsMap().containsKey(ComponentId.fromString(SkillHandler.SKILL_CLASSNAME))
-             && cluster.getComponentsMap().values().stream().noneMatch(SkillHandler::isSkill))
-            cluster.addComponent(SkillHandler.createSkill());
-
-        // The built-in handler, unless the application declares one itself or search has no bindings
-        if ( ! declaredSkillHandlers.isEmpty()
-            || cluster.getComponentsMap().containsKey(ComponentId.fromString(SkillHandler.HANDLER_CLASSNAME))) return;
-        List<BindingPattern> searchBindings = cluster.getHandlers().stream()
-                                                     .filter(handler -> handler.getClassId().getName().equals(SearchHandler.HANDLER_CLASSNAME))
-                                                     .flatMap(handler -> handler.getServerBindings().stream())
-                                                     .toList();
-        Handler skillHandler = SkillHandler.create(searchBindings);
-        // Added after user handlers, so leave out any binding they have taken
-        for (BindingPattern binding : List.copyOf(skillHandler.getServerBindings())) {
-            if (cluster.getHandlers().stream().anyMatch(handler -> handler.getServerBindings().stream().anyMatch(binding::hasSamePattern)))
-                skillHandler.removeServerBinding(binding);
-        }
-        if ( ! skillHandler.getServerBindings().isEmpty())
-            cluster.addComponent(skillHandler);
+        cluster.addComponent(skillHandler);
+        cluster.addComponent(new Component<>(new ComponentModel(SkillHandler.SCHEMA_SKILL_SPEC, null)));
     }
 
     private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, ApplicationContainerCluster cluster, Element searchElement, Collection<BindingPattern> defaultBindings) {
