@@ -30,6 +30,14 @@ BooleanMatchIteratorWrapper::BooleanMatchIteratorWrapper(SearchIterator::UP     
 
 BooleanMatchIteratorWrapper::~BooleanMatchIteratorWrapper() = default;
 
+void BooleanMatchIteratorWrapper::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) {
+    _search->get_element_ids(docid, element_ids);
+}
+
+void BooleanMatchIteratorWrapper::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) {
+    _search->and_element_ids_into(docid, element_ids);
+}
+
 void BooleanMatchIteratorWrapper::visitMembers(vespalib::ObjectVisitor& visitor) const {
     visit(visitor, "search", _search);
     // _match not visited

@@ -2,6 +2,8 @@
 
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
+#include <vespa/searchlib/queryeval/fake_result.h>
+#include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -161,6 +163,27 @@ TEST_F(WrapperTest, boolean_match_iterator_wrapper) {
     EXPECT_EQ(_data.seekCnt, 9u);
     EXPECT_EQ(_data.unpackCnt, 2u);
     EXPECT_EQ(_data.dtorCnt, 3u);
+}
+
+TEST(BooleanMatchIteratorWrapperTest, element_ids_are_forwarded_to_wrapped_iterator) {
+    TermFieldMatchData      match;
+    TermFieldMatchDataArray tfmda;
+    tfmda.add(&match);
+    auto result = FakeResult().doc(10).elem(1).pos(0).elem(3).pos(2).doc(20).elem(2).pos(0);
+    auto search = std::make_unique<BooleanMatchIteratorWrapper>(
+        std::make_unique<FakeSearch>("tag", "field", "term", result, tfmda), tfmda);
+    search->initFullRange();
+    std::vector<uint32_t> element_ids;
+    EXPECT_TRUE(search->seek(10));
+    search->get_element_ids(10, element_ids);
+    EXPECT_EQ((std::vector<uint32_t>{1, 3}), element_ids);
+    element_ids = {0, 3, 5};
+    search->and_element_ids_into(10, element_ids);
+    EXPECT_EQ((std::vector<uint32_t>{3}), element_ids);
+    EXPECT_TRUE(search->seek(20));
+    element_ids.clear();
+    search->get_element_ids(20, element_ids);
+    EXPECT_EQ((std::vector<uint32_t>{2}), element_ids);
 }
 
 class FilterWrapperVerifier : public search::test::SearchIteratorVerifier {

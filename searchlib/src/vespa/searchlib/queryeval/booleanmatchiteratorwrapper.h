@@ -15,6 +15,10 @@ namespace search::queryeval {
  * we found a match or not. This is done by intercepting calls to the
  * doUnpack method. The doSeek method will be forwarded to ensure we
  * match the same set of documents.
+ *
+ * Element ids are forwarded to the wrapped iterator, so that callers
+ * that need them (e.g. matched-elements-only summary fields) still
+ * get them for filter terms.
  **/
 class BooleanMatchIteratorWrapper : public SearchIterator {
 private:
@@ -49,6 +53,8 @@ public:
     BooleanMatchIteratorWrapper(SearchIterator::UP search, const fef::TermFieldMatchDataArray& matchData);
     ~BooleanMatchIteratorWrapper() override;
 
+    void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
+    void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
 };
 
