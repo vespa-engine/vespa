@@ -203,6 +203,21 @@ TEST(ProfiledIteratorTest, init_seek_unpack_termwise_is_profiled) {
     verify_operation(profiler, seen, "[1]SimpleSearch::and_hits_into");
 }
 
+TEST(ProfiledIteratorTest, element_operations_are_profiled) {
+    ExecutionProfiler             profiler(64);
+    std::map<std::string, size_t> seen;
+    auto                          root = ProfiledIterator::profile(profiler, T({1, 2, 3}, 1));
+    root->initRange(1, 4);
+    verify_operation(profiler, seen, "[1]SimpleSearch::initRange");
+    EXPECT_TRUE(root->seek(2));
+    verify_operation(profiler, seen, "[1]SimpleSearch::doSeek");
+    std::vector<uint32_t> element_ids;
+    root->get_element_ids(2, element_ids);
+    verify_operation(profiler, seen, "[1]SimpleSearch::get_element_ids");
+    root->and_element_ids_into(2, element_ids);
+    verify_operation(profiler, seen, "[1]SimpleSearch::and_element_ids_into");
+}
+
 TEST(ProfiledIteratorTest, iterator_tree_can_be_profiled) {
     ExecutionProfiler profiler(64);
     auto              root = create_iterator_tree();
