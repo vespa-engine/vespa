@@ -403,11 +403,10 @@ alignas(32) constexpr uint8_t bf16_lut_b4[32] = {
     0x03, 0xc6, 0x28, 0x71, 0xa0, 0xcf, 0x04, 0x2e, 0x03, 0xc6, 0x28, 0x71, 0xa0, 0xcf, 0x04, 0x2e  // LSB
 };
 
-template <uint8_t Bits>
+template <uint8_t Bits, size_t U8Lanes>
 HWY_NOINLINE float hwy_eden_f32_q_dot(const float* HWY_RESTRICT f32_lhs, const uint8_t* HWY_RESTRICT packed_rhs,
                                       const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz) noexcept {
-    // Important: all of these are _fixed_ lane count tags, not ScalableTag!
-    const hn::Full128<uint8_t>                            du8;
+    const hn::CappedTag<uint8_t, U8Lanes>                 du8;
     const hn::Repartition<hwy::bfloat16_t, decltype(du8)> dbf16;
     const hn::Repartition<float, decltype(dbf16)>         df32;
 
@@ -451,15 +450,15 @@ HWY_NOINLINE float hwy_eden_f32_q_dot(const float* HWY_RESTRICT f32_lhs, const u
         const VU8 bf16_msb = hn::TableLookupBytes(bf16_msb_lut, rhs_v);
         const VU8 bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, rhs_v);
         // Glue the MSB/LSB pairs together. Note the reverse LUT order since we use little endian.
-        const VBF16 bf16_lo = hn::BitCast(dbf16, hn::InterleaveLower(du8, bf16_lsb, bf16_msb));
-        const VBF16 bf16_hi = hn::BitCast(dbf16, hn::InterleaveUpper(du8, bf16_lsb, bf16_msb));
+        const VBF16 bf16_lo = hn::BitCast(dbf16, hn::InterleaveWholeLower(du8, bf16_lsb, bf16_msb));
+        const VBF16 bf16_hi = hn::BitCast(dbf16, hn::InterleaveWholeUpper(du8, bf16_lsb, bf16_msb));
 
         const VF32 rhs_f32_lo_lo = hn::PromoteLowerTo(df32, bf16_lo);
         const VF32 rhs_f32_lo_hi = hn::PromoteUpperTo(df32, bf16_lo);
         const VF32 rhs_f32_hi_lo = hn::PromoteLowerTo(df32, bf16_hi);
         const VF32 rhs_f32_hi_hi = hn::PromoteUpperTo(df32, bf16_hi);
 
-        HWY_LANES_CONSTEXPR const size_t NF32 = hn::Lanes(df32); // Always 4, but this is best practice(tm)
+        HWY_LANES_CONSTEXPR const size_t NF32 = hn::Lanes(df32);
 
         VF32 lhs_f32_lo_lo, lhs_f32_lo_hi, lhs_f32_hi_lo, lhs_f32_hi_hi;
         if constexpr (!meta.is_partial()) {
@@ -494,8 +493,8 @@ HWY_NOINLINE float hwy_eden_f32_q_dot(const float* HWY_RESTRICT f32_lhs, const u
     VF32 accu6 = hn::Zero(df32);
     VF32 accu7 = hn::Zero(df32);
 
-    unary_unpack_bits<Bits>(packed_rhs, sz, kernel, FnAccuArity<4>{}, accu0, accu1, accu2, accu3, accu4, accu5, accu6,
-                            accu7);
+    unary_unpack_bits<Bits>(du8, packed_rhs, sz, kernel, FnAccuArity<4>{}, accu0, accu1, accu2, accu3, accu4, accu5,
+                            accu6, accu7);
     return LaneReduceSum{}(
         df32, parallel_reduce_accumulators(VecAdd{}, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7));
 }
@@ -525,17 +524,48 @@ double my_dot_product_f64(const double* a, const double* b, size_t sz) noexcept 
 [[maybe_unused]]
 float my_eden_f32_q_dot_product(const float* lhs, const uint8_t* packed_rhs, const uint8_t bits,
                                 const size_t sz) noexcept {
-    switch (bits) {
-    case 1:
-        return hwy_eden_f32_q_dot<1>(lhs, packed_rhs, bf16_lut_b1, sz);
-    case 2:
-        return hwy_eden_f32_q_dot<2>(lhs, packed_rhs, bf16_lut_b2, sz);
-    case 3:
-        return hwy_eden_f32_q_dot<3>(lhs, packed_rhs, bf16_lut_b3, sz);
-    case 4:
-        return hwy_eden_f32_q_dot<4>(lhs, packed_rhs, bf16_lut_b4, sz);
-    default:
-        abort();
+    const hn::CappedTag<uint8_t, 64> max_tag;
+    HWY_LANES_CONSTEXPR const size_t max_lanes = hn::Lanes(max_tag);
+    if HWY_LANES_CONSTEXPR (max_lanes == 16) {
+        switch (bits) {
+        case 1:
+            return hwy_eden_f32_q_dot<1, 16>(lhs, packed_rhs, bf16_lut_b1, sz);
+        case 2:
+            return hwy_eden_f32_q_dot<2, 16>(lhs, packed_rhs, bf16_lut_b2, sz);
+        case 3:
+            return hwy_eden_f32_q_dot<3, 16>(lhs, packed_rhs, bf16_lut_b3, sz);
+        case 4:
+            return hwy_eden_f32_q_dot<4, 16>(lhs, packed_rhs, bf16_lut_b4, sz);
+        default:
+            abort();
+        }
+    } else if HWY_LANES_CONSTEXPR (max_lanes == 32) {
+        switch (bits) {
+        case 1:
+            return hwy_eden_f32_q_dot<1, 32>(lhs, packed_rhs, bf16_lut_b1, sz);
+        case 2:
+            return hwy_eden_f32_q_dot<2, 32>(lhs, packed_rhs, bf16_lut_b2, sz);
+        case 3:
+            return hwy_eden_f32_q_dot<3, 32>(lhs, packed_rhs, bf16_lut_b3, sz);
+        case 4:
+            return hwy_eden_f32_q_dot<4, 32>(lhs, packed_rhs, bf16_lut_b4, sz);
+        default:
+            abort();
+        }
+    } else {
+        HWY_ASSERT(max_lanes == 64);
+        switch (bits) {
+        case 1:
+            return hwy_eden_f32_q_dot<1, 64>(lhs, packed_rhs, bf16_lut_b1, sz);
+        case 2:
+            return hwy_eden_f32_q_dot<2, 64>(lhs, packed_rhs, bf16_lut_b2, sz);
+        case 3:
+            return hwy_eden_f32_q_dot<3, 64>(lhs, packed_rhs, bf16_lut_b3, sz);
+        case 4:
+            return hwy_eden_f32_q_dot<4, 64>(lhs, packed_rhs, bf16_lut_b4, sz);
+        default:
+            abort();
+        }
     }
 }
 double my_squared_euclidean_distance_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {

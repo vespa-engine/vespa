@@ -24,9 +24,11 @@ namespace HWY_NAMESPACE {
 
 namespace hn = hwy::HWY_NAMESPACE;
 
-template <uint8_t Bits, typename KernelFn, size_t FnAccus, typename... Accus>
-void unary_unpack_bits(const uint8_t* HWY_RESTRICT packed, const size_t sz, KernelFn kernel_fn,
+// 128-bit
+template <uint8_t Bits, typename DU8, HWY_IF_V_SIZE_D(DU8, 16), typename KernelFn, size_t FnAccus, typename... Accus>
+void unary_unpack_bits(const DU8 du8, const uint8_t* HWY_RESTRICT packed, const size_t sz, KernelFn kernel_fn,
                        const FnAccuArity<FnAccus>, Accus&&... accus) {
+    (void)du8;
     constexpr uint8_t B = Bits;
 
     const hn::Full128<uint8_t> d8x16;
@@ -119,6 +121,155 @@ void unary_unpack_bits(const uint8_t* HWY_RESTRICT packed, const size_t sz, Kern
         }
         // Load() may fault if unaligned, so tmp_raw must have vector alignment
         my_dispatch(PartialInvocation{orig_rem}, arity, kernel_fn, hn::Load(d8x16, tmp_raw),
+                    std::forward<Accus>(accus)...);
+    }
+}
+
+// 256-bit
+template <uint8_t Bits, typename DU8, HWY_IF_V_SIZE_D(DU8, 32), typename KernelFn, size_t FnAccus, typename... Accus>
+void unary_unpack_bits(const DU8 d8x32, const uint8_t* HWY_RESTRICT packed, const size_t sz, KernelFn kernel_fn,
+                       const FnAccuArity<FnAccus>, Accus&&... accus) {
+    constexpr uint8_t B = Bits;
+
+    // Bit unpacking must always be done using fixed tag, regardless of kernel register width
+    const hn::Full128<uint8_t> d8x16;
+    const hn::Full64<uint8_t>  d8x8;
+    const hn::Full32<uint8_t>  d8x4;
+
+    static_assert(FnAccus <= sizeof...(Accus), "Can't use more accumulators than actually exist");
+    constexpr auto arity = AccusAndFnArity<sizeof...(Accus), FnAccus>{};
+
+    size_t i = 0;
+    for (; i + 128 <= sz; i += 128, packed += 16 * B) {
+        hn::Vec<decltype(d8x16)> raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7;
+        VecUnpack8<B>::unpack(d8x16, packed, raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7);
+
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn, hn::Combine(d8x32, raw1, raw0),
+                    std::forward<Accus>(accus)...);
+        my_dispatch(BlockInvocation<2>{}, arity, kernel_fn, hn::Combine(d8x32, raw3, raw2),
+                    std::forward<Accus>(accus)...);
+        my_dispatch(BlockInvocation<4>{}, arity, kernel_fn, hn::Combine(d8x32, raw5, raw4),
+                    std::forward<Accus>(accus)...);
+        my_dispatch(BlockInvocation<6>{}, arity, kernel_fn, hn::Combine(d8x32, raw7, raw6),
+                    std::forward<Accus>(accus)...);
+    }
+    size_t rem = sz - i;
+    if (rem >= 64) { // <= 127
+        hn::Vec<decltype(d8x8)> raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7;
+        VecUnpack8<B>::unpack(d8x8, packed, raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7);
+        // raw1, raw0 in that order since Combine's first arg is the _high_ part of the destination
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn,
+                    hn::Combine(d8x32, hn::Combine(d8x16, raw3, raw2), hn::Combine(d8x16, raw1, raw0)),
+                    std::forward<Accus>(accus)...);
+        my_dispatch(BlockInvocation<1>{}, arity, kernel_fn,
+                    hn::Combine(d8x32, hn::Combine(d8x16, raw7, raw6), hn::Combine(d8x16, raw5, raw4)),
+                    std::forward<Accus>(accus)...);
+        i += 64;
+        packed += 8 * B;
+        rem -= 64;
+    }
+    if (rem >= 32) { // <= 63
+        hn::Vec<decltype(d8x4)> raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7;
+        VecUnpack8<B>::unpack(d8x4, packed, raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7);
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn,
+                    hn::Combine(d8x32,
+                                hn::Combine(d8x16, hn::Combine(d8x8, raw7, raw6), hn::Combine(d8x8, raw5, raw4)),
+                                hn::Combine(d8x16, hn::Combine(d8x8, raw3, raw2), hn::Combine(d8x8, raw1, raw0))),
+                    std::forward<Accus>(accus)...);
+        i += 32;
+        packed += 4 * B;
+        rem -= 32;
+    }
+    if (rem > 0) { // <= 31
+        HWY_ALIGN uint8_t tmp_raw[32] = {};
+        const size_t      orig_rem = rem;
+        i = 0;
+        if (rem >= 16) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<2>(packed, tmp_raw);
+            i += 16;
+            packed += 2 * B;
+            rem -= 16;
+        }
+        if (rem >= 8) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<1>(packed, tmp_raw + i);
+            i += 8;
+            packed += 1 * B;
+            rem -= 8;
+        }
+        if (rem > 0 && rem < 8) { // <= 7
+            ScalarHorizontalRemainderBitPacker<B>::unpack1_to_7(packed, tmp_raw + i, rem);
+        }
+        // Load() may fault if unaligned, so tmp_raw must have vector alignment
+        my_dispatch(PartialInvocation{orig_rem}, arity, kernel_fn, hn::Load(d8x32, tmp_raw),
+                    std::forward<Accus>(accus)...);
+    }
+}
+
+// 512-bit
+template <uint8_t Bits, typename DU8, HWY_IF_V_SIZE_D(DU8, 64), typename KernelFn, size_t FnAccus, typename... Accus>
+void unary_unpack_bits(const DU8 d8x64, const uint8_t* HWY_RESTRICT packed, const size_t sz, KernelFn kernel_fn,
+                       const FnAccuArity<FnAccus>, Accus&&... accus) {
+    constexpr uint8_t B = Bits;
+
+    const hn::Half<decltype(d8x64)> d8x32;
+    // Bit unpacking must always be done using fixed tag, regardless of kernel register width
+    const hn::Full128<uint8_t> d8x16;
+    const hn::Full64<uint8_t>  d8x8;
+
+    static_assert(FnAccus <= sizeof...(Accus), "Can't use more accumulators than actually exist");
+    constexpr auto arity = AccusAndFnArity<sizeof...(Accus), FnAccus>{};
+
+    size_t i = 0;
+    for (; i + 128 <= sz; i += 128, packed += 16 * B) {
+        hn::Vec<decltype(d8x16)> raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7;
+        VecUnpack8<B>::unpack(d8x16, packed, raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7);
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn,
+                    hn::Combine(d8x64, hn::Combine(d8x32, raw3, raw2), hn::Combine(d8x32, raw1, raw0)),
+                    std::forward<Accus>(accus)...);
+        my_dispatch(BlockInvocation<1>{}, arity, kernel_fn,
+                    hn::Combine(d8x64, hn::Combine(d8x32, raw7, raw6), hn::Combine(d8x32, raw5, raw4)),
+                    std::forward<Accus>(accus)...);
+    }
+    size_t rem = sz - i;
+    if (rem >= 64) { // <= 127
+        hn::Vec<decltype(d8x8)> raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7;
+        VecUnpack8<B>::unpack(d8x8, packed, raw0, raw1, raw2, raw3, raw4, raw5, raw6, raw7);
+        my_dispatch(BlockInvocation<0>{}, arity, kernel_fn,
+                    hn::Combine(d8x64,
+                                hn::Combine(d8x32, hn::Combine(d8x16, raw7, raw6), hn::Combine(d8x16, raw5, raw4)),
+                                hn::Combine(d8x32, hn::Combine(d8x16, raw3, raw2), hn::Combine(d8x16, raw1, raw0))),
+                    std::forward<Accus>(accus)...);
+        i += 64;
+        packed += 8 * B;
+        rem -= 64;
+    }
+    if (rem > 0) { // <= 63
+        HWY_ALIGN uint8_t tmp_raw[64] = {};
+        const size_t      orig_rem = rem;
+        i = 0;
+        if (rem >= 32) { // <= 63
+            ScalarVerticalBlockBitPacker<B>::template unpack<4>(packed, tmp_raw);
+            i += 32;
+            packed += 4 * B;
+            rem -= 32;
+        }
+        if (rem >= 16) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<2>(packed, tmp_raw + i);
+            i += 16;
+            packed += 2 * B;
+            rem -= 16;
+        }
+        if (rem >= 8) {
+            ScalarVerticalBlockBitPacker<B>::template unpack<1>(packed, tmp_raw + i);
+            i += 8;
+            packed += 1 * B;
+            rem -= 8;
+        }
+        if (rem > 0 && rem < 8) { // <= 7
+            ScalarHorizontalRemainderBitPacker<B>::unpack1_to_7(packed, tmp_raw + i, rem);
+        }
+        // Load() may fault if unaligned, so tmp_raw must have vector alignment
+        my_dispatch(PartialInvocation{orig_rem}, arity, kernel_fn, hn::Load(d8x64, tmp_raw),
                     std::forward<Accus>(accus)...);
     }
 }
