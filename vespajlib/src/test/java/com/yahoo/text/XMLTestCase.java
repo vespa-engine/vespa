@@ -97,6 +97,19 @@ public class XMLTestCase  {
     }
 
     @Test
+    public void testInvalidNamesRejected() {
+        // The NameChar productions allow only #xB7, [#x0300-#x036F] and
+        // [#x203F-#x2040] beyond NameStartChar, so codepoints in between,
+        // including U+2000-U+200B and U+037E, are not legal name characters
+        assertFalse(XML.isName("a\u2000b"));
+        assertFalse(XML.isName("a\u200B"));
+        assertFalse(XML.isName("a\u037E"));
+        assertTrue(XML.isName("a\u037F"));
+        assertTrue(XML.isName("a\u203F"));
+        assertTrue(XML.isName("a\u2040"));
+    }
+
+    @Test
     public void testExceptionContainingLineNumberAndColumnNumber() {
         final String invalidXml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<foo";
