@@ -6,6 +6,7 @@
 #include "i_dictionary_lookup.h"
 
 #include <vespa/searchlib/query/query_term_ucs4.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 #include <vespa/vespalib/util/regexp.h>
 

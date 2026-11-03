@@ -2,11 +2,11 @@
 
 #include "string_range_matcher.h"
 
-#include "enumhintsearchcontext.h"
 #include "enumstore.h"
 #include "i_dictionary_lookup.h"
 
 #include <vespa/searchlib/query/query_term_ucs4.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/vespalib/datastore/infinity_unique_store_string_comparator.h>
 
 namespace search::attribute {

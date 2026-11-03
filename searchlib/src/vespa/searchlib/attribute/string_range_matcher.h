@@ -2,18 +2,18 @@
 
 #pragma once
 
-#include "enumstore.h"
 #include "string_range_search_helper.h"
 
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
-#include <vespa/searchlib/queryeval/executeinfo.h>
-#include <vespa/vespalib/datastore/infinity_unique_store_string_comparator.h>
-#include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 
 namespace search {
 template <class EntryT> class EnumStoreT;
 } // namespace search
+
+namespace search::queryeval {
+class ExecuteInfo;
+}
 
 namespace search::attribute {
 

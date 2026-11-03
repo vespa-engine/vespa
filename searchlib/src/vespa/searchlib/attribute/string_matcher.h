@@ -6,7 +6,6 @@
 #include "string_search_helper.h"
 
 #include <vespa/searchlib/query/query_term_ucs4.h>
-#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 #include <vespa/vespalib/util/regexp.h>
@@ -14,6 +13,10 @@
 namespace search {
 class QueryTermSimple;
 } // namespace search
+
+namespace search::queryeval {
+class ExecuteInfo;
+}
 
 namespace search::attribute {
 
