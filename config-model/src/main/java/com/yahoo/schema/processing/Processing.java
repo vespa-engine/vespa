@@ -70,6 +70,8 @@ public class Processing {
                 ExactMatch::new,
                 NGramMatch::new,
                 TextMatch::new,
+                // Must run after all processors changing the matching and linguistics settings of struct fields
+                StructFieldIndexing::new,
                 MultifieldIndexHarmonizer::new,
                 FilterFieldNames::new,
                 ValidateNoFieldRankFilterOverlap::new,

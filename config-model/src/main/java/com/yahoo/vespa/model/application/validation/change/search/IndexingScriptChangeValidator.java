@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.application.validation.change.search;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.schema.Schema;
-import com.yahoo.schema.derived.IndexingScript;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -75,8 +74,8 @@ public class IndexingScriptChangeValidator {
             changed = true;
         }
         // Struct fields with 'indexing: index' are indexed by a script derived for the complex field as a whole
-        ScriptExpression currentStructFieldScript = structFieldIndexingScript(currentField, currentSchema, currentStreaming);
-        ScriptExpression nextStructFieldScript = structFieldIndexingScript(nextField, nextSchema, nextStreaming);
+        ScriptExpression currentStructFieldScript = structFieldIndexingScript(currentField, currentStreaming);
+        ScriptExpression nextStructFieldScript = structFieldIndexingScript(nextField, nextStreaming);
         if ( ! currentStructFieldScript.equals(nextStructFieldScript)) {
             ChangeMessageBuilder structFieldMessageBuilder = new ChangeMessageBuilder(nextField.getName());
             changeMessageBuilder.populateStructFieldIndexes(structFieldMessageBuilder);
@@ -92,9 +91,9 @@ public class IndexingScriptChangeValidator {
     }
 
     /** Returns the struct field indexing script which is used for the given field, which is none in streaming mode. */
-    private static ScriptExpression structFieldIndexingScript(ImmutableSDField field, Schema schema, boolean streaming) {
+    private static ScriptExpression structFieldIndexingScript(ImmutableSDField field, boolean streaming) {
         if (streaming) return new ScriptExpression();
-        return IndexingScript.structFieldIndexingScript(field, schema);
+        return field.getStructFieldIndexingScript();
     }
 
     static boolean equalScripts(ScriptExpression currentScript, ScriptExpression nextScript) {

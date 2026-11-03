@@ -62,6 +62,12 @@ public class SDField extends Field implements ImmutableSDField {
     /** The indexing statements to be applied to this value during indexing */
     private ScriptExpression indexingScript = new ScriptExpression();
 
+    /**
+     * The statements indexing the struct fields of this complex field,
+     * see {@link com.yahoo.schema.processing.StructFieldIndexing}
+     */
+    private ScriptExpression structFieldIndexingScript = new ScriptExpression();
+
     /** The default rank type for indices of this field */
     private RankType rankType = RankType.DEFAULT;
 
@@ -519,6 +525,14 @@ public class SDField extends Field implements ImmutableSDField {
 
     @Override
     public ScriptExpression getIndexingScript() { return indexingScript; }
+
+    /** Sets the statements indexing the struct fields of this complex field, or null (or empty) for none. */
+    public void setStructFieldIndexingScript(ScriptExpression script) {
+        structFieldIndexingScript = (script == null) ? new ScriptExpression() : script;
+    }
+
+    @Override
+    public ScriptExpression getStructFieldIndexingScript() { return structFieldIndexingScript; }
 
     @SuppressWarnings("deprecation")
     @Override
