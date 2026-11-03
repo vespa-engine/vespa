@@ -13,6 +13,8 @@ permissions:
 jobs:
   external-contribution:
     if: >-
+      github.event.pull_request.head.repo.id != github.event.pull_request.base.repo.id &&
+      github.event.pull_request.user.type != 'Bot' &&
       github.event.pull_request.author_association != 'OWNER' &&
       github.event.pull_request.author_association != 'MEMBER' &&
       github.event.pull_request.author_association != 'COLLABORATOR'
