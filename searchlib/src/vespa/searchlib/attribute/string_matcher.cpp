@@ -25,27 +25,6 @@ bool StringMatcher::isValid() const {
     return (_query_term && (!_query_term->empty()));
 }
 
-void StringMatcher::setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store,
-                                       EnumHintSearchContext&         enum_hint_sc) {
-    if (isValid()) {
-        if (isPrefix()) {
-            auto comp = enum_store.prefix_lookup_comparator(get_query_term_ptr()->getTerm());
-            enum_hint_sc.lookupRange(comp, comp);
-        } else if (isRegex()) {
-            std::string prefix(vespalib::RegexpUtil::get_prefix(get_query_term_ptr()->getTerm()));
-            auto        comp = enum_store.prefix_lookup_comparator(prefix.c_str());
-            enum_hint_sc.lookupRange(comp, comp);
-        } else if (isFuzzy()) {
-            std::string prefix(getFuzzyMatcher().getPrefix());
-            auto        comp = enum_store.prefix_lookup_comparator(prefix.c_str());
-            enum_hint_sc.lookupRange(comp, comp);
-        } else {
-            auto comp = enum_store.string_lookup_comparator(get_query_term_ptr()->getTerm());
-            enum_hint_sc.lookupTerm(comp);
-        }
-    }
-}
-
 bool StringMatcher::lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const {
     if (isValid()) {
         if (isPrefix()) {

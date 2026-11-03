@@ -42,7 +42,6 @@ public:
         return dynamic_cast<QueryTermUCS4*>(_query_term.get());
     }
 
-    void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
     bool lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const;
 
     /*

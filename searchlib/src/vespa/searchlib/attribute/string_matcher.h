@@ -50,7 +50,6 @@ public:
                         const DfaStringComparator::DataStoreType& data_store) const {
         return _helper.is_fuzzy_match(word, itr, data_store);
     }
-    void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
     bool lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const;
 
     /*

@@ -20,40 +20,6 @@ StringRangeMatcher::StringRangeMatcher(StringRangeMatcher&&) noexcept = default;
 
 StringRangeMatcher::~StringRangeMatcher() = default;
 
-void StringRangeMatcher::setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store,
-                                            EnumHintSearchContext&         enum_hint_sc) {
-    if (_helper.is_valid()) {
-        auto* range_spec = _helper.get_string_range_spec();
-        // This is used to eliminate searches that do not yield any results.
-        // We do not use the possible (half-)openness of the range here: If we do not get any result here,
-        // we do not have any results for the closed range and, hence, also not any hits if the range is (half-)open.
-
-        if (range_spec->left && range_spec->right) {
-            enum_hint_sc.lookupRange(enum_store.string_lookup_comparator(range_spec->left->c_str()),
-                                     enum_store.string_lookup_comparator(range_spec->right->c_str()));
-
-        } else if (range_spec->left) {
-            enum_hint_sc.lookupRange(
-                enum_store.string_lookup_comparator(range_spec->left->c_str()),
-                vespalib::datastore::PositiveInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
-                    enum_store.get_data_store()));
-
-        } else if (range_spec->right) {
-            enum_hint_sc.lookupRange(
-                vespalib::datastore::NegativeInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
-                    enum_store.get_data_store()),
-                enum_store.string_lookup_comparator(range_spec->right->c_str()));
-
-        } else {
-            enum_hint_sc.lookupRange(
-                vespalib::datastore::NegativeInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
-                    enum_store.get_data_store()),
-                vespalib::datastore::PositiveInfinityUniqueStoreStringComparator<IEnumStore::InternalIndex>(
-                    enum_store.get_data_store()));
-        }
-    }
-}
-
 bool StringRangeMatcher::lookup_in_dictionary(const EnumStoreT<const char*>& enum_store,
                                               IDictionaryLookup&             dict) const {
     auto range_spec = _helper.get_string_range_spec();
