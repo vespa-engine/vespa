@@ -56,31 +56,6 @@ public:
     /*
      * The methods below are needed in StringPostingSearchContext
      */
-    template <typename PostingSearchContextAdapterType>
-    bool setup_posting_sc(const EnumStoreT<const char*>&   enum_store,
-                          PostingSearchContextAdapterType& posting_sc) const {
-        if (isValid()) {
-            if (isPrefix()) {
-                auto comp = enum_store.prefix_lookup_comparator(get_query_term_ptr()->getTerm());
-                posting_sc.lookupRange(comp, comp);
-            } else if (isRegex()) {
-                std::string prefix(vespalib::RegexpUtil::get_prefix(get_query_term_ptr()->getTerm()));
-                auto        comp = enum_store.prefix_lookup_comparator(prefix.c_str());
-                posting_sc.lookupRange(comp, comp);
-            } else if (isFuzzy()) {
-                std::string prefix(getFuzzyMatcher().getPrefix());
-                auto        comp = enum_store.prefix_lookup_comparator(prefix.c_str());
-                posting_sc.lookupRange(comp, comp);
-            } else {
-                auto comp = enum_store.string_lookup_comparator(get_query_term_ptr()->getTerm());
-                posting_sc.lookupTerm(comp);
-            }
-            return true;
-        }
-
-        return false;
-    }
-
     template <typename DictionaryConstIteratorType>
     bool use_dictionary_entry(const EnumStoreT<const char*>& enum_store, DictionaryConstIteratorType& it) const {
         if (isRegex()) {

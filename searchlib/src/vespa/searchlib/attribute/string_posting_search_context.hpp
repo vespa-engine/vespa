@@ -12,7 +12,7 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::StringPostingSearchContext(Bas
                                                                              const AttrT& toBeSearched)
     : Parent(std::move(base_sc), useBitVector, toBeSearched) {
     DictionaryLookupAdapter adapter(*this);
-    if (matcher().setup_posting_sc(_enumStore, adapter)) {
+    if (matcher().lookup_in_dictionary(_enumStore, adapter)) {
         if (this->_uniqueValues == 1u) {
             /*
              * A single dictionary entry from lookupRange() might not be
