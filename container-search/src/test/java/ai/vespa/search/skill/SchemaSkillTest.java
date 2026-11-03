@@ -22,99 +22,107 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SchemaSkillTest {
 
     @Test
+    void testEmptyOverview() {
+        var expectedOverview = """
+            ---
+            name: vespa-application-schemas
+            description: The schemas, fields and rank profiles of this Vespa application, with notes from its authors. Use this when writing queries against this application.
+            ---
+
+            # Querying this application
+
+            Query this application with YQL at `/search/`. For general Vespa query syntax, use the Vespa skills (`vespa skills install`).
+            """;
+        assertEquals(expectedOverview, new SchemaSkill(emptySchemaInfo()).overview());
+    }
+
+    @Test
     void testOverview() {
-        String overview = new SchemaSkill(schemaInfo()).overview();
-        assertFrontMatter(overview);
-        assertTrue(overview.contains("`/search/`"), overview);
+        var expectedOverview = """
+            ---
+            name: vespa-application-schemas
+            description: The schemas, fields and rank profiles of this Vespa application, with notes from its authors. Use this when writing queries against this application.
+            ---
 
-        String product = section(overview, "## Schema `product`");
-        assertTrue(product.contains("Products in a web shop."), product);
-        assertTrue(product.contains("`/skills/v1/schemas/product/`"), product);
-        assertFalse(product.contains("streaming"), product);
+            # Querying this application
 
-        String mail = section(overview, "## Schema `mail`");
-        assertTrue(mail.contains("`streaming.groupname`"), mail);
-        assertTrue(mail.contains("`/skills/v1/schemas/mail/`"), mail);
+            Query this application with YQL at `/search/`. For general Vespa query syntax, use the Vespa skills (`vespa skills install`).
+
+            Each schema below links to its fields, field sets and rank profiles. Read it before querying the schema.
+
+            ## Schema `product`
+
+            Products in a web shop.
+
+            Each document is a single product.
+
+            Details: `/skills/v1/schemas/product/`
+
+            ## Schema `mail`
+
+            This schema uses streaming search: queries must set exactly one of `streaming.groupname` (for document ids with `g=<group>`), `streaming.userid` (for ids with `n=<number>`) or `streaming.selection` (a document selection).
+
+            Details: `/skills/v1/schemas/mail/`
+            """;
+        assertEquals(expectedOverview, new SchemaSkill(schemaInfo()).overview());
     }
 
     @Test
-    void testOverviewWithoutSchemas() {
-        String overview = new SchemaSkill(emptySchemaInfo()).overview();
-        assertFrontMatter(overview);
-        assertTrue(overview.contains("`/search/`"), overview);
-        assertFalse(overview.contains("## Schema"), overview);
-    }
+    void testIndexedSchema() {
+        var expectedProduct = """
+            # Schema `product`
 
-    /** The full document of one schema, as an example of the format. The other tests check what is listed, not the wording. */
-    @Test
-    void testSchema() {
-        SchemaSkill skill = new SchemaSkill(schemaInfo());
-        assertEquals("""
-                     # Schema `product`
+            Products in a web shop.
 
-                     Products in a web shop.
+            Each document is a single product.
 
-                     Each document is a single product.
+            ## Fields
 
-                     ## Fields
+            - `title` (string; index; match: text; aliases: `name`): The product title.
+            - `weight` (float; attribute): Weight in kg.
+              Not set for digital products.
+            - `embedding` (tensor<float>(x[4]); attribute): Embedding of the title.
+            - `attributes` (map<string, string>; searchable through its struct fields and by lookup)
+              - `attributes.key` (string; attribute): The attribute name.
+                Such as color or material.
+              - `attributes.by_key{key}` (lookup; key: string, value: string)
+            - `tags` (array<string>; attribute; match: word)
+            - `scores` (weightedset<int>; attribute)
+            - `brand` (reference<brand>; attribute)
+            - `size` (struct dimensions; not searchable)
+            - `packages` (array<struct dimensions>; searchable through its struct fields)
+              - `packages.width` (float; attribute)
+            - `location` (position; attribute)
+            - `internal_id` (string; not searchable)
 
-                     - `title` (string; index; match: text; aliases: `name`): The product title.
-                     - `weight` (float; attribute): Weight in kg.
-                       Not set for digital products.
-                     - `embedding` (tensor<float>(x[4]); attribute): Embedding of the title.
-                     - `attributes` (map<string, string>; searchable through its struct fields and by lookup)
-                       - `attributes.key` (string; attribute): The attribute name.
-                         Such as color or material.
-                       - `attributes.by_key{key}` (lookup; key: string, value: string)
-                     - `tags` (array<string>; attribute; match: word)
-                     - `scores` (weightedset<int>; attribute)
-                     - `brand` (reference<brand>; attribute)
-                     - `size` (struct dimensions; not searchable)
-                     - `packages` (array<struct dimensions>; searchable through its struct fields)
-                       - `packages.width` (float; attribute)
-                     - `location` (position; attribute)
-                     - `internal_id` (string; not searchable)
+            ## Field sets
 
-                     ## Field sets
+            - `default`: `title`
 
-                     - `default`: `title`
+            ## Rank profiles
 
-                     ## Rank profiles
-
-                     - `default`
-                     - `semantic`: Ranks by closeness to the query embedding. Use for natural language queries.
-                       - Input `query(q)` (`tensor<float>(x[4])`): The query embedding.
-                         Made with the same model as the title embeddings.
-                       - Input `query(boost)` (`double`)
-                       - Input `query(lang)` (`string`)
-                     """,
-                     skill.schema("product").get());
+            - `default`
+            - `semantic`: Ranks by closeness to the query embedding. Use for natural language queries.
+              - Input `query(q)` (`tensor<float>(x[4])`): The query embedding.
+                Made with the same model as the title embeddings.
+              - Input `query(boost)` (`double`)
+              - Input `query(lang)` (`string`)
+            """;
+        assertEquals(expectedProduct, new SchemaSkill(schemaInfo()).schema("product").get());
     }
 
     @Test
     void testStreamingSchema() {
-        String mail = new SchemaSkill(schemaInfo()).schema("mail").get();
-        assertTrue(mail.startsWith("# Schema `mail`\n"), mail);
-        assertTrue(mail.contains("`streaming.groupname`"), mail);
-        assertTrue(mail.contains("- `subject` (string; index, attribute)"), mail);
-    }
+        var expectedMail = """
+            # Schema `mail`
 
-    @Test
-    void testUnknownSchema() {
-        assertEquals(Optional.empty(), new SchemaSkill(schemaInfo()).schema("nonexisting"));
-    }
+            This schema uses streaming search: queries must set exactly one of `streaming.groupname` (for document ids with `g=<group>`), `streaming.userid` (for ids with `n=<number>`) or `streaming.selection` (a document selection).
 
-    private static void assertFrontMatter(String overview) {
-        assertTrue(overview.startsWith("---\nname: " + SchemaSkill.NAME + "\ndescription: " + SchemaSkill.DESCRIPTION + "\n---\n"),
-                   overview);
-    }
+            ## Fields
 
-    /** Returns the part of the given markdown from the given heading to the next heading of the same level. */
-    private static String section(String markdown, String heading) {
-        int start = markdown.indexOf(heading + "\n");
-        assertTrue(start >= 0, "No '" + heading + "' in\n" + markdown);
-        int end = markdown.indexOf("\n## ", start + heading.length());
-        return end < 0 ? markdown.substring(start) : markdown.substring(start, end + 1);
+            - `subject` (string; index, attribute)
+            """;
+        assertEquals(expectedMail, new SchemaSkill(schemaInfo()).schema("mail").get());
     }
 
     static SchemaInfo schemaInfo() {
