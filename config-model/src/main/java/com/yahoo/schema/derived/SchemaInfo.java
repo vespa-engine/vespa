@@ -12,6 +12,7 @@ import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
@@ -162,6 +163,11 @@ public final class SchemaInfo extends Derived {
         }
     }
 
+    /** Returns whether the field is indexed, including struct field indexes in indexed mode, as in IndexInfo. */
+    private boolean doesIndexing(ImmutableSDField field) {
+        return indexMode == IndexMode.STREAMING ? field.doesIndexing() : ComplexIndexFieldUtils.doesIndexing(field, schema);
+    }
+
     private void addFieldConfig(ImmutableSDField field, boolean isAttribute, Optional<String> inputExpression,
                                 SchemaInfoConfig.Schema.Builder schemaBuilder) {
         var fieldBuilder = new SchemaInfoConfig.Schema.Field.Builder();
@@ -171,9 +177,10 @@ public final class SchemaInfo extends Derived {
             if (alias.getValue().equals(field.getName()))
                 fieldBuilder.alias(alias.getKey());
         }
+        boolean isIndex = doesIndexing(field);
         fieldBuilder.attribute(isAttribute);
-        fieldBuilder.index(field.doesIndexing());
-        fieldBuilder.matchType(toMatchType(field, isAttribute || field.doesIndexing()));
+        fieldBuilder.index(isIndex);
+        fieldBuilder.matchType(toMatchType(field, isAttribute || isIndex));
         field.getExplanation().ifPresent(fieldBuilder::explanation);
         inputExpression.ifPresent(fieldBuilder::inputExpression);
         for (var fastMapFields : field.getFastMapSearches()) {
