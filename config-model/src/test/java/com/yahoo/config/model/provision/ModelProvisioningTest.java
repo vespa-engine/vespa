@@ -8,8 +8,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.OnnxModelCost;
-import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestDeployState;
@@ -2699,15 +2697,6 @@ public class ModelProvisioningTest {
 
         var zone = new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName());
 
-        // Triton is enabled only for apps with ONNX models.
-        // Mocking OnnxModelCost since DisabledOnnxModelCost used by default returns no models.
-        var mockModelCost = new OnnxModelCost.DisabledOnnxModelCost() {
-            @Override
-            public Map<String, ModelInfo> models() {
-                return Map.of("modernbert", new ModelInfo("modernbert", 1, 1, OnnxModelOptions.empty()));
-            }
-        };
-
         // What the sidecar containers look like is decided by the sidecar provider, injected e.g. in hosted Vespa.
         var sidecar = SidecarSpec.builder()
                 .id(0)
@@ -2732,7 +2721,6 @@ public class ModelProvisioningTest {
             }
         };
         var deployStateBuilder = deployStateWithClusterEndpoints("container1")
-                .onnxModelCost(mockModelCost)
                 .sidecarProvider(provider);
         var model = tester.createModel(zone, services, true, deployStateBuilder);
 

@@ -4,8 +4,6 @@ package com.yahoo.vespa.model.application.validation.change;
 import ai.vespa.llm.clients.TritonConfig;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeRestartAction.ConfigChange;
-import com.yahoo.config.model.api.OnnxModelCost;
-import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.Environment;
@@ -18,7 +16,6 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -29,45 +26,58 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
 
+    // An ONNX embedder, so that the cluster uses Triton when the flag is on.
+    private static final String EMBEDDER = """
+        <component id='modernbert' type='hugging-face-embedder'>
+          <transformer-model url='https://example.com/model.onnx'/>
+          <tokenizer-model url='https://example.com/tokenizer.json'/>
+        </component>
+        """;
+
     private static final String SERVICES_XML_WITH_ONE_CLUSTER = """
         <services version='1.0'>
           <container id='cluster1' version='1.0'>
+            %s
           </container>
         </services>
-        """;
+        """.formatted(EMBEDDER);
 
     // Clusters must have different ports
     private static final String SERVICES_XML_TWO_CLUSTERS = """
         <services version='1.0'>
           <container id='cluster1' version='1.0'>
+            %s
             <http>
               <server id='server1' port='8080'/>
             </http>
           </container>
           <container id='other-cluster' version='1.0'>
+            %s
             <http>
               <server id='server2' port='8081'/>
             </http>
           </container>
         </services>
-        """;
+        """.formatted(EMBEDDER, EMBEDDER);
 
     private static final String SERVICES_XML_OTHER_CLUSTER = """
         <services version='1.0'>
           <container id='other-cluster' version='1.0'>
+            %s
           </container>
         </services>
-        """;
+        """.formatted(EMBEDDER);
 
     private static final String SERVICES_XML_WITH_TRITON_CONFIG = """
         <services version='1.0'>
           <container id='cluster1' version='1.0'>
+            %s
             <config name='ai.vespa.llm.clients.triton'>
               <timeout>30000</timeout>
             </config>
           </container>
         </services>
-        """;
+        """.formatted(EMBEDDER);
 
     @Test
     void restart_when_triton_runtime_enabled() {
@@ -224,13 +234,6 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
                                     .setTritonOnnxPooling(pooling));
 
         if (useTriton) {
-            var mockModelCost = new OnnxModelCost.DisabledOnnxModelCost() {
-                @Override
-                public Map<String, ModelInfo> models() {
-                    return Map.of("modernbert", new ModelInfo("modernbert", 1, 1, OnnxModelOptions.empty()));
-                }
-            };
-            deployStateBuilder.onnxModelCost(mockModelCost);
             deployStateBuilder.zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()));
             deployStateBuilder.sidecarProvider((clusterId, minNodeResources, needTriton) -> List.of());
         }
