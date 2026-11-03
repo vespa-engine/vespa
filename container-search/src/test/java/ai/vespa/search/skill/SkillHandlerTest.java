@@ -27,14 +27,18 @@ public class SkillHandlerTest {
 
     @Test
     void testIndex() throws IOException {
+        String expectedIndex = """
+               # Agent skills of this application
+
+               Each skill is a SKILL.md document at the given path, which may link to more documents.
+
+               - `vespa-application-schemas` at `/skills/v1/schemas`: The schemas, fields and rank profiles of this Vespa application, with notes from its authors. Use this when writing queries against this application.
+               """;
         for (String path : List.of("/skills/v1", "/skills/v1/")) {
             HttpResponse response = get(path);
             assertEquals(200, response.getStatus());
             assertEquals("text/markdown", response.getContentType());
-            // Checks the skills listed, by name and path, not the wording around them
-            String index = body(response);
-            assertTrue(index.contains(SchemaSkill.NAME), index);
-            assertTrue(index.contains("`/skills/v1/schemas`"), index);
+            assertEquals(expectedIndex, body(response));
         }
     }
 
