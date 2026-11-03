@@ -16,6 +16,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
@@ -52,6 +53,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -209,6 +211,21 @@ public class SessionRepositoryTest {
         } catch (InvalidApplicationException e) {
             assertEquals(sessions, sessionRepository.getLocalSessions());
         }
+    }
+
+    @Test
+    public void require_that_application_with_models_generated_dir_is_rejected() throws Exception {
+        setup();
+
+        File app = temporaryFolder.newFolder();
+        IOUtils.copyDirectory(testApp, app);
+        assertTrue(new File(app, ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.getRelative()).mkdirs());
+
+        Collection<LocalSession> sessions = sessionRepository.getLocalSessions();
+        var e = assertThrows(InvalidApplicationException.class, () -> deploy(applicationId, app));
+        assertEquals("Application package contains directory 'models.generated', which is reserved for internal use, please delete it",
+                     e.getMessage());
+        assertEquals(sessions, sessionRepository.getLocalSessions());
     }
 
     @Test
