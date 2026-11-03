@@ -62,7 +62,6 @@ vespa_define_module(
     src/tests/proton/attribute/attribute_usage_notifier
     src/tests/proton/attribute/attribute_usage_stats
     src/tests/proton/attribute/attributes_state_explorer
-    src/tests/proton/attribute/document_field_extractor
     src/tests/proton/attribute/document_field_populator
     src/tests/proton/attribute/imported_attributes_context
     src/tests/proton/attribute/imported_attributes_repo

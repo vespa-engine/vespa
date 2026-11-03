@@ -2,7 +2,7 @@
 
 #include "mimalloc_intercept.h"
 
-#include <absl/debugging/stacktrace.h>
+#include <vespa/vespalib/util/backtrace.h>
 #include <absl/debugging/symbolize.h>
 
 #include <atomic>
@@ -50,8 +50,8 @@ __attribute__((noreturn)) void terminate_on_mi_malloc_failure_once(int err, [[ma
     if (err == ENOMEM) {
         fprintf(stderr, "mimalloc has reported an OOM condition; exiting process. "
                         "Allocation site stack trace (may dump core if symbolizer has not been initialized):\n");
-        // Use Abseil stacktrace functionality, as it is async signal safe.
-        // Note that this is predicated on absl::InitializeSymbolizer(argv[0]) having been
+        // Collect frames via vespalib's async signal safe unwinder, and symbolize them using
+        // Abseil. Note that symbolization is predicated on absl::InitializeSymbolizer(argv[0]) having been
         // called via main() some point prior to this happening. This is done explicitly by our
         // "large" C++ binaries, but may not always be the case for any other random binary.
         // This is then likely to trigger a transitive abort() by the Abseil allocation code
@@ -61,12 +61,13 @@ __attribute__((noreturn)) void terminate_on_mi_malloc_failure_once(int err, [[ma
         // binaries where we already init the symbolizer, so triggering a core for other
         // (presumably less beefy) processes is not necessarily a problem.
         constexpr int max_frames = 32;
-        // Don't make any assumptions on which frames can be omitted from the stack trace.
-        // This is both dependent on compiler optimizations and the underlying mimalloc code.
-        constexpr int skip_frames = 0;
+        // Skip only the frame of signal_safe_collect_stack_frames() itself. Don't make any
+        // further assumptions on which frames can be omitted from the stack trace, as this is
+        // both dependent on compiler optimizations and the underlying mimalloc code.
+        constexpr int skip_frames = 1;
         void*         frames[max_frames];
-        int           depth = absl::GetStackTrace(frames, max_frames, skip_frames);
-        for (int i = 0; i < depth; ++i) {
+        int           depth = signal_safe_collect_stack_frames(frames, max_frames);
+        for (int i = skip_frames; i < depth; ++i) {
             const char* sym = "(unknown)";
             char        tmp[1024];
             if (absl::Symbolize(frames[i], tmp, sizeof(tmp))) {

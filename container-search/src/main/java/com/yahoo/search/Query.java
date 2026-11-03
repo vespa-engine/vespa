@@ -697,7 +697,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
 
     /**
-     * Encodes this query tree into the given buffer
+     * Encodes this query tree into the given buffer, using the legacy binary stack dump format.
+     * The backend now receives the query tree as protobuf (see Item.toProtobuf), and some items,
+     * like SparseTensorWandItem, can only be serialized that way and throw from encode.
      *
      * @param buffer the buffer to encode the query to
      * @return the number of encoded query tree items

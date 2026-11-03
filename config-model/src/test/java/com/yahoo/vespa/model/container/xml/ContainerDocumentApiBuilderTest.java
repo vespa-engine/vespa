@@ -91,21 +91,73 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
                 .contains(SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi")));
         assertEquals(2, handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().size());
     }
-
     @Test
-    void legacy_feed_handler_can_be_disabled_by_feature_flag() {
+    void legacy_feed_handler_default_values() {
         Element elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
                 "  <document-api />",
                 nodesXml,
                 "</container>");
-        var deployState = new DeployState.Builder().properties(new TestProperties().enableLegacyFeedHandler(false)).build();
-        createModel(root, deployState, null, elem);
+        createModel(root, elem);
+        assertFeedHandlerEnabled(true);
+    }
 
+    private void assertFeedHandlerEnabled() {
+        assertFeedHandlerEnabled(true);
+    }
+
+    private void assertFeedHandlerDisabled() {
+        assertFeedHandlerEnabled(false);
+    }
+
+    private void assertFeedHandlerEnabled(boolean enabled) {
         Map<String, Handler> handlerMap = getHandlers("cluster1");
-        assertNull(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler"));
+        if (enabled) {
+            assertNotNull(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler"));
+        } else {
+            assertNull(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler"));
+        }
         assertNotNull(handlerMap.get("com.yahoo.document.restapi.resource.DocumentV1ApiHandler"));
     }
+
+    @Test
+    void legacy_feed_handler_can_be_disabled_by_feature_flag() {
+        createModel(false, false);
+        assertFeedHandlerDisabled();
+    }
+
+    @Test
+    void legacy_feed_handler_can_be_disabled_by_feature_flag_when_enabled_in_services_xml() {
+        createModel(true, false);
+        assertFeedHandlerDisabled();
+    }
+
+    @Test
+    void legacy_feed_handler_can_be_disabled_in_services_xml() {
+        createModel(false, true);
+        assertFeedHandlerDisabled();
+    }
+
+    @Test
+    void legacy_feed_handler_can_be_enabled_in_services_xml() {
+        createModel(true, true);
+        assertFeedHandlerEnabled();
+    }
+
+    private void createModel(boolean enableLegacyFeedApiInServicesXml, boolean enableLegacyFeedApiFeatureFlag) {
+        Element elem = DomBuilderTest.parse(
+                "<container id='cluster1' version='1.0'>",
+                "  <document-api>",
+                "    <legacy-feed-api>" + (enableLegacyFeedApiInServicesXml ? "enabled" : "disabled") + "</legacy-feed-api>",
+                "  </document-api>",
+                nodesXml,
+                "</container>");
+        var deployState = new DeployState.Builder().properties(new TestProperties()
+                                                                       .enableLegacyFeedHandler(enableLegacyFeedApiFeatureFlag))
+                                                   .build();
+        createModel(root, deployState, null, elem);
+    }
+
 
     @Test
     void nonexisting_fields_can_be_ignored() {

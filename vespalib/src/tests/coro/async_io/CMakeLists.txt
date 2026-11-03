@@ -6,4 +6,8 @@ vespa_add_executable(vespalib_async_io_test_app TEST
     vespalib
     GTest::gtest
 )
-vespa_add_test(NAME vespalib_async_io_test_app COMMAND vespalib_async_io_test_app)
+if(VESPA_USE_SANITIZER STREQUAL "thread")
+   # Thread sanitizer is not happy with use of coroutines
+   set(MAYBE_DISABLED_TEST "DISABLED")
+endif()
+vespa_add_test(NAME vespalib_async_io_test_app ${MAYBE_DISABLED_TEST} COMMAND vespalib_async_io_test_app)

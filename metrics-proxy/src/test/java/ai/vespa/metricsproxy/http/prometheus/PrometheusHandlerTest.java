@@ -16,12 +16,15 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.HOSTNAME;
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.REASON;
+import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.RETIRING;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.objectMapper;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -69,6 +72,34 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
     public void response_contains_node_metrics() {
         String cpu = getLine(valuesResponse, CPU_METRIC + "{");
         assertTrue(cpu.contains("} 12.345"));   // metric value
+    }
+
+    @Test
+    public void retiring_reaches_alive_and_updates_without_affecting_other_metrics() {
+        var metricsManager = getMetricsManager();
+        var executor = Executors.newSingleThreadExecutor();
+        var handler = new PrometheusHandler(executor, metricsManager, vespaServices,
+                                            getMetricsConsumers(), getApplicationDimensions(), getNodeDimensions());
+        try (var driver = new RequestHandlerTestDriver(handler)) {
+            for (String retiring : List.of("false", "true", "false")) {
+                metricsManager.setExtraMetrics(List.of(
+                        new MetricsPacket.Builder(toServiceId("vespa.node"))
+                                .timestamp(Instant.now())
+                                .putMetric(toMetricId(CPU_METRIC), 12.345)
+                                .putDimension(toDimensionId(HOSTNAME), "host1")
+                                .putDimension(toDimensionId(RETIRING), retiring)));
+
+                String response = driver.sendRequest(VALUES_URI).readAll();
+                String alive = getLine(response, "alive{");
+                assertTrue(alive.contains("host=\"host1\""));
+                assertTrue(alive.contains("retiring=\"" + retiring + "\""));
+                assertTrue(alive.contains("} 1.0"));
+                assertFalse(getLine(response, CPU_METRIC + "{").contains("retiring="));
+                assertFalse(getLine(response, DummyService.NAME + "0").contains("retiring="));
+            }
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     @Test

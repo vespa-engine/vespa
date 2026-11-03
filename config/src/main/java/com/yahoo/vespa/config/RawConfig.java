@@ -27,7 +27,7 @@ public class RawConfig extends ConfigInstance {
     private final List<String> defContent;
     private final Payload payload;
     private final int errorCode;
-    private final PayloadChecksums payloadChecksums;
+    private final PayloadChecksum payloadChecksum;
     private final Optional<VespaVersion> vespaVersion;
     private long generation;
     private boolean applyOnRestart;
@@ -39,28 +39,28 @@ public class RawConfig extends ConfigInstance {
      * @param defMd5  The md5 sum of the .def-file.
      */
     public RawConfig(ConfigKey<?> key, String defMd5) {
-        this(key, defMd5, null, PayloadChecksums.empty(), 0L, false, 0, List.of(), Optional.empty());
+        this(key, defMd5, null, PayloadChecksum.empty(), 0L, false, 0, List.of(), Optional.empty());
     }
 
-    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, PayloadChecksums payloadChecksums, long generation,
+    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, PayloadChecksum payloadChecksum, long generation,
                      boolean applyOnRestart, List<String> defContent, Optional<VespaVersion> vespaVersion) {
-        this(key, defMd5, payload, payloadChecksums, generation, applyOnRestart, 0, defContent, vespaVersion);
+        this(key, defMd5, payload, payloadChecksum, generation, applyOnRestart, 0, defContent, vespaVersion);
     }
 
     /** Copy constructor */
     public RawConfig(RawConfig rawConfig) {
-        this(rawConfig.key, rawConfig.defMd5, rawConfig.payload, rawConfig.payloadChecksums,
+        this(rawConfig.key, rawConfig.defMd5, rawConfig.payload, rawConfig.payloadChecksum,
              rawConfig.generation, rawConfig.applyOnRestart,
              rawConfig.errorCode, rawConfig.defContent, rawConfig.getVespaVersion());
     }
 
-    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, PayloadChecksums payloadChecksums, long generation,
+    public RawConfig(ConfigKey<?> key, String defMd5, Payload payload, PayloadChecksum payloadChecksum, long generation,
                      boolean applyOnRestart, int errorCode, List<String> defContent,
                      Optional<VespaVersion> vespaVersion) {
         this.key = key;
         this.defMd5 = ConfigUtils.getDefMd5FromRequest(defMd5, defContent);
         this.payload = payload;
-        this.payloadChecksums = payloadChecksums;
+        this.payloadChecksum = payloadChecksum;
         this.generation = generation;
         this.applyOnRestart = applyOnRestart;
         this.errorCode = errorCode;
@@ -77,7 +77,7 @@ public class RawConfig extends ConfigInstance {
         return new RawConfig(req.getConfigKey(),
                              ConfigUtils.getDefMd5(req.getDefContent().asList()),
                              req.getNewPayload(),
-                             req.getNewChecksums(),
+                             req.getNewChecksum(),
                              req.getNewGeneration(),
                              req.responseIsApplyOnRestart(),
                              0,
@@ -94,7 +94,7 @@ public class RawConfig extends ConfigInstance {
         return new RawConfig(req.getConfigKey(),
                              ConfigUtils.getDefMd5(req.getDefContent().asList()),
                              Payload.from(new Utf8String(""), CompressionInfo.uncompressed()),
-                             req.getRequestConfigChecksums(),
+                             req.getRequestConfigChecksum(),
                              req.getRequestGeneration(),
                              req.applyOnRestart(),
                              0,
@@ -128,7 +128,7 @@ public class RawConfig extends ConfigInstance {
 
     public Optional<VespaVersion> getVespaVersion() { return vespaVersion; }
 
-    public PayloadChecksums getPayloadChecksums() { return payloadChecksums; }
+    public PayloadChecksum getPayloadChecksum() { return payloadChecksum; }
 
     /**
      * Returns true if this config is equal to the config (same payload md5) in the given request.
@@ -137,11 +137,7 @@ public class RawConfig extends ConfigInstance {
      * @return  true if this config is equal to the config in the given request.
      */
     public boolean hasEqualConfig(JRTServerConfigRequest req) {
-        PayloadChecksum xxhash64 = getPayloadChecksums().getForType(PayloadChecksum.Type.XXHASH64);
-        if (xxhash64 != null)
-            return xxhash64.equals(req.getRequestConfigChecksums().getForType(PayloadChecksum.Type.XXHASH64));
-
-        return true;
+        return getPayloadChecksum().equals(req.getRequestConfigChecksum());
     }
 
     /**
@@ -175,7 +171,7 @@ public class RawConfig extends ConfigInstance {
         // while non-zero and equal error codes means configs are equal.
         if (isError()) return true;
         if (generation != other.generation) return false;
-        return (payloadChecksums.equals(((RawConfig) o).payloadChecksums));
+        return (payloadChecksum.equals(((RawConfig) o).payloadChecksum));
     }
 
     @Override
@@ -191,7 +187,7 @@ public class RawConfig extends ConfigInstance {
         if (! isError()) {
             // checksum and generation only matter when the RawConfig is not an error.
             hash = 31 * hash + (int)(generation ^(generation >>>32));
-            hash = 31 * hash + payloadChecksums.hashCode();
+            hash = 31 * hash + payloadChecksum.hashCode();
         }
         return hash;
     }
@@ -205,7 +201,7 @@ public class RawConfig extends ConfigInstance {
         sb.append(",");
         sb.append(key.getConfigId());
         sb.append(",");
-        sb.append(payloadChecksums);
+        sb.append(payloadChecksum);
         sb.append(",");
         sb.append(getGeneration());
         sb.append(",");

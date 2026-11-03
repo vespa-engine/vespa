@@ -133,6 +133,11 @@ void SummaryManager::removeDocument(uint64_t syncToken, search::DocumentIdT lid)
     _docStore->remove(syncToken, lid);
 }
 
+void SummaryManager::moveDocument(uint64_t syncToken, search::DocumentIdT prevLid, search::DocumentIdT lid,
+                                  const Document& doc) {
+    _docStore->move(syncToken, prevLid, lid, doc);
+}
+
 namespace {
 
 IFlushTarget::SP createShrinkLidSpaceFlushTarget(vespalib::Executor& summaryService, IDocumentStore::SP docStore) {

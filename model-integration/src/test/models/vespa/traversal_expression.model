@@ -1,6 +1,6 @@
 model traversal_expression {
 
-    function leak() {
+    function outside() {
         expression: file: d/../../outside.expression
     }
 

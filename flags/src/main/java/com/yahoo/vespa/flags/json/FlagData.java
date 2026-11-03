@@ -137,14 +137,12 @@ public class FlagData {
              .forEach(value -> {
                  try {
                      deserializer.deserialize(value);
-                 } catch (IllegalArgumentException e) {
-                     throw e;
                  } catch (RuntimeException e) {
-                     // Ensures FlagsHandler returns 4xx
+                     // Serializers name the offending value; add the flag.
+                     // IllegalArgumentException ensures FlagsHandler returns 4xx.
                      throw new IllegalArgumentException("Failed to deserialize value of flag " + id, e);
                  }
              });
-
     }
 
     @Override

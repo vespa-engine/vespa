@@ -112,6 +112,10 @@ void SchemaBuilder::build(const IndexschemaConfig& cfg, Schema& schema) {
         }
         schema.addFieldSet(toAdd);
     }
+    for (const auto& uriField : cfg.urifield) {
+        schema.add_uri_field(uriField.name);
+    }
+    schema.set_explicit_uri_fields(cfg.explicituris);
 }
 
 void SchemaBuilder::build(const AttributesConfig& cfg, Schema& schema) {

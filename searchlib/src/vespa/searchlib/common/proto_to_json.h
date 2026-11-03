@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include <google/protobuf/message.h>
+#include <string>
+
+namespace google::protobuf { class Message; }
 
 namespace search::common {
 

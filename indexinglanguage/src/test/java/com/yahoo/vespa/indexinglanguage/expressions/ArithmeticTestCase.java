@@ -74,6 +74,26 @@ public class ArithmeticTestCase {
     }
 
     @Test
+    public void requireThatRequiredInputIsTheMostSpecificRequirementOfTheArguments() {
+        var context = new TypeContext(new SimpleTestAdapter());
+        // The left argument requires a number, while the constant to the right accepts any input
+        assertEquals(AnyNumericDataType.instance, newExecutionValueModulo(1000).setOutputType(DataType.INT, context));
+    }
+
+    @Test
+    public void requireThatResultTypeIsUnresolvedWhenAnArgumentTypeIsUnresolved() {
+        var context = new TypeContext(new SimpleTestAdapter());
+        assertEquals(AnyNumericDataType.instance, newExecutionValueModulo(1000).setInputType(AnyNumericDataType.instance, context));
+        assertEquals(DataType.LONG, newExecutionValueModulo(1000).setInputType(DataType.LONG, context));
+        assertEquals(DataType.INT, newExecutionValueModulo(1000).setInputType(DataType.INT, context));
+    }
+
+    private static ArithmeticExpression newExecutionValueModulo(int divisor) {
+        return new ArithmeticExpression(new ExecutionValueExpression(), Operator.MOD,
+                                        new ConstantExpression(new IntegerFieldValue(divisor)));
+    }
+
+    @Test
     public void requireThatResultIsCalculated() {
         for (int i = 0; i < 50; ++i) {
             LongFieldValue left = new LongFieldValue(i);

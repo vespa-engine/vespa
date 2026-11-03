@@ -10,7 +10,7 @@ namespace search::queryeval {
 
 /**
  * Wraps a search iterator to profile its operations. Each iterator
- * has 6 distinct operations that will be profiled separately.
+ * has 8 distinct operations that will be profiled separately.
  *
  * The full name of each profiled task will be the id of the iterator (enumeration from blueprint tree)
  * followed by the type of the iterator.
@@ -22,6 +22,8 @@ namespace search::queryeval {
  * [id]type::get_hits
  * [id]type::or_hits_into
  * [id]type::and_hits_into
+ * [id]type::get_element_ids
+ * [id]type::and_element_ids_into
  **/
 class ProfiledIterator : public SearchIterator {
 private:
@@ -34,12 +36,16 @@ private:
     Profiler::TaskId                _get_hits_tag;
     Profiler::TaskId                _or_hits_into_tag;
     Profiler::TaskId                _and_hits_into_tag;
+    Profiler::TaskId                _get_element_ids_tag;
+    Profiler::TaskId                _and_element_ids_into_tag;
     struct ctor_tag {};
 
 public:
     ProfiledIterator(Profiler& profiler, std::unique_ptr<SearchIterator> search, Profiler::TaskId initRange_tag,
                      Profiler::TaskId doSeek_tag, Profiler::TaskId doUnpack_tag, Profiler::TaskId get_hits_tag,
-                     Profiler::TaskId or_hits_into_tag, Profiler::TaskId and_hits_into_tag, ctor_tag) noexcept
+                     Profiler::TaskId or_hits_into_tag, Profiler::TaskId and_hits_into_tag,
+                     Profiler::TaskId get_element_ids_tag, Profiler::TaskId and_element_ids_into_tag,
+                     ctor_tag) noexcept
         : _profiler(profiler),
           _search(std::move(search)),
           _initRange_tag(initRange_tag),
@@ -47,7 +53,9 @@ public:
           _doUnpack_tag(doUnpack_tag),
           _get_hits_tag(get_hits_tag),
           _or_hits_into_tag(or_hits_into_tag),
-          _and_hits_into_tag(and_hits_into_tag) {
+          _and_hits_into_tag(and_hits_into_tag),
+          _get_element_ids_tag(get_element_ids_tag),
+          _and_element_ids_into_tag(and_element_ids_into_tag) {
         set_id(_search->id());
     }
     ~ProfiledIterator() override;

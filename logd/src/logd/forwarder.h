@@ -2,11 +2,11 @@
 
 #pragma once
 
+#include <vespa/log/logger.h>
+
 #include <map>
 #include <memory>
 #include <string_view>
-
-#include <vespa/log/log.h>
 
 namespace logdemon {
 

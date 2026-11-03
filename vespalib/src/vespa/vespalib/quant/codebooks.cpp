@@ -59,4 +59,16 @@ const float unit_norm_centroids_f32[4][16] = {
 
 // clang-format on
 
+// Hex floats are used to ensure we're bitwise exact with the truncated floats.
+const float unit_norm_centroids_bf16_as_f32[4][16] = {
+    // 1 bit:
+    {-0x1.98p-1, 0x1.98p-1},
+    // 2 bits:
+    {-0x1.cep-2, -0x1.82p+0, 0x1.cep-2, 0x1.82p+0},
+    // 3 bits:
+    {-0x1.f4p-3, -0x1.82p-1, -0x1.58p+0, -0x1.12p+1, 0x1.f4p-3, 0x1.82p-1, 0x1.58p+0, 0x1.12p+1},
+    // 4 bits:
+    {-0x1.06p-3, -0x1.8cp-2, -0x1.5p-1, -0x1.e2p-1, -0x1.4p+0, -0x1.9ep+0, -0x1.08p+1, -0x1.5cp+1, 0x1.06p-3,
+     0x1.8cp-2, 0x1.5p-1, 0x1.e2p-1, 0x1.4p+0, 0x1.9ep+0, 0x1.08p+1, 0x1.5cp+1}};
+
 } // namespace vespalib::quant::codebooks

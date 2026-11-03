@@ -11,6 +11,10 @@
 
 #include <memory>
 
+namespace ai::vespa::telemetry::internal {
+class InternalTelemetryType;
+}
+
 namespace vespa_opentelemetry {
 
 /*
@@ -18,6 +22,7 @@ namespace vespa_opentelemetry {
  */
 class OpenTelemetryTracerProviders {
 public:
+    using TelemetryConfig = const ai::vespa::telemetry::internal::InternalTelemetryType;
     static const std::string vespa_tls_config_file;
 
     static void cleanup_tracer_provider();
@@ -27,10 +32,15 @@ public:
     [[nodiscard]] static opentelemetry::sdk::trace::BatchSpanProcessorOptions
     setup_batch_span_processor_options(bool test);
     [[nodiscard]] static opentelemetry::sdk::resource::Resource make_resource();
+    [[nodiscard]] static opentelemetry::sdk::resource::Resource make_resource(const std::string& service_name,
+                                                                              TelemetryConfig&   telemetry_config);
+    static void adjust_otlp_grpc_exporter_options(opentelemetry::exporter::otlp::OtlpGrpcExporterOptions& opts,
+                                                  TelemetryConfig&                                        cfg);
     static void init_grpc_tracer_provider(
         const opentelemetry::exporter::otlp::OtlpGrpcExporterOptions& otlp_grpc_exporter_options,
         const opentelemetry::sdk::trace::BatchSpanProcessorOptions&   batch_span_processor_options,
         const opentelemetry::sdk::resource::Resource&                 resource);
+    static void init_grpc_tracer_provider(const std::string& service_name, TelemetryConfig& telemetry_config);
 
     [[nodiscard]] static std::shared_ptr<opentelemetry::exporter::memory::InMemorySpanData>
     init_memory_tracer_provider();

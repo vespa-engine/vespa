@@ -121,7 +121,7 @@ public class MemoryCache {
 
             // First three lines are meta-data about config as comment lines, fourth line is empty
             writer.write("# defMd5:" + config.getDefMd5() + "\n");
-            writer.write("# config checksums:" + config.getPayloadChecksums() + "\n");
+            writer.write("# config checksums:" + config.getPayloadChecksum() + "\n");
             writer.write("# generation:" + config.getGeneration() + "\n");
             writer.write("# protocolVersion:" + protocolVersion + "\n");
             writer.write("\n");

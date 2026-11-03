@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "routable_factories_8.h"
+#include "routable_factories_8_pb.h"
 
 #include <vespa/check_require.h>
 #include <vespa/document/bucket/bucketidfactory.h>
@@ -9,10 +10,6 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/documentapi/messagebus/docapi_common.pb.h>
-#include <vespa/documentapi/messagebus/docapi_feed.pb.h>
-#include <vespa/documentapi/messagebus/docapi_inspect.pb.h>
-#include <vespa/documentapi/messagebus/docapi_visiting.pb.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>

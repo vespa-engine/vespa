@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import ai.vespa.rankingexpression.importer.MlModelImportCacheImpl;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
@@ -217,6 +218,8 @@ public class VespaModelFactory implements ModelFactory {
             .wantedNodeVespaVersion(modelContext.wantedNodeVespaVersion())
             .wantedDockerImageRepo(modelContext.wantedDockerImageRepo())
             .onnxModelCost(modelContext.onnxModelCost());
+        if (modelContext.properties().featureFlags().useMlModelImportCache())
+            modelContext.mlModelImportCacheDir().ifPresent(dir -> builder.modelImportCache(new MlModelImportCacheImpl(dir.toPath())));
         sidecarProvider.ifPresent(builder::sidecarProvider);
         if (modelContext.properties().hostedVespa() && modelContext.properties().featureFlags().productDiscovery())
             productDiscoveryProvider.ifPresent(provider ->

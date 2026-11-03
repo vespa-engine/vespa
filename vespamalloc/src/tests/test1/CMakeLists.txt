@@ -4,6 +4,7 @@ vespa_add_executable(vespamalloc_testatomic_app TEST
     testatomic.cpp
     ../../vespamalloc/malloc/mmappool.cpp
     ../../vespamalloc/malloc/common.cpp
+    ../../vespamalloc/malloc/check_require.cpp
     DEPENDS
     vespamalloc_util
     GTest::gtest
@@ -16,6 +17,7 @@ vespa_add_test(NAME vespamalloc_testatomic_app NO_VALGRIND COMMAND vespamalloc_t
 vespa_add_executable(vespamalloc_new_test_app TEST
     SOURCES
     new_test.cpp
+    ../../vespamalloc/malloc/check_require.cpp
     DEPENDS
     GTest::gtest
     EXTERNAL_DEPENDS
@@ -26,6 +28,7 @@ vespa_add_test(NAME vespamalloc_new_test_app NO_VALGRIND COMMAND vespamalloc_new
 vespa_add_executable(vespamalloc_new_test_with_vespamalloc_app TEST
     SOURCES
     new_test.cpp
+    ../../vespamalloc/malloc/check_require.cpp
     DEPENDS
     GTest::gtest
     vespamalloc
@@ -35,6 +38,7 @@ vespa_add_test(NAME vespamalloc_new_test_with_vespamalloc_app NO_VALGRIND COMMAN
 vespa_add_executable(vespamalloc_new_test_with_vespamallocd_app TEST
     SOURCES
     new_test.cpp
+    ../../vespamalloc/malloc/check_require.cpp
     DEPENDS
     GTest::gtest
     vespamallocd

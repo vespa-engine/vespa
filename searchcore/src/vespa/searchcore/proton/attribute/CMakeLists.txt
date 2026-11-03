@@ -32,7 +32,6 @@ vespa_add_library(searchcore_attribute STATIC
     attributemanager.cpp
     attributes_initializer_base.cpp
     attributesconfigscout.cpp
-    document_field_extractor.cpp
     document_field_populator.cpp
     document_field_retriever.cpp
     filter_attribute_manager.cpp

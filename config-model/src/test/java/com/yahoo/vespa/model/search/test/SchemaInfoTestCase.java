@@ -1,11 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search.test;
 
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DataType;
+import com.yahoo.schema.ApplicationBuilder;
+import com.yahoo.schema.RankProfileRegistry;
+import com.yahoo.schema.derived.Summaries;
+import com.yahoo.schema.parser.ParseException;
 import com.yahoo.schema.Index;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
@@ -13,6 +20,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class SchemaInfoTestCase {
@@ -26,6 +35,7 @@ public class SchemaInfoTestCase {
         field.getAliasToName().put("alias2", "f1");
         assertEquals("""
     schema[0].name "test"
+    schema[0].explanation ""
     schema[0].field[0].name "f1"
     schema[0].field[0].type "string"
     schema[0].field[0].alias[0] "alias1"
@@ -33,6 +43,9 @@ public class SchemaInfoTestCase {
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
+    schema[0].field[0].matchType NONE
+    schema[0].field[0].explanation ""
+    schema[0].field[0].inputExpression ""
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
     schema[0].summaryclass[0].fields[0].type "longstring"
@@ -51,16 +64,23 @@ public class SchemaInfoTestCase {
         schema.fieldSets().addUserFieldSetItem("fs2", "f1");
         assertEquals("""
     schema[0].name "test"
+    schema[0].explanation ""
     schema[0].field[0].name "f1"
     schema[0].field[0].type "string"
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
+    schema[0].field[0].matchType NONE
+    schema[0].field[0].explanation ""
+    schema[0].field[0].inputExpression ""
     schema[0].field[1].name "f2"
     schema[0].field[1].type "string"
     schema[0].field[1].attribute false
     schema[0].field[1].index false
     schema[0].field[1].bitPacked false
+    schema[0].field[1].matchType NONE
+    schema[0].field[1].explanation ""
+    schema[0].field[1].inputExpression ""
     schema[0].fieldset[0].name "fs1"
     schema[0].fieldset[0].field[0] "f1"
     schema[0].fieldset[0].field[1] "f2"
@@ -83,11 +103,15 @@ public class SchemaInfoTestCase {
         index.addAlias("a2");
         assertEquals("""
     schema[0].name "test"
+    schema[0].explanation ""
     schema[0].field[0].name "f1"
     schema[0].field[0].type "string"
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
+    schema[0].field[0].matchType NONE
+    schema[0].field[0].explanation ""
+    schema[0].field[0].inputExpression ""
     schema[0].field[1].name "f1Index"
     schema[0].field[1].type "string"
     schema[0].field[1].alias[0] "a1"
@@ -95,6 +119,9 @@ public class SchemaInfoTestCase {
     schema[0].field[1].attribute false
     schema[0].field[1].index true
     schema[0].field[1].bitPacked false
+    schema[0].field[1].matchType TEXT
+    schema[0].field[1].explanation ""
+    schema[0].field[1].inputExpression ""
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
     schema[0].summaryclass[0].fields[0].type "longstring"
@@ -112,11 +139,15 @@ public class SchemaInfoTestCase {
         attribute.getAliases().add("a2");
         assertEquals("""
     schema[0].name "test"
+    schema[0].explanation ""
     schema[0].field[0].name "f1"
     schema[0].field[0].type "int"
     schema[0].field[0].attribute false
     schema[0].field[0].index false
     schema[0].field[0].bitPacked false
+    schema[0].field[0].matchType NONE
+    schema[0].field[0].explanation ""
+    schema[0].field[0].inputExpression ""
     schema[0].field[1].name "f1Attribute"
     schema[0].field[1].type "int"
     schema[0].field[1].alias[0] "a1"
@@ -124,11 +155,179 @@ public class SchemaInfoTestCase {
     schema[0].field[1].attribute true
     schema[0].field[1].index false
     schema[0].field[1].bitPacked false
+    schema[0].field[1].matchType NONE
+    schema[0].field[1].explanation ""
+    schema[0].field[1].inputExpression ""
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
     schema[0].summaryclass[0].fields[0].type "longstring"
     schema[0].summaryclass[0].fields[0].dynamic false""",
                      schemaInfoTester.schemaInfoConfig(schema));
+    }
+
+    @Test
+    void testStructFieldExporting() throws ParseException {
+        var registry = new RankProfileRegistry();
+        var builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+                          schema test {
+                              document test {
+                                  struct inner {
+                                      field code type string {}
+                                  }
+                                  struct person {
+                                      field name type string {}
+                                      field age type int {}
+                                      field address type inner {}
+                                  }
+                                  field people type array<person> {
+                                      indexing: summary
+                                      struct-field name {
+                                          indexing: attribute
+                                          explanation: The name of the person
+                                      }
+                                      struct-field age {
+                                          indexing: attribute
+                                      }
+                                  }
+                                  field tags type map<string, int> {
+                                      indexing: summary
+                                      struct-field key {
+                                          indexing: attribute
+                                      }
+                                  }
+                                  field location type position {
+                                      indexing: attribute
+                                  }
+                              }
+                          }
+                          """);
+        builder.build(true);
+        var schema = builder.getSchema();
+        var schemaInfo = new com.yahoo.schema.derived.SchemaInfo(schema, "index", registry,
+                                                                 new Summaries(schema, new BaseDeployLogger(), new TestProperties()));
+        var configBuilder = new SchemaInfoConfig.Builder();
+        schemaInfo.getConfig(configBuilder);
+        var config = configBuilder.build().schema(0);
+        assertEquals(List.of("location_zcurve",
+                             "people", "people.name", "people.age", "people.address", "people.address.code",
+                             "tags", "tags.key", "tags.value",
+                             "location"),
+                     config.field().stream().map(SchemaInfoConfig.Schema.Field::name).toList());
+
+        var name = field("people.name", config);
+        assertEquals("string", name.type());
+        assertTrue(name.attribute());
+        assertFalse(name.index());
+        assertEquals(SchemaInfoConfig.Schema.Field.MatchType.WORD, name.matchType());
+        assertEquals("The name of the person", name.explanation());
+
+        var age = field("people.age", config);
+        assertEquals("int", age.type());
+        assertTrue(age.attribute());
+        assertEquals(SchemaInfoConfig.Schema.Field.MatchType.NONE, age.matchType());
+
+        var code = field("people.address.code", config);
+        assertFalse(code.attribute());
+        assertFalse(code.index());
+
+        assertTrue(field("tags.key", config).attribute());
+        assertFalse(field("tags.value", config).attribute());
+    }
+
+    @Test
+    void testInputExpressionExporting() throws ParseException {
+        var registry = new RankProfileRegistry();
+        var builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+                          schema test {
+                              document test {
+                                  field title type string {
+                                      indexing: index
+                                  }
+                                  field body type string {
+                                      indexing: index
+                                  }
+                              }
+                              field body_embedding type tensor<float>(x[4]) {
+                                  indexing: input body | embed bert | attribute | summary
+                              }
+                              field title_embedding type tensor<float>(x[4]) {
+                                  indexing: input title | embed e5 | attribute
+                              }
+                              field default_embedding type tensor<float>(x[4]) {
+                                  indexing: input title | embed | attribute
+                              }
+                          }
+                          """);
+        builder.build(true);
+        var schema = builder.getSchema();
+        var schemaInfo = new com.yahoo.schema.derived.SchemaInfo(schema, "index", registry,
+                                                                 new Summaries(schema, new BaseDeployLogger(), new TestProperties()));
+        var configBuilder = new SchemaInfoConfig.Builder();
+        schemaInfo.getConfig(configBuilder);
+        var config = configBuilder.build().schema(0);
+        assertEquals("", field("title", config).inputExpression());
+        assertEquals("", field("body", config).inputExpression());
+        assertEquals("embed(bert, @input)", field("body_embedding", config).inputExpression());
+        assertEquals("embed(e5, @input)", field("title_embedding", config).inputExpression());
+        assertEquals("embed(@input)", field("default_embedding", config).inputExpression());
+    }
+
+    private SchemaInfoConfig.Schema.Field field(String name, SchemaInfoConfig.Schema schema) {
+        return schema.field().stream().filter(f -> f.name().equals(name)).findFirst().orElseThrow();
+    }
+
+    @Test
+    void testMatchTypeExporting() throws ParseException {
+        var registry = new RankProfileRegistry();
+        var builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+                          schema test {
+                              document test {
+                                  field text type string {
+                                      indexing: index
+                                  }
+                                  field implicitWord type array<string> {
+                                      indexing: attribute
+                                  }
+                                  field word type string {
+                                      indexing: index
+                                      match: word
+                                  }
+                                  field exact type string {
+                                      indexing: index
+                                      match: exact
+                                  }
+                                  field gram type string {
+                                      indexing: index
+                                      match: gram
+                                  }
+                                  field number type int {
+                                      indexing: attribute
+                                  }
+                              }
+                          }
+                          """);
+        builder.build(true);
+        var schema = builder.getSchema();
+        var schemaInfo = new com.yahoo.schema.derived.SchemaInfo(schema, "index", registry,
+                                                                 new Summaries(schema, new BaseDeployLogger(), new TestProperties()));
+        var configBuilder = new SchemaInfoConfig.Builder();
+        schemaInfo.getConfig(configBuilder);
+        var config = configBuilder.build().schema(0);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.TEXT, "text", config);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.WORD, "implicitWord", config);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.WORD, "word", config);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.EXACT, "exact", config);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.GRAM, "gram", config);
+        assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.NONE, "number", config);
+    }
+
+    private void assertMatchType(SchemaInfoConfig.Schema.Field.MatchType.Enum expected, String fieldName,
+                                 SchemaInfoConfig.Schema schema) {
+        var field = schema.field().stream().filter(f -> f.name().equals(fieldName)).findFirst().orElseThrow();
+        assertEquals(expected, field.matchType(), "Match type of " + fieldName);
     }
 
     /** Schema-info should contain all schemas, independent of clusters. */
@@ -209,6 +408,10 @@ public class SchemaInfoTestCase {
                              RankProfilesConfig.Rankprofile rankProfilesProfile) {
         assertEquals(name, schemaInfoProfile.input(index).name());
         assertEquals(type, schemaInfoProfile.input(index).type());
+        if (defaultValue == null)
+            assertEquals("", schemaInfoProfile.input(index).defaultValue());
+        else
+            assertEquals(Tensor.from(type, defaultValue), Tensor.from(schemaInfoProfile.input(index).defaultValue()));
         if (defaultValue != null) {
             boolean found = false;
             for (var property : rankProfilesProfile.fef().property()) {

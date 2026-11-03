@@ -181,6 +181,14 @@ std::unique_ptr<document::Document> DocumentStore::read(DocumentIdT lid, const D
     return std::unique_ptr<document::Document>();
 }
 
+void DocumentStore::writeThroughCache(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream& stream) {
+    Value                value(syncToken);
+    vespalib::DataBuffer buf(stream.size());
+    buf.writeBytes(stream.peek(), stream.size());
+    value.set(std::move(buf), stream.size(), _store->getCompression());
+    _cache->write(lid, std::move(value)); // Writes to both cache and backing store
+}
+
 void DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const document::Document& doc) {
     nbostream stream(12345);
     doc.serialize(stream);
@@ -196,11 +204,7 @@ void DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const vespalib::n
             break;
         case Config::UpdateStrategy::UPDATE:
             if (_cache->hasKey(lid)) {
-                Value                value(syncToken);
-                vespalib::DataBuffer buf(stream.size());
-                buf.writeBytes(stream.peek(), stream.size());
-                value.set(std::move(buf), stream.size(), _store->getCompression());
-                _cache->write(lid, std::move(value));
+                writeThroughCache(syncToken, lid, stream);
             } else {
                 _backingStore.write(syncToken, lid, stream.peek(), stream.size());
             }
@@ -217,6 +221,19 @@ void DocumentStore::remove(uint64_t syncToken, DocumentIdT lid) {
     if (useCache()) {
         _cache->invalidate(lid);
         _visitCache->invalidate(lid);
+    }
+}
+
+void DocumentStore::move(uint64_t syncToken, DocumentIdT fromLid, DocumentIdT toLid, const document::Document& doc) {
+    if (useCache() && _cache->hasKey(fromLid)) {
+        // The document is hot under fromLid, so keep it hot under toLid as well.
+        // The cached copy at fromLid is invalidated when fromLid is removed.
+        nbostream stream(12345);
+        doc.serialize(stream);
+        writeThroughCache(syncToken, toLid, stream);
+        _visitCache->invalidate(toLid);
+    } else {
+        write(syncToken, toLid, doc);
     }
 }
 

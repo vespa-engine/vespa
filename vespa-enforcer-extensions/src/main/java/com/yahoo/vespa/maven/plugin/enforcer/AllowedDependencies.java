@@ -3,17 +3,13 @@ package com.yahoo.vespa.maven.plugin.enforcer;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.enforcer.rule.api.AbstractEnforcerRule;
-import org.apache.maven.enforcer.rule.api.EnforcerRule;
 import org.apache.maven.enforcer.rule.api.EnforcerRuleException;
-import org.apache.maven.enforcer.rule.api.EnforcerRuleHelper;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.DefaultProjectBuildingRequest;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
-import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException;
-import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -43,33 +39,28 @@ import java.util.stream.Stream;
  * @author bjorncs
  */
 @Named("allowedDependencies")
-@SuppressWarnings("deprecation")
-public class AllowedDependencies extends AbstractEnforcerRule implements EnforcerRule {
+public class AllowedDependencies extends AbstractEnforcerRule {
 
     private static final String WRITE_SPEC_PROP = "dependencyEnforcer.writeSpec";
     private static final String GUESS_VERSION = "dependencyEnforcer.guessProperty";
 
-    @Inject private MavenProject project;
-    @Inject private MavenSession session;
-    @Inject private DependencyGraphBuilder graphBuilder;
+    private final MavenProject project;
+    private final MavenSession session;
+    private final DependencyGraphBuilder graphBuilder;
 
     // Injected parameters
     public List<String> ignored;
     public String rootProjectId;
     public String specFile;
 
-    @Override
-    public void execute(EnforcerRuleHelper helper) throws EnforcerRuleException {
-        try {
-            project = (MavenProject) helper.evaluate("${project}");
-            session = (MavenSession) helper.evaluate("${session}");
-            graphBuilder = helper.getComponent(DependencyGraphBuilder.class);
-        } catch (ExpressionEvaluationException | ComponentLookupException e) {
-            throw new RuntimeException(e);
-        }
-        execute();
+    @Inject
+    public AllowedDependencies(MavenProject project, MavenSession session, DependencyGraphBuilder graphBuilder) {
+        this.project = project;
+        this.session = session;
+        this.graphBuilder = graphBuilder;
     }
 
+    @Override
     public void execute() throws EnforcerRuleException {
         var dependencies = getDependenciesOfAllProjects();
         getLog().info(String.format(Locale.ROOT, "Found %d unique dependencies ", dependencies.size()));
@@ -303,9 +294,4 @@ public class AllowedDependencies extends AbstractEnforcerRule implements Enforce
 
     record Resolved(Set<Dependency> matchedDeps, Set<Rule> matchedRules,
                     Set<Dependency> unmatchedDeps, Set<Rule> unmatchedRules) {}
-
-    // Mark rule as not cachable
-    @Override public boolean isCacheable() { return false; }
-    @Override public boolean isResultValid(EnforcerRule r) { return false; }
-    @Override public String getCacheId() { return ""; }
 }

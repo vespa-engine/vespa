@@ -47,7 +47,7 @@ public class LiteralPhraseProduction extends TermProduction {
 
     public void produce(RuleEvaluation e, int offset) {
         PhraseItem newPhrase = new PhraseItem();
-        newPhrase.setIndexName(getLabel());
+        newPhrase.setIndexName(getLabel(e));
         for (String term : terms)
             newPhrase.addItem(new WordItem(term, true));
 

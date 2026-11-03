@@ -129,6 +129,24 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
         assertTrue(tritonConfig(createModel(SERVICES_XML_WITH_ONE_CLUSTER, true, true)).shareOnnxSessionBetweenInstances());
     }
 
+    // A feature flag decides pooling. The model writes it to the Triton config of the runtime component.
+    @Test
+    void pooling_feature_flag_is_written_to_triton_config() {
+        assertFalse(tritonConfig(createModel(SERVICES_XML_WITH_ONE_CLUSTER, true, false, false)).onnxPooling());
+        assertTrue(tritonConfig(createModel(SERVICES_XML_WITH_ONE_CLUSTER, true, false, true)).onnxPooling());
+    }
+
+    @Test
+    void restart_when_triton_pooling_changes() {
+        var previous = createModel(SERVICES_XML_WITH_ONE_CLUSTER, true, false, false);
+        var next = createModel(SERVICES_XML_WITH_ONE_CLUSTER, true, false, true);
+        var result = validateModel(previous, next);
+
+        assertEquals(1, result.size());
+        assertTrue(result.get(0).getMessage().contains("onnxPooling"));
+        assertEquals(ConfigChangeAction.Type.RESTART, result.get(0).getType());
+    }
+
     // Pins the restart marker on the session sharing field, which the feature flag flips.
     @Test
     void restart_when_triton_session_sharing_changes() {
@@ -176,7 +194,7 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
         return ValidationTester.validateChanges(
                 new RestartOnDeployForTritonOnnxRuntimeValidator(),
                 next,
-                deployStateBuilder(false, false)
+                deployStateBuilder(false, false, false)
                         .properties(new TestProperties().setHostedVespa(true))
                         .previousModel(current)
                         .build());
@@ -187,7 +205,11 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
     }
 
     private static VespaModel createModel(String servicesXml, boolean useTriton, boolean shareSession) {
-        var builder = deployStateBuilder(useTriton, shareSession);
+        return createModel(servicesXml, useTriton, shareSession, false);
+    }
+
+    private static VespaModel createModel(String servicesXml, boolean useTriton, boolean shareSession, boolean pooling) {
+        var builder = deployStateBuilder(useTriton, shareSession, pooling);
         return new VespaModelCreatorWithMockPkg(null, servicesXml).create(builder);
     }
 
@@ -196,9 +218,10 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
         return model.getConfig(TritonConfig.class, "cluster1/component/ai.vespa.triton.TritonOnnxRuntime");
     }
 
-    private static DeployState.Builder deployStateBuilder(boolean useTriton, boolean shareSession) {
+    private static DeployState.Builder deployStateBuilder(boolean useTriton, boolean shareSession, boolean pooling) {
         var deployStateBuilder = new DeployState.Builder().properties(
-                new TestProperties().setUseTriton(useTriton).setTritonShareOnnxSession(shareSession));
+                new TestProperties().setUseTriton(useTriton).setTritonShareOnnxSession(shareSession)
+                                    .setTritonOnnxPooling(pooling));
 
         if (useTriton) {
             var mockModelCost = new OnnxModelCost.DisabledOnnxModelCost() {

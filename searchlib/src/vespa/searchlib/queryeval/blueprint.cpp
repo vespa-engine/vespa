@@ -701,6 +701,7 @@ void IntermediateBlueprint::freeze() {
 }
 
 void IntermediateBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept {
+    Blueprint::set_matching_phase(matching_phase);
     for (auto& child : _children) {
         child->set_matching_phase(matching_phase);
     }
@@ -766,9 +767,6 @@ void LeafBlueprint::fetchPostings(const ExecuteInfo&) {
 
 void LeafBlueprint::freeze() {
     freeze_self();
-}
-
-void LeafBlueprint::set_matching_phase(MatchingPhase) noexcept {
 }
 
 SearchIterator::UP LeafBlueprint::createSearchImpl(fef::MatchData& md) const {

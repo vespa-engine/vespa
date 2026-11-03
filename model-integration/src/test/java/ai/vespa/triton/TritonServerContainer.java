@@ -50,13 +50,17 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
         setCommandParts(new String[]{"tritonserver", "--model-repository=/models", "--model-control-mode=explicit"});
     }
 
-    // Only Vespa's Triton images, given with the image override, support ONNX session sharing.
-    public boolean supportsSessionSharing() {
+    // Only Vespa's Triton images, given with the image override, support ONNX session sharing and pooling.
+    public boolean isVespaImage() {
         return System.getProperty(IMAGE_NAME_PROPERTY) != null;
     }
 
     public String getGrpcEndpoint() {
         return getHost() + ":" + getMappedPort(GRPC_PORT);
+    }
+
+    public String getHttpEndpoint() {
+        return "http://" + getHost() + ":" + getMappedPort(HTTP_PORT);
     }
 
     public Path getModelRepositoryPath() { return modelRepositoryPath; }

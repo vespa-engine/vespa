@@ -4,6 +4,7 @@
 
 #include "fn_table.h"
 #include "platform_generic.h"
+#include "scalar_block_bit_packing.hpp"
 #include "target_info.h"
 
 #include <hwy/base.h>
@@ -22,6 +23,7 @@
 #include "hwy_kernel-inl.h"
 #include "hwy_aux_ops-inl.h"
 #include <hwy/contrib/dot/dot-inl.h>
+#include <hwy/contrib/bit_pack/bit_pack-inl.h>
 
 // clang-format on
 
@@ -278,6 +280,93 @@ int64_t my_hwy_dot_int8(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRICT
     return compute_chunked_sum<max_n_per_chunk, int64_t>(mul_add_i8_to_i32, a, b, sz);
 }
 
+// This is a Highway-ified mirror of `scalar_block_bit_pack`; see its comments for rationale.
+template <uint8_t Bits>
+HWY_NOINLINE void my_hwy_pack_bits(const uint8_t* HWY_RESTRICT raw, uint8_t* HWY_RESTRICT packed, const size_t sz) {
+    constexpr uint8_t B = Bits;
+    // All blocks have a fixed size, e.g. 128x u8 input -> 128*B bits output. Since the
+    // underlying architecture we're running on may have much larger vector size (e.g.
+    // AVX-512), we have to constrain register lane counts. To do this we use the
+    // Highway-provided fixed lane tag aliases FullN<T>, where N is {128, 64, 32, 16}.
+    // This means that we inherently can't use the full width of registers for e.g. AVX2,
+    // AVX-512 or SVE[2] > 128 bits, but that's just how it is. These are all cheap and
+    // fast bit operations, so we expect memory bandwidth and latency to be the bottle-
+    // neck in practice(tm).
+    size_t i = 0;
+    for (; i + 128 <= sz; i += 128, packed += 16 * B) {
+        hn::Pack8<B>{}.Pack(hn::Full128<uint8_t>{}, raw + i, packed);
+    }
+    size_t rem = sz - i;
+    if (rem >= 64) { // <= 127
+        hn::Pack8<B>{}.Pack(hn::Full64<uint8_t>{}, raw + i, packed);
+        i += 64;
+        packed += 8 * B;
+        rem -= 64;
+    }
+    if (rem >= 32) { // <= 63
+        hn::Pack8<B>{}.Pack(hn::Full32<uint8_t>{}, raw + i, packed);
+        i += 32;
+        packed += 4 * B;
+        rem -= 32;
+    }
+    if (rem >= 16) { // <= 31
+        hn::Pack8<B>{}.Pack(hn::Full16<uint8_t>{}, raw + i, packed);
+        i += 16;
+        packed += 2 * B;
+        rem -= 16;
+    }
+    // Full16 is as low as Highway goes (Full8 would just be a single byte and that's not included
+    // since it's not SIMD), so we defer the remnants to our home-grown, fully organic packer.
+    if (rem >= 8) { // <= 15
+        ScalarVerticalBlockBitPacker<B>::template pack<1>(raw + i, packed);
+        i += 8;
+        packed += 1 * B;
+        rem -= 8;
+    }
+    if (rem > 0 && rem < 8) { // <= 7
+        ScalarHorizontalRemainderBitPacker<B>::pack1_to_7(raw + i, packed, rem);
+    }
+}
+
+// This is a Highway-ified mirror of `scalar_block_bit_unpack`; see its comments for rationale.
+template <uint8_t Bits>
+HWY_NOINLINE void my_hwy_unpack_bits(const uint8_t* HWY_RESTRICT packed, uint8_t* HWY_RESTRICT raw, const size_t sz) {
+    constexpr uint8_t B = Bits;
+
+    size_t i = 0;
+    for (; i + 128 <= sz; i += 128, packed += 16 * B) {
+        hn::Pack8<B>{}.Unpack(hn::Full128<uint8_t>{}, packed, raw + i);
+    }
+    size_t rem = sz - i;
+    if (rem >= 64) { // <= 127
+        hn::Pack8<B>{}.Unpack(hn::Full64<uint8_t>{}, packed, raw + i);
+        i += 64;
+        packed += 8 * B;
+        rem -= 64;
+    }
+    if (rem >= 32) { // <= 63
+        hn::Pack8<B>{}.Unpack(hn::Full32<uint8_t>{}, packed, raw + i);
+        i += 32;
+        packed += 4 * B;
+        rem -= 32;
+    }
+    if (rem >= 16) { // <= 31
+        hn::Pack8<B>{}.Unpack(hn::Full16<uint8_t>{}, packed, raw + i);
+        i += 16;
+        packed += 2 * B;
+        rem -= 16;
+    }
+    if (rem >= 8) { // <= 15
+        ScalarVerticalBlockBitPacker<B>::template unpack<1>(packed, raw + i);
+        i += 8;
+        packed += 1 * B;
+        rem -= 8;
+    }
+    if (rem > 0 && rem < 8) { // <= 7
+        ScalarHorizontalRemainderBitPacker<B>::unpack1_to_7(packed, raw + i, rem);
+    }
+}
+
 HWY_INLINE
 const char* my_hwy_target_name() noexcept {
     return hwy::TargetName(HWY_TARGET);
@@ -321,6 +410,34 @@ size_t my_binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) n
 size_t my_population_count(const uint64_t* buf, size_t sz) noexcept {
     return my_hwy_popcount(buf, sz);
 }
+void my_pack_bits(const uint8_t* raw, uint8_t* packed, const uint8_t bits, const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return my_hwy_pack_bits<1>(raw, packed, sz);
+    case 2:
+        return my_hwy_pack_bits<2>(raw, packed, sz);
+    case 3:
+        return my_hwy_pack_bits<3>(raw, packed, sz);
+    case 4:
+        return my_hwy_pack_bits<4>(raw, packed, sz);
+    default:
+        abort();
+    }
+}
+void my_unpack_bits(const uint8_t* packed, uint8_t* raw, const uint8_t bits, const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return my_hwy_unpack_bits<1>(packed, raw, sz);
+    case 2:
+        return my_hwy_unpack_bits<2>(packed, raw, sz);
+    case 3:
+        return my_hwy_unpack_bits<3>(packed, raw, sz);
+    case 4:
+        return my_hwy_unpack_bits<4>(packed, raw, sz);
+    default:
+        abort();
+    }
+}
 TargetInfo my_target_info() noexcept {
     return {"Highway", my_hwy_target_name(), vector_byte_size()};
 }
@@ -347,6 +464,8 @@ public:
         ft.squared_euclidean_length_f32 = my_squared_euclidean_length_f32;
         ft.binary_hamming_distance = my_binary_hamming_distance;
         ft.population_count = my_population_count;
+        ft.pack_bits = my_pack_bits;
+        ft.unpack_bits = my_unpack_bits;
 #if HWY_TARGET == HWY_AVX2 || HWY_TARGET == HWY_AVX3
         // AVX2 and AVX3 do not have dedicated vector popcount instructions, so the Highway "emulation"
         // ends up being slower in practice than the baseline one using 4x pipelined POPCNT.

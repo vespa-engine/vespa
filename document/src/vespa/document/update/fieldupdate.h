@@ -1,16 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * \class document::FieldUpdate
- * \ingroup update
- *
- * \brief Represent a collection of updates to be performed on a single
- * field in a document.
- *
- * It inherits from Printable to produce human readable output when required.
- * Serialization is done through Serializable and XmlSerializable.
- * Deserialization is specially handled as document type is not serialized with
- * the object.
- */
+
 #pragma once
 
 #include "valueupdate.h"
@@ -22,6 +11,13 @@ namespace document {
 class Document;
 class DocumentType;
 
+/**
+ * Represents a collection of updates to be performed on a single field in a
+ * document. The value updates are applied in the order they were added.
+ *
+ * Deserialization requires the document type, as the field is identified by
+ * id and the field's data type is not part of the serialized form.
+ */
 class FieldUpdate {
 public:
     using nbostream = vespalib::nbostream;

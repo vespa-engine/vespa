@@ -32,27 +32,25 @@
 %define _create_vespa_service 1
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
-%global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_dependencies_version 1.21.0
-%global _vespa_gtest_version 1.16.0
-%global _vespa_protobuf_version 6.34.1
+%global _vespa_abseil_cpp_version 20260817.0.1
+%global _vespa_build_dependencies_version 1.23.1
+%global _vespa_gtest_version 1.18.0
+%global _vespa_protobuf_version 7.36.2
 %global _vespa_openblas_version 0.3.27
 %global _vespa_mimalloc_version 3.3.2
 %global _vespa_highway_version 1.4.0
-%global _vespa_onnxruntime_version 1.30.0
+%global _vespa_onnxruntime_version 1.31.0
 %global _vespa_jllama_version 4.7.10
 %global _vespa_icu_version 78.3.0
 %global _vespa_re2_version 20251105
 %global _vespa_xxhash_version 0.8.1
 %global _vespa_openssl_version 3.5.9
-%global _vespa_opentelemetry_cpp_version 1.29.0
-%global _vespa_grpc_version 1.84.0
-%if 0%{?el8} || 0%{?el9} || 0%{?amzn2023}
+%global _vespa_opentelemetry_cpp_version 1.30.0
+%global _vespa_grpc_version 1.84.1
 %global _use_vespa_abseil_cpp 1
 %global _vespa_abseil_excludes |absl_[a-z_0-9]*
 %global _use_vespa_gtest 1
 %global _vespa_gtest_excludes |(gtest|gmock)(_main)?
-%endif
 %global _use_vespa_protobuf 1
 %global _vespa_protobuf_excludes |protobuf|utf8_validity|utf8_range
 %global _use_vespa_openblas 1
@@ -80,9 +78,9 @@
 %if ! 0%{?_vespa_java_version:1}
 %global _vespa_java_version 17
 %endif
-%if 0%{?el8} || 0%{?el9} || 0%{?el10}
 %global _use_vespa_re2 1
 %global _vespa_re2_excludes |re2
+%if 0%{?el8} || 0%{?el9} || 0%{?el10}
 %global _use_vespa_icu 1
 %global _vespa_icu_excludes |icu(data|i18n|io|test|tu|uc)
 %endif
@@ -254,6 +252,9 @@ Requires: vespa-re2 = %{_vespa_re2_version}
 %global _vespa_re2_excludes |re2
 %else
 Requires: re2
+%endif
+%if 0%{?_use_vespa_abseil_cpp}
+Requires: vespa-abseil-cpp = %{_vespa_abseil_cpp_version}
 %endif
 
 %if 0%{?el8} || 0%{?el9} || 0%{?el10}

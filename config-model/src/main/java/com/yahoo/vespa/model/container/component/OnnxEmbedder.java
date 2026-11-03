@@ -19,6 +19,7 @@ import static com.yahoo.text.XML.getChildValue;
  * Extracts common ONNX parameters from XML to construct {@link OnnxModelOptions} and {@link OnnxEvaluatorConfig}.
  * 
  * @author glebashnik
+ * @author ingridhabrekke
  */
 abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfig.Producer {
     final protected OnnxModelOptions onnxModelOptions;
@@ -59,6 +60,7 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
         if (batchingConfig != null) {
             opts = opts.withBatchingMaxSize(batchingConfig.maxSize());
             opts = opts.withBatchingMaxDelay(batchingConfig.maxDelay());
+            opts = opts.withPaddingBuckets(batchingConfig.paddingBuckets());
         }
 
         var concurrencyElement = getChild(xml, "concurrency");
@@ -79,8 +81,9 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
                 .map(value -> state.getFileRegistry().addFile(value))
                 .map(opts::withModelConfigOverride)
                 .orElse(opts);
-        
+
         onnxModelOptions = opts;
+
     }
 
     /**
@@ -111,6 +114,7 @@ abstract class OnnxEmbedder extends TypedComponent implements OnnxEvaluatorConfi
         onnxModelOptions.gpuDevice().ifPresent(value -> builder.gpuDevice(value.deviceNumber()));
         onnxModelOptions.batchingMaxSize().ifPresent(builder.batching::maxSize);
         onnxModelOptions.batchingMaxDelay().ifPresent(delay -> builder.batching.maxDelayMillis(delay.toMillis()));
+        builder.batching.paddingBuckets(onnxModelOptions.paddingBuckets());
         onnxModelOptions
                 .concurrencyFactorType()
                 .ifPresent(value ->

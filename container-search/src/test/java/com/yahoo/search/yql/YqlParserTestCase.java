@@ -29,6 +29,7 @@ import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.SparseTensorWandItem;
 import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
@@ -1370,6 +1371,29 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testSparseTensorWand() {
+        assertParse("select foo from bar where sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector}");
+        assertParse("select foo from bar where {targetHits: 37, scoreThreshold: 1.5} sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector,targetHits=37,scoreThreshold=1.5}");
+        assertParse("select foo from bar where {totalTargetHits: 1000} sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector,totalTargetHits=1000}");
+        assertParse("select foo from bar where {label: \"foo\", ranked: false} sparseTensorWand(sparse_embedding, my_vector)",
+                    "SPARSE_TENSOR_WAND {field=sparse_embedding,queryTensorName=my_vector}");
+    }
+
+    @Test
+    void testSparseTensorWandLeafSettings() {
+        var item = assertInstanceOf(SparseTensorWandItem.class,
+                                    parse("select foo from bar where {label: \"foo\", ranked: false, filter: true, weight: 42} " +
+                                          "sparseTensorWand(sparse_embedding, my_vector)").getRoot());
+        assertEquals("foo", item.getLabel());
+        assertFalse(item.isRanked());
+        assertTrue(item.isFilter());
+        assertEquals(42, item.getWeight());
+    }
+
+    @Test
     void testNearestNeighborWithHnswTuningParameters() {
         assertParse("select foo from bar where {targetHits: 10, hnsw.approximateThreshold: 0.05} nearestNeighbor(semantic_embedding, my_vector)",
                 "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.approximateThreshold=0.05}");
@@ -1997,6 +2021,47 @@ public class YqlParserTestCase {
         assertParseFail("select * from sources * where mixed in (25)",
                 new IllegalArgumentException("The in operator is not supported for fieldsets with a mix of integer " +
                         "and string fields. The fieldset mixed has both"));
+    }
+
+    @Test
+    void testLabeledInEmitsLabelId() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertInLabelId("color",
+                        "select * from sources * where {label:\"color\"}string in ('red', 'blue')",
+                        StringInItem.class);
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        assertInLabelId("yr",
+                        "select * from sources * where {label:\"yr\"}field in (2020, 2021)",
+                        NumericInItem.class);
+    }
+
+    @Test
+    void testInParsesIdAndSignificance() {
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        var stringIn = assertInstanceOf(StringInItem.class,
+                                        parse("select * from sources * where {id: 23, significance: 23.0}string in ('a')").getRoot());
+        assertEquals(23, stringIn.getUniqueID());
+        assertEquals(23.0, stringIn.getSignificance(), 1E-6);
+        assertTrue(stringIn.hasExplicitSignificance());
+
+        var numericIn = assertInstanceOf(NumericInItem.class,
+                                         parse("select * from sources * where {id: 9, significance: 1.5}field in (42)").getRoot());
+        assertEquals(9, numericIn.getUniqueID());
+        assertEquals(1.5, numericIn.getSignificance(), 1E-6);
+        assertTrue(numericIn.hasExplicitSignificance());
+    }
+
+    private void assertInLabelId(String label, String yql, Class<? extends Item> type) {
+        Item item = parse(yql).getRoot();
+        assertEquals(type, item.getClass());
+        Query query = new Query();
+        query.getModel().getQueryTree().setRoot(item);
+        query.prepare();
+        assertEquals(String.valueOf(((TaggableItem) item).getUniqueID()),
+                     query.getRanking().getProperties().get("vespa.label." + label + ".id").get(0));
+        String rendered = query.yqlRepresentation();
+        assertTrue(rendered.contains("label: \"" + label + "\""), rendered);
+        assertTrue(rendered.contains("id: " + ((TaggableItem) item).getUniqueID()), rendered);
     }
 
     /** Parameters passed as arrays in a POSTed JSON query are seen as JSON arrays here. */

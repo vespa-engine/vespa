@@ -6,7 +6,7 @@ import com.yahoo.jrt.RequestWaiter;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Payload;
 
@@ -91,7 +91,7 @@ public class MockConnection implements ConnectionPool, Connection {
         protected void createResponse(Request request) {
             JRTServerConfigRequestV3 jrtReq = JRTServerConfigRequestV3.createFromRequest(request);
             Payload payload = Payload.from(ConfigPayload.empty());
-            jrtReq.addOkResponse(payload, generation, false, PayloadChecksums.fromPayload(payload));
+            jrtReq.addOkResponse(payload, generation, false, PayloadChecksum.fromPayload(payload));
             generation++;
         }
 

@@ -2,12 +2,14 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
@@ -15,9 +17,11 @@ import com.yahoo.vespa.config.search.IndexschemaConfig;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Deriver of indexschema config containing information of all text index fields with name and data type.
@@ -29,6 +33,7 @@ public class IndexSchema extends Derived {
     private final List<IndexField> fields = new ArrayList<>();
     private final Map<String, FieldCollection> collections = new LinkedHashMap<>();
     private final Map<String, FieldSet> fieldSets = new LinkedHashMap<>();
+    private final Set<String> uriFields = new LinkedHashSet<>();
 
     public IndexSchema(Schema schema) {
         fieldSets.putAll(schema.fieldSets().userFieldSets());
@@ -48,6 +53,14 @@ public class IndexSchema extends Derived {
         return field.getDataType() instanceof TensorDataType;
     }
 
+    private static boolean isUriField(ImmutableSDField field) {
+        DataType type = field.getDataType();
+        if (type instanceof CollectionDataType collectionType) {
+            type = collectionType.getNestedType();
+        }
+        return type == DataType.URI;
+    }
+
     private void deriveIndexFields(ImmutableSDField field, Schema schema) {
         // Note: Indexes for tensor fields are NOT part of the index schema for text fields.
         if ((!field.doesIndexing() && !field.isIndexStructureField()) ||
@@ -60,6 +73,9 @@ public class IndexSchema extends Derived {
             return;
         }
         String fieldName = field.getName();
+        if (isUriField(field)) {
+            uriFields.add(fieldName);
+        }
         for (Field flatField : lst) {
             deriveIndexFields(flatField, schema);
         }
@@ -82,6 +98,13 @@ public class IndexSchema extends Derived {
         addFieldToCollection(field.getName(), field.getName()); // implicit
     }
 
+    /** Each supported struct field index is an array of string, with one element per element in the complex field. */
+    private void deriveStructFieldIndexes(ImmutableSDField field, Schema schema) {
+        for (ImmutableSDField structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field, ComplexIndexFieldUtils.Mode.of(schema))) {
+            deriveIndexFields(new Field(structField.getName(), DataType.getArray(DataType.STRING)), schema);
+        }
+    }
+
     private FieldCollection getCollection(String collectionName) {
         FieldCollection retval = collections.get(collectionName);
         if (retval == null) {
@@ -99,7 +122,8 @@ public class IndexSchema extends Derived {
     @Override
     protected void derive(ImmutableSDField field, Schema schema) {
         if (field.usesStructOrMap()) {
-            return; // unsupported
+            deriveStructFieldIndexes(field, schema);
+            return;
         }
         deriveIndexFields(field, schema);
     }
@@ -135,6 +159,8 @@ public class IndexSchema extends Derived {
         // Replace
         icB.indexfield(fields.stream().map(IndexSchema::createIndexFieldConfig).toList());
         icB.fieldset(fieldSets.values().stream().map(IndexSchema::createFieldSetConfig).toList());
+        icB.urifield(uriFields.stream().map(name -> new IndexschemaConfig.Urifield.Builder().name(name)).toList());
+        icB.explicituris(true);
     }
 
     public void export(String toDirectory) throws IOException {

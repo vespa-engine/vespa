@@ -21,6 +21,7 @@ public class EmbedderRuntime implements Embedder.Runtime {
 
     private final Gauge embedLatency;
     private final Gauge sequenceLength;
+    private final Gauge paddedSequenceLength;
     private final Counter requestCount;
     private final Counter requestFailureCount;
     private final Map<MetricDimensions, Point> metricPointCache = new ConcurrentHashMap<>();
@@ -29,6 +30,7 @@ public class EmbedderRuntime implements Embedder.Runtime {
     public EmbedderRuntime(MetricReceiver metrics) {
         embedLatency = metrics.declareGauge(ContainerMetrics.EMBEDDER_LATENCY.baseName());
         sequenceLength = metrics.declareGauge(ContainerMetrics.EMBEDDER_SEQUENCE_LENGTH.baseName());
+        paddedSequenceLength = metrics.declareGauge(ContainerMetrics.EMBEDDER_PADDED_SEQUENCE_LENGTH.baseName());
         requestCount = metrics.declareCounter(ContainerMetrics.EMBEDDER_REQUEST_COUNT.baseName());
         requestFailureCount = metrics.declareCounter(ContainerMetrics.EMBEDDER_REQUEST_FAILURE_COUNT.baseName());
     }
@@ -41,6 +43,11 @@ public class EmbedderRuntime implements Embedder.Runtime {
     @Override
     public void sampleSequenceLength(long length, Embedder.Context ctx) {
         sequenceLength.sample(length, metricPoint(ctx));
+    }
+
+    @Override
+    public void samplePaddedSequenceLength(long length, Embedder.Context ctx) {
+        paddedSequenceLength.sample(length, metricPoint(ctx));
     }
 
     @Override

@@ -18,6 +18,7 @@
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
+#include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
 #include <vespa/searchlib/queryeval/queryeval_stats.h>
@@ -41,11 +42,6 @@ namespace search::features {
 class FirstPhaseRankLookup;
 }
 
-namespace search::fef {
-class RankProgram;
-class RankSetup;
-} // namespace search::fef
-
 namespace proton::matching {
 
 class SortFeatureStore;
@@ -59,6 +55,7 @@ private:
     using Properties = search::fef::Properties;
     using RankProgram = search::fef::RankProgram;
     using RankSetup = search::fef::RankSetup;
+    using SortSelection = search::fef::RankSetup::SortSelection;
     using LazyValue = search::fef::LazyValue;
     using ExecutionProfiler = vespalib::ExecutionProfiler;
     QueryLimiter&                             _queryLimiter;
@@ -74,7 +71,8 @@ private:
     HandleRecorder::HandleMap                 _used_handles;
     const HandleRecorder::HandleMap&          _needed_handles;
     std::vector<std::string>                  _sort_public_names;
-    std::vector<std::unique_ptr<RankProgram>> _sort_programs;
+    SortSelection                             _sort_selection;
+    std::unique_ptr<RankProgram>              _sort_program;
     std::vector<LazyValue>                    _sort_seeds;
     std::unique_ptr<SortFeatureStore>         _sort_store;
     bool                                      _search_has_changed;
@@ -88,7 +86,8 @@ public:
     MatchTools(QueryLimiter& queryLimiter, const vespalib::Doom& doom, const Query& query,
                MaybeMatchPhaseLimiter& match_limiter_in, const QueryEnvironment& queryEnv, const MatchDataLayout& mdl,
                const RankSetup& rankSetup, const Properties& featureOverrides,
-               const HandleRecorder::HandleMap& needed_handles, std::vector<std::string> sort_public_names);
+               const HandleRecorder::HandleMap& needed_handles, std::vector<std::string> sort_public_names,
+               SortSelection sort_selection);
     ~MatchTools();
     const vespalib::Doom& getDoom() const { return _doom; }
     QueryLimiter& getQueryLimiter() { return _queryLimiter; }
@@ -107,7 +106,7 @@ public:
     void setup_match_features();
     void setup_summary();
     void setup_dump();
-    void release_sort_programs();
+    void release_sort_program();
     bool has_sort_selection() const noexcept { return !_sort_public_names.empty(); }
     SortFeatureStore* sort_store() const noexcept { return _sort_store.get(); }
     std::span<const LazyValue> sort_seeds() const noexcept { return _sort_seeds; }
@@ -167,6 +166,7 @@ private:
     const search::IDocumentMetaStore&  _metaStore;
     HandleRecorder::HandleMap          _needed_handles;
     std::vector<std::string>           _sort_public_names;
+    RankSetup::SortSelection           _sort_selection;
 
     std::unique_ptr<AttributeOperationTask> createTask(std::string_view attribute, std::string_view operation) const;
 

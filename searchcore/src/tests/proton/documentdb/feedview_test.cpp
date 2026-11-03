@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/newconfigbuilder.h>
+#include <vespa/document/update/assignfieldpathupdate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
@@ -33,6 +35,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <tuple>
 
@@ -433,17 +436,38 @@ struct SchemaContext {
     std::shared_ptr<const document::DocumentTypeRepo> getRepo() const { return _builder.get_repo_sp(); }
 };
 
+Schema make_schema(const DocBuilder& builder) {
+    using search::index::schema::CollectionType;
+    using search::index::schema::DataType;
+    auto schema =
+        SchemaBuilder(builder).add_indexes({"i1", "url"}).add_attributes({"a1", "a2", "a3", "a4"}).build();
+    // Struct field indexes for the struct field 'name' in the array of struct field 'sa', the key and value of
+    // the map of string field 'sm', and the struct field 'name' in the value of the map of struct field 'pm'.
+    schema.addIndexField({"sa.name", DataType::STRING, CollectionType::ARRAY});
+    schema.addIndexField({"sm.key", DataType::STRING, CollectionType::ARRAY});
+    schema.addIndexField({"sm.value", DataType::STRING, CollectionType::ARRAY});
+    schema.addIndexField({"pm.value.name", DataType::STRING, CollectionType::ARRAY});
+    return schema;
+}
+
 SchemaContext::SchemaContext()
     : _builder([](auto& builder, auto& header) {
+          auto elem = header.createStruct("elem")
+                          .addField("name", builder.stringTypeRef())
+                          .addField("count", builder.intTypeRef())
+                          .ref();
           header.addField("i1", builder.stringTypeRef())
               .addField("a1", builder.stringTypeRef())
               .addField("a2", builder.predicateTypeRef())
               .addTensorField("a3", "")
               .addTensorField("a4", "")
-              .addField("s1", builder.stringTypeRef());
+              .addField("s1", builder.stringTypeRef())
+              .addField("sa", header.createArray(elem).ref())
+              .addField("sm", header.createMap(builder.stringTypeRef(), builder.stringTypeRef()).ref())
+              .addField("pm", header.createMap(builder.stringTypeRef(), elem).ref())
+              .addField("url", builder.uriTypeRef());
       }),
-      _schema(std::make_shared<Schema>(
-          SchemaBuilder(_builder).add_indexes({"i1"}).add_attributes({"a1", "a2", "a3", "a4"}).build())) {
+      _schema(std::make_shared<Schema>(make_schema(_builder))) {
 }
 
 SchemaContext::~SchemaContext() = default;
@@ -718,6 +742,19 @@ FastAccessFeedViewFixture::FastAccessFeedViewFixture()
 
 FastAccessFeedViewFixture::~FastAccessFeedViewFixture() {
     forceCommitAndWait();
+}
+
+// Constructs a feed view with a schema that has the given index in addition to the plain index 'i1'.
+// The struct field indexes of the fixture schema are left out, so that the given index is the only one checked.
+void make_feed_view_with_index(FixtureBase& f, const std::string& index_name,
+                               search::index::schema::CollectionType collection_type =
+                                   search::index::schema::CollectionType::SINGLE) {
+    auto schema = std::make_shared<Schema>(SchemaBuilder(f.sc._builder).add_indexes({"i1"}).build());
+    schema->addIndexField(Schema::IndexField(index_name, search::index::schema::DataType::STRING, collection_type));
+    StoreOnlyFeedView fv(StoreOnlyFeedView::Context(f.sa, std::move(schema), f._dmsc, f.sc.getRepo(),
+                                                    f._pendingLidsForCommit, *f._gidToLidChangeHandler,
+                                                    f._writeService),
+                         f.pc.getParams());
 }
 
 void assertBucketInfo(const BucketId& ebid, const Timestamp& ets, uint32_t lid, const IDocumentMetaStore& metaStore)
@@ -1122,6 +1159,138 @@ TEST(FeedViewTest, update_to_quantized_tensor_attribute_updates_document_store_a
     f.maw._attrs.insert("a4"); // mark a4 as attribute field
     f.maw._has_non_authoritative_attr = true;
     check_update_writes_document_to_attribute_and_document_store(f, "a4");
+}
+
+namespace {
+
+std::string put_document_and_assign_by_field_path(SearchableFeedViewFixture& f, const std::string& field_path) {
+    DocumentContext dc1 = f.doc1();
+    f.putAndWait(dc1);
+    DocumentContext dc2("id:ns:searchdocument::1", 20, f.getBuilder());
+    dc2.upd->addFieldPathUpdate(std::make_unique<document::AssignFieldPathUpdate>(
+        f.getBuilder().get_document_type(), field_path, "", std::make_unique<StringFieldValue>("foo")));
+    f.updateAndWait(dc2);
+    return f.get_trace();
+}
+
+} // namespace
+
+TEST(FeedViewTest, update_to_indexed_field_updates_index) {
+    SearchableFeedViewFixture f;
+    putDocumentAndUpdate(f, "i1");
+    auto trace = f.get_trace();
+    EXPECT_NE(std::string::npos, trace.find("put(adapter=index,serialNum=2,lid=1)")) << trace;
+    EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
+}
+
+TEST(FeedViewTest, update_to_field_with_struct_field_index_updates_index) {
+    SearchableFeedViewFixture f;
+    putDocumentAndUpdate(f, "sa");
+    auto trace = f.get_trace();
+    EXPECT_NE(std::string::npos, trace.find("put(adapter=index,serialNum=2,lid=1)")) << trace;
+    EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
+}
+
+TEST(FeedViewTest, update_to_field_with_struct_field_indexes_in_map_updates_index) {
+    for (const auto* field_name : {"sm", "pm"}) {
+        SCOPED_TRACE(field_name);
+        SearchableFeedViewFixture f;
+        putDocumentAndUpdate(f, field_name);
+        auto trace = f.get_trace();
+        EXPECT_NE(std::string::npos, trace.find("put(adapter=index,serialNum=2,lid=1)")) << trace;
+        EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
+    }
+}
+
+TEST(FeedViewTest, update_to_uri_field_updates_index) {
+    SearchableFeedViewFixture f;
+    putDocumentAndUpdate(f, "url");
+    auto trace = f.get_trace();
+    EXPECT_NE(std::string::npos, trace.find("put(adapter=index,serialNum=2,lid=1)")) << trace;
+    EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
+}
+
+TEST(FeedViewTest, update_to_non_indexed_field_does_not_update_index) {
+    SearchableFeedViewFixture f;
+    putDocumentAndUpdate(f, "s1");
+    auto trace = f.get_trace();
+    EXPECT_EQ(std::string::npos, trace.find("put(adapter=index,serialNum=2")) << trace;
+    EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
+}
+
+TEST(FeedViewTest, field_path_update_to_indexed_field_updates_index) {
+    SearchableFeedViewFixture f;
+    auto trace = put_document_and_assign_by_field_path(f, "i1");
+    EXPECT_NE(std::string::npos, trace.find("put(adapter=index,serialNum=2,lid=1)")) << trace;
+    EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
+}
+
+TEST(FeedViewTest, field_path_update_to_field_with_struct_field_index_updates_index) {
+    SearchableFeedViewFixture f;
+    auto trace = put_document_and_assign_by_field_path(f, "sa[0].name");
+    EXPECT_NE(std::string::npos, trace.find("put(adapter=index,serialNum=2,lid=1)")) << trace;
+    EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
+}
+
+TEST(FeedViewTest, field_path_update_to_field_with_struct_field_indexes_in_map_updates_index) {
+    for (const auto* field_path : {"sm{foo}", "pm{foo}.name"}) {
+        SCOPED_TRACE(field_path);
+        SearchableFeedViewFixture f;
+        auto trace = put_document_and_assign_by_field_path(f, field_path);
+        EXPECT_NE(std::string::npos, trace.find("put(adapter=index,serialNum=2,lid=1)")) << trace;
+        EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
+    }
+}
+
+TEST(FeedViewTest, field_path_update_to_non_indexed_field_does_not_update_index) {
+    SearchableFeedViewFixture f;
+    auto trace = put_document_and_assign_by_field_path(f, "s1");
+    EXPECT_EQ(std::string::npos, trace.find("put(adapter=index,serialNum=2")) << trace;
+    EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
+}
+
+TEST(FeedViewTest, index_not_belonging_to_a_document_field_is_rejected) {
+    SearchableFeedViewFixture f;
+    VESPA_EXPECT_EXCEPTION(make_feed_view_with_index(f, "unknown.name"), document::FieldNotFoundException,
+                           "Index 'unknown.name' does not belong to a field in document type 'searchdocument'");
+    VESPA_EXPECT_EXCEPTION(make_feed_view_with_index(f, ".name"), document::FieldNotFoundException,
+                           "Index '.name' does not belong to a field in document type 'searchdocument'");
+}
+
+TEST(FeedViewTest, index_that_is_not_a_valid_struct_field_index_is_rejected) {
+    SearchableFeedViewFixture f;
+    using search::index::schema::CollectionType;
+    auto not_a_struct_field = [](const std::string& index_name) {
+        return "Index '" + index_name +
+               "' in document type 'searchdocument' is neither part of a uri field nor a field in an array of "
+               "struct or map field";
+    };
+    auto not_valid = [](const std::string& index_name, const std::string& problem) {
+        return "Index '" + index_name + "' in document type 'searchdocument' is not a valid struct field index: " +
+               problem;
+    };
+    // Not a complex field
+    VESPA_EXPECT_EXCEPTION(make_feed_view_with_index(f, "s1.name", CollectionType::ARRAY),
+                           vespalib::IllegalStateException, not_a_struct_field("s1.name"));
+    // No such struct field
+    VESPA_EXPECT_EXCEPTION(make_feed_view_with_index(f, "sa.unknown", CollectionType::ARRAY),
+                           vespalib::IllegalStateException, not_a_struct_field("sa.unknown"));
+    // Struct field is not a string
+    VESPA_EXPECT_EXCEPTION(make_feed_view_with_index(f, "sa.count", CollectionType::ARRAY),
+                           vespalib::IllegalStateException,
+                           not_valid("sa.count", "the field has type Int, expected String"));
+    // Map value is a struct, which can't be extracted as a whole, only its fields can
+    VESPA_EXPECT_EXCEPTION(make_feed_view_with_index(f, "pm.value", CollectionType::ARRAY),
+                           vespalib::IllegalStateException, not_a_struct_field("pm.value"));
+    // Index is not an array (the field is a string, so only the collection type is wrong)
+    VESPA_EXPECT_EXCEPTION(make_feed_view_with_index(f, "sa.name"), vespalib::IllegalStateException,
+                           not_valid("sa.name", "the index is SINGLE STRING, expected ARRAY STRING"));
+    VESPA_EXPECT_EXCEPTION(make_feed_view_with_index(f, "sm.key"), vespalib::IllegalStateException,
+                           not_valid("sm.key", "the index is SINGLE STRING, expected ARRAY STRING"));
+    // Both the index and the field are wrong
+    VESPA_EXPECT_EXCEPTION(make_feed_view_with_index(f, "sa.count"), vespalib::IllegalStateException,
+                           not_valid("sa.count", "the index is SINGLE STRING, expected ARRAY STRING, and the field "
+                                                 "has type Int, expected String"));
 }
 
 TEST(

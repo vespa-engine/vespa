@@ -2,15 +2,16 @@
 package ai.vespa.modelintegration.evaluator;
 
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
-import net.jpountz.xxhash.XXHashFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 /**
- * Session options for ONNX Runtime evaluation
+ * Session options for ONNX Runtime evaluation.
+ * Runtimes that batch requests use the padding options, present when padding buckets are configured.
+ * Runtimes that can pool use the runtime pooling, present when an embedder asks the runtime to pool a model output.
  *
  * @author lesters
  * @author bjorncs
@@ -26,19 +27,17 @@ public record OnnxEvaluatorOptions(
         int batchingMaxSize,
         Optional<Integer> numModelInstances,
         Optional<Path> modelConfigOverride,
+        Optional<OnnxPadderOptions> padding,
+        Optional<OnnxPoolingOptions> runtimePooling,
         int availableProcessors
 ) {
-
-    // Unlike hashCode, this hash doesn't change between runs
-    public long calculateHash() {
-        var bytes = toString().getBytes(StandardCharsets.UTF_8);
-        return XXHashFactory.fastestInstance().hash64().hash(bytes, 0, bytes.length, 0);
-    }
 
     public OnnxEvaluatorOptions {
         Objects.requireNonNull(executionMode, "executionMode cannot be null");
         Objects.requireNonNull(numModelInstances, "numModelInstances cannot be null");
         Objects.requireNonNull(modelConfigOverride, "modelConfigOverride cannot be null");
+        Objects.requireNonNull(padding, "padding cannot be null");
+        Objects.requireNonNull(runtimePooling, "runtimePooling cannot be null");
     }
 
     public static OnnxEvaluatorOptions createDefault() {
@@ -60,6 +59,7 @@ public record OnnxEvaluatorOptions(
                 .setBatchingMaxSize(config.batching().maxSize())
                 .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
                 .setModelConfigOverride(config.modelConfigOverride())
+                .setPadding(OnnxPadderOptions.of(config))
                 .setOptimizeModel(config.optimizeModel());
 
         if (config.gpuDevice() >= 0) {
@@ -102,6 +102,8 @@ public record OnnxEvaluatorOptions(
         private int batchingMaxSize;
         private Optional<Integer> numModelInstances;
         private Optional<Path> modelConfigOverride;
+        private Optional<OnnxPadderOptions> padding;
+        private Optional<OnnxPoolingOptions> runtimePooling;
 
         // Used to calculate number of threads
         private int availableProcessors;
@@ -121,7 +123,9 @@ public record OnnxEvaluatorOptions(
             batchingMaxSize = 1;
             numModelInstances = Optional.empty();
             modelConfigOverride = Optional.empty();
-            
+            padding = Optional.empty();
+            runtimePooling = Optional.empty();
+
             this.availableProcessors = availableProcessors;
         }
         
@@ -135,6 +139,8 @@ public record OnnxEvaluatorOptions(
             this.batchingMaxSize = options.batchingMaxSize();
             this.numModelInstances = options.numModelInstances();
             this.modelConfigOverride = options.modelConfigOverride;
+            this.padding = options.padding();
+            this.runtimePooling = options.runtimePooling();
             this.availableProcessors = options.availableProcessors();
         }
 
@@ -225,6 +231,16 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
+        public Builder setPadding(Optional<OnnxPadderOptions> padding) {
+            this.padding = padding;
+            return this;
+        }
+
+        public Builder setRuntimePooling(Optional<OnnxPoolingOptions> runtimePooling) {
+            this.runtimePooling = runtimePooling;
+            return this;
+        }
+
         public OnnxEvaluatorOptions build() {
             return new OnnxEvaluatorOptions(
                     executionMode,
@@ -236,6 +252,8 @@ public record OnnxEvaluatorOptions(
                     batchingMaxSize,
                     numModelInstances,
                     modelConfigOverride,
+                    padding,
+                    runtimePooling,
                     availableProcessors
             );
         }
@@ -269,5 +287,32 @@ public record OnnxEvaluatorOptions(
 
     public OnnxEvaluatorOptions withNumModelInstances(int numModelInstances) {
         return new Builder(this).setNumModelInstances(numModelInstances).build();
+    }
+
+    /** Returns these options padding with the given attention mask input, if padding is configured */
+    public OnnxEvaluatorOptions withAttentionMask(String name) {
+        return withPadding(padding -> padding.withAttentionMask(name));
+    }
+
+    /** Returns these options padding to at most the given max tokens, the longest input, if padding is configured */
+    public OnnxEvaluatorOptions withMaxTokens(int maxTokens) {
+        return withPadding(padding -> padding.withMaxTokens(maxTokens));
+    }
+
+    /** Returns these options without padding, which runtimes that do not pad key their sessions on */
+    public OnnxEvaluatorOptions withoutPadding() {
+        return padding.isEmpty() ? this : new Builder(this).setPadding(Optional.empty()).build();
+    }
+
+    private OnnxEvaluatorOptions withPadding(UnaryOperator<OnnxPadderOptions> operator) {
+        return padding.isEmpty() ? this : new Builder(this).setPadding(padding.map(operator)).build();
+    }
+
+    public OnnxEvaluatorOptions withRuntimePooling(OnnxPoolingOptions pooling) {
+        return new Builder(this).setRuntimePooling(Optional.of(pooling)).build();
+    }
+
+    public OnnxEvaluatorOptions withoutRuntimePooling() {
+        return runtimePooling.isEmpty() ? this : new Builder(this).setRuntimePooling(Optional.empty()).build();
     }
 }

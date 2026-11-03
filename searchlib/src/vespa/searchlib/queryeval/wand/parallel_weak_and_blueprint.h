@@ -19,6 +19,7 @@ namespace search::queryeval {
 class ParallelWeakAndBlueprint : public ComplexLeafBlueprint {
 private:
     using score_t = wand::score_t;
+    using WeakAndHeap = WeakAndHeapT<wand::score_t>;
 
     std::unique_ptr<WeakAndPriorityQueue> _scores;
     const wand::score_t                   _scoreThreshold;

@@ -220,6 +220,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addSearch(deployState, spec, cluster, context);
         addDocproc(deployState, spec, cluster);
         addDocumentApi(deployState, spec, cluster, context);  // NOTE: Must be done after addSearch
+        addSkills(deployState, spec, cluster); // NOTE: Must be done after addSearch
         addDefaultThreadpool(deployState, spec, cluster);
 
         cluster.addDefaultHandlersExceptStatus();
@@ -1364,6 +1365,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
 
+    /** Adds the schemas skill if <skills> enables it, and the handler serving it where search is. */
+    private void addSkills(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
+        Element skills = XML.getChild(spec, "skills");
+        if (skills == null || XML.getChild(skills, "schemas") == null) return;
+        if (cluster.getSearch() == null)
+            throw new IllegalArgumentException("The 'schemas' skill requires search, but container cluster '" +
+                                               cluster.getName() + "' has no <search>");
+
+        var skillHandler = new SkillHandler(cluster);
+        if (skillHandler.getServerBindings().isEmpty()) {
+            deployState.getDeployLogger().logApplicationPackage(WARNING, "The 'schemas' skill in container cluster '" +
+                                                                         cluster.getName() + "' is not served, as search has no bindings");
+            return;
+        }
+        cluster.addComponent(skillHandler);
+        cluster.addComponent(new Component<>(new ComponentModel(SkillHandler.SCHEMA_SKILL_SPEC, null)));
+    }
+
     private List<BindingPattern> serverBindings(DeployState deployState, ConfigModelContext context, ApplicationContainerCluster cluster, Element searchElement, Collection<BindingPattern> defaultBindings) {
         List<Element> bindings = XML.getChildren(searchElement, "binding");
         if (bindings.isEmpty())
@@ -1383,6 +1402,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         return result;
     }
+
     private static Collection<UserBindingPattern> userBindingPattern(String path, Set<Integer> portBindingOverride) {
         UserBindingPattern bindingPattern = UserBindingPattern.fromPattern(path);
         if (portBindingOverride.isEmpty()) return Set.of(bindingPattern);
@@ -1390,7 +1410,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .map(bindingPattern::withOverriddenPort)
                 .toList();
     }
-
 
     private ContainerDocumentApi buildDocumentApi(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         Element documentApiElement = XML.getChild(spec, "document-api");

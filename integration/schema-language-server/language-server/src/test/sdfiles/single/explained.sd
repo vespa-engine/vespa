@@ -1,0 +1,43 @@
+schema explained {
+    explanation {
+        Products in a web shop.
+        Each document is a single product, identified by its SKU.
+    }
+    document explained {
+        struct dimensions {
+            field width type int {}
+        }
+        field title type string {
+            indexing: index | summary
+            explanation { The product title. }
+        }
+        field weight type float {
+            indexing: attribute
+            explanation: Weight in {kg}, # not lbs.
+        }
+        field color type string { explanation: The color name }
+        field size type dimensions {
+            struct-field width {
+                indexing: attribute
+                explanation {
+                    Width in cm.
+                }
+            }
+        }
+    }
+    field title_lowercase type string {
+        indexing: input title | lowercase | attribute
+        explanation {
+            Lowercased title, for {exact} # matching.
+        }
+    }
+    rank-profile vector {
+        explanation: Semantic similarity: Use for natural language queries.
+    }
+    rank-profile text {
+        explanation {Ranks by text relevance only: Use for keyword queries.}
+        first-phase {
+            expression: bm25(title)
+        }
+    }
+}

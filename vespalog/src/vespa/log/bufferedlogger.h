@@ -82,10 +82,10 @@
 #define VESPA_LOG_LOGENTRYMAXAGE 300 // Max seconds an entry can be cached
 #define VESPA_LOG_COUNTAGEFACTOR 5   // How many seconds each count counts for
 
+#include "log.h"
+
 #include <sstream>
 #include <string>
-
-#include <vespa/log/log.h>
 
 // Define LOG if using log buffer for regular LOG calls
 // If logger logs debug messages, bypass buffer.

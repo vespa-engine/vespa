@@ -38,6 +38,17 @@ INJECT GroupingParser:
         return new NegFunction(exp);
     }
 
+    // A parameter reference (@name) is resolved from query properties at query time, which are not available here.
+    // The placeholders below are valid in every position a parameter is accepted, so the tree can still be built.
+
+    private static String placeholderParameterValue(String name) {
+        return "@" + name;
+    }
+
+    private static Number placeholderParameterNumber() {
+        return Long.valueOf(1);
+    }
+
 
 }
 
@@ -129,12 +140,14 @@ TOKEN :
 // NOTE: Whenever you addElm a new token, you need to also addElm it do the identifier() rule at the bottom of this grammar.
 // NOTE: Failure to do so will cause the token image to become a reserved word. To prevent regression on this, addElm the
 // NOTE: new token to the GroupingParserTestCase#requireThatTokenImagesAreNotReservedWords() test.
+// NOTE: A parameter reference (@name) is a single token, with the same name rules as an identifier in YQL.
 //
 TOKEN :
     <SPACE: [" ","\n","\r","\t"]> |
     <SCOLON: ";"> |
     <COMMA: ","> |
     <DOLLAR: "$"> |
+    <PARAMETER: "@" ["A"-"Z","a"-"z","_"] (["A"-"Z","a"-"z","0"-"9","_","-"])*> |
     <DOT: "."> |
     <EQ: "="> |
     <INFIX_ADD: "+"> |
@@ -331,7 +344,7 @@ GroupingOperation eachOperation(GroupingOperation parent) :
 }
     ( <EACH> { ret = new EachOperation(); if (parent != null) { parent.addChild(ret); } }
       lbraceElm operationBody(ret) rbraceElm
-      [ <AS> lbraceElm str = stringElm rbraceElm { ret.setLabel(str); } ] )
+      [ <AS> lbraceElm str = stringOrParameterElm rbraceElm { ret.setLabel(str); } ] )
     { return ret; }
 ;
 operationBody(GroupingOperation parent) :
@@ -393,7 +406,7 @@ GroupingExpression expElm(GroupingOperation grp) :
 }
     ( [ addElm | subElm                         { neg = true; } ]
       exp = expAlias(grp)                     { if (neg) { exp = resolveNegation(exp); } }
-      [ <AS> lbraceElm str = stringElm rbraceElm { exp.setLabel(str); } ] )
+      [ <AS> lbraceElm str = stringOrParameterElm rbraceElm { exp.setLabel(str); } ] )
     { return exp; }
 ;
 
@@ -446,7 +459,8 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = attributeFunction           |
                    exp = avgExpression(grp)            |
                    exp = catFunction(grp)              |
-                   exp = constantValue               |
+                   exp = literalConstantValue        |
+                   exp = parameterStringValue        |
                    exp = countAggregator             |
                    exp = debugWaitFunction(grp)        |
                    exp = divFunction(grp)              |
@@ -524,7 +538,7 @@ AttributeValue attributeValue :
     ( str = identifierStr { prefix.append(str); }
       ( SCAN 2 => <DOT> { prefix.append(lastConsumedToken.toString()); } ( str = identifierStr { prefix.append(str); } ) )*
       ( SCAN 3 =>
-          ( lcurlyElm key = stringElm rcurlyElm ) |
+          ( lcurlyElm key = stringOrParameterElm rcurlyElm ) |
           ( lcurlyElm keySourceAttr = attributeFunction rcurlyElm )
       )?
       ( <DOT> { suffix.append(lastConsumedToken.toString()); } ( str = identifierStr { suffix.append(str); } ) )*
@@ -613,6 +627,22 @@ ConstantValue constantValueSigned :
 }
     ( num = signedNumber )
     { return num instanceof Double ? new DoubleValue((Double)num) : new LongValue((Long)num); }
+;
+
+ConstantValue literalConstantValue :
+{
+    Number num;
+}
+    ( num = literalNumber )
+    { return num instanceof Double ? new DoubleValue((Double)num) : new LongValue((Long)num); }
+;
+
+StringValue parameterStringValue :
+{
+    String str;
+}
+    ( str = parameterElm )
+    { return new StringValue(str); }
 ;
 
 
@@ -928,7 +958,7 @@ SummaryValue summaryValue :
 {
     String str = null;
 }
-    ( <SUMMARY> lbraceElm [ str = stringElm ] rbraceElm )
+    ( <SUMMARY> lbraceElm [ str = stringOrParameterElm ] rbraceElm )
     { return str == null ? new SummaryValue() : new SummaryValue(str); }
 ;
 
@@ -989,7 +1019,8 @@ FunctionNode ucaFunction(GroupingOperation grp) :
     String locale;
     String strength = null;
 }
-    ( <UCA> lbraceElm arg = expElm(grp) commaElm locale = stringElm [ commaElm strength = stringElm ] rbraceElm )
+    ( <UCA> lbraceElm arg = expElm(grp) commaElm locale = stringOrParameterElm
+      [ commaElm ( strength = stringElm | parameterName ) ] rbraceElm )
     { return (strength == null ? new UcaFunction(arg, locale)
                                : new UcaFunction(arg, locale, strength)); }
 ;
@@ -1086,7 +1117,7 @@ RegexPredicate regexPredicate(GroupingOperation grp) :
     GroupingExpression exp;
     Token stringToken;
 }
-    ( <REGEX> lbraceElm pattern = stringElm { stringToken = lastConsumedToken; } commaElm exp = expElm(grp) rbraceElm )
+    ( <REGEX> lbraceElm pattern = stringOrParameterElm { stringToken = lastConsumedToken; } commaElm exp = expElm(grp) rbraceElm )
     {
         try {
             return new RegexPredicate(pattern, exp);
@@ -1107,7 +1138,7 @@ RangePredicate rangePredicate(GroupingOperation grp) :
     BooleanValue upperInclusive = new BooleanValue(false);
 }
     (
-        <RANGE> lbraceElm lower = number commaElm upper = number commaElm exp = expElm(grp)
+        <RANGE> lbraceElm lower = rangeBound commaElm upper = rangeBound commaElm exp = expElm(grp)
         [ commaElm lowerInclusive = booleanValue commaElm upperInclusive = booleanValue ] rbraceElm
     )
 {
@@ -1131,7 +1162,10 @@ InPredicate inPredicate(GroupingOperation grp) :
     String arg;
     List<String> args = new ArrayList<String>();
 }
-    <IN> lbraceElm exp = expElm(grp) ( commaElm arg = stringElm { args.add(arg); } )+ rbraceElm
+    <IN> lbraceElm exp = expElm(grp)
+    ( commaElm ( ( arg = stringElm { args.add(arg); } ) |
+                 ( arg = parameterName { args.add(placeholderParameterValue(arg)); } ) ) )+
+    rbraceElm
     { return new InPredicate(exp, args); }
 ;
 
@@ -1209,10 +1243,32 @@ Number signedNumber :
 
 Number number :
 {
+    Number num;
+}
+    ( num = literalNumber | num = parameterNumber )
+    { return num; }
+;
+
+// A bound of range(): a number literal which may be negative, or a parameter
+Number rangeBound :
+{
+    Number num;
+}
+    ( num = signedNumber | num = parameterNumber )
+    { return num; }
+;
+
+Number literalNumber :
+{
     String str;
 }
     ( ( <INTEGER> | <FLOAT> ) { str = lastConsumedToken.toString(); } spaceElm )
     { return resolveNumber(str); }
+;
+
+Number parameterNumber :
+    ( parameterName )
+    { return placeholderParameterNumber(); }
 ;
 
 
@@ -1230,12 +1286,36 @@ byteValue(RawBuffer buffer) :
 ;
 
 
+String stringOrParameterElm :
+{
+    String ret;
+}
+    ( ret = stringElm | ret = parameterElm )
+    { return ret; }
+;
+
 String stringElm :
 {
     String ret;
 }
     ( ret = identifierStr | ( <STRING> { ret = UnicodeUtilities.unquote(lastConsumedToken.toString()); } spaceElm ) )
     { return ret; }
+;
+
+String parameterName :
+{
+    String name;
+}
+    ( <PARAMETER> { name = lastConsumedToken.toString().substring(1); } spaceElm )
+    { return name; }
+;
+
+String parameterElm :
+{
+    String name;
+}
+    ( name = parameterName )
+    { return placeholderParameterValue(name); }
 ;
 
 

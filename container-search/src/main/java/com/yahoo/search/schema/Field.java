@@ -22,18 +22,22 @@ public class Field implements FieldInfo {
     private final Type type;
     private final boolean isAttribute;
     private final boolean isIndex;
-    private final boolean bitPacked;
     private final List<FastMapSearchFields> fastMapSearches;
     private final Set<String> aliases;
+    private final MatchType matchType;
+    private final Optional<String> inputExpression;
+    private final Optional<String> explanation;
 
     public Field(Builder builder) {
         this.name = builder.name;
         this.type = builder.type;
         this.isAttribute = builder.isAttribute;
         this.isIndex = builder.isIndex;
-        this.bitPacked = builder.isBitPacked;
         this.fastMapSearches = List.copyOf(builder.fastMapSearches);
         this.aliases = Set.copyOf(builder.aliases);
+        this.matchType = builder.matchType;
+        this.inputExpression = Optional.ofNullable(builder.inputExpression);
+        this.explanation = Optional.ofNullable(builder.explanation);
     }
 
     @Override
@@ -57,6 +61,18 @@ public class Field implements FieldInfo {
         return ! fastMapSearches.isEmpty();
     }
 
+    @Override
+    public MatchType matchType() { return matchType; }
+
+    /**
+     * Returns the expression to use in queries to produce an input to match against this field, where the
+     * value to convert is referenced as "@input", e.g. "embed(myEmbedder, @input)", or empty if none.
+     */
+    public Optional<String> inputExpression() { return inputExpression; }
+
+    /** Returns the free text explanation of the content and usage of this field, if any. */
+    public Optional<String> explanation() { return explanation; }
+
     /** Returns the key and value fields of each fast map search of this field, or an empty list if it has none. */
     public List<FastMapSearchFields> fastMapSearches() {
         return fastMapSearches;
@@ -76,16 +92,35 @@ public class Field implements FieldInfo {
         if ( this.isIndex != other.isIndex) return false;
         if ( ! this.fastMapSearches.equals(other.fastMapSearches)) return false;
         if ( ! this.aliases.equals(other.aliases)) return false;
+        if ( ! this.matchType.equals(other.matchType)) return false;
+        if ( ! this.inputExpression.equals(other.inputExpression)) return false;
+        if ( ! this.explanation.equals(other.explanation)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, isAttribute, isIndex, fastMapSearches, aliases);
+        return Objects.hash(name, type, isAttribute, isIndex, fastMapSearches, aliases, matchType, inputExpression, explanation);
     }
 
     @Override
     public String toString() { return "field '" + name + "'"; }
+
+    /** How a field is matched. */
+    public enum MatchType {
+
+        /** This is not a string field, so match type is not applicable. */
+        NONE,
+        /** Matched as text: Text is tokenized, and query tokens match tokens in the field. */
+        TEXT,
+        /** Matched as a single word: A query term matches an entire field value, or an entire element of a collection. */
+        WORD,
+        /** Like WORD, but without normalizing the value (except lowercasing, unless the field is cased). */
+        EXACT,
+        /** Matched as n-grams, such that query text can match substrings of field values. */
+        GRAM
+
+    }
 
     public static class Type {
 
@@ -126,9 +161,9 @@ public class Field implements FieldInfo {
         /** Creates this from a type string on the syntax following "field [name] type " in a schema definition. */
         public static Type from(String typeString) {
             if (typeString.startsWith("annotationreference<"))
-                return new Type(Kind.ANNOTATIONREFERENCE); // TODO: Model as subclass
+                return AnnotationReferenceFieldType.from(typeString);
             if (typeString.startsWith("array<"))
-                return new Type(Kind.ARRAY); // TODO: Model as subclass
+                return ArrayFieldType.from(typeString);
             if (typeString.equals("bool"))
                 return new Type(Kind.BOOL);
             if (typeString.equals("byte"))
@@ -150,7 +185,7 @@ public class Field implements FieldInfo {
             if (typeString.equals("raw"))
                 return new Type(Kind.RAW);
             if (typeString.startsWith("reference<"))
-                return new Type(Kind.REFERENCE); // TODO: Model as subclass
+                return ReferenceFieldType.from(typeString);
             if (typeString.equals("string"))
                 return new Type(Kind.STRING);
             if (typeString.startsWith("tensor<") || typeString.startsWith("tensor("))
@@ -158,9 +193,9 @@ public class Field implements FieldInfo {
             if (typeString.equals("url"))
                 return new Type(Kind.URL);
             if (typeString.startsWith("weightedset<"))
-                return new Type(Kind.WEIGHTEDSET); // TODO: Model as subclass
+                return WeightedSetFieldType.from(typeString);
             else
-                return new Type(Kind.STRUCT); // TODO: Model as a subclass
+                return new StructFieldType(typeString);
         }
 
     }
@@ -234,6 +269,150 @@ public class Field implements FieldInfo {
         }
     }
 
+    public static class ArrayFieldType extends Type {
+
+        private final Type elementType;
+
+        public ArrayFieldType(Type elementType) {
+            super(Kind.ARRAY);
+            this.elementType = elementType;
+        }
+
+        public Type elementType() { return elementType; }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            return this.elementType.equals(((ArrayFieldType)o).elementType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), elementType);
+        }
+
+        public static Type from(String typeString) {
+            return new ArrayFieldType(Type.from(typeArgument("array<", typeString)));
+        }
+
+    }
+
+    public static class WeightedSetFieldType extends Type {
+
+        private final Type elementType;
+
+        public WeightedSetFieldType(Type elementType) {
+            super(Kind.WEIGHTEDSET);
+            this.elementType = elementType;
+        }
+
+        public Type elementType() { return elementType; }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            return this.elementType.equals(((WeightedSetFieldType)o).elementType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), elementType);
+        }
+
+        public static Type from(String typeString) {
+            return new WeightedSetFieldType(Type.from(typeArgument("weightedset<", typeString)));
+        }
+
+    }
+
+    public static class ReferenceFieldType extends Type {
+
+        private final String documentType;
+
+        public ReferenceFieldType(String documentType) {
+            super(Kind.REFERENCE);
+            this.documentType = Objects.requireNonNull(documentType);
+        }
+
+        /** Returns the name of the document type referenced. */
+        public String documentType() { return documentType; }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            return this.documentType.equals(((ReferenceFieldType)o).documentType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), documentType);
+        }
+
+        public static Type from(String typeString) {
+            return new ReferenceFieldType(typeArgument("reference<", typeString));
+        }
+
+    }
+
+    public static class StructFieldType extends Type {
+
+        private final String name;
+
+        public StructFieldType(String name) {
+            super(Kind.STRUCT);
+            this.name = Objects.requireNonNull(name);
+        }
+
+        /** Returns the name of the struct type. */
+        public String name() { return name; }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            return this.name.equals(((StructFieldType)o).name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), name);
+        }
+
+    }
+
+    public static class AnnotationReferenceFieldType extends Type {
+
+        private final String annotationType;
+
+        public AnnotationReferenceFieldType(String annotationType) {
+            super(Kind.ANNOTATIONREFERENCE);
+            this.annotationType = Objects.requireNonNull(annotationType);
+        }
+
+        /** Returns the name of the annotation type referenced. */
+        public String annotationType() { return annotationType; }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! super.equals(o)) return false;
+            return this.annotationType.equals(((AnnotationReferenceFieldType)o).annotationType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), annotationType);
+        }
+
+        public static Type from(String typeString) {
+            return new AnnotationReferenceFieldType(typeArgument("annotationreference<", typeString));
+        }
+
+    }
+
+    /** Returns the type argument of a type string on the form prefix + argument + ">", such as {@code array<string>}. */
+    private static String typeArgument(String prefix, String typeString) {
+        return typeString.substring(prefix.length(), typeString.lastIndexOf(">")).trim();
+    }
+
     /**
      * The name of the lookup field, and the struct fields holding the key and the value, of a field with
      * fast map search, which is either a map, or an array of a struct acting as a map entry.
@@ -262,12 +441,32 @@ public class Field implements FieldInfo {
         private final Set<String> aliases = new HashSet<>();
         private boolean isAttribute;
         private boolean isIndex;
-        private boolean isBitPacked;
         private final List<FastMapSearchFields> fastMapSearches = new ArrayList<>();
+        private String explanation = null;
+        private MatchType matchType = MatchType.NONE;
+        private String inputExpression = null;
 
         public Builder(String name, String typeString) {
             this.name = name;
             this.type = Type.from(typeString);
+        }
+
+        /** Sets a free text explanation of the content and usage of this field. */
+        public Builder setExplanation(String explanation) {
+            this.explanation = Objects.requireNonNull(explanation);
+            return this;
+        }
+
+        /** Sets how this field is matched. This should be NONE (the default) for fields which are not strings. */
+        public Builder setMatchType(MatchType matchType) {
+            this.matchType = Objects.requireNonNull(matchType);
+            return this;
+        }
+
+        /** Sets the expression to use in queries to produce an input to match against this field, e.g. "embed(myEmbedder, @input)". */
+        public Builder setInputExpression(String inputExpression) {
+            this.inputExpression = Objects.requireNonNull(inputExpression);
+            return this;
         }
 
         public Builder addAlias(String alias) {
@@ -282,11 +481,6 @@ public class Field implements FieldInfo {
 
         public Builder setIndex(boolean isIndex) {
             this.isIndex = isIndex;
-            return this;
-        }
-
-        public Builder setBitPacked(boolean isBitPacked) {
-            this.isBitPacked = isBitPacked;
             return this;
         }
 

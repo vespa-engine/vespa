@@ -31,7 +31,7 @@ public class AttributesTestCase extends AbstractExportingTestCase {
 
     @Test
     void testMapOfPrimitiveAttribute() throws IOException, ParseException {
-        assertCorrectDeriving("map_attribute", new TestProperties().fastMapSearch(true));
+        assertCorrectDeriving("map_attribute");
     }
 
 }

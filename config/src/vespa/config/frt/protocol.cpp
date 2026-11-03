@@ -27,7 +27,6 @@ const Memory REQUEST_DEF_MD5 = "defMD5";
 const Memory REQUEST_DEF_CONTENT = "defContent";
 const Memory REQUEST_CLIENT_CONFIGID = "configId";
 const Memory REQUEST_CLIENT_HOSTNAME = "clientHostname";
-const Memory REQUEST_CONFIG_MD5 = "configMD5";
 const Memory REQUEST_CONFIG_XXHASH64 = "configXxhash64";
 const Memory REQUEST_CURRENT_GENERATION = "currentGeneration";
 const Memory REQUEST_TIMEOUT = "timeout";

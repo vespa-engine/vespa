@@ -130,6 +130,11 @@ struct MyRegExpTerm : InitTerm<RegExpTerm> {
     ~MyRegExpTerm() override;
 };
 
+struct MySparseTensorWandTerm : SparseTensorWandTerm {
+    MySparseTensorWandTerm() : SparseTensorWandTerm("qt", "fn", 0, Weight(42), 10, 0.5) {}
+    ~MySparseTensorWandTerm() override;
+};
+
 struct MyNearestNeighborTerm : NearestNeighborTerm {
     MyNearestNeighborTerm() : NearestNeighborTerm("qt", "fn", 0, Weight(42), 10, true, make_hnsw_params()) {}
     ~MyNearestNeighborTerm() override;
@@ -211,6 +216,8 @@ MyRegExpTerm::~MyRegExpTerm() = default;
 
 MyNearestNeighborTerm::~MyNearestNeighborTerm() = default;
 
+MySparseTensorWandTerm::~MySparseTensorWandTerm() = default;
+
 MyTrue::~MyTrue() = default;
 
 MyFalse::~MyFalse() = default;
@@ -246,6 +253,7 @@ struct MyQueryNodeTypes {
     using PredicateQuery = MyPredicateQuery;
     using RegExpTerm = MyRegExpTerm;
     using NearestNeighborTerm = MyNearestNeighborTerm;
+    using SparseTensorWandTerm = MySparseTensorWandTerm;
     using FalseQueryNode = MyFalse;
     using TrueQueryNode = MyTrue;
     using InTerm = MyInTerm;
@@ -286,6 +294,7 @@ public:
     void visit(MyPredicateQuery&) override { setVisited<MyPredicateQuery>(); }
     void visit(MyRegExpTerm&) override { setVisited<MyRegExpTerm>(); }
     void visit(MyNearestNeighborTerm&) override { setVisited<MyNearestNeighborTerm>(); }
+    void visit(MySparseTensorWandTerm&) override { setVisited<MySparseTensorWandTerm>(); }
     void visit(MyTrue&) override { setVisited<MyTrue>(); }
     void visit(MyFalse&) override { setVisited<MyFalse>(); }
     void visit(MyFuzzyTerm&) override { setVisited<MyFuzzyTerm>(); }
@@ -326,6 +335,7 @@ TEST(CustomTypeVisitorTest, all_query_nodes_are_visited) {
     requireThatNodeIsVisited<MyRegExpTerm>();
     requireThatNodeIsVisited<MyLocationTerm>();
     requireThatNodeIsVisited<MyNearestNeighborTerm>();
+    requireThatNodeIsVisited<MySparseTensorWandTerm>();
     requireThatNodeIsVisited<MyTrue>();
     requireThatNodeIsVisited<MyFalse>();
     requireThatNodeIsVisited<MyFuzzyTerm>();

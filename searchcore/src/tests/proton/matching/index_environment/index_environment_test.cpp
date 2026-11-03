@@ -187,9 +187,10 @@ Schema::UP schema_with_virtual_fields() {
     result->addAttributeField(SAF("person_map.value.year", DataType::INT32, CollectionType::ARRAY));
     result->addImportedAttributeField(SAF("int_map.key", DataType::INT32, CollectionType::ARRAY));
     result->addImportedAttributeField(SAF("int_map.value", DataType::INT32, CollectionType::ARRAY));
-    // Index fields do not represent virtual fields:
+    // Uri parts do not represent virtual fields:
     result->addIndexField(SIF("url.hostname", DataType::STRING, CollectionType::SINGLE));
     result->addIndexField(SIF("url.port", DataType::STRING, CollectionType::SINGLE));
+    result->add_uri_field("url");
     return result;
 }
 
@@ -207,6 +208,60 @@ TEST(IndexEnvironmentTest, virtual_fields_are_extracted_in_index_environment) {
     f.assert_virtual_field(9, "int_map");
     f.assert_virtual_field(10, "person_map");
     f.assert_virtual_field(11, "person_map.value");
+    f.assert_no_field_is_first();
+    f.assert_id_matches_index();
+}
+
+Schema::UP schema_with_virtual_fields_from_indexes() {
+    // These index fields represent struct fields with 'indexing: index' in the following fields:
+    //   * field person_array type array<person>, where the person struct has the fields name and year
+    //     (with year as a struct field attribute).
+    //   * field string_map type map<string, string>
+    //   * field files type array<file>, where the file struct has the field path (named like a uri part).
+    //
+    // 'person_array', 'string_map' and 'files' are virtual fields, while uri parts (url.hostname) are not.
+    auto result = std::make_unique<Schema>();
+    result->addAttributeField(SAF("person_array.year", DataType::INT32, CollectionType::ARRAY));
+    result->addIndexField(SIF("person_array.name", DataType::STRING, CollectionType::ARRAY));
+    result->addIndexField(SIF("string_map.key", DataType::STRING, CollectionType::ARRAY));
+    result->addIndexField(SIF("string_map.value", DataType::STRING, CollectionType::ARRAY));
+    result->addIndexField(SIF("files.path", DataType::STRING, CollectionType::ARRAY));
+    result->addIndexField(SIF("url.hostname", DataType::STRING, CollectionType::SINGLE));
+    result->add_uri_field("url");
+    return result;
+}
+
+TEST(IndexEnvironmentTest, virtual_fields_are_extracted_from_struct_field_indexes_in_index_environment) {
+    Fixture f(schema_with_virtual_fields_from_indexes());
+    ASSERT_EQ(11u, f.env.getNumFields());
+    f.assertAttributeField(1, "person_array.year", DataType::INT32, CollectionType::ARRAY);
+    f.assertField(2, "person_array.name", DataType::STRING, CollectionType::ARRAY);
+    f.assertField(3, "string_map.key", DataType::STRING, CollectionType::ARRAY);
+    f.assertField(4, "string_map.value", DataType::STRING, CollectionType::ARRAY);
+    f.assertField(5, "files.path", DataType::STRING, CollectionType::ARRAY);
+    f.assertField(6, "url.hostname", DataType::STRING, CollectionType::SINGLE);
+    EXPECT_EQ("[documentmetastore]", f.env.getField(7)->name());
+    f.assert_virtual_field(8, "files");
+    f.assert_virtual_field(9, "person_array");
+    f.assert_virtual_field(10, "string_map");
+    EXPECT_EQ(nullptr, f.env.getFieldByName("url"));
+    f.assert_no_field_is_first();
+    f.assert_id_matches_index();
+}
+
+TEST(IndexEnvironmentTest, virtual_field_does_not_replace_real_field_with_same_name) {
+    // Tests a guard: no schema from the config model has a real field named like a virtual field,
+    // so the field names used here are made up just to get such a collision.
+    auto schema = std::make_unique<Schema>();
+    schema->addAttributeField(SAF("a.b.c", DataType::STRING, CollectionType::ARRAY));
+    schema->addIndexField(SIF("a.b", DataType::STRING, CollectionType::ARRAY));
+    Fixture f(std::move(schema));
+    ASSERT_EQ(5u, f.env.getNumFields());
+    f.assertAttributeField(1, "a.b.c", DataType::STRING, CollectionType::ARRAY);
+    f.assertField(2, "a.b", DataType::STRING, CollectionType::ARRAY);
+    EXPECT_EQ("[documentmetastore]", f.env.getField(3)->name());
+    f.assert_virtual_field(4, "a");
+    EXPECT_EQ(2u, f.env.getFieldByName("a.b")->id());
     f.assert_no_field_is_first();
     f.assert_id_matches_index();
 }

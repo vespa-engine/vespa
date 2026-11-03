@@ -44,6 +44,7 @@ struct TermDataFromTermVisitor : public search::query::CustomTypeVisitor<ProtonN
     void visit(ProtonPredicateQuery&) override {}
     void visit(ProtonRegExpTerm& n) override { visitTerm(n); }
     void visit(ProtonNearestNeighborTerm& n) override { visitTerm(n); }
+    void visit(ProtonSparseTensorWandTerm& n) override { visitTerm(n); }
     void visit(ProtonFuzzyTerm& n) override { visitTerm(n); }
     void visit(ProtonInTerm& n) override { visitTerm(n); }
     void visit(ProtonWordAlternatives& n) override { visitTerm(n); }

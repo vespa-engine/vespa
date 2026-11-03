@@ -119,7 +119,7 @@ public class AttributeListTestCase extends AbstractSchemaTestCase {
 
     @Test
     void fields_in_map_of_primitive_are_derived_into_array_attributes() throws IOException, ParseException {
-        var b = new ApplicationBuilder(new TestProperties().fastMapSearch(true));
+        var b = new ApplicationBuilder(new TestProperties());
         b.addSchemaFile("src/test/derived/map_attribute/test.sd");
         b.build(true);
         Schema schema = b.getSchema();

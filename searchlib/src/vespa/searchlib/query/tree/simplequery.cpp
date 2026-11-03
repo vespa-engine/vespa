@@ -56,6 +56,8 @@ SimpleRegExpTerm::~SimpleRegExpTerm() = default;
 
 SimpleNearestNeighborTerm::~SimpleNearestNeighborTerm() = default;
 
+SimpleSparseTensorWandTerm::~SimpleSparseTensorWandTerm() = default;
+
 SimpleFuzzyTerm::~SimpleFuzzyTerm() = default;
 
 SimpleInTerm::~SimpleInTerm() = default;

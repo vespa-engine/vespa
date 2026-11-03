@@ -7,7 +7,6 @@
 #include <vespamalloc/util/callstack.h>
 #include <vespamalloc/util/index.h>
 
-#include <cassert>
 #include <csignal>
 #include <vector>
 

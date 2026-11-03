@@ -123,7 +123,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         if (cachedConfig.isPresent()) {
             RawConfig config = cachedConfig.get();
             log.log(Level.FINE, () -> "Found config " + configCacheKey + " in cache, generation=" + config.getGeneration() +
-                    ",config checksums=" + config.getPayloadChecksums());
+                    ",config checksums=" + config.getPayloadChecksum());
             log.log(Level.FINEST, () -> "input config=" + input + ",cached config=" + config);
             if (ProxyServer.configOrGenerationHasChanged(config, request)) {
                 log.log(Level.FINEST, () -> "Cached config is not equal to requested, will return it");

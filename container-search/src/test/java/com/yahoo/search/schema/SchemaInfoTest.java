@@ -2,14 +2,18 @@
 package com.yahoo.search.schema;
 
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -24,23 +28,85 @@ public class SchemaInfoTest {
     }
 
     @Test
+    void testFieldSets() {
+        var schemaA = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("a");
+        assertEquals(List.of("default", "structFields", "mixed"), List.copyOf(schemaA.fieldSets().keySet()));
+
+        var defaultFieldSet = schemaA.fieldInfo("").get();
+        assertEquals(schemaA.fieldSets().get("default"), defaultFieldSet);
+        assertEquals(Field.Type.from("string"), defaultFieldSet.type());
+        assertTrue(defaultFieldSet.isIndex());
+        assertFalse(defaultFieldSet.isAttribute());
+
+        // Properties are determined by the first field known by the schema
+        var mixed = schemaA.fieldInfo("mixed").get();
+        assertEquals(Field.Type.from("int"), mixed.type());
+        assertTrue(mixed.isAttribute());
+        assertFalse(mixed.isIndex());
+
+        // A field set without any fields known by the schema is present, but not resolved as field info
+        var structFields = schemaA.fieldSets().get("structFields");
+        assertEquals(Set.of("struct1.x", "struct1.y"), structFields.fieldNames());
+        assertNull(structFields.type());
+        assertFalse(structFields.isAttribute());
+        assertFalse(structFields.isIndex());
+        assertTrue(schemaA.fieldInfo("structFields").isEmpty());
+    }
+
+    @Test
+    void testMatchType() {
+        var schemaA = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("a");
+        assertEquals(Field.MatchType.TEXT, schemaA.fields().get("field1").matchType());
+        assertEquals(Field.MatchType.NONE, schemaA.fields().get("field2").matchType());
+        assertEquals(Field.MatchType.TEXT, schemaA.fieldInfo("default").get().matchType());
+        assertEquals(Field.MatchType.NONE, schemaA.fieldInfo("mixed").get().matchType());
+        assertEquals(Field.MatchType.NONE, schemaA.fieldSets().get("structFields").matchType());
+    }
+
+    @Test
+    void testInputExpression() {
+        var schemaA = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("a");
+        assertEquals(Optional.of("embed(e5, @input)"), schemaA.fields().get("field3").inputExpression());
+        assertEquals(Optional.empty(), schemaA.fields().get("field1").inputExpression());
+    }
+
+    @Test
+    void testExplanations() {
+        var schemaA = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("a");
+        assertEquals(Optional.of("Schema a"), schemaA.explanation());
+        assertEquals(Optional.of("Field 1\nin schema a"), schemaA.fields().get("field1").explanation());
+        assertEquals(Optional.empty(), schemaA.fields().get("field2").explanation());
+        assertEquals(Optional.of("Profile with parameters"), schemaA.rankProfiles().get("withParameters").explanation());
+        assertEquals(Optional.empty(), schemaA.rankProfiles().get("commonProfile").explanation());
+        assertEquals(Optional.empty(), SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("b").explanation());
+
+        var bOnly = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("b").rankProfiles().get("bOnly");
+        assertEquals(new RankProfile.Input("query(myTensor1)", RankProfile.InputType.fromSpec("tensor(a{},b{})"),
+                                           Optional.of(Tensor.from("tensor(a{},b{}):{{a:x,b:y}:1.0}")), Optional.of("The first tensor")),
+                     bOnly.inputDetails().get("query(myTensor1)"));
+        assertEquals(RankProfile.InputType.fromSpec("tensor(a{},b{})"), bOnly.inputs().get("query(myTensor1)"));
+        assertEquals(Optional.empty(), schemaA.rankProfiles().get("commonProfile").inputDetails().get("query(myTensor1)").explanation());
+        assertEquals(Optional.empty(), schemaA.rankProfiles().get("commonProfile").inputDetails().get("query(myTensor1)").defaultValue());
+    }
+
+    @Test
     void testFastMapSearchConfiguration() {
         var schemaConfig = new SchemaInfoConfig.Schema.Builder().name("a");
         schemaConfig.field(new SchemaInfoConfig.Schema.Field.Builder().name("plain").type("map<string,string>")
-                                                                      .index(false).attribute(false).bitPacked(false));
+                                                                      .index(false).attribute(false));
         schemaConfig.field(new SchemaInfoConfig.Schema.Field.Builder().name("fastmap").type("map<string,int>")
-                                                                      .index(false).attribute(false).bitPacked(false)
+                                                                      .index(false).attribute(false)
                                                                       .fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
                                                                                                    .lookupName("maplookup")
                                                                                                    .keyType("string").valueType("int")));
         schemaConfig.field(new SchemaInfoConfig.Schema.Field.Builder().name("fastarray").type("array<entry>")
-                                                                      .index(false).attribute(false).bitPacked(false)
+                                                                      .index(false).attribute(false)
                                                                       .fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
                                                                                                    .lookupName("arraylookup")
                                                                                                    .keyField("mykey").keyType("string")
                                                                                                    .valueField("myvalue").valueType("long")));
         schemaConfig.field(new SchemaInfoConfig.Schema.Field.Builder().name("twolookups").type("array<entry>")
-                                                                      .index(false).attribute(false).bitPacked(false)
+                                                                      .index(false).attribute(false)
                                                                       .fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
                                                                                                    .lookupName("lookup")
                                                                                                    .keyField("mykey").keyType("string")

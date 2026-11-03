@@ -28,8 +28,8 @@ public class RequestValidation {
             log.log(WARNING, "Illegal name space '" + key.getNamespace() + "'");
             return ErrorCode.ILLEGAL_NAME_SPACE;
         }
-        if (! request.getRequestConfigChecksums().valid()) {
-            log.log(WARNING, "Illegal config checksum '" + request.getRequestConfigChecksums() + "'");
+        if (! request.getRequestConfigChecksum().valid()) {
+            log.log(WARNING, "Illegal config checksum '" + request.getRequestConfigChecksum() + "'");
             return ErrorCode.ILLEGAL_CONFIG_MD5; // TODO: Use ILLEGAL_CONFIG_CHECKSUM
         }
         if (!RequestValidation.verifyGeneration(request.getRequestGeneration())) {

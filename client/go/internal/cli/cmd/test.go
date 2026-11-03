@@ -454,7 +454,7 @@ func getParameters(parametersRaw []byte, testsPath string) (map[string]string, e
 				return nil, err
 			}
 			resolvedParametersPath := filepath.Join(testsPath, parametersPath)
-			parametersRaw, err = os.ReadFile(resolvedParametersPath)
+			parametersRaw, err = readReferencedFile(testsPath, parametersPath)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read request parameters at %s: %w", resolvedParametersPath, err)
 			}
@@ -475,12 +475,30 @@ func getBody(bodyRaw []byte, testsPath string) ([]byte, error) {
 			return nil, err
 		}
 		resolvedBodyPath := filepath.Join(testsPath, bodyPath)
-		bodyRaw, err = os.ReadFile(resolvedBodyPath)
+		bodyRaw, err = readReferencedFile(testsPath, bodyPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read body file at %s: %w", resolvedBodyPath, err)
 		}
 	}
 	return bodyRaw, nil
+}
+
+// readReferencedFile reads the file at relPath relative to testsPath, refusing to follow symlinks
+// below testsPath.
+func readReferencedFile(testsPath, relPath string) ([]byte, error) {
+	basePath, err := filepath.EvalSymlinks(testsPath)
+	if err != nil {
+		return nil, err
+	}
+	path := filepath.Join(basePath, relPath)
+	resolvedPath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return nil, err
+	}
+	if resolvedPath != path {
+		return nil, fmt.Errorf("path may not contain symlinks, but '%s' does", relPath)
+	}
+	return os.ReadFile(path)
 }
 
 func validateRelativePath(relPath string) error {

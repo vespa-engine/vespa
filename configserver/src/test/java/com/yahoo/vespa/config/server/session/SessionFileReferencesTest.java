@@ -21,11 +21,7 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagId;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
-import com.yahoo.vespa.flags.RawFlag;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -38,11 +34,8 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -56,12 +49,10 @@ public class SessionFileReferencesTest {
 
     private final MockCurator curator = new MockCurator();
     private final InMemoryFlagSource flags = new InMemoryFlagSource();
-    private final AtomicInteger flagReads = new AtomicInteger();
     private FileDistributionFactory factory;
     private TenantRepository tenants;
     private ApplicationRepository applications;
     private SessionRepository sessions;
-    private boolean changeFlagDuringModelBuild;
 
     @Before
     public void setUp() throws IOException {
@@ -71,12 +62,7 @@ public class SessionFileReferencesTest {
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .build();
-        factory = new FileDistributionFactory(config, new FileDirectory(config), new InMemoryFlagSource() {
-            @Override public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
-                if (id.equals(Flags.APPLICATION_UPDATE_ROLLOUT_PERCENT.id())) flagReads.incrementAndGet();
-                return flags.fetch(id, vector);
-            }
-        });
+        factory = new FileDistributionFactory(config, new FileDirectory(config));
         tenants = new TestTenantRepository.Builder()
                 .withConfigserverConfig(config)
                 .withCurator(curator)
@@ -98,11 +84,8 @@ public class SessionFileReferencesTest {
     }
 
     @Test
-    public void prepareUsesOneSchemeAcrossModelsAndReloadKeepsSavedReferences() {
-        percent(100);
-        changeFlagDuringModelBuild = true;
+    public void prepareUsesSha256AcrossModelsAndReloadKeepsSavedReferences() {
         long session = deploy();
-        assertEquals(1, flagReads.get());
         Map<Version, FileRegistry> registries = reload(session);
         assertEquals(2, registries.size());
         for (FileRegistry registry : registries.values()) {
@@ -111,31 +94,17 @@ public class SessionFileReferencesTest {
             for (FileRegistry.Entry entry : registry.export()) assertEquals(64, entry.reference.value().length());
             assertEquals(64, registry.addBlob("model-" + firstVersion, ByteBuffer.allocate(0)).value().length());
         }
-        assertEquals(1, flagReads.get());
-
-        // The changed percentage is used by the next prepare, even for an unchanged package.
-        changeFlagDuringModelBuild = false;
-        registries = reload(deploy());
-        for (FileRegistry registry : registries.values())
-            for (FileRegistry.Entry entry : registry.export()) assertTrue(entry.reference.value().length() <= 16);
-        assertEquals(2, flagReads.get());
     }
 
     @Test
     public void reloadedSessionUsesSavedIdentityOnlyForNewEntries() {
         long session = deploy();
-        FileReference legacy = reload(session).get(firstVersion).addBlob("model-" + firstVersion, ByteBuffer.allocate(0));
-        assertTrue(legacy.value().length() <= 16);
-        percent(100);
+        FileReference saved = reload(session).get(firstVersion).addBlob("model-" + firstVersion, ByteBuffer.allocate(0));
         Map<Version, FileRegistry> registries = reload(session);
-        int before = flagReads.get();
-        assertEquals(legacy, registries.get(firstVersion).addBlob("model-" + firstVersion, ByteBuffer.allocate(0)));
-        assertEquals(before, flagReads.get());
+        assertEquals(saved, registries.get(firstVersion).addBlob("model-" + firstVersion, ByteBuffer.allocate(0)));
         FileReference added = registries.get(firstVersion).addBlob("new-blob", ByteBuffer.allocate(0));
         assertEquals(64, added.value().length());
-        percent(0);
         assertEquals(64, registries.get(secondVersion).addBlob("another-blob", ByteBuffer.allocate(0)).value().length());
-        assertEquals(before + 1, flagReads.get());
     }
 
     @Test
@@ -155,26 +124,20 @@ public class SessionFileReferencesTest {
         client.createNewSession(Instant.now());
         client.writeApplicationId(application);
         assertEquals(application, client.readApplicationId());
-        assertEquals(0, flagReads.get());
     }
 
     @Test
-    public void unchangedRedeploymentAfterMigrationKeepsReferences() {
-        FileReference legacy = reload(deploy()).get(firstVersion).addBlob("model-" + firstVersion, ByteBuffer.allocate(0));
-        percent(100);
-        FileReference migrated = reload(deploy()).get(firstVersion).addBlob("model-" + firstVersion, ByteBuffer.allocate(0));
-        assertEquals(64, migrated.value().length());
-        assertNotEquals(legacy, migrated);
-        assertEquals(migrated, reload(deploy()).get(firstVersion).addBlob("model-" + firstVersion, ByteBuffer.allocate(0)));
-        assertTrue(factory.fileDirectory().getFile(legacy).isPresent());
-        assertTrue(factory.fileDirectory().getFile(migrated).isPresent());
+    public void unchangedRedeploymentKeepsReferences() {
+        FileReference reference = reload(deploy()).get(firstVersion).addBlob("model-" + firstVersion, ByteBuffer.allocate(0));
+        assertEquals(64, reference.value().length());
+        assertEquals(reference, reload(deploy()).get(firstVersion).addBlob("model-" + firstVersion, ByteBuffer.allocate(0)));
+        assertTrue(factory.fileDirectory().getFile(reference).isPresent());
     }
 
     private TestModelFactory modelFactory(Version version) {
         return new TestModelFactory(version) {
             @Override
             public ModelCreateResult createAndValidateModel(ModelContext context, ValidationParameters validation) {
-                if (changeFlagDuringModelBuild) percent(0);
                 context.getFileRegistry().addBlob("model-" + version, ByteBuffer.wrap(new byte[] { 1, 2, 3 }));
                 return super.createAndValidateModel(context, validation);
             }
@@ -194,7 +157,4 @@ public class SessionFileReferencesTest {
         return sessions.createSessionZooKeeperClient(session).loadApplicationPackage().getFileRegistries();
     }
 
-    private void percent(int value) {
-        flags.withIntFlag(Flags.APPLICATION_UPDATE_ROLLOUT_PERCENT.id(), value);
-    }
 }

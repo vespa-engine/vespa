@@ -427,6 +427,16 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         ("rank-profile p {", "rank-profile", "keyword.declaration.vespa", "declarations"),
         ("function fn()", "function", "keyword.declaration.vespa", "declarations"),
         ("import field x", "import", "keyword.declaration.vespa", "declarations"),
+
+        # Explanations
+        ("explanation {", "explanation", "keyword.control.vespa", "explanation-block"),
+        ("explanation: Weight in kg", "explanation", "keyword.control.vespa", "explanation-inline"),
+        ("field explanation type string", "explanation", None, "explanation-block"),
+        ("field explanation type string", "explanation", None, "explanation-inline"),
+        ("    @input query(q1) The query", "@input", "storage.type.class.documentation.vespa", "explanation-tag"),
+        ("    @input query(q1) The query", "query(q1)", "variable.parameter.documentation.vespa", "explanation-tag"),
+        ("@input q2 A weight", "q2", "variable.parameter.documentation.vespa", "explanation-tag"),
+        ("Not a tag: @input q2", "@input", None, "explanation-tag"),
     ]
 
     for text, target, expected_scope, repo_key in capture_checks:

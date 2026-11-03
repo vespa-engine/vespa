@@ -10,9 +10,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.filedistribution.FileDirectory.HashScheme;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.yolean.concurrent.Memoized;
 
 import java.io.File;
@@ -31,15 +28,13 @@ public class FileDistributionFactory implements AutoCloseable {
 
     protected final ConfigserverConfig configserverConfig;
     protected final FileDirectory fileDirectory;
-    private final FlagSource flagSource;
     private final Supervisor supervisor = new Supervisor(new Transport("filedistribution"));
 
 
     @Inject
-    public FileDistributionFactory(ConfigserverConfig configserverConfig, FileDirectory fileDirectory, FlagSource flagSource) {
+    public FileDistributionFactory(ConfigserverConfig configserverConfig, FileDirectory fileDirectory) {
         this.configserverConfig = configserverConfig;
         this.fileDirectory = fileDirectory;
-        this.flagSource = flagSource;
     }
 
     public FileRegistry createFileRegistry(File applicationPackage, ApplicationId owner) {
@@ -51,12 +46,7 @@ public class FileDistributionFactory implements AutoCloseable {
     }
 
     public AddFileInterface createFileManager(File applicationDir, ApplicationId owner) {
-        int percent = Flags.APPLICATION_UPDATE_ROLLOUT_PERCENT.bindTo(flagSource).with(owner).value();
-        if (percent < 0 || percent > 100)
-            throw new IllegalArgumentException("application-update-rollout-percent must be between 0 and 100: " + percent);
-        int bucket = Math.floorMod(owner.serializedForm().hashCode(), 100);
-        HashScheme scheme = bucket < percent ? HashScheme.SHA256 : HashScheme.LEGACY;
-        return new ApplicationFileManager(applicationDir, fileDirectory, configserverConfig.hostedVespa(), Optional.of(owner), scheme);
+        return new ApplicationFileManager(applicationDir, fileDirectory, configserverConfig.hostedVespa(), Optional.of(owner));
     }
 
     // A new session has no saved identity yet. Resolve it only if the loaded registry needs a new reference.

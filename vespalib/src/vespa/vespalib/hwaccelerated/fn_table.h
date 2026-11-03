@@ -40,6 +40,9 @@ using PopulationCountFn = size_t (*)(const uint64_t* buf, size_t sz) noexcept;
 
 using ConvertBFloat16ToFloatFn = void (*)(const uint16_t* src, float* dest, size_t sz) noexcept;
 
+using PackBitsFn = void (*)(const uint8_t* raw, uint8_t* packed, uint8_t bits, size_t sz) noexcept;
+using UnpackBitsFn = void (*)(const uint8_t* packed, uint8_t* raw, uint8_t bits, size_t sz) noexcept;
+
 using OrBitFn = void (*)(void* a, const void* b, size_t bytes) noexcept;
 using AndBitFn = void (*)(void* a, const void* b, size_t bytes) noexcept;
 using AndNotBitFn = void (*)(void* a, const void* b, size_t bytes) noexcept;
@@ -84,6 +87,9 @@ struct FnTable {
 
     ConvertBFloat16ToFloatFn convert_bfloat16_to_float = nullptr;
 
+    PackBitsFn   pack_bits = nullptr;
+    UnpackBitsFn unpack_bits = nullptr;
+
     OrBitFn     or_bit = nullptr;
     AndBitFn    and_bit = nullptr;
     AndNotBitFn and_not_bit = nullptr;
@@ -108,6 +114,8 @@ struct FnTable {
         BINARY_HAMMING_DISTANCE,
         POPULATION_COUNT,
         CONVERT_BFLOAT16_TO_FLOAT,
+        PACK_BITS,
+        UNPACK_BITS,
         OR_BIT,
         AND_BIT,
         AND_NOT_BIT,
@@ -188,6 +196,8 @@ struct FnTable {
     VISITOR(BinaryHammingDistanceFn, binary_hamming_distance, FnTable::FnId::BINARY_HAMMING_DISTANCE)               \
     VISITOR(PopulationCountFn, population_count, FnTable::FnId::POPULATION_COUNT)                                   \
     VISITOR(ConvertBFloat16ToFloatFn, convert_bfloat16_to_float, FnTable::FnId::CONVERT_BFLOAT16_TO_FLOAT)          \
+    VISITOR(PackBitsFn, pack_bits, FnTable::FnId::PACK_BITS)                                                        \
+    VISITOR(UnpackBitsFn, unpack_bits, FnTable::FnId::UNPACK_BITS)                                                  \
     VISITOR(OrBitFn, or_bit, FnTable::FnId::OR_BIT)                                                                 \
     VISITOR(AndBitFn, and_bit, FnTable::FnId::AND_BIT)                                                              \
     VISITOR(AndNotBitFn, and_not_bit, FnTable::FnId::AND_NOT_BIT)                                                   \

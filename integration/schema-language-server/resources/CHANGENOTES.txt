@@ -1,5 +1,2 @@
-- Added support for the final fast map search syntax, 'fast-search-map-field <name>', on maps and arrays of struct, including float and double map values.
-- Added the 'exhex8floatencode' and 'exhex16doubleencode' indexing expressions, and completion and highlighting for all 'exhex' expressions.
-- Fixed indexing expression completions offering names that do not parse, and added completion and highlighting for more indexing expressions.
-- Added the attribute 'quantization' block, and the 'argmax' and 'argmin' aggregators and the 'in' filter in grouping.
-- Fixed a duplicated word in a diagnostic message.
+- Adds 'abs' to the indexing language
+- Adds support for explanations on schemas, fields and rank-profiles

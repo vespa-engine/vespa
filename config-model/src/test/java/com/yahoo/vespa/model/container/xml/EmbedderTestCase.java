@@ -120,6 +120,7 @@ public class EmbedderTestCase {
         assertEquals(1, onnxCfg.gpuDevice());
         assertEquals(16, onnxCfg.batching().maxSize());
         assertEquals(100, onnxCfg.batching().maxDelayMillis());
+        assertEquals(List.of(16, 64, 256), onnxCfg.batching().paddingBuckets());
         assertEquals(OnnxEvaluatorConfig.Concurrency.FactorType.Enum.relative, onnxCfg.concurrency().factorType());
         assertEquals(2.0, onnxCfg.concurrency().factor(), 0.001);
         assertTrue(onnxCfg.modelConfigOverride().isPresent());
@@ -186,6 +187,7 @@ public class EmbedderTestCase {
         assertEquals(1, onnxCfg.gpuDevice());
         assertEquals(8, onnxCfg.batching().maxSize());
         assertEquals(50, onnxCfg.batching().maxDelayMillis());
+        assertEquals(List.of(), onnxCfg.batching().paddingBuckets());
         assertEquals(OnnxEvaluatorConfig.Concurrency.FactorType.Enum.absolute, onnxCfg.concurrency().factorType());
         assertEquals(4.0, onnxCfg.concurrency().factor(), 0.001);
         assertTrue(onnxCfg.modelConfigOverride().isPresent());

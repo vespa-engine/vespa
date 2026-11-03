@@ -130,17 +130,15 @@ public class VersionSpecificationTestCase {
         VersionSpecification mostSpecific = new VersionSpecification(4, 2, 1);
         VersionSpecification leastSpecific = new VersionSpecification(4, 2);
 
-        assertEquals(mostSpecific,
-                mostSpecific.intersect(leastSpecific));
-        assertEquals(mostSpecific,
-                leastSpecific.intersect(mostSpecific));
+        assertEquals(mostSpecific, mostSpecific.intersect(leastSpecific));
+        assertEquals(mostSpecific, leastSpecific.intersect(mostSpecific));
     }
 
     @Test
     void testInvalidIntersect() {
         assertThrows(RuntimeException.class, () -> {
-            new VersionSpecification(4, 1).intersect(
-                    new VersionSpecification(4, 2));
+            new VersionSpecification(4, 1).intersect(new VersionSpecification(4, 2));
         });
     }
+
 }

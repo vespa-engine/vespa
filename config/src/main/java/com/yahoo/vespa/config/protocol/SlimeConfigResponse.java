@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -20,29 +20,29 @@ public class SlimeConfigResponse implements ConfigResponse {
     private final CompressionInfo compressionInfo;
     private final long generation;
     private final boolean applyOnRestart;
-    private final PayloadChecksums payloadChecksums;
+    private final PayloadChecksum payloadChecksum;
 
     public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload,
                                                         long generation,
                                                         boolean applyOnRestart,
-                                                        PayloadChecksums payloadChecksums) {
+                                                        PayloadChecksum payloadChecksum) {
         AbstractUtf8Array data = payload.toUtf8Array(true);
         return new SlimeConfigResponse(data,
                                        generation,
                                        applyOnRestart,
-                                       payloadChecksums,
+                                       payloadChecksum,
                                        CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
     }
 
     public SlimeConfigResponse(AbstractUtf8Array payload,
                                long generation,
                                boolean applyOnRestart,
-                               PayloadChecksums payloadChecksums,
+                               PayloadChecksum payloadChecksum,
                                CompressionInfo compressionInfo) {
         this.payload = payload;
         this.generation = generation;
         this.applyOnRestart = applyOnRestart;
-        this.payloadChecksums = payloadChecksums;
+        this.payloadChecksum = payloadChecksum;
         this.compressionInfo = compressionInfo;
     }
 
@@ -68,7 +68,7 @@ public class SlimeConfigResponse implements ConfigResponse {
     @Override
     public String toString() {
         return "generation=" + generation +  "\n" +
-                "checksums=" + payloadChecksums +  "\n" +
+                "checksums=" + payloadChecksum +  "\n" +
                 Payload.from(payload, compressionInfo).withCompression(CompressionType.UNCOMPRESSED);
     }
 
@@ -76,5 +76,5 @@ public class SlimeConfigResponse implements ConfigResponse {
     public CompressionInfo getCompressionInfo() { return compressionInfo; }
 
     @Override
-    public PayloadChecksums getPayloadChecksums() { return payloadChecksums; }
+    public PayloadChecksum getPayloadChecksum() { return payloadChecksum; }
 }

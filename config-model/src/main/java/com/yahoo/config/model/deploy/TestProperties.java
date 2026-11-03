@@ -14,6 +14,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.OpenTelemetryConfiguration;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -80,16 +81,20 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
     private boolean tritonShareOnnxSession = false;
+    private boolean tritonOnnxPooling = false;
     private OptionalInt metricsProxyHeapSizeInMib = OptionalInt.empty();
     private OptionalInt metricsProxyAdminNodeHeapSizeInMib = OptionalInt.empty();
     private boolean ignoreConnectivityChecksAtStartup = false;
     private double searchNodeReservedMemoryFactor = 0.0;
     private boolean failWhenConfiguringIndexedMapOfArray = true;
-    private boolean fastMapSearch = false;
+    private String allowStructFieldIndex = "disallow";
+    private boolean requireStrictlyIncreasingClusterStateVersions = true;
     private boolean commerceDiscovery = false;
     private boolean enableLandlock = false;
     private boolean enableLegacyFeedHandler = true;
     private boolean productDiscovery = false;
+    private boolean useMlModelImportCache = false;
+    private OpenTelemetryConfiguration opentelemetrySdk = OpenTelemetrySettings.createDisabled();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -146,16 +151,20 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return () -> useTriton; }
     @Override public ModelContext.FeatureFlag<Boolean> tritonShareOnnxSessionFlag() { return () -> tritonShareOnnxSession; }
+    @Override public ModelContext.FeatureFlag<Boolean> tritonOnnxPoolingFlag() { return () -> tritonOnnxPooling; }
     @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return () -> metricsProxyHeapSizeInMib.orElse(0); }
     @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return metricsProxyAdminNodeHeapSizeInMib; }
     @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
     @Override public double searchNodeReservedMemoryFactor() { return searchNodeReservedMemoryFactor; }
     @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
-    @Override public boolean fastMapSearch() { return fastMapSearch; }
+    @Override public String allowStructFieldIndex() { return allowStructFieldIndex; }
+    @Override public boolean requireStrictlyIncreasingClusterStateVersions() { return requireStrictlyIncreasingClusterStateVersions; }
     @Override public boolean commerceDiscovery() { return commerceDiscovery; }
     @Override public boolean enableLandlock() { return enableLandlock; }
     @Override public boolean enableLegacyFeedHandler() { return enableLegacyFeedHandler; }
     @Override public boolean productDiscovery() { return productDiscovery; }
+    @Override public boolean useMlModelImportCache() { return useMlModelImportCache; }
+    @Override public OpenTelemetryConfiguration opentelemetrySdk() { return opentelemetrySdk; }
 
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -372,6 +381,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
+    public TestProperties setTritonOnnxPooling(boolean value) {
+        this.tritonOnnxPooling = value;
+        return this;
+    }
+
     public TestProperties setIgnoreConnectivityChecksAtStartup(boolean value) {
         this.ignoreConnectivityChecksAtStartup = value;
         return this;
@@ -387,8 +401,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties fastMapSearch(boolean value) {
-        this.fastMapSearch = value;
+    public TestProperties allowStructFieldIndex(String value) {
+        this.allowStructFieldIndex = value;
         return this;
     }
 
@@ -409,6 +423,21 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties productDiscovery(boolean value) {
         this.productDiscovery = value;
+        return this;
+    }
+
+    public TestProperties useMlModelImportCache(boolean value) {
+        this.useMlModelImportCache = value;
+        return this;
+    }
+
+    public TestProperties opentelemetrySdk(OpenTelemetryConfiguration value) {
+        this.opentelemetrySdk = value;
+        return this;
+    }
+
+    public TestProperties requireStrictlyIncreasingClusterStateVersions(boolean value) {
+        this.requireStrictlyIncreasingClusterStateVersions = value;
         return this;
     }
 
@@ -452,6 +481,23 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
             this.configServerPort = configServerPort;
             this.zooKeeperPort = zooKeeperPort;
         }
+    }
+
+    public static class OpenTelemetrySettings implements OpenTelemetryConfiguration {
+        private final boolean enabled;
+        private final double samplingRatio;
+
+        public static OpenTelemetrySettings createDisabled() {
+            return new OpenTelemetrySettings(false, null);
+        }
+
+        public OpenTelemetrySettings(Boolean enabled, Double samplingRatio) {
+            this.enabled = enabled != null && enabled;
+            this.samplingRatio = samplingRatio != null ? samplingRatio : 1.0;
+        }
+
+        @Override public boolean enabled()      { return enabled; }
+        @Override public double samplingRatio() { return samplingRatio; }
     }
 
 }

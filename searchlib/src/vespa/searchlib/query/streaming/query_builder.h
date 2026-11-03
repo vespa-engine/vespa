@@ -24,12 +24,15 @@ class QueryBuilder {
     class HiddenTermsGuard;
     std::unique_ptr<QueryNode> build_nearest_neighbor_query_node(const QueryNodeResultFactory& factory,
                                                                  QueryStackIterator&           queryRep);
+    std::unique_ptr<QueryNode> build_sparse_tensor_wand_query_node(const QueryNodeResultFactory& factory,
+                                                                   QueryStackIterator&           queryRep);
     void populate_multi_term(Normalizing string_normalize_mode, MultiTerm& mt, QueryStackIterator& queryRep);
     std::unique_ptr<QueryNode> build_dot_product_term(const QueryNodeResultFactory& factory,
                                                       QueryStackIterator&           queryRep);
     std::unique_ptr<QueryNode> build_wand_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
     std::unique_ptr<QueryNode> build_weighted_set_term(const QueryNodeResultFactory& factory,
                                                        QueryStackIterator&           queryRep);
+    std::unique_ptr<QueryNode> build_in_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
     std::unique_ptr<QueryNode> build_phrase_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep);
     std::unique_ptr<QueryNode> build_equiv_term(const QueryNodeResultFactory& factory, QueryStackIterator& queryRep,
                                                 bool allow_rewrite);

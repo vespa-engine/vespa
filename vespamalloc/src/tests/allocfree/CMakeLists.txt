@@ -14,6 +14,7 @@ vespa_add_executable(vespamalloc_linklist_test_app
     producerconsumer.cpp
     ../../vespamalloc/malloc/allocchunk.cpp
     ../../vespamalloc/malloc/common.cpp
+    ../../vespamalloc/malloc/check_require.cpp
     $<TARGET_OBJECTS:vespamalloc_util>
     EXTERNAL_DEPENDS
     ${VESPA_ATOMIC_LIB}

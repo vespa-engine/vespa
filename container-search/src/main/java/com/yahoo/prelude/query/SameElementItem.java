@@ -87,18 +87,12 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
 
     /**
      * Set an element filter. The filter cannot contain null values or negative numbers.
-     * <p>
-     * The filter will be deduplicates and sorted.
+     * The filter will be deduplicated and sorted.
      */
     public void setElementFilter(List<Integer> filter) {
-        if (filter == null || filter.isEmpty()) {
-            elementFilter = new ArrayList<>();
-            return;
-        }
-        elementFilter = filter.stream()
-                .distinct()
-                .sorted()
-                .toList();
+        if (filter == null)
+            filter = new ArrayList<>();
+        elementFilter = filter.stream().distinct().sorted().toList();
     }
 
     @Override

@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-10-14
+Last updated: 2026-11-02
 
 ---
 
@@ -58,9 +58,9 @@ Last updated: 2026-10-14
 
 ---
 
-## @shikijs/vscode-textmate 10.0.2 — MIT
+## @shikijs/vscode-textmate 10.1.0 — MIT
 
-- Homepage: <https://github.com/shikijs/vscode-textmate#readme>
+- Homepage: <https://registry.npmjs.org/@shikijs/vscode-textmate/-/vscode-textmate-10.1.0.tgz>
 - Copyright Microsoft Corporation
 
 ---
@@ -216,19 +216,11 @@ Last updated: 2026-10-14
 
 ---
 
-## com.fasterxml.jackson.core 2.22.3 — Apache 2.0
+## com.fasterxml.jackson.core 2.22.4 — Apache 2.0
 
-- Homepage: <https://github.com/FasterXML/jackson>
+- Homepage: <http://fasterxml.com/>
 - Copyright 2007 Tatu Saloranta tatu.saloranta@iki.fi
 - FasterXML
-
----
-
-## com.fasterxml.woodstox 7.3.0 — Apache 2.0
-
-- Homepage: <http://fasterxml.com>
-- Copyright 2004 Tatu Saloranta
--  tatu.saloranta@iki.fi
 
 ---
 
@@ -239,33 +231,31 @@ Last updated: 2026-10-14
 
 ---
 
-## com.google.errorprone 2.50.0 — Apache 2.0
+## com.google.errorprone 2.51.0 — Apache 2.0
 
-- Homepage: <https://errorprone.info>
+- Homepage: <https://www.google.com>
 - Copyright 2015 The Error Prone Authors
+- Copyright The Error Prone
 
 ---
 
-## com.google.guava 1.0.2 — Apache 2.0
+## com.google.guava 1.0.3 — Apache 2.0
 
 - Homepage: <https://github.com/google/guava>
-- Copyright 2018 The Guava Authors
+- Copyright 2024 The Guava Authors
 
 ---
 
-## com.google.guava 33.2.1-jre — Apache 2.0
+## com.google.guava 33.7.2-jre — Apache 2.0
 
-- Homepage: <https://github.com/google/guava>
-- Copyright 2010 The Guava Authors
+- Copyright 2008 The Guava Authors
 
 ---
 
-## com.google.j2objc 3.0.0 — Apache 2.0
+## com.google.j2objc 3.1 — Apache 2.0
 
 - Homepage: <https://github.com/google/j2objc/>
-- Copyright 1995-2016 International Business Machines Corporation and others
-- Copyright 1999-2007 Apple Inc
-- Copyright 2006-2008 Google Inc
+- Copyright 2012 Google Inc
 
 ---
 
@@ -443,10 +433,10 @@ Last updated: 2026-10-14
 
 ---
 
-## github.com/fxamacker/cbor/v2 v2.9.6 — MIT
+## github.com/fxamacker/cbor/v2 v2.10.0 — MIT
 
-- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.9.6>
-- Copyright 2019-2024 Faye Amacker
+- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.10.0>
+- Copyright 2019-2026 Faye Amacker
 - Copyright 2019 Faye Amacker
 
 ---
@@ -553,9 +543,9 @@ Last updated: 2026-10-14
 
 ---
 
-## golang.org/x/net v0.61.0 — Golang BSD + Patents
+## golang.org/x/net v0.62.0 — Golang BSD + Patents
 
-- Homepage: <https://pkg.go.dev/golang.org/x/net@v0.61.0>
+- Homepage: <https://pkg.go.dev/golang.org/x/net@v0.62.0>
 - Copyright 2009 The Go Authors
 
 ---
@@ -624,7 +614,7 @@ Last updated: 2026-10-14
 
 ---
 
-## hast-util-to-html 9.0.5 — MIT
+## hast-util-to-html 9.0.6 — MIT
 
 - Homepage: <https://github.com/syntax-tree/hast-util-to-html#readme>
 - Copyright Titus Wormer
@@ -926,16 +916,10 @@ Last updated: 2026-10-14
 
 ---
 
-## org.apache.maven 4.0.0-rc-6 — Apache 2.0
-
-- Homepage: <https://maven.apache.org/ref/4.0.0-rc-6/>
-- The Apache Software Foundation
-
----
-
-## org.apache.maven.plugin-tools 3.15.2 — Apache 2.0
+## org.apache.maven.plugin-tools 3.16.0 — Apache 2.0
 
 - Homepage: <https://maven.apache.org/plugin-tools>
+- Copyright 2004-2026 The Apache Software Foundation
 - The Apache Software Foundation
 
 ---
@@ -1011,14 +995,6 @@ Last updated: 2026-10-14
 
 ---
 
-## org.codehaus.woodstox 4.3.2 — BSD 2
-
-- Homepage: <http://fasterxml.com>
-- Copyright 2008 FasterXML, LLC
-- Copyright 2008 FasterXML LLC "info@fasterxml.com" mailto:info@fasterxml.com
-
----
-
 ## org.eclipse.lsp4j 0.24.0 — Eclipse 2.0
 
 - Homepage: <https://github.com/eclipse-lsp4j/lsp4j>
@@ -1041,7 +1017,7 @@ Last updated: 2026-10-14
 
 ---
 
-## org.ow2.asm 9.11 — BSD 3
+## org.ow2.asm 9.11.1 — BSD 3
 
 - Homepage: <http://www.ow2.org/>
 - Copyright 2000-2011 INRIA
@@ -1066,13 +1042,6 @@ Last updated: 2026-10-14
 
 - Homepage: <https://mojo-executor.github.io/mojo-executor/>
 - Copyright 2008-2013 Don Brown
-
----
-
-## org.vafer 2.10 — Apache 2.0
-
-- Homepage: <http://github.com/tcurdt/jdependency>
-- Copyright 2010-2023 Copyright
 
 ---
 
@@ -1347,19 +1316,19 @@ Last updated: 2026-10-14
 
 ---
 
-## unist-util-visit 5.1.0 — MIT
+## unist-util-visit 5.2.0 — MIT
 
 - Homepage: <https://github.com/syntax-tree/unist-util-visit#readme>
 - Copyright Titus Wormer
-- Copyright 2015 Titus Wormer <tituswormer@gmail.com>
+- Copyright Titus Wormer <tituswormer@gmail.com>
 
 ---
 
-## unist-util-visit-parents 6.0.2 — MIT
+## unist-util-visit-parents 6.1.0 — MIT
 
 - Homepage: <https://github.com/syntax-tree/unist-util-visit-parents#readme>
 - Copyright Titus Wormer
-- Copyright 2016 Titus Wormer <tituswormer@gmail.com>
+- Copyright Titus Wormer <tituswormer@gmail.com>
 
 ---
 

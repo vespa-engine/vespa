@@ -867,6 +867,51 @@ def build_grammar(
         "patterns": [{"include": "#ranking-expression"}],
     }
 
+    # --- explanations: free text documentation, which may contain braces and '#' ---
+    # A rank profile explanation may end with javadoc style "@input name explanation" tags.
+    repository["explanation-tag"] = {
+        "match": r"^\s*(@input)\b(?:\s+(query\(\s*[a-zA-Z_]\w*\s*\)|[a-zA-Z_]\w*))?",
+        "captures": {
+            "1": {"name": "storage.type.class.documentation.vespa"},
+            "2": {"name": "variable.parameter.documentation.vespa"},
+        },
+    }
+    repository["explanation-braces"] = {
+        "begin": r"\{",
+        "end": r"\}",
+        "patterns": [
+            {"include": "#explanation-tag"},
+            {"include": "#explanation-braces"},
+        ],
+    }
+    repository["explanation-block"] = {
+        "name": "meta.block.explanation.vespa",
+        "contentName": "comment.block.documentation.vespa",
+        "begin": r"\b(explanation)\s*(\{)",
+        "beginCaptures": {
+            "1": {"name": "keyword.control.vespa"},
+            "2": {"name": "punctuation.section.block.begin.vespa"},
+        },
+        "end": r"(\})",
+        "endCaptures": {
+            "1": {"name": "punctuation.section.block.end.vespa"},
+        },
+        "patterns": [
+            {"include": "#explanation-tag"},
+            {"include": "#explanation-braces"},
+        ],
+    }
+    repository["explanation-inline"] = {
+        "name": "meta.inline.explanation.vespa",
+        "contentName": "comment.line.documentation.vespa",
+        "begin": r"\b(explanation)\s*(:)",
+        "beginCaptures": {
+            "1": {"name": "keyword.control.vespa"},
+            "2": {"name": "punctuation.separator.vespa"},
+        },
+        "end": r"$",
+    }
+
     # --- feature list block: match-features { ... } ---
     feature_kws = "match-features|summary-features|rank-features|sort-features"
     feature_lookbehind = r"(?<![a-zA-Z0-9_-])"
@@ -1066,6 +1111,8 @@ def build_grammar(
         {"include": "#comment"},
         {"include": "#string-double"},
         {"include": "#string-single"},
+        {"include": "#explanation-block"},
+        {"include": "#explanation-inline"},
         {"include": "#tensor-type"},
         {"include": "#indexing-block"},
         {"include": "#indexing-inline"},

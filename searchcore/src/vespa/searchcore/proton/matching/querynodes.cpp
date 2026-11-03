@@ -153,6 +153,7 @@ template struct ProtonTerm<search::query::SuffixTerm>;
 template struct ProtonTerm<search::query::WeightedSetTerm>;
 template struct ProtonTerm<search::query::DotProduct>;
 template struct ProtonTerm<search::query::WandTerm>;
+template struct ProtonTerm<search::query::SparseTensorWandTerm>;
 template struct ProtonTerm<search::query::PredicateQuery>;
 template struct ProtonTerm<search::query::RegExpTerm>;
 template struct ProtonTerm<search::query::FuzzyTerm>;

@@ -428,6 +428,45 @@ TEST(RankProgramTest, fast_forest_gbdt_evaluation_is_pure) {
     EXPECT_EQ(f1.final_executor_name(), "search::features::FastForestExecutor");
 }
 
+TEST(RankProgramTest, a_program_over_selected_seeds_calculates_a_shared_input_once) {
+    Fixture f1;
+    f1.add("mysum(track(docid),value(1))").add("track(ivalue(3))").add("mysum(track(docid),value(2))").compile();
+    QueryEnvironment queryEnv(&f1.indexEnv);
+    RankProgram      program(
+        f1.resolver->select_seeds({"mysum(track(docid),value(2))", "mysum(track(docid),value(1))"}));
+    program.setup(*f1.match_data, queryEnv, f1.overrides);
+    EXPECT_EQ(6u, program.num_executors());
+    auto seeds = program.get_seeds();
+    ASSERT_EQ(2u, seeds.num_features());
+    EXPECT_EQ(f1.track_cnt, 0u);
+    EXPECT_EQ(6.0, seeds.resolve(0).as_number(5));
+    EXPECT_EQ(7.0, seeds.resolve(1).as_number(5));
+    EXPECT_EQ(f1.track_cnt, 1u);
+    EXPECT_EQ(8.0, seeds.resolve(1).as_number(6));
+    EXPECT_EQ(7.0, seeds.resolve(0).as_number(6));
+    EXPECT_EQ(f1.track_cnt, 2u);
+}
+
+TEST(RankProgramTest, a_program_over_selected_seeds_applies_only_their_overrides) {
+    const std::string kept = "mysum(ivalue(1),double(ivalue(2),ivalue(3)),double(ivalue(2),ivalue(3)).1)";
+    Fixture           f1;
+    // The pruned seed comes first, so its executors' old indexes are reused by kept ones.
+    f1.add("mysum(ivalue(9))").add(kept);
+    f1.override("double(ivalue(2),ivalue(3))", 10.0); // default output, index 0
+    f1.override("double(ivalue(2),ivalue(3)).1", 20.0);
+    f1.override("ivalue(9)", 100.0);
+    f1.compile();
+    EXPECT_EQ(31.0, f1.get(kept));
+    EXPECT_EQ(100.0, f1.get("mysum(ivalue(9))"));
+    QueryEnvironment queryEnv(&f1.indexEnv);
+    RankProgram      program(f1.resolver->select_seeds({kept}));
+    program.setup(*f1.match_data, queryEnv, f1.overrides);
+    EXPECT_EQ(5u, program.num_executors());
+    auto seeds = program.get_seeds();
+    ASSERT_EQ(1u, seeds.num_features());
+    EXPECT_EQ(31.0, seeds.resolve(0).as_number(default_docid));
+}
+
 TEST(RankProgramTest, rank_program_can_be_profiled) {
     Fixture           f1;
     ExecutionProfiler profiler(64);

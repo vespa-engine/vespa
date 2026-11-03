@@ -44,6 +44,7 @@ public class IndexingLanguageCompletion implements CompletionProvider {
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("chunk")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("binarize")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("hash")),
+                CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("abs")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("to_array")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("to_byte")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("to_double")),

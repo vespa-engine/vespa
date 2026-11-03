@@ -108,10 +108,14 @@ public class Select implements Cloneable {
     public void setGroupingString(String grouping) {
         groupingRequests.clear();
         this.grouping = grouping;
-        // Parsing is deferred until the grouping is first accessed, as parameter references (@name) in the grouping
-        // must be resolved against the complete query properties, and this may be called while the properties of
-        // the query are still being set from the request
         this.groupingPending = true;
+        // A grouping with parameter references (@name) must be resolved against the complete query properties,
+        // and this may be called while the properties of the query are still being set from the request, so
+        // parsing it is deferred until the grouping is first accessed. A grouping without parameter references
+        // is parsed here, so that an invalid grouping fails where it is set.
+        if ( ! grouping.contains("@")) {
+            resolveGrouping();
+        }
     }
 
     /**

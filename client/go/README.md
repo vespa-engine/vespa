@@ -8,4 +8,4 @@ Prefer web service API's to this in production.
 See [Vespa documentation](https://docs.vespa.ai) and [getting started with Vespa
 CLI](https://docs.vespa.ai/en/reference/clients/vespa-cli.html).
 
-Run `make` to build and test - make sure to use go 1.18 or higher.
+Run `make` to build and test - make sure to use the Go version specified in `go.mod` or higher.

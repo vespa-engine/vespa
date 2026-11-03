@@ -48,14 +48,14 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.AllowedDependencies">
+                                <allowedDependencies>
                                     <rootProjectId>com.yahoo.vespa:maven-plugins</rootProjectId>
                                     <specFile>allowed-maven-dependencies.txt</specFile>
                                     <ignored>
                                         <i>com.yahoo.vespa:*:*</i>
                                         <i>ai.vespa:*:*</i>
                                     </ignored>
-                                </enforceDependencies>
+                                </allowedDependencies>
                             </rules>
                             <fail>true</fail>
                         </configuration>

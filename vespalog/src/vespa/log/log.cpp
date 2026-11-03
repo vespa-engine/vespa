@@ -1,10 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "log.h"
-LOG_SETUP_INDIRECT(".log", "$Id$");
 
-#undef LOG
-#define LOG LOG_INDIRECT
+#include "log-indirect.h"
+LOG_SETUP_INDIRECT(".log", "$Id$");
 
 #include "bufferedlogger.h"
 #include "control-file.h"
@@ -21,6 +20,9 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #include <cinttypes>
 #include <cstdarg>
 #include <cstring>
+
+#undef LOG
+#define LOG LOG_INDIRECT
 
 namespace ns_log {
 

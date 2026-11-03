@@ -218,6 +218,7 @@ public class ConvertParsedFields {
             Attribute.validateDataType(schema.getName(), field.getName(), field.getDataType());
         }
         parsed.getWeight().ifPresent(value -> field.setWeight(value));
+        parsed.getExplanation().ifPresent(field::setExplanation);
         parsed.getStemming().ifPresent(value -> field.setStemming(value));
         parsed.getNormalizing().ifPresent(value -> convertNormalizing(field, value));
         parsed.getIndexLinguisticsProfile().ifPresent(value -> field.setIndexLinguisticsProfile(value));
@@ -303,11 +304,6 @@ public class ConvertParsedFields {
                 throw fastMapSearchError(schema, field, "'fast-search-map-field " + lookupName + "' has the same key and value as " +
                                                         "'fast-search-map-field " + other.lookupName() + "'.");
             }
-        }
-        // error on duplicates
-        if (!properties.featureFlags().fastMapSearch()) {
-            throw fastMapSearchError(schema, field, "'fast-search-map-field' is an unfinished feature that " +
-                                                    "will not be enabled yet. Please remove this property from the field.");
         }
         field.addFastMapSearch(fastMapFields);
     }

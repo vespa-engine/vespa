@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
+import com.yahoo.component.Version;
 import org.junit.Test;
 
 import com.yahoo.text.Text;
@@ -33,6 +34,19 @@ public class ModelContextTest {
             assertTrue(
                     Text.format("Method '%s' has no default implementation", method.getName()),
                     method.isDefault());
+        }
+    }
+
+    @Test
+    public void verify_unused_since_is_a_version_with_major_and_minor() {
+        for (Method method : ModelContext.FeatureFlags.class.getDeclaredMethods()) {
+            if (ignoreMethod(method)) continue;
+            ModelContext.ModelFeatureFlag annotation = method.getDeclaredAnnotation(ModelContext.ModelFeatureFlag.class);
+            if (annotation == null || annotation.unusedSince().isEmpty()) continue;
+            assertTrue(Text.format("Method '%s' has unusedSince '%s' which must be on the form major.minor or major.minor.patch",
+                                   method.getName(), annotation.unusedSince()),
+                       annotation.unusedSince().matches("\\d+\\.\\d+(\\.\\d+)?"));
+            Version.fromString(annotation.unusedSince()); // Must also be accepted by Version
         }
     }
 

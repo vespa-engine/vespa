@@ -95,14 +95,14 @@ public class VespaImportTestCase {
     @Test
     public void testExpressionFileOutsideModelDirectoryIsRejected() {
         var e = assertThrows(IllegalArgumentException.class, () -> importModel("traversal_expression"));
-        assertEquals("function 'leak' references 'd/../../outside.expression', which is outside the model directory",
+        assertEquals("function 'outside' references 'd/../../outside.expression', which is outside the model directory",
                      rootCause(e).getMessage());
     }
 
     @Test
     public void testConstantFileOutsideModelDirectoryIsRejected() {
         var e = assertThrows(IllegalArgumentException.class, () -> importModel("traversal_constant"));
-        assertEquals("constant 'leak' references 'd/../../outside.json', which is outside the model directory",
+        assertEquals("constant 'outside' references 'd/../../outside.json', which is outside the model directory",
                      rootCause(e).getMessage());
     }
 

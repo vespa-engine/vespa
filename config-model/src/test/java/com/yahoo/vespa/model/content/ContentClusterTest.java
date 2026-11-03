@@ -1330,9 +1330,14 @@ public class ContentClusterTest extends ContentBaseTest {
 
 
     private ContentCluster createWithZone(String clusterXml, Zone zone) throws Exception {
+        return createWithZone(clusterXml, zone, true);
+    }
+
+    private ContentCluster createWithZone(String clusterXml, Zone zone, boolean requireStrictlyIncreasingClusterStateVersions) throws Exception {
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
                 .zone(zone);
-        var properties = new TestProperties().setHostedVespa(true);
+        var properties = new TestProperties().setHostedVespa(true)
+                .requireStrictlyIncreasingClusterStateVersions(requireStrictlyIncreasingClusterStateVersions);
         deployStateBuilder.properties(properties);
 
         List<String> schemas = SchemaBuilder.createSchemas("test");
@@ -1686,30 +1691,46 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(warnings, "");
     }
 
-    private void checkStrictlyIncreasingClusterStateVersionConfigForZone(Zone zone, boolean expected) throws Exception {
+    private void checkStrictlyIncreasingClusterStateVersionNotRequired(boolean requireStrictlyIncreasingClusterStateVersions) throws Exception {
+        Zone zone = new Zone(Environment.dev, RegionName.from("us-east-3"));
         String xml = new ContentClusterBuilder().docTypes("test").getXml();
-        var cc = createWithZone(xml, zone);
+        var cc = createWithZone(xml, zone, requireStrictlyIncreasingClusterStateVersions);
 
         // stor-server config should be the same for both distributors and storage nodes
+        assertFalse(getStorServerConfigForStorage(cc).require_strictly_increasing_cluster_state_versions());
+        assertFalse(getStorServerConfigForDistributor(cc).require_strictly_increasing_cluster_state_versions());
+    }
+
+    private static StorServerConfig getStorServerConfigForDistributor(ContentCluster cc) {
+        var builder = new StorServerConfig.Builder();
+        cc.getDistributorNodes().getConfig(builder);
+        return builder.build();
+    }
+
+    private static StorServerConfig getStorServerConfigForStorage(ContentCluster cc) {
         var builder = new StorServerConfig.Builder();
         cc.getStorageCluster().getConfig(builder);
-        var cfg = builder.build();
-        assertEquals(expected, cfg.require_strictly_increasing_cluster_state_versions());
-
-        builder = new StorServerConfig.Builder();
-        cc.getDistributorNodes().getConfig(builder);
-        cfg = builder.build();
-        assertEquals(expected, cfg.require_strictly_increasing_cluster_state_versions());
+        return builder.build();
     }
 
     @Test
-    void strictly_increasing_cluster_state_versions_config_is_disabled_with_a_single_cluster_controller() throws Exception {
-        // Dev zones get a single dedicated cluster controller, so the version check is unnecessary there,
-        checkStrictlyIncreasingClusterStateVersionConfigForZone(new Zone(Environment.dev, RegionName.from("us-east-3")), false);
+    void strictly_increasing_cluster_state_versions_config_is_not_required_with_a_single_cluster_controller() throws Exception {
+        checkStrictlyIncreasingClusterStateVersionNotRequired(true);
+        checkStrictlyIncreasingClusterStateVersionNotRequired(false);
     }
 
     @Test
-    void strictly_increasing_cluster_state_versions_config_is_enabled_with_multiple_cluster_controllers() {
+    void cluster_state_versions_config_with_multiple_cluster_controllers_when_flag_is_enabled() {
+        require_strict_cluster_state_versions_config_with_multiple_cluster_controllers(true, true);
+    }
+
+    @Test
+    void cluster_state_versions_config_with_multiple_cluster_controllers_when_flag_is_disabled() {
+        require_strict_cluster_state_versions_config_with_multiple_cluster_controllers(false, false);
+    }
+
+    private void require_strict_cluster_state_versions_config_with_multiple_cluster_controllers(boolean requireStrictlyIncreasingClusterStateVersions,
+                                                                                                boolean expected) {
         // Self-hosted deployments with more than one config server get one cluster controller per config server.
         // The version check must never be disabled when there is more than one cluster controller, regardless of the flag.
         List<String> sds = ApplicationPackageUtils.generateSchemas("type1");
@@ -1734,23 +1755,18 @@ public class ContentClusterTest extends ContentBaseTest {
                   </content>
                 </services>
                 """;
-        var properties = new TestProperties();
+        var properties = new TestProperties().requireStrictlyIncreasingClusterStateVersions(requireStrictlyIncreasingClusterStateVersions);
         DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(properties);
         VespaModel model = new VespaModelCreatorWithMockPkg(null, xml, sds).create(deployStateBuilder);
         assertTrue(model.getAdmin().getClusterControllers().getContainers().size() > 1);
 
         ContentCluster cc = model.getContentClusters().get("bar");
-        var builder = new StorServerConfig.Builder();
-        cc.getStorageCluster().getConfig(builder);
-        assertTrue(builder.build().require_strictly_increasing_cluster_state_versions());
-
-        builder = new StorServerConfig.Builder();
-        cc.getDistributorNodes().getConfig(builder);
-        assertTrue(builder.build().require_strictly_increasing_cluster_state_versions());
+        assertEquals(expected, getStorServerConfigForStorage(cc).require_strictly_increasing_cluster_state_versions());
+        assertEquals(expected, getStorServerConfigForDistributor(cc).require_strictly_increasing_cluster_state_versions());
     }
 
     @Test
-    void strictly_increasing_cluster_state_versions_config_is_disabled_with_a_single_config_server() throws Exception {
+    void strictly_increasing_cluster_state_versions_config_is_disabled_with_a_single_config_server_when_flag_is_enabled() throws Exception {
         // Self-hosted deployments with a single config server also get a single cluster controller,
         // so the version check can be relaxed there once the feature flag is enabled.
         List<String> sds = ApplicationPackageUtils.generateSchemas("type1");
@@ -1773,7 +1789,7 @@ public class ContentClusterTest extends ContentBaseTest {
                   </content>
                 </services>
                 """;
-        var properties = new TestProperties();
+        var properties = new TestProperties().requireStrictlyIncreasingClusterStateVersions(true);
         DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(properties);
         VespaModel model = new VespaModelCreatorWithMockPkg(null, xml, sds).create(deployStateBuilder);
         assertEquals(1, model.getAdmin().getClusterControllers().getContainers().size());

@@ -8,6 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
+import com.yahoo.vespa.indexinglanguage.expressions.AbsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.DocumentIdExpression;
@@ -114,6 +115,12 @@ public class IndexingParserTest {
             InputExpression.class,
             ExcessHex16DoubleEncodeExpression.class,
             AttributeExpression.class}, "input weight_src | exhex16doubleencode | attribute");
+
+        assertEqualsParsedFlattened(new Class<?>[] {
+            StatementExpression.class,
+            InputExpression.class,
+            AbsExpression.class,
+            AttributeExpression.class}, "input weight_src | abs | attribute");
     }
 
     private static void assertEqualsParsedFlattened(Class<?>[] expectedFlattened, String input) {

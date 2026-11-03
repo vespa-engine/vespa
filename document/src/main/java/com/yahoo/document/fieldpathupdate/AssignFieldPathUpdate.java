@@ -269,7 +269,7 @@ public class AssignFieldPathUpdate extends FieldPathUpdate {
 
     @Override
     public String toString() {
-        return "Assign: " + super.toString() + " : " + (isArithmetic() ? getExpression() : getNewValue().toString());
+        return "Assign: " + super.toString() + " : " + (isArithmetic() ? getExpression() : String.valueOf(getNewValue()));
     }
 
     public boolean getCreateMissingPath() {

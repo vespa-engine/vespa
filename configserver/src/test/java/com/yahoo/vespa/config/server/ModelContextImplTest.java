@@ -82,7 +82,8 @@ public class ModelContextImplTest {
                 OnnxModelCost.disabled(),
                 Optional.empty(),
                 new Version(7),
-                new Version(8));
+                new Version(8),
+                Optional.empty());
         assertTrue(context.applicationPackage() instanceof MockApplicationPackage);
         assertEquals(hostProvisioner, context.getHostProvisioner());
         assertFalse(context.previousModel().isPresent());

@@ -4,6 +4,15 @@ schema test {
     field id type int {
       indexing: attribute | summary 
     }
+    field vec type tensor(x{}) {
+      indexing: attribute
+    }
+    field vec2 type tensor(x{}) {
+      indexing: attribute
+    }
+  }
+  fieldset vecs {
+    fields: vec, vec2
   }
   rank-profile default {
     first-phase {
@@ -15,6 +24,14 @@ schema test {
       expression: attribute(id) + 20
     }
     match-features: attribute(id) myfunc()
+  }
+  rank-profile sparse_tensor_wand {
+    inputs {
+      query(qt) tensor(x{})
+    }
+    first-phase {
+      expression: rawScore(vec) + 1000 * rawScore(vec2)
+    }
   }
 }
 

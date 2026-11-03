@@ -20,6 +20,7 @@ vespa_add_library(searchlib_query_streaming OBJECT
     querynoderesultbase.cpp
     queryterm.cpp
     same_element_query_node.cpp
+    sparse_tensor_wand_query_node.cpp
     wand_term.cpp
     weighted_set_term.cpp
     regexp_term.cpp

@@ -465,6 +465,20 @@ public class SelectTestCase {
     }
 
     @Test
+    void testDocumentFrequency() {
+        assertParseFail("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"documentFrequency\" : {\"frequency\" : 13} } } }",
+                new IllegalArgumentException("Map annotation 'documentFrequency' must contain an entry with key 'count'."));
+        assertParseFail("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"documentFrequency\" : {\"count\" : 101} } } }",
+                new IllegalArgumentException("Map annotation 'documentFrequency' must contain an entry with key 'frequency'."));
+        assertParseFail("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"documentFrequency\" : {\"frequency\" : 13.5, \"count\" : 101} } } }",
+                new IllegalArgumentException("Expected Long or Integer for entry 'frequency' in map annotation 'documentFrequency', got DOUBLE."));
+        assertParseFail("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"documentFrequency\" : {\"frequency\" : \"13\", \"count\" : 101} } } }",
+                new IllegalArgumentException("Expected Long or Integer for entry 'frequency' in map annotation 'documentFrequency', got STRING."));
+        assertParseFail("{ \"contains\": { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"documentFrequency\" : 13 } } }",
+                new IllegalArgumentException("Expected an object for annotation 'documentFrequency', got LONG."));
+    }
+
+    @Test
     void testSameElement() {
         assertParse("{ \"contains\": [ \"baz\", {\"sameElement\" : [ { \"contains\" : [\"f1\", \"a\"] }, { \"contains\" : [\"f2\", \"b\"] } ]} ] }",
                 "baz:{f1:a f2:b}");
@@ -754,6 +768,16 @@ public class SelectTestCase {
                 "NEAREST_NEIGHBOR {field=f3field,queryTensorName=q4prop,targetHits=37,distanceThreshold=100100.25,hnsw.exploreAdditionalHits=42}");
         assertParse("{ \"nearestNeighbor\": { \"children\" : [ \"f3field\", \"q4prop\" ], \"attributes\" : {\"totalTargetHits\": 100, \"minTargetHits\": 11, \"hnsw.exploreAdditionalHits\": 42, \"distanceThreshold\": 100100.25 } }}",
                     "NEAREST_NEIGHBOR {field=f3field,queryTensorName=q4prop,totalTargetHits=100,minTargetHits=11,distanceThreshold=100100.25,hnsw.exploreAdditionalHits=42}");
+    }
+
+    @Test
+    void testSparseTensorWand() {
+        assertParse("{ \"sparseTensorWand\": [ \"f1field\", \"q2prop\" ] }",
+                    "SPARSE_TENSOR_WAND {field=f1field,queryTensorName=q2prop}");
+        assertParse("{ \"sparseTensorWand\": { \"children\" : [ \"f3field\", \"q4prop\" ], \"attributes\" : {\"targetHits\": 37, \"scoreThreshold\": 1.5 } }}",
+                    "SPARSE_TENSOR_WAND {field=f3field,queryTensorName=q4prop,targetHits=37,scoreThreshold=1.5}");
+        assertParse("{ \"sparseTensorWand\": { \"children\" : [ \"f3field\", \"q4prop\" ], \"attributes\" : {\"totalTargetHits\": 1000 } }}",
+                    "SPARSE_TENSOR_WAND {field=f3field,queryTensorName=q4prop,totalTargetHits=1000}");
     }
 
     @Test
@@ -1241,10 +1265,10 @@ public class SelectTestCase {
         Query query = new Query();
         query.getSelect().setGroupingString(grouping);
 
-        var e = assertThrows(IllegalArgumentException.class, () -> query.getSelect().getGrouping());
+        var e = assertThrows(IllegalInputException.class, () -> query.getSelect().getGrouping());
         assertTrue(Exceptions.toMessageString(e).contains("Input 'max' is not set"), Exceptions.toMessageString(e));
         // Still failing on repeated access, with the same error, rather than silently returning no grouping
-        e = assertThrows(IllegalArgumentException.class, () -> query.getSelect().getGrouping());
+        e = assertThrows(IllegalInputException.class, () -> query.getSelect().getGrouping());
         assertTrue(Exceptions.toMessageString(e).contains("Input 'max' is not set"), Exceptions.toMessageString(e));
 
         query.properties().set("max", "3");
@@ -1257,6 +1281,15 @@ public class SelectTestCase {
         query.properties().set("max", "4");
         assertEquals("all(group(b) max(3) each(output(count())))",
                      query.getSelect().getGrouping().get(1).getRootOperation().toString());
+    }
+
+    /** A grouping without parameter references is parsed when it is set, so an invalid one fails right there. */
+    @Test
+    void testGroupingWithoutParametersFailsWhenSet() {
+        String grouping = "[ { \"all\" : { \"group\" : \"a\", \"max\" : \"0\", \"each\" : { \"output\" : \"count()\" } } } ]";
+        Query query = new Query();
+        var e = assertThrows(IllegalInputException.class, () -> query.getSelect().setGroupingString(grouping));
+        assertEquals("max must be a positive number, but got 0", e.getMessage());
     }
 
     @Test

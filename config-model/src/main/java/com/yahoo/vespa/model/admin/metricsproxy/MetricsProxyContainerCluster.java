@@ -206,7 +206,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
             builder.service(HOST_LIFE_SERVICE, s -> s
                     .dimension(PublicDimensions.HOSTNAME)
                     .dimension(PublicDimensions.PARENT_HOSTNAME)
-                    .dimension(PublicDimensions.OS_VERSION));
+                    .dimension(PublicDimensions.OS_VERSION)
+                    .dimension(PublicDimensions.RETIRING));
         }
     }
 

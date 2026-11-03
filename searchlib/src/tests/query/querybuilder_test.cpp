@@ -14,6 +14,7 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("querybuilder_test");
@@ -524,6 +525,11 @@ struct MyNearestNeighborTerm : NearestNeighborTerm {
     ~MyNearestNeighborTerm() override;
 };
 
+struct MySparseTensorWandTerm : SparseTensorWandTerm {
+    using SparseTensorWandTerm::SparseTensorWandTerm;
+    ~MySparseTensorWandTerm() override;
+};
+
 struct MyTrue : TrueQueryNode {
     ~MyTrue() override;
 };
@@ -598,6 +604,8 @@ MyRegExpTerm::~MyRegExpTerm() = default;
 
 MyNearestNeighborTerm::~MyNearestNeighborTerm() = default;
 
+MySparseTensorWandTerm::~MySparseTensorWandTerm() = default;
+
 MyTrue::~MyTrue() = default;
 
 MyFalse::~MyFalse() = default;
@@ -634,6 +642,7 @@ struct MyQueryNodeTypes {
     using PredicateQuery = MyPredicateQuery;
     using RegExpTerm = MyRegExpTerm;
     using NearestNeighborTerm = MyNearestNeighborTerm;
+    using SparseTensorWandTerm = MySparseTensorWandTerm;
     using TrueQueryNode = MyTrue;
     using FalseQueryNode = MyFalse;
     using FuzzyTerm = MyFuzzyTerm;
@@ -916,6 +925,50 @@ TEST(QueryBuilderTest, string_range_node_can_be_replicated) {
         Node::UP new_node = QueryTreeCreator<MyQueryNodeTypes>::replicate(*node);
         EXPECT_TRUE(checkTerm(as_node<MyStringRangeTerm>(new_node.get()), expected, view[9], id[9], weight[9]));
     }
+}
+
+namespace {
+
+Node::UP make_sparse_tensor_wand_query() {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    auto& term = builder.add_sparse_tensor_wand_term("query_tensor", "doc_tensor", id[3], weight[5], 17, 2.5);
+    term.setRanked(false);
+    return builder.build();
+}
+
+template <typename NodeType> void check_sparse_tensor_wand_term(Node* node) {
+    auto* term = as_node<NodeType>(node);
+    ASSERT_TRUE(term != nullptr);
+    EXPECT_EQ("query_tensor", term->get_query_tensor_name());
+    EXPECT_EQ("doc_tensor", term->getView());
+    EXPECT_EQ(id[3], term->getId());
+    EXPECT_EQ(weight[5].percent(), term->getWeight().percent());
+    EXPECT_EQ(17u, term->get_target_num_hits());
+    EXPECT_EQ(2.5, term->get_score_threshold());
+    EXPECT_FALSE(term->isRanked());
+}
+
+} // namespace
+
+TEST(QueryBuilderTest, sparse_tensor_wand_node_survives_protobuf_round_trip) {
+    Node::UP        node = make_sparse_tensor_wand_query();
+    QueryToProtobuf converter;
+    auto            proto_query_tree = converter.serialize(*node);
+    auto            serialized_query_tree =
+        SerializedQueryTree::fromProtobuf(std::make_unique<decltype(proto_query_tree)>(proto_query_tree));
+    auto new_node = serialized_query_tree->apply(QueryTreeCreator<SimpleQueryNodeTypes>());
+    check_sparse_tensor_wand_term<SparseTensorWandTerm>(new_node.get());
+}
+
+TEST(QueryBuilderTest, sparse_tensor_wand_node_can_be_replicated) {
+    Node::UP node = make_sparse_tensor_wand_query();
+    Node::UP new_node = QueryTreeCreator<MyQueryNodeTypes>::replicate(*node);
+    check_sparse_tensor_wand_term<MySparseTensorWandTerm>(new_node.get());
+}
+
+TEST(QueryBuilderTest, sparse_tensor_wand_node_cannot_be_stack_dumped) {
+    Node::UP node = make_sparse_tensor_wand_query();
+    EXPECT_THROW(StackDumpCreator::create(*node), vespalib::IllegalArgumentException);
 }
 
 TEST(QueryBuilderTest, require_that_empty_intermediate_node_can_be_added) {

@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 
 /**
  * Interface for config requests used by clients.
@@ -59,11 +59,11 @@ public interface JRTClientConfigRequest extends JRTConfigRequest {
     boolean responseIsApplyOnRestart();
 
     /**
-     * Gets the config checksums of the config returned by the server. Returns an empty string if no response has been returned.
+     * Gets the config checksum of the config returned by the server. Returns an empty string if no response has been returned.
      *
      * @return a config checksum.
      */
-    PayloadChecksums getNewChecksums();
+    PayloadChecksum getNewChecksum();
 
     /**
      * Test whether or not the response contains an updated config or not.

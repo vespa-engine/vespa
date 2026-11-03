@@ -5,7 +5,6 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.filedistribution.FileDirectory.HashScheme;
 import net.jpountz.lz4.LZ4FrameOutputStream;
 
 import java.io.Closeable;
@@ -32,14 +31,12 @@ public class ApplicationFileManager implements AddFileInterface {
     private final FileDirectory fileDirectory;
     private final boolean isHosted;
     private final Optional<ApplicationId> owner;
-    private final HashScheme hashScheme;
 
-    ApplicationFileManager(File applicationDir, FileDirectory fileDirectory, boolean isHosted, Optional<ApplicationId> owner, HashScheme hashScheme) {
+    ApplicationFileManager(File applicationDir, FileDirectory fileDirectory, boolean isHosted, Optional<ApplicationId> owner) {
         this.applicationDir = applicationDir;
         this.fileDirectory = fileDirectory;
         this.isHosted = isHosted;
         this.owner = owner;
-        this.hashScheme = hashScheme;
     }
 
     @Override
@@ -49,7 +46,7 @@ public class ApplicationFileManager implements AddFileInterface {
     }
 
     private FileReference addFile(File file) throws IOException {
-        return fileDirectory.addFile(file, owner, hashScheme);
+        return fileDirectory.addFile(file, owner);
     }
 
     @Override

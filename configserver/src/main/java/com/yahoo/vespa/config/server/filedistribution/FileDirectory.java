@@ -11,8 +11,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
-import net.jpountz.xxhash.XXHash64;
-import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -22,7 +20,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -117,47 +114,7 @@ public class FileDirectory extends AbstractComponent {
 
     public File getRoot() { return root; }
 
-    public enum HashScheme {
-        LEGACY, SHA256;
-
-        static HashScheme fromReference(FileReference reference) {
-            String value = reference.value();
-            if (value.matches("[0-9a-f]{1,16}")) return LEGACY;
-            if (value.matches("[0-9a-f]{64}")) return SHA256;
-            throw new IllegalArgumentException("Unrecognized file reference: " + value);
-        }
-    }
-
-    private String computeHash(File file, HashScheme scheme) throws IOException {
-        return switch (scheme) {
-            case LEGACY -> Long.toHexString(computeLegacyHash(file));
-            case SHA256 -> computeSha256(file);
-        };
-    }
-
-    private Long computeLegacyHash(File file) throws IOException {
-        XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
-        if (file.isDirectory()) {
-            return Files.walk(file.toPath(), 100).map(path -> {
-                try {
-                    log.log(FINEST, () -> "Calculating hash for '" + path + "'");
-                    return hash(path.toFile(), hasher);
-                } catch (IOException e) {
-                    log.log(WARNING, "Failed getting hash from '" + path + "'");
-                    return 0;
-                }
-            }).mapToLong(Number::longValue).sum();
-        } else {
-            return hash(file, hasher);
-        }
-    }
-
-    private long hash(File file, XXHash64 hasher) throws IOException {
-        byte[] wholeFile = file.isDirectory() ?  new byte[0] : IOUtils.readFileBytes(file);
-        return hasher.hash(ByteBuffer.wrap(wholeFile), hasher.hash(ByteBuffer.wrap(Utf8.toBytes(file.getName())), 0));
-    }
-
-    private String computeSha256(File file) throws IOException {
+    private String computeHash(File file) throws IOException {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             try (var output = new DataOutputStream(new DigestOutputStream(OutputStream.nullOutputStream(), digest))) {
@@ -203,12 +160,12 @@ public class FileDirectory extends AbstractComponent {
         }
     }
 
-    public FileReference addFile(File source, HashScheme scheme) throws IOException {
-        return addFile(source, Optional.empty(), scheme);
+    public FileReference addFile(File source) throws IOException {
+        return addFile(source, Optional.empty());
     }
 
-    public FileReference addFile(File source, Optional<ApplicationId> owner, HashScheme scheme) throws IOException {
-        FileReference fileReference = new FileReference(computeHash(source, scheme));
+    public FileReference addFile(File source, Optional<ApplicationId> owner) throws IOException {
+        FileReference fileReference = new FileReference(computeHash(source));
         try (Lock lock = locks.lock(fileReference)) {
             return addFile(source, fileReference, owner);
         }
@@ -241,7 +198,7 @@ public class FileDirectory extends AbstractComponent {
         if ( ! destinationDir.exists()) return true;
 
         File existingFile = destinationDir.toPath().resolve(source.getName()).toFile();
-        if ( ! existingFile.exists() || ! computeHash(existingFile, HashScheme.fromReference(fileReference)).equals(fileReference.value())) {
+        if ( ! existingFile.exists() || ! computeHash(existingFile).equals(fileReference.value())) {
             log.log(WARNING, "Directory for file reference '" + fileReference.value() + "'" + ownerSuffix(owner) +
                     " has content that does not match its hash, deleting everything in " +
                     destinationDir.getAbsolutePath());

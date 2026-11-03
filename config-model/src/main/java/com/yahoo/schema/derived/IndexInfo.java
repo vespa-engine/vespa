@@ -13,6 +13,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.BooleanIndexDefinition;
 import com.yahoo.schema.document.Case;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.FastMapSearchFields;
 import com.yahoo.searchlib.document.FastMapSearch;
 import com.yahoo.schema.document.FieldSet;
@@ -169,10 +170,14 @@ public class IndexInfo extends Derived {
 
     @Override
     protected void derive(ImmutableSDField field, Schema schema) {
-        derive(field, schema, null);
+        derive(field, schema, null, false);
     }
 
-    protected void derive(ImmutableSDField field, Schema schema, ImmutableSDField parent) {
+    /**
+     * @param parent the struct or map field containing this, or null if this is a top level field
+     * @param insideMultivalue whether any ancestor of this field is multivalue (e.g. the map of a map.value.f field)
+     */
+    private void derive(ImmutableSDField field, Schema schema, ImmutableSDField parent, boolean insideMultivalue) {
         if (field.getDataType().equals(DataType.PREDICATE)) {
             addIndexCommand(field, CMD_PREDICATE);
             Index index = field.getIndex(field.getName());
@@ -193,8 +198,9 @@ public class IndexInfo extends Derived {
             addIndexAlias(alias, name);
         }
         if (field.usesStructOrMap()) {
+            boolean childInsideMultivalue = insideMultivalue || isMultivalueField(field);
             for (ImmutableSDField structField : field.getStructFields()) {
-                derive(structField, schema, field); // Recursion
+                derive(structField, schema, field, childInsideMultivalue); // Recursion
             }
         }
 
@@ -206,20 +212,22 @@ public class IndexInfo extends Derived {
             addIndexCommand(index.getName(), CMD_INDEX); // List the indices
         }
 
-        if (needLowerCase(field)) {
+        boolean doesIndexing = doesIndexing(field, schema);
+
+        if (needLowerCase(field, doesIndexing)) {
             addIndexCommand(field, CMD_LOWERCASE);
         }
 
-        if (isMultivalueField(field) || isMultivalueField(parent)) {
+        if (isMultivalueField(field) || insideMultivalue) {
             addIndexCommand(field, CMD_MULTIVALUE);
         }
 
         Attribute attribute = field.getAttribute();
-        if ((field.doesAttributing() || (attribute != null && !isPositionField(parent))) && !field.doesIndexing()) {
+        if ((field.doesAttributing() || (attribute != null && !isPositionField(parent))) && !doesIndexing) {
             addIndexCommand(field.getName(), CMD_ATTRIBUTE);
             if (attribute != null && attribute.isFastSearch())
                 addIndexCommand(field.getName(), CMD_FAST_SEARCH);
-        } else if (field.doesIndexing()) {
+        } else if (doesIndexing) {
             if (stemSomehow(field, schema)) {
                 addIndexCommand(field, CMD_STEM + ":" + field.getEffectiveSearchStemming(schema).toStemMode());
             }
@@ -269,8 +277,13 @@ public class IndexInfo extends Derived {
         return false;
     }
 
-    private static boolean needLowerCase(ImmutableSDField field) {
-        return ( field.doesIndexing() && field.getMatching().getCase() != Case.CASED) ||
+    /** Returns whether the field is indexed, including struct field indexes in indexed mode. */
+    private boolean doesIndexing(ImmutableSDField field, Schema schema) {
+        return isStreaming ? field.doesIndexing() : ComplexIndexFieldUtils.doesIndexing(field, schema);
+    }
+
+    private static boolean needLowerCase(ImmutableSDField field, boolean doesIndexing) {
+        return ( doesIndexing && field.getMatching().getCase() != Case.CASED) ||
                field.doesLowerCasing() ||
                ((field.doesAttributing() || (field.getAttribute() != null)) &&
                 isAnyChildString(field.getDataType())
@@ -404,13 +417,13 @@ public class IndexInfo extends Derived {
         Matching fieldSetMatching = fieldSet.getMatching(); // null if no explicit matching
         // First a pass over the fields to read some params to decide field settings implicitly:
         for (ImmutableSDField field : fieldSet.fields()) {
-            if (field.doesIndexing()) {
+            if (doesIndexing(field, schema)) {
                 anyIndexing = true;
             }
             if (field.doesAttributing()) {
                 anyAttributing = true;
             }
-            if (needLowerCase(field)) {
+            if (needLowerCase(field, doesIndexing(field, schema))) {
                 anyLowerCasing = true;
             }
             if (stemming(field)) {

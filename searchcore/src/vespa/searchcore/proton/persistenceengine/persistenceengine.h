@@ -10,6 +10,8 @@
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/persistence/spi/bucketexecutor.h>
 
+#include <atomic>
+#include <condition_variable>
 #include <mutex>
 #include <shared_mutex>
 
@@ -74,24 +76,27 @@ private:
     std::unordered_map<BucketSpace, ClusterState::SP, BucketSpace::hash> _clusterStates;
     mutable ExtraModifiedBuckets                                         _extraModifiedBuckets;
     mutable std::shared_mutex                                            _rwMutex;
+    [[maybe_unused]] mutable std::atomic<uint32_t>                       _pending_unique_lock;
+    [[maybe_unused]] mutable std::condition_variable_any                 _rw_cond;
     std::shared_ptr<ResourceUsageTracker>                                _resource_usage_tracker;
     std::weak_ptr<BucketExecutor>                                        _bucket_executor;
 
-    using ReadGuard = std::shared_lock<std::shared_mutex>;
-    using WriteGuard = std::unique_lock<std::shared_mutex>;
-
-    IPersistenceHandler* getHandler(const ReadGuard& guard, document::BucketSpace bucketSpace,
-                                    const DocTypeName& docType) const;
-    HandlerSnapshot getHandlerSnapshot(const WriteGuard& guard) const;
-    HandlerSnapshot getSafeHandlerSnapshot(const ReadGuard& guard, document::BucketSpace bucketSpace) const;
-    UnsafeHandlerSnapshot getHandlerSnapshot(const ReadGuard& guard, document::BucketSpace bucketSpace) const;
-    HandlerSnapshot getHandlerSnapshot(const WriteGuard& guard, document::BucketSpace bucketSpace) const;
+    IPersistenceHandler* getHandler(const std::shared_lock<std::shared_mutex>& guard,
+                                    document::BucketSpace bucketSpace, const DocTypeName& docType) const;
+    HandlerSnapshot getHandlerSnapshot(const std::unique_lock<std::shared_mutex>& guard) const;
+    HandlerSnapshot getSafeHandlerSnapshot(const std::shared_lock<std::shared_mutex>& guard,
+                                           document::BucketSpace                      bucketSpace) const;
+    UnsafeHandlerSnapshot getHandlerSnapshot(const std::shared_lock<std::shared_mutex>& guard,
+                                             document::BucketSpace                      bucketSpace) const;
+    HandlerSnapshot getHandlerSnapshot(const std::unique_lock<std::shared_mutex>& guard,
+                                       document::BucketSpace                      bucketSpace) const;
 
     void saveClusterState(BucketSpace bucketSpace, const ClusterState& calc);
     ClusterState::SP savedClusterState(BucketSpace bucketSpace) const;
     std::shared_ptr<BucketExecutor> get_bucket_executor() noexcept { return _bucket_executor.lock(); }
     void removeAsyncSingle(const Bucket&, Timestamp, const document::DocumentId& id, OperationComplete::UP);
     void removeAsyncMulti(const Bucket&, std::vector<storage::spi::IdAndTimestamp> ids, OperationComplete::UP);
+    [[nodiscard]] std::shared_lock<std::shared_mutex> get_shared_lock() const;
 
 public:
     using UP = std::unique_ptr<PersistenceEngine>;
@@ -101,10 +106,10 @@ public:
                       bool ignoreMaxBytes);
     ~PersistenceEngine() override;
 
-    IPersistenceHandler::SP putHandler(const WriteGuard&, document::BucketSpace bucketSpace,
+    IPersistenceHandler::SP putHandler(const std::unique_lock<std::shared_mutex>&, document::BucketSpace bucketSpace,
                                        const DocTypeName& docType, const IPersistenceHandler::SP& handler);
-    IPersistenceHandler::SP removeHandler(const WriteGuard&, document::BucketSpace bucketSpace,
-                                          const DocTypeName& docType);
+    IPersistenceHandler::SP removeHandler(const std::unique_lock<std::shared_mutex>&,
+                                          document::BucketSpace bucketSpace, const DocTypeName& docType);
 
     // Implements PersistenceProvider
     Result initialize() override;
@@ -134,9 +139,9 @@ public:
     void destroyIterators();
     void propagateSavedClusterState(BucketSpace bucketSpace, IPersistenceHandler& handler);
     void grabExtraModifiedBuckets(BucketSpace bucketSpace, IPersistenceHandler& handler);
-    void populateInitialBucketDB(const WriteGuard& guard, BucketSpace bucketSpace,
+    void populateInitialBucketDB(const std::unique_lock<std::shared_mutex>& guard, BucketSpace bucketSpace,
                                  IPersistenceHandler& targetHandler);
-    WriteGuard getWLock() const;
+    [[nodiscard]] std::unique_lock<std::shared_mutex> get_unique_lock() const;
     ResourceUsageTracker& get_resource_usage_tracker() noexcept { return *_resource_usage_tracker; }
     void execute(const Bucket& bucket, std::unique_ptr<BucketTask> task) override;
 };

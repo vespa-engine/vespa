@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "logger.h"
+
 #include <cstring>
 
-#include <vespa/log/log.h>
 namespace ns_log {
 
 enum Logger::LogLevel Logger::parseLevel(const char* lname) {

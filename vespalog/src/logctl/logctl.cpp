@@ -12,6 +12,7 @@
 #include <cstring>
 #include <optional>
 
+#include <vespa/log/log.h>
 LOG_SETUP("vespa-logctl");
 
 using namespace ns_log;

@@ -46,6 +46,9 @@ public class LightGBMImporter extends ModelImporter {
     }
 
     @Override
+    public boolean isCacheable() { return true; }
+
+    @Override
     public ImportedModel importModel(String modelName, String modelPath) {
         try {
             ImportedModel model = new ImportedModel(modelName, modelPath, ImportedMlModel.ModelType.LIGHTGBM);

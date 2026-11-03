@@ -70,6 +70,7 @@ public class ModelContextImpl implements ModelContext {
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
     private final OnnxModelCost onnxModelCost;
+    private final Optional<File> mlModelImportCacheDir;
 
     private final Optional<DockerImage> wantedDockerImageRepository;
 
@@ -99,7 +100,8 @@ public class ModelContextImpl implements ModelContext {
                             OnnxModelCost onnxModelCost,
                             Optional<DockerImage> wantedDockerImageRepository,
                             Version modelVespaVersion,
-                            Version wantedNodeVespaVersion) {
+                            Version wantedNodeVespaVersion,
+                            Optional<File> mlModelImportCacheDir) {
         this.applicationPackage = applicationPackage;
         this.previousModel = previousModel;
         this.deployLogger = deployLogger;
@@ -115,6 +117,7 @@ public class ModelContextImpl implements ModelContext {
         this.modelVespaVersion = modelVespaVersion;
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.onnxModelCost = onnxModelCost;
+        this.mlModelImportCacheDir = mlModelImportCacheDir;
     }
 
     @Override
@@ -157,6 +160,8 @@ public class ModelContextImpl implements ModelContext {
     public Optional<File> appDir() { return appDir; }
 
     @Override public OnnxModelCost onnxModelCost() { return onnxModelCost; }
+
+    @Override public Optional<File> mlModelImportCacheDir() { return mlModelImportCacheDir; }
 
     @Override
     public Optional<DockerImage> wantedDockerImageRepo() { return wantedDockerImageRepository; }
@@ -252,6 +257,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return flag(PermanentFlags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY).value(); }
         @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return flag(Flags.USE_TRITON); }
         @Override public ModelContext.FeatureFlag<Boolean> tritonShareOnnxSessionFlag() { return flag(Flags.TRITON_SHARE_ONNX_SESSION); }
+        @Override public ModelContext.FeatureFlag<Boolean> tritonOnnxPoolingFlag() { return flag(Flags.TRITON_ONNX_POOLING); }
         @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB); }
         @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB).value()); }
         @Override public boolean ignoreConnectivityChecksAtStartup() { return flag(PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP).value(); }
@@ -259,11 +265,13 @@ public class ModelContextImpl implements ModelContext {
         @Override public double searchNodeReservedMemoryFactor() { return flag(Flags.SEARCHNODE_RESERVED_MEMORY_FACTOR).value(); }
         @Override public boolean forceDisableOnnxModelOptimization() { return flag(PermanentFlags.FORCE_DISABLE_ONNX_MODEL_OPTIMIZATION).value(); }
         @Override public boolean failWhenConfiguringIndexedMapOfArray() { return flag(Flags.FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY).value(); }
-        @Override public boolean fastMapSearch() { return flag(Flags.FAST_MAP_SEARCH).value(); }
+        @Override public String allowStructFieldIndex() { return flag(Flags.ALLOW_STRUCT_FIELD_INDEX).value(); }
+        @Override public boolean requireStrictlyIncreasingClusterStateVersions() { return flag(PermanentFlags.REQUIRE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS).value(); }
         @Override public boolean commerceDiscovery() { return flag(Flags.COMMERCE_DISCOVERY).value(); }
         @Override public boolean enableLandlock() { return flag(Flags.ENABLE_LANDLOCK).value(); }
         @Override public boolean enableLegacyFeedHandler() { return flag(Flags.ENABLE_LEGACY_FEED_HANDLER).value(); }
         @Override public boolean productDiscovery() { return flag(Flags.PRODUCT_DISCOVERY).value(); }
+        @Override public boolean useMlModelImportCache() { return flag(Flags.USE_ML_MODEL_IMPORT_CACHE).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();

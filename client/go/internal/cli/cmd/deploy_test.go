@@ -61,7 +61,7 @@ Hint: Pass --add-cert to use the certificate of the current application
 	warning := apiKeyWarning + "Warning: Application package does not contain security/clients.pem, which is required for deployments to Vespa Cloud\n"
 	assert.Equal(t, warning+strings.Repeat("Error: please answer 'y' or 'n'\n", 3)+certError, stderr.String())
 	buf.WriteString("y\n")
-	require.Nil(t, cli.Run("deploy", "--add-cert=false", "--wait=0", pkgDir2))
+	require.Nil(t, cli.Run("deploy", "--progress=false", "--add-cert=false", "--wait=0", pkgDir2))
 	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
 
 	// Missing application certificate is detected
@@ -397,4 +397,51 @@ func assertDeployServerError(t *testing.T, status int, errorMessage string) {
 	assert.Equal(t,
 		"Error: error from deploy API at 127.0.0.1:19071 (status "+strconv.Itoa(status)+"):\n"+errorMessage+"\n",
 		stderr.String())
+}
+
+func TestDeployCloudProgress(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, false, false)
+	cli, stdout, stderr := newTestCLI(t, "NO_COLOR=true")
+	client := &mock.HTTPClient{}
+	cli.httpClient = client
+	require.NoError(t, cli.Run("config", "set", "application", "t1.a1.i1"))
+	require.NoError(t, cli.Run("config", "set", "target", "cloud"))
+	require.NoError(t, cli.Run("auth", "api-key"))
+	require.NoError(t, cli.Run("auth", "cert", pkgDir))
+	cli.isTerminal = func() bool { return true }
+	stdout.Reset()
+	stderr.Reset()
+	client.NextResponseString(200, `{"run":42}`)
+	running := `{"active":true,"status":"running","lastId":1,"steps":{"deployReal":{"status":"unfinished","startMillis":1}},"log":{"deployReal":[{"at":1,"type":"info","message":"` + provisioningMessage + `"}]}}`
+	// Waiter probes once and then waits: replayed initial logs must be harmless.
+	client.NextResponseString(200, running)
+	client.NextResponseString(200, running)
+	require.NoError(t, cli.Run("deploy", pkgDir))
+	assert.Contains(t, stderr.String(), "Application hosts")
+	assert.Contains(t, stderr.String(), "Admin hosts")
+	assert.Contains(t, stderr.String(), "Deployment run 42 is still running")
+	assert.Contains(t, stdout.String(), "vespa status deployment")
+	assert.NotContains(t, stdout.String(), "[00:")
+	assert.True(t, client.Consumed())
+	assert.Nil(t, cli.progress)
+
+	// A rejected upload does not claim that a deployment may be running.
+	stdout.Reset()
+	stderr.Reset()
+	client.NextResponseString(400, `{"error-code":"BAD_REQUEST","message":"invalid"}`)
+	require.Error(t, cli.Run("deploy", pkgDir))
+	assert.Contains(t, stderr.String(), "✗ Upload failed")
+	assert.NotContains(t, stderr.String(), "may still be running")
+	assert.Nil(t, cli.progress)
+
+	// Explicitly opting out restores plain output.
+	stdout.Reset()
+	stderr.Reset()
+	client.NextResponseString(200, `{"run":43}`)
+	client.NextResponseString(200, `{"active":false,"status":"success"}`)
+	require.NoError(t, cli.Run("deploy", "--progress=false", pkgDir))
+	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
+	assert.NotContains(t, stderr.String(), "\x1b[")
+	assert.True(t, client.Consumed())
 }

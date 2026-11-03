@@ -12,6 +12,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Wraps {@link ImportedField} as {@link ImmutableSDField}.
@@ -44,11 +45,6 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     @Override
     public boolean doesIndexing() {
         return importedField.targetField().doesIndexing();
-    }
-
-    @Override
-    public boolean doesBitPacking() {
-        return importedField.targetField().doesBitPacking();
     }
 
     @Override
@@ -222,6 +218,11 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     @Override
     public int getWeight() {
         return importedField.targetField().getWeight();
+    }
+
+    @Override
+    public Optional<String> getExplanation() {
+        return importedField.targetField().getExplanation();
     }
 
     @Override

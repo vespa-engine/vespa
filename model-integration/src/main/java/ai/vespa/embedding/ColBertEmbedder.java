@@ -114,7 +114,9 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         );
         
         var resolver = new OnnxExternalDataResolver();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig)
+                                           .withAttentionMask(attentionMaskName)
+                                           .withMaxTokens(Math.max(maxDocumentTokens, maxQueryTokens));
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
         this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
         
@@ -222,6 +224,9 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         var encoding = tokenizer.encode(text, context.getLanguage());
         runtime.sampleSequenceLength(encoding.ids().size(), context);
         TransformerInput input = buildTransformerInput(encoding.ids(), isQuery ? maxQueryTokens : maxDocumentTokens, isQuery);
+        // Use the length of the model input, not of the encoding: the input also has the special tokens,
+        // and a query is extended with [MASK] tokens up to the max query tokens
+        runtime.samplePaddedSequenceLength(evaluator.paddedLength(input.inputIds().size()), context);
         Tensor inputIdsTensor = createTensorRepresentation(input.inputIds, "d1");
         Tensor attentionMaskTensor = createTensorRepresentation(input.attentionMask, "d1");
         var inputs = Map.of(inputIdsName,

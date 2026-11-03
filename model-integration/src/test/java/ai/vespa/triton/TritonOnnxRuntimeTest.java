@@ -2,17 +2,26 @@
 package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
+import ai.vespa.modelintegration.evaluator.BatchDimensionTestModels;
+import ai.vespa.modelintegration.evaluator.EmbeddedOnnxRuntime;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.OnnxPoolingOptions;
 import com.yahoo.io.IOUtils;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.text.Text;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,12 +32,14 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -44,6 +55,7 @@ import org.junit.jupiter.api.function.ThrowingSupplier;
 class TritonOnnxRuntimeTest {
 
     private static final String MODEL_PATH = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+    private static final String MASKED_MODEL_PATH = "src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx";
 
     private static TritonServerContainer tritonContainer;
     private final OnnxEvaluatorOptions.Builder optsBuilder =
@@ -61,6 +73,22 @@ class TritonOnnxRuntimeTest {
     void load_model_with_defaults() throws IOException {
         var opts = optsBuilder.build();
         assertLoadModel("src/test/triton/config_with_defaults.pbtxt", opts);
+    }
+
+    @Test
+    void pooling_fails_at_load_on_an_image_without_pooling_support() {
+        assumeFalse(tritonContainer.isVespaImage(), "Needs the stock Triton image, which ignores the pooling parameters");
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder(testConfig(TritonConfig.ModelControlMode.EXPLICIT, false))
+                                                    .onnxPooling(true).build());
+        var pooling = new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "last_hidden_state", "attention_mask");
+        try {
+            var exception = assertThrows(IllegalArgumentException.class,
+                    () -> runtime.evaluatorOf(MASKED_MODEL_PATH, optsBuilder.build().withRuntimePooling(pooling)));
+            assertTrue(exception.getMessage().startsWith("Triton did not pool output 'last_hidden_state'"), exception.getMessage());
+            assertTrue(exception.getMessage().contains("Disable triton-onnx-pooling"), exception.getMessage());
+        } finally {
+            runtime.deconstruct();
+        }
     }
 
     @Test
@@ -276,7 +304,7 @@ class TritonOnnxRuntimeTest {
     void failed_unload_keeps_files_for_startup_cleanup() {
         var opts = optsBuilder.setModelConfigOverride(Optional.of(
                 Path.of("src/test/triton/config_with_model_config_override_input.pbtxt"))).build();
-        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts, false);
+        var modelName = TritonOnnxRuntime.generateModelName(MODEL_PATH, opts, false, Optional.empty());
         var runtimeClient = spy(createClient());
         var runtime = new TritonOnnxRuntime(testConfig(TritonConfig.ModelControlMode.EXPLICIT, false), runtimeClient);
 
@@ -336,7 +364,7 @@ class TritonOnnxRuntimeTest {
     // The model name of a runtime with separate sessions
     private static String modelName(String modelPath, OnnxEvaluatorOptions opts) {
         var resolvedOpts = TritonOnnxRuntime.resolveInstanceCount(opts, false);
-        return TritonOnnxRuntime.generateModelName(modelPath, resolvedOpts, false);
+        return TritonOnnxRuntime.generateModelName(modelPath, resolvedOpts, false, Optional.empty());
     }
 
     // expectedConfigPath == null means we expect an error during model loading
@@ -350,7 +378,7 @@ class TritonOnnxRuntimeTest {
         var testModelFilePath = Text.format("src/test/models/onnx/transformer/%s.onnx", modelBaseName);
         var resolvedOpts = evalOpts.modelConfigOverride().isPresent()
                 ? evalOpts : TritonOnnxRuntime.resolveInstanceCount(evalOpts, shareSession);
-        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, resolvedOpts, shareSession);
+        var modelName = TritonOnnxRuntime.generateModelName(testModelFilePath, resolvedOpts, shareSession, Optional.empty());
         var modelFilePath = Text.format("%s/1/model.onnx", modelName);
         var modelConfigPath = Text.format("%s/config.pbtxt", modelName);
         var runtime = createRuntime(shareSession);
@@ -375,7 +403,7 @@ class TritonOnnxRuntimeTest {
             assertEquals(expectedFilePermissions, Files.getPosixFilePermissions(modelFile));
 
             // The stock image ignores the parameter, so only the generated config can be checked there.
-            if (shareSession && tritonContainer.supportsSessionSharing()) {
+            if (shareSession && tritonContainer.isVespaImage()) {
                 assertTrue(tritonContainer.getLogs().contains("Reusing session for instance: " + modelName),
                            "Triton did not reuse the session between instances of " + modelName);
             }
@@ -423,6 +451,161 @@ class TritonOnnxRuntimeTest {
         } finally {
             runtime.deconstruct();
             Files.deleteIfExists(faultyModelPath);
+        }
+    }
+
+    // Triton fails to load a model without a batch dimension with a non-zero max batch size, so Vespa configures 0.
+    @Test
+    void load_and_evaluate_model_without_batch_dimension() {
+        var runtime = createRuntime();
+        try {
+            for (var batchingMaxSize : new int[] {1, 8}) {
+                var opts = optsBuilder.setBatchingMaxSize(batchingMaxSize).build();
+                try (var evaluator = runtime.evaluatorOf("src/test/models/onnx/add_float.onnx", opts)) {
+                    var inputs = Map.of("input1", Tensor.from("tensor<float>(d0[1]):[1]"),
+                                        "input2", Tensor.from("tensor<float>(d0[1]):[2]"));
+                    assertEquals(Tensor.from("tensor<float>(d0[1]):[3]"), evaluator.evaluate(inputs, "output"));
+                }
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    // Triton decides whether a model can batch, so it is the reference for the max batch size Vespa configures.
+    // A model without a batch dimension needs 0, or Triton fails to load it.
+    // A model with one must keep the configured size, since Triton fills in its own default and dynamic batching for 0.
+    @Test
+    void triton_loads_models_with_the_max_batch_size_their_batch_dimension_allows(@TempDir Path directory)
+            throws Exception {
+        var runtime = createRuntime();
+        var opts = optsBuilder.setBatchingMaxSize(8).build();
+        try {
+            for (var testCase : BatchDimensionTestModels.cases()) {
+                var model = Files.write(directory.resolve(testCase.name() + ".onnx"), testCase.model().toByteArray());
+                try (var evaluator = runtime.evaluatorOf(model.toString(), opts)) {
+                    assertEquals(testCase.supportsBatching() ? 8 : 0,
+                                 maxBatchSizeInTriton(modelName(model.toString(), opts)), testCase.name());
+                }
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    // ONNX Runtime infers that these models have an output without a batch dimension.
+    // OnnxStreamParser reads only declared shapes, so the first load with a non-zero max batch size fails.
+    // The runtime then loads the models again with a max batch size of 0.
+    @Test
+    void triton_loads_models_without_batching_when_only_shape_inference_finds_no_batch_dimension(@TempDir Path directory)
+            throws Exception {
+        var runtime = createRuntime();
+        var opts = optsBuilder.setBatchingMaxSize(8).build();
+        try {
+            for (var testCase : BatchDimensionTestModels.casesWhereShapeInferenceRemovesBatchDimension()) {
+                var model = Files.write(directory.resolve(testCase.name() + ".onnx"), testCase.model().toByteArray());
+                try (var evaluator = runtime.evaluatorOf(model.toString(), opts)) {
+                    assertEquals(0, maxBatchSizeInTriton(modelName(model.toString(), opts)), testCase.name());
+                }
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    // Global-phase ranking evaluates a cross-encoder in the container, with options without batching or padding.
+    @Test
+    void rerankers_score_the_same_as_with_the_embedded_runtime(@TempDir Path directory) throws Exception {
+        var inputs = Map.of("input_ids", Tensor.from("tensor(d0[1],d1[8]):[[1, 2, 3, 4, 5, 0, 0, 0]]"),
+                            "attention_mask", Tensor.from("tensor(d0[1],d1[8]):[[1, 1, 1, 1, 1, 0, 0, 0]]"));
+        var runtime = createRuntime();
+        var opts = optsBuilder.build();
+        try {
+            for (var withBatchDimension : new boolean[] {true, false}) {
+                var model = Files.write(directory.resolve("cross_encoder_" + withBatchDimension + ".onnx"),
+                                        BatchDimensionTestModels.crossEncoder(withBatchDimension).toByteArray()).toString();
+                Tensor expected;
+                try (var embedded = EmbeddedOnnxRuntime.createTestInstance().evaluatorOf(model)) {
+                    expected = embedded.evaluate(inputs, "logits");
+                }
+                try (var evaluator = runtime.evaluatorOf(model, opts)) {
+                    var actual = evaluator.evaluate(inputs, "logits");
+                    assertEquals(expected.type(), actual.type(), model);
+                    assertEquals(expected.sum().asDouble(), actual.sum().asDouble(), 1e-6, model);
+                    assertEquals(withBatchDimension ? 1 : 0, maxBatchSizeInTriton(modelName(model, opts)), model);
+                }
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void embedders_keep_batching_and_ltr_models_without_batch_dimension_get_none() throws Exception {
+        var runtime = createRuntime();
+        var opts = optsBuilder.setBatchingMaxSize(8).build();
+        var expectedMaxBatchSizes = Map.of("src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx", 8,
+                                           "src/test/models/onnx/catboost/catboost_regressor.onnx", 0);
+        try {
+            for (var entry : expectedMaxBatchSizes.entrySet()) {
+                try (var evaluator = runtime.evaluatorOf(entry.getKey(), opts)) {
+                    assertEquals(entry.getValue(), maxBatchSizeInTriton(modelName(entry.getKey(), opts)), entry.getKey());
+                }
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    private static int maxBatchSizeInTriton(String modelName) throws IOException, InterruptedException {
+        var request = HttpRequest.newBuilder(
+                URI.create(tritonContainer.getHttpEndpoint() + "/v2/models/" + modelName + "/config")).build();
+        var config = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString()).body();
+        var matcher = Pattern.compile("\"max_batch_size\":(\\d+)").matcher(config);
+        assertTrue(matcher.find(), config);
+        return Integer.parseInt(matcher.group(1));
+    }
+
+    // A tree model exported to score one row at a time, see catboost_regressor.py.
+    @Test
+    void load_and_evaluate_tree_model_without_batch_dimension() {
+        var model = "src/test/models/onnx/catboost/catboost_regressor.onnx";
+        var inputs = Map.of("features", Tensor.from("tensor<float>(d0[1],d1[4]):[[1, 2, 3, 4]]"));
+        Tensor expected;
+        try (var embedded = EmbeddedOnnxRuntime.createTestInstance().evaluatorOf(model)) {
+            expected = embedded.evaluate(inputs, "predictions");
+        }
+        // The prediction CatBoost itself makes for this row
+        assertEquals(-1.1251647, expected.sum().asDouble(), 1e-6);
+
+        var runtime = createRuntime();
+        try {
+            for (var batchingMaxSize : new int[] {1, 8}) {
+                var opts = optsBuilder.setBatchingMaxSize(batchingMaxSize).build();
+                try (var evaluator = runtime.evaluatorOf(model, opts)) {
+                    // Triton's ONNX Runtime can be another version than the embedded one and sum in another order
+                    var actual = evaluator.evaluate(inputs, "predictions");
+                    assertEquals(expected.type(), actual.type());
+                    assertEquals(expected.sum().asDouble(), actual.sum().asDouble(), 1e-6);
+                }
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void load_and_evaluate_model_with_external_data() {
+        var runtime = createRuntime();
+        var opts = optsBuilder.build();
+        var model = "src/test/models/onnx/external_data/add_with_external_data.onnx";
+        try (var evaluator = runtime.evaluatorOf(model, opts)) {
+            var inputs = Map.of("input1", Tensor.from("tensor<float>(d0[1]):[1]"),
+                                "input2", Tensor.from("tensor<float>(d0[1]):[2]"));
+            // The output adds the constant 5 stored in the external data file
+            assertEquals(Tensor.from("tensor<float>(d0[1]):[8]"), evaluator.evaluate(inputs, "output"));
+        } finally {
+            runtime.deconstruct();
         }
     }
 

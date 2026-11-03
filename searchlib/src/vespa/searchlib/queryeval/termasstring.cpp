@@ -36,6 +36,7 @@ using search::query::RangeTerm;
 using search::query::Rank;
 using search::query::RegExpTerm;
 using search::query::SameElement;
+using search::query::SparseTensorWandTerm;
 using search::query::StringRangeTerm;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
@@ -114,6 +115,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     void visit(FuzzyTerm& n) override { visitTerm(n); }
     void visit(PredicateQuery&) override { illegalVisit(); }
     void visit(NearestNeighborTerm&) override { illegalVisit(); }
+    void visit(SparseTensorWandTerm&) override { illegalVisit(); }
     void visit(TrueQueryNode&) override { illegalVisit(); }
     void visit(FalseQueryNode&) override { illegalVisit(); }
 };

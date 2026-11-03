@@ -746,8 +746,8 @@ DocumentDB::SP Proton::addDocumentDB(const document::DocumentType& docType, docu
     _documentDBMap[docTypeName] = ret;
     if (_persistenceEngine) {
         // Not allowed to get to service layer to call pause().
-        std::unique_lock<std::shared_mutex> persistenceWGuard(_persistenceEngine->getWLock());
-        auto                                persistenceHandler = std::make_shared<PersistenceHandlerProxy>(ret);
+        auto persistenceWGuard(_persistenceEngine->get_unique_lock());
+        auto persistenceHandler = std::make_shared<PersistenceHandlerProxy>(ret);
         if (!_isInitializing) {
             _persistenceEngine->propagateSavedClusterState(bucketSpace, *persistenceHandler);
             _persistenceEngine->populateInitialBucketDB(persistenceWGuard, bucketSpace, *persistenceHandler);
@@ -784,8 +784,8 @@ void Proton::removeDocumentDB(const DocTypeName& docTypeName) {
     if (_persistenceEngine) {
         {
             // Not allowed to get to service layer to call pause().
-            std::unique_lock<std::shared_mutex> persistenceWguard(_persistenceEngine->getWLock());
-            IPersistenceHandler::SP             oldHandler =
+            auto                    persistenceWguard(_persistenceEngine->get_unique_lock());
+            IPersistenceHandler::SP oldHandler =
                 _persistenceEngine->removeHandler(persistenceWguard, old->getBucketSpace(), docTypeName);
             if (_initComplete && oldHandler) {
                 // TODO: Fix race with bucket db modifying ops.

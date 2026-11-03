@@ -214,6 +214,7 @@ public enum ContainerMetrics implements VespaMetrics {
 
     EMBEDDER_LATENCY("embedder.latency", Unit.MILLISECOND, "Time spent creating an embedding"),
     EMBEDDER_SEQUENCE_LENGTH("embedder.sequence_length", Unit.ITEM, "Number of tokens in the input sequence"),
+    EMBEDDER_PADDED_SEQUENCE_LENGTH("embedder.padded_sequence_length", Unit.ITEM, "Number of tokens in the input sequence evaluated by the model, including padding to padding-buckets"),
     EMBEDDER_REQUEST_COUNT("embedder.request.count", Unit.REQUEST, "Number of embedder API requests"),
     EMBEDDER_REQUEST_FAILURE_COUNT("embedder.request.failure.count", Unit.REQUEST, "Number of failed embedder API requests"),
 

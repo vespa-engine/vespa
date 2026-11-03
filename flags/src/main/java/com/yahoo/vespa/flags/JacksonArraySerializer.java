@@ -22,7 +22,7 @@ public class JacksonArraySerializer<T> implements FlagSerializer<List<T>> {
     public List<T> deserialize(RawFlag rawFlag) {
         var list = JsonNodeRawFlag.fromJsonNode(rawFlag.asJsonNode()).<List<T>>toJacksonClass(type);
         if (!validator.test(list)) {
-            throw new IllegalArgumentException("Invalid value: " + list);
+            throw new IllegalArgumentException("Invalid value: " + rawFlag.asJson());
         }
         return list;
     }

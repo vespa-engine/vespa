@@ -36,6 +36,7 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.text.StringUtilities;
+import com.yahoo.vespa.indexinglanguage.expressions.AbsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Base64DecodeExpression;
@@ -61,6 +62,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExpressionList;
 import com.yahoo.vespa.indexinglanguage.expressions.FlattenExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GenerateExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetLanguageExpression;
@@ -249,6 +251,7 @@ TOKEN :
     <SCOLON: ";"> |
     <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
              ("'" (~["'"] | "\\'")* "'")> |
+    <ABS: "abs"> |
     <ATTRIBUTE: "attribute"> |
     <BASE64_DECODE: "base64decode"> |
     <BASE64_ENCODE: "base64encode"> |
@@ -271,6 +274,7 @@ TOKEN :
     <EXHEX16_DOUBLE_ENCODE: "exhex16doubleencode"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
+    <FOR_EACH_FIELD: "for_each_field"> |
     <GET_FIELD: "get_field"> |
     <GET_LANGUAGE: "get_language"> |
     <GET_VALUE: "get_value"> |
@@ -414,7 +418,8 @@ Expression value() :
     Expression val;
 }
 {
-    ( val = attributeExp()          |
+    ( val = absExp()                |
+      val = attributeExp()          |
       val = base64DecodeExp()       |
       val = base64EncodeExp()       |
       val = binarizeExp()           |
@@ -433,6 +438,7 @@ Expression value() :
       val = exHex16DoubleEncodeExp() |
       val = flattenExp()            |
       val = forEachExp()            |
+      val = forEachFieldExp()       |
       val = getFieldExp()           |
       val = getLanguageExp()        |
       val = getValueExp()           |
@@ -484,6 +490,12 @@ Expression value() :
       val = zcurveExp()             |
       ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
     { return val; }
+}
+
+Expression absExp() : { }
+{
+    ( <ABS> )
+    { return new AbsExpression(); }
 }
 
 Expression attributeExp() :
@@ -610,6 +622,16 @@ Expression forEachExp() :
 {
     ( <FOR_EACH> <LCURLY> nl() val = statement() nl() <RCURLY> )
     { return new ForEachExpression(val); }
+}
+
+Expression forEachFieldExp() :
+{
+    String path;
+    Expression val;
+}
+{
+    ( <FOR_EACH_FIELD> path = string() <LCURLY> nl() val = statement() nl() <RCURLY> )
+    { return new ForEachFieldExpression(path, val); }
 }
 
 Expression getFieldExp() :
@@ -1054,7 +1076,8 @@ String identifier() :
 }
 {
     ( val = string()             |
-      ( <ATTRIBUTE>              |
+      ( <ABS>                    |
+        <ATTRIBUTE>              |
         <BASE64_DECODE>          |
         <BASE64_ENCODE>          |
         <BINARIZE>               |
@@ -1071,6 +1094,7 @@ String identifier() :
         <EMBED>                  |
         <FLATTEN>                |
         <FOR_EACH>               |
+        <FOR_EACH_FIELD>         |
         <GENERATE>               |
         <GET_FIELD>              |
         <GET_LANGUAGE>           |

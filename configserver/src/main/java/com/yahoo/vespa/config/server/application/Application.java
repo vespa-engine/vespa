@@ -134,7 +134,7 @@ public class Application implements ModelResult {
 
         var payload = createPayload(configKey, def);
 
-        return responseFactory.createResponse(payload.getFirst(), applicationGeneration, payload.getSecond(), req.configPayloadChecksums());
+        return responseFactory.createResponse(payload.getFirst(), applicationGeneration, payload.getSecond(), req.configPayloadChecksum());
     }
 
     private Pair<AbstractUtf8Array, Boolean> createPayload(ConfigKey<?> configKey, ConfigDefinition def) {

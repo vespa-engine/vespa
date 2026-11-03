@@ -8,7 +8,7 @@ import com.yahoo.jrt.RequestWaiter;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.ErrorCode;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import org.junit.Test;
@@ -85,7 +85,7 @@ public class JRTConfigRequesterTest {
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);
 
         JRTConfigSubscription<SimpletypesConfig> sub = createSubscription(requester, timingValues);
-        sub.setConfig(1L, false, config(), PayloadChecksums.empty());
+        sub.setConfig(1L, false, config(), PayloadChecksum.empty());
 
         requester.request(sub);
         waitUntilResponse(connection);
@@ -109,7 +109,7 @@ public class JRTConfigRequesterTest {
         MockConnection connection = new MockConnection(new ErrorResponseHandler(com.yahoo.jrt.ErrorCode.TIMEOUT));
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);
         JRTConfigSubscription<SimpletypesConfig> sub = createSubscription(requester, timingValues);
-        sub.setConfig(1L, false, config(), PayloadChecksums.empty());
+        sub.setConfig(1L, false, config(), PayloadChecksum.empty());
 
         requester.request(sub);
         waitUntilResponse(connection);
@@ -122,7 +122,7 @@ public class JRTConfigRequesterTest {
         MockConnection connection = new MockConnection(new ErrorResponseHandler(ErrorCode.UNKNOWN_DEFINITION));
         JRTConfigRequester requester = new JRTConfigRequester(connection, timingValues);
         JRTConfigSubscription<SimpletypesConfig> sub = createSubscription(requester, timingValues);
-        sub.setConfig(1L, false, config(), PayloadChecksums.empty());
+        sub.setConfig(1L, false, config(), PayloadChecksum.empty());
 
         assertEquals(requester.getConnectionPool(), connection);
         requester.request(sub);

@@ -396,7 +396,7 @@ search::ResultSet::UP MatchThread::findMatches(MatchTools& tools) {
      * If not you will have deadlock.
      */
     match_loop_helper(tools, hits);
-    tools.release_sort_programs(); // sort RankPrograms gone before second phase
+    tools.release_sort_program(); // sort RankProgram gone before second phase
     const bool run_second_phase = match_with_ranking && tools.has_second_phase_rank();
     if (run_second_phase) {
         secondPhase(tools, hits);

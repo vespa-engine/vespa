@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.vespa.config.server.filedistribution.FileDirectory.HashScheme;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
@@ -33,14 +32,14 @@ public class FileDBRegistryTestCase {
     private static final String BOO_FILE = "/files/no_foo.json";
     private static final String BAR_FILE = "../files/no_foo.json";
     private static final String BLOB_NAME = "././myblob.name";
-    private static final FileReference BLOB_REF = new FileReference("12f292a25163dd9");
-    private static final FileReference FOO_REF = new FileReference("b5ce94ca1feae86c");
+    private static final FileReference BLOB_REF = new FileReference("758747292d100576778817dc3678211685d6d759cab01ab6f77af8308f2cb361");
+    private static final FileReference FOO_REF = new FileReference("9c25c55d470ca801676f2efbdcc6ee21f7a5c5f39bccc2f9409dc6a9b0d1115f");
 
     @Test
     public void uriResourcesNotSupportedWhenHosted() {
         assertEquals("URI type resources are not supported in this Vespa cloud",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> new ApplicationFileManager(null, null, true, Optional.empty(), HashScheme.LEGACY).addUri(null, null))
+                                  () -> new ApplicationFileManager(null, null, true, Optional.empty()).addUri(null, null))
                              .getMessage());
     }
 
@@ -49,7 +48,7 @@ public class FileDBRegistryTestCase {
         TemporaryFolder tmpDir = new TemporaryFolder();
         tmpDir.create();
         AddFileInterface fileManager =
-                new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder()), false, Optional.empty(), HashScheme.LEGACY);
+                new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder()), false, Optional.empty());
         FileRegistry fileRegistry = new FileDBRegistry(fileManager);
         assertEquals(FOO_REF, fileRegistry.addFile(FOO_FILE));
         try {
@@ -111,7 +110,7 @@ public class FileDBRegistryTestCase {
         TemporaryFolder tmpDir = new TemporaryFolder();
         tmpDir.create();
         AddFileInterface fileManager =
-                new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder()), false, Optional.empty(), HashScheme.LEGACY);
+                new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder()), false, Optional.empty());
         FileRegistry fileRegistry = new FileDBRegistry(fileManager);
         try {
             fileRegistry.addFile("files/foo\t.json");

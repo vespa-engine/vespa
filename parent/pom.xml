@@ -132,6 +132,8 @@
                     <version>${maven-failsafe-plugin.vespa.version}</version>
                     <configuration>
                         <argLine>-Djava.io.tmpdir=${project.build.directory}</argLine>
+                        <!-- failsafe 3.6.0 no longer honors -DskipTests -->
+                        <skipITs>${skipTests}</skipITs>
                     </configuration>
                 </plugin>
                 <plugin>

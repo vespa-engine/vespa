@@ -59,6 +59,9 @@
   "com.yahoo.prelude.query.SimpleIndexedItem" : [
     "com.yahoo.prelude.query.textualrepresentation.Discloser"
   ],
+  "com.yahoo.prelude.query.SparseTensorWandItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
   "com.yahoo.prelude.query.StringInItem" : [
     "com.yahoo.prelude.query.textualrepresentation.Discloser"
   ],

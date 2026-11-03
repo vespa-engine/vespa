@@ -7,6 +7,7 @@ vespa_add_library(searchlib_common OBJECT
     bitvectoriterator.cpp
     condensedbitvectors.cpp
     create_and_freeze_times.cpp
+    document_field_extractor.cpp
     documentlocations.cpp
     documentsummary.cpp
     fileheadercontext.cpp

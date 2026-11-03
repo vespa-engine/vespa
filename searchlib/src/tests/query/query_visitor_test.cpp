@@ -48,6 +48,7 @@ public:
     void visit(PredicateQuery&) override { isVisited<PredicateQuery>() = true; }
     void visit(RegExpTerm&) override { isVisited<RegExpTerm>() = true; }
     void visit(NearestNeighborTerm&) override { isVisited<NearestNeighborTerm>() = true; }
+    void visit(SparseTensorWandTerm&) override { isVisited<SparseTensorWandTerm>() = true; }
     void visit(TrueQueryNode&) override { isVisited<TrueQueryNode>() = true; }
     void visit(FalseQueryNode&) override { isVisited<FalseQueryNode>() = true; }
     void visit(FuzzyTerm&) override { isVisited<FuzzyTerm>() = true; }
@@ -92,6 +93,8 @@ TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     hnsw_params.explore_additional_hits = 321;
     checkVisit<NearestNeighborTerm>(
         new SimpleNearestNeighborTerm("query_tensor", "doc_tensor", 0, Weight(0), 123, true, hnsw_params));
+    checkVisit<SparseTensorWandTerm>(
+        new SimpleSparseTensorWandTerm("query_tensor", "doc_tensor", 0, Weight(0), 123, 0.5));
     checkVisit<TrueQueryNode>(new SimpleTrue());
     checkVisit<FalseQueryNode>(new SimpleFalse());
     checkVisit<FuzzyTerm>(new SimpleFuzzyTerm("t", "field", 0, Weight(0), 2, 0, false));

@@ -3,7 +3,6 @@
 #include "attribute_writer.h"
 
 #include "attributemanager.h"
-#include "document_field_extractor.h"
 #include "ifieldupdatecallback.h"
 #include "imported_attributes_repo.h"
 
@@ -16,6 +15,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
+#include <vespa/searchlib/common/document_field_extractor.h>
 #include <vespa/searchlib/tensor/prepare_result.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>

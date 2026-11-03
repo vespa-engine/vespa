@@ -66,6 +66,18 @@ public class RpcResourcePoolTest {
         pool.close();
     }
 
+    @Test
+    void snapshotKeepsFillRetrySelectorOfItsGeneration() {
+        var pool = new RpcResourcePool(dispatchConfig(), nodesConfig(0, 1));
+        var oldGeneration = pool.snapshot();
+
+        pool.updateNodes(nodesConfig(0));
+
+        assertEquals(2, oldGeneration.getFillRetrySelector().numNodes());
+        assertEquals(1, pool.snapshot().getFillRetrySelector().numNodes());
+        pool.close();
+    }
+
     private DispatchConfig dispatchConfig() {
         return new DispatchConfig.Builder().numJrtConnectionsPerNode(1).numJrtTransportThreads(1).build();
     }

@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
-
 /**
  * Cache that holds configs and config definitions (builtin and user config definitions).
  *
@@ -43,7 +41,7 @@ public class ServerCache {
     }
 
     private void put(ConfigCacheKey key, ConfigResponse config) {
-        PayloadChecksum xxhash64 = config.getPayloadChecksums().getForType(XXHASH64);
+        PayloadChecksum xxhash64 = config.getPayloadChecksum();
         checksums.put(key, xxhash64);
         checksumToConfig.put(xxhash64, config);
     }

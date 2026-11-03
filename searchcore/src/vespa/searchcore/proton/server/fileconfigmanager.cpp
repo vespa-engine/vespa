@@ -12,6 +12,7 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
@@ -34,6 +35,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.fileconfigmanager");
 
+using ai::vespa::telemetry::TelemetryConfig;
 using cloud::config::filedistribution::FiledistributorrpcConfig;
 using document::DocumentTypeRepo;
 using document::DocumentTypeRepoFactory;
@@ -304,6 +306,7 @@ void FileConfigManager::loadConfig(const DocumentDBConfig& currentSnapshot, sear
 
     auto filedistRpcConf = std::make_shared<FiledistributorrpcConfig>();
     auto bucketspaces = std::make_shared<BucketspacesConfig>();
+    auto telemetry = std::make_shared<TelemetryConfig>();
 
     /*
      * XXX: If non-default maintenance config is used then an extra config
@@ -320,7 +323,7 @@ void FileConfigManager::loadConfig(const DocumentDBConfig& currentSnapshot, sear
     HwInfoSampler         sampler(protonConfig.basedir, samplerCfg);
     auto                  bootstrap =
         std::make_shared<BootstrapConfig>(1, docTypesCfg, repo, _protonConfig, filedistRpcConf, bucketspaces,
-                                          currentSnapshot.getTuneFileDocumentDBSP(), sampler.hwInfo());
+                                          telemetry, currentSnapshot.getTuneFileDocumentDBSP(), sampler.hwInfo());
     dbc.forwardConfig(bootstrap);
     dbc.nextGeneration(_transport, 0ms);
 

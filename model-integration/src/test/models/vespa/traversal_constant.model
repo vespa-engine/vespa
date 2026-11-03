@@ -1,6 +1,6 @@
 model traversal_constant {
 
-    constant leak {
+    constant outside {
         type: tensor(x[3])
         file: d/../../outside.json
     }

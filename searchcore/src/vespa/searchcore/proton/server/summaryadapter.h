@@ -23,6 +23,7 @@ public:
     void put(SerialNum serialNum, const DocumentIdT lid, const Document& doc) override;
     void put(SerialNum serialNum, const DocumentIdT lid, const vespalib::nbostream& doc) override;
     void remove(SerialNum serialNum, const DocumentIdT lid) override;
+    void move(SerialNum serialNum, const DocumentIdT prevLid, const DocumentIdT lid, const Document& doc) override;
     void heartBeat(SerialNum serialNum) override;
     const search::IDocumentStore& getDocumentStore() const override;
     std::unique_ptr<document::Document> get(const DocumentIdT lid, const DocumentTypeRepo& repo) override;

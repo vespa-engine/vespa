@@ -36,7 +36,7 @@ typename AllocPoolT<MemBlockPtrT>::ChunkSList* AllocPoolT<MemBlockPtrT>::getFree
             if (ncsl) {
                 ChunkSList::linkInList(empty, ncsl);
             } else {
-                assert(ncsl != nullptr);
+                CHECK(ncsl != nullptr);
                 return nullptr;
             }
         }
@@ -102,7 +102,7 @@ AllocPoolT<MemBlockPtrT>::exchangeAlloc(SizeClassT sc, typename AllocPoolT<MemBl
 }
 
 template <typename MemBlockPtrT> void AllocPoolT<MemBlockPtrT>::validate(const void* ptr) const noexcept {
-    assert((ptr == nullptr) || _dataSegment.containsPtr(ptr));
+    CHECK((ptr == nullptr) || _dataSegment.containsPtr(ptr));
 }
 
 template <typename MemBlockPtrT>

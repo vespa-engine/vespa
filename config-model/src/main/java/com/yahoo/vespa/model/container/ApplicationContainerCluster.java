@@ -109,6 +109,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
     private final boolean tritonShareOnnxSession;
+    private final boolean tritonOnnxPooling;
     private int maxDocumentOperationRequestSizeMib = new DocumentOperationExecutorConfig.Builder().build().maxDocumentOperationRequestSizeMib();
 
     /** The heap size % of total memory available to the JVM process. */
@@ -156,6 +157,10 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                             .withClusterType(ClusterSpec.Type.container)
                                             .withClusterId(id())
                                             .value();
+        tritonOnnxPooling = deployState.featureFlags().tritonOnnxPoolingFlag()
+                                       .withClusterType(ClusterSpec.Type.container)
+                                       .withClusterId(id())
+                                       .value();
         var heapSizeFromFlag = deployState.featureFlags().heapSizePercentage(Optional.of(getName()));
         heapSizePercentageOfAvailableMemory = heapSizeFromFlag > 0
                 ? Math.min(99, heapSizeFromFlag)
@@ -463,6 +468,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     public void getConfig(TritonConfig.Builder builder) {
         builder.shareOnnxSessionBetweenInstances(tritonShareOnnxSession);
+        builder.onnxPooling(tritonOnnxPooling);
     }
 
     public static class MbusParams {

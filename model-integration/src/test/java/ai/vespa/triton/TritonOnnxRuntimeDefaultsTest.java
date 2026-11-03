@@ -2,10 +2,16 @@
 package ai.vespa.triton;
 
 import ai.vespa.llm.clients.TritonConfig;
+import ai.vespa.modelintegration.evaluator.BatchDimensionTestModels;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.OnnxPoolingOptions;
+import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.google.protobuf.TextFormat;
+import com.yahoo.jdisc.ResourceReference;
+import com.yahoo.tensor.TensorType;
 import inference.ModelConfigOuterClass.ModelConfig;
 import inference.ModelConfigOuterClass.ModelInstanceGroup.Kind;
+import onnx.Onnx;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -16,18 +22,28 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 import static ai.vespa.triton.TritonOnnxRuntime.intraOpThreadsForSeparateSessions;
 import static ai.vespa.triton.TritonOnnxRuntime.resolveInstanceCount;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
 import static inference.ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -35,16 +51,81 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
  * Tests the defaults TritonOnnxRuntime derives from options. Does not need a Triton server.
  *
  * @author glebashnik
+ * @author ingridhabrekke
  */
 class TritonOnnxRuntimeDefaultsTest {
 
     private static final String MODEL_PATH = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+    private static final String REJECTS_BATCHING = "Failed loading model: failed to load 'model' version 1: Invalid argument: " +
+            "autofill failed for model 'model': model does not support batching while non-zero max_batch_size is specified";
 
     private static final boolean SHARED_SESSION = true;
     private static final boolean SEPARATE_SESSIONS = false;
 
     private static OnnxEvaluatorOptions.Builder options(int cpuCores) {
         return new OnnxEvaluatorOptions.Builder(cpuCores);
+    }
+
+    private static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options) {
+        return TritonOnnxRuntime.shouldPadForBatching(modelPath, options, () -> TritonOnnxRuntime.declaresBatchDimension(modelPath));
+    }
+
+    @Test
+    void inputs_are_padded_only_when_batching_on_gpu() {
+        String float32 = "src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx";
+        assertTrue(shouldPadForBatching(float32, options(16).setBatchingMaxSize(8).setGpuDevice(0).build()));
+        assertTrue(shouldPadForBatching(float32, options(16).setBatchingMaxSize(8).setGpuDevice(0, true).build()));
+        assertFalse(shouldPadForBatching(float32, options(16).setBatchingMaxSize(8).build()), "Should not pad on CPU");
+        assertFalse(shouldPadForBatching(float32, options(16).setGpuDevice(0).build()), "Should not pad without batching");
+        assertFalse(shouldPadForBatching(float32, options(16).setBatchingMaxSize(0).setGpuDevice(0).build()), "Should not pad without batching");
+        assertTrue(shouldPadForBatching("not-a-local-file", options(16).setBatchingMaxSize(8).setGpuDevice(0).build()));
+    }
+
+    @Test
+    void models_without_batch_dimension_are_not_padded_since_they_are_not_batched() {
+        var options = options(16).setBatchingMaxSize(8).setGpuDevice(0).build();
+        assertFalse(shouldPadForBatching("src/test/models/onnx/add_float.onnx", options));
+        assertFalse(shouldPadForBatching("src/test/models/onnx/catboost/catboost_regressor.onnx", options));
+    }
+
+    @Test
+    void rerankers_are_padded_and_batched_only_with_a_batch_dimension(@TempDir Path directory) throws IOException {
+        var batched = Files.write(directory.resolve("cross_encoder.onnx"),
+                                  BatchDimensionTestModels.crossEncoder(true).toByteArray()).toString();
+        var fixed = Files.write(directory.resolve("cross_encoder_fixed.onnx"),
+                                BatchDimensionTestModels.crossEncoder(false).toByteArray()).toString();
+        var batchingOnGpu = options(16).setBatchingMaxSize(8).setGpuDevice(0).build();
+        assertTrue(shouldPadForBatching(batched, batchingOnGpu));
+        assertFalse(shouldPadForBatching(fixed, batchingOnGpu));
+
+        // RankProfilesConfigImporter builds these options for global-phase ranking, without batching or padding
+        var globalPhase = new OnnxEvaluatorOptions.Builder().setGpuDevice(0, false).build();
+        assertFalse(shouldPadForBatching(batched, globalPhase));
+        assertTrue(TritonOnnxRuntime.declaresBatchDimension(batched));
+        assertFalse(TritonOnnxRuntime.declaresBatchDimension(fixed));
+    }
+
+    @Test
+    void padding_is_used_with_a_model_config_override_since_it_is_configured_on_purpose(@TempDir Path directory) throws IOException {
+        String float32 = "src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx";
+        var override = Files.writeString(directory.resolve("override.pbtxt"), "max_batch_size: 8 instance_group { kind: KIND_CPU }");
+        assertTrue(shouldPadForBatching(float32, options(16).setModelConfigOverride(Optional.of(override)).build()),
+                   "The override owns the batching setup, so padding configured with it is used as is");
+    }
+
+    @Test
+    void padding_applies_by_default_since_triton_may_place_the_model_on_a_gpu() {
+        String float32 = "src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx";
+        var config = new OnnxEvaluatorConfig.Builder();
+        config.batching.maxSize(8);
+        assertTrue(shouldPadForBatching(float32, OnnxEvaluatorOptions.of(config.build(), 16)), "Should pad when no GPU device set, since Triton may place the model on a GPU.");
+        assertFalse(shouldPadForBatching(float32, OnnxEvaluatorOptions.of(config.gpuDevice(-1).build(), 16)), "Should not pad on CPU (device -1).");
+    }
+
+    @Test
+    void dynamically_quantized_models_are_not_padded() {
+        String quantized = "src/test/models/onnx/transformer/embedding_model.onnx";
+        assertFalse(shouldPadForBatching(quantized, options(16).setBatchingMaxSize(8).setGpuDevice(0).build()));
     }
 
     @Test
@@ -87,7 +168,7 @@ class TritonOnnxRuntimeDefaultsTest {
 
     private static String modelName(OnnxEvaluatorOptions options, boolean shareSession) {
         var resolvedOptions = resolveInstanceCount(options, shareSession);
-        return TritonOnnxRuntime.generateModelName(MODEL_PATH, resolvedOptions, shareSession);
+        return TritonOnnxRuntime.generateModelName(MODEL_PATH, resolvedOptions, shareSession, Optional.empty());
     }
 
     @Test
@@ -98,12 +179,16 @@ class TritonOnnxRuntimeDefaultsTest {
 
         // A fixed expected name detects changes in hashing or encoding across runs.
         assertEquals("model_98ad6a1dc766eee5",
-                     TritonOnnxRuntime.generateModelName(model.toString(), options, SHARED_SESSION));
+                     TritonOnnxRuntime.generateModelName(model.toString(), options, SHARED_SESSION, Optional.empty()));
+
+        // The pooling parameters are part of the name, in their own encoding.
+        assertEquals("model_614d5bfbd056302f",
+                     TritonOnnxRuntime.generateModelName(model.toString(), options, SHARED_SESSION, Optional.of(MEAN_POOLING)));
 
         // A model file without an extension keeps its whole name.
         var modelWithoutExtension = Files.writeString(directory.resolve("model"), "model contents");
         assertEquals("model_98ad6a1dc766eee5",
-                     TritonOnnxRuntime.generateModelName(modelWithoutExtension.toString(), options, SHARED_SESSION));
+                     TritonOnnxRuntime.generateModelName(modelWithoutExtension.toString(), options, SHARED_SESSION, Optional.empty()));
     }
 
     @Test
@@ -111,11 +196,11 @@ class TritonOnnxRuntimeDefaultsTest {
         for (var options : List.of(options(8).build(), options(8).setGpuDevice(0).build())) {
             for (boolean shareSession : List.of(SEPARATE_SESSIONS, SHARED_SESSION)) {
                 var name = assertDoesNotThrow(() ->
-                        TritonOnnxRuntime.generateModelName(MODEL_PATH, options, shareSession));
-                assertEquals(name, TritonOnnxRuntime.generateModelName(MODEL_PATH, options, shareSession));
+                        TritonOnnxRuntime.generateModelName(MODEL_PATH, options, shareSession, Optional.empty()));
+                assertEquals(name, TritonOnnxRuntime.generateModelName(MODEL_PATH, options, shareSession, Optional.empty()));
                 var defaultCount = TritonOnnxRuntime.defaultNumModelInstances(options, shareSession);
                 assertNotEquals(name, TritonOnnxRuntime.generateModelName(
-                        MODEL_PATH, options.withNumModelInstances(defaultCount), shareSession));
+                        MODEL_PATH, options.withNumModelInstances(defaultCount), shareSession, Optional.empty()));
             }
         }
     }
@@ -125,13 +210,13 @@ class TritonOnnxRuntimeDefaultsTest {
         var model = Files.writeString(directory.resolve("model.onnx"), "model contents");
         var options = options(8).build().withNumModelInstances(1);
         var originalName = TritonOnnxRuntime.generateModelName(model.toString(), options,
-                                                               SEPARATE_SESSIONS);
+                                                               SEPARATE_SESSIONS, Optional.empty());
 
         Files.writeString(model, "updated model contents");
 
         assertNotEquals(originalName,
                         TritonOnnxRuntime.generateModelName(model.toString(), options,
-                                                            SEPARATE_SESSIONS));
+                                                            SEPARATE_SESSIONS, Optional.empty()));
     }
 
     @Test
@@ -204,7 +289,7 @@ class TritonOnnxRuntimeDefaultsTest {
                 var config = Files.writeString(directory.resolve("override.pbtxt"),
                         "platform: \"onnxruntime_onnx\"\ninstance_group { " + group + " }");
                 var options = options(8).setGpuDevice(2).setModelConfigOverride(Optional.of(config)).build();
-                var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, true);
+                var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, true, Optional.empty());
                 try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options)) {
                     var generated = TextFormat.parse(Files.readString(
                             directory.resolve("repository").resolve(name).resolve("config.pbtxt")), ModelConfig.class);
@@ -212,6 +297,168 @@ class TritonOnnxRuntimeDefaultsTest {
                                  generated.getInstanceGroup(0));
                 }
             }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    // ONNX Runtime's shape inference can remove a batch dimension that the model file declares.
+    // Triton then rejects batching, and the runtime loads the model again with a max batch size of 0.
+    @Test
+    void model_is_loaded_again_without_batching_when_triton_rejects_batching(@TempDir Path directory) throws IOException {
+        var model = Files.write(directory.resolve("reduced_output.onnx"),
+                                BatchDimensionTestModels.casesWhereShapeInferenceRemovesBatchDimension().get(0).model().toByteArray()).toString();
+        var options = options(8).setBatchingMaxSize(8).build();
+        var name = TritonOnnxRuntime.generateModelName(model, resolveInstanceCount(options, true), true, Optional.empty());
+        var repository = directory.resolve("repository");
+        var client = mock(TritonOnnxClient.class);
+        doThrow(new TritonOnnxClient.TritonException(REJECTS_BATCHING)).doNothing().when(client).loadUntilModelReady(name);
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), client);
+        try (var evaluator = runtime.evaluatorOf(model, options)) {
+            verify(client, times(2)).loadUntilModelReady(name);
+            var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
+            assertEquals(0, config.getMaxBatchSize());
+            assertFalse(config.hasDynamicBatching());
+            // Padding follows the batch dimension Triton loaded the model with, not the one in the model file
+            assertEquals(Optional.of(false), runtime.supportsBatching(name));
+            assertTrue(TritonOnnxRuntime.declaresBatchDimension(model));
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void model_is_not_loaded_again_for_other_errors_or_with_a_model_config_override(@TempDir Path directory)
+            throws IOException {
+        var model = Files.write(directory.resolve("reduced_output.onnx"),
+                                BatchDimensionTestModels.casesWhereShapeInferenceRemovesBatchDimension().get(0).model().toByteArray()).toString();
+        var override = Files.writeString(directory.resolve("override.pbtxt"), "max_batch_size: 8");
+        var cases = Map.of(options(8).setBatchingMaxSize(8).build(), "some other error",
+                           options(8).setModelConfigOverride(Optional.of(override)).build(), REJECTS_BATCHING);
+        for (var entry : cases.entrySet()) {
+            var options = entry.getKey();
+            var resolved = options.modelConfigOverride().isPresent() ? options : resolveInstanceCount(options, true);
+            var name = TritonOnnxRuntime.generateModelName(model, resolved, true, Optional.empty());
+            var client = mock(TritonOnnxClient.class);
+            doThrow(new TritonOnnxClient.TritonException(entry.getValue())).when(client).loadUntilModelReady(name);
+            var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                    .modelRepositoryPath(directory.resolve("repository").toString())
+                    .shareOnnxSessionBetweenInstances(true).build(), client);
+            try {
+                assertThrows(TritonOnnxClient.TritonException.class, () -> runtime.evaluatorOf(model, options));
+                verify(client, times(1)).loadUntilModelReady(name);
+            } finally {
+                runtime.deconstruct();
+            }
+        }
+    }
+
+    // Triton fails to load a model whose inputs or outputs have no batch dimension with a non-zero max batch size.
+    @Test
+    void model_without_batch_dimension_is_not_batched(@TempDir Path directory) throws IOException {
+        var unbatched = "src/test/models/onnx/add_float.onnx";
+        var repository = directory.resolve("repository");
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                .modelRepositoryPath(repository.toString())
+                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class));
+        try {
+            for (var batchingMaxSize : List.of(1, 8)) {
+                var options = options(8).setBatchingMaxSize(batchingMaxSize).build();
+                for (var model : List.of(unbatched, MODEL_PATH)) {
+                    var name = TritonOnnxRuntime.generateModelName(
+                            model, resolveInstanceCount(options, true), true, Optional.empty());
+                    try (var evaluator = runtime.evaluatorOf(model, options)) {
+                        var config = TextFormat.parse(Files.readString(
+                                repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
+                        assertEquals(model.equals(unbatched) ? 0 : batchingMaxSize, config.getMaxBatchSize(), model);
+                        assertEquals(!model.equals(unbatched) && batchingMaxSize > 1, config.hasDynamicBatching(), model);
+                    }
+                }
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void external_data_files_are_copied_next_to_the_model(@TempDir Path directory) throws IOException {
+        var model = "src/test/models/onnx/external_data/add_with_external_data.onnx";
+        var dataFile = Path.of("src/test/models/onnx/external_data/external_data.bin");
+        var repository = directory.resolve("repository");
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                .modelRepositoryPath(repository.toString())
+                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class));
+        try {
+            try (var evaluator = runtime.evaluatorOf(model, options(8).build());
+                 var modelDirs = Files.list(repository)) {
+                var versionDir = modelDirs.toList().get(0).resolve("1");
+                assertTrue(Files.exists(versionDir.resolve("model.onnx")));
+                assertArrayEquals(Files.readAllBytes(dataFile),
+                                  Files.readAllBytes(versionDir.resolve("external_data.bin")));
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void external_data_file_named_model_onnx_is_rejected(@TempDir Path directory) throws IOException {
+        var model = modelWithExternalData(directory, "model.onnx");
+        Files.writeString(directory.resolve("model.onnx"), "weights");
+        assertExternalDataRejected(directory, model, "cannot be named model.onnx");
+    }
+
+    @Test
+    void external_data_file_outside_the_model_directory_is_rejected(@TempDir Path directory) throws IOException {
+        var dataFile = Files.writeString(directory.resolve("weights.bin"), "weights");
+        var absolute = modelWithExternalData(directory, dataFile.toAbsolutePath().toString());
+        assertExternalDataRejected(directory, absolute, "is outside the directory of");
+
+        var escaping = modelWithExternalData(directory, "../weights.bin");
+        assertExternalDataRejected(directory, escaping, "is outside the directory of");
+    }
+
+    @Test
+    void external_data_file_in_subdirectory_is_copied_to_the_same_subdirectory(@TempDir Path directory)
+            throws IOException {
+        var model = modelWithExternalData(directory, "weights/part0.bin");
+        Files.createDirectories(directory.resolve("weights"));
+        Files.writeString(directory.resolve("weights/part0.bin"), "weights");
+        var repository = directory.resolve("repository");
+        var runtime = runtimeWithRepository(repository);
+        try {
+            try (var evaluator = runtime.evaluatorOf(model.toString(), options(8).build());
+                 var modelDirs = Files.list(repository)) {
+                var dataFile = modelDirs.toList().get(0).resolve("1/weights/part0.bin");
+                assertEquals("weights", Files.readString(dataFile));
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    private static Path modelWithExternalData(Path directory, String location) throws IOException {
+        var tensor = Onnx.TensorProto.newBuilder()
+                .setName("weights")
+                .setDataLocation(Onnx.TensorProto.DataLocation.EXTERNAL)
+                .addExternalData(Onnx.StringStringEntryProto.newBuilder().setKey("location").setValue(location));
+        return Files.write(directory.resolve("encoder.onnx"), Onnx.ModelProto.newBuilder()
+                .setGraph(Onnx.GraphProto.newBuilder().addInitializer(tensor)).build().toByteArray());
+    }
+
+    private static TritonOnnxRuntime runtimeWithRepository(Path repository) {
+        return new TritonOnnxRuntime(new TritonConfig.Builder()
+                .modelRepositoryPath(repository.toString())
+                .shareOnnxSessionBetweenInstances(true).build(), mock(TritonOnnxClient.class));
+    }
+
+    private static void assertExternalDataRejected(Path directory, Path model, String expectedMessage) {
+        var runtime = runtimeWithRepository(directory.resolve("repository"));
+        try {
+            var exception = assertThrows(IllegalArgumentException.class,
+                                         () -> runtime.evaluatorOf(model.toString(), options(8).build()));
+            assertTrue(exception.getMessage().contains(expectedMessage), exception.getMessage());
         } finally {
             runtime.deconstruct();
         }
@@ -228,7 +475,7 @@ class TritonOnnxRuntimeDefaultsTest {
                 var client = mock(TritonOnnxClient.class);
                 var runtime = new TritonOnnxRuntime(new TritonConfig.Builder().modelControlMode(mode)
                         .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), client);
-                var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, true);
+                var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, true, Optional.empty());
                 try {
                     runtime.evaluatorOf(MODEL_PATH, options).close();
                     verify(client).getModelMetadata(name);
@@ -244,5 +491,142 @@ class TritonOnnxRuntimeDefaultsTest {
                 }
             }
         }
+    }
+
+    private static final OnnxPoolingOptions MEAN_POOLING =
+            new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "last_hidden_state", "attention_mask");
+
+    @Test
+    void model_name_depends_on_pooling() {
+        var options = options(8).build().withNumModelInstances(1);
+        var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, SHARED_SESSION, Optional.empty());
+
+        var meanName = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, SHARED_SESSION, Optional.of(MEAN_POOLING));
+        var clsName = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, SHARED_SESSION, Optional.of(
+                new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.CLS, "last_hidden_state", "attention_mask")));
+        assertNotEquals(name, meanName);
+        assertNotEquals(meanName, clsName);
+    }
+
+    @Test
+    void model_name_depends_only_on_the_pooling_parameters_the_config_gets() {
+        var options = options(8).build().withNumModelInstances(1);
+        // The config leaves out the mask input for CLS and for the default name, so the mask does not tell models apart.
+        assertEquals(modelName(options, OnnxPoolingOptions.Strategy.CLS, "attention_mask"),
+                     modelName(options, OnnxPoolingOptions.Strategy.CLS, "mask"));
+        assertNotEquals(modelName(options, OnnxPoolingOptions.Strategy.MEAN, "attention_mask"),
+                        modelName(options, OnnxPoolingOptions.Strategy.MEAN, "mask"));
+        assertEquals("pooling_output=last_hidden_state,pooling_strategy=cls",
+                     TritonOnnxRuntime.poolingIdentity(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.CLS, "last_hidden_state", "mask")));
+    }
+
+    private static String modelName(OnnxEvaluatorOptions options, OnnxPoolingOptions.Strategy strategy, String mask) {
+        return TritonOnnxRuntime.generateModelName(MODEL_PATH, options, SHARED_SESSION,
+                                                    Optional.of(new OnnxPoolingOptions(strategy, "last_hidden_state", mask)));
+    }
+
+    @Test
+    void enabled_pooling_adds_parameters_to_generated_config(@TempDir Path directory) throws IOException {
+        var repository = directory.resolve("repository");
+        var client = mock(TritonOnnxClient.class);
+        when(client.getModelMetadata(any())).thenReturn(pooledMetadata());
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                .modelRepositoryPath(repository.toString()).onnxPooling(true).build(), client);
+        var options = options(8).build();
+        try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options.withRuntimePooling(MEAN_POOLING))) {
+            assertEquals(Optional.of(MEAN_POOLING), evaluator.runtimePooling());
+            var name = TritonOnnxRuntime.generateModelName(
+                    MODEL_PATH, resolveInstanceCount(options, SEPARATE_SESSIONS), SEPARATE_SESSIONS, Optional.of(MEAN_POOLING));
+            var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
+            // The config leaves the default mask input to Triton, which also handles a model without it.
+            assertEquals(Map.of("pooling_strategy", "mean", "pooling_output", "last_hidden_state"),
+                         poolingParameters(config));
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    /** The metadata of a model whose output Triton pooled to [batch, embedding] */
+    private static TritonOnnxClient.ModelMetadata pooledMetadata() {
+        var tokens = TensorType.fromSpec("tensor<float>(d0[],d1[])");
+        return new TritonOnnxClient.ModelMetadata(Map.of("input_ids", tokens, "attention_mask", tokens),
+                                                  Map.of("last_hidden_state", TensorType.fromSpec("tensor<float>(d0[],d1[4])")));
+    }
+
+    @Test
+    void evaluator_fails_when_triton_did_not_pool() {
+        var client = mock(TritonOnnxClient.class);
+        var tokenEmbeddings = TensorType.fromSpec("tensor<float>(d0[],d1[],d2[4])");
+        when(client.getModelMetadata(any())).thenReturn(new TritonOnnxClient.ModelMetadata(Map.of(), Map.of("last_hidden_state", tokenEmbeddings)));
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, true, Optional.of(MEAN_POOLING)));
+        assertEquals("Triton did not pool output 'last_hidden_state' of model model_1: got type " + tokenEmbeddings +
+                     " instead of [batch, embedding]. The Triton image does not support pooling. " +
+                     "Disable triton-onnx-pooling, or use an image whose ONNX Runtime backend supports it.",
+                     exception.getMessage());
+        // A missing output is left to the caller, which reports it
+        assertDoesNotThrow(() -> new TritonOnnxEvaluator("model_1", mock(ResourceReference.class), client, true,
+                                                         Optional.of(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "no_such_output", "attention_mask"))));
+    }
+
+    @Test
+    void pooling_parameters_name_only_a_non_default_mask_used_by_the_strategy() {
+        assertEquals(Map.of("pooling_strategy", "mean", "pooling_output", "token_embeddings",
+                            "pooling_attention_mask", "mask"),
+                     poolingParameters(OnnxPoolingOptions.Strategy.MEAN, "token_embeddings", "mask"));
+        assertEquals(Map.of("pooling_strategy", "last", "pooling_output", "last_hidden_state",
+                            "pooling_attention_mask", "mask"),
+                     poolingParameters(OnnxPoolingOptions.Strategy.LAST, "last_hidden_state", "mask"));
+        assertEquals(Map.of("pooling_strategy", "last", "pooling_output", "last_hidden_state"),
+                     poolingParameters(OnnxPoolingOptions.Strategy.LAST, "last_hidden_state", "attention_mask"));
+        // CLS pooling does not use the mask.
+        assertEquals(Map.of("pooling_strategy", "cls", "pooling_output", "last_hidden_state"),
+                     poolingParameters(OnnxPoolingOptions.Strategy.CLS, "last_hidden_state", "mask"));
+    }
+
+    private static Map<String, String> poolingParameters(OnnxPoolingOptions.Strategy strategy, String output, String mask) {
+        var builder = ModelConfig.newBuilder();
+        TritonOnnxRuntime.addPoolingParameters(builder, new OnnxPoolingOptions(strategy, output, mask));
+        return poolingParameters(builder.build());
+    }
+
+    @Test
+    void pooling_is_ignored_when_disabled_or_config_is_not_generated(@TempDir Path directory) throws IOException {
+        var repository = directory.resolve("repository");
+        var override = Files.writeString(directory.resolve("override.pbtxt"), "platform: \"onnxruntime_onnx\"");
+        for (var enabled : List.of(false, true)) {
+            for (var options : List.of(options(8).build(), options(8).setModelConfigOverride(Optional.of(override)).build())) {
+                if (enabled && options.modelConfigOverride().isEmpty()) continue; // the case where pooling applies
+                var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                        .modelRepositoryPath(repository.toString()).onnxPooling(enabled).build(), mock(TritonOnnxClient.class));
+                try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options.withRuntimePooling(MEAN_POOLING))) {
+                    assertTrue(evaluator.runtimePooling().isEmpty());
+                    var resolved = options.modelConfigOverride().isPresent()
+                            ? options : resolveInstanceCount(options, SEPARATE_SESSIONS);
+                    var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, resolved, SEPARATE_SESSIONS, Optional.empty());
+                    var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
+                    assertEquals(Map.of(), poolingParameters(config));
+                } finally {
+                    runtime.deconstruct();
+                }
+            }
+        }
+        for (var mode : List.of(TritonConfig.ModelControlMode.NONE, TritonConfig.ModelControlMode.POLL)) {
+            var runtime = new TritonOnnxRuntime(new TritonConfig.Builder().modelControlMode(mode)
+                    .modelRepositoryPath(repository.toString()).onnxPooling(true).build(), mock(TritonOnnxClient.class));
+            try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options(8).build().withRuntimePooling(MEAN_POOLING))) {
+                assertTrue(evaluator.runtimePooling().isEmpty());
+            } finally {
+                runtime.deconstruct();
+            }
+        }
+    }
+
+    private static Map<String, String> poolingParameters(ModelConfig config) {
+        var result = new TreeMap<String, String>();
+        config.getParametersMap().forEach((key, value) -> {
+            if (key.startsWith("pooling_")) result.put(key, value.getStringValue());
+        });
+        return result;
     }
 }

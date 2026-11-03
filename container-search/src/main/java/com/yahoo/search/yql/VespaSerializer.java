@@ -45,6 +45,7 @@ import static com.yahoo.search.yql.YqlParser.RANKED;
 import static com.yahoo.search.yql.YqlParser.SAME_ELEMENT;
 import static com.yahoo.search.yql.YqlParser.SCORE_THRESHOLD;
 import static com.yahoo.search.yql.YqlParser.SIGNIFICANCE;
+import static com.yahoo.search.yql.YqlParser.SPARSE_TENSOR_WAND;
 import static com.yahoo.search.yql.YqlParser.START_ANCHOR;
 import static com.yahoo.search.yql.YqlParser.STEM;
 import static com.yahoo.search.yql.YqlParser.SUBSTRING;
@@ -109,6 +110,7 @@ import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentItem;
 import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.SparseTensorWandItem;
 import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
@@ -879,6 +881,39 @@ public class VespaSerializer {
 
     }
 
+    private static class SparseTensorWandSerializer extends Serializer<SparseTensorWandItem> {
+
+        @Override
+        void onExit(StringBuilder destination, SparseTensorWandItem item) { }
+
+        @Override
+        boolean serialize(StringBuilder destination, SparseTensorWandItem item, Scope scope) {
+            StringBuilder annotations = new StringBuilder(leafAnnotations(item));
+            Integer targetHits = item.getTargetHits();
+            if (targetHits != null) {
+                comma(annotations, 0);
+                annotationKey(annotations, YqlParser.TARGET_HITS).append(targetHits);
+            }
+            Integer totalTargetHits = item.getTotalTargetHits();
+            if (totalTargetHits != null) {
+                comma(annotations, 0);
+                annotationKey(annotations, YqlParser.TOTAL_TARGET_HITS).append(totalTargetHits);
+            }
+            double scoreThreshold = item.getScoreThreshold();
+            if (scoreThreshold != 0) {
+                comma(annotations, 0);
+                annotationKey(annotations, SCORE_THRESHOLD).append(scoreThreshold);
+            }
+            if ( ! annotations.isEmpty())
+                destination.append("{").append(annotations).append("}");
+            destination.append(SPARSE_TENSOR_WAND).append('(');
+            destination.append(item.getIndexName()).append(", ");
+            destination.append(item.getQueryTensorName()).append(')');
+            return false;
+        }
+
+    }
+
     private static class PredicateQuerySerializer extends Serializer<PredicateQueryItem> {
 
         @Override
@@ -1226,6 +1261,7 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, StringInItem item, Scope scope) {
+            boolean addedAnnotations = addAnnotations(destination, item, "");
             destination.append(scope.requiredIndexName(item.getIndexName())).append(" in (");
             int initLen = destination.length();
             List<String> tokens = new ArrayList<>(item.getTokens());
@@ -1237,6 +1273,8 @@ public class VespaSerializer {
                 destination.append("\"");
             }
             destination.append(")");
+            if (addedAnnotations)
+                destination.append(')');
             return false;
         }
     }
@@ -1248,6 +1286,7 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, NumericInItem item, Scope scope) {
+            boolean addedAnnotations = addAnnotations(destination, item, "");
             destination.append(scope.requiredIndexName(item.getIndexName())).append(" in (");
             int initLen = destination.length();
             List<Long> tokens = new ArrayList<>(item.getTokens());
@@ -1259,6 +1298,8 @@ public class VespaSerializer {
                     destination.append("L");
             }
             destination.append(")");
+            if (addedAnnotations)
+                destination.append(')');
             return false;
         }
     }
@@ -1433,6 +1474,7 @@ public class VespaSerializer {
         dispatchBuilder.put(MarkerWordItem.class, new WordSerializer()); // gotcha
         dispatchBuilder.put(NearItem.class, new NearSerializer());
         dispatchBuilder.put(NearestNeighborItem.class, new NearestNeighborSerializer());
+        dispatchBuilder.put(SparseTensorWandItem.class, new SparseTensorWandSerializer());
         dispatchBuilder.put(NotItem.class, new NotSerializer());
         dispatchBuilder.put(NullItem.class, new NullSerializer());
         dispatchBuilder.put(ONearItem.class, new ONearSerializer());
@@ -1600,11 +1642,11 @@ public class VespaSerializer {
     }
 
     /** Adds annotations and returns whether any were added */
-    private static boolean addAnnotations(StringBuilder destination, WeightedSetItem weightedSet,
+    private static boolean addAnnotations(StringBuilder destination, TaggableItem item,
                                           String optionalAnnotations) {
         int preAnnotationValueLen;
         int incomingLen = destination.length();
-        String annotations = leafAnnotations(weightedSet);
+        String annotations = leafAnnotations(item);
 
         if (!optionalAnnotations.isEmpty() || !annotations.isEmpty()) {
             destination.append("({");

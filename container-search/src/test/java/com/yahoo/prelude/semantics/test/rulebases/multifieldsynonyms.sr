@@ -1,0 +1,7 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+(index1, index2):[synonyms1] -> =*:[synonyms1*]; # Replace by equiv(foo, bar, baz) in the matched field
+(index1, index2):[synonyms2] +> =*:[synonyms2*]; # Add equiv(word, "a phrase") in the matched field
+
+[synonyms1] :- foo, baz, bar;
+[synonyms2] :- word, a phrase;

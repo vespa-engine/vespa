@@ -23,7 +23,9 @@ public class DocumentApiOptionsBuilder {
     private static final Logger log = Logger.getLogger(DocumentApiOptionsBuilder.class.getName());
 
     public static ContainerDocumentApi.HandlerOptions build(Element spec) {
-        return new ContainerDocumentApi.HandlerOptions(getBindings(spec), XML.getChild(spec, "http-client-api"));
+        return new ContainerDocumentApi.HandlerOptions(getBindings(spec),
+                                                       XML.getChild(spec, "http-client-api"),
+                                                       enableLegacyFeedApi(spec));
     }
 
     /**
@@ -58,6 +60,12 @@ public class DocumentApiOptionsBuilder {
             bindings.add(binding);
         }
         return bindings;
+    }
+
+    /** True unless explicitly disabled in the config */
+    private static boolean enableLegacyFeedApi(Element spec) {
+        var legacyFeedApi = XML.getChild(spec, "legacy-feed-api");
+        return ! XML.getValue(legacyFeedApi).equals("disabled");
     }
 
     private static String getBinding(Element e) {

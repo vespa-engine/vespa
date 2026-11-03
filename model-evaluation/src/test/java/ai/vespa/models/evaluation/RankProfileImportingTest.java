@@ -87,4 +87,19 @@ public class RankProfileImportingTest {
         assertEquals(1, args.size());
         assertEquals("tensor(m{},v[3])", args.get("rankingExpression(mymul)").toString());
     }
+
+    @Test
+    public void testEvaluatingChainedGlobalPhase() {
+        ModelTester tester = new ModelTester("src/test/resources/config/independent-boosts/");
+        assertEquals(1, tester.models().size());
+        Model m = tester.models().get("default");
+        var evaluator = m.evaluatorOf("globalphase");
+        evaluator.bind("attribute(score_lexical)", 5.0);
+        evaluator.bind("query(multiplierA)", 0.15);
+        evaluator.bind("query(multiplierB)", 0.15);
+        // score_base = 2 * 5 = 10
+        // finalA = 10 + 10 * 0.15 = 11.5
+        // finalB = 11.5 + 10 * 0.15 = 13.0
+        assertEquals(13.0, evaluator.evaluate().asDouble(), 1e-9);
+    }
 }

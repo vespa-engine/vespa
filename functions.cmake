@@ -401,7 +401,7 @@ function(__is_command_a_script COMMAND RESULT_VAR)
 endfunction()
 
 function(vespa_add_test)
-    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK" "NAME;WORKING_DIRECTORY;COST" "COMMAND;DEPENDS;ENVIRONMENT" ${ARGN})
+    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK;DISABLED" "NAME;WORKING_DIRECTORY;COST" "COMMAND;DEPENDS;ENVIRONMENT" ${ARGN})
 
     if(NOT RUN_BENCHMARKS AND ARG_BENCHMARK)
         return()
@@ -465,6 +465,10 @@ function(vespa_add_test)
 
     if(ARG_RUN_SERIAL)
         set_tests_properties(${ARG_NAME} PROPERTIES RUN_SERIAL TRUE)
+    endif()
+
+    if(ARG_DISABLED)
+        set_tests_properties(${ARG_NAME} PROPERTIES DISABLED True)
     endif()
 
     if (AUTORUN_UNIT_TESTS)
@@ -642,9 +646,9 @@ function(__export_include_directories TARGET)
     get_directory_property(LOCAL_INCLUDE_DIRS INCLUDE_DIRECTORIES)
     get_target_property(TARGET_TYPE ${TARGET} TYPE)
     if(TARGET_TYPE STREQUAL INTERFACE_LIBRARY)
-        target_include_directories(${TARGET} INTERFACE ${LOCAL_INCLUDE_DIRS})
+        target_include_directories(${TARGET} INTERFACE "$<BUILD_INTERFACE:${LOCAL_INCLUDE_DIRS}>" "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
     else()
-        target_include_directories(${TARGET} PUBLIC ${LOCAL_INCLUDE_DIRS})
+        target_include_directories(${TARGET} PUBLIC "$<BUILD_INTERFACE:${LOCAL_INCLUDE_DIRS}>" "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
     endif()
 endfunction()
 

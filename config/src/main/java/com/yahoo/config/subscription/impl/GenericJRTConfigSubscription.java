@@ -32,7 +32,7 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
     @Override
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
         RawConfig rawConfig = RawConfig.createFromResponseParameters(jrtReq);
-        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), rawConfig, jrtReq.getNewChecksums());
+        setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), rawConfig, jrtReq.getNewChecksum());
         log.log(FINE, () -> "in setNewConfig, config=" + this.getConfigState().getConfig());
     }
 
@@ -56,7 +56,7 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
         // (see equals usage in setConfigAndGeneration())
         setGeneration(jrtReq.getNewGeneration());
         RawConfig rawConfig = RawConfig.createFromResponseParameters(jrtReq);
-        setConfigAndGeneration(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), rawConfig, jrtReq.getNewChecksums());
+        setConfigAndGeneration(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), rawConfig, jrtReq.getNewChecksum());
     }
 
     // Override to propagate internal redeploy into the config value in addition to the config state

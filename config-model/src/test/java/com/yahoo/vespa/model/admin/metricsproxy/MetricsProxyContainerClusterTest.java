@@ -118,7 +118,8 @@ public class MetricsProxyContainerClusterTest {
         assertEquals(List.of(PublicDimensions.HOSTNAME, PublicDimensions.PARENT_HOSTNAME), config.defaultDimension());
 
         assertEquals(Set.of("host_life"), config.service().keySet());
-        assertEquals(List.of(PublicDimensions.HOSTNAME, PublicDimensions.PARENT_HOSTNAME, PublicDimensions.OS_VERSION),
+        assertEquals(List.of(PublicDimensions.HOSTNAME, PublicDimensions.PARENT_HOSTNAME,
+                             PublicDimensions.OS_VERSION, PublicDimensions.RETIRING),
                      config.service("host_life").dimension());
     }
 

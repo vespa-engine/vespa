@@ -10,6 +10,10 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/hw_info.h>
 
+namespace ai::vespa::telemetry::internal {
+class InternalTelemetryType;
+}
+
 namespace vespa::config::content::core::internal {
 class InternalBucketspacesType;
 }
@@ -33,6 +37,7 @@ public:
     using DocumenttypesConfigSP = std::shared_ptr<DocumenttypesConfig>;
     using BucketspacesConfig = const vespa::config::content::core::internal::InternalBucketspacesType;
     using BucketspacesConfigSP = std::shared_ptr<BucketspacesConfig>;
+    using TelemetryConfig = const ai::vespa::telemetry::internal::InternalTelemetryType;
 
 private:
     DocumenttypesConfigSP                             _documenttypes;
@@ -40,6 +45,7 @@ private:
     ProtonConfigSP                                    _proton;
     FiledistributorrpcConfigSP                        _fileDistributorRpc;
     BucketspacesConfigSP                              _bucketspaces;
+    std::shared_ptr<TelemetryConfig>                  _telemetry;
     search::TuneFileDocumentDB::SP                    _tuneFileDocumentDB;
     vespalib::HwInfo                                  _hwInfo;
     int64_t                                           _generation;
@@ -48,6 +54,7 @@ public:
     BootstrapConfig(int64_t generation, const DocumenttypesConfigSP& documenttypes,
                     const std::shared_ptr<const document::DocumentTypeRepo>& repo, const ProtonConfigSP& protonConfig,
                     const FiledistributorrpcConfigSP& filedistRpcConfSP, const BucketspacesConfigSP& bucketspaces,
+                    const std::shared_ptr<TelemetryConfig>& telemetry,
                     const search::TuneFileDocumentDB::SP& _tuneFileDocumentDB, const vespalib::HwInfo& hwInfo);
     ~BootstrapConfig();
 
@@ -59,6 +66,9 @@ public:
     const vespa::config::search::core::ProtonConfig& getProtonConfig() const { return *_proton; }
     const ProtonConfigSP& getProtonConfigSP() const { return _proton; }
     const BucketspacesConfigSP& getBucketspacesConfigSP() const { return _bucketspaces; }
+    [[nodiscard]] const std::shared_ptr<TelemetryConfig>& get_telemetry_config_sp() const noexcept {
+        return _telemetry;
+    }
     const search::TuneFileDocumentDB::SP& getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
     int64_t getGeneration() const { return _generation; }
     const vespalib::HwInfo& getHwInfo() const { return _hwInfo; }

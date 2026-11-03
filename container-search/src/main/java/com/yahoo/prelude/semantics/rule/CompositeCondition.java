@@ -98,8 +98,8 @@ public abstract class CompositeCondition extends Condition {
     }
 
     protected String toInnerString(String conditionSeparator) {
-        if (getLabel() != null)
-            return getLabel() + ":(" + conditionsToString(conditionSeparator) + ")";
+        if ( ! getLabels().isEmpty())
+            return getLabelString() + "(" + conditionsToString(conditionSeparator) + ")";
         else if (useParentheses())
             return "(" + conditionsToString(conditionSeparator) + ")";
         else

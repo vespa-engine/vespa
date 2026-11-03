@@ -45,10 +45,15 @@ public class ImportedMlModels {
     }
 
     public ImportedMlModels(File modelsDirectory, ExecutorService executor, Collection<MlModelImporter> importers) {
+        this(modelsDirectory, executor, importers, MlModelImportCache.none());
+    }
+
+    public ImportedMlModels(File modelsDirectory, ExecutorService executor, Collection<MlModelImporter> importers,
+                            MlModelImportCache cache) {
         Map<String, Future<ImportedMlModel>> futureModels = new HashMap<>();
 
         // Find all subdirectories recursively which contains a model we can read
-        importRecursively(modelsDirectory, executor, futureModels, importers, skippedModels);
+        importRecursively(modelsDirectory, executor, futureModels, importers, cache, skippedModels);
         Map<String, ImportedMlModel> models = new HashMap<>();
         futureModels.forEach((name, future) -> {
             try {
@@ -88,6 +93,7 @@ public class ImportedMlModels {
                                           ExecutorService executor,
                                           Map<String, Future<ImportedMlModel>> models,
                                           Collection<MlModelImporter> importers,
+                                          MlModelImportCache cache,
                                           Map<String, String> skippedModels) {
         if ( ! dir.isDirectory()) return;
 
@@ -107,7 +113,7 @@ public class ImportedMlModels {
                 Future<ImportedMlModel> future = executor.submit(() -> {
                     Instant start = Instant.now();
                     try {
-                        return importer.get().importModel(name, child);
+                        return cache.importModel(name, child, importer.get());
                     } catch (RuntimeException e) {
                         skippedModels.put(name, e.getMessage());
                     } finally {
@@ -118,7 +124,7 @@ public class ImportedMlModels {
                 models.put(name, future);
             }
             else {
-                importRecursively(child, executor, models, importers, skippedModels);
+                importRecursively(child, executor, models, importers, cache, skippedModels);
             }
         });
     }

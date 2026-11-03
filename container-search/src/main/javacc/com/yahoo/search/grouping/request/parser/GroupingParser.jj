@@ -112,6 +112,18 @@ public class GroupingParser {
         return number;
     }
 
+    /**
+     * Resolves a parameter used where an int is expected. The value must be an integer within the given bounds,
+     * so that the narrowing done by the caller is lossless.
+     */
+    private Number resolveParameterInteger(String name, String clause, long min, long max) throws ParseException {
+        Number num = resolveParameterNumber(name, resolveParameter(name));
+        if (num instanceof Double || num.longValue() < min || num.longValue() > max) {
+            throw new ParseException(clause + " must be an integer between " + min + " and " + max + ", but got " + num);
+        }
+        return num;
+    }
+
     private static Number resolveNumber(String str) {
         if (str.indexOf('.') >= 0) {
             return Double.valueOf(str);
@@ -358,7 +370,7 @@ void operationBody(GroupingOperation parent) :
     FilterExpression filterExp = null;
     ConstantValue<?> maxOperand = null;
     String str;
-    Number num;
+    Number num = null;
     GroupingExpression exp;
     List<GroupingExpression> lst;
 }
@@ -369,17 +381,17 @@ void operationBody(GroupingOperation parent) :
       ( <HINT>      lbrace() str = identifier()                           rbrace() { parent.addHint(str); }                   ) |
       ( <FILTER>    lbrace() filterExp = filterExp(parent)                rbrace() { parent.setFilterBy(filterExp); }         ) |
       ( <KEEP>      lbrace() filterExp = filterExp(parent)                rbrace() { parent.setFilterBy(filterExp); }         ) |
-      ( <MAX>       lbrace() ( maxOperand = infinitePositiveValue() | maxOperand = constantValue() ) rbrace()
+      ( <MAX>       { maxOperand = null; } lbrace() ( maxOperand = infinitePositiveValue() | num = integerNumber("max", Integer.MAX_VALUE) ) rbrace()
       {
-            if (maxOperand instanceof InfiniteValue) {
+            if (maxOperand != null) {
                 parent.setMax(GroupingOperation.UNLIMITED_MAX);
             } else {
-                parent.setMax(checkPositive("max", (Number)maxOperand.getValue()).intValue());
+                parent.setMax(checkPositive("max", num).intValue());
             }
       } ) |
       ( <ORDER>     lbrace() lst = expList(parent)                        rbrace() { parent.addOrderBy(lst); }                ) |
       ( <OUTPUT>    lbrace() lst = expList(parent)                        rbrace() { parent.addOutputs(lst); }                ) |
-      ( <PRECISION> lbrace() num = number()                               rbrace() { parent.setPrecision(checkPositive("precision", num).intValue()); } ) |
+      ( <PRECISION> lbrace() num = integerNumber("precision", Integer.MAX_VALUE) rbrace() { parent.setPrecision(checkPositive("precision", num).intValue()); } ) |
       ( <WHERE>     lbrace() str = where()                                rbrace() { parent.setWhere(str); }                  ) )*
     (                              operation(parent)                                                                            )*
 }
@@ -744,7 +756,7 @@ GroupingExpression md5Function(GroupingOperation grp) :
     Number num;
 }
 {
-    ( <MD5> lbrace() exp = exp(grp) comma() num = number() rbrace() )
+    ( <MD5> lbrace() exp = exp(grp) comma() num = integerNumber("md5 bits", 128) rbrace() )
     { return new Md5Function(exp, toNumBits("md5", num, 128)); }
 }
 
@@ -1111,7 +1123,7 @@ XorBitFunction xorBitFunction(GroupingOperation grp) :
     Number num;
 }
 {
-    ( <XORBIT> lbrace() exp = exp(grp) comma() num = number() rbrace() )
+    ( <XORBIT> lbrace() exp = exp(grp) comma() num = integerNumber("xorbit bits", 64) rbrace() )
     { return new XorBitFunction(exp, toNumBits("xorbit", num, 64)); }
 }
 
@@ -1247,6 +1259,18 @@ Number number() :
 }
 {
     ( num = literalNumber() | num = parameterNumber() )
+    { return num; }
+}
+
+// A number used where an int is expected. A literal is narrowed by the caller as before, while a parameter
+// must be an integer between 1 and max, as it may come from the request.
+Number integerNumber(String clause, int max) :
+{
+    Number num;
+    String name;
+}
+{
+    ( num = literalNumber() | name = parameterName() { num = resolveParameterInteger(name, clause, 1, max); } )
     { return num; }
 }
 

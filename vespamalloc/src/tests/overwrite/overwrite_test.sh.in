@@ -1,0 +1,10 @@
+#!/bin/bash
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+set -e
+
+LD_PRELOAD=../../../src/vespamalloc/@CMAKE_SHARED_LIBRARY_PREFIX@vespamalloc.so ./vespamalloc_overwrite_test_app
+LD_PRELOAD=../../../src/vespamalloc/@CMAKE_SHARED_LIBRARY_PREFIX@vespamallocd.so ./vespamalloc_overwrite_test_app testmemoryfill
+ulimit -c 0;
+./vespamalloc_expectsignal-overwrite_app 6 "LD_PRELOAD=../../../src/vespamalloc/@CMAKE_SHARED_LIBRARY_PREFIX@vespamallocd.so ./vespamalloc_overwrite_test_app prewrite"
+./vespamalloc_expectsignal-overwrite_app 6 "LD_PRELOAD=../../../src/vespamalloc/@CMAKE_SHARED_LIBRARY_PREFIX@vespamallocd.so ./vespamalloc_overwrite_test_app postwrite"
+./vespamalloc_expectsignal-overwrite_app 6 "LD_PRELOAD=../../../src/vespamalloc/@CMAKE_SHARED_LIBRARY_PREFIX@vespamallocd.so ./vespamalloc_overwrite_test_app writeafterfree"
