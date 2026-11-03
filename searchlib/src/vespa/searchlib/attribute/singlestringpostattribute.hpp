@@ -133,10 +133,7 @@ SingleValueStringPostingAttributeT<B>::getSearch(QueryTermSimpleUP              
         std::move(qTerm), cased, params.fuzzy_matching_algorithm(),
         [&]<typename Matcher>(Matcher&& matcher) -> std::unique_ptr<attribute::SearchContext> {
             using BaseSC = attribute::SingleStringEnumSearchContextT<Matcher>;
-            using SC = std::conditional_t<
-                std::is_same_v<Matcher, attribute::StringRangeMatcher>,
-                attribute::StringRangePostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>,
-                attribute::StringPostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>>;
+            using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, vespalib::btree::BTreeNoLeafData>;
             BaseSC base_sc(std::move(matcher), *this, this->_enumIndices.make_read_view(docid_limit),
                            this->_enumStore);
             return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);
