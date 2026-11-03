@@ -121,4 +121,24 @@ public class FilesApplicationPackageTest {
         }
     }
 
+    @Test
+    public void testDisallowedDirectories() throws IOException {
+        File appDir = temporaryFolder.newFolder();
+        IOUtils.copyDirectory(new File("src/test/resources/app-with-deployment"), appDir);
+        FilesApplicationPackage.validateDirectories(appDir);
+
+        File replicatedDir = new File(appDir, ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.getRelative());
+        assertTrue(replicatedDir.mkdirs());
+        assertDisallowedDirectory(appDir, ApplicationPackage.MODELS_GENERATED_DIR.getRelative());
+
+        IOUtils.recursiveDeleteDir(new File(appDir, ApplicationPackage.MODELS_GENERATED_DIR.getRelative()));
+        FilesApplicationPackage.validateDirectories(appDir);
+    }
+
+    private static void assertDisallowedDirectory(File appDir, String dir) {
+        var e = assertThrows(IllegalArgumentException.class, () -> FilesApplicationPackage.validateDirectories(appDir));
+        assertEquals("Application package contains directory '" + dir + "', which is reserved for internal use, please delete it",
+                     e.getMessage());
+    }
+
 }
