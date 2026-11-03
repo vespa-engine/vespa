@@ -49,10 +49,8 @@ public class SchemaSkill extends AbstractComponent {
           .append("description: ").append(DESCRIPTION).append("\n")
           .append("---\n\n");
         md.append("# Querying this application\n\n")
-          .append("Query this application with YQL")
-          .append(" at `/search/`")
-          .append(". ")
-          .append("For general Vespa query syntax, use the Vespa skills (`vespa skills install`).\n");
+          .append("Query this application using [YQL](https://docs.vespa.ai/en/reference/querying/yql.html)")
+          .append(" at `/search/`.\n");
         if ( ! schemaInfo.schemas().isEmpty())
             md.append("\nEach schema below links to its fields, field sets and rank profiles. ")
               .append("Read it before querying the schema.\n");

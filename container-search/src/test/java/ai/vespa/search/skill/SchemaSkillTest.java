@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author ingrid
@@ -31,7 +29,7 @@ public class SchemaSkillTest {
 
             # Querying this application
 
-            Query this application with YQL at `/search/`. For general Vespa query syntax, use the Vespa skills (`vespa skills install`).
+            Query this application using [YQL](https://docs.vespa.ai/en/reference/querying/yql.html) at `/search/`.
             """;
         assertEquals(expectedOverview, new SchemaSkill(emptySchemaInfo()).overview());
     }
@@ -46,7 +44,7 @@ public class SchemaSkillTest {
 
             # Querying this application
 
-            Query this application with YQL at `/search/`. For general Vespa query syntax, use the Vespa skills (`vespa skills install`).
+            Query this application using [YQL](https://docs.vespa.ai/en/reference/querying/yql.html) at `/search/`.
 
             Each schema below links to its fields, field sets and rank profiles. Read it before querying the schema.
 
