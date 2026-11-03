@@ -11,7 +11,7 @@ template <typename BaseSC, typename AttrT, typename DataT>
 StringPostingSearchContext<BaseSC, AttrT, DataT>::StringPostingSearchContext(BaseSC&& base_sc, bool useBitVector,
                                                                              const AttrT& toBeSearched)
     : Parent(std::move(base_sc), useBitVector, toBeSearched) {
-    LookupAdapter adapter(*this);
+    DictionaryLookupAdapter adapter(*this);
     if (matcher().setup_posting_sc(_enumStore, adapter)) {
         if (this->_uniqueValues == 1u) {
             /*

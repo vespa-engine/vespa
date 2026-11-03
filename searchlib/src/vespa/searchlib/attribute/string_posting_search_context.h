@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_dictionary_lookup.h"
 #include "posting_list_folded_search_context.h"
 #include "postinglistsearchcontext.h"
 
@@ -17,15 +18,14 @@ private:
     using Parent::_enumStore;
     using Parent::matcher;
 
-    class LookupAdapter {
+    class DictionaryLookupAdapter : public IDictionaryLookup {
         StringPostingSearchContext& _sc;
 
     public:
-        explicit LookupAdapter(StringPostingSearchContext& sc) : _sc(sc) {}
-        void lookupSingle() { _sc.lookupSingle(); }
-        void lookupTerm(const vespalib::datastore::EntryComparator& comp) { _sc.lookupTerm(comp); }
+        explicit DictionaryLookupAdapter(StringPostingSearchContext& sc) : _sc(sc) {}
+        void lookupTerm(const vespalib::datastore::EntryComparator& comp) override { _sc.lookupTerm(comp); }
         void lookupRange(const vespalib::datastore::EntryComparator& low,
-                         const vespalib::datastore::EntryComparator& high) {
+                         const vespalib::datastore::EntryComparator& high) override {
             _sc.lookupRange(low, high);
         }
     };
