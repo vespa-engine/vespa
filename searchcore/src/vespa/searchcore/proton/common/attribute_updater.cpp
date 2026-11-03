@@ -70,7 +70,7 @@ std::string toString(const FieldValue& value) {
     return ss.str();
 }
 
-std::string toString(const FieldPathTarget& target) {
+std::string to_string(const FieldPathTarget& target) {
     switch (target.kind()) {
     case FieldPathTarget::Kind::UNSUPPORTED:
         return "unsupported";
@@ -385,7 +385,7 @@ void AttributeUpdater::handleValue(AttributeVector& vec, uint32_t lid, const Fie
 
 void AttributeUpdater::handle_field_path_update(AttributeVector& vec, uint32_t lid, const FieldPathTarget& target,
                                                 const FieldPathUpdate& update) {
-    LOG(spam, "handle_field_path_update(%s, %u, %s): %s", vec.getName().c_str(), lid, toString(target).c_str(),
+    LOG(spam, "handle_field_path_update(%s, %u, %s): %s", vec.getName().c_str(), lid, to_string(target).c_str(),
         update.getOriginalFieldPath().c_str());
     switch (target.kind()) {
     case FieldPathTarget::Kind::ASSIGN_ELEMENT: {
