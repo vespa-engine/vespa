@@ -3,18 +3,14 @@ package ai.vespa.search.skill;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiException;
 import com.yahoo.restapi.RestApiRequestHandler;
-import com.yahoo.search.handler.SearchHandler;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Serves the agent skills of this application: a list of them at /skills/v1/, and each skill at /skills/v1/[skill].
@@ -29,25 +25,21 @@ import java.util.Objects;
  */
 public class SkillHandler extends RestApiRequestHandler<SkillHandler> {
 
-    static final String PATH = "/skills/v1";
-    static final String SCHEMAS_PATH = PATH + "/schemas";
-    static final String SEARCH_HANDLER_ID = SearchHandler.class.getName();
-
     private final SchemaSkill skill;
     private final String overview;
 
     @Inject
-    public SkillHandler(ThreadedHttpRequestHandler.Context context, SchemaSkill skill, JdiscBindingsConfig bindingsConfig) {
+    public SkillHandler(ThreadedHttpRequestHandler.Context context, SchemaSkill skill) {
         super(context, SkillHandler::createRestApiDefinition);
         this.skill = skill;
-        this.overview = skill.overview(searchPaths(bindingsConfig), schemaName -> SCHEMAS_PATH + "/" + schemaName);
+        this.overview = skill.overview();
     }
 
     private static RestApi createRestApiDefinition(SkillHandler self) {
         return RestApi.builder()
-                      .addRoute(RestApi.route(PATH).get(self::getIndex))
-                      .addRoute(RestApi.route(SCHEMAS_PATH).get(self::getOverview))
-                      .addRoute(RestApi.route(SCHEMAS_PATH + "/{schema}").get(self::getSchema))
+                      .addRoute(RestApi.route("/skills/v1").get(self::getIndex))
+                      .addRoute(RestApi.route("/skills/v1/schemas").get(self::getOverview))
+                      .addRoute(RestApi.route("/skills/v1/schemas/{schema}").get(self::getSchema))
                       .build();
     }
 
@@ -63,7 +55,8 @@ public class SkillHandler extends RestApiRequestHandler<SkillHandler> {
         String name = context.pathParameters().getStringOrThrow("schema");
         return skill.schema(name)
                     .map(MarkdownResponse::new)
-                    .orElseThrow(() -> new RestApiException.NotFound("No schema named '" + name + "'. The schemas are listed at " + SCHEMAS_PATH + "/"));
+                    .orElseThrow(() -> new RestApiException.NotFound("No schema named '" + name +
+                                                                     "'. The schemas are listed at /skills/v1/schemas/"));
     }
 
     /**
@@ -74,28 +67,7 @@ public class SkillHandler extends RestApiRequestHandler<SkillHandler> {
     static String index() {
         return "# Agent skills of this application\n\n" +
                "Each skill is a SKILL.md document at the given path, which may link to more documents.\n\n" +
-               "- `" + SchemaSkill.NAME + "` at `" + SCHEMAS_PATH + "`: " + SchemaSkill.DESCRIPTION + "\n";
-    }
-
-    /** Returns the paths the search handler is bound to, such as /search/. */
-    static List<String> searchPaths(JdiscBindingsConfig bindingsConfig) {
-        var searchHandler = bindingsConfig.handlers(SEARCH_HANDLER_ID);
-        if (searchHandler == null) return List.of();
-        return searchHandler.serverBindings().stream()
-                            .map(SkillHandler::pathOf)
-                            .filter(Objects::nonNull)
-                            .map(path -> path.endsWith("*") ? path.substring(0, path.length() - 1) : path)
-                            .map(path -> path.endsWith("/") ? path : path + "/")
-                            .distinct()
-                            .toList();
-    }
-
-    /** Returns the path of a binding such as http://*:4443/search/*, or null if it has none. */
-    private static String pathOf(String binding) {
-        int hostStart = binding.indexOf("://");
-        if (hostStart < 0) return null;
-        int pathStart = binding.indexOf('/', hostStart + 3);
-        return pathStart < 0 ? null : binding.substring(pathStart);
+               "- `" + SchemaSkill.NAME + "` at `/skills/v1/schemas" + "`: " + SchemaSkill.DESCRIPTION + "\n";
     }
 
     private static class MarkdownResponse extends HttpResponse {

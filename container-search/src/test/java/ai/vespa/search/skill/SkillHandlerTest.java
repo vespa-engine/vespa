@@ -23,8 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SkillHandlerTest {
 
     private final SchemaSkill skill = new SchemaSkill(SchemaSkillTest.schemaInfo());
-    private final SkillHandler handler = new SkillHandler(ThreadedHttpRequestHandler.testContext(), skill,
-                                                          bindings("http://*/search/*", "http://*/search"));
+    private final SkillHandler handler = new SkillHandler(ThreadedHttpRequestHandler.testContext(), skill);
 
     @Test
     void testIndex() throws IOException {
@@ -41,18 +40,9 @@ public class SkillHandlerTest {
 
     @Test
     void testOverview() throws IOException {
-        String expected = skill.overview(List.of("/search/"), name -> "/skills/v1/schemas/" + name);
+        String expected = skill.overview();
         assertMarkdown(expected, get("/skills/v1/schemas"));
         assertMarkdown(expected, get("/skills/v1/schemas/"));
-    }
-
-    @Test
-    void testSearchPaths() {
-        assertEquals(List.of("/search/"), SkillHandler.searchPaths(bindings("http://*/search/*", "http://*/search")));
-        assertEquals(List.of("/search/"), SkillHandler.searchPaths(bindings("http://*:4443/search/*", "http://*:4443/search",
-                                                                            "http://*:4444/search/*", "http://*:4444/search")));
-        assertEquals(List.of("/search-binding/"), SkillHandler.searchPaths(bindings("http://*/search-binding/")));
-        assertEquals(List.of(), SkillHandler.searchPaths(new JdiscBindingsConfig.Builder().build()));
     }
 
     @Test
@@ -76,12 +66,6 @@ public class SkillHandlerTest {
 
     private HttpResponse get(String path) {
         return handler.handle(HttpRequest.createTestRequest("http://localhost" + path, GET));
-    }
-
-    private static JdiscBindingsConfig bindings(String ... searchBindings) {
-        return new JdiscBindingsConfig.Builder()
-                .handlers(SkillHandler.SEARCH_HANDLER_ID, new JdiscBindingsConfig.Handlers.Builder().serverBindings(List.of(searchBindings)))
-                .build();
     }
 
     private static void assertMarkdown(String expected, HttpResponse response) throws IOException {

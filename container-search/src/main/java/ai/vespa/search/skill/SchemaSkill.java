@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,13 +41,8 @@ public class SchemaSkill extends AbstractComponent {
         schemaInfo.schemas().forEach((name, schema) -> schemaDocuments.put(name, renderSchema(schema, schemaInfo)));
     }
 
-    /**
-     * Returns the overview of the schemas, which is the SKILL.md of the skill.
-     *
-     * @param searchPaths the paths to query this application at, such as /search/
-     * @param schemaLink returns where to find the document of the schema with the given name
-     */
-    public String overview(List<String> searchPaths, Function<String, String> schemaLink) {
+    /** Returns the overview of the schemas, which is the SKILL.md of the skill. */
+    public String overview() {
         var md = new StringBuilder();
         md.append("---\n")
           .append("name: ").append(NAME).append("\n")
@@ -56,7 +50,7 @@ public class SchemaSkill extends AbstractComponent {
           .append("---\n\n");
         md.append("# Querying this application\n\n")
           .append("Query this application with YQL")
-          .append(searchPaths.isEmpty() ? "" : " at " + searchPaths.stream().map(SchemaSkill::code).collect(Collectors.joining(" or ")))
+          .append(" at `/search/`")
           .append(". ")
           .append("For general Vespa query syntax, use the Vespa skills (`vespa skills install`).\n");
         if ( ! schemaInfo.schemas().isEmpty())
@@ -65,7 +59,7 @@ public class SchemaSkill extends AbstractComponent {
         for (Schema schema : schemaInfo.schemas().values()) {
             md.append("\n## Schema `").append(schema.name()).append("`\n");
             appendSchemaInfo(schema, schemaInfo, md);
-            md.append("\nDetails: `").append(schemaLink.apply(schema.name())).append("`\n");
+            md.append("\nDetails: `/skills/v1/schemas/").append(schema.name()).append("/`\n");
         }
         return md.toString();
     }
