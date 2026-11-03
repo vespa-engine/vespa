@@ -23,27 +23,25 @@ public class SchemaSkillTest {
 
     @Test
     void testOverview() {
-        String overview = new SchemaSkill(schemaInfo()).overview(List.of("/search/"), name -> "/skills/v1/schemas/" + name);
+        String overview = new SchemaSkill(schemaInfo()).overview();
         assertFrontMatter(overview);
         assertTrue(overview.contains("`/search/`"), overview);
 
         String product = section(overview, "## Schema `product`");
         assertTrue(product.contains("Products in a web shop."), product);
-        assertTrue(product.contains("`/skills/v1/schemas/product`"), product);
+        assertTrue(product.contains("`/skills/v1/schemas/product/`"), product);
         assertFalse(product.contains("streaming"), product);
 
         String mail = section(overview, "## Schema `mail`");
         assertTrue(mail.contains("`streaming.groupname`"), mail);
-        assertTrue(mail.contains("`/skills/v1/schemas/mail`"), mail);
+        assertTrue(mail.contains("`/skills/v1/schemas/mail/`"), mail);
     }
 
     @Test
     void testOverviewWithoutSchemas() {
-        String overview = new SchemaSkill(new SchemaInfo(List.of(), List.of())).overview(List.of("/search/", "/query/"),
-                                                                                           name -> "/skills/v1/schemas/" + name);
+        String overview = new SchemaSkill(emptySchemaInfo()).overview();
         assertFrontMatter(overview);
         assertTrue(overview.contains("`/search/`"), overview);
-        assertTrue(overview.contains("`/query/`"), overview);
         assertFalse(overview.contains("## Schema"), overview);
     }
 
@@ -161,6 +159,11 @@ public class SchemaSkillTest {
         return new SchemaInfo(List.of(product, mail),
                               List.of(new Cluster.Builder("products").addSchema("product").build(),
                                       new Cluster.Builder("mail").addSchema("mail").setStreaming(true).build()));
+    }
+
+    static SchemaInfo emptySchemaInfo() {
+        return new SchemaInfo(List.of(),
+                              List.of());
     }
 
 }
