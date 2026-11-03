@@ -341,6 +341,10 @@ bool Schema::is_uri_part(std::string_view name) const {
     return std::find(uriFields.begin(), uriFields.end(), base) != uriFields.end();
 }
 
+bool Schema::is_struct_field_index(std::string_view name) const {
+    return name.find('.') != std::string_view::npos && isIndexField(name) && !is_uri_part(name);
+}
+
 uint32_t Schema::getIndexFieldId(std::string_view name) const noexcept {
     return getFieldId(name, _indexIds);
 }

@@ -233,6 +233,9 @@ public:
     FieldIdToNameMapper getFieldIdToNameMapper() const {
         return FieldIdToNameMapper(_queryEnv.getIndexEnvironment());
     }
+    // Note: The match data is not tagged with the needed handles, so all term field match data is needed. The
+    // docsum matcher depends on this for element ids: a disk index term with a bitvector gives a BitVectorIterator
+    // (no element ids) when its term field match data is not needed, see DiskTermBlueprint::createLeafSearch().
     search::fef::MatchData::UP createMatchData() const { return _mdl.createMatchData(); }
 };
 

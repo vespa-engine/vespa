@@ -100,9 +100,13 @@ void find_matching_elements(const std::vector<uint32_t>& docs, SearchIterator& s
     std::vector<uint32_t> matches;
     for (uint32_t doc : docs) {
         if (search.seek(doc)) {
+            // Note: Gives no element ids when the search iterator has no positions (a BitVectorIterator in the
+            // disk index), so no matching elements are reported for these.
             search.get_element_ids(doc, matches);
-            result.add_matching_elements(doc, fieldName, matches);
-            matches.clear();
+            if (!matches.empty()) {
+                result.add_matching_elements(doc, fieldName, matches);
+                matches.clear();
+            }
         }
     }
 }
@@ -146,7 +150,7 @@ void extract_matching_elements(uint32_t doc, std::span<const MatchSpan> match_sp
             if (!matching_elements.empty()) {
                 auto& field_name = id_to_name.lookup(field_id);
                 if (fields.has_field(field_name)) {
-                    result.add_matching_elements(doc, field_name, matching_elements);
+                    result.add_matching_elements(doc, fields.enclosing_field(field_name), matching_elements);
                 }
                 matching_elements.clear();
             }
@@ -162,7 +166,7 @@ void extract_matching_elements(uint32_t doc, std::span<const MatchSpan> match_sp
     if (!matching_elements.empty()) {
         auto& field_name = id_to_name.lookup(field_id);
         if (fields.has_field(field_name)) {
-            result.add_matching_elements(doc, field_name, matching_elements);
+            result.add_matching_elements(doc, fields.enclosing_field(field_name), matching_elements);
         }
     }
 }
@@ -251,7 +255,7 @@ void FindMatchingElements::process(const std::vector<uint32_t>& docs, const Blue
         const std::string& fieldName = idToName.lookup(currentField);
         if (fields.has_field(fieldName)) {
             SearchIterator::UP child = bp.createSearch(matchData);
-            find_matching_elements(docs, *child, fieldName, result);
+            find_matching_elements(docs, *child, fields.enclosing_field(fieldName), result);
         }
     }
 }

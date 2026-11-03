@@ -381,6 +381,23 @@ TEST(SchemaTest, require_that_uri_fields_are_detected_from_index_field_names_whe
     EXPECT_FALSE(s.is_uri_part("url.host"));
 }
 
+TEST(SchemaTest, require_that_struct_field_indexes_are_identified) {
+    Schema s = make_uri_schema();
+    s.addIndexField(SIF("title", DataType::STRING));
+    s.addAttributeField(SIF("persons.age", DataType::INT32, CollectionType::ARRAY));
+    EXPECT_TRUE(s.is_struct_field_index("files.path"));
+    EXPECT_FALSE(s.is_struct_field_index("files"));
+    EXPECT_FALSE(s.is_struct_field_index("url"));
+    EXPECT_FALSE(s.is_struct_field_index("url.host"));
+    EXPECT_FALSE(s.is_struct_field_index("url.hostname"));
+    EXPECT_FALSE(s.is_struct_field_index("title"));
+    EXPECT_FALSE(s.is_struct_field_index("persons.age")); // attribute only
+    EXPECT_FALSE(s.is_struct_field_index("files.other")); // not in schema
+    s.addIndexField(SIF("people.value.name", DataType::STRING, CollectionType::ARRAY));
+    EXPECT_TRUE(s.is_struct_field_index("people.value.name")); // nested struct field in map of struct
+    EXPECT_FALSE(s.is_struct_field_index("people.value"));
+}
+
 TEST(SchemaTest, require_that_uri_fields_are_built_from_config) {
     Schema s;
     SchemaBuilder::build(make_uri_config(true), s);
