@@ -7,7 +7,6 @@
 #include "string_direct_posting_store_adapter.hpp"
 #include "string_matcher_factory.h"
 #include "string_posting_search_context.hpp"
-#include "string_range_posting_search_context.hpp"
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
