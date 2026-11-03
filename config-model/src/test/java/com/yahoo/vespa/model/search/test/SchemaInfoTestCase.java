@@ -45,6 +45,7 @@ public class SchemaInfoTestCase {
     schema[0].field[0].bitPacked false
     schema[0].field[0].matchType NONE
     schema[0].field[0].explanation ""
+    schema[0].field[0].inputExpression ""
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
     schema[0].summaryclass[0].fields[0].type "longstring"
@@ -71,6 +72,7 @@ public class SchemaInfoTestCase {
     schema[0].field[0].bitPacked false
     schema[0].field[0].matchType NONE
     schema[0].field[0].explanation ""
+    schema[0].field[0].inputExpression ""
     schema[0].field[1].name "f2"
     schema[0].field[1].type "string"
     schema[0].field[1].attribute false
@@ -78,6 +80,7 @@ public class SchemaInfoTestCase {
     schema[0].field[1].bitPacked false
     schema[0].field[1].matchType NONE
     schema[0].field[1].explanation ""
+    schema[0].field[1].inputExpression ""
     schema[0].fieldset[0].name "fs1"
     schema[0].fieldset[0].field[0] "f1"
     schema[0].fieldset[0].field[1] "f2"
@@ -108,6 +111,7 @@ public class SchemaInfoTestCase {
     schema[0].field[0].bitPacked false
     schema[0].field[0].matchType NONE
     schema[0].field[0].explanation ""
+    schema[0].field[0].inputExpression ""
     schema[0].field[1].name "f1Index"
     schema[0].field[1].type "string"
     schema[0].field[1].alias[0] "a1"
@@ -117,6 +121,7 @@ public class SchemaInfoTestCase {
     schema[0].field[1].bitPacked false
     schema[0].field[1].matchType TEXT
     schema[0].field[1].explanation ""
+    schema[0].field[1].inputExpression ""
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
     schema[0].summaryclass[0].fields[0].type "longstring"
@@ -142,6 +147,7 @@ public class SchemaInfoTestCase {
     schema[0].field[0].bitPacked false
     schema[0].field[0].matchType NONE
     schema[0].field[0].explanation ""
+    schema[0].field[0].inputExpression ""
     schema[0].field[1].name "f1Attribute"
     schema[0].field[1].type "int"
     schema[0].field[1].alias[0] "a1"
@@ -151,6 +157,7 @@ public class SchemaInfoTestCase {
     schema[0].field[1].bitPacked false
     schema[0].field[1].matchType NONE
     schema[0].field[1].explanation ""
+    schema[0].field[1].inputExpression ""
     schema[0].summaryclass[0].name "default"
     schema[0].summaryclass[0].fields[0].name "documentid"
     schema[0].summaryclass[0].fields[0].type "longstring"
@@ -226,6 +233,45 @@ public class SchemaInfoTestCase {
 
         assertTrue(field("tags.key", config).attribute());
         assertFalse(field("tags.value", config).attribute());
+    }
+
+    @Test
+    void testInputExpressionExporting() throws ParseException {
+        var registry = new RankProfileRegistry();
+        var builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+                          schema test {
+                              document test {
+                                  field title type string {
+                                      indexing: index
+                                  }
+                                  field body type string {
+                                      indexing: index
+                                  }
+                              }
+                              field body_embedding type tensor<float>(x[4]) {
+                                  indexing: input body | embed bert | attribute | summary
+                              }
+                              field title_embedding type tensor<float>(x[4]) {
+                                  indexing: input title | embed e5 | attribute
+                              }
+                              field default_embedding type tensor<float>(x[4]) {
+                                  indexing: input title | embed | attribute
+                              }
+                          }
+                          """);
+        builder.build(true);
+        var schema = builder.getSchema();
+        var schemaInfo = new com.yahoo.schema.derived.SchemaInfo(schema, "index", registry,
+                                                                 new Summaries(schema, new BaseDeployLogger(), new TestProperties()));
+        var configBuilder = new SchemaInfoConfig.Builder();
+        schemaInfo.getConfig(configBuilder);
+        var config = configBuilder.build().schema(0);
+        assertEquals("", field("title", config).inputExpression());
+        assertEquals("", field("body", config).inputExpression());
+        assertEquals("embed(bert, @input)", field("body_embedding", config).inputExpression());
+        assertEquals("embed(e5, @input)", field("title_embedding", config).inputExpression());
+        assertEquals("embed(@input)", field("default_embedding", config).inputExpression());
     }
 
     private SchemaInfoConfig.Schema.Field field(String name, SchemaInfoConfig.Schema schema) {

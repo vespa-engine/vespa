@@ -64,6 +64,13 @@ public class SchemaInfoTest {
     }
 
     @Test
+    void testInputExpression() {
+        var schemaA = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("a");
+        assertEquals(Optional.of("embed(e5, @input)"), schemaA.fields().get("field3").inputExpression());
+        assertEquals(Optional.empty(), schemaA.fields().get("field1").inputExpression());
+    }
+
+    @Test
     void testExplanations() {
         var schemaA = SchemaInfoTester.createSchemaInfoFromConfig().schemas().get("a");
         assertEquals(Optional.of("Schema a"), schemaA.explanation());

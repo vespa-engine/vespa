@@ -22,6 +22,10 @@ schema[].field[].matchType enum { NONE, TEXT, WORD, EXACT, GRAM } default=NONE
 ## A free text explanation of the content and usage of this field, or empty if none
 schema[].field[].explanation string default=""
 
+## The expression to use in queries to produce an input to match against this field from a value given as "@input",
+## e.g. "embed(myEmbedder, @input)", or empty if none
+schema[].field[].inputExpression string default=""
+
 ## Present (with a single entry) if this field has fast map search, i.e. does 'fast-search-map-field',
 ## either on a map, or on an array of struct with the key and value struct fields given here
 ## The name given to the lookup field in 'fast-search-map-field'
