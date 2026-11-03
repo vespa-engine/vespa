@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_dictionary_lookup.h"
 #include "ipostinglistsearchcontext.h"
 
 namespace vespalib::datastore {
@@ -20,7 +21,7 @@ namespace search::attribute {
  * searches for values that are not present at all.
  */
 
-class EnumHintSearchContext : public IPostingListSearchContext {
+class EnumHintSearchContext : public IPostingListSearchContext, public IDictionaryLookup {
     const std::unique_ptr<vespalib::datastore::IUniqueStoreDictionaryReadSnapshot> _dict_snapshot;
     uint32_t                                                                       _uniqueValues;
     uint32_t                                                                       _docIdLimit;
@@ -31,9 +32,9 @@ protected:
     ~EnumHintSearchContext() override;
 
 public:
-    void lookupTerm(const vespalib::datastore::EntryComparator& comp);
+    void lookupTerm(const vespalib::datastore::EntryComparator& comp) override;
     void lookupRange(const vespalib::datastore::EntryComparator& low,
-                     const vespalib::datastore::EntryComparator& high);
+                     const vespalib::datastore::EntryComparator& high) override;
 
 protected:
     std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData* matchData,
