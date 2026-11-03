@@ -43,6 +43,8 @@ private:
     std::map<std::string, size_t> _params;
 
 protected:
+    bool _has_duplicates = false;
+
     size_t lookup(const std::string& token) const {
         auto result = _params.find(token);
         return (result == _params.end()) ? UNDEF : result->second;
@@ -58,6 +60,7 @@ protected:
 
 public:
     static const size_t UNDEF = -1;
+    bool has_duplicates() const { return _has_duplicates; }
     virtual bool implicit() const = 0;
     virtual size_t resolve(const std::string& token) const = 0;
     std::vector<std::string> extract() const {
@@ -74,7 +77,9 @@ public:
 struct ExplicitParams : Params {
     explicit ExplicitParams(const std::vector<std::string>& params_in) {
         for (const auto& param : params_in) {
-            CHECK(lookup(param) == UNDEF);
+            if (lookup(param) != UNDEF) {
+                _has_duplicates = true;
+            }
             lookup_add(param);
         }
     }
@@ -1039,6 +1044,9 @@ void parse_expression(ParseContext& ctx) {
 
 auto parse_function(const Params& params, std::string_view expression, const SymbolExtractor* symbol_extractor) {
     ParseContext ctx(params, expression.data(), expression.size(), symbol_extractor);
+    if (params.has_duplicates()) {
+        ctx.fail("duplicate parameter names");
+    }
     parse_expression(ctx);
     if (ctx.failed() && params.implicit()) {
         return Function::create(ctx.get_result(), std::vector<std::string>());

@@ -794,6 +794,17 @@ TEST(FunctionTest, require_that_tensor_reduce_with_unknown_aggregator_fails) {
     verify_error("reduce(x,bogus)", "[reduce(x,bogus]...[unknown aggregator: 'bogus']...[)]");
 }
 
+TEST(FunctionTest, require_that_explicit_parameter_names_cannot_contain_duplicates) {
+    auto function = Function::parse({"x", "y", "x"}, "x+y");
+    EXPECT_TRUE(function->has_error());
+    EXPECT_EQ("[]...[duplicate parameter names]...[x+y]", function->get_error());
+}
+
+TEST(FunctionTest, require_that_lambda_parameter_names_cannot_contain_duplicates) {
+    verify_error("map(x,f(a,a)(a))", "[map(x,f(a,a)]...[duplicate identifiers]...[(a))]");
+    verify_error("join(x,y,f(a,a)(a+a))", "[join(x,y,f(a,a)]...[duplicate identifiers]...[(a+a))]");
+}
+
 TEST(FunctionTest, require_that_tensor_reduce_with_duplicate_dimensions_fails) {
     verify_error("reduce(x,sum,a,a)", "[reduce(x,sum,a,a]...[duplicate identifiers]...[)]");
 }
