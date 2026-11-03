@@ -18,6 +18,7 @@ template <class EntryT> class EnumStoreT;
 namespace search::attribute {
 
 class EnumHintSearchContext;
+class IDictionaryLookup;
 
 /*
  * Class used to determine if an attribute vector string value is a match for
@@ -42,6 +43,7 @@ public:
     }
 
     void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
+    bool lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const;
 
     /*
      * The methods below are needed in StringPostingSearchContext
