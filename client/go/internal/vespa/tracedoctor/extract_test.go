@@ -150,6 +150,8 @@ func TestPerfSample(t *testing.T) {
 		{"[3]And::get_hits", sampleFlags{enum: true, termwise: true}},
 		{"[3]And::and_hits_into", sampleFlags{enum: true, termwise: true}},
 		{"[3]And::or_hits_into", sampleFlags{enum: true, termwise: true}},
+		{"[3]SameElement::get_element_ids", sampleFlags{enum: true}},
+		{"[3]SameElement::and_element_ids_into", sampleFlags{enum: true}},
 		{"[3]MultiBitVectorIterator::doSeek", sampleFlags{enum: true, seek: true, mbv: true}},
 		{"bogus", sampleFlags{}},
 	}
