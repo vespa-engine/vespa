@@ -5,7 +5,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.Payload;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +34,7 @@ public class MemoryCacheTest {
     private final String configId2 = "clients/gateways/gateway/component/com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation";
     private static final String defMd52 = "a2";
     private static final String differentDefMd5 = "09ef";
-    private static final PayloadChecksums checksums = PayloadChecksums.from("b", "");
+    private static final PayloadChecksum checksum = new PayloadChecksum("b");
     private final ConfigKey<?> configKey = new ConfigKey<>(defName, configId, namespace);
     private final ConfigKey<?> configKey2 = new ConfigKey<>(defName2, configId2, namespace2);
     private ConfigCacheKey cacheKey;
@@ -64,9 +64,9 @@ public class MemoryCacheTest {
         slime.setString("bar \"value2\"");
         payloadDifferentMd5 = Payload.from(new ConfigPayload(slime));
 
-        config = new RawConfig(configKey, defMd5, payload, checksums, generation, false, defContent, Optional.empty());
-        config2 = new RawConfig(configKey2, defMd52, payload2, checksums, generation, false, defContent, Optional.empty());
-        configDifferentMd5 = new RawConfig(configKey, differentDefMd5, payloadDifferentMd5, checksums, generation, false, defContent, Optional.empty());
+        config = new RawConfig(configKey, defMd5, payload, checksum, generation, false, defContent, Optional.empty());
+        config2 = new RawConfig(configKey2, defMd52, payload2, checksum, generation, false, defContent, Optional.empty());
+        configDifferentMd5 = new RawConfig(configKey, differentDefMd5, payloadDifferentMd5, checksum, generation, false, defContent, Optional.empty());
 
         cacheKey = new ConfigCacheKey(configKey, config.getDefMd5());
         cacheKey2 = new ConfigCacheKey(configKey2, config2.getDefMd5());

@@ -9,5 +9,6 @@ vespa_add_library(searchlib_query OBJECT
     query_term_decoder.cpp
     query_term_simple.cpp
     query_term_ucs4.cpp
+    string_range_spec.cpp
     DEPENDS
 )

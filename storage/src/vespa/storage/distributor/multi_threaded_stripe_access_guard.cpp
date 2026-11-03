@@ -5,12 +5,14 @@
 #include "distributor_stripe_pool.h"
 #include "distributor_stripe_thread.h"
 
+#include <vespa/check_require.h>
+
 namespace storage::distributor {
 
 MultiThreadedStripeAccessGuard::MultiThreadedStripeAccessGuard(MultiThreadedStripeAccessor& accessor,
                                                                DistributorStripePool&       stripe_pool)
     : _accessor(accessor), _stripe_pool(stripe_pool) {
-    assert(_stripe_pool.stripe_count() > 0);
+    CHECK(_stripe_pool.stripe_count() > 0);
     _stripe_pool.park_all_threads();
 }
 
@@ -143,13 +145,13 @@ template <typename Func> void MultiThreadedStripeAccessGuard::for_each_stripe(Fu
 
 std::unique_ptr<StripeAccessGuard> MultiThreadedStripeAccessor::rendezvous_and_hold_all() {
     // For sanity checking of invariant of only one guard being allowed at any given time.
-    assert(!_guard_held);
+    CHECK(!_guard_held);
     _guard_held = true;
     return std::make_unique<MultiThreadedStripeAccessGuard>(*this, _stripe_pool);
 }
 
 void MultiThreadedStripeAccessor::mark_guard_released() {
-    assert(_guard_held);
+    CHECK(_guard_held);
     _guard_held = false;
 }
 

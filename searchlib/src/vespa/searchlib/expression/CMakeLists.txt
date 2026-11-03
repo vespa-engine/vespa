@@ -21,6 +21,7 @@ vespa_add_library(searchlib_expression OBJECT
     floatresultnode.cpp
     functionnodes.cpp
     geo_distance_function_node.cpp
+    in_predicate_node.cpp
     integerbucketresultnode.cpp
     integerresultnode.cpp
     interpolated_document_field_lookup_node.cpp

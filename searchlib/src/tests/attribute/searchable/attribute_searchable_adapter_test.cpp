@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
@@ -53,11 +54,13 @@ using search::query::SimpleLocationTerm;
 using search::query::SimplePredicateQuery;
 using search::query::SimplePrefixTerm;
 using search::query::SimpleRangeTerm;
+using search::query::SimpleStringRangeTerm;
 using search::query::SimpleStringTerm;
 using search::query::SimpleSubstringTerm;
 using search::query::SimpleSuffixTerm;
 using search::query::SimpleWandTerm;
 using search::query::SimpleWeightedSetTerm;
+using search::query::StringRange;
 using search::query::StringTermVector;
 using search::query::Weight;
 using search::queryeval::Blueprint;
@@ -113,9 +116,9 @@ public:
         }
     }
 
-    void getAttributeList(vector<AttributeGuard>&) const override { assert(!"Not implemented"); }
+    void getAttributeList(vector<AttributeGuard>&) const override { CHECK(!"Not implemented"); }
     IAttributeContext::UP createContext() const override {
-        assert(!"Not implemented");
+        CHECK(!"Not implemented");
         return IAttributeContext::UP();
     }
 
@@ -301,6 +304,23 @@ template <typename T> MyAttributeManager makeAttributeManager(T value) {
     return MyAttributeManager(attr);
 }
 
+MyAttributeManager make_fast_search_string_attribute_manager(const string& value) {
+    Config cfg(BasicType::STRING, CollectionType::SINGLE);
+    cfg.setFastSearch(true);
+    AttributeVector::SP attr_ptr = AttributeFactory::createAttribute(field, cfg);
+    auto*               attr = static_cast<search::StringAttribute*>(attr_ptr.get());
+    add_docs(attr, num_docs);
+    attr->update(num_docs - 1, value);
+    attr->commit();
+    return MyAttributeManager(attr_ptr);
+}
+
+SimpleStringRangeTerm make_string_range_term(std::optional<std::string> left, bool left_closed,
+                                             std::optional<std::string> right, bool right_closed) {
+    return {StringRange(std::in_place, std::move(left), left_closed, std::move(right), right_closed), field, 0,
+            Weight(0)};
+}
+
 MyAttributeManager makeFastSearchLongAttributeManager(int64_t value) {
     Config cfg(BasicType::INT64, CollectionType::SINGLE);
     cfg.setFastSearch(true);
@@ -330,6 +350,33 @@ TEST(AttributeSearchableAdapterTest, requireThatRangeTermsWorkToo) {
     EXPECT_TRUE(!search("[10;23]", attribute_manager));
     EXPECT_TRUE(!search(">43", attribute_manager));
     EXPECT_TRUE(search("[10;]", attribute_manager));
+}
+
+TEST(AttributeSearchableAdapterTest, require_that_string_range_terms_work) {
+    for (bool fast_search : {false, true}) {
+        MyAttributeManager attribute_manager =
+            fast_search ? make_fast_search_string_attribute_manager("foo") : makeAttributeManager("foo");
+
+        // Contained in range
+        EXPECT_TRUE(
+            search(make_string_range_term("bar", true, "fox", true), attribute_manager, fast_search, true, false));
+        EXPECT_TRUE(
+            search(make_string_range_term("foo", true, "foo", true), attribute_manager, fast_search, true, false));
+        EXPECT_TRUE(search(make_string_range_term("bar", true, std::nullopt, false), attribute_manager, fast_search,
+                           true, false));
+        // matching is uncased by default
+        EXPECT_TRUE(
+            search(make_string_range_term("BAR", true, "FOX", true), attribute_manager, fast_search, true, false));
+
+        // Not contained in range
+        EXPECT_FALSE(
+            search(make_string_range_term("bar", true, "fon", true), attribute_manager, fast_search, true, true));
+        // The following two cannot be expected to be empty since the closed range contains foo
+        EXPECT_FALSE(
+            search(make_string_range_term("foo", false, "fox", true), attribute_manager, fast_search, true, false));
+        EXPECT_FALSE(
+            search(make_string_range_term("bar", true, "foo", false), attribute_manager, fast_search, true, false));
+    }
 }
 
 TEST(AttributeSearchableAdapterTest, requireThatPrefixTermsWork) {
@@ -401,12 +448,15 @@ TEST(AttributeSearchableAdapterTest,
 
 void set_weights(StringAttribute* attr, uint32_t docid, int32_t foo_weight, int32_t bar_weight, int32_t baz_weight) {
     attr->clearDoc(docid);
-    if (foo_weight > 0)
+    if (foo_weight > 0) {
         attr->append(docid, "foo", foo_weight);
-    if (bar_weight > 0)
+    }
+    if (bar_weight > 0) {
         attr->append(docid, "bar", bar_weight);
-    if (baz_weight > 0)
+    }
+    if (baz_weight > 0) {
         attr->append(docid, "baz", baz_weight);
+    }
     attr->commit();
 }
 

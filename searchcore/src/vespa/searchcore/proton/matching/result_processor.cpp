@@ -5,6 +5,7 @@
 #include "partial_result.h"
 #include "sessionmanager.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
@@ -28,14 +29,21 @@ ResultProcessor::Result::Result(std::unique_ptr<search::engine::SearchReply> rep
 ResultProcessor::Result::~Result() = default;
 
 ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom& doom, IAttributeContext& ac,
-                            const std::string& ss)
+                            const std::string& ss, INumericSortValueProvider* sort_value_provider)
     : sorter(FastS_DefaultResultSorter::instance()),
       _ucaFactory(std::make_unique<search::uca::UcaConverterFactory>()),
-      sortSpec(DocumentMetaStoreAttribute::getFixedName(), partitionId, doom, *_ucaFactory) {
+      sortSpec(DocumentMetaStoreAttribute::getFixedName(), partitionId, doom, *_ucaFactory),
+      _feature_binding_failed(false) {
     if (!ss.empty() && sortSpec.Init(ss.c_str(), ac)) {
-        sorter = &sortSpec;
+        if (sortSpec.bind_numeric_provider(sort_value_provider)) {
+            sorter = &sortSpec;
+        } else {
+            _feature_binding_failed = true;
+        }
     }
 }
+
+ResultProcessor::Sort::~Sort() = default;
 
 ResultProcessor::Context::Context(const search::BitVector& validLids, Sort::UP s, PartialResultUP r,
                                   GroupingContext::UP g)
@@ -50,7 +58,7 @@ ResultProcessor::Context::~Context() = default;
 
 void ResultProcessor::GroupingSource::merge(Source& s) {
     auto& rhs = dynamic_cast<GroupingSource&>(s);
-    assert((ctx == nullptr) == (rhs.ctx == nullptr));
+    CHECK((ctx == nullptr) == (rhs.ctx == nullptr));
     if (ctx != nullptr) {
         search::grouping::GroupingManager man(*ctx);
         man.merge(*rhs.ctx);
@@ -69,7 +77,8 @@ ResultProcessor::ResultProcessor(IAttributeContext& attrContext, const search::I
       _sortSpec(sortSpec),
       _offset(offset),
       _hits(hits),
-      _wasMerged(false) {
+      _wasMerged(false),
+      _sort_feature_failed(false) {
     if (!_groupingContext.empty()) {
         _groupingSession = std::make_unique<GroupingSession>(sessionId, _groupingContext, attrContext, nullptr);
     }
@@ -87,8 +96,12 @@ void ResultProcessor::prepareThreadContextCreation(size_t num_threads) {
 }
 
 std::unique_ptr<ResultProcessor::Context>
-ResultProcessor::createThreadContext(const vespalib::Doom& hardDoom, size_t thread_id, uint32_t distributionKey) {
-    auto sort = std::make_unique<Sort>(distributionKey, hardDoom, _attrContext, _sortSpec);
+ResultProcessor::createThreadContext(const vespalib::Doom& hardDoom, size_t thread_id, uint32_t distributionKey,
+                                     INumericSortValueProvider* sort_value_provider) {
+    auto sort = std::make_unique<Sort>(distributionKey, hardDoom, _attrContext, _sortSpec, sort_value_provider);
+    if (sort->feature_binding_failed()) {
+        note_sort_feature_failure();
+    }
     auto result = std::make_unique<PartialResult>((_offset + _hits), sort->hasSortData());
     search::grouping::GroupingContext::UP groupingContext;
     if (_groupingSession) {
@@ -158,7 +171,7 @@ ResultProcessor::Result::UP ResultProcessor::makeReply(PartialResultUP full_resu
             sortOffset += sr.second;
         }
         r.sortIndex[hitcnt] = sortOffset;
-        assert(sortOffset == sortDataSize);
+        CHECK(sortOffset == sortDataSize);
     }
     numFs4Hits += reply->hits.size();
     return std::make_unique<Result>(std::move(reply), numFs4Hits);

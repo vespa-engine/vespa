@@ -2,6 +2,7 @@
 
 #include "visitoroperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/storage/common/reindexing_constants.h>
@@ -110,7 +111,7 @@ document::BucketId VisitorOperation::getLastBucketVisited() {
     LOG(spam, "getLastBucketVisited(): Sub bucket count: %zu", _superBucket.subBucketsVisitOrder.size());
     for (const auto& sub_bucket : _superBucket.subBucketsVisitOrder) {
         auto found = _superBucket.subBuckets.find(sub_bucket);
-        assert(found != _superBucket.subBuckets.end());
+        CHECK(found != _superBucket.subBuckets.end());
         LOG(spam, "%s => %s", found->first.toString().c_str(), found->second.toString().c_str());
 
         if (found->second.done) {
@@ -151,10 +152,10 @@ vespalib::duration VisitorOperation::timeLeft() const noexcept {
 
 void VisitorOperation::markCompleted(const document::BucketId& bid, const api::ReturnCode& code) {
     auto found = _superBucket.subBuckets.find(bid);
-    assert(found != _superBucket.subBuckets.end());
+    CHECK(found != _superBucket.subBuckets.end());
 
     BucketInfo& info = found->second;
-    assert(info.activeNode != -1);
+    CHECK(info.activeNode != -1);
     info.activeNode = -1;
     if (code.success()) {
         info.done = true;
@@ -174,7 +175,7 @@ void VisitorOperation::onReceive(DistributorStripeMessageSender& sender, const a
     _trace.add(reply.steal_trace());
 
     auto iter = _sentMessages.find(reply.getMsgId());
-    assert(iter != _sentMessages.end());
+    CHECK(iter != _sentMessages.end());
 
     api::CreateVisitorCommand& storageVisitor = *iter->second;
 
@@ -481,7 +482,7 @@ int VisitorOperation::pickTargetNode(const BucketDatabase::Entry& entry, const s
         return findNodeWithMostDocuments(potentialNodes);
     }
 
-    assert(!potentialNodes.empty());
+    CHECK(!potentialNodes.empty());
     return potentialNodes.front().getNode();
 }
 
@@ -495,7 +496,7 @@ void VisitorOperation::onStart(DistributorStripeMessageSender& sender) {
 }
 
 bool VisitorOperation::verify_command_and_expand_buckets(DistributorStripeMessageSender& sender) {
-    assert(!_verified_and_expanded);
+    CHECK(!_verified_and_expanded);
     _verified_and_expanded = true;
     if (!verifyCreateVisitorCommand(sender)) {
         return false;
@@ -570,7 +571,7 @@ bool VisitorOperation::bucketIsValidAndConsistent(const BucketDatabase::Entry& e
         LOG(debug, "Bucket %s does not exist anymore", entry.toString().c_str());
         return false;
     }
-    assert(entry->getNodeCount() != 0);
+    CHECK(entry->getNodeCount() != 0);
 
     if (!allowInconsistencies() && !entry->hasTrusted()) {
         LOG(spam,
@@ -590,7 +591,7 @@ bool VisitorOperation::allowInconsistencies() const noexcept {
 bool VisitorOperation::assignBucketsToNodes(NodeToBucketsMap& nodeToBucketsMap) {
     for (const auto& subBucket : _superBucket.subBucketsVisitOrder) {
         auto subIter(_superBucket.subBuckets.find(subBucket));
-        assert(subIter != _superBucket.subBuckets.end());
+        CHECK(subIter != _superBucket.subBuckets.end());
 
         BucketInfo& bucketInfo(subIter->second);
         if (shouldSkipBucket(bucketInfo)) {
@@ -733,12 +734,12 @@ void VisitorOperation::onClose(DistributorStripeMessageSender& sender) {
 }
 
 void VisitorOperation::fail_with_bucket_already_locked(DistributorStripeMessageSender& sender) {
-    assert(is_read_for_write());
+    CHECK(is_read_for_write());
     sendReply(api::ReturnCode(api::ReturnCode::BUSY, "This bucket is already locked by another operation"), sender);
 }
 
 void VisitorOperation::fail_with_merge_pending(DistributorStripeMessageSender& sender) {
-    assert(is_read_for_write());
+    CHECK(is_read_for_write());
     sendReply(api::ReturnCode(api::ReturnCode::BUSY, "A merge operation is pending for this bucket"), sender);
 }
 

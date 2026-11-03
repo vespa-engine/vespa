@@ -154,7 +154,8 @@ public class PlatformBundles {
             com.yahoo.search.searchers.RateLimitingSearcher.class.getName(),
             com.yahoo.vespa.streamingvisitors.StreamingBackend.class.getName(),
             ai.vespa.search.llm.LLMSearcher.class.getName(),
-            ai.vespa.search.llm.RAGSearcher.class.getName()
+            ai.vespa.search.llm.RAGSearcher.class.getName(),
+            ai.vespa.search.counting.FilterIntersectionsSearcher.class.getName()
     );
 
     // This is a hack to allow users to declare components from the model-integration bundle without naming the bundle.

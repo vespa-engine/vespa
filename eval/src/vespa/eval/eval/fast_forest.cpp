@@ -4,6 +4,7 @@
 
 #include "gbdt.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/basic_nodes.h>
 #include <vespa/eval/eval/call_nodes.h>
 #include <vespa/eval/eval/operator_nodes.h>
@@ -12,7 +13,6 @@
 #include <arpa/inet.h>
 
 #include <algorithm>
-#include <cassert>
 
 namespace vespalib::eval::gbdt {
 
@@ -38,13 +38,13 @@ struct BitRange {
     BitRange(uint32_t bit) : first(bit), last(bit) {}
     BitRange(uint32_t a, uint32_t b) : first(a), last(b) {}
     template <typename T> size_t covered_words() const {
-        assert(first <= last);
+        CHECK(first <= last);
         uint32_t v1 = (first / (bits_per_byte * sizeof(T)));
         uint32_t v2 = (last / (bits_per_byte * sizeof(T)));
         return ((v2 - v1) + 1);
     }
     static BitRange join(const BitRange& a, const BitRange& b) {
-        assert((a.last + 1) == b.first);
+        CHECK((a.last + 1) == b.first);
         return BitRange(a.first, b.last);
     }
     ~BitRange() = default;
@@ -83,25 +83,25 @@ BitRange State::encode_node(uint32_t tree_id, const nodes::Node& node) {
         auto     inverted = nodes::as<nodes::Not>(if_node->cond());
         if (less) {
             auto symbol = nodes::as<nodes::Symbol>(less->lhs());
-            assert(symbol);
-            assert(less->rhs().is_const_double());
+            CHECK(symbol);
+            CHECK(less->rhs().is_const_double());
             size_t feature = symbol->id();
-            assert(feature < cmp_nodes.size());
+            CHECK(feature < cmp_nodes.size());
             cmp_nodes[feature].emplace_back(less->rhs().get_const_double_value(), tree_id, true_leafs, true);
         } else {
-            assert(inverted);
+            CHECK(inverted);
             auto ge = nodes::as<nodes::GreaterEqual>(inverted->child());
-            assert(ge);
+            CHECK(ge);
             auto symbol = nodes::as<nodes::Symbol>(ge->lhs());
-            assert(symbol);
-            assert(ge->rhs().is_const_double());
+            CHECK(symbol);
+            CHECK(ge->rhs().is_const_double());
             size_t feature = symbol->id();
-            assert(feature < cmp_nodes.size());
+            CHECK(feature < cmp_nodes.size());
             cmp_nodes[feature].emplace_back(ge->rhs().get_const_double_value(), tree_id, true_leafs, false);
         }
         return BitRange::join(true_leafs, false_leafs);
     } else {
-        assert(node.is_const_double());
+        CHECK(node.is_const_double());
         BitRange leaf_range(leafs[tree_id].size());
         leafs[tree_id].push_back(node.get_const_double_value());
         return leaf_range;
@@ -112,12 +112,12 @@ State::State(size_t num_params, const std::vector<const nodes::Node*>& trees)
     : cmp_nodes(num_params), leafs(trees.size()), max_leafs(0) {
     for (uint32_t tree_id = 0; tree_id < trees.size(); ++tree_id) {
         BitRange leaf_range = encode_node(tree_id, *trees[tree_id]);
-        assert(leaf_range.first == 0);
-        assert((leaf_range.last + 1) == leafs[tree_id].size());
+        CHECK(leaf_range.first == 0);
+        CHECK((leaf_range.last + 1) == leafs[tree_id].size());
         max_leafs = std::max(max_leafs, leafs[tree_id].size());
     }
     for (CmpNodes& cmp_range : cmp_nodes) {
-        assert(!cmp_range.empty());
+        CHECK(!cmp_range.empty());
         std::sort(cmp_range.begin(), cmp_range.end());
     }
 }
@@ -164,8 +164,8 @@ template <typename T> struct FixedForest : FastForest {
     static T make_mask(const CmpNode& cmp_node) {
         BitRange range = cmp_node.false_mask;
         size_t   num_bits = (sizeof(T) * bits_per_byte);
-        assert(range.last < num_bits);
-        assert(range.first <= range.last);
+        CHECK(range.last < num_bits);
+        CHECK(range.first <= range.last);
         T mask = 0;
         for (uint32_t i = 0; i < num_bits; ++i) {
             if ((i < range.first) || (i > range.last)) {
@@ -238,7 +238,7 @@ FixedForest<T>::FixedForest(const State& state)
             _padded_leafs.push_back(0.0);
         }
     }
-    assert(_padded_leafs.size() == (_num_trees * _max_leafs));
+    CHECK(_padded_leafs.size() == (_num_trees * _max_leafs));
 }
 
 template <typename T>
@@ -363,7 +363,7 @@ struct MultiWordForest : FastForest {
 
     static Mask make_fixed_mask(const CmpNode& cmp_node, size_t words_per_tree) {
         BitRange range = cmp_node.false_mask;
-        assert(range.covered_words<uint32_t>() == 1);
+        CHECK(range.covered_words<uint32_t>() == 1);
         size_t   offset = (range.first / bits_per_word);
         uint32_t bits = 0;
         for (uint32_t i = 0; i < bits_per_word; ++i) {
@@ -378,7 +378,7 @@ struct MultiWordForest : FastForest {
 
     static Mask make_rle_mask(const CmpNode& cmp_node, size_t words_per_tree) {
         BitRange range = cmp_node.false_mask;
-        assert(range.covered_words<uint32_t>() > 1);
+        CHECK(range.covered_words<uint32_t>() > 1);
         uint32_t idx1 = (range.first / bits_per_byte);
         uint32_t idx2 = (range.last / bits_per_byte);
         uint8_t  bits1 = 0;
@@ -395,7 +395,7 @@ struct MultiWordForest : FastForest {
         }
         uint32_t offset = (idx1 + (word_size * words_per_tree * cmp_node.tree_id));
         uint32_t empty_cnt = ((idx2 - idx1) - 1);
-        assert(empty_cnt < 256);
+        CHECK(empty_cnt < 256);
         return Mask(cmp_node.value, offset, bits1, empty_cnt, bits2);
     }
 
@@ -453,7 +453,7 @@ MultiWordForest::MultiWordForest(const State& state)
                 _default_masks.emplace_back(_masks.back().offset, _masks.back().bits);
             }
         }
-        assert(_default_masks.size() == _default_offsets.back().rle);
+        CHECK(_default_masks.size() == _default_offsets.back().rle);
         for (const CmpNode& cmp_node : rle) {
             _masks.push_back(make_rle_mask(cmp_node, _words_per_tree));
             if (cmp_node.false_is_default) {

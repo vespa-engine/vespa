@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import org.junit.jupiter.api.Test;
 
@@ -18,109 +19,71 @@ public class ClusterMembershipTest {
 
     @Test
     void testContainerServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
-        assertContainerService(ClusterMembership.from(cluster, 3));
+        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.container,
+                                                  ClusterSpec.Id.from("id1"),
+                                                  Capacity.unspecified(),
+                                                  new Version("6.42")).build();
+        assertContainerService(ClusterMembership.from(cluster, 0, 3));
     }
 
     @Test
     void testSerializationWithOptionalParts() {
         {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/retired", Vtag.currentVersion, Optional.empty());
-            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
-            assertFalse(serialized.cluster().isStateful());
+            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive/retired");
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue());
             assertEquals(instance, serialized);
             assertTrue(instance.retired());
-            assertTrue(instance.cluster().isExclusive());
         }
         {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive", Vtag.currentVersion, Optional.empty());
-            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
-            assertFalse(serialized.cluster().isStateful());
+            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/exclusive");
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue());
             assertEquals(instance, serialized);
-            assertTrue(instance.cluster().isExclusive());
         }
         {
-            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/stateful", Vtag.currentVersion, Optional.empty());
-            ClusterMembership serialized = ClusterMembership.from(instance.stringValue(), Vtag.currentVersion, Optional.empty());
+            ClusterMembership instance = ClusterMembership.from("container/id1/4/37/stateful");
+            ClusterMembership serialized = ClusterMembership.from(instance.stringValue());
             assertEquals(instance, serialized);
-            assertTrue(instance.cluster().isStateful());
         }
     }
 
     @Test
     void testServiceInstance() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
-        assertContentService(ClusterMembership.from(cluster, 37));
-    }
-
-    @Test
-    void testServiceInstanceWithGroup() {
-        ClusterSpec cluster = ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
-                               .group(ClusterSpec.Group.from(4))
-                               .vespaVersion("6.42")
-                               .build();
-        assertContentServiceWithGroup(ClusterMembership.from(cluster, 37));
+        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.content,
+                                                  ClusterSpec.Id.from("id1"),
+                                                  Capacity.unspecified(),
+                                                  new Version("6.42"))
+                                         .build();
+        assertContentService(ClusterMembership.from(cluster, 0, 37));
     }
 
     @Test
     void testServiceInstanceWithGroupFromString() {
-        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37/stateful", Vtag.currentVersion, Optional.empty()));
+        assertContentServiceWithGroup(ClusterMembership.from("content/id1/4/37"));
     }
 
     @Test
     void testServiceInstanceWithRetire() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1")).vespaVersion("6.42").build();
-        assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 37));
-    }
-
-    @Test
-    void testServiceInstanceWithGroupAndRetire() {
-        ClusterSpec cluster = ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
-                               .group(ClusterSpec.Group.from(4))
-                               .vespaVersion("6.42")
-                               .build();
-        assertContentServiceWithGroupAndRetire(ClusterMembership.retiredFrom(cluster, 37));
+        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.content,
+                                                  ClusterSpec.Id.from("id1"),
+                                                  Capacity.unspecified(),
+                                                  new Version("6.42"))
+                                         .build();
+        assertContentServiceWithRetire(ClusterMembership.retiredFrom(cluster, 0, 37));
     }
 
     @Test
     void testServiceInstanceWithGroupAndRetireFromString() {
-        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired/stateful", Vtag.currentVersion, Optional.empty()));
+        assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired"));
     }
 
     @Test
     void testProfilePreservedOnClusterSpec() {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
-                                         .vespaVersion("6.42")
+        ClusterSpec cluster = ClusterSpec.builder(ClusterSpec.Type.content,
+                                                  ClusterSpec.Id.from("id1"),Capacity.unspecified(), new Version("6.42"))
                                          .profile("large-storage")
                                          .build();
-        ClusterMembership membership = ClusterMembership.from(cluster, 37);
-        assertEquals(Optional.of("large-storage"), membership.cluster().profile());
-        assertEquals("content/id1//37/stateful", membership.stringValue());
-    }
-
-    @Test
-    void testProfilePropagatedFromDeserializationParameters() {
-        String membershipString = "content/id1//37/stateful";
-        ClusterMembership withProfile = ClusterMembership.from(
-                membershipString,
-                Vtag.currentVersion,
-                Optional.empty(),
-                ZoneEndpoint.defaultEndpoint,
-                List.of(),
-                List.of(),
-                Optional.of("large-storage")
-        );
-        assertEquals(Optional.of("large-storage"), withProfile.cluster().profile());
-        ClusterMembership withoutProfile = ClusterMembership.from(
-                membershipString,
-                Vtag.currentVersion,
-                Optional.empty(),
-                ZoneEndpoint.defaultEndpoint,
-                List.of(),
-                List.of(),
-                Optional.empty()
-        );
-        assertEquals(Optional.empty(), withoutProfile.cluster().profile());
+        ClusterMembership membership = ClusterMembership.from(cluster, 0, 37);
+        assertEquals("content/id1/0/37/stateful", membership.stringValue());
     }
 
     private void assertContainerService(ClusterMembership instance) {
@@ -128,9 +91,9 @@ public class ClusterMembershipTest {
         assertEquals("id1", instance.id().value());
         assertEquals(0, instance.group());
         assertEquals(3, instance.index());
-        assertEquals("container/id1//3", instance.stringValue());
+        assertEquals("container/id1/0/3", instance.stringValue());
         // Legacy form:
-        assertEquals(instance, ClusterMembership.from("container/id1/3", instance.cluster().vespaVersion(), Optional.empty()));
+        assertEquals(instance, ClusterMembership.from("container/id1/3"));
     }
 
     private void assertContentService(ClusterMembership instance) {
@@ -139,7 +102,7 @@ public class ClusterMembershipTest {
         assertEquals(0, instance.group());
         assertEquals(37, instance.index());
         assertFalse(instance.retired());
-        assertEquals("content/id1//37/stateful", instance.stringValue());
+        assertEquals("content/id1/0/37/stateful", instance.stringValue());
     }
 
     private void assertContentServiceWithGroup(ClusterMembership instance) {
@@ -157,9 +120,9 @@ public class ClusterMembershipTest {
         assertEquals("id1", instance.id().value());
         assertEquals(37, instance.index());
         assertTrue(instance.retired());
-        assertEquals("content/id1//37/retired/stateful", instance.stringValue());
+        assertEquals("content/id1/0/37/retired/stateful", instance.stringValue());
         // Legacy form:
-        assertEquals(instance, ClusterMembership.from("content/id1/37/retired/stateful", instance.cluster().vespaVersion(), Optional.empty()));
+        assertEquals(instance, ClusterMembership.from("content/id1/37/retired"));
     }
 
     private void assertContentServiceWithGroupAndRetire(ClusterMembership instance) {

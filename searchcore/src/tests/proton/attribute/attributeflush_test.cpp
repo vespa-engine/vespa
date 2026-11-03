@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/file.h>
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
@@ -15,6 +15,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/util/file_settings.h>
+#include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
@@ -92,7 +93,7 @@ public:
         }
         Executor::Task::UP wrapper(new TaskWrapper(std::move(task), gate));
         Executor::Task::UP ok = _executor.execute(std::move(wrapper));
-        assert(ok.get() == nullptr);
+        CHECK(ok.get() == nullptr);
     }
 };
 
@@ -148,7 +149,7 @@ void UpdaterTask::run() {
         }
         ia.commit(CommitParam(i - 1, i, CommitParam::UpdateStats::SKIP)); // save i as last sync token
         needFlushToken = i;
-        assert(i + 1 == ag->getNumDocs());
+        CHECK(i + 1 == ag->getNumDocs());
         if ((commits++ % 20 == 0) && (!flushHandler.gate || flushHandler.gate->getCount() == 0)) {
             startFlushing(i, flushHandler);
             ++flushCount;
@@ -402,8 +403,8 @@ TEST(AttributeFlushTest, require_that_only_one_flusher_can_run_at_the_same_time)
 
 TEST(AttributeFlushTest, require_that_last_flush_time_is_reported) {
     using seconds = std::chrono::seconds;
-    BaseFixture     f;
-    FastOS_StatInfo stat;
+    BaseFixture           f;
+    vespalib::system_time modified_time;
     { // no meta info file yet
         AttributeManagerFixture amf(f);
         AttributeManager&       am = amf._m;
@@ -419,8 +420,13 @@ TEST(AttributeFlushTest, require_that_last_flush_time_is_reported) {
         EXPECT_EQ(vespalib::system_time(), ft->getLastFlushTime());
         EXPECT_EQ(zero_flush_duration, ft->last_flush_duration());
         ft->initFlush(200, std::make_shared<search::FlushToken>())->run();
-        EXPECT_TRUE(FastOS_File::Stat("flush/a9/snapshot-200", &stat));
-        EXPECT_EQ(stat._modifiedTime, ft->getLastFlushTime());
+        std::filesystem::path snapshot_200_path("flush/a9/snapshot-200");
+        std::error_code       ec;
+        ASSERT_TRUE(std::filesystem::exists(snapshot_200_path, ec));
+        ASSERT_FALSE(ec);
+        modified_time = FileKit::getModificationTime(snapshot_200_path.string());
+        EXPECT_NE(vespalib::system_time(), modified_time);
+        EXPECT_EQ(modified_time, ft->getLastFlushTime());
         EXPECT_NE(zero_flush_duration, ft->last_flush_duration());
     }
     { // snapshot flushed
@@ -428,14 +434,14 @@ TEST(AttributeFlushTest, require_that_last_flush_time_is_reported) {
         AttributeManager&       am = amf._m;
         amf.addAttribute("a9");
         IFlushTarget::SP ft = am.getFlushable("a9");
-        EXPECT_EQ(stat._modifiedTime, ft->getLastFlushTime());
+        EXPECT_EQ(modified_time, ft->getLastFlushTime());
         EXPECT_NE(zero_flush_duration, ft->last_flush_duration());
         { // updated flush time after nothing to flush
             std::this_thread::sleep_for(1100ms);
             std::chrono::seconds now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
             Executor::Task::UP   task = ft->initFlush(200, std::make_shared<search::FlushToken>());
             EXPECT_FALSE(task);
-            EXPECT_LT(stat._modifiedTime, ft->getLastFlushTime());
+            EXPECT_LT(modified_time, ft->getLastFlushTime());
             EXPECT_NEAR(now.count(), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()).count(), 3);
             EXPECT_NE(zero_flush_duration, ft->last_flush_duration());
         }

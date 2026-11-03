@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
@@ -137,13 +138,13 @@ template <typename ManagerType> void cleanup(GenerationHandler& g, ManagerType& 
 template <typename ManagerType, typename NodeType>
 void cleanup(GenerationHandler& g, ManagerType& m, BTreeNode::Ref n1Ref, NodeType* n1,
              BTreeNode::Ref n2Ref = BTreeNode::Ref(), NodeType* n2 = nullptr) {
-    assert(ManagerType::isValidRef(n1Ref));
+    CHECK(ManagerType::isValidRef(n1Ref));
     m.holdNode(n1Ref, n1);
     if (n2 != nullptr) {
-        assert(ManagerType::isValidRef(n2Ref));
+        CHECK(ManagerType::isValidRef(n2Ref));
         m.holdNode(n2Ref, n2);
     } else {
-        assert(!ManagerType::isValidRef(n2Ref));
+        CHECK(!ManagerType::isValidRef(n2Ref));
     }
     cleanup(g, m);
 }
@@ -189,8 +190,9 @@ template <typename LeafNodeType> bool BTreeTest::assertLeafNode(const std::strin
     std::stringstream ss;
     ss << "[";
     for (uint32_t i = 0; i < n.validSlots(); ++i) {
-        if (i > 0)
+        if (i > 0) {
             ss << ",";
+        }
         ss << n.getKey(i) << ":" << n.getData(i);
     }
     ss << "]";
@@ -685,8 +687,8 @@ void BTreeTest::buildSubTree(const std::vector<LeafPair>& sub, size_t numEntries
         builder.insert(num, str);
     }
     tree.assign(builder);
-    assert(numEntries == tree.size());
-    assert(tree.isValid());
+    CHECK(numEntries == tree.size());
+    CHECK(tree.isValid());
     EXPECT_EQ(numEntries, tree.size());
     EXPECT_TRUE(tree.isValid());
     MyTree::Iterator itr = tree.begin();
@@ -761,8 +763,9 @@ TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree) {
         MyTree::Iterator itre = itr;
         MyTree::Iterator itre2;
         MyTree::Iterator ritr = itr;
-        while (itre.valid())
+        while (itre.valid()) {
             ++itre;
+        }
         if (numEntries > 0) {
             EXPECT_TRUE(ritr.valid());
             EXPECT_EQ(0u, ritr.position());
@@ -1122,10 +1125,12 @@ struct UpdKeyComp {
     mutable size_t _numErrors;
     UpdKeyComp(int remainder) : _remainder(remainder), _numErrors(0) {}
     bool operator()(const int& lhs, const int& rhs) const {
-        if (lhs % 2 != _remainder)
+        if (lhs % 2 != _remainder) {
             ++_numErrors;
-        if (rhs % 2 != _remainder)
+        }
+        if (rhs % 2 != _remainder) {
             ++_numErrors;
+        }
         return lhs < rhs;
     }
 };
@@ -1310,8 +1315,9 @@ TEST_F(BTreeTest, require_that_apply_works) {
 
     additions.clear();
     removals.clear();
-    for (uint32_t i = 0; i < 20; ++i)
+    for (uint32_t i = 0; i < 20; ++i) {
         additions.push_back(KeyDataType(1000 + i, "big"));
+    }
     removals.push_back(60);
     removals.push_back(1002);
     apply_tree_mutations(s, root, additions, removals);
@@ -1325,10 +1331,12 @@ TEST_F(BTreeTest, require_that_apply_works) {
 
     additions.clear();
     removals.clear();
-    for (uint32_t i = 0; i < 20; ++i)
+    for (uint32_t i = 0; i < 20; ++i) {
         additions.push_back(KeyDataType(1100 + i, "big"));
-    for (uint32_t i = 0; i < 10; ++i)
+    }
+    for (uint32_t i = 0; i < 10; ++i) {
         removals.push_back(1000 + i);
+    }
     apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(30u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
@@ -1553,7 +1561,7 @@ class KeyRangeValidator {
 public:
     KeyRangeValidator(std::vector<int>& list, size_t start_pos) : _list(list), _curr_pos(start_pos) {}
     void operator()(int key) {
-        assert(_curr_pos < _list.size());
+        CHECK(_curr_pos < _list.size());
         EXPECT_EQ(key, _list[_curr_pos]);
         ++_curr_pos;
     }

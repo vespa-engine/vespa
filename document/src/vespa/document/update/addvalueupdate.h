@@ -1,10 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class document::AddValueUpdate
- * @ingroup document
- *
- * @brief Represents an update that specifies an addition to a field value.
- */
+
 #pragma once
 
 #include "valueupdate.h"
@@ -13,6 +8,14 @@
 
 namespace document {
 
+/**
+ * Represents an add to array and weighted set fields.
+ *
+ * For array fields it appends the value to the array.
+ * For weighted set fields it inserts the value with the given weight,
+ * replacing the weight if the value is already present. A zero weight removes
+ * the value if the type has removeIfZero.
+ */
 class AddValueUpdate final : public ValueUpdate {
     std::unique_ptr<FieldValue> _value;  // The field value to add by this update.
     int                         _weight; // The weight to assign to the contained value.

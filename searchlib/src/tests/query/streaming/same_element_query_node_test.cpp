@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <vespa/searchlib/fef/matchdata.h>
@@ -159,7 +160,7 @@ SameElementQueryNodeTest::make_query(QueryTweak query_tweak, const std::vector<s
     case QueryTweak::ANDNOT:
     case QueryTweak::RANK:
         EXPECT_LE(2, num_terms);
-        assert(num_terms >= 2);
+        CHECK(num_terms >= 2);
         --top_arity;
         break;
     default:
@@ -336,7 +337,12 @@ TEST_F(SameElementQueryNodeTest, test_same_element_evaluate) {
     sameElem->unpack_match_data(2, td, *md, ie, ElementIds::select_all());
     EXPECT_TRUE(tfmd0->has_ranking_data(2));
     EXPECT_EQ(0, tfmd0->getNumOccs());
-    EXPECT_EQ(0, tfmd0->end() - tfmd0->begin());
+    // One position per matching element exposes the matching element ids to ranking
+    std::vector<uint32_t> unpacked_element_ids;
+    for (const auto& pos : *tfmd0) {
+        unpacked_element_ids.push_back(pos.getElementId());
+    }
+    EXPECT_EQ((std::vector<uint32_t>{0, 2, 4, 5}), unpacked_element_ids);
 }
 
 TEST_F(SameElementQueryNodeTest, and_below_same_element) {

@@ -75,7 +75,7 @@ void MaintenanceJobsInjector::injectJobs(
             visibility_delay = 100ms;
         }
         controller.registerJob(std::make_unique<ClearImportedAttributeSearchCacheJob>(readyAttributeManager,
-                                                                                      config.getVisibilityDelay()));
+                                                                                      visibility_delay));
     }
 
     const auto&                     docTypeName = controller.getDocTypeName().getName();

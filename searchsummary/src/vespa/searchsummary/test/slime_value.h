@@ -2,9 +2,8 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/slime/slime.h>
-
-#include <cassert>
 
 namespace search::docsummary::test {
 
@@ -16,7 +15,7 @@ struct SlimeValue {
 
     SlimeValue(const std::string& json_input) : slime() {
         size_t used = vespalib::slime::JsonFormat::decode(json_input, slime);
-        assert(used > 0);
+        CHECK(used > 0);
     }
 };
 

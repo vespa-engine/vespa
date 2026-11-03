@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -88,7 +89,7 @@ struct ArrayStoreTest : public TestT {
         if (add_using_allocate) {
             result = store.allocate(input.size());
             auto dest = store.get_writable(result);
-            assert(dest.size() == input.size());
+            CHECK(dest.size() == input.size());
             for (size_t i = 0; i < input.size(); ++i) {
                 dest[i] = input[i];
             }
@@ -96,7 +97,7 @@ struct ArrayStoreTest : public TestT {
             // This is default and preferred way of adding an array.
             result = store.add(ConstArrayRef(input));
         }
-        assert(reference_store_count(result) == 0);
+        CHECK(reference_store_count(result) == 0);
         refStore.insert(std::make_pair(result, input));
         return result;
     }

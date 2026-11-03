@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/storage/persistence/fieldvisitor.h>
@@ -24,7 +25,7 @@ struct FieldVisitorTest : Test {
         document::BucketIdFactory id_factory;
         document::select::Parser  parser(_test_doc_mgr.getTypeRepo(), id_factory);
         auto*                     doc_type = _test_doc_mgr.getTypeRepo().getDocumentType("testdoctype1");
-        assert(doc_type);
+        CHECK(doc_type);
         FieldVisitor visitor(*doc_type);
 
         auto sel_ast = parser.parse(selection);

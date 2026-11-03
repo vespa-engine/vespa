@@ -5,6 +5,7 @@
 
 using namespace search::queryeval;
 using score_t = wand::score_t;
+using WeakAndHeap = WeakAndHeapT<score_t>;
 
 struct Scores : public std::vector<score_t> {
     Scores& s(score_t val) {
@@ -15,7 +16,7 @@ struct Scores : public std::vector<score_t> {
 
 void adjust(WeakAndHeap& heap, const Scores& scores) {
     Scores tmp = scores;
-    heap.adjust(&tmp[0], &tmp[0] + tmp.size());
+    heap.adjust(tmp);
 }
 
 void assertScores(const Scores& exp, SharedWeakAndPriorityQueue& heap) {
@@ -92,6 +93,18 @@ TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_can_be_adjusted_al
     adjust(f.h, Scores().s(2).s(3).s(6).s(8).s(4));
     EXPECT_EQ(6, f.h.getMinScore());
     assertScores(Scores().s(6).s(7).s(8).s(9), f.h);
+}
+
+TEST(WeakAndHeapTest, require_that_SharedWeakAndPriorityQueue_works_with_double_scores) {
+    SharedWeakAndPriorityQueueT<double> h(2);
+    EXPECT_EQ(0.0, h.getMinScore());
+    std::vector<double> scores = {0.5, 2.25, 1.75, 0.25};
+    h.adjust(scores);
+    EXPECT_EQ(1.75, h.getMinScore());
+    ASSERT_EQ(2u, h.getScores().size());
+    EXPECT_EQ(1.75, h.getScores().front());
+    SharedWeakAndPriorityQueueT<double> null_heap(0);
+    EXPECT_EQ(std::numeric_limits<double>::max(), null_heap.getMinScore());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

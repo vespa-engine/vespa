@@ -54,10 +54,12 @@ public:
      * positions are equal, sort best exactness first.
      */
     static bool compareWithExactness(const TermFieldMatchDataPosition& a, const TermFieldMatchDataPosition& b) {
-        if (a < b)
+        if (a < b) {
             return true;
-        if (b < a)
+        }
+        if (b < a) {
             return false;
+        }
         return a._matchExactness > b._matchExactness;
     }
 

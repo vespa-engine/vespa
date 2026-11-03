@@ -3,6 +3,7 @@
 #include "attributesearcher.h"
 #include "attributeupdater.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -186,11 +187,11 @@ void AttributeBenchmark::addDocs(const AttributePtr& ptr, uint32_t numDocs) {
     DocId startDoc;
     DocId lastDoc;
     bool  success = ptr->addDocs(startDoc, lastDoc, numDocs);
-    assert(success);
+    CHECK(success);
     (void)success;
-    assert(startDoc == 0);
-    assert(lastDoc + 1 == numDocs);
-    assert(ptr->getNumDocs() == numDocs);
+    CHECK(startDoc == 0);
+    CHECK(lastDoc + 1 == numDocs);
+    CHECK(ptr->getNumDocs() == numDocs);
 }
 
 template <typename Vector, typename T, typename BT>

@@ -41,7 +41,7 @@ class NoopTelemetryTest {
     @Test
     void inSpan_still_runs_the_body_and_returns_its_value() {
         String result = NoopTelemetry.INSTANCE.tracer("scope")
-                .inSpan("x", SpanKind.INTERNAL, Context.root(), () -> "body-value");
+                .instrument("x", SpanKind.INTERNAL, Context.root(), () -> "body-value");
 
         assertEquals("body-value", result);
     }
@@ -52,7 +52,7 @@ class NoopTelemetryTest {
 
         IllegalStateException thrown = assertThrows(IllegalStateException.class,
                 () -> NoopTelemetry.INSTANCE.tracer("scope")
-                        .inSpan("x", SpanKind.INTERNAL, Context.root(), () -> { throw boom; }));
+                        .instrument("x", SpanKind.INTERNAL, Context.root(), () -> { throw boom; }));
 
         assertSame(boom, thrown);
     }

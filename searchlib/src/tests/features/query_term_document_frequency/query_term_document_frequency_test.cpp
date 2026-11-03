@@ -54,42 +54,42 @@ struct QueryTermDocumentFrequencyTest {
 TEST(QueryTermDocumentFrequencyTest, cells_hold_per_term_document_frequencies_for_the_field) {
     QueryTermDocumentFrequencyTest f("queryTermDocumentFrequency(foo)");
     f.add_index_field("foo");
-    f.add_term({"foo"})->lookupField(0)->setDocFreq(10, 100);
-    f.add_term({"foo"})->lookupField(0)->setDocFreq(25, 100);
+    f.add_term({"foo"})->lookupField(1)->setDocFreq(10, 100);
+    f.add_term({"foo"})->lookupField(1)->setDocFreq(25, 100);
     EXPECT_EQ(empty_spec().add(term_addr("0"), 10).add(term_addr("1"), 25), f.execute());
 }
 
 TEST(QueryTermDocumentFrequencyTest, field_is_resolved_by_field_id_not_position) {
     QueryTermDocumentFrequencyTest f("queryTermDocumentFrequency(foo)");
-    f.add_index_field("bar"); // field id 0
-    f.add_index_field("foo"); // field id 1
-    f.add_term({"foo"})->lookupField(1)->setDocFreq(7, 100);
+    f.add_index_field("bar"); // field id 1
+    f.add_index_field("foo"); // field id 2
+    f.add_term({"foo"})->lookupField(2)->setDocFreq(7, 100);
     EXPECT_EQ(empty_spec().add(term_addr("0"), 7), f.execute());
 }
 
 TEST(QueryTermDocumentFrequencyTest, labels_are_query_term_indexes_not_renumbered) {
     QueryTermDocumentFrequencyTest f("queryTermDocumentFrequency(foo)");
-    f.add_index_field("foo"); // field id 0
-    f.add_index_field("bar"); // field id 1
-    f.add_term({"bar"})->lookupField(1)->setDocFreq(3, 100);
-    f.add_term({"foo"})->lookupField(0)->setDocFreq(11, 100);
+    f.add_index_field("foo"); // field id 1
+    f.add_index_field("bar"); // field id 2
+    f.add_term({"bar"})->lookupField(2)->setDocFreq(3, 100);
+    f.add_term({"foo"})->lookupField(1)->setDocFreq(11, 100);
     EXPECT_EQ(empty_spec().add(term_addr("1"), 11), f.execute());
 }
 
 TEST(QueryTermDocumentFrequencyTest, cell_uses_the_target_fields_frequency_for_multi_field_terms) {
     QueryTermDocumentFrequencyTest f("queryTermDocumentFrequency(foo)");
-    f.add_index_field("foo"); // field id 0
-    f.add_index_field("bar"); // field id 1
+    f.add_index_field("foo"); // field id 1
+    f.add_index_field("bar"); // field id 2
     auto* term = f.add_term({"foo", "bar"});
-    term->lookupField(0)->setDocFreq(13, 100);
-    term->lookupField(1)->setDocFreq(42, 100);
+    term->lookupField(1)->setDocFreq(13, 100);
+    term->lookupField(2)->setDocFreq(42, 100);
     EXPECT_EQ(empty_spec().add(term_addr("0"), 13), f.execute());
 }
 
 TEST(QueryTermDocumentFrequencyTest, query_provided_document_frequency_overrides_field_statistic) {
     QueryTermDocumentFrequencyTest f("queryTermDocumentFrequency(foo)");
     f.add_index_field("foo");
-    f.add_term({"foo"})->setUniqueId(7).lookupField(0)->setDocFreq(10, 100);
+    f.add_term({"foo"})->setUniqueId(7).lookupField(1)->setDocFreq(10, 100);
     f.add_docfreq_override(7, 60, 1000);
     EXPECT_EQ(empty_spec().add(term_addr("0"), 60), f.execute());
 }
@@ -97,26 +97,26 @@ TEST(QueryTermDocumentFrequencyTest, query_provided_document_frequency_overrides
 TEST(QueryTermDocumentFrequencyTest, no_override_lookup_for_terms_with_unset_unique_id) {
     QueryTermDocumentFrequencyTest f("queryTermDocumentFrequency(foo)");
     f.add_index_field("foo");
-    f.add_term({"foo"})->setUniqueId(0).lookupField(0)->setDocFreq(10, 100);
+    f.add_term({"foo"})->setUniqueId(0).lookupField(1)->setDocFreq(10, 100);
     f.add_docfreq_override(0, 60, 1000);
     EXPECT_EQ(empty_spec().add(term_addr("0"), 10), f.execute());
 }
 
 TEST(QueryTermDocumentFrequencyTest, override_on_term_not_searching_the_field_does_not_add_a_cell) {
     QueryTermDocumentFrequencyTest f("queryTermDocumentFrequency(foo)");
-    f.add_index_field("foo"); // field id 0
-    f.add_index_field("bar"); // field id 1
-    f.add_term({"bar"})->setUniqueId(7).lookupField(1)->setDocFreq(3, 100);
+    f.add_index_field("foo"); // field id 1
+    f.add_index_field("bar"); // field id 2
+    f.add_term({"bar"})->setUniqueId(7).lookupField(2)->setDocFreq(3, 100);
     f.add_docfreq_override(7, 60, 1000);
-    f.add_term({"foo"})->lookupField(0)->setDocFreq(11, 100);
+    f.add_term({"foo"})->lookupField(1)->setDocFreq(11, 100);
     EXPECT_EQ(empty_spec().add(term_addr("1"), 11), f.execute());
 }
 
 TEST(QueryTermDocumentFrequencyTest, no_terms_searching_the_field_gives_empty_tensor) {
     QueryTermDocumentFrequencyTest f("queryTermDocumentFrequency(foo)");
-    f.add_index_field("foo"); // field id 0
-    f.add_index_field("bar"); // field id 1
-    f.add_term({"bar"})->lookupField(1)->setDocFreq(3, 100);
+    f.add_index_field("foo"); // field id 1
+    f.add_index_field("bar"); // field id 2
+    f.add_term({"bar"})->lookupField(2)->setDocFreq(3, 100);
     EXPECT_EQ(empty_spec(), f.execute());
 }
 

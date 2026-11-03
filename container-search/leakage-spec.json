@@ -14,6 +14,12 @@
   "com.yahoo.prelude.query.Item" : [
     "com.yahoo.prelude.query.textualrepresentation.Discloser"
   ],
+  "com.yahoo.prelude.query.LabelWrapperItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.MapMatchItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
   "com.yahoo.prelude.query.MarkerWordItem" : [
     "com.yahoo.prelude.query.textualrepresentation.Discloser"
   ],
@@ -51,6 +57,9 @@
     "com.yahoo.prelude.query.textualrepresentation.Discloser"
   ],
   "com.yahoo.prelude.query.SimpleIndexedItem" : [
+    "com.yahoo.prelude.query.textualrepresentation.Discloser"
+  ],
+  "com.yahoo.prelude.query.SparseTensorWandItem" : [
     "com.yahoo.prelude.query.textualrepresentation.Discloser"
   ],
   "com.yahoo.prelude.query.StringInItem" : [

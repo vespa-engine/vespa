@@ -18,9 +18,10 @@ class FastOS_UNIX_File : public FastOS_FileInterface {
 public:
     using FastOS_FileInterface::ReadBuf;
 
-private:
-    FastOS_UNIX_File(const FastOS_UNIX_File&);
-    FastOS_UNIX_File& operator=(const FastOS_UNIX_File&);
+    FastOS_UNIX_File(const FastOS_UNIX_File&) = delete;
+    FastOS_UNIX_File(FastOS_UNIX_File&&) = delete;
+    FastOS_UNIX_File& operator=(const FastOS_UNIX_File&) = delete;
+    FastOS_UNIX_File& operator=(FastOS_UNIX_File&&) = delete;
 
 protected:
     void*  _mmapbase;
@@ -32,18 +33,12 @@ protected:
     static unsigned int CalcAccessFlags(unsigned int openFlags);
 
 public:
-    static bool Stat(const char* filename, FastOS_StatInfo* statInfo);
-
     static int GetMaximumFilenameLength(const char* pathName);
     static int GetMaximumPathLength(const char* pathName);
 
-    FastOS_UNIX_File(const char* filename = nullptr)
-        : FastOS_FileInterface(filename),
-          _mmapbase(nullptr),
-          _mmaplen(0),
-          _filedes(-1),
-          _mmapFlags(0),
-          _mmapEnabled(false) {}
+    FastOS_UNIX_File();
+    explicit FastOS_UNIX_File(const char* filename);
+    ~FastOS_UNIX_File() override;
 
     void ReadBuf(void* buffer, size_t length, int64_t readOffset) override;
     [[nodiscard]] ssize_t Read(void* buffer, size_t len) override;
@@ -77,6 +72,5 @@ public:
     bool SetSize(int64_t newSize) override;
     void dropFromCache() const override;
 
-    static int64_t GetFreeDiskSpace(const char* path);
     static int count_open_files();
 };

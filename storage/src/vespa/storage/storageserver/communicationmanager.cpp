@@ -4,6 +4,7 @@
 
 #include "rpcrequestwrapper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
 #include <vespa/messagebus/emptyreply.h>
@@ -46,7 +47,7 @@ StorageTransportContext::StorageTransportContext(std::unique_ptr<RPCRequestWrapp
 StorageTransportContext::~StorageTransportContext() = default;
 
 void CommunicationManager::receiveStorageReply(const std::shared_ptr<api::StorageReply>& reply) {
-    assert(reply);
+    CHECK(reply);
     process(reply);
 }
 
@@ -82,7 +83,7 @@ void CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg) {
         std::unique_ptr<documentapi::DocumentMessage> docMsgPtr(
             static_cast<documentapi::DocumentMessage*>(msg.release()));
 
-        assert(docMsgPtr);
+        CHECK(docMsgPtr);
 
         std::unique_ptr<api::StorageCommand> cmd;
         try {
@@ -199,7 +200,7 @@ struct PlaceHolderBucketResolver : public BucketResolver {
         return FixedBucketSpaces::default_space();
     }
     [[nodiscard]] std::string nameFromBucketSpace(const document::BucketSpace& bucketSpace) const override {
-        assert(bucketSpace == FixedBucketSpaces::default_space());
+        CHECK(bucketSpace == FixedBucketSpaces::default_space());
         return FixedBucketSpaces::to_string(bucketSpace);
     }
 };
@@ -304,7 +305,7 @@ void CommunicationManager::onClose() {
     std::shared_ptr<api::StorageMessage> msg;
     api::ReturnCode                      code(api::ReturnCode::ABORTED, "Node shutting down");
     while (_eventQueue.size() > 0) {
-        assert(_eventQueue.getNext(msg, 0ms));
+        CHECK(_eventQueue.getNext(msg, 0ms));
         if (!msg->getType().isReply()) {
             std::shared_ptr<api::StorageReply> reply(dynamic_cast<api::StorageCommand&>(*msg).makeReply());
             reply->setResult(code);
@@ -626,7 +627,7 @@ void CommunicationManager::sendMessageBusReply(StorageTransportContext&         
     mbus::Reply::UP replyUP;
 
     LOG(spam, "Sending message bus reply %s", reply->toString().c_str());
-    assert(context._docAPIMsg); // StorageProtocol no longer uses MessageBus carrier.
+    CHECK(context._docAPIMsg); // StorageProtocol no longer uses MessageBus carrier.
 
     // Create an MBus reply and transfer state to it.
     if (reply->getResult().getResult() == api::ReturnCode::WRONG_DISTRIBUTION) {
@@ -725,7 +726,7 @@ void CommunicationManager::updateBucketSpacesConfig(const BucketspacesConfig& co
 }
 
 bool CommunicationManager::address_visible_in_slobrok(const api::StorageMessageAddress& addr) const noexcept {
-    assert(_storage_api_rpc_service);
+    CHECK(_storage_api_rpc_service);
     return _storage_api_rpc_service->address_visible_in_slobrok_uncached(addr);
 }
 

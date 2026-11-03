@@ -38,6 +38,8 @@ public:
     using ResultNode = expression::ResultNode;
     DECLARE_NBO_SERIALIZE;
     DECLARE_ABSTRACT_AGGREGATIONRESULT(AggregationResult);
+    // Note: copy is shallow wrt. _expressionTree (see below); search::grouping::GroupingSession
+    // relies on that sharing to fix up merge-target result types after a copy is re-configured.
     AggregationResult(const AggregationResult&);
     AggregationResult& operator=(const AggregationResult&);
     AggregationResult(AggregationResult&&) = default;
@@ -59,8 +61,10 @@ public:
     void aggregate(DocId docId, HitRank rank);
     AggregationResult& setExpression(ExpressionNode::UP expr);
     // only used by unit tests:
-    AggregationResult& setResult(const ResultNode::CP& result) {
-        prepare(result.get(), true);
+    AggregationResult& resultForUnitTest(const ResultNode::CP& result) {
+        if (result.get()) {
+            initForUnitTest(*result);
+        }
         return *this;
     }
     const ResultNode& getRank() const { return onGetRank(); }
@@ -79,15 +83,17 @@ private:
 
     void prepare() {
         if (getExpression() != nullptr) {
-            prepare(getExpression()->getResult(), false);
+            prepare(getExpression()->getResult());
         }
     }
-    void prepare(const ResultNode* result, bool useForInit) {
+    void prepare(const ResultNode* result) {
         if (result) {
-            onPrepare(*result, useForInit);
+            onPrepare(*result);
         }
     }
-    virtual void onPrepare(const ResultNode& result, bool useForInit) = 0;
+    virtual void onPrepare(const ResultNode& result) = 0;
+    // only used by unit tests, via resultForUnitTest():
+    virtual void initForUnitTest(const ResultNode& result) { onPrepare(result); }
     virtual void onMerge(const AggregationResult& b) = 0;
     virtual void onReset() = 0;
     virtual void onAggregate(const ResultNode& result) = 0;
@@ -102,6 +108,10 @@ private:
         (void)rank;
         onAggregate(result);
     }
+    // Shared (not deep-copied) by the default copy constructor above: a copy and its
+    // original keep resolving to the same ExpressionTree instance, so configuring one
+    // (e.g. via Configure) also fixes up the result type the other's getExpression()
+    // reports, even though each AggregationResult's own result node stays independent.
     std::shared_ptr<expression::ExpressionTree> _expressionTree;
     uint32_t                                    _tag;
 };

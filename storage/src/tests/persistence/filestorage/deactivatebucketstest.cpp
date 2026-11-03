@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -51,7 +52,7 @@ struct DeactivateBucketsTest : FileStorTestFixture {
 
 bool DeactivateBucketsTest::is_active(const document::BucketId& bucket) const {
     StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(bucket, "foo"));
-    assert(entry.exists());
+    CHECK(entry.exists());
     return entry->info.isActive();
 }
 

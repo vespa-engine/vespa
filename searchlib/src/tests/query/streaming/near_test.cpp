@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
@@ -197,7 +198,7 @@ WrappedQuery NearTest::make_query(QueryTweak query_tweak, uint32_t distance,
     auto                               top_arity = num_terms;
     if (query_tweak != QueryTweak::NORMAL) {
         EXPECT_LT(2, num_terms);
-        assert(num_terms > 2);
+        CHECK(num_terms > 2);
         --top_arity;
     }
     if (GetParam().ordered()) {
@@ -334,7 +335,8 @@ void NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index
     MatchDataLayout         mdl;
     IndexEnvironment        index_env;
     auto&                   fields = index_env.getFields();
-    for (uint32_t field_id = 0; field_id <= max_field_id; ++field_id) {
+    // Field id 0 is the "no field" already held first in the index environment.
+    for (uint32_t field_id = fields.size(); field_id <= max_field_id; ++field_id) {
         fields.emplace_back(FieldType::INDEX, CollectionType::SINGLE, std::format("field{}", field_id), field_id);
     }
 

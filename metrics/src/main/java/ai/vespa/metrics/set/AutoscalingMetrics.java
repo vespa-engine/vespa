@@ -60,6 +60,7 @@ public class AutoscalingMetrics {
         // Inference metrics
         metrics.add(ContainerMetrics.INFERENCE_QUEUE_COMPUTE_RATIO.baseName());
         metrics.add(ContainerMetrics.INFERENCE_PENDING.baseName());
+        metrics.add(ContainerMetrics.INFERENCE_QUEUE_DEPTH.baseName());
         metrics.add(ContainerMetrics.INFERENCE_REQUEST_LATENCY.baseName());
         metrics.add(ContainerMetrics.INFERENCE_QUEUE_LATENCY.baseName());
         metrics.add(ContainerMetrics.INFERENCE_REQUEST_RATE.baseName());

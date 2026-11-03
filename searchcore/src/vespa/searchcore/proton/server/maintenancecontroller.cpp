@@ -5,6 +5,7 @@
 #include "i_blockable_maintenance_job.h"
 #include "maintenancejobrunner.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -63,7 +64,7 @@ void MaintenanceController::killJobs() {
         _state = State::PAUSED;
     }
     // Called by master write thread
-    assert(_masterThread.isCurrentThread());
+    CHECK(_masterThread.isCurrentThread());
     LOG(debug, "killJobs(): threadId=%zu", as_zu(std::this_thread::get_id()));
     _periodicTaskHandles.clear();
     // No need to take _jobsLock as modification of _jobs also happens in master write thread.
@@ -93,7 +94,7 @@ void MaintenanceController::performHoldJobs(JobList jobs) {
 }
 
 void MaintenanceController::stop() {
-    assert(!_masterThread.isCurrentThread());
+    CHECK(!_masterThread.isCurrentThread());
     _masterThread.execute(makeLambdaTask([this]() {
         _state = State::STOPPING;
         killJobs();
@@ -115,7 +116,7 @@ void MaintenanceController::kill() {
 
 void MaintenanceController::start() {
     // Called by master write thread
-    assert(_state == State::INITIALIZING);
+    CHECK(_state == State::INITIALIZING);
     _state = State::STARTED;
     restart();
 }
@@ -155,7 +156,7 @@ namespace {
 void assert_equal_meta_store_instances(const MaintenanceDocumentSubDB& old_db,
                                        const MaintenanceDocumentSubDB& new_db) {
     if (old_db.valid() && new_db.valid()) {
-        assert(old_db.meta_store().get() == new_db.meta_store().get());
+        CHECK(old_db.meta_store().get() == new_db.meta_store().get());
     }
 }
 
@@ -166,8 +167,8 @@ void MaintenanceController::syncSubDBs(const MaintenanceDocumentSubDB& readySubD
                                        const MaintenanceDocumentSubDB& notReadySubDB) {
     // Called by master write thread
     bool oldValid = _readySubDB.valid();
-    assert(readySubDB.valid());
-    assert(remSubDB.valid());
+    CHECK(readySubDB.valid());
+    CHECK(remSubDB.valid());
     // Document meta store instances should not change. Maintenance jobs depend on this fact.
     assert_equal_meta_store_instances(_readySubDB, readySubDB);
     assert_equal_meta_store_instances(_remSubDB, remSubDB);

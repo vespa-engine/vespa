@@ -4,7 +4,7 @@
 
 #include "generation_hold_list.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 
@@ -43,9 +43,9 @@ GenerationHoldList<T, track_bytes_held, use_deque>::GenerationHoldList() noexcep
 
 template <typename T, bool track_bytes_held, bool use_deque>
 GenerationHoldList<T, track_bytes_held, use_deque>::~GenerationHoldList() {
-    assert(_phase_1_list.empty());
-    assert(_phase_2_list.empty());
-    assert(get_held_bytes() == 0);
+    CHECK(_phase_1_list.empty());
+    CHECK(_phase_2_list.empty());
+    CHECK(get_held_bytes() == 0);
 }
 
 template <typename T, bool track_bytes_held, bool use_deque>

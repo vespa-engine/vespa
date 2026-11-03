@@ -10,7 +10,7 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/datastore/unique_store.h>
 #include <vespa/vespalib/datastore/unique_store_enumerator.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace search::attribute {
 

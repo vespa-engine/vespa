@@ -68,13 +68,15 @@ NodeState::NodeState(std::string_view serialized, const NodeType* type)
         }
         std::string_view key = token.substr(0, index);
         std::string_view value = token.substr(index + 1);
-        if (!key.empty())
+        if (!key.empty()) {
             switch (key[0]) {
             case 'b':
-                if (_type != nullptr && *type != NodeType::STORAGE)
+                if (_type != nullptr && *type != NodeType::STORAGE) {
                     break;
-                if (key.size() > 1)
+                }
+                if (key.size() > 1) {
                     break;
+                }
                 try {
                     setMinUsedBits(vespalib::lexical_cast<uint32_t>(value));
                 } catch (...) {
@@ -85,15 +87,18 @@ NodeState::NodeState(std::string_view serialized, const NodeType* type)
                 }
                 continue;
             case 's':
-                if (key.size() > 1)
+                if (key.size() > 1) {
                     break;
+                }
                 setState(State::get(value));
                 continue;
             case 'c':
-                if (key.size() > 1)
+                if (key.size() > 1) {
                     break;
-                if (_type != nullptr && *type != NodeType::STORAGE)
+                }
+                if (_type != nullptr && *type != NodeType::STORAGE) {
                     break;
+                }
                 try {
                     setCapacity(vespalib::lexical_cast<double>(value));
                 } catch (...) {
@@ -104,8 +109,9 @@ NodeState::NodeState(std::string_view serialized, const NodeType* type)
                 }
                 continue;
             case 'i':
-                if (key.size() > 1)
+                if (key.size() > 1) {
                     break;
+                }
                 try {
                     setInitProgress(vespalib::lexical_cast<double>(value));
                 } catch (...) {
@@ -116,8 +122,9 @@ NodeState::NodeState(std::string_view serialized, const NodeType* type)
                 }
                 continue;
             case 't':
-                if (key.size() > 1)
+                if (key.size() > 1) {
                     break;
+                }
                 try {
                     setStartTimestamp(vespalib::lexical_cast<uint64_t>(value));
                 } catch (...) {
@@ -128,13 +135,15 @@ NodeState::NodeState(std::string_view serialized, const NodeType* type)
                 }
                 continue;
             case 'm':
-                if (key.size() > 1)
+                if (key.size() > 1) {
                     break;
+                }
                 _description = document::StringUtil::unescape(value);
                 continue;
             default:
                 break;
             }
+        }
         LOG(debug,
             "Unknown key %s in nodestate. Ignoring it, assuming it's a "
             "new feature from a newer version than ourself: %s",
@@ -290,8 +299,9 @@ bool NodeState::similarTo(const NodeState& other) const {
 }
 
 void NodeState::verifySupportForNodeType(const NodeType& type) const {
-    if (_type != nullptr && *_type == type)
+    if (_type != nullptr && *_type == type) {
         return;
+    }
     if (!_state->validReportedNodeState(type) && !_state->validWantedNodeState(type)) {
         throw IllegalArgumentException(
             "State " + _state->toString() + " does not fit a node of type " + type.toString(), VESPA_STRLOC);

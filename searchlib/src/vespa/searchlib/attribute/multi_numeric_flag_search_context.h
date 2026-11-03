@@ -31,6 +31,8 @@ public:
 private:
     AtomicBitVectorsRef _bit_vectors;
     bool                _zeroHits;
+    T get_low() const noexcept { return this->matcher().get_low(); }
+    T get_high() const noexcept { return this->matcher().get_high(); }
     const BitVector* get_bit_vector(T value) const {
         static_assert(std::is_same_v<T, int8_t>,
                       "Flag attribute search context is only supported for int8_t data type");

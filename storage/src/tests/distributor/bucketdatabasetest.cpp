@@ -2,6 +2,7 @@
 
 #include "bucketdatabasetest.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/storageutil/utils.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 
@@ -703,7 +704,7 @@ TEST_P(BucketDatabaseTest, DISABLED_benchmark_find_parents) {
             std::vector<BucketDatabase::Entry> entries;
             for (uint64_t k : bucket_keys) {
                 db().getParents(BucketId(BucketId::keyToBucketId(k)), entries);
-                assert(entries.size() == 1);
+                CHECK(entries.size() == 1);
                 entries.clear();
             }
         },

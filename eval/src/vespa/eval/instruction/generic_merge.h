@@ -4,6 +4,8 @@
 
 #include "generic_join.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::eval::instruction {
 
 struct MergeParam {
@@ -21,11 +23,11 @@ struct MergeParam {
           dense_subspace_size(lhs_type.dense_subspace_size()),
           all_view_dims(num_mapped_dimensions),
           factory(factory_in) {
-        assert(!res_type.is_error());
-        assert(num_mapped_dimensions == rhs_type.count_mapped_dimensions());
-        assert(num_mapped_dimensions == res_type.count_mapped_dimensions());
-        assert(dense_subspace_size == rhs_type.dense_subspace_size());
-        assert(dense_subspace_size == res_type.dense_subspace_size());
+        CHECK(!res_type.is_error());
+        CHECK(num_mapped_dimensions == rhs_type.count_mapped_dimensions());
+        CHECK(num_mapped_dimensions == res_type.count_mapped_dimensions());
+        CHECK(dense_subspace_size == rhs_type.dense_subspace_size());
+        CHECK(dense_subspace_size == res_type.dense_subspace_size());
         for (size_t i = 0; i < num_mapped_dimensions; ++i) {
             all_view_dims[i] = i;
         }

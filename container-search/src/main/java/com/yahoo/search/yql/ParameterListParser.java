@@ -5,14 +5,17 @@ import com.yahoo.prelude.query.NumericInItem;
 import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.WeightedSetItem;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
- * Parser of parameter lists on the form {key:value, key:value} or [[key,value], [key,value], ...]
+ * Parser of parameter lists on the form {key:value, key:value} or [[key,value], [key,value], ...],
+ * and of token lists on the form value, value, ... optionally enclosed in [ ].
  *
  * @author bratseth
  */
-class ParameterListParser {
+public class ParameterListParser {
 
     public static void addItemsFromString(String string, WeightedSetItem out) {
         var s = new ParsableString(string);
@@ -67,8 +70,20 @@ class ParameterListParser {
         if (string == null) {
             return;
         }
+        for (String token : stringTokens(string)) {
+            out.addToken(token);
+        }
+    }
+
+    /**
+     * Parses a list of string tokens on the form value, value, ... where each value is optionally quoted,
+     * and the list is optionally enclosed in [ ].
+     */
+    public static List<String> stringTokens(String string) {
+        List<String> tokens = new ArrayList<>();
         var s = new ParsableString(string);
-        while (!s.atEnd()) {
+        boolean array = s.passOptional('['); // A JSON array: ["a", "b"]
+        while (!s.atEnd() && !(array && s.peek() == ']')) {
             String token;
             if (s.passOptional('\'')) {
                 token = s.stringTo(s.position('\''));
@@ -79,11 +94,14 @@ class ParameterListParser {
                 s.pass('"');
             }
             else {
-                token = s.stringTo(s.positionOrEnd(',')).trim();
+                token = s.stringTo(array ? s.positionOrEnd(',', ']') : s.positionOrEnd(',')).trim();
             }
-            out.addToken(token);
+            tokens.add(token);
             s.passOptional(',');
         }
+        if (array)
+            s.pass(']');
+        return tokens;
     }
 
     public static void addNumericTokensFromString(String string, NumericInItem out) {
@@ -91,11 +109,14 @@ class ParameterListParser {
             return;
         }
         var s = new ParsableString(string);
-        while (!s.atEnd()) {
-            long token = s.longTo(s.positionOrEnd(','));
+        boolean array = s.passOptional('['); // A JSON array: [1, 2]
+        while (!s.atEnd() && !(array && s.peek() == ']')) {
+            long token = s.longTo(array ? s.positionOrEnd(',', ']') : s.positionOrEnd(','));
             out.addToken(token);
             s.passOptional(',');
         }
+        if (array)
+            s.pass(']');
     }
 
     private static class ParsableString {

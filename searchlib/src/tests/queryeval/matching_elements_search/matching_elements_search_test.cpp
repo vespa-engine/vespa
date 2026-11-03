@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -37,7 +38,7 @@ std::shared_ptr<AttributeVector> make_attribute(BasicType type) {
 std::unique_ptr<MatchingElementsSearch> make_search(AttributeVector& attr, const std::vector<std::string>& terms) {
     using LookupResult = IDirectPostingStore::LookupResult;
     auto dwa = attr.as_docid_with_weight_posting_store();
-    assert(dwa != nullptr);
+    CHECK(dwa != nullptr);
     auto                      snapshot = dwa->get_dictionary_snapshot();
     std::vector<LookupResult> dict_entries;
     for (const auto& term : terms) {

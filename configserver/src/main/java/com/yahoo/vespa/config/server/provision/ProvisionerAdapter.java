@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.provision;
 
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionContext;
@@ -39,8 +38,8 @@ public class ProvisionerAdapter implements HostProvisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
-        return provisioner.prepare(applicationId, cluster, capacity, context);
+    public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
+        return provisioner.prepare(applicationId, cluster, context);
     }
 
 }

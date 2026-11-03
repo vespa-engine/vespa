@@ -59,7 +59,11 @@ public abstract class Item implements Cloneable {
         FALSE(29),
         FUZZY(30),
         STRING_IN(31),
-        NUMERIC_IN(32);
+        NUMERIC_IN(32),
+        LABEL_WRAPPER(33),
+        STRING_RANGE(34),
+        SPARSE_TENSOR_WAND(35);
+        // The next type added here is 36: ITEM_UNDEF in parse.h is kept last and moves up
 
         public final int code;
 
@@ -131,7 +135,7 @@ public abstract class Item implements Cloneable {
     private boolean isProtected;
 
     private Language language = Language.UNKNOWN;
-    
+
     /** Sets the index name of this item */
     public abstract void setIndexName(String index);
 
@@ -522,16 +526,16 @@ public abstract class Item implements Cloneable {
 
     /** Returns the language of any natural language text below this item, or Language.UNKNOWN if not set. */
     public Language getLanguage() { return language; }
-    
-    /** 
-     * Sets the language of any natural language text below this item. 
-     * This cannot be set to null but can be set to Language.UNKNOWN 
+
+    /**
+     * Sets the language of any natural language text below this item.
+     * This cannot be set to null but can be set to Language.UNKNOWN
      */
     public void setLanguage(Language language) {
         Objects.requireNonNull(language, "Language cannot be null");
         this.language = language;
     }
-    
+
     /**
      * DO NOT USE
      */

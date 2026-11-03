@@ -39,7 +39,7 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.AllowedDependencies">
+                                <allowedDependencies>
                                     <rootProjectId>com.yahoo.vespa:vespa</rootProjectId>
                                     <specFile>allowed-maven-dependencies.txt</specFile>
                                     <ignored>
@@ -48,7 +48,7 @@
                                         <i>com.yahoo.vespa.bundle-plugin:*:*</i>
                                         <i>com.yahoo.vespa.jdisc_core:*:*</i>
                                     </ignored>
-                                </enforceDependencies>
+                                </allowedDependencies>
                             </rules>
                             <fail>true</fail>
                         </configuration>

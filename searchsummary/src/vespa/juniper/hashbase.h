@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 
-#include <cassert>
 #include <cstring>
 
 // Simple default order that everybody has - pointer order:
@@ -53,8 +52,9 @@ protected:
         for (++_index; _index < _hashTable->_tableSize; _index++) {
             retVal = _hashTable->_lookupTable[_index];
 
-            if (retVal != nullptr)
+            if (retVal != nullptr) {
                 break;
+            }
         }
 
         return retVal;
@@ -122,8 +122,9 @@ public:
     inline int ElementCount() { return _numElements; }
 
     inline void Clear() {
-        if (_numElements == 0)
+        if (_numElements == 0) {
             return;
+        }
         for (int i = 0; i < _tableSize; i++) {
             element *curr, *prev = nullptr;
 
@@ -131,15 +132,17 @@ public:
                 if (prev != nullptr) {
                     delete prev;
                     _numElements--;
-                    if (_numElements == 0)
+                    if (_numElements == 0) {
                         break;
+                    }
                 }
                 prev = curr;
                 _lookupTable[i] = nullptr;
             }
 
-            if (prev != nullptr)
+            if (prev != nullptr) {
                 delete prev;
+            }
         }
     }
 
@@ -182,9 +185,11 @@ public:
     element* FindRef(Key key) {
         int pos = HashFunction(key);
 
-        for (element* curr = _lookupTable[pos]; curr != nullptr; curr = curr->GetNext())
-            if (curr->GetKey() == key)
+        for (element* curr = _lookupTable[pos]; curr != nullptr; curr = curr->GetNext()) {
+            if (curr->GetKey() == key) {
                 return curr;
+            }
+        }
         return nullptr;
     }
 

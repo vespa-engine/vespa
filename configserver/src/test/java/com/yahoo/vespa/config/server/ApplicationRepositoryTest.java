@@ -26,7 +26,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.GetConfigRequest;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.VespaVersion;
@@ -703,7 +703,7 @@ public class ApplicationRepositoryTest {
             public String getRequestDefMd5() { return ""; }
 
             @Override
-            public PayloadChecksums configPayloadChecksums() { return PayloadChecksums.empty(); }
+            public PayloadChecksum configPayloadChecksum() { return PayloadChecksum.empty(); }
 
         }, Optional.empty());
     }

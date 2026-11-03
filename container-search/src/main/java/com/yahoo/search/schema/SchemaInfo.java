@@ -77,7 +77,11 @@ public class SchemaInfo {
     public ParserSettings parserSettings() { return parserSettings; }
 
     public Session newSession(Query query) {
-        return new Session(query.getModel().getSources(), query.getModel().getRestrict(), clusters, schemas);
+        return newSession(query.getModel().getSources(), query.getModel().getRestrict());
+    }
+
+    public Session newSession(Set<String> sources, Set<String> restrict) {
+        return new Session(sources, restrict, clusters, schemas);
     }
 
     public static SchemaInfo empty() { return empty; }
@@ -145,6 +149,16 @@ public class SchemaInfo {
                 Optional<FieldInfo> field = schema.fieldInfo(fieldName);
                 if (field.isPresent())
                     return field;
+            }
+            return Optional.empty();
+        }
+
+        /** Returns the field set with the given name, if one is defined in any of the schemas in the session. */
+        public Optional<FieldSet> fieldSet(String fieldSetName) {
+            for (var schema : schemas) {
+                var fieldSet = schema.fieldSets().get(fieldSetName);
+                if (fieldSet != null)
+                    return Optional.of(fieldSet);
             }
             return Optional.empty();
         }

@@ -56,6 +56,7 @@ public class ReservedFunctionNames extends Processor {
         temp.add("customTokenInputIds");
         temp.add("firstphase");
         temp.add("globalphase");
+        temp.add("matches_for_labels");
         temp.add("normalize_linear");
         temp.add("num_docs_indexed");
         temp.add("onnx");

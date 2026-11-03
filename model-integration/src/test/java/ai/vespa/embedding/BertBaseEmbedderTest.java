@@ -7,10 +7,12 @@ import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.language.process.Embedder;
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -18,6 +20,32 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 public class BertBaseEmbedderTest {
+
+    @Test
+    public void testLastPoolingWithRightPadding() {
+        String vocabPath = "src/test/models/onnx/transformer/dummy_vocab.txt";
+        String modelPath = "src/test/models/onnx/transformer/dummy_transformer.onnx";
+        assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
+        var config = new BertBaseEmbedderConfig.Builder()
+                .tokenizerVocab(ModelReference.valueOf(vocabPath))
+                .transformerModel(ModelReference.valueOf(modelPath))
+                .poolingStrategy(BertBaseEmbedderConfig.PoolingStrategy.Enum.last)
+                .build();
+        var embedder = newBertBaseEmbedder(config);
+        try (var evaluator = OnnxRuntime.testInstance().evaluatorOf(modelPath)) {
+            var raw = evaluator.evaluate(Map.of(
+                    "input_ids", Tensor.from("tensor<float>(d0[1],d1[5]):[1,2,3,0,0]"),
+                    "attention_mask", Tensor.from("tensor<float>(d0[1],d1[5]):[1,1,1,0,0]"),
+                    "token_type_ids", Tensor.from("tensor<float>(d0[1],d1[5]):[0,0,0,0,0]")), "output_0");
+            var result = embedder.embedTokens(List.of(1,2,3,0,0), TensorType.fromSpec("tensor<float>(x[7])"));
+
+            for (int i = 0; i < 7; i++) {
+                assertEquals(raw.get(TensorAddress.of(0,2,i)), result.get(TensorAddress.of(i)), 1e-6);
+            }
+        } finally {
+            embedder.deconstruct();
+        }
+    }
 
     @Test
     public void testEmbedder() {

@@ -6,6 +6,8 @@
 #include "sparse_state.h"
 #include "unicode_utils.h"
 
+#include <vespa/check_require.h>
+
 #include <vector>
 
 namespace vespalib::fuzzy {
@@ -72,13 +74,13 @@ template <uint8_t MaxEdits> struct DfaNode {
     }
 
     void add_match_out_edge(uint32_t out_char, uint32_t out_node) noexcept {
-        assert(num_match_out_edges < MaxCharOutEdges);
+        CHECK(num_match_out_edges < MaxCharOutEdges);
         match_out_edges_buf[num_match_out_edges] = Edge{out_char, out_node};
         ++num_match_out_edges;
     }
 
     void set_wildcard_out_edge(uint32_t out_node) noexcept {
-        assert(wildcard_edge_to == DOOMED);
+        CHECK(wildcard_edge_to == DOOMED);
         wildcard_edge_to = out_node;
     }
 };

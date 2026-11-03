@@ -70,7 +70,7 @@ Span getSpan(const SpanNode& span_node) {
 std::string_view get_span_string_or_alternative(std::string_view s, const Span& span, const FieldValue* fv) {
     if (fv != nullptr) {
         auto raw = fv->getAsRaw();
-        return {raw.first, raw.second};
+        return {raw.data(), raw.size()};
     } else {
         return {s.data() + span.from(), static_cast<size_t>(span.length())};
     }

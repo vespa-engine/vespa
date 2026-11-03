@@ -4,6 +4,7 @@
 
 #include "mock_gid_to_lid_mapping.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -57,7 +58,7 @@ std::unique_ptr<QueryTermSimple> word_term(std::string_view term) {
 }
 
 void ImportedAttributeFixture::map_reference(DocId from_lid, GlobalId via_gid, DocId to_lid) {
-    assert(from_lid < reference_attr->getNumDocs());
+    CHECK(from_lid < reference_attr->getNumDocs());
     mapper_factory->_map[via_gid] = to_lid;
     if (to_lid != 0) {
         reference_attr->notifyReferencedPut(via_gid, to_lid);

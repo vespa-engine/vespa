@@ -1,14 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "fieldsearcher.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.searcher.fieldsearcher");
@@ -65,7 +64,7 @@ bool FieldSearcher::search(const StorageDocument& doc) {
         fInfo.setHitOffset(qt->getHitList().size());
     }
     onSearch(doc);
-    assert(_element_length_fixups.empty());
+    CHECK(_element_length_fixups.empty());
     for (auto qt : _qtl) {
         QueryTerm::FieldInfo& fInfo = qt->getFieldInfo(field());
         fInfo.setHitCount(qt->getHitList().size() - fInfo.getHitOffset());

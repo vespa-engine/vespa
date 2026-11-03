@@ -10,6 +10,8 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <format>
+
 using search::feature_t;
 using namespace search::features::test;
 using namespace search::features;
@@ -24,20 +26,28 @@ const std::string fieldFeatureName("closeness(bar)");
 
 using RankFixture = DistanceClosenessFixture;
 
-class NnsClosenessTest : public ::testing::TestWithParam<uint32_t> {
+using IsQuantized = bool;
+
+class NnsClosenessTest : public ::testing::TestWithParam<IsQuantized> {
 protected:
     NnsClosenessTest();
     ~NnsClosenessTest() override;
-    void expect_raw_score_calculated_on_the_fly(RankFixture& f);
+
+    [[nodiscard]] bool is_quantized() const noexcept { return GetParam(); }
 };
 
-NnsClosenessTest::NnsClosenessTest() : ::testing::TestWithParam<uint32_t>() {
-}
-
+NnsClosenessTest::NnsClosenessTest() = default;
 NnsClosenessTest::~NnsClosenessTest() = default;
 
-INSTANTIATE_TEST_SUITE_P(NnsClosenessMultiTest, NnsClosenessTest, testing::Values(0, 1, 2),
-                         testing::PrintToStringParamName());
+namespace {
+struct MyPrintTestParams {
+    std::string operator()(const testing::TestParamInfo<IsQuantized>& info) const {
+        return info.param ? "quantized" : "unquantized";
+    }
+};
+} // namespace
+
+INSTANTIATE_TEST_SUITE_P(NnsClosenessQuantTest, NnsClosenessTest, testing::Bool(), MyPrintTestParams());
 
 TEST_F(NnsClosenessTest, require_that_blueprint_can_be_created_from_factory) {
     BlueprintFactoryFixture f;
@@ -122,6 +132,29 @@ TEST_F(NnsClosenessTest, require_that_stale_data_is_ignored) {
     EXPECT_EQ(0, f2.getScore(10));
 }
 
+TEST_P(NnsClosenessTest, can_return_negative_values_with_dotproduct_distance_metric) {
+    NoLabel     f1;
+    RankFixture f2(0, 2, f1, fieldFeatureName, "tensor(x[2]):[2,3]", DistanceMetric::Dotproduct, is_quantized());
+    ASSERT_FALSE(f2.failed());
+
+    f2.set_bar_rawscore(0, 7, 5.0);
+    f2.set_bar_rawscore(1, 8, -5.0);
+    f2.set_attribute_tensor(9, TensorSpec::from_expr("tensor(x[2]):[4,5]"));
+    f2.set_attribute_tensor(10, TensorSpec::from_expr("tensor(x[2]):[-4,-5]"));
+
+    // For docids 9 and 10 the raw score is calculated on the fly
+    // using a distance calculator over the attribute and query tensors.
+    EXPECT_EQ(5.0, f2.getScore(7));
+    EXPECT_EQ(-5.0, f2.getScore(8));
+    if (!is_quantized()) {
+        EXPECT_EQ(23.0, f2.getScore(9));
+        EXPECT_EQ(-23.0, f2.getScore(10));
+    } else {
+        EXPECT_NEAR(23.0, f2.getScore(9), 0.35);
+        EXPECT_NEAR(-23.0, f2.getScore(10), 0.35);
+    }
+}
+
 namespace {
 
 const std::vector<TensorSpec> doc9_tensor{
@@ -141,51 +174,64 @@ const std::vector<TensorSpec> doc10_tensor{
 const std::vector<std::string> tensor_types{"tensor(x[2])", "tensor(a{},x[2])", "tensor(a{},b{},x[2])"};
 } // namespace
 
-void NnsClosenessTest::expect_raw_score_calculated_on_the_fly(RankFixture& f) {
+using MappedDimsAndQuantized = std::tuple<uint32_t, bool>;
+
+class NnsClosenessMultiTest : public ::testing::TestWithParam<MappedDimsAndQuantized> {
+protected:
+    NnsClosenessMultiTest();
+    ~NnsClosenessMultiTest() override;
+    void expect_raw_score_calculated_on_the_fly(RankFixture& f);
+};
+
+NnsClosenessMultiTest::NnsClosenessMultiTest() = default;
+NnsClosenessMultiTest::~NnsClosenessMultiTest() = default;
+
+void NnsClosenessMultiTest::expect_raw_score_calculated_on_the_fly(RankFixture& f) {
     f.setBarScore(0, 8, 13.0);
-    uint32_t mapped_dimensions = GetParam();
+    const auto [mapped_dimensions, quantized] = GetParam();
     f.set_attribute_tensor(9, doc9_tensor[mapped_dimensions]);
     f.set_attribute_tensor(10, doc10_tensor[mapped_dimensions]);
 
     // For docids 9 and 10 the raw score is calculated on the fly
     // using a distance calculator over the attribute and query tensors.
     EXPECT_EQ(1 / (1 + 13.0), f.getScore(8));
-    EXPECT_EQ(1 / (1 + (5.0 - 3.0)), f.getScore(9));
-    EXPECT_EQ(1 / (1 + (7.0 - 3.0)), f.getScore(10));
+    if (!quantized) {
+        EXPECT_EQ(1 / (1 + (5.0 - 3.0)), f.getScore(9));
+        EXPECT_EQ(1 / (1 + (7.0 - 3.0)), f.getScore(10));
+    } else {
+        EXPECT_NEAR(1 / (1 + (5.0 - 3.0)), f.getScore(9), 0.1);
+        EXPECT_NEAR(1 / (1 + (7.0 - 3.0)), f.getScore(10), 0.1);
+    }
 }
 
-TEST_P(NnsClosenessTest, raw_score_is_calculated_on_the_fly_using_field_setup) {
-    NoLabel     f1;
-    uint32_t    mapped_dimensions = GetParam();
-    RankFixture f2(tensor_types[mapped_dimensions], false, 0, 1, f1, fieldFeatureName, "tensor(x[2]):[3,11]");
+TEST_P(NnsClosenessMultiTest, raw_score_is_calculated_on_the_fly_using_field_setup) {
+    NoLabel f1;
+    const auto [mapped_dimensions, quantized] = GetParam();
+    RankFixture f2(tensor_types[mapped_dimensions], false, 0, 1, f1, fieldFeatureName, "tensor(x[2]):[3,11]",
+                   DistanceMetric::Euclidean, quantized);
     ASSERT_FALSE(f2.failed());
     expect_raw_score_calculated_on_the_fly(f2);
 }
 
-TEST_P(NnsClosenessTest, raw_score_is_calculated_on_the_fly_using_label_setup) {
+TEST_P(NnsClosenessMultiTest, raw_score_is_calculated_on_the_fly_using_label_setup) {
     SingleLabel f1("nns", 1);
-    uint32_t    mapped_dimensions = GetParam();
-    RankFixture f2(tensor_types[mapped_dimensions], false, 0, 1, f1, labelFeatureName, "tensor(x[2]):[3,11]");
+    const auto [mapped_dimensions, quantized] = GetParam();
+    RankFixture f2(tensor_types[mapped_dimensions], false, 0, 1, f1, labelFeatureName, "tensor(x[2]):[3,11]",
+                   DistanceMetric::Euclidean, quantized);
     ASSERT_FALSE(f2.failed());
     expect_raw_score_calculated_on_the_fly(f2);
 }
 
-TEST_F(NnsClosenessTest, can_return_negative_values_with_dotproduct_distance_metric) {
-    NoLabel     f1;
-    RankFixture f2(0, 2, f1, fieldFeatureName, "tensor(x[2]):[2,3]", DistanceMetric::Dotproduct);
-    ASSERT_FALSE(f2.failed());
+namespace {
+struct MyPrintMultiTestParams {
+    std::string operator()(const testing::TestParamInfo<MappedDimsAndQuantized>& info) const {
+        return std::format("{}_mapped_dims{}", std::get<0>(info.param), std::get<1>(info.param) ? "_quantized" : "");
+    }
+};
+} // namespace
 
-    f2.set_bar_rawscore(0, 7, 5.0);
-    f2.set_bar_rawscore(1, 8, -5.0);
-    f2.set_attribute_tensor(9, TensorSpec::from_expr("tensor(x[2]):[4,5]"));
-    f2.set_attribute_tensor(10, TensorSpec::from_expr("tensor(x[2]):[-4,-5]"));
-
-    // For docids 9 and 10 the raw score is calculated on the fly
-    // using a distance calculator over the attribute and query tensors.
-    EXPECT_EQ(5.0, f2.getScore(7));
-    EXPECT_EQ(-5.0, f2.getScore(8));
-    EXPECT_EQ(23.0, f2.getScore(9));
-    EXPECT_EQ(-23.0, f2.getScore(10));
-}
+// Instantiates with cartesian product of mapped dims {0, 1, 2} x quantization {true, false}
+INSTANTIATE_TEST_SUITE_P(NnsClosenessMultiDimAndQuantTest, NnsClosenessMultiTest,
+                         testing::Combine(testing::Values(0, 1, 2), testing::Bool()), MyPrintMultiTestParams());
 
 GTEST_MAIN_RUN_ALL_TESTS()

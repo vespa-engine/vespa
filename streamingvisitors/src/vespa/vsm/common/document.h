@@ -24,11 +24,18 @@ using DocumentTypeIndexFieldMapT = vespalib::hash_map<std::string, IndexFieldMap
 /// A type to represent a map from fieldname to fieldid.
 using StringFieldIdTMapT = std::map<std::string, FieldIdT, std::less<>>;
 
+/**
+ * Mapping from field name to field id. Field id 0 is reserved to mean "no
+ * field", mirroring the "no field" held first in the field table of the
+ * feature execution framework index environment, so implicitly assigned ids
+ * start at 1.
+ */
 class StringFieldIdTMap {
 public:
     enum { npos = 0xFFFFFFFF };
     StringFieldIdTMap();
     FieldIdT fieldNo(const std::string& fName) const;
+    /** Add a field with the next unused field id. */
     void add(const std::string& s);
     void add(const std::string& s, FieldIdT fNo);
     const StringFieldIdTMapT& map() const { return _map; }
@@ -37,6 +44,7 @@ public:
 
 private:
     StringFieldIdTMapT _map;
+    FieldIdT           _nextId;
 };
 
 using FieldRef = std::string_view;

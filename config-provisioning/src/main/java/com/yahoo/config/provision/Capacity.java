@@ -16,15 +16,18 @@ import static java.util.Objects.requireNonNull;
  */
 public final class Capacity {
 
+    private static final Capacity unspecified = Capacity.from(new ClusterResources(1, 1, NodeResources.unspecified()));
+
     /** Resources should stay between these values, inclusive */
     private final ClusterResources min, max;
     private final IntRange groupSize;
     private final boolean required;
-    private final boolean canFail;
+    private final boolean canFail; // TODO: Move out of this class since it is a transient property of a request
     private final NodeType type;
-    private final Optional<CloudAccount> cloudAccount;
-    private final CloudResourceTags cloudResourceTags;
-    private final ClusterInfo clusterInfo;
+    private final double maxCostFactor;
+    private final CloudAccount cloudAccount; // TODO: Move to ClusterSpec
+    private final CloudResourceTags cloudResourceTags;  // TODO: Move to ClusterSpec
+    private final ClusterInfo clusterInfo;  // TODO: Move to ClusterSpec
 
     private Capacity(ClusterResources min,
                      ClusterResources max,
@@ -32,7 +35,8 @@ public final class Capacity {
                      boolean required,
                      boolean canFail,
                      NodeType type,
-                     Optional<CloudAccount> cloudAccount,
+                     double maxCostFactor,
+                     CloudAccount cloudAccount,
                      CloudResourceTags cloudResourceTags,
                      ClusterInfo clusterInfo) {
         validate(min);
@@ -40,7 +44,9 @@ public final class Capacity {
         if (max.smallerThan(min))
             throw new IllegalArgumentException("The max capacity must be larger than the min capacity, but got min " +
                                                min + " and max " + max);
-        if (cloudAccount.isEmpty() && ! clusterInfo.hostTTL().isZero())
+        if (maxCostFactor < 1.0)
+            throw new IllegalArgumentException("The max cost factor must be at least 1.0, but got " + maxCostFactor);
+        if (cloudAccount.isUnspecified() && ! clusterInfo.hostTTL().isZero())
             throw new IllegalArgumentException("Cannot set hostTTL without a custom cloud account");
         this.min = min;
         this.max = max;
@@ -48,6 +54,7 @@ public final class Capacity {
         this.required = required;
         this.canFail = canFail;
         this.type = type;
+        this.maxCostFactor = maxCostFactor;
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.cloudResourceTags = requireNonNull(cloudResourceTags);
         this.clusterInfo = clusterInfo;
@@ -81,8 +88,17 @@ public final class Capacity {
      */
     public NodeType type() { return type; }
 
+    /**
+     * Returns how much larger an exclusively allocated hosts can be compared to the requested resources
+     * of the node to be allocated, measured in cost for the host resources compared to the cost for the
+     * requested node resources.
+     * This allows trading cost against node type availability.
+     * The default value is 1.0: Require exact match between host and tenant node resources.
+     */
+    public double maxCostFactor() { return maxCostFactor; }
+
     /** Returns the cloud account where this capacity is requested */
-    public Optional<CloudAccount> cloudAccount() {
+    public CloudAccount cloudAccount() {
         return cloudAccount;
     }
 
@@ -93,18 +109,53 @@ public final class Capacity {
 
     public ClusterInfo clusterInfo() { return clusterInfo; }
 
+    Capacity with(CloudAccount account) {
+        return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, account, cloudResourceTags, clusterInfo);
+    }
+
+    public Capacity withCanFail(boolean canFail) {
+        return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, cloudAccount, cloudResourceTags, clusterInfo);
+    }
+
     public Capacity withLimits(ClusterResources min, ClusterResources max) {
         return withLimits(min, max, IntRange.empty());
     }
 
     public Capacity withLimits(ClusterResources min, ClusterResources max, IntRange groupSize) {
-        return new Capacity(min, max, groupSize, required, canFail, type, cloudAccount, cloudResourceTags, clusterInfo);
+        return new Capacity(min, max, groupSize, required, canFail, type, maxCostFactor, cloudAccount, cloudResourceTags, clusterInfo);
+    }
+
+    /** Returns true if the given resources are allowed by the constraints of this. */
+    public boolean allows(ClusterResources resources) {
+        return resources.isWithin(min, max) && groupSize.includes(resources.nodes() / resources.groups());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if (! (o instanceof Capacity other)) return false;
+        if ( ! this.min.equals(other.min)) return false;
+        if ( ! this.max.equals(other.max)) return false;
+        if ( ! this.groupSize.equals(other.groupSize)) return false;
+        if (this.required != other.required) return false;
+        if (this.type != other.type) return false;
+        if (this.maxCostFactor != other.maxCostFactor) return false;
+        if ( ! this.cloudAccount.equals(other.cloudAccount)) return false;
+        if ( ! this.cloudResourceTags.equals(other.cloudResourceTags)) return false;
+        if ( ! this.clusterInfo.equals(other.clusterInfo)) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(min, max, groupSize, required, type, maxCostFactor, cloudAccount, cloudResourceTags, clusterInfo);
     }
 
     @Override
     public String toString() {
         return (required ? "required " : "") +
-               (min.equals(max) ? min : "between " + min + " and " + max);
+               (min.equals(max) ? min : "between " + min + " and " + max) +
+               (maxCostFactor != 1.0 ? " max-cost-factor: " + maxCostFactor : "");
     }
 
     /** Create a non-required, failable capacity request */
@@ -118,7 +169,7 @@ public final class Capacity {
     }
 
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize) {
-        return from(min, max, groupSize, false, true, Optional.empty(), CloudResourceTags.empty(), ClusterInfo.empty());
+        return from(min, max, groupSize, 1.0, false, true, Optional.empty(), CloudResourceTags.empty(), ClusterInfo.empty());
     }
 
     public static Capacity from(ClusterResources resources, boolean required, boolean canFail) {
@@ -129,15 +180,37 @@ public final class Capacity {
         return from(resources, required, canFail, NodeType.tenant, hostTTL);
     }
 
+    @Deprecated // TODO: Remove after September 2026
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
                                 Optional<CloudAccount> cloudAccount, ClusterInfo clusterInfo) {
-        return from(min, max, groupSize, required, canFail, cloudAccount, CloudResourceTags.empty(), clusterInfo);
+        return from(min, max, groupSize, 1.0, required, canFail, cloudAccount, CloudResourceTags.empty(), clusterInfo);
     }
 
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
+                                CloudAccount cloudAccount, ClusterInfo clusterInfo) {
+        return from(min, max, groupSize, 1.0, required, canFail, cloudAccount, CloudResourceTags.empty(), clusterInfo);
+    }
+
+    @Deprecated // TODO: Remove after September 2026
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
                                 Optional<CloudAccount> cloudAccount, CloudResourceTags cloudResourceTags,
                                 ClusterInfo clusterInfo) {
-        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, cloudResourceTags, clusterInfo);
+        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, 1.0, cloudAccount.orElse(CloudAccount.unspecified()), cloudResourceTags, clusterInfo);
+    }
+
+    @Deprecated // TODO: Remove after September 2026
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, double maxCostFactor,
+                                boolean required, boolean canFail,
+                                Optional<CloudAccount> cloudAccount, CloudResourceTags cloudResourceTags,
+                                ClusterInfo clusterInfo) {
+        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, maxCostFactor, cloudAccount.orElse(CloudAccount.unspecified()), cloudResourceTags, clusterInfo);
+    }
+
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, double maxCostFactor,
+                                boolean required, boolean canFail,
+                                CloudAccount cloudAccount, CloudResourceTags cloudResourceTags,
+                                ClusterInfo clusterInfo) {
+        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, maxCostFactor, cloudAccount, cloudResourceTags, clusterInfo);
     }
 
     /** Creates this from a node type */
@@ -145,8 +218,10 @@ public final class Capacity {
         return from(new ClusterResources(0, 1, NodeResources.unspecified()), true, false, type, Duration.ZERO);
     }
 
+    public static Capacity unspecified() { return unspecified; }
+
     private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type, Duration hostTTL) {
-        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, Optional.empty(),
+        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, 1.0, CloudAccount.unspecified(),
                             CloudResourceTags.empty(), new ClusterInfo.Builder().hostTTL(hostTTL).build());
     }
 

@@ -4,6 +4,8 @@
 
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <cstdlib>
+
 namespace vespalib {
 
 namespace {

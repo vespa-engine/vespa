@@ -6,12 +6,14 @@ vespa_add_executable(searchlib_query_streaming_gtest_runner_app TEST
     gtest_runner.cpp
     hit_iterator_test.cpp
     hit_iterator_pack_test.cpp
+    label_wrapper_query_node_test.cpp
     near_test.cpp
     nearest_neighbor_query_node_test.cpp
     phrase_query_node_test.cpp
     query_builder_test.cpp
     query_term_test.cpp
     same_element_query_node_test.cpp
+    sparse_tensor_wand_query_node_test.cpp
     DEPENDS
     searchlib_queryeval_test
     vespa_searchlib

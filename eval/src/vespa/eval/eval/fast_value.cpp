@@ -4,6 +4,7 @@
 
 #include "fast_value.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/typify.h>
 
 namespace vespalib::eval {
@@ -16,7 +17,7 @@ struct CreateFastValueBuilderBase {
     template <typename T, typename R2>
     static std::unique_ptr<ValueBuilderBase> invoke(const ValueType& type, size_t num_mapped_dims,
                                                     size_t subspace_size, size_t expected_subspaces) {
-        assert(check_cell_type<T>(type.cell_type()));
+        CHECK(check_cell_type<T>(type.cell_type()));
         if (type.is_double()) {
             return std::make_unique<FastDoubleValueBuilder>();
         } else if (num_mapped_dims == 0) {
@@ -68,7 +69,7 @@ struct FastIterateView : public Value::Index::View {
             return false;
         }
         auto addr = map.get_addr(pos);
-        assert(addr.size() == addr_out.size());
+        CHECK(addr.size() == addr_out.size());
         for (size_t i = 0; i < addr.size(); ++i) {
             *addr_out[i] = addr[i];
         }
@@ -100,7 +101,7 @@ struct FastFilterView : public Value::Index::View {
     ~FastFilterView() override;
 
     void lookup(std::span<const string_id* const> addr) override {
-        assert(addr.size() == query.size());
+        CHECK(addr.size() == query.size());
         for (size_t i = 0; i < addr.size(); ++i) {
             query[i] = *addr[i];
         }
@@ -111,7 +112,7 @@ struct FastFilterView : public Value::Index::View {
         while (pos < map.size()) {
             auto addr = map.get_addr(pos);
             if (is_match(addr)) {
-                assert(addr_out.size() == extract_dims.size());
+                CHECK(addr_out.size() == extract_dims.size());
                 for (size_t i = 0; i < extract_dims.size(); ++i) {
                     *addr_out[i] = addr[extract_dims[i]];
                 }
@@ -138,8 +139,8 @@ FastFilterView::FastFilterView(const FastAddrMap& map_in, std::span<const size_t
             ++my_pos;
         }
     }
-    assert(my_pos == match_dims.end());
-    assert((match_dims.size() + extract_dims.size()) == map.addr_size());
+    CHECK(my_pos == match_dims.end());
+    CHECK((match_dims.size() + extract_dims.size()) == map.addr_size());
 }
 
 FastFilterView::~FastFilterView() = default;

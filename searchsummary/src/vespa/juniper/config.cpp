@@ -41,8 +41,9 @@ Config::Config(const char* config_name, const Juniper& juniper)
     const unsigned char* cons = char_p_cast<unsigned char>(GetProp("dynsum.connectors", separators.c_str()));
     double               proximity_factor = vespalib::locale::c::strtod(GetProp("proximity.factor", "0.25"), nullptr);
     // Silently convert to something sensible
-    if (proximity_factor > 1E8 || proximity_factor < 0)
+    if (proximity_factor > 1E8 || proximity_factor < 0) {
         proximity_factor = 0.25;
+    }
 
     _sumconf = CreateSummaryConfig(high_on, high_off, contsym, seps, cons, StringToConfigFlag(escape_markup),
                                    StringToConfigFlag(preserve_white_space));

@@ -11,6 +11,7 @@
 #include "stripe_access_guard.h"
 #include "top_level_distributor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -267,7 +268,7 @@ bool TopLevelBucketDBUpdater::onActivateClusterStateVersion(
         const auto pending_version = _pending_cluster_state->clusterStateVersion();
         if (pending_version == cmd->version()) {
             if (is_pending_cluster_state_completed()) {
-                assert(_pending_cluster_state->isDeferred());
+                CHECK(_pending_cluster_state->isDeferred());
                 auto guard = _stripe_accessor.rendezvous_and_hold_all();
                 activate_pending_cluster_state(*guard);
             } else {
@@ -336,8 +337,8 @@ void TopLevelBucketDBUpdater::process_completed_pending_cluster_state(StripeAcce
     if (_pending_cluster_state->isDeferred()) {
         LOG(debug, "Deferring completion of pending cluster state version %u until explicitly activated",
             _pending_cluster_state->clusterStateVersion());
-        assert(_pending_cluster_state
-                   ->hasCommand()); // Deferred transitions should only ever be created by state commands.
+        CHECK(_pending_cluster_state
+                  ->hasCommand()); // Deferred transitions should only ever be created by state commands.
         // Sending down SetSystemState command will reach the state manager and a reply
         // will be auto-sent back to the cluster controller in charge. Once this happens,
         // it will send an explicit activation command once all distributors have reported

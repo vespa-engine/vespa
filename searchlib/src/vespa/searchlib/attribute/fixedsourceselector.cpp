@@ -2,6 +2,7 @@
 
 #include "fixedsourceselector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
@@ -52,7 +53,7 @@ FixedSourceSelector::UP FixedSourceSelector::cloneAndSubtract(const std::string&
     for (uint32_t docId = 0; docId < _source.getNumDocs(); ++docId) {
         queryeval::Source src = _source.get(docId);
         src = getNewSource(src, diff);
-        assert(src < SOURCE_LIMIT);
+        CHECK(src < SOURCE_LIMIT);
         selector->_source.set(docId, src);
     }
     selector->_source.commit();
@@ -65,7 +66,7 @@ FixedSourceSelector::UP FixedSourceSelector::load(const std::string& baseFileNam
     LoadInfo::UP info = extractLoadInfo(baseFileName);
     info->load();
     uint32_t defaultSource = currentId - info->header()._baseId;
-    assert(defaultSource < SOURCE_LIMIT);
+    CHECK(defaultSource < SOURCE_LIMIT);
     if (defaultSource != info->header()._defaultSource) {
         LOG(info, "Default source mismatch: header says %u, should be %u selector %s",
             (uint32_t)info->header()._defaultSource, defaultSource, baseFileName.c_str());
@@ -95,7 +96,7 @@ void FixedSourceSelector::reserve(uint32_t numDocs) {
 }
 
 void FixedSourceSelector::setSource(uint32_t docId, queryeval::Source source) {
-    assert(source < SOURCE_LIMIT);
+    CHECK(source < SOURCE_LIMIT);
     /**
      * Due to matchingloop advancing 1 past end, we need to initialize data that
      * far too.

@@ -35,7 +35,9 @@ public:
     void visit(SameElement&) override { isVisited<SameElement>() = true; }
     void visit(PrefixTerm&) override { isVisited<PrefixTerm>() = true; }
     void visit(RangeTerm&) override { isVisited<RangeTerm>() = true; }
+    void visit(StringRangeTerm&) override { isVisited<StringRangeTerm>() = true; }
     void visit(Rank&) override { isVisited<Rank>() = true; }
+    void visit(LabelWrapper&) override { isVisited<LabelWrapper>() = true; }
     void visit(StringTerm&) override { isVisited<StringTerm>() = true; }
     void visit(SubstringTerm&) override { isVisited<SubstringTerm>() = true; }
     void visit(SuffixTerm&) override { isVisited<SuffixTerm>() = true; }
@@ -46,6 +48,7 @@ public:
     void visit(PredicateQuery&) override { isVisited<PredicateQuery>() = true; }
     void visit(RegExpTerm&) override { isVisited<RegExpTerm>() = true; }
     void visit(NearestNeighborTerm&) override { isVisited<NearestNeighborTerm>() = true; }
+    void visit(SparseTensorWandTerm&) override { isVisited<SparseTensorWandTerm>() = true; }
     void visit(TrueQueryNode&) override { isVisited<TrueQueryNode>() = true; }
     void visit(FalseQueryNode&) override { isVisited<FalseQueryNode>() = true; }
     void visit(FuzzyTerm&) override { isVisited<FuzzyTerm>() = true; }
@@ -73,11 +76,13 @@ TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     checkVisit<DotProduct>(new SimpleDotProduct(0, "field", 0, Weight(42)));
     checkVisit<WandTerm>(new SimpleWandTerm(0, "field", 0, Weight(42), 57, 67, 77.7));
     checkVisit<Rank>(new SimpleRank);
+    checkVisit<LabelWrapper>(new SimpleLabelWrapper(7, 2.5));
     checkVisit<NumberTerm>(new SimpleNumberTerm("0.42", "field", 0, Weight(0)));
     const Location location(Point{10, 10}, 20, 0);
     checkVisit<LocationTerm>(new SimpleLocationTerm(location, "field", 0, Weight(0)));
     checkVisit<PrefixTerm>(new SimplePrefixTerm("t", "field", 0, Weight(0)));
     checkVisit<RangeTerm>(new SimpleRangeTerm(Range(0, 1), "field", 0, Weight(0)));
+    checkVisit<StringRangeTerm>(new SimpleStringRangeTerm(StringRange(), "field", 0, Weight(0)));
     checkVisit<StringTerm>(new SimpleStringTerm("t", "field", 0, Weight(0)));
     checkVisit<SubstringTerm>(new SimpleSubstringTerm("t", "field", 0, Weight(0)));
     checkVisit<SuffixTerm>(new SimpleSuffixTerm("t", "field", 0, Weight(0)));
@@ -88,6 +93,8 @@ TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     hnsw_params.explore_additional_hits = 321;
     checkVisit<NearestNeighborTerm>(
         new SimpleNearestNeighborTerm("query_tensor", "doc_tensor", 0, Weight(0), 123, true, hnsw_params));
+    checkVisit<SparseTensorWandTerm>(
+        new SimpleSparseTensorWandTerm("query_tensor", "doc_tensor", 0, Weight(0), 123, 0.5));
     checkVisit<TrueQueryNode>(new SimpleTrue());
     checkVisit<FalseQueryNode>(new SimpleFalse());
     checkVisit<FuzzyTerm>(new SimpleFuzzyTerm("t", "field", 0, Weight(0), 2, 0, false));

@@ -87,6 +87,9 @@ public class RankingExpressionTypeResolver extends Processor {
             ensureValidDouble(profile.getFirstPhaseRanking(), "first-phase expression", context);
             ensureValidDouble(profile.getSecondPhaseRanking(), "second-phase expression", context);
             ensureValidDouble(profile.getGlobalPhaseRanking(), "global-phase expression", context);
+            for (var sortFeature : profile.getSortFeatures()) {
+                ensureValidDouble(sortFeature, "sort feature " + sortFeature, context);
+            }
             if ( ( context.tensorsAreUsed() || profile.isStrict())
                  && ! context.queryFeaturesNotDeclared().isEmpty()
                  && ! warnedAbout.containsAll(context.queryFeaturesNotDeclared())) {
@@ -127,6 +130,10 @@ public class RankingExpressionTypeResolver extends Processor {
 
     private void ensureValidDouble(RankingExpression expression, String expressionDescription, TypeContext<Reference> context) {
         if (expression == null) return;
+        ensureValidDouble(expression.getRoot(), expressionDescription, context);
+    }
+
+    private void ensureValidDouble(ExpressionNode expression, String expressionDescription, TypeContext<Reference> context) {
         TensorType type = resolveType(expression, expressionDescription, context);
         if ( ! type.equals(TensorType.empty))
             throw new IllegalArgumentException("The " + expressionDescription + " must produce a double " +

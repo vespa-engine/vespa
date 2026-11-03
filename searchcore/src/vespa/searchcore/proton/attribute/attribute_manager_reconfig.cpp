@@ -5,7 +5,7 @@
 #include "attributemanager.h"
 #include "sequential_attributes_initializer.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton {
 
@@ -18,7 +18,7 @@ AttributeManagerReconfig::~AttributeManagerReconfig() = default;
 
 std::shared_ptr<IAttributeManager> AttributeManagerReconfig::create(uint32_t          docid_limit,
                                                                     search::SerialNum serial_num) {
-    assert(_mgr);
+    CHECK(_mgr);
     _mgr->addInitializedAttributes(_initializer->getInitializedAttributes(), docid_limit, serial_num);
     return std::move(_mgr);
 }

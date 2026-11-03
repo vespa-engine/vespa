@@ -24,9 +24,9 @@ protected:
 public:
     DocsumFieldWriterFactory(const IDocsumEnvironment& env, const IQueryTermFilterFactory& query_term_filter_factory);
     ~DocsumFieldWriterFactory() override;
-    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const std::string& field_name,
-                                                                  const std::string& command,
-                                                                  const std::string& source) override;
+    std::unique_ptr<DocsumFieldWriter>
+    create_docsum_field_writer(const std::string& field_name, const std::string& command, const std::string& source,
+                               std::span<const std::string> struct_fields, CombinerShape declared_shape) override;
 };
 
 } // namespace search::docsummary

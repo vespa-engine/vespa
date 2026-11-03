@@ -2,7 +2,7 @@
 
 #include "clusterstatehandler.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton::test {
 
@@ -10,7 +10,7 @@ ClusterStateHandler::ClusterStateHandler() : IClusterStateChangedNotifier(), _ha
 }
 
 ClusterStateHandler::~ClusterStateHandler() {
-    assert(_handlers.empty());
+    CHECK(_handlers.empty());
 }
 
 void ClusterStateHandler::addClusterStateChangedHandler(IClusterStateChangedHandler* handler) {

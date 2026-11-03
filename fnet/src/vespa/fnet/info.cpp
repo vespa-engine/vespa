@@ -41,13 +41,15 @@ FNET_Info::FNET_Info() {
 
     cmp = 0x08070605;
     cmp = (cmp << 32) + 0x04030201;
-    if (intval16 == 0x0201 && intval32 == 0x04030201 && intval64 == cmp)
+    if (intval16 == 0x0201 && intval32 == 0x04030201 && intval64 == cmp) {
         endian = ENDIAN_LITTLE;
+    }
 
     cmp = 0x01020304;
     cmp = (cmp << 32) + 0x05060708;
-    if (intval16 == 0x0102 && intval32 == 0x01020304 && intval64 == cmp)
+    if (intval16 == 0x0102 && intval32 == 0x01020304 && intval64 == cmp) {
         endian = ENDIAN_BIG;
+    }
 
     _endian = endian;
 }
@@ -64,10 +66,12 @@ void FNET_Info::PrintInfo() {
 void FNET_Info::LogInfo() {
     LOG(info, "FNET Version    : %s", GetFNETVersion());
     const char* endian_str = "UNKNOWN";
-    if (_endian == ENDIAN_LITTLE)
+    if (_endian == ENDIAN_LITTLE) {
         endian_str = "LITTLE";
-    if (_endian == ENDIAN_BIG)
+    }
+    if (_endian == ENDIAN_BIG) {
         endian_str = "BIG";
+    }
     LOG(info, "Host Endian     : %s", endian_str);
     const char* thread_str = HasThreads() ? "true" : "false";
     LOG(info, "Thread support  : %s", thread_str);

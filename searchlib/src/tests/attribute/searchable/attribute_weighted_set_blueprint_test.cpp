@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
 #include <vespa/searchlib/attribute/attribute_weighted_set_blueprint.h>
@@ -42,7 +43,7 @@ void setupAttributeManager(MockAttributeManager& manager, bool isFilter) {
         auto* attr = (IntegerAttribute*)(attr_sp.get());
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
-            assert(i == docId);
+            CHECK(i == docId);
             attr->update(docId, i);
             attr->commit();
         }
@@ -55,7 +56,7 @@ void setupAttributeManager(MockAttributeManager& manager, bool isFilter) {
         auto* attr = (StringAttribute*)(attr_sp.get());
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
-            assert(i == docId);
+            CHECK(i == docId);
             attr->update(i, std::string(1, '1' + i - 1).c_str());
             attr->commit();
         }
@@ -67,7 +68,7 @@ void setupAttributeManager(MockAttributeManager& manager, bool isFilter) {
         auto* attr = (IntegerAttribute*)(attr_sp.get());
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
-            assert(i == docId);
+            CHECK(i == docId);
             attr->append(docId, i, 0);
             attr->append(docId, i + 10, 1);
             attr->commit();
@@ -203,10 +204,10 @@ TEST(AttributeWeightedSetBlueprintTest, attribute_weighted_set_single_token_filt
               "search::attribute::NumericMatcher<long> > >",
               normalize_class_name(ws.createSearch(adapter, "integer", false)->getClassName()));
     EXPECT_EQ("search::FilterAttributeIteratorStrict<search::attribute::SingleEnumSearchContext<char const*, "
-              "search::attribute::StringSearchContext> >",
+              "search::attribute::StringSearchContextT<search::attribute::StringMatcher> > >",
               normalize_class_name(ws.createSearch(adapter, "string", true)->getClassName()));
     EXPECT_EQ("search::FilterAttributeIteratorT<search::attribute::SingleEnumSearchContext<char const*, "
-              "search::attribute::StringSearchContext> >",
+              "search::attribute::StringSearchContextT<search::attribute::StringMatcher> > >",
               normalize_class_name(ws.createSearch(adapter, "string", false)->getClassName()));
     EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", true));
     EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", false));

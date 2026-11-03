@@ -72,6 +72,15 @@ public class RangeQueryOptimizerTestCase {
     }
 
     @Test
+    void testStructFieldRangeOptimizing() {
+        assertOptimizedYql("AND myStruct.f1:<10;20>",
+                           "select * from sources * where myStruct.f1 > 10 and myStruct.f1 < 20");
+        // Different map entries may match each range
+        assertOptimizedYql("AND myMap.value.weight:>10 myMap.value.weight:<20",
+                           "select * from sources * where myMap.value.weight > 10 and myMap.value.weight < 20");
+    }
+
+    @Test
     void testRangeOptimizingCarriesOverItemAttributesWhenNotOptimized() {
         Query query = new Query();
         AndItem root = new AndItem();
@@ -247,6 +256,11 @@ public class RangeQueryOptimizerTestCase {
         Index f2Array = new Index("myStructArray.f2Array");
         f2Array.setMultivalue(true);
 
+        Index myMap = new Index("myMap");
+        myMap.setMultivalue(true);
+        Index myMapValueWeight = new Index("myMap.value.weight");
+        myMapValueWeight.setMultivalue(true);
+
         sd.addIndex(singleValue1);
         sd.addIndex(singleValue2);
         sd.addIndex(multiValue);
@@ -256,6 +270,8 @@ public class RangeQueryOptimizerTestCase {
         sd.addIndex(myStructArray);
         sd.addIndex(f1Array);
         sd.addIndex(f2Array);
+        sd.addIndex(myMap);
+        sd.addIndex(myMapValueWeight);
         return new IndexFacts(new IndexModel(sd));
     }
 

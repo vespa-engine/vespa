@@ -66,12 +66,14 @@ void test_generic_merge_with(const ValueBuilderFactory& factory) {
         const auto r = merge_layouts[i + 1].cpy().seq(N_16ths);
         for (CellType lct : CellTypeUtils::list_types()) {
             auto lhs = l.cpy().cells(lct);
-            if (lhs.bad_scalar())
+            if (lhs.bad_scalar()) {
                 continue;
+            }
             for (CellType rct : CellTypeUtils::list_types()) {
                 auto rhs = r.cpy().cells(rct);
-                if (rhs.bad_scalar())
+                if (rhs.bad_scalar()) {
                     continue;
+                }
                 SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.gen().to_string().c_str(),
                                  rhs.gen().to_string().c_str()));
                 for (auto fun : {operation::Add::f, operation::Mul::f, operation::Sub::f, operation::Max::f}) {

@@ -2,7 +2,7 @@
 
 #include "active_work.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::coro {
 
@@ -13,7 +13,7 @@ bool ActiveWork::join_awaiter::await_suspend(std::coroutine_handle<> handle) noe
 
 ActiveWork::~ActiveWork() {
     // NB: join must be called, even if there is no other work
-    assert(_pending.load(std::memory_order_relaxed) == 0);
+    CHECK(_pending.load(std::memory_order_relaxed) == 0);
 }
 
 } // namespace vespalib::coro

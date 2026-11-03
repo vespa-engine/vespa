@@ -31,6 +31,7 @@ public class TensorModifyUpdateReader {
     private static final String MODIFY_ADD = "add";
     private static final String MODIFY_MULTIPLY = "multiply";
     private static final String MODIFY_CREATE = "create";
+    private static final String MODIFY_ADDRESSES = "addresses";
 
     public static TensorModifyUpdate createModifyUpdate(TokenBuffer buffer, Field field) {
         expectFieldIsOfTypeTensor(field);
@@ -81,9 +82,8 @@ public class TensorModifyUpdateReader {
 
     private static ModifyUpdateResult createModifyUpdateResult(TokenBuffer buffer, Field field) {
         ModifyUpdateResult result = new ModifyUpdateResult();
-        buffer.next();
         int localNesting = buffer.nesting();
-        while (localNesting <= buffer.nesting()) {
+        for (buffer.next(); localNesting <= buffer.nesting(); buffer.next()) {
             switch (buffer.currentName()) {
                 case MODIFY_OPERATION:
                     result.operation = createOperation(buffer, field.getName());
@@ -92,6 +92,7 @@ public class TensorModifyUpdateReader {
                     result.createNonExistingCells = createNonExistingCells(buffer, field.getName());
                     break;
                 case TENSOR_CELLS:
+                case MODIFY_ADDRESSES:
                     result.tensor = createTensorFromCells(buffer, field);
                     break;
                 case TENSOR_BLOCKS:
@@ -100,7 +101,6 @@ public class TensorModifyUpdateReader {
                 default:
                     throw new IllegalArgumentException("Unknown JSON string '" + buffer.currentName() + "' in modify update for field '" + field.getName() + "'");
             }
-            buffer.next();
         }
         return result;
     }

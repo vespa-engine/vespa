@@ -2,6 +2,7 @@
 
 #include "isearchableindexcollection.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 
 namespace searchcorespi {
@@ -9,13 +10,13 @@ namespace searchcorespi {
 using search::queryeval::ISourceSelector;
 
 void ISearchableIndexCollection::setCurrentIndex(uint32_t id) {
-    assert(id < ISourceSelector::SOURCE_LIMIT);
+    CHECK(id < ISourceSelector::SOURCE_LIMIT);
 
     _currentIndex = id;
 }
 
 uint32_t ISearchableIndexCollection::getCurrentIndex() const {
-    assert(valid());
+    CHECK(valid());
 
     return _currentIndex;
 }

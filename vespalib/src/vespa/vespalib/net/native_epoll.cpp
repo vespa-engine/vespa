@@ -2,9 +2,10 @@
 
 #include "native_epoll.h"
 
+#include <vespa/check_require.h>
+
 #include <unistd.h>
 
-#include <cassert>
 #include <cerrno>
 #include <cstring>
 
@@ -29,7 +30,7 @@ void check(int res) {
 } // namespace
 
 Epoll::Epoll() : _epoll_fd(epoll_create1(0)) {
-    assert(_epoll_fd != -1);
+    CHECK(_epoll_fd != -1);
 }
 
 Epoll::~Epoll() {

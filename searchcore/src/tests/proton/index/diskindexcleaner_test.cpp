@@ -7,11 +7,13 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <algorithm>
+#include <chrono>
 #include <filesystem>
 
 using std::string;
 using std::vector;
 using namespace searchcorespi::index;
+using namespace std::literals::chrono_literals;
 
 namespace {
 

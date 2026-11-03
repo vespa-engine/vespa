@@ -18,7 +18,9 @@ enum class TermType : uint8_t {
     REGEXP = 5,
     GEO_LOCATION = 6,
     FUZZYTERM = 7,
-    NEAREST_NEIGHBOR = 8
+    NEAREST_NEIGHBOR = 8,
+    STRING_RANGE = 9,
+    SPARSE_TENSOR_WAND = 10
 };
 
 std::ostream& operator<<(std::ostream&, Normalizing);

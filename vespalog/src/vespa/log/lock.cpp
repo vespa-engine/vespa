@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "log.h"
+#include "log-indirect.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -41,8 +41,9 @@ Lock::Lock(const char* filename, int mode) : _fd(open(filename, mode, 0666)), _i
 
 void Lock::lock(bool exclusive) {
     // Early escape to avoid double locking which would of course block forever
-    if (_isLocked)
+    if (_isLocked) {
         return;
+    }
 
     if (flock(_fd, exclusive ? LOCK_EX : LOCK_SH) == -1) {
         int err = errno;

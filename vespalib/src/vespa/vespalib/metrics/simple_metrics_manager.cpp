@@ -3,7 +3,7 @@
 
 #include "simple_tick.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.metrics.simple_metrics_manager");
@@ -24,10 +24,11 @@ SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig& config, Ti
       _maxBuckets(config.sliding_window_seconds),
       _totalsBucket(0, _startTime, _startTime),
       _thread(&SimpleMetricsManager::tickerLoop, this) {
-    if (_maxBuckets < 1)
+    if (_maxBuckets < 1) {
         _maxBuckets = 1;
+    }
     Point empty = pointFrom(PointMap());
-    assert(empty.id() == 0);
+    CHECK(empty.id() == 0);
 }
 
 SimpleMetricsManager::~SimpleMetricsManager() {

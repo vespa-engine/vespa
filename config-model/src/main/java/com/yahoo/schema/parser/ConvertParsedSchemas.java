@@ -282,9 +282,10 @@ public class ConvertParsedSchemas {
         }
         parsed.getDocumentIdAttribute().ifPresent(schema::enableDocumentIdAttribute);
         parsed.getRawAsBase64().ifPresent(value -> schema.enableRawAsBase64(value));
+        parsed.getExplanation().ifPresent(schema::setExplanation);
         var typeContext = typeConverter.makeContext(parsed.getDocument());
         var sfResolver = new SummaryFieldTypeResolver(schema, parsed.getDocumentSummaries());
-        var fieldConverter = new ConvertParsedFields(typeContext, convertedStructs);
+        var fieldConverter = new ConvertParsedFields(typeContext, convertedStructs, properties);
         convertDocument(schema, parsed.getDocument(), fieldConverter);
         for (var field : parsed.getFields()) {
             fieldConverter.convertExtraField(schema, field);

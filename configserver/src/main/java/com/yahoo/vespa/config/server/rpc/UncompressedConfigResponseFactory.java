@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.text.AbstractUtf8Array;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.protocol.CompressionInfo;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -19,10 +19,10 @@ public class UncompressedConfigResponseFactory implements ConfigResponseFactory 
     public ConfigResponse createResponse(AbstractUtf8Array rawPayload,
                                          long generation,
                                          boolean applyOnRestart,
-                                         PayloadChecksums requestsPayloadChecksums) {
+                                         PayloadChecksum requestPayloadChecksum) {
         CompressionInfo info = CompressionInfo.create(CompressionType.UNCOMPRESSED, rawPayload.getByteLength());
-        PayloadChecksums payloadChecksums = generatePayloadChecksums(rawPayload, requestsPayloadChecksums);
-        return new SlimeConfigResponse(rawPayload, generation, applyOnRestart, payloadChecksums, info);
+        PayloadChecksum payloadChecksum = generatePayloadChecksum(rawPayload, requestPayloadChecksum);
+        return new SlimeConfigResponse(rawPayload, generation, applyOnRestart, payloadChecksum, info);
     }
 
 }

@@ -2,13 +2,15 @@
 
 #include "content_bucket_space.h"
 
+#include <vespa/check_require.h>
+
 namespace storage {
 
 ClusterStateAndDistribution::ClusterStateAndDistribution(
     std::shared_ptr<const lib::ClusterState> cluster_state,
     std::shared_ptr<const lib::Distribution> distribution) noexcept
     : _cluster_state(std::move(cluster_state)), _distribution(std::move(distribution)) {
-    assert(_cluster_state && _distribution);
+    CHECK(_cluster_state && _distribution);
 }
 
 ClusterStateAndDistribution::~ClusterStateAndDistribution() = default;
@@ -34,7 +36,7 @@ ContentBucketSpace::ContentBucketSpace(document::BucketSpace bucketSpace, const 
 
 void ContentBucketSpace::set_state_and_distribution(
     std::shared_ptr<const ClusterStateAndDistribution> state_and_distr) noexcept {
-    assert(state_and_distr);
+    CHECK(state_and_distr);
     std::lock_guard guard(_lock);
     _state_and_distribution = std::move(state_and_distr);
 }

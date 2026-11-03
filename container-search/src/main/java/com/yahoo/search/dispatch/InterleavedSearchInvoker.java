@@ -11,6 +11,8 @@ import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.DocumentCountSource;
+import com.yahoo.search.result.Coverage;
+import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -30,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.yahoo.container.protect.Error.BACKEND_COMMUNICATION_ERROR;
+
 /**
  * InterleavedSearchInvoker uses multiple {@link SearchInvoker} objects to interface with content
  * nodes in parallel. Operationally it first sends requests to all contained invokers and then
@@ -48,6 +52,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private final DocumentCountSource documentCountSource;
     private final LinkedBlockingQueue<SearchInvoker> availableForProcessing;
     private final Set<Integer> alreadyFailedNodes;
+    private final List<ErrorMessage> connectionFailures = new ArrayList<>();
     private final CoverageAggregator coverageAggregator;
     private final TopKEstimator hitEstimator;
     private Query query;
@@ -135,6 +140,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     break;
                 } else {
                     InvokerResult toMerge = invoker.getSearchResult();
+                    deferConnectionFailure(toMerge.getResult());
                     merged = mergeResult(result.getResult(), toMerge, merged, groupingResultAggregator);
                     ejectInvoker(invoker);
                 }
@@ -161,14 +167,18 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
     private void topKOptimize(Query query, Group group) {
         int neededHits = query.getHits() + query.getOffset();
         int q = neededHits;
-        if (group.isBalanced() && !group.isSparse()) {
+        // When content is skewed, estimate as if every node held as much as the largest node,
+        // which asks each node for at least as many hits as the largest one needs
+        int estimateNodes = group.isBalanced() ? invokers.size()
+                                               : Math.min(invokers.size(), (int)(1 / group.maxContentShare()));
+        if ( ! group.isSparse()) {
             Double topkProbabilityOverrride = query.properties().getDouble(Dispatcher.topKProbability);
             q = (topkProbabilityOverrride != null)
-                ? estimateHitsToFetch(neededHits, invokers.size(), topkProbabilityOverrride)
-                : estimateHitsToFetch(neededHits, invokers.size());
+                ? estimateHitsToFetch(neededHits, estimateNodes, topkProbabilityOverrride)
+                : estimateHitsToFetch(neededHits, estimateNodes);
         }
         if (q < neededHits) {
-            query.trace("Only fetching " + q + " of " + neededHits + " hits per node (TopK probability for " + invokers.size() + " nodes)", 1);
+            query.trace("Only fetching " + q + " of " + neededHits + " hits per node (TopK probability for " + estimateNodes + " nodes)", 1);
         }
         query.setHits(q);
         query.setOffset(0);
@@ -199,6 +209,28 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             }
             coverageAggregator.setFailedNodes(alreadyFailedNodes.size());
         }
+        // Unlike the failures above these stay errors, as with several searchable copies per group the
+        // coverage can read full while the failed node's documents are still missing. Marking them partial
+        // keeps a query that other nodes answered from failing for want of hits.
+        boolean othersAnswered = coverageAggregator.hasParticipatingAnswers();
+        for (ErrorMessage failure : connectionFailures) {
+            failure.setPartial(othersAnswered);
+            result.hits().addError(failure);
+        }
+    }
+
+    /**
+     * Holds back the error of a node whose connection failed during the query, since whether it
+     * failed the query depends on the nodes yet to answer. It is added by insertNetworkErrors.
+     */
+    private void deferConnectionFailure(Result nodeResult) {
+        ErrorHit errorHit = nodeResult.hits().getErrorHit();
+        if (errorHit == null || ! errorHit.hasOnlyErrorCode(BACKEND_COMMUNICATION_ERROR.code)) return;
+        Coverage coverage = nodeResult.getCoverage(false);
+        if (coverage != null && coverage.getNodes() > 0) return;
+
+        nodeResult.hits().removeErrorHit();
+        errorHit.errorIterator().forEachRemaining(connectionFailures::add);
     }
 
     private List<LeanHit> mergeResult(Result result, InvokerResult partialResult, List<LeanHit> current,

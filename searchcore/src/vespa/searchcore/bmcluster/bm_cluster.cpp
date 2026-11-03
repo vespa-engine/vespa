@@ -15,6 +15,7 @@
 #include "storage_api_message_bus_bm_feed_handler.h"
 #include "storage_api_rpc_bm_feed_handler.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/messagebus/config-messagebus.h>
@@ -24,7 +25,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <filesystem>
 #include <thread>
 
@@ -216,8 +216,8 @@ void BmCluster::stop_rpc_client() {
 }
 
 void BmCluster::make_node(uint32_t node_idx) {
-    assert(node_idx < _nodes.size());
-    assert(!_nodes[node_idx]);
+    CHECK(node_idx < _nodes.size());
+    CHECK(!_nodes[node_idx]);
     vespalib::asciistream s;
     s << _base_dir << "/n" << node_idx;
     std::string node_base_dir(s.view());

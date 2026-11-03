@@ -25,10 +25,12 @@ import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.BlockItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.DocumentFrequency;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
+import com.yahoo.prelude.query.InItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
@@ -48,6 +50,8 @@ import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.SparseTensorWandItem;
+import com.yahoo.prelude.query.StringRangeItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -79,6 +83,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.PREFIX_LENGTH;
@@ -98,7 +103,10 @@ import static com.yahoo.search.yql.YqlParser.ASCENDING_HITS_ORDER;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_ID;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
 import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
+import static com.yahoo.search.yql.YqlParser.COUNT;
 import static com.yahoo.search.yql.YqlParser.DESCENDING_HITS_ORDER;
+import static com.yahoo.search.yql.YqlParser.DOCUMENT_FREQUENCY;
+import static com.yahoo.search.yql.YqlParser.FREQUENCY;
 import static com.yahoo.search.yql.YqlParser.DISTANCE;
 import static com.yahoo.search.yql.YqlParser.DISTANCE_THRESHOLD;
 import static com.yahoo.search.yql.YqlParser.DOT_PRODUCT;
@@ -129,6 +137,7 @@ import static com.yahoo.search.yql.YqlParser.RANKED;
 import static com.yahoo.search.yql.YqlParser.SAME_ELEMENT;
 import static com.yahoo.search.yql.YqlParser.SCORE_THRESHOLD;
 import static com.yahoo.search.yql.YqlParser.SIGNIFICANCE;
+import static com.yahoo.search.yql.YqlParser.SPARSE_TENSOR_WAND;
 import static com.yahoo.search.yql.YqlParser.STEM;
 import static com.yahoo.search.yql.YqlParser.SUBSTRING;
 import static com.yahoo.search.yql.YqlParser.SUFFIX;
@@ -189,7 +198,7 @@ public class SelectParser implements Parser {
     private IndexNameExpander indexNameExpander = new IndexNameExpander();
     private boolean insideSameElement = false;
 
-    private static final List<String> FUNCTION_CALLS = List.of(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_BOUNDING_BOX, GEO_LOCATION, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
+    private static final List<String> FUNCTION_CALLS = List.of(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_BOUNDING_BOX, GEO_LOCATION, NEAREST_NEIGHBOR, SPARSE_TENSOR_WAND, PREDICATE, RANK, WEAK_AND);
     private static final Set<String> OPERATOR_KEYS = Set.of(AND, AND_NOT, CONTAINS, EQ, IN, MATCHES, NOT, OR, RANGE);
     private static final Set<String> COMPOSITE_LEAF_KEYS = Set.of(PHRASE, NEAR, ONEAR, EQUIV, FUZZY, ALTERNATIVES);
 
@@ -328,11 +337,29 @@ public class SelectParser implements Parser {
         };
     }
 
-    public List<VespaGroupingStep> getGroupingSteps(String grouping){
+    public List<VespaGroupingStep> getGroupingSteps(String grouping) {
+        return getGroupingSteps(grouping, null);
+    }
+
+    /**
+     * Returns the grouping steps of the given JSON grouping, resolving parameter references on the form @name
+     * using the given function, see {@link GroupingOperation#fromStringAsList(String, Function)}.
+     */
+    public List<VespaGroupingStep> getGroupingSteps(String grouping, Function<String, String> parameters) {
         List<VespaGroupingStep> groupingSteps = new ArrayList<>();
         List<String> groupingOperations = toGroupingRequests(grouping);
         for (String groupingString : groupingOperations) {
-            GroupingOperation groupingOperation = GroupingOperation.fromString(groupingString);
+            GroupingOperation groupingOperation;
+            try {
+                groupingOperation = GroupingOperation.fromString(groupingString, parameters);
+            }
+            catch (IllegalInputException e) {
+                throw e;
+            }
+            catch (IllegalArgumentException e) {
+                // An invalid grouping is illegal input, also when it is first parsed after the query is constructed
+                throw new IllegalInputException(e.getMessage(), e);
+            }
             VespaGroupingStep groupingStep = new VespaGroupingStep(groupingOperation);
             groupingSteps.add(groupingStep);
         }
@@ -396,7 +423,7 @@ public class SelectParser implements Parser {
                     if (isOperationBody && "each".equals(name)) {
                         directEachSeen[0] = true;
                         if (label != null) {
-                            b.append(" as(").append(UnicodeUtilities.quote(label, '"')).append(")");
+                            b.append(" as(").append(asLabelImage(label)).append(")");
                         }
                     }
                     b.append(" ");
@@ -414,6 +441,17 @@ public class SelectParser implements Parser {
                 b.append(groupingJson.toString());
                 break;
         }
+    }
+
+    /**
+     * Returns a JSON label as it must be written in the grouping language: a parameter reference (@name) as is,
+     * so it is resolved like a parameter anywhere else in the grouping, and any other label as a quoted string.
+     */
+    private static String asLabelImage(String label) {
+        if (label.matches("@[A-Za-z_][A-Za-z0-9_-]*")) {
+            return label;
+        }
+        return UnicodeUtilities.quote(label, '"');
     }
 
     /** Describes where a misplaced "label" was found (only reached when isOperationBody is false). */
@@ -444,11 +482,12 @@ public class SelectParser implements Parser {
             case GEO_BOUNDING_BOX -> buildGeoBoundingBox(key, value);
             case GEO_LOCATION -> buildGeoLocation(key, value);
             case NEAREST_NEIGHBOR -> buildNearestNeighbor(key, value);
+            case SPARSE_TENSOR_WAND -> buildSparseTensorWand(key, value);
             case PREDICATE -> buildPredicate(key, value);
             case RANK -> buildRank(key, value);
             case WEAK_AND -> buildWeakAnd(key, value);
             default ->
-                    throw newUnexpectedArgumentException(key, DOT_PRODUCT, NEAREST_NEIGHBOR, RANK, WAND, WEAK_AND, WEIGHTED_SET, PREDICATE);
+                    throw newUnexpectedArgumentException(key, DOT_PRODUCT, NEAREST_NEIGHBOR, SPARSE_TENSOR_WAND, RANK, WAND, WEAK_AND, WEIGHTED_SET, PREDICATE);
         };
     }
 
@@ -681,6 +720,22 @@ public class SelectParser implements Parser {
         return item;
     }
 
+    private Item buildSparseTensorWand(String key, Inspector value) {
+        HashMap<String, Inspector> annotations = getAnnotationMap(value);
+        HashMap<Integer, Inspector> children = childMap(value);
+        Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
+        String field = children.get(0).asString();
+        String property = children.get(1).asString();
+        SparseTensorWandItem item = new SparseTensorWandItem(indexFactsSession.getCanonicName(field), property);
+        item.setTargetHits(getIntegerAnnotation(TARGET_HITS, annotations, null));
+        item.setTotalTargetHits(getIntegerAnnotation(TOTAL_TARGET_HITS, annotations, null));
+        Double scoreThreshold = getDoubleAnnotation(SCORE_THRESHOLD, annotations, null);
+        if (scoreThreshold != null) {
+            item.setScoreThreshold(scoreThreshold);
+        }
+        return leafStyleSettings(getAnnotations(value), item);
+    }
+
     private CompositeItem buildWeakAnd(String key, Inspector value) {
         WeakAndItem weakAnd = new WeakAndItem();
         addItemsFromInspector(weakAnd, value);
@@ -726,6 +781,9 @@ public class SelectParser implements Parser {
                         if (annotation_value != null) {
                             out.setSignificance(annotation_value.asDouble());
                         }
+                    }
+                    if (DOCUMENT_FREQUENCY.equals(annotation_name)) {
+                        out.setDocumentFrequency(readDocumentFrequency(annotation_value));
                     }
                     if (UNIQUE_ID.equals(annotation_name)) {
                         if (annotation_value != null) {
@@ -774,11 +832,37 @@ public class SelectParser implements Parser {
                 if (hitLimit != null) {
                     number.setHitLimit(hitLimit);
                 }
-
+            } else if (out instanceof StringRangeItem stringRange && annotations != null) {
+                Integer hitLimit = getCappedRangeSearchParameter(annotations);
+                if (hitLimit != null) {
+                    stringRange.setHitLimit(hitLimit);
+                }
             }
         }
 
         return out;
+    }
+
+    /**
+     * Reads a {@code documentFrequency} annotation the way YQL does: an object with
+     * integer {@code frequency} and {@code count}, both required.
+     */
+    private static DocumentFrequency readDocumentFrequency(Inspector value) {
+        Preconditions.checkArgument(value != null && value.type() == OBJECT,
+                "Expected an object for annotation '%s', got %s.",
+                DOCUMENT_FREQUENCY, value == null ? "null" : value.type());
+        return new DocumentFrequency(documentFrequencyEntry(value, FREQUENCY),
+                                     documentFrequencyEntry(value, COUNT));
+    }
+
+    private static long documentFrequencyEntry(Inspector value, String key) {
+        Inspector entry = value.field(key);
+        Preconditions.checkArgument(entry.valid(),
+                "Map annotation '%s' must contain an entry with key '%s'.", DOCUMENT_FREQUENCY, key);
+        Preconditions.checkArgument(entry.type() == LONG,
+                "Expected Long or Integer for entry '%s' in map annotation '%s', got %s.",
+                key, DOCUMENT_FREQUENCY, entry.type());
+        return entry.asLong();
     }
 
     private Integer getCappedRangeSearchParameter(Inspector annotations) {
@@ -875,16 +959,15 @@ public class SelectParser implements Parser {
     private Item buildSameElementWithElementFilter(EqualsParams params) {
         int elementIndex = YqlParser.convertToElementId(params.index.asLong());
         var value = params.value;
-        // Convert value to string — sameElement only supports string children (consistent with YqlParser).
-        String stringValue = switch (value.type()) {
-            case BOOL -> String.valueOf(value.asBool());
-            case LONG -> String.valueOf(value.asLong());
-            case DOUBLE -> String.valueOf(value.asDouble());
-            case STRING -> value.asString();
+        // Numbers become numeric equality terms, other values word terms (consistent with YqlParser).
+        Item valueItem = switch (value.type()) {
+            case LONG -> new IntItem(String.valueOf(value.asLong()), "", true);
+            case DOUBLE -> new IntItem(String.valueOf(value.asDouble()), "", true);
+            case BOOL -> new WordItem(String.valueOf(value.asBool()), "", true);
+            case STRING -> new WordItem(value.asString(), "", true);
             default -> throw new IllegalArgumentException("'value' in 'equals' should be a boolean, integer, double, " +
                                                           "or string but was " + value.type());
         };
-        Item valueItem = new WordItem(stringValue, "", true);
 
         SameElementItem sameElement = new SameElementItem(params.field.asString());
         sameElement.setElementFilter(List.of(elementIndex));
@@ -938,14 +1021,12 @@ public class SelectParser implements Parser {
             item = numericInItem;
         }
 
-        return item;
+        return leafStyleSettings(getAnnotations(value), (InItem) item);
     }
 
     private Item buildRange(String key, Inspector value) {
         Map<Integer, Inspector> children = childMap(value);
         Inspector annotations = getAnnotations(value);
-
-        boolean[] equals = {false};
 
         String field;
         Inspector boundInspector;
@@ -956,6 +1037,48 @@ public class SelectParser implements Parser {
             field = getIndex(children.get(1).asString());
             boundInspector = children.get(0);
         }
+
+        var index = indexOf(field);
+        if (index.isString() && !index.isInteger() && !index.isNumerical())
+            return leafStyleSettings(annotations, buildStringRange(field, boundInspector, annotations));
+        else
+            return leafStyleSettings(annotations, buildIntRange(field, boundInspector));
+    }
+
+    /**
+     * Builds a lexical range over a string field, e.g. {"range": ["title", {">=": "aaa", "<": "zzz"}]}.
+     * Omitting a bound makes the interval unbounded in that direction, as -Infinity and Infinity do in YQL,
+     * such that an empty bound object matches everything.
+     */
+    private StringRangeItem buildStringRange(String field, Inspector boundInspector, Inspector annotations) {
+        String[] bounds = {null, null};
+        boolean[] inclusive = {false, false};
+        boundInspector.traverse((ObjectTraverser) (operator, bound) -> {
+            if (bound.type() != STRING) {
+                throw new IllegalArgumentException("The field '" + field + "' is a string field, but the argument "
+                                                   + bound + " to range is of type " + bound.type());
+            }
+            switch (operator) {
+                case "=" -> {
+                    bounds[0] = bounds[1] = bound.asString();
+                    inclusive[0] = inclusive[1] = true;
+                }
+                case ">=", ">" -> {
+                    bounds[0] = bound.asString();
+                    inclusive[0] = operator.equals(">=");
+                }
+                case "<=", "<" -> {
+                    bounds[1] = bound.asString();
+                    inclusive[1] = operator.equals("<=");
+                }
+                default -> throw newUnexpectedArgumentException(operator, "=", "<", "<=", ">", ">=");
+            }
+        });
+        return new StringRangeItem(bounds[0], inclusive[0], bounds[1], inclusive[1], field, true, getOrigin(annotations));
+    }
+
+    private IntItem buildIntRange(String field, Inspector boundInspector) {
+        boolean[] equals = {false};
         Number[] bounds = {null, null};
         String[] operators = {null, null};
         boundInspector.traverse((ObjectTraverser) (operator, bound) -> {
@@ -994,7 +1117,7 @@ public class SelectParser implements Parser {
             range = instantiateRangeItem(bounds[0], bounds[1], field, operators[0].equals(">"), operators[1].equals("<"));
         }
 
-        return leafStyleSettings(annotations, range);
+        return range;
     }
 
     private IntItem buildGreaterThanOrEquals(String field, String bound) {
@@ -1726,6 +1849,11 @@ public class SelectParser implements Parser {
         String expanded = indexNameExpander.expand(field);
         Preconditions.checkArgument(indexFactsSession.isIndex(expanded), "Field '%s' does not exist.", expanded);
         return indexFactsSession.getCanonicName(field);
+    }
+
+    /** Returns the index of a field name as returned by {@link #getIndex}. */
+    private Index indexOf(String field) {
+        return indexFactsSession.getIndex(indexNameExpander.expand(field));
     }
 
     private static void assertHasOperator(String key, String expectedKey) {

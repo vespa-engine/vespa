@@ -5,7 +5,7 @@
 #include "datastorebase.h"
 #include "entry_ref_filter.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::datastore {
 
@@ -15,7 +15,7 @@ CompactingBuffers::CompactingBuffers(DataStoreBase& store, uint32_t num_buffers,
 }
 
 CompactingBuffers::~CompactingBuffers() {
-    assert(_buffer_ids.empty());
+    CHECK(_buffer_ids.empty());
 }
 
 void CompactingBuffers::finish() {

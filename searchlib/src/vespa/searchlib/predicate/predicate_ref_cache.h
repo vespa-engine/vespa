@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstdint>
 #include <set>
 
@@ -135,7 +136,7 @@ public:
      * inserted in the underlying data store.
      */
     uint32_t insert(uint32_t ref) {
-        assert(ref);
+        CHECK(ref);
         return *_ref_cache.insert(ref).first;
     }
 

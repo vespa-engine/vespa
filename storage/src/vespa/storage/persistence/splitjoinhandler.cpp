@@ -7,6 +7,7 @@
 #include "persistenceutil.h"
 #include "splitbitdetector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storageapi/message/bucket.h>
 
@@ -58,7 +59,7 @@ MessageTracker::UP SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& 
     }
     // If we get here, we're splitting data in two.
     // (Possibly in special case where a target will be unused)
-    assert(targetInfo.success());
+    CHECK(targetInfo.success());
     document::Bucket target1(spiBucket.getBucketSpace(), targetInfo.getTarget1());
     document::Bucket target2(spiBucket.getBucketSpace(), targetInfo.getTarget2());
 
@@ -86,7 +87,7 @@ MessageTracker::UP SplitJoinHandler::handleSplitBucket(api::SplitBucketCommand& 
     std::vector<TargetInfo> targets;
     for (uint32_t i = 0; i < 2; i++) {
         const document::Bucket& target(i == 0 ? target1 : target2);
-        assert(target.getBucketId().getRawId() != 0);
+        CHECK(target.getBucketId().getRawId() != 0);
         targets.emplace_back(_env.getBucketDatabase(target.getBucketSpace())
                                  .get(target.getBucketId(), "PersistenceThread::handleSplitBucket - Target",
                                       StorBucketDatabase::CREATE_IF_NONEXISTING),
@@ -205,10 +206,17 @@ MessageTracker::UP SplitJoinHandler::handleJoinBuckets(api::JoinBucketsCommand& 
     for (uint32_t i = 0; i < cmd.getSourceBuckets().size(); i++) {
         document::Bucket           srcBucket(destBucket.getBucketSpace(), cmd.getSourceBuckets()[i]);
         FileStorHandler::RemapInfo target(cmd.getBucket());
-        _env._fileStorHandler.remapQueueAfterJoin(FileStorHandler::RemapInfo(srcBucket), target);
-        // Remove source from bucket db.
+        // Feed operations hold the source bucket's DB entry lock from bucket lookup
+        // through queue insertion. Holding the same lock across queue remapping and
+        // source removal ensures a concurrent feed op is either included in the
+        // remap, or observes the removed source and is remapped or rejected at
+        // ingress. Otherwise it may execute against the source after the provider
+        // join and leave the provider and service layer bucket DB out of sync.
+        // This mirrors the lock ordering used by the split path.
         StorBucketDatabase::WrappedEntry entry =
             _env.getBucketDatabase(srcBucket.getBucketSpace()).get(srcBucket.getBucketId(), "join-remove-source");
+        _env._fileStorHandler.remapQueueAfterJoin(FileStorHandler::RemapInfo(srcBucket), target);
+        // Remove source from bucket db.
         if (entry.exists()) {
             lastModified = std::max(lastModified, entry->info.getLastModified());
             entry.remove();

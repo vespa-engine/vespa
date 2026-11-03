@@ -5,6 +5,8 @@ import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldValue;
 
 /**
+ * Returns {@link FieldValue}s from field names and field paths.
+ *
  * @author Simon Thoresen Hult
  */
 public interface FieldValues extends FieldTypes {

@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "jsonwriter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-#include <cassert>
 #include <cmath>
 
 namespace vespalib {
@@ -14,7 +14,7 @@ void JSONWriter::push(State next) {
 
 void JSONWriter::pop(State expected) {
     State actual = _stack.back();
-    assert(actual == expected);
+    CHECK(actual == expected);
     (void)actual;
     (void)expected;
     _stack.pop_back();

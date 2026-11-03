@@ -30,30 +30,39 @@ std::unique_ptr<DocEntry> cloneDocEntry(const DocEntry& e) {
 }
 
 bool equal(const DocEntry& a, const DocEntry& b) {
-    if (a.getTimestamp() != b.getTimestamp())
+    if (a.getTimestamp() != b.getTimestamp()) {
         return false;
-    if (a.getMetaEnum() != b.getMetaEnum())
+    }
+    if (a.getMetaEnum() != b.getMetaEnum()) {
         return false;
-    if (a.getSize() != b.getSize())
+    }
+    if (a.getSize() != b.getSize()) {
         return false;
+    }
 
     if (a.getDocument()) {
-        if (!b.getDocument())
+        if (!b.getDocument()) {
             return false;
-        if (*a.getDocument() != *b.getDocument())
+        }
+        if (*a.getDocument() != *b.getDocument()) {
             return false;
+        }
     } else {
-        if (b.getDocument())
+        if (b.getDocument()) {
             return false;
+        }
     }
     if (a.getDocumentId()) {
-        if (!b.getDocumentId())
+        if (!b.getDocumentId()) {
             return false;
-        if (*a.getDocumentId() != *b.getDocumentId())
+        }
+        if (*a.getDocumentId() != *b.getDocumentId()) {
             return false;
+        }
     } else {
-        if (b.getDocumentId())
+        if (b.getDocumentId()) {
             return false;
+        }
     }
 
     return true;

@@ -12,6 +12,7 @@
 #include "multi_term_or_filter_search.h"
 #include "predicate_attribute.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/hit_estimate_flow_stats_adapter.h>
 #include <vespa/searchlib/common/location.h>
@@ -36,6 +37,7 @@
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/queryeval/orlikesearch.h>
 #include <vespa/searchlib/queryeval/predicate_blueprint.h>
+#include <vespa/searchlib/queryeval/sparse_tensor_wand_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
@@ -74,6 +76,7 @@ using search::query::PrefixTerm;
 using search::query::RangeTerm;
 using search::query::RegExpTerm;
 using search::query::StackDumpCreator;
+using search::query::StringRangeTerm;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
@@ -165,13 +168,13 @@ public:
     }
 
     SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray& tfmda) const override {
-        assert(tfmda.size() == 1);
+        CHECK(tfmda.size() == 1);
         return _search_context->createIterator(tfmda[0], strict());
     }
 
     SearchIterator::UP createSearchImpl(fef::MatchData& md) const override {
         const State& state = getState();
-        assert(state.numFields() == 1);
+        CHECK(state.numFields() == 1);
         return _search_context->createIterator(state.field(0).resolve(md), strict());
     }
 
@@ -503,7 +506,7 @@ public:
     }
 
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda) const override {
-        assert(tfmda.size() == 1);
+        CHECK(tfmda.size() == 1);
         if (_terms.empty()) {
             return std::make_unique<queryeval::EmptySearch>();
         }
@@ -535,6 +538,7 @@ std::unique_ptr<SearchIterator> DirectWandBlueprint::createFilterSearchImpl(Filt
 }
 
 void DirectWandBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept {
+    Blueprint::set_matching_phase(matching_phase);
     _matching_phase = matching_phase;
     if (matching_phase != MatchingPhase::FIRST_PHASE) {
         /*
@@ -659,6 +663,14 @@ public:
         setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term), scParams));
     }
 
+    void visit(StringRangeTerm& n) override {
+        const auto& range = n.getTerm();
+        auto spec_for_term = range ? std::make_unique<StringRangeSpec>(*range) : std::make_unique<StringRangeSpec>();
+        auto term = std::make_unique<streaming::QueryTerm>(QueryTermSimple::Type::WORD, "", std::move(spec_for_term));
+        setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, std::move(term),
+                                                            createContextParams(_field.isFilter())));
+    }
+
     void visit(StringTerm& n) override { visitTerm(n); }
     void visit(SubstringTerm& n) override {
         query::SimpleRegExpTerm re(vespalib::RegexpUtil::make_from_substring(n.getTerm()), n.getView(), n.getId(),
@@ -778,6 +790,25 @@ public:
                 _field, std::move(calc), n.get_target_num_hits(), n.get_allow_approximate(), blueprint_hnsw_params));
         } catch (const vespalib::IllegalArgumentException& ex) {
             return fail_nearest_neighbor_term(n, ex.getMessage());
+        }
+    }
+
+    void visit(query::SparseTensorWandTerm& n) override {
+        const auto* query_tensor = getRequestContext().get_query_tensor(n.get_query_tensor_name());
+        if (query_tensor == nullptr) {
+            Issue::report("SparseTensorWandTerm(%s, %s): Query tensor was not found in request context. "
+                          "Returning empty blueprint",
+                          _field.getName().c_str(), n.get_query_tensor_name().c_str());
+            return setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
+        }
+        try {
+            const auto& attr_tensor = queryeval::SparseTensorWandBlueprint::validate(_attr, *query_tensor);
+            setResult(std::make_unique<queryeval::SparseTensorWandBlueprint>(
+                _field, attr_tensor, *query_tensor, n.get_target_num_hits(), n.get_score_threshold()));
+        } catch (const vespalib::IllegalArgumentException& ex) {
+            Issue::report("SparseTensorWandTerm(%s, %s): %s. Returning empty blueprint", _field.getName().c_str(),
+                          n.get_query_tensor_name().c_str(), ex.getMessage().c_str());
+            setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
         }
     }
 

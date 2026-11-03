@@ -224,6 +224,13 @@ public class Configurator {
                 String enabledProtocols = Arrays.stream(ctx.parameters().getProtocols()).sorted().collect(Collectors.joining(","));
                 configEntries.put(configFieldPrefix() + ".enabledProtocols", enabledProtocols);
                 configEntries.put(configFieldPrefix() + ".clientAuth", "NEED");
+                // Must be disabled, as ZooKeeper's hostname verification breaks quorum connections:
+                // Since 3.9.6, ZooKeeper does hostname verification in FIPS mode (the default) by setting the HTTPS
+                // endpoint identification algorithm on the socket, also on the server side of quorum connections.
+                // The JDK then verifies the connecting peer's certificate against the peer's IP address, which fails,
+                // since certificates typically do not contain IP addresses. This is not needed, as Vespa's trust manager
+                // verifies server hostnames itself and authorizes peers using Vespa's peer policies.
+                configEntries.put(configFieldPrefix() + ".hostnameVerification", "false");
             });
         }
 

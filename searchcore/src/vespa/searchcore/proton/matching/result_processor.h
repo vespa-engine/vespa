@@ -5,6 +5,8 @@
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/vespalib/util/dual_merge_director.h>
 
+#include <atomic>
+
 namespace search {
 namespace engine {
 class SearchReply;
@@ -40,8 +42,20 @@ public:
         FastS_SortSpec                                    sortSpec;
         Sort(const Sort&) = delete;
         Sort& operator=(const Sort&) = delete;
-        Sort(uint32_t partitionId, const vespalib::Doom& doom, IAttributeContext& ac, const std::string& ss);
+        /**
+         * The sort value provider is only needed when the sort spec sorts on
+         * rank features. If it cannot supply all the features named by the
+         * sort spec, feature_binding_failed is set; the hits cannot be ordered
+         * as requested and the query must fail.
+         **/
+        Sort(uint32_t partitionId, const vespalib::Doom& doom, IAttributeContext& ac, const std::string& ss,
+             INumericSortValueProvider* sort_value_provider);
+        ~Sort();
         bool hasSortData() const noexcept { return (sorter == (const FastS_IResultSorter*)&sortSpec); }
+        bool feature_binding_failed() const noexcept { return _feature_binding_failed; }
+
+    private:
+        bool _feature_binding_failed;
     };
 
     /**
@@ -88,6 +102,7 @@ private:
     size_t                            _offset;
     size_t                            _hits;
     bool                              _wasMerged;
+    std::atomic<bool>                 _sort_feature_failed;
 
 public:
     ResultProcessor(IAttributeContext& attrContext, const search::IDocumentMetaStore& metaStore,
@@ -97,9 +112,23 @@ public:
 
     void prepareThreadContextCreation(size_t num_threads);
     std::unique_ptr<Context> createThreadContext(const vespalib::Doom& hardDoom, size_t thread_id,
-                                                 uint32_t distributionKey);
+                                                 uint32_t                   distributionKey,
+                                                 INumericSortValueProvider* sort_value_provider);
     std::vector<std::pair<uint32_t, uint32_t>> extract_docid_ordering(const PartialResult& result) const;
     std::unique_ptr<Result> makeReply(PartialResultUP full_result);
+
+    /**
+     * Records that a thread could not order its hits by the requested rank
+     * features, either because binding failed or because the sort values of
+     * some hit were missing while the sort blobs were encoded.
+     **/
+    void note_sort_feature_failure() noexcept { _sort_feature_failed.store(true, std::memory_order_relaxed); }
+
+    /**
+     * True if any thread's sort spec named a rank feature whose sort values
+     * were not available. Only meaningful once all match threads are done.
+     **/
+    bool sort_feature_failed() const noexcept { return _sort_feature_failed.load(std::memory_order_relaxed); }
 };
 
 } // namespace proton::matching

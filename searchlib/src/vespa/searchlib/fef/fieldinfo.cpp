@@ -15,4 +15,15 @@ FieldInfo::FieldInfo(FieldType type_in, CollectionType collection_in, const stri
       _hasAttribute(type_in == FieldType::ATTRIBUTE) {
 }
 
+const FieldInfo& FieldInfo::no_field() {
+    static const FieldInfo instance = [] {
+        FieldInfo field(FieldType::NONE, CollectionType::SINGLE, "", 0);
+        // RAW is opaque to ranking, keeping the "no field" out of the
+        // data type filters used when dumping and setting up rank features.
+        field.set_data_type(DataType::RAW);
+        return field;
+    }();
+    return instance;
+}
+
 } // namespace search::fef

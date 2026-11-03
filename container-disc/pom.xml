@@ -518,7 +518,7 @@
                 container-apache-http-client-bundle-jar-with-dependencies.jar,
                 container-opentelemetry-jar-with-dependencies.jar,
                 security-utils.jar,
-                bcprov-jdk18on-${bouncycastle.vespa.version}.jar, <!-- Used by security-utils -->
+                bcprov-jdk18on-${bouncycastle.bcprov.vespa.version}.jar, <!-- Used by security-utils -->
                 bcpkix-jdk18on-${bouncycastle.vespa.version}.jar, <!-- Used by security-utils -->
                 bcutil-jdk18on-${bouncycastle.vespa.version}.jar, <!-- Used by security-utils -->
                 <!-- END Bundles needed to retrieve config, or used by container-disc -->

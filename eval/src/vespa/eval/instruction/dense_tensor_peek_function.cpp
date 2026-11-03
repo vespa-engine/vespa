@@ -2,6 +2,7 @@
 
 #include "dense_tensor_peek_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 
 namespace vespalib::eval {
@@ -64,14 +65,14 @@ const TensorFunction& DenseTensorPeekFunction::optimize(const TensorFunction& ex
         const ValueType& peek_type = peek->param_type();
         if (expr.result_type().is_double() && peek_type.is_dense()) {
             SmallVector<std::pair<int64_t, size_t>> spec;
-            assert(peek_type.dimensions().size() == peek->map().size());
+            CHECK(peek_type.dimensions().size() == peek->map().size());
             for (auto dim = peek_type.dimensions().rbegin(); dim != peek_type.dimensions().rend(); ++dim) {
                 auto dim_spec = peek->map().find(dim->name);
-                assert(dim_spec != peek->map().end());
+                CHECK(dim_spec != peek->map().end());
 
                 std::visit(
                     vespalib::overload{[&](const TensorSpec::Label& label) {
-                                           assert(label.is_indexed());
+                                           CHECK(label.is_indexed());
                                            spec.emplace_back(label.index, dim->size);
                                        },
                                        [&](const TensorFunction::Child&) { spec.emplace_back(-1, dim->size); }},

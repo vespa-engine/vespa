@@ -148,12 +148,14 @@ std::unique_ptr<IteratorHandler> AssignFieldPathUpdate::getIteratorHandler(Docum
 }
 
 bool AssignFieldPathUpdate::operator==(const FieldPathUpdate& other) const {
-    if (!FieldPathUpdate::operator==(other))
+    if (!FieldPathUpdate::operator==(other)) {
         return false;
+    }
     const auto& assignOther = static_cast<const AssignFieldPathUpdate&>(other);
     if (assignOther._newValue.get() && _newValue.get()) {
-        if (*assignOther._newValue != *_newValue)
+        if (*assignOther._newValue != *_newValue) {
             return false;
+        }
     }
     // else: should always have at least 1 with non-empty expression
     return (assignOther._expression == _expression) && (assignOther._removeIfZero == _removeIfZero) &&

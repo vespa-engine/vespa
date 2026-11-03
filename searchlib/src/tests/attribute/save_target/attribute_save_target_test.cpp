@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
@@ -39,7 +40,7 @@ public:
     void set_header(const std::string& file_name) { target.setHeader(AttributeHeader(file_name)); }
     IAttributeFileWriter& setup_writer(const std::string& file_suffix, const std::string& desc) {
         bool res = target.setup_writer(file_suffix, desc);
-        assert(res);
+        CHECK(res);
         return target.get_writer(file_suffix);
     }
     void setup_writer_and_fill(const std::string& file_suffix, const std::string& desc, int value) {

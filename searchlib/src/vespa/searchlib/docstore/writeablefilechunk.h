@@ -109,6 +109,8 @@ private:
     uint64_t get_size_on_disk(const unique_lock& guard) const;
     std::unique_ptr<FastOS_FileInterface> openIdx(bool create);
     const Chunk& get_chunk(uint32_t chunk) const;
+    [[nodiscard]] uint32_t getNumChunks() const override;
+    [[nodiscard]] ChunkInfo get_chunk_info(uint32_t chunk_id) const override;
 
     Config            _config;
     uint64_t          _serialNum;

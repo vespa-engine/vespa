@@ -44,8 +44,9 @@ PredicateFieldValue& PredicateFieldValue::operator=(const PredicateFieldValue& r
 
 int PredicateFieldValue::compare(const FieldValue& rhs) const {
     int diff = FieldValue::compare(rhs);
-    if (diff != 0)
+    if (diff != 0) {
         return diff;
+    }
     const PredicateFieldValue& o = static_cast<const PredicateFieldValue&>(rhs);
     return Predicate::compare(*_slime, *o._slime);
 }

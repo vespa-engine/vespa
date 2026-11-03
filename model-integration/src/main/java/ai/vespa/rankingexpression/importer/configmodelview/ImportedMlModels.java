@@ -5,6 +5,8 @@ import com.yahoo.path.Path;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -24,6 +27,11 @@ import java.util.regex.Pattern;
  * @author bratseth
  */
 public class ImportedMlModels {
+
+    private static final Logger log = Logger.getLogger(ImportedMlModels.class.getName());
+
+    /** Log model imports taking longer than this */
+    private static final Duration slowImportThreshold = Duration.ofSeconds(30);
 
     /** All imported models, indexed by their names */
     private final Map<String, ImportedMlModel> importedModels;
@@ -37,10 +45,15 @@ public class ImportedMlModels {
     }
 
     public ImportedMlModels(File modelsDirectory, ExecutorService executor, Collection<MlModelImporter> importers) {
+        this(modelsDirectory, executor, importers, MlModelImportCache.none());
+    }
+
+    public ImportedMlModels(File modelsDirectory, ExecutorService executor, Collection<MlModelImporter> importers,
+                            MlModelImportCache cache) {
         Map<String, Future<ImportedMlModel>> futureModels = new HashMap<>();
 
         // Find all subdirectories recursively which contains a model we can read
-        importRecursively(modelsDirectory, executor, futureModels, importers, skippedModels);
+        importRecursively(modelsDirectory, executor, futureModels, importers, cache, skippedModels);
         Map<String, ImportedMlModel> models = new HashMap<>();
         futureModels.forEach((name, future) -> {
             try {
@@ -80,6 +93,7 @@ public class ImportedMlModels {
                                           ExecutorService executor,
                                           Map<String, Future<ImportedMlModel>> models,
                                           Collection<MlModelImporter> importers,
+                                          MlModelImportCache cache,
                                           Map<String, String> skippedModels) {
         if ( ! dir.isDirectory()) return;
 
@@ -97,19 +111,28 @@ public class ImportedMlModels {
                 }
 
                 Future<ImportedMlModel> future = executor.submit(() -> {
+                    Instant start = Instant.now();
                     try {
-                        return importer.get().importModel(name, child);
+                        return cache.importModel(name, child, importer.get());
                     } catch (RuntimeException e) {
                         skippedModels.put(name, e.getMessage());
+                    } finally {
+                        logIfSlow(name, child, importer.get(), Duration.between(start, Instant.now()));
                     }
                     return null;
                 });
                 models.put(name, future);
             }
             else {
-                importRecursively(child, executor, models, importers, skippedModels);
+                importRecursively(child, executor, models, importers, cache, skippedModels);
             }
         });
+    }
+
+    private static void logIfSlow(String name, File source, MlModelImporter importer, Duration elapsed) {
+        if (elapsed.compareTo(slowImportThreshold) <= 0) return;
+        log.info("Importing model '" + name + "' from " + source + " using " + importer.getClass().getSimpleName() +
+                 " took " + elapsed.toSeconds() + " seconds");
     }
 
     private static Optional<MlModelImporter> findImporterOf(File path, Collection<MlModelImporter> importers) {

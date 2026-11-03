@@ -70,6 +70,7 @@ public class ModelContextImpl implements ModelContext {
     private final ModelContext.Properties properties;
     private final Optional<File> appDir;
     private final OnnxModelCost onnxModelCost;
+    private final Optional<File> mlModelImportCacheDir;
 
     private final Optional<DockerImage> wantedDockerImageRepository;
 
@@ -99,7 +100,8 @@ public class ModelContextImpl implements ModelContext {
                             OnnxModelCost onnxModelCost,
                             Optional<DockerImage> wantedDockerImageRepository,
                             Version modelVespaVersion,
-                            Version wantedNodeVespaVersion) {
+                            Version wantedNodeVespaVersion,
+                            Optional<File> mlModelImportCacheDir) {
         this.applicationPackage = applicationPackage;
         this.previousModel = previousModel;
         this.deployLogger = deployLogger;
@@ -115,6 +117,7 @@ public class ModelContextImpl implements ModelContext {
         this.modelVespaVersion = modelVespaVersion;
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.onnxModelCost = onnxModelCost;
+        this.mlModelImportCacheDir = mlModelImportCacheDir;
     }
 
     @Override
@@ -157,6 +160,8 @@ public class ModelContextImpl implements ModelContext {
     public Optional<File> appDir() { return appDir; }
 
     @Override public OnnxModelCost onnxModelCost() { return onnxModelCost; }
+
+    @Override public Optional<File> mlModelImportCacheDir() { return mlModelImportCacheDir; }
 
     @Override
     public Optional<DockerImage> wantedDockerImageRepo() { return wantedDockerImageRepository; }
@@ -242,20 +247,17 @@ public class ModelContextImpl implements ModelContext {
         @Override public int rpcEventsBeforeWakeup() { return flag(Flags.RPC_EVENTS_BEFORE_WAKEUP).value(); }
         @Override public String unknownConfigDefinition() { return flag(PermanentFlags.UNKNOWN_CONFIG_DEFINITION).value(); }
         @Override public boolean sortBlueprintsByCost() { return flag(PermanentFlags.SORT_BLUEPRINTS_BY_COST).value(); }
-        @Override public boolean logserverOtelCol() { return flag(Flags.LOGSERVER_OTELCOL_AGENT).value(); }
         @Override public SharedHosts sharedHosts() { return flag(PermanentFlags.SHARED_HOST).value(); }
         @Override public Architecture adminClusterArchitecture() { return Architecture.valueOf(flag(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE).value()); }
         @Override public double logserverNodeMemory() { return flag(PermanentFlags.LOGSERVER_NODE_MEMORY).value(); }
         @Override public double clusterControllerNodeMemory() { return flag(PermanentFlags.CLUSTER_CONTROLLER_NODE_MEMORY).value(); }
         @Override public boolean useLegacyWandQueryParsing() { return flag(Flags.USE_LEGACY_WAND_QUERY_PARSING).value(); }
-        @Override public boolean useSimpleAnnotations() { return flag(Flags.USE_SIMPLE_ANNOTATIONS).value(); }
-        @Override public boolean sendOldQueryStack() { return flag(Flags.SEND_OLD_QUERY_STACK).value(); }
         @Override public boolean forwardAllLogLevels() { return flag(PermanentFlags.FORWARD_ALL_LOG_LEVELS).value(); }
         @Override public long zookeeperPreAllocSize() { return flag(PermanentFlags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB).value(); }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return flag(PermanentFlags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY).value(); }
-        @Override public Object sidecarsForTest() { return flag(Flags.SIDECARS_FOR_TEST).value(); }
         @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return flag(Flags.USE_TRITON); }
-        @Override public OptionalInt metricsProxyHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB).value()); }
+        @Override public ModelContext.FeatureFlag<Boolean> tritonShareOnnxSessionFlag() { return flag(Flags.TRITON_SHARE_ONNX_SESSION); }
+        @Override public ModelContext.FeatureFlag<Boolean> tritonOnnxPoolingFlag() { return flag(Flags.TRITON_ONNX_POOLING); }
         @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB); }
         @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB).value()); }
         @Override public boolean ignoreConnectivityChecksAtStartup() { return flag(PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP).value(); }
@@ -263,8 +265,13 @@ public class ModelContextImpl implements ModelContext {
         @Override public double searchNodeReservedMemoryFactor() { return flag(Flags.SEARCHNODE_RESERVED_MEMORY_FACTOR).value(); }
         @Override public boolean forceDisableOnnxModelOptimization() { return flag(PermanentFlags.FORCE_DISABLE_ONNX_MODEL_OPTIMIZATION).value(); }
         @Override public boolean failWhenConfiguringIndexedMapOfArray() { return flag(Flags.FAIL_WHEN_CONFIGURING_INDEXED_MAP_OF_ARRAY).value(); }
-        @Override public boolean protonLogWarningOnDiskCapacityChange() { return flag(Flags.PROTON_LOG_WARNING_ON_DISK_CAPACITY_CHANGE).value(); }
-        @Override public boolean protonResampleDiskCapacity() { return flag(Flags.PROTON_RESAMPLE_DISK_CAPACITY).value(); }
+        @Override public String allowStructFieldIndex() { return flag(Flags.ALLOW_STRUCT_FIELD_INDEX).value(); }
+        @Override public boolean requireStrictlyIncreasingClusterStateVersions() { return flag(PermanentFlags.REQUIRE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS).value(); }
+        @Override public boolean commerceDiscovery() { return flag(Flags.COMMERCE_DISCOVERY).value(); }
+        @Override public boolean enableLandlock() { return flag(Flags.ENABLE_LANDLOCK).value(); }
+        @Override public boolean enableLegacyFeedHandler() { return flag(Flags.ENABLE_LEGACY_FEED_HANDLER).value(); }
+        @Override public boolean productDiscovery() { return flag(Flags.PRODUCT_DISCOVERY).value(); }
+        @Override public boolean useMlModelImportCache() { return flag(Flags.USE_ML_MODEL_IMPORT_CACHE).value(); }
 
         private static OptionalInt toOptionalInt(int value) {
             return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();
@@ -282,6 +289,7 @@ public class ModelContextImpl implements ModelContext {
         private final HostName loadBalancerName;
         private final URI ztsUrl;
         private final String tenantSecretDomain;
+        private final AthenzDomain tenantParentDomain;
         private final String athenzDnsSuffix;
         private final boolean hostedVespa;
         private final Set<ContainerEndpoint> endpoints;
@@ -293,7 +301,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<TenantVault> tenantVaults;
         private final List<TenantSecretStore> tenantSecretStores;
         private final List<X509Certificate> operatorCertificates;
-        private final Optional<CloudAccount> cloudAccount;
+        private final CloudAccount cloudAccount;
         private final CloudResourceTags cloudResourceTags;
         private final List<DataplaneToken> dataplaneTokens;
 
@@ -310,7 +318,7 @@ public class ModelContextImpl implements ModelContext {
                           List<TenantVault> tenantVaults,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
-                          Optional<CloudAccount> cloudAccount,
+                          CloudAccount cloudAccount,
                           CloudResourceTags cloudResourceTags,
                           List<DataplaneToken> dataplaneTokens) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId, modelVersion);
@@ -322,6 +330,7 @@ public class ModelContextImpl implements ModelContext {
             this.loadBalancerName = configserverConfig.loadBalancerAddress().isEmpty() ? null : HostName.of(configserverConfig.loadBalancerAddress());
             this.ztsUrl = configserverConfig.ztsUrl() != null ? URI.create(configserverConfig.ztsUrl()) : null;
             this.tenantSecretDomain = configserverConfig.tenantSecretDomain();
+            this.tenantParentDomain = AthenzDomain.from(configserverConfig.tenantParentDomain());
             this.athenzDnsSuffix = configserverConfig.athenzDnsSuffix();
             this.hostedVespa = configserverConfig.hostedVespa();
             this.endpoints = endpoints;
@@ -345,6 +354,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public HostName loadBalancerName() { return loadBalancerName; }
         @Override public URI ztsUrl() { return ztsUrl; }
         @Override public String athenzDnsSuffix() { return athenzDnsSuffix; }
+        @Override public AthenzDomain tenantParentDomain() { return tenantParentDomain; }
         @Override public boolean hostedVespa() { return hostedVespa; }
         @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
         @Override public boolean isBootstrap() { return isBootstrap; }
@@ -355,7 +365,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public List<TenantVault> tenantVaults() { return tenantVaults; }
         @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
         @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
-        @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
+        @Override public CloudAccount getCloudAccount() { return cloudAccount; }
         @Override public CloudResourceTags cloudResourceTags() { return cloudResourceTags; }
         @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
         @Override public boolean allowDisableMtls() { return flag(PermanentFlags.ALLOW_DISABLE_MTLS).value(); }

@@ -14,25 +14,20 @@ void SchemaIndexFields::setup(const Schema& schema) {
     UriField::UsedFieldsMap usedFields;
     usedFields.resize(numIndexFields);
 
-    // Detect all URI fields (flattened structs).
-    for (uint32_t fieldId = 0; fieldId < numIndexFields; ++fieldId) {
-        const Schema::IndexField& field = schema.getIndexField(fieldId);
-        const std::string&        name = field.getName();
-        size_t                    dotPos = name.find('.');
-        if (dotPos != std::string::npos) {
-            const std::string suffix = name.substr(dotPos + 1);
-            if (suffix == "scheme") {
-                const std::string shortName = name.substr(0, dotPos);
-                UriField          uriField;
-                uriField.setup(schema, shortName);
-                if (uriField.valid(schema, field.getCollectionType())) {
-                    _uriFields.push_back(uriField);
-                    uriField.markUsed(usedFields);
-                } else if (uriField.broken(schema, field.getCollectionType())) {
-                    // Broken removal of unused URI fields.
-                    uriField.markUsed(usedFields);
-                }
-            }
+    // Set up all URI fields (flattened structs).
+    for (const auto& name : schema.get_uri_fields()) {
+        UriField uriField;
+        uriField.setup(schema, name);
+        if (uriField._scheme == Schema::UNKNOWN_FIELD_ID) {
+            continue;
+        }
+        const auto& collectionType = schema.getIndexField(uriField._scheme).getCollectionType();
+        if (uriField.valid(schema, collectionType)) {
+            _uriFields.push_back(uriField);
+            uriField.markUsed(usedFields);
+        } else if (uriField.broken(schema, collectionType)) {
+            // Broken removal of unused URI fields.
+            uriField.markUsed(usedFields);
         }
     }
 

@@ -182,7 +182,7 @@ public class NGramSearcherTestCase {
         assertEquals("WEAKAND (AND gram2:en gram2:ng)", search("?query=gram2:eng"));
         assertEquals("WEAKAND (AND gram2:en gram2:ng)", search("?query=gram2:eng&gram.match=all"));
         assertEquals("WEAKAND (OR gram2:en gram2:ng)", search("?query=gram2:eng&gram.match=any"));
-        assertEquals("WEAKAND (WEAKAND gram2:en gram2:ng)", search("?query=gram2:eng&gram.match=weakAnd"));
+        assertEquals("WEAKAND gram2:en gram2:ng", search("?query=gram2:eng&gram.match=weakAnd"));
         assertEquals("WEAKAND gram2:\"en ng\"", search("?query=gram2:eng&gram.match=phrase"));
         assertEquals("WEAKAND (NEAR(2) gram2:en gram2:ng)", search("?query=gram2:eng&gram.match=near"));
         assertEquals("WEAKAND (ONEAR(2) gram2:en gram2:ng)", search("?query=gram2:eng&gram.match=onear"));
@@ -339,7 +339,7 @@ public class NGramSearcherTestCase {
         q.getModel().setLanguage(Language.UNKNOWN);
         q.getModel().getQueryTree().setRoot(item);
         new Execution(chain, createContextStub(createIndexFacts())).search(q);
-        assertEquals("AND a (AND gram14:afirstsecondth gram14:firstsecondthi gram14:irstsecondthir gram14:rstsecondthird) b gram14:hi",
+        assertEquals("AND a gram14:afirstsecondth gram14:firstsecondthi gram14:irstsecondthir gram14:rstsecondthird b gram14:hi",
                      q.getModel().getQueryTree().toString());
     }
 

@@ -8,6 +8,7 @@
 #include "readerbase.h"
 #include "string_sort_blob_writer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/common/sort.h>
@@ -174,7 +175,7 @@ bool StringAttribute::onLoadEnumerated(ReaderBase& attrReader) {
         numDocs = attrReader.getNumIdx() - 1;
         numValues = attrReader.getNumValues();
         uint64_t enumCount = attrReader.getEnumCount();
-        assert(numValues == enumCount);
+        CHECK(numValues == enumCount);
         (void)enumCount;
     } else {
         numValues = attrReader.getEnumCount();
@@ -218,7 +219,7 @@ bool StringAttribute::onLoad(vespalib::Executor*) {
 
     setCreateSerialNum(attrReader.getCreateSerialNum());
 
-    assert(attrReader.getEnumerated());
+    CHECK(attrReader.getEnumerated());
     return onLoadEnumerated(attrReader);
 }
 

@@ -7,6 +7,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.RankType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.RankProfile;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.Iterator;
@@ -32,6 +33,11 @@ public class FilterFieldNames extends Processor {
         for (SDField f : schema.allConcreteFields()) {
             if (f.getRanking().isFilter()) {
                 filterField(f.getName());
+            }
+            for (var structField : ComplexIndexFieldUtils.supportedIndexedStructFields(f, ComplexIndexFieldUtils.Mode.of(schema))) {
+                if (structField.getRanking().isFilter()) {
+                    filterField(structField.getName());
+                }
             }
         }
 

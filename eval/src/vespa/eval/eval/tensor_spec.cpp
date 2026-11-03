@@ -8,6 +8,7 @@
 #include "value_codec.h"
 #include "value_type.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/test/reference_evaluation.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/overload.h>
@@ -245,7 +246,7 @@ TensorSpec& TensorSpec::add(Address address, double value) {
         // to simplify reference implementations, allow
         // adding the same address several times to a Spec, but
         // only with the same value every time:
-        assert(iter->second == Value(value));
+        CHECK(iter->second == Value(value));
     }
     return *this;
 }
@@ -332,7 +333,7 @@ TensorSpec TensorSpec::normalize() const {
         return typify_invoke<1, TypifyCellType, NormalizeTensorSpec>(my_type.cell_type(), my_type, *this);
     } catch (RequireFailedException& e) {
         fprintf(stderr, "TensorSpec::normalize: invalid spec: %s\n", to_string().c_str());
-        assert(false); // preserve crashing behavior
+        CHECK(false); // preserve crashing behavior
     }
 }
 

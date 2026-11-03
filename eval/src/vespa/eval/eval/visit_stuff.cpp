@@ -15,98 +15,142 @@ namespace vespalib::eval::visit {
 namespace {
 
 std::string name_of(map_fun_t fun) {
-    if (fun == operation::Neg::f)
+    if (fun == operation::Neg::f) {
         return "-";
-    if (fun == operation::Not::f)
+    }
+    if (fun == operation::Not::f) {
         return "!";
-    if (fun == operation::Cos::f)
+    }
+    if (fun == operation::Cos::f) {
         return "cos";
-    if (fun == operation::Sin::f)
+    }
+    if (fun == operation::Sin::f) {
         return "sin";
-    if (fun == operation::Tan::f)
+    }
+    if (fun == operation::Tan::f) {
         return "tan";
-    if (fun == operation::Cosh::f)
+    }
+    if (fun == operation::Cosh::f) {
         return "cosh";
-    if (fun == operation::Sinh::f)
+    }
+    if (fun == operation::Sinh::f) {
         return "sinh";
-    if (fun == operation::Tanh::f)
+    }
+    if (fun == operation::Tanh::f) {
         return "tanh";
-    if (fun == operation::Acos::f)
+    }
+    if (fun == operation::Acos::f) {
         return "acos";
-    if (fun == operation::Asin::f)
+    }
+    if (fun == operation::Asin::f) {
         return "asin";
-    if (fun == operation::Atan::f)
+    }
+    if (fun == operation::Atan::f) {
         return "atan";
-    if (fun == operation::Exp::f)
+    }
+    if (fun == operation::Exp::f) {
         return "exp";
-    if (fun == operation::Log10::f)
+    }
+    if (fun == operation::Log10::f) {
         return "log10";
-    if (fun == operation::Log::f)
+    }
+    if (fun == operation::Log::f) {
         return "log";
-    if (fun == operation::Sqrt::f)
+    }
+    if (fun == operation::Sqrt::f) {
         return "sqrt";
-    if (fun == operation::Ceil::f)
+    }
+    if (fun == operation::Ceil::f) {
         return "ceil";
-    if (fun == operation::Fabs::f)
+    }
+    if (fun == operation::Fabs::f) {
         return "fabs";
-    if (fun == operation::Floor::f)
+    }
+    if (fun == operation::Floor::f) {
         return "floor";
-    if (fun == operation::IsNan::f)
+    }
+    if (fun == operation::IsNan::f) {
         return "isnan";
-    if (fun == operation::Relu::f)
+    }
+    if (fun == operation::Relu::f) {
         return "relu";
-    if (fun == operation::Sigmoid::f)
+    }
+    if (fun == operation::Sigmoid::f) {
         return "sigmoid";
-    if (fun == operation::Elu::f)
+    }
+    if (fun == operation::Elu::f) {
         return "elu";
-    if (fun == operation::Erf::f)
+    }
+    if (fun == operation::Erf::f) {
         return "erf";
+    }
     return "[other map function]";
 }
 
 std::string name_of(join_fun_t fun) {
-    if (fun == operation::Add::f)
+    if (fun == operation::Add::f) {
         return "+";
-    if (fun == operation::Sub::f)
+    }
+    if (fun == operation::Sub::f) {
         return "-";
-    if (fun == operation::Mul::f)
+    }
+    if (fun == operation::Mul::f) {
         return "*";
-    if (fun == operation::Div::f)
+    }
+    if (fun == operation::Div::f) {
         return "/";
-    if (fun == operation::Mod::f)
+    }
+    if (fun == operation::Mod::f) {
         return "%";
-    if (fun == operation::Pow::f)
+    }
+    if (fun == operation::Pow::f) {
         return "^";
-    if (fun == operation::Equal::f)
+    }
+    if (fun == operation::Equal::f) {
         return "==";
-    if (fun == operation::NotEqual::f)
+    }
+    if (fun == operation::NotEqual::f) {
         return "!=";
-    if (fun == operation::Approx::f)
+    }
+    if (fun == operation::Approx::f) {
         return "~";
-    if (fun == operation::Less::f)
+    }
+    if (fun == operation::Less::f) {
         return "<";
-    if (fun == operation::LessEqual::f)
+    }
+    if (fun == operation::LessEqual::f) {
         return "<=";
-    if (fun == operation::Greater::f)
+    }
+    if (fun == operation::Greater::f) {
         return ">";
-    if (fun == operation::GreaterEqual::f)
+    }
+    if (fun == operation::GreaterEqual::f) {
         return ">=";
-    if (fun == operation::And::f)
+    }
+    if (fun == operation::And::f) {
         return "&&";
-    if (fun == operation::Or::f)
+    }
+    if (fun == operation::Or::f) {
         return "||";
-    if (fun == operation::Atan2::f)
+    }
+    if (fun == operation::Atan2::f) {
         return "atan2";
-    if (fun == operation::Ldexp::f)
+    }
+    if (fun == operation::Ldexp::f) {
         return "ldexp";
-    if (fun == operation::Min::f)
+    }
+    if (fun == operation::Min::f) {
         return "min";
-    if (fun == operation::Max::f)
+    }
+    if (fun == operation::Max::f) {
         return "max";
-    if (fun == operation::Bit::f)
+    }
+    if (fun == operation::Bit::f) {
         return "bit";
-    if (fun == operation::Hamming::f)
+    }
+    if (fun == operation::Hamming::f) {
         return "hamming";
+    }
     return "[other join function]";
 }
 

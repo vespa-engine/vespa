@@ -6,6 +6,8 @@
 
 #include <vespa/vespalib/util/array.h>
 
+#include <span>
+
 struct FastS_IResultSorter;
 
 namespace search {
@@ -31,6 +33,7 @@ public:
     RankedHit& operator[](uint32_t i) { return _rankedHitsArray[i]; }
     void push_back(RankedHit hit) { _rankedHitsArray.push_back_fast(hit); }
     unsigned int getArrayUsed() const { return _rankedHitsArray.size(); }
+    std::span<const RankedHit> array_view() const noexcept { return _rankedHitsArray; }
 
     const BitVector* getBitOverflow() const { return _bitOverflow.get(); }
     BitVector* getBitOverflow() { return _bitOverflow.get(); }

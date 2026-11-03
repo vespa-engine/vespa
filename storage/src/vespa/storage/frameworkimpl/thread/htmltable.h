@@ -45,8 +45,9 @@ struct Column {
     virtual void printElementStart(std::ostream& out, uint16_t row) {
         std::map<uint16_t, Color>::iterator color(_colors.find(row));
         out << "<td";
-        if (color != _colors.end())
+        if (color != _colors.end()) {
             printTdColor(out, color->second);
+        }
         switch (_alignment) {
         case LEFT:
             out << " align=\"left\"";

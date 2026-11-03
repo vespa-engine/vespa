@@ -13,8 +13,8 @@ struct DummyFlushTarget : public searchcorespi::LeafFlushTarget {
     DiskGain getApproxDiskGain() const override { return DiskGain(0, 0); }
     SerialNum getFlushedSerialNum() const override { return 0; }
     Time getLastFlushTime() const override { return Time(); }
-    searchcorespi::FlushTask::UP initFlush(SerialNum, std::shared_ptr<search::IFlushToken>) override {
-        return searchcorespi::FlushTask::UP();
+    void init_flush(SerialNum, std::shared_ptr<search::IFlushToken>, TaskPromise task_promise) override {
+        task_promise.set_value({});
     }
     [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     searchcorespi::FlushStats getLastFlushStats() const override { return searchcorespi::FlushStats(); }

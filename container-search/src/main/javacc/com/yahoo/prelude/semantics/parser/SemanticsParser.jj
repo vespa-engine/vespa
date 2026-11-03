@@ -21,6 +21,8 @@ import com.yahoo.prelude.semantics.*;
 import com.yahoo.prelude.semantics.rule.*;
 import com.yahoo.prelude.semantics.engine.RuleBaseLinguistics;
 import com.yahoo.prelude.query.TermType;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SemanticsParser {
 
@@ -260,7 +262,7 @@ TermProduction termProduction() :
 }
 {
     termType = termType()
-    ( LOOKAHEAD(2) label = label() )?
+    ( LOOKAHEAD(2) label = productionLabel() )?
     ( termProduction = nonphraseTermProduction() | termProduction = phraseProduction() )
 
     {
@@ -447,7 +449,8 @@ Condition terminalOrComparisonCondition() :
 
 Condition reallyTerminalCondition() :
 {
-    String label = null;
+    String label;
+    List<String> labels = List.of();
     String context = null;
     String nameSpace = null;
     Condition condition = null;
@@ -460,20 +463,20 @@ Condition reallyTerminalCondition() :
    (
        ( LOOKAHEAD(2) context = context() )?
        ( nameSpace = nameSpace() )
-       ( LOOKAHEAD(2) label = label() )?
+       ( LOOKAHEAD(2) label = label() { labels = List.of(label); } | LOOKAHEAD(labelList()) labels = labelList() | {} )
        condition = terminalConditionBody()
    )
    |
    (
        ( LOOKAHEAD(2) context = context() )?
-       ( LOOKAHEAD(2) label = label() )?
+       ( LOOKAHEAD(2) label = label() { labels = List.of(label); } | LOOKAHEAD(labelList()) labels = labelList() | {} )
        condition = terminalConditionBody()
    )
    )
    {
      if (context != null)
          condition.setContextName(context);
-     condition.setLabel(label);
+     condition.setLabels(labels);
      condition.setNameSpace(nameSpace);
      return condition;
    }
@@ -629,6 +632,29 @@ String label() :
 }
 {
     ( str = identifier() <COLON> )
+    { return str; }
+}
+
+/** A list of alternative labels: (label1, label2, ...): */
+List<String> labelList() :
+{
+    List<String> labels = new ArrayList<>();
+    String label;
+}
+{
+    <LEFTBRACE> label = identifier() { labels.add(label); }
+    ( <COMMA> label = identifier() { labels.add(label); } )*
+    <RIGHTBRACE> <COLON>
+    { return labels; }
+}
+
+/** A production label, which may be '*' meaning the label of the matched term */
+String productionLabel() :
+{
+    String str;
+}
+{
+    ( str = label() | ( <STAR> <COLON> { str = "*"; } ) )
     { return str; }
 }
 

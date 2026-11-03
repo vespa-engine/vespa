@@ -3,7 +3,7 @@ package com.yahoo.search.grouping;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
-import java.util.logging.Level;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -28,6 +28,7 @@ import com.yahoo.search.searchchain.PhaseNames;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -77,12 +78,20 @@ public class UniqueGroupingSearcher extends Searcher {
      */
     private static Result dedupe(Query query, Execution execution, String dedupField) {
         Sorting sorting = query.getRanking().getSorting();
-        if (sorting != null && sorting.fieldOrders().size() > 1) {
-            query.trace("Can not use grouping for deduping with multi-level sorting.", 3);
-            // To support this we'd have to generate a grouping expression with as many levels
-            // as there are levels in the sort spec. This is probably too slow and costly that
-            // we'd ever want to actually use it (and a bit harder to implement as well).
-            return execution.search(query);
+        if (sorting != null) {
+            for (Sorting.FieldOrder fieldOrder : sorting.fieldOrders()) {
+                if (fieldOrder.getSorter() instanceof Sorting.FeatureSorter) {
+                    throw new IllegalInputException(
+                            "Cannot use unique grouping with feature(...) sorting");
+                }
+            }
+            if (sorting.fieldOrders().size() > 1) {
+                query.trace("Can not use grouping for deduping with multi-level sorting.", 3);
+                // To support this we'd have to generate a grouping expression with as many levels
+                // as there are levels in the sort spec. This is probably too slow and costly that
+                // we'd ever want to actually use it (and a bit harder to implement as well).
+                return execution.search(query);
+            }
         }
 
         int hits = query.getHits();

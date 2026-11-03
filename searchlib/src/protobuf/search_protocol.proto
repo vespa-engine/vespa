@@ -33,6 +33,7 @@ message Profiling {
     ProfilingParams match = 1;
     ProfilingParams first_phase = 2;
     ProfilingParams second_phase = 3;
+    ProfilingParams sort_features = 4;
 }
 
 message ProfilingParams {
@@ -145,6 +146,12 @@ message ItemAndNot {
 message ItemRank {
     repeated QueryTreeItem children = 1;
 }
+message ItemLabelWrapper {
+    QueryTreeItem child = 1;
+    // the label is mapped to this id via the "vespa.label.<label>.id" rank property
+    int32 unique_id = 2;
+    double score = 3;
+}
 message ItemNear {
     int32 distance = 1;
     repeated QueryTreeItem children = 2;
@@ -158,7 +165,7 @@ message ItemOnear {
     int32 exclusion_distance = 4;
 }
 message ItemWeakAnd {
-    string index = 1;
+    string index = 1; // Note: unused
     uint32 target_num_hits = 2;
     repeated QueryTreeItem children = 3;
 }
@@ -257,6 +264,16 @@ message ItemFloatingPointRangeTerm {
     uint32 diversity_cutoff_groups = 13;
 }
 
+// string range
+message ItemStringRangeTerm {
+    TermItemProperties properties = 1;
+    optional string lower_limit = 2;
+    optional string upper_limit = 3;
+    bool lower_inclusive = 4;
+    bool upper_inclusive = 5;
+    optional int32 range_limit = 6;
+}
+
 // multi-terms:
 message ItemStringIn {
     TermItemProperties properties = 1;
@@ -305,6 +322,13 @@ message ItemLongWand {
     double score_threshold = 3;
     double threshold_boost_factor = 4;
     repeated PureWeightedLong weighted_longs = 5;
+}
+
+message ItemSparseTensorWand {
+    TermItemProperties properties = 1;
+    string query_tensor_name = 2;
+    uint32 target_num_hits = 3;
+    double score_threshold = 4;
 }
 
 // complex intermediates:
@@ -405,10 +429,12 @@ message QueryTreeItem {
 
         ItemPhrase item_phrase = 34;
         ItemSameElement item_same_element = 35;
-
         ItemNearestNeighbor item_nearest_neighbor = 36;
         ItemGeoLocationTerm item_geo_location_term = 37;
         ItemPredicateQuery item_predicate_query = 38;
+        ItemLabelWrapper item_label_wrapper = 39;
+        ItemStringRangeTerm item_string_range_term = 40;
+        ItemSparseTensorWand item_sparse_tensor_wand = 41;
 
         // unfinished, only inside QRS: item_multi_term
         // not used anymore: item_any

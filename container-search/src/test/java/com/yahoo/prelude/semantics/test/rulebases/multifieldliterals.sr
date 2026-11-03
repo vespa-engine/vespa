@@ -1,0 +1,6 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+(index1, index2):foo -> *:bar; # Replace by a literal term in the matched field
+(index1, index2):car +> =*:automobile; # Add a literal term to an equiv in the matched field
+(index1, index2):tv -> *:"television set"; # Replace by a literal phrase in the matched field
+(index1, index2):(new york) +> =*:nyc; # Add a literal term to an equiv of the matched phrase in the matched field

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/small_vector.h>
 
 #include <algorithm>
@@ -441,7 +442,7 @@ private:
         static_assert(sizeof(stored_type) <= sizeof(_space));
         API* upcasted = ::new (static_cast<void*>(_space)) stored_type(std::forward<Args>(args)...);
         (void)upcasted;
-        assert(static_cast<void*>(upcasted) == static_cast<void*>(_space));
+        CHECK(static_cast<void*>(upcasted) == static_cast<void*>(_space));
     }
 
 public:

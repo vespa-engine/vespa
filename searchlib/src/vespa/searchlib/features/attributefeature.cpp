@@ -4,11 +4,13 @@
 
 #include "constant_tensor_executor.h"
 #include "dense_tensor_attribute_executor.h"
+#include "dequantizing_tensor_attribute_executor.h"
 #include "direct_tensor_attribute_executor.h"
 #include "tensor_attribute_executor.h"
 #include "utils.h"
 #include "valuefeature.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
@@ -317,7 +319,7 @@ fef::FeatureExecutor& createAttributeExecutor(uint32_t numOutputs, const IAttrib
     }
     CollectionType collectionType = attribute->getCollectionType();
     if (collectionType == CollectionType::WSET) {
-        assert(numOutputs == 4);
+        CHECK(numOutputs == 4);
         bool useKey = !extraParam.empty();
         if (useKey) {
             if (attribute->isStringType()) {
@@ -338,37 +340,42 @@ fef::FeatureExecutor& createAttributeExecutor(uint32_t numOutputs, const IAttrib
         if (collectionType == CollectionType::SINGLE) {
             if (attribute->isIntegerType()) {
                 if (basicType == BasicType::BOOL) {
-                    assert(numOutputs == 1);
+                    CHECK(numOutputs == 1);
                     return stash.create<BoolAttributeExecutor>(*attribute);
                 } else {
-                    assert(numOutputs == 4);
+                    CHECK(numOutputs == 4);
                     if (basicType == BasicType::INT8) {
                         SingleValueExecutorCreator<IntegerAttributeTemplate<int8_t>> creator;
-                        if (creator.handle(attribute))
+                        if (creator.handle(attribute)) {
                             return creator.create(stash);
+                        }
                     } else if (basicType == BasicType::INT32) {
                         SingleValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
-                        if (creator.handle(attribute))
+                        if (creator.handle(attribute)) {
                             return creator.create(stash);
+                        }
                     }
                     SingleValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
-                    if (creator.handle(attribute))
+                    if (creator.handle(attribute)) {
                         return creator.create(stash);
+                    }
                 }
             } else if (attribute->isFloatingPointType()) {
-                assert(numOutputs == 4);
+                CHECK(numOutputs == 4);
                 if (basicType == BasicType::DOUBLE) {
                     SingleValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
-                    if (creator.handle(attribute))
+                    if (creator.handle(attribute)) {
                         return creator.create(stash);
+                    }
                 } else {
                     SingleValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
-                    if (creator.handle(attribute))
+                    if (creator.handle(attribute)) {
                         return creator.create(stash);
+                    }
                 }
             }
         }
-        assert(numOutputs == 4);
+        CHECK(numOutputs == 4);
         uint32_t idx = 0;
         if (!extraParam.empty()) {
             idx = util::strToNum<uint32_t>(extraParam);
@@ -380,23 +387,27 @@ fef::FeatureExecutor& createAttributeExecutor(uint32_t numOutputs, const IAttrib
         } else if (attribute->isIntegerType()) {
             if (basicType == BasicType::INT32) {
                 ArrayExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
-                if (creator.handle(stash, attribute))
+                if (creator.handle(stash, attribute)) {
                     return creator.create(stash, idx);
+                }
             } else if (basicType == BasicType::INT64) {
                 ArrayExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
-                if (creator.handle(stash, attribute))
+                if (creator.handle(stash, attribute)) {
                     return creator.create(stash, idx);
+                }
             }
             return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
         } else { // FLOAT
             if (basicType == BasicType::DOUBLE) {
                 ArrayExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
-                if (creator.handle(stash, attribute))
+                if (creator.handle(stash, attribute)) {
                     return creator.create(stash, idx);
+                }
             } else {
                 ArrayExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
-                if (creator.handle(stash, attribute))
+                if (creator.handle(stash, attribute)) {
                     return creator.create(stash, idx);
+                }
             }
             return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
         }
@@ -414,7 +425,7 @@ fef::FeatureExecutor& createTensorAttributeExecutor(const IAttributeVector* attr
     if (attribute->getCollectionType() != attribute::CollectionType::SINGLE ||
         attribute->getBasicType() != attribute::BasicType::TENSOR)
     {
-        Issue::report("attribute feature: The attribute vector '%s' is NOT of type tensor."
+        Issue::report("attribute feature: The attribute vector '%s' is NOT of type tensor. "
                       "Returning empty tensor.",
                       attribute->getName().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
@@ -426,12 +437,21 @@ fef::FeatureExecutor& createTensorAttributeExecutor(const IAttributeVector* attr
                       attribute->getName().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
-    if (tensorType != tensorAttribute->getTensorType()) {
+    // Quantized tensors will be transparently dequantized to the type configured in the schema,
+    // so the attribute feature type must match the schema type (_not_ the internal, quantized type).
+    // For non-quantized tensors, this is always equal to the configured schema type.
+    if (tensorType != tensorAttribute->unquantized_tensor_type()) {
         Issue::report("attribute feature: The tensor attribute '%s' has tensor type '%s',"
                       " while the feature executor expects type '%s'. Returning empty tensor.",
-                      attribute->getName().c_str(), tensorAttribute->getTensorType().to_spec().c_str(),
+                      attribute->getName().c_str(), tensorAttribute->unquantized_tensor_type().to_spec().c_str(),
                       tensorType.to_spec().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType, stash);
+    }
+    // Quantization takes precedence over extract_cells_ref/get_tensor_ref support.
+    // TODO consider having a dedicated executor for quantized + get_tensor_ref support,
+    //  since the dequantization API takes in a `const eval::Value&`.
+    if (tensorAttribute->is_quantized()) {
+        return stash.create<DequantizingTensorAttributeExecutor>(*tensorAttribute);
     }
     if (tensorAttribute->supports_extract_cells_ref()) {
         return stash.create<DenseTensorAttributeExecutor>(*tensorAttribute);

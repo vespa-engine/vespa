@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/signalshutdown.h>
@@ -30,7 +31,7 @@ private:
         std::thread thread;
         ~JoinGuard() {
             if (thread.joinable()) {
-                assert(std::this_thread::get_id() != thread.get_id());
+                CHECK(std::this_thread::get_id() != thread.get_id());
                 thread.join();
             }
         }
@@ -55,7 +56,7 @@ private:
     auto wrap_task(auto task, std::promise<std::thread>& promise) {
         return [future = promise.get_future(), task = std::move(task), &owner = *this]() mutable {
             auto thread = future.get();
-            assert(std::this_thread::get_id() == thread.get_id());
+            CHECK(std::this_thread::get_id() == thread.get_id());
             task();
             owner.notify_done(std::move(thread));
         };

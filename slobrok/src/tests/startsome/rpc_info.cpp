@@ -8,16 +8,19 @@
 class RPCInfo {
 public:
     void GetReq(FRT_RPCRequest** req, FRT_Supervisor* supervisor) {
-        if ((*req) != nullptr)
+        if ((*req) != nullptr) {
             (*req)->internal_subref();
+        }
         (*req) = supervisor->AllocRPCRequest();
     }
 
     void FreeReqs(FRT_RPCRequest* r1, FRT_RPCRequest* r2) {
-        if (r1 != nullptr)
+        if (r1 != nullptr) {
             r1->internal_subref();
-        if (r2 != nullptr)
+        }
+        if (r2 != nullptr) {
             r2->internal_subref();
+        }
     }
 
     void DumpMethodInfo(const char* indent, FRT_RPCRequest* info, const char* name) {
@@ -44,14 +47,16 @@ public:
 
         if (argCnt > 0) {
             printf("%s  PARAMS:\n", indent);
-            for (uint32_t a = 0; a < argCnt; a++)
+            for (uint32_t a = 0; a < argCnt; a++) {
                 printf("%s    [%c][%s] %s\n", indent, arg[a], argName[a]._str, argDesc[a]._str);
+            }
         }
 
         if (retCnt > 0) {
             printf("%s  RETURN:\n", indent);
-            for (uint32_t r = 0; r < retCnt; r++)
+            for (uint32_t r = 0; r < retCnt; r++) {
                 printf("%s    [%c][%s] %s\n", indent, ret[r], retName[r]._str, retDesc[r]._str);
+            }
         }
         printf("\n");
     }

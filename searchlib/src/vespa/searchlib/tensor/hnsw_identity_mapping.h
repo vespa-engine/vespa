@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/generation.h>
 #include <vespa/vespalib/util/memoryusage.h>
 
-#include <cassert>
 #include <cstdint>
 #include <span>
 
@@ -27,7 +27,7 @@ class HnswIdentityMapping {
 public:
     HnswIdentityMapping() : _nodeid(0u) {}
     std::span<const uint32_t> allocate_ids(uint32_t docid, uint32_t subspaces) {
-        assert(subspaces == 1u);
+        CHECK(subspaces == 1u);
         _nodeid = docid;
         return {&_nodeid, 1};
     }

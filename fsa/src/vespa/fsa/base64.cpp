@@ -25,26 +25,28 @@ const unsigned char Base64::_padding = '=';
 // {{{ Base64::b2n()
 
 inline int Base64::b2n(int b) {
-    if (b >= 'A' && b <= 'Z')
+    if (b >= 'A' && b <= 'Z') {
         return b - 'A';
-    else if (b >= 'a' && b <= 'z')
+    } else if (b >= 'a' && b <= 'z') {
         return b - 'a' + 26;
-    else if (b >= '0' && b <= '9')
+    } else if (b >= '0' && b <= '9') {
         return b - '0' + 52;
-    else if (b == '+')
+    } else if (b == '+') {
         return 62;
-    else if (b == '/')
+    } else if (b == '/') {
         return 63;
-    else
+    } else {
         return -1;
+    }
 }
 
 // }}}
 // {{{ Base64::n2b()
 
 inline int Base64::n2b(int n) {
-    if (n < 0 || n > 63)
+    if (n < 0 || n > 63) {
         return -1;
+    }
     return _table[n];
 }
 

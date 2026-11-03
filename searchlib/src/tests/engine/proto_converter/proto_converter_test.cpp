@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/engine/proto_converter.h>
+#include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -69,16 +70,19 @@ TEST_F(SearchRequestTest, require_that_profile_depth_is_converted) {
     EXPECT_EQ(request.trace().match_profile_depth(), 7);
     EXPECT_EQ(request.trace().first_phase_profile_depth(), 7);
     EXPECT_EQ(request.trace().second_phase_profile_depth(), 7);
+    EXPECT_EQ(request.trace().sort_features_profile_depth(), 7);
 }
 
 TEST_F(SearchRequestTest, require_that_profiling_params_are_converted) {
     proto.mutable_profiling()->mutable_match()->set_depth(4);
     proto.mutable_profiling()->mutable_first_phase()->set_depth(5);
     proto.mutable_profiling()->mutable_second_phase()->set_depth(6);
+    proto.mutable_profiling()->mutable_sort_features()->set_depth(8);
     convert();
     EXPECT_EQ(request.trace().match_profile_depth(), 4);
     EXPECT_EQ(request.trace().first_phase_profile_depth(), 5);
     EXPECT_EQ(request.trace().second_phase_profile_depth(), 6);
+    EXPECT_EQ(request.trace().sort_features_profile_depth(), 8);
 }
 
 TEST_F(SearchRequestTest, require_that_profile_depth_is_fallback) {
@@ -88,6 +92,17 @@ TEST_F(SearchRequestTest, require_that_profile_depth_is_fallback) {
     EXPECT_EQ(request.trace().match_profile_depth(), 7);
     EXPECT_EQ(request.trace().first_phase_profile_depth(), 5);
     EXPECT_EQ(request.trace().second_phase_profile_depth(), 7);
+    EXPECT_EQ(request.trace().sort_features_profile_depth(), 7);
+}
+
+TEST_F(SearchRequestTest, require_that_sort_features_depth_overrides_profile_depth) {
+    proto.mutable_profiling()->mutable_sort_features()->set_depth(8);
+    proto.set_profile_depth(7);
+    convert();
+    EXPECT_EQ(request.trace().match_profile_depth(), 7);
+    EXPECT_EQ(request.trace().first_phase_profile_depth(), 7);
+    EXPECT_EQ(request.trace().second_phase_profile_depth(), 7);
+    EXPECT_EQ(request.trace().sort_features_profile_depth(), 8);
 }
 
 TEST_F(SearchRequestTest, require_that_sorting_is_converted) {
@@ -99,6 +114,14 @@ TEST_F(SearchRequestTest, require_that_sorting_is_converted) {
     sort_field->set_field("bar");
     convert();
     EXPECT_EQ(request.sortSpec, "+foo -bar");
+}
+
+TEST_F(SearchRequestTest, require_that_feature_sorting_is_converted) {
+    auto* sort_field = proto.add_sorting();
+    sort_field->set_ascending(true);
+    sort_field->set_field("feature(foo)");
+    convert();
+    EXPECT_EQ(request.sortSpec, "+feature(foo)");
 }
 
 TEST_F(SearchRequestTest, require_that_session_key_is_converted) {

@@ -1,9 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/datastore/buffer_type.h>
 #include <vespa/vespalib/gtest/gtest.h>
-
-#include <cassert>
 
 using namespace vespalib::datastore;
 
@@ -87,7 +86,7 @@ struct Fixture {
     void add_setup(const MySetup& setup_in) {
         // The buffer type stores pointers to EntryCount (from MySetup) and we must ensure these do not move in
         // memory.
-        assert(setups.size() < setups.capacity());
+        CHECK(setups.size() < setups.capacity());
         setups.push_back(setup_in);
     }
     void onActive() {

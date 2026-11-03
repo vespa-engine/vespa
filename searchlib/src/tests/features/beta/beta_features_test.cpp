@@ -328,28 +328,36 @@ int cntFlow(int m1, int m2, int m3, int m4) {
     int flow = 0;
 
     for (int p1p = 0; p1p < 4; p1p++) {
-        if (((1 << p1p) & m1) == 0)
+        if (((1 << p1p) & m1) == 0) {
             continue;
+        }
         for (int p2p = 0; p2p < 4; p2p++) {
-            if (((1 << p2p) & m2) == 0)
+            if (((1 << p2p) & m2) == 0) {
                 continue;
+            }
             int f2 = 1;
-            if (p2p != p1p)
+            if (p2p != p1p) {
                 ++f2;
+            }
             for (int p3p = 0; p3p < 4; p3p++) {
-                if (((1 << p3p) & m3) == 0)
+                if (((1 << p3p) & m3) == 0) {
                     continue;
+                }
                 int f3 = f2;
-                if (p3p != p1p && p3p != p2p)
+                if (p3p != p1p && p3p != p2p) {
                     ++f3;
+                }
                 for (int p4p = 0; p4p < 4; p4p++) {
-                    if (((1 << p4p) & m4) == 0)
+                    if (((1 << p4p) & m4) == 0) {
                         continue;
+                    }
                     int f4 = f3;
-                    if (p4p != p1p && p4p != p2p && p4p != p3p)
+                    if (p4p != p1p && p4p != p2p && p4p != p3p) {
                         ++f4;
-                    if (flow < f4)
+                    }
+                    if (flow < f4) {
                         flow = f4;
+                    }
                 }
             }
         }
@@ -463,14 +471,18 @@ TEST_F(BetaFeaturesTest, test_flow_completeness) {
                         MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
                         mdb->setFieldLength("foo", 4);
                         for (int pos = 0; pos < 4; ++pos) {
-                            if (((1 << pos) & t0m) != 0)
+                            if (((1 << pos) & t0m) != 0) {
                                 mdb->addOccurence("foo", 0, pos);
-                            if (((1 << pos) & t1m) != 0)
+                            }
+                            if (((1 << pos) & t1m) != 0) {
                                 mdb->addOccurence("foo", 1, pos);
-                            if (((1 << pos) & t2m) != 0)
+                            }
+                            if (((1 << pos) & t2m) != 0) {
                                 mdb->addOccurence("foo", 2, pos);
-                            if (((1 << pos) & t3m) != 0)
+                            }
+                            if (((1 << pos) & t3m) != 0) {
                                 mdb->addOccurence("foo", 3, pos);
+                            }
                         }
 
                         ASSERT_TRUE(mdb->apply(1));

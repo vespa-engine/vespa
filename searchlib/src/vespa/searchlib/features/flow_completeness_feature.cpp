@@ -2,6 +2,7 @@
 
 #include "flow_completeness_feature.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/itermdata.h>
@@ -9,8 +10,6 @@
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/stash.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.flowcompleteness");
@@ -137,25 +136,25 @@ struct State {
         }
         while (p.path.size() > 1) {
             uint32_t pos = p.path.back();
-            assert(pos < posLimit);
+            CHECK(pos < posLimit);
             p.path.pop_back();
             uint32_t tix = p.path.back();
-            assert(tix < matchedTerms);
+            CHECK(tix < matchedTerms);
             p.path.pop_back();
             matchedTermForPos[pos] = tix;
             matchedPosForTerm[tix] = pos;
         }
-        assert(p.path.size() == 0);
+        CHECK(p.path.size() == 0);
         return 1;
     }
 
     int findSimpleMatches() {
         int found = 0;
         for (size_t tix = 0; tix < matchedTerms; ++tix) {
-            assert(matchedPosForTerm[tix] == IllegalPosId);
-            assert(positionsForTerm[tix].size() > 0);
+            CHECK(matchedPosForTerm[tix] == IllegalPosId);
+            CHECK(positionsForTerm[tix].size() > 0);
             uint32_t pos = positionsForTerm[tix][0];
-            assert(pos < posLimit);
+            CHECK(pos < posLimit);
 
             auto it = matchedTermForPos.find(pos);
             if (it == matchedTermForPos.end()) {
@@ -184,7 +183,7 @@ struct State {
 } // namespace
 
 void FlowCompletenessExecutor::execute(uint32_t) {
-    assert(_queue.empty());
+    CHECK(_queue.empty());
     for (size_t i = 0; i < _terms.size(); ++i) {
         const fef::TermFieldMatchData* tfmd = _md->resolveTermField(_terms[i].termHandle);
         Item                           item(i, tfmd->begin(), tfmd->end());

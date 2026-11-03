@@ -4,6 +4,7 @@
 
 #include "indexsearchablevisitor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
@@ -33,7 +34,7 @@ IndexCollection::IndexCollection(const ISourceSelector::SP& selector, const ISea
 IndexCollection::~IndexCollection() = default;
 
 void IndexCollection::setSource(uint32_t docId) {
-    assert(valid());
+    CHECK(valid());
     _source_selector->setSource(docId, getCurrentIndex());
 }
 
@@ -156,6 +157,7 @@ private:
     void visit(WeakAnd&) override {}
     void visit(Equiv&) override {}
     void visit(Rank&) override {}
+    void visit(LabelWrapper&) override {}
     void visit(Near&) override {}
     void visit(ONear&) override {}
     void visit(SameElement&) override {}
@@ -170,12 +172,14 @@ private:
     void visit(LocationTerm& n) override { visitTerm(n); }
     void visit(PrefixTerm& n) override { visitTerm(n); }
     void visit(RangeTerm& n) override { visitTerm(n); }
+    void visit(StringRangeTerm& n) override { visitTerm(n); }
     void visit(StringTerm& n) override { visitTerm(n); }
     void visit(SubstringTerm& n) override { visitTerm(n); }
     void visit(SuffixTerm& n) override { visitTerm(n); }
     void visit(PredicateQuery& n) override { visitTerm(n); }
     void visit(RegExpTerm& n) override { visitTerm(n); }
     void visit(NearestNeighborTerm& n) override { visitTerm(n); }
+    void visit(SparseTensorWandTerm& n) override { visitTerm(n); }
     void visit(FuzzyTerm& n) override { visitTerm(n); }
     void visit(InTerm& n) override { visitTerm(n); }
     void visit(WordAlternatives& n) override { visitTerm(n); }

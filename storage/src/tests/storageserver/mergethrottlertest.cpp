@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/messagebus/dynamicthrottlepolicy.h>
 #include <vespa/storage/config/config-stor-server.h>
@@ -166,7 +167,7 @@ struct MergeThrottlerTest : Test {
     void TearDown() override;
 
     MergeThrottler& throttler(size_t idx) noexcept {
-        assert(idx < _throttlers.size());
+        CHECK(idx < _throttlers.size());
         return *_throttlers[idx];
     }
 
@@ -182,9 +183,9 @@ struct MergeThrottlerTest : Test {
 
     std::shared_ptr<api::MergeBucketCommand> peek_throttler_queue_top(size_t throttler_idx) {
         auto& queue = _throttlers[throttler_idx]->getMergeQueue();
-        assert(!queue.empty());
+        CHECK(!queue.empty());
         auto merge = std::dynamic_pointer_cast<api::MergeBucketCommand>(queue.begin()->_msg);
-        assert(merge);
+        CHECK(merge);
         return merge;
     }
 

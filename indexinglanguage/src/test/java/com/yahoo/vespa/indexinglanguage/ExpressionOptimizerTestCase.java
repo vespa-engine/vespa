@@ -64,6 +64,8 @@ public class ExpressionOptimizerTestCase {
         assertNotOptimized("0 | set_var tmp | " +
                            "input foo | split ';' | for_each { to_int + get_var tmp | set_var tmp } | " +
                            "get_var tmp | attribute bar");
+        assertNotOptimized("input foo | for_each_field \"a\" { get_var bar } | attribute foo");
+        assertNotOptimized("input foo | for_each_field \"a\" { 'x' } | attribute foo");
     }
 
     private void checkStatementThatIgnoresInput(Expression exp) {

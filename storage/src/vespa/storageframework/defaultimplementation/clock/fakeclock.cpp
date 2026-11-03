@@ -8,8 +8,9 @@ FakeClock::FakeClock(Mode m, vespalib::duration startTime) : _mode(m), _absolute
 
 int64_t FakeClock::getTimeInMicros() const {
     std::lock_guard guard(_lock);
-    if (_mode == FAKE_ABSOLUTE)
+    if (_mode == FAKE_ABSOLUTE) {
         return vespalib::count_us(_absoluteTime);
+    }
     vespalib::duration tmp(_absoluteTime);
     tmp += std::chrono::seconds(_cycleCount++);
     return vespalib::count_us(tmp);

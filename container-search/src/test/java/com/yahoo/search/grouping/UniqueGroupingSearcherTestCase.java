@@ -40,6 +40,18 @@ public class UniqueGroupingSearcherTestCase {
     }
 
     @Test
+    void testRejectFeatureSorting() {
+        try {
+            search("?query=foo&unique=fingerprint&sorting=-feature%28foo%29",
+                    new MockResultProvider(0, false));
+            fail("Above statement should throw");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Cannot use unique grouping with feature(...) sorting",
+                         Exceptions.toMessageString(e));
+        }
+    }
+
+    @Test
     void testIllegalSortingSpec() {
         try {
             search("?query=foo&unique=fingerprint&sorting=-1",

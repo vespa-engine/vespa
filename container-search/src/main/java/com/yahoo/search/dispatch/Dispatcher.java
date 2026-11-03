@@ -18,7 +18,6 @@ import com.yahoo.search.dispatch.rpc.RpcConnectionPool;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.dispatch.searchcluster.AvailabilityPolicy;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -57,19 +56,28 @@ public class Dispatcher extends AbstractComponent {
     private static final String TOP_K_PROBABILITY = "topKProbability";
     private static final String DOCSUM_RETRY_LIMIT = "docsumRetryLimit";
     private static final String DOCSUM_RETRY_FACTOR  = "docsumRetryFactor";
+    private static final String DOCSUM_BLOWUP_FACTOR = "docsumBlowupFactor";
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
 
     /** If set will control computation of how many hits will be fetched from each partition.*/
     public static final CompoundName topKProbability = CompoundName.from(DISPATCH + "." + TOP_K_PROBABILITY);
+
+    /** No longer used, ignored */
     public static final CompoundName docsumRetryLimit = CompoundName.from(DISPATCH + "." + DOCSUM_RETRY_LIMIT);
+    /** No longer used, ignored */
     public static final CompoundName docsumRetryFactor  = CompoundName.from(DISPATCH + "." + DOCSUM_RETRY_FACTOR);
+    /**
+     * Empty docsums are retried on other nodes if the "extra" requested work
+     * (empty count - 1) * (nodes asked per hit) is below this factor times the original fill work.
+     * Default 25.0; set this to 0.0 to disable retries.
+     */
+    public static final CompoundName docsumBlowupFactor = CompoundName.from(DISPATCH + "." + DOCSUM_BLOWUP_FACTOR);
 
     private final InvokerFactoryFactory invokerFactories;
     private final DispatchConfig dispatchConfig;
     private final RpcConnectionPool rpcResourcePool;
     private final SearchCluster searchCluster;
     private final ClusterMonitor<Node> clusterMonitor;
-    private final QrSearchersConfig qrSearchersConfig;
     private final String localAvailabilityZone;
     private volatile VolatileItems volatileItems;
 
@@ -113,25 +121,24 @@ public class Dispatcher extends AbstractComponent {
         argumentType.addField(new FieldDescription(TOP_K_PROBABILITY, FieldType.doubleType));
         argumentType.addField(new FieldDescription(DOCSUM_RETRY_LIMIT, FieldType.integerType));
         argumentType.addField(new FieldDescription(DOCSUM_RETRY_FACTOR, FieldType.doubleType));
+        argumentType.addField(new FieldDescription(DOCSUM_BLOWUP_FACTOR, FieldType.doubleType));
         argumentType.freeze();
     }
 
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     interface InvokerFactoryFactory {
-        InvokerFactory create(RpcConnectionPool rpcConnectionPool, SearchGroups searchGroups, DispatchConfig dispatchConfig, QrSearchersConfig qrSearchersConfig);
+        InvokerFactory create(RpcConnectionPool rpcConnectionPool, SearchGroups searchGroups, DispatchConfig dispatchConfig);
     }
 
     @Inject
     public Dispatcher(ComponentId clusterId,
                       DispatchConfig dispatchConfig,
-                      QrSearchersConfig qrSearchersConfig,
                       DispatchNodesConfig nodesConfig,
                       SystemInfo systemInfo,
                       VipStatus vipStatus) {
         this(clusterId,
              dispatchConfig,
-             qrSearchersConfig,
              new RpcResourcePool(dispatchConfig, nodesConfig),
              nodesConfig,
              systemInfo,
@@ -142,14 +149,12 @@ public class Dispatcher extends AbstractComponent {
 
     Dispatcher(ComponentId clusterId,
                DispatchConfig dispatchConfig,
-               QrSearchersConfig qrSearchersConfig,
                RpcConnectionPool rpcConnectionPool,
                DispatchNodesConfig nodesConfig,
                SystemInfo systemInfo,
                VipStatus vipStatus,
                InvokerFactoryFactory invokerFactories) {
         this(dispatchConfig,
-             qrSearchersConfig,
              rpcConnectionPool,
              new SearchCluster(clusterId.stringValue(),
                                AvailabilityPolicy.from(dispatchConfig),
@@ -161,13 +166,11 @@ public class Dispatcher extends AbstractComponent {
     }
 
     Dispatcher(DispatchConfig dispatchConfig,
-               QrSearchersConfig qrSearchersConfig,
                RpcConnectionPool rpcConnectionPool,
                SearchCluster searchCluster,
                SystemInfo systemInfo,
                InvokerFactoryFactory invokerFactories) {
         this(dispatchConfig,
-             qrSearchersConfig,
              rpcConnectionPool,
              searchCluster,
              new ClusterMonitor<>(searchCluster, false),
@@ -177,14 +180,12 @@ public class Dispatcher extends AbstractComponent {
     }
 
     Dispatcher(DispatchConfig dispatchConfig,
-               QrSearchersConfig qrSearchersConfig,
                RpcConnectionPool rpcConnectionPool,
                SearchCluster searchCluster,
                ClusterMonitor<Node> clusterMonitor,
                SystemInfo systemInfo,
                InvokerFactoryFactory invokerFactories) {
         this.dispatchConfig = dispatchConfig;
-        this.qrSearchersConfig = qrSearchersConfig;
         this.rpcResourcePool = rpcConnectionPool;
         this.searchCluster = searchCluster;
         this.clusterMonitor = clusterMonitor;
@@ -198,16 +199,14 @@ public class Dispatcher extends AbstractComponent {
     Dispatcher(ClusterMonitor<Node> clusterMonitor,
                SearchCluster searchCluster,
                DispatchConfig dispatchConfig,
-               QrSearchersConfig qrSearchersConfig,
                SystemInfo systemInfo,
                InvokerFactory invokerFactory) {
         this(dispatchConfig,
-             qrSearchersConfig,
              null,
              searchCluster,
              clusterMonitor,
              systemInfo,
-             (__, ___, ____, _____) -> invokerFactory);
+             (__, ___, ____) -> invokerFactory);
     }
 
     /** Returns the snapshot of volatile items that need to be kept together, incrementing its reference counter. */
@@ -266,7 +265,11 @@ public class Dispatcher extends AbstractComponent {
         return new VolatileItems(new LoadBalancer(searchCluster.groupList().groups(),
                                                   toLoadBalancerPolicy(dispatchConfig.distributionPolicy()),
                                                   localAvailabilityZone),
-                                 invokerFactories.create(rpcResourcePool, searchCluster.groupList(), dispatchConfig, qrSearchersConfig));
+                                 // Invokers of this generation resolve connections through a snapshot of the node set,
+                                 // so nodes removed by a later reconfiguration stay resolvable until this generation drains.
+                                 // The pool is null in some tests, which use invoker factories that don't need it.
+                                 invokerFactories.create(rpcResourcePool == null ? null : rpcResourcePool.snapshot(),
+                                                         searchCluster.groupList(), dispatchConfig));
     }
 
     private void initialWarmup(double warmupTime) {

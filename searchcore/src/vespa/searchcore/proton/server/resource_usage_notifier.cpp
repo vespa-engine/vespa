@@ -75,7 +75,8 @@ double ResourceUsageNotifier::get_relative_reserved_disk_space(const Guard&) con
 }
 
 double ResourceUsageNotifier::get_relative_reserved_memory(const Guard&) const {
-    return static_cast<double>(_reserved_disk_space_and_memory.reserved_memory()) / _hwInfo.memory().sizeBytes();
+    return static_cast<double>(_reserved_disk_space_and_memory.reserved_memory(_reserved_memory_for_attribute_load)) /
+           _hwInfo.memory().sizeBytes();
 }
 
 double ResourceUsageNotifier::get_relative_transient_memory_usage(const Guard&) const {
@@ -101,10 +102,6 @@ void ResourceUsageNotifier::set_resource_usage(const ResourceUsage&         reso
 }
 
 void ResourceUsageNotifier::warn_on_disk_capacity_changed(const DiskUsage& disk_usage) const noexcept {
-    if (!_config._log_warning_on_disk_capacity_change) {
-        return;
-    }
-
     const DiskUsage& previous = _disk_usage;
     if (previous.capacity_bytes() != disk_usage.capacity_bytes()) {
         LOG(info, "Disk capacity changed from %" PRIu64 " bytes to %" PRIu64 " bytes.", previous.capacity_bytes(),
@@ -122,8 +119,9 @@ void ResourceUsageNotifier::notify_attribute_usage(const AttributeUsageStats& at
 
 bool ResourceUsageNotifier::setConfig(Config config_in) {
     Guard guard(_lock);
-    if (_config == config_in)
+    if (_config == config_in) {
         return false;
+    }
     _config = config_in;
     recalcState(guard, false);
     return true;

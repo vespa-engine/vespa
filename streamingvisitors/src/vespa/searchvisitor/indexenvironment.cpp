@@ -2,6 +2,7 @@
 
 #include "indexenvironment.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/i_ranking_assets_repo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/vespalib/stllike/hash_set.h>
@@ -13,7 +14,7 @@ namespace streaming {
 IndexEnvironment::IndexEnvironment(const ITableManager& tableManager)
     : _tableManager(&tableManager),
       _properties(),
-      _fields(),
+      _fields(1, FieldInfo::no_field()),
       _fieldNames(),
       _motivation(RANK),
       _ranking_assets_repo() {
@@ -25,6 +26,9 @@ IndexEnvironment::~IndexEnvironment() = default;
 
 bool IndexEnvironment::addField(const std::string& name, bool isAttribute,
                                 search::fef::FieldInfo::DataType data_type) {
+    // The empty name belongs to the "no field" held first in _fields, which is
+    // not registered in _fieldNames and thus escapes the duplicate check below.
+    CHECK(!name.empty());
     if (getFieldByName(name) != nullptr) {
         return false;
     }
@@ -68,6 +72,9 @@ void IndexEnvironment::add_virtual_fields() {
 
 void IndexEnvironment::fixup_fields() {
     for (auto& field : _fields) {
+        if (field.is_no_field()) {
+            continue;
+        }
         if (indexproperties::IsFilterField::check(_properties, field.name())) {
             field.setFilter(true);
         }

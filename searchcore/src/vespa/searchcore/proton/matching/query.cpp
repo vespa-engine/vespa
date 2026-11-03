@@ -81,7 +81,10 @@ void trace_global_filter_decision(uint32_t trace_level, search::engine::Trace* t
 Node::UP inject(Node::UP query, Node::UP to_inject) {
     if (auto* my_and = dynamic_cast<search::query::And*>(query.get())) {
         my_and->append(std::move(to_inject));
-    } else if (dynamic_cast<search::query::Rank*>(query.get()) || dynamic_cast<search::query::AndNot*>(query.get())) {
+    } else if (dynamic_cast<search::query::Rank*>(query.get()) ||
+               dynamic_cast<search::query::LabelWrapper*>(query.get()) ||
+               dynamic_cast<search::query::AndNot*>(query.get()))
+    {
         auto& root = static_cast<search::query::Intermediate&>(*query);
         root.prepend(inject(root.stealFirst(), std::move(to_inject)));
     } else {
@@ -164,7 +167,7 @@ void exchange_location_nodes(const string& location_str, Node::UP& query_tree,
 }
 
 /*
- * WeakAnd, WandTerm and NearestNeighborTerm query operators need ranking since
+ * WeakAnd, WandTerm, NearestNeighborTerm and SparseTensorWandTerm query operators need ranking since
  * doUnpack is used to update threshold during query evaluation.
  */
 class NeedsRankingVisitor : public TemplateTermVisitor<NeedsRankingVisitor, ProtonNodeTypes> {
@@ -177,6 +180,7 @@ public:
     void visit(ProtonNodeTypes::WeakAnd&) override { _needs_ranking = true; }
     void visitTerm(ProtonNodeTypes::WandTerm&) { _needs_ranking = true; }
     void visitTerm(ProtonNodeTypes::NearestNeighborTerm&) { _needs_ranking = true; }
+    void visitTerm(ProtonNodeTypes::SparseTensorWandTerm&) { _needs_ranking = true; }
     bool needs_ranking() const noexcept { return _needs_ranking; }
 };
 
@@ -263,14 +267,16 @@ void Query::handle_global_filter(const IRequestContext&          requestContext,
                                  double global_filter_lower_limit, double global_filter_upper_limit,
                                  search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace& trace,
                                  bool sort_by_cost, bool keep_order, bool use_lazy_filter) {
-    if (!handle_global_filter(*_blueprint, requestContext.getDoom(), ann_deadline_config, docid_limit,
-                              global_filter_lower_limit, global_filter_upper_limit, requestContext.thread_bundle(),
-                              setup_stats, &trace, use_lazy_filter))
-    {
+    auto outcome = handle_global_filter(*_blueprint, requestContext.getDoom(), ann_deadline_config, docid_limit,
+                                        global_filter_lower_limit, global_filter_upper_limit,
+                                        requestContext.thread_bundle(), setup_stats, &trace, use_lazy_filter);
+    if (outcome == GlobalFilterOutcome::UNCHANGED) {
         return;
     }
-    // optimized order may change after accounting for global filter:
-    trace.addEvent(5, "Optimize query execution plan to account for global filter");
+    // optimized order may change after accounting for global filter or changed cost tiers:
+    trace.addEvent(5, (outcome == GlobalFilterOutcome::FILTER_SET)
+                          ? "Optimize query execution plan to account for global filter"
+                          : "Optimize query execution plan to account for changed cost tiers");
     auto opts =
         Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(sort_by_cost).keep_order(keep_order);
     _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), _in_flow, opts);
@@ -280,12 +286,13 @@ void Query::handle_global_filter(const IRequestContext&          requestContext,
     fetchPostings(ExecuteInfo::create(_in_flow.rate(), requestContext.getDoom(), requestContext.thread_bundle()));
 }
 
-bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom,
-                                 const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
-                                 double global_filter_lower_limit, double global_filter_upper_limit,
-                                 vespalib::ThreadBundle&             thread_bundle,
-                                 search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace* trace,
-                                 bool use_lazy_filter) {
+Query::GlobalFilterOutcome Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom,
+                                                       const AnnDeadlineConfiguration& ann_deadline_config,
+                                                       uint32_t docid_limit, double global_filter_lower_limit,
+                                                       double                              global_filter_upper_limit,
+                                                       vespalib::ThreadBundle&             thread_bundle,
+                                                       search::queryeval::QuerySetupStats& setup_stats,
+                                                       search::engine::Trace* trace, bool use_lazy_filter) {
     using search::queryeval::Blueprint;
     using search::queryeval::GlobalFilter;
     double estimated_hit_ratio = blueprint.getState().hit_ratio(docid_limit);
@@ -293,7 +300,7 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
     // Check if blueprint wants global filter and get any limit overrides
     Blueprint::GlobalFilterLimits limits;
     if (!blueprint.want_global_filter(limits)) {
-        return false;
+        return GlobalFilterOutcome::UNCHANGED;
     }
 
     // Use overrides from blueprint if provided
@@ -306,7 +313,26 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
         }
         trace_global_filter_decision(5, trace, "Skip", estimated_hit_ratio, effective_lower_limit,
                                      effective_upper_limit);
-        return false;
+
+        // We are skipping the global filter computation on the premise that this query matches only very few
+        // documents, i.e., the estimated hit ratio is very low, and using exact nearest neighbor search to compute
+        // the distances to these documents is cheap.
+        // A WhiteListBlueprint that only matches very few documents can be the reason for the low estimated
+        // hit ratio. Hence, we have to make sure that the WhiteListBlueprint comes before the
+        // NearestNeighborBlueprints to reap the benefits of the low estimated hit ratio. The WhiteListBlueprint is in
+        // the expensive cost tier, however, which means that we have to mark the NearestNeighborBlueprints also as
+        // expensive to allow them to come after the WhiteListBlueprint.
+        // The blueprint tree has already been sorted at this point, so the caller must sort it again for the changed
+        // cost tiers to take effect.
+        bool changed_cost_tier = false;
+        blueprint.each_node_post_order([&changed_cost_tier](Blueprint& bp) {
+            if (auto nearest_neighbor = bp.asNearestNeighbor()) {
+                nearest_neighbor->set_cost_tier_to_expensive();
+                changed_cost_tier = true;
+            }
+        });
+
+        return changed_cost_tier ? GlobalFilterOutcome::COST_TIER_CHANGED : GlobalFilterOutcome::UNCHANGED;
     }
 
     std::shared_ptr<search::queryeval::GlobalFilter> lazy_filter;
@@ -352,7 +378,7 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
     }
     blueprint.set_global_filter(*global_filter, estimated_hit_ratio);
     perform_ann_searches(blueprint, doom, ann_deadline_config, setup_stats, trace);
-    return true;
+    return GlobalFilterOutcome::FILTER_SET;
 }
 
 void Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom,

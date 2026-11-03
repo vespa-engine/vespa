@@ -158,8 +158,9 @@ void Sha1::reset() {
 void Sha1::process(const char* data, size_t len) {
     uint32_t i, j;
     j = (_count[0] >> 3) & 63;
-    if ((_count[0] += len << 3) < (len << 3))
+    if ((_count[0] += len << 3) < (len << 3)) {
         _count[1]++;
+    }
     _count[1] += (len >> 29);
     if ((j + len) > 63) {
         memcpy(&_buffer[j], data, (i = 64 - j));
@@ -169,8 +170,9 @@ void Sha1::process(const char* data, size_t len) {
             transform();
         }
         j = 0;
-    } else
+    } else {
         i = 0;
+    }
     memcpy(&_buffer[j], &data[i], len - i);
 }
 
@@ -187,8 +189,9 @@ void Sha1::get_digest(char* digest, size_t digestLen) {
         process("\0", 1);
     }
     process(reinterpret_cast<char*>(finalcount), 8); /* Should cause a Transform() */
-    if (digestLen > 20)
+    if (digestLen > 20) {
         digestLen = 20;
+    }
     for (i = 0; i < digestLen; i++) {
         digest[i] = static_cast<char>((_state[i >> 2] >> ((3 - (i & 3)) * 8)) & 255);
     }

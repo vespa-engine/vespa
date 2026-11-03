@@ -46,15 +46,18 @@ public class OnnxModelInfo {
     private final Map<String, OnnxTypeInfo> outputs;
     private final Map<String, TensorType> vespaTypes = new HashMap<>();
     private final Set<String> initializers;
+    private final boolean enableLandlock;
 
     private OnnxModelInfo(ApplicationPackage app, String path, Map<String, OnnxTypeInfo> inputs,
-                          Map<String, OnnxTypeInfo> outputs, Set<String> initializers, String defaultOutput) {
+                          Map<String, OnnxTypeInfo> outputs, Set<String> initializers, String defaultOutput,
+                          boolean enableLandlock) {
         this.app = app;
         this.modelPath = path;
         this.inputs = Map.copyOf(inputs);
         this.outputs = Map.copyOf(outputs);
         this.defaultOutput = defaultOutput;
         this.initializers = Set.copyOf(initializers);
+        this.enableLandlock = enableLandlock;
     }
 
     public String getModelPath() {
@@ -92,7 +95,7 @@ public class OnnxModelInfo {
 
             TensorType type = TensorType.empty;
             if (!inputTypes.isEmpty() && onnxTypeInfo.needModelProbe(symbolicSizes)) {
-                type = OnnxModelProbe.probeModel(app, Path.fromString(modelPath), onnxName, inputTypes);
+                type = OnnxModelProbe.probeModel(app, Path.fromString(modelPath), onnxName, inputTypes, enableLandlock);
             }
             if (type.equals(TensorType.empty)) {
                 type = onnxTypeInfo.toVespaTensorType(symbolicSizes, unboundSizes);
@@ -141,13 +144,13 @@ public class OnnxModelInfo {
         }
     }
 
-    static public OnnxModelInfo load(String path, ApplicationPackage app) {
+    static public OnnxModelInfo load(String path, ApplicationPackage app, boolean enableLandlock) {
         Path pathInApplicationPackage = Path.fromString(path);
         if (app.getFile(pathInApplicationPackage).exists()) {
-            return loadFromFile(pathInApplicationPackage, app);
+            return loadFromFile(pathInApplicationPackage, app, enableLandlock);
         }
         if (app.getFile(generatedModelInfoPath(pathInApplicationPackage)).exists()) {
-            return loadFromGeneratedInfo(pathInApplicationPackage, app);
+            return loadFromGeneratedInfo(pathInApplicationPackage, app, enableLandlock);
         }
         throw new IllegalArgumentException("Unable to find ONNX model '" +  path + "'");
     }
@@ -163,22 +166,22 @@ public class OnnxModelInfo {
         return false;
     }
 
-    static private OnnxModelInfo loadFromFile(Path path, ApplicationPackage app) {
+    static private OnnxModelInfo loadFromFile(Path path, ApplicationPackage app, boolean enableLandlock) {
         try (InputStream inputStream = app.getFile(path).createInputStream()) {
             Onnx.ModelProto model = Onnx.ModelProto.parseFrom(inputStream);
             String json = onnxModelToJson(model, path);
             storeGeneratedInfo(json, path, app);
-            return jsonToModelInfo(json, app);
+            return jsonToModelInfo(json, app, enableLandlock);
 
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to parse ONNX model", e);
         }
     }
 
-    static private OnnxModelInfo loadFromGeneratedInfo(Path path, ApplicationPackage app) {
+    static private OnnxModelInfo loadFromGeneratedInfo(Path path, ApplicationPackage app, boolean enableLandlock) {
         try {
             String json = readGeneratedInfo(path, app);
-            return jsonToModelInfo(json, app);
+            return jsonToModelInfo(json, app, enableLandlock);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to parse ONNX model", e);
         }
@@ -239,7 +242,7 @@ public class OnnxModelInfo {
         return out.toString(java.nio.charset.StandardCharsets.UTF_8);
     }
 
-    static public OnnxModelInfo jsonToModelInfo(String json, ApplicationPackage app) throws IOException {
+    static public OnnxModelInfo jsonToModelInfo(String json, ApplicationPackage app, boolean enableLandlock) throws IOException {
         JsonNode root = Jackson.mapper().readTree(json);
         Map<String, OnnxTypeInfo> inputs = new HashMap<>();
         Map<String, OnnxTypeInfo> outputs = new HashMap<>();
@@ -265,7 +268,7 @@ public class OnnxModelInfo {
                 initializers.add(initializer.get("name").textValue());
             }
         }
-        return new OnnxModelInfo(app, path, inputs, outputs, initializers, defaultOutput);
+        return new OnnxModelInfo(app, path, inputs, outputs, initializers, defaultOutput, enableLandlock);
     }
 
     static private void onnxTypeToJson(JsonGenerator g, Onnx.ValueInfoProto valueInfo) throws IOException {

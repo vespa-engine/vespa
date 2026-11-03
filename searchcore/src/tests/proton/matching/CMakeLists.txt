@@ -31,6 +31,14 @@ vespa_add_executable(searchcore_sessionmanager_test_app TEST
     GTest::gtest
 )
 vespa_add_test(NAME searchcore_sessionmanager_test_app COMMAND searchcore_sessionmanager_test_app)
+vespa_add_executable(searchcore_sort_feature_store_test_app TEST
+    SOURCES
+    sort_feature_store_test.cpp
+    DEPENDS
+    searchcore_matching
+    GTest::gtest
+)
+vespa_add_test(NAME searchcore_sort_feature_store_test_app COMMAND searchcore_sort_feature_store_test_app)
 vespa_add_executable(searchcore_matching_stats_test_app TEST
     SOURCES
     matching_stats_test.cpp

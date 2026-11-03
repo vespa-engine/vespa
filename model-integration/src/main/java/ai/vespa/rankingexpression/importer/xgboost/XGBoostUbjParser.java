@@ -358,7 +358,7 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
      * For a UBJ file "path/to/model.ubj", looks for "path/to/model-features.txt".
      * Each line in the file should contain one feature name.
      *
-     * @param ubjFilePath Path to the UBJ file
+     * @param featuresFilePath Path to the "-features.txt" file corresponding to the UBJ model
      * @return List of feature names if file exists and is valid, null otherwise
      */
     private static List<String> loadFeatureNamesFromFile(String featuresFilePath) {

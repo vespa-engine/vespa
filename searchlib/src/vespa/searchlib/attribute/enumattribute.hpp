@@ -6,6 +6,7 @@
 #include "enumattribute.h"
 #include "enumstore.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/util/hdr_abort.h>
 
@@ -38,7 +39,7 @@ template <typename B> void EnumAttribute<B>::load_enum_store(LoadedVector& loade
                     prev = value.getValue();
                     prevRefCount = 1;
                 } else {
-                    assert(prevRefCount < std::numeric_limits<uint32_t>::max());
+                    CHECK(prevRefCount < std::numeric_limits<uint32_t>::max());
                     prevRefCount++;
                 }
                 value.setEidx(index);

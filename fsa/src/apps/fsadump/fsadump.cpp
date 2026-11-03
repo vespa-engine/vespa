@@ -115,7 +115,9 @@ int main(int argc, char** argv) {
     }
 
     if (format == OUTPUT_UNDEF) // use default format (warning?)
+    {
         format = OUTPUT_TEXT_EMPTY;
+    }
 
     input_file = argv[optind];
 

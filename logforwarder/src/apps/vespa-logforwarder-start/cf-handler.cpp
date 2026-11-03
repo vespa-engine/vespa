@@ -35,11 +35,13 @@ bool isExecutable(const char* path) {
 }
 
 time_t lastModTime(const std::string& fn) {
-    if (fn.empty())
+    if (fn.empty()) {
         return 0;
+    }
     struct stat info;
-    if (stat(fn.c_str(), &info) != 0)
+    if (stat(fn.c_str(), &info) != 0) {
         return 0;
+    }
     return info.st_mtime;
 }
 

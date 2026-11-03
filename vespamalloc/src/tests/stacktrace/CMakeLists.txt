@@ -2,10 +2,11 @@
 vespa_add_executable(vespamalloc_stacktrace_test_app TEST
     SOURCES
     stacktrace.cpp
+    ../../vespamalloc/malloc/check_require.cpp
     DEPENDS
 )
 vespa_add_test(
     NAME vespamalloc_stacktrace_test_app
     NO_VALGRIND COMMAND vespamalloc_stacktrace_test_app
-    ENVIRONMENT "LD_PRELOAD=${CMAKE_CURRENT_BINARY_DIR}/../../vespamalloc/libvespamallocdst16.so"
+    ENVIRONMENT "LD_PRELOAD=${CMAKE_CURRENT_BINARY_DIR}/../../vespamalloc/${CMAKE_SHARED_LIBRARY_PREFIX}vespamallocdst16.so"
     NO_VALGRIND)

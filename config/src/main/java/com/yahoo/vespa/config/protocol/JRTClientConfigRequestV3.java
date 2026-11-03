@@ -13,7 +13,6 @@ import com.yahoo.text.Utf8Array;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.PayloadChecksum;
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
@@ -23,37 +22,34 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
-import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
-
 /**
  * Represents version 3 config request for config clients. Provides methods for inspecting request and response
  * values.
- *
  * See {@link JRTServerConfigRequestV3} for protocol details.
  *
  * @author Ulf Lilleengen
  */
 public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
 
-    protected static final Logger log = Logger.getLogger(JRTClientConfigRequestV3.class.getName());
-    protected final SlimeRequestData requestData;
-    protected final Request request;
+    private static final Logger log = Logger.getLogger(JRTClientConfigRequestV3.class.getName());
+
+    private final SlimeRequestData requestData;
+    private final Request request;
     private final SlimeResponseData responseData;
 
-    protected JRTClientConfigRequestV3(ConfigKey<?> key,
-                                       String hostname,
-                                       DefContent defSchema,
-                                       PayloadChecksums payloadChecksums,
-                                       long generation,
-                                       long timeout,
-                                       Trace trace,
-                                       CompressionType compressionType,
-                                       Optional<VespaVersion> vespaVersion) {
+    JRTClientConfigRequestV3(ConfigKey<?> key,
+                             String hostname,
+                             DefContent defSchema,
+                             PayloadChecksum payloadChecksum,
+                             long generation,
+                             long timeout,
+                             Trace trace,
+                             CompressionType compressionType,
+                             Optional<VespaVersion> vespaVersion) {
         Slime data = SlimeRequestData.encodeRequest(key,
                                                     hostname,
                                                     defSchema,
-                                                    payloadChecksums,
+                                                    payloadChecksum,
                                                     generation,
                                                     timeout,
                                                     trace,
@@ -68,7 +64,7 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         this.request = jrtReq;
     }
 
-    protected static String encodeAsUtf8String(Slime data) {
+    static String encodeAsUtf8String(Slime data) {
         ByteArrayOutputStream baos = new NoCopyByteArrayOutputStream();
         try {
             new JsonFormat(true /* compact format */).encode(baos, data);
@@ -78,11 +74,11 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return Utf8.toString(baos.toByteArray());
     }
 
-    protected String getJRTMethodName() {
+    String getJRTMethodName() {
         return JRTMethods.configV3getConfigMethodName;
     }
 
-    protected boolean checkReturnTypes(Request request) {
+    boolean checkReturnTypes(Request request) {
         return JRTMethods.checkV3ReturnTypes(request);
     }
 
@@ -103,7 +99,7 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return new JRTClientConfigRequestV3(getConfigKey(),
                 getClientHostName(),
                 getDefContent(),
-                isError() ? getRequestConfigChecksums() : newConfigChecksums(),
+                isError() ? getRequestConfigChecksum() : newConfigChecksum(),
                 isError() ? getRequestGeneration() : newGen(),
                 timeout,
                 Trace.createNew(),
@@ -119,7 +115,7 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return createWithParams(sub.getKey(),
                                 sub.getDefContent(),
                                 ConfigUtils.getCanonicalHostName(),
-                                configState.getChecksums(),
+                                configState.getChecksum(),
                                 configState.getGeneration(),
                                 sub.timingValues().getSubscribeTimeout(),
                                 trace,
@@ -136,7 +132,7 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return createWithParams(config.getKey(),
                                 DefContent.fromList(config.getDefContent()),
                                 hostname,
-                                config.getPayloadChecksums(),
+                                config.getPayloadChecksum(),
                                 config.getGeneration(),
                                 serverTimeout,
                                 trace,
@@ -147,7 +143,7 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
     public static JRTClientConfigRequest createWithParams(ConfigKey<?> reqKey,
                                                           DefContent defContent,
                                                           String hostname,
-                                                          PayloadChecksums payloadChecksums,
+                                                          PayloadChecksum payloadChecksum,
                                                           long generation,
                                                           long serverTimeout,
                                                           Trace trace,
@@ -156,7 +152,7 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return new JRTClientConfigRequestV3(reqKey,
                                             hostname,
                                             defContent,
-                                            payloadChecksums,
+                                            payloadChecksum,
                                             generation,
                                             serverTimeout,
                                             trace,
@@ -178,12 +174,12 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         StringBuilder sb = new StringBuilder();
         sb.append("request='").append(getConfigKey())
                 .append(",").append(getClientHostName())
-                .append(",").append(getRequestConfigChecksums())
+                .append(",").append(getRequestConfigChecksum())
                 .append(",").append(getRequestGeneration())
                 .append(",").append(getTimeout())
                 .append(",").append(getVespaVersion().map(VespaVersion::toString).orElse(""))
                 .append("'\n");
-                 sb.append("response='").append(getNewChecksums())
+                 sb.append("response='").append(getNewChecksum())
                 .append(",").append(getNewGeneration())
                 .append(",").append(responseIsApplyOnRestart())
                 .append("'\n");
@@ -227,13 +223,13 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return requestData.getTimeout();
     }
 
-    protected PayloadChecksums newConfigChecksums() {
-        PayloadChecksums newChecksum = getNewChecksums();
-        if (PayloadChecksums.empty().equals(newChecksum)) return getRequestConfigChecksums();
+    PayloadChecksum newConfigChecksum() {
+        PayloadChecksum newChecksum = getNewChecksum();
+        if (PayloadChecksum.empty().equals(newChecksum)) return getRequestConfigChecksum();
         return newChecksum;
     }
 
-    protected long newGen() {
+    long newGen() {
         long newGen = getNewGeneration();
         if (newGen == 0) return getRequestGeneration();
         return newGen;
@@ -251,20 +247,14 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
 
     @Override
     public boolean hasUpdatedConfig() {
-        PayloadChecksums requestConfigChecksums = getRequestConfigChecksums();
-        log.log(Level.FINE, () -> "request checksums for " + getConfigKey() + ":"  + requestConfigChecksums);
+        PayloadChecksum requestConfigChecksum = getRequestConfigChecksum();
+        log.log(Level.FINE, () -> "request checksum for " + getConfigKey() + ":"  + requestConfigChecksum);
 
-        PayloadChecksums newChecksums = getNewChecksums();
-        log.log(Level.FINE, () -> "new checksums for " + getConfigKey() + ": " + newChecksums);
-        if (newChecksums.isEmpty()) return false;
+        PayloadChecksum newChecksum = getNewChecksum();
+        log.log(Level.FINE, () -> "new checksum for " + getConfigKey() + ": " + newChecksum);
+        if (newChecksum.isEmpty()) return false;
 
-        PayloadChecksum respMd5 = newChecksums.getForType(MD5);
-        boolean updated = respMd5 != null && ! requestConfigChecksums.getForType(MD5).equals(respMd5);
-
-        if (updated) return true;
-
-        PayloadChecksum respXxhash64 = newChecksums.getForType(XXHASH64);
-        return respXxhash64 != null &&  ! requestConfigChecksums.getForType(XXHASH64).equals(respXxhash64);
+        return ! requestConfigChecksum.equals(newChecksum);
     }
 
     @Override
@@ -277,8 +267,8 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return requestData.getRequestDefMd5();
     }
 
-    public PayloadChecksums getRequestConfigChecksums() {
-        return requestData.getRequestConfigChecksums();
+    public PayloadChecksum getRequestConfigChecksum() {
+        return requestData.getRequestConfigChecksum();
     }
 
     @Override
@@ -301,8 +291,8 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
     }
 
     @Override
-    public PayloadChecksums getNewChecksums() {
-        return responseData.getResponseConfigChecksums();
+    public PayloadChecksum getNewChecksum() {
+        return responseData.getResponseConfigChecksum();
     }
 
     @Override
@@ -320,7 +310,7 @@ public final class JRTClientConfigRequestV3 implements JRTClientConfigRequest {
         return requestData.getRequestGeneration();
     }
 
-    protected SlimeResponseData getResponseData() {
+    SlimeResponseData getResponseData() {
         return responseData;
     }
 }

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -149,7 +150,7 @@ void Benchmark::Config::init(const std::string& fileName) {
         std::getline(is, line);
         if (!line.empty()) {
             std::vector<std::string> values = FtUtil::tokenize(line, "=");
-            assert(values.size() == 2);
+            CHECK(values.size() == 2);
             add(values[0], values[1]);
         }
     }
@@ -330,7 +331,7 @@ void Benchmark::runAttributeMatch(Config& cfg) {
     MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
     mdb->setWeight("foo", 0, 0);
     mdb->apply(0);
-    TermFieldMatchData* amd = mdb->getTermFieldMatchData(0, 0);
+    TermFieldMatchData* amd = mdb->getTermFieldMatchData(0, 1);
 
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
@@ -461,7 +462,7 @@ void Benchmark::runNativeAttributeMatch(Config& cfg) {
     mdb->setWeight("foo", 0, 0);
     mdb->apply(0);
 
-    TermFieldMatchData* amd = mdb->getTermFieldMatchData(0, 0);
+    TermFieldMatchData* amd = mdb->getTermFieldMatchData(0, 1);
 
     start();
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;

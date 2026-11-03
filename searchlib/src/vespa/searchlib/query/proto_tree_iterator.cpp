@@ -48,6 +48,8 @@ void walk(const QueryTreeItem& item, std::vector<TreeItem>& target) {
         return walk_children(item.item_and_not().children(), target);
     case IC::kItemRank:
         return walk_children(item.item_rank().children(), target);
+    case IC::kItemLabelWrapper:
+        return walk(item.item_label_wrapper().child(), target);
     case IC::kItemNear:
         return walk_children(item.item_near().children(), target);
     case IC::kItemOnear:
@@ -112,6 +114,14 @@ bool handle(const ItemAndNot& item, QueryStackIterator::Data& _d) {
 bool handle(const ItemRank& item, QueryStackIterator::Data& _d) {
     _d.itemType = ParseItem::ItemType::ITEM_RANK;
     _d.arity = item.children_size();
+    return true;
+}
+
+bool handle(const ItemLabelWrapper& item, QueryStackIterator::Data& _d) {
+    _d.itemType = ParseItem::ItemType::ITEM_LABEL_WRAPPER;
+    _d.arity = 1;
+    _d.uniqueId = item.unique_id();
+    _d.label_score = item.score();
     return true;
 }
 
@@ -274,6 +284,22 @@ bool handle(const ItemFloatingPointRangeTerm& item, QueryStackIterator::Data& _d
     _d.term_view = tmp;
     return true;
 }
+bool handle(const ItemStringRangeTerm& item, QueryStackIterator::Data& _d) {
+    fillTermProperties(item.properties(), _d);
+    _d.itemType = ParseItem::ItemType::ITEM_STRING_RANGE_TERM;
+    auto spec = std::make_unique<StringRangeSpec>();
+    if (item.has_lower_limit()) {
+        spec->left = item.lower_limit();
+    }
+    if (item.has_upper_limit()) {
+        spec->right = item.upper_limit();
+    }
+    spec->left_closed = item.lower_inclusive();
+    spec->right_closed = item.upper_inclusive();
+    spec->range_limit = item.range_limit();
+    _d.string_range_spec = std::move(spec);
+    return true;
+}
 
 bool handle(const ItemSameElement& item, QueryStackIterator::Data& _d) {
     fillTermProperties(item.properties(), _d);
@@ -348,6 +374,16 @@ bool handle(const ItemNearestNeighbor& item, QueryStackIterator::Data& _d) {
     return true;
 }
 
+bool handle(const ItemSparseTensorWand& item, QueryStackIterator::Data& _d) {
+    fillTermProperties(item.properties(), _d);
+    _d.itemType = ParseItem::ItemType::ITEM_SPARSE_TENSOR_WAND;
+    _d.term_view = item.query_tensor_name();
+    _d.targetHits = item.target_num_hits();
+    _d.scoreThreshold = item.score_threshold();
+    _d.arity = 0;
+    return true;
+}
+
 bool handle(const ItemGeoLocationTerm& item, QueryStackIterator::Data& _d, std::string& tmp) {
     constexpr int M = 1000000;
     fillTermProperties(item.properties(), _d);
@@ -373,8 +409,9 @@ bool handle(const ItemGeoLocationTerm& item, QueryStackIterator::Data& _d, std::
         int n = std::round(item.n() * M);
         tmp = std::format("[2,{},{},{},{}]", w, s, e, n);
     }
-    if (tmp == "")
+    if (tmp == "") {
         return false;
+    }
     _d.term_view = tmp;
     return true;
 }
@@ -461,6 +498,8 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
         return handle(qsi.item_and_not(), _d);
     case IC::kItemRank:
         return handle(qsi.item_rank(), _d);
+    case IC::kItemLabelWrapper:
+        return handle(qsi.item_label_wrapper(), _d);
     case IC::kItemNear:
         return handle(qsi.item_near(), _d);
     case IC::kItemOnear:
@@ -513,6 +552,8 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
         return handle(qsi.item_integer_range_term(), _d, _serialized_term);
     case IC::kItemFloatingPointRangeTerm:
         return handle(qsi.item_floating_point_range_term(), _d, _serialized_term);
+    case IC::kItemStringRangeTerm:
+        return handle(qsi.item_string_range_term(), _d);
 
     case IC::kItemWeightedSetOfString:
         return handle(qsi.item_weighted_set_of_string(), _d);
@@ -524,6 +565,8 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
         return handle(qsi.item_nearest_neighbor(), _d);
     case IC::kItemGeoLocationTerm:
         return handle(qsi.item_geo_location_term(), _d, _serialized_term);
+    case IC::kItemSparseTensorWand:
+        return handle(qsi.item_sparse_tensor_wand(), _d);
 
     case IC::ITEM_NOT_SET:
         return false;

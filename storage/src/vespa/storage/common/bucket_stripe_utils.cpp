@@ -2,9 +2,8 @@
 
 #include "bucket_stripe_utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/alloc.h>
-
-#include <cassert>
 
 namespace storage {
 
@@ -20,20 +19,20 @@ size_t stripe_of_bucket_key(uint64_t key, uint8_t n_stripe_bits) noexcept {
     if (n_stripe_bits == 0) {
         return 0;
     }
-    assert(used_bits_of(key) >= n_stripe_bits);
+    CHECK(used_bits_of(key) >= n_stripe_bits);
     // Since bucket keys have count-bits at the LSB positions, we want to look at the MSBs instead.
     return (key >> (64 - n_stripe_bits));
 }
 
 uint8_t calc_num_stripe_bits(uint32_t n_stripes) noexcept {
-    assert(n_stripes > 0);
+    CHECK(n_stripes > 0);
     if (n_stripes == 1) {
         return 0;
     }
-    assert(n_stripes == adjusted_num_stripes(n_stripes));
+    CHECK(n_stripes == adjusted_num_stripes(n_stripes));
 
     auto result = vespalib::Optimized::msbIdx(n_stripes);
-    assert(result <= MaxStripeBits);
+    CHECK(result <= MaxStripeBits);
     return result;
 }
 

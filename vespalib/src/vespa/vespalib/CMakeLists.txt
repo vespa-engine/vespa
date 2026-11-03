@@ -56,12 +56,12 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_fastos>
     INSTALL lib64
     EXTERNAL_DEPENDS
+    re2::re2
     ${VESPA_GCC_LIB}
     ${VESPA_LIBSTDCXX_COMPAT}
 )
 
 vespa_add_target_package_dependency(vespalib OpenSSL)
-vespa_add_target_package_dependency(vespalib RE2)
 if (APPLE)
     target_link_options(vespalib PRIVATE "-Wl,-U,_vespamalloc_dump_info,-U,_mi_stats_print_out")
 endif()

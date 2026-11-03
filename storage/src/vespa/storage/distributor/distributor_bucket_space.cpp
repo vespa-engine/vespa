@@ -4,6 +4,7 @@
 
 #include "bucketownership.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/bucketdb/btree_bucket_database.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -127,7 +128,7 @@ thread_local IdealServiceLayerNodesBundle fallback_ideal_nodes_bundle;
 
 const IdealServiceLayerNodesBundle&
 DistributorBucketSpace::get_ideal_service_layer_nodes_bundle(document::BucketId bucket) const {
-    assert(bucket.getUsedBits() >= _distribution_bits);
+    CHECK(bucket.getUsedBits() >= _distribution_bits);
     if (is_split_group_bucket(bucket)) {
         IdealServiceLayerNodesBundle& ideal_nodes_bundle = fallback_ideal_nodes_bundle;
         setup_ideal_nodes_bundle(ideal_nodes_bundle, *_distribution, *_clusterState, bucket);
@@ -141,7 +142,7 @@ DistributorBucketSpace::get_ideal_service_layer_nodes_bundle(document::BucketId 
     auto ideal_nodes_bundle = std::make_unique<IdealServiceLayerNodesBundle>();
     setup_ideal_nodes_bundle(*ideal_nodes_bundle, *_distribution, *_clusterState, lookup_bucket);
     auto insres = _ideal_nodes.insert(std::make_pair(lookup_bucket, std::move(ideal_nodes_bundle)));
-    assert(insres.second);
+    CHECK(insres.second);
     return *insres.first->second;
 }
 
@@ -166,7 +167,7 @@ BucketOwnershipFlags DistributorBucketSpace::get_bucket_ownership_flags(document
         flags.set_owned_in_current_state();
     }
     auto insres = _ownerships.insert(std::make_pair(super_bucket, flags));
-    assert(insres.second);
+    CHECK(insres.second);
     return insres.first->second;
 }
 
@@ -174,7 +175,7 @@ BucketOwnership
 DistributorBucketSpace::check_ownership_in_pending_and_current_state(document::BucketId bucket) const {
     auto flags = get_bucket_ownership_flags(bucket);
     if (!flags.owned_in_pending_state()) {
-        assert(_pending_cluster_state);
+        CHECK(_pending_cluster_state);
         return BucketOwnership::createNotOwnedInState(*_pending_cluster_state);
     }
     if (flags.owned_in_current_state()) {

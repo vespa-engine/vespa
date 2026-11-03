@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/identifiable.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/objects/deserializer.h>
@@ -206,12 +207,12 @@ uint32_t NormalSketch<BucketBits, HashT>::compress_buckets_into(char* buffer, ui
     vespalib::DataBuffer                           compress_buffer(buffer, size);
     vespalib::compression::CompressionConfig::Type r =
         vespalib::compression::compress(config, org, compress_buffer, false);
-    assert(compress_buffer.getDead() == buffer);
+    CHECK(compress_buffer.getDead() == buffer);
     if (r == vespalib::compression::CompressionConfig::LZ4) {
-        assert(compress_buffer.getDataLen() < BUCKET_COUNT);
+        CHECK(compress_buffer.getDataLen() < BUCKET_COUNT);
         return compress_buffer.getDataLen();
     } else {
-        assert(BUCKET_COUNT <= size);
+        CHECK(BUCKET_COUNT <= size);
         memcpy(buffer, bucket, BUCKET_COUNT);
         return BUCKET_COUNT;
     }
@@ -241,7 +242,7 @@ template <int BucketBits, typename HashT>
 void NormalSketch<BucketBits, HashT>::deserialize(vespalib::Deserializer& is) {
     uint32_t bucket_count, size;
     is >> bucket_count >> size;
-    assert(bucket_count == BUCKET_COUNT);
+    CHECK(bucket_count == BUCKET_COUNT);
     uint8_t compressed_array[BUCKET_COUNT];
     for (size_t i = 0; i < size; ++i) {
         is >> compressed_array[i];

@@ -89,8 +89,9 @@ protected:
     }
 
     int compare_prefix(const std::string& lhs, const std::string& rhs, size_t prefix_len) {
-        int ret = normalize_ret(FoldedStringCompare::comparePrefix(lhs.c_str(), rhs.c_str(), prefix_len));
-        EXPECT_EQ(-ret, normalize_ret(FoldedStringCompare::comparePrefix(rhs.c_str(), lhs.c_str(), prefix_len)));
+        auto cmp = FoldedStringCompare::compareFoldedPrefix<true, true>;
+        int  ret = normalize_ret(cmp(lhs.c_str(), rhs.c_str(), prefix_len));
+        EXPECT_EQ(-ret, normalize_ret(cmp(rhs.c_str(), lhs.c_str(), prefix_len)));
         return ret;
     }
 };
@@ -134,12 +135,13 @@ TEST_F(FoldedStringCompareTest, compare) {
 }
 
 TEST_F(FoldedStringCompareTest, compare_prefix) {
-    EXPECT_EQ(1, compare_prefix("ba", "BAR", 2));
-    EXPECT_EQ(-1, compare_prefix("BA", "bar", 2));
+    EXPECT_EQ(0, compare_prefix("ba", "BAR", 2));
+    EXPECT_EQ(0, compare_prefix("BA", "bar", 2));
     EXPECT_EQ(-1, compare_prefix("ba", "FOO", 2));
     EXPECT_EQ(-1, compare_prefix("BA", "foo", 2));
     // Verify that we don't mix number of bytes versus number of code points
-    EXPECT_EQ(1, compare_prefix(u8"å"_C, u8"Å"_C, 1));
+    // the below strings UTF-8 encoded are two bytes each, C3 A5 / C3 A6:
+    EXPECT_EQ(-1, compare_prefix(u8"å"_C, u8"æ"_C, 1));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

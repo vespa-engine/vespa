@@ -4,6 +4,7 @@
 #include "btree_lockable_map.h"
 #include "generic_btree_bucket_database.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
 #include <vespa/vespalib/datastore/datastore.h>
 
@@ -134,7 +135,7 @@ typename BTreeLockableMap<T>::WrappedEntry BTreeLockableMap<T>::get(const key_ty
         _impl->update_by_raw_key(key, mapped_type());
         // TODO avoid double lookup, though this is in an unlikely branch so shouldn't matter much.
         iter = _impl->find(key);
-        assert(iter.valid());
+        CHECK(iter.valid());
     }
     if (!iter.valid()) {
         return WrappedEntry();
@@ -235,7 +236,7 @@ void BTreeLockableMap<T>::do_for_each(std::function<Decision(uint64_t, const map
             return;
         }
         Decision d(func(key, val));
-        assert(d == Decision::ABORT || d == Decision::CONTINUE);
+        CHECK(d == Decision::ABORT || d == Decision::CONTINUE);
         if (handleDecision(key, val, d)) {
             return;
         }

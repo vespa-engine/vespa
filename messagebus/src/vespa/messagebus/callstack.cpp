@@ -6,7 +6,7 @@
 #include "message.h"
 #include "reply.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace mbus {
 
@@ -23,7 +23,7 @@ void CallStack::discard() {
 CallStack::~CallStack() = default;
 
 IReplyHandler& CallStack::pop(Reply& reply) {
-    assert(!_stack.empty());
+    CHECK(!_stack.empty());
     const Frame&   frame = _stack.back();
     IReplyHandler* handler = frame.replyHandler;
     reply.setContext(frame.ctx);

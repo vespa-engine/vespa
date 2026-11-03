@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/crypto_engine.h>
@@ -18,8 +19,6 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-
-#include <cassert>
 
 using namespace vespalib;
 using namespace vespalib::test;
@@ -43,7 +42,7 @@ std::string read_bytes(SyncCryptoSocket& socket, size_t wanted_bytes) {
     while (read_buffer.obtain().size < wanted_bytes) {
         auto chunk = read_buffer.reserve(wanted_bytes - read_buffer.obtain().size);
         auto res = socket.read(chunk.data, chunk.size);
-        assert(res > 0);
+        CHECK(res > 0);
         read_buffer.commit(res);
     }
     auto data = read_buffer.obtain();

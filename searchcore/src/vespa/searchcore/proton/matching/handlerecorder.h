@@ -40,6 +40,7 @@ public:
     ~HandleRecorder();
     const HandleMap& get_handles() const { return _handles; }
     HandleMap steal_handles() && { return std::move(_handles); }
+    bool registration_attempted() const noexcept { return _registration_attempted; }
     static void register_handle(search::fef::TermFieldHandle handle, search::fef::MatchDataDetails requested_details);
     std::string to_string() const;
     void tag_match_data(search::fef::MatchData& match_data);
@@ -47,6 +48,7 @@ public:
 private:
     void add(search::fef::TermFieldHandle handle, search::fef::MatchDataDetails requested_details);
     HandleMap _handles;
+    bool      _registration_attempted;
 };
 
 } // namespace proton::matching

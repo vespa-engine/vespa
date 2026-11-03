@@ -148,6 +148,8 @@ private:
     std::vector<AttributeField>         _attributeFields;
     std::vector<FieldSet>               _fieldSets;
     std::vector<ImportedAttributeField> _importedAttributeFields;
+    std::vector<std::string>            _uriFields;
+    bool                                _explicitUriFields = false;
     using Name2IdMap = vespalib::hash_map<std::string, uint32_t>;
     Name2IdMap _indexIds;
     Name2IdMap _attributeIds;
@@ -210,6 +212,30 @@ public:
     Schema& addFieldSet(const FieldSet& collection);
 
     Schema& addImportedAttributeField(const ImportedAttributeField& field);
+
+    /**
+     * Add a uri field to this schema. A uri field 'x' is indexed as the index fields 'x', 'x.scheme', 'x.host',
+     * 'x.port', 'x.path', 'x.query', 'x.fragment' and 'x.hostname', which must be added separately.
+     * This marks the uri fields of this schema as explicit.
+     **/
+    Schema& add_uri_field(std::string_view name);
+
+    /**
+     * Set whether the uri fields of this schema are explicitly given (by add_uri_field). When not explicit (schema
+     * from an older config model or saved by an older version), uri fields are detected from the index field names.
+     **/
+    void set_explicit_uri_fields(bool value) noexcept { _explicitUriFields = value; }
+    bool has_explicit_uri_fields() const noexcept { return _explicitUriFields; }
+
+    /**
+     * Get the names of the uri fields in this schema, either explicitly given or detected from the index field names.
+     **/
+    std::vector<std::string> get_uri_fields() const;
+
+    /**
+     * Check if the index field with the given name is part of a uri field ('x' or 'x.host' for uri field 'x').
+     **/
+    bool is_uri_part(std::string_view name) const;
 
     /**
      * Obtain the number of index fields in this schema.

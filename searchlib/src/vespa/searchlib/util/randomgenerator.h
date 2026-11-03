@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/rand48.h>
 
-#include <cassert>
 #include <string>
 #include <vector>
 
@@ -21,7 +21,7 @@ public:
     void srand(long seed) { _rnd.srand48(seed); }
 
     uint32_t rand(uint32_t min, uint32_t max) {
-        assert(min <= max);
+        CHECK(min <= max);
         uint32_t divider = max - min + 1;
         return (divider == 0 ? _rnd.lrand48() : min + _rnd.lrand48() % divider);
     }

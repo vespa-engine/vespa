@@ -6,6 +6,7 @@
 #include "tensor_quantization.h"
 #include "vector_bundle.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/vespalib/net/http/state_explorer.h>
@@ -16,7 +17,7 @@ namespace {
 
 const ITensorAttribute& getTensorAttribute(const search::attribute::IAttributeVector& attr) {
     const ITensorAttribute* result = attr.asTensorAttribute();
-    assert(result != nullptr);
+    CHECK(result != nullptr);
     return *result;
 }
 

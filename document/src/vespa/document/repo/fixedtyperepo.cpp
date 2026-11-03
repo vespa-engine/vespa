@@ -2,13 +2,13 @@
 
 #include "fixedtyperepo.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace document {
 
 FixedTypeRepo::FixedTypeRepo(const DocumentTypeRepo& repo, std::string_view type) noexcept
     : _repo(&repo), _doc_type(repo.getDocumentType(type)) {
-    assert(_doc_type);
+    CHECK(_doc_type);
 }
 
 } // namespace document

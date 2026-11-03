@@ -421,7 +421,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         CuratorConfig.Builder curatorBuilder = new CuratorConfig.Builder();
         model.getConfig(curatorBuilder, "foo");
         CuratorConfig curatorConfig = curatorBuilder.build();
-        assertEquals(120, curatorConfig.zookeeperSessionTimeoutSeconds());
+        assertEquals(30, curatorConfig.zookeeperSessionTimeoutSeconds());
 
         assertReindexingConfigPresent(model);
         assertReindexingConfiguredOnAdminCluster(model);

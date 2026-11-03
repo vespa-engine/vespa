@@ -92,6 +92,39 @@ func TestDeployCloud(t *testing.T) {
 	assert.Equal(t, string(values["deployOptions"]), `{"vespaVersion":"1.2.3"}`)
 }
 
+func TestDeployCloudWithClientCertificateDeclaredInServicesXML(t *testing.T) {
+	httpClient := mock.HTTPClient{}
+	target, _ := createCloudTarget(t, io.Discard)
+	cloudTarget, ok := target.(*cloudTarget)
+	require.True(t, ok)
+	cloudTarget.httpClient = &httpClient
+	appDir := t.TempDir()
+	servicesXML := `<services version="1.0">
+  <container id="default" version="1.0">
+    <clients>
+      <client id="mtls" permissions="read,write">
+        <certificate file="certs/search-pre.pem"/>
+      </client>
+    </clients>
+  </container>
+</services>`
+	err := os.WriteFile(filepath.Join(appDir, "services.xml"), []byte(servicesXML), 0o644)
+	require.Nil(t, err)
+	// The declared certificate file exists at its own path, not under security/
+	err = os.MkdirAll(filepath.Join(appDir, "certs"), 0o755)
+	require.Nil(t, err)
+	err = os.WriteFile(filepath.Join(appDir, "certs", "search-pre.pem"), []byte("certificate contents"), 0o644)
+	require.Nil(t, err)
+	pkg, err := FindApplicationPackage(appDir, PackageOptions{})
+	require.Nil(t, err)
+	require.False(t, pkg.HasCertificateFile())
+	require.True(t, pkg.HasCertificate())
+
+	opts := DeploymentOptions{Target: target, ApplicationPackage: pkg}
+	_, err = Deploy(opts)
+	require.Nil(t, err)
+}
+
 func TestSubmit(t *testing.T) {
 	httpClient := mock.HTTPClient{}
 	target, _ := createCloudTarget(t, io.Discard)

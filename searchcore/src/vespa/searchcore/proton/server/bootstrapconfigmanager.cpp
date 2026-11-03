@@ -4,7 +4,9 @@
 
 #include "bootstrapconfig.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-bucketspaces.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
@@ -12,7 +14,6 @@
 #include <vespa/config/retriever/configsnapshot.hpp>
 #include <vespa/searchlib/common/tunefileinfo.hpp>
 
-#include <cassert>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -20,6 +21,7 @@ LOG_SETUP(".proton.server.bootstrapconfigmanager");
 
 using namespace vespa::config::search;
 using namespace config;
+using ai::vespa::telemetry::TelemetryConfig;
 using cloud::config::filedistribution::FiledistributorrpcConfig;
 using document::DocumentTypeRepo;
 using document::DocumentTypeRepoFactory;
@@ -41,7 +43,8 @@ const ConfigKeySet BootstrapConfigManager::createConfigKeySet() const {
         .add<ProtonConfig>(_configId)
         .add<DocumenttypesConfig>(_configId)
         .add<FiledistributorrpcConfig>(_configId)
-        .add<BucketspacesConfig>(_configId);
+        .add<BucketspacesConfig>(_configId)
+        .add<TelemetryConfig>(_configId);
 }
 
 std::shared_ptr<BootstrapConfig> BootstrapConfigManager::getConfig() const {
@@ -59,6 +62,7 @@ void BootstrapConfigManager::update(const ConfigSnapshot& snapshot) {
     DocumenttypesConfigSP                       newDocumenttypesConfig;
     std::shared_ptr<const DocumentTypeRepo>     newRepo;
     BucketspacesConfigSP                        newBucketspacesConfig;
+    std::shared_ptr<TelemetryConfig>            new_telemetry_config;
     int64_t                                     currentGen = -1;
 
     BootstrapConfig::SP current = _pendingConfigSnapshot;
@@ -69,6 +73,7 @@ void BootstrapConfigManager::update(const ConfigSnapshot& snapshot) {
         newDocumenttypesConfig = current->getDocumenttypesConfigSP();
         newRepo = current->getDocumentTypeRepoSP();
         newBucketspacesConfig = current->getBucketspacesConfigSP();
+        new_telemetry_config = current->get_telemetry_config_sp();
         currentGen = current->getGeneration();
     }
 
@@ -107,12 +112,17 @@ void BootstrapConfigManager::update(const ConfigSnapshot& snapshot) {
         LOG(spam, "Bucketspaces config is changed");
         newBucketspacesConfig = snapshot.getConfig<BucketspacesConfig>(_configId);
     }
-    assert(newProtonConfig);
-    assert(newFiledistRpcConfSP);
-    assert(newBucketspacesConfig);
-    assert(newTuneFileDocumentDB);
-    assert(newDocumenttypesConfig);
-    assert(newRepo);
+    if (snapshot.isChanged<TelemetryConfig>(_configId, currentGen)) {
+        LOG(spam, "Telemetry config is changed");
+        new_telemetry_config = snapshot.getConfig<TelemetryConfig>(_configId);
+    }
+    CHECK(newProtonConfig);
+    CHECK(newFiledistRpcConfSP);
+    CHECK(newBucketspacesConfig);
+    CHECK(new_telemetry_config);
+    CHECK(newTuneFileDocumentDB);
+    CHECK(newDocumenttypesConfig);
+    CHECK(newRepo);
 
     const ProtonConfig&   protonConfig = *newProtonConfig;
     const auto&           hwDiskCfg = protonConfig.hwinfo.disk;
@@ -123,11 +133,11 @@ void BootstrapConfigManager::update(const ConfigSnapshot& snapshot) {
     std::filesystem::create_directories(std::filesystem::path(protonConfig.basedir));
     HwInfoSampler sampler(protonConfig.basedir, samplerCfg);
 
-    auto newSnapshot(std::make_shared<BootstrapConfig>(snapshot.getGeneration(), newDocumenttypesConfig, newRepo,
-                                                       newProtonConfig, newFiledistRpcConfSP, newBucketspacesConfig,
-                                                       newTuneFileDocumentDB, sampler.hwInfo()));
+    auto newSnapshot(std::make_shared<BootstrapConfig>(
+        snapshot.getGeneration(), newDocumenttypesConfig, newRepo, newProtonConfig, newFiledistRpcConfSP,
+        newBucketspacesConfig, new_telemetry_config, newTuneFileDocumentDB, sampler.hwInfo()));
 
-    assert(newSnapshot->valid());
+    CHECK(newSnapshot->valid());
     {
         std::lock_guard<std::mutex> lock(_pendingConfigMutex);
         _pendingConfigSnapshot = newSnapshot;

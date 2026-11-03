@@ -10,9 +10,8 @@ LOG_SETUP(".groupingsession");
 
 namespace search::grouping {
 
-using search::aggregation::Group;
+using search::aggregation::AggregationResult;
 using search::aggregation::Grouping;
-using search::aggregation::GroupingLevel;
 using search::attribute::IAttributeContext;
 
 GroupingSession::GroupingSession(const SessionId& sessionId, GroupingContext& groupingContext,
@@ -28,18 +27,37 @@ GroupingSession::~GroupingSession() = default;
 
 void GroupingSession::init(GroupingContext& groupingContext, const IAttributeContext& attrCtx,
                            const document::DocumentType* documentType) {
-    GroupingList& sessionList(groupingContext.getGroupingList());
-    for (auto g : sessionList) {
-        // Make internal copy of those we want to keep for another pass
+    GroupingList& requestList(groupingContext.getGroupingList());
+    for (auto g : requestList) {
+        // Groupings that need more than this pass to finish get a session copy: it is the one
+        // that actually gets grouped/aggregated into (via _mgrContext/_groupingManager below) and
+        // is cached in _groupingMap for use by later passes. The original stays behind, untouched,
+        // as the element still in requestList (and hence in the request itself); that original is
+        // what continueExecution() later merges the session copy's results into.
         if (!_sessionId.empty() && g->getLastLevel() < g->levels().size()) {
-            auto gp = std::make_shared<Grouping>(*g);
-            gp->setLastLevel(gp->levels().size());
-            _groupingMap[gp->getId()] = gp;
-            g = std::move(gp);
+            auto sessionCopy = std::make_shared<Grouping>(*g);
+            sessionCopy->setLastLevel(sessionCopy->levels().size());
+            _groupingMap[sessionCopy->getId()] = sessionCopy;
+            g = std::move(sessionCopy);
         }
         _mgrContext->addGrouping(std::move(g));
     }
     _groupingManager->init(attrCtx, documentType);
+    prepareMergeTargets(requestList);
+}
+
+void GroupingSession::prepareMergeTargets(const GroupingList& requestList) {
+    // The groupings we made a session copy of above are left behind in the request, where
+    // continueExecution() will use them as merge target. They are not part of _mgrContext, so the
+    // init() above did not touch them and their aggregation results are still default-constructed.
+    // Prepare them here: they share their expression trees with the session copies, which init()
+    // just configured, so the result nodes get the type the expression actually produces.
+    AggregationResult::Configure aggrConf;
+    for (const auto& g : requestList) {
+        if (_groupingMap.contains(g->getId())) {
+            g->select(aggrConf, aggrConf);
+        }
+    }
 }
 
 void GroupingSession::prepareThreadContextCreation(size_t num_threads) {

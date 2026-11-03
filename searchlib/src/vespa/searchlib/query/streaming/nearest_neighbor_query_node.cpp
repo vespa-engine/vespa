@@ -2,10 +2,9 @@
 
 #include "nearest_neighbor_query_node.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/matchdata.h>
-
-#include <cassert>
 
 using search::common::ElementIds;
 
@@ -41,7 +40,7 @@ NearestNeighborQueryNode* NearestNeighborQueryNode::as_nearest_neighbor_query_no
 
 std::optional<double> NearestNeighborQueryNode::get_raw_score() const {
     if (_distance.has_value()) {
-        assert(_calc != nullptr);
+        CHECK(_calc != nullptr);
         return _calc->to_raw_score(_distance.value());
     }
     return std::nullopt;
@@ -55,7 +54,7 @@ void NearestNeighborQueryNode::unpack_match_data(uint32_t docid, const fef::ITer
         if (td.numFields() == 1u) {
             auto& tfd = td.field(0u);
             auto  tmd = match_data.resolveTermField(tfd.getHandle());
-            assert(tmd != nullptr);
+            CHECK(tmd != nullptr);
             tmd->setRawScore(docid, raw_score.value());
         }
     }

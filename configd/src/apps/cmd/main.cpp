@@ -109,8 +109,9 @@ int Cmd::run(const Method& cmd, const char* arg) {
             uint32_t         j;
             for (j = 0; j < numHosts; ++j) {
                 uint32_t hl = strlen(hosts[j]._str);
-                if (hl > ml)
+                if (hl > ml) {
                     ml = hl;
+                }
             }
             for (j = 0; j < numHosts && j < numStats; ++j) {
                 printf("%-*s -> %s\n", ml, hosts[j]._str, stats[j]._str);

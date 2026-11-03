@@ -1,4 +1,2 @@
-- The 'tensorFromStructs' rank feature.
-- Fix bugs related to the 'foreach' rank feature.
-- Publish to the Open VSX registry.
-- General stability improvements.
+- Adds 'abs' to the indexing language
+- Adds support for explanations on schemas, fields and rank-profiles

@@ -176,6 +176,7 @@ TOKEN :
     <SCOLON: ";"> |
     <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
              ("'" (~["'"] | "\\'")* "'")> |
+    <ABS: "abs"> |
     <ATTRIBUTE: "attribute"> |
     <BASE64_DECODE: "base64decode"> |
     <BASE64_ENCODE: "base64encode"> |
@@ -183,6 +184,7 @@ TOKEN :
     <BUSY_WAIT: "busy_wait"> |
     <CASE: "case"> |
     <CASE_DEFAULT: "default"> |
+    <DOCUMENT_ID: "documentid"> |
     <CHUNK: "chunk"> |
     <CLEAR_STATE: "clear_state"> |
     <CREATE_IF_NON_EXISTENT: "create_if_non_existent"> |
@@ -190,6 +192,10 @@ TOKEN :
     <ELSE: "else"> |
     <EMBED: "embed"> |
     <EXACT: "exact"> |
+    <EXHEX8_ENCODE: "exhex8encode"> |
+    <EXHEX16_ENCODE: "exhex16encode"> |
+    <EXHEX8_FLOAT_ENCODE: "exhex8floatencode"> |
+    <EXHEX16_DOUBLE_ENCODE: "exhex16doubleencode"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
     <GENERATE: "generate"> |
@@ -229,7 +235,7 @@ TOKEN :
     <SUBSTRING: "substring"> |
     <SUMMARY: "summary"> |
     <SWITCH: "switch"> |
-    <THIS: "this"> |
+    <THIS_KEYWORD: "this"> |
     <TOKENIZE: "tokenize"> |
     <TO_ARRAY: "to_array"> |
     <TO_BOOL: "to_bool"> |
@@ -241,6 +247,7 @@ TOKEN :
     <TO_LONG: "to_long"> |
     <TO_POS: "to_pos"> |
     <TO_STRING: "to_string"> |
+    <TO_TENSOR: "to_tensor"> |
     <TO_URI: "to_uri"> |
     <TO_WSET: "to_wset"> |
     <TRIM: "trim"> |
@@ -341,16 +348,22 @@ Expression value() :
     Expression val;
 }
  
-    ( val = attributeExp()          |
+    ( val = absExp()                |
+      val = attributeExp()          |
       val = base64DecodeExp()       |
       val = base64EncodeExp()       |
       val = binarizeExp()           |
       val = busy_waitExp()          |
       val = chunkExp()              |
       val = clearStateExp()         |
+      val = documentIdExp()         |
       val = echoExp()               |
       val = embedExp()              |
       val = exactExp()              |
+      val = exHex8EncodeExp()       |
+      val = exHex16EncodeExp()      |
+      val = exHex8FloatEncodeExp()  |
+      val = exHex16DoubleEncodeExp() |
       val = flattenExp()            |
       val = forEachExp()            |
       val = generateExp()           |
@@ -397,6 +410,7 @@ Expression value() :
       val = toLongExp()             |
       val = toPosExp()              |
       val = toStringExp()           |
+      val = toTensorExp()           |
       val = toUriExp()              |
       val = toWsetExp()             |
       val = trimExp()               |
@@ -405,6 +419,12 @@ Expression value() :
       val = executionValueExp()     |
       ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
     { return val; }
+;
+
+Expression absExp() : { }
+ 
+    ( <ABS> )
+    { return new AbsExpression(); }
 ;
 
 Expression attributeExp() :
@@ -456,6 +476,15 @@ Expression chunkExp() :
     }
 ;
 
+Expression documentIdExp() :
+{
+    String part = null;
+}
+
+    ( <DOCUMENT_ID> [ SCAN(identifierStr) => (part = identifierStr()) ] )
+    { return new DocumentIdExpression(part); }
+;
+
 Expression clearStateExp() : { }
  
     ( <CLEAR_STATE> )
@@ -489,6 +518,27 @@ Expression exactExp() :
  
     ( <EXACT> [ config = annotatorConfig() ] )
     { return new ExactExpression(config); }
+;
+
+Expression exHex8EncodeExp() : { }
+ 
+    ( <EXHEX8_ENCODE> )
+    { return new ExcessHex8EncodeExpression(); }
+;
+
+Expression exHex16EncodeExp() : { }
+    ( <EXHEX16_ENCODE> )
+    { return new ExcessHex16EncodeExpression(); }
+;
+
+Expression exHex8FloatEncodeExp() : { }
+    ( <EXHEX8_FLOAT_ENCODE> )
+    { return new ExcessHex8FloatEncodeExpression(); }
+;
+
+Expression exHex16DoubleEncodeExp() : { }
+    ( <EXHEX16_DOUBLE_ENCODE> )
+    { return new ExcessHex16DoubleEncodeExpression(); }
 ;
 
 Expression flattenExp() : { }
@@ -780,7 +830,7 @@ Expression switchExp() :
 
 Expression thisExp() : { }
  
-    ( <THIS> )
+    ( <THIS_KEYWORD> )
     { return new ThisExpression(); }
 ;
 
@@ -868,9 +918,17 @@ Expression toPosExp() : { }
 ;
 
 Expression toStringExp() : { }
- 
+
     ( <TO_STRING> )
     { return new ToStringExpression(); }
+;
+
+Expression toTensorExp() :
+{
+    String val;
+}
+    ( <TO_TENSOR> val = identifierStr() )
+    { return new ToTensorExpression(val); }
 ;
 
 Expression toUriExp() : { }
@@ -943,7 +1001,8 @@ String identifierStr() :
     String val;
 }
     ( val = stringLiteral()      |
-      ( <ATTRIBUTE>              |
+      ( <ABS>                    |
+        <ATTRIBUTE>              |
         <BASE64_DECODE>          |
         <BASE64_ENCODE>          |
         <BINARIZE>               |
@@ -953,6 +1012,7 @@ String identifierStr() :
         <CHUNK>                  |
         <CLEAR_STATE>            |
         <CREATE_IF_NON_EXISTENT> |
+        <DOCUMENT_ID>            |
         <ECHO>                   |
         <EXACT>                  |
         <ELSE>                   |
@@ -993,7 +1053,7 @@ String identifierStr() :
         <SUBSTRING>              |
         <SUMMARY>                |
         <SWITCH>                 |
-        <THIS>                   |
+        <THIS_KEYWORD>           |
         <TO_ARRAY>               |
         <TO_BOOL>                |
         <TO_BYTE>                |
@@ -1004,6 +1064,7 @@ String identifierStr() :
         <TO_LONG>                |
         <TO_POS>                 |
         <TO_STRING>              |
+        <TO_TENSOR>              |
         <TO_URI>                 |
         <TO_WSET>                |
         <TOKENIZE>               |

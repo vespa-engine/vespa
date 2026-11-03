@@ -57,12 +57,24 @@ public class AdjustSummaryTransforms extends Processor {
         summaryField.setTransform(SummaryTransform.ATTRIBUTE);
     }
 
-    /** If the source is a complex field with only struct field attributes then make this use the attribute combiner transform */
+    /**
+     * If the source is a complex field with only struct field attributes then make this use the attribute
+     * combiner transform. If the summary field only requests a subset of the struct sub-fields (via
+     * struct-field selection in a document-summary), only that subset needs to be usable as struct field
+     * attributes. The selection itself is validated in {@link SummaryStructFieldSelectValidator}.
+     *
+     * A selection whose sub-fields are not attributes leaves the transform alone, which is fine in every
+     * mode: the field is then filled from the stored document, and the selection is applied when the
+     * summary field is written, by the copy transform below or, when the field is its own source and gets
+     * no transform at all, from the summary config of the requested document-summary.
+     */
     private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField, Schema schema) {
         if (summaryField.getTransform() == SummaryTransform.NONE) {
             String sourceFieldName = summaryField.getSingleSource();
             ImmutableSDField source = schema.getField(sourceFieldName);
-            if (source != null && isComplexFieldWithOnlyStructFieldAttributes(source)) {
+            if (source == null) return;
+            var selectedFields = summaryField.getStructFields();
+            if (isComplexFieldWithOnlyStructFieldAttributes(source, selectedFields)) {
                 summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
             }
         }

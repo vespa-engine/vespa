@@ -4,6 +4,8 @@
 
 #include "value.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::eval {
 
 /**
@@ -56,7 +58,7 @@ private:
     std::unique_ptr<ValueBuilder<T>> create_value_builder(const ValueType& type, bool transient,
                                                           size_t num_mapped_dims_in, size_t subspace_size_in,
                                                           size_t expected_subspaces) const {
-        assert(check_cell_type<T>(type.cell_type()));
+        CHECK(check_cell_type<T>(type.cell_type()));
         auto base =
             create_value_builder_base(type, transient, num_mapped_dims_in, subspace_size_in, expected_subspaces);
         auto* builder = static_cast<ValueBuilder<T>*>(base.get());

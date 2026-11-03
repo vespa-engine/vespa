@@ -4,6 +4,7 @@ package com.yahoo.config.provision;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
@@ -15,15 +16,24 @@ import java.util.Optional;
  */
 public record BlockWindow(boolean revision, boolean version, boolean maintenance,
                           List<DayOfWeek> days, List<Integer> hours, ZoneId zone,
-                          Optional<LocalDate> fromDate, Optional<LocalDate> toDate) {
+                          Optional<LocalDate> fromDate, Optional<LocalDate> toDate,
+                          Optional<LocalTime> fromTime, Optional<LocalTime> toTime) {
 
     public BlockWindow(boolean revision, boolean version, boolean maintenance, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
-        this(revision, version, maintenance, days, hours, zone, Optional.empty(), Optional.empty());
+        this(revision, version, maintenance, days, hours, zone, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     public BlockWindow(boolean revision, boolean version, boolean maintenance,
                        List<DayOfWeek> days, List<Integer> hours, ZoneId zone,
                        Optional<LocalDate> fromDate, Optional<LocalDate> toDate) {
+        this(revision, version, maintenance, days, hours, zone, fromDate, toDate, Optional.empty(), Optional.empty());
+    }
+
+    public BlockWindow(boolean revision, boolean version, boolean maintenance,
+                       List<DayOfWeek> days, List<Integer> hours, ZoneId zone,
+                       Optional<LocalDate> fromDate, Optional<LocalDate> toDate,
+                       Optional<LocalTime> fromTime, Optional<LocalTime> toTime) {
+        new LocalDateTimeRange(fromDate, fromTime, toDate, toTime); // Validates that the range is non-inverted
         this.revision    = revision;
         this.version     = version;
         this.maintenance = maintenance;
@@ -32,6 +42,8 @@ public record BlockWindow(boolean revision, boolean version, boolean maintenance
         this.zone        = zone;
         this.fromDate    = fromDate;
         this.toDate      = toDate;
+        this.fromTime    = fromTime;
+        this.toTime      = toTime;
     }
 
     /** Returns whether this window is currently blocking platform (Vespa version) upgrades */
@@ -50,13 +62,10 @@ public record BlockWindow(boolean revision, boolean version, boolean maintenance
     }
 
     private boolean isWithin(Instant instant) {
-        var localTime = instant.atZone(zone);
-        if (!days.contains(localTime.getDayOfWeek())) return false;
-        if (!hours.contains(localTime.getHour())) return false;
-        LocalDate date = localTime.toLocalDate();
-        if (fromDate.isPresent() && date.isBefore(fromDate.get())) return false;
-        if (toDate.isPresent() && date.isAfter(toDate.get())) return false;
-        return true;
+        var zonedDateTime = instant.atZone(zone);
+        if (!days.contains(zonedDateTime.getDayOfWeek())) return false;
+        if (!hours.contains(zonedDateTime.getHour())) return false;
+        return new LocalDateTimeRange(fromDate, fromTime, toDate, toTime).includes(zonedDateTime.toLocalDateTime());
     }
 
 }

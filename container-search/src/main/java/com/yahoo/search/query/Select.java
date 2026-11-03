@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * The parameters defining the where-clause and grouping of a query
  *
- * @author henrhoi
+ * @author Henrik Høiness
  */
 public class Select implements Cloneable {
 
@@ -40,6 +40,8 @@ public class Select implements Cloneable {
 
     private String where;
     private String grouping;
+    /** Whether the grouping string has been set but not yet parsed into grouping requests */
+    private boolean groupingPending = false;
     private String groupingExpressionString;
     private String fields = "";
 
@@ -106,8 +108,35 @@ public class Select implements Cloneable {
     public void setGroupingString(String grouping) {
         groupingRequests.clear();
         this.grouping = grouping;
+        this.groupingPending = true;
+        // A grouping with parameter references (@name) must be resolved against the complete query properties,
+        // and this may be called while the properties of the query are still being set from the request, so
+        // parsing it is deferred until the grouping is first accessed. A grouping without parameter references
+        // is parsed here, so that an invalid grouping fails where it is set.
+        if ( ! grouping.contains("@")) {
+            resolveGrouping();
+        }
+    }
+
+    /**
+     * Parses the grouping string set by {@link #setGroupingString(String)} into grouping requests, if this has not
+     * already been done. Parameter references (@name) in the grouping are resolved against the properties of the
+     * parent query at the time this is called, so this should be called once all properties of the query are set.
+     * {@link Query} does this at the end of construction from a request. Accessing the grouping also calls this.
+     *
+     * @throws IllegalArgumentException if the grouping cannot be parsed, or references a parameter which is not set
+     */
+    public void resolveGrouping() {
+        if ( ! groupingPending) {
+            return;
+        }
         SelectParser parser = (SelectParser) ParserFactory.newInstance(Query.Type.SELECT, new ParserEnvironment());
-        for (VespaGroupingStep step : parser.getGroupingSteps(grouping)) {
+        // Parse everything before clearing the pending flag, so a failed parse (e.g. a parameter which is not set yet)
+        // leaves the grouping pending and it can be resolved later. The flag must be cleared before adding the
+        // requests, as GroupingRequest.newInstance adds to the list returned by getGrouping().
+        var steps = parser.getGroupingSteps(grouping, parent.properties()::getString);
+        groupingPending = false;
+        for (VespaGroupingStep step : steps) {
             GroupingRequest.newInstance(parent)
                     .setRootOperation(step.getOperation())
                     .continuations().addAll(step.continuations());
@@ -161,7 +190,10 @@ public class Select implements Cloneable {
      * Returns the query's {@link GroupingRequest} as a mutable list. Changing this directly changes the grouping
      * operations which will be performed by this query.
      */
-    public List<GroupingRequest> getGrouping() { return groupingRequests; }
+    public List<GroupingRequest> getGrouping() {
+        resolveGrouping();
+        return groupingRequests;
+    }
 
     @Override
     public String toString() {
@@ -170,10 +202,12 @@ public class Select implements Cloneable {
 
     @Override
     public Object clone() {
+        resolveGrouping();
         return new Select(where, grouping, groupingExpressionString, parent, groupingRequests, fields);
     }
 
     public Select cloneFor(Query parent)  {
+        resolveGrouping();
         return new Select(where, grouping, groupingExpressionString, parent, groupingRequests, fields);
     }
 

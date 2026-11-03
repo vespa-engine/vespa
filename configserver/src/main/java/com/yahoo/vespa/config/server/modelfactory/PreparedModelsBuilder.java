@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
+import ai.vespa.rankingexpression.importer.configmodelview.MlModelImportCacheLayout;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -34,9 +35,11 @@ import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -126,7 +129,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 onnxModelCost,
                 wantedDockerImageRepository,
                 modelVersion,
-                wantedNodeVespaVersion);
+                wantedNodeVespaVersion,
+                Optional.of(mlModelImportCacheDir(configserverConfig)));
 
         ModelCreateResult result = createAndValidateModel(modelFactory, applicationId, modelVersion, modelContext);
         return new PreparedModelResult(modelVersion, result.getModel(), fileRegistry, result.getConfigChangeActions());
@@ -177,6 +181,11 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         return applicationPackage instanceof FilesApplicationPackage ?
                        Optional.of(((FilesApplicationPackage) applicationPackage).getAppDir()) :
                        Optional.empty();
+    }
+
+    /** Returns the root directory of the ML model import cache */
+    public static File mlModelImportCacheDir(ConfigserverConfig configserverConfig) {
+        return MlModelImportCacheLayout.cacheRoot(Path.of(Defaults.getDefaults().underVespaHome(configserverConfig.configServerDBDir()))).toFile();
     }
 
     private void validateModelHosts(HostValidator hostValidator, ApplicationId applicationId, Model model) {

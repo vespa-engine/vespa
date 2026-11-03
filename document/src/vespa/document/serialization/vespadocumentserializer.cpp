@@ -6,6 +6,7 @@
 #include "slime_output_to_vector.h"
 #include "util.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
@@ -288,7 +289,7 @@ void VespaDocumentSerializer::write(const TensorFieldValue& value) {
     const auto*         tensor = value.getAsTensorPtr();
     if (tensor) {
         encode_value(*tensor, tmpStream);
-        assert(!tmpStream.empty());
+        CHECK(!tmpStream.empty());
         _stream.putInt1_4Bytes(tmpStream.size());
         _stream.write(tmpStream.peek(), tmpStream.size());
     } else {

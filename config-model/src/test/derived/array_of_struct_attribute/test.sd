@@ -15,6 +15,21 @@ schema test {
         indexing: attribute
       }
     }
+    # A struct whose sub-fields are named like a map entry's, which is what makes the shape ambiguous
+    # when it has to be deduced from the struct field attribute names alone.
+    struct keyval {
+      field key type string {}
+      field value type string {}
+    }
+    field keyval_array type array<keyval> {
+      indexing: summary
+      struct-field key {
+        indexing: attribute
+      }
+      struct-field value {
+        indexing: attribute
+      }
+    }
     struct mykv {
       field mykey type string {}
       field myval type string {}

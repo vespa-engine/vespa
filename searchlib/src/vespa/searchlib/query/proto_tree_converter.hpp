@@ -106,6 +106,11 @@ public:
         return true;
     }
 
+    bool handle(const ItemLabelWrapper& item) {
+        _builder.add_label_wrapper(item.unique_id(), item.score());
+        return handle_item(item.child());
+    }
+
     bool handle(const ItemNear& item) {
         uint32_t arity = item.children_size();
         uint32_t nearDistance = item.distance();
@@ -134,10 +139,9 @@ public:
     }
 
     bool handle(const ItemWeakAnd& item) {
-        uint32_t    arity = item.children_size();
-        uint32_t    targetNumHits = item.target_num_hits();
-        std::string index = item.index();
-        _builder.addWeakAnd(arity, targetNumHits, index);
+        uint32_t arity = item.children_size();
+        uint32_t targetNumHits = item.target_num_hits();
+        _builder.addWeakAnd(arity, targetNumHits);
         for (const auto& child : item.children()) {
             if (!handle_item(child)) {
                 return false;
@@ -150,60 +154,72 @@ public:
         auto  d = fillTermProperties(item.properties());
         auto  word = item.word();
         auto& term = _builder.addStringTerm(word, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
     bool handle(const ItemPrefixTerm& item) {
         auto  d = fillTermProperties(item.properties());
         auto  word = item.word();
         auto& term = _builder.addPrefixTerm(word, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
     bool handle(const ItemSubstringTerm& item) {
         auto  d = fillTermProperties(item.properties());
         auto  word = item.word();
         auto& term = _builder.addSubstringTerm(word, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
     bool handle(const ItemSuffixTerm& item) {
         auto  d = fillTermProperties(item.properties());
         auto  word = item.word();
         auto& term = _builder.addSuffixTerm(word, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
     bool handle(const ItemExactStringTerm& item) {
         auto  d = fillTermProperties(item.properties());
         auto  word = item.word();
         auto& term = _builder.addStringTerm(word, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
     bool handle(const ItemRegexp& item) {
         auto  d = fillTermProperties(item.properties());
         auto  regexp = item.regexp();
         auto& term = _builder.addRegExpTerm(regexp, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
     bool handle(const ItemFuzzy& item) {
@@ -214,12 +230,15 @@ public:
         auto  prefix_lock_length = item.prefix_lock_length();
         auto& term = _builder.addFuzzyTerm(word, d.index_view, d.uniqueId, d.weight, max_edit_distance,
                                            prefix_lock_length, prefix_match);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
-        if (prefix_match)
+        }
+        if (prefix_match) {
             term.set_prefix_match(true); // nop?
+        }
         return true;
     }
 
@@ -248,10 +267,12 @@ public:
         }
         auto& term = _builder.add_word_alternatives(std::move(words), d.index_view, d.uniqueId, d.weight);
         // compare equiv above
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
 
@@ -259,10 +280,12 @@ public:
         auto     d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_strings_size();
         auto&    ws = _builder.addWeightedSetTerm(arity, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             ws.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             ws.setPositionData(false);
+        }
         for (const auto& child : item.weighted_strings()) {
             query::Weight weight(child.weight());
             ws.addTerm(child.value(), weight);
@@ -274,10 +297,12 @@ public:
         auto     d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_longs_size();
         auto&    ws = _builder.addWeightedSetTerm(arity, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             ws.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             ws.setPositionData(false);
+        }
         for (const auto& child : item.weighted_longs()) {
             query::Weight weight(child.weight());
             ws.addTerm(child.value(), weight);
@@ -289,8 +314,9 @@ public:
         auto     d = fillTermProperties(item.properties());
         uint32_t arity = item.children_size();
         auto&    term = _builder.addPhrase(arity, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
+        }
         // not meaningful: d.noPositionDataFlag
         for (const auto& child : item.children()) {
             if (!handle_item(child)) {
@@ -305,10 +331,12 @@ public:
         int64_t     number = item.number();
         std::string word = std::format("{}", number);
         auto&       term = _builder.addNumberTerm(word, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
 
@@ -317,10 +345,12 @@ public:
         double      number = item.number();
         std::string word = std::format("{}", number);
         auto&       term = _builder.addNumberTerm(word, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
 
@@ -350,10 +380,12 @@ public:
 
         query::Range range(std::move(spec));
         auto&        term = _builder.addRangeTerm(range, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
     bool handle(const ItemFloatingPointRangeTerm& item) {
@@ -380,10 +412,29 @@ public:
 
         query::Range range(std::move(spec));
         auto&        term = _builder.addRangeTerm(range, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
+        return true;
+    }
+
+    bool handle(const ItemStringRangeTerm& item) {
+        auto                           d = fillTermProperties(item.properties());
+        std::optional<StringRangeSpec> range(
+            std::in_place, item.has_lower_limit() ? std::make_optional(item.lower_limit()) : std::nullopt,
+            item.lower_inclusive(), item.has_upper_limit() ? std::make_optional(item.upper_limit()) : std::nullopt,
+            item.upper_inclusive(),
+            item.range_limit()); // range_limit() defaults to 0 if not present
+        auto& term = _builder.add_string_range_term(range, d.index_view, d.uniqueId, d.weight);
+        if (d.noRankFlag) {
+            term.setRanked(false);
+        }
+        if (d.noPositionDataFlag) {
+            term.setPositionData(false);
+        }
         return true;
     }
 
@@ -392,10 +443,12 @@ public:
         uint32_t              arity = item.children_size();
         std::vector<uint32_t> element_filter(item.element_filter().cbegin(), item.element_filter().cend());
         auto& term = _builder.addSameElement(arity, d.index_view, d.uniqueId, d.weight, std::move(element_filter));
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         for (const auto& child : item.children()) {
             if (!handle_item(child)) {
                 return false;
@@ -408,10 +461,12 @@ public:
         auto     d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_strings_size();
         auto&    dp = _builder.addDotProduct(arity, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             dp.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             dp.setPositionData(false);
+        }
         for (const auto& child : item.weighted_strings()) {
             query::Weight weight(child.weight());
             dp.addTerm(child.value(), weight);
@@ -423,10 +478,12 @@ public:
         auto     d = fillTermProperties(item.properties());
         uint32_t arity = item.weighted_longs_size();
         auto&    dp = _builder.addDotProduct(arity, d.index_view, d.uniqueId, d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             dp.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             dp.setPositionData(false);
+        }
         for (const auto& child : item.weighted_longs()) {
             query::Weight weight(child.weight());
             dp.addTerm(child.value(), weight);
@@ -442,10 +499,12 @@ public:
         double   thresholdBoostFactor = item.threshold_boost_factor();
         auto&    wand = _builder.addWandTerm(arity, d.index_view, d.uniqueId, d.weight, targetNumHits, scoreThreshold,
                                              thresholdBoostFactor);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             wand.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             wand.setPositionData(false);
+        }
         for (const auto& child : item.weighted_strings()) {
             query::Weight weight(child.weight());
             wand.addTerm(child.value(), weight);
@@ -461,13 +520,28 @@ public:
         double   thresholdBoostFactor = item.threshold_boost_factor();
         auto&    wand = _builder.addWandTerm(arity, d.index_view, d.uniqueId, d.weight, targetNumHits, scoreThreshold,
                                              thresholdBoostFactor);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             wand.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             wand.setPositionData(false);
+        }
         for (const auto& child : item.weighted_longs()) {
             query::Weight weight(child.weight());
             wand.addTerm(child.value(), weight);
+        }
+        return true;
+    }
+
+    bool handle(const ItemSparseTensorWand& item) {
+        auto  d = fillTermProperties(item.properties());
+        auto& term = _builder.add_sparse_tensor_wand_term(item.query_tensor_name(), d.index_view, d.uniqueId,
+                                                          d.weight, item.target_num_hits(), item.score_threshold());
+        if (d.noRankFlag) {
+            term.setRanked(false);
+        }
+        if (d.noPositionDataFlag) {
+            term.setPositionData(false);
         }
         return true;
     }
@@ -491,11 +565,13 @@ public:
         }
         auto& term = _builder.addPredicateQuery(std::move(predicateQueryTerm), d.index_view, d.uniqueId, d.weight);
         // not meaningful?
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
+        }
         // not meaningful?
-        if (d.noPositionDataFlag)
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
 
@@ -528,11 +604,13 @@ public:
             _builder.add_nearest_neighbor_term(item.query_tensor_name(), d.index_view, d.uniqueId, d.weight,
                                                item.target_num_hits(), item.allow_approximate(), hnsw_params);
         // not meaningful?
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
+        }
         // not meaningful?
-        if (d.noPositionDataFlag)
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
 
@@ -546,8 +624,9 @@ public:
 
         double latitudeRadians = item.latitude() * M_PI / 180.0;
         double cosLat = cos(latitudeRadians);
-        if (cosLat < 0)
+        if (cosLat < 0) {
             cosLat = 0;
+        }
         GeoLocation::Aspect aspect{cosLat};
 
         int32_t w = std::round(item.w() * M);
@@ -591,10 +670,12 @@ public:
         }
         auto& term = _builder.add_in_term(std::move(terms), query::MultiTerm::Type::STRING, d.index_view, d.uniqueId,
                                           d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
 
@@ -607,10 +688,12 @@ public:
         }
         auto& term = _builder.add_in_term(std::move(terms), query::MultiTerm::Type::INTEGER, d.index_view, d.uniqueId,
                                           d.weight);
-        if (d.noRankFlag)
+        if (d.noRankFlag) {
             term.setRanked(false);
-        if (d.noPositionDataFlag)
+        }
+        if (d.noPositionDataFlag) {
             term.setPositionData(false);
+        }
         return true;
     }
 
@@ -633,6 +716,8 @@ public:
             return handle(qti.item_and_not());
         case IC::kItemRank:
             return handle(qti.item_rank());
+        case IC::kItemLabelWrapper:
+            return handle(qti.item_label_wrapper());
         case IC::kItemNear:
             return handle(qti.item_near());
         case IC::kItemOnear:
@@ -685,6 +770,8 @@ public:
             return handle(qti.item_integer_range_term());
         case IC::kItemFloatingPointRangeTerm:
             return handle(qti.item_floating_point_range_term());
+        case IC::kItemStringRangeTerm:
+            return handle(qti.item_string_range_term());
 
         case IC::kItemWeightedSetOfString:
             return handle(qti.item_weighted_set_of_string());
@@ -696,6 +783,8 @@ public:
             return handle(qti.item_nearest_neighbor());
         case IC::kItemGeoLocationTerm:
             return handle(qti.item_geo_location_term());
+        case IC::kItemSparseTensorWand:
+            return handle(qti.item_sparse_tensor_wand());
 
         case IC::ITEM_NOT_SET:
             LOG(error, "missing item in serialized query tree");

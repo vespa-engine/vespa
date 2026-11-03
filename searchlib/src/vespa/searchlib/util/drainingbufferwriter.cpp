@@ -2,7 +2,7 @@
 
 #include "drainingbufferwriter.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search {
 
@@ -16,7 +16,7 @@ DrainingBufferWriter::~DrainingBufferWriter() {
 
 void DrainingBufferWriter::flush() {
     // measure overhead above this flush method
-    assert(_incompleteBuffers == 0); // all previous buffers must have been full
+    CHECK(_incompleteBuffers == 0); // all previous buffers must have been full
     size_t nowLen = usedLen();
     if (nowLen != _buf.size()) {
         // buffer is not full, only allowed for last buffer

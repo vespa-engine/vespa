@@ -4,6 +4,7 @@
 
 #include "multi_term_hash_filter.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/hit_estimate_flow_stats_adapter.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -124,8 +125,8 @@ queryeval::FlowStats AttributeWeightedSetBlueprint::calculate_flow_stats(uint32_
 
 queryeval::SearchIterator::UP
 AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray& tfmda) const {
-    assert(tfmda.size() == 1);
-    assert(getState().numFields() == 1);
+    CHECK(tfmda.size() == 1);
+    CHECK(getState().numFields() == 1);
     fef::TermFieldMatchData& tfmd = *tfmda[0];
     bool                     field_is_filter = getState().fields()[0].isFilter();
     if ((tfmd.isNotNeeded() || field_is_filter) && (_contexts.size() == 1)) {
@@ -145,11 +146,11 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
                                                         std::move(match_data));
     } else { // use attribute filter optimization
         bool isString = (_attr.isStringType() && _attr.hasEnum());
-        assert(!_attr.hasMultiValue());
+        CHECK(!_attr.hasMultiValue());
         if (isString) {
             return make_multi_term_filter<StringEnumWrapper>(tfmd, _attr, _weights, _contexts);
         } else {
-            assert(_attr.isIntegerType());
+            CHECK(_attr.isIntegerType());
             return make_multi_term_filter<IntegerWrapper>(tfmd, _attr, _weights, _contexts);
         }
     }

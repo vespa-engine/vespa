@@ -14,25 +14,24 @@ private:
     using BaseType = typename AttrT::T;
     using Params = attribute::SearchContextParams;
     using Parent::_enumStore;
-    using Parent::_high;
-    using Parent::_low;
     using Parent::_toBeSearched;
+    using Parent::matcher;
     Params _params;
 
     void getIterators(bool shouldApplyRangeLimit);
-    bool valid() const override { return this->isValid(); }
+    bool valid() const override { return matcher().isValid(); }
 
     HitEstimate calc_hit_estimate() const override {
         HitEstimate        estimate = PostingListSearchContextT<DataT>::calc_hit_estimate();
-        const unsigned int limit = std::abs(this->getRangeLimit());
+        const unsigned int limit = std::abs(matcher().getRangeLimit());
         return ((limit > 0) && (limit < estimate.est_hits())) ? HitEstimate(limit) : estimate;
     }
     void fetchPostings(const ExecuteInfo& execInfo, bool strict) override {
         if (params().diversityAttribute() != nullptr) {
-            bool   forward = (this->getRangeLimit() > 0);
-            size_t wanted_hits = std::abs(this->getRangeLimit());
+            bool   forward = (matcher().getRangeLimit() > 0);
+            size_t wanted_hits = std::abs(matcher().getRangeLimit());
             PostingListSearchContextT<DataT>::diversify(forward, wanted_hits, *(params().diversityAttribute()),
-                                                        this->getMaxPerGroup(), params().diversityCutoffGroups(),
+                                                        matcher().getMaxPerGroup(), params().diversityCutoffGroups(),
                                                         params().diversityCutoffStrict());
         } else {
             PostingListSearchContextT<DataT>::fetchPostings(execInfo, strict);

@@ -323,6 +323,7 @@ public class SessionRepository {
                                                             ApplicationId applicationId,
                                                             TimeoutBudget timeoutBudget,
                                                             DeployLogger deployLogger) {
+        validateDirectories(applicationDirectory);
         LocalSession session = createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget,
                                             deployLogger, clock.instant());
         tenantApplications.createApplication(applicationId);
@@ -855,6 +856,14 @@ public class SessionRepository {
         return app;
     }
 
+    private static void validateDirectories(File applicationDirectory) {
+        try {
+            FilesApplicationPackage.validateDirectories(applicationDirectory);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidApplicationException(e.getMessage(), e);
+        }
+    }
+
     private void validateFileExtensions(ApplicationId applicationId, Optional<DeployLogger> deployLogger, FilesApplicationPackage app) {
         try {
             app.validateFileExtensions();
@@ -1047,7 +1056,8 @@ public class SessionRepository {
                                           tenantName,
                                           sessionId,
                                           configserverConfig,
-                                          fileDistributionFactory.createFileManager(getSessionAppDir(sessionId)),
+                                          fileDistributionFactory.createFileManager(getSessionAppDir(sessionId),
+                                                  () -> SessionZooKeeperClient.readApplicationId(curator, tenantName, sessionId)),
                                           maxNodeSize);
     }
 

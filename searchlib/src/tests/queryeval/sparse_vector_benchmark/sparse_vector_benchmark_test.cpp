@@ -2,6 +2,7 @@
 #include "../weak_and/rise_wand.h"
 #include "../weak_and/rise_wand.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
@@ -29,7 +30,7 @@ struct Writer {
     FILE* file;
     explicit Writer(const std::string& file_name) {
         file = fopen(file_name.c_str(), "w");
-        assert(file != nullptr);
+        CHECK(file != nullptr);
     }
     void write(const char* data, size_t size) const { fwrite(data, 1, size, file); }
     void fmt(const char* format, ...) const __attribute__((format(printf, 2, 3))) {
@@ -156,13 +157,13 @@ struct ModSearch : SearchIterator {
     ModSearch(uint32_t step_in, uint32_t limit_in) : step(step_in), limit(limit_in) { setDocId(step); }
     ~ModSearch() override;
     void doSeek(uint32_t docid) override {
-        assert(docid > getDocId());
+        CHECK(docid > getDocId());
         uint32_t hit = (docid / step) * step;
         if (hit < docid) {
             hit += step;
         }
         if (hit < limit) {
-            assert(hit >= docid);
+            CHECK(hit >= docid);
             setDocId(hit);
         } else {
             setAtEnd();
@@ -335,7 +336,7 @@ struct Result {
         if (time == max_time) {
             *this = r;
         } else {
-            assert(num_hits == r.num_hits);
+            CHECK(num_hits == r.num_hits);
             time = std::min(time, r.time);
         }
     }

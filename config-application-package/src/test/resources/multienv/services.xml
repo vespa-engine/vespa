@@ -1,0 +1,9 @@
+<services version='1.0' xmlns:deploy="vespa" xmlns:preprocess="properties">
+    <preprocess:properties>
+        <logserver.rpcport>4099</logserver.rpcport>
+    </preprocess:properties>
+    <preprocess:properties deploy:environment="prod">
+        <logserver.rpcport>5000</logserver.rpcport>
+    </preprocess:properties>
+    <preprocess:include file="admin.xml" />
+</services>

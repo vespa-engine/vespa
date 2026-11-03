@@ -54,20 +54,25 @@ bool JuniperQueryAdapter::Traverse(juniper::IQueryVisitor* v) const {
         case search::ParseItem::ITEM_WEAK_AND:
         case search::ParseItem::ITEM_EQUIV:
         case search::ParseItem::ITEM_WORD_ALTERNATIVES:
-            if (!v->VisitOR(&item, iterator.getArity()))
+            if (!v->VisitOR(&item, iterator.getArity())) {
                 rc = skipItem(iterator);
+            }
             break;
         case search::ParseItem::ITEM_AND:
-            if (!v->VisitAND(&item, iterator.getArity()))
+            if (!v->VisitAND(&item, iterator.getArity())) {
                 rc = skipItem(iterator);
+            }
             break;
         case search::ParseItem::ITEM_NOT:
-            if (!v->VisitANDNOT(&item, iterator.getArity()))
+            if (!v->VisitANDNOT(&item, iterator.getArity())) {
                 rc = skipItem(iterator);
+            }
             break;
         case search::ParseItem::ITEM_RANK:
-            if (!v->VisitRANK(&item, iterator.getArity()))
+        case search::ParseItem::ITEM_LABEL_WRAPPER:
+            if (!v->VisitRANK(&item, iterator.getArity())) {
                 rc = skipItem(iterator);
+            }
             break;
         case search::ParseItem::ITEM_PREFIXTERM:
         case search::ParseItem::ITEM_SUBSTRINGTERM:
@@ -106,16 +111,19 @@ bool JuniperQueryAdapter::Traverse(juniper::IQueryVisitor* v) const {
             }
         } break;
         case search::ParseItem::ITEM_PHRASE:
-            if (!v->VisitPHRASE(&item, iterator.getArity()))
+            if (!v->VisitPHRASE(&item, iterator.getArity())) {
                 rc = skipItem(iterator);
+            }
             break;
         case search::ParseItem::ITEM_NEAR:
-            if (!v->VisitNEAR(&item, iterator.getArity(), iterator.getNearDistance()))
+            if (!v->VisitNEAR(&item, iterator.getArity(), iterator.getNearDistance())) {
                 rc = skipItem(iterator);
+            }
             break;
         case search::ParseItem::ITEM_ONEAR:
-            if (!v->VisitWITHIN(&item, iterator.getArity(), iterator.getNearDistance()))
+            if (!v->VisitWITHIN(&item, iterator.getArity(), iterator.getNearDistance())) {
                 rc = skipItem(iterator);
+            }
             break;
         case search::ParseItem::ITEM_TRUE:
         case search::ParseItem::ITEM_FALSE:
@@ -137,6 +145,7 @@ bool JuniperQueryAdapter::Traverse(juniper::IQueryVisitor* v) const {
         case search::ParseItem::ITEM_FUZZY:
         case search::ParseItem::ITEM_STRING_IN:
         case search::ParseItem::ITEM_NUMERIC_IN:
+        case search::ParseItem::ITEM_STRING_RANGE_TERM:
             if (!v->VisitOther(&item, iterator.getArity())) {
                 rc = skipItem(iterator);
             }

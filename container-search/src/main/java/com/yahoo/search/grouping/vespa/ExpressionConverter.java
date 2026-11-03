@@ -7,6 +7,8 @@ import com.yahoo.search.grouping.request.AddFunction;
 import com.yahoo.search.grouping.request.AggregatorNode;
 import com.yahoo.search.grouping.request.AndFunction;
 import com.yahoo.search.grouping.request.AndPredicate;
+import com.yahoo.search.grouping.request.ArgmaxAggregator;
+import com.yahoo.search.grouping.request.ArgminAggregator;
 import com.yahoo.search.grouping.request.ArrayAtLookup;
 import com.yahoo.search.grouping.request.AttributeFunction;
 import com.yahoo.search.grouping.request.AttributeMapLookupValue;
@@ -30,6 +32,7 @@ import com.yahoo.search.grouping.request.GeoDistanceFunction;
 import com.yahoo.search.grouping.request.GroupingExpression;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.grouping.request.HourOfDayFunction;
+import com.yahoo.search.grouping.request.InPredicate;
 import com.yahoo.search.grouping.request.InfiniteValue;
 import com.yahoo.search.grouping.request.InterpolatedLookup;
 import com.yahoo.search.grouping.request.IsTruePredicate;
@@ -65,8 +68,8 @@ import com.yahoo.search.grouping.request.ModFunction;
 import com.yahoo.search.grouping.request.MonthOfYearFunction;
 import com.yahoo.search.grouping.request.MulFunction;
 import com.yahoo.search.grouping.request.NegFunction;
-import com.yahoo.search.grouping.request.NotPredicate;
 import com.yahoo.search.grouping.request.NormalizeSubjectFunction;
+import com.yahoo.search.grouping.request.NotPredicate;
 import com.yahoo.search.grouping.request.NowFunction;
 import com.yahoo.search.grouping.request.OrFunction;
 import com.yahoo.search.grouping.request.OrPredicate;
@@ -99,6 +102,7 @@ import com.yahoo.search.grouping.request.YearFunction;
 import com.yahoo.search.grouping.request.ZCurveXFunction;
 import com.yahoo.search.grouping.request.ZCurveYFunction;
 import com.yahoo.searchlib.aggregation.AggregationResult;
+import com.yahoo.searchlib.aggregation.ArgmaxAggregationResult;
 import com.yahoo.searchlib.aggregation.AverageAggregationResult;
 import com.yahoo.searchlib.aggregation.CountAggregationResult;
 import com.yahoo.searchlib.aggregation.ExpressionCountAggregationResult;
@@ -130,6 +134,7 @@ import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.GeoDistanceFunctionNode;
 import com.yahoo.searchlib.expression.GetDocIdNamespaceSpecificFunctionNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNode;
+import com.yahoo.searchlib.expression.InPredicateNode;
 import com.yahoo.searchlib.expression.IntegerBucketResultNodeVector;
 import com.yahoo.searchlib.expression.IntegerResultNode;
 import com.yahoo.searchlib.expression.InterpolatedLookupNode;
@@ -142,8 +147,8 @@ import com.yahoo.searchlib.expression.ModuloFunctionNode;
 import com.yahoo.searchlib.expression.MultiArgFunctionNode;
 import com.yahoo.searchlib.expression.MultiplyFunctionNode;
 import com.yahoo.searchlib.expression.NegateFunctionNode;
-import com.yahoo.searchlib.expression.NotPredicateNode;
 import com.yahoo.searchlib.expression.NormalizeSubjectFunctionNode;
+import com.yahoo.searchlib.expression.NotPredicateNode;
 import com.yahoo.searchlib.expression.NumElemFunctionNode;
 import com.yahoo.searchlib.expression.OrFunctionNode;
 import com.yahoo.searchlib.expression.OrPredicateNode;
@@ -254,6 +259,17 @@ class ExpressionConverter {
             return new SumAggregationResult()
                     .setExpression(toExpressionNode(aggregator.getExpression()));
         }
+        if (exp instanceof ArgmaxAggregator aggregator) {
+            return new ArgmaxAggregationResult()
+                    .setKeyExpression(toExpressionNode(aggregator.getKey()))
+                    .setExpression(toExpressionNode(aggregator.getExpression()));
+        }
+        if (exp instanceof ArgminAggregator aggregator) {
+            // argmin(key, value) is argmax(-key, value)
+            return new ArgmaxAggregationResult()
+                    .setKeyExpression(new NegateFunctionNode(toExpressionNode(aggregator.getKey())))
+                    .setExpression(toExpressionNode(aggregator.getExpression()));
+        }
         if (exp instanceof SummaryValue summaryValue) {
             String summaryName = summaryValue.getSummaryName();
             return new HitsAggregationResult()
@@ -279,6 +295,8 @@ class ExpressionConverter {
             return new RangePredicateNode(rp.getLower(), rp.getUpper(), toExpressionNode(rp.getExpression()), rp.getLowerInclusive(), rp.getUpperInclusive());
         } else if (expression instanceof IsTruePredicate rp) {
             return new IsTruePredicateNode(toExpressionNode(rp.getExpression()));
+        } else if (expression instanceof InPredicate ip) {
+            return new InPredicateNode(toExpressionNode(ip.getExpression()), ip.getArgs());
         } else if (expression instanceof NotPredicate np) {
             return new NotPredicateNode(toFilterExpressionNode(np.getExpression()));
         } else if (expression instanceof OrPredicate op) {

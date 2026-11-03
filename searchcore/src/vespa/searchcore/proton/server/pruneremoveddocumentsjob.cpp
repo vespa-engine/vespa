@@ -4,6 +4,7 @@
 
 #include "ipruneremoveddocumentshandler.h"
 
+#include <vespa/check_require.h>
 #include <vespa/persistence/spi/bucket_tasks.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
@@ -47,7 +48,7 @@ public:
               IDestructorCallback::SP opsTracker)
         : _job(std::move(job)), _lid(lid), _meta(meta), _opsTracker(std::move(opsTracker)) {}
     void run(const Bucket& bucket, IDestructorCallback::SP onDone) override;
-    void fail(const Bucket& bucket) override { assert(bucket.getBucketId() == _meta.getBucketId()); }
+    void fail(const Bucket& bucket) override { CHECK(bucket.getBucketId() == _meta.getBucketId()); }
 
 private:
     std::shared_ptr<PruneRemovedDocumentsJob> _job;
@@ -57,7 +58,7 @@ private:
 };
 
 void PruneRemovedDocumentsJob::PruneTask::run(const Bucket& bucket, IDestructorCallback::SP onDone) {
-    assert(bucket.getBucketId() == _meta.getBucketId());
+    CHECK(bucket.getBucketId() == _meta.getBucketId());
     using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallback::SP, IDestructorCallback::SP>>;
     auto& job = *_job;
     job._master.execute(makeLambdaTask(
@@ -69,17 +70,22 @@ void PruneRemovedDocumentsJob::PruneTask::run(const Bucket& bucket, IDestructorC
 }
 
 void PruneRemovedDocumentsJob::remove(uint32_t lid, const RawDocumentMetadata& oldMeta) {
-    if (stopped())
+    if (stopped()) {
         return;
-    if (!_metaStore.validLid(lid))
+    }
+    if (!_metaStore.validLid(lid)) {
         return;
+    }
     const RawDocumentMetadata& meta = _metaStore.getRawMetadata(lid);
-    if (meta.getBucketId() != oldMeta.getBucketId())
+    if (meta.getBucketId() != oldMeta.getBucketId()) {
         return;
-    if (meta.getTimestamp() != oldMeta.getTimestamp())
+    }
+    if (meta.getTimestamp() != oldMeta.getTimestamp()) {
         return;
-    if (meta.getGid() != oldMeta.getGid())
+    }
+    if (meta.getGid() != oldMeta.getGid()) {
         return;
+    }
 
     PruneRemovedDocumentsOperation pruneOp(_metaStore.getCommittedDocIdLimit(), _subDbId);
     pruneOp.getLidsToRemove()->addLid(lid);
@@ -92,11 +98,13 @@ bool PruneRemovedDocumentsJob::run() {
     const DocId     docIdLimit(_metaStore.getCommittedDocIdLimit());
     const DocId     lidLimit = std::min(_nextLid + 1000000u, docIdLimit);
     for (; !isBlocked() && _nextLid < lidLimit; _nextLid++) {
-        if (!_metaStore.validLid(_nextLid))
+        if (!_metaStore.validLid(_nextLid)) {
             continue;
+        }
         const RawDocumentMetadata& meta = _metaStore.getRawMetadata(_nextLid);
-        if (meta.getTimestamp() >= ageLimit)
+        if (meta.getTimestamp() >= ageLimit) {
             continue;
+        }
 
         _bucketExecutor.execute(
             Bucket(document::Bucket(_bucketSpace, meta.getBucketId())),

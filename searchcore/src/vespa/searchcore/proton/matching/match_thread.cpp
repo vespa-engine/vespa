@@ -5,7 +5,9 @@
 #include "document_scorer.h"
 #include "match_tools.h"
 #include "partial_result.h"
+#include "sort_feature_store.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
@@ -18,23 +20,20 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
-#include <limits>
+#include <optional>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_thread");
 
 namespace proton::matching {
 
-using search::attribute::AttributeOperation;
 using search::fef::BlueprintResolver;
 using search::fef::FeatureResolver;
 using search::fef::LazyValue;
-using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::queryeval::HitCollector;
 using search::queryeval::ProfiledIterator;
 using search::queryeval::SearchIterator;
-using search::queryeval::SortedHitSequence;
 
 namespace {
 
@@ -52,18 +51,18 @@ struct SimpleStrategy {
 
 LazyValue get_score_feature(const RankProgram& rankProgram) {
     FeatureResolver resolver(rankProgram.get_seeds());
-    assert(resolver.num_features() == 1u);
+    CHECK(resolver.num_features() == 1u);
     return resolver.resolve(0);
 }
 
-void fillPartialResult(ResultProcessor::Context& context, size_t totalHits, size_t numHits,
-                       const search::RankedHit* hits, const search::BitVector* bits) __attribute__((noinline));
+void fillPartialResult(ResultProcessor::Context& context, size_t totalHits, std::span<const search::RankedHit> hits,
+                       const search::BitVector* bits) __attribute__((noinline));
 
-void fillPartialResult(ResultProcessor::Context& context, size_t totalHits, size_t numHits,
-                       const search::RankedHit* hits, const search::BitVector* bits) {
+void fillPartialResult(ResultProcessor::Context& context, size_t totalHits, std::span<const search::RankedHit> hits,
+                       const search::BitVector* bits) {
     PartialResult& pr = *context.result;
     pr.totalHits(totalHits);
-    size_t                   maxHits = std::min(numHits, pr.maxSize());
+    size_t                   maxHits = std::min(hits.size(), pr.maxSize());
     const search::BitVector& validLids = context._validLids;
     if (pr.hasSortData()) {
         FastS_SortSpec& spec = context.sort->sortSpec;
@@ -95,18 +94,26 @@ void fillPartialResult(ResultProcessor::Context& context, size_t totalHits, size
 //-----------------------------------------------------------------------------
 
 MatchThread::Context::Context(std::optional<double> first_phase_rank_score_drop_limit, MatchTools& tools,
-                              HitCollector& hits, uint32_t num_threads)
+                              HitCollector& hits, uint32_t num_threads, std::optional<LazyValue> score_feature,
+                              SortFeatureStore* sort_store, std::span<const LazyValue> sort_seeds,
+                              bool sort_needs_unpack)
     : matches(0),
       _matches_limit(tools.match_limiter().sample_hits_per_thread(num_threads)),
-      _score_feature(get_score_feature(tools.rank_program())),
+      _score_feature(std::move(score_feature)),
       _first_phase_rank_score_drop_limit(first_phase_rank_score_drop_limit.value_or(0.0 /* ignored */)),
       _hits(hits),
       _doom(tools.getDoom()),
+      _sort_store(sort_store),
+      _sort_seeds(sort_seeds),
+      _sort_needs_unpack(sort_needs_unpack),
+      _sort_scratch(sort_store ? sort_store->num_features() : 0),
       dropped() {
 }
 
-template <MatchThread::RankDropLimitE use_rank_drop_limit> void MatchThread::Context::rankHit(uint32_t docId) {
-    double score = _score_feature.as_number(docId);
+MatchThread::Context::~Context() = default;
+
+template <MatchThread::RankDropLimitE use_rank_drop_limit> bool MatchThread::Context::rankHit(uint32_t docId) {
+    double score = (*_score_feature).as_number(docId);
     // convert NaN and Inf scores to -Inf
     if (__builtin_expect(std::isnan(score) || std::isinf(score), false)) {
         score = -HUGE_VAL;
@@ -114,12 +121,22 @@ template <MatchThread::RankDropLimitE use_rank_drop_limit> void MatchThread::Con
     if (use_rank_drop_limit != RankDropLimitE::no) {
         if (__builtin_expect(score > _first_phase_rank_score_drop_limit, true)) {
             _hits.addHit(docId, score);
+            return true;
         } else if (use_rank_drop_limit == RankDropLimitE::track) {
             dropped.emplace_back(docId);
         }
-    } else {
-        _hits.addHit(docId, score);
+        return false;
     }
+    _hits.addHit(docId, score);
+    return true;
+}
+
+void MatchThread::Context::record_sort(uint32_t docId) {
+    // Sort features are captured during matching and are not recomputed during result sorting.
+    for (uint32_t i = 0; i < _sort_scratch.size(); ++i) {
+        _sort_scratch[i] = _sort_seeds[i].as_number(docId);
+    }
+    _sort_store->record(docId, _sort_scratch);
 }
 
 //-----------------------------------------------------------------------------
@@ -169,16 +186,26 @@ bool MatchThread::try_share(DocidRange& docid_range, uint32_t next_docid) {
 }
 
 template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work,
-          MatchThread::RankDropLimitE use_rank_drop_limit>
+          MatchThread::RankDropLimitE use_rank_drop_limit, bool do_sort>
 uint32_t MatchThread::inner_match_loop(Context& context, MatchTools& tools, DocidRange& docid_range) {
     SearchIterator* search = &tools.search();
     search->initRange(docid_range.begin, docid_range.end);
-    uint32_t docId = search->seekFirst(docid_range.begin);
+    uint32_t   docId = search->seekFirst(docid_range.begin);
+    const bool sort_needs_unpack = do_sort && context.sort_needs_unpack();
     while ((docId < docid_range.end) && !context.atSoftDoom()) {
         if (do_rank) {
             search->unpack(docId);
-            context.rankHit<use_rank_drop_limit>(docId);
+            [[maybe_unused]] bool accepted = context.rankHit<use_rank_drop_limit>(docId);
+            if (do_sort && accepted) {
+                context.record_sort(docId);
+            }
         } else {
+            if (sort_needs_unpack) {
+                search->unpack(docId);
+            }
+            if (do_sort) {
+                context.record_sort(docId);
+            }
             context.addHit(docId);
         }
         context.matches++;
@@ -198,18 +225,30 @@ uint32_t MatchThread::inner_match_loop(Context& context, MatchTools& tools, Doci
 template <typename Strategy, bool do_rank, bool do_limit, bool do_share_work,
           MatchThread::RankDropLimitE use_rank_drop_limit>
 void MatchThread::match_loop(MatchTools& tools, HitCollector& hits) {
-    bool               softDoomed = false;
-    uint32_t           docsCovered = 0;
-    vespalib::duration overtime(vespalib::duration::zero());
-    Context            context(matchParams.first_phase_rank_score_drop_limit, tools, hits, num_threads);
+    bool                     softDoomed = false;
+    uint32_t                 docsCovered = 0;
+    vespalib::duration       overtime(vespalib::duration::zero());
+    std::optional<LazyValue> score_feature;
+    if constexpr (do_rank) {
+        score_feature = get_score_feature(tools.rank_program());
+    }
+    Context context(matchParams.first_phase_rank_score_drop_limit, tools, hits, num_threads, std::move(score_feature),
+                    tools.sort_store(), tools.sort_seeds(), tools.sort_needs_unpack());
     for (DocidRange docid_range = scheduler.first_range(thread_id); !docid_range.empty();
          docid_range = scheduler.next_range(thread_id))
     {
         // Due to some schedulers communicating across threads, it is vital that all complete this
         // loop. Do not break out.
         if (!softDoomed) {
-            uint32_t lastCovered = inner_match_loop<Strategy, do_rank, do_limit, do_share_work, use_rank_drop_limit>(
-                context, tools, docid_range);
+            uint32_t lastCovered;
+            if (tools.sort_store() == nullptr) {
+                lastCovered =
+                    inner_match_loop<Strategy, do_rank, do_limit, do_share_work, use_rank_drop_limit, false>(
+                        context, tools, docid_range);
+            } else {
+                lastCovered = inner_match_loop<Strategy, do_rank, do_limit, do_share_work, use_rank_drop_limit, true>(
+                    context, tools, docid_range);
+            }
             softDoomed = (lastCovered < docid_range.end);
             if (softDoomed) {
                 overtime = -context.timeLeft();
@@ -314,12 +353,24 @@ void MatchThread::secondPhase(MatchTools& tools, HitCollector& hits) {
     hits.setReRankedHits(std::move(kept_hits));
     hits.setRanges(ranges);
     if (auto onReRankTask = matchToolsFactory.createOnSecondPhaseTask()) {
+        // Submit the mutation asynchronously; result sorting does not wait for it.
         onReRankTask->run(hits.getReRankedHits());
     }
 }
 
 search::ResultSet::UP MatchThread::findMatches(MatchTools& tools) {
-    tools.setup_first_phase(first_phase_profiler.get());
+    if (tools.has_sort_selection()) {
+        // Created here, not in the constructor, so that only queries with an installed feature sort report it.
+        if (trace->getLevel() > 0) {
+            if (int32_t depth = trace->sort_features_profile_depth(); depth != 0) {
+                sort_features_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);
+            }
+        }
+        tools.setup_first_phase_and_sort(first_phase_profiler.get(), sort_features_profiler.get(),
+                                         match_with_ranking);
+    } else {
+        tools.setup_first_phase(first_phase_profiler.get());
+    }
     if (isFirstThread()) {
         LOG(spam, "SearchIterator: %s", tools.search().asString().c_str());
     }
@@ -345,11 +396,13 @@ search::ResultSet::UP MatchThread::findMatches(MatchTools& tools) {
      * If not you will have deadlock.
      */
     match_loop_helper(tools, hits);
-    if (tools.has_second_phase_rank()) {
+    tools.release_sort_program(); // sort RankProgram gone before second phase
+    const bool run_second_phase = match_with_ranking && tools.has_second_phase_rank();
+    if (run_second_phase) {
         secondPhase(tools, hits);
     }
     trace->addEvent(4, "Create result set");
-    if (tools.has_second_phase_rank() && matchParams.second_phase_rank_score_drop_limit.has_value()) {
+    if (run_second_phase && matchParams.second_phase_rank_score_drop_limit.has_value()) {
         return get_matches_after_second_phase_rank_score_drop(hits);
     } else {
         return hits.getResultSet();
@@ -376,41 +429,50 @@ std::unique_ptr<search::ResultSet> MatchThread::get_matches_after_second_phase_r
 }
 
 void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, ResultProcessor::Context& context) {
-    if (doom.hard_doom())
+    if (doom.hard_doom()) {
         return;
+    }
     bool hasGrouping = bool(context.grouping);
     if (context.sort->hasSortData() || hasGrouping) {
         result->mergeWithBitOverflow(fallback_rank_value());
     }
-    if (doom.hard_doom())
+    if (doom.hard_doom()) {
         return;
-    size_t                   totalHits = result->getNumHits(); // Must be done before modifying overflow
-    const search::RankedHit* hits = result->getArray();
-    size_t                   numHits = result->getArrayUsed();
-    search::BitVector*       bits = result->getBitOverflow();
-    if (bits != nullptr && hits != nullptr) {
-        bits->andNotWithT(search::RankedHitIterator(hits, numHits));
     }
-    if (doom.hard_doom())
+    size_t             totalHits = result->getNumHits(); // Must be done before modifying overflow
+    const auto&        hits = result->array_view();
+    search::BitVector* bits = result->getBitOverflow();
+    if (bits != nullptr && hits.size() > 0) {
+        bits->andNotWithT(search::RankedHitIterator(hits.data(), hits.size()));
+    }
+    if (doom.hard_doom()) {
         return;
+    }
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
-        man.groupUnordered(_distributionKey, hits, numHits, bits);
+        man.groupUnordered(_distributionKey, hits, bits);
     }
-    if (doom.hard_doom())
+    if (doom.hard_doom()) {
         return;
-    size_t sortLimit = hasGrouping ? numHits : context.result->maxSize();
+    }
+    size_t sortLimit = hasGrouping ? hits.size() : context.result->maxSize();
     result->sort(*context.sort->sorter, sortLimit);
-    if (doom.hard_doom())
+    if (context.sort->sortSpec.feature_values_failed()) {
+        // The hits are not in the requested order; the matcher fails the query.
+        resultProcessor.note_sort_feature_failure();
+    }
+    if (doom.hard_doom()) {
         return;
+    }
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
-        man.groupInRelevanceOrder(_distributionKey, hits, numHits);
+        man.groupInRelevanceOrder(_distributionKey, hits);
         man.convertToGlobalId(matchToolsFactory.metaStore());
     }
-    if (doom.hard_doom())
+    if (doom.hard_doom()) {
         return;
-    fillPartialResult(context, totalHits, numHits, hits, bits);
+    }
+    fillPartialResult(context, totalHits, hits, bits);
 
     if (auto task = matchToolsFactory.createOnMatchTask()) {
         task->run(result->copyResult());
@@ -425,7 +487,7 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
 MatchThread::MatchThread(size_t thread_id_in, size_t num_threads_in, const MatchParams& mp,
                          const MatchToolsFactory& mtf, IMatchLoopCommunicator& com, DocidRangeScheduler& sched,
                          ResultProcessor& rp, vespalib::DualMergeDirector& md, uint32_t distributionKey,
-                         const Trace& parent_trace)
+                         const Trace& parent_trace, bool query_token_held_in, double query_token_wait_s_in)
     : thread_id(thread_id_in),
       num_threads(num_threads_in),
       matchParams(mp),
@@ -441,11 +503,14 @@ MatchThread::MatchThread(size_t thread_id_in, size_t num_threads_in, const Match
       total_time_s(0.0),
       match_time_s(0.0),
       wait_time_s(0.0),
+      query_token_held(query_token_held_in),
+      query_token_wait_s(query_token_wait_s_in),
       match_with_ranking(mtf.has_first_phase_rank() && mp.save_rank_scores()),
       trace(parent_trace.make_trace_up()),
       match_profiler(),
       first_phase_profiler(),
       second_phase_profiler(),
+      sort_features_profiler(),
       my_issues() {
     if (trace->getLevel() > 0) {
         if (int32_t depth = trace->match_profile_depth(); depth != 0) {
@@ -473,19 +538,44 @@ void MatchThread::run() {
      */
     search::ResultSet::UP result = findMatches(*matchTools);
     match_time_s = vespalib::to_s(match_time.elapsed());
-    resultContext = resultProcessor.createThreadContext(matchTools->getDoom(), thread_id, _distributionKey);
+    // The store is handed over even when its values will never be read, so that
+    // binding a doomed or otherwise unused query fails only on a genuinely
+    // unavailable feature.
+    SortFeatureStore* sort_store = matchTools->sort_store();
+    resultContext =
+        resultProcessor.createThreadContext(matchTools->getDoom(), thread_id, _distributionKey, sort_store);
     {
-        trace->addEvent(5, "Wait for result processing token");
-        WaitTimer               get_token_timer(wait_time_s);
-        QueryLimiter::Token::UP processToken(matchTools->getQueryLimiter().getToken(
-            matchTools->getDoom(), scheduler.total_size(thread_id), result->getNumHits(),
-            resultContext->sort->hasSortData(), bool(resultContext->grouping)));
-        get_token_timer.done();
+        /**
+         * The token must not be held while waiting for other threads in the
+         * bundle, since they may be waiting for a token themselves. When the
+         * match master holds a token for the whole query, no per-thread token
+         * is needed.
+         */
+        QueryLimiter::Token::UP processToken;
+        if (!query_token_held) {
+            trace->addEvent(5, "Wait for result processing token");
+            WaitTimer get_token_timer(wait_time_s);
+            processToken = matchTools->getQueryLimiter().getToken(
+                matchTools->getDoom(), scheduler.total_size(thread_id), result->getNumHits(),
+                resultContext->sort->hasSortData(), bool(resultContext->grouping));
+            get_token_timer.done();
+        }
+        // The recorded values are of no use once we are past the hard deadline or
+        // when the selected sorter does not read them; releasing them here frees
+        // the storage before the sorter allocates its own scratch. Otherwise the
+        // store must be in docid order before result processing seeks in it.
+        if (sort_store) {
+            if (matchTools->getDoom().hard_doom() || !resultContext->sort->hasSortData()) {
+                sort_store->consumed();
+            } else {
+                sort_store->ensure_sorted_for_read();
+            }
+        }
         trace->addEvent(5, "Start result processing");
         processResult(matchTools->getDoom(), std::move(result), *resultContext);
     }
     total_time_s = vespalib::to_s(total_time.elapsed());
-    thread_stats.active_time(total_time_s - wait_time_s).wait_time(wait_time_s);
+    thread_stats.active_time(total_time_s - wait_time_s).wait_time(wait_time_s + query_token_wait_s);
     trace->addEvent(4, "Start thread merge");
     mergeDirector.dualMerge(thread_id, *resultContext->result, resultContext->groupingSource);
     trace->addEvent(4, "MatchThread::run Done");
@@ -499,6 +589,11 @@ void MatchThread::run() {
     }
     if (second_phase_profiler) {
         second_phase_profiler->report(trace->createCursor("second_phase_profiling"), [](const std::string& name) {
+            return BlueprintResolver::describe_feature(name);
+        });
+    }
+    if (sort_features_profiler) {
+        sort_features_profiler->report(trace->createCursor("sort_features_profiling"), [](const std::string& name) {
             return BlueprintResolver::describe_feature(name);
         });
     }

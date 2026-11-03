@@ -72,8 +72,8 @@ std::string LiteralFieldValueB::getAsString() const {
     return getValue();
 }
 
-std::pair<const char*, size_t> LiteralFieldValueB::getAsRaw() const {
-    return std::make_pair(_value.data(), _value.size());
+std::span<const char> LiteralFieldValueB::getAsRaw() const {
+    return _value;
 }
 
 void LiteralFieldValueB::syncBacking() const {

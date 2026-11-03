@@ -42,8 +42,9 @@ std::string toStr(Iterator itr) {
     oss << "[";
     bool firstWord = true;
     for (auto word : words) {
-        if (!firstWord)
+        if (!firstWord) {
             oss << ",";
+        }
         oss << word.ref();
         firstWord = false;
     }

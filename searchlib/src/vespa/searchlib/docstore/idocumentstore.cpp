@@ -13,4 +13,8 @@ void IDocumentStore::visit(const LidVector& lids, const document::DocumentTypeRe
     }
 }
 
+void IDocumentStore::move(uint64_t syncToken, DocumentIdT, DocumentIdT toLid, const document::Document& doc) {
+    write(syncToken, toLid, doc);
+}
+
 } // namespace search

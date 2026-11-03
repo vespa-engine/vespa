@@ -11,8 +11,9 @@ LegacySubscriber::~LegacySubscriber() {
 }
 
 void LegacySubscriber::close() {
-    if (_fetcher.get() != nullptr)
+    if (_fetcher.get() != nullptr) {
         _fetcher->close();
+    }
 }
 
 } // namespace config

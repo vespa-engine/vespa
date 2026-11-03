@@ -46,10 +46,12 @@ void MapDataType::print(std::ostream& out, bool verbose, const std::string& inde
 }
 
 bool MapDataType::equals(const DataType& other) const noexcept {
-    if (this == &other)
+    if (this == &other) {
         return true;
-    if (!DataType::equals(other))
+    }
+    if (!DataType::equals(other)) {
         return false;
+    }
     const MapDataType* w = other.cast_map();
     return w && _keyType->equals(*w->_keyType) && _valueType->equals(*w->_valueType);
 }

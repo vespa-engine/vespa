@@ -4,11 +4,11 @@
 
 #include "distributor_bucket_space.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/vespalib/util/printable.hpp>
 
-#include <cassert>
 #include <sstream>
 
 namespace storage::distributor {
@@ -37,8 +37,9 @@ void BucketInstance::print(vespalib::asciistream& out, const PrintProperties&) c
 
 bool BucketInstanceList::contains(lib::Node node) const {
     for (const auto& instance : _instances) {
-        if (instance._node == node)
+        if (instance._node == node) {
             return true;
+        }
     }
     return false;
 }
@@ -85,14 +86,14 @@ void BucketInstanceList::limitToRedundancyCopies(uint16_t redundancy) {
 document::BucketId BucketInstanceList::leastSpecificLeafBucketInSubtree(const document::BucketId& candidateId,
                                                                         const document::BucketId& mostSpecificId,
                                                                         const BucketDatabase&     db) {
-    assert(candidateId.contains(mostSpecificId));
+    CHECK(candidateId.contains(mostSpecificId));
     document::BucketId treeNode = candidateId;
     // treeNode may reach at most 58 bits since buckets at 58 bits by definition
     // cannot have any children.
     while (db.childCount(treeNode) != 0) {
         treeNode = document::BucketId(treeNode.getUsedBits() + 1, mostSpecificId.getRawId());
     }
-    assert(treeNode.contains(mostSpecificId));
+    CHECK(treeNode.contains(mostSpecificId));
     return treeNode;
 }
 
@@ -185,8 +186,9 @@ struct LegacyInstanceOrder {
         if (a._bucket == b._bucket) {
             // Trusted only makes sense within same bucket
             // Prefer trusted buckets over non-trusted ones.
-            if (a._trusted != b._trusted)
+            if (a._trusted != b._trusted) {
                 return a._trusted;
+            }
             if (a._ideal_location_priority != b._ideal_location_priority) {
                 return a._ideal_location_priority < b._ideal_location_priority;
             }

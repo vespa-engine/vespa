@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
+
 #include <string.h>
 #include <unistd.h>
 #include <util/filereader.h>
 
-#include <cassert>
 #include <iostream>
 
 /**
@@ -81,7 +82,7 @@ int main(int argc, char** argv) {
 
     // filter the input
     char* line = new char[bufsize];
-    assert(line != nullptr);
+    CHECK(line != nullptr);
     int   res;
     char* tmp;
     char* url;
@@ -90,7 +91,7 @@ int main(int argc, char** argv) {
     int   idx;
     int   outIdx;
     char* buf = new char[bufsize];
-    assert(buf != nullptr);
+    CHECK(buf != nullptr);
     int  state; // 0=expect param name, 1=copy, 2=skip
     bool gotQuery;
     memcpy(buf, prefix, prefixlen);
@@ -102,13 +103,15 @@ int main(int argc, char** argv) {
 
         // find url beginning
         url = strstr(line + startIdx, trigger);
-        if (url == nullptr)
+        if (url == nullptr) {
             continue; // CONTINUE
+        }
 
         // find field end
         tmp = strstr(line + startIdx, endToken);
-        if (tmp == nullptr)
+        if (tmp == nullptr) {
             tmp = strstr(line + startIdx, "\"");
+        }
         endIdx = (tmp != nullptr) ? (tmp - line) : strlen(line);
 
         // find params: scan forward until we pass the '?' separator
@@ -116,8 +119,9 @@ int main(int argc, char** argv) {
         while (idx < endIdx && line[idx++] != '?') {
             // empty body
         }
-        if (idx >= endIdx)
+        if (idx >= endIdx) {
             continue; // CONTINUE
+        }
 
         outIdx = prefixlen;
         state = 0; // expect param name
@@ -134,16 +138,19 @@ int main(int argc, char** argv) {
                 buf[outIdx++] = line[idx];
                 [[fallthrough]];
             case 2:
-                if (line[idx++] == '&')
+                if (line[idx++] == '&') {
                     state = 0;
+                }
                 break;
             }
         }
-        if (!gotQuery)
+        if (!gotQuery) {
             continue; // CONTINUE
+        }
 
-        if (buf[outIdx - 1] == '&')
+        if (buf[outIdx - 1] == '&') {
             outIdx--;
+        }
         buf[outIdx++] = '\n';
         buf[outIdx] = '\0';
         if (!file.write(buf, outIdx)) {

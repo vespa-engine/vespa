@@ -135,7 +135,8 @@ public class McpSearchSpecProvider extends AbstractComponent implements McpSpecP
         fields.forEach((name, f) -> {
             Map<String, Object> fieldDetails = new LinkedHashMap<>();
             fieldDetails.put("name", f.name());
-            fieldDetails.put("type", f.type().toString());
+            if (f.type() != null)
+                fieldDetails.put("type", f.type().toString());
             fieldDetails.put("isIndex", f.isIndex());
             fieldDetails.put("isAttribute", f.isAttribute());
             fieldDetails.put((f instanceof Field) ? "aliases" : "fieldNames",

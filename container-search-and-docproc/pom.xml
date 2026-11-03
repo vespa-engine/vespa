@@ -234,6 +234,21 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- OpenTelemetry, also declared in container-search and NOT duplication: the bundle-plugin reads only
+         THIS module's provided dependencies when generating Import-Package, so removing these two silently
+         ships a bundle with no OTel imports and fails at the first span. Do not remove as redundant. -->
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-opentelemetry</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- TEST scope -->
     <dependency>
       <groupId>junit</groupId>

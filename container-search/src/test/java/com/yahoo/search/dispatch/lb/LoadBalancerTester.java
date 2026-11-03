@@ -98,7 +98,7 @@ public class LoadBalancerTester {
     }
 
     /** Asserts that the expected number of requests per group matches the actual. */
-    private void assertLb(List<Integer> expected, List<Integer> actual) {
+    public void assertLb(List<Integer> expected, List<Integer> actual) {
         if ( deviationPercentage == 0.0) { // Give better assert failure messages
             assertEquals(expected, actual);
         }
@@ -120,11 +120,11 @@ public class LoadBalancerTester {
                    message + ": Expected " + expected + " but was " + actual);
     }
 
-    private List<Integer> loadBalance(List<Group> groups, String localAZ) {
+    public List<Integer> loadBalance(List<Group> groups, String localAZ) {
         return loadBalance(groups, List.of(), localAZ);
     }
 
-    private List<Integer> loadBalance(List<Group> groups, List<Group> rejected, String localAZ) {
+    public List<Integer> loadBalance(List<Group> groups, List<Group> rejected, String localAZ) {
         LoadBalancer lb = new LoadBalancer(groups, policy, localAZ, 1);
         List<Integer> requestCounts = new ArrayList<>(groups.size());
         for (int i = 0; i < groups.size(); i++)

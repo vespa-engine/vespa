@@ -73,12 +73,14 @@ protected:
         }
 
         bool operator==(const Iterator& other) const {
-            if (_field == nullptr && other._field == nullptr)
+            if (_field == nullptr && other._field == nullptr) {
                 // both at end()
                 return true;
-            if (_field == nullptr || other._field == nullptr)
+            }
+            if (_field == nullptr || other._field == nullptr) {
                 // one at end()
                 return false;
+            }
             return (*_field == *other._field);
         }
         bool operator!=(const Iterator& other) const { return !(operator==(other)); }

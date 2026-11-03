@@ -2,14 +2,13 @@
 
 #include "bitvectordictionary.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadertags.h>
 #include <vespa/searchlib/common/read_stats.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/error.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.bitvectordictionary");
@@ -49,10 +48,10 @@ bool BitVectorDictionary::open(const std::string& pathPrefix, const TuneFileRand
         vespalib::FileHeader idxHeader;
         uint32_t             idxHeaderLen = idxHeader.readFile(idxFile);
         idxFile.SetPosition(idxHeaderLen);
-        assert(idxHeader.hasTag(FROZEN));
-        assert(idxHeader.hasTag(DOCID_LIMIT));
-        assert(idxHeader.hasTag(NUM_KEYS));
-        assert(idxHeader.getTag(FROZEN).asInteger() != 0);
+        CHECK(idxHeader.hasTag(FROZEN));
+        CHECK(idxHeader.hasTag(DOCID_LIMIT));
+        CHECK(idxHeader.hasTag(NUM_KEYS));
+        CHECK(idxHeader.getTag(FROZEN).asInteger() != 0);
         _docIdLimit = idxHeader.getTag(DOCID_LIMIT).asInteger();
         uint32_t numEntries = idxHeader.getTag(NUM_KEYS).asInteger();
         if (idxHeader.hasTag(ENTRY_SIZE)) {
@@ -66,10 +65,10 @@ bool BitVectorDictionary::open(const std::string& pathPrefix, const TuneFileRand
 
         _entries.resize(numEntries);
         size_t bufSize = sizeof(WordSingleKey) * numEntries;
-        assert(idxFile.getSize() >= static_cast<int64_t>(idxHeaderLen + bufSize));
+        CHECK(idxFile.getSize() >= static_cast<int64_t>(idxHeaderLen + bufSize));
         if (bufSize > 0) {
             ssize_t has_read = idxFile.Read(&_entries[0], bufSize);
-            assert(has_read == ssize_t(bufSize));
+            CHECK(has_read == ssize_t(bufSize));
         }
     }
 
@@ -90,7 +89,7 @@ bool BitVectorDictionary::open(const std::string& pathPrefix, const TuneFileRand
     }
     vespalib::FileHeader datHeader(64);
     _datHeaderLen = datHeader.readFile(*_datFile);
-    assert(_datFile->getSize() >= static_cast<int64_t>(_vectorSize * _entries.size() + _datHeaderLen));
+    CHECK(_datFile->getSize() >= static_cast<int64_t>(_vectorSize * _entries.size() + _datHeaderLen));
     _memory_mapped = (_datFile->MemoryMapPtr(0) != nullptr);
     _create_and_freeze_times.merge(CreateAndFreezeTimes(datHeader));
     return true;

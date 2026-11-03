@@ -4,5 +4,5 @@
 Dependency artifact for building container bundles.
 To build standalone document clients, use `documentapi` instead.
 
-The actual java code remains in `documentapi`, becuase it uses
+The actual java code remains in `documentapi`, because it uses
 common test files with the C++ code in the same module.

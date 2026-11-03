@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
@@ -75,7 +76,7 @@ void saveAttr(const std::string& name, const Config& cfg, SerialNum serialNum, S
     av->addReservedDoc();
     uint32_t docId;
     av->addDoc(docId);
-    assert(docId == 1u);
+    CHECK(docId == 1u);
     av->clearDoc(docId);
     if (cfg.basicType().type() == BasicType::Type::INT32 && cfg.collectionType().type() == CollectionType::Type::WSET)
     {

@@ -2,7 +2,7 @@
 
 #include "simple_buffer.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 
@@ -13,20 +13,20 @@ Memory SimpleBuffer::obtain() {
 }
 
 Input& SimpleBuffer::evict(size_t bytes) {
-    assert(bytes <= _used);
+    CHECK(bytes <= _used);
     _data.erase(_data.begin(), _data.begin() + bytes);
     _used -= bytes;
     return *this;
 }
 
 WritableMemory SimpleBuffer::reserve(size_t bytes) {
-    assert((_used + bytes) >= _used);
+    CHECK((_used + bytes) >= _used);
     _data.resize(_used + bytes, char(0x55));
     return {_data.data() + _used, bytes};
 }
 
 Output& SimpleBuffer::commit(size_t bytes) {
-    assert(bytes <= (_data.size() - _used));
+    CHECK(bytes <= (_data.size() - _used));
     _used += bytes;
     return *this;
 }

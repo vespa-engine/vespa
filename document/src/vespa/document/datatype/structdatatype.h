@@ -1,20 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * \class document::StructDataType
- * \ingroup datatype
- *
- * \brief A data type describing what can be contained in a struct field value.
- *
- * Describes what can be stored in a struct.
- */
+
 #pragma once
 
 #include "structureddatatype.h"
 
 #include <vespa/vespalib/stllike/hash_map.h>
 
+#include <optional>
+
 namespace document {
 
+/**
+ * A data type describing what can be contained in a struct field value.
+ *
+ * Describes what can be stored in a struct.
+ */
 class StructDataType final : public StructuredDataType {
 public:
     using UP = std::unique_ptr<StructDataType>;
@@ -27,8 +27,8 @@ public:
     ~StructDataType();
 
     /**
-     * @throws vespalib::IllegalArgumentException if field conflicts with
-     *                                            already existing field.
+     * Throws vespalib::IllegalArgumentException if field conflicts with
+     * already existing field.
      */
     void addField(const Field& field);
 
@@ -67,8 +67,8 @@ private:
     StringFieldMap _nameFieldMap;
     IntFieldMap    _idFieldMap;
 
-    /** @return "" if not conflicting. Error message otherwise. */
-    std::string containsConflictingField(const Field& field) const;
+    /** Returns empty string if not conflicting. Error message otherwise. */
+    std::optional<std::string> containsConflictingField(const Field& field) const;
 };
 
 } // namespace document

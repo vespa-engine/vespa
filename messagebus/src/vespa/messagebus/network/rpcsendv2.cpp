@@ -5,6 +5,7 @@
 #include "rpcnetwork.h"
 #include "rpcserviceaddress.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/reflection.h>
 #include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/messagebus/emptyreply.h>
@@ -190,7 +191,7 @@ void RPCSendV2::encodeRequest(FRT_RPCRequest& req, const Version& version, const
     args.AddInt8(type);
     args.AddInt32(toCompress.size());
     const auto bufferLength = buf.getDataLen();
-    assert(bufferLength <= INT32_MAX);
+    CHECK(bufferLength <= INT32_MAX);
     args.AddData(std::move(buf).stealBuffer(), bufferLength);
 }
 
@@ -239,7 +240,7 @@ public:
         DataBuffer     uncompressed(arg[5]._data._buf, arg[5]._data._len);
         ConstBufferRef blob(arg[5]._data._buf, arg[5]._data._len);
         decompress(CompressionConfig::toType(encoding), uncompressedSize, blob, uncompressed, true);
-        assert(uncompressedSize == uncompressed.getDataLen());
+        CHECK(uncompressedSize == uncompressed.getDataLen());
         BinaryFormat::decode(Memory(uncompressed.getData(), uncompressed.getDataLen()), _slime);
     }
 
@@ -280,7 +281,7 @@ std::unique_ptr<Reply> RPCSendV2::createReply(const FRT_Values& ret, const strin
     DataBuffer     uncompressed(ret[5]._data._buf, ret[5]._data._len);
     ConstBufferRef blob(ret[5]._data._buf, ret[5]._data._len);
     decompress(CompressionConfig::toType(encoding), uncompressedSize, blob, uncompressed, true);
-    assert(uncompressedSize == uncompressed.getDataLen());
+    CHECK(uncompressedSize == uncompressed.getDataLen());
     Slime slime;
     BinaryFormat::decode(Memory(uncompressed.getData(), uncompressed.getDataLen()), slime);
     Inspector& root = slime.get();
@@ -348,7 +349,7 @@ void RPCSendV2::createResponse(FRT_Values& ret, const string& version, Reply& re
 
     ret.AddInt8(type);
     ret.AddInt32(toCompress.size());
-    assert(buf.getDataLen() <= INT32_MAX);
+    CHECK(buf.getDataLen() <= INT32_MAX);
     ret.AddData(std::move(buf));
 }
 

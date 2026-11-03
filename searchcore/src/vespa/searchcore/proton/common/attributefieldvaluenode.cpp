@@ -4,13 +4,12 @@
 
 #include "selectcontext.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-#include <cassert>
 
 namespace proton {
 
@@ -38,7 +37,7 @@ AttributeFieldValueNode::AttributeFieldValueNode(const std::string& doctype, con
 std::unique_ptr<document::select::Value> AttributeFieldValueNode::getValue(const Context& context) const {
     const auto& sc(dynamic_cast<const SelectContext&>(context));
     uint32_t    docId(sc._lid);
-    assert(docId != 0u);
+    CHECK(docId != 0u);
     const auto& v = sc.guarded_attribute_at_index(_attr_guard_index);
     if (v.isUndefined(docId)) {
         return std::make_unique<NullValue>();
@@ -61,7 +60,7 @@ std::unique_ptr<document::select::Value> AttributeFieldValueNode::getValue(const
         return std::make_unique<FloatValue>(v.getFloat(docId));
     case BasicType::TENSOR: {
         auto* tensor_attr = v.asTensorAttribute();
-        assert(tensor_attr != nullptr);
+        CHECK(tensor_attr != nullptr);
         if (tensor_attr->getTensor(sc._lid)) {
             // This returns a sentinel tensor value that can only be used for
             // checking field presence, not actual tensor _contents_.

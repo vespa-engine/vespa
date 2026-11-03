@@ -14,13 +14,14 @@ namespace search::attribute {
  * for a query term on a single value string enumerated attribute vector using
  * dictionary information to eliminate searches for nonexisting words.
  */
-class SingleStringEnumHintSearchContext : public SingleStringEnumSearchContext, public EnumHintSearchContext {
+template <typename Matcher>
+class SingleStringEnumHintSearchContextT : public SingleStringEnumSearchContextT<Matcher>,
+                                           public EnumHintSearchContext {
 public:
-    SingleStringEnumHintSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased,
-                                      vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm,
-                                      const AttributeVector& toBeSearched, EnumIndices enum_indices,
-                                      const EnumStoreT<const char*>& enum_store, uint64_t num_values);
-    ~SingleStringEnumHintSearchContext() override;
+    SingleStringEnumHintSearchContextT(Matcher&& matcher, const AttributeVector& toBeSearched,
+                                       typename SingleStringEnumHintSearchContextT::EnumIndices enum_indices,
+                                       const EnumStoreT<const char*>& enum_store, uint64_t num_values);
+    ~SingleStringEnumHintSearchContextT() override;
 };
 
 } // namespace search::attribute

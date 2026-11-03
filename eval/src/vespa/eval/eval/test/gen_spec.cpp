@@ -2,6 +2,7 @@
 
 #include "gen_spec.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/string_stuff.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -50,11 +51,11 @@ Sequence Seq(const std::vector<double>& seq) {
 //-----------------------------------------------------------------------------
 
 DimSpec::DimSpec(const std::string& name, size_t size) noexcept : _name(name), _size(size), _dict() {
-    assert(_size);
+    CHECK(_size);
 }
 DimSpec::DimSpec(const std::string& name, std::vector<std::string> dict) noexcept
     : _name(name), _size(), _dict(std::move(dict)) {
-    assert(!_size);
+    CHECK(!_size);
 }
 
 DimSpec::DimSpec(DimSpec&&) noexcept = default;

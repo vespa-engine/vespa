@@ -152,8 +152,9 @@ void DocumentType::inherit(const DocumentType& docType) {
 
 bool DocumentType::isA(const DataType& other) const {
     for (const DocumentType* docType : _inheritedTypes) {
-        if (docType->isA(other))
+        if (docType->isA(other)) {
             return true;
+        }
     }
     return equals(other);
 }
@@ -185,22 +186,28 @@ void DocumentType::print(std::ostream& out, bool verbose, const std::string& ind
 }
 
 bool DocumentType::equals(const DataType& other) const noexcept {
-    if (&other == this)
+    if (&other == this) {
         return true;
-    if (!DataType::equals(other))
+    }
+    if (!DataType::equals(other)) {
         return false;
+    }
     const auto* o(dynamic_cast<const DocumentType*>(&other));
-    if (o == nullptr)
+    if (o == nullptr) {
         return false;
-    if (!_fields->equals(*o->_fields))
+    }
+    if (!_fields->equals(*o->_fields)) {
         return false;
-    if (_inheritedTypes.size() != o->_inheritedTypes.size())
+    }
+    if (_inheritedTypes.size() != o->_inheritedTypes.size()) {
         return false;
+    }
     auto it1 = _inheritedTypes.begin();
     auto it2 = o->_inheritedTypes.begin();
     while (it1 != _inheritedTypes.end()) {
-        if (!(*it1)->equals(**it2))
+        if (!(*it1)->equals(**it2)) {
             return false;
+        }
         ++it1;
         ++it2;
     }

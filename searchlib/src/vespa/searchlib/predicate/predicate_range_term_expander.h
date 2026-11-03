@@ -30,11 +30,13 @@ public:
           _lower_bound(lower_bound),
           _upper_bound(upper_bound) {
         uint64_t t = _upper_bound;
-        while ((t /= _arity) > 0)
+        while ((t /= _arity) > 0) {
             ++_max_positive_levels;
+        }
         t = uint64_t(0) - _lower_bound;
-        while ((t /= _arity) > 0)
+        while ((t /= _arity) > 0) {
             ++_max_negative_levels;
+        }
     }
 
     template <typename Handler> void expand(const std::string& key, int64_t value, Handler& handler);

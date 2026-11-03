@@ -4,12 +4,17 @@ package com.yahoo.schema.derived;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
+import com.yahoo.schema.ApplicationBuilder;
+import com.yahoo.schema.parser.ParseException;
+import com.yahoo.vespa.config.search.IndexschemaConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -189,6 +194,33 @@ public class IndexSchemaTestCase {
                 new Field("foo.my_raw", DataType.getArray(DataType.getArray(DataType.RAW))),
                 new Field("foo.my_string", DataType.getArray(DataType.getArray(DataType.STRING))),
                 new Field("foo.my_uri", DataType.getArray(DataType.getArray(DataType.URI))));
+    }
+
+    @Test
+    void requireThatUriFieldsAreListed() throws ParseException {
+        var schema = ApplicationBuilder.createFromString(
+                joinLines("search test {",
+                        "  document test {",
+                        "    field my_uri type uri {",
+                        "      indexing: index",
+                        "    }",
+                        "    field my_uri_array type array<uri> {",
+                        "      indexing: index",
+                        "    }",
+                        "    field my_uri_summary type uri {",
+                        "      indexing: summary",
+                        "    }",
+                        "    field my_string type string {",
+                        "      indexing: index",
+                        "    }",
+                        "  }",
+                        "}")).getSchema();
+        var builder = new IndexschemaConfig.Builder();
+        new IndexSchema(schema).getConfig(builder);
+        var config = builder.build();
+        assertTrue(config.explicituris());
+        assertEquals(List.of("my_uri", "my_uri_array"),
+                     config.urifield().stream().map(IndexschemaConfig.Urifield::name).toList());
     }
 
     private static void assertFlat(Field fieldToFlatten, Field... expectedFields) {

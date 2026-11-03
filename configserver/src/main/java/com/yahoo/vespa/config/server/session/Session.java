@@ -160,7 +160,7 @@ public abstract class Session implements Comparable<Session>  {
         return sessionZooKeeperClient.readOperatorCertificates();
     }
 
-    public Optional<CloudAccount> getCloudAccount() {
+    public CloudAccount getCloudAccount() {
         return sessionZooKeeperClient.readCloudAccount();
     }
 

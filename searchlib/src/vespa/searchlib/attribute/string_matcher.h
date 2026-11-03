@@ -8,9 +8,12 @@
 
 namespace search {
 class QueryTermSimple;
-}
+template <class EntryT> class EnumStoreT;
+} // namespace search
 
 namespace search::attribute {
+
+class EnumHintSearchContext;
 
 /*
  * Class used to determine if an attribute vector string value is a match for
@@ -27,7 +30,6 @@ public:
     StringMatcher(StringMatcher&&) noexcept;
     ~StringMatcher();
 
-protected:
     bool isValid() const;
     bool match(const char* src) const { return _helper.isMatch(src); }
     bool isPrefix() const { return _helper.isPrefix(); }
@@ -43,6 +45,7 @@ protected:
                         const DfaStringComparator::DataStoreType& data_store) const {
         return _helper.is_fuzzy_match(word, itr, data_store);
     }
+    void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
 };
 
 } // namespace search::attribute

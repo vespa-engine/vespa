@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/cell_type.h>
 
 #include <span>
@@ -38,7 +39,7 @@ struct TypedCells {
     template <typename T> bool check_type() const noexcept { return check_cell_type<T>(type); }
 
     template <typename T> std::span<const T> typify() const noexcept {
-        assert(check_type<T>());
+        CHECK(check_type<T>());
         return std::span<const T>((const T*)data, size);
     }
     template <typename T> std::span<const T> unsafe_typify() const noexcept {

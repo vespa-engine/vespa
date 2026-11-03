@@ -4,6 +4,7 @@
 
 #include "querynodes.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
@@ -11,6 +12,7 @@
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/label_wrapper_blueprint.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/vespalib/util/issue.h>
@@ -100,7 +102,7 @@ private:
 
     void buildWordAlternatives(ProtonWordAlternatives& n) {
         const auto& children = n.getChildren();
-        assert(children.size() == n.getNumTerms());
+        CHECK(children.size() == n.getNumTerms());
         double                                  eqw = n.getWeight().percent();
         std::vector<std::unique_ptr<Blueprint>> term_bps;
         for (const auto& child : children) {
@@ -112,7 +114,7 @@ private:
             specs.add(n.field(i).fieldSpec());
         }
         auto eq = std::make_unique<EquivBlueprint>(std::move(specs), EquivBlueprint::allocate_outside_equiv_tag{});
-        assert(term_bps.size() == n.getNumTerms());
+        CHECK(term_bps.size() == n.getNumTerms());
         for (uint32_t idx = 0; idx < n.getNumTerms(); idx++) {
             const auto& child = children[idx];
             double      w = child->getWeight().percent();
@@ -121,6 +123,21 @@ private:
         eq->setDocIdLimit(_context.getDocIdLimit());
         n.setDocumentFrequency(eq->getState().estimate().estHits, _context.getDocIdLimit());
         _result = std::move(eq);
+    }
+
+    void buildLabelWrapper(ProtonLabelWrapper& n) {
+        // The reserved "no field" is resolved unconditionally, so this should always hold;
+        // fall back to a plain rank if it somehow does not, losing only the raw score.
+        if (n.numFields() != 1) {
+            buildIntermediate(new RankBlueprint(), n);
+            return;
+        }
+        auto handle = n.field(0).getHandle(); // Records in HandleRecorder
+        if (handle == search::fef::IllegalHandle) {
+            buildIntermediate(new RankBlueprint(), n);
+            return;
+        }
+        buildIntermediate(new LabelWrapperBlueprint(handle, n.getLabelScore()), n);
     }
 
     void buildSameElement(ProtonSameElement& n) {
@@ -154,8 +171,8 @@ private:
         Mixer         mixer;
         for (size_t i = 0; i < n.numFields(); ++i) {
             const ProtonTermData::FieldEntry& field = n.field(i);
-            assert(field.getFieldId() != search::fef::IllegalFieldId);
-            assert(field.getHandle() != search::fef::IllegalHandle);
+            CHECK(field.getFieldId() != search::fef::IllegalFieldId);
+            CHECK(field.getHandle() != search::fef::IllegalHandle);
             if (field.attribute_field) {
                 mixer.addAttribute(
                     _context.getAttributes().createBlueprint(_requestContext, field.fieldSpec(), n, _global_layout));
@@ -180,6 +197,7 @@ protected:
     void visit(ProtonEquiv& n) override { buildEquiv(n); }
     void visit(ProtonWordAlternatives& n) override { buildWordAlternatives(n); }
     void visit(ProtonRank& n) override { buildIntermediate(new RankBlueprint(), n); }
+    void visit(ProtonLabelWrapper& n) override { buildLabelWrapper(n); }
     void visit(ProtonNear& n) override {
         buildIntermediate(new NearBlueprint(n.getDistance(), n.num_negative_terms(), n.exclusion_distance(),
                                             _requestContext.get_element_gap_inspector()),
@@ -201,12 +219,14 @@ protected:
     void visit(ProtonLocationTerm& n) override { buildTerm(n); }
     void visit(ProtonPrefixTerm& n) override { buildTerm(n); }
     void visit(ProtonRangeTerm& n) override { buildTerm(n); }
+    void visit(ProtonStringRangeTerm& n) override { buildTerm(n); }
     void visit(ProtonStringTerm& n) override { buildTerm(n); }
     void visit(ProtonSubstringTerm& n) override { buildTerm(n); }
     void visit(ProtonSuffixTerm& n) override { buildTerm(n); }
     void visit(ProtonPredicateQuery& n) override { buildTerm(n); }
     void visit(ProtonRegExpTerm& n) override { buildTerm(n); }
     void visit(ProtonNearestNeighborTerm& n) override { buildTerm(n); }
+    void visit(ProtonSparseTensorWandTerm& n) override { buildTerm(n); }
     void visit(ProtonTrue&) override { _result = std::make_unique<AlwaysTrueBlueprint>(); }
     void visit(ProtonFalse&) override { _result = std::make_unique<EmptyBlueprint>(); }
     void visit(ProtonFuzzyTerm& n) override { buildTerm(n); }
@@ -217,7 +237,7 @@ public:
                             search::fef::MatchDataLayout& global_layout)
         : _requestContext(requestContext), _context(context), _global_layout(global_layout), _result() {}
     Blueprint::UP build() {
-        assert(_result);
+        CHECK(_result);
         return std::move(_result);
     }
     static Blueprint::UP build(const IRequestContext& requestContext, Node& node, ISearchContext& context,

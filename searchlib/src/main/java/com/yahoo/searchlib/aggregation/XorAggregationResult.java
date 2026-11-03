@@ -19,11 +19,9 @@ public final class XorAggregationResult extends AggregationResult {
     private long xor = 0;
 
     /**
-     * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
+     * Constructs an empty result node.
      */
-    public XorAggregationResult() {
-
-    }
+    public XorAggregationResult() {}
 
     /**
      * Constructs an instance of this class with given xor value.

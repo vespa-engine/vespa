@@ -37,7 +37,7 @@ public class SessionSerializer {
                Version vespaVersion, Optional<Version> versionToBuildFirst,
                Optional<AthenzDomain> athenzDomain, Optional<Quota> quota,
                List<TenantVault> tenantVaults, List<TenantSecretStore> tenantSecretStores,
-               List<X509Certificate> operatorCertificates, Optional<CloudAccount> cloudAccount,
+               List<X509Certificate> operatorCertificates, CloudAccount cloudAccount,
                CloudResourceTags cloudResourceTags,
                List<DataplaneToken> dataplaneTokens, ActivationTriggers activationTriggers,
                TelemetryExporterConfiguration telemetryExporterConfiguration,

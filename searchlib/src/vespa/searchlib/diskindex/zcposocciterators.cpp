@@ -5,10 +5,9 @@
 #include "features_size_flush.h"
 #include "zc4_posting_params.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-
-#include <cassert>
 
 namespace search::diskindex {
 
@@ -28,7 +27,7 @@ ZcRareWordPosOccIterator<bigEndian, dynamic_k>::ZcRareWordPosOccIterator(
                                                       decode_interleaved_features, unpack_normal_features,
                                                       unpack_interleaved_features),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams) {
-    assert(!this->_matchData.valid() || (fieldsParams->getNumFields() == this->_matchData.size()));
+    CHECK(!this->_matchData.valid() || (fieldsParams->getNumFields() == this->_matchData.size()));
     _decodeContext = &_decodeContextReal;
 }
 
@@ -45,7 +44,7 @@ ZcPosOccIterator<bigEndian, dynamic_k>::ZcPosOccIterator(
                                    decode_normal_features, decode_interleaved_features, unpack_normal_features,
                                    unpack_interleaved_features),
       _decodeContextReal(start.getOccurences(), start.getBitOffset(), bitLength, fieldsParams) {
-    assert(!this->_matchData.valid() || (fieldsParams->getNumFields() == this->_matchData.size()));
+    CHECK(!this->_matchData.valid() || (fieldsParams->getNumFields() == this->_matchData.size()));
     _decodeContext = &_decodeContextReal;
 }
 
@@ -69,8 +68,8 @@ std::unique_ptr<search::queryeval::SearchIterator> create_zc_posocc_iterator(
         UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
         num_docs = static_cast<uint32_t>(val64) + 1;
     }
-    assert((num_docs == counts._numDocs) ||
-           ((num_docs == posting_params._min_chunk_docs || features_size_flush) && (num_docs < counts._numDocs)));
+    CHECK((num_docs == counts._numDocs) ||
+          ((num_docs == posting_params._min_chunk_docs || features_size_flush) && (num_docs < counts._numDocs)));
     if (num_docs < posting_params._min_skip_docs && !features_size_flush) {
         if (posting_params._dynamic_k) {
             return std::make_unique<ZcRareWordPosOccIterator<bigEndian, true>>(

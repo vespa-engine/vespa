@@ -4,11 +4,10 @@
 
 #include "streamed_value_index.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
-
-#include <cassert>
 
 namespace vespalib::eval {
 
@@ -34,7 +33,7 @@ public:
           _my_cells(std::move(cells)),
           _my_labels(std::move(handles)),
           _my_index(num_mapped_dimensions, num_subspaces, _my_labels.view()) {
-        assert(num_subspaces * _type.dense_subspace_size() == _my_cells.size());
+        CHECK(num_subspaces * _type.dense_subspace_size() == _my_cells.size());
     }
 
     ~StreamedValue();

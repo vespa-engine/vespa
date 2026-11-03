@@ -5,9 +5,8 @@
 #include "attributevector.h"
 #include "load_utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/multivalue.h>
-
-#include <cassert>
 
 namespace search::attribute {
 
@@ -34,7 +33,7 @@ uint32_t loadFromEnumeratedMultiValue(
         indices.reserve(valueCount);
         for (uint32_t vci = 0; vci < valueCount; ++vci) {
             uint32_t enumValue = attrReader.getNextEnum();
-            assert(enumValue < enumValueToValueMap.size());
+            CHECK(enumValue < enumValueToValueMap.size());
             if (!enum_value_remapping.empty()) {
                 enumValue = enum_value_remapping[enumValue];
             }
@@ -53,7 +52,7 @@ uint32_t loadFromEnumeratedMultiValue(
         }
         mapping.set(doc, indices);
     }
-    assert(totalValueCount == numValues);
+    CHECK(totalValueCount == numValues);
     mapping.doneLoadFromMultiValue();
     (void)numValues;
     return maxValueCount;
@@ -72,7 +71,7 @@ void loadFromEnumeratedSingleValue(
     vector.unsafe_reserve(numDocs);
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
         uint32_t enumValue = attrReader.getNextEnum();
-        assert(enumValue < enumValueToValueMap.size());
+        CHECK(enumValue < enumValueToValueMap.size());
         if (!enum_value_remapping.empty()) {
             enumValue = enum_value_remapping[enumValue];
         }

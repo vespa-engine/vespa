@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespamalloc/malloc/check_require.h>
 #include <vespamalloc/util/osmem.h>
 
 #include <atomic>
-#include <cassert>
 #include <cstdio>
 #include <new>
 #include <thread>
@@ -127,7 +127,7 @@ void logStackTrace() __attribute__((noinline));
     {                                        \
         if (__builtin_expect(!(a), false)) { \
             vespamalloc::logStackTrace();    \
-            assert(a);                       \
+            CHECK(a);                        \
         }                                    \
     }
 

@@ -19,14 +19,14 @@ vespa_add_library(vespa_hwaccelerated
     DEPENDS
     INSTALL lib64
 )
-set_source_files_properties(avx2.cpp              PROPERTIES COMPILE_FLAGS "-O3 -march=haswell")
-set_source_files_properties(avx3.cpp              PROPERTIES COMPILE_FLAGS "-O3 -march=skylake-avx512 -mprefer-vector-width=512")
-set_source_files_properties(avx3_dl.cpp           PROPERTIES COMPILE_FLAGS "-O3 -march=icelake-server -mprefer-vector-width=512")
+vespa_compile_flag_for(avx2.cpp              "-O3 -march=haswell")
+vespa_compile_flag_for(avx3.cpp              "-O3 -march=skylake-avx512 -mprefer-vector-width=512")
+vespa_compile_flag_for(avx3_dl.cpp           "-O3 -march=icelake-server -mprefer-vector-width=512")
 
-set_source_files_properties(neon.cpp              PROPERTIES COMPILE_FLAGS "-O3 -march=armv8.2-a")
-set_source_files_properties(neon_fp16_dotprod.cpp PROPERTIES COMPILE_FLAGS "-O3 -march=armv8.2-a+fp16+dotprod+crypto -mtune=neoverse-n1")
-set_source_files_properties(sve.cpp               PROPERTIES COMPILE_FLAGS "-O3 -march=armv8.2-a+sve -mtune=neoverse-n1")
-set_source_files_properties(sve2.cpp              PROPERTIES COMPILE_FLAGS "-O3 -march=armv8.2-a+sve2 -mtune=neoverse-n1")
+vespa_compile_flag_for(neon.cpp              "-O3 -march=armv8.2-a")
+vespa_compile_flag_for(neon_fp16_dotprod.cpp "-O3 -march=armv8.2-a+fp16+dotprod+crypto -mtune=neoverse-n1")
+vespa_compile_flag_for(sve.cpp               "-O3 -march=armv8.2-a+sve -mtune=neoverse-n1")
+vespa_compile_flag_for(sve2.cpp              "-O3 -march=armv8.2-a+sve2 -mtune=neoverse-n1")
 
 set(BLA_VENDOR OpenBLAS)
 vespa_add_target_package_dependency(vespa_hwaccelerated BLAS)

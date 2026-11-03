@@ -79,6 +79,12 @@ void ProtonTermData::resolveFromChildren(const std::vector<Node*>& subterms) {
     }
 }
 
+void ProtonTermData::resolve_no_field() {
+    const FieldInfo& info = FieldInfo::no_field();
+    _fields.clear();
+    _fields.emplace_back(info.name(), info.id(), false);
+}
+
 void ProtonTermData::allocateTerms(MatchDataLayout& mdl) {
     for (size_t i = 0; i < _fields.size(); ++i) {
         _fields[i]._field_spec.setHandle(mdl.allocTermField(_fields[i].getFieldId()));
@@ -140,12 +146,14 @@ template struct ProtonTerm<search::query::NumberTerm>;
 template struct ProtonTerm<search::query::Phrase>;
 template struct ProtonTerm<search::query::PrefixTerm>;
 template struct ProtonTerm<search::query::RangeTerm>;
+template struct ProtonTerm<search::query::StringRangeTerm>;
 template struct ProtonTerm<search::query::StringTerm>;
 template struct ProtonTerm<search::query::SubstringTerm>;
 template struct ProtonTerm<search::query::SuffixTerm>;
 template struct ProtonTerm<search::query::WeightedSetTerm>;
 template struct ProtonTerm<search::query::DotProduct>;
 template struct ProtonTerm<search::query::WandTerm>;
+template struct ProtonTerm<search::query::SparseTensorWandTerm>;
 template struct ProtonTerm<search::query::PredicateQuery>;
 template struct ProtonTerm<search::query::RegExpTerm>;
 template struct ProtonTerm<search::query::FuzzyTerm>;
@@ -154,6 +162,7 @@ template struct ProtonTerm<search::query::WordAlternatives>;
 
 ProtonAndNot::~ProtonAndNot() = default;
 ProtonEquiv::~ProtonEquiv() = default;
+ProtonLabelWrapper::~ProtonLabelWrapper() = default;
 ProtonWordAlternatives::~ProtonWordAlternatives() = default;
 ProtonSameElement::~ProtonSameElement() = default;
 ProtonNearestNeighborTerm::~ProtonNearestNeighborTerm() = default;

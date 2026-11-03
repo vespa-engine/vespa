@@ -4,7 +4,8 @@
 
 #include "internal.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <cstdarg>
 #include <iomanip>
 #include <map>
@@ -109,10 +110,12 @@ struct Cache {
             const auto& eb = deref(map.find(b));
             system_time ta = ea.getAgeFactor();
             system_time tb = eb.getAgeFactor();
-            if (ta < tb)
+            if (ta < tb) {
                 return true;
-            if (tb < ta)
+            }
+            if (tb < ta) {
                 return false;
+            }
             return a < b;
         }
     };
@@ -139,25 +142,25 @@ struct Cache {
             // In order to add one to count, we need to remove and re-insert in age order set.
             uint64_t oldId = curEntry.sequenceId;
             auto     it = _age_order.find(oldId);
-            assert(it != _age_order.end());
+            CHECK(it != _age_order.end());
             _age_order.erase(it);
             curEntry._count++;
             _age_order.insert(oldId);
         }
-        assert(_entry_map.size() == _entry_order.size());
-        assert(_entry_order.size() == _age_order.size());
+        CHECK(_entry_map.size() == _entry_order.size());
+        CHECK(_entry_order.size() == _age_order.size());
         return curEntry;
     }
 
     void remove(uint64_t sequenceId) {
         auto place = _entry_order.find(sequenceId);
-        assert(place != _entry_order.end());
+        CHECK(place != _entry_order.end());
         // NB keep order of erase calls:
         _age_order.erase(sequenceId);
         _entry_map.erase(place->second);
         _entry_order.erase(place);
-        assert(_entry_map.size() == _entry_order.size());
-        assert(_entry_order.size() == _age_order.size());
+        CHECK(_entry_map.size() == _entry_order.size());
+        CHECK(_entry_order.size() == _age_order.size());
     }
 
     struct iterator {
@@ -186,11 +189,11 @@ struct Cache {
         for (uint64_t seq : _age_order) {
             if (seq < limit) {
                 auto place = _entry_order.find(seq);
-                assert(place != _entry_order.end());
+                CHECK(place != _entry_order.end());
                 return deref(place);
             }
         }
-        assert(false);
+        CHECK(false);
     }
 };
 
@@ -283,8 +286,9 @@ void BufferedLogger::doLog(Logger& l, Logger::LogLevel level, const char* file, 
     vsnprintf(&buffer[0], buffer.capacity(), fmt, args);
     std::string message(&buffer[0]);
     // Empty token means to use message itself as token
-    if (token.empty())
+    if (token.empty()) {
         token = message;
+    }
 
     _backing->logImpl(l, level, file, line, token, message);
 }

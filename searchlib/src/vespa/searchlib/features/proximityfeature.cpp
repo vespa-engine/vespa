@@ -31,8 +31,9 @@ void ProximityExecutor::execute(uint32_t docId) {
         const fef::TermFieldMatchData& matchB = *_md->resolveTermField(_termB);
 
         if (matchA.has_ranking_data(docId) && matchB.has_ranking_data(docId)) {
-            if (findBest(matchA, matchB))
+            if (findBest(matchA, matchB)) {
                 return;
+            }
         }
     }
     // no match

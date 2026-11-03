@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/int8float.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value_type_spec.h>
@@ -6,7 +7,6 @@
 #include <vespa/vespalib/util/bfloat16.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <cassert>
 #include <ostream>
 
 using vespalib::BFloat16;
@@ -16,7 +16,7 @@ const size_t npos = ValueType::Dimension::npos;
 
 ValueType type(const std::string& type_str) {
     ValueType ret = ValueType::from_spec(type_str);
-    assert(!ret.is_error() || (type_str == "error"));
+    CHECK(!ret.is_error() || (type_str == "error"));
     return ret;
 }
 

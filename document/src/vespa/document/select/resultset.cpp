@@ -17,12 +17,14 @@ ResultSet::PreCalculated::PreCalculated(uint32_t range) : _ands(range * range), 
             ResultSet myand;
             ResultSet myor;
             for (uint32_t lenum = 0; lenum < erange; ++lenum) {
-                if (!lset.hasEnum(lenum))
+                if (!lset.hasEnum(lenum)) {
                     continue;
+                }
                 const Result& lhs(Result::fromEnum(lenum));
                 for (uint32_t renum = 0; renum < erange; ++renum) {
-                    if (!rset.hasEnum(renum))
+                    if (!rset.hasEnum(renum)) {
                         continue;
+                    }
                     const Result& rhs(Result::fromEnum(renum));
                     myand.add(lhs && rhs);
                     myor.add(lhs || rhs);
@@ -33,8 +35,9 @@ ResultSet::PreCalculated::PreCalculated(uint32_t range) : _ands(range * range), 
         }
         ResultSet mynot;
         for (uint32_t lenum = 0; lenum < erange; ++lenum) {
-            if (!lset.hasEnum(lenum))
+            if (!lset.hasEnum(lenum)) {
                 continue;
+            }
             const Result& lhs(Result::fromEnum(lenum));
             mynot.add(!lhs);
         }

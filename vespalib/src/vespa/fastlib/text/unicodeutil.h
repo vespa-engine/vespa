@@ -80,9 +80,9 @@ public:
      * @return Pointer to the next position in dst after the putted byte(s).
      */
     static char* utf8cput(char* dst, ucs4_t i) noexcept {
-        if (i < 128)
+        if (i < 128) {
             *dst++ = i;
-        else if (i < 0x800) {
+        } else if (i < 0x800) {
             *dst++ = (i >> 6) | 0xc0;
             *dst++ = (i & 63) | 0x80;
         } else if (i < 0x10000) {
@@ -125,18 +125,19 @@ public:
      * @return The number of bytes required for the UTF-8 representation.
      */
     static size_t utf8clen(ucs4_t i) noexcept {
-        if (i < 128)
+        if (i < 128) {
             return 1;
-        else if (i < 0x800)
+        } else if (i < 0x800) {
             return 2;
-        else if (i < 0x10000)
+        } else if (i < 0x10000) {
             return 3;
-        else if (i < 0x200000)
+        } else if (i < 0x200000) {
             return 4;
-        else if (i < 0x4000000)
+        } else if (i < 0x4000000) {
             return 5;
-        else
+        } else {
             return 6;
+        }
     }
 
     /**

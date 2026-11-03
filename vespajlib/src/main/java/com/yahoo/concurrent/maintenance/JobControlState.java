@@ -15,7 +15,7 @@ public interface JobControlState {
     /** Returns the set of jobs that are temporarily inactive */
     Set<String> readInactiveJobs();
 
-    /** Acquire lock for running given job */
+    /** Acquire lock for running given job. Throws UncheckedTimeoutException if another run holds the lock */
     Mutex lockMaintenanceJob(String job);
 
 }

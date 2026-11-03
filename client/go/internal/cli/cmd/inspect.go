@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
@@ -23,7 +24,20 @@ type inspectProfileOptions struct {
 	showQueryNodes      []int
 }
 
+const inspectProfileDisclaimer = `This command is internal tooling and is not a supported public API.
+Its flags, output format, and behavior may change or be removed without
+notice between releases. Do not rely on it in scripts, integrations, or
+other production workflows.`
+
+func printInspectProfileDisclaimer(cli *CLI) {
+	border := "================================================================"
+	fmt.Fprintln(cli.Stderr, color.YellowString(border))
+	fmt.Fprintln(cli.Stderr, color.YellowString("WARNING: "+inspectProfileDisclaimer))
+	fmt.Fprintln(cli.Stderr, color.YellowString(border))
+}
+
 func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
+	printInspectProfileDisclaimer(cli)
 	var r io.ReadCloser
 	switch opts.profileFile {
 	case "-":
@@ -73,7 +87,9 @@ func newInspectProfileCmd(cli *CLI) *cobra.Command {
 		Use:    "profile",
 		Hidden: true,
 		Short:  "Inspect profiling results",
-		Long:   `Inspect profiling results previously obtained by vespa query --profile`,
+		Long: `Inspect profiling results previously obtained by vespa query --profile
+
+WARNING: ` + inspectProfileDisclaimer,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return inspectProfile(cli, &opts)
 		},

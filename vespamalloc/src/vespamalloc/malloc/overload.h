@@ -16,7 +16,7 @@ public:
     static constexpr unsigned DESTRUCTED = 0xd1d2d3d4;
     CreateAllocator() : _initialized(CONSTRUCTED) { vespamalloc::createAllocator(); }
     ~CreateAllocator() {
-        assert(_initialized == CONSTRUCTED);
+        CHECK(_initialized == CONSTRUCTED);
         _initialized = DESTRUCTED;
     }
 

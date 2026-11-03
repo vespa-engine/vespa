@@ -27,10 +27,12 @@ public:
     void add(size_t count_in, T total_in, T min_in, T max_in) {
         _count += count_in;
         _total += total_in;
-        if (min_in < _min)
+        if (min_in < _min) {
             _min = min_in;
-        if (max_in > _max)
+        }
+        if (max_in > _max) {
             _max = max_in;
+        }
     }
     size_t count() const { return _count; }
     T total() const { return _total; }

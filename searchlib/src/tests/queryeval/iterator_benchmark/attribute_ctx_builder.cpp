@@ -2,6 +2,7 @@
 
 #include "attribute_ctx_builder.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -69,7 +70,7 @@ void populate_attribute(AttributeType& attr, uint32_t docid_limit, const HitSpec
         std::vector<uint32_t> values(docid_limit, 0);
         uint32_t              docid = 1;
         for (auto spec : hit_specs) {
-            assert((docid + spec.num_hits) <= docid_limit);
+            CHECK((docid + spec.num_hits) <= docid_limit);
             std::fill_n(values.begin() + docid, spec.num_hits, spec.term_value);
             docid += spec.num_hits;
         }
@@ -87,7 +88,7 @@ AttributeVector::SP make_attribute(const Config& cfg, std::string_view field_nam
     attr->addReservedDoc();
     attr->addDocs(num_docs);
     uint32_t docid_limit = attr->getNumDocs();
-    assert(docid_limit == (num_docs + 1));
+    CHECK(docid_limit == (num_docs + 1));
     bool is_multivalue = cfg.collectionType() != CollectionType::SINGLE;
     if (attr->isStringType()) {
         auto& real = dynamic_cast<StringAttribute&>(*attr);
@@ -119,7 +120,7 @@ public:
         FakeRequestContext        req_ctx(_attr_ctx.get());
         MatchDataLayout           mdl;
         auto                      bp = factory.createBlueprint(req_ctx, field_spec, term, mdl);
-        assert(mdl.empty());
+        CHECK(mdl.empty());
         return bp;
     }
 };

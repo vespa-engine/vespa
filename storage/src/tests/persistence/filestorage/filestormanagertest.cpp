@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -1199,11 +1200,11 @@ spi::IteratorId createIterator(DummyStorageLink& link, const document::BucketId&
         makeDocumentBucket(bucket), selection, document::AllFields::NAME, spi::NEWEST_DOCUMENT_ONLY);
     link.sendDown(createIterCmd);
     link.waitForMessages(1, FileStorManagerTest::LONG_WAITTIME);
-    assert(link.getNumReplies() == 1);
+    CHECK(link.getNumReplies() == 1);
     auto reply = std::dynamic_pointer_cast<CreateIteratorReply>(link.getReply(0));
-    assert(reply.get());
+    CHECK(reply.get());
     link.reset();
-    assert(reply->getResult().success());
+    CHECK(reply->getResult().success());
     return reply->getIteratorId();
 }
 

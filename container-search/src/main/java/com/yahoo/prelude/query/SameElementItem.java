@@ -26,12 +26,18 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
 
     @Override
     protected void encodeThis(ByteBuffer buffer, SerializationContext context) {
+        // The binary query stack format has no element filter field, and silently dropping the
+        // filter would over-match, so refuse rather than produce a query with different semantics.
+        if ( ! elementFilter.isEmpty()) {
+            throw new IllegalStateException("cannot serialize sameElement with an element filter in old protocol");
+        }
         super.encodeThis(buffer, context);
         putString(fieldName, buffer);
     }
 
     @Override
     protected void appendHeadingString(StringBuilder buffer) { }
+
     @Override
     protected void appendBodyString(StringBuilder buffer) {
         buffer.append(fieldName);
@@ -81,18 +87,12 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
 
     /**
      * Set an element filter. The filter cannot contain null values or negative numbers.
-     * <p>
-     * The filter will be deduplicates and sorted.
+     * The filter will be deduplicated and sorted.
      */
     public void setElementFilter(List<Integer> filter) {
-        if (filter == null || filter.isEmpty()) {
-            elementFilter = new ArrayList<>();
-            return;
-        }
-        elementFilter = filter.stream()
-                .distinct()
-                .sorted()
-                .toList();
+        if (filter == null)
+            filter = new ArrayList<>();
+        elementFilter = filter.stream().distinct().sorted().toList();
     }
 
     @Override
@@ -103,12 +103,13 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
     @Override
     public boolean equals(Object other) {
         if ( ! super.equals(other)) return false;
-        return Objects.equals(this.fieldName, ((SameElementItem)other).fieldName);
+        return Objects.equals(this.fieldName, ((SameElementItem)other).fieldName)
+               && Objects.equals(this.elementFilter, ((SameElementItem)other).elementFilter);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), fieldName);
+        return Objects.hash(super.hashCode(), fieldName, elementFilter);
     }
 
     @Override

@@ -4,6 +4,7 @@
 #include "client_common.h"
 #include "domain.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
@@ -64,7 +65,7 @@ bool SyncHandler::poll() {
     }
     _domain->triggerSyncNow(vespalib::makeUniqueLambdaCallback([self = shared_from_this()]() {
         bool completed = self->poll();
-        assert(completed);
+        CHECK(completed);
     }));
     return false;
 }

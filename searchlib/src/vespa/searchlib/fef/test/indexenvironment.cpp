@@ -2,6 +2,7 @@
 
 #include "indexenvironment.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -19,6 +20,9 @@ const FieldInfo* IndexEnvironment::getField(uint32_t id) const {
 }
 
 const FieldInfo* IndexEnvironment::getFieldByName(const string& name) const {
+    if (name.empty()) {
+        return nullptr; // the "no field" is not name addressable
+    }
     for (const auto& field : _fields) {
         if (field.name() == name) {
             return &field;
@@ -39,7 +43,7 @@ vespalib::eval::ConstantValue::UP IndexEnvironment::getConstantValue(const std::
 void IndexEnvironment::addConstantValue(const std::string& name, vespalib::eval::ValueType type,
                                         std::unique_ptr<vespalib::eval::Value> value) {
     auto insertRes = _constants.emplace(name, Constant(std::move(type), std::move(value)));
-    assert(insertRes.second); // successful insert
+    CHECK(insertRes.second); // successful insert
     (void)insertRes;
 }
 

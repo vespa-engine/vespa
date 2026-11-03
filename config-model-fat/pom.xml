@@ -131,7 +131,7 @@
             </goals>
             <configuration>
               <rules>
-                <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.EnforceDependencies">
+                <enforceDependencies>
                   <!--
                   Validate which dependencies, including transitive, are embedded inside the fat model jar
                   -->

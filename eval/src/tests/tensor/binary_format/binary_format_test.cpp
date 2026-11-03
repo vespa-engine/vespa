@@ -54,8 +54,9 @@ void verify_encode_decode(const TensorSpec& spec, const ValueBuilderFactory& enc
 void verify_encode_decode(const GenSpec& spec) {
     for (CellType ct : CellTypeUtils::list_types()) {
         auto my_spec = spec.cpy().cells(ct);
-        if (my_spec.bad_scalar())
+        if (my_spec.bad_scalar()) {
             continue;
+        }
         auto my_tspec = my_spec.gen();
         verify_encode_decode(my_tspec, simple, fast);
         verify_encode_decode(my_tspec, fast, simple);

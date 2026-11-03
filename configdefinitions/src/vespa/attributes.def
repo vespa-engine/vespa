@@ -45,3 +45,7 @@ attribute[].index.hnsw.maxlinkspernode int default=16
 attribute[].index.hnsw.neighborstoexploreatinsert int default=200
 # Whether multi-threaded indexing is enabled for this hnsw index.
 attribute[].index.hnsw.multithreadedindexing bool default=true
+
+# For tensor attributes, specifies the number of quantized bits used per dense dimension.
+# 0 bits implies no quantization is used, i.e. the tensor attribute is lossless.
+attribute[].quantization.bits int default=0

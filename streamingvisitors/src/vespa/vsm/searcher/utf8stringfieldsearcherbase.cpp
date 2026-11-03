@@ -4,7 +4,7 @@
 
 #include "tokenizereader.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 using search::byte;
 using search::streaming::QueryTerm;
@@ -192,7 +192,7 @@ size_t UTF8StringFieldSearcherBase::skipSeparators(const search::byte* p, size_t
             }
         }
     }
-    assert(dstbuf.valid());
+    CHECK(dstbuf.valid());
     return dstbuf.size();
 }
 

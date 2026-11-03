@@ -8,6 +8,8 @@
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
 
+#include <cstdlib>
+
 #include <vespa/log/log.h>
 LOG_SETUP("multibitvectoriterator_test");
 

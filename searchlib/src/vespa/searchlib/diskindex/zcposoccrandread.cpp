@@ -4,12 +4,12 @@
 
 #include "zcposocciterators.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 
-#include <cassert>
 #include <cstring>
 
 #include <vespa/log/log.h>
@@ -72,8 +72,8 @@ ZcPosOccRandRead::~ZcPosOccRandRead() {
 std::unique_ptr<search::queryeval::SearchIterator>
 ZcPosOccRandRead::createIterator(const DictionaryLookupResult& lookup_result, const PostingListHandle& handle,
                                  const search::fef::TermFieldMatchDataArray& matchData) const {
-    assert((lookup_result.counts._numDocs != 0) == (lookup_result.counts._bitLength != 0));
-    assert(handle._bitOffsetMem <= lookup_result.bitOffset);
+    CHECK((lookup_result.counts._numDocs != 0) == (lookup_result.counts._bitLength != 0));
+    CHECK(handle._bitOffsetMem <= lookup_result.bitOffset);
 
     if (lookup_result.counts._bitLength == 0) {
         return std::make_unique<search::queryeval::EmptySearch>();
@@ -117,8 +117,8 @@ PostingListHandle ZcPosOccRandRead::read_posting_list(const DictionaryLookupResu
         void*  alignedBuffer = nullptr;
         if (mallocLen > 0) {
             alignedBuffer = _file->AllocateDirectIOBuffer(mallocLen);
-            assert(alignedBuffer != nullptr);
-            assert(file_range.end_offset + padAfter + padExtraAfter <= _fileSize);
+            CHECK(alignedBuffer != nullptr);
+            CHECK(file_range.end_offset + padAfter + padExtraAfter <= _fileSize);
             _file->ReadBuf(alignedBuffer, padBefore + vectorLen + padAfter, file_range.start_offset - padBefore);
         }
         // Zero decode prefetch memory to avoid uninitialized reads
@@ -142,15 +142,15 @@ void ZcPosOccRandRead::consider_trim_posting_list(const DictionaryLookupResult& 
     auto   file_range = get_file_range(lookup_result, _headerBitSize);
     size_t malloc_len = file_range.size() + decode_prefetch_size;
     if (handle._allocSize == malloc_len) {
-        assert(handle._allocMem.get() == handle._mem);
+        CHECK(handle._allocMem.get() == handle._mem);
         return;
     }
-    assert(handle._allocSize >= malloc_len);
+    CHECK(handle._allocSize >= malloc_len);
     if (handle._allocSize <= malloc_len * (1.0 + bloat_factor)) {
         return;
     }
     auto* mem = malloc(malloc_len);
-    assert(mem != nullptr);
+    CHECK(mem != nullptr);
     memcpy(mem, handle._mem, malloc_len);
     handle._allocMem = std::shared_ptr<void>(mem, free);
     handle._mem = mem;
@@ -208,19 +208,19 @@ template <typename DecodeContext> void ZcPosOccRandRead::readHeader(const std::s
     vespalib::FileHeader header;
     d.readHeader(header, _file->getSize());
     uint32_t headerLen = header.getSize();
-    assert(header.hasTag("frozen"));
-    assert(header.hasTag("fileBitSize"));
-    assert(header.hasTag("format.0"));
-    assert(header.hasTag("format.1"));
-    assert(!header.hasTag("format.2"));
-    assert(header.hasTag("numWords"));
-    assert(header.hasTag("minChunkDocs"));
-    assert(header.hasTag("docIdLimit"));
-    assert(header.hasTag("minSkipDocs"));
-    assert(header.getTag("frozen").asInteger() != 0);
+    CHECK(header.hasTag("frozen"));
+    CHECK(header.hasTag("fileBitSize"));
+    CHECK(header.hasTag("format.0"));
+    CHECK(header.hasTag("format.1"));
+    CHECK(!header.hasTag("format.2"));
+    CHECK(header.hasTag("numWords"));
+    CHECK(header.hasTag("minChunkDocs"));
+    CHECK(header.hasTag("docIdLimit"));
+    CHECK(header.hasTag("minSkipDocs"));
+    CHECK(header.getTag("frozen").asInteger() != 0);
     _fileBitSize = header.getTag("fileBitSize").asInteger();
-    assert(header.getTag("format.0").asString() == identifier);
-    assert(header.getTag("format.1").asString() == d.getIdentifier());
+    CHECK(header.getTag("format.0").asString() == identifier);
+    CHECK(header.getTag("format.1").asString() == d.getIdentifier());
     _numWords = header.getTag("numWords").asInteger();
     _posting_params._min_chunk_docs = header.getTag("minChunkDocs").asInteger();
     _posting_params._doc_id_limit = header.getTag("docIdLimit").asInteger();
@@ -233,7 +233,7 @@ template <typename DecodeContext> void ZcPosOccRandRead::readHeader(const std::s
     // Align on 64-bit unit
     d.smallAlign(64);
     headerLen += (-headerLen & 7);
-    assert(d.getReadOffset() == headerLen * 8);
+    CHECK(d.getReadOffset() == headerLen * 8);
     _headerBitSize = d.getReadOffset();
 }
 

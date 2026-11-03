@@ -5,11 +5,11 @@
 #include "storagecommand.h"
 #include "storagereply.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <cassert>
 #include <sstream>
 
 #include <vespa/log/bufferedlogger.h>
@@ -56,7 +56,7 @@ mbus::Blob StorageProtocol::encode(const vespalib::Version& version, const mbus:
     const StorageMessage& message(dynamic_cast<const StorageMessage&>(routable));
 
     try {
-        assert(message.getInternalMessage());
+        CHECK(message.getInternalMessage());
         if (version < version7_0) {
             LOGBP(error,
                   "Cannot encode message on version %s."

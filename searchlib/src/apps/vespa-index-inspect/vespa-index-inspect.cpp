@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file_interface.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/diskindex/docidmapper.h>
@@ -78,14 +79,18 @@ public:
           _elementWeight(elementWeight) {}
 
     bool operator<(const PosEntry& rhs) const noexcept {
-        if (_docId != rhs._docId)
+        if (_docId != rhs._docId) {
             return _docId < rhs._docId;
-        if (_fieldId != rhs._fieldId)
+        }
+        if (_fieldId != rhs._fieldId) {
             return _fieldId < rhs._fieldId;
-        if (_elementId != rhs._elementId)
+        }
+        if (_elementId != rhs._elementId) {
             return _elementId < rhs._elementId;
-        if (_wordPos != rhs._wordPos)
+        }
+        if (_wordPos != rhs._wordPos) {
             return _wordPos < rhs._wordPos;
+        }
         return _wordNum < rhs._wordNum;
     }
 };
@@ -204,8 +209,9 @@ ShowPostingListSubApp::~ShowPostingListSubApp() {
 
 void ShowPostingListSubApp::usage(bool showHeader) {
     using std::cerr;
-    if (showHeader)
+    if (showHeader) {
         usageHeader();
+    }
     cerr << "vespa-index-inspect showpostings [--indexdir indexDir]\n"
             " --field field\n"
             " word\n"
@@ -270,10 +276,12 @@ bool ShowPostingListSubApp::getOptions(int argc, char** argv) {
     }
     if (_transpose) {
     } else {
-        if (_fieldOptions._fields.empty())
+        if (_fieldOptions._fields.empty()) {
             return false;
-        if (_fieldOptions._fields.size() > 1)
+        }
+        if (_fieldOptions._fields.size() > 1) {
             return false;
+        }
     }
     _optIndex = optind;
     if (_transpose) {
@@ -288,15 +296,17 @@ bool ShowPostingListSubApp::getOptions(int argc, char** argv) {
 
 bool ShowPostingListSubApp::readDocIdLimit(const Schema& schema) {
     TuneFileSeqRead tuneFileRead;
-    if (_dm.readDocIdLimit(_indexDir))
+    if (_dm.readDocIdLimit(_indexDir)) {
         return true;
+    }
     uint32_t numIndexFields = schema.getNumIndexFields();
     for (uint32_t fieldId = 0; fieldId < numIndexFields; ++fieldId) {
         const Schema::IndexField& field = schema.getIndexField(fieldId);
         if (field.getDataType() == DataType::STRING) {
             FieldReader fr;
-            if (!fr.open(_indexDir + "/" + field.getName() + "/", tuneFileRead))
+            if (!fr.open(_indexDir + "/" + field.getName() + "/", tuneFileRead)) {
                 continue;
+            }
             _dm.setup(fr.getDocIdLimit());
             return true;
         }
@@ -310,20 +320,22 @@ bool ShowPostingListSubApp::readWordList(const SchemaUtil::IndexIterator& index)
     search::TuneFileSeqRead tuneFileRead;
     PageDict4FileSeqRead    wr;
     std::string             fieldDir = _indexDir + "/" + index.getName();
-    if (!wr.open(fieldDir + "/dictionary", tuneFileRead))
+    if (!wr.open(fieldDir + "/dictionary", tuneFileRead)) {
         return false;
+    }
     std::string       word;
     PostingListCounts counts;
     uint64_t          wordNum = noWordNum();
     wr.readWord(word, wordNum, counts);
     words.push_back(""); // Word number 0 is special here.
     while (wordNum != noWordNumHigh()) {
-        assert(wordNum == words.size());
+        CHECK(wordNum == words.size());
         words.push_back(word);
         wr.readWord(word, wordNum, counts);
     }
-    if (!wr.close())
+    if (!wr.close()) {
         return false;
+    }
     return true;
 }
 
@@ -337,14 +349,16 @@ bool ShowPostingListSubApp::readWordList(const Schema& schema) {
     if (!_fieldOptions.empty()) {
         for (auto id : _fieldOptions._ids) {
             SchemaUtil::IndexIterator index(schema, id);
-            if (!readWordList(index))
+            if (!readWordList(index)) {
                 return false;
+            }
         }
     } else {
         SchemaUtil::IndexIterator index(schema);
         while (index.isValid()) {
-            if (!readWordList(index))
+            if (!readWordList(index)) {
                 return false;
+            }
             ++index;
         }
     }
@@ -357,10 +371,12 @@ void ShowPostingListSubApp::readPostings(const SchemaUtil::IndexIterator& index,
     std::string                              mangledName = _indexDir + "/" + index.getName() + "/";
     search::TuneFileSeqRead                  tuneFileRead;
     r.setup(_wmv[index.getIndex()], _dm);
-    if (!r.open(mangledName, tuneFileRead))
+    if (!r.open(mangledName, tuneFileRead)) {
         return;
-    if (r.isValid())
+    }
+    if (r.isValid()) {
         r.read();
+    }
     while (r.isValid()) {
         uint32_t docId = r._docIdAndFeatures.doc_id();
         if (docId >= _minDocId && docId < _docIdLimit) {
@@ -368,8 +384,9 @@ void ShowPostingListSubApp::readPostings(const SchemaUtil::IndexIterator& index,
         }
         r.read();
     }
-    if (!r.close())
+    if (!r.close()) {
         LOG_ABORT("should not be reached");
+    }
 }
 
 void ShowPostingListSubApp::showTransposedPostingList() {
@@ -380,10 +397,12 @@ void ShowPostingListSubApp::showTransposedPostingList() {
         std::_Exit(1);
     }
     _fieldOptions.validateFields(schema);
-    if (!readDocIdLimit(schema))
+    if (!readDocIdLimit(schema)) {
         return;
-    if (!readWordList(schema))
+    }
+    if (!readWordList(schema)) {
         return;
+    }
     std::vector<PosEntry> entries;
     if (!_fieldOptions.empty()) {
         for (auto id : _fieldOptions._ids) {
@@ -424,8 +443,8 @@ void ShowPostingListSubApp::showTransposedPostingList() {
             prevElementLen = entry._elementLen;
             prevElementWeight = entry._elementWeight;
         }
-        assert(entry._wordNum != 0);
-        assert(entry._wordNum < _wordsv[entry._fieldId].size());
+        CHECK(entry._wordNum != 0);
+        CHECK(entry._wordNum < _wordsv[entry._fieldId].size());
         std::cout << "   pos = " << entry._wordPos << ", word = \"" << _wordsv[entry._fieldId][entry._wordNum]
                   << "\"";
         std::cout << '\n';
@@ -454,10 +473,12 @@ void ShowPostingListSubApp::showPostingList() {
     std::unique_ptr<DictionaryFileRandRead> dict(new PageDict4RandRead);
     std::string                             dictName = _indexDir + "/" + shortName + "/dictionary";
     search::TuneFileRandRead                tuneFileRead;
-    if (_directio)
+    if (_directio) {
         tuneFileRead.setWantDirectIO();
-    if (_readmmap)
+    }
+    if (_readmmap) {
         tuneFileRead.setWantMemoryMap();
+    }
     if (!dict->open(dictName, tuneFileRead)) {
         LOG(error, "Could not open dictionary %s", dictName.c_str());
         std::_Exit(1);
@@ -522,8 +543,9 @@ void ShowPostingListSubApp::showPostingList() {
             ++docId;
         } else {
             docId = sb->getDocId();
-            if (sb->isAtEnd())
+            if (sb->isAtEnd()) {
                 break;
+            }
         }
     }
     if (first) {
@@ -541,10 +563,11 @@ void ShowPostingListSubApp::showPostingList() {
 }
 
 int ShowPostingListSubApp::run() {
-    if (_transpose)
+    if (_transpose) {
         showTransposedPostingList();
-    else
+    } else {
         showPostingList();
+    }
     return 0;
 }
 
@@ -582,8 +605,9 @@ DumpWordsSubApp::~DumpWordsSubApp() = default;
 
 void DumpWordsSubApp::usage(bool showHeader) {
     using std::cerr;
-    if (showHeader)
+    if (showHeader) {
         usageHeader();
+    }
     cerr << "vespa-index-inspect dumpwords [--indexdir indexDir]\n"
             " --field field\n"
             " [--file-range] [--minnumdocs minnumdocs] [--verbose] [--wordnum]\n"
@@ -686,8 +710,9 @@ void DumpWordsSubApp::dumpWords() {
     for (;;) {
         lookup_result.bitOffset += counts._bitLength;
         wordList.readWord(word, wordNum, counts);
-        if (wordNum == wordList.noWordNumHigh())
+        if (wordNum == wordList.noWordNumHigh()) {
             break;
+        }
         if (counts._numDocs < _minNumDocs) {
             continue;
         }
@@ -732,10 +757,11 @@ int VespaIndexInspectApp::main(int argc, char** argv) {
         return 1;
     }
     std::unique_ptr<SubApp> subApp;
-    if (strcmp(argv[1], "showpostings") == 0)
+    if (strcmp(argv[1], "showpostings") == 0) {
         subApp = std::make_unique<ShowPostingListSubApp>();
-    else if (strcmp(argv[1], "dumpwords") == 0)
+    } else if (strcmp(argv[1], "dumpwords") == 0) {
         subApp = std::make_unique<DumpWordsSubApp>();
+    }
     if (subApp.get() != nullptr) {
         if (!subApp->getOptions(argc, argv)) {
             subApp->usage(true);

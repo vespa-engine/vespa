@@ -52,7 +52,9 @@ struct DumpQuery : QueryVisitor {
     }
     void visit(PrefixTerm&) override {}
     void visit(RangeTerm&) override {}
+    void visit(StringRangeTerm&) override {}
     void visit(Rank&) override {}
+    void visit(LabelWrapper&) override {}
     void visit(StringTerm& n) override {
         out.printf("%*s%s %s%s%s\n", indent, "", "Term", n.getTerm().c_str(),
                    (!n.isRanked() && !n.usePositionData()) ? " cheap" : "",
@@ -67,6 +69,7 @@ struct DumpQuery : QueryVisitor {
     void visit(PredicateQuery&) override {}
     void visit(RegExpTerm&) override {}
     void visit(NearestNeighborTerm&) override {}
+    void visit(SparseTensorWandTerm&) override {}
     void visit(TrueQueryNode&) override {}
     void visit(FalseQueryNode&) override {}
     void visit(FuzzyTerm&) override {}

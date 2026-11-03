@@ -21,6 +21,7 @@ function(vespa_add_target_dependency TARGET OTHER_TARGET)
     # (Weak) dependency between object library and other target
     if(TARGET_TYPE STREQUAL OBJECT_LIBRARY)
         target_include_directories(${TARGET} PRIVATE $<TARGET_PROPERTY:${OTHER_TARGET},INTERFACE_INCLUDE_DIRECTORIES>)
+        target_compile_definitions(${TARGET} PRIVATE $<TARGET_PROPERTY:${OTHER_TARGET},INTERFACE_COMPILE_DEFINITIONS>)
         return()
     endif()
 
@@ -250,7 +251,7 @@ function(__install_header_files)
             get_filename_component(RELDIR ${HEADER} DIRECTORY)
             install(FILES ${RELATIVE_TO}/${HEADER} DESTINATION include/vespa/${RELDIR})
         endforeach()
-   endif()   
+   endif()
 endfunction()
 
 function(vespa_add_executable TARGET)
@@ -400,7 +401,7 @@ function(__is_command_a_script COMMAND RESULT_VAR)
 endfunction()
 
 function(vespa_add_test)
-    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK" "NAME;WORKING_DIRECTORY;COST" "COMMAND;DEPENDS;ENVIRONMENT" ${ARGN})
+    cmake_parse_arguments(ARG "NO_VALGRIND;RUN_SERIAL;BENCHMARK;DISABLED" "NAME;WORKING_DIRECTORY;COST" "COMMAND;DEPENDS;ENVIRONMENT" ${ARGN})
 
     if(NOT RUN_BENCHMARKS AND ARG_BENCHMARK)
         return()
@@ -461,9 +462,13 @@ function(vespa_add_test)
     if (ARG_COST)
         set_tests_properties(${ARG_NAME} PROPERTIES COST ${ARG_COST})
     endif()
-    
+
     if(ARG_RUN_SERIAL)
         set_tests_properties(${ARG_NAME} PROPERTIES RUN_SERIAL TRUE)
+    endif()
+
+    if(ARG_DISABLED)
+        set_tests_properties(${ARG_NAME} PROPERTIES DISABLED True)
     endif()
 
     if (AUTORUN_UNIT_TESTS)
@@ -505,6 +510,10 @@ function(vespa_workaround_gcc_bug_67055 SOURCE_FILE)
             set_source_files_properties(${SOURCE_FILE} PROPERTIES COMPILE_FLAGS -fno-ipa-icf)
         endif()
     endif()
+endfunction()
+
+function(vespa_compile_flag_for SOURCE_FILE COMPILE_FLAG)
+    set_source_files_properties(${SOURCE_FILE} PROPERTIES COMPILE_FLAGS ${COMPILE_FLAG})
 endfunction()
 
 macro(__initialize_module)
@@ -637,9 +646,9 @@ function(__export_include_directories TARGET)
     get_directory_property(LOCAL_INCLUDE_DIRS INCLUDE_DIRECTORIES)
     get_target_property(TARGET_TYPE ${TARGET} TYPE)
     if(TARGET_TYPE STREQUAL INTERFACE_LIBRARY)
-        target_include_directories(${TARGET} INTERFACE ${LOCAL_INCLUDE_DIRS})
+        target_include_directories(${TARGET} INTERFACE "$<BUILD_INTERFACE:${LOCAL_INCLUDE_DIRS}>" "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
     else()
-        target_include_directories(${TARGET} PUBLIC ${LOCAL_INCLUDE_DIRS})
+        target_include_directories(${TARGET} PUBLIC "$<BUILD_INTERFACE:${LOCAL_INCLUDE_DIRS}>" "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
     endif()
 endfunction()
 

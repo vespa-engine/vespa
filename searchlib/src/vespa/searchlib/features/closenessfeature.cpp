@@ -5,7 +5,9 @@
 #include "distance_calculator_bundle.h"
 #include "utils.h"
 
-#include <vespa/searchcommon/common/schema.h>
+#include <vespa/check_require.h>
+#include <vespa/searchcommon/common/datatype.h>
+#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/vespalib/util/stash.h>
@@ -40,7 +42,7 @@ ConvertRawScoreToCloseness::ConvertRawScoreToCloseness(const fef::IQueryEnvironm
 
 void ConvertRawScoreToCloseness::execute(uint32_t docId) {
     feature_t max_closeness = _bundle.min_rawscore();
-    assert(_md);
+    CHECK(_md);
     for (const auto& elem : _bundle.elements()) {
         const TermFieldMatchData* tfmd = _md->resolveTermField(elem.handle);
         if (tfmd->has_ranking_data(docId)) {
@@ -76,7 +78,7 @@ ClosenessBlueprint::ClosenessBlueprint()
       _scaleDistance(5.0 * 9013.305), // default value (about 5 km)
       _halfResponse(1),
       _arg_string(),
-      _attr_id(search::index::Schema::UNKNOWN_FIELD_ID),
+      _attr_id(fef::IllegalFieldId),
       _use_geo_pos(false),
       _use_nns_tensor(false),
       _use_item_label(false) {
@@ -179,7 +181,7 @@ FeatureExecutor& ClosenessBlueprint::createExecutor(const IQueryEnvironment& env
     if (_use_item_label) {
         return stash.create<ConvertRawScoreToCloseness>(env, _arg_string);
     }
-    assert(_use_geo_pos);
+    CHECK(_use_geo_pos);
     return stash.create<ClosenessExecutor>(_maxDistance, _scaleDistance);
 }
 

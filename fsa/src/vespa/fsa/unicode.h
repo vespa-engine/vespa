@@ -92,10 +92,11 @@ public:
      * @return unsigned char with the property bitmap.
      */
     static unsigned char getProperty(ucs4_t testchar) {
-        if (testchar < 65536)
+        if (testchar < 65536) {
             return _compCharProps[testchar >> 8][testchar & 255];
-        else
+        } else {
             return 0;
+        }
     }
 
     /**
@@ -209,8 +210,9 @@ public:
      * @return true if testchar is an uppercase character.
      */
     static bool isUpper(ucs4_t testchar) {
-        if (testchar >= 65536)
+        if (testchar >= 65536) {
             return false;
+        }
         ucs4_t ret = _compLowerCase[testchar >> 8][testchar & 255];
         return (ret != 0 && ret != testchar);
     }
@@ -224,11 +226,13 @@ public:
         ucs4_t ret;
         if (testchar < 65536) {
             ret = _compLowerCase[testchar >> 8][testchar & 255];
-            if (ret == 0)
+            if (ret == 0) {
                 return testchar;
+            }
             return ret;
-        } else
+        } else {
             return testchar;
+        }
     }
 
     /**
@@ -237,18 +241,19 @@ public:
      * @return The number of bytes required for the UTF-8 representation.
      */
     static size_t utf8clen(ucs4_t i) {
-        if (i < 128)
+        if (i < 128) {
             return 1;
-        else if (i < 0x800)
+        } else if (i < 0x800) {
             return 2;
-        else if (i < 0x10000)
+        } else if (i < 0x10000) {
             return 3;
-        else if (i < 0x200000)
+        } else if (i < 0x200000) {
             return 4;
-        else if (i < 0x4000000)
+        } else if (i < 0x4000000) {
             return 5;
-        else
+        } else {
             return 6;
+        }
     }
 
     /**
@@ -265,9 +270,9 @@ public:
      * @return Pointer to the next position in dst after the putted byte(s).
      */
     static char* utf8cput(char* dst, ucs4_t i) {
-        if (i < 128)
+        if (i < 128) {
             *dst++ = i;
-        else if (i < 0x800) {
+        } else if (i < 0x800) {
             *dst++ = (i >> 6) | 0xc0;
             *dst++ = (i & 63) | 0x80;
         } else if (i < 0x10000) {

@@ -35,6 +35,26 @@ search indexsettings {
         }
     }
 
+    field l3 type string {
+        linguistics {
+            profile: p1
+            tokens: alternatives
+        }
+    }
+
+    field l4 type string {
+        linguistics {
+            index {
+                profile: p2
+                tokens: original
+            }
+            search {
+                profile: p1
+                tokens: original-and-alternatives
+            }
+        }
+    }
+
   }
 
 }

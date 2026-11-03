@@ -24,7 +24,7 @@ prependDocument string default=""
 # Normalize tensors from tokenizer
 normalize bool default=false
 
-poolingStrategy enum { cls, mean, none } default=mean
+poolingStrategy enum { cls, mean, last, none } default=mean
 
 # TODO: Parameters below are moved to onnx-evaluator.def, remove them after 2026-01-01
 # Settings for ONNX model evaluation

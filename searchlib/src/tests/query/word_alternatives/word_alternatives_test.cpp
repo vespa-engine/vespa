@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for querybuilder.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
+#include <vespa/searchlib/query/tree/querytreecreator.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/query/tree/stackdumpquerycreator.h>
@@ -18,7 +20,6 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("querybuilder_test");
-#include <vespa/searchlib/query/tree/querytreecreator.h>
 
 using string = std::string;
 using namespace search;
@@ -55,7 +56,7 @@ template <class NodeTypes> Node::UP createQueryTree() {
     }
     builder.add_word_alternatives(make_tv(4, 7), view[3], id[3], weight[3]);
     Node::UP node = builder.build();
-    assert(node.get());
+    CHECK(node.get());
     return node;
 }
 

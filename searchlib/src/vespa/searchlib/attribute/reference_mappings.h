@@ -4,7 +4,7 @@
 
 #include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <atomic>
 
@@ -21,7 +21,7 @@ class ReferenceMappings {
     using GenerationHolder = vespalib::GenerationHolder;
     using EntryRef = vespalib::datastore::EntryRef;
     // Classes used to map from target lid to source lids
-    using ReverseMappingIndices = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using ReverseMappingIndices = vespalib::TypeStableVectorBase<AtomicEntryRef>;
     using ReverseMapping =
         vespalib::btree::BTreeStore<uint32_t, vespalib::btree::BTreeNoLeafData, vespalib::btree::NoAggregated,
                                     std::less<uint32_t>, vespalib::btree::BTreeDefaultTraits,
@@ -36,8 +36,8 @@ class ReferenceMappings {
     // source lids.
     ReverseMapping _reverseMapping;
     // vector containing target lid given source lid
-    vespalib::RcuVectorBase<AtomicTargetLid> _targetLids;
-    const std::atomic<uint32_t>&             _committedDocIdLimit;
+    vespalib::TypeStableVectorBase<AtomicTargetLid> _targetLids;
+    const std::atomic<uint32_t>&                    _committedDocIdLimit;
 
     void syncForwardMapping(const Reference& entry);
     void syncReverseMappingIndices(const Reference& entry);

@@ -21,6 +21,7 @@ struct TermDataFromTermVisitor : public search::query::CustomTypeVisitor<ProtonN
     void visit(ProtonONear&) override {}
     void visit(ProtonOr&) override {}
     void visit(ProtonRank&) override {}
+    void visit(ProtonLabelWrapper&) override {}
     void visit(ProtonWeakAnd&) override {}
     void visit(ProtonSameElement&) override {}
     void visit(ProtonTrue&) override {}
@@ -36,12 +37,14 @@ struct TermDataFromTermVisitor : public search::query::CustomTypeVisitor<ProtonN
     void visit(ProtonLocationTerm& n) override { visitTerm(n); }
     void visit(ProtonPrefixTerm& n) override { visitTerm(n); }
     void visit(ProtonRangeTerm& n) override { visitTerm(n); }
+    void visit(ProtonStringRangeTerm& n) override { visitTerm(n); }
     void visit(ProtonStringTerm& n) override { visitTerm(n); }
     void visit(ProtonSubstringTerm& n) override { visitTerm(n); }
     void visit(ProtonSuffixTerm& n) override { visitTerm(n); }
     void visit(ProtonPredicateQuery&) override {}
     void visit(ProtonRegExpTerm& n) override { visitTerm(n); }
     void visit(ProtonNearestNeighborTerm& n) override { visitTerm(n); }
+    void visit(ProtonSparseTensorWandTerm& n) override { visitTerm(n); }
     void visit(ProtonFuzzyTerm& n) override { visitTerm(n); }
     void visit(ProtonInTerm& n) override { visitTerm(n); }
     void visit(ProtonWordAlternatives& n) override { visitTerm(n); }

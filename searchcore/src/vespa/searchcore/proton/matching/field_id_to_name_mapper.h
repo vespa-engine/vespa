@@ -10,11 +10,11 @@ namespace proton::matching {
 class FieldIdToNameMapper {
 public:
     const std::string& lookup(uint32_t fieldId) const {
-        static const std::string lookupFailed;
         if (auto fieldInfo = _indexEnv.getField(fieldId)) {
             return fieldInfo->name();
         }
-        return lookupFailed;
+        // Out of bounds is reported the same way as field id 0, the "no field".
+        return search::fef::FieldInfo::no_field().name();
     }
     FieldIdToNameMapper(const search::fef::IIndexEnvironment& indexEnv) : _indexEnv(indexEnv) {}
 

@@ -2,10 +2,9 @@
 
 #include "pruneremoveddocumentsoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.feedoperation.pruneremoveddocumentsoperation");
@@ -29,8 +28,8 @@ PruneRemovedDocumentsOperation::PruneRemovedDocumentsOperation(DocumentIdT docId
 void PruneRemovedDocumentsOperation::serialize(vespalib::nbostream& os) const {
     LOG(debug, "serialize(): %s", toString().c_str());
     os << _subDbId;
-    assert(_lidsToRemoveMap.size() == 1);
-    assert(_lidsToRemoveMap.begin()->first == _subDbId);
+    CHECK(_lidsToRemoveMap.size() == 1);
+    CHECK(_lidsToRemoveMap.begin()->first == _subDbId);
     serializeLidsToRemove(os);
 }
 

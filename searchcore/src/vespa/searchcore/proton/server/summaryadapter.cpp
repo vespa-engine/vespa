@@ -2,10 +2,10 @@
 
 #include "summaryadapter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
-#include <cassert>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -22,7 +22,7 @@ SummaryAdapter::SummaryAdapter(SummaryManager::SP mgr)
 SummaryAdapter::~SummaryAdapter() = default;
 
 bool SummaryAdapter::ignore(SerialNum serialNum) const {
-    assert(serialNum != 0);
+    CHECK(serialNum != 0);
     return serialNum <= _lastSerial;
 }
 
@@ -52,6 +52,16 @@ void SummaryAdapter::remove(SerialNum serialNum, const DocumentIdT lid) {
     if (!ignore(serialNum + 1)) {
         LOG(spam, "SummaryAdapter::remove(serialnum = '%" PRIu64 "', lid = %u)", serialNum, lid);
         _mgr->removeDocument(serialNum, lid);
+        _lastSerial = serialNum;
+    }
+}
+
+void SummaryAdapter::move(SerialNum serialNum, const DocumentIdT prevLid, const DocumentIdT lid,
+                          const Document& doc) {
+    if (!ignore(serialNum)) {
+        LOG(spam, "SummaryAdapter::move(serialnum = '%" PRIu64 "', prevLid = %u, lid = %u, docId = '%s')", serialNum,
+            prevLid, lid, doc.getId().toString().c_str());
+        _mgr->moveDocument(serialNum, prevLid, lid, doc);
         _lastSerial = serialNum;
     }
 }

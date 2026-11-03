@@ -3,8 +3,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <unistd.h>
-
-#include <cassert>
+#include <vespamalloc/malloc/check_require.h>
 
 void* hammer(void* arg) {
     usleep(4000000);
@@ -23,7 +22,7 @@ void* hammer(void* arg) {
 
         for (auto& allocation : allocations) {
             for (size_t j(0); j < 20; j++) {
-                assert(allocation[j] == id);
+                CHECK(allocation[j] == id);
             }
             delete[] allocation;
         }

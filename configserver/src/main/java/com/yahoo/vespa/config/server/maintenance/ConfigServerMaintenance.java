@@ -52,24 +52,30 @@ public class ConfigServerMaintenance {
     public void startAfterBootstrap() {
         maintainers.add(new FileDistributionMaintainer(applicationRepository, curator, interval, fileDirectory));
         maintainers.add(new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30)));
+        maintainers.add(new MlModelImportCacheMaintainer(applicationRepository, curator, interval));
         maintainers.add(new ReindexingMaintainer(applicationRepository, curator,
                                                  Duration.ofMinutes(3), convergenceChecker, Clock.systemUTC()));
         if (applicationRepository.configserverConfig().hostedVespa()) {
-            // Only one of these maintainers is used per application controlled by
-            // {@code Flags.RESTART_ON_DEPLOY_MAINTAINER} feature flag.
-            // {@code PendingRestartsMaintainer} is active when the flag is {@code false} - default.
-            // {@code RestartOnDeployMaintainer} is active when the flag is {@code true} - experimental.
-            maintainers.add(new PendingRestartsMaintainer(
-                    applicationRepository, curator, Clock.systemUTC(), Duration.ofSeconds(30)));
+            var interval = Duration.ofMinutes(1);
             maintainers.add(new RestartOnDeployMaintainer(
-                    applicationRepository, curator, Clock.systemUTC(), Duration.ofSeconds(30)));
-            maintainers.add(new HostRegistryMaintainer(applicationRepository, curator, Duration.ofSeconds(30)));
+                    applicationRepository, curator, Clock.systemUTC(), interval));
+            maintainers.add(new HostRegistryMaintainer(applicationRepository, curator, interval));
         }
     }
 
-    public void shutdown() {
+    /** Signals all maintainers to stop, without waiting for them to finish. */
+    public void signalShutdown() {
         maintainers.forEach(Maintainer::shutdown);
+    }
+
+    /** Waits for all maintainers to finish shutting down, signalling shutdown first if not already done. */
+    public void awaitShutdown() {
         maintainers.forEach(Maintainer::awaitShutdown);
+    }
+
+    public void shutdown() {
+        signalShutdown();
+        awaitShutdown();
     }
 
     public List<Maintainer> maintainers() { return List.copyOf(maintainers); }

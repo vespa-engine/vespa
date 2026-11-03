@@ -24,13 +24,12 @@ interface Visitor {
     record Context(String searchCluster,
                    String schema,
                    int traceLevelOverride,
-                   boolean sendOldQueryStack,
                    PartialSummaryHandler partialSummaryHandler) {
         Context(String searchCluster, String schema) {
             this(searchCluster, schema, 0);
         }
         Context(String searchCluster, String schema, int traceLevelOverride) {
-            this(searchCluster, schema, traceLevelOverride, false, null);
+            this(searchCluster, schema, traceLevelOverride, null);
         }
     }
 

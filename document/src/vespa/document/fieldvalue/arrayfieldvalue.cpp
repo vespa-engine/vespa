@@ -116,17 +116,20 @@ FieldValue& ArrayFieldValue::assign(const FieldValue& value) {
 
 int ArrayFieldValue::compare(const FieldValue& o) const {
     int diff = CollectionFieldValue::compare(o);
-    if (diff != 0)
+    if (diff != 0) {
         return diff;
+    }
 
     const ArrayFieldValue& other(static_cast<const ArrayFieldValue&>(o));
 
-    if (size() != other.size())
+    if (size() != other.size()) {
         return (size() - other.size());
+    }
     for (uint32_t i = 0, n = size(); i < n; ++i) {
         diff = array()[i].compare(other.array()[i]);
-        if (diff != 0)
+        if (diff != 0) {
             return diff;
+        }
     }
     return 0;
 }

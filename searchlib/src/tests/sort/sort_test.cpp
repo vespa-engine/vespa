@@ -82,13 +82,14 @@ void PrintTo(const FieldSortSpec& spec, std::ostream* os) {
     PrintTo(spec._sort_order, os);
     *os << ", " << converter_as_string_view(spec._converter) << ", ";
     PrintTo(spec._missing_policy, os);
-    *os << ", " << std::quoted(spec._missing_value) << "}";
+    *os << ", " << std::quoted(spec._missing_value) << ", rank_feature=" << spec._is_rank_feature << "}";
 }
 
 bool operator==(const FieldSortSpec& lhs, const FieldSortSpec& rhs) {
     return lhs._field == rhs._field && lhs._sort_order == rhs._sort_order &&
            converter_as_string_view(lhs._converter) == converter_as_string_view(rhs._converter) &&
-           lhs._missing_policy == rhs._missing_policy && lhs._missing_value == rhs._missing_value;
+           lhs._missing_policy == rhs._missing_policy && lhs._missing_value == rhs._missing_value &&
+           lhs._is_rank_feature == rhs._is_rank_feature;
 }
 
 } // namespace search::common
@@ -265,6 +266,7 @@ TEST(SortTest, sortspec_missing) {
     constexpr auto      miss_first = MissingPolicy::FIRST;
     constexpr auto      miss_last = MissingPolicy::LAST;
     constexpr auto      miss_as = MissingPolicy::AS;
+    constexpr auto      miss_def = MissingPolicy::DEFAULT;
     EXPECT_EQ(FieldSortSpecVector({{"name", asc, {}, miss_first, ""}}),
               SortSpec("+missing(name,first)", ucaFactory).get_field_sort_specs());
     EXPECT_EQ(FieldSortSpecVector({{"name", asc, {}, miss_last, ""}}),
@@ -280,6 +282,20 @@ TEST(SortTest, sortspec_missing) {
                            "Expected '\\' or '\"', got 'n' at [-missing(name,as,\"bad quoting \\][n here\"]");
     EXPECT_EQ(FieldSortSpecVector({{"name", desc, lowercase, miss_last, ""}}),
               SortSpec("-missing(lowercase(name),last)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"foo", desc, {}, miss_def, "", true}}),
+              SortSpec("-feature(foo)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"foo", asc, {}, miss_def, "", true}}),
+              SortSpec("+feature(foo)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"foo", desc, {}, miss_def, "", true}, {"name", desc, {}, miss_def, ""}}),
+              SortSpec("-feature(foo) -name", ucaFactory).get_field_sort_specs());
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("-feature(foo-bar)", ucaFactory), std::runtime_error,
+                           "Illegal feature name 'foo-bar' for sorting");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("-feature(foo$)", ucaFactory), std::runtime_error,
+                           "Illegal feature name 'foo$' for sorting");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("-missing(feature(foo),first)", ucaFactory), std::runtime_error,
+                           "Cannot use missing() with feature(...) sorting");
+    VESPA_EXPECT_EXCEPTION(SortSpec spec("-FeAtUrE(foo)", ucaFactory), std::runtime_error, "Unknown func FeAtUrE");
+    EXPECT_FALSE(SortSpec("+missing(title,as,\"feature(foo)\")", ucaFactory)[0]._is_rank_feature);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

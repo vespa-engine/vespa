@@ -43,6 +43,17 @@ public class NodeMetricGatherer {
     }
 
     public List<MetricsPacket> gatherMetrics()  {
+        return gatherBuilders().stream().map(MetricsPacket.Builder::build).toList();
+    }
+
+    /** Returns the node metrics, with timestamps adjusted to the given start time as done by {@link MetricsManager}. */
+    public List<MetricsPacket> gatherMetrics(Instant startTime)  {
+        return gatherBuilders().stream()
+                .map(builder -> MetricsManager.adjustTimestamp(builder, startTime).build())
+                .toList();
+    }
+
+    private List<MetricsPacket.Builder> gatherBuilders() {
         List<MetricsPacket.Builder> metricPacketBuilders = new ArrayList<>();
 
         addObjectToBuilders(metricPacketBuilders, HostLifeGatherer.getHostLifePacket());
@@ -52,7 +63,7 @@ public class NodeMetricGatherer {
                     metricPacketBuilder.putDimensionsIfAbsent(applicationDimensions.getDimensions())
                     .putDimensionsIfAbsent(nodeDimensions.getDimensions())
                     .putDimensionsIfAbsent(metricsManager.getExtraDimensions())
-                    .putDimensionsIfAbsent(metricsManager.getExtraHostDimensions(metricPacketBuilder.getServiceId())).build()
+                    .putDimensionsIfAbsent(metricsManager.getExtraHostDimensions(metricPacketBuilder.getServiceId()))
         ).toList();
     }
 

@@ -99,8 +99,9 @@ public:
         if (sz > capacity()) {
             if (!allocated()) {
                 allocateVector();
-                if (sz <= capacity())
+                if (sz <= capacity()) {
                     return;
+                }
             }
             resizePositionVector(sz);
         }

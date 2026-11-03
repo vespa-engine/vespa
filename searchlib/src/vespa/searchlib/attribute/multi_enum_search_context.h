@@ -37,7 +37,7 @@ public:
         auto indices(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < indices.size(); i++) {
             T v = _enum_store.get_value(multivalue::get_value_ref(indices[i]).load_acquire());
-            if (this->match(v)) {
+            if (this->matcher().match(v)) {
                 weight = multivalue::get_weight(indices[i]);
                 return i;
             }
@@ -50,7 +50,7 @@ public:
         auto indices(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < indices.size(); i++) {
             T v = _enum_store.get_value(multivalue::get_value_ref(indices[i]).load_acquire());
-            if (this->match(v)) {
+            if (this->matcher().match(v)) {
                 return i;
             }
         }

@@ -2,6 +2,7 @@
 
 #include "parallel_weak_and_search.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/monitoring_dump_iterator.h>
@@ -101,7 +102,7 @@ public:
         if (!_readonly_scores_heap) {
             _localScores.push_back(score);
             if (_localScores.size() == _matchParams.scoresAdjustFrequency) {
-                _matchParams.scores.adjust(&_localScores[0], &_localScores[0] + _localScores.size());
+                _matchParams.scores.adjust(_localScores);
                 _localScores.clear();
             }
         }
@@ -142,14 +143,14 @@ SearchIterator::UP createWand(const wand::Terms& terms, const ParallelWeakAndSea
                                matchParams.scoreThreshold, IS_STRICT),
             std::make_unique<WandType>(rankParams.rootMatchData,
                                               VectorizedIteratorTerms(termsWithMonitoring, DotProductScorer(),
-                                                                      matchParams.docIdLimit,
+                                                                      matchParams.docid_limit,
                                                                       std::move(rankParams.childrenMatchData)),
                                               matchParams, readonly_scores_heap),
             false);
         return std::make_unique<MonitoringDumpIterator>(std::move(monitoringIterator));
     }
     return std::make_unique<WandType>(rankParams.rootMatchData,
-                                      VectorizedIteratorTerms(terms, DotProductScorer(), matchParams.docIdLimit,
+                                      VectorizedIteratorTerms(terms, DotProductScorer(), matchParams.docid_limit,
                                                               std::move(rankParams.childrenMatchData)),
                                       matchParams, readonly_scores_heap);
 }
@@ -215,10 +216,10 @@ SearchIterator::UP ParallelWeakAndSearch::create(search::fef::TermFieldMatchData
                                                  const std::vector<IDirectPostingStore::LookupResult>& dict_entries,
                                                  const IDocidWithWeightPostingStore& attr, bool strict,
                                                  bool readonly_scores_heap) {
-    assert(weights.size() == dict_entries.size());
+    CHECK(weights.size() == dict_entries.size());
     if (!wand::should_monitor_wand()) {
         wand::VectorizedAttributeTerms terms(weights, dict_entries, attr, wand::DotProductScorer(),
-                                             matchParams.docIdLimit);
+                                             matchParams.docid_limit);
         return create_helper(tfmd, std::move(terms), matchParams, strict, readonly_scores_heap,
                              (weights.size() < 128));
     } else {
@@ -230,7 +231,7 @@ SearchIterator::UP ParallelWeakAndSearch::create(search::fef::TermFieldMatchData
             handles.push_back(layout.allocTermField(tfmd.getFieldId()));
         }
         fef::MatchData::UP childrenMatchData = layout.createMatchData();
-        assert(childrenMatchData->getNumTermFields() == dict_entries.size());
+        CHECK(childrenMatchData->getNumTermFields() == dict_entries.size());
         wand::Terms terms;
         terms.reserve(dict_entries.size());
         for (size_t i = 0; i < dict_entries.size(); ++i) {

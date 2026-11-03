@@ -2,9 +2,6 @@
 vespa_add_library(vespalib_vespalib_regex OBJECT
     SOURCES
     regex.cpp
-    DEPENDS
+    EXTERNAL_DEPENDS
+    re2::re2
 )
-
-find_package(RE2 REQUIRED)
-# TODO can this be PRIVATE since we don't expose it transitively?
-target_include_directories(vespalib_vespalib_regex PUBLIC ${RE2_INCLUDE_DIR})

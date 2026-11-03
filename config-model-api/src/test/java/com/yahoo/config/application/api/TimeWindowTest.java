@@ -87,6 +87,34 @@ public class TimeWindowTest {
             assertInside(tw3, i8);
             assertInside(tw3, i9);
         }
+        { // Date range with hour granularity at the boundaries
+            TimeWindow tw = TimeWindow.from("", "", "UTC", "2026-09-01T05:00", "2026-09-04T08:00");
+            assertOutside(tw, Instant.parse("2026-09-01T04:59:59.00Z")); // Before start hour
+            assertInside(tw, Instant.parse("2026-09-01T05:00:00.00Z")); // At start hour
+            assertInside(tw, Instant.parse("2026-09-02T12:00:00.00Z")); // Within window
+            assertInside(tw, Instant.parse("2026-09-04T08:00:00.00Z")); // At end hour
+            assertOutside(tw, Instant.parse("2026-09-04T08:00:01.00Z")); // After end hour
+
+            // A space is accepted as an alternative to 'T' as the date/time separator
+            TimeWindow tw2 = TimeWindow.from("", "", "UTC", "2026-09-01 05:00", "2026-09-04 08:00");
+            assertOutside(tw2, Instant.parse("2026-09-01T04:59:59.00Z"));
+            assertInside(tw2, Instant.parse("2026-09-01T05:00:00.00Z"));
+            assertInside(tw2, Instant.parse("2026-09-04T08:00:00.00Z"));
+            assertOutside(tw2, Instant.parse("2026-09-04T08:00:01.00Z"));
+
+            // Mixing a date-only bound with an hour-granular bound is allowed
+            TimeWindow tw3 = TimeWindow.from("", "", "UTC", "2026-09-01T05:00", "2026-09-04");
+            assertOutside(tw3, Instant.parse("2026-09-01T04:59:59.00Z"));
+            assertInside(tw3, Instant.parse("2026-09-04T23:59:59.00Z")); // Whole end day still included
+            assertOutside(tw3, Instant.parse("2026-09-05T00:00:00.00Z"));
+
+            // Time zone applies to the parsed date/time bounds
+            TimeWindow tw4 = TimeWindow.from("", "", "Asia/Tokyo", "2026-09-01T05:00", "2026-09-04T08:00");
+            assertOutside(tw4, Instant.parse("2026-08-31T19:59:59.00Z")); // 04:59:59 JST
+            assertInside(tw4, Instant.parse("2026-08-31T20:00:00.00Z")); // 05:00:00 JST
+            assertInside(tw4, Instant.parse("2026-09-03T23:00:00.00Z")); // 08:00:00 JST
+            assertOutside(tw4, Instant.parse("2026-09-03T23:00:01.00Z")); // 08:00:01 JST
+        }
     }
 
     @Test
@@ -135,6 +163,20 @@ public class TimeWindowTest {
             TimeWindow tw2 = TimeWindow.from("", "", "", "2022-01-01", "2100-01-01");
             assertEquals(List.of(DayOfWeek.values()), tw2.days());
         }
+        {   // Date range boundaries may carry an hour-of-day
+            TimeWindow tw = TimeWindow.from("", "", "Asia/Tokyo", "2026-09-01T05:00", "2026-09-04T08:00");
+            assertEquals(java.time.LocalDate.parse("2026-09-01"), tw.dateRange().start().get());
+            assertEquals(java.time.LocalTime.parse("05:00"), tw.dateRange().startTime().get());
+            assertEquals(java.time.LocalDate.parse("2026-09-04"), tw.dateRange().end().get());
+            assertEquals(java.time.LocalTime.parse("08:00"), tw.dateRange().endTime().get());
+            assertEquals("date range [2026-09-01T05:00, 2026-09-04T08:00]", tw.dateRange().toString());
+
+            // Without an hour-of-day, the range still prints as a bare date (unchanged, backward-compatible format)
+            TimeWindow tw2 = TimeWindow.from("", "", "", "2022-01-11", "2022-01-14");
+            assertTrue(tw2.dateRange().startTime().isEmpty());
+            assertTrue(tw2.dateRange().endTime().isEmpty());
+            assertEquals("date range [2022-01-11, 2022-01-14]", tw2.dateRange().toString());
+        }
     }
 
     @Test
@@ -160,6 +202,10 @@ public class TimeWindowTest {
         assertInvalidDateRange("", "2022-01-15", "2022-01-01", "Invalid date range: start date 2022-01-15 is after end date 2022-01-01");
         assertInvalidDateRange("wed", "2022-01-06", "2022-01-09", "Invalid day: date range [2022-01-06, 2022-01-09] does not contain WEDNESDAY");
         assertInvalidDateRange("mon-sun", "2022-01-03", "2022-01-07", "Invalid day: date range [2022-01-03, 2022-01-07] does not contain SATURDAY");
+
+        // Invalid date-time in date range
+        assertInvalidDateRange("", "2026-09-01T25:00", "2026-09-04T08:00", "Could not parse date range '2026-09-01T25:00' and '2026-09-04T08:00'");
+        assertInvalidDateRange("", "2026-09-01T10:00", "2026-09-01T09:00", "Invalid date range: start date 2026-09-01T10:00 is after end date 2026-09-01T09:00");
     }
 
     private static void assertOutside(TimeWindow window, Instant instant) {

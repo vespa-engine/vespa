@@ -2,6 +2,7 @@
 
 #include "documentretriever.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/positiondatatype.h>
@@ -55,7 +56,7 @@ bool is_array_of_position_type(const document::DataType& field_type) noexcept {
         return false;
     }
     auto* tensor_attr = attr.asTensorAttribute();
-    assert(tensor_attr);
+    CHECK(tensor_attr);
     return tensor_attr->is_quantized();
 }
 
@@ -82,8 +83,9 @@ bool FieldSetAttributeDB::areAllFieldsAttributes(uint64_t key, const document::F
     if (found == _isFieldSetAttributeOnly.end()) {
         for (const Field* field : set) {
             isAttributeOnly = _fieldInfo.isFieldAttribute(*field);
-            if (!isAttributeOnly)
+            if (!isAttributeOnly) {
                 break;
+            }
         }
         _isFieldSetAttributeOnly[key] = isAttributeOnly;
     } else {

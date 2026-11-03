@@ -5,6 +5,7 @@
 #include "blueprint.h"
 #include "featureoverrider.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/locale/c.h>
@@ -16,7 +17,6 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
 #include <algorithm>
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fef.rankprogram");
@@ -127,7 +127,7 @@ public:
         : _primary(primary), _secondary(secondary), _use_primary(true), _primary_mark(primary.mark()) {}
     Stash& get() const { return _use_primary ? _primary : _secondary; }
     void use_secondary() {
-        assert(_use_primary);
+        CHECK(_use_primary);
         _use_primary = false;
         _primary.revert(_primary_mark);
     }
@@ -204,7 +204,7 @@ RankProgram::~RankProgram() = default;
 void RankProgram::setup(const MatchData& md, const IQueryEnvironment& queryEnv, const Properties& featureOverrides,
                         ExecutionProfiler* profiler) {
     const auto& specs = _resolver->getExecutorSpecs();
-    assert(_executors.empty());
+    CHECK(_executors.empty());
     std::vector<Override> overrides = prepare_overrides(specs, _resolver->getFeatureMap(), featureOverrides);
     auto                  override = overrides.begin();
     auto                  override_end = overrides.end();
@@ -256,7 +256,7 @@ void RankProgram::setup(const MatchData& md, const IQueryEnvironment& queryEnv, 
             unbox(seed, md);
         }
     }
-    assert(_executors.size() == specs.size());
+    CHECK(_executors.size() == specs.size());
     LOG(debug, "Num executors = %ld, hot stash = %ld, cold stash = %ld, match data fields = %d", _executors.size(),
         _hot_stash.count_used(), _cold_stash.count_used(), md.getNumTermFields());
     if (LOG_WOULD_LOG(debug)) {

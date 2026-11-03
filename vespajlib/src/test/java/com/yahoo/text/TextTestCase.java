@@ -114,6 +114,128 @@ public class TextTestCase {
 	assertEquals("foo 3.14", Text.format("%s %.2f", "foo", 3.1415926536));
     }
 
+    @Test
+    public void testToExcessHex8() {
+        assertEquals("00000000", Text.toExcessHex8(Integer.MIN_VALUE));
+        assertEquals("00000001", Text.toExcessHex8(Integer.MIN_VALUE + 1));
+        assertEquals("7fffffff", Text.toExcessHex8(-1));
+        assertEquals("80000000", Text.toExcessHex8(0));
+        assertEquals("80000001", Text.toExcessHex8(1));
+        assertEquals("8000000a", Text.toExcessHex8(10));
+        assertEquals("fffffffe", Text.toExcessHex8(Integer.MAX_VALUE - 1));
+        assertEquals("ffffffff", Text.toExcessHex8(Integer.MAX_VALUE));
+    }
+
+    @Test
+    public void testToExcessHex8PreservesOrdering() {
+        int[] values = new int[] { Integer.MIN_VALUE, Integer.MIN_VALUE + 1, -1000000, -256, -2, -1,
+                                   0, 1, 2, 256, 1000000, Integer.MAX_VALUE - 1, Integer.MAX_VALUE };
+        for (int i = 1; i < values.length; i++) {
+            String lower = Text.toExcessHex8(values[i - 1]);
+            String higher = Text.toExcessHex8(values[i]);
+            assertEquals(8, lower.length());
+            assertEquals(8, higher.length());
+            assertTrue(lower + " should sort before " + higher, lower.compareTo(higher) < 0);
+        }
+    }
+
+    @Test
+    public void testToExcessHex16() {
+        assertEquals("0000000000000000", Text.toExcessHex16(Long.MIN_VALUE));
+        assertEquals("0000000000000001", Text.toExcessHex16(Long.MIN_VALUE + 1));
+        assertEquals("7fffffffffffffff", Text.toExcessHex16(-1L));
+        assertEquals("8000000000000000", Text.toExcessHex16(0L));
+        assertEquals("8000000000000001", Text.toExcessHex16(1L));
+        assertEquals("800000000000000a", Text.toExcessHex16(10L));
+        assertEquals("fffffffffffffffe", Text.toExcessHex16(Long.MAX_VALUE - 1));
+        assertEquals("ffffffffffffffff", Text.toExcessHex16(Long.MAX_VALUE));
+
+        // Ints widen, and get a different encoding than from toExcessHex8
+        assertEquals("7fffffff80000000", Text.toExcessHex16(Integer.MIN_VALUE));
+        assertEquals("800000007fffffff", Text.toExcessHex16(Integer.MAX_VALUE));
+    }
+
+    @Test
+    public void testToExcessHex16PreservesOrdering() {
+        long[] values = new long[] { Long.MIN_VALUE, Long.MIN_VALUE + 1, Integer.MIN_VALUE, -1000000L, -256L, -2L, -1L,
+                                     0L, 1L, 2L, 256L, 1000000L, Integer.MAX_VALUE, Long.MAX_VALUE - 1, Long.MAX_VALUE };
+        for (int i = 1; i < values.length; i++) {
+            String lower = Text.toExcessHex16(values[i - 1]);
+            String higher = Text.toExcessHex16(values[i]);
+            assertEquals(16, lower.length());
+            assertEquals(16, higher.length());
+            assertTrue(lower + " should sort before " + higher, lower.compareTo(higher) < 0);
+        }
+    }
+
+    @Test
+    public void testFloatToExcessHex8() {
+        assertEquals("007fffff", Text.floatToExcessHex8(Float.NEGATIVE_INFINITY));
+        assertEquals("00800000", Text.floatToExcessHex8(-Float.MAX_VALUE));
+        assertEquals("407fffff", Text.floatToExcessHex8(-1.0f));
+        assertEquals("7ffffffe", Text.floatToExcessHex8(-Float.MIN_VALUE));
+        assertEquals("7fffffff", Text.floatToExcessHex8(-0.0f));
+        assertEquals("80000000", Text.floatToExcessHex8(0.0f));
+        assertEquals("80000001", Text.floatToExcessHex8(Float.MIN_VALUE));
+        assertEquals("bf800000", Text.floatToExcessHex8(1.0f));
+        assertEquals("ff7fffff", Text.floatToExcessHex8(Float.MAX_VALUE));
+        assertEquals("ff800000", Text.floatToExcessHex8(Float.POSITIVE_INFINITY));
+
+        // NaN sorts outside the infinities, on the side given by its sign bit
+        assertEquals("ffc00000", Text.floatToExcessHex8(Float.NaN));
+        assertEquals("003fffff", Text.floatToExcessHex8(Float.intBitsToFloat(0xffc00000)));
+    }
+
+    @Test
+    public void testFloatToExcessHex8PreservesOrdering() {
+        float[] values = new float[] { Float.NEGATIVE_INFINITY, -Float.MAX_VALUE, -1.0e10f, -1.5f, -1.0f,
+                                       -Float.MIN_NORMAL, -Float.MIN_VALUE, -0.0f, 0.0f, Float.MIN_VALUE,
+                                       Float.MIN_NORMAL, 1.0f, 1.5f, 1.0e10f, Float.MAX_VALUE, Float.POSITIVE_INFINITY };
+        for (int i = 1; i < values.length; i++) {
+            String lower = Text.floatToExcessHex8(values[i - 1]);
+            String higher = Text.floatToExcessHex8(values[i]);
+            assertEquals(8, lower.length());
+            assertEquals(8, higher.length());
+            assertTrue(lower + " should sort before " + higher, lower.compareTo(higher) < 0);
+        }
+    }
+
+    @Test
+    public void testDoubleToExcessHex16() {
+        assertEquals("000fffffffffffff", Text.doubleToExcessHex16(Double.NEGATIVE_INFINITY));
+        assertEquals("0010000000000000", Text.doubleToExcessHex16(-Double.MAX_VALUE));
+        assertEquals("400fffffffffffff", Text.doubleToExcessHex16(-1.0));
+        assertEquals("7ffffffffffffffe", Text.doubleToExcessHex16(-Double.MIN_VALUE));
+        assertEquals("7fffffffffffffff", Text.doubleToExcessHex16(-0.0));
+        assertEquals("8000000000000000", Text.doubleToExcessHex16(0.0));
+        assertEquals("8000000000000001", Text.doubleToExcessHex16(Double.MIN_VALUE));
+        assertEquals("bff0000000000000", Text.doubleToExcessHex16(1.0));
+        assertEquals("ffefffffffffffff", Text.doubleToExcessHex16(Double.MAX_VALUE));
+        assertEquals("fff0000000000000", Text.doubleToExcessHex16(Double.POSITIVE_INFINITY));
+
+        // NaN sorts outside the infinities, on the side given by its sign bit
+        assertEquals("fff8000000000000", Text.doubleToExcessHex16(Double.NaN));
+        assertEquals("0007ffffffffffff", Text.doubleToExcessHex16(Double.longBitsToDouble(0xfff8000000000000L)));
+
+        // Floats widen, and get a different encoding than from floatToExcessHex8
+        assertEquals("bff0000000000000", Text.doubleToExcessHex16(1.0f));
+    }
+
+    @Test
+    public void testDoubleToExcessHex16PreservesOrdering() {
+        double[] values = new double[] { Double.NEGATIVE_INFINITY, -Double.MAX_VALUE, -Float.MAX_VALUE, -1.0e10, -1.5, -1.0,
+                                         -Double.MIN_NORMAL, -Double.MIN_VALUE, -0.0, 0.0, Double.MIN_VALUE,
+                                         Double.MIN_NORMAL, 1.0, 1.5, 1.0e10, Float.MAX_VALUE, Double.MAX_VALUE,
+                                         Double.POSITIVE_INFINITY };
+        for (int i = 1; i < values.length; i++) {
+            String lower = Text.doubleToExcessHex16(values[i - 1]);
+            String higher = Text.doubleToExcessHex16(values[i]);
+            assertEquals(16, lower.length());
+            assertEquals(16, higher.length());
+            assertTrue(lower + " should sort before " + higher, lower.compareTo(higher) < 0);
+        }
+    }
+
     private static long benchmarkIsValid(String [] strings, int num) {
         long sum = 0;
         for (int i=0; i < num; i++) {

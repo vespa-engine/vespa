@@ -2,6 +2,7 @@
 
 #include "storagedocument.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 
@@ -25,6 +26,9 @@ StorageDocument::SubDocument _emptySubDocument(nullptr, _emptyFieldPath.getFullR
 } // namespace
 
 const StorageDocument::SubDocument& StorageDocument::getComplexField(FieldIdT fId) const {
+    // Both are indexed by field id, so they must cover the whole field id space.
+    CHECK(fId < _cachedFields.size());
+    CHECK(fId < _fieldMap->size());
     if (_cachedFields[fId].getFieldValue() == nullptr) {
         const FieldPath& fp = (*_fieldMap)[fId];
         if (!fp.empty()) {

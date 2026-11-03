@@ -68,15 +68,16 @@ TEST(DocumentTest, string_field_id_t_map) {
     StringFieldIdTMap m;
     EXPECT_EQ(0u, m.highestFieldNo());
     EXPECT_TRUE(StringFieldIdTMap::npos == m.fieldNo("unknown"));
+    // Field id 0 is reserved for the "no field", so implicit ids start at 1.
     m.add("f1");
-    EXPECT_EQ(0u, m.fieldNo("f1"));
-    EXPECT_EQ(1u, m.highestFieldNo());
-    m.add("f1");
-    EXPECT_EQ(0u, m.fieldNo("f1"));
-    EXPECT_EQ(1u, m.highestFieldNo());
-    m.add("f2");
-    EXPECT_EQ(1u, m.fieldNo("f2"));
+    EXPECT_EQ(1u, m.fieldNo("f1"));
     EXPECT_EQ(2u, m.highestFieldNo());
+    m.add("f1");
+    EXPECT_EQ(1u, m.fieldNo("f1"));
+    EXPECT_EQ(2u, m.highestFieldNo());
+    m.add("f2");
+    EXPECT_EQ(2u, m.fieldNo("f2"));
+    EXPECT_EQ(3u, m.highestFieldNo());
     m.add("f3", 7);
     EXPECT_EQ(7u, m.fieldNo("f3"));
     EXPECT_EQ(8u, m.highestFieldNo());
@@ -86,16 +87,20 @@ TEST(DocumentTest, string_field_id_t_map) {
     m.add("f2", 13);
     EXPECT_EQ(13u, m.fieldNo("f2"));
     EXPECT_EQ(14u, m.highestFieldNo());
+    // An implicitly assigned id must never collide with an explicitly assigned one.
     m.add("f4");
-    EXPECT_EQ(3u, m.fieldNo("f4"));
-    EXPECT_EQ(14u, m.highestFieldNo());
+    EXPECT_EQ(14u, m.fieldNo("f4"));
+    EXPECT_EQ(15u, m.highestFieldNo());
+    m.add("f5");
+    EXPECT_EQ(15u, m.fieldNo("f5"));
+    EXPECT_EQ(16u, m.highestFieldNo());
     {
         vespalib::asciistream os;
         StringFieldIdTMap     t;
         t.add("b");
         t.add("a");
         os << t;
-        EXPECT_EQ(std::string("a = 1\nb = 0\n"), os.view());
+        EXPECT_EQ(std::string("a = 2\nb = 1\n"), os.view());
     }
 }
 

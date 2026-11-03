@@ -5,12 +5,14 @@
 #include "bootstrapconfig.h"
 #include "documentdbconfigmanager.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
+#include <vespa/config-telemetry.h>
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
@@ -26,7 +28,6 @@
 
 #include <fcntl.h>
 
-#include <cassert>
 #include <cinttypes>
 #include <filesystem>
 #include <sstream>
@@ -34,6 +35,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.fileconfigmanager");
 
+using ai::vespa::telemetry::TelemetryConfig;
 using cloud::config::filedistribution::FiledistributorrpcConfig;
 using document::DocumentTypeRepo;
 using document::DocumentTypeRepoFactory;
@@ -81,7 +83,7 @@ template <class Config> void saveHelper(const std::string& snapDir, const std::s
     std::string              fileName(snapDir + "/" + name + ".cfg");
     config::FileConfigWriter writer(fileName);
     bool                     ok = writer.write(config);
-    assert(ok);
+    CHECK(ok);
     (void)ok;
     fsyncFile(fileName);
 }
@@ -115,15 +117,16 @@ ConfigFile::~ConfigFile() = default;
 ConfigFile::ConfigFile(const std::string& name, const std::string& fullName) : _name(name), _content() {
     FastOS_File file;
     bool        openRes = file.OpenReadOnlyExisting(false, fullName.c_str());
-    if (!openRes)
+    if (!openRes) {
         return;
+    }
     int64_t fileSize = file.getSize();
     _content.resize(fileSize);
     file.ReadBuf(_content.data(), fileSize);
 }
 
 nbostream& ConfigFile::serialize(nbostream& stream) const {
-    assert(strchr(_name.c_str(), '/') == nullptr);
+    CHECK(strchr(_name.c_str(), '/') == nullptr);
     stream << _name;
     stream << int64_t(0ul); // Used to be modtime => unused
     uint32_t sz = _content.size();
@@ -134,13 +137,13 @@ nbostream& ConfigFile::serialize(nbostream& stream) const {
 
 nbostream& ConfigFile::deserialize(nbostream& stream) {
     stream >> _name;
-    assert(strchr(_name.c_str(), '/') == nullptr);
+    CHECK(strchr(_name.c_str(), '/') == nullptr);
     int64_t unused_modTime;
     stream >> unused_modTime;
     uint32_t sz;
     stream >> sz;
     _content.resize(sz);
-    assert(stream.size() >= sz);
+    CHECK(stream.size() >= sz);
     if (sz > 0) {
         memcpy(_content.data(), stream.peek(), sz);
     }
@@ -152,12 +155,12 @@ void ConfigFile::save(const std::string& snapDir) const {
     std::string fullName = snapDir + "/" + _name;
     FastOS_File file;
     bool        openRes = file.OpenWriteOnlyTruncate(fullName.c_str());
-    assert(openRes);
+    CHECK(openRes);
     (void)openRes;
 
     file.WriteBuf(_content.data(), _content.size());
     bool closeRes = file.Close();
-    assert(closeRes);
+    CHECK(closeRes);
     (void)closeRes;
 
     fsyncFile(fullName);
@@ -211,8 +214,9 @@ FileConfigManager::FileConfigManager(FNET_Transport& transport, const std::strin
       _size_on_disk(0) {
     std::filesystem::create_directory(std::filesystem::path(baseDir));
     vespalib::File::sync(vespalib::dirname(baseDir));
-    if (!_info.load())
+    if (!_info.load()) {
         _info.save();
+    }
     removeInvalid();
     _protonConfig.reset(new ProtonConfig());
     calc_initial_sizes_on_disk();
@@ -229,10 +233,12 @@ SerialNum FileConfigManager::getOldestSerialNum() const {
     SerialNum           res = 0;
     const SnapshotList& snaps = _info.snapshots();
     for (const auto& snap : snaps) {
-        if (!snap.valid || snap.syncToken == 0)
+        if (!snap.valid || snap.syncToken == 0) {
             continue;
-        if (res == 0 || res > snap.syncToken)
+        }
+        if (res == 0 || res > snap.syncToken) {
             res = snap.syncToken;
+        }
     }
     return res;
 }
@@ -247,7 +253,7 @@ void FileConfigManager::saveConfig(const DocumentDBConfig& snapshot, SerialNum s
     Snapshot    snap(false, serialNum, snapDirBaseName);
     _info.addSnapshot(snap);
     bool saveInvalidSnap = _info.save();
-    assert(saveInvalidSnap);
+    CHECK(saveInvalidSnap);
     (void)saveInvalidSnap;
     std::filesystem::create_directory(std::filesystem::path(snapDir));
     save(snapDir, snapshot.getRankProfilesConfig());
@@ -264,7 +270,7 @@ void FileConfigManager::saveConfig(const DocumentDBConfig& snapshot, SerialNum s
     _info.validateSnapshot(serialNum);
 
     bool saveValidSnap = _info.save();
-    assert(saveValidSnap);
+    CHECK(saveValidSnap);
     (void)saveValidSnap;
     auto size = DirectoryTraverse::get_tree_size(snapDir);
     _config_sizes_on_disk.emplace(serialNum, size);
@@ -300,6 +306,7 @@ void FileConfigManager::loadConfig(const DocumentDBConfig& currentSnapshot, sear
 
     auto filedistRpcConf = std::make_shared<FiledistributorrpcConfig>();
     auto bucketspaces = std::make_shared<BucketspacesConfig>();
+    auto telemetry = std::make_shared<TelemetryConfig>();
 
     /*
      * XXX: If non-default maintenance config is used then an extra config
@@ -316,7 +323,7 @@ void FileConfigManager::loadConfig(const DocumentDBConfig& currentSnapshot, sear
     HwInfoSampler         sampler(protonConfig.basedir, samplerCfg);
     auto                  bootstrap =
         std::make_shared<BootstrapConfig>(1, docTypesCfg, repo, _protonConfig, filedistRpcConf, bucketspaces,
-                                          currentSnapshot.getTuneFileDocumentDBSP(), sampler.hwInfo());
+                                          telemetry, currentSnapshot.getTuneFileDocumentDBSP(), sampler.hwInfo());
     dbc.forwardConfig(bootstrap);
     dbc.nextGeneration(_transport, 0ms);
 
@@ -330,11 +337,13 @@ void FileConfigManager::removeInvalid() {
 
     const SnapshotList& snaps = _info.snapshots();
     for (const auto& snap : snaps) {
-        if (!snap.valid)
+        if (!snap.valid) {
             toRem.push_back(snap.syncToken);
+        }
     }
-    if (toRem.empty())
+    if (toRem.empty()) {
         return;
+    }
 
     for (const auto& serial : toRem) {
         std::string snapDirBaseName(makeSnapDirBaseName(serial));
@@ -353,7 +362,7 @@ void FileConfigManager::removeInvalid() {
         _config_sizes_on_disk.erase(serial);
     }
     bool saveRemInvalidSnap = _info.save();
-    assert(saveRemInvalidSnap);
+    CHECK(saveRemInvalidSnap);
     (void)saveRemInvalidSnap;
     _size_on_disk.fetch_sub(removed_size_on_disk);
 }
@@ -364,19 +373,22 @@ void FileConfigManager::prune(SerialNum serialNum) {
 
     const SnapshotList& snaps = _info.snapshots();
     for (const auto& snap : snaps) {
-        if (snap.valid && snap.syncToken <= serialNum)
+        if (snap.valid && snap.syncToken <= serialNum) {
             toPrune.push_back(snap.syncToken);
+        }
     }
     std::sort(toPrune.begin(), toPrune.end());
-    if (!toPrune.empty())
+    if (!toPrune.empty()) {
         toPrune.pop_back(); // Keep the newest old entry
-    if (toPrune.empty())
+    }
+    if (toPrune.empty()) {
         return;
+    }
     for (const auto& serial : toPrune) {
         _info.invalidateSnapshot(serial);
     }
     bool saveInvalidSnap = _info.save();
-    assert(saveInvalidSnap);
+    CHECK(saveInvalidSnap);
     (void)saveInvalidSnap;
     removeInvalid();
 }
@@ -390,10 +402,12 @@ SerialNum FileConfigManager::getPrevValidSerial(SerialNum serialNum) const {
     SerialNum           res = 0;
     const SnapshotList& snaps = _info.snapshots();
     for (const auto& snap : snaps) {
-        if (!snap.valid || snap.syncToken >= serialNum)
+        if (!snap.valid || snap.syncToken >= serialNum) {
             continue;
-        if (res < snap.syncToken)
+        }
+        if (res < snap.syncToken) {
             res = snap.syncToken;
+        }
     }
     return res;
 }
@@ -402,7 +416,7 @@ void FileConfigManager::serializeConfig(SerialNum serialNum, nbostream& stream) 
     std::string snapDirBaseName(makeSnapDirBaseName(serialNum));
     std::string snapDir(_baseDir + "/" + snapDirBaseName);
 
-    assert(hasValidSerial(serialNum));
+    CHECK(hasValidSerial(serialNum));
 
     std::vector<std::string> configs = getFileList(snapDir);
     uint32_t                 numConfigs = configs.size();
@@ -423,7 +437,7 @@ void FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream& stream
     if (!skip) {
         _info.addSnapshot(snap);
         bool saveInvalidSnap = _info.save();
-        assert(saveInvalidSnap);
+        CHECK(saveInvalidSnap);
         (void)saveInvalidSnap;
         std::filesystem::create_directory(std::filesystem::path(snapDir));
     }
@@ -433,14 +447,15 @@ void FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream& stream
     for (uint32_t i = 0; i < numConfigs; ++i) {
         ConfigFile file;
         stream >> file;
-        if (!skip)
+        if (!skip) {
             file.save(snapDir);
+        }
     }
-    assert(stream.size() == 0);
+    CHECK(stream.size() == 0);
     if (!skip) {
         _info.validateSnapshot(serialNum);
         bool saveValidSnap = _info.save();
-        assert(saveValidSnap);
+        CHECK(saveValidSnap);
         (void)saveValidSnap;
         auto size = DirectoryTraverse::get_tree_size(snapDir);
         _config_sizes_on_disk.emplace(snap.syncToken, size);

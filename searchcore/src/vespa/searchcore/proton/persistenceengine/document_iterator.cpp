@@ -4,6 +4,7 @@
 
 #include "ipersistencehandler.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -95,7 +96,7 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket& bucket, document:
 DocumentIterator::~DocumentIterator() = default;
 
 void DocumentIterator::add(const DocTypeName& doc_type_name, IDocumentRetriever::SP retriever) {
-    assert(doc_type_name.getName() == retriever->get_doc_type_name().getName());
+    CHECK(doc_type_name.getName() == retriever->get_doc_type_name().getName());
     _sources.emplace_back(doc_type_name, std::move(retriever));
 }
 
@@ -142,7 +143,7 @@ public:
             _needs_document = _cachedSelect->needs_document();
             _document_selection_always_true = _cachedSelect->is_always_true();
             if (_cachedSelect->is_always_false() || _cachedSelect->is_always_invalid()) {
-                assert(!_document_selection_always_true);
+                CHECK(!_document_selection_always_true);
                 LOG(debug, "Nothing will ever match cs.allFalse = '%d', cs.allInvalid = '%d'",
                     _cachedSelect->is_always_false(), _cachedSelect->is_always_invalid());
                 _willAlwaysFail = true;
@@ -182,7 +183,7 @@ public:
             return false;
         }
         // Provide the information we have to the document select context.
-        assert(_select_ctx);
+        CHECK(_select_ctx);
         _select_ctx->_lid = meta.lid;
         _select_ctx->_doc = nullptr;
         if (_populate_document_metadata_docids) {
@@ -212,7 +213,7 @@ public:
             return false;
         }
         // Provide the information we have to the document select context.
-        assert(_select_ctx);
+        CHECK(_select_ctx);
         _select_ctx->_lid = meta.lid;
         _select_ctx->_doc = doc;
         // Evaluate a version of the document select expression that might access the document.
@@ -252,7 +253,7 @@ public:
     }
     void visit(uint32_t lid, document::Document::UP doc) override {
         const search::DocumentMetadata& meta = _metadata[_lidIndexMap[lid]];
-        assert(lid == meta.lid);
+        CHECK(lid == meta.lid);
         if (_matcher.match(meta, doc.get())) {
             if (doc && _fields) {
                 document::FieldSet::stripFields(*doc, *_fields);
@@ -311,7 +312,7 @@ void DocumentIterator::fetchCompleteSource(const DocTypeName& doc_type_name, con
     if (_metaOnly) {
         for (uint32_t lid : lidsToFetch) {
             const search::DocumentMetadata& meta = metadata[lidIndexMap[lid]];
-            assert(lid == meta.lid);
+            CHECK(lid == meta.lid);
             list.push_back(
                 createDocEntry(Timestamp(meta.timestamp), meta.removed, doc_type_name.getName(), meta.gid));
         }
@@ -320,9 +321,9 @@ void DocumentIterator::fetchCompleteSource(const DocTypeName& doc_type_name, con
     {
         for (uint32_t lid : lidsToFetch) {
             const search::DocumentMetadata& meta = metadata[lidIndexMap[lid]];
-            assert(lid == meta.lid);
+            CHECK(lid == meta.lid);
             DocumentId docid(meta.docid);
-            assert(docid.getGlobalId() == meta.gid);
+            CHECK(docid.getGlobalId() == meta.gid);
             if (meta.removed) {
                 list.push_back(DocEntry::create(Timestamp(meta.timestamp), DocumentMetaEnum::REMOVE_ENTRY, docid));
             } else {

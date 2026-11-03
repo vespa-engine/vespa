@@ -24,6 +24,7 @@ public final class ComponentId implements Comparable<ComponentId> {
 
     /** Precomputed string value */
     private final String stringValue;
+    private final String fullValue;
 
     /**
      * Creates a component id from the id string form: name(:version)?(@namespace)?,
@@ -51,15 +52,14 @@ public final class ComponentId implements Comparable<ComponentId> {
         this.spec = new Spec<>(new VersionHandler(), id, version, namespace);
         this.anonymous = anonymous;
         this.stringValue = spec.createStringValue();
+        this.fullValue = spec.createFullValue();
     }
 
     public ComponentId nestInNamespace(ComponentId namespace) {
         if (namespace == null) {
             return this;
         } else {
-            ComponentId newNamespace = (getNamespace() == null)
-                    ? namespace
-                    : getNamespace().nestInNamespace(namespace);
+            ComponentId newNamespace = (getNamespace() == null) ? namespace : getNamespace().nestInNamespace(namespace);
             return new ComponentId(getName(), getVersion(), newNamespace);
         }
     }
@@ -80,6 +80,13 @@ public final class ComponentId implements Comparable<ComponentId> {
      * Trailing ".0"'s are stripped from the version part.
      */
     public String stringValue() { return stringValue; }
+
+    /**
+     * Returns the string value of this id as a fully specified string with any trailing ".0"
+     * kept. This is suitable for usage as a reference to a specific version, where no range
+     * is allowed for minor and micro parts.
+     */
+    public String fullValue() { return fullValue; }
 
     @Override
     public String toString() {

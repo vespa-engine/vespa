@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -74,26 +75,27 @@ private:
         explicit FieldIndexBuilder(std::stringstream& ss)
             : _ss(ss), _insideWord(false), _firstWord(true), _firstDoc(true) {}
         ~FieldIndexBuilder() override {
-            assert(!_insideWord);
+            CHECK(!_insideWord);
             _ss << "]";
         }
         void startWord(std::string_view word) override {
-            assert(!_insideWord);
-            if (!_firstWord)
+            CHECK(!_insideWord);
+            if (!_firstWord) {
                 _ss << ",";
+            }
             _ss << "w=" << word << "[";
             _firstDoc = true;
             _insideWord = true;
         }
 
         void endWord() override {
-            assert(_insideWord);
+            CHECK(_insideWord);
             _ss << "]";
             _firstWord = false;
             _insideWord = false;
         }
         void add_document(const DocIdAndFeatures& features) override {
-            assert(_insideWord);
+            CHECK(_insideWord);
             if (!_firstDoc) {
                 _ss << ",";
             }
@@ -134,8 +136,9 @@ public:
     ~MyBuilder() override;
 
     std::unique_ptr<index::FieldIndexBuilder> startField(uint32_t fieldId) override {
-        if (!_firstField)
+        if (!_firstField) {
             _ss << ",";
+        }
         _ss << "f=" << fieldId << "[";
         _firstField = false;
         return std::make_unique<FieldIndexBuilder>(_ss);
@@ -164,8 +167,9 @@ std::string toString(const SimpleMatchData& match_data, bool hasElements = false
     ss << posItr.getFieldLength() << ":";
     bool first = true;
     for (; posItr.valid(); posItr.next()) {
-        if (!first)
+        if (!first) {
             ss << ",";
+        }
         ss << posItr.getPosition();
         first = false;
         if (hasElements) {
@@ -187,8 +191,9 @@ bool assertPostingList(const std::string& exp, PostingIteratorType itr, const Fe
     SimpleMatchData                   match_data;
     ss << "[";
     for (size_t i = 0; itr.valid(); ++itr, ++i) {
-        if (i > 0)
+        if (i > 0) {
             ss << ",";
+        }
         uint32_t docId = itr.getKey();
         ss << docId;
         if (store != nullptr) { // consider features as well
@@ -209,8 +214,9 @@ template <typename PostingIteratorType> bool assertPostingList(std::vector<uint3
     std::stringstream ss;
     ss << "[";
     for (size_t i = 0; i < exp.size(); ++i) {
-        if (i > 0)
+        if (i > 0) {
             ss << ",";
+        }
         ss << exp[i];
     }
     ss << "]";
@@ -222,7 +228,7 @@ typename FieldIndex<interleaved_features>::PostingList::Iterator
 find_in_field_index(const std::string_view word, uint32_t field_id, const FieldIndexCollection& fic) {
     using FieldIndexType = FieldIndex<interleaved_features>;
     auto* field_index = dynamic_cast<FieldIndexType*>(fic.getFieldIndex(field_id));
-    assert(field_index != nullptr);
+    CHECK(field_index != nullptr);
     return field_index->find(word);
 }
 
@@ -231,7 +237,7 @@ typename FieldIndex<interleaved_features>::PostingList::ConstIterator
 find_frozen_in_field_index(const std::string_view word, uint32_t field_id, const FieldIndexCollection& fic) {
     using FieldIndexType = FieldIndex<interleaved_features>;
     auto* field_index = dynamic_cast<FieldIndexType*>(fic.getFieldIndex(field_id));
-    assert(field_index != nullptr);
+    CHECK(field_index != nullptr);
     return field_index->findFrozen(word);
 }
 

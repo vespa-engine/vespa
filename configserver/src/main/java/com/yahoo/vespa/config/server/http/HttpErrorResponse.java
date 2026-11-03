@@ -18,6 +18,7 @@ import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.PRECONDITION_FAILED;
 import static com.yahoo.jdisc.Response.Status.REQUEST_TIMEOUT;
+import static com.yahoo.jdisc.Response.Status.SERVICE_UNAVAILABLE;
 
 /**
  * @author Ulf Lilleengen
@@ -56,7 +57,8 @@ public class HttpErrorResponse extends HttpResponse {
         REINDEXING_STATUS_UNAVAILABLE,
         PRECONDITION_FAILED,
         TESTER_SUSPENDED,
-        QUOTA_EXCEEDED
+        QUOTA_EXCEEDED,
+        SERVICE_UNAVAILABLE
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
@@ -133,6 +135,10 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpResponse quotaExceeded(String msg) {
         return new HttpErrorResponse(BAD_REQUEST, ErrorCode.QUOTA_EXCEEDED.name(), msg);
+    }
+
+    public static HttpResponse serviceUnavailable(String msg) {
+        return new HttpErrorResponse(SERVICE_UNAVAILABLE, ErrorCode.SERVICE_UNAVAILABLE.name(), msg);
     }
 
     @Override

@@ -21,20 +21,23 @@ class EnumHintSearchContext;
  * StringSearchContext is an abstract base class for search contexts
  * handling a query term on a string attribute vector.
  */
-class StringSearchContext : public SearchContext, public StringMatcher {
+template <typename Matcher>
+class StringSearchContextT : public SearchContext {
+    Matcher _matcher;
+
 protected:
-    using MatcherType = StringMatcher;
+    using MatcherType = Matcher;
+
+    const Matcher& matcher() const noexcept { return _matcher; }
 
 public:
-    StringSearchContext(const AttributeVector& to_be_searched, std::unique_ptr<QueryTermSimple> query_term,
-                        bool cased, vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm);
-    StringSearchContext(const AttributeVector& to_be_searched, StringMatcher&& matcher);
-    StringSearchContext(StringSearchContext&&) noexcept;
-    ~StringSearchContext() override;
+    StringSearchContextT(const AttributeVector& to_be_searched, Matcher&& matcher);
+    StringSearchContextT(StringSearchContextT&&) noexcept;
+    ~StringSearchContextT() override;
     const QueryTermUCS4* queryTerm() const override;
     bool valid() const override;
 
-    void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
+    void set_and_setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
 };
 
 } // namespace search::attribute

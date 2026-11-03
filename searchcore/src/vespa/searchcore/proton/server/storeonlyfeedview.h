@@ -134,6 +134,7 @@ private:
     void putSummary(SerialNum serialNum, Lid lid, FutureStream doc, const OnOperationDoneType& onDone);
     void putSummaryNoop(FutureStream doc, const OnOperationDoneType& onDone);
     void putSummary(SerialNum serialNum, Lid lid, DocumentSP doc, const OnOperationDoneType& onDone);
+    void moveSummary(SerialNum serialNum, Lid prevLid, Lid lid, DocumentSP doc, const OnOperationDoneType& onDone);
     void removeSummary(SerialNum serialNum, Lid lid, const OnWriteDoneType& onDone);
     void removeSummaries(SerialNum serialNum, const LidVector& lids, const OnWriteDoneType& onDone);
     void heartBeatSummary(SerialNum serialNum, const DoneCallback& onDone);

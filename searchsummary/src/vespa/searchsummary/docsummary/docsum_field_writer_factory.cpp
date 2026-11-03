@@ -50,9 +50,9 @@ void DocsumFieldWriterFactory::throw_missing_source(const std::string& command) 
     throw IllegalArgumentException("Missing source for command '" + command + "'.");
 }
 
-std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
-                                                                                        const std::string& command,
-                                                                                        const std::string& source) {
+std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field_writer(
+    const std::string& field_name, const std::string& command, const std::string& source,
+    std::span<const std::string> struct_fields, CombinerShape declared_shape) {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
     if (command == command::dynamic_teaser) {
         if (!source.empty()) {
@@ -69,7 +69,7 @@ std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field
         fieldWriter = std::make_unique<EmptyDFW>();
     } else if (command == command::copy) {
         if (!source.empty()) {
-            fieldWriter = std::make_unique<CopyDFW>(source);
+            fieldWriter = std::make_unique<CopyDFW>(source, struct_fields);
         } else {
             throw_missing_source(command);
         }
@@ -118,7 +118,15 @@ std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field
         if (has_attribute_manager()) {
             auto               attr_ctx = getEnvironment().getAttributeManager()->createContext();
             const std::string& source_field = source.empty() ? field_name : source;
-            fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx);
+            fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, struct_fields, declared_shape);
+            if (!fieldWriter && !struct_fields.empty()) {
+                // Failing the field would discard the summary config for the whole node, cf.
+                // ResultConfig::readConfig, so drop just the selection and write all the sub-fields.
+                Issue::report("Ignoring the selection of struct fields for summary field '%s': all sub-fields "
+                              "of '%s' are included instead",
+                              field_name.c_str(), source_field.c_str());
+                fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, {}, declared_shape);
+            }
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::documentid) {

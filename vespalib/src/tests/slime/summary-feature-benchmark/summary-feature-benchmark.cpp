@@ -1,11 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
-
-#include <cassert>
 
 using namespace vespalib;
 using namespace vespalib::slime::convenience;
@@ -16,7 +15,7 @@ struct MyBuffer : public Output {
     MyBuffer() : data(1_Mi), used(0) {}
     ~MyBuffer() override;
     WritableMemory reserve(size_t bytes) override {
-        assert(data.size() >= (used + bytes));
+        CHECK(data.size() >= (used + bytes));
         return WritableMemory(&data[used], data.size() - used);
     }
     Output& commit(size_t bytes) override {

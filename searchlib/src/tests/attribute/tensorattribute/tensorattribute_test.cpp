@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/simple_value.h>
@@ -28,6 +29,7 @@
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute_flags.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchlib/test/tensor_divergence.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/data/fileheader.h>
@@ -252,14 +254,14 @@ public:
     std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid, VectorBundle vectors,
                                                         GenerationGuard guard) const override {
         (void)guard;
-        assert(vectors.subspaces() == 1);
+        CHECK(vectors.subspaces() == 1);
         auto d_vector = vectors.cells(0).typify<double>();
         _prepare_adds.emplace_back(docid, DoubleVector(d_vector.begin(), d_vector.end()));
         return std::make_unique<MockPrepareResult>(docid);
     }
     void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) override {
         auto* mock_result = dynamic_cast<MockPrepareResult*>(prepare_result.get());
-        assert(mock_result);
+        CHECK(mock_result);
         EXPECT_EQ(docid, mock_result->docid);
         auto vector = _vectors.get_vector(docid, 0).typify<double>();
         _complete_adds.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
@@ -369,7 +371,7 @@ class MockNearestNeighborIndexFactory : public NearestNeighborIndexFactory {
         (void)params;
         (void)multi_vector_index;
         (void)quant_params;
-        assert(cell_type == CellType::DOUBLE);
+        CHECK(cell_type == CellType::DOUBLE);
         return std::make_unique<MockNearestNeighborIndex>(vectors);
     }
 };
@@ -465,17 +467,11 @@ void PrintTo(const WrapValue& value, std::ostream* os) {
 /*
  * Checks if two tensors are approximately equal to each other, where the max divergence is
  * given by the `max_nrmse` (maximum normalized root mean squared error) argument.
- * NRMSE isn't necessarily the most intuitive error metric, but unlike other metrics (MAPE,
- * SMAPE etc.) it is well-defined for values of (or close to) zero, and it compensates for
- * different vector norms. The latter is very useful since vector dequantization precision
- * is directly affected by the norm due to the scaling factor used during reconstruction.
  *
  * If `max_nrmse` is zero, this will fall back to eval::Value operator== for equality testing,
  * as it transparently handles floating point precision issues.
  *
  * `arg` is expected to be a WrapValue instance.
- *
- * TODO move this out since it's useful for other quantization tests.
  */
 MATCHER_P2(TensorApproxEquals, exp_spec, max_nrmse, "") {
     using vespalib::eval::Aggr;
@@ -483,29 +479,8 @@ MATCHER_P2(TensorApproxEquals, exp_spec, max_nrmse, "") {
     if (max_nrmse == 0) {
         return ExplainMatchResult(Eq(exp_spec), arg, result_listener);
     }
-    auto arg_spec = TensorSpec::from_value(*arg._value); // WrapValue arg
-    if (exp_spec.type() != arg_spec.type()) {
-        *result_listener << "tensors have mismatching types";
-        return false;
-    }
-    // Root mean squared error (RMSE)
-    // For simplicity, compute across all subspaces. Quantization works on a per
-    // dense subspace basis, so we may want to change this to be subspace-aware.
-    // We also casually assume tensors have at least 1 dimension.
-    const double n = ReferenceOperations::reduce(exp_spec, Aggr::COUNT, {}).as_double();
-    auto         err_sq = ReferenceOperations::merge(exp_spec, arg_spec, [](double a, double b) noexcept {
-        const double diff = a - b;
-        return diff * diff;
-    });
-    const double sum_err_sq = ReferenceOperations::reduce(err_sq, Aggr::SUM, {}).as_double();
-    const double mse = sum_err_sq / n;
-    const double rmse = std::sqrt(mse);
-    // Normalized root mean squared error (NRSME)
-    // We choose to normalize based on the max observed cell value in the expected tensor
-    // Ref: https://en.wikipedia.org/wiki/Root_mean_square_deviation#Normalization
-    const double exp_max = ReferenceOperations::reduce(exp_spec, Aggr::MAX, {}).as_double();
-    const double nrmse = (exp_max != 0) ? (rmse / exp_max) : rmse;
-
+    const auto   exp_value = WrapValue(exp_spec);
+    const double nrmse = search::test::compute_tensor_nrmse(*exp_value._value, *arg._value);
     if (nrmse > max_nrmse) {
         *result_listener << "expected NRMSE between tensors to be <= " << max_nrmse << ", was " << nrmse;
         return false;
@@ -577,7 +552,7 @@ struct Fixture {
 
     std::shared_ptr<TensorAttribute> makeAttr() {
         if (_traits.use_dense_tensor_attribute) {
-            assert(_denseTensors);
+            CHECK(_denseTensors);
             return std::make_shared<DenseTensorAttribute>(_name, _cfg, *_index_factory);
         } else if (_traits.use_direct_tensor_attribute) {
             return std::make_shared<DirectTensorAttribute>(_name, _cfg);
@@ -588,14 +563,14 @@ struct Fixture {
 
     const DenseTensorAttribute& as_dense_tensor() const {
         auto result = dynamic_cast<const DenseTensorAttribute*>(_tensorAttr.get());
-        assert(result != nullptr);
+        CHECK(result != nullptr);
         return *result;
     }
 
     template <typename IndexType> IndexType& get_nearest_neighbor_index() {
-        assert(_tensorAttr->nearest_neighbor_index() != nullptr);
+        CHECK(_tensorAttr->nearest_neighbor_index() != nullptr);
         auto index = dynamic_cast<const IndexType*>(_tensorAttr->nearest_neighbor_index());
-        assert(index != nullptr);
+        CHECK(index != nullptr);
         return *const_cast<IndexType*>(index);
     }
 

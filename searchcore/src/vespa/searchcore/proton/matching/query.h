@@ -47,6 +47,13 @@ public:
     /** Convenience typedef. */
     using GeoLocationSpecPtrs = std::vector<const GeoLocationSpec*>;
 
+    /** How the blueprint tree was changed by handle_global_filter. */
+    enum class GlobalFilterOutcome {
+        UNCHANGED,        // the blueprint tree was not changed
+        FILTER_SET,       // a global filter was set on the blueprint tree
+        COST_TIER_CHANGED // no global filter was set, but cost tiers were changed
+    };
+
     Query();
     ~Query();
     /**
@@ -121,20 +128,22 @@ public:
      *
      * The estimated hit ratio from the blueprint tree is used to select strategy:
      * 1) estimated_hit_ratio < global_filter_lower_limit:
-     *     Nothing is done.
+     *     No global filter is set. Nearest neighbor blueprints are moved to the expensive cost tier
+     *     so that a white list blueprint can come before them.
      * 2) estimated_hit_ratio <= global_filter_upper_limit:
      *     Calculate the global filter and set it on the blueprint.
      * 3) estimated_hit_ratio > global_filter_upper_limit:
      *     Set a "match all filter" on the blueprint.
      *
-     * @return whether the global filter was set on the blueprint.
+     * @return how the blueprint was changed. If it was changed, it must be optimized and sorted again.
      */
-    static bool handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom,
-                                     const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
-                                     double global_filter_lower_limit, double global_filter_upper_limit,
-                                     vespalib::ThreadBundle&             thread_bundle,
-                                     search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace* trace,
-                                     bool use_lazy_filter = false);
+    static GlobalFilterOutcome handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom,
+                                                    const AnnDeadlineConfiguration& ann_deadline_config,
+                                                    uint32_t docid_limit, double global_filter_lower_limit,
+                                                    double                              global_filter_upper_limit,
+                                                    vespalib::ThreadBundle&             thread_bundle,
+                                                    search::queryeval::QuerySetupStats& setup_stats,
+                                                    search::engine::Trace* trace, bool use_lazy_filter = false);
 
     static void perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom,
                                      const AnnDeadlineConfiguration&     ann_deadline_config,

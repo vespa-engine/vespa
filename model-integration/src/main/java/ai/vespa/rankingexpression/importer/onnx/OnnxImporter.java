@@ -28,6 +28,9 @@ public class OnnxImporter extends ModelImporter {
     }
 
     @Override
+    public boolean isCacheable() { return true; }
+
+    @Override
     public ImportedModel importModel(String modelName, String modelPath) {
         try (FileInputStream inputStream = new FileInputStream(modelPath)) {
             Onnx.ModelProto model = Onnx.ModelProto.parseFrom(inputStream);

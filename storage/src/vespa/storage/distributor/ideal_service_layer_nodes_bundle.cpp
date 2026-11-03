@@ -42,8 +42,9 @@ void IdealServiceLayerNodesBundle::set_nodes(ConstNodesRef nodes, ConstNodesRef 
 IdealServiceLayerNodesBundle::Index
 IdealServiceLayerNodesBundle::ConstNodesRef2Index::lookup(uint16_t node) const noexcept {
     for (uint16_t i(0); i < _idealState.size(); i++) {
-        if (node == _idealState[i])
+        if (node == _idealState[i]) {
             return Index(i);
+        }
     }
     return Index::invalid();
 }

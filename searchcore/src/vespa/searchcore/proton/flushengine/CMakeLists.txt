@@ -21,6 +21,8 @@ vespa_add_library(searchcore_flushengine STATIC
     flush_target_candidates.cpp
     flushtargetproxy.cpp
     flushtask.cpp
+    prepare_restart_costs.cpp
+    prepare_restart_costs_config.cpp
     prepare_restart_flush_strategy.cpp
     reserved_disk_space_calculator.cpp
     reserved_memory_calculator.cpp

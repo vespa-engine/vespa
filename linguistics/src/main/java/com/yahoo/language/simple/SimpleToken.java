@@ -22,6 +22,7 @@ public class SimpleToken implements Token {
     private List<String> stems = null; // Any additional stems after tokenString
     private boolean specialToken = false;
     private long offset = 0;
+    private long positionIncrement = 1;
 
     public SimpleToken(String original) {
         this(original, (String)null);
@@ -129,6 +130,16 @@ public class SimpleToken implements Token {
 
     public SimpleToken setOffset(long offset) {
         this.offset = offset;
+        return this;
+    }
+
+    @Override
+    public long getPositionIncrement() {
+        return positionIncrement;
+    }
+
+    public SimpleToken setPositionIncrement(long increment) {
+        this.positionIncrement = increment;
         return this;
     }
 

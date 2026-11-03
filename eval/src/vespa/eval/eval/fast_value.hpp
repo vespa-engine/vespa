@@ -4,6 +4,7 @@
 #include "inline_operation.h"
 #include "value_builder_factory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 
@@ -162,11 +163,11 @@ template <typename T, bool transient> struct FastValue final : Value, ValueBuild
     std::span<const T> get_raw_cells() const { return {my_cells.get(0), my_cells.size}; }
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         if (my_index.map.addr_size() == 0) {
-            assert(my_index.map.size() == 1);
+            CHECK(my_index.map.size() == 1);
         }
-        assert(my_cells.size == (my_index.map.size() * my_subspace_size));
+        CHECK(my_cells.size == (my_index.map.size() * my_subspace_size));
         ValueBuilder<T>* me = this;
-        assert(me == self.get());
+        CHECK(me == self.get());
         self.release();
         return std::unique_ptr<Value>(this);
     }
@@ -215,7 +216,7 @@ template <typename T> struct FastDenseValue final : Value, ValueBuilder<T> {
     }
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         ValueBuilder<T>* me = this;
-        assert(me == self.get());
+        CHECK(me == self.get());
         self.release();
         return std::unique_ptr<Value>(this);
     }

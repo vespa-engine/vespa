@@ -4,6 +4,8 @@
 
 #include "free_list_raw_allocator.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::datastore {
 
 template <typename EntryT, typename RefT>
@@ -18,7 +20,7 @@ FreeListRawAllocator<EntryT, RefT>::alloc(size_t num_entries) {
     if (free_list.empty()) {
         return ParentType::alloc(num_entries);
     }
-    assert(num_entries == 1);
+    CHECK(num_entries == 1);
     RefT  ref = free_list.pop_entry();
     auto& state = _store.getBufferState(ref.bufferId());
     auto  array_size = state.getArraySize();
@@ -37,7 +39,7 @@ FreeListRawAllocator<EntryT, RefT>::alloc_dynamic_array(size_t array_size) {
     }
     RefT ref = free_list.pop_entry();
     auto entry_size = _store.get_entry_size(_typeId);
-    assert(_store.getBufferState(ref.bufferId()).getArraySize() >= array_size);
+    CHECK(_store.getBufferState(ref.bufferId()).getArraySize() >= array_size);
     EntryT* entry = BufferType::get_entry(_store.getBuffer(ref.bufferId()), ref.offset(), entry_size);
     BufferType::set_dynamic_array_size(entry, array_size);
     return HandleType(ref, entry);

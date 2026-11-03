@@ -6,6 +6,7 @@
 #include "idocumentmovehandler.h"
 #include "maintenancedocumentsubdb.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
@@ -21,14 +22,17 @@ namespace proton::bucketdb {
 using Iterator = IDocumentMetaStore::Iterator;
 
 MoveOperation::UP BucketMover::createMoveOperation(const MoveKey& key) {
-    if (_source->lidNeedsCommit(key._lid))
+    if (_source->lidNeedsCommit(key._lid)) {
         return {};
+    }
 
     const RawDocumentMetadata& metaNow = _source->meta_store()->getRawMetadata(key._lid);
-    if (metaNow.getGid() != key._gid)
+    if (metaNow.getGid() != key._gid) {
         return {};
-    if (metaNow.getTimestamp() != key._timestamp)
+    }
+    if (metaNow.getTimestamp() != key._timestamp) {
         return {};
+    }
 
     Document::SP doc(_source->retriever()->getFullDocument(key._lid));
     if (!doc || doc->getId().getGlobalId() != key._gid) {
@@ -86,7 +90,7 @@ BucketMover::BucketMover(const BucketId& bucket, const MaintenanceDocumentSubDB*
 }
 
 BucketMover::~BucketMover() {
-    assert(inSync());
+    CHECK(inSync());
 }
 
 std::pair<BucketMover::MoveKeys, bool> BucketMover::getKeysToMove(size_t maxDocsToMove) {
@@ -170,8 +174,9 @@ bool DocumentBucketMover::moveDocuments(size_t maxDocsToMove, IMoveOperationLimi
     if (done && allOk) {
         _impl->setAllScheduled();
     }
-    if (moveOps.success().empty())
+    if (moveOps.success().empty()) {
         return allOk;
+    }
 
     _impl->updateLastValidGid(moveOps.success().back().first->getDocument()->getId().getGlobalId());
 

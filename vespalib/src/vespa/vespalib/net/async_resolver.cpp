@@ -4,6 +4,7 @@
 
 #include "socket_spec.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -73,7 +74,7 @@ bool AsyncResolver::CachingHostResolver::lookup(const std::string& host_name, st
         _map.erase(_queue.front());
         _queue.pop();
     }
-    assert(_map.size() == _queue.size());
+    CHECK(_map.size() == _queue.size());
     auto pos = _map.find(host_name);
     if (pos != _map.end()) {
         ip_address = pos->second.ip_address;
@@ -89,7 +90,7 @@ void AsyncResolver::CachingHostResolver::store(const std::string& host_name, con
     if (res.second) {
         _queue.push(res.first);
     }
-    assert(_map.size() == _queue.size());
+    CHECK(_map.size() == _queue.size());
 }
 
 AsyncResolver::CachingHostResolver::CachingHostResolver(Clock::SP clock, HostResolver::SP resolver,
@@ -149,7 +150,7 @@ void AsyncResolver::wait_for_pending_resolves() {
 void AsyncResolver::resolve_async(const std::string& spec, ResultHandler::WP result_handler) {
     auto task = std::make_unique<ResolveTask>(spec, *_resolver, std::move(result_handler));
     auto rejected = _executor->execute(std::move(task));
-    assert(!rejected);
+    CHECK(!rejected);
 }
 
 AsyncResolver::SP AsyncResolver::create(Params params) {

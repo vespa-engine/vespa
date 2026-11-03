@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/engine/search_protocol_proto.h>
+#include <string>
+
+namespace google::protobuf { class Message; }
 
 namespace search::common {
 

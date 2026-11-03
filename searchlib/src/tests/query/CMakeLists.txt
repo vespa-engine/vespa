@@ -39,6 +39,14 @@ vespa_add_executable(searchlib_stackdumpquerycreator_test_app TEST
     GTest::gtest
 )
 vespa_add_test(NAME searchlib_stackdumpquerycreator_test_app COMMAND searchlib_stackdumpquerycreator_test_app)
+vespa_add_executable(searchlib_stackdumpiterator_test_app TEST
+    SOURCES
+    stackdumpiterator_test.cpp
+    DEPENDS
+    vespa_searchlib
+    GTest::gtest
+)
+vespa_add_test(NAME searchlib_stackdumpiterator_test_app COMMAND searchlib_stackdumpiterator_test_app)
 vespa_add_executable(searchlib_streaming_query_test_app TEST
     SOURCES
     streaming_query_test.cpp

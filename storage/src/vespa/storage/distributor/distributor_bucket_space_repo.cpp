@@ -9,7 +9,6 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/backtrace.h>
 
-#include <cassert>
 #include <cinttypes>
 
 #include <vespa/log/log.h>

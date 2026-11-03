@@ -2,10 +2,9 @@
 
 #include "configretriever.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/subscription/sourcespec.h>
-
-#include <cassert>
 
 namespace config {
 
@@ -38,31 +37,35 @@ ConfigSnapshot ConfigRetriever::getBootstrapConfigs(vespalib::duration timeout) 
 }
 
 ConfigSnapshot ConfigRetriever::getConfigs(const ConfigKeySet& keySet, vespalib::duration timeout) {
-    if (isClosed())
+    if (isClosed()) {
         return ConfigSnapshot();
+    }
     if (_bootstrapRequired) {
         throw ConfigRuntimeException("Cannot change keySet until bootstrap getBootstrapConfigs() has been called");
     }
-    assert(!keySet.empty());
+    CHECK(!keySet.empty());
     if (keySet != _lastKeySet) {
         _lastKeySet = keySet;
         {
             std::lock_guard guard(_lock);
-            if (isClosed())
+            if (isClosed()) {
                 return ConfigSnapshot();
+            }
             _configSubscriber = std::make_unique<GenericConfigSubscriber>(_context);
         }
         _subscriptionList.clear();
         for (const auto& key : keySet) {
             std::lock_guard guard(_lock);
-            if (isClosed())
+            if (isClosed()) {
                 return ConfigSnapshot();
+            }
             _subscriptionList.push_back(_configSubscriber->subscribe(key, _subscribeTimeout));
         }
     }
     // Try update the subscribers generation if older than bootstrap
-    if (_configSubscriber->getGeneration() < _bootstrapSubscriber.getGeneration())
+    if (_configSubscriber->getGeneration() < _bootstrapSubscriber.getGeneration()) {
         _configSubscriber->nextGeneration(timeout);
+    }
 
     // If we failed to get a new generation, the user should call us again.
     if (_configSubscriber->getGeneration() < _bootstrapSubscriber.getGeneration()) {
@@ -71,8 +74,9 @@ ConfigSnapshot ConfigRetriever::getConfigs(const ConfigKeySet& keySet, vespalib:
     // If we are not in sync, even though we got a new generation, we should get
     // another bootstrap.
     _bootstrapRequired = _configSubscriber->getGeneration() > _bootstrapSubscriber.getGeneration();
-    if (_bootstrapRequired)
+    if (_bootstrapRequired) {
         return ConfigSnapshot();
+    }
 
     _generation = _configSubscriber->getGeneration();
     return ConfigSnapshot(_subscriptionList, _generation);
@@ -82,8 +86,9 @@ void ConfigRetriever::close() {
     std::lock_guard guard(_lock);
     _closed.store(true, std::memory_order_relaxed);
     _bootstrapSubscriber.close();
-    if (_configSubscriber)
+    if (_configSubscriber) {
         _configSubscriber->close();
+    }
 }
 
 bool ConfigRetriever::isClosed() const {

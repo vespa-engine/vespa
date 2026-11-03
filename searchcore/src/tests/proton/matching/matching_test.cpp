@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -11,13 +12,15 @@
 #include <vespa/searchcore/proton/matching/match_tools.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/matching/querynodes.h>
+#include <vespa/searchcore/proton/matching/result_processor.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/matching/viewresolver.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
-#include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
+#include <vespa/searchlib/aggregation/sumaggregationresult.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
+#include <vespa/searchlib/common/converters.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -28,11 +31,14 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
+#include <vespa/searchlib/query/tree/query_to_protobuf.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
+#include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/searchlib/queryeval/fake_index.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -41,7 +47,12 @@
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/testclock.h>
 
+#include <atomic>
+#include <chrono>
 #include <initializer_list>
+#include <map>
+#include <string_view>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("matching_test");
@@ -61,7 +72,9 @@ using namespace search::queryeval;
 using namespace search;
 
 using search::attribute::test::MockAttributeContext;
+using search::fef::indexproperties::hitcollector::FirstPhaseRankScoreDropLimit;
 using search::fef::indexproperties::hitcollector::HeapSize;
+using search::fef::indexproperties::hitcollector::SecondPhaseRankScoreDropLimit;
 using search::index::schema::DataType;
 using storage::spi::Timestamp;
 using vespalib::FeatureSet;
@@ -70,6 +83,18 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 
 constexpr uint32_t NUM_DOCS = 1000;
+
+// poll until pred is true; false if it did not happen within a generous deadline
+template <typename Pred> bool wait_until(Pred pred) {
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+    while (!pred()) {
+        if (std::chrono::steady_clock::now() > deadline) {
+            return false;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return true;
+}
 
 class MatchingTestSharedState {
     std::unique_ptr<vespalib::SimpleThreadBundle> _thread_bundle;
@@ -108,7 +133,7 @@ IAttributeContext& MatchingTestSharedState::attribute_context() {
                 attr->addDoc(docid);
                 attr->add(i, docid); // value = docid
             }
-            assert(docid + 1 == NUM_DOCS);
+            CHECK(docid + 1 == NUM_DOCS);
             _attribute_context->add(attr);
         }
         {
@@ -118,7 +143,7 @@ IAttributeContext& MatchingTestSharedState::attribute_context() {
                 attr->addDoc(docid);
                 attr->add(i * 2, docid); // value = docid * 2
             }
-            assert(docid + 1 == NUM_DOCS);
+            CHECK(docid + 1 == NUM_DOCS);
             _attribute_context->add(attr);
         }
         {
@@ -128,7 +153,7 @@ IAttributeContext& MatchingTestSharedState::attribute_context() {
                 attr->addDoc(docid);
                 attr->add(i % 10, docid);
             }
-            assert(docid + 1 == NUM_DOCS);
+            CHECK(docid + 1 == NUM_DOCS);
             _attribute_context->add(attr);
         }
     }
@@ -180,12 +205,22 @@ std::string make_simple_stack_dump(const std::string& field, const std::string& 
     return StackDumpCreator::create(*builder.build());
 }
 
-std::string make_same_element_stack_dump(const std::string& a1_term, const std::string& f1_term) {
+std::string make_same_element_stack_dump(const std::string& view, const std::string& field1, const std::string& term1,
+                                         const std::string& field2, const std::string& term2) {
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addSameElement(2, "my", 0, Weight(1));
-    builder.addStringTerm(a1_term, "a1", 1, Weight(1));
-    builder.addStringTerm(f1_term, "f1", 2, Weight(1));
+    builder.addSameElement(2, view, 0, Weight(1));
+    builder.addStringTerm(term1, field1, 1, Weight(1));
+    builder.addStringTerm(term2, field2, 2, Weight(1));
     return StackDumpCreator::create(*builder.build());
+}
+
+std::string make_same_element_stack_dump(const std::string& a1_term, const std::string& f1_term) {
+    return make_same_element_stack_dump("my", "a1", a1_term, "f1", f1_term);
+}
+
+// sameElement over the virtual field 'ix', which only has struct field indexes (no struct field attributes).
+std::string make_index_only_same_element_stack_dump(const std::string& f1_term, const std::string& f2_term) {
+    return make_same_element_stack_dump("ix", "f1", f1_term, "f2", f2_term);
 }
 
 std::string make_two_term_and_stack_dump(const std::string& field, const std::string& term1,
@@ -195,6 +230,100 @@ std::string make_two_term_and_stack_dump(const std::string& field, const std::st
     builder.addStringTerm(term1, field, 1, Weight(1));
     builder.addStringTerm(term2, field, 2, Weight(1));
     return StackDumpCreator::create(*builder.build());
+}
+
+size_t feature_index(const std::vector<std::string>& names, const std::string& name) {
+    for (size_t i = 0; i < names.size(); ++i) {
+        if (names[i] == name) {
+            return i;
+        }
+    }
+    ADD_FAILURE() << "match feature '" << name << "' not found";
+    return names.size();
+}
+
+struct ProfileTagWalk {
+    bool                                                  present = false;
+    std::vector<size_t>                                   entries_per_thread; // one element per thread trace
+    size_t                                                entries_with_roots = 0;
+    std::map<std::string, int64_t>                        root_counts;
+    std::map<std::string, std::map<std::string, int64_t>> child_counts;
+    ~ProfileTagWalk();
+};
+
+ProfileTagWalk::~ProfileTagWalk() = default;
+
+ProfileTagWalk walk_profile_tag(const SearchRequest& req, std::string_view tag) {
+    ProfileTagWalk out;
+    if (!req.trace().hasTrace()) {
+        return out;
+    }
+    const auto& traces = req.trace().getTraces();
+    for (size_t i = 0; i < traces.entries(); ++i) {
+        if (traces[i]["tag"].asString().make_string() != "query_execution") {
+            continue;
+        }
+        const auto& threads = traces[i]["threads"];
+        for (size_t t = 0; t < threads.entries(); ++t) {
+            const auto& ttraces = threads[t]["traces"];
+            out.entries_per_thread.push_back(0);
+            for (size_t j = 0; j < ttraces.entries(); ++j) {
+                if (ttraces[j]["tag"].asString().make_string() != tag) {
+                    continue;
+                }
+                out.present = true;
+                ++out.entries_per_thread.back();
+                const auto& roots = ttraces[j]["roots"];
+                if (roots.entries() > 0) {
+                    ++out.entries_with_roots;
+                }
+                for (size_t r = 0; r < roots.entries(); ++r) {
+                    const std::string name = roots[r]["name"].asString().make_string();
+                    out.root_counts[name] += roots[r]["count"].asLong();
+                    const auto& children = roots[r]["children"];
+                    for (size_t c = 0; c < children.entries(); ++c) {
+                        out.child_counts[name][children[c]["name"].asString().make_string()] +=
+                            children[c]["count"].asLong();
+                    }
+                }
+            }
+        }
+    }
+    return out;
+}
+
+// Turns on tracing; the caller sets the profile depths on the returned trace.
+search::engine::Trace& enable_tracing(SearchRequest& req) {
+    req.setTraceLevel(1, 1);
+    return req.trace();
+}
+
+// Three labeled query items: a term in f1, a term in f2 and a label wrapper
+// (which searches no field of its own) around a term in f1.
+std::string make_labeled_terms_and_wrapper_stack_dump() {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addAnd(3);
+    builder.addStringTerm("foo", "f1", 1, Weight(1));
+    builder.addStringTerm("baz", "f2", 2, Weight(1));
+    builder.add_label_wrapper(3, 1.0);
+    builder.addStringTerm("bar", "f1", 4, Weight(1));
+    return StackDumpCreator::create(*builder.build());
+}
+
+// A labeled in on f1 (alternatives foo and bar) or'ed with a labeled term in f2,
+// so that a document can hit without matching the in. Serialized as protobuf,
+// since the stack dump creator does not write the unique id of multi-term items.
+SerializedQueryTreeSP make_labeled_in_or_term_query() {
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addOr(2);
+    auto alternatives = std::make_unique<StringTermVector>(2);
+    alternatives->addTerm("foo");
+    alternatives->addTerm("bar");
+    builder.add_in_term(std::move(alternatives), MultiTerm::Type::STRING, "f1", 1, Weight(1));
+    builder.addStringTerm("baz", "f2", 2, Weight(1));
+    QueryToProtobuf converter;
+    auto            proto_query_tree = converter.serialize(*builder.build());
+    return SerializedQueryTree::fromProtobuf(std::make_unique<decltype(proto_query_tree)>(proto_query_tree));
 }
 
 std::string make_near_stack_dump(bool ordered, const std::string& term1, const std::string& term2) {
@@ -279,6 +408,29 @@ struct MyWorld {
         sessionManager = std::make_shared<SessionManager>(100);
     }
 
+    void setup_sort_feature_by_a1() {
+        config.add(indexproperties::sort::Feature::NAME, "attribute(a1)");
+        config.add(indexproperties::feature_rename::Rename::NAME, "attribute(a1)");
+        config.add(indexproperties::feature_rename::Rename::NAME, "by_a1");
+    }
+
+    void setup_sort_feature_bm25() {
+        config.add(indexproperties::sort::Feature::NAME, "bm25(f1)");
+        config.add(indexproperties::feature_rename::Rename::NAME, "bm25(f1)");
+        config.add(indexproperties::feature_rename::Rename::NAME, "title_bm25");
+        // FakeIndexSearchable reports average field length 0. Override it so the
+        // synthetic BM25 scores are finite and exercise feature ordering.
+        config.add("bm25(f1).averageFieldLength", "10");
+    }
+
+    void setup_sort_feature_expr(const std::string& public_name, const std::string& script) {
+        const std::string backend = "rankingExpression(" + public_name + ")";
+        config.add(indexproperties::sort::Feature::NAME, backend);
+        config.add(backend + ".rankingScript", script);
+        config.add(indexproperties::feature_rename::Rename::NAME, backend);
+        config.add(indexproperties::feature_rename::Rename::NAME, public_name);
+    }
+
     void set_property(const std::string& name, const std::string& value) {
         Properties cfg;
         cfg.add(name, value);
@@ -312,6 +464,18 @@ struct MyWorld {
         config.add(indexproperties::match::Feature::NAME, "bm25(f1,\"label:t2\")");
         config.add(indexproperties::match::Feature::NAME, "bm25_for_labels(f1)");
         config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
+    }
+
+    void setup_matches_for_labels_match_features() {
+        config.add(indexproperties::match::Feature::NAME, "matches_for_labels(f1)");
+        config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"matches_for_labels(f1){label:t1}\")");
+    }
+
+    void setup_matches_for_labels_any_field_match_features() {
+        config.add(indexproperties::match::Feature::NAME, "matches_for_labels");
+        config.add(indexproperties::match::Feature::NAME, "matches_for_labels(f1)");
+        config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"matches_for_labels{label:t3}\")");
+        config.add(indexproperties::match::Feature::NAME, "itemRawScore(t3)");
     }
 
     void setup_feature_renames() {
@@ -438,6 +602,22 @@ struct MyWorld {
         searchContext.idx(0).getFake().addResult("my.f1", my_f1_0_term, my_f1_0_result);
     }
 
+    // Struct field indexes 'ix.f1' and 'ix.f2' (e.g. from an array of struct field 'ix'), without any struct field
+    // attributes, so the virtual field 'ix' is made from indexes only.
+    void add_index_only_struct_fields() {
+        schema.addIndexField(Schema::IndexField("ix.f1", DataType::STRING, schema::CollectionType::ARRAY));
+        schema.addIndexField(Schema::IndexField("ix.f2", DataType::STRING, schema::CollectionType::ARRAY));
+    }
+
+    // doc 10: ix.f1 and ix.f2 match in different elements, so no same element match.
+    // doc 20: ix.f1 matches elements {0,2} and ix.f2 matches element {2}; only element 2 matches both.
+    void add_index_only_same_element_results(const std::string& f1_term, const std::string& f2_term) {
+        auto f1_result = make_elem_result({{10, {1}}, {20, {0, 2}}});
+        auto f2_result = make_elem_result({{10, {0}}, {20, {2}}});
+        searchContext.idx(0).getFake().addResult("ix.f1", f1_term, f1_result);
+        searchContext.idx(0).getFake().addResult("ix.f2", f2_term, f2_result);
+    }
+
     void add_near_result() {
         auto f3_field = get_field_info("f3")->id();
         auto docs = FakeIndex()
@@ -464,12 +644,16 @@ struct MyWorld {
         request.setSerializedQueryTree(SerializedQueryTree::fromStackDump(stack_dump));
     }
 
-    static SearchRequest::SP createRequest(const std::string& stack_dump) {
+    static SearchRequest::SP createRequest(SerializedQueryTreeSP query_tree) {
         SearchRequest::SP request(new SearchRequest);
         request->setTimeout(60s);
-        setStackDump(*request, stack_dump);
+        request->setSerializedQueryTree(std::move(query_tree));
         request->maxhits = 10;
         return request;
+    }
+
+    static SearchRequest::SP createRequest(const std::string& stack_dump) {
+        return createRequest(SerializedQueryTree::fromStackDump(stack_dump));
     }
 
     static SearchRequest::SP createSimpleRequest(const std::string& field, const std::string& term) {
@@ -517,12 +701,26 @@ struct MyWorld {
         return match_tools->match_data().get_termwise_limit();
     }
 
+    bool sort_needs_unpack(const std::vector<std::string>& public_names) {
+        Matcher::SP                        matcher = createMatcher();
+        SearchRequest::SP                  request = createSimpleRequest("f1", "spread");
+        search::fef::Properties            overrides;
+        search::queryeval::QuerySetupStats setup_stats;
+        auto                               mtf =
+            matcher->create_match_tools_factory(*request, searchContext, attributeContext, metaStore, overrides,
+                                                ttb(), nullptr, setup_stats, searchContext.getDocIdLimit(), true);
+        EXPECT_TRUE(mtf->prepare_and_install_sort_features(public_names));
+        MatchTools::UP match_tools = mtf->createMatchTools();
+        match_tools->setup_first_phase_and_sort(nullptr, nullptr, false);
+        return match_tools->sort_needs_unpack();
+    }
+
     SearchReply::UP performSearch(const SearchRequest& req, size_t threads) {
         Matcher::SP                    matcher = createMatcher();
         SearchSession::OwnershipBundle owned_objects(
             {std::make_unique<MockAttributeContext>(), std::make_unique<FakeSearchContext>()},
             std::make_shared<MySearchHandler>(matcher));
-        assert(threads <= MatchingTestSharedState::max_threads);
+        CHECK(threads <= MatchingTestSharedState::max_threads);
         vespalib::LimitedThreadBundleWrapper threadBundle(shared_state.thread_bundle(), threads);
         SearchReply::UP reply = matcher->match(req, threadBundle, searchContext, attributeContext, *sessionManager,
                                                metaStore, metaStore.getBucketDB(), std::move(owned_objects));
@@ -755,20 +953,11 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
     ASSERT_GT(reply->hits.size(), 0u);
     const auto& names = reply->match_features.names;
     ASSERT_EQ(names.size(), 5u);
-    auto feature_index = [&names](const std::string& name) {
-        for (size_t i = 0; i < names.size(); ++i) {
-            if (names[i] == name) {
-                return i;
-            }
-        }
-        ADD_FAILURE() << "match feature '" << name << "' not found";
-        return names.size();
-    };
-    size_t full_idx = feature_index("bm25(f1)");
-    size_t t1_idx = feature_index("bm25(\"field:f1\",\"label:t1\")");
-    size_t t2_idx = feature_index("bm25(f1,\"label:t2\")");
-    size_t tensor_idx = feature_index("bm25_for_labels(f1)");
-    size_t slice_idx = feature_index("rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
+    size_t full_idx = feature_index(names, "bm25(f1)");
+    size_t t1_idx = feature_index(names, "bm25(\"field:f1\",\"label:t1\")");
+    size_t t2_idx = feature_index(names, "bm25(f1,\"label:t2\")");
+    size_t tensor_idx = feature_index(names, "bm25_for_labels(f1)");
+    size_t slice_idx = feature_index(names, "rankingExpression(\"bm25_for_labels(f1){label:t1}\")");
     ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
     for (size_t i = 0; i < reply->hits.size(); ++i) {
         const auto* values = &reply->match_features.values[i * names.size()];
@@ -790,8 +979,134 @@ TEST_F(MatchingTest, require_that_bm25_label_parameter_restricts_scoring_to_labe
                                     .normalize();
             EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
         }
-        // and slicing a cell out of it evaluates in the backend 
+        // and slicing a cell out of it evaluates in the backend
         EXPECT_FLOAT_EQ(values[slice_idx].as_double(), t1_score);
+    }
+}
+
+TEST_F(MatchingTest, require_that_matches_for_labels_reports_matching_labels_and_slice) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    // two terms matching the same documents in field f1
+    world.searchContext.idx(0).getFake().addResult("f1", "foo", FakeResult().doc(10).doc(20).doc(30));
+    world.searchContext.idx(0).getFake().addResult("f1", "bar", FakeResult().doc(10).doc(20).doc(30));
+    world.setup_matches_for_labels_match_features();
+    SearchRequest::SP request = MyWorld::createRequest(make_two_term_and_stack_dump("f1", "foo", "bar"));
+    auto&             rankProperties = request->propertiesMap.lookupCreate(MapNames::RANK);
+    rankProperties.add("vespa.label.t1.id", "1");
+    rankProperties.add("vespa.label.t2.id", "2");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_GT(reply->hits.size(), 0u);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 2u);
+    size_t tensor_idx = feature_index(names, "matches_for_labels(f1)");
+    ASSERT_LT(tensor_idx, names.size());
+    size_t slice_idx = feature_index(names, "rankingExpression(\"matches_for_labels(f1){label:t1}\")");
+    ASSERT_LT(slice_idx, names.size());
+    ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
+    for (size_t i = 0; i < reply->hits.size(); ++i) {
+        const auto* values = &reply->match_features.values[i * names.size()];
+        ASSERT_TRUE(values[tensor_idx].is_data());
+        {
+            nbostream buf(values[tensor_idx].as_data().data, values[tensor_idx].as_data().size);
+            // both labeled terms hit; cells are 1, not BM25 scores
+            TensorSpec expect =
+                TensorSpec("tensor<float>(label{})").add({{"label", "t1"}}, 1).add({{"label", "t2"}}, 1);
+            EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        }
+        // slicing a cell out of it evaluates in the backend
+        EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), 1.0);
+    }
+}
+
+TEST_F(MatchingTest, require_that_matches_for_labels_without_field_parameter_ignores_fields) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    // one labeled term per field, plus a labeled wrapper around a term in f1
+    world.searchContext.idx(0).getFake().addResult("f1", "foo", FakeResult().doc(10).doc(20).doc(30));
+    world.searchContext.idx(0).getFake().addResult("f2", "baz", FakeResult().doc(10).doc(20).doc(30));
+    world.searchContext.idx(0).getFake().addResult("f1", "bar", FakeResult().doc(10).doc(20).doc(30));
+    world.setup_matches_for_labels_any_field_match_features();
+    SearchRequest::SP request = MyWorld::createRequest(make_labeled_terms_and_wrapper_stack_dump());
+    auto&             rankProperties = request->propertiesMap.lookupCreate(MapNames::RANK);
+    rankProperties.add("vespa.label.t1.id", "1");
+    rankProperties.add("vespa.label.t2.id", "2");
+    rankProperties.add("vespa.label.t3.id", "3");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_GT(reply->hits.size(), 0u);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 4u);
+    size_t any_field_idx = feature_index(names, "matches_for_labels");
+    ASSERT_LT(any_field_idx, names.size());
+    size_t f1_idx = feature_index(names, "matches_for_labels(f1)");
+    ASSERT_LT(f1_idx, names.size());
+    size_t slice_idx = feature_index(names, "rankingExpression(\"matches_for_labels{label:t3}\")");
+    ASSERT_LT(slice_idx, names.size());
+    size_t wrapper_score_idx = feature_index(names, "itemRawScore(t3)");
+    ASSERT_LT(wrapper_score_idx, names.size());
+    ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
+    for (size_t i = 0; i < reply->hits.size(); ++i) {
+        const auto* values = &reply->match_features.values[i * names.size()];
+        ASSERT_TRUE(values[any_field_idx].is_data());
+        {
+            nbostream buf(values[any_field_idx].as_data().data, values[any_field_idx].as_data().size);
+            // without a field parameter every label hits, including the wrapper
+            // that searches no field at all
+            TensorSpec expect = TensorSpec("tensor<float>(label{})")
+                                    .add({{"label", "t1"}}, 1)
+                                    .add({{"label", "t2"}}, 1)
+                                    .add({{"label", "t3"}}, 1);
+            EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        }
+        ASSERT_TRUE(values[f1_idx].is_data());
+        {
+            nbostream buf(values[f1_idx].as_data().data, values[f1_idx].as_data().size);
+            // with a field parameter only the term searching f1 hits; the f2 term
+            // and the field-less wrapper are left out
+            TensorSpec expect = TensorSpec("tensor<float>(label{})").add({{"label", "t1"}}, 1);
+            EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        }
+        // slicing the wrapper label out of the field-less feature evaluates in the backend
+        EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), 1.0);
+        // the wrapper is unpacked, so its constant score is available as well
+        EXPECT_DOUBLE_EQ(values[wrapper_score_idx].as_double(), 1.0);
+    }
+}
+
+TEST_F(MatchingTest, require_that_matches_for_labels_reports_a_labeled_in_term) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    // the in alternatives match docs 10 and 20; doc 30 only matches the term in f2
+    world.searchContext.idx(0).getFake().addResult("f1", "foo", FakeResult().doc(10));
+    world.searchContext.idx(0).getFake().addResult("f1", "bar", FakeResult().doc(20));
+    world.searchContext.idx(0).getFake().addResult("f2", "baz", FakeResult().doc(30));
+    world.setup_matches_for_labels_match_features();
+    SearchRequest::SP request = MyWorld::createRequest(make_labeled_in_or_term_query());
+    auto&             rankProperties = request->propertiesMap.lookupCreate(MapNames::RANK);
+    rankProperties.add("vespa.label.t1.id", "1");
+    rankProperties.add("vespa.label.t2.id", "2");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(reply->hits.size(), 3u);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 2u);
+    size_t tensor_idx = feature_index(names, "matches_for_labels(f1)");
+    ASSERT_LT(tensor_idx, names.size());
+    size_t slice_idx = feature_index(names, "rankingExpression(\"matches_for_labels(f1){label:t1}\")");
+    ASSERT_LT(slice_idx, names.size());
+    ASSERT_EQ(reply->match_features.values.size(), names.size() * reply->hits.size());
+    const auto only_f2_hit = document::DocumentId("id:ns:searchdocument::30").getGlobalId();
+    for (size_t i = 0; i < reply->hits.size(); ++i) {
+        const auto* values = &reply->match_features.values[i * names.size()];
+        // the label of the in reaches its term; t2 searches f2, so it is never a cell here
+        bool       in_matched = (reply->hits[i].gid != only_f2_hit);
+        TensorSpec expect("tensor<float>(label{})");
+        if (in_matched) {
+            expect.add({{"label", "t1"}}, 1);
+        }
+        ASSERT_TRUE(values[tensor_idx].is_data());
+        nbostream buf(values[tensor_idx].as_data().data, values[tensor_idx].as_data().size);
+        EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), expect);
+        EXPECT_DOUBLE_EQ(values[slice_idx].as_double(), in_matched ? 1.0 : 0.0);
     }
 }
 
@@ -968,6 +1283,420 @@ TEST_F(MatchingTest, require_that_sortspec_can_be_used_with_multi_threaded_match
     }
 }
 
+TEST_F(MatchingTest, require_that_feature_sort_orders_hits_without_activating_ranking) {
+    for (size_t threads = 1; threads <= 16; ++threads) {
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.setup_sort_feature_by_a1();
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        request->sortSpec = "-feature(by_a1)";
+        SearchReply::UP reply = world.performSearch(*request, threads);
+        ASSERT_EQ(9u, reply->hits.size());
+        EXPECT_EQ(9u, world.matchingStats.docsMatched());
+        EXPECT_EQ(0u, world.matchingStats.docsRanked());
+        EXPECT_EQ(0u, world.matchingStats.docsReRanked());
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+        EXPECT_EQ(zero_rank_value, reply->hits[0].metric);
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::800").getGlobalId(), reply->hits[1].gid);
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[8].gid);
+        EXPECT_FALSE(reply->sortIndex.empty());
+        EXPECT_FALSE(reply->sortData.empty());
+    }
+}
+
+TEST_F(MatchingTest, require_that_feature_sort_takes_query_token_covering_all_threads) {
+    for (size_t threads : {1, 3, 8}) {
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.setup_sort_feature_by_a1();
+        world.basicResults();
+        world.queryLimiter.configure(4, 1.0, std::numeric_limits<uint32_t>::max());
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        request->sortSpec = "-feature(by_a1)";
+        // hold all capacity; the query must wait for it before matching
+        auto            blocker = world.queryLimiter.getQueryToken(vespalib::Doom::never(), 4);
+        SearchReply::UP reply;
+        std::thread     thread([&] { reply = world.performSearch(*request, threads); });
+        EXPECT_TRUE(wait_until([&] { return world.queryLimiter.num_waiting() > 0; }));
+        EXPECT_EQ(4, world.queryLimiter.active_threads());
+        blocker.reset();
+        thread.join();
+        ASSERT_EQ(9u, reply->hits.size());
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+        EXPECT_EQ(0, world.queryLimiter.active_threads());
+    }
+}
+
+TEST_F(MatchingTest, require_that_attribute_sort_does_not_take_query_token) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.basicResults();
+    // per-thread tokens are never needed with this min hits
+    world.queryLimiter.configure(4, 1.0, std::numeric_limits<uint32_t>::max());
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "+a1";
+    auto              blocker = world.queryLimiter.getQueryToken(vespalib::Doom::never(), 4);
+    std::atomic<bool> done(false);
+    SearchReply::UP   reply;
+    std::thread       thread([&] {
+        reply = world.performSearch(*request, 3);
+        done = true;
+    });
+    // a query token taken by mistake would queue behind the blocker until doom
+    EXPECT_TRUE(wait_until([&] { return done || world.queryLimiter.num_waiting() > 0; }));
+    EXPECT_EQ(0u, world.queryLimiter.num_waiting());
+    EXPECT_EQ(4, world.queryLimiter.active_threads());
+    blocker.reset();
+    thread.join();
+    EXPECT_TRUE(done);
+    ASSERT_EQ(9u, reply->hits.size());
+}
+
+TEST_F(MatchingTest, require_that_duplicate_feature_sort_clauses_share_an_ordinal) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) +feature(by_a1)";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+}
+
+TEST_F(MatchingTest, require_that_second_phase_is_not_run_for_unranked_feature_sort) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setupSecondPhaseRanking();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1)";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(0u, world.matchingStats.docsRanked());
+    EXPECT_EQ(0u, world.matchingStats.docsReRanked());
+}
+
+TEST_F(MatchingTest, require_that_second_phase_is_not_run_for_unranked_attribute_sort) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setupSecondPhaseRanking();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "+a1";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(0u, world.matchingStats.docsRanked());
+    EXPECT_EQ(0u, world.matchingStats.docsReRanked());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::200").getGlobalId(), reply->hits[1].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::300").getGlobalId(), reply->hits[2].gid);
+    EXPECT_EQ(zero_rank_value, reply->hits[0].metric);
+}
+
+TEST_F(MatchingTest, require_that_attribute_sort_with_rank_still_reranks) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setupSecondPhaseRanking();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "+a1 -[rank]";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(9u, world.matchingStats.docsRanked());
+    EXPECT_EQ(3u, world.matchingStats.docsReRanked());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[8].gid);
+}
+
+TEST_F(MatchingTest, require_that_unknown_sort_feature_fails_closed) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(nope)";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    EXPECT_TRUE(reply->hits.empty());
+    EXPECT_EQ(0u, reply->coverage.getCovered());
+    EXPECT_GT(reply->coverage.getActive(), 0u);
+}
+
+TEST_F(MatchingTest, require_that_zero_hit_feature_sort_returns_no_sort_data) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1)";
+    request->maxhits = 0;
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    EXPECT_TRUE(reply->hits.empty());
+    EXPECT_EQ(9u, reply->totalHitCount);
+    EXPECT_EQ(9u, world.matchingStats.docsMatched());
+    EXPECT_EQ(0u, world.matchingStats.docsRanked());
+    EXPECT_TRUE(reply->sortIndex.empty());
+    EXPECT_TRUE(reply->sortData.empty());
+}
+
+TEST_F(MatchingTest, require_that_feature_sort_with_rank_keeps_ranking) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) -[rank]";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(9u, world.matchingStats.docsRanked());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(900.0, reply->hits[0].metric);
+}
+
+TEST_F(MatchingTest, require_that_first_phase_drop_skips_sort_rows) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) -[rank]";
+    request->propertiesMap.lookupCreate(MapNames::RANK).add(FirstPhaseRankScoreDropLimit::NAME, "550");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(4u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::800").getGlobalId(), reply->hits[1].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::700").getGlobalId(), reply->hits[2].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::600").getGlobalId(), reply->hits[3].gid);
+}
+
+TEST_F(MatchingTest, require_that_second_phase_drop_skips_unused_sort_rows) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setupSecondPhaseRanking();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) -[rank]";
+    request->propertiesMap.lookupCreate(MapNames::RANK).add(SecondPhaseRankScoreDropLimit::NAME, "1500");
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(2u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::800").getGlobalId(), reply->hits[1].gid);
+}
+
+TEST_F(MatchingTest, require_that_mixed_feature_attribute_rank_sort_tuple_works) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) +a1 -[rank]";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(9u, world.matchingStats.docsRanked());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::800").getGlobalId(), reply->hits[1].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[8].gid);
+    EXPECT_EQ(900.0, reply->hits[0].metric);
+    EXPECT_FALSE(reply->sortData.empty());
+}
+
+TEST_F(MatchingTest, require_that_bm25_sort_feature_unpacks) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_bm25();
+    world.searchContext.idx(0).getFake().addResult("f1", "foo", FakeResult().doc(10).doc(20).doc(30));
+    FakeResult spread;
+    // Interleaved num_occs/field_length, not pos(): BM25 reads getNumOccs().
+    // Identical TFs (or skipped unpack) would not produce this descending order.
+    for (uint32_t i = 1; i <= 9; ++i) {
+        spread.doc(i * 100).num_occs(i).field_length(10);
+    }
+    world.searchContext.idx(0).getFake().addResult("f1", "spread", spread);
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(title_bm25)";
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(0u, world.matchingStats.docsRanked());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::800").getGlobalId(), reply->hits[1].gid);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[8].gid);
+    EXPECT_EQ(zero_rank_value, reply->hits[0].metric);
+    EXPECT_FALSE(reply->sortData.empty());
+}
+
+TEST_F(MatchingTest, require_that_sort_features_are_profiled) {
+    for (bool use_global_depth : {false, true}) {
+        for (size_t threads : {size_t(1), size_t(4)}) {
+            MyWorld world(shared_state());
+            world.basicSetup();
+            world.setup_sort_feature_by_a1();
+            world.setup_sort_feature_bm25();
+            world.basicResults();
+            SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+            request->sortSpec = "-feature(by_a1) -feature(title_bm25)";
+            if (use_global_depth) {
+                enable_tracing(*request).profile_depth(3);
+            } else {
+                enable_tracing(*request).sort_features_profile_depth(3);
+            }
+            SearchReply::UP reply = world.performSearch(*request, threads);
+            ASSERT_EQ(9u, reply->hits.size());
+            const std::string label =
+                "global depth=" + std::to_string(use_global_depth) + " threads=" + std::to_string(threads);
+            auto sort_walk = walk_profile_tag(*request, "sort_features_profiling");
+            EXPECT_EQ(std::vector<size_t>(threads, 1), sort_walk.entries_per_thread) << label;
+            EXPECT_EQ(2u, sort_walk.root_counts.size()) << label;
+            EXPECT_EQ(9, sort_walk.root_counts["rank feature attribute(a1)"]) << label;
+            EXPECT_EQ(9, sort_walk.root_counts["rank feature bm25(f1)"]) << label;
+        }
+    }
+}
+
+TEST_F(MatchingTest, require_that_idle_threads_report_sort_features_profiling) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    // "foo" matches docs 10, 20 and 30, which are all in the first thread's docid range.
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "foo");
+    request->sortSpec = "-feature(by_a1)";
+    enable_tracing(*request).sort_features_profile_depth(3);
+    SearchReply::UP reply = world.performSearch(*request, 4);
+    ASSERT_EQ(3u, reply->hits.size());
+    auto sort_walk = walk_profile_tag(*request, "sort_features_profiling");
+    EXPECT_EQ(std::vector<size_t>(4, 1), sort_walk.entries_per_thread);
+    EXPECT_EQ(1u, sort_walk.entries_with_roots);
+    EXPECT_EQ(3, sort_walk.root_counts["rank feature attribute(a1)"]);
+}
+
+TEST_F(MatchingTest, require_that_sort_and_first_phase_profiles_are_independent) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.setup_sort_feature_bm25();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1) -feature(title_bm25) -[rank]";
+    enable_tracing(*request).sort_features_profile_depth(3).first_phase_profile_depth(3);
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    auto sort_walk = walk_profile_tag(*request, "sort_features_profiling");
+    ASSERT_TRUE(sort_walk.present);
+    EXPECT_EQ(2u, sort_walk.root_counts.size());
+    EXPECT_EQ(9, sort_walk.root_counts["rank feature attribute(a1)"]);
+    EXPECT_EQ(9, sort_walk.root_counts["rank feature bm25(f1)"]);
+    auto first_walk = walk_profile_tag(*request, "first_phase_profiling");
+    ASSERT_TRUE(first_walk.present);
+    EXPECT_EQ(1u, first_walk.root_counts.size());
+    EXPECT_EQ(9, first_walk.root_counts["rank feature attribute(a1)"]);
+}
+
+TEST_F(MatchingTest, require_that_sort_features_profiling_is_absent_at_depth_zero) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1)";
+    enable_tracing(*request).match_profile_depth(3);
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_TRUE(walk_profile_tag(*request, "match_profiling").present);
+    EXPECT_FALSE(walk_profile_tag(*request, "sort_features_profiling").present);
+}
+
+TEST_F(MatchingTest, require_that_sort_features_profiling_is_absent_without_feature_sort) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "+a1";
+    enable_tracing(*request).profile_depth(3);
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_TRUE(walk_profile_tag(*request, "match_profiling").present);
+    EXPECT_FALSE(walk_profile_tag(*request, "sort_features_profiling").present);
+}
+
+TEST_F(MatchingTest, require_that_sort_features_profiling_counts_shared_executors_once) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_expr("by_x", "attribute(a1) + rankingExpression(c)");
+    world.setup_sort_feature_expr("by_y", "attribute(a1) * rankingExpression(c)");
+    world.config.add("rankingExpression(c).rankingScript", "3");
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_x) -feature(by_y)";
+    enable_tracing(*request).sort_features_profile_depth(3);
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    auto sort_walk = walk_profile_tag(*request, "sort_features_profiling");
+    ASSERT_TRUE(sort_walk.present);
+    // One program: the constant is computed once at setup, and the shared
+    // attribute under the first sort level to evaluate it for each hit.
+    EXPECT_EQ(3u, sort_walk.root_counts.size());
+    EXPECT_EQ(9, sort_walk.root_counts["function by_x"]);
+    EXPECT_EQ(9, sort_walk.root_counts["function by_y"]);
+    EXPECT_EQ(1, sort_walk.root_counts["function c"]);
+    EXPECT_EQ(1u, sort_walk.child_counts["function by_x"].size());
+    EXPECT_EQ(9, sort_walk.child_counts["function by_x"]["rank feature attribute(a1)"]);
+    EXPECT_EQ(0u, sort_walk.child_counts["function by_y"].size());
+    EXPECT_EQ(0u, sort_walk.child_counts["function c"].size());
+}
+
+TEST_F(MatchingTest, require_that_feature_sort_levels_follow_the_sort_spec) {
+    for (bool with_unselected : {false, true}) {
+        MyWorld world(shared_state());
+        world.basicSetup();
+        // The seeds, attribute(a1) and rankingExpression(by_neg), are kept sorted by name.
+        world.setup_sort_feature_by_a1();
+        world.setup_sort_feature_expr("by_neg", "0 - attribute(a1)");
+        if (with_unselected) {
+            world.setup_sort_feature_bm25();
+        }
+        world.basicResults();
+        const std::string label = "with_unselected=" + std::to_string(with_unselected);
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        request->sortSpec = "-feature(by_neg) -feature(by_a1)";
+        SearchReply::UP reply = world.performSearch(*request, 1);
+        ASSERT_EQ(9u, reply->hits.size()) << label;
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[0].gid) << label;
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[8].gid) << label;
+        request->sortSpec = "-feature(by_a1) -feature(by_neg)";
+        reply = world.performSearch(*request, 1);
+        ASSERT_EQ(9u, reply->hits.size()) << label;
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[0].gid) << label;
+        EXPECT_EQ(document::DocumentId("id:ns:searchdocument::100").getGlobalId(), reply->hits[8].gid) << label;
+    }
+}
+
+TEST_F(MatchingTest, require_that_unselected_sort_features_do_not_force_unpack) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.setup_sort_feature_bm25();
+    world.basicResults();
+    EXPECT_FALSE(world.sort_needs_unpack({"by_a1"}));
+    EXPECT_TRUE(world.sort_needs_unpack({"title_bm25"}));
+    EXPECT_TRUE(world.sort_needs_unpack({"by_a1", "title_bm25"}));
+}
+
+TEST_F(MatchingTest, require_that_sort_features_profiling_is_absent_when_tracing_is_off) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1)";
+    request->trace().sort_features_profile_depth(3).match_profile_depth(3);
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_FALSE(walk_profile_tag(*request, "sort_features_profiling").present);
+}
+
 ExpressionNode::UP createAttr() {
     return std::make_unique<AttributeNode>("a1");
 }
@@ -999,10 +1728,49 @@ TEST_F(MatchingTest, require_that_grouping_is_performed_with_multi_threaded_matc
             gresult.deserialize(is);
             Grouping gexpect;
             gexpect.setRoot(Group().addResult(
-                SumAggregationResult().setExpression(createAttr()).setResult(Int64ResultNode(4500))));
+                SumAggregationResult().setExpression(createAttr()).resultForUnitTest(Int64ResultNode(4500))));
             EXPECT_EQ(gexpect.root().asString(), gresult.root().asString());
         }
         EXPECT_GT(world.matchingStats.groupingTimeAvg(), 0.0000001);
+    }
+}
+
+TEST_F(MatchingTest, require_that_zero_hit_grouping_still_groups_with_feature_sort_spec) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.setup_sort_feature_by_a1();
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    request->sortSpec = "-feature(by_a1)";
+    request->maxhits = 0;
+    {
+        vespalib::nbostream     buf;
+        vespalib::NBOSerializer os(buf);
+        uint32_t                n = 1;
+        os << n;
+        Grouping grequest;
+        grequest.setRoot(Group().addResult(SumAggregationResult().setExpression(createAttr())));
+        grequest.serialize(os);
+        request->groupSpec.assign(buf.data(), buf.data() + buf.size());
+    }
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    EXPECT_TRUE(reply->hits.empty());
+    EXPECT_EQ(9u, reply->totalHitCount);
+    EXPECT_EQ(9u, world.matchingStats.docsMatched());
+    EXPECT_EQ(0u, world.matchingStats.docsRanked());
+    EXPECT_GT(reply->coverage.getCovered(), 0u);
+    {
+        vespalib::nbostream     buf(&reply->groupResult[0], reply->groupResult.size());
+        vespalib::NBOSerializer is(buf);
+        uint32_t                n;
+        is >> n;
+        EXPECT_EQ(1u, n);
+        Grouping gresult;
+        gresult.deserialize(is);
+        Grouping gexpect;
+        gexpect.setRoot(Group().addResult(
+            SumAggregationResult().setExpression(createAttr()).resultForUnitTest(Int64ResultNode(4500))));
+        EXPECT_EQ(gexpect.root().asString(), gresult.root().asString());
     }
 }
 
@@ -1367,6 +2135,58 @@ TEST_F(MatchingTest, require_that_same_element_search_works) {
     EXPECT_EQ(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
 }
 
+TEST_F(MatchingTest, require_that_elementwise_matches_reports_matching_elements_for_same_element) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_same_element_results("foo", "bar");
+    world.config.add(indexproperties::match::Feature::NAME, "elementwise(matches(my),x)");
+    SearchRequest::SP request = MyWorld::createSameElementRequest("foo", "bar");
+    SearchReply::UP   reply = world.performSearch(*request, 1);
+    ASSERT_EQ(1u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 1u);
+    ASSERT_EQ(reply->match_features.values.size(), names.size());
+    auto decode = [&](const std::string& name) {
+        const auto& value = reply->match_features.values[feature_index(names, name)];
+        EXPECT_TRUE(value.is_data());
+        nbostream buf(value.as_data().data, value.as_data().size);
+        return spec_from_value(*SimpleValue::from_stream(buf));
+    };
+    // doc 20 has my.a1 matching elements {2,3} and my.f1 matching elements {1,2}; only element 2 matches both
+    EXPECT_EQ(decode("elementwise(matches(my),x)"), TensorSpec("tensor<float>(x{})").add({{"x", "2"}}, 1.0));
+}
+
+TEST_F(MatchingTest, require_that_same_element_search_works_for_virtual_field_with_only_indexes) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_struct_fields();
+    world.add_index_only_same_element_results("foo", "bar");
+    auto            request = MyWorld::createRequest(make_index_only_same_element_stack_dump("foo", "bar"));
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(1u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
+}
+
+TEST_F(MatchingTest, require_that_elementwise_matches_reports_matching_elements_for_virtual_field_with_only_indexes) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_struct_fields();
+    world.add_index_only_same_element_results("foo", "bar");
+    world.config.add(indexproperties::match::Feature::NAME, "elementwise(matches(ix),x)");
+    auto            request = MyWorld::createRequest(make_index_only_same_element_stack_dump("foo", "bar"));
+    SearchReply::UP reply = world.performSearch(*request, 1);
+    ASSERT_EQ(1u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
+    const auto& names = reply->match_features.names;
+    ASSERT_EQ(names.size(), 1u);
+    ASSERT_EQ(reply->match_features.values.size(), names.size());
+    const auto& value = reply->match_features.values[feature_index(names, "elementwise(matches(ix),x)")];
+    ASSERT_TRUE(value.is_data());
+    nbostream buf(value.as_data().data, value.as_data().size);
+    EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), TensorSpec("tensor<float>(x{})").add({{"x", "2"}}, 1.0));
+}
+
 TEST_F(MatchingTest, require_that_invalid_queries_are_handled) {
     MyWorld world(shared_state());
     world.basicSetup();
@@ -1385,6 +2205,23 @@ TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_f
     fields.add_mapping("my", "my.f1");
     auto        result = world.get_matching_elements(*request, fields);
     const auto& list = result->get_matching_elements(20, "my");
+    ASSERT_EQ(list.size(), 1u);
+    EXPECT_EQ(list[0], 2u);
+}
+
+TEST_F(MatchingTest,
+       require_that_docsum_matcher_can_extract_matching_elements_from_same_element_blueprint_with_only_indexes) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_index_only_struct_fields();
+    world.add_index_only_same_element_results("foo", "bar");
+    auto request = MyWorld::create_docsum_request(make_index_only_same_element_stack_dump("foo", "bar"), {10, 20});
+    MatchingElementsFields fields;
+    fields.add_mapping("ix", "ix.f1");
+    fields.add_mapping("ix", "ix.f2");
+    auto result = world.get_matching_elements(*request, fields);
+    EXPECT_TRUE(result->get_matching_elements(10, "ix").empty());
+    const auto& list = result->get_matching_elements(20, "ix");
     ASSERT_EQ(list.size(), 1u);
     EXPECT_EQ(list[0], 2u);
 }
@@ -1502,6 +2339,64 @@ TEST_F(MatchingTest, weak_and_stop_word_strategy_is_resolved_correctly) {
     EXPECT_TRUE(stop_words.should_drop(501));
     EXPECT_FALSE(stop_words.keep_all());
     EXPECT_TRUE(stop_words.allow_drop_all());
+}
+
+namespace {
+
+struct FakeSortValueProvider : INumericSortValueProvider {
+    std::vector<std::string> names;
+    explicit FakeSortValueProvider(std::vector<std::string> names_in) : names(std::move(names_in)) {}
+    uint32_t ordinal(std::string_view public_name) const override {
+        for (uint32_t i = 0; i < names.size(); ++i) {
+            if (names[i] == public_name) {
+                return i;
+            }
+        }
+        return invalid_ordinal;
+    }
+    void seek(uint32_t) override {}
+    double get(uint32_t) const override { return 0.0; }
+    bool failed() const noexcept override { return false; }
+    void consumed() override {}
+};
+
+} // namespace
+
+TEST(SortBindingTest, feature_sort_binds_when_all_values_are_available) {
+    MockAttributeContext  ac;
+    FakeSortValueProvider provider({"by_a1"});
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1)", &provider);
+    EXPECT_FALSE(sort.feature_binding_failed());
+    EXPECT_TRUE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, feature_sort_binding_fails_when_a_value_is_unavailable) {
+    MockAttributeContext  ac;
+    FakeSortValueProvider provider({"by_a1"});
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1) +feature(gone)", &provider);
+    EXPECT_TRUE(sort.feature_binding_failed());
+    EXPECT_FALSE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, feature_sort_binding_fails_without_a_provider) {
+    MockAttributeContext  ac;
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "-feature(by_a1)", nullptr);
+    EXPECT_TRUE(sort.feature_binding_failed());
+    EXPECT_FALSE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, sort_without_features_needs_no_provider) {
+    MockAttributeContext  ac;
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "+[rank]", nullptr);
+    EXPECT_FALSE(sort.feature_binding_failed());
+    EXPECT_TRUE(sort.hasSortData());
+}
+
+TEST(SortBindingTest, failed_attribute_sort_is_not_a_feature_binding_failure) {
+    MockAttributeContext  ac;
+    ResultProcessor::Sort sort(7, vespalib::Doom::never(), ac, "+no_such_attribute", nullptr);
+    EXPECT_FALSE(sort.feature_binding_failed());
+    EXPECT_FALSE(sort.hasSortData());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

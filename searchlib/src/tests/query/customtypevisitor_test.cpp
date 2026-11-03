@@ -60,6 +60,11 @@ struct MyRank : Rank {
     ~MyRank() override;
 };
 
+struct MyLabelWrapper : LabelWrapper {
+    MyLabelWrapper() : LabelWrapper(7, 2.5) {}
+    ~MyLabelWrapper() override;
+};
+
 struct MyNumberTerm : InitTerm<NumberTerm> {
     ~MyNumberTerm() override;
 };
@@ -74,6 +79,10 @@ struct MyPrefixTerm : InitTerm<PrefixTerm> {
 
 struct MyRangeTerm : InitTerm<RangeTerm> {
     ~MyRangeTerm() override;
+};
+
+struct MyStringRangeTerm : InitTerm<StringRangeTerm> {
+    ~MyStringRangeTerm() override;
 };
 
 struct MyStringTerm : InitTerm<StringTerm> {
@@ -94,7 +103,7 @@ struct MyFuzzyTerm : FuzzyTerm {
 };
 
 struct MyWeakAnd : WeakAnd {
-    MyWeakAnd() : WeakAnd(1234, "view") {}
+    MyWeakAnd() : WeakAnd(1234) {}
     ~MyWeakAnd() override;
 };
 
@@ -119,6 +128,11 @@ struct MyPredicateQuery : InitTerm<PredicateQuery> {
 
 struct MyRegExpTerm : InitTerm<RegExpTerm> {
     ~MyRegExpTerm() override;
+};
+
+struct MySparseTensorWandTerm : SparseTensorWandTerm {
+    MySparseTensorWandTerm() : SparseTensorWandTerm("qt", "fn", 0, Weight(42), 10, 0.5) {}
+    ~MySparseTensorWandTerm() override;
 };
 
 struct MyNearestNeighborTerm : NearestNeighborTerm {
@@ -169,6 +183,7 @@ MyPhrase::~MyPhrase() = default;
 MySameElement::~MySameElement() = default;
 
 MyRank::~MyRank() = default;
+MyLabelWrapper::~MyLabelWrapper() = default;
 
 MyNumberTerm::~MyNumberTerm() = default;
 
@@ -177,6 +192,7 @@ MyLocationTerm::~MyLocationTerm() = default;
 MyPrefixTerm::~MyPrefixTerm() = default;
 
 MyRangeTerm::~MyRangeTerm() = default;
+MyStringRangeTerm::~MyStringRangeTerm() = default;
 
 MyStringTerm::~MyStringTerm() = default;
 
@@ -200,6 +216,8 @@ MyRegExpTerm::~MyRegExpTerm() = default;
 
 MyNearestNeighborTerm::~MyNearestNeighborTerm() = default;
 
+MySparseTensorWandTerm::~MySparseTensorWandTerm() = default;
+
 MyTrue::~MyTrue() = default;
 
 MyFalse::~MyFalse() = default;
@@ -221,7 +239,9 @@ struct MyQueryNodeTypes {
     using SameElement = MySameElement;
     using PrefixTerm = MyPrefixTerm;
     using RangeTerm = MyRangeTerm;
+    using StringRangeTerm = MyStringRangeTerm;
     using Rank = MyRank;
+    using LabelWrapper = MyLabelWrapper;
     using StringTerm = MyStringTerm;
     using SubstringTerm = MySubstrTerm;
     using SuffixTerm = MySuffixTerm;
@@ -233,6 +253,7 @@ struct MyQueryNodeTypes {
     using PredicateQuery = MyPredicateQuery;
     using RegExpTerm = MyRegExpTerm;
     using NearestNeighborTerm = MyNearestNeighborTerm;
+    using SparseTensorWandTerm = MySparseTensorWandTerm;
     using FalseQueryNode = MyFalse;
     using TrueQueryNode = MyTrue;
     using InTerm = MyInTerm;
@@ -260,7 +281,9 @@ public:
     void visit(MySameElement&) override { setVisited<MySameElement>(); }
     void visit(MyPrefixTerm&) override { setVisited<MyPrefixTerm>(); }
     void visit(MyRangeTerm&) override { setVisited<MyRangeTerm>(); }
+    void visit(MyStringRangeTerm&) override { setVisited<MyStringRangeTerm>(); }
     void visit(MyRank&) override { setVisited<MyRank>(); }
+    void visit(MyLabelWrapper&) override { setVisited<MyLabelWrapper>(); }
     void visit(MyStringTerm&) override { setVisited<MyStringTerm>(); }
     void visit(MySubstrTerm&) override { setVisited<MySubstrTerm>(); }
     void visit(MySuffixTerm&) override { setVisited<MySuffixTerm>(); }
@@ -271,6 +294,7 @@ public:
     void visit(MyPredicateQuery&) override { setVisited<MyPredicateQuery>(); }
     void visit(MyRegExpTerm&) override { setVisited<MyRegExpTerm>(); }
     void visit(MyNearestNeighborTerm&) override { setVisited<MyNearestNeighborTerm>(); }
+    void visit(MySparseTensorWandTerm&) override { setVisited<MySparseTensorWandTerm>(); }
     void visit(MyTrue&) override { setVisited<MyTrue>(); }
     void visit(MyFalse&) override { setVisited<MyFalse>(); }
     void visit(MyFuzzyTerm&) override { setVisited<MyFuzzyTerm>(); }
@@ -296,7 +320,9 @@ TEST(CustomTypeVisitorTest, all_query_nodes_are_visited) {
     requireThatNodeIsVisited<MyPhrase>();
     requireThatNodeIsVisited<MySameElement>();
     requireThatNodeIsVisited<MyRangeTerm>();
+    requireThatNodeIsVisited<MyStringRangeTerm>();
     requireThatNodeIsVisited<MyRank>();
+    requireThatNodeIsVisited<MyLabelWrapper>();
     requireThatNodeIsVisited<MyNumberTerm>();
     requireThatNodeIsVisited<MyPrefixTerm>();
     requireThatNodeIsVisited<MyStringTerm>();
@@ -309,6 +335,7 @@ TEST(CustomTypeVisitorTest, all_query_nodes_are_visited) {
     requireThatNodeIsVisited<MyRegExpTerm>();
     requireThatNodeIsVisited<MyLocationTerm>();
     requireThatNodeIsVisited<MyNearestNeighborTerm>();
+    requireThatNodeIsVisited<MySparseTensorWandTerm>();
     requireThatNodeIsVisited<MyTrue>();
     requireThatNodeIsVisited<MyFalse>();
     requireThatNodeIsVisited<MyFuzzyTerm>();

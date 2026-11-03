@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
@@ -644,14 +645,14 @@ public:
 
 private:
     State waitState(State state, uint32_t lid) const override {
-        assert(state == State::COMPLETED);
+        CHECK(state == State::COMPLETED);
         _lidState.waitComplete(lid);
         _waitCompleteCount++;
         return state;
     }
 
     State waitState(State state, const LidList& lids) const override {
-        assert(state == State::COMPLETED);
+        CHECK(state == State::COMPLETED);
         _lidState.waitComplete(lids);
         _waitCompleteCount++;
         return state;

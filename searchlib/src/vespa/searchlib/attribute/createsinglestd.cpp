@@ -9,6 +9,7 @@
 #include "singlesmallnumericattribute.h"
 #include "singlestringattribute.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
@@ -19,7 +20,7 @@ namespace search {
 using attribute::BasicType;
 
 AttributeVector::SP AttributeFactory::createSingleStd(std::string name, const Config& info) {
-    assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
+    CHECK(info.collectionType().type() == attribute::CollectionType::SINGLE);
     switch (info.basicType().type()) {
     case BasicType::BOOL:
         return std::make_shared<SingleBoolAttribute>(name, info.getGrowStrategy(), info.paged());

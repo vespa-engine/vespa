@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/bucket/bucketidfactory.h>
@@ -80,7 +81,7 @@ struct DocumentApiConverterTest : Test {
     template <typename DerivedT, typename BaseT>
     std::unique_ptr<DerivedT> dynamic_unique_ptr_cast(std::unique_ptr<BaseT> base) {
         auto derived = dynamic_cast<DerivedT*>(base.get());
-        assert(derived);
+        CHECK(derived);
         base.release();
         return std::unique_ptr<DerivedT>(derived);
     }

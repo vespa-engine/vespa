@@ -5,13 +5,12 @@
 #include "posocc_fields_params.h"
 #include "raw_features_collector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".posocccompression");
@@ -302,16 +301,16 @@ void EG2PosOccEncodeContext<bigEndian>::writeFeatures(const search::index::DocId
 
     uint32_t numElements = features.elements().size();
     if (fieldParams._hasElements) {
-        assert(numElements > 0u);
+        CHECK(numElements > 0u);
         encodeExpGolomb(numElements - 1, K_VALUE_POSOCC_NUMELEMENTS);
     } else {
-        assert(numElements == 1);
+        CHECK(numElements == 1);
     }
     uint32_t minElementId = 0;
     for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++element) {
         if (fieldParams._hasElements) {
             uint32_t elementId = element->getElementId();
-            assert(elementId >= minElementId);
+            CHECK(elementId >= minElementId);
             encodeExpGolomb(elementId - minElementId, K_VALUE_POSOCC_ELEMENTID);
             minElementId = elementId + 1;
             if (fieldParams._hasElementWeights) {
@@ -323,13 +322,13 @@ void EG2PosOccEncodeContext<bigEndian>::writeFeatures(const search::index::DocId
             }
         } else {
             uint32_t elementId = element->getElementId();
-            assert(elementId == 0);
+            CHECK(elementId == 0);
             (void)elementId;
         }
 
         encodeExpGolomb(element->getElementLen() - 1, K_VALUE_POSOCC_ELEMENTLEN);
         uint32_t numPositions = element->getNumOccs();
-        assert(numPositions > 0);
+        CHECK(numPositions > 0);
         encodeExpGolomb(numPositions - 1, K_VALUE_POSOCC_NUMPOSITIONS);
 
         uint32_t wordPos = static_cast<uint32_t>(-1);
@@ -617,16 +616,16 @@ void EGPosOccEncodeContext<bigEndian>::writeFeatures(const search::index::DocIdA
 
     uint32_t numElements = features.elements().size();
     if (fieldParams._hasElements) {
-        assert(numElements > 0u);
+        CHECK(numElements > 0u);
         encodeExpGolomb(numElements - 1, K_VALUE_POSOCC_NUMELEMENTS);
     } else {
-        assert(numElements == 1);
+        CHECK(numElements == 1);
     }
     uint32_t minElementId = 0;
     for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++element) {
         if (fieldParams._hasElements) {
             uint32_t elementId = element->getElementId();
-            assert(elementId >= minElementId);
+            CHECK(elementId >= minElementId);
             encodeExpGolomb(elementId - minElementId, K_VALUE_POSOCC_ELEMENTID);
             minElementId = elementId + 1;
             if (fieldParams._hasElementWeights) {
@@ -638,13 +637,13 @@ void EGPosOccEncodeContext<bigEndian>::writeFeatures(const search::index::DocIdA
             }
         } else {
             uint32_t elementId = element->getElementId();
-            assert(elementId == 0);
+            CHECK(elementId == 0);
             (void)elementId;
         }
         uint32_t elementLen = element->getElementLen();
         encodeExpGolomb(elementLen - 1, elementLenK);
         uint32_t numPositions = element->getNumOccs();
-        assert(numPositions > 0);
+        CHECK(numPositions > 0);
         encodeExpGolomb(numPositions - 1, K_VALUE_POSOCC_NUMPOSITIONS);
 
         uint32_t wordPosK = calcWordPosK(numPositions, elementLen);

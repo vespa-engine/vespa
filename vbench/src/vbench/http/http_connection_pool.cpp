@@ -2,6 +2,8 @@
 
 #include "http_connection_pool.h"
 
+#include <vespa/check_require.h>
+
 namespace vbench {
 
 HttpConnectionPool::HttpConnectionPool(CryptoEngine::SP crypto, Timer& timer)
@@ -35,7 +37,7 @@ void HttpConnectionPool::putConnection(HttpConnection::UP conn) {
     std::lock_guard guard(_lock);
     conn->touch(now);
     size_t idx = _map[conn->server()];
-    assert(idx < _store.size());
+    CHECK(idx < _store.size());
     _store[idx].push(std::move(conn));
 }
 

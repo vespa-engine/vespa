@@ -66,6 +66,7 @@ public:
     void write(uint64_t synkToken, DocumentIdT lid, const document::Document& doc) override;
     void write(uint64_t synkToken, DocumentIdT lid, const vespalib::nbostream& os) override;
     void remove(uint64_t syncToken, DocumentIdT lid) override;
+    void move(uint64_t syncToken, DocumentIdT fromLid, DocumentIdT toLid, const document::Document& doc) override;
     void flush(uint64_t syncToken) override;
     uint64_t initFlush(uint64_t synctoken) override;
     void compactBloat(uint64_t syncToken) override;
@@ -105,6 +106,7 @@ public:
 private:
     bool useCache() const;
     Config::UpdateStrategy updateStrategy() const;
+    void writeThroughCache(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream& stream);
 
     template <class> class WrapVisitor;
     class WrapVisitorProgress;

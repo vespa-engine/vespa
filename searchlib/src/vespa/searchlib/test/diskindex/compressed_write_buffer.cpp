@@ -2,9 +2,8 @@
 
 #include "compressed_write_buffer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/compression.h>
-
-#include <cassert>
 
 namespace search::diskindex::test {
 
@@ -19,7 +18,7 @@ template <bool bigEndian> CompressedWriteBuffer<bigEndian>::~CompressedWriteBuff
 
 template <bool bigEndian> void CompressedWriteBuffer<bigEndian>::clear() {
     _e.setupWrite(_wc);
-    assert(_e.getWriteOffset() == 0);
+    CHECK(_e.getWriteOffset() == 0);
     _header_len = 0;
     _file_bit_size = 0;
 }

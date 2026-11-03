@@ -11,7 +11,7 @@
 
 #include <vespa/document/update/tensor_update.h>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 #include <atomic>
 
@@ -31,7 +31,7 @@ class TensorAttribute : public NotImplementedAttribute, public ITensorAttribute 
 protected:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = TensorStore::EntryRef;
-    using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
+    using RefVector = vespalib::TypeStableVectorBase<AtomicEntryRef>;
 
     RefVector                                _refVector;   // docId -> ref in data store for serialized tensor
     TensorStore&                             _tensorStore; // data store for serialized tensors

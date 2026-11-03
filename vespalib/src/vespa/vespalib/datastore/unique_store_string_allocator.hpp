@@ -5,6 +5,8 @@
 #include "datastore.hpp"
 #include "unique_store_string_allocator.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib::datastore {
 
 template <typename RefT>
@@ -19,7 +21,7 @@ UniqueStoreStringAllocator<RefT>::UniqueStoreStringAllocator(std::shared_ptr<all
     uint32_t exp_type_id = 0;
     for (auto& type_handler : _type_handlers) {
         auto type_id = _store.addType(type_handler.get());
-        assert(type_id == exp_type_id);
+        CHECK(type_id == exp_type_id);
         ++exp_type_id;
     }
     _store.init_primary_buffers();

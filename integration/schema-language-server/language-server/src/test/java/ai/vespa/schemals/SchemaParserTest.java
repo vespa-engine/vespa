@@ -1,6 +1,7 @@
 package ai.vespa.schemals;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.net.URI;
@@ -11,11 +12,13 @@ import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import com.yahoo.io.IOUtils;
 
 import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.common.SchemaDiagnostic.DiagnosticCode;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
@@ -227,6 +230,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/examples/stemmingdefault.sd",
             "../../../config-model/src/test/examples/stemmingsetting.sd",
             "../../../config-model/src/test/examples/strange.sd",
+            "../../../config-model/src/test/derived/structsummaries/structsummaries.sd",
             "../../../config-model/src/test/examples/struct.sd",
             "../../../config-model/src/test/examples/struct_outside.sd",
             "../../../config-model/src/test/examples/structanddocumentwithsamenames.sd",
@@ -243,8 +247,13 @@ public class SchemaParserTest {
             "src/test/sdfiles/single/defaultdefault.sd",
             "src/test/sdfiles/single/elementwise.sd",
             "src/test/sdfiles/single/embed.sd",
+            "src/test/sdfiles/single/explained.sd",
             "src/test/sdfiles/single/foreach.sd",
+            "src/test/sdfiles/single/linguistics.sd",
+            "src/test/sdfiles/single/mapcompletion.sd",
+            "src/test/sdfiles/single/mapfastsearch.sd",
             "src/test/sdfiles/single/rankprofilebuiltin.sd",
+            "src/test/sdfiles/single/sortfeatures.sd",
             "src/test/sdfiles/single/structinfieldset.sd",
             "src/test/sdfiles/single/subqueries.sd",
             "src/test/sdfiles/single/tensorfromlabels.sd",
@@ -271,6 +280,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/inheritfromparent/",
             "../../../config-model/src/test/derived/inheritstruct/",
             "../../../config-model/src/test/derived/namecollision/",
+            "../../../config-model/src/test/derived/quantized_tensors/",
             "../../../config-model/src/test/derived/rankprofileinheritance/",
             "../../../config-model/src/test/derived/schemainheritance/",
             "../../../config-model/src/test/derived/tensor2/",
@@ -326,10 +336,12 @@ public class SchemaParserTest {
 
             new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 5), // TODO: unused rank-profile functions should throw errors? Also rank-type doesntexist: ... in field?
 
+            new BadFileTestCase("src/test/sdfiles/single/mapfastsearchbad.sd", 3),
             new BadFileTestCase("src/test/sdfiles/single/bm25forlabelsargsbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/bm25forlabelsattrbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/bm25labelbarebad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/bm25labelemptybad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/badlinguistics.sd", 3),
             new BadFileTestCase("src/test/sdfiles/single/bm25quotelabelemptybad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/bm25labelunknownfieldbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/bm25labelwrapperbad.sd", 1),
@@ -340,10 +352,13 @@ public class SchemaParserTest {
             new BadFileTestCase("src/test/sdfiles/single/elementwisebm25labelbad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/featuresinheritance.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/foreachbad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/matchesforlabelsargsbad.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/matchesforlabelssummarybad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodelinput.sd", 6),
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
             new BadFileTestCase("src/test/sdfiles/single/rankproperties.sd", 1),
+            new BadFileTestCase("src/test/sdfiles/single/sortfeaturesbad.sd", 11),
             new BadFileTestCase("src/test/sdfiles/single/tensorGenerate.sd", 2),
             new BadFileTestCase("src/test/sdfiles/single/tensorfromlabelsbad.sd", 1),
         };
@@ -352,4 +367,31 @@ public class SchemaParserTest {
                      .map(testCase -> DynamicTest.dynamicTest(testCase.filePath(), () -> checkFileFails(testCase.filePath(), testCase.expectedErrors())));
     }
 
+    private List<Diagnostic> deprecatedSearchDiagnostics(List<Diagnostic> diagnostics) {
+        return diagnostics.stream()
+                          .filter(diag -> diag.getCode() != null && diag.getCode().isRight())
+                          .filter(diag -> diag.getCode().getRight().equals(DiagnosticCode.DEPRECATED_TOKEN_SEARCH.ordinal()))
+                          .toList();
+    }
+
+    /**
+     * "search" is only deprecated as the keyword opening a schema. Inside a linguistics profile it is a
+     * regular keyword, and warning about it there would also offer a quick fix that corrupts the schema.
+     */
+    @Test
+    void searchInLinguisticsProfileIsNotDeprecated() throws Exception {
+        var parseResult = parseFile("src/test/sdfiles/single/linguistics.sd");
+        List<Diagnostic> deprecated = deprecatedSearchDiagnostics(parseResult.diagnostics());
+        assertTrue(deprecated.isEmpty(),
+                   "Expected no deprecation warning for search inside linguistics, got: "
+                 + Utils.constructDiagnosticMessage(deprecated, 1));
+    }
+
+    @Test
+    void searchAsSchemaKeywordIsDeprecated() throws Exception {
+        var parseResult = parseFile("src/test/sdfiles/single/deprecatedsearch.sd");
+        assertEquals(1, deprecatedSearchDiagnostics(parseResult.diagnostics()).size(),
+                     "Expected search used as the schema keyword to be reported as deprecated"
+                   + Utils.constructDiagnosticMessage(parseResult.diagnostics(), 1));
+    }
 }

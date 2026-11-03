@@ -23,6 +23,7 @@ public class RpcResourcePool implements RpcConnectionPool {
 
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private volatile Map<Integer, NodeConnectionPool> nodeConnectionPools = Map.of();
+    private volatile FillRetrySelector fillRetrySelector;
     private final int numConnections;
     private final RpcClient rpcClient;
 
@@ -30,6 +31,7 @@ public class RpcResourcePool implements RpcConnectionPool {
         var builder = new HashMap<Integer, NodeConnectionPool>();
         nodeConnections.forEach((key, connection) -> builder.put(key, new NodeConnectionPool(List.of(connection))));
         this.nodeConnectionPools = Map.copyOf(builder);
+        this.fillRetrySelector = FillRetrySelector.singleGroup(nodeConnections.keySet());
         this.rpcClient = null;
         this.numConnections = 1;
     }
@@ -62,9 +64,14 @@ public class RpcResourcePool implements RpcConnectionPool {
                 nextPools.put(node.key(), new NodeConnectionPool(connections));
             }
         }
+        var nextSelector = FillRetrySelector.create(nodesConfig.node());
         this.nodeConnectionPools = Map.copyOf(nextPools);
+        this.fillRetrySelector = nextSelector;
         return currentPools.values();
     }
+
+    @Override
+    public FillRetrySelector getFillRetrySelector() { return fillRetrySelector; }
 
     @Override
     public NodeConnection getConnection(int nodeId) {
@@ -74,6 +81,53 @@ public class RpcResourcePool implements RpcConnectionPool {
         } else {
             return pool.nextConnection();
         }
+    }
+
+    @Override
+    public RpcConnectionPool snapshot() {
+        return new View(nodeConnectionPools, fillRetrySelector);
+    }
+
+    /**
+     * An immutable view of one generation of the node set. Queries of a generation resolve
+     * connections through this, so a node removed by a later node set update stays resolvable
+     * to them: updateNodes leaves its connections open until the generation has drained.
+     */
+    private static class View implements RpcConnectionPool {
+
+        private final Map<Integer, NodeConnectionPool> pools;
+        private final FillRetrySelector fillRetrySelector;
+
+        View(Map<Integer, NodeConnectionPool> pools, FillRetrySelector fillRetrySelector) {
+            this.pools = Map.copyOf(pools);
+            this.fillRetrySelector = fillRetrySelector;
+        }
+
+        @Override
+        public NodeConnection getConnection(int nodeId) {
+            var pool = pools.get(nodeId);
+            return pool == null ? null : pool.nextConnection();
+        }
+
+        @Override
+        public Collection<Integer> knownNodeIds() { return pools.keySet(); }
+
+        @Override
+        public FillRetrySelector getFillRetrySelector() { return fillRetrySelector; }
+
+        @Override
+        public RpcConnectionPool snapshot() { return this; }
+
+        @Override
+        public Collection<? extends AutoCloseable> updateNodes(DispatchNodesConfig nodesConfig) {
+            throw new UnsupportedOperationException("Immutable view of the node set");
+        }
+
+        @Override
+        public void close() {
+            throw new UnsupportedOperationException("Views do not own the connections");
+        }
+
     }
 
     @Override

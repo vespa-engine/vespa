@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,10 +44,59 @@ public class SchemaValidatorTest {
             "  </admin>\n" +
             "</services>\n";
 
+    private static String servicesWith(String element) {
+        return "<?xml version='1.0' encoding='utf-8' ?>\n" +
+               "<services>\n" +
+               "  <" + element + " version='1.0'>\n" +
+               "    <product document-type='model' namespace='model' id-field='id' />\n" +
+               "    <category id-field='id' />\n" +
+               "    <variant-presentation />\n" +
+               "    <ranking-tags-registry />\n" +
+               "  </" + element + ">\n" +
+               "</services>\n";
+    }
+
     @Test
     void testXMLParse() throws IOException {
         SchemaValidator validator = createValidator();
         validator.validate(new StringReader(okServices));
+    }
+
+    @Test
+    void testProductDiscoveryIsAccepted() throws IOException {
+        SchemaValidator validator = createValidator();
+        validator.validate(new StringReader(servicesWith("product-discovery")));
+    }
+
+    @Test
+    void testProductDiscoveryVersionIsMajorDotMinor() throws IOException {
+        SchemaValidator validator = createValidator();
+        String original = "<product-discovery version='1.0'>";
+
+        // version must be major.minor
+        String majorDotMinor = servicesWith("product-discovery").replace(original, "<product-discovery version='1.34'>");
+        assertDoesNotThrow(() -> validator.validate(new StringReader(majorDotMinor)));
+
+        // major.minor.micro is rejected
+        String majorDotMinorDotMicro = servicesWith("product-discovery").replace(original, "<product-discovery version='1.0.0'>");
+        assertThrows(RuntimeException.class, () -> validator.validate(new StringReader(majorDotMinorDotMicro)));
+    }
+
+    @Test
+    void testProductDiscoveryGrammarOnlyAcceptsItsMajorVersion() throws IOException {
+        SchemaValidator validator = createValidator();
+        String original = "<product-discovery version='1.0'>";
+        assertDoesNotThrow(() -> validator.validate(new StringReader(servicesWith("product-discovery").replace(original, "<product-discovery version='1.34'>"))));
+        assertThrows(RuntimeException.class, () -> validator.validate(new StringReader(servicesWith("product-discovery").replace(original, "<product-discovery version='2.0'>"))));
+    }
+
+    @Test
+    void testUnknownTopLevelElementIsRejected() {
+        Throwable exception = assertThrows(RuntimeException.class, () -> {
+            SchemaValidator validator = createValidator();
+            validator.validate(new StringReader(servicesWith("commerce-discoverh")));
+        });
+        assertTrue(exception.getMessage().contains("element \"commerce-discoverh\" not allowed"));
     }
 
     @Test
@@ -95,6 +145,25 @@ public class SchemaValidatorTest {
                 "8:  <admin version='2.0'>\n" +
                 "9:    <adminserver hostalias='node1'>\n" +
                 "10:  </admin>\n";
+    }
+
+    @Test
+    void rejectsDoctypeDeclaration() {
+        String withExternalDtd = """
+                <?xml version='1.0' encoding='utf-8' ?>
+                <!DOCTYPE services SYSTEM "foo">
+                <services>
+                  <admin version='2.0'>
+                    <adminserver hostalias='node1' />
+                  </admin>
+                </services>
+                """;
+        Throwable exception = assertThrows(RuntimeException.class, () -> {
+            SchemaValidator validator = createValidator();
+            validator.validate(new StringReader(withExternalDtd));
+        });
+        assertTrue(exception.getMessage().contains("DOCTYPE"),
+                   "Expected the parser to reject the DOCTYPE, got: " + exception.getMessage());
     }
 
     @Test

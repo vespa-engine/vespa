@@ -2,7 +2,7 @@
 
 #include "field_spec.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search::queryeval {
 
@@ -20,7 +20,7 @@ FieldSpec::FieldSpec(const std::string& name, uint32_t fieldId, fef::TermFieldHa
     // NOTE: Whether the field is a filter is still tracked in FieldSpecBase
     // to ensure this information is available in code where only the base class is used.
     // This also ensures that the size of FieldSpecBase is not changed.
-    assert(fieldId < 0x1000000); // Can be represented by 24 bits
+    CHECK(fieldId < 0x1000000); // Can be represented by 24 bits
 }
 
 FieldSpecBaseList::~FieldSpecBaseList() = default;

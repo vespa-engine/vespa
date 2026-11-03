@@ -2,6 +2,7 @@
 
 #include "bitvectorfile.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
@@ -10,8 +11,6 @@
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/size_literals.h>
-
-#include <cassert>
 
 namespace search::diskindex {
 
@@ -39,7 +38,7 @@ void BitVectorFileWrite::open(const std::string& name, uint32_t docIdLimit, cons
                               const FileHeaderContext& fileHeaderContext) {
     std::string datname = name + ".bdat";
 
-    assert(!_datFile);
+    CHECK(!_datFile);
 
     Parent::open(name, docIdLimit, tuneFileWrite, fileHeaderContext);
 
@@ -53,17 +52,17 @@ void BitVectorFileWrite::open(const std::string& name, uint32_t docIdLimit, cons
     _datFile->WriteOpen(datname.c_str());
 
     if (_datHeaderLen == 0) {
-        assert(_numKeys == 0);
+        CHECK(_numKeys == 0);
         makeDatHeader(fileHeaderContext);
     }
 
     size_t  bitmapbytes = BitVector::getFileBytes(_docIdLimit);
     int64_t pos = static_cast<int64_t>(_numKeys) * static_cast<int64_t>(bitmapbytes) + _datHeaderLen;
 
-    assert(_datFile->getSize() >= pos);
+    CHECK(_datFile->getSize() >= pos);
     _datFile->SetSize(pos);
 
-    assert(pos == _datFile->getPosition());
+    CHECK(pos == _datFile->getPosition());
 }
 
 void BitVectorFileWrite::makeDatHeader(const FileHeaderContext& fileHeaderContext) {
@@ -90,16 +89,16 @@ void BitVectorFileWrite::updateDatHeader(uint64_t fileBitSize) {
     h.putTag(Tag(FROZEN, 1));
     h.putTag(Tag(FILE_BIT_SIZE, fileBitSize));
     bool sync_ok = _datFile->Sync();
-    assert(sync_ok);
-    assert(h.getSize() == _datHeaderLen);
+    CHECK(sync_ok);
+    CHECK(h.getSize() == _datHeaderLen);
     _datFile->SetPosition(0);
     h.writeFile(*_datFile);
     sync_ok = _datFile->Sync();
-    assert(sync_ok);
+    CHECK(sync_ok);
 }
 
 void BitVectorFileWrite::addWordSingle(uint64_t wordNum, const BitVector& bitVector) {
-    assert(bitVector.size() == _docIdLimit);
+    CHECK(bitVector.size() == _docIdLimit);
     bitVector.invalidateCachedCount();
     Parent::addWordSingle(wordNum, bitVector.countTrueBits());
     _datFile->WriteBuf(bitVector.getStart(), bitVector.getFileBytes());
@@ -114,19 +113,19 @@ void BitVectorFileWrite::sync() {
     flush();
     Parent::syncCommon();
     bool sync_ok = _datFile->Sync();
-    assert(sync_ok);
+    CHECK(sync_ok);
 }
 
 void BitVectorFileWrite::close() {
     if (_datFile && _datFile->IsOpened()) {
         size_t   bitmapbytes = BitVector::getFileBytes(_docIdLimit);
         uint64_t pos = _datFile->getPosition();
-        assert(pos == static_cast<uint64_t>(_numKeys) * static_cast<uint64_t>(bitmapbytes) + _datHeaderLen);
+        CHECK(pos == static_cast<uint64_t>(_numKeys) * static_cast<uint64_t>(bitmapbytes) + _datHeaderLen);
         (void)bitmapbytes;
         _datFile->alignEndForDirectIO();
         updateDatHeader(pos * 8);
         bool close_ok = _datFile->Close();
-        assert(close_ok);
+        CHECK(close_ok);
     }
     _datFile.reset();
     Parent::close();

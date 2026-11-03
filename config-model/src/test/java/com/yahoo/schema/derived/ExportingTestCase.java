@@ -126,7 +126,7 @@ public class ExportingTestCase extends AbstractExportingTestCase {
 
     @Test
     void testIndexSchema() throws IOException, ParseException {
-        assertCorrectDeriving("indexschema");
+        assertCorrectDeriving("indexschema", new TestProperties().allowStructFieldIndex("allow_alone"));
     }
 
     @Test
@@ -163,6 +163,11 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     @Test
     void testHnswIndex() throws IOException, ParseException {
         assertCorrectDeriving("hnsw_index");
+    }
+
+    @Test
+    void test_quantized_tensors() throws IOException, ParseException {
+        assertCorrectDeriving("quantized_tensors");
     }
 
     @Test

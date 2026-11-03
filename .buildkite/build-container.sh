@@ -130,3 +130,14 @@ docker build --progress=plain \
              --target systemtest \
              --tag "$DOCKER_SYSTEMTEST_TAG" \
              --file "$(select_dockerfile)" .
+
+echo "--- Running basic-search system test"
+
+srv="/opt/vespa-systemtests/lib/node_server.rb"
+lib="/opt/vespa-systemtests/lib:/opt/vespa-systemtests/tests"
+bst="/opt/vespa-systemtests/tests/search/basicsearch/basic_search.rb"
+tnm="test_basicsearch__INDEXED"
+lft="/opt/vespa/bin/vespa-logfmt"
+
+docker run --entrypoint /bin/bash -a stdout -a stderr --rm "$DOCKER_SYSTEMTEST_TAG" -lc \
+    "set -x; ${srv} & sleep 3 && RUBYLIB=${lib} ruby ${bst} --run ${tnm} || ($lft -N && false)"

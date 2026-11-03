@@ -20,7 +20,7 @@
 
 namespace vespalib::atomic {
 
-#if _LIBCPP_VERSION >= 190000 && _LIBCPP_VERSION < 230000
+#if _LIBCPP_VERSION >= 190000 && _LIBCPP_VERSION < 240000
 /*
  * std::atomic_ref with constant template argument is broken with libc++ 19
  * and libc++ 20.

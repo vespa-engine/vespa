@@ -2,6 +2,7 @@
 
 #include "translogserverapp.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/util/time.h>
 
@@ -34,7 +35,7 @@ Encoding::Crc getCrc(searchlib::TranslogserverConfig::Crcmethod crcType) {
     case searchlib::TranslogserverConfig::Crcmethod::xxh64:
         return Encoding::Crc::xxh64;
     }
-    assert(false);
+    CHECK(false);
 }
 
 Encoding::Compression getCompression(searchlib::TranslogserverConfig::Compression::Type type) {
@@ -47,7 +48,7 @@ Encoding::Compression getCompression(searchlib::TranslogserverConfig::Compressio
     case searchlib::TranslogserverConfig::Compression::Type::ZSTD:
         return Encoding::Compression::zstd;
     }
-    assert(false);
+    CHECK(false);
 }
 
 Encoding getEncoding(const searchlib::TranslogserverConfig& cfg) {

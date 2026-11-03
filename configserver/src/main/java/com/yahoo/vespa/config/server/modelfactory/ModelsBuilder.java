@@ -121,7 +121,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 throw e;
             }
             // Catch NoSuchMethodError as well, otherwise the JVM will shut down
-            catch (RuntimeException | NoSuchMethodError e) {
+            catch (RuntimeException | NoSuchMethodError | NoClassDefFoundError e) {
                 if (shouldSkipCreatingMajorVersionOnError(majorVersions, majorVersion, wantedNodeVespaVersion, allocatedHosts)) {
                     log.log(Level.FINE, applicationId + ": Skipping major version " + majorVersion, e);
                 }

@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/persistence/spi/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
 
-#include <cassert>
 #include <unordered_map>
 
 namespace storage::lib {
@@ -35,11 +35,11 @@ public:
     void set_distribution(std::shared_ptr<const lib::Distribution> distribution);
 
     const lib::ClusterState& get_cluster_state() const noexcept {
-        assert(_cluster_state);
+        CHECK(_cluster_state);
         return *_cluster_state;
     }
     const lib::Distribution& get_distribution() const noexcept {
-        assert(_distribution);
+        CHECK(_distribution);
         return *_distribution;
     }
 };

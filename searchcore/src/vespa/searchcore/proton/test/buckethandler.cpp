@@ -2,7 +2,7 @@
 
 #include "buckethandler.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton::test {
 
@@ -10,7 +10,7 @@ BucketHandler::BucketHandler() : IBucketStateChangedNotifier(), _handlers() {
 }
 
 BucketHandler::~BucketHandler() {
-    assert(_handlers.empty());
+    CHECK(_handlers.empty());
 }
 
 void BucketHandler::addBucketStateChangedHandler(IBucketStateChangedHandler* handler) {

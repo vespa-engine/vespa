@@ -27,8 +27,9 @@ public:
     bool operator!=(const Node& other) const noexcept { return (other._index != _index || *other._type != *_type); }
 
     bool operator<(const Node& n) const noexcept {
-        if (*_type != *n._type)
+        if (*_type != *n._type) {
             return (*_type < *n._type);
+        }
         return (_index < n._index);
     }
 };

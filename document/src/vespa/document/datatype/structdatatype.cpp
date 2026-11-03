@@ -2,6 +2,7 @@
 
 #include "structdatatype.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/structfieldvalue.h>
@@ -9,7 +10,6 @@
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-#include <cassert>
 #include <ostream>
 
 #include <vespa/log/log.h>
@@ -38,7 +38,7 @@ void StructDataType::print(std::ostream& out, bool verbose, const std::string& i
     out << ")";
     if (verbose) {
         out << " {";
-        assert(_idFieldMap.size() == _nameFieldMap.size());
+        CHECK(_idFieldMap.size() == _nameFieldMap.size());
         if (!_nameFieldMap.empty()) {
             // Use fieldset to print even though inefficient. Don't need
             // efficient print, and this gets fields in order
@@ -53,10 +53,9 @@ void StructDataType::print(std::ostream& out, bool verbose, const std::string& i
 }
 
 void StructDataType::addField(const Field& field) {
-    std::string error = containsConflictingField(field);
-    if (!error.empty()) {
+    if (auto error = containsConflictingField(field); error) {
         throw IllegalArgumentException(make_string("Failed to add field '%s' to struct '%s': %s",
-                                                   field.getName().data(), getName().c_str(), error.c_str()),
+                                                   field.getName().data(), getName().c_str(), error.value().c_str()),
                                        VESPA_STRLOC);
     }
     if (hasField(field.getName())) {
@@ -68,14 +67,13 @@ void StructDataType::addField(const Field& field) {
 }
 
 void StructDataType::addInheritedField(const Field& field) {
-    std::string error = containsConflictingField(field);
-    if (!error.empty()) {
+    if (auto error = containsConflictingField(field); error) {
         // Deploy application should fail if overwriting a field with field
         // of different type. Java version of document sees to this. C++
         // just accepts what it gets, as to make it easier to alter the
         // restrictions.
         LOG(warning, "Inherited field %s conflicts with existing field. Field not added to struct %s: %s",
-            field.toString().c_str(), getName().c_str(), error.c_str());
+            field.toString().c_str(), getName().c_str(), error.value().c_str());
         return;
     }
     if (hasField(field.getName())) {
@@ -141,7 +139,7 @@ bool differs(const Field& field1, const Field& field2) {
 }
 } // namespace
 
-std::string StructDataType::containsConflictingField(const Field& field) const {
+std::optional<std::string> StructDataType::containsConflictingField(const Field& field) const {
     StringFieldMap::const_iterator it1(_nameFieldMap.find(field.getName()));
     IntFieldMap::const_iterator    it2(_idFieldMap.find(field.getId()));
 
@@ -152,7 +150,7 @@ std::string StructDataType::containsConflictingField(const Field& field) const {
         return make_string("Field id in use by field %s.", it2->second->toString().c_str());
     }
 
-    return "";
+    return std::nullopt;
 }
 
 } // namespace document

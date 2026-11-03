@@ -2,6 +2,7 @@
 
 #include "disk_index_builder.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -67,7 +68,7 @@ public:
         FakeRequestContext           req_ctx;
         search::fef::MatchDataLayout mdl;
         auto                         bp = _index->createBlueprint(req_ctx, field, term, mdl);
-        assert(mdl.empty());
+        CHECK(mdl.empty());
         return bp;
     }
 };
@@ -85,7 +86,7 @@ std::unique_ptr<BenchmarkSearchable> DiskIndexBuilder::build() {
     _selector.extractSaveInfo(_index_dir + "/selector")->save(_tune_file_attributes, _file_header_ctx);
     auto index = std::make_unique<DiskIndex>(_index_dir, std::shared_ptr<search::diskindex::IPostingListCache>());
     bool setup = index->setup(_tune_file_search);
-    assert(setup);
+    CHECK(setup);
     return std::make_unique<DiskIndexSearchable>(std::move(index));
 }
 

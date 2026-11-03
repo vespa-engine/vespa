@@ -25,7 +25,7 @@ from pathlib import Path
 TMGRAMMAR = Path(__file__).resolve().parent.parent
 VESPA_ROOT = TMGRAMMAR.parents[1]
 LSP = VESPA_ROOT / "integration" / "schema-language-server" / "language-server"
-GRAMMAR_PATH = TMGRAMMAR / "grammar/vespa-schema.tmLanguage.json"
+GRAMMAR_PATH = TMGRAMMAR / "grammars/vespa-schema.tmLanguage.json"
 SCHEMA_CCC = LSP / "src/main/ccc/SchemaParser.ccc"
 INDEXING_CCC = LSP / "src/main/ccc/indexinglanguage/IndexingParser.ccc"
 RANKING_CCC = LSP / "src/main/ccc/rankingexpression/RankingExpressionParser.ccc"
@@ -369,6 +369,7 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         ("'single quoted'", "string.quoted.single.vespa", "string-single"),
         # Tensor type — begin/end pattern, check via begin match
         ("tensor<float>(x[384])", "matched-no-name", "tensor-type"),
+        ("tensor(x[384])", "matched-no-name", "tensor-type"),
         # Numerics → constant.numeric (light green)
         ("42", "constant.numeric.integer.vespa", "numeric-literal"),
         ("3.14", "constant.numeric.float.vespa", "numeric-literal"),
@@ -385,8 +386,11 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
 
     # --- Capture-based checks ---
     capture_checks = [
+        ("sort-features {", "sort-features", "keyword.control.vespa", "feature-list-block"),
+        ("sort-features: nativeRank", "sort-features", "keyword.control.vespa", "feature-list-inline"),
         # Tensor keyword → keyword.control (begin capture)
         ("tensor<float>(x[384])", "tensor", "keyword.control.vespa", "tensor-type"),
+        ("tensor(x[384])", "tensor", "keyword.control.vespa", "tensor-type"),
         # Comment # → punctuation
         ("# comment", "#", "punctuation.definition.comment.vespa", "comment"),
         # Variable $ → punctuation
@@ -399,7 +403,10 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         ("field myField type int", "type", "keyword.control.vespa", "declarations"),
         ("struct myStruct {", "myStruct", None, "declarations"),
         ("rank-profile prof {", "prof", "entity.name.function.vespa", "declarations"),
+        ("model example {", "model", "keyword.declaration.vespa", "declarations"),
+        ("model example {", "example", "entity.name.function.vespa", "declarations"),
         ("function fn(x)", "fn", "entity.name.function.vespa", "declarations"),
+        ("function fn(x)", "(", "punctuation.section.parens.begin.vespa", "declarations"),
         ("annotation myAnnotation {", "myAnnotation", None, "declarations"),
         ("document-summary ds {", "ds", "entity.name.type.vespa", "declarations"),
         ("fieldset fs {", "fs", None, "declarations"),
@@ -420,6 +427,16 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         ("rank-profile p {", "rank-profile", "keyword.declaration.vespa", "declarations"),
         ("function fn()", "function", "keyword.declaration.vespa", "declarations"),
         ("import field x", "import", "keyword.declaration.vespa", "declarations"),
+
+        # Explanations
+        ("explanation {", "explanation", "keyword.control.vespa", "explanation-block"),
+        ("explanation: Weight in kg", "explanation", "keyword.control.vespa", "explanation-inline"),
+        ("field explanation type string", "explanation", None, "explanation-block"),
+        ("field explanation type string", "explanation", None, "explanation-inline"),
+        ("    @input query(q1) The query", "@input", "storage.type.class.documentation.vespa", "explanation-tag"),
+        ("    @input query(q1) The query", "query(q1)", "variable.parameter.documentation.vespa", "explanation-tag"),
+        ("@input q2 A weight", "q2", "variable.parameter.documentation.vespa", "explanation-tag"),
+        ("Not a tag: @input q2", "@input", None, "explanation-tag"),
     ]
 
     for text, target, expected_scope, repo_key in capture_checks:

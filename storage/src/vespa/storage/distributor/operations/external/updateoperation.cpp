@@ -2,6 +2,7 @@
 
 #include "updateoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
@@ -75,7 +76,7 @@ void UpdateOperation::onStart(DistributorStripeMessageSender& sender) {
 
     // An UpdateOperation should only be started iff all replicas are consistent
     // with each other, so sampling a single replica should be equal to sampling them all.
-    assert(_entries[0].getBucketInfo().getNodeCount() > 0); // Empty buckets are not allowed
+    CHECK(_entries[0].getBucketInfo().getNodeCount() > 0); // Empty buckets are not allowed
     _infoAtSendTime = _entries[0].getBucketInfo().getNodeRef(0).getBucketInfo();
 
     // FIXME(vekterli): this loop will happily update all replicas in the

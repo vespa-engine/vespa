@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -23,7 +24,7 @@ struct Service : FRT_Invokable {
         init_rpc();
         bool ok = frt.supervisor().Listen(0);
         EXPECT_TRUE(ok);
-        assert(ok);
+        CHECK(ok);
     }
     FNET_Transport& transport() { return *frt.supervisor().GetTransport(); }
     int listen_port() const { return frt.supervisor().GetListenPort(); }

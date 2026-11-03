@@ -26,9 +26,9 @@
 #endif
 #endif
 #endif
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/memory.h>
 
-#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <format>
@@ -527,7 +527,7 @@ namespace dispatch {
     }
 
 FnTable build_composite_fn_table(std::span<const FnTable> fn_tables, bool exclude_suboptimal) noexcept {
-    assert(!fn_tables.empty());
+    CHECK(!fn_tables.empty());
     FnTable composite_tbl;
     // Start at the back (worst) and move towards the front (best), patching in present
     // function pointers as we go (assuming not suboptimal & excluded). Painter's algorithm
@@ -588,7 +588,7 @@ const FnTable& active_fn_table() noexcept {
     VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(fn_field) = fns.fn_field;
 
 void thread_unsafe_update_function_dispatch_pointers(const FnTable& fns) {
-    assert(fns.is_complete());
+    CHECK(fns.is_complete());
     if (LOG_WOULD_LOG(debug)) {
         debug_log_fn_table_update(fns);
     }

@@ -2,9 +2,8 @@
 
 #include "listener.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-#include <cassert>
 
 namespace vespalib::portal {
 
@@ -12,7 +11,7 @@ Listener::Listener(Reactor& reactor, int port, std::function<void(SocketHandle)>
     : _server_socket(port), _handler(std::move(handler)), _token() {
     if (_server_socket.valid()) {
         bool async = _server_socket.set_blocking(false);
-        assert(async);
+        CHECK(async);
         _token = reactor.attach(*this, _server_socket.get_fd(), true, false);
     } else {
         throw PortListenException(port, "PORTAL");

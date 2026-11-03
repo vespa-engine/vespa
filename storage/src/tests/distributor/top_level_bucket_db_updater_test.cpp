@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -252,7 +253,7 @@ public:
 
     bool bucket_has_node(document::BucketId id, uint16_t node) const {
         BucketDatabase::Entry entry = get_bucket(id);
-        assert(entry.valid());
+        CHECK(entry.valid());
 
         for (uint32_t j = 0; j < entry->getNodeCount(); ++j) {
             if (entry->getNodeRef(j).getNode() == node) {

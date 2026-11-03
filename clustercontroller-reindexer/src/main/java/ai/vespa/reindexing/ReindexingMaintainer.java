@@ -73,7 +73,7 @@ public class ReindexingMaintainer extends AbstractComponent {
                                           .toList();
         this.executor = new ScheduledThreadPoolExecutor(reindexingConfig.clusters().size(), new DaemonThreadFactory("reindexer-"));
         if (reindexingConfig.enabled())
-            scheduleStaggered((delayMillis, intervalMillis) -> executor.scheduleAtFixedRate(this::maintain, delayMillis, intervalMillis, TimeUnit.MILLISECONDS),
+            scheduleStaggered((initialDelayMillis, delayMillis) -> executor.scheduleWithFixedDelay(this::maintain, initialDelayMillis, delayMillis, TimeUnit.MILLISECONDS),
                               Duration.ofMinutes(1), clock.instant(), HostName.getLocalhost(), zookeepersConfig.zookeeperserverlist());
     }
 
@@ -131,17 +131,17 @@ public class ReindexingMaintainer extends AbstractComponent {
     static void scheduleStaggered(BiConsumer<Long, Long> scheduler,
                                   Duration interval, Instant now,
                                   String hostname, String clusterHostnames) {
-        long delayMillis = 0;
-        long intervalMillis = interval.toMillis();
+        long initialDelayMillis = 0;
+        long delayMillis = interval.toMillis();
         List<String> hostnames = Stream.of(clusterHostnames.split(","))
                                        .map(hostPort -> hostPort.split(":")[0])
                                        .toList();
         if (hostnames.contains(hostname)) {
-            long offset = hostnames.indexOf(hostname) * intervalMillis;
-            intervalMillis *= hostnames.size();
-            delayMillis = Math.floorMod(offset - now.toEpochMilli(), intervalMillis);
+            long offset = hostnames.indexOf(hostname) * delayMillis;
+            delayMillis *= hostnames.size();
+            initialDelayMillis = Math.floorMod(offset - now.toEpochMilli(), delayMillis);
         }
-        scheduler.accept(delayMillis, intervalMillis);
+        scheduler.accept(initialDelayMillis, delayMillis);
     }
 
     static Cluster parseCluster(String name, ClusterListConfig clusters, AllClustersBucketSpacesConfig bucketSpaces,

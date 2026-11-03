@@ -4,7 +4,7 @@
 
 #include "detached_rpc_requests_owner.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton {
 
@@ -25,13 +25,13 @@ DetachedRpcRequest::~DetachedRpcRequest() {
 }
 
 bool DetachedRpcRequest::add_to_owner(std::shared_ptr<DetachedRpcRequest> self) {
-    assert(this == self.get());
+    CHECK(this == self.get());
     auto owner = _owner.lock();
     return owner ? owner->add_detached_request(std::move(self)) : false;
 }
 
 void DetachedRpcRequest::remove_from_owner(std::shared_ptr<DetachedRpcRequest> self) {
-    assert(this == self.get());
+    CHECK(this == self.get());
     auto owner = _owner.lock();
     if (owner) {
         owner->remove_detached_request(std::move(self));

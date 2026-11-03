@@ -2,6 +2,7 @@
 
 #include "gp.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <algorithm>
@@ -24,7 +25,7 @@ Program::Ref map(const std::map<Program::Ref, Program::Ref>& ref_map, Program::R
         return ref;
     }
     auto pos = ref_map.find(ref);
-    assert(pos != ref_map.end());
+    CHECK(pos != ref_map.end());
     return pos->second;
 }
 
@@ -48,18 +49,18 @@ Program::Program(const OpRepo& repo, size_t in_cnt, size_t out_cnt, size_t alt_c
 }
 
 void Program::assert_valid(Ref ref, size_t limit) const {
-    assert(ref.is_input() != ref.is_operation());
+    CHECK(ref.is_input() != ref.is_operation());
     if (ref.is_input()) {
-        assert(ref.in_idx() < _in_cnt);
+        CHECK(ref.in_idx() < _in_cnt);
     }
     if (ref.is_operation()) {
-        assert(ref.op_idx() < limit);
+        CHECK(ref.op_idx() < limit);
     }
 }
 
 Program::Ref Program::add_op(size_t code, Ref lhs, Ref rhs) {
     size_t op_idx = _program.size();
-    assert(code <= _repo.max_op());
+    CHECK(code <= _repo.max_op());
     assert_valid(lhs, op_idx);
     assert_valid(rhs, op_idx);
     _program.emplace_back(code, lhs, rhs);
@@ -71,7 +72,7 @@ Program::Ref Program::add_forward(Ref ref) {
 }
 
 void Program::init(const Program& src) {
-    assert(src._out_cnt < _out_cnt);
+    CHECK(src._out_cnt < _out_cnt);
     std::map<Ref, Ref> ref_map;
     auto               used = src.get_used_ops(src.stats().alt);
     for (size_t i = 0; i < used.size(); ++i) {
@@ -79,10 +80,10 @@ void Program::init(const Program& src) {
             const Op& op = src._program[i];
             if (op.code == 0) { // forward
                 auto res = ref_map.emplace(Ref::op(i), map(ref_map, op.lhs));
-                assert(res.second);
+                CHECK(res.second);
             } else {
                 auto res = ref_map.emplace(Ref::op(i), Ref::op(_program.size()));
-                assert(res.second);
+                CHECK(res.second);
                 _program.emplace_back(op.code, map(ref_map, op.lhs), map(ref_map, op.rhs));
             }
         }
@@ -114,13 +115,13 @@ void Program::mutate(Random& rnd, size_t mut_idx) {
     } else if (sel == 1) {
         op.lhs = rnd_ref(rnd, std::min(mut_idx, prefix));
     } else {
-        assert(sel == 2);
+        CHECK(sel == 2);
         op.rhs = rnd_ref(rnd, std::min(mut_idx, prefix));
     }
 }
 
 void Program::mutate(Random& rnd) {
-    assert(_frozen < _program.size());
+    CHECK(_frozen < _program.size());
     mutate(rnd, rnd.get(_frozen, _program.size() - 1));
 }
 
@@ -222,12 +223,12 @@ Result Program::execute(const Input& input) const {
         }
         result.push_back(out);
     }
-    assert(idx == _program.size());
+    CHECK(idx == _program.size());
     return result;
 }
 
 void Program::handle_feedback(Random& rnd, const Feedback& feedback) {
-    assert(feedback.size() == _alt_cnt);
+    CHECK(feedback.size() == _alt_cnt);
     std::vector<Stats> my_stats;
     my_stats.reserve(_alt_cnt);
     for (size_t i = 0; i < _alt_cnt; ++i) {

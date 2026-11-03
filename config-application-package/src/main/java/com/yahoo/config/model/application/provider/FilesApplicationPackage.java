@@ -18,6 +18,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.zone.ZoneInfo;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
@@ -71,6 +72,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private static final String META_FILE_NAME = ".applicationMetaData";
     private static final Map<Path, Set<String>> validFileExtensions;
+    private static final List<Path> disallowedDirectories = List.of(MODELS_GENERATED_DIR, MODELS_GENERATED_REPLICATED_DIR);
 
     private final File appDir;
     private final File configDefsDir;
@@ -472,7 +474,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     @Override
-    public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
+    public ApplicationPackage preprocess(ZoneInfo zone, DeployLogger logger) throws IOException {
         return preprocessor.preprocess(zone);
     }
 
@@ -492,6 +494,15 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             if (file.exists()) return file;
         }
         return fileUnder(appDir, path);
+    }
+
+    /* Validates that the application package does not contain directories reserved for internal use */
+    public static void validateDirectories(File appDir) {
+        for (Path dir : disallowedDirectories) {
+            if (fileUnder(appDir, dir).exists())
+                throw new IllegalArgumentException("Application package contains directory '" + dir.getRelative() +
+                                                   "', which is reserved for internal use, please delete it");
+        }
     }
 
     /* Validates that files in application dir and subdirectories have a known extension */

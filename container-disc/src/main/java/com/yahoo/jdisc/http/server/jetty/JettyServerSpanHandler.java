@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import ai.vespa.telemetry.api.Telemetry;
 import ai.vespa.telemetry.api.trace.ScopedTracer;
+import ai.vespa.telemetry.api.trace.OtelTracing;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -24,9 +25,10 @@ import java.util.logging.Logger;
  * Jetty integration that creates an OpenTelemetry {@link SpanKind#SERVER server span} per HTTP request.
  *
  * <p>The span is started when request handling begins ({@link #onBeforeHandling}) and ended when the
- * request and response are fully processed ({@link #onComplete}). The owning {@link Context} (the
- * incoming W3C trace context with this server span set) is stored as a Jetty request attribute under
- * {@link #OTEL_CONTEXT_REQUEST_ATTRIBUTE}, so downstream code can create child spans and propagate it.</p>
+ * request and response are fully processed ({@link #onComplete}). The owning {@link Context} — the incoming
+ * W3C trace context with this server span set, plus the {@link Telemetry} instance when enabled — is stored
+ * as a Jetty request attribute under {@link #OTEL_CONTEXT_REQUEST_ATTRIBUTE}, so downstream code can recover
+ * the telemetry, create child spans, and propagate the context further.</p>
  *
  * <p>{@link #onBeforeHandling} and {@link #onComplete} are not guaranteed to run on the same thread
  * (async requests), so the span is carried explicitly in the request attribute rather than via a
@@ -39,11 +41,11 @@ import java.util.logging.Logger;
  */
 class JettyServerSpanHandler extends EventsHandler {
 
-    /** Request attribute holding the {@link Context} (incoming context + server span) for this request. */
+    /** Request attribute holding the {@link Context} (incoming context, server span, and the {@link Telemetry}
+     *  instance when enabled) for this request. */
     static final String OTEL_CONTEXT_REQUEST_ATTRIBUTE = "jdisc.request.otel.context";
 
     private static final Logger log = Logger.getLogger(JettyServerSpanHandler.class.getName());
-    private static final String INSTRUMENTATION_SCOPE_NAME = "com.yahoo.jdisc.http.server.jetty";
 
     // OpenTelemetry HTTP-server semantic-convention attribute keys. Hardcoded here (rather than depending
     // on the alpha opentelemetry-semconv artifact) so this stays on the API-only classpath.
@@ -70,10 +72,12 @@ class JettyServerSpanHandler extends EventsHandler {
 
     private final ScopedTracer tracer;
     private final TextMapPropagator propagator;
+    private final Telemetry telemetry;
 
     JettyServerSpanHandler(Telemetry telemetry, Handler handler) {
         super(handler);
-        this.tracer = telemetry.tracer(INSTRUMENTATION_SCOPE_NAME);
+        this.telemetry = telemetry;
+        this.tracer = telemetry.tracer(OtelTracing.DEFAULT_SCOPE);
         this.propagator = telemetry.textMapPropagator();
     }
 
@@ -83,7 +87,8 @@ class JettyServerSpanHandler extends EventsHandler {
      * <p>Context propagation: the incoming W3C trace-context headers are read via the {@link #propagator}
      * to recover the caller's (remote parent) {@link Context}; the new span is created as a child of it, so a
      * distributed trace started upstream continues through this server. The owning context — the extracted
-     * parent with this span set on it ({@code parentContext.with(span)}) — is then stored in the Jetty request
+     * parent with this span set on it, plus the {@link Telemetry} instance
+     * ({@code Telemetry.store(parentContext.with(span), telemetry)}) — is then stored in the Jetty request
      * attribute {@link #OTEL_CONTEXT_REQUEST_ATTRIBUTE}, NOT in a thread-local {@link io.opentelemetry.context.Scope},
      * because {@link #onComplete} may run on a different thread for async requests. Downstream code can read that
      * attribute to create child spans and propagate the context further.</p>
@@ -93,11 +98,16 @@ class JettyServerSpanHandler extends EventsHandler {
     @Override
     protected void onBeforeHandling(Request request) {
         try {
-            Context parentContext = propagator.extract(Context.current(), request, HEADER_GETTER);
+            // Extract from root() rather than current(): nothing is attached on the Jetty thread so they are
+            // equal today, but root() is immune to a scope leaked from a prior request on this reused thread.
+            // Vespa runs no external OTel agent, so inheriting the thread's ambient context has no value here.
+            Context parentContext = propagator.extract(Context.root(), request, HEADER_GETTER);
             Span span = tracer.startServerSpan(spanName(request), parentContext);
-            // Store the context before setting attributes so onComplete can always end the span,
-            // even if an attribute getter below throws.
-            request.setAttribute(OTEL_CONTEXT_REQUEST_ATTRIBUTE, parentContext.with(span));
+            // Store the context before setting attributes so onComplete can always end the span even if a
+            // getter below throws. Telemetry is stored into the context too, so downstream span sites in
+            // exported packages (which cannot be dependency-injected) recover it from the ambient context.
+            request.setAttribute(OTEL_CONTEXT_REQUEST_ATTRIBUTE,
+                    Telemetry.store(parentContext.with(span), telemetry));
             setRequestAttributes(span, request);
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed to start server span", e);

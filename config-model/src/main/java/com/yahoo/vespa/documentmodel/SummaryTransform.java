@@ -12,10 +12,8 @@ public enum SummaryTransform {
     NONE("none"),
     ATTRIBUTE("attribute"),
     BOLDED("bolded"),
-    DISTANCE("distance"),
     DYNAMICBOLDED("dynamicbolded"),
     DYNAMICTEASER("dynamicteaser"),
-    POSITIONS("positions"),
     RANKFEATURES("rankfeatures"),
     SUMMARYFEATURES("summaryfeatures"),
     GEOPOS("geopos"),
@@ -73,7 +71,7 @@ public enum SummaryTransform {
     /** Returns whether this transform always gets its value by accessing memory only */
     public boolean isInMemory() {
         return switch (this) {
-            case ATTRIBUTE, DISTANCE, POSITIONS, GEOPOS, RANKFEATURES, SUMMARYFEATURES,
+            case ATTRIBUTE, GEOPOS, RANKFEATURES, SUMMARYFEATURES,
                     ATTRIBUTECOMBINER, ATTRIBUTE_TOKENS ->
                     true;
             default -> false;

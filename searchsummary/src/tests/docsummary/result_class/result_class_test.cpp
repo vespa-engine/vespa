@@ -24,8 +24,9 @@ public:
 TEST(ResultClassTest, subset_of_fields_in_class_are_generated) {
     ResultClass rc("test");
     rc.addConfigEntry("from_disk");
-    rc.addConfigEntry("generated", SummaryElementsSelector::select_all(), std::make_unique<MockWriter>(true));
-    rc.addConfigEntry("not_generated", SummaryElementsSelector::select_all(), std::make_unique<MockWriter>(false));
+    rc.addConfigEntry("generated", SummaryElementsSelector::select_all(), std::make_unique<MockWriter>(true), {});
+    rc.addConfigEntry("not_generated", SummaryElementsSelector::select_all(), std::make_unique<MockWriter>(false),
+                      {});
 
     EXPECT_FALSE(rc.all_fields_generated({}));
     EXPECT_FALSE(rc.all_fields_generated({"from_disk", "generated", "not_generated"}));
@@ -36,8 +37,8 @@ TEST(ResultClassTest, subset_of_fields_in_class_are_generated) {
 
 TEST(ResultClassTest, all_fields_in_class_are_generated) {
     ResultClass rc("test");
-    rc.addConfigEntry("generated_1", SummaryElementsSelector::select_all(), std::make_unique<MockWriter>(true));
-    rc.addConfigEntry("generated_2", SummaryElementsSelector::select_all(), std::make_unique<MockWriter>(true));
+    rc.addConfigEntry("generated_1", SummaryElementsSelector::select_all(), std::make_unique<MockWriter>(true), {});
+    rc.addConfigEntry("generated_2", SummaryElementsSelector::select_all(), std::make_unique<MockWriter>(true), {});
 
     EXPECT_TRUE(rc.all_fields_generated({}));
     EXPECT_TRUE(rc.all_fields_generated({"generated_1"}));

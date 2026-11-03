@@ -44,10 +44,15 @@ public:
     using CP = vespalib::IdentifiablePtr<ExpressionNode>;
     virtual const ResultNode* getResult() const = 0;
     void execute() const { return onExecute(); }
+
+    // preserveAccurateTypes is currently only used for MD5 and binary Cat. And the behavior
+    // is tested in perdocexpr_test. Used in AttributeNode and DocumentFieldNode to make result
+    // nodes with the size given by their type rather than promoting them to 64 bit.
     ExpressionNode& prepare(bool preserveAccurateTypes) {
         onPrepare(preserveAccurateTypes);
         return *this;
     }
+
     virtual ExpressionNode* clone() const = 0;
     void executeIterative(const ResultNode& arg, ResultNode& result) const;
     virtual void wireAttributes(const search::attribute::IAttributeContext& attrCtx);

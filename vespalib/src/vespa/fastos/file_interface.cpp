@@ -12,7 +12,6 @@
 
 #include <fcntl.h>
 
-#include <cassert>
 #include <cstdlib>
 #include <cstring>
 #include <sstream>
@@ -107,8 +106,9 @@ void FastOS_FileInterface::EnableDirectIO() {
 }
 
 void FastOS_FileInterface::EnableSyncWrites() {
-    if (!IsOpened())
+    if (!IsOpened()) {
         _syncWritesEnabled = true;
+    }
 }
 
 bool FastOS_FileInterface::GetDirectIORestrictions(size_t& memoryAlignment, size_t& transferGranularity,

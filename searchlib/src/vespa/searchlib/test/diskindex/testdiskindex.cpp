@@ -2,13 +2,12 @@
 
 #include "testdiskindex.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/diskindex/posting_list_cache.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 #include <vespa/vespalib/io/fileutil.h>
-
-#include <cassert>
 
 namespace search::diskindex {
 
@@ -115,7 +114,7 @@ void TestDiskIndex::openIndex(const std::string& dir, bool directio, bool readmm
     }
     _index = std::make_unique<DiskIndex>(dir, posting_list_cache);
     bool ok(_index->setup(tuneFileRead));
-    assert(ok);
+    CHECK(ok);
     (void)ok;
 }
 

@@ -152,6 +152,7 @@ public class RawRankProfile {
         private final Set<ReferenceNode> matchFeatures;
         private final Set<ReferenceNode> hiddenMatchFeatures;
         private final Set<ReferenceNode> rankFeatures;
+        private final Set<ReferenceNode> sortFeatures;
         private final Map<String, String> featureRenames = new java.util.LinkedHashMap<>();
         private final List<RankProfile.RankProperty> rankProperties;
 
@@ -220,6 +221,7 @@ public class RawRankProfile {
             hiddenMatchFeatures = compiled.getHiddenMatchFeatures();
             matchFeatures.addAll(hiddenMatchFeatures);
             rankFeatures = compiled.getRankFeatures();
+            sortFeatures = new LinkedHashSet<>(compiled.getSortFeatures());
             rerankCount = compiled.getRerankCount();
             globalPhaseRerankCount = compiled.getGlobalPhaseRerankCount();
             matchPhaseSettings = compiled.getMatchPhase();
@@ -299,6 +301,7 @@ public class RawRankProfile {
                                                               SerializationContext functionContext) {
             replaceFunctionFeatures(summaryFeatures, functionContext);
             replaceFunctionFeatures(matchFeatures, functionContext);
+            replaceFunctionFeatures(sortFeatures, functionContext);
 
             // First phase, second phase and summary features should add all required functions to the context.
             // However, we need to add any functions not referenced in those anyway for model-evaluation.
@@ -478,6 +481,9 @@ public class RawRankProfile {
             }
             for (ReferenceNode feature : rankFeatures) {
                 properties.add(new Pair<>("vespa.dump.feature", feature.toString()));
+            }
+            for (ReferenceNode feature : sortFeatures) {
+                properties.add(new Pair<>("vespa.sort.feature", feature.toString()));
             }
             for (var entry : featureRenames.entrySet()) {
                 properties.add(new Pair<>("vespa.feature.rename", entry.getKey()));

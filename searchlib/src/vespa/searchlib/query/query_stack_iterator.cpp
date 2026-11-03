@@ -26,6 +26,9 @@ std::unique_ptr<query::PredicateQueryTerm> QueryStackIterator::getPredicateQuery
 std::unique_ptr<query::TermVector> QueryStackIterator::get_terms() {
     return std::move(_d.termVector);
 }
+std::unique_ptr<StringRangeSpec> QueryStackIterator::get_string_range_spec() {
+    return std::move(_d.string_range_spec);
+}
 
 std::string_view QueryStackIterator::DEFAULT_INDEX = "default";
 
@@ -55,6 +58,7 @@ void QueryStackIterator::Data::clear() {
     term_view = {};
     integerTerm = 0;
 
+    label_score = 0;
     distanceThreshold = 0;
     scoreThreshold = 0;
     thresholdBoostFactor = 0;

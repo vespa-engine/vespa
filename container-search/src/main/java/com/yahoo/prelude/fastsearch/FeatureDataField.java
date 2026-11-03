@@ -27,4 +27,7 @@ public class FeatureDataField extends LongstringField {
         return new FeatureData(value);
     }
 
+    @Override
+    boolean isString() { return false; }
+
 }

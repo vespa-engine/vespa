@@ -10,6 +10,7 @@ import com.yahoo.searchlib.expression.DocumentFieldNode;
 import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.GetDocIdNamespaceSpecificFunctionNode;
 import com.yahoo.searchlib.expression.IntegerResultNode;
+import com.yahoo.searchlib.expression.IntegerResultNodeVector;
 import com.yahoo.searchlib.expression.MD5BitFunctionNode;
 import com.yahoo.searchlib.expression.MinFunctionNode;
 import com.yahoo.searchlib.expression.XorBitFunctionNode;
@@ -23,6 +24,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author baldersheim
@@ -41,6 +43,80 @@ public class AggregationTestCase {
         assertEquals(7, b.getSum().getInteger());
         b.merge(a);
         assertEquals(14, b.getSum().getInteger());
+    }
+
+    @Test
+    public void testArgmaxAggregationResult() {
+        ArgmaxAggregationResult a = new ArgmaxAggregationResult(new FloatResultNode(5.0), new IntegerResultNode(6));
+        a.setKeyExpression(new AttributeNode("attributeB"));
+        a.setExpression(new AttributeNode("attributeA"));
+        assertTrue(a.hasValue());
+        assertEquals(5.0, a.getKey().getFloat(), delta);
+        assertEquals(6, a.getValue().getInteger());
+
+        ArgmaxAggregationResult b = (ArgmaxAggregationResult)serializeDeserialize(a);
+        assertTrue(b.hasValue());
+        assertEquals(5.0, b.getKey().getFloat(), delta);
+        assertEquals(6, b.getValue().getInteger());
+        assertEquals(a.getKeyExpression(), b.getKeyExpression());
+
+        // The hit with the largest key wins, no matter which side of the merge it is on.
+        ArgmaxAggregationResult c = new ArgmaxAggregationResult(new FloatResultNode(10.0), new IntegerResultNode(7));
+        c.setKeyExpression(new AttributeNode("attributeB"));
+        c.setExpression(new AttributeNode("attributeA"));
+        b.merge(c);
+        assertEquals(10.0, b.getKey().getFloat(), delta);
+        assertEquals(7, b.getValue().getInteger());
+        c.merge(a);
+        assertEquals(10.0, c.getKey().getFloat(), delta);
+        assertEquals(7, c.getValue().getInteger());
+    }
+
+    @Test
+    public void testArgmaxAggregationResultWithMultivalueResult() {
+        IntegerResultNodeVector values = new IntegerResultNodeVector();
+        values.add(new IntegerResultNode(6)).add(new IntegerResultNode(7));
+        ArgmaxAggregationResult a = new ArgmaxAggregationResult(new FloatResultNode(5.0), values);
+        a.setKeyExpression(new AttributeNode("attributeB"));
+        a.setExpression(new AttributeNode("attributeA"));
+        assertTrue(a.hasValue());
+        assertEquals(values, a.getValue());
+
+        // The multi-value result survives serialization as is.
+        ArgmaxAggregationResult b = (ArgmaxAggregationResult)serializeDeserialize(a);
+        assertTrue(b.hasValue());
+        assertEquals(5.0, b.getKey().getFloat(), delta);
+        assertEquals(values, b.getValue());
+
+        // A smaller key replaces the whole multi-value result.
+        IntegerResultNodeVector other = new IntegerResultNodeVector();
+        other.add(new IntegerResultNode(8));
+        ArgmaxAggregationResult c = new ArgmaxAggregationResult(new FloatResultNode(10.0), other);
+        b.merge(c);
+        assertEquals(10.0, b.getKey().getFloat(), delta);
+        assertEquals(other, b.getValue());
+    }
+
+    @Test
+    public void testArgmaxAggregationResultWithoutValue() {
+        ArgmaxAggregationResult empty = new ArgmaxAggregationResult();
+        empty.setKeyExpression(new AttributeNode("attributeB"));
+        empty.setExpression(new AttributeNode("attributeA"));
+        assertFalse(empty.hasValue());
+        assertFalse(((ArgmaxAggregationResult)serializeDeserialize(empty)).hasValue());
+
+        // An empty result never wins, and is filled in by whatever it merges with.
+        ArgmaxAggregationResult a = new ArgmaxAggregationResult(new FloatResultNode(1.0), new IntegerResultNode(8));
+        a.setKeyExpression(new AttributeNode("attributeB"));
+        a.setExpression(new AttributeNode("attributeA"));
+        a.merge(empty);
+        assertEquals(1.0, a.getKey().getFloat(), delta);
+        assertEquals(8, a.getValue().getInteger());
+
+        empty.merge(a);
+        assertTrue(empty.hasValue());
+        assertEquals(1.0, empty.getKey().getFloat(), delta);
+        assertEquals(8, empty.getValue().getInteger());
     }
 
     @Test

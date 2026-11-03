@@ -187,3 +187,6 @@
 #define CID_search_expression_IsTruePredicateNode SEARCHLIB_CID(180)
 #define CID_search_expression_GeoDistanceFunctionNode SEARCHLIB_CID(181)
 #define CID_search_expression_PositionDocumentFieldNode SEARCHLIB_CID(182)
+
+#define CID_search_aggregation_ArgmaxAggregationResult SEARCHLIB_CID(183)
+#define CID_search_expression_InPredicateNode SEARCHLIB_CID(184)

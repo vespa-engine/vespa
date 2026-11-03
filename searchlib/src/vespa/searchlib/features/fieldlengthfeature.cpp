@@ -32,8 +32,9 @@ void FieldLengthExecutor::execute(uint32_t docId) {
         if (tfmd.has_ranking_data(docId)) {
             FieldPositionsIterator it = tfmd.getIterator();
             if (it.valid()) {
-                if (val < it.getFieldLength())
+                if (val < it.getFieldLength()) {
                     val = it.getFieldLength();
+                }
                 validVal = true;
             }
         }

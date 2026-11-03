@@ -60,7 +60,7 @@ public:
     int fastCompare(const FieldValue& other) const override final;
 
     std::string getAsString() const override;
-    std::pair<const char*, size_t> getAsRaw() const override;
+    std::span<const char> getAsRaw() const override;
 
     void printXml(XmlOutputStream& out) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

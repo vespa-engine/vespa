@@ -15,9 +15,12 @@ import static java.util.Collections.unmodifiableSet;
 /**
  *
  * Restarts for a set of hostnames. A pending restart is created for a specific config generation
- * and a set of hostnames.
+ * and a set of hostnames. Container nodes might use a feature (restartOnDeploy) where new config is
+ * not being used until the service has restarted. Content nodes will always use new config when it is available,
+ * but might still need a restart to apply changes.
  *
  * @author Jon Marius Venstad
+ * @author hmusum
  *
  *
  */

@@ -65,10 +65,12 @@ void WeightedSetDataType::print(std::ostream& out, bool verbose, const std::stri
 }
 
 bool WeightedSetDataType::equals(const DataType& other) const noexcept {
-    if (this == &other)
+    if (this == &other) {
         return true;
-    if (!CollectionDataType::equals(other) || !other.isWeightedSet())
+    }
+    if (!CollectionDataType::equals(other) || !other.isWeightedSet()) {
         return false;
+    }
     const WeightedSetDataType& w(static_cast<const WeightedSetDataType&>(other));
     return (_createIfNonExistent == w._createIfNonExistent) && (_removeIfZero == w._removeIfZero);
 }

@@ -25,11 +25,13 @@ bool DocumentSummary::readDocIdLimit(const std::string& dir, uint32_t& count) {
     count = qcnt = 0;
     // XXX no checking for success
     qcntfile.ReadOpen(qcntname.c_str());
-    if (!qcntfile.IsOpened() || qcntfile.Eof())
+    if (!qcntfile.IsOpened() || qcntfile.Eof()) {
         return false;
+    }
     p = qcntfile.ReadLine(numbuf, sizeof(numbuf));
-    while (*p >= '0' && *p <= '9')
+    while (*p >= '0' && *p <= '9') {
         qcnt = qcnt * 10 + *p++ - '0';
+    }
     count = qcnt;
     return true;
 }

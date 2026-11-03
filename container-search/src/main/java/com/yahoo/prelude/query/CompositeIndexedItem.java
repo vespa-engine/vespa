@@ -29,15 +29,12 @@ public abstract class CompositeIndexedItem extends CompositeTaggableItem impleme
 
     /**
      * The *full* name of the field searched by this,
-     * which is prefixed by the parent name and a dot if this is inside a SameElement,
+     * which is prefixed by the parent name and a dot if this is inside a SameElement or MapMatch,
      * and the same as getIndexName otherwise.
      */
     @Override
     public String getFieldName() {
-        if (getParent() instanceof SameElementItem sameElementParent)
-            return sameElementParent.getFieldName() + "." + getIndexName();
-        else
-            return getIndexName();
+        return ElementFieldNames.fieldName(getParent(), getIndexName());
     }
 
     // encode index bytes

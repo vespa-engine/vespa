@@ -52,6 +52,25 @@ public abstract class TermProduction extends Production {
     /** Returns the label of this, or null if none (the default) */
     public void setLabel(String label) { this.label = label; }
 
+    /**
+     * Returns the label to produce the term in given the match it is produced from:
+     * The label of this, or the label of the matched term if the label of this is "*".
+     */
+    protected String getLabel(Match match) {
+        return "*".equals(label) ? match.getItem().getIndexName() : label;
+    }
+
+    /**
+     * Returns the label to produce the term in given an evaluation:
+     * The label of this, or the label of the first matched term if the label of this is "*"
+     * (or null if there are no matched terms).
+     */
+    protected String getLabel(RuleEvaluation e) {
+        if ( ! "*".equals(label)) return label;
+        Match match = e.getFirstMatch();
+        return match == null ? null : getLabel(match);
+    }
+
     /** Returns the type of term to produce, never null. Default is DEFAULT */
     public TermType getTermType() { return termType; }
 
@@ -104,9 +123,9 @@ public abstract class TermProduction extends Production {
         }
 
         PhraseItem phrase = new PhraseItem();
-        phrase.setIndexName(getLabel());
+        phrase.setIndexName(getLabel(e));
         for (int i = 0; i < count; i++) {
-            phrase.addItem(e.getNonreferencedMatch(i).toItem(getLabel()));
+            phrase.addItem(e.getNonreferencedMatch(i).toItem(getLabel(e)));
         }
 
         // Remove extra matched terms (1..N-1) from parent

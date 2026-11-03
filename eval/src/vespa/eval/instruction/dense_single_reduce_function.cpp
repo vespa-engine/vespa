@@ -2,11 +2,11 @@
 
 #include "dense_single_reduce_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/util/typify.h>
 
 #include <array>
-#include <cassert>
 
 namespace vespalib::eval {
 
@@ -136,9 +136,9 @@ std::pair<std::vector<std::string>, ValueType> sort_and_drop_trivial(const std::
     std::vector<std::string> list_out;
     for (const auto& dim_name : list_in) {
         auto dim_idx = type_in.dimension_index(dim_name);
-        assert(dim_idx != ValueType::Dimension::npos);
+        CHECK(dim_idx != ValueType::Dimension::npos);
         const auto& dim = type_in.dimensions()[dim_idx];
-        assert(dim.is_indexed());
+        CHECK(dim.is_indexed());
         if (dim.is_trivial()) {
             dropped.push_back(dim_name);
         } else {
@@ -147,7 +147,7 @@ std::pair<std::vector<std::string>, ValueType> sort_and_drop_trivial(const std::
     }
     std::sort(list_out.begin(), list_out.end());
     ValueType type_out = dropped.empty() ? type_in : type_in.reduce(dropped);
-    assert(!type_out.is_error());
+    CHECK(!type_out.is_error());
     return {list_out, type_out};
 }
 
@@ -188,7 +188,7 @@ DenseSingleReduceSpec extract_next(const ValueType& type, Aggr aggr, std::vector
         b.next();
     }
     todo = do_later;
-    assert(!do_now.empty());
+    CHECK(!do_now.empty());
     return {type.reduce(do_now), outer_size, reduce_size, inner_size, aggr};
 }
 
@@ -206,7 +206,7 @@ std::vector<DenseSingleReduceSpec> make_dense_single_reduce_list(const ValueType
         list.push_back(extract_next(curr_type, aggr, todo));
         curr_type = list.back().result_type;
     }
-    assert(curr_type == res_type);
+    CHECK(curr_type == res_type);
     if ((list.size() > 1) && !aggr::is_simple(aggr)) {
         return {};
     }
@@ -219,7 +219,7 @@ DenseSingleReduceFunction::DenseSingleReduceFunction(const DenseSingleReduceSpec
       _reduce_size(spec.reduce_size),
       _inner_size(spec.inner_size),
       _aggr(spec.aggr) {
-    assert(result_type().cell_meta().is_scalar == false);
+    CHECK(result_type().cell_meta().is_scalar == false);
 }
 
 DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;

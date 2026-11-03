@@ -33,6 +33,7 @@ SimpleDotProduct::~SimpleDotProduct() = default;
 SimpleWandTerm::~SimpleWandTerm() = default;
 
 SimpleRank::~SimpleRank() = default;
+SimpleLabelWrapper::~SimpleLabelWrapper() = default;
 
 SimpleNumberTerm::~SimpleNumberTerm() = default;
 
@@ -41,6 +42,7 @@ SimpleLocationTerm::~SimpleLocationTerm() = default;
 SimplePrefixTerm::~SimplePrefixTerm() = default;
 
 SimpleRangeTerm::~SimpleRangeTerm() = default;
+SimpleStringRangeTerm::~SimpleStringRangeTerm() = default;
 
 SimpleStringTerm::~SimpleStringTerm() = default;
 
@@ -53,6 +55,8 @@ SimplePredicateQuery::~SimplePredicateQuery() = default;
 SimpleRegExpTerm::~SimpleRegExpTerm() = default;
 
 SimpleNearestNeighborTerm::~SimpleNearestNeighborTerm() = default;
+
+SimpleSparseTensorWandTerm::~SimpleSparseTensorWandTerm() = default;
 
 SimpleFuzzyTerm::~SimpleFuzzyTerm() = default;
 

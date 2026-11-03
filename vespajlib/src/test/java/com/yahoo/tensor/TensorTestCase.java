@@ -147,6 +147,21 @@ public class TensorTestCase {
         assertTrue(dimensions3.contains("d3"));
     }
 
+    /** Equality is mathematical. */
+    @Test
+    public void testMappedIsEqualToIndexed() {
+        var t = Tensor.from("tensor(x[3]):[1.0, 2.0, 3.0]");
+        assertEqualBothWays(Tensor.from("tensor(x{}):{\"0\":1.0, \"1\":2.0, \"2\":3.0}"),
+                            Tensor.from("tensor(x[3]):[1.0, 2.0, 3.0]"));
+        assertEqualBothWays(Tensor.from("tensor(x{},y[2]):{0:[1.0, 2.0]}"),
+                            Tensor.from("tensor(x[1],y[2]):[[1.0, 2.0]]"));
+    }
+
+    private void assertEqualBothWays(Tensor a, Tensor b) {
+        assertEquals(a, b);
+        assertEquals(b, a);
+    }
+
     @Test
     public void testExpressions() {
         Tensor y =  Tensor.from("{{y:1}:3}");

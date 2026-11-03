@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
@@ -19,6 +20,7 @@ using namespace search::queryeval::test;
 
 using feature_t = search::feature_t;
 using score_t = wand::score_t;
+using WeakAndHeap = ParallelWeakAndSearch::WeakAndHeap;
 using MatchParams = ParallelWeakAndSearch::MatchParams;
 using RankParams = ParallelWeakAndSearch::RankParams;
 using search::IDirectPostingStore;
@@ -63,10 +65,10 @@ struct TestHeap : public WeakAndHeap {
     ScoresHistory history;
 
     explicit TestHeap(uint32_t scoresToTrack_) : WeakAndHeap(scoresToTrack_), history() {}
-    void adjust(score_t* begin, score_t* end) override {
+    void adjust(std::span<score_t> newScores) override {
         Scores scores;
-        for (score_t* itr = begin; itr != end; ++itr) {
-            scores.add(*itr);
+        for (score_t score : newScores) {
+            scores.add(score);
         }
         history.push_back(scores);
         setMinScore(1);
@@ -583,7 +585,7 @@ TEST(ParallelWeakAndTest, require_that_docid_limit_is_propagated_to_search_itera
     f1.spec.docIdLimit = 4050;
     SearchIterator::UP           itr = f1.iterator();
     const ParallelWeakAndSearch* wand = dynamic_cast<ParallelWeakAndSearch*>(itr.get());
-    EXPECT_EQ(4050u, wand->getMatchParams().docIdLimit);
+    EXPECT_EQ(4050u, wand->getMatchParams().docid_limit);
 }
 
 TEST(ParallelWeakAndTest, require_that_terms_are_sorted_for_maximum_skipping) {
@@ -673,7 +675,7 @@ using RankParams = ParallelWeakAndSearch::RankParams;
 
 struct DummyHeap : public WeakAndHeap {
     DummyHeap() : WeakAndHeap(9001) {}
-    void adjust(score_t*, score_t*) override {}
+    void adjust(std::span<score_t>) override {}
 };
 
 SearchIterator::UP create_wand(bool use_dww, TermFieldMatchData& tfmd, const MatchParams& matchParams,
@@ -690,7 +692,7 @@ SearchIterator::UP create_wand(bool use_dww, TermFieldMatchData& tfmd, const Mat
         handles.push_back(layout.allocTermField(tfmd.getFieldId()));
     }
     MatchData::UP childrenMatchData = layout.createMatchData();
-    assert(childrenMatchData->getNumTermFields() == dict_entries.size());
+    CHECK(childrenMatchData->getNumTermFields() == dict_entries.size());
     wand::Terms terms;
     for (size_t i = 0; i < dict_entries.size(); ++i) {
         terms.push_back(
@@ -698,7 +700,7 @@ SearchIterator::UP create_wand(bool use_dww, TermFieldMatchData& tfmd, const Mat
                                                          dict_entries[i]),
                        weights[i], dict_entries[i].posting_size, childrenMatchData->resolveTermField(handles[i])));
     }
-    assert(terms.size() == dict_entries.size());
+    CHECK(terms.size() == dict_entries.size());
     return SearchIterator::UP(ParallelWeakAndSearch::create(
         terms, matchParams, RankParams(tfmd, std::move(childrenMatchData)), strict, false));
 }

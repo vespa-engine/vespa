@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.Capacity;
@@ -39,7 +40,12 @@ public class SingleNodeProvisioner implements HostProvisioner {
         host = new Host(HostName.getLocalhost());
         this.hostSpec = new HostSpec(host.hostname(),
                                      flavor.resources(), flavor.resources(), flavor.resources(),
-                                     ClusterMembership.from(ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).group(ClusterSpec.Group.from(0)).vespaVersion("1").build(), 0),
+                                     ClusterMembership.from(ClusterSpec.builder(ClusterSpec.Type.content,
+                                                                                ClusterSpec.Id.from("test"),
+                                                                                Capacity.unspecified(),
+                                                                                new Version("1")).build(),
+                                                            0,
+                                                            0),
                                      Optional.empty(), Optional.empty(), Optional.empty(),
                                      AzName.defaultName());
     }
@@ -50,11 +56,11 @@ public class SingleNodeProvisioner implements HostProvisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+    public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
         List<HostSpec> hosts = new ArrayList<>();
         hosts.add(new HostSpec(host.hostname(),
                                NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
-                               ClusterMembership.from(cluster.with(Optional.of(ClusterSpec.Group.from(0))), counter++),
+                               ClusterMembership.from(cluster, 0, counter++),
                                Optional.empty(), Optional.empty(), Optional.empty(),
                                AzName.defaultName()));
         return hosts;

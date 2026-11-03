@@ -6,7 +6,7 @@ import java.util.OptionalInt;
 
 /**
  * Text utility functions. See also {com.yahoo.language.process.CharacterClasses}.
- * 
+ *
  * @author bratseth
  */
 public final class Text {
@@ -41,7 +41,7 @@ public final class Text {
     private Text() {}
 
     /**
-     * Returns whether the given codepoint is a valid text character, potentially suitable for 
+     * Returns whether the given codepoint is a valid text character, potentially suitable for
      * purposes such as indexing and display, see http://www.w3.org/TR/2006/REC-xml11-20060816/#charsets
      */
     public static boolean isTextCharacter(int codepoint) {
@@ -193,6 +193,75 @@ public final class Text {
 
     public static String format(String format, Object... args) {
 	return String.format(Locale.US, format, args);
+    }
+
+    /**
+     * Returns the value as exactly 8 hex digits in excess notation: Biased by 2^31, such that the
+     * strings sort in the same order as the values, also across zero:
+     * Integer.MIN_VALUE becomes "00000000", 0 becomes "80000000".
+     */
+    public static String toExcessHex8(int value) {
+        return format("%08x", value ^ Integer.MIN_VALUE);
+    }
+
+    /**
+     * Returns the value as exactly 16 hex digits in excess notation: Biased by 2^63, such that the
+     * strings sort in the same order as the values, also across zero:
+     * Long.MIN_VALUE becomes "0000000000000000", 0 becomes "8000000000000000".
+     */
+    public static String toExcessHex16(long value) {
+        return format("%016x", value ^ Long.MIN_VALUE);
+    }
+
+    /**
+     * Returns the IEEE 754 bit pattern of the value as exactly 8 hex digits, transformed such that
+     * the strings sort in the same order as the values, also across zero:
+     * Positive values (sign bit clear) get the sign bit set, while negative values (sign bit set)
+     * get all bits inverted, so that larger magnitudes sort lower.
+     * -Infinity becomes "007fffff", -0.0 becomes "7fffffff", 0.0 becomes "80000000",
+     * 1.0 becomes "bf800000", and Infinity becomes "ff800000".
+     * The raw bits are used, so NaN payloads are preserved: NaN values with the sign bit clear
+     * (such as Float.NaN) sort above Infinity, while those with the sign bit set sort below -Infinity.
+     */
+    public static String floatToExcessHex8(float value) {
+        int bits = Float.floatToRawIntBits(value);
+        if (bits < 0) {
+            bits ^= -1;
+        } else {
+            bits ^= Integer.MIN_VALUE;
+        }
+        return format("%08x", bits);
+    }
+
+    /**
+     * Returns the IEEE 754 bit pattern of the value as exactly 16 hex digits, transformed such that
+     * the strings sort in the same order as the values, also across zero:
+     * Positive values (sign bit clear) get the sign bit set, while negative values (sign bit set)
+     * get all bits inverted, so that larger magnitudes sort lower.
+     * -Infinity becomes "000fffffffffffff", -0.0 becomes "7fffffffffffffff", 0.0 becomes "8000000000000000",
+     * 1.0 becomes "bff0000000000000", and Infinity becomes "fff0000000000000".
+     * The raw bits are used, so NaN payloads are preserved: NaN values with the sign bit clear
+     * (such as Double.NaN) sort above Infinity, while those with the sign bit set sort below -Infinity.
+     */
+    public static String doubleToExcessHex16(double value) {
+        long bits = Double.doubleToRawLongBits(value);
+        if (bits < 0) {
+            bits ^= -1L;
+        } else {
+            bits ^= Long.MIN_VALUE;
+        }
+        return format("%016x", bits);
+    }
+
+    /**
+     * Returns true if the string contains any control characters (0x00-0x1F and 0x7F), false otherwise.
+     */
+    public static boolean containsControlCharacter(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c < 0x20 || c == 0x7F) return true;
+        }
+        return false;
     }
 
 }

@@ -2,6 +2,8 @@
 
 #include "threadstackexecutorbase.h"
 
+#include <vespa/check_require.h>
+
 namespace vespalib {
 
 ThreadStackExecutorBase::Worker::Worker()
@@ -10,10 +12,10 @@ ThreadStackExecutorBase::Worker::Worker()
 
 void ThreadStackExecutorBase::Worker::verify(bool expect_idle) const {
     (void)expect_idle;
-    assert(pre_guard == 0xaaaaaaaa);
-    assert(post_guard == 0x55555555);
-    assert(idle == expect_idle);
-    assert(!task.task == expect_idle);
+    CHECK(pre_guard == 0xaaaaaaaa);
+    CHECK(post_guard == 0x55555555);
+    CHECK(idle == expect_idle);
+    CHECK(!task.task == expect_idle);
 }
 
 void ThreadStackExecutorBase::BlockedThread::wait() const {
@@ -63,7 +65,7 @@ bool ThreadStackExecutorBase::obtainTask(Worker& worker) {
     {
         unique_lock guard(_lock);
         if (!worker.idle) {
-            assert(_taskCount != 0);
+            CHECK(_taskCount != 0);
             --_taskCount;
             wakeup(guard, _cond);
             _barrier.completeEvent(worker.task.token);
@@ -125,11 +127,11 @@ ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t taskLimit, init_fun_t 
       _taskLimit(taskLimit),
       _closed(false),
       _init_fun(init_fun) {
-    assert(taskLimit > 0);
+    CHECK(taskLimit > 0);
 }
 
 void ThreadStackExecutorBase::start(uint32_t threads) {
-    assert(threads > 0);
+    CHECK(threads > 0);
     for (uint32_t i = 0; i < threads; ++i) {
         _pool.start(*this, _init_fun);
     }
@@ -209,7 +211,7 @@ ThreadStackExecutorBase& ThreadStackExecutorBase::shutdown() {
         _closed = true;
         _taskLimit = 0;
         idle.swap(_workers);
-        assert(idle.empty() || _tasks.empty()); // idle -> empty queue
+        CHECK(idle.empty() || _tasks.empty()); // idle -> empty queue
         wakeup(guard, _cond);
     }
     while (!idle.empty()) {
@@ -249,8 +251,8 @@ void ThreadStackExecutorBase::cleanup() {
 }
 
 ThreadStackExecutorBase::~ThreadStackExecutorBase() {
-    assert(_taskCount == 0);
-    assert(_blocked.empty());
+    CHECK(_taskCount == 0);
+    CHECK(_blocked.empty());
 }
 
 } // namespace vespalib

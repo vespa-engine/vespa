@@ -19,12 +19,12 @@ import java.util.HashMap;
 public abstract class AbstractApplicationPackage implements ApplicationPackage {
 
     @Override
-    public Map<String,String> legacyOverrides() {
+    public Map<String, String> legacyOverrides() {
         Map<String, String> result = new HashMap<>();
         try {
             Document services = Xml.getDocument(getServices());
             NodeList legacyNodes = services.getElementsByTagName("legacy");
-            for (int i=0; i < legacyNodes.getLength(); i++) {
+            for (int i = 0; i < legacyNodes.getLength(); i++) {
                 var flagNodes = legacyNodes.item(i).getChildNodes();
                 for (int j = 0; j < flagNodes.getLength(); ++j) {
                     var flagNode = flagNodes.item(j);

@@ -4,11 +4,17 @@
 
 #include "flush_history_explorer.h"
 #include "flushengine.h"
+#include "i_tls_stats_factory.h"
+#include "prepare_restart_costs.h"
+#include "tls_stats_map.h"
 
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
 using proton::flushengine::FlushHistoryExplorer;
+using proton::flushengine::PrepareRestartCosts;
+using proton::flushengine::PrepareRestartCostsConfig;
+using proton::flushengine::TlsStatsMap;
 using searchcorespi::IFlushTarget;
 using vespalib::StateExplorer;
 using vespalib::slime::Cursor;
@@ -33,7 +39,15 @@ void sortTargetList(FlushContext::List& allTargets) {
     });
 }
 
-void convertToSlime(const FlushContext::List& allTargets, const vespalib::system_time& now, Cursor& array) {
+void convert_prepare_restart_costs(const PrepareRestartCosts& prepare_restart_costs, Cursor& object) {
+    object.setDouble("read_cost", prepare_restart_costs.read_cost());
+    object.setDouble("write_cost", prepare_restart_costs.write_cost());
+    object.setDouble("replay_cost", prepare_restart_costs.replay_cost());
+}
+
+void convertToSlime(const FlushContext::List& allTargets, const TlsStatsMap& tls_stats_map,
+                    const PrepareRestartCostsConfig& prepare_restart_costs_config, const vespalib::system_time& now,
+                    Cursor& array) {
     for (const auto& ctx : allTargets) {
         Cursor& object = array.addObject();
         object.setString("name", ctx->getName());
@@ -50,6 +64,12 @@ void convertToSlime(const FlushContext::List& allTargets, const vespalib::system
         object.setLong("estimated_flush_duration",
                        duration_cast<std::chrono::microseconds>(target->estimated_flush_duration()).count());
         object.setLong("reserved-memory-for-flush", target->reserved_memory_for_flush());
+        if (target->getType() != IFlushTarget::Type::GC) {
+            const auto&         tls_stats = tls_stats_map.getTlsStats(ctx->getHandler()->getName());
+            PrepareRestartCosts prepare_restart_costs(*target, tls_stats.getLastSerial(),
+                                                      target->getFlushedSerialNum(), prepare_restart_costs_config);
+            convert_prepare_restart_costs(prepare_restart_costs, object.setObject("prepare-restart-costs"));
+        }
     }
 }
 
@@ -57,7 +77,9 @@ const std::string FLUSH_HISTORY("flush_history");
 
 } // namespace
 
-FlushEngineExplorer::FlushEngineExplorer(const FlushEngine& engine) : _engine(engine) {
+FlushEngineExplorer::FlushEngineExplorer(const FlushEngine&                     engine,
+                                         flushengine::PrepareRestartCostsConfig prepare_restart_costs_config)
+    : _engine(engine), _prepare_restart_costs_config(prepare_restart_costs_config) {
 }
 
 void FlushEngineExplorer::get_state(const Inserter& inserter, bool full) const {
@@ -67,7 +89,8 @@ void FlushEngineExplorer::get_state(const Inserter& inserter, bool full) const {
         convertToSlime(_engine.getCurrentlyFlushingSet(), object.setArray("flushingTargets"));
         FlushContext::List allTargets = _engine.getTargetList(true);
         sortTargetList(allTargets);
-        convertToSlime(allTargets, now, object.setArray("allTargets"));
+        auto tls_stats_map = _engine.get_tls_stats_factory().create();
+        convertToSlime(allTargets, tls_stats_map, _prepare_restart_costs_config, now, object.setArray("allTargets"));
     }
 }
 

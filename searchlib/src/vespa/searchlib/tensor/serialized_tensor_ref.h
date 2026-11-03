@@ -22,6 +22,8 @@ public:
     ~SerializedTensorRef();
     const VectorBundle& get_vectors() const noexcept { return _vectors; }
     std::span<const vespalib::string_id> get_labels(uint32_t subspace) const;
+    // labels for all subspaces, in subspace order
+    std::span<const vespalib::string_id> get_labels() const noexcept { return _labels; }
 };
 
 } // namespace search::tensor

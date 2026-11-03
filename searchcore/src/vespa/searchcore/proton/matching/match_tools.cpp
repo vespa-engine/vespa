@@ -4,14 +4,18 @@
 
 #include "querynodes.h"
 #include "rangequerylocator.h"
+#include "sort_feature_store.h"
 #include "tag_needed_handles.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/attribute/diversity.h>
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/features/first_phase_rank_lookup.h>
+#include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/queryeval/create_blueprint_params.h>
 #include <vespa/searchlib/queryeval/flow.h>
@@ -19,6 +23,8 @@
 #include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+
+#include <cstdlib>
 
 using search::SerializedQueryTree;
 using search::attribute::BasicType;
@@ -102,7 +108,8 @@ void MatchTools::setup(std::unique_ptr<RankProgram> rank_program, ExecutionProfi
 MatchTools::MatchTools(QueryLimiter& queryLimiter, const vespalib::Doom& doom, const Query& query,
                        MaybeMatchPhaseLimiter& match_limiter_in, const QueryEnvironment& queryEnv,
                        const MatchDataLayout& mdl, const RankSetup& rankSetup, const Properties& featureOverrides,
-                       const HandleRecorder::HandleMap& needed_handles)
+                       const HandleRecorder::HandleMap& needed_handles, std::vector<std::string> sort_public_names,
+                       SortSelection sort_selection)
     : _queryLimiter(queryLimiter),
       _doom(doom),
       _query(query),
@@ -115,7 +122,13 @@ MatchTools::MatchTools(QueryLimiter& queryLimiter, const vespalib::Doom& doom, c
       _search(),
       _used_handles(),
       _needed_handles(needed_handles),
-      _search_has_changed(false) {
+      _sort_public_names(std::move(sort_public_names)),
+      _sort_selection(std::move(sort_selection)),
+      _sort_program(),
+      _sort_seeds(),
+      _sort_store(),
+      _search_has_changed(false),
+      _sort_needs_unpack(false) {
 }
 
 MatchTools::~MatchTools() = default;
@@ -127,6 +140,40 @@ bool MatchTools::has_second_phase_rank() const {
 void MatchTools::setup_first_phase(ExecutionProfiler* profiler) {
     setup(_rankSetup.create_first_phase_program(), profiler,
           TermwiseLimit::lookup(_queryEnv.getProperties(), _rankSetup.get_termwise_limit()));
+}
+
+void MatchTools::setup_first_phase_and_sort(ExecutionProfiler* first_phase_profiler,
+                                            ExecutionProfiler* sort_features_profiler, bool match_with_ranking) {
+    _sort_seeds.clear();
+    _sort_seeds.reserve(_sort_selection.seed_index.size());
+    _sort_program = _rankSetup.create_sort_program(_sort_selection);
+    HandleRecorder recorder(_needed_handles);
+    {
+        HandleRecorder::Binder bind(recorder);
+        _sort_program->setup(*_match_data, _queryEnv, _featureOverrides, sort_features_profiler);
+        search::fef::FeatureResolver seeds(_sort_program->get_seeds());
+        for (uint32_t index : _sort_selection.seed_index) {
+            _sort_seeds.push_back(seeds.resolve(index));
+        }
+        // Re-registering an existing handle still means sort evaluation needs unpack.
+        _sort_needs_unpack = recorder.registration_attempted();
+        if (match_with_ranking) {
+            _rank_program = _rankSetup.create_first_phase_program();
+            _rank_program->setup(*_match_data, _queryEnv, _featureOverrides, first_phase_profiler);
+        }
+    }
+    recorder.tag_match_data(*_match_data);
+    _match_data->set_termwise_limit(
+        TermwiseLimit::lookup(_queryEnv.getProperties(), _rankSetup.get_termwise_limit()));
+    _search = _query.createSearch(*_match_data);
+    _used_handles = std::move(recorder).steal_handles();
+    _search_has_changed = false;
+    _sort_store = std::make_unique<SortFeatureStore>(_sort_public_names);
+}
+
+void MatchTools::release_sort_program() {
+    _sort_seeds.clear();
+    _sort_program.reset();
 }
 
 void MatchTools::setup_second_phase(ExecutionProfiler* profiler) {
@@ -171,7 +218,9 @@ MatchToolsFactory::MatchToolsFactory(
       _valid(false),
       _object_store(nullptr),
       _metaStore(metaStore),
-      _needed_handles() {
+      _needed_handles(),
+      _sort_public_names(),
+      _sort_selection() {
     if (doom.soft_doom()) {
         return;
     }
@@ -232,7 +281,9 @@ MatchToolsFactory::MatchToolsFactory(
         if (degradationParams.enabled()) {
             trace.addEvent(5, "Setup match phase limiter");
             const search::fef::FieldInfo* fieldInfo = indexEnv.getFieldByName(attribute);
-            uint32_t                      field_id = fieldInfo != nullptr ? fieldInfo->id() : 0;
+            // Falling back to the "no field" id means no query item can match,
+            // which is what we want when the degradation attribute is unknown.
+            uint32_t field_id = fieldInfo != nullptr ? fieldInfo->id() : search::fef::FieldInfo::no_field().id();
             _rangeLocator = std::make_unique<LocateRangeItemFromQuery>(*_query.peekRoot(), field_id);
             _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), *_rangeLocator,
                                                                  searchContext.getAttributes(), _requestContext,
@@ -249,9 +300,22 @@ MatchToolsFactory::MatchToolsFactory(
 MatchToolsFactory::~MatchToolsFactory() = default;
 
 MatchTools::UP MatchToolsFactory::createMatchTools() const {
-    assert(_valid);
+    CHECK(_valid);
     return std::make_unique<MatchTools>(_queryLimiter, _requestContext.getDoom(), _query, *_match_limiter, _queryEnv,
-                                        _mdl, _rankSetup, _featureOverrides, _needed_handles);
+                                        _mdl, _rankSetup, _featureOverrides, _needed_handles, _sort_public_names,
+                                        _sort_selection);
+}
+
+bool MatchToolsFactory::prepare_and_install_sort_features(const std::vector<std::string>& public_names) {
+    CHECK(_object_store != nullptr);
+    auto selection = _rankSetup.select_sort_features(public_names);
+    if (!selection.valid()) {
+        return false;
+    }
+    _rankSetup.prepare_sort_shared_state(_queryEnv, *_object_store, selection);
+    _sort_selection = std::move(selection);
+    _sort_public_names = public_names;
+    return true;
 }
 
 std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier(uint32_t want_hits) const {

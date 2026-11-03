@@ -7,6 +7,7 @@
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
+#include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
@@ -81,6 +82,19 @@ std::unique_ptr<sourceselector::Iterator> selector() {
 }
 
 MockElementGapInspector mock_element_gap_inspector(std::nullopt);
+
+//-----------------------------------------------------------------------------
+
+class ElementIdsSearch final : public EmptySearch {
+    std::vector<uint32_t> _element_ids;
+
+public:
+    explicit ElementIdsSearch(std::initializer_list<uint32_t> element_ids) : _element_ids(element_ids) {}
+
+    void get_element_ids(uint32_t, std::vector<uint32_t>& element_ids) override {
+        element_ids.insert(element_ids.end(), _element_ids.begin(), _element_ids.end());
+    }
+};
 
 //-----------------------------------------------------------------------------
 
@@ -197,6 +211,16 @@ TEST(QueryEvalTest, test_that_non_strict_andnot_search_does_not_forward_to_its_g
         AndNotSearch::create({AndSearch::create(search2("a", "b"), true), new TrueSearch(tfmd)}, false);
     auto filter = std::make_unique<TrueSearch>(tfmd);
     EXPECT_TRUE(nullptr != search->andWith(std::move(filter), 8).get());
+}
+
+TEST(QueryEvalTest, andnot_get_element_ids_handles_multiple_negative_children) {
+    for (bool strict : {false, true}) {
+        auto search = AndNotSearch::create(
+            {new ElementIdsSearch({1, 3, 5, 7}), new ElementIdsSearch({5, 7}), new ElementIdsSearch({1, 3})}, strict);
+        std::vector<uint32_t> element_ids;
+        search->get_element_ids(1, element_ids);
+        EXPECT_TRUE(element_ids.empty());
+    }
 }
 
 void expect_match(std::string input, std::string regexp) {

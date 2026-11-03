@@ -39,28 +39,30 @@ public:
     static ucs4_t lowercase_ascii(ucs4_t c) noexcept { return _lowerCase[c]; }
     static bool is_wordchar_ascii7bit(ucs4_t c) noexcept { return _isWord[c]; }
     static ucs4_t lowercase(ucs4_t c) {
-        if (c < 767)
+        if (c < 767) {
             return _lowerCase[c];
-        else if (c >= 0x1E00 && c < 0x1F00)
+        } else if (c >= 0x1E00 && c < 0x1F00) {
             return _lowerCaseHighAscii[c - 0x1E00];
-        else if (c >= 0x3040 && c < 0x3100)
+        } else if (c >= 0x3040 && c < 0x3100) {
             return _kanaMap[c - 0x3040];
-        else if (c >= 0xFF00 && c < 0xFFF0)
+        } else if (c >= 0xFF00 && c < 0xFFF0) {
             return _halfwidth_fullwidthMap[c - 0xFF00];
-        else
+        } else {
             return Fast_UnicodeUtil::ToLower(c);
+        }
     }
     static ucs4_t lowercase_and_fold(ucs4_t c) {
-        if (c < 767)
+        if (c < 767) {
             return _foldCase[c];
-        else if (c >= 0x1E00 && c < 0x1F00)
+        } else if (c >= 0x1E00 && c < 0x1F00) {
             return _foldCaseHighAscii[c - 0x1E00];
-        else if (c >= 0x3040 && c < 0x3100)
+        } else if (c >= 0x3040 && c < 0x3100) {
             return _kanaMap[c - 0x3040];
-        else if (c >= 0xFF00 && c < 0xFFF0)
+        } else if (c >= 0xFF00 && c < 0xFFF0) {
             return _halfwidth_fullwidthMap[c - 0xFF00];
-        else
+        } else {
             return Fast_UnicodeUtil::ToLower(c);
+        }
     }
 
     static const char* ReplacementString(ucs4_t testchar) {

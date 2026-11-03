@@ -5,9 +5,9 @@
 #include "controlpacket.h"
 #include "vespa/fnet/channel.h"
 
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace fnet {
 
@@ -20,15 +20,15 @@ struct ChannelMap : public vespalib::hash_map<uint32_t, FNET_Channel*> {
 using fnet::ChannelMap;
 
 FNET_ChannelLookup::FNET_ChannelLookup(uint32_t hashSize) : _map(std::make_unique<ChannelMap>(hashSize)) {
-    assert(hashSize > 0);
+    CHECK(hashSize > 0);
 }
 
 FNET_ChannelLookup::~FNET_ChannelLookup() {
-    assert(_map->empty());
+    CHECK(_map->empty());
 }
 
 void FNET_ChannelLookup::Register(FNET_Channel* channel) {
-    assert(channel->GetHandler() != nullptr);
+    CHECK(channel->GetHandler() != nullptr);
     (*_map)[channel->GetID()] = channel;
 }
 

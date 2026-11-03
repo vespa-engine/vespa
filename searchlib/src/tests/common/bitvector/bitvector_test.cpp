@@ -65,8 +65,9 @@ std::string toString(BitVectorIterator& b) {
     for (uint32_t docId = 1; !b.isAtEnd(docId);) {
         if (!b.seek(docId)) {
             docId = std::max(docId + 1, b.getDocId());
-            if (b.isAtEnd(docId))
+            if (b.isAtEnd(docId)) {
                 break;
+            }
             continue;
         }
         if (!first) {
@@ -82,13 +83,16 @@ std::string toString(BitVectorIterator& b) {
 
 uint32_t myCountInterval(const BitVector& bv, uint32_t low, uint32_t high) {
     uint32_t res = 0u;
-    if (bv.size() == 0u)
+    if (bv.size() == 0u) {
         return 0u;
-    if (high >= bv.size())
+    }
+    if (high >= bv.size()) {
         high = bv.size() - 1;
+    }
     for (; low <= high; ++low) {
-        if (bv.testBit(low))
+        if (bv.testBit(low)) {
             ++res;
+        }
     }
     return res;
 }

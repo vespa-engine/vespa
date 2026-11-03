@@ -39,13 +39,16 @@ FieldUpdate::FieldUpdate(const DocumentTypeRepo& repo, const DataType& type, nbo
 FieldUpdate::~FieldUpdate() = default;
 
 bool FieldUpdate::operator==(const FieldUpdate& other) const {
-    if (_field != other._field)
+    if (_field != other._field) {
         return false;
-    if (_updates.size() != other._updates.size())
+    }
+    if (_updates.size() != other._updates.size()) {
         return false;
+    }
     for (uint32_t i = 0, n = _updates.size(); i < n; ++i) {
-        if (*_updates[i] != *other._updates[i])
+        if (*_updates[i] != *other._updates[i]) {
             return false;
+        }
     }
     return true;
 }

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/searchlib/attribute/posting_iterator_pack.h>
 #include <vespa/searchlib/features/bm25_utils.h>
@@ -16,14 +17,16 @@
 
 #include <cmath>
 
+namespace search::queryeval::wand {
+using score_t = int64_t;
+}
 namespace search::queryeval {
-class WeakAndHeap;
+template <typename ScoreT> class WeakAndHeapT;
 }
 namespace search::queryeval::wand {
 
 //-----------------------------------------------------------------------------
 
-using score_t = int64_t;
 using docid_t = uint32_t;
 using ref_t = uint16_t;
 
@@ -65,22 +68,39 @@ public:
     [[nodiscard]] static StopWordStrategy none() noexcept { return {1.0, 1.0, 0, false}; }
 };
 
+/** Common params used to tweak the behavior of the WAND algorithm. */
+template <typename ScoreT>
+struct CommonMatchParamsT {
+    using WeakAndHeap = WeakAndHeapT<ScoreT>;
+
+    WeakAndHeap&     scores;
+    const uint32_t   scoresAdjustFrequency;
+    const uint32_t   docid_limit;
+    CommonMatchParamsT(WeakAndHeap& scores_in) noexcept
+        : CommonMatchParamsT(scores_in, DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, 0) {}
+    CommonMatchParamsT(WeakAndHeap& scores_in, uint32_t scoresAdjustFrequency_in,
+                uint32_t docid_limit_in) noexcept
+        : scores(scores_in),
+          scoresAdjustFrequency(scoresAdjustFrequency_in),
+          docid_limit(docid_limit_in) {}
+};
+
+using CommonMatchParams = CommonMatchParamsT<wand::score_t>;
+
 /**
  * Params used to tweak the behavior of the WAND algorithm.
  */
-struct MatchParams {
-    WeakAndHeap&     scores;
+struct MatchParams : public CommonMatchParams {
     StopWordStrategy stop_words;
-    const uint32_t   scoresAdjustFrequency;
-    const uint32_t   docid_limit;
     MatchParams(WeakAndHeap& scores_in) noexcept
-        : MatchParams(scores_in, StopWordStrategy::none(), DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, 0) {}
+      : CommonMatchParams(scores_in),
+        stop_words(StopWordStrategy::none())
+    {}
     MatchParams(WeakAndHeap& scores_in, StopWordStrategy stop_word_strategy, uint32_t scoresAdjustFrequency_in,
                 uint32_t docid_limit_in) noexcept
-        : scores(scores_in),
-          stop_words(stop_word_strategy),
-          scoresAdjustFrequency(scoresAdjustFrequency_in),
-          docid_limit(docid_limit_in) {}
+      : CommonMatchParams(scores_in, scoresAdjustFrequency_in, docid_limit_in),
+        stop_words(stop_word_strategy)
+    {}
 };
 
 /**
@@ -107,7 +127,7 @@ using Terms = std::vector<Term>;
 namespace {
 
 struct Ident {
-    template <typename T> T operator()(const T& t) const noexcept { return t; }
+    template <typename T> [[maybe_unused]] T operator()(const T& t) const noexcept { return t; }
 };
 
 struct NumericOrder {
@@ -117,7 +137,8 @@ struct NumericOrder {
     ref_t operator[](size_t idx) const noexcept { return idx; }
 };
 
-template <typename F, typename Order> auto assemble(const F& f, const Order& order) -> std::vector<decltype(f(0))> {
+template <typename F, typename Order> [[maybe_unused]] auto assemble(const F& f, const Order& order)
+    -> std::vector<decltype(f(0))> {
     std::vector<decltype(f(0))> result;
     result.reserve(order.size());
     for (size_t i = 0; i < order.size(); ++i) {
@@ -181,7 +202,7 @@ template <typename Input> struct MaxSkipOrder {
 namespace {
 
 template <typename ITR, typename F>
-std::string do_stringify(const std::string& title, ITR begin, ITR end, const F& f) {
+[[maybe_unused]] std::string do_stringify(const std::string& title, ITR begin, ITR end, const F& f) {
     std::string result = vespalib::make_string("[%s]{", title.c_str());
     for (ITR pos = begin; pos != end; ++pos) {
         if (pos != begin) {
@@ -404,7 +425,7 @@ template <typename FutureHeap, typename PastHeap> void DualHeap<FutureHeap, Past
     }
     _past = _present;
     _trash = _past;
-    assert(_future == _space.data()); // space has not moved
+    CHECK(_future == _space.data()); // space has not moved
 }
 
 template <typename FutureHeap, typename PastHeap> std::string DualHeap<FutureHeap, PastHeap>::stringify() const {

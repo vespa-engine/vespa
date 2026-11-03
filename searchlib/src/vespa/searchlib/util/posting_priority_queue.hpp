@@ -4,6 +4,8 @@
 
 #include "posting_priority_queue.h"
 
+#include <vespa/check_require.h>
+
 namespace search {
 
 template <class Reader> void PostingPriorityQueue<Reader>::adjust() {
@@ -31,7 +33,7 @@ template <class Reader> void PostingPriorityQueue<Reader>::adjust() {
 template <class Reader> void PostingPriorityQueue<Reader>::setup(uint32_t heap_limit) {
     _heap_limit = heap_limit;
     for (auto ref : _vec) {
-        assert(ref.get()->isValid());
+        CHECK(ref.get()->isValid());
     }
     if (_vec.size() >= heap_limit) {
         std::sort(_vec.begin(), _vec.end());

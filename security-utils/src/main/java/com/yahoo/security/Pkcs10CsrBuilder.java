@@ -1,8 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameStyle;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
@@ -27,6 +32,22 @@ import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
  * @author bjorncs
  */
 public class Pkcs10CsrBuilder {
+
+    /**
+     * BouncyCastle 1.85 and later enforce the RFC 5280 ub-common-name upper bound (64) when encoding a DN string.
+     * That enforcement is deliberate (https://github.com/bcgit/bc-java/issues/750): a longer common name is not
+     * RFC compliant. Athenz role certificate subjects are '{@code <domain>:role.<role>}', which exceeds the bound,
+     * is not ours to shorten, and is already in use, so opt out of the check for the common name rather than fail
+     * to request the certificate. Common names within the bound are encoded exactly as {@link BCStyle} does.
+     * Handing the {@link X500Principal} to the request builder would also avoid the check, but reverses the RDN
+     * order of the subject.
+     */
+    private static final X500NameStyle LENIENT_COMMON_NAME_STYLE = new BCStyle() {
+        @Override
+        protected ASN1Encodable encodeStringValue(ASN1ObjectIdentifier oid, String value) {
+            return CN.equals(oid) ? new DERUTF8String(value) : super.encodeStringValue(oid, value);
+        }
+    };
 
     private final X500Principal subject;
     private final KeyPair keyPair;
@@ -75,7 +96,8 @@ public class Pkcs10CsrBuilder {
     public Pkcs10Csr build() {
         try {
             PKCS10CertificationRequestBuilder requestBuilder =
-                    new JcaPKCS10CertificationRequestBuilder(new X500Name(subject.getName()), keyPair.getPublic());
+                    new JcaPKCS10CertificationRequestBuilder(
+                            new X500Name(LENIENT_COMMON_NAME_STYLE, subject.getName()), keyPair.getPublic());
             ExtensionsGenerator extGen = new ExtensionsGenerator();
             if (basicConstraintsExtension != null) {
                 extGen.addExtension(

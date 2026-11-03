@@ -50,6 +50,16 @@ public class SearchHandlerTest {
     }
 
     @Test
+    void testNonExistingRuleBase() {
+        try (var tester = new SearchHandlerTester()) {
+            var responseHandler = tester.sendRequest("http://localhost/search/?query=test&searchChain=semantic&rules.rulebase=fake");
+            String response = responseHandler.readAll();
+            assertEquals(400, responseHandler.getStatus());
+            assertTrue(response.contains("Requested rule base 'fake' does not exist"), response);
+        }
+    }
+
+    @Test
     void testFailing() {
         try (var tester = new SearchHandlerTester()) {
             assertTrue(tester.sendRequest("http://localhost?query=test&searchChain=classLoadingError").readAll().contains("NoClassDefFoundError"));

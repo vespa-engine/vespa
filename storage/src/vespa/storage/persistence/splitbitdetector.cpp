@@ -4,13 +4,13 @@
 
 #include "bucketprocessor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 
-#include <cassert>
 #include <sstream>
 
 #include <vespa/log/bufferedlogger.h>
@@ -58,7 +58,7 @@ struct BucketVisitor : public BucketProcessor::EntryProcessor {
     ~BucketVisitor() override;
 
     void process(std::unique_ptr<spi::DocEntry> entry) override {
-        assert(entry->getDocumentId());
+        CHECK(entry->getDocumentId());
         ++_docCount;
 
         const document::DocumentId& id(*entry->getDocumentId());
@@ -107,8 +107,9 @@ BucketVisitor::~BucketVisitor() = default;
 
 bool smallerThanSizeLimit(uint32_t minCount, uint32_t minSize, const spi::Bucket& b,
                           spi::PersistenceProvider& provider) {
-    if (minCount == 0 && minSize == 0)
+    if (minCount == 0 && minSize == 0) {
         return false;
+    }
     spi::BucketInfo info = provider.getBucketInfo(b).getBucketInfo();
     if ((minCount != 0 && info.getDocumentCount() < minCount) &&
         (minSize != 0 &&
@@ -146,7 +147,7 @@ SplitBitDetector::Result SplitBitDetector::detectSplit(spi::PersistenceProvider&
 
     uint16_t splitBit = detector._splitBit;
 
-    assert(splitBit <= 58);
+    CHECK(splitBit <= 58);
     // Handle empty source bucket case
     if (detector._refBucket.getRawId() == 0) {
         return Result();
@@ -211,7 +212,7 @@ SplitBitDetector::Result SplitBitDetector::detectSplit(spi::PersistenceProvider&
             source.getBucketId().toString().c_str(), splitBit, source.getBucketId().getUsedBits(),
             detector._refId.toString().c_str(), detector._refBucket.toString().c_str(),
             detector._conflictId.toString().c_str(), detector._conflictBucket.toString().c_str());
-        assert(false);
+        CHECK(false);
     }
 
     document::BucketId base(splitBit, detector._refBucket.getRawId());
@@ -227,11 +228,13 @@ void SplitBitDetector::Result::print(std::ostream& out, bool verbose, const std:
     switch (_result) {
     case OK:
         out << _target1.getUsedBits() << ": " << _target1 << ", ";
-        if (_singleTarget)
+        if (_singleTarget) {
             out << "[ ";
+        }
         out << _target2;
-        if (_singleTarget)
+        if (_singleTarget) {
             out << " ]";
+        }
         break;
     case EMPTY:
         out << "source empty";

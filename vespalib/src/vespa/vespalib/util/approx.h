@@ -13,8 +13,9 @@ namespace vespalib {
  * two numbers must be equal to 23 bits precision.
  **/
 constexpr bool approx_equal(double a, double b) {
-    if (a == b)
+    if (a == b) {
         return true;
+    }
     if (a > 1.0 || a < -1.0) {
         // This is in a way the simple case, but it's needed
         // anyway to handle numbers that are outside "float" range.

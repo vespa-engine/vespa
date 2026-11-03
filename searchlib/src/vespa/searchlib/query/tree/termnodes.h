@@ -7,6 +7,7 @@
 #include "predicate_query_term.h"
 #include "querynodemixin.h"
 #include "range.h"
+#include "string_range.h"
 #include "term.h"
 #include "term_vector.h"
 
@@ -42,6 +43,15 @@ public:
     RangeTerm(const Type& term, const std::string& view, int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight) {}
     virtual ~RangeTerm() = 0;
+};
+
+//-----------------------------------------------------------------------------
+
+class StringRangeTerm : public QueryNodeMixin<StringRangeTerm, TermBase<StringRange>> {
+public:
+    StringRangeTerm(const Type& term, const std::string& view, int32_t id, Weight weight)
+        : QueryNodeMixinType(term, view, id, weight) {}
+    virtual ~StringRangeTerm() = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -168,6 +178,35 @@ public:
     double get_distance_threshold() const {
         return _hnsw_params.distance_threshold.value_or(std::numeric_limits<double>::infinity());
     }
+};
+
+/**
+ * Term matching the documents with the highest dot product between a sparse
+ * document tensor and a sparse query tensor, both with exactly one mapped dimension.
+ *
+ * The query tensor is found in fef::IQueryEnvironment using the query tensor name as key.
+ * The field name is the name of a tensor attribute with the same tensor type as the query tensor.
+ *
+ * Like WandTerm, a heap of the best target num hits scores is used to gradually increase the
+ * score threshold a document must exceed to become a hit.
+ */
+class SparseTensorWandTerm : public QueryNodeMixin<SparseTensorWandTerm, TermNode> {
+private:
+    std::string _query_tensor_name;
+    uint32_t    _target_num_hits;
+    double      _score_threshold;
+
+public:
+    SparseTensorWandTerm(std::string_view query_tensor_name, std::string field_name, int32_t id, Weight weight,
+                         uint32_t target_num_hits, double score_threshold)
+        : QueryNodeMixinType(std::move(field_name), id, weight),
+          _query_tensor_name(query_tensor_name),
+          _target_num_hits(target_num_hits),
+          _score_threshold(score_threshold) {}
+    ~SparseTensorWandTerm() override;
+    const std::string& get_query_tensor_name() const { return _query_tensor_name; }
+    uint32_t get_target_num_hits() const { return _target_num_hits; }
+    double get_score_threshold() const { return _score_threshold; }
 };
 
 class MultiTerm : public Node {

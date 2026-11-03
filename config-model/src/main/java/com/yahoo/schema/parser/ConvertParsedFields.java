@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.parser;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.document.DataType;
+import com.yahoo.document.MapDataType;
 import com.yahoo.schema.document.GeoPos;
+import com.yahoo.schema.document.QuantizationParams;
 import com.yahoo.schema.parser.ConvertParsedTypes.TypeResolver;
 import com.yahoo.schema.Index;
 import com.yahoo.schema.Schema;
@@ -10,6 +13,7 @@ import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.BooleanIndexDefinition;
 import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.Dictionary;
+import com.yahoo.schema.document.FastMapSearchFields;
 import com.yahoo.schema.document.NormalizeLevel;
 import com.yahoo.schema.document.RankType;
 import com.yahoo.schema.document.SDDocumentType;
@@ -23,6 +27,7 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 /**
  * Helper for converting ParsedField etc. to SDField with settings
@@ -33,10 +38,13 @@ public class ConvertParsedFields {
 
     private final TypeResolver context;
     private final Map<String, SDDocumentType> structProxies;
+    private final ModelContext.Properties properties;
 
-    ConvertParsedFields(TypeResolver context, Map<String, SDDocumentType> structProxies) {
+    ConvertParsedFields(TypeResolver context, Map<String, SDDocumentType> structProxies,
+                        ModelContext.Properties properties) {
         this.context = context;
         this.structProxies = structProxies;
+        this.properties = properties;
     }
 
     static void caseHandling(SDField field, Case casing) {
@@ -103,6 +111,9 @@ public class ConvertParsedFields {
         attribute.setFastAccess(parsed.getFastAccess());
         attribute.setMutable(parsed.getMutable());
         attribute.setEnableOnlyBitVector(parsed.getEnableOnlyBitVector());
+        if (parsed.hasQuantization()) {
+            attribute.setQuantizationParams(QuantizationParams.ofBits(parsed.quantization().bits()));
+        }
 
         // attribute.setTensorType(?)
 
@@ -207,10 +218,13 @@ public class ConvertParsedFields {
             Attribute.validateDataType(schema.getName(), field.getName(), field.getDataType());
         }
         parsed.getWeight().ifPresent(value -> field.setWeight(value));
+        parsed.getExplanation().ifPresent(field::setExplanation);
         parsed.getStemming().ifPresent(value -> field.setStemming(value));
         parsed.getNormalizing().ifPresent(value -> convertNormalizing(field, value));
         parsed.getIndexLinguisticsProfile().ifPresent(value -> field.setIndexLinguisticsProfile(value));
         parsed.getSearchLinguisticsProfile().ifPresent(value -> field.setSearchLinguisticsProfile(value));
+        parsed.getIndexLinguisticsTokens().ifPresent(value -> field.setIndexLinguisticsTokens(value));
+        parsed.getSearchLinguisticsTokens().ifPresent(value -> field.setSearchLinguisticsTokens(value));
         for (var attribute : parsed.getAttributes()) {
             convertAttribute(schema, field, attribute);
         }
@@ -242,6 +256,102 @@ public class ConvertParsedFields {
         if (parsed.hasNormal()) {
             field.getRanking().setNormal(true);
         }
+        for (var parsedFastMapSearch : parsed.getFastMapSearches()) {
+            convertFastMapSearch(schema, field, parsedFastMapSearch);
+        }
+    }
+
+    /** A lookup name is queried as field.lookupName and is part of the fieldName$lookupName attribute name. */
+    private static final Pattern validLookupName = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
+
+    private void convertFastMapSearch(Schema schema, SDField field, ParsedField.ParsedFastMapSearch parsed) {
+        String lookupName = parsed.lookupName();
+        FastMapSearchFields fastMapFields;
+        if (field.getDataType() instanceof MapDataType) {
+            validateMapFieldName(schema, field, parsed.keyField(), FastMapSearchFields.MAP_KEY);
+            validateMapFieldName(schema, field, parsed.valueField(), FastMapSearchFields.MAP_VALUE);
+            fastMapFields = FastMapSearchFields.forMap(field.getDataType(), lookupName);
+        } else if (FastMapSearchFields.isArrayOfStruct(field.getDataType())) {
+            if (parsed.keyField() == null || parsed.valueField() == null) {
+                throw fastMapSearchError(schema, field, "'fast-search-map-field' on an array of struct requires " +
+                                                        "'key' and 'value' in its block to name the struct fields to use.");
+            }
+            if (parsed.keyField().equals(parsed.valueField())) {
+                throw fastMapSearchError(schema, field, "'fast-search-map-field' requires 'key' and 'value' to be different struct fields.");
+            }
+            fastMapFields = FastMapSearchFields.forArrayOfStruct(field.getDataType(), lookupName, parsed.keyField(), parsed.valueField());
+        } else {
+            throw fastMapSearchError(schema, field, "'fast-search-map-field' requires a map or an array of struct field, " +
+                                                    "but the type is " + field.getDataType().getName() + ".");
+        }
+        if ( ! validLookupName.matcher(lookupName).matches()) {
+            throw fastMapSearchError(schema, field, "'fast-search-map-field' must be a letter or underscore followed by " +
+                                                    "letters, digits or underscores, but got '" + lookupName + "'.");
+        }
+        if (lookupName.equals(FastMapSearchFields.MAP_KEY) || lookupName.equals(FastMapSearchFields.MAP_VALUE)) {
+            throw fastMapSearchError(schema, field, "'fast-search-map-field' can not be named '" + lookupName +
+                                                    "', as 'key' and 'value' name the key and value in a lookup.");
+        }
+        if (fastMapFields.hasSubField(lookupName)) {
+            throw fastMapSearchError(schema, field, "'fast-search-map-field' can not be named '" + lookupName +
+                                                    "', which is the name of a field in the " +
+                                                    (fastMapFields.isMap() ? "map" : "struct") + ".");
+        }
+        validateFastMapSubtype(schema, field, fastMapFields.keyType(), fastMapFields.keyField(), "key");
+        validateFastMapSubtype(schema, field, fastMapFields.valueType(), fastMapFields.valueField(), "value");
+        for (FastMapSearchFields other : field.getFastMapSearches()) {
+            if (other.keyField().equals(fastMapFields.keyField()) && other.valueField().equals(fastMapFields.valueField())) {
+                throw fastMapSearchError(schema, field, "'fast-search-map-field " + lookupName + "' has the same key and value as " +
+                                                        "'fast-search-map-field " + other.lookupName() + "'.");
+            }
+        }
+        field.addFastMapSearch(fastMapFields);
+    }
+
+    /** Validates the type of the key or value. */
+    private void validateFastMapSubtype(Schema schema, SDField field, DataType type, String subField, String keyOrValue) {
+        if (type == null) {
+            throw fastMapSearchError(schema, field, "'fast-search-map-field' requires " + keyOrValue + " '" + subField +
+                                                    "' to be a field in the struct.");
+        }
+        boolean isKey = keyOrValue.equals("key");
+        if (isKey ? ! isSupportedFastMapKeyType(type) : ! isSupportedFastMapValueType(type)) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "For schema '%s', field '%s': 'fast-search-map-field' requires %s to be of type %s, but the type is %s.",
+                            schema.getName(),
+                            field.getName(),
+                            subField,
+                            isKey ? "string, int or long" : "string, int, long, float or double",
+                            type.getName()));
+        }
+    }
+
+    private boolean isSupportedFastMapKeyType(DataType dataType) {
+        return dataType.equals(DataType.STRING)
+                || dataType.equals(DataType.INT)
+                || dataType.equals(DataType.LONG);
+    }
+
+    private boolean isSupportedFastMapValueType(DataType dataType) {
+        return dataType.equals(DataType.STRING)
+                || dataType.equals(DataType.INT)
+                || dataType.equals(DataType.LONG)
+                || dataType.equals(DataType.FLOAT)
+                || dataType.equals(DataType.DOUBLE);
+    }
+
+    /** A map always has struct fields named key and value, so naming them is allowed but can not change them. */
+    private void validateMapFieldName(Schema schema, SDField field, String given, String required) {
+        if (given != null && ! given.equals(required)) {
+            throw fastMapSearchError(schema, field, "'fast-search-map-field' on a map requires " + required + " to be '" +
+                                                    required + "', but got '" + given + "'.");
+        }
+    }
+
+    private static IllegalArgumentException fastMapSearchError(Schema schema, SDField field, String message) {
+        return new IllegalArgumentException(String.format("For schema '%s', field '%s': %s",
+                                                          schema.getName(), field.getName(), message));
     }
 
     private void convertStructField(Schema schema, SDField field, ParsedField parsed) {
@@ -313,6 +423,9 @@ public class ConvertParsedFields {
         }
         for (String destination : parsed.getDestinations()) {
             summary.addDestination(destination);
+        }
+        for (String structField : parsed.getStructFieldSelect()) {
+            summary.addStructField(structField);
         }
         summary.setImplicit(false);
     }

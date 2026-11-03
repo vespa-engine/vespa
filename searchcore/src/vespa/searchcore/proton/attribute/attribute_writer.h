@@ -39,6 +39,7 @@ public:
         AttributeVector&  _attribute;
         bool              _structFieldAttribute; // in array/map of struct
         bool              _use_two_phase_put;
+        bool              _is_quantized;
 
     public:
         WriteField(AttributeVector& attribute);
@@ -46,8 +47,13 @@ public:
         AttributeVector& getAttribute() const { return _attribute; }
         const FieldPath& getFieldPath() const { return _fieldPath; }
         void buildFieldPath(const DocumentType& docType) const;
-        bool isStructFieldAttribute() const { return _structFieldAttribute; }
-        bool use_two_phase_put() const { return _use_two_phase_put; }
+        [[nodiscard]] bool isStructFieldAttribute() const noexcept { return _structFieldAttribute; }
+        [[nodiscard]] bool use_two_phase_put() const noexcept { return _use_two_phase_put; }
+        [[nodiscard]] bool is_quantized() const noexcept { return _is_quantized; }
+        // Iff true, the attribute contents cannot be used to losslessly recreate the
+        // state of the document as it exists in the document store. I.e. the document
+        // store must be used as the source of truth for reads.
+        [[nodiscard]] bool is_non_authoritative() const noexcept { return _structFieldAttribute || _is_quantized; }
     };
 
     /**
@@ -61,6 +67,9 @@ public:
         bool                                     _hasStructFieldAttribute;
         // When this is true, the context only contains a single field.
         bool _use_two_phase_put;
+        // When this is true, the attribute requires doc store read+writeback, as the
+        // attribute itself does not have authoritative information
+        bool _has_quantized_attribute;
 
     public:
         WriteContext(ExecutorId executorId) noexcept;
@@ -71,9 +80,13 @@ public:
         void add(AttributeVector& attr);
         ExecutorId getExecutorId() const { return _executorId; }
         const std::vector<WriteField>& getFields() const { return _fields; }
-        bool hasStructFieldAttribute() const { return _hasStructFieldAttribute; }
-        bool use_two_phase_put() const { return _use_two_phase_put; }
-        std::shared_ptr<const FieldPath> get_two_phase_put_field_path() const noexcept {
+        [[nodiscard]] bool hasStructFieldAttribute() const noexcept { return _hasStructFieldAttribute; }
+        [[nodiscard]] bool use_two_phase_put() const noexcept { return _use_two_phase_put; }
+        [[nodiscard]] bool has_quantized_attribute() const noexcept { return _has_quantized_attribute; }
+        [[nodiscard]] bool has_non_authoritative_attribute() const noexcept {
+            return _hasStructFieldAttribute || _has_quantized_attribute;
+        }
+        [[nodiscard]] std::shared_ptr<const FieldPath> get_two_phase_put_field_path() const noexcept {
             return _two_phase_put_field_path;
         }
     };
@@ -91,6 +104,7 @@ private:
     using AttrMap = vespalib::hash_map<std::string, AttributeWithInfo>;
     std::vector<WriteContext> _writeContexts;
     bool                      _hasStructFieldAttribute;
+    bool                      _has_quantized_attribute;
     AttrMap                   _attrMap;
 
     void setupWriteContexts();
@@ -123,7 +137,8 @@ public:
     void forceCommit(const CommitParam& param, const OnWriteDoneType& onWriteDone) override;
 
     void onReplayDone(uint32_t docIdLimit) override;
-    bool hasStructFieldAttribute() const override;
+    [[nodiscard]] bool hasStructFieldAttribute() const override;
+    [[nodiscard]] bool has_non_authoritative_attribute() const noexcept override;
     void drain(const OnWriteDoneType& onWriteDone) override;
 
     // Should only be used for unit testing.

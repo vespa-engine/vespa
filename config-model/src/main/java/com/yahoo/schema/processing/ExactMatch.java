@@ -84,7 +84,8 @@ public class ExactMatch extends Processor {
         }
     }
 
-    private AnnotatorConfig toAnnotatorConfig(Matching matching) {
+    /** Returns the annotator config to use for exact matching with the given settings. */
+    public static AnnotatorConfig toAnnotatorConfig(Matching matching) {
         var config = new AnnotatorConfig();
         if (matching.maxTokenLength() != null)
             config.setMaxTokenLength(matching.maxTokenLength());

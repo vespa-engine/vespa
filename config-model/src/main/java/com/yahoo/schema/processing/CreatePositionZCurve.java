@@ -114,6 +114,7 @@ public class CreatePositionZCurve extends Processor {
         attribute.setPosition(true);
         attribute.setFastSearch(true);
         field.addAttribute(attribute);
+        field.setInternalField(true);
 
         ScriptExpression script = inputField.getIndexingScript();
         script = (ScriptExpression)new RemoveSummary(inputField.getName()).convert(script);

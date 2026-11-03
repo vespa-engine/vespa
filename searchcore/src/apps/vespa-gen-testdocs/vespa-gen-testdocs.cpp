@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -11,7 +12,6 @@
 #include <getopt.h>
 #include <openssl/evp.h>
 
-#include <cassert>
 #include <filesystem>
 #include <iostream>
 #include <limits>
@@ -43,8 +43,9 @@ void usageHeader() {
 }
 
 string prependBaseDir(const string& baseDir, const string& file) {
-    if (baseDir.empty() || baseDir == ".")
+    if (baseDir.empty() || baseDir == ".") {
         return file;
+    }
     return baseDir + "/" + file;
 }
 
@@ -88,7 +89,7 @@ void shafile(const string& baseDir, const string& file) {
         remainder -= thistime;
     }
     EVP_DigestFinal_ex(md_ctx.get(), &digest[0], &digest_len);
-    assert(digest_len > 0u && digest_len <= EVP_MAX_MD_SIZE);
+    CHECK(digest_len > 0u && digest_len <= EVP_MAX_MD_SIZE);
     for (unsigned int i = 0; i < digest_len; ++i) {
         os.width(2);
         os.fill('0');
@@ -129,7 +130,7 @@ void StringGenerator::rand_unique_array(StringArray& res, uint32_t minLen, uint3
         do {
             rand_string(s, minLen, maxLen);
         } while (!set.insert(s).second);
-        assert(s.size() > 0);
+        CHECK(s.size() > 0);
         res.push_back(s);
     }
 }
@@ -269,12 +270,13 @@ void RandTextFieldGenerator::generateValue(vespalib::asciistream& doc, uint32_t)
     uint32_t gLen = _minFill + _rnd.lrand48() % (_randFill + 1);
     bool     first = true;
     for (uint32_t i = 0; i < gLen; ++i) {
-        if (!first)
+        if (!first) {
             doc << " ";
+        }
         first = false;
         uint32_t      wNum = _rnd.lrand48() % _strings.size();
         const string& s(_strings[wNum]);
-        assert(s.size() > 0);
+        CHECK(s.size() > 0);
         doc << s;
     }
 }
@@ -301,8 +303,9 @@ void ModTextFieldGenerator::generateValue(vespalib::asciistream& doc, uint32_t i
     bool first = true;
     for (MI mi(_mods.begin()), me(_mods.end()); mi != me; ++mi) {
         uint32_t m = *mi;
-        if (!first)
+        if (!first) {
             doc << " ";
+        }
         first = false;
         doc << "w" << m << "w" << (id % m);
     }
@@ -441,7 +444,7 @@ void DocumentGenerator::generate(uint32_t docMin, uint32_t docIdLimit, const str
     }
     f.Flush();
     bool close_ok = f.Close();
-    assert(close_ok);
+    CHECK(close_ok);
     LOG(info, "Calculating sha256 for %s", feedFileName.c_str());
     shafile(baseDir, feedFileName);
 }
@@ -501,8 +504,9 @@ public:
 
 void GenTestDocsApp::usage(bool showHeader) {
     using std::cerr;
-    if (showHeader)
+    if (showHeader) {
         usageHeader();
+    }
     cerr << "vespa-gen-testdocs gentestdocs\n"
             " [--basedir basedir]\n"
             " [--consttextfield name]\n"
@@ -644,8 +648,9 @@ int App::main(int argc, char** argv) {
         return 1;
     }
     std::unique_ptr<SubApp> subApp;
-    if (strcmp(argv[1], "gentestdocs") == 0)
+    if (strcmp(argv[1], "gentestdocs") == 0) {
         subApp = std::make_unique<GenTestDocsApp>();
+    }
     if (subApp.get() != nullptr) {
         if (!subApp->getOptions(argc, argv)) {
             subApp->usage(true);

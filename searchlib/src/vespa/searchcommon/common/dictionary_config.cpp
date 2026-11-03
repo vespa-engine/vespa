@@ -2,7 +2,8 @@
 
 #include "dictionary_config.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <ostream>
 
 namespace search {
@@ -21,7 +22,7 @@ std::ostream& operator<<(std::ostream& os, DictionaryConfig::Type type) {
     case DictionaryConfig::Type::BTREE_AND_HASH:
         return os << "BTREE_AND_HASH";
     }
-    assert(false);
+    CHECK(false);
 }
 
 std::ostream& operator<<(std::ostream& os, DictionaryConfig::Match match) {
@@ -31,7 +32,7 @@ std::ostream& operator<<(std::ostream& os, DictionaryConfig::Match match) {
     case DictionaryConfig::Match::UNCASED:
         return os << "CASE_INSENSITIVE";
     }
-    assert(false);
+    CHECK(false);
 }
 
 } // namespace search

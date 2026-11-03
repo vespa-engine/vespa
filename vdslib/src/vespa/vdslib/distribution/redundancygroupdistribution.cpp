@@ -2,12 +2,12 @@
 
 #include "redundancygroupdistribution.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <algorithm>
-#include <cassert>
 #include <ostream>
 #include <string>
 
@@ -52,8 +52,9 @@ void verifyLegal(vespalib::StringTokenizer& st, std::string_view serialized) {
 
 std::vector<uint16_t> parse(std::string_view serialized) {
     std::vector<uint16_t> result;
-    if (serialized == "")
+    if (serialized == "") {
         return result;
+    }
     vespalib::StringTokenizer st(serialized, "|");
     verifyLegal(st, serialized);
     for (vespalib::StringTokenizer::Iterator it = st.begin(); it != st.end(); ++it) {
@@ -89,15 +90,16 @@ RedundancyGroupDistribution::RedundancyGroupDistribution(const RedundancyGroupDi
     // Lastly sort, so the most copies will end up first in ideal state
     std::sort(_values.begin(), _values.end());
     std::reverse(_values.begin(), _values.end());
-    assert(_values.front() >= _values.back());
+    CHECK(_values.front() >= _values.back());
 }
 
 RedundancyGroupDistribution::~RedundancyGroupDistribution() = default;
 
 void RedundancyGroupDistribution::print(std::ostream& out, bool, const std::string&) const {
     for (uint32_t i = 0; i < _values.size(); ++i) {
-        if (i != 0)
+        if (i != 0) {
             out << '|';
+        }
         if (_values[i] == 0) {
             out << '*';
         } else {
@@ -127,8 +129,9 @@ uint16_t RedundancyGroupDistribution::divideSpecifiedCopies(uint16_t start, uint
                 --redundancy;
             }
         }
-        if (redundancy == lastRedundancy)
+        if (redundancy == lastRedundancy) {
             break;
+        }
         lastRedundancy = redundancy;
     }
     return redundancy;

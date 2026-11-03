@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -160,7 +161,7 @@ func TestStatusCloudDeployment(t *testing.T) {
 	}
 	client.NextResponse(running)
 	assert.NotNil(t, cli.Run("status", "deployment"))
-	assert.Equal(t, `Deployment is still running. See https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details
+	assert.Equal(t, `Deployment is still running. See https://console.vespa-cloud.com/tenant/t1/application/a1/environment/dev/instance/i1/job/dev-us-north-1/run/1337 for more details
 Warning: wait deadline reached
 Hint: Consider using the --wait flag to increase the wait period
 Hint: --wait 120 will make this command wait for completion up to 2 minutes
@@ -179,7 +180,7 @@ Hint: --wait 120 will make this command wait for completion up to 2 minutes
 	assert.Nil(t, cli.Run("status", "deployment"))
 	assert.Equal(t, "", stderr.String())
 	assert.Equal(t,
-		"Deployment run 1337 has completed\nSee https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details\n",
+		"Deployment run 1337 has completed\nSee https://console.vespa-cloud.com/tenant/t1/application/a1/environment/dev/instance/i1/job/dev-us-north-1/run/1337 for more details\n",
 		stdout.String())
 	// Explicit run ID and wait period
 	run := mock.HTTPResponse{
@@ -533,4 +534,36 @@ func TestStatusWithoutPrivateServices(t *testing.T) {
 	assert.Nil(t, err, "Should produce valid JSON")
 	_, hasPrivateService := output["privateService"]
 	assert.False(t, hasPrivateService, "Should not have privateService field when not configured")
+}
+
+func TestStatusDeploymentProgress(t *testing.T) {
+	cli, stdout, stderr := newTestCLI(t, "NO_COLOR=true")
+	require.NoError(t, cli.Run("config", "set", "application", "t1.a1.i1"))
+	require.NoError(t, cli.Run("config", "set", "target", "cloud"))
+	require.NoError(t, cli.Run("config", "set", "progress", "true"))
+	require.NoError(t, cli.Run("auth", "api-key"))
+	cli.isTerminal = func() bool { return true }
+	client := &mock.HTTPClient{}
+	cli.httpClient = client
+	stdout.Reset()
+	stderr.Reset()
+	client.NextResponseString(200, `{"active":false,"status":"success","steps":{"installReal":{"status":"succeeded"}}}`)
+	require.NoError(t, cli.Run("status", "deployment", "42"))
+	assert.Contains(t, stderr.String(), "✓ Deployment complete")
+	assert.Contains(t, stderr.String(), "Run 42")
+	assert.Contains(t, stderr.String(), "Console:")
+	assert.Empty(t, stdout.String())
+	assert.True(t, client.Consumed())
+	assert.Nil(t, cli.progress)
+
+	stdout.Reset()
+	stderr.Reset()
+	for range 2 {
+		client.NextResponseString(200, `{"active":true,"status":"running"}`)
+	}
+	require.Error(t, cli.Run("status", "deployment", "42"))
+	assert.Contains(t, stderr.String(), "Deployment run 42 is still running")
+	assert.Contains(t, stderr.String(), "Warning: wait deadline reached")
+	assert.True(t, client.Consumed())
+	assert.Nil(t, cli.progress)
 }

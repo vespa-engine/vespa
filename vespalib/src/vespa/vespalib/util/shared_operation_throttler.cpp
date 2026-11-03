@@ -3,8 +3,9 @@
 
 #include "overflow.h"
 
+#include <vespa/check_require.h>
+
 #include <atomic>
-#include <cassert>
 #include <condition_variable>
 #include <format>
 #include <functional>
@@ -19,8 +20,8 @@ public:
     NoLimitsOperationThrottler()
         : SharedOperationThrottler(), _mutex(), _refs(0), _current_resource_usage(0), _max_resource_usage(0) {}
     ~NoLimitsOperationThrottler() override {
-        assert(_refs == 0);
-        assert(_current_resource_usage == 0);
+        CHECK(_refs == 0);
+        CHECK(_current_resource_usage == 0);
     }
     Token blocking_acquire_one(uint64_t operation_resource_usage) noexcept override {
         internal_ref_count_and_resource_usage_increase(operation_resource_usage);
@@ -301,7 +302,7 @@ DynamicOperationThrottler::DynamicOperationThrottler(const DynamicThrottleParams
 }
 
 DynamicOperationThrottler::~DynamicOperationThrottler() {
-    assert(_pending_ops == 0u);
+    CHECK(_pending_ops == 0u);
 }
 
 bool DynamicOperationThrottler::has_spare_capacity_in_active_window(uint64_t operation_resource_usage) noexcept {
@@ -323,19 +324,19 @@ void DynamicOperationThrottler::add_one_to_active_window_size() noexcept {
 }
 
 void DynamicOperationThrottler::add_to_current_resource_usage(uint64_t operation_resource_usage) noexcept {
-    assert(!add_would_overflow<uint64_t>(_current_resource_usage, operation_resource_usage));
+    CHECK(!add_would_overflow<uint64_t>(_current_resource_usage, operation_resource_usage));
     _current_resource_usage += operation_resource_usage;
     _max_resource_usage = std::max(_max_resource_usage, _current_resource_usage);
 }
 
 void DynamicOperationThrottler::subtract_one_from_active_window_size() noexcept {
     _throttle_policy.process_response(true); // TODO support failure push-back
-    assert(_pending_ops > 0);
+    CHECK(_pending_ops > 0);
     --_pending_ops;
 }
 
 void DynamicOperationThrottler::subtract_from_current_resource_usage(uint64_t operation_resource_usage) noexcept {
-    assert(_current_resource_usage >= operation_resource_usage);
+    CHECK(_current_resource_usage >= operation_resource_usage);
     _current_resource_usage -= operation_resource_usage;
 }
 

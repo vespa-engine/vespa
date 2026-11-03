@@ -228,8 +228,9 @@ struct ProgramOptions::OptionParser {
     std::string getOptSyntaxString() const;
     std::string getArgName() const {
         std::string name = _names[0];
-        for (uint32_t i = 1; i < _names.size(); ++i)
+        for (uint32_t i = 1; i < _names.size(); ++i) {
             name += " " + _names[i];
+        }
         return name;
     }
     virtual bool isHeader() const { return false; }

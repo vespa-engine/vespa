@@ -2,6 +2,7 @@
 
 #include "attribute_aspect_delayer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-summary.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
@@ -162,7 +163,7 @@ bool AttributeAspectConfigRewriter::calculate_fast_access(
         return new_attribute_config.fastaccess;
     }
     auto old_attribute_config = _old_attributes_config_hash.lookup(name);
-    assert(old_attribute_config != nullptr);
+    CHECK(old_attribute_config != nullptr);
     auto old_cfg = ConfigConverter::convert(*old_attribute_config);
     if (!old_attribute_config->fastaccess ||
         willTriggerReprocessOnAttributeAspectRemoval(old_cfg, _old_index_schema_inspector, name))

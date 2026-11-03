@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/types.h>
@@ -9,7 +10,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cassert>
 
 namespace proton {
 
@@ -40,10 +40,10 @@ struct RawDocumentMetadata {
           _doc_size(docSize),
           _bucket_used_bits_and_padding(bucketId.getUsedBits()),
           _timestamp(timestamp) {
-        assert(bucketId.valid());
+        CHECK(bucketId.valid());
         BucketId verId(gid.convertToBucketId());
         verId.setUsedBits(bucketId.getUsedBits());
-        assert(bucketId.getRawId() == verId.getRawId() || bucketId.getRawId() == verId.getId());
+        CHECK(bucketId.getRawId() == verId.getRawId() || bucketId.getRawId() == verId.getId());
     }
 
     RawDocumentMetadata(const RawDocumentMetadata& rhs)
@@ -87,16 +87,16 @@ struct RawDocumentMetadata {
     }
 
     void setBucketUsedBits(uint8_t bucketUsedBits) {
-        assert(BucketId::validUsedBits(bucketUsedBits));
+        CHECK(BucketId::validUsedBits(bucketUsedBits));
         _bucket_used_bits_and_padding.store(bucketUsedBits, std::memory_order_relaxed);
     }
 
     void setBucketId(const BucketId& bucketId) {
-        assert(bucketId.valid());
+        CHECK(bucketId.valid());
         uint8_t  bucketUsedBits = bucketId.getUsedBits();
         BucketId verId(_gid.convertToBucketId());
         verId.setUsedBits(bucketUsedBits);
-        assert(bucketId.getRawId() == verId.getRawId() || bucketId.getRawId() == verId.getId());
+        CHECK(bucketId.getRawId() == verId.getRawId() || bucketId.getRawId() == verId.getId());
         setBucketUsedBits(bucketUsedBits);
     }
 

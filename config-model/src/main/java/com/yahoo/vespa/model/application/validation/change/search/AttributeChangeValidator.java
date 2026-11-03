@@ -122,6 +122,7 @@ public class AttributeChangeValidator {
                     validateAttributeHnswIndexSetting(id, current, next, HnswIndexParams::maxLinksPerNode, "max-links-per-node", result);
                     validateAttributeHnswIndexSetting(id, current, next, HnswIndexParams::neighborsToExploreAtInsert, "neighbors-to-explore-at-insert", result);
                 }
+                validateAttributeQuantizationChanges(current, next);
             }
         }
         return result;
@@ -174,6 +175,27 @@ public class AttributeChangeValidator {
             context.invalid(ValidationId.pagedSettingRemoval,
                               current + "' has setting 'paged' removed. " +
                               "This may cause content nodes to run out of memory as the entire attribute is loaded into memory");
+        }
+    }
+
+    private void validateAttributeQuantizationChanges(Attribute current, Attribute next) {
+        if (!current.isQuantized() && !next.isQuantized()) {
+            return; // No quantization; nothing for us to meddle with.
+        }
+        var msgSuffix = "First remove the attribute aspect, redeploy and restart content nodes, " +
+                        "then re-add the attribute with updated quantization settings.";
+        if (current.isQuantized() != next.isQuantized()) {
+            context.illegal(Text.format("Quantization cannot be added or removed on existing %s. %s", current, msgSuffix));
+            return;
+        }
+        // At this point both attribute versions are known to be quantized.
+        if (current.quantizationParams().get().bits() != next.quantizationParams().get().bits()) {
+            context.illegal(Text.format("Quantization bit count cannot be changed in-place on existing %s. %s", current, msgSuffix));
+        }
+        // TODO only disallow distance metric change if the backend quantization semantics actually change?
+        //  (i.e. MSE vs. inner product)
+        if (!current.distanceMetric().equals(next.distanceMetric())) {
+            context.illegal(Text.format("Distance metric cannot be changed in-place on existing quantized %s. %s", current, msgSuffix));
         }
     }
 

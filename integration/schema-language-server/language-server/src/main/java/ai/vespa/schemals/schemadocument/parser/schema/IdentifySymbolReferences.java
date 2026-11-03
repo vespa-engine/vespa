@@ -44,6 +44,7 @@ import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.parser.ast.summaryFeaturesElm;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
+import ai.vespa.schemals.parser.ast.summaryInDocumentItem;
 import ai.vespa.schemals.parser.ast.summaryItem;
 import ai.vespa.schemals.parser.ast.summarySourceList;
 import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
@@ -421,6 +422,8 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
      */
     private boolean summaryHasSourceList(Node summaryNode) {
         for (Node child : summaryNode) {
+            // Inside a document-summary the items are wrapped in a summaryInDocumentItem
+            if (child.isASTInstance(summaryInDocumentItem.class) && child.size() > 0) child = child.get(0);
             if (child.isASTInstance(summaryItem.class) && child.get(0).isASTInstance(summarySourceList.class)) return true;
         }
         return false;

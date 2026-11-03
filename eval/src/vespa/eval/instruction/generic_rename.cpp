@@ -2,12 +2,11 @@
 
 #include "generic_rename.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
-
-#include <cassert>
 
 using namespace vespalib::eval::tensor_function;
 
@@ -48,8 +47,8 @@ struct RenameParam {
           sparse_plan(lhs_type, res_type, rename_dimension_from, rename_dimension_to),
           dense_plan(lhs_type, res_type, rename_dimension_from, rename_dimension_to),
           factory(factory_in) {
-        assert(!res_type.is_error());
-        assert(lhs_type.cell_type() == res_type.cell_type());
+        CHECK(!res_type.is_error());
+        CHECK(lhs_type.cell_type() == res_type.cell_type());
     }
     ~RenameParam();
 };
@@ -103,8 +102,8 @@ template <typename CT> void my_mixed_rename_dense_only_op(State& state, uint64_t
         dense_plan.execute(0, copy_cells);
         lhs += dense_plan.subspace_size;
     }
-    assert(lhs == lhs_cells.data() + lhs_cells.size());
-    assert(dst == out_cells.data() + out_cells.size());
+    CHECK(lhs == lhs_cells.data() + lhs_cells.size());
+    CHECK(dst == out_cells.data() + out_cells.size());
     state.pop_push(state.stash.create<ValueView>(param.res_type, index, TypedCells(out_cells)));
 }
 
@@ -128,17 +127,17 @@ SparseRenamePlan::SparseRenamePlan(const ValueType& input_type, const ValueType&
     const auto in_dims = input_type.mapped_dimensions();
     const auto out_dims = output_type.mapped_dimensions();
     mapped_dims = in_dims.size();
-    assert(mapped_dims == out_dims.size());
+    CHECK(mapped_dims == out_dims.size());
     for (const auto& dim : in_dims) {
         const auto& renamed_to = find_rename(dim.name, from, to);
         size_t      index = find_index_of(renamed_to, out_dims);
-        assert(index < mapped_dims);
+        CHECK(index < mapped_dims);
         if (index != output_dimensions.size()) {
             can_forward_index = false;
         }
         output_dimensions.emplace_back(index);
     }
-    assert(output_dimensions.size() == mapped_dims);
+    CHECK(output_dimensions.size() == mapped_dims);
 }
 
 SparseRenamePlan::~SparseRenamePlan() = default;
@@ -146,11 +145,11 @@ SparseRenamePlan::~SparseRenamePlan() = default;
 DenseRenamePlan::DenseRenamePlan(const ValueType& lhs_type, const ValueType& output_type,
                                  const std::vector<std::string>& from, const std::vector<std::string>& to)
     : loop_cnt(), stride(), subspace_size(output_type.dense_subspace_size()) {
-    assert(subspace_size == lhs_type.dense_subspace_size());
+    CHECK(subspace_size == lhs_type.dense_subspace_size());
     const auto lhs_dims = lhs_type.nontrivial_indexed_dimensions();
     const auto out_dims = output_type.nontrivial_indexed_dimensions();
     size_t     num_dense_dims = lhs_dims.size();
-    assert(num_dense_dims == out_dims.size());
+    CHECK(num_dense_dims == out_dims.size());
     SmallVector<size_t> lhs_loopcnt(num_dense_dims);
     SmallVector<size_t> lhs_stride(num_dense_dims, 1);
     size_t              lhs_size = 1;
@@ -159,14 +158,14 @@ DenseRenamePlan::DenseRenamePlan(const ValueType& lhs_type, const ValueType& out
         lhs_loopcnt[i] = lhs_dims[i].size;
         lhs_size *= lhs_loopcnt[i];
     }
-    assert(lhs_size == subspace_size);
+    CHECK(lhs_size == subspace_size);
     size_t prev_index = num_dense_dims;
     for (const auto& dim : out_dims) {
         const auto& renamed_from = find_rename(dim.name, to, from);
         size_t      index = find_index_of(renamed_from, lhs_dims);
-        assert(index < num_dense_dims);
+        CHECK(index < num_dense_dims);
         if (prev_index + 1 == index) {
-            assert(stride.back() == lhs_stride[index] * lhs_loopcnt[index]);
+            CHECK(stride.back() == lhs_stride[index] * lhs_loopcnt[index]);
             loop_cnt.back() *= lhs_loopcnt[index];
             stride.back() = lhs_stride[index];
         } else {
@@ -183,8 +182,8 @@ InterpretedFunction::Instruction GenericRename::make_instruction(
     const ValueType& result_type, const ValueType& input_type, const std::vector<std::string>& rename_dimension_from,
     const std::vector<std::string>& rename_dimension_to, const ValueBuilderFactory& factory, Stash& stash) {
     auto& param = stash.create<RenameParam>(input_type, rename_dimension_from, rename_dimension_to, factory);
-    assert(result_type == param.res_type);
-    assert(result_type.cell_meta().eq(input_type.cell_meta()));
+    CHECK(result_type == param.res_type);
+    CHECK(result_type.cell_meta().eq(input_type.cell_meta()));
     auto fun =
         typify_invoke<1, TypifyCellMeta, SelectGenericRenameOp>(param.res_type.cell_meta().not_scalar(), param);
     return Instruction(fun, wrap_param<RenameParam>(param));

@@ -7,6 +7,7 @@
 #include "objectpredicate.h"
 #include "visit.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -14,7 +15,6 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <stdexcept>
 
 namespace vespalib {
@@ -107,7 +107,7 @@ Identifiable::RuntimeClass::RuntimeClass(RuntimeInfo* info_) : _rt(info_) {
     if (_rt->_factory) {
         Identifiable::UP tmp(create());
         Identifiable&    tmpref = *tmp;
-        assert(id() == tmp->getClass().id());
+        CHECK(id() == tmp->getClass().id());
         // printf("Class %s has typeinfo %s\n", name(), typeid(*tmp).name());
         for (const RuntimeInfo* curr = _rt; curr && curr != curr->_base; curr = curr->_base) {
             // printf("\tinherits %s : typeinfo = %s\n", curr->_name, curr->_typeId().name());
@@ -130,7 +130,7 @@ Identifiable::RuntimeClass::RuntimeClass(RuntimeInfo* info_) : _rt(info_) {
 
 Identifiable::RuntimeClass::~RuntimeClass() {
     if (!_register->erase(this)) {
-        assert(0);
+        CHECK(0);
     }
     if (_register->empty()) {
         delete _register;

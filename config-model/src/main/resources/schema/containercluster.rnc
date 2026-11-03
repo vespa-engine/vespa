@@ -27,7 +27,8 @@ ContainerServices =
     GenericConfig* &
     Clients? &
     Inference? &
-    Threadpool?
+    Threadpool? &
+    Skills?
 
 # TODO(ogronnesby): Change this configuration syntax
 ClientAuthorize = element client-authorize { empty }
@@ -160,6 +161,10 @@ Threadpool = element threadpool {
 
 Significance = element significance {
     element model { ModelReference }*
+}
+
+Skills = element skills {
+    element schemas { empty }?
 }
 
 Clients = element clients {
@@ -301,6 +306,7 @@ DocumentApi = element document-api {
    element timeout { xsd:double { minInclusive = "0.0" } }? &
    element tracelevel { xsd:positiveInteger }? &
    element mbusport { xsd:positiveInteger }? &
+   element legacy-feed-api { xsd:string }? &
    DocumentRestApi? &
    HttpClientApi?
 }

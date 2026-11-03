@@ -4,12 +4,10 @@ package com.yahoo.vespa.config.protocol;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ErrorCode;
-import com.yahoo.vespa.config.PayloadChecksum;
 
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
-import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -30,12 +28,8 @@ public class RequestValidation {
             log.log(WARNING, "Illegal name space '" + key.getNamespace() + "'");
             return ErrorCode.ILLEGAL_NAME_SPACE;
         }
-        if (!(new PayloadChecksum(request.getRequestDefMd5(), MD5).valid())) {
-            log.log(WARNING, "Illegal checksum '" + key.getNamespace() + "'");
-            return ErrorCode.ILLEGAL_DEF_MD5;  // TODO: Use ILLEGAL_DEF_CHECKSUM
-        }
-        if (! request.getRequestConfigChecksums().valid()) {
-            log.log(WARNING, "Illegal config checksum '" + request.getRequestConfigChecksums() + "'");
+        if (! request.getRequestConfigChecksum().valid()) {
+            log.log(WARNING, "Illegal config checksum '" + request.getRequestConfigChecksum() + "'");
             return ErrorCode.ILLEGAL_CONFIG_MD5; // TODO: Use ILLEGAL_CONFIG_CHECKSUM
         }
         if (!RequestValidation.verifyGeneration(request.getRequestGeneration())) {

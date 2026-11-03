@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/tls/impl/direct_buffer_bio.h>
 
-#include <cassert>
 #include <string>
 
 using namespace vespalib;
@@ -16,7 +16,7 @@ struct Fixture {
 
     Fixture()
         : mutable_bio(new_mutable_direct_buffer_bio()), const_bio(new_const_direct_buffer_bio()), tmp_buf('X', 64) {
-        assert(mutable_bio && const_bio);
+        CHECK(mutable_bio && const_bio);
     }
     ~Fixture();
 };
@@ -133,7 +133,7 @@ TEST(DirectBufferBIOTest, test_BIO_read_on_mutable_BIO_returns_failure) {
     MutableBufferViewGuard g(*f.mutable_bio, &f.tmp_buf[0], f.tmp_buf.size());
 
     std::string dummy_buf;
-    dummy_buf.reserve(128);
+    dummy_buf.resize(128);
     int ret = ::BIO_read(f.mutable_bio.get(), &dummy_buf[0], static_cast<int>(dummy_buf.size()));
     EXPECT_EQ(-1, ret);
     EXPECT_EQ(0, BIO_should_retry(f.mutable_bio.get()));

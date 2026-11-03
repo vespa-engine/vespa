@@ -2,6 +2,7 @@
 package com.yahoo.config.model.deploy;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
+import ai.vespa.rankingexpression.importer.configmodelview.MlModelImportCache;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
@@ -10,9 +11,9 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
-import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
+import com.yahoo.config.model.api.AdditionalContent;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
@@ -21,6 +22,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
+import com.yahoo.config.model.api.SidecarProvider;
 import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -31,8 +33,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.ProvisionContext;
-import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.schema.Application;
@@ -44,7 +44,6 @@ import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.documentmodel.DocumentModel;
-import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRules;
@@ -63,7 +62,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.search.SemanticRules.SemanticRuleBuilder;
 
@@ -98,6 +96,8 @@ public class DeployState implements ConfigDefinitionStore {
     private final Reindexing reindexing;
     private final ExecutorService executor;
     private final OnnxModelCost onnxModelCost;
+    private final Optional<SidecarProvider> sidecarProvider;
+    private final AdditionalContent additionalContent;
 
     private DeployState(Application application,
                         RankProfileRegistry rankProfileRegistry,
@@ -112,6 +112,7 @@ public class DeployState implements ConfigDefinitionStore {
                         Optional<Model> previousModel,
                         Set<ContainerEndpoint> endpoints,
                         Collection<MlModelImporter> modelImporters,
+                        MlModelImportCache mlModelImportCache,
                         Zone zone,
                         QueryProfiles queryProfiles,
                         SemanticRules semanticRules,
@@ -121,7 +122,9 @@ public class DeployState implements ConfigDefinitionStore {
                         Optional<DockerImage> wantedDockerImageRepo,
                         Reindexing reindexing,
                         Optional<ValidationOverrides> validationOverrides,
-                        OnnxModelCost onnxModelCost) {
+                        OnnxModelCost onnxModelCost,
+                        Optional<SidecarProvider> sidecarProvider,
+                        AdditionalContent additionalContent) {
         this.logger = deployLogger;
         this.fileRegistry = fileRegistry;
         this.executor = executor;
@@ -140,7 +143,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
-        this.importedModels = importMlModels(applicationPackage, modelImporters, executor);
+        this.importedModels = importMlModels(applicationPackage, modelImporters, mlModelImportCache, executor);
 
         this.validationOverrides = validationOverrides.orElse(applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml)
                                                       .orElse(ValidationOverrides.empty));
@@ -150,6 +153,8 @@ public class DeployState implements ConfigDefinitionStore {
         this.wantedDockerImageRepo = wantedDockerImageRepo;
         this.reindexing = reindexing;
         this.onnxModelCost = onnxModelCost;
+        this.sidecarProvider = sidecarProvider;
+        this.additionalContent = additionalContent;
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
@@ -211,9 +216,10 @@ public class DeployState implements ConfigDefinitionStore {
 
     private static ImportedMlModels importMlModels(ApplicationPackage applicationPackage,
                                                    Collection<MlModelImporter> modelImporters,
+                                                   MlModelImportCache mlModelImportCache,
                                                    ExecutorService executor) {
         File importFrom = applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR);
-        ImportedMlModels importedModels = new ImportedMlModels(importFrom, executor, modelImporters);
+        ImportedMlModels importedModels = new ImportedMlModels(importFrom, executor, modelImporters, mlModelImportCache);
         for (var entry : importedModels.getSkippedModels().entrySet())
             throw new IllegalArgumentException("Could not import model '" + entry.getKey() + "': " + entry.getValue());
         return importedModels;
@@ -309,6 +315,15 @@ public class DeployState implements ConfigDefinitionStore {
 
     public OnnxModelCost onnxModelCost() { return onnxModelCost; }
 
+    /** Returns the sidecar provider to consult when building container clusters, if any. */
+    public Optional<SidecarProvider> getSidecarProvider() { return sidecarProvider; }
+
+    /**
+     * Returns the content added to this application on top of its package. Its schemas were added to the
+     * application when this was built; its document declarations are added by the content cluster builders.
+     */
+    public AdditionalContent getAdditionalContent() { return additionalContent; }
+
     public boolean isHostedTenantApplication(ApplicationType type) {
         boolean isTesterApplication = getProperties().applicationId().instance().isTester();
         return isHosted() && type == ApplicationType.DEFAULT && !isTesterApplication
@@ -333,6 +348,7 @@ public class DeployState implements ConfigDefinitionStore {
         private Optional<Model> previousModel = Optional.empty();
         private Set<ContainerEndpoint> endpoints = Set.of();
         private Collection<MlModelImporter> modelImporters = List.of();
+        private MlModelImportCache mlModelImportCache = MlModelImportCache.none();
         private Zone zone = Zone.defaultZone();
         private Instant now = Instant.now();
         private Version wantedNodeVespaVersion = Vtag.currentVersion;
@@ -343,6 +359,8 @@ public class DeployState implements ConfigDefinitionStore {
         private Reindexing reindexing = null;
         private Optional<ValidationOverrides> validationOverrides = Optional.empty();
         private OnnxModelCost onnxModelCost = OnnxModelCost.disabled();
+        private Optional<SidecarProvider> sidecarProvider = Optional.empty();
+        private AdditionalContent additionalContent = AdditionalContent.none();
 
         public Builder() {}
 
@@ -462,6 +480,25 @@ public class DeployState implements ConfigDefinitionStore {
 
         public Builder onnxModelCost(OnnxModelCost instance) { this.onnxModelCost = instance; return this; }
 
+        public Builder modelImportCache(MlModelImportCache mlModelImportCache) {
+            this.mlModelImportCache = mlModelImportCache;
+            return this;
+        }
+
+        public Builder sidecarProvider(SidecarProvider sidecarProvider) {
+            this.sidecarProvider = Optional.of(sidecarProvider);
+            return this;
+        }
+
+        /**
+         * Sets content to add to the application on top of its package: schemas and their document declarations.
+         * The schemas are added to the application by {@link #build}; the declarations by the content cluster builders.
+         */
+        public Builder additionalContent(AdditionalContent content) {
+            this.additionalContent = Objects.requireNonNull(content, "additional content cannot be null");
+            return this;
+        }
+
         public DeployState build() {
             return build(new ValidationParameters());
         }
@@ -470,9 +507,10 @@ public class DeployState implements ConfigDefinitionStore {
             if (queryProfiles == null)
                 queryProfiles = new QueryProfilesBuilder().build(applicationPackage, logger);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
-            Application application = new ApplicationBuilder(applicationPackage, fileRegistry, logger, properties,
-                                                             rankProfileRegistry, queryProfiles.getRegistry())
-                    .build(! validationParameters.ignoreValidationErrors());
+            ApplicationBuilder applicationBuilder = new ApplicationBuilder(applicationPackage, fileRegistry, logger, properties,
+                                                                            rankProfileRegistry, queryProfiles.getRegistry());
+            additionalContent.schemas().forEach(applicationBuilder::addSchema);
+            Application application = applicationBuilder.build(! validationParameters.ignoreValidationErrors());
             return new DeployState(application,
                                    rankProfileRegistry,
                                    fileRegistry,
@@ -486,6 +524,7 @@ public class DeployState implements ConfigDefinitionStore {
                                    previousModel,
                                    endpoints,
                                    modelImporters,
+                                   mlModelImportCache,
                                    zone,
                                    queryProfiles,
                                    semanticRules,
@@ -495,7 +534,9 @@ public class DeployState implements ConfigDefinitionStore {
                                    wantedDockerImageRepo,
                                    reindexing,
                                    validationOverrides,
-                                   onnxModelCost);
+                                   onnxModelCost,
+                                   sidecarProvider,
+                                   additionalContent);
         }
 
     }

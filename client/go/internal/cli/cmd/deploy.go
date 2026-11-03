@@ -59,10 +59,13 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 			if err != nil {
 				return err
 			}
+			progress := cli.startDeploymentProgress("Deploying application")
+			defer progress.close()
 			target, err := cli.target(targetOptions{logLevel: logLevelArg})
 			if err != nil {
 				return err
 			}
+			progress.setTitle("Deploying " + target.Deployment().String())
 			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
 			if versionArg != "" {
 				version, err := version.Parse(versionArg)
@@ -93,11 +96,17 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 				return err
 			}
 			var result vespa.PrepareResult
-			err = cli.spinner(cli.Stderr, "Uploading application package...", func() error {
+			if progress != nil {
+				progress.note("Uploading application package…")
 				result, err = vespa.Deploy(opts)
-				return err
-			})
+			} else {
+				err = cli.spinner(cli.Stderr, "Uploading application package...", func() error {
+					result, err = vespa.Deploy(opts)
+					return err
+				})
+			}
 			if err != nil {
+				progress.finish("✗ Upload failed")
 				if target.IsCloud() && errors.Is(err, vespa.ErrUnauthorized) {
 					return errHint(err,
 						"You do not have access to the tenant "+color.CyanString(target.Deployment().Application.Tenant),
@@ -106,17 +115,31 @@ $ vespa deploy -t cloud -z dev.gcp-us-central1-f`,
 				}
 				return err
 			}
-			if opts.Target.IsCloud() {
+			if opts.Target.IsCloud() && progress == nil {
 				cli.printSuccess("Triggered deployment of ", color.CyanString("'"+pkg.Path+"'"), " with run ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
-			} else {
+			} else if !opts.Target.IsCloud() {
 				cli.printSuccess("Deployed ", color.CyanString("'"+pkg.Path+"'"), " with session ID ", color.CyanString(strconv.FormatInt(result.ID, 10)))
 				printPrepareLog(cli.Stderr, result)
 			}
-			if opts.Target.IsCloud() {
+			if progress != nil {
+				progress.setURL(opts.Target.Deployment().System.ConsoleRunURL(opts.Target.Deployment(), result.ID))
+				progress.note(fmt.Sprintf("Upload complete · run %d", result.ID))
+			} else if opts.Target.IsCloud() {
 				log.Printf("\nUse %s for deployment status, or follow this deployment at", color.CyanString("vespa status deployment"))
 				log.Print(color.CyanString(opts.Target.Deployment().System.ConsoleRunURL(opts.Target.Deployment(), result.ID)))
 			}
-			return waitForVespaReady(target, result.ID, waiter)
+			err = waitForVespaReady(target, result.ID, waiter)
+			if progress != nil {
+				succeeded := progress.succeeded()
+				if succeeded && err != nil {
+					progress.finish("✗ Deployed, but services did not become ready")
+				}
+				progress.close()
+				if err == nil && !succeeded {
+					log.Printf("\nUse %s for deployment status", color.CyanString("vespa status deployment"))
+				}
+			}
+			return err
 		},
 	}
 	cmd.Flags().StringVarP(&logLevelArg, "log-level", "l", "error", `Log level for Vespa logs. Must be "error", "warning", "info" or "debug"`)

@@ -2,6 +2,9 @@
 package com.yahoo.search.query;
 
 import com.yahoo.prelude.Index;
+import com.yahoo.prelude.query.DocumentFrequency;
+import com.yahoo.prelude.query.WordItem;
+import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -14,6 +17,8 @@ import com.yahoo.slime.SlimeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,6 +38,28 @@ public class YqlJsonQueryFeatureParityTest {
         var env = new ParserEnvironment().setIndexFacts(createIndexFacts());
         yqlParser = new YqlParser(env);
         selectParser = new SelectParser(env);
+    }
+
+    @Test
+    void testDocumentFrequency() {
+        var yqlWord = (WordItem) yqlParser.parse(new Parsable().setQuery(
+                "select * from sources * where title contains ({documentFrequency: {frequency: 13, count: 101}}\"colors\")")).getRoot();
+        var json = "{ \"contains\": { \"children\": [\"title\", \"colors\"], \"attributes\": {\"documentFrequency\": {\"frequency\": 13, \"count\": 101}} } }";
+        var jsonWord = (WordItem) selectParser.parse(new Parsable().setSelect(new Select(json, "", new Query()))).getRoot();
+
+        assertEquals(Optional.of(new DocumentFrequency(13, 101)), jsonWord.getDocumentFrequency());
+        assertEquals(yqlWord.getDocumentFrequency(), jsonWord.getDocumentFrequency());
+
+        Query yqlQuery = new Query();
+        yqlQuery.getModel().getQueryTree().setRoot(yqlWord);
+        yqlQuery.prepare();
+        Query selectQuery = new Query();
+        selectQuery.getModel().getQueryTree().setRoot(jsonWord);
+        selectQuery.prepare();
+        assertEquals(yqlQuery.getRanking().getProperties().get("vespa.term.1.docfreq"),
+                     selectQuery.getRanking().getProperties().get("vespa.term.1.docfreq"));
+        assertEquals("13", selectQuery.getRanking().getProperties().get("vespa.term.1.docfreq").get(0));
+        assertEquals("101", selectQuery.getRanking().getProperties().get("vespa.term.1.docfreq").get(1));
     }
 
     @Test
@@ -104,6 +131,33 @@ public class YqlJsonQueryFeatureParityTest {
                 "{ 'in' : ['field', 42, 22] }");
         assertWhereParity("string in ('a', 'b')",
                 "{ 'in' : ['string', 'a', 'b'] }");
+    }
+
+    @Test
+    void testInWithAnnotations() {
+        assertWhereParity("{label: \"color\", ranked: false, weight: 250}string in ('a', 'b')",
+                "{ 'in' : { 'children' : ['string', 'a', 'b'], 'attributes' : { 'label' : 'color', 'ranked' : false, 'weight' : 250 } } }");
+        assertWhereParity("{label: \"yr\", ranked: false, weight: 250}field in (42, 22)",
+                "{ 'in' : { 'children' : ['field', 42, 22], 'attributes' : { 'label' : 'yr', 'ranked' : false, 'weight' : 250 } } }");
+    }
+
+    @Test
+    void testLabeledJsonInEmitsLabelId() {
+        assertJsonInLabelId("color",
+                            "{ 'in' : { 'children' : ['string', 'red', 'blue'], 'attributes' : { 'label' : 'color' } } }");
+        assertJsonInLabelId("yr",
+                            "{ 'in' : { 'children' : ['field', 2020, 2021], 'attributes' : { 'label' : 'yr' } } }");
+    }
+
+    private void assertJsonInLabelId(String label, String jsonWhere) {
+        var normalizedJson = SlimeUtils.toJson(SlimeUtils.jsonToSlime(jsonWhere));
+        var selectTree = selectParser.parse(new Parsable().setSelect(new Select(normalizedJson, "", new Query())));
+        var query = new Query();
+        query.getModel().getQueryTree().setRoot(selectTree.getRoot());
+        query.prepare();
+        var item = (TaggableItem) selectTree.getRoot();
+        assertEquals(String.valueOf(item.getUniqueID()),
+                     query.getRanking().getProperties().get("vespa.label." + label + ".id").get(0));
     }
 
     @Test
@@ -300,6 +354,18 @@ public class YqlJsonQueryFeatureParityTest {
     }
 
     @Test
+    void testSparseTensorWand() {
+        assertWhereParity("sparseTensorWand(f1field, q2prop)",
+                "{ 'sparseTensorWand' : ['f1field', 'q2prop'] }");
+    }
+
+    @Test
+    void testSparseTensorWandWithAnnotations() {
+        assertWhereParity("{label: 'foo', ranked: false, targetHits: 37, scoreThreshold: 1.5}sparseTensorWand(f1field, q2prop)",
+                "{ 'sparseTensorWand' : { 'children' : ['f1field', 'q2prop'], 'attributes' : { 'label' : 'foo', 'ranked' : false, 'targetHits' : 37, 'scoreThreshold' : 1.5 } } }");
+    }
+
+    @Test
     void testTrueClause() {
         assertWhereParity("true", "true");
     }
@@ -338,6 +404,26 @@ public class YqlJsonQueryFeatureParityTest {
         assertGroupingParity(
                 "all(group(predefined(price, bucket[1, 2>, bucket[3, 4>)))",
                 "[ { 'all' : { 'group' : { 'predefined' : [ 'price', { 'bucket' : [1, 2] }, { 'bucket' : [3, 4] } ] } } } ]");
+    }
+
+    @Test
+    void testGroupingWithParameters() {
+        Map<String, String> parameters = Map.of("pattern", "ba.*", "zones", "x, y");
+        Query query = new Query();
+        parameters.forEach((name, value) -> query.properties().set(name, value));
+        yqlParser.setUserQuery(query);
+        yqlParser.parse(new Parsable().setQuery("select * from sources * where true | " +
+                                                "all(group(a) filter(regex(@pattern, a) and in(a, @zones)) each(output(count())))"));
+        var yqlSteps = yqlParser.getGroupingSteps();
+
+        var json = "[ { 'all' : { 'group' : 'a', 'filter' : 'regex(@pattern, a) and in(a, @zones)', 'each' : { 'output' : 'count()' } } } ]";
+        var selectSteps = selectParser.getGroupingSteps(new String(SlimeUtils.toJson(SlimeUtils.jsonToSlime(json))),
+                                                        parameters::get);
+
+        assertEquals(1, selectSteps.size());
+        assertEquals("all(group(a) filter((regex(\"ba.*\", a) and in(a, \"x\", \"y\"))) each(output(count())))",
+                     selectSteps.get(0).getOperation().toString());
+        assertEquals(yqlSteps.get(0).getOperation().toString(), selectSteps.get(0).getOperation().toString());
     }
 
     @Test

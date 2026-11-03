@@ -33,7 +33,7 @@ SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION DEC)
 
 find_package(Threads REQUIRED)
 
-find_package(LLVM REQUIRED CONFIG)
+find_package(LLVM CONFIG REQUIRED)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 message(STATUS "LLVM_INCLUDE_DIRS is ${LLVM_INCLUDE_DIRS}")
@@ -51,7 +51,10 @@ endif()
 
 find_package(GTest REQUIRED)
 
-find_package(Protobuf REQUIRED CONFIG)
+find_package(re2 CONFIG REQUIRED)
+find_package(Protobuf CONFIG REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
+find_package(opentelemetry-cpp CONFIG REQUIRED COMPONENTS api sdk exporters_ostream exporters_in_memory exporters_otlp_grpc)
 
 include(build_settings.cmake)
 include(cxx_settings.cmake)
@@ -156,6 +159,7 @@ add_subdirectory(metrics-proxy)
 add_subdirectory(model-evaluation)
 add_subdirectory(model-integration)
 add_subdirectory(opennlp-linguistics)
+add_subdirectory(opentelemetry)
 add_subdirectory(persistence)
 add_subdirectory(predicate-search)
 add_subdirectory(searchcore)

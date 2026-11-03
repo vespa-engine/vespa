@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "name_collection.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::metrics {
 
@@ -9,10 +9,10 @@ using Guard = std::lock_guard<std::mutex>;
 
 NameCollection::NameCollection() {
     size_t first = resolve("");
-    assert(first == 0);
-    assert(lookup(first) == "");
-    assert(_names_by_id.size() == 1);
-    assert(_names.size() == 1);
+    CHECK(first == 0);
+    CHECK(lookup(first) == "");
+    CHECK(_names_by_id.size() == 1);
+    CHECK(_names.size() == 1);
     (void)first; // in case of NOP asserts
 }
 
@@ -20,7 +20,7 @@ NameCollection::~NameCollection() = default;
 
 const std::string& NameCollection::lookup(size_t id) const {
     Guard guard(_lock);
-    assert(id < _names_by_id.size());
+    CHECK(id < _names_by_id.size());
     return _names_by_id[id]->first;
 }
 

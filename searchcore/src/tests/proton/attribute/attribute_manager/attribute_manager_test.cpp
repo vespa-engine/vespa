@@ -97,8 +97,9 @@ public:
         std::ostringstream os;
         std::sort(_names.begin(), _names.end());
         for (const std::string& name : _names) {
-            if (!os.str().empty())
+            if (!os.str().empty()) {
                 os << ",";
+            }
             os << name;
         }
         return os.str();

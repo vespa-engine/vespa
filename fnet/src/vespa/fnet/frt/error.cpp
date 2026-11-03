@@ -3,10 +3,12 @@
 #include "error.h"
 
 const char* FRT_GetErrorCodeName(uint32_t errorCode) {
-    if (errorCode == 0)
+    if (errorCode == 0) {
         return "FRTE_NO_ERROR";
-    if (errorCode > 0xffff)
+    }
+    if (errorCode > 0xffff) {
         return "[APPLICATION ERROR]";
+    }
 
     if (errorCode >= FRTE_RPC_FIRST && errorCode <= FRTE_RPC_LAST) {
         switch (errorCode) {
@@ -44,10 +46,12 @@ const char* FRT_GetErrorCodeName(uint32_t errorCode) {
 }
 
 const char* FRT_GetDefaultErrorMessage(uint32_t errorCode) {
-    if (errorCode == 0)
+    if (errorCode == 0) {
         return "No error";
-    if (errorCode > 0xffff)
+    }
+    if (errorCode > 0xffff) {
         return "[APPLICATION ERROR]";
+    }
 
     if (errorCode >= FRTE_RPC_FIRST && errorCode <= FRTE_RPC_LAST) {
         switch (errorCode) {

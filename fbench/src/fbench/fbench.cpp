@@ -275,8 +275,9 @@ void FBench::PrintSummary() {
     printf("zero hit percentage:    %8.2f %%\n",
            (status._requestCnt > 0) ? 100.0 * (double(status._zeroHitQueries) / status._requestCnt) : 0.0);
     printf("http request status breakdown:\n");
-    for (const auto& entry : status._requestStatusDistribution)
+    for (const auto& entry : status._requestStatusDistribution) {
         printf("  %8u : %8u \n", entry.first, entry.second);
+    }
 
     fflush(stdout);
 }
@@ -427,8 +428,9 @@ int FBench::Main(int argc, char* argv[]) {
             break;
         case 'p':
             printInterval = atoi(optarg);
-            if (printInterval < 0)
+            if (printInterval < 0) {
                 optError = true;
+            }
             break;
         case 'k':
             keepAlive = false;

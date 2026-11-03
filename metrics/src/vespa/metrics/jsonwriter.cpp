@@ -5,7 +5,8 @@
 #include "metricsnapshot.h"
 #include "valuemetric.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <iterator>
 
 namespace metrics {
@@ -24,7 +25,7 @@ bool JsonWriter::visitSnapshot(const MetricSnapshot& snapshot) {
 }
 
 void JsonWriter::doneVisitingSnapshot(const MetricSnapshot&) {
-    assert(_flag == SNAPSHOT_STARTED);
+    CHECK(_flag == SNAPSHOT_STARTED);
     _stream << End() << End();
     _flag = NOT_STARTED;
     _period = 0;
@@ -121,7 +122,7 @@ void JsonWriter::doneVisiting() {
         _stream << End();
         _flag = NOT_STARTED;
     }
-    assert(_flag == NOT_STARTED);
+    CHECK(_flag == NOT_STARTED);
 }
 
 } // namespace metrics

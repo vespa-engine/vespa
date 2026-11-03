@@ -5,15 +5,11 @@ import com.yahoo.json.Jackson;
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.model.api.ApplicationClusterInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
@@ -82,12 +78,6 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
     private final ExecutorService responseHandlerExecutor =
             Executors.newSingleThreadExecutor(new DaemonThreadFactory("config-convergence-checker-response-handler-"));
-    private final BooleanFlag useStateV1ExtendedInfo;
-
-    @Inject
-    public ConfigConvergenceChecker(FlagSource flagSource) {
-        this.useStateV1ExtendedInfo = Flags.USE_WANTED_GENERATION_IN_CONVERGENCE_CHECK.bindTo(flagSource);
-    }
 
     /** Fetches the active config generation for all services in the given application. */
     public Map<ServiceInfo, Long> getServiceConfigGenerations(Application application, Duration timeoutPerService) {
@@ -111,15 +101,6 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     /** Checks all services in given application. Returns the minimum current generation of all services */
     public ServiceListResponse checkConvergenceForAllServices(Application application, Duration timeoutPerService) {
         return checkConvergence(application, timeoutPerService, new HostsToCheck(Set.of()));
-    }
-
-    /**
-     * Checks services except those which defer config changes until restart in the given application.
-     * Returns the minimum current generation of those services.
-     */
-    public ServiceListResponse checkConvergenceUnlessDeferringChangesUntilRestart(Application application, Set<String> hostnames) {
-        Duration timeoutPerService = Duration.ofSeconds(10);
-        return checkConvergence(application, timeoutPerService, new HostsToCheck(hostnames));
     }
 
     private ServiceListResponse checkConvergence(Application application, Duration timeoutPerService, HostsToCheck hostsToCheck) {
@@ -243,7 +224,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             JsonNode configNode = json.get("config");
             long generation = configNode.get("generation").asLong(-1);
             long wantedGeneration = configNode.path("wantedGeneration").asLong(generation);
-            if (useStateV1ExtendedInfo.value() && configNode.get("message") != null) {
+            if (configNode.get("message") != null) {
                 return ServiceGenerationResult.configFailed(wantedGeneration,
                                                             configNode.path("message").asText("unknown failure"));
             }
@@ -406,12 +387,19 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         public final long wantedGeneration;
         public final long currentGeneration;
         public final boolean converged;
+        public final PendingRestarts pendingRestarts; // Pending restarts for services which have converged on the wanted generation, but need a restart to apply changes
 
         public ServiceListResponse(List<Service> services, long wantedGeneration, long currentGeneration, boolean converged) {
+            this(services, wantedGeneration, currentGeneration, converged, PendingRestarts.empty());
+        }
+
+        private ServiceListResponse(List<Service> services, long wantedGeneration, long currentGeneration,
+                                    boolean converged, PendingRestarts pendingRestarts) {
             this.services.addAll(services);
             this.wantedGeneration = wantedGeneration;
             this.currentGeneration = currentGeneration;
             this.converged = converged;
+            this.pendingRestarts = pendingRestarts;
         }
 
         public ServiceListResponse(Map<ServiceInfo, Long> services, long wantedGeneration, long currentGeneration) {
@@ -421,8 +409,10 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                  wantedGeneration, currentGeneration, currentGeneration >= wantedGeneration);
         }
 
-        public ServiceListResponse unconverged() {
-            return new ServiceListResponse(services, wantedGeneration, currentGeneration, false);
+        /** Returns a copy of this with the given pending restarts, not converged if there are any */
+        public ServiceListResponse withPendingRestarts(PendingRestarts pendingRestarts) {
+            return new ServiceListResponse(services, wantedGeneration, currentGeneration,
+                                           converged && pendingRestarts.isEmpty(), pendingRestarts);
         }
 
         public List<Service> services() { return services; }

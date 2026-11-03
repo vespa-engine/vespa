@@ -56,6 +56,15 @@ public class SortingDegraderTestCase {
     }
 
     @Test
+    void testDegradingNonDefaultTotalMaxHits() {
+        Query query = new Query("?ranking.sorting=-a1%20-a2&ranking.matchPhase.totalMaxHits=370");
+        execute(query);
+        assertEquals("a1", query.getRanking().getMatchPhase().getAttribute());
+        assertNull(query.getRanking().getMatchPhase().getMaxHits());
+        assertEquals(370l, query.getRanking().getMatchPhase().getTotalMaxHits().longValue());
+    }
+
+    @Test
     void testDegradingNonDefaultMaxFilterCoverage() {
         Query query = new Query("?ranking.sorting=-a1%20-a2&ranking.matchPhase.maxFilterCoverage=0.37");
         execute(query);
@@ -186,6 +195,22 @@ public class SortingDegraderTestCase {
         test.addIndex(nonFastSearchAttribute);
         test.addIndex(stringAttribute);
         return new IndexFacts(new IndexModel(test));
+    }
+
+    @Test
+    void testNoDegradingWhenLeadingFeatureSorter() {
+        Query query = new Query("?ranking.sorting=" +
+                                java.net.URLEncoder.encode("-feature(a1)", java.nio.charset.StandardCharsets.UTF_8));
+        execute(query);
+        assertNull(query.getRanking().getMatchPhase().getAttribute());
+    }
+
+    @Test
+    void testDegradingWhenLeadingAttributeBeforeFeature() {
+        Query query = new Query("?ranking.sorting=" +
+                                java.net.URLEncoder.encode("-a1 -feature(foo)", java.nio.charset.StandardCharsets.UTF_8));
+        execute(query);
+        assertEquals("a1", query.getRanking().getMatchPhase().getAttribute());
     }
 
 }

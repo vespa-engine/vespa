@@ -2,17 +2,20 @@
 
 #include "databuffer.h"
 
+#include <vespa/check_require.h>
+
 #include <cstdio>
 
 FNET_DataBuffer::FNET_DataBuffer(uint32_t len)
     : _bufstart(nullptr), _bufend(nullptr), _datapt(nullptr), _freept(nullptr) {
-    if (len > 0 && len < 256)
+    if (len > 0 && len < 256) {
         len = 256;
+    }
 
     if (len > 0) {
         Alloc::alloc(len).swap(_ownedBuf);
         _bufstart = static_cast<char*>(_ownedBuf.get());
-        assert(_bufstart != nullptr);
+        CHECK(_bufstart != nullptr);
     } else { // len == 0
         _bufstart = nullptr;
     }
@@ -28,17 +31,17 @@ FNET_DataBuffer::~FNET_DataBuffer() {
 }
 
 void FNET_DataBuffer::FreeToData(uint32_t len) {
-    assert(GetFreeLen() >= len);
+    CHECK(GetFreeLen() >= len);
     _freept += len;
 }
 
 void FNET_DataBuffer::DeadToData(uint32_t len) {
-    assert(GetDeadLen() >= len);
+    CHECK(GetDeadLen() >= len);
     _datapt -= len;
 }
 
 void FNET_DataBuffer::DataToFree(uint32_t len) {
-    assert(GetDataLen() >= len);
+    CHECK(GetDataLen() >= len);
     _freept -= len;
 }
 
@@ -66,8 +69,9 @@ void FNET_DataBuffer::Pack(uint32_t needbytes) {
         if (bufsize < 256) {
             bufsize = 256;
         }
-        while (bufsize - GetDataLen() < needbytes)
+        while (bufsize - GetDataLen() < needbytes) {
             bufsize *= 2;
+        }
 
         Alloc newBuf(Alloc::alloc(bufsize));
         if (_datapt != nullptr) [[likely]] {
@@ -86,8 +90,9 @@ void FNET_DataBuffer::Pack(uint32_t needbytes) {
 }
 
 bool FNET_DataBuffer::Equals(FNET_DataBuffer* other) {
-    if (GetDataLen() != other->GetDataLen())
+    if (GetDataLen() != other->GetDataLen()) {
         return false;
+    }
     return memcmp(GetData(), other->GetData(), GetDataLen()) == 0;
 }
 
@@ -97,10 +102,12 @@ void FNET_DataBuffer::HexDump() {
     uint32_t i = 0;
     while (pt < _freept) {
         printf("%x ", (unsigned char)*pt++);
-        if ((++i % 16) == 0)
+        if ((++i % 16) == 0) {
             printf("\n");
+        }
     }
-    if ((i % 16) != 0)
+    if ((i % 16) != 0) {
         printf("\n");
+    }
     printf("*** FNET_DataBuffer HexDump END ***\n");
 }

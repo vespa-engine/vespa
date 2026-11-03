@@ -4,7 +4,7 @@
 
 #include "i_gid_to_lid_change_listener.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton {
 
@@ -18,7 +18,7 @@ GidToLidChangeRegistrator::~GidToLidChangeRegistrator() {
 }
 
 void GidToLidChangeRegistrator::addListener(std::unique_ptr<IGidToLidChangeListener> listener) {
-    assert(listener->getDocTypeName() == _docTypeName);
+    CHECK(listener->getDocTypeName() == _docTypeName);
     _keepNames.insert(listener->getName());
     _handler->addListener(std::move(listener));
 }

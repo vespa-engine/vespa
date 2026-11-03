@@ -4,10 +4,10 @@
 
 #include "element_id_extractor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.h>
 
-#include <cassert>
 #include <functional>
 
 using search::fef::TermFieldMatchData;
@@ -165,9 +165,9 @@ SimplePhraseSearch::SimplePhraseSearch(Children children, fef::MatchData::UP md,
       _unpacked_docid(beginId()),
       _strict(strict),
       _iterators(getChildren().size()) {
-    assert(!getChildren().empty());
-    assert(getChildren().size() == _childMatch.size());
-    assert(getChildren().size() == _eval_order.size());
+    CHECK(!getChildren().empty());
+    CHECK(getChildren().size() == _childMatch.size());
+    CHECK(getChildren().size() == _eval_order.size());
 }
 
 SimplePhraseSearch::~SimplePhraseSearch() = default;

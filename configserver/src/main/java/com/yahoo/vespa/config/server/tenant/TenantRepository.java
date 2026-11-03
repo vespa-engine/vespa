@@ -150,7 +150,7 @@ public class TenantRepository {
              metrics,
              new StripedExecutor<>(),
              new StripedExecutor<>(),
-             new FileDistributionFactory(configserverConfig, fileDirectory, flagSource),
+             new FileDistributionFactory(configserverConfig, fileDirectory),
              flagSource,
              Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())),
              hostProvisionerProvider,
@@ -229,6 +229,8 @@ public class TenantRepository {
                                                                   checkForRemovedApplicationsInterval.getSeconds(),
                                                                   TimeUnit.SECONDS);
     }
+
+    public Zone zone() { return zone; }
 
     private ExecutorService createModelBuilderExecutor() {
         final long GB = 1024*1024*1024;

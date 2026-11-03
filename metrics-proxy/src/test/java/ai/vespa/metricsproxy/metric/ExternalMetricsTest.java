@@ -82,6 +82,7 @@ public class ExternalMetricsTest {
                 .putDimension(toDimensionId(PublicDimensions.HOSTNAME), "host1")
                 .putDimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME), "parent1")
                 .putDimension(toDimensionId(PublicDimensions.OS_VERSION), "8.4.0")
+                .putDimension(toDimensionId(PublicDimensions.RETIRING), "true")
                 .putDimension(toDimensionId("role"), "tenants")
                 .putDimension(toDimensionId("state"), "active")
                 .putDimension(toDimensionId("zone"), "prod.us-east-1");
@@ -90,17 +91,18 @@ public class ExternalMetricsTest {
                 new MetricsConsumers(new ConsumersConfig.Builder().build()), TestUtil.standardDimensionMapping());
         Map<DimensionId, String> hostDimensions = externalMetrics.extractHostDimensions(List.of(packet));
 
-        assertEquals(3, hostDimensions.size());
+        assertEquals(4, hostDimensions.size());
         assertEquals("host1", hostDimensions.get(toDimensionId(PublicDimensions.HOSTNAME)));
         assertEquals("parent1", hostDimensions.get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
         assertEquals("8.4.0", hostDimensions.get(toDimensionId(PublicDimensions.OS_VERSION)));
+        assertEquals("true", hostDimensions.get(toDimensionId(PublicDimensions.RETIRING)));
         assertFalse(hostDimensions.containsKey(toDimensionId("role")));
         assertFalse(hostDimensions.containsKey(toDimensionId("state")));
         assertFalse(hostDimensions.containsKey(toDimensionId("zone")));
     }
 
     @Test
-    public void osVersion_is_stripped_from_carrier_packets_but_host_and_parentHostname_kept() {
+    public void host_life_dimensions_are_stripped_from_carrier_packets_but_host_and_parentHostname_kept() {
         MetricsConsumers noConsumers = new MetricsConsumers(new ConsumersConfig.Builder().build());
         ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers, TestUtil.standardDimensionMapping());
         externalMetrics.setExtraMetrics(List.of(
@@ -108,6 +110,7 @@ public class ExternalMetricsTest {
                         .putDimension(toDimensionId(PublicDimensions.HOSTNAME), "host1")
                         .putDimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME), "parent1")
                         .putDimension(toDimensionId(PublicDimensions.OS_VERSION), "8.4.0")
+                        .putDimension(toDimensionId(PublicDimensions.RETIRING), "true")
                         .putDimension(toDimensionId("role"), "tenants")));
 
         Map<DimensionId, String> dims = externalMetrics.getMetrics().get(0).build().dimensions();
@@ -115,20 +118,23 @@ public class ExternalMetricsTest {
         assertEquals("parent1", dims.get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
         assertEquals("tenants", dims.get(toDimensionId("role")));
         assertFalse(dims.containsKey(toDimensionId(PublicDimensions.OS_VERSION)));
+        assertFalse(dims.containsKey(toDimensionId(PublicDimensions.RETIRING)));
     }
 
     @Test
-    public void osVersion_is_kept_on_host_life_packets() {
+    public void host_life_dimensions_are_kept_on_host_life_packets() {
         MetricsConsumers noConsumers = new MetricsConsumers(new ConsumersConfig.Builder().build());
         ExternalMetrics externalMetrics = new ExternalMetrics(noConsumers, TestUtil.standardDimensionMapping());
         externalMetrics.setExtraMetrics(List.of(
                 new MetricsPacket.Builder(toServiceId("host_life"))
                         .putDimension(toDimensionId(PublicDimensions.HOSTNAME), "host1")
                         .putDimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME), "parent1")
-                        .putDimension(toDimensionId(PublicDimensions.OS_VERSION), "8.4.0")));
+                        .putDimension(toDimensionId(PublicDimensions.OS_VERSION), "8.4.0")
+                        .putDimension(toDimensionId(PublicDimensions.RETIRING), "true")));
 
         Map<DimensionId, String> dims = externalMetrics.getMetrics().get(0).build().dimensions();
         assertEquals("8.4.0", dims.get(toDimensionId(PublicDimensions.OS_VERSION)));
+        assertEquals("true", dims.get(toDimensionId(PublicDimensions.RETIRING)));
         assertEquals("host1", dims.get(toDimensionId(PublicDimensions.HOSTNAME)));
         assertEquals("parent1", dims.get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
     }

@@ -2,6 +2,7 @@
 
 #include "value.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/compressor.h>
 
 #include <xxhash.h>
@@ -55,7 +56,7 @@ vespalib::alloc::Alloc compact(size_t sz, vespalib::alloc::Alloc buf) {
 
 } // namespace
 void Value::set(vespalib::DataBuffer&& buf, ssize_t len, CompressionConfig compression) {
-    assert(len < std::numeric_limits<uint32_t>::max());
+    CHECK(len < std::numeric_limits<uint32_t>::max());
     // Underlying buffer must be identical to allow swap.
     vespalib::DataBuffer     compressed(buf.getData(), 0u);
     vespalib::ConstBufferRef input(buf.getData(), len);
@@ -68,8 +69,8 @@ void Value::set(vespalib::DataBuffer&& buf, ssize_t len, CompressionConfig compr
                                                                 ? std::move(buf).stealBuffer()
                                                                 : std::move(compressed).stealBuffer()));
 
-    assert(((type == CompressionConfig::NONE) && (len == ssize_t(_compressedSize))) ||
-           ((type != CompressionConfig::NONE) && (len > ssize_t(_compressedSize))));
+    CHECK(((type == CompressionConfig::NONE) && (len == ssize_t(_compressedSize))) ||
+          ((type != CompressionConfig::NONE) && (len > ssize_t(_compressedSize))));
 }
 
 Value::Result Value::decompressed() const {

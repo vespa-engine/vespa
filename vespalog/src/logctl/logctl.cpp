@@ -12,6 +12,7 @@
 #include <cstring>
 #include <optional>
 
+#include <vespa/log/log.h>
 LOG_SETUP("vespa-logctl");
 
 using namespace ns_log;
@@ -57,10 +58,12 @@ static std::vector<std::string> findAllFiles(const char* dir) {
 
     struct dirent* entry;
     while ((entry = readdir(d)) != nullptr) {
-        if (strcmp(entry->d_name, ".") == 0)
+        if (strcmp(entry->d_name, ".") == 0) {
             continue;
-        if (strcmp(entry->d_name, "..") == 0)
+        }
+        if (strcmp(entry->d_name, "..") == 0) {
             continue;
+        }
 
         const char* suffix = ".logcontrol";
 
@@ -106,8 +109,9 @@ int main(int argc, char** argv) {
 
     while (1) {
         int c = getopt(argc, argv, "acnrf:d:h");
-        if (c == -1)
+        if (c == -1) {
             break;
+        }
         switch (c) {
         case 'a':
             doAllFiles = true;
@@ -216,8 +220,9 @@ int main(int argc, char** argv) {
             hadFailure = true;
         }
     }
-    if (hadFailure)
+    if (hadFailure) {
         return EXIT_FAILURE;
+    }
     if (!hadSuccess) {
         fprintf(stderr, "no logcontrol files updates\n");
         return EXIT_FAILURE;

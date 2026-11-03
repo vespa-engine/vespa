@@ -15,7 +15,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.DefContent;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
@@ -71,10 +71,10 @@ public class SuperModelControllerTest {
 
     @Test(expected = UnknownConfigDefinitionException.class)
     public void test_unknown_config_definition() {
-        PayloadChecksums payloadChecksums = PayloadChecksums.empty();
+        PayloadChecksum payloadChecksum = PayloadChecksum.empty();
         Request request = createWithParams(new ConfigKey<>("foo", "id", "bar", null),
                                            DefContent.fromList(List.of()), "fromHost",
-                                           payloadChecksums, 1, 1, Trace.createDummy(),
+                                           payloadChecksum, 1, 1, Trace.createDummy(),
                                            CompressionType.UNCOMPRESSED, Optional.empty())
                 .getRequest();
         JRTServerConfigRequestV3 v3Request = JRTServerConfigRequestV3.createFromRequest(request);

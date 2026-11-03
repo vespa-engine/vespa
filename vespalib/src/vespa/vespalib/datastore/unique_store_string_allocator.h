@@ -8,7 +8,8 @@
 #include "unique_store_add_result.h"
 #include "unique_store_entry.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <string>
 
 namespace vespalib::alloc {
@@ -40,7 +41,7 @@ public:
 
     UniqueStoreSmallStringEntry(const char* value, size_t value_len, size_t array_size) noexcept
         : UniqueStoreEntryBase() {
-        assert(value_offset() + value_len < array_size);
+        CHECK(value_offset() + value_len < array_size);
         memcpy(&_value[0], value, value_len);
         memset(&_value[0] + value_len, 0, array_size - value_len - value_offset());
     }

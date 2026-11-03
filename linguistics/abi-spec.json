@@ -465,6 +465,7 @@
     "methods" : [
       "public abstract void sampleEmbeddingLatency(double, com.yahoo.language.process.Embedder$Context)",
       "public abstract void sampleSequenceLength(long, com.yahoo.language.process.Embedder$Context)",
+      "public void samplePaddedSequenceLength(long, com.yahoo.language.process.Embedder$Context)",
       "public abstract void sampleRequestCount(com.yahoo.language.process.Embedder$Context)",
       "public abstract void sampleRequestFailure(com.yahoo.language.process.Embedder$Context, int)",
       "public static com.yahoo.language.process.Embedder$Runtime testInstance()"
@@ -838,6 +839,7 @@
     "fields" : [
       "public static final enum com.yahoo.language.process.StemMode NONE",
       "public static final enum com.yahoo.language.process.StemMode DEFAULT",
+      "public static final enum com.yahoo.language.process.StemMode ALL_STEMS",
       "public static final enum com.yahoo.language.process.StemMode ALL",
       "public static final enum com.yahoo.language.process.StemMode SHORTEST",
       "public static final enum com.yahoo.language.process.StemMode BEST"
@@ -901,6 +903,7 @@
       "public abstract int getNumComponents()",
       "public abstract com.yahoo.language.process.Token getComponent(int)",
       "public abstract long getOffset()",
+      "public long getPositionIncrement()",
       "public abstract com.yahoo.language.process.TokenScript getScript()",
       "public abstract java.lang.String getTokenString()",
       "public abstract boolean isSpecialToken()",

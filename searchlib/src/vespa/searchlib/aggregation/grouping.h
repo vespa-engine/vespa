@@ -85,6 +85,7 @@ public:
     const GroupingLevelList& getLevels() const noexcept { return _levels; }
     const Group& getRoot() const noexcept { return _root; }
     bool needResort() const;
+    std::span<const RankedHit> limit_to_top_n(std::span<const RankedHit> hits) const noexcept;
 
     GroupingLevelList& levels() noexcept { return _levels; }
     Group& root() noexcept { return _root; }
@@ -107,7 +108,7 @@ public:
     void cleanupAttributeReferences();
     // Only used by tests
     void aggregate(DocId from, DocId to);
-    void aggregate(const RankedHit* rankedHit, unsigned int len);
+    void aggregate(std::span<const RankedHit> hits);
 };
 
 } // namespace search::aggregation

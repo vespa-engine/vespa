@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <sys/mman.h>
 
-#include <cassert>
 #include <filesystem>
 #include <memory>
 
@@ -32,7 +32,7 @@ void MemoryMapTestImpl(int mmap_flags) {
     }
     EXPECT_EQ(file.Write2(buffer, bufSize), bufSize);
     bool close_ok = file.Close();
-    assert(close_ok);
+    CHECK(close_ok);
     file.enableMemoryMap(mmap_flags);
     ASSERT_TRUE(file.OpenReadOnly());
     bool  mmapEnabled = file.IsMemoryMapped();
@@ -68,7 +68,7 @@ TEST(FileTest, DirectIOTest) {
     }
     EXPECT_EQ(file.Write2(buffer, bufSize), bufSize);
     bool close_ok = file.Close();
-    assert(close_ok);
+    CHECK(close_ok);
     file.EnableDirectIO();
     ASSERT_TRUE(file.OpenReadOnly());
     size_t memoryAlignment = 0;
@@ -196,11 +196,6 @@ TEST(FileTest, ReadBufTest) {
     buffer[6] = '\0';
     EXPECT_EQ(file.getPosition(), 4);
     EXPECT_EQ(strcmp(buffer, "a test"), 0);
-}
-
-TEST(FileTest, DiskFreeSpaceTest) {
-    EXPECT_NE(FastOS_File::GetFreeDiskSpace(roFilename.c_str()), int64_t(-1));
-    EXPECT_NE(FastOS_File::GetFreeDiskSpace("."), int64_t(-1));
 }
 
 TEST(FileTest, MaxLengthTest) {

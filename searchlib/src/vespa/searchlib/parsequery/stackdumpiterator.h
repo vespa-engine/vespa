@@ -37,6 +37,7 @@ private:
     VESPA_DLL_LOCAL void readFuzzy(const char*& p);
     VESPA_DLL_LOCAL void read_string_in(const char*& p);
     VESPA_DLL_LOCAL void read_numeric_in(const char*& p);
+    VESPA_DLL_LOCAL void read_string_range_term(const char*& p);
     VESPA_DLL_LOCAL bool readNext();
 
 public:

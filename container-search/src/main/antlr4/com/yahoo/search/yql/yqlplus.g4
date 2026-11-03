@@ -410,14 +410,18 @@ dereferenced_expression
 	     (
 	        indexref[in_select]
           | propertyref
+          | mapref[in_select]
 	     )*
 	;
-	
+
 indexref[boolean in_select]
 	:	LBRACKET idx=expression[in_select] RBRACKET
 	;
 propertyref
 	: 	DOT nm=IDENTIFIER
+	;
+mapref[boolean in_select]
+	:	LBRACE key=expression[in_select] RBRACE
 	;
 
 primary_expression

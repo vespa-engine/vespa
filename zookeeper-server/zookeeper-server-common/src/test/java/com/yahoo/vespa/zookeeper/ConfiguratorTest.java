@@ -201,7 +201,7 @@ public class ConfiguratorTest {
                "initLimit=20\n" +
                "syncLimit=15\n" +
                "maxClientCnxns=0\n" +
-               "snapCount=50000\n" +
+               "snapCount=100000\n" +
                "dataDir=" + getDefaults().underVespaHome("var/zookeeper") + "\n" +
                "autopurge.purgeInterval=1\n" +
                "autopurge.snapRetainCount=15\n" +
@@ -230,6 +230,7 @@ public class ConfiguratorTest {
                ssl.quorum.ciphersuites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
                ssl.quorum.enabledProtocols=TLSv1.2,TLSv1.3
                ssl.quorum.clientAuth=NEED
+               ssl.quorum.hostnameVerification=false
                """;
     }
 
@@ -239,6 +240,7 @@ public class ConfiguratorTest {
                ssl.ciphersuites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
                ssl.enabledProtocols=TLSv1.2,TLSv1.3
                ssl.clientAuth=NEED
+               ssl.hostnameVerification=false
                """;
     }
 

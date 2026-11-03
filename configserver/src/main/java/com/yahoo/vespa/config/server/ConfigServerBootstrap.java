@@ -110,11 +110,12 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     @Override
     public void deconstruct() {
         log.log(Level.FINE, "Stopping config server");
+        configServerMaintenance.signalShutdown(); // Stop maintainers now, don't wait for RPC server draining below
         down();
         server.stop();
         log.log(Level.FINE, "RPC server stopped");
         rpcServerExecutor.shutdown();
-        configServerMaintenance.shutdown();
+        configServerMaintenance.awaitShutdown();
     }
 
     @Override

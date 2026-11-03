@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-08-08
+Last updated: 2026-11-02
 
 ---
 
@@ -58,9 +58,9 @@ Last updated: 2026-08-08
 
 ---
 
-## @shikijs/vscode-textmate 10.0.2 — MIT
+## @shikijs/vscode-textmate 10.1.0 — MIT
 
-- Homepage: <https://github.com/shikijs/vscode-textmate#readme>
+- Homepage: <https://registry.npmjs.org/@shikijs/vscode-textmate/-/vscode-textmate-10.1.0.tgz>
 - Copyright Microsoft Corporation
 
 ---
@@ -86,7 +86,7 @@ Last updated: 2026-08-08
 
 ---
 
-## @ungap/structured-clone 1.3.3 — ISC
+## @ungap/structured-clone 1.4.0 — ISC
 
 - Homepage: <https://github.com/ungap/structured-clone#readme>
 - Copyright 2021 Andrea Giammarchi
@@ -162,19 +162,19 @@ Last updated: 2026-08-08
 
 ---
 
-## bigdecimal 4.1.2 — BSD 2
+## bigdecimal 4.1.3 — BSD 2
 
 - Homepage: <https://github.com/ruby/bigdecimal>
 
 ---
 
-## bigdecimal 4.1.2 — Ruby
+## bigdecimal 4.1.3 — Ruby
 
 - Homepage: <https://github.com/ruby/bigdecimal>
 
 ---
 
-## brace-expansion 2.1.4 — MIT
+## brace-expansion 2.1.7 — MIT
 
 - Homepage: <https://github.com/juliangruber/brace-expansion>
 - Copyright 2013 Julian Gruber <julian@juliangruber.com>
@@ -209,6 +209,56 @@ Last updated: 2026-08-08
 
 ---
 
+## com.fasterxml.jackson.core 2.22 — Apache 2.0
+
+- Homepage: <https://github.com/FasterXML/jackson>
+- FasterXML
+
+---
+
+## com.fasterxml.jackson.core 2.22.4 — Apache 2.0
+
+- Homepage: <http://fasterxml.com/>
+- Copyright 2007 Tatu Saloranta tatu.saloranta@iki.fi
+- FasterXML
+
+---
+
+## com.github.luben 1.5.7-19 — BSD 2
+
+- Homepage: <https://github.com/luben/zstd-jni>
+- Copyright 2015 Luben Karavelov/
+
+---
+
+## com.google.errorprone 2.51.0 — Apache 2.0
+
+- Homepage: <https://www.google.com>
+- Copyright 2015 The Error Prone Authors
+- Copyright The Error Prone
+
+---
+
+## com.google.guava 1.0.3 — Apache 2.0
+
+- Homepage: <https://github.com/google/guava>
+- Copyright 2024 The Guava Authors
+
+---
+
+## com.google.guava 33.7.2-jre — Apache 2.0
+
+- Copyright 2008 The Guava Authors
+
+---
+
+## com.google.j2objc 3.1 — Apache 2.0
+
+- Homepage: <https://github.com/google/j2objc/>
+- Copyright 2012 Google Inc
+
+---
+
 ## com.vladsch.flexmark 0.64.8 — BSD 2
 
 - Homepage: <https://github.com/vsch/flexmark-java>
@@ -222,13 +272,28 @@ Last updated: 2026-08-08
 
 ---
 
-## concurrent-ruby 1.3.7 — MIT
+## commons-codec 1.23.0 — Apache 2.0
+
+- Homepage: <https://www.apache.org/>
+- Copyright 2002-2026 The Apache Software Foundation
+- The Apache Software Foundation
+
+---
+
+## commons-io 2.22.0 — Apache 2.0
+
+- Homepage: <https://commons.apache.org/proper/commons-io/>
+- The Apache Software Foundation
+
+---
+
+## concurrent-ruby 1.3.8 — MIT
 
 - Homepage: <http://www.concurrent-ruby.com>
 
 ---
 
-## concurrent-ruby 1.3.7 — Ruby
+## concurrent-ruby 1.3.8 — Ruby
 
 - Homepage: <http://www.concurrent-ruby.com>
 
@@ -242,20 +307,20 @@ Last updated: 2026-08-08
 
 ---
 
-## csv 3.3.5 — BSD 2
+## csv 3.3.6 — BSD 2
 
 - Homepage: <https://github.com/ruby/csv>
 - Copyright 2007-2017 Yukihiro Matsumoto
 - Copyright 2017 pavel
-- Copyright 2005-2016 James Edward Gray II. All rights reserved
-- Copyright 2018 Kouhei Sutou
 - Copyright 2018 Vladislav
+- Copyright 2018 Kouhei Sutou
 - Copyright 2017-2018 Steven Daniels
 - Copyright 2017 Espartaco Palma
 - Copyright 2018 Tomohiro Ogoke
 - Copyright 2017 Marcus Stollsteimer
-- Copyright 2017 Olivier Lacan
+- Copyright 2005-2016 James Edward Gray II
 - Copyright 2017 SHIBATA Hiroshi
+- Copyright 2017 Olivier Lacan
 - Copyright 2018 Mitsutaka Mimura
 
 ---
@@ -368,17 +433,17 @@ Last updated: 2026-08-08
 
 ---
 
-## github.com/fxamacker/cbor/v2 v2.9.2 — MIT
+## github.com/fxamacker/cbor/v2 v2.10.0 — MIT
 
-- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.9.2>
-- Copyright 2019-2024 Faye Amacker
+- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.10.0>
+- Copyright 2019-2026 Faye Amacker
 - Copyright 2019 Faye Amacker
 
 ---
 
-## github.com/go-json-experiment/json v0.0.0-20260520185125-572e7c383686 — BSD 3
+## github.com/go-json-experiment/json v0.0.0-20260820222146-c27c302e5fc3 — BSD 3
 
-- Homepage: <https://pkg.go.dev/github.com/go-json-experiment/json@v0.0.0-20260520185125-572e7c383686>
+- Homepage: <https://pkg.go.dev/github.com/go-json-experiment/json@v0.0.0-20260820222146-c27c302e5fc3>
 - Copyright 2020 The Go Authors
 
 ---
@@ -391,52 +456,23 @@ Last updated: 2026-08-08
 
 ---
 
-## github.com/klauspost/compress v1.18.7 — Apache 2.0
+## github.com/mattn/go-colorable v0.1.16 — MIT
 
-- Homepage: <https://pkg.go.dev/github.com/klauspost/compress@v1.18.7>
-- Copyright 2011 The Snappy-Go Authors
-- Copyright 2016 The filepathx Authors
-- Copyright 2015 Klaus Post
-- Copyright 2016-2017 The New York Times Company
-- Copyright 2012 The Go Authors
-- Copyright 2019 Klaus Post
-
----
-
-## github.com/klauspost/compress v1.18.7 — BSD 3
-
-- Homepage: <https://pkg.go.dev/github.com/klauspost/compress@v1.18.7>
-- Copyright 2011 The Snappy-Go Authors
-- Copyright 2016 The filepathx Authors
-- Copyright 2015 Klaus Post
-- Copyright 2016-2017 The New York Times Company
-- Copyright 2012 The Go Authors
-- Copyright 2019 Klaus Post
-
----
-
-## github.com/klauspost/compress v1.18.7 — MIT
-
-- Homepage: <https://pkg.go.dev/github.com/klauspost/compress@v1.18.7>
-- Copyright 2011 The Snappy-Go Authors
-- Copyright 2016 The filepathx Authors
-- Copyright 2015 Klaus Post
-- Copyright 2016-2017 The New York Times Company
-- Copyright 2012 The Go Authors
-- Copyright 2019 Klaus Post
-
----
-
-## github.com/mattn/go-colorable v0.1.15 — MIT
-
-- Homepage: <https://pkg.go.dev/github.com/mattn/go-colorable@v0.1.15>
+- Homepage: <https://pkg.go.dev/github.com/mattn/go-colorable@v0.1.16>
 - Copyright 2016 Yasuhiro Matsumoto
 
 ---
 
-## github.com/mattn/go-runewidth v0.0.24 — MIT
+## github.com/mattn/go-isatty v0.0.24 — MIT
 
-- Homepage: <https://pkg.go.dev/github.com/mattn/go-runewidth@v0.0.24>
+- Homepage: <https://pkg.go.dev/github.com/mattn/go-isatty@v0.0.24>
+- Copyright Yasuhiro MATSUMOTO <mattn.jp@gmail.com>
+
+---
+
+## github.com/mattn/go-runewidth v0.0.31 — MIT
+
+- Homepage: <https://pkg.go.dev/github.com/mattn/go-runewidth@v0.0.31>
 - Copyright 2016 Yasuhiro Matsumoto
 
 ---
@@ -476,41 +512,66 @@ Last updated: 2026-08-08
 
 ---
 
-## go.yaml.in/yaml/v3 v3.0.4 — Apache 2.0
+## github.com/zalando/go-keyring v0.2.8 — MIT
 
-- Homepage: <https://pkg.go.dev/go.yaml.in/yaml/v3@v3.0.4>
-- Copyright 2011-2019 Canonical Ltd
-- Copyright 2011 when the project was ported over:
-- Copyright files of libyaml, and thus
-- Copyright 2006-2010 Kirill Simonov
+- Homepage: <https://pkg.go.dev/github.com/zalando/go-keyring@v0.2.8>
+- Copyright 2016 Zalando SE
 
 ---
 
-## go.yaml.in/yaml/v3 v3.0.4 — MIT
+## go.yaml.in/yaml/v3 v3.0.5 — Apache 2.0
 
-- Homepage: <https://pkg.go.dev/go.yaml.in/yaml/v3@v3.0.4>
+- Homepage: <https://pkg.go.dev/go.yaml.in/yaml/v3@v3.0.5>
+-  and thus
+- Copyright files of libyaml
 - Copyright 2011-2019 Canonical Ltd
 - Copyright 2011 when the project was ported over:
-- Copyright files of libyaml, and thus
 - Copyright 2006-2010 Kirill Simonov
+- Copyright 2006-2011 Kirill Simonov
 
 ---
 
-## golang.org/x/term v0.45.0 — Golang BSD + Patents
+## go.yaml.in/yaml/v3 v3.0.5 — MIT
 
-- Homepage: <https://pkg.go.dev/golang.org/x/term@v0.45.0>
+- Homepage: <https://pkg.go.dev/go.yaml.in/yaml/v3@v3.0.5>
+-  and thus
+- Copyright files of libyaml
+- Copyright 2011-2019 Canonical Ltd
+- Copyright 2011 when the project was ported over:
+- Copyright 2006-2010 Kirill Simonov
+- Copyright 2006-2011 Kirill Simonov
+
+---
+
+## golang.org/x/net v0.62.0 — Golang BSD + Patents
+
+- Homepage: <https://pkg.go.dev/golang.org/x/net@v0.62.0>
 - Copyright 2009 The Go Authors
 
 ---
 
-## golang.org/x/text v0.40.0 — Golang BSD + Patents
+## golang.org/x/sys v0.49.0 — Golang BSD + Patents
 
-- Homepage: <https://pkg.go.dev/golang.org/x/text@v0.40.0>
+- Homepage: <https://pkg.go.dev/golang.org/x/sys@v0.49.0>
 - Copyright 2009 The Go Authors
 
 ---
 
-## google-protobuf 4.35.0 — BSD 3
+## golang.org/x/term v0.47.0 — Golang BSD + Patents
+
+- Homepage: <https://pkg.go.dev/golang.org/x/term@v0.47.0>
+- Copyright 2009 The Go Authors
+
+---
+
+## golang.org/x/text v0.43.0 — Golang BSD + Patents
+
+- Homepage: <https://pkg.go.dev/golang.org/x/text@v0.43.0>
+- Copyright 2009 The Go Authors
+
+---
+
+## google-protobuf 4.36.2 — BSD 3
 
 - Homepage: <https://developers.google.com/protocol-buffers>
 
@@ -553,7 +614,7 @@ Last updated: 2026-08-08
 
 ---
 
-## hast-util-to-html 9.0.5 — MIT
+## hast-util-to-html 9.0.6 — MIT
 
 - Homepage: <https://github.com/syntax-tree/hast-util-to-html#readme>
 - Copyright Titus Wormer
@@ -568,10 +629,9 @@ Last updated: 2026-08-08
 
 ---
 
-## html-proofer 5.2.1 — MIT
+## html-proofer 5.2.2 — MIT
 
 - Homepage: <https://github.com/gjtorikian/html-proofer>
-- Copyright 2013 Garen Torikian
 
 ---
 
@@ -590,14 +650,14 @@ Last updated: 2026-08-08
 
 ---
 
-## i18n 1.14.8 — MIT
+## i18n 1.15.2 — MIT
 
 - Homepage: <https://github.com/ruby-i18n/i18n>
 - Copyright 2008 The Ruby I18n team
 
 ---
 
-## io-event 1.16.1 — MIT
+## io-event 1.16.4 — MIT
 
 - Homepage: <https://github.com/socketry/io-event>
 -  by Wander Hillen
@@ -619,6 +679,13 @@ Last updated: 2026-08-08
 
 ---
 
+## javax.inject 1 — Apache 2.0
+
+- Homepage: <http://code.google.com/p/atinject/>
+- Copyright 2009 The JSR-330 Expert Group
+
+---
+
 ## jekyll 4.4.1 — MIT
 
 - Homepage: <https://jekyllrb.com>
@@ -626,14 +693,14 @@ Last updated: 2026-08-08
 
 ---
 
-## jekyll-feed 0.17.0 — MIT
+## jekyll-feed 0.18.0 — MIT
 
 - Homepage: <https://github.com/jekyll/jekyll-feed>
 - Copyright 2015 Ben Balter and jekyll-feed contributors
 
 ---
 
-## jekyll-redirect-from 0.16.0 — MIT
+## jekyll-redirect-from 0.17.0 — MIT
 
 - Homepage: <https://github.com/jekyll/jekyll-redirect-from>
 - Copyright 2013 Parker Moore and jekyll-redirect-from contributors
@@ -660,14 +727,14 @@ Last updated: 2026-08-08
 
 ---
 
-## json 2.19.5 — BSD 2
+## json 2.21.2 — BSD 2
 
 - Homepage: <https://github.com/ruby/json>
 - Copyright 1993-2013 Yukihiro Matsumoto
 
 ---
 
-## json 2.19.5 — Ruby
+## json 2.21.2 — Ruby
 
 - Homepage: <https://github.com/ruby/json>
 - Copyright 1993-2013 Yukihiro Matsumoto
@@ -704,7 +771,7 @@ Last updated: 2026-08-08
 
 ---
 
-## listen 3.10.0 — MIT
+## listen 3.10.1 — MIT
 
 - Homepage: <https://github.com/guard/listen>
 - Copyright 2013 Thibaud Guillaume-Gentil
@@ -772,11 +839,10 @@ Last updated: 2026-08-08
 
 ---
 
-## micromark-util-types 2.0.2 — MIT
+## micromark-util-types 2.0.3 — MIT
 
 - Homepage: <https://github.com/micromark/micromark/tree/main#readme>
 - Copyright Titus Wormer
-- Copyright 2020 Titus Wormer <tituswormer@gmail.com>
 - Copyright Titus Wormer <tituswormer@gmail.com>
 
 ---
@@ -794,12 +860,12 @@ Last updated: 2026-08-08
 
 ---
 
-## nokogiri 1.19.3 — MIT
+## nokogiri 1.19.4 — MIT
 
 - Homepage: <https://nokogiri.org>
 - Copyright 2008-2023 Mike Dalessio
-- Copyright 1995-2017 Jean-loup Gailly and Mark Adler
 - Copyright 1998-2012 Daniel Veillard
+- Copyright 1995-2017 Jean-loup Gailly and Mark Adler
 - Copyright 2001-2003 Thai Open Source Software Center Ltd
 - Copyright 2001-2002 SourceForge ISO-RELAX Project
 - Copyright 2001-2002 Thomas Broyer
@@ -821,10 +887,111 @@ Last updated: 2026-08-08
 
 ---
 
+## org.apache.commons 1.28.0 — Apache 2.0
+
+- Homepage: <https://commons.apache.org/proper/commons-compress/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.commons 3.21.0 — Apache 2.0
+
+- Homepage: <https://www.apache.org/>
+- Copyright 2001-2026 The Apache Software Foundation
+- The Apache Software Foundation
+
+---
+
+## org.apache.commons 4.4 — Apache 2.0
+
+- Homepage: <https://commons.apache.org/proper/commons-collections/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.maven 3.6.6 — Apache 2.0
+
+- Homepage: <https://maven.apache.org/shared/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.maven.plugin-tools 3.16.0 — Apache 2.0
+
+- Homepage: <https://maven.apache.org/plugin-tools>
+- Copyright 2004-2026 The Apache Software Foundation
+- The Apache Software Foundation
+
+---
+
+## org.apache.maven.plugins 3.5.3 — Apache 2.0
+
+- Homepage: <https://www.apache.org/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.maven.resolver 2.0.24 — Apache 2.0
+
+- Homepage: <https://www.apache.org/>
+- Copyright 2010-2026 The Apache Software Foundation
+- The Apache Software Foundation
+
+---
+
+## org.apache.maven.shared 3.3.0 — Apache 2.0
+
+- Homepage: <https://www.apache.org/>
+- The Apache Software Foundation
+
+---
+
 ## org.apache.zookeeper 3.9.5 — Apache 2.0
 
 - Homepage: <http://zookeeper.apache.org>
 - The Apache Software Foundation
+
+---
+
+## org.apache.zookeeper 3.9.6 — Apache 2.0
+
+- Homepage: <http://zookeeper.apache.org>
+- The Apache Software Foundation
+
+---
+
+## org.codehaus.plexus 1.30.0 — Apache 2.0
+
+- Homepage: <https://codehaus-plexus.github.io/plexus-pom/>
+- Codehaus Plexus
+
+---
+
+## org.codehaus.plexus 4.1.0 — Apache 2.0
+
+- Homepage: <https://codehaus-plexus.github.io/plexus-utils/>
+- Copyright 2001-2003 ThoughtWorks, Inc
+- Copyright 2002 Extreme!
+- Copyright 2006 Javolution http://javolution.org
+- Codehaus Plexus
+- Copyright The Codehaus Foundation
+
+---
+
+## org.codehaus.plexus 4.14.0 — Apache 2.0
+
+- Homepage: <https://codehaus-plexus.github.io/plexus-archiver/>
+- Codehaus Plexus
+
+---
+
+## org.codehaus.plexus 4.2.0 — Apache 2.0
+
+- Homepage: <https://codehaus-plexus.github.io/plexus-xml/>
+- Copyright 2002 Extreme!
+- Copyright 2006 Javolution http://javolution.org
+- Codehaus Plexus
+- Copyright The Codehaus Foundation
 
 ---
 
@@ -834,12 +1001,47 @@ Last updated: 2026-08-08
 
 ---
 
-## org.jsoup 1.23.1 — MIT
+## org.jdom 2.0.6.1 — JDOM
+
+- Homepage: <http://www.jdom.org>
+- Copyright 2000-2012 Jason Hunter
+
+---
+
+## org.jsoup 1.23.2 — MIT
 
 - Homepage: <https://jsoup.org/>
 - Copyright 2009-2026 Jonathan Hedley <https://jsoup.org/>
 - Copyright 2009-2026 a href
 - Jonathan Hedley
+
+---
+
+## org.ow2.asm 9.11.1 — BSD 3
+
+- Homepage: <http://www.ow2.org/>
+- Copyright 2000-2011 INRIA
+- OW2
+
+---
+
+## org.slf4j 1.7.36 — MIT
+
+- Homepage: <http://www.qos.ch>
+- QOS.ch
+
+---
+
+## org.tukaani 1.12 — BSD Zero
+
+- Homepage: <https://tukaani.org/xz/java.html>
+
+---
+
+## org.twdata.maven 2.4.1 — Apache 2.0
+
+- Homepage: <https://mojo-executor.github.io/mojo-executor/>
+- Copyright 2008-2013 Don Brown
 
 ---
 
@@ -925,14 +1127,14 @@ Last updated: 2026-08-08
 
 ---
 
-## react 19.2.7 — MIT
+## react 19.3.0 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
 
 ---
 
-## react-dom 19.2.7 — MIT
+## react-dom 19.3.0 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
@@ -997,13 +1199,13 @@ Last updated: 2026-08-08
 
 ---
 
-## sass-embedded 1.100.0 — MIT
+## sass-embedded 1.105.1 — MIT
 
 - Homepage: <https://github.com/sass-contrib/sass-embedded-host-ruby>
 
 ---
 
-## scheduler 0.27.0 — MIT
+## scheduler 0.28.0 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
@@ -1114,19 +1316,19 @@ Last updated: 2026-08-08
 
 ---
 
-## unist-util-visit 5.1.0 — MIT
+## unist-util-visit 5.2.0 — MIT
 
 - Homepage: <https://github.com/syntax-tree/unist-util-visit#readme>
 - Copyright Titus Wormer
-- Copyright 2015 Titus Wormer <tituswormer@gmail.com>
+- Copyright Titus Wormer <tituswormer@gmail.com>
 
 ---
 
-## unist-util-visit-parents 6.0.2 — MIT
+## unist-util-visit-parents 6.1.0 — MIT
 
 - Homepage: <https://github.com/syntax-tree/unist-util-visit-parents#readme>
 - Copyright Titus Wormer
-- Copyright 2016 Titus Wormer <tituswormer@gmail.com>
+- Copyright Titus Wormer <tituswormer@gmail.com>
 
 ---
 
@@ -1203,7 +1405,7 @@ Last updated: 2026-08-08
 
 ---
 
-## zeitwerk 2.8.2 — MIT
+## zeitwerk 2.8.3 — MIT
 
 - Homepage: <https://github.com/fxn/zeitwerk>
 - Copyright 2019 Xavier Noria

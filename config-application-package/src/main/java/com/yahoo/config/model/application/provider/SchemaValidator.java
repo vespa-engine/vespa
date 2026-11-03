@@ -6,6 +6,7 @@ import com.thaiopensource.util.PropertyMapBuilder;
 import com.thaiopensource.validate.ValidateProperty;
 import com.thaiopensource.validate.ValidationDriver;
 import com.thaiopensource.validate.rng.CompactSchemaReader;
+import com.thaiopensource.xml.sax.XMLReaderCreator;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
@@ -15,6 +16,8 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -83,7 +86,24 @@ public class SchemaValidator {
     private PropertyMap instanceProperties() {
         PropertyMapBuilder builder = new PropertyMapBuilder();
         builder.put(ValidateProperty.ERROR_HANDLER, errorHandler);
+        builder.put(ValidateProperty.XML_READER_CREATOR, xmlReaderCreator());
         return builder.toPropertyMap();
+    }
+
+    private static XMLReaderCreator xmlReaderCreator() {
+        return () -> {
+            try {
+                SAXParserFactory factory = SAXParserFactory.newInstance();
+                factory.setNamespaceAware(true); // RELAX NG validation requires namespace processing
+                factory.setXIncludeAware(false);
+                factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+                factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+                return factory.newSAXParser().getXMLReader();
+            } catch (ParserConfigurationException e) {
+                throw new SAXException("Could not create a hardened XML reader", e);
+            }
+        };
     }
 
     private class CustomErrorHandler implements ErrorHandler {

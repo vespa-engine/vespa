@@ -4,6 +4,7 @@
 #include "simple_index.h"
 #include "simple_index_saver.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace search::predicate {
@@ -30,7 +31,7 @@ void SimpleIndex<Posting, Key, DocId>::insertIntoPosting(vespalib::datastore::En
 template <typename Posting, typename Key, typename DocId>
 void SimpleIndex<Posting, Key, DocId>::insertIntoVectorPosting(vespalib::datastore::EntryRef ref, Key key,
                                                                DocId doc_id, const Posting& posting) {
-    assert(doc_id < _limit_provider.getDocIdLimit());
+    CHECK(doc_id < _limit_provider.getDocIdLimit());
     auto it = _vector_posting_lists.find(key);
     if (it.valid()) {
         auto& vector = *it.getData();
@@ -79,8 +80,9 @@ void SimpleIndex<Posting, Key, DocId>::deserialize(vespalib::DataBuffer&        
     std::vector<vespalib::btree::BTreeKeyData<DocId, Posting>> postings;
     for (size_t i = 0; i < size; ++i) {
         uint32_t posting_size = buffer.readInt32();
-        if (!posting_size)
+        if (!posting_size) {
             continue;
+        }
         postings.clear();
         Key key = buffer.readInt64();
         for (size_t j = 0; j < posting_size; ++j) {
@@ -130,9 +132,9 @@ std::pair<Posting, bool> SimpleIndex<Posting, Key, DocId>::removeFromPostingList
         return std::make_pair(Posting(), false);
     }
     auto ref = dict_it.getData();
-    assert(ref.valid());
+    CHECK(ref.valid());
     auto posting_it = _btree_posting_lists.begin(ref);
-    assert(posting_it.valid());
+    CHECK(posting_it.valid());
 
     if (posting_it.getKey() < doc_id) {
         posting_it.binarySeek(doc_id);
@@ -168,13 +170,14 @@ void SimpleIndex<Posting, Key, DocId>::removeFromVectorPostingList(vespalib::dat
 template <typename Posting, typename Key, typename DocId>
 void SimpleIndex<Posting, Key, DocId>::pruneBelowThresholdVectors() {
     //  Check if it is time to prune any vector postings
-    if (++_insert_remove_counter % _config.vector_prune_frequency > 0)
+    if (++_insert_remove_counter % _config.vector_prune_frequency > 0) {
         return;
+    }
 
     for (auto posting_it = _vector_posting_lists.begin(); posting_it.valid();) {
         Key  key = posting_it.getKey();
         auto dict_it = _dictionary.find(key);
-        assert(dict_it.valid());
+        CHECK(dict_it.valid());
         if (!removeVectorIfBelowThreshold(dict_it.getData(), posting_it)) {
             ++posting_it;
         }
@@ -194,8 +197,9 @@ void SimpleIndex<Posting, Key, DocId>::promoteOverThresholdVectors() {
 template <typename Posting, typename Key, typename DocId>
 void SimpleIndex<Posting, Key, DocId>::logVector(const char* action, Key key, size_t document_count, double ratio,
                                                  size_t vector_length) const {
-    if (!simpleindex::log_enabled())
+    if (!simpleindex::log_enabled()) {
         return;
+    }
     auto msg = vespalib::make_string("%s vector for key '%016" PRIx64 "' with length %zu. Contains %zu documents "
                                      "(doc id limit %u, committed doc id limit %u, ratio %f, "
                                      "vector count %zu)",
@@ -210,7 +214,7 @@ void SimpleIndex<Posting, Key, DocId>::createVectorIfOverThreshold(vespalib::dat
     size_t   size = getDocumentCount(ref);
     double   ratio = getDocumentRatio(size, doc_id_limit);
     if (shouldCreateVectorPosting(size, ratio)) {
-        auto vector = new vespalib::RcuVectorBase<Posting>(_config.grow_strategy, _generation_holder);
+        auto vector = new vespalib::TypeStableVectorBase<Posting>(_config.grow_strategy, _generation_holder);
         vector->unsafe_resize(doc_id_limit);
         _btree_posting_lists.foreach_unfrozen(ref, [&](DocId d, const Posting& p) { (*vector)[d] = p; });
         _vector_posting_lists.insert(key, std::shared_ptr<PostingVector>(vector));
@@ -235,7 +239,7 @@ bool SimpleIndex<Posting, Key, DocId>::removeVectorIfBelowThreshold(vespalib::da
 
 template <typename Posting, typename Key, typename DocId>
 double SimpleIndex<Posting, Key, DocId>::getDocumentRatio(size_t document_count, uint32_t doc_id_limit) const {
-    assert(doc_id_limit > 1);
+    CHECK(doc_id_limit > 1);
     return document_count / static_cast<double>(doc_id_limit - 1);
 };
 

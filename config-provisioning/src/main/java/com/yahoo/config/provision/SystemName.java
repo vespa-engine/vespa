@@ -30,6 +30,9 @@ public enum SystemName {
     /** Public Vespa Cloud CD */
     PublicCd,
 
+    /** A personal Vespa Cloud system run by a developer in their own cloud account, like PublicCd but smaller */
+    DevCloud,
+
     /** Local development system */
     dev,
 
@@ -60,6 +63,7 @@ public enum SystemName {
             case main -> "main";
             case Public -> "public";
             case PublicCd -> "publiccd";
+            case DevCloud -> "devcloud";
             case kubernetes -> "kubernetes";
             case kubernetesCd -> "kubernetescd";
             case Default -> "default";
@@ -67,17 +71,20 @@ public enum SystemName {
     }
 
     /** Whether the system is similar to Public, e.g. PublicCd. */
-    public boolean isPublicCloudLike() { return this == Public || this == PublicCd; }
+    public boolean isPublicCloudLike() { return this == Public || this == PublicCd || this == DevCloud; }
 
     public boolean isYahooLike() { return this == main || this == cd; }
 
     public boolean isKubernetesLike() { return this == kubernetes || this == kubernetesCd; }
 
-    public boolean isCdLike() { return this == cd || this == PublicCd || this == kubernetesCd; }
+    public boolean isCdLike() { return this == cd || this == PublicCd || this == kubernetesCd || this == DevCloud; }
 
     public boolean isProductionLike() { return this == main || this == Public || this == kubernetes; }
 
-    public boolean isHostedLike() { return this == main || this == cd || this == Public || this == PublicCd; }
+    public boolean isHostedLike() { return this == main || this == cd || this == Public || this == PublicCd || this == DevCloud; }
+
+    /** Whether this is a personal development system, see {@link #DevCloud}. */
+    public boolean isDevCloud() { return this == DevCloud; }
 
     public static Set<SystemName> all() { return EnumSet.allOf(SystemName.class); }
 
@@ -86,6 +93,6 @@ public enum SystemName {
     }
 
     /** Managed systems hosted by Vespa.ai */
-    public static Set<SystemName> hostedVespa() { return EnumSet.of(main, cd, Public, PublicCd); }
+    public static Set<SystemName> hostedVespa() { return EnumSet.of(main, cd, Public, PublicCd, DevCloud); }
 
 }

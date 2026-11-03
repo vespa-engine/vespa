@@ -6,6 +6,7 @@
 #include "search_environment_snapshot.h"
 #include "searchenvironment.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/mapdatatype.h>
@@ -17,7 +18,7 @@
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
-#include <vespa/searchlib/aggregation/modifiers.h>
+#include <vespa/searchlib/aggregation/attribute_node_replacer.h>
 #include <vespa/searchlib/attribute/array_bool_ext_attribute.h>
 #include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/single_raw_ext_attribute.h>
@@ -172,7 +173,7 @@ AttributeVector::SP createAttribute(const std::string& name, const document::Fie
         search::attribute::Config cfg(search::attribute::BasicType::TENSOR,
                                       search::attribute::CollectionType::SINGLE);
         auto                      tdt = get_tensor_type(fv);
-        assert(tdt != nullptr);
+        CHECK(tdt != nullptr);
         cfg.setTensorType(tdt->getTensorType());
         cfg.set_distance_metric(dm);
         return std::make_shared<search::tensor::TensorExtAttribute>(name, cfg);
@@ -367,10 +368,12 @@ uint32_t count_normalize_none(const vsm::FieldSearchSpecMapT& specMap, const Str
 search::Normalizing SearchVisitor::normalizing_mode(std::string_view index) const noexcept {
     StringFieldIdTMap fieldIdMap;
     _fieldSearchSpecMap.addFieldsFromIndex(index, fieldIdMap);
-    if (count_normalize_none(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size())
+    if (count_normalize_none(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size()) {
         return Normalizing::NONE;
-    if (count_normalize_lowercase(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size())
+    }
+    if (count_normalize_lowercase(_fieldSearchSpecMap.specMap(), fieldIdMap) == fieldIdMap.map().size()) {
         return Normalizing::LOWERCASE;
+    }
     return Normalizing::LOWERCASE_AND_FOLD;
 }
 
@@ -598,8 +601,7 @@ void SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content& c) {
     } else if (_attribute.isStringType()) {
         attr.add(value.getAsString().c_str(), c.getWeight());
     } else if (_attribute.is_raw_type()) {
-        auto raw_value = value.getAsRaw();
-        attr.add(std::span<const char>(raw_value.first, raw_value.second), c.getWeight());
+        attr.add(value.getAsRaw(), c.getWeight());
     } else if (_attribute.isTensorType()) {
         auto tfvalue = dynamic_cast<const document::TensorFieldValue*>(&value);
         if (tfvalue != nullptr) {
@@ -609,7 +611,7 @@ void SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content& c) {
             }
         }
     } else {
-        assert(false && "We got an attribute vector that is of an unknown type");
+        CHECK(false && "We got an attribute vector that is of an unknown type");
     }
 }
 
@@ -801,7 +803,7 @@ SearchVisitor::SyntheticFieldsController::SyntheticFieldsController() : _documen
 void SearchVisitor::SyntheticFieldsController::setup(const StringFieldIdTMap& fieldRegistry,
                                                      const StringFieldIdTMap& /*fieldsInQuery*/) {
     _documentIdFId = fieldRegistry.fieldNo("documentid");
-    assert(_documentIdFId != StringFieldIdTMap::npos);
+    CHECK(_documentIdFId != StringFieldIdTMap::npos);
 }
 
 void SearchVisitor::SyntheticFieldsController::onDocument(StorageDocument&) {
@@ -950,8 +952,9 @@ void SearchVisitor::setupAttributeVector(const FieldPath& fieldPath) {
 namespace {
 bool notContained(const std::vector<size_t>& sortList, size_t idx) {
     for (size_t v : sortList) {
-        if (v == idx)
+        if (v == idx) {
             return false;
+        }
     }
     return true;
 }
@@ -1058,7 +1061,7 @@ void SearchVisitor::handleDocuments(const document::BucketId&, DocEntryList& ent
     size_t highestFieldNo(_fieldSearchSpecMap.nameIdMap().highestFieldNo());
 
     const document::DocumentType* defaultDocType = _docTypeMapping.getDefaultDocumentType();
-    assert(defaultDocType);
+    CHECK(defaultDocType);
     for (const auto& entry : entries) {
         auto document = std::make_shared<StorageDocument>(entry->releaseDocument(), _fieldPathMap, highestFieldNo);
 
@@ -1164,7 +1167,7 @@ void SearchVisitor::fillAttributeVectors(const std::string& documentId, const St
             }
         } else if (finfoGuard->getName() == "[docid]") {
             _documentIdAttribute.add(documentId.c_str());
-            // assert((_docsumCache.cache().size() + 1) == _documentIdAttribute.getNumDocs());
+            // CHECK((_docsumCache.cache().size() + 1) == _documentIdAttribute.getNumDocs());
         } else if (finfoGuard->getName() == "[rank]") {
             _shouldFillRankAttribute = true;
         }

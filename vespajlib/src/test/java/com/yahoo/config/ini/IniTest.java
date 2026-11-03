@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -69,6 +70,8 @@ class IniTest {
         ini.write(out);
         String serialized = out.toString(StandardCharsets.UTF_8);
         assertEquals(expected, serialized);
+        // Writing is platform-independent: line endings are always \n, never the default separator of the platform
+        assertFalse(serialized.contains("\r"), "Expected only \\n line endings, but serialized output contains \\r");
         assertEquals(ini, parse(serialized));
     }
 

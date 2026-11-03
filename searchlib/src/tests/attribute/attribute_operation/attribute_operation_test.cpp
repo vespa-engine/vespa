@@ -136,12 +136,14 @@ void verify(BasicType typeClaimed, std::string_view operation, AttributeVector& 
         AttributeOperation::FullResult hits;
         hits.first = search::BitVector::create(docs.back() + 1);
         std::for_each(docs.begin(), docs.end(), [&hits](uint32_t docId) {
-            if ((docId % 2) == 0)
+            if ((docId % 2) == 0) {
                 hits.first->setBit(docId);
+            }
         });
         std::for_each(docs.begin(), docs.end(), [&hits](uint32_t docId) {
-            if ((docId % 2) != 0)
+            if ((docId % 2) != 0) {
                 hits.second.push_back(search::RankedHit(docId, 0.0));
+            }
         });
         verify2<T, AttributeOperation::FullResult>(typeClaimed, operation, attr, initial, expected, docs,
                                                    std::move(hits));

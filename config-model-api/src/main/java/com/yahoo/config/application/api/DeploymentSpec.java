@@ -228,7 +228,7 @@ public final class DeploymentSpec {
         return (zone.environment().isManuallyDeployed() ? devSpec.cloudAccounts
                                                         : instance(instance).map(spec -> spec.cloudAccounts(zone.environment(), zone.region())))
                 .orElse(cloudAccounts)
-                .getOrDefault(cloud, CloudAccount.empty);
+                .getOrDefault(cloud, CloudAccount.unspecified());
     }
 
     public Map<CloudName, CloudAccount> cloudAccounts() { return cloudAccounts; }
@@ -328,11 +328,16 @@ public final class DeploymentSpec {
     }
 
     public List<AzName> availabilityZones(InstanceName instance, Zone zone) {
+        if (zone.environment() == Environment.dev)
+            return devSpec.availabilityZones.getOrDefault(zone.region(), List.of());
         var declaredInstance = instance(instance);
         if (declaredInstance.isEmpty()) return List.of();
         var declaredZone = declaredInstance.get().zone(zone);
         return declaredZone.map(DeclaredZone::availabilityZones).orElse(List.of());
     }
+
+    /** Returns the settings for the dev environment */
+    public DevSpec devSpec() { return devSpec; }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
@@ -870,12 +875,18 @@ public final class DeploymentSpec {
         private final boolean version;
         private final boolean maintenance;
         private final TimeWindow window;
+        private final Set<RegionName> regions;
 
         public ChangeBlocker(boolean revision, boolean version, boolean maintenance, TimeWindow window) {
+            this(revision, version, maintenance, window, Set.of());
+        }
+
+        public ChangeBlocker(boolean revision, boolean version, boolean maintenance, TimeWindow window, Set<RegionName> regions) {
             this.revision = revision;
             this.version = version;
             this.maintenance = maintenance;
             this.window = window;
+            this.regions = Set.copyOf(regions);
         }
 
         public boolean blocksRevisions() { return revision; }
@@ -883,9 +894,18 @@ public final class DeploymentSpec {
         public boolean blocksMaintenance() { return maintenance; }
         public TimeWindow window() { return window; }
 
+        /** The regions this blocks changes in, or empty if it blocks changes in all regions */
+        public Set<RegionName> regions() { return regions; }
+
+        /** Whether this applies to the given region, or, if empty, to changes not specific to a region */
+        public boolean appliesTo(Optional<RegionName> region) {
+            return regions.isEmpty() || region.map(regions::contains).orElse(false);
+        }
+
         @Override
         public String toString() {
-            return "change blocker revision=" + revision + " version=" + version + " maintenance=" + maintenance + " window=" + window;
+            return "change blocker revision=" + revision + " version=" + version + " maintenance=" + maintenance + " window=" + window +
+                   (regions.isEmpty() ? "" : " regions=" + regions.stream().map(RegionName::value).sorted().toList());
         }
 
     }
@@ -933,7 +953,7 @@ public final class DeploymentSpec {
 
     public static class DevSpec {
 
-        public static final DevSpec empty = new DevSpec(Optional.empty(), Optional.empty(), Optional.empty(), Tags.empty(), CloudResourceTags.empty(), Map.of());
+        public static final DevSpec empty = new DevSpec(Optional.empty(), Optional.empty(), Optional.empty(), Tags.empty(), CloudResourceTags.empty(), Map.of(), Map.of());
 
         private final Optional<AthenzService> athenzService;
         private final Optional<Map<CloudName, CloudAccount>> cloudAccounts;
@@ -941,32 +961,39 @@ public final class DeploymentSpec {
         private final Tags tags;
         private final CloudResourceTags cloudResourceTags;
         private final Map<ClusterSpec.Id, ZoneEndpoint> zoneEndpoints;
+        private final Map<RegionName, List<AzName>> availabilityZones;
 
         public DevSpec(Optional<AthenzService> athenzService,
                        Optional<Map<CloudName, CloudAccount>> cloudAccounts,
                        Optional<Duration> hostTTL,
                        Tags tags,
                        CloudResourceTags cloudResourceTags,
-                       Map<ClusterSpec.Id, ZoneEndpoint> zoneEndpoints) {
+                       Map<ClusterSpec.Id, ZoneEndpoint> zoneEndpoints,
+                       Map<RegionName, List<AzName>> availabilityZones) {
             this.athenzService = Objects.requireNonNull(athenzService);
             this.cloudAccounts = cloudAccounts.map(Map::copyOf);
             this.hostTTL = Objects.requireNonNull(hostTTL);
             this.tags = Objects.requireNonNull(tags);
             this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags);
             this.zoneEndpoints = Map.copyOf(zoneEndpoints);
+            this.availabilityZones = availabilityZones.entrySet().stream()
+                                                      .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, e -> List.copyOf(e.getValue())));
         }
+
+        /** Returns the availability zones declared for each dev region, in declaration order. */
+        public Map<RegionName, List<AzName>> availabilityZones() { return availabilityZones; }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             DevSpec devSpec = (DevSpec) o;
-            return Objects.equals(athenzService, devSpec.athenzService) && Objects.equals(cloudAccounts, devSpec.cloudAccounts) && Objects.equals(hostTTL, devSpec.hostTTL) && Objects.equals(tags, devSpec.tags) && Objects.equals(cloudResourceTags, devSpec.cloudResourceTags) && Objects.equals(zoneEndpoints, devSpec.zoneEndpoints);
+            return Objects.equals(athenzService, devSpec.athenzService) && Objects.equals(cloudAccounts, devSpec.cloudAccounts) && Objects.equals(hostTTL, devSpec.hostTTL) && Objects.equals(tags, devSpec.tags) && Objects.equals(cloudResourceTags, devSpec.cloudResourceTags) && Objects.equals(zoneEndpoints, devSpec.zoneEndpoints) && Objects.equals(availabilityZones, devSpec.availabilityZones);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(athenzService, cloudAccounts, hostTTL, tags, cloudResourceTags, zoneEndpoints);
+            return Objects.hash(athenzService, cloudAccounts, hostTTL, tags, cloudResourceTags, zoneEndpoints, availabilityZones);
         }
 
         @Override
@@ -978,6 +1005,7 @@ public final class DeploymentSpec {
             if ( ! tags.isEmpty()) joiner.add("tags: " + tags);
             if ( ! cloudResourceTags.isEmpty()) joiner.add("resource-tags: " + cloudResourceTags);
             if ( ! zoneEndpoints.isEmpty()) joiner.add("endpoint settings for clusters: " + zoneEndpoints.keySet().stream().map(ClusterSpec.Id::value).collect(joining(", ")));
+            if ( ! availabilityZones.isEmpty()) joiner.add("availability zones: " + availabilityZones);
             return joiner.toString();
         }
 

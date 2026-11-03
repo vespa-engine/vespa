@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.filedistribution;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.config.provision.ApplicationId;
 
 import java.io.File;
 
@@ -13,16 +13,16 @@ import java.io.File;
 public class MockFileDistributionFactory extends FileDistributionFactory {
 
     public MockFileDistributionFactory(ConfigserverConfig configserverConfig) {
-        super(configserverConfig, new FileDirectory(configserverConfig), new InMemoryFlagSource());
+        super(configserverConfig, new FileDirectory(configserverConfig));
     }
 
     @Override
-    public FileRegistry createFileRegistry(File applicationPackage) {
+    public FileRegistry createFileRegistry(File applicationPackage, ApplicationId owner) {
         return new MockFileRegistry(applicationPackage, fileDirectory);
     }
 
     @Override
-    public AddFileInterface createFileManager(File applicationDir) {
+    public AddFileInterface createFileManager(File applicationDir, ApplicationId owner) {
         return new MockFileManager();
     }
 

@@ -2,6 +2,8 @@
 
 #include "timestamp.h"
 
+#include <vespa/vespalib/util/time.h>
+
 namespace search::expression {
 
 using vespalib::Deserializer;
@@ -41,9 +43,9 @@ void TimeStampFunctionNode::onPrepareResult() {
 }
 
 unsigned TimeStampFunctionNode::getTimePart(time_t secSince70, TimePart tp, bool gmt) {
-    tm ts;
+    struct tm ts;
     if (gmt) {
-        gmtime_r(&secSince70, &ts);
+        vespalib::toGmtDateAndTime(secSince70, ts);
     } else {
         localtime_r(&secSince70, &ts);
     }

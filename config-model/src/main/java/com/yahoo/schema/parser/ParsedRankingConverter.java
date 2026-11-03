@@ -53,6 +53,10 @@ public class ParsedRankingConverter {
             profile.inherit(namePrefix + inherited);
         }
         parsed.isStrict().ifPresent(profile::setStrict);
+        parsed.getExplanation().map(TaggedExplanation::parse).ifPresent(explanation -> {
+            explanation.text().ifPresent(profile::setExplanation);
+            profile.setInputExplanations(explanation.inputs());
+        });
         parsed.isUseSignificanceModel().ifPresent(profile::setUseSignificanceModel);
         parsed.getConstants().values().forEach(profile::add);
         parsed.getOnnxModels().forEach(profile::add);
@@ -100,6 +104,7 @@ public class ParsedRankingConverter {
 
         parsed.getMatchFeatures().forEach(profile::addMatchFeatures);
         parsed.getRankFeatures().forEach(profile::addRankFeatures);
+        parsed.getSortFeatures().forEach(profile::addSortFeatures);
         parsed.getSummaryFeatures().forEach(profile::addSummaryFeatures);
         parsed.getInheritedMatchFeatures().forEach(profile::addInheritedMatchFeatures);
         parsed.getInheritedSummaryFeatures().forEach(profile::addInheritedSummaryFeatures);

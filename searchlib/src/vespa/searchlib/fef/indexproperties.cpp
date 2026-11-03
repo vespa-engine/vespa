@@ -256,6 +256,17 @@ std::vector<std::pair<std::string, std::string>> Rename::lookup(const Properties
 }
 } // namespace feature_rename
 
+namespace sort {
+
+const std::string              Feature::NAME("vespa.sort.feature");
+const std::vector<std::string> Feature::DEFAULT_VALUE;
+
+std::vector<std::string> Feature::lookup(const Properties& props) {
+    return lookupStringVector(props, NAME, DEFAULT_VALUE);
+}
+
+} // namespace sort
+
 namespace match {
 
 const std::string              Feature::NAME("vespa.match.feature");

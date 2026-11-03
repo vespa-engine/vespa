@@ -6,8 +6,6 @@
 #include <logd/empty_forwarder.h>
 #include <logd/metrics.h>
 
-#include <vespa/log/log.h>
-
 using namespace logdemon;
 using vespalib::metrics::DummyMetricsManager;
 

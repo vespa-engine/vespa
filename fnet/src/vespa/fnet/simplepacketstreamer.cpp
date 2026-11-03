@@ -16,8 +16,9 @@ bool FNET_SimplePacketStreamer::GetPacketInfo(FNET_DataBuffer* src, uint32_t* pl
                                               bool* broken) {
     (void)broken;
 
-    if (src->GetDataLen() < 3 * sizeof(uint32_t))
+    if (src->GetDataLen() < 3 * sizeof(uint32_t)) {
         return false;
+    }
 
     *plen = src->ReadInt32() - 2 * sizeof(uint32_t);
     *pcode = src->ReadInt32();

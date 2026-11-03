@@ -2,9 +2,10 @@
 
 #include "regex.h"
 
+#include <vespa/check_require.h>
+
 #include <re2/re2.h>
 
-#include <cassert>
 #include <cstdint>
 
 namespace vespalib {
@@ -21,7 +22,7 @@ public:
     bool parsed_ok() const noexcept { return _regex.ok(); }
 
     bool partial_match(std::string_view input) const noexcept {
-        assert(input.size() <= INT32_MAX);
+        CHECK(input.size() <= INT32_MAX);
         if (!_regex.ok()) {
             return false;
         }
@@ -29,7 +30,7 @@ public:
     }
 
     bool full_match(std::string_view input) const noexcept {
-        assert(input.size() <= INT32_MAX);
+        CHECK(input.size() <= INT32_MAX);
         if (!_regex.ok()) {
             return false;
         }
@@ -62,7 +63,7 @@ Regex& Regex::operator=(Regex&&) noexcept = default;
 Regex::~Regex() = default;
 
 Regex Regex::from_pattern(std::string_view pattern, uint32_t opt_mask) {
-    assert(pattern.size() <= INT32_MAX); // StringPiece limitation
+    CHECK(pattern.size() <= INT32_MAX); // StringPiece limitation
     RE2::Options opts;
     opts.set_log_errors(false);
     if ((opt_mask & Options::IgnoreCase) != 0) {
@@ -91,13 +92,13 @@ std::pair<std::string, std::string> Regex::possible_anchored_match_prefix_range(
 }
 
 bool Regex::partial_match(std::string_view input, std::string_view pattern) noexcept {
-    assert(pattern.size() <= INT32_MAX);
+    CHECK(pattern.size() <= INT32_MAX);
     Impl impl(pattern, RE2::Quiet);
     return impl.partial_match(input);
 }
 
 bool Regex::full_match(std::string_view input, std::string_view pattern) noexcept {
-    assert(pattern.size() <= INT32_MAX);
+    CHECK(pattern.size() <= INT32_MAX);
     Impl impl(pattern, RE2::Quiet);
     return impl.full_match(input);
 }

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -44,7 +45,7 @@ template <typename UniqueStoreDictionaryType> struct UniqueStoreDictionaryTest :
     UniqueStoreDictionaryTest() : dict(std::make_unique<Comparator>(0)), snapshot(), gen_handler() {}
     UniqueStoreDictionaryTest& add(uint32_t value) {
         auto result = dict.add(Comparator(value), [=]() noexcept { return EntryRef(value); });
-        assert(result.inserted());
+        CHECK(result.inserted());
         return *this;
     }
     UniqueStoreDictionaryTest& remove(uint32_t value) {

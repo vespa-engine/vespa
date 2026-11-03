@@ -2,7 +2,7 @@
 
 #include "removeoperation.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 using document::BucketId;
 using document::DocumentId;
@@ -53,7 +53,7 @@ RemoveOperationWithGid::~RemoveOperationWithGid() = default;
 
 void RemoveOperationWithGid::serialize(vespalib::nbostream& os) const {
     assertValidBucketId(_gid);
-    assert(!getValidDbdId());
+    CHECK(!getValidDbdId());
     RemoveOperation::serialize(os);
     size_t oldSize = os.size();
     os.write(_gid.get(), GlobalId::LENGTH);

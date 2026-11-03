@@ -4,10 +4,10 @@
 #include "btree_lockable_map.hpp"
 #include "striped_btree_lockable_map.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storage/common/bucket_stripe_utils.h>
 
 #include <algorithm>
-#include <cassert>
 #include <queue>
 
 namespace storage::bucketdb {
@@ -15,8 +15,8 @@ namespace storage::bucketdb {
 template <typename T>
 StripedBTreeLockableMap<T>::StripedBTreeLockableMap(uint8_t n_stripe_bits)
     : _n_stripe_bits(n_stripe_bits), _n_stripes(1ULL << _n_stripe_bits), _stripes() {
-    assert(_n_stripe_bits > 0);
-    assert(_n_stripe_bits <= MaxStripeBits);
+    CHECK(_n_stripe_bits > 0);
+    CHECK(_n_stripe_bits <= MaxStripeBits);
     _stripes.reserve(_n_stripes);
     for (size_t i = 0; i < _n_stripes; ++i) {
         // TODO reduce initial sub-DB data store memory usage based on number of stripes
@@ -235,7 +235,7 @@ public:
     }
 
     void next() noexcept override {
-        assert(!_iter_queue.empty());
+        CHECK(!_iter_queue.empty());
         auto* top_iter = _iter_queue.top().second;
         top_iter->next();
         _iter_queue.pop();

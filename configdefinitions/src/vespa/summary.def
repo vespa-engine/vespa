@@ -14,5 +14,11 @@ classes[].fields[].name string
 classes[].fields[].command string default=""
 # The name of the source field used by the command.
 classes[].fields[].source string default=""
+# The names of struct sub-fields to include in the output;
+# an empty list means all sub-fields are included.
+classes[].fields[].struct_fields[] string
+# Which shape the attribute combiner should write for this field. INFER keeps the legacy behaviour
+# of deducing it from the names of the struct field attributes.
+classes[].fields[].combiner_shape enum { INFER, ARRAY_OF_STRUCT, MAP_OF_STRUCT, MAP_OF_SCALAR } default=INFER
 classes[].fields[].elements.select enum { ALL, BY_MATCH, BY_SUMMARY_FEATURE } default=ALL
 classes[].fields[].elements.summary_feature string default=""

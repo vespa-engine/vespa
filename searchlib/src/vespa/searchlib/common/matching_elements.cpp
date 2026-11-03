@@ -3,6 +3,7 @@
 #include "matching_elements.h"
 
 #include <algorithm>
+#include <iterator>
 
 namespace search {
 

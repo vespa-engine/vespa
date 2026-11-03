@@ -97,7 +97,7 @@ TEST_F(ProdFeaturesTest, test_field_term_match) {
 
         // make sure the term match data is initialized with the term data
         MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
-        mdb->getTermFieldMatchData(0, 0)->reset(1);
+        mdb->getTermFieldMatchData(0, 1)->reset(1);
 
         search::fef::test::RankResult exp;
         exp.addScore("fieldTermMatch(foo,0).firstPosition", 1000000)

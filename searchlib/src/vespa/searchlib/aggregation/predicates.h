@@ -16,10 +16,7 @@ public:
     CountFS4Hits() : _hitCnt(0) {}
     uint32_t getHitCount() const { return _hitCnt; }
     bool check(const vespalib::Identifiable& obj) const override { return (obj.getClass().id() == FS4Hit::classId); }
-    void execute(vespalib::Identifiable& obj) override {
-        (void)obj;
-        ++_hitCnt;
-    }
+    void execute(vespalib::Identifiable&) override { ++_hitCnt; }
 };
 
 class FS4HitSetDistributionKey : public vespalib::ObjectPredicate, public vespalib::ObjectOperation {

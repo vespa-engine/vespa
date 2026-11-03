@@ -40,9 +40,13 @@ public class ValuesFetcher {
     }
 
     public List<MetricsPacket> fetch(String requestedConsumer) throws JsonRenderingException {
+        return fetch(requestedConsumer, Instant.now());
+    }
+
+    public List<MetricsPacket> fetch(String requestedConsumer, Instant startTime) throws JsonRenderingException {
         ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
 
-        return metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now(), consumer)
+        return metricsManager.getMetrics(vespaServices.getVespaServices(), startTime, consumer)
                 .stream()
                 .filter(metricsPacket -> metricsPacket.consumers().contains(consumer))
                 .toList();

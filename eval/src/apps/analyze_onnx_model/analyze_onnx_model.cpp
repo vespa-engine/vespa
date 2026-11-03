@@ -7,6 +7,7 @@
 #include <vespa/eval/onnx/onnx_wrapper.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/guard.h>
+#include <vespa/vespalib/util/landlock.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -67,8 +68,9 @@ struct MemoryUsage {
 static const std::string UNKNOWN = "unknown";
 
 size_t convert(const std::string& s) {
-    if (s == UNKNOWN)
+    if (s == UNKNOWN) {
         return 0;
+    }
     size_t v(0);
     size_t end = s.find("kB");
     auto [ptr, ec] = std::from_chars(s.data(), s.data() + std::min(s.size(), end), v, 10);
@@ -327,7 +329,15 @@ int probe_types() {
     return 0;
 }
 
+int landlock_failure() {
+    fprintf(stderr, "Landlock init failure\n");
+    return 1;
+}
+
 int my_main(int argc, char** argv) {
+    if (!vespalib::Landlock::maybe_setup_from_env()) {
+        return landlock_failure();
+    }
     if (argc < 2) {
         return usage(argv[0]);
     }

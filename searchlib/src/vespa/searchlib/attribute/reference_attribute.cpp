@@ -8,6 +8,7 @@
 #include "reference_attribute_saver.h"
 #include "search_context.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/idstringexception.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -135,7 +136,7 @@ void ReferenceAttribute::buildReverseMapping() {
 
 uint32_t ReferenceAttribute::clearDoc(DocId doc) {
     updateUncommittedDocIdLimit(doc);
-    assert(doc < _indices.size());
+    CHECK(doc < _indices.size());
     EntryRef oldRef = _indices[doc].load_relaxed();
     if (oldRef.valid()) {
         removeReverseMapping(oldRef, doc);
@@ -211,14 +212,14 @@ bool ReferenceAttribute::onLoad(vespalib::Executor*) {
         return false;
     }
     setCreateSerialNum(attrReader.getCreateSerialNum());
-    assert(attrReader.getEnumerated());
-    assert(!attrReader.hasIdx());
+    CHECK(attrReader.getEnumerated());
+    CHECK(!attrReader.hasIdx());
     uint64_t             numValues = attrReader.getEnumCount();
     size_t               numDocs = numValues;
     auto                 udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     const GenericHeader& header = udatBuffer->getHeader();
     uint32_t             uniqueValueCount = extractUniqueValueCount(header);
-    assert(uniqueValueCount * sizeof(GlobalId) == udatBuffer->size());
+    CHECK(uniqueValueCount * sizeof(GlobalId) == udatBuffer->size());
     std::span<const GlobalId> uniques(static_cast<const GlobalId*>(udatBuffer->buffer()), uniqueValueCount);
 
     auto builder = _store.getBuilder(uniqueValueCount);
@@ -245,7 +246,7 @@ bool ReferenceAttribute::onLoad(vespalib::Executor*) {
 
 void ReferenceAttribute::update(DocId doc, const GlobalId& gid) {
     updateUncommittedDocIdLimit(doc);
-    assert(doc < _indices.size());
+    CHECK(doc < _indices.size());
     EntryRef  oldRef = _indices[doc].load_relaxed();
     Reference refToAdd(gid);
     EntryRef  newRef = _store.add(refToAdd).ref();
@@ -319,7 +320,7 @@ void ReferenceAttribute::setGidToLidMapperFactory(std::shared_ptr<IGidToLidMappe
 }
 
 void ReferenceAttribute::notifyReferencedPutNoCommit(const GlobalId& gid, DocId targetLid) {
-    assert(targetLid != 0);
+    CHECK(targetLid != 0);
     EntryRef ref = _store.find(gid);
     if (!ref.valid() || _store.get(ref).lid() == 0) {
         Reference refToAdd(gid);
@@ -383,8 +384,8 @@ void ReferenceAttribute::populateTargetLids(const std::vector<GlobalId>& removes
 }
 
 void ReferenceAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool) {
-    assert(lidLow <= lidLimit);
-    assert(lidLimit <= getNumDocs());
+    CHECK(lidLow <= lidLimit);
+    CHECK(lidLimit <= getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
         EntryRef oldRef = _indices[lid].load_relaxed();
         if (oldRef.valid()) {
@@ -398,7 +399,7 @@ void ReferenceAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool) {
 void ReferenceAttribute::onShrinkLidSpace() {
     // References for lids > committedDocIdLimit have been cleared.
     uint32_t committedDocIdLimit = getCommittedDocIdLimit();
-    assert(_indices.size() >= committedDocIdLimit);
+    CHECK(_indices.size() >= committedDocIdLimit);
     _indices.shrink(committedDocIdLimit);
     _referenceMappings.shrink(committedDocIdLimit);
     setNumDocs(committedDocIdLimit);

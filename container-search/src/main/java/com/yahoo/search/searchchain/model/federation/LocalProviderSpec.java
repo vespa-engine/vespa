@@ -28,6 +28,7 @@ public class LocalProviderSpec {
                             com.yahoo.search.querytransform.VespaLowercasingSearcher.class,
                             com.yahoo.search.querytransform.DefaultPositionSearcher.class,
                             com.yahoo.search.querytransform.RangeQueryOptimizer.class,
+                            com.yahoo.search.querytransform.FastMapSearcher.class,
                             com.yahoo.search.querytransform.SortingDegrader.class,
                             com.yahoo.prelude.searcher.ValidateSortingSearcher.class,
                             com.yahoo.search.searchers.QueryValidator.class,

@@ -55,8 +55,7 @@ public class ZKApplicationPackageTest {
                                     nodeResources,
                                     nodeResources,
                                     nodeResources,
-                                    ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                           Optional.of(DockerImage.fromString(dockerImage))),
+                                    ClusterMembership.from("container/test/0/0"),
                                     Optional.of(Version.fromString("6.0.1")), Optional.empty(),
                                     Optional.of(DockerImage.fromString(dockerImage)),
                                     AzName.defaultName())));

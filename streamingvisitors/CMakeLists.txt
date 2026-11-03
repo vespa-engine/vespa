@@ -21,6 +21,7 @@ vespa_define_module(
     src/tests/charbuffer
     src/tests/docsum
     src/tests/document
+    src/tests/fieldsearchspec
     src/tests/hitcollector
     src/tests/matching_elements_filler
     src/tests/nearest_neighbor_field_searcher
@@ -28,6 +29,7 @@ vespa_define_module(
     src/tests/querywrapper
     src/tests/searcher
     src/tests/searchvisitor
+    src/tests/sparse_tensor_wand_field_searcher
     src/tests/textutil
     src/tests/tokens_converter
 )

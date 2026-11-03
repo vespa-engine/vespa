@@ -18,8 +18,7 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /*
- * Adjusts position summary fields by adding derived summary fields (.distance and .position) and setting summary
- * transform and source.
+ * Sets summary transform and source for position summary fields.
  */
 public class AdjustPositionSummaryFields extends Processor {
 
@@ -37,16 +36,6 @@ public class AdjustPositionSummaryFields extends Processor {
         for (DocumentSummary summary : schema.getSummaries().values()) {
             scanSummary(summary);
         }
-    }
-
-    static String getPositionSummaryFieldName(String fieldName) {
-        // Only used in v7 legacy mode, remove in Vespa 9
-        return fieldName + ".position";
-    }
-
-    static String getDistanceSummaryFieldName(String fieldName) {
-        // Only used in v7 legacy mode, remove in Vespa 9
-        return fieldName + ".distance";
     }
 
     private void scanSummary(DocumentSummary summary) {
@@ -67,7 +56,7 @@ public class AdjustPositionSummaryFields extends Processor {
                     if (zCurve != null) {
                         if (hasPositionAttribute(zCurve)) {
                             Source source = new Source(zCurve);
-                            adjustPositionField(summary, summaryField, source);
+                            adjustPositionField(summaryField, source);
                         } else if (sourceField.isImportedField() || !summaryField.getName().equals(originalSource)) {
                             fail(summaryField, "No position attribute '" + zCurve + "'");
                         }
@@ -77,36 +66,10 @@ public class AdjustPositionSummaryFields extends Processor {
         }
     }
 
-    private void adjustPositionField(DocumentSummary summary, SummaryField summaryField, Source source) {
+    private void adjustPositionField(SummaryField summaryField, Source source) {
         summaryField.setTransform(SummaryTransform.GEOPOS);
         summaryField.getSources().clear();
         summaryField.addSource(source);
-        ensureSummaryField(summary,
-                           getPositionSummaryFieldName(summaryField.getName()),
-                           DataType.getArray(DataType.STRING),
-                           source,
-                           SummaryTransform.POSITIONS);
-        ensureSummaryField(summary,
-                           getDistanceSummaryFieldName(summaryField.getName()),
-                           DataType.INT,
-                           source,
-                           SummaryTransform.DISTANCE);
-    }
-
-    private void ensureSummaryField(DocumentSummary summary, String fieldName, DataType dataType, Source source, SummaryTransform transform) {
-        SummaryField oldField = schema.getSummaryField(fieldName);
-        if (oldField == null) {
-            return;
-        }
-        if (!oldField.getDataType().equals(dataType)) {
-            fail(oldField, "exists with type '" + oldField.getDataType().toString() + "', should be of type '" + dataType.toString() + "'");
-        }
-        if (oldField.getTransform() != transform) {
-            fail(oldField, "has summary transform '" + oldField.getTransform().toString() + "', should have transform '" + transform.toString() + "'");
-        }
-        if (oldField.getSourceCount() != 1 || !oldField.getSingleSource().equals(source.getName())) {
-            fail(oldField, "has source '" + oldField.getSources().toString() + "', should have source '" + source + "'");
-        }
     }
 
     private boolean hasPositionAttribute(String name) {

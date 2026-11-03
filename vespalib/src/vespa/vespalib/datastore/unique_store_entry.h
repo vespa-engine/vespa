@@ -4,13 +4,14 @@
 
 #include "unique_store_entry_base.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <utility>
 
 namespace vespalib::datastore {
 
 template <typename EntryType> struct UniqueStoreEntryReclaimer {
-    static void reclaim(EntryType* entry) { assert(entry->get_ref_count() == 0u); }
+    static void reclaim(EntryType* entry) { CHECK(entry->get_ref_count() == 0u); }
 };
 
 /*

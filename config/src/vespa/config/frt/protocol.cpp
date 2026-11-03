@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "protocol.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <lz4.h>
 
-#include <cassert>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -27,7 +27,6 @@ const Memory REQUEST_DEF_MD5 = "defMD5";
 const Memory REQUEST_DEF_CONTENT = "defContent";
 const Memory REQUEST_CLIENT_CONFIGID = "configId";
 const Memory REQUEST_CLIENT_HOSTNAME = "clientHostname";
-const Memory REQUEST_CONFIG_MD5 = "configMD5";
 const Memory REQUEST_CONFIG_XXHASH64 = "configXxhash64";
 const Memory REQUEST_CURRENT_GENERATION = "currentGeneration";
 const Memory REQUEST_TIMEOUT = "timeout";
@@ -74,7 +73,7 @@ DecompressedData decompress_lz4(const char* input, uint32_t inputLen, int uncomp
         memcpy(copy.get(), memory.get(), sz);
         memory = std::move(copy);
     }
-    assert(sz >= 0);
+    CHECK(sz >= 0);
     return DecompressedData(std::move(memory), static_cast<uint32_t>(sz));
 }
 

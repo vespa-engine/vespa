@@ -2,6 +2,8 @@
 
 #include "fast_value_view.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespalib::MemoryUsage;
@@ -25,7 +27,7 @@ FastValueView::FastValueView(const ValueType& type, std::span<const string_id> l
         std::span<const string_id> addr(_labels.data() + (i * num_mapped_dimensions), num_mapped_dimensions);
         _index.map.add_mapping(FastAddrMap::hash_labels(addr));
     }
-    assert(_index.map.size() == num_subspaces);
+    CHECK(_index.map.size() == num_subspaces);
 }
 
 MemoryUsage FastValueView::get_memory_usage() const {

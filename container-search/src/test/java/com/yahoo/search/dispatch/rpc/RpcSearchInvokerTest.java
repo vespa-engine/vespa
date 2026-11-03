@@ -6,7 +6,6 @@ import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.concurrent.Timer;
-import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.cluster.ClusterSearcher;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.VespaBackend;
@@ -414,7 +413,7 @@ public class RpcSearchInvokerTest {
 
     RpcSearchInvoker createRpcInvoker(Node node, int maxHits, Holders holders) {
         var mockPool = new RpcResourcePool(ImmutableMap.of(node.key(), parameterCollectorClient(holders).createConnection(node.hostname(), 123)));
-        return new RpcSearchInvoker(mockSearcher(), compressor, node, mockPool, maxHits, new QrSearchersConfig.Builder().build());
+        return new RpcSearchInvoker(mockSearcher(), compressor, node, mockPool, maxHits);
     }
 
     void verifyConnections(RpcResourcePool rpcResourcePool, int numGroups, int nodesPerGroup, int expectNeedCloseCount) {

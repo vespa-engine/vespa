@@ -10,6 +10,7 @@
 #include "service_layer_error_listener.h"
 #include "statemanager.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-persistence.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/config/common/exceptions.h>
@@ -70,7 +71,7 @@ void ServiceLayerNode::report(vespalib::JsonStream& stream) const {
 }
 
 void ServiceLayerNode::init() {
-    assert(!_init_has_been_called);
+    CHECK(!_init_has_been_called);
     _init_has_been_called = true;
     spi::Result initResult(_persistenceProvider.initialize());
     if (initResult.hasError()) {
@@ -98,7 +99,7 @@ void ServiceLayerNode::init() {
 }
 
 ServiceLayerNode::~ServiceLayerNode() {
-    assert(_init_has_been_called);
+    CHECK(_init_has_been_called);
     shutdown();
 }
 
@@ -213,24 +214,24 @@ void ServiceLayerNode::createChain(IStorageChainBuilder& builder) {
 }
 
 void ServiceLayerNode::on_configure(const StorServerConfig& config) {
-    assert(_merge_throttler);
+    CHECK(_merge_throttler);
     _merge_throttler->on_configure(config);
-    assert(_modified_bucket_checker);
+    CHECK(_modified_bucket_checker);
     _modified_bucket_checker->on_configure(config);
 }
 
 void ServiceLayerNode::on_configure(const PersistenceConfig& config) {
-    assert(_changed_bucket_ownership_handler);
+    CHECK(_changed_bucket_ownership_handler);
     _changed_bucket_ownership_handler->on_configure(config);
 }
 
 void ServiceLayerNode::on_configure(const StorVisitorConfig& config) {
-    assert(_visitor_manager);
+    CHECK(_visitor_manager);
     _visitor_manager->on_configure(config);
 }
 
 void ServiceLayerNode::on_configure(const StorFilestorConfig& config) {
-    assert(_fileStorManager);
+    CHECK(_fileStorManager);
     _fileStorManager->on_configure(config);
 }
 
@@ -239,8 +240,8 @@ ResumeGuard ServiceLayerNode::pause() {
 }
 
 void ServiceLayerNode::perform_post_chain_creation_init_steps() {
-    assert(_fileStorManager);
-    assert(_bucket_manager);
+    CHECK(_fileStorManager);
+    CHECK(_bucket_manager);
     // After initialization, the node will immediately start communicating with the cluster
     // controller, exchanging host info. This host info contains a subset snapshot of the active
     // metrics, which includes the total bucket count, doc count etc. It is critical that
@@ -257,7 +258,7 @@ void ServiceLayerNode::perform_post_chain_creation_init_steps() {
 }
 
 void ServiceLayerNode::on_bouncer_config_changed() {
-    assert(_bouncer);
+    CHECK(_bouncer);
     _bouncer->on_configure(bouncer_config());
 }
 

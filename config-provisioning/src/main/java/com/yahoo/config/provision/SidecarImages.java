@@ -19,7 +19,14 @@ import java.util.stream.Collectors;
  * where the key is an arbitrary identifier for the image, and the value is a container image reference.
  *
  * @author glebashnik
+ * @deprecated Sidecar images are configured outside this repository, through implementations of
+ *             com.yahoo.config.model.api.SidecarProvider. This class is unused here, but released
+ *             config-model versions that predate the SidecarProvider hook import it from this bundle
+ *             at runtime, so removing it fails deployments for applications on those versions with
+ *             NoClassDefFoundError. Remove this class and sidecar-images.properties once no
+ *             config-model version importing it is in use.
  */
+@Deprecated(forRemoval = true)
 public class SidecarImages {
     private final Map<String, DockerImage> images;
 

@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster;
 
+import ai.vespa.telemetry.api.trace.OtelTracing;
+import ai.vespa.telemetry.api.trace.TraceAttributes;
 import com.yahoo.collections.TinyIdentitySet;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.ComponentId;
@@ -28,6 +30,7 @@ import com.yahoo.search.schema.Cluster;
 import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
+import io.opentelemetry.api.trace.Span;
 import com.yahoo.vespa.streamingvisitors.StreamingBackend;
 import com.yahoo.yolean.Exceptions;
 
@@ -49,6 +52,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
+
 
 /**
  * A searcher which forwards to a cluster of monitored native Vespa backends.
@@ -182,22 +186,36 @@ public class ClusterSearcher extends Searcher {
                     .collect(Collectors.toCollection(TinyIdentitySet::new))
                 : schema2Searcher.values().stream().collect(Collectors.toCollection(TinyIdentitySet::new));
 
-        if ( ! servers.isEmpty() ) {
-            for (var server : servers) {
-                if (query.getTimeLeft() > 0) {
-                    server.fill(result, summaryClass);
-                } else {
-                    if (result.hits().getErrorHit() == null) {
-                        result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries, query timeout was " +
-                                                                          query.getTimeout() + " ms"));
+        // The top of the fill side of the dispatch layer, and the counterpart of dispatch.search: this is the
+        // level at which "a fill happened against this content cluster" is true, and it is the span the
+        // per-invoker and per-node fill spans hang under. The error branches are covered deliberately - a fill
+        // that produced nothing but a timeout still took time, and is the case worth seeing in a trace.
+        OtelTracing.instrument("cluster.fill", () -> {
+            // Set before any work, so a fill that finds no backend in service is still attributable to a
+            // cluster and a summary class rather than being an anonymous failed span. No vespa.schema here:
+            // the restrict can hold several, and dispatch.fill below carries the precise one per partition.
+            Span.current()
+                .setAttribute(TraceAttributes.CONTENT_CLUSTER,    searchClusterName)
+                .setAttribute(TraceAttributes.FILL_SUMMARY_CLASS, summaryClass)
+                .setAttribute(TraceAttributes.FILL_BACKENDS,      servers.size());
+
+            if ( ! servers.isEmpty() ) {
+                for (var server : servers) {
+                    if (query.getTimeLeft() > 0) {
+                        server.fill(result, summaryClass);
+                    } else {
+                        if (result.hits().getErrorHit() == null) {
+                            result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries, query timeout was " +
+                                                                              query.getTimeout() + " ms"));
+                        }
                     }
                 }
+            } else {
+                if (result.hits().getErrorHit() == null) {
+                    result.hits().addError(ErrorMessage.createNoBackendsInService("Could not fill result"));
+                }
             }
-        } else {
-            if (result.hits().getErrorHit() == null) {
-                result.hits().addError(ErrorMessage.createNoBackendsInService("Could not fill result"));
-            }
-        }
+        });
     }
 
     private void validateQueryTimeout(Query query) {
@@ -351,7 +369,10 @@ public class ClusterSearcher extends Searcher {
             for (var entry : schemaQueries.entrySet()) {
                 FutureTask<Result> task = new FutureTask<>(() -> perSchemaSearch(entry.getKey(), entry.getValue()));
                 try {
-                    executor.execute(task);
+                    // Carry the trace context onto the pool thread: the dispatch and per-node spans created
+                    // below perSchemaSearch would otherwise see no context and never be exported. The rejection
+                    // path below runs on this thread, where the context is already current, and needs nothing.
+                    executor.execute(OtelTracing.withCurrentContext(task));
                     pending.add(task);
                 } catch (RejectedExecutionException rej) {
                     task.run();

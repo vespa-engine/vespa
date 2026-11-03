@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/check_require.h>
 #include <vespa/searchlib/features/rankingexpression/intrinsic_blueprint_adapter.h>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
@@ -35,7 +36,7 @@ struct MyBlueprint : Blueprint {
     Blueprint::UP createInstance() const override { return std::make_unique<MyBlueprint>(flags); }
     bool setup(const IIndexEnvironment&, const std::vector<std::string>& params) override {
         EXPECT_EQ(getName(), "my_bp(foo,bar)");
-        assert(params.size() == 2);
+        CHECK(params.size() == 2);
         EXPECT_EQ(params[0], "foo");
         EXPECT_EQ(params[1], "bar");
         if (is_set(extra_input)) {

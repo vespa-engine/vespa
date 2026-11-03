@@ -28,8 +28,9 @@ std::string HtmlStatusReporter::getReportContentType(const HttpUrlPath&) const {
 }
 
 bool HtmlStatusReporter::reportStatus(std::ostream& out, const HttpUrlPath& path) const {
-    if (!isValidStatusRequest())
+    if (!isValidStatusRequest()) {
         return false;
+    }
     reportHtmlHeader(out, path);
     reportHtmlStatus(out, path);
     reportHtmlFooter(out, path);

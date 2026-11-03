@@ -47,7 +47,7 @@ ItemRawScoreBlueprint::~ItemRawScoreBlueprint() = default;
 
 bool ItemRawScoreBlueprint::setup(const IIndexEnvironment&, const ParameterList& params) {
     _label = params[0].getValue();
-    describeOutput("out", "raw score for the given query item");
+    describeOutput("out", "summed raw score of the query items with the given label");
     return true;
 }
 
@@ -65,9 +65,10 @@ FeatureExecutor& ItemRawScoreBlueprint::createExecutor(const IQueryEnvironment& 
 
 ItemRawScoreBlueprint::HandleVector ItemRawScoreBlueprint::resolve(const IQueryEnvironment& env,
                                                                    const std::string&       label) {
-    HandleVector     handles;
-    const ITermData* term = util::getTermByLabel(env, label);
-    if (term != nullptr) {
+    HandleVector handles;
+    // A label may name several query items; the raw scores of all of them are summed, just like the raw scores
+    // of the fields of a single item are.
+    for (const ITermData* term : util::getTermsByLabel(env, label)) {
         uint32_t numFields(term->numFields());
         for (uint32_t i(0); i < numFields; ++i) {
             TermFieldHandle handle = term->field(i).getHandle();

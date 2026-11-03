@@ -4,6 +4,7 @@
 
 #include "fpfactory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/queryeval/iterators.h>
@@ -147,15 +148,17 @@ void FakeMemTreeOccMgr::add(uint32_t wordIdx, index::DocIdAndFeatures& features)
 
     _unflushed.push_back(PendingOp(wordIdx, features.doc_id(), r.first));
 
-    if (_unflushed.size() >= 10000)
+    if (_unflushed.size() >= 10000) {
         flush();
+    }
 }
 
 void FakeMemTreeOccMgr::remove(uint32_t wordIdx, uint32_t docId) {
     _unflushed.push_back(PendingOp(wordIdx, docId));
 
-    if (_unflushed.size() >= 10000)
+    if (_unflushed.size() >= 10000) {
         flush();
+    }
 }
 
 void FakeMemTreeOccMgr::sortUnflushed() {
@@ -169,8 +172,9 @@ void FakeMemTreeOccMgr::sortUnflushed() {
 void FakeMemTreeOccMgr::flush() {
     using Aligner = FeatureStore::Aligner;
 
-    if (_unflushed.empty())
+    if (_unflushed.empty()) {
         return;
+    }
 
     uint32_t lastWord = std::numeric_limits<uint32_t>::max();
     sortUnflushed();
@@ -237,12 +241,13 @@ FakeMemTreeOccFactory::~FakeMemTreeOccFactory() {
 FakePosting::SP FakeMemTreeOccFactory::make(const FakeWord& fw) {
     auto itr = _mgr._fw2WordIdx.find(&fw);
 
-    if (itr == _mgr._fw2WordIdx.end())
+    if (itr == _mgr._fw2WordIdx.end()) {
         LOG_ABORT("should not be reached");
+    }
 
     uint32_t wordIdx = itr->second;
 
-    assert(_mgr._postingIdxs.size() > wordIdx);
+    CHECK(_mgr._postingIdxs.size() > wordIdx);
 
     return std::make_shared<FakeMemTreeOcc>(fw, _mgr._allocator, _mgr._postingIdxs[wordIdx]->_tree,
                                             _mgr._featureSizes[wordIdx], _mgr);
@@ -292,12 +297,13 @@ FakeMemTreeOcc2Factory::~FakeMemTreeOcc2Factory() = default;
 FakePosting::SP FakeMemTreeOcc2Factory::make(const FakeWord& fw) {
     auto i = _mgr._fw2WordIdx.find(&fw);
 
-    if (i == _mgr._fw2WordIdx.end())
+    if (i == _mgr._fw2WordIdx.end()) {
         LOG_ABORT("should not be reached");
+    }
 
     uint32_t wordIdx = i->second;
 
-    assert(_mgr._postingIdxs.size() > wordIdx);
+    CHECK(_mgr._postingIdxs.size() > wordIdx);
 
     return std::make_shared<FakeMemTreeOcc>(fw, _mgr._allocator, _mgr._postingIdxs[wordIdx]->_tree,
                                             _mgr._featureSizes[wordIdx], _mgr, ".memtreeocc2");

@@ -249,9 +249,10 @@ again:
                 vespalib::to_s(now - created));
             int l = strlen(filename);
             strcpy(newfn, filename);
-            time_t     seconds = vespalib::count_s(now.time_since_epoch());
-            struct tm* nowtm = gmtime(&seconds);
-            if (strftime(newfn + l, FILENAME_MAX - l - 1, "-%Y-%m-%d.%H-%M-%S", nowtm) < 10) {
+            time_t    seconds = vespalib::count_s(now.time_since_epoch());
+            struct tm nowtm;
+            vespalib::toGmtDateAndTime(seconds, nowtm);
+            if (strftime(newfn + l, FILENAME_MAX - l - 1, "-%Y-%m-%d.%H-%M-%S", &nowtm) < 10) {
                 LOG(error, "could not strftime");
                 throw SomethingBad("strftime failed");
             }

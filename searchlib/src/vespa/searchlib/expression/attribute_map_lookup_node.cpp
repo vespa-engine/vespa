@@ -4,6 +4,7 @@
 
 #include "resultvector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcommon/attribute/multi_value_read_view_traits.h>
@@ -442,7 +443,7 @@ AttributeMapLookupNode::createResultHandler(bool                               p
             const StringAttribute& sattr = dynamic_cast<const StringAttribute&>(attribute);
             EnumHandle             undefined(0);
             bool                   found = attribute.findEnum(sattr.defaultValue(), undefined);
-            assert(found);
+            CHECK(found);
             auto handler =
                 std::make_unique<EnumValueHandler>(std::move(keyHandler), attribute, *resultNode, undefined);
             return {std::move(resultNode), std::move(handler)};

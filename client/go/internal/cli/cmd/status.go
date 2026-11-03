@@ -170,14 +170,19 @@ $ vespa status deployment -t local [session-id] --wait 600
 				}
 				wantedID = n
 			}
+			progress := cli.startDeploymentProgress("Deployment status")
+			defer progress.close()
 			t, err := cli.target(targetOptions{logLevel: "none"})
 			if err != nil {
 				return err
 			}
+			progress.setTitle("Deployment of " + t.Deployment().String())
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			id, err := waiter.Deployment(t, wantedID)
 			if err != nil {
-				if errors.Is(err, vespa.ErrWaitTimeout) && t.IsCloud() {
+				progress.close()
+				// A drawn frame already ends with the run state and console URL.
+				if errors.Is(err, vespa.ErrWaitTimeout) && t.IsCloud() && (progress == nil || progress.lines == 0) {
 					cli.printInfo("Deployment is still running. See ", color.CyanString(t.Deployment().System.ConsoleRunURL(t.Deployment(), id)), " for more details")
 				}
 				var hints []string
@@ -186,7 +191,10 @@ $ vespa status deployment -t local [session-id] --wait 600
 				}
 				return ErrCLI{Status: 1, warn: true, hints: hints, error: err}
 			}
-			if t.IsCloud() {
+			if progress != nil {
+				progress.setURL(t.Deployment().System.ConsoleRunURL(t.Deployment(), id))
+				progress.finish("✓ Deployment complete")
+			} else if t.IsCloud() {
 				log.Printf("Deployment run %s has completed", color.CyanString(strconv.FormatInt(id, 10)))
 				log.Printf("See %s for more details", color.CyanString(t.Deployment().System.ConsoleRunURL(t.Deployment(), id)))
 			} else {

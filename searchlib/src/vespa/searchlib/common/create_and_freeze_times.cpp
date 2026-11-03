@@ -13,7 +13,6 @@ using search::tags::FREEZE_TIME;
 using std::chrono::microseconds;
 using std::chrono::steady_clock;
 using std::chrono::system_clock;
-using std::chrono::utc_clock;
 
 namespace search::common {
 
@@ -30,20 +29,18 @@ CreateAndFreezeTimes::CreateAndFreezeTimes(const vespalib::GenericHeader& header
         auto create_time = header.getTag(CREATE_TIME).asInteger();
         auto freeze_time = header.getTag(FREEZE_TIME).asInteger();
         if (freeze_time >= create_time) {
-            _create_time = from_utc_us(create_time);
-            _freeze_time = from_utc_us(freeze_time);
+            _create_time = from_system_us(create_time);
+            _freeze_time = from_system_us(freeze_time);
         }
     }
 }
 
-int64_t CreateAndFreezeTimes::to_utc_us(std::chrono::system_clock::time_point system_time) {
-    auto utc_time = utc_clock::from_sys(system_time);
-    return duration_cast<microseconds>(utc_time.time_since_epoch()).count();
+int64_t CreateAndFreezeTimes::to_system_us(std::chrono::system_clock::time_point system_time) {
+    return duration_cast<microseconds>(system_time.time_since_epoch()).count();
 }
 
-system_clock::time_point CreateAndFreezeTimes::from_utc_us(uint64_t us) {
-    auto utc_time = utc_clock::time_point(microseconds(us));
-    return utc_clock::to_sys(utc_time);
+system_clock::time_point CreateAndFreezeTimes::from_system_us(int64_t us) {
+    return system_clock::time_point(microseconds(us));
 }
 
 void CreateAndFreezeTimes::merge(const CreateAndFreezeTimes& rhs) noexcept {

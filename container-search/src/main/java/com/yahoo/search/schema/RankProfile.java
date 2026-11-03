@@ -1,13 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.schema;
 
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 
 /**
  * Information about a rank profile
@@ -17,31 +22,42 @@ import java.util.OptionalInt;
 public class RankProfile {
 
     private final String      name;
+    private final Optional<String> explanation;
     private final boolean     hasSummaryFeatures;
     private final boolean     hasRankFeatures;
     private final boolean     useSignificanceModel;
     private final OptionalInt keepRankCount;
     private final OptionalInt totalKeepRankCount;
+    private final Map<String, Input> inputDetails;
     private final Map<String, InputType> inputs;
     private final MatchPhase  matchPhase;
     private final SecondPhase secondPhase;
+    private final List<String> sortFeatures;
 
     // Assigned when this is added to a schema
     private Schema schema = null;
 
     private RankProfile(Builder builder) {
         this.name = builder.name;
+        this.explanation = Optional.ofNullable(builder.explanation);
         this.hasSummaryFeatures = builder.hasSummaryFeatures;
         this.hasRankFeatures = builder.hasRankFeatures;
         this.useSignificanceModel = builder.useSignificanceModel;
-        this.inputs = Collections.unmodifiableMap(builder.inputs);
+        this.inputDetails = Collections.unmodifiableMap(new LinkedHashMap<>(builder.inputs));
+        Map<String, InputType> inputs = new LinkedHashMap<>();
+        builder.inputs.forEach((name, input) -> inputs.put(name, input.type()));
+        this.inputs = Collections.unmodifiableMap(inputs);
         this.keepRankCount = builder.keepRankCount;
         this.totalKeepRankCount = builder.totalKeepRankCount;
         this.matchPhase = builder.matchPhase;
         this.secondPhase = builder.secondPhase;
+        this.sortFeatures = List.copyOf(builder.sortFeatures);
     }
 
     public String name() { return name; }
+
+    /** Returns the free text explanation of what this rank profile does and when to use it, if any. */
+    public Optional<String> explanation() { return explanation; }
 
     /** Returns the schema owning this, or null if this is not added to a schema */
     public Schema schema() { return schema; }
@@ -62,8 +78,11 @@ public class RankProfile {
     /** Returns true if this rank profile should use significance models. */
     public boolean useSignificanceModel() { return useSignificanceModel; }
 
-    /** Returns the inputs explicitly declared in this rank profile. */
+    /** Returns the types of the inputs explicitly declared in this rank profile. */
     public Map<String, InputType> inputs() { return inputs; }
+
+    /** Returns all the information about the inputs explicitly declared in this rank profile. */
+    public Map<String, Input> inputDetails() { return inputDetails; }
 
     /** Returns the number of hits to keep rank data for in first phase on each node, or empty to use the default. */
     public OptionalInt keepRankCount() { return keepRankCount; }
@@ -77,30 +96,47 @@ public class RankProfile {
     /** Returns information about the second phase reranking of this. */
     public SecondPhase secondPhase() { return secondPhase; }
 
+    /** Returns the public names of rank features that may be used as sorting keys. */
+    public List<String> sortFeatures() { return sortFeatures; }
+
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
         if ( ! (o instanceof RankProfile other)) return false;
         if ( ! other.name.equals(this.name)) return false;
+        if ( ! other.explanation.equals(this.explanation)) return false;
         if ( other.hasSummaryFeatures != this.hasSummaryFeatures) return false;
         if ( other.hasRankFeatures != this.hasRankFeatures) return false;
         if ( other.useSignificanceModel != this.useSignificanceModel) return false;
-        if ( ! other.inputs.equals(this.inputs)) return false;
+        if ( ! other.inputDetails.equals(this.inputDetails)) return false;
         if ( ! other.keepRankCount.equals(this.keepRankCount)) return false;
         if ( ! other.totalKeepRankCount.equals(this.totalKeepRankCount)) return false;
         if ( ! other.matchPhase.equals(this.matchPhase)) return false;
         if ( ! other.secondPhase.equals(this.secondPhase)) return false;
+        if ( ! other.sortFeatures.equals(this.sortFeatures)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, hasSummaryFeatures, hasRankFeatures, useSignificanceModel, inputs, keepRankCount, totalKeepRankCount, matchPhase, secondPhase);
+        return Objects.hash(name, explanation, hasSummaryFeatures, hasRankFeatures, useSignificanceModel, inputDetails, keepRankCount, totalKeepRankCount, matchPhase, secondPhase, sortFeatures);
     }
 
     @Override
     public String toString() {
         return "rank profile '" + name + "'" + (schema == null ? "" : " in " + schema);
+    }
+
+    /** An input (query rank feature) accepted by a rank profile. */
+    public record Input(String name, InputType type, Optional<Tensor> defaultValue, Optional<String> explanation) {
+
+        public Input {
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(type);
+            Objects.requireNonNull(defaultValue);
+            Objects.requireNonNull(explanation);
+        }
+
     }
 
     public record InputType(TensorType tensorType, boolean declaredString) {
@@ -125,17 +161,25 @@ public class RankProfile {
     public static class Builder {
 
         private final String name;
+        private String explanation = null;
         private boolean hasSummaryFeatures = true;
         private boolean hasRankFeatures = true;
         private boolean useSignificanceModel = false;
-        private final Map<String, InputType> inputs = new LinkedHashMap<>();
+        private final Map<String, Input> inputs = new LinkedHashMap<>();
         private OptionalInt keepRankCount = OptionalInt.empty();
         private OptionalInt totalKeepRankCount = OptionalInt.empty();
         private MatchPhase matchPhase = new MatchPhase.Builder().build();
         private SecondPhase secondPhase = new SecondPhase.Builder().build();
+        private final Set<String> sortFeatures = new LinkedHashSet<>();
 
         public Builder(String name) {
             this.name = Objects.requireNonNull(name);
+        }
+
+        /** Sets a free text explanation of what this rank profile does and when to use it. */
+        public Builder setExplanation(String explanation) {
+            this.explanation = Objects.requireNonNull(explanation);
+            return this;
         }
 
         public Builder setHasSummaryFeatures(boolean hasSummaryFeatures) {
@@ -149,7 +193,11 @@ public class RankProfile {
         }
 
         public Builder addInput(String name, InputType type) {
-            inputs.put(name, type);
+            return addInput(new Input(name, type, Optional.empty(), Optional.empty()));
+        }
+
+        public Builder addInput(Input input) {
+            inputs.put(input.name(), input);
             return this;
         }
 
@@ -172,6 +220,11 @@ public class RankProfile {
 
         public Builder setSecondPhase(SecondPhase secondPhase) {
             this.secondPhase = Objects.requireNonNull(secondPhase);
+            return this;
+        }
+
+        public Builder addSortFeature(String name) {
+            sortFeatures.add(Objects.requireNonNull(name));
             return this;
         }
 

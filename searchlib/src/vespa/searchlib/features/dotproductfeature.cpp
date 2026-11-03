@@ -763,8 +763,9 @@ Blueprint::UP DotProductBlueprint::createInstance() const {
 
 void DotProductBlueprint::prepareSharedState(const IQueryEnvironment& env, IObjectStore& store) const {
     const IAttributeVector* attribute = lookupAndStoreAttribute(_attrKey, getAttribute(env), env, store);
-    if (attribute == nullptr)
+    if (attribute == nullptr) {
         return;
+    }
 
     const fef::Anything* queryVector = env.getObjectStore().get(_queryVectorKey);
     if (queryVector == nullptr) {

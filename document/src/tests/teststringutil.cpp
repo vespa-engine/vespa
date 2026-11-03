@@ -37,8 +37,9 @@ TEST(StringUtilTest, test_unescape) {
 
 TEST(StringUtilTest, test_printAsHex) {
     std::vector<char> asciitable(256);
-    for (uint32_t i = 0; i < 256; ++i)
+    for (uint32_t i = 0; i < 256; ++i) {
         asciitable[i] = i;
+    }
     std::ostringstream ost;
     ost << "\n  ";
     StringUtil::printAsHex(ost, &asciitable[0], asciitable.size(), 16, true, "  ");

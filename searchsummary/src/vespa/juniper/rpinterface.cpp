@@ -9,7 +9,9 @@
 #include "queryvisitor.h"
 #include "result.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
+#include <cstdlib>
 #include <vector>
 
 #include <vespa/log/log.h>
@@ -44,14 +46,15 @@ Juniper::Juniper(IJuniperProperties* props, const Fast_WordFolder* wordfolder, i
             JUNIPER_RP_ABI_VERSION, api_version);
     }
 
-    assert(props);
-    assert(wordfolder);
+    CHECK(props);
+    CHECK(wordfolder);
 
     LOG(debug, "Juniper result processor (interface v.%d)", JUNIPER_RP_ABI_VERSION);
 
     unsigned int debug_mask = strtol(_props->GetProperty("juniper.debug_mask", "0"), nullptr, 0);
-    if (debug_mask)
+    if (debug_mask) {
         SetDebug(debug_mask);
+    }
 }
 
 Juniper::~Juniper() {

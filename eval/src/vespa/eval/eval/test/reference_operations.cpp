@@ -2,12 +2,11 @@
 
 #include "reference_operations.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/visit_ranges.h>
-
-#include <cassert>
 
 namespace vespalib::eval {
 
@@ -166,7 +165,7 @@ TensorSpec ReferenceOperations::concat(const TensorSpec& in_a, const TensorSpec&
     size_t concat_dim_index = a_type.dimension_index(concat_dim);
     if (concat_dim_index != ValueType::Dimension::npos) {
         const auto& dim = a_type.dimensions()[concat_dim_index];
-        assert(dim.is_indexed()); // type resolving (above) should catch this
+        CHECK(dim.is_indexed()); // type resolving (above) should catch this
         b_offset = dim.size;
     }
     for (const auto& cell_a : a.cells()) {
@@ -189,7 +188,7 @@ TensorSpec ReferenceOperations::create(const std::string& type, const CreateSpec
         return result;
     }
     for (const auto& [addr, child_idx] : spec) {
-        assert(child_idx < children.size());
+        CHECK(child_idx < children.size());
         const auto& child = children[child_idx];
         double      val = value_from_child(child);
         result.add(addr, val);
@@ -318,7 +317,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec& peek_spec, const std::vecto
     }
     auto is_mapped_dim = [&](const std::string& name) {
         size_t dim_idx = param_type.dimension_index(name);
-        assert(dim_idx != ValueType::Dimension::npos);
+        CHECK(dim_idx != ValueType::Dimension::npos);
         const auto& param_dim = param_type.dimensions()[dim_idx];
         return param_dim.is_mapped();
     };
@@ -327,7 +326,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec& peek_spec, const std::vecto
         const std::string& dim = dim_name;
         std::visit(vespalib::overload{[&](const TensorSpec::Label& label) { addr.emplace(dim, label); },
                                       [&](const size_t& child_idx) {
-                                          assert(child_idx < children.size());
+                                          CHECK(child_idx < children.size());
                                           const auto& child = children[child_idx];
                                           double      child_value = value_from_child(child);
                                           if (is_mapped_dim(dim)) {
@@ -392,7 +391,7 @@ TensorSpec ReferenceOperations::reduce(const TensorSpec& in_a, Aggr aggr, const 
 TensorSpec ReferenceOperations::rename(const TensorSpec& in_a, const std::vector<std::string>& from,
                                        const std::vector<std::string>& to) {
     auto a = in_a.normalize();
-    assert(from.size() == to.size());
+    CHECK(from.size() == to.size());
     ValueType  res_type = ValueType::from_spec(a.type()).rename(from, to);
     TensorSpec result(res_type.to_spec());
     if (res_type.is_error()) {

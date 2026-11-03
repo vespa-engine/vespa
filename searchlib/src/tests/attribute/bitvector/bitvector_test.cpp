@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -100,7 +101,7 @@ BitVectorTest::~BitVectorTest() = default;
 
 template <typename VectorType> VectorType& BitVectorTest::as(AttributePtr& v) {
     auto* res = dynamic_cast<VectorType*>(v.get());
-    assert(res != nullptr);
+    CHECK(res != nullptr);
     return *res;
 }
 
@@ -292,7 +293,7 @@ void BitVectorTest::checkSearch(AttributePtr v, SearchBasePtr sb, TermFieldMatch
     EXPECT_EQ(expFirstDocId, docId);
     while (docId != search::endDocId) {
         lastDocId = docId;
-        ++docFreq, assert(!checkStride || (docId % 5) == 2u);
+        ++docFreq, CHECK(!checkStride || (docId % 5) == 2u);
         sb->unpack(docId);
         EXPECT_TRUE(md.has_ranking_data(docId));
         if (v->getCollectionType() == CollectionType::SINGLE || !weights) {

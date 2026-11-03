@@ -5,6 +5,7 @@
 #include "distance_function_factory.h"
 #include "nearest_neighbor_index.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -26,7 +27,7 @@ DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tens
     auto* nns_index = _attr_tensor.nearest_neighbor_index();
     auto& dff = nns_index ? nns_index->distance_function_factory() : attr_tensor.distance_function_factory();
     _dist_fun = dff.for_query_vector(query_tensor_in.cells());
-    assert(_dist_fun);
+    CHECK(_dist_fun);
 }
 
 DistanceCalculator::~DistanceCalculator() = default;
@@ -56,7 +57,7 @@ DistanceCalculator::make_with_validation(const search::attribute::IAttributeVect
     if (attr_tensor == nullptr) {
         throw IllegalArgumentException("Attribute is not a tensor");
     }
-    const auto& at_type = attr_tensor->getTensorType();
+    const auto& at_type = attr_tensor->unquantized_tensor_type();
     if (!supported_tensor_type(at_type)) {
         throw IllegalArgumentException(
             make_string("Attribute tensor type (%s) is not supported", at_type.to_spec().c_str()));

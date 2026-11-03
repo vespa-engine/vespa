@@ -4,6 +4,7 @@
 
 #include "attributedisklayout.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcorespi/common/transient_resource_usage.h>
 #include <vespa/searchlib/util/directory_traverse.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
@@ -11,7 +12,6 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-#include <cassert>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -61,17 +61,17 @@ AttributeDirectory::AttributeDirectory(const std::shared_ptr<AttributeDiskLayout
 
 AttributeDirectory::~AttributeDirectory() {
     std::lock_guard<std::mutex> guard(_mutex);
-    assert(_writer == nullptr);
+    CHECK(_writer == nullptr);
 }
 
 std::string AttributeDirectory::getDirName() const {
     std::shared_ptr<AttributeDiskLayout> diskLayout;
     {
         std::lock_guard<std::mutex> guard(_mutex);
-        assert(!_diskLayout.expired());
+        CHECK(!_diskLayout.expired());
         diskLayout = _diskLayout.lock();
     }
-    assert(diskLayout);
+    CHECK(diskLayout);
     if (_name.empty()) {
         return diskLayout->getBaseDir();
     }
@@ -112,8 +112,8 @@ void AttributeDirectory::markValidSnapshot(SerialNum serialNum) {
     {
         std::lock_guard<std::mutex> guard(_mutex);
         auto                        snap = _snapInfo.getSnapshot(serialNum);
-        assert(!snap.valid);
-        assert(snap.syncToken == serialNum);
+        CHECK(!snap.valid);
+        CHECK(snap.syncToken == serialNum);
         _snapInfo.validateSnapshot(serialNum);
     }
     std::string snapshotDir(getSnapshotDir(serialNum));
@@ -190,7 +190,7 @@ bool AttributeDirectory::removeDiskDir() {
 }
 
 void AttributeDirectory::detach() {
-    assert(empty());
+    CHECK(empty());
     std::lock_guard<std::mutex> guard(_mutex);
     _diskLayout.reset();
 }

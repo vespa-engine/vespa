@@ -4,17 +4,17 @@
 
 #include "free_list.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib::datastore {
 
 void BufferFreeList::attach() {
-    assert(_free_list != nullptr);
+    CHECK(_free_list != nullptr);
     _free_list->attach(*this);
 }
 
 void BufferFreeList::detach() noexcept {
-    assert(_free_list != nullptr);
+    CHECK(_free_list != nullptr);
     _free_list->detach(*this);
 }
 
@@ -23,13 +23,13 @@ BufferFreeList::BufferFreeList(std::atomic<EntryCount>& dead_entries) noexcept
 }
 
 BufferFreeList::~BufferFreeList() {
-    assert(_free_list == nullptr);
-    assert(_free_refs.empty());
+    CHECK(_free_list == nullptr);
+    CHECK(_free_refs.empty());
 }
 
 void BufferFreeList::enable(FreeList& free_list) noexcept {
-    assert(_free_list == nullptr);
-    assert(_free_refs.empty());
+    CHECK(_free_list == nullptr);
+    CHECK(_free_refs.empty());
     _free_list = &free_list;
 }
 

@@ -4,6 +4,7 @@
 
 #include "load_order_compare.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -21,7 +22,7 @@ TaskRunner::TaskRunner(vespalib::Executor& executor) : _executor(executor), _run
 }
 
 TaskRunner::~TaskRunner() {
-    assert(_runningTasks == 0u);
+    CHECK(_runningTasks == 0u);
 }
 
 void TaskRunner::getReadyTasks(const InitializerTask::SP task, TaskList& readyTasks, TaskSet& checked) {
@@ -65,7 +66,7 @@ void TaskRunner::setTaskDone(InitializerTask& task, Context::SP context) {
 
 void TaskRunner::internalRunTask(InitializerTask::SP task, Context::SP context) {
     // run by context executor
-    assert(task->getState() == State::BLOCKED);
+    CHECK(task->getState() == State::BLOCKED);
     setTaskRunning(*task);
     auto done(makeLambdaTask([this, task, context]() { setTaskDone(*task, context); }));
     _executor.execute(makeLambdaTask([task, context, done(std::move(done))]() mutable {

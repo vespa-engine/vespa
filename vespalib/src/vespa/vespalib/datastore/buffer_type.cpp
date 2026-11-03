@@ -2,11 +2,11 @@
 
 #include "buffer_type.hpp"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 
 namespace vespalib::datastore {
@@ -20,8 +20,8 @@ constexpr float DEFAULT_ALLOC_GROW_FACTOR = 0.2;
 void BufferTypeBase::CleanContext::extraBytesCleaned(size_t value) noexcept {
     size_t extra_used_bytes = _extraUsedBytes.load(std::memory_order_relaxed);
     size_t extra_hold_bytes = _extraHoldBytes.load(std::memory_order_relaxed);
-    assert(extra_used_bytes >= value);
-    assert(extra_hold_bytes >= value);
+    CHECK(extra_used_bytes >= value);
+    CHECK(extra_hold_bytes >= value);
     _extraUsedBytes.store(extra_used_bytes - value, std::memory_order_relaxed);
     _extraHoldBytes.store(extra_hold_bytes - value, std::memory_order_relaxed);
 }
@@ -52,10 +52,10 @@ BufferTypeBase::BufferTypeBase(BufferTypeBase&& rhs) noexcept = default;
 BufferTypeBase& BufferTypeBase::operator=(BufferTypeBase&& rhs) noexcept = default;
 
 BufferTypeBase::~BufferTypeBase() {
-    assert(_holdBuffers == 0);
-    assert(_hold_used_entries == 0);
-    assert(_aggr_counts.empty());
-    assert(_active_buffers.empty());
+    CHECK(_holdBuffers == 0);
+    CHECK(_hold_used_entries == 0);
+    CHECK(_aggr_counts.empty());
+    CHECK(_active_buffers.empty());
 }
 
 EntryCount BufferTypeBase::get_reserved_entries(uint32_t bufferId) const noexcept {
@@ -65,7 +65,7 @@ EntryCount BufferTypeBase::get_reserved_entries(uint32_t bufferId) const noexcep
 void BufferTypeBase::on_active(uint32_t bufferId, std::atomic<EntryCount>* used_entries,
                                std::atomic<EntryCount>* dead_entries, void* buffer) {
     _aggr_counts.add_buffer(used_entries, dead_entries);
-    assert(std::find(_active_buffers.begin(), _active_buffers.end(), bufferId) == _active_buffers.end());
+    CHECK(std::find(_active_buffers.begin(), _active_buffers.end(), bufferId) == _active_buffers.end());
     _active_buffers.emplace_back(bufferId);
     auto reserved_entries = get_reserved_entries(bufferId);
     if (reserved_entries != 0u) {
@@ -79,7 +79,7 @@ void BufferTypeBase::on_hold(uint32_t buffer_id, const std::atomic<EntryCount>* 
                              const std::atomic<EntryCount>* dead_entries) {
     ++_holdBuffers;
     auto itr = std::find(_active_buffers.begin(), _active_buffers.end(), buffer_id);
-    assert(itr != _active_buffers.end());
+    CHECK(itr != _active_buffers.end());
     _active_buffers.erase(itr);
     _aggr_counts.remove_buffer(used_entries, dead_entries);
     _hold_used_entries += *used_entries;
@@ -87,14 +87,14 @@ void BufferTypeBase::on_hold(uint32_t buffer_id, const std::atomic<EntryCount>* 
 
 void BufferTypeBase::on_free(EntryCount used_entries) noexcept {
     --_holdBuffers;
-    assert(_hold_used_entries >= used_entries);
+    CHECK(_hold_used_entries >= used_entries);
     _hold_used_entries -= used_entries;
 }
 
 void BufferTypeBase::resume_primary_buffer(uint32_t buffer_id, std::atomic<EntryCount>* used_entries,
                                            std::atomic<EntryCount>* dead_entries) {
     auto itr = std::find(_active_buffers.begin(), _active_buffers.end(), buffer_id);
-    assert(itr != _active_buffers.end());
+    CHECK(itr != _active_buffers.end());
     _active_buffers.erase(itr);
     _active_buffers.emplace_back(buffer_id);
     _aggr_counts.remove_buffer(used_entries, dead_entries);
@@ -125,7 +125,7 @@ size_t BufferTypeBase::calc_entries_to_alloc(uint32_t bufferId, EntryCount free_
         }
     }
     bc = _aggr_counts.all_buffers();
-    assert(bc.used_entries >= bc.dead_entries);
+    CHECK(bc.used_entries >= bc.dead_entries);
     size_t needed_entries =
         static_cast<size_t>(free_entries_needed) + (resizing ? last_bc.used_entries : reserved_entries);
     size_t live_entries = (bc.used_entries - bc.dead_entries);
@@ -174,8 +174,8 @@ BufferTypeBase::AggregatedBufferCounts::AggregatedBufferCounts() noexcept : _cou
 void BufferTypeBase::AggregatedBufferCounts::add_buffer(const std::atomic<EntryCount>* used_entries,
                                                         const std::atomic<EntryCount>* dead_entries) {
     for (const auto& elem : _counts) {
-        assert(elem.used_ptr != used_entries);
-        assert(elem.dead_ptr != dead_entries);
+        CHECK(elem.used_ptr != used_entries);
+        CHECK(elem.dead_ptr != dead_entries);
     }
     _counts.emplace_back(used_entries, dead_entries);
 }
@@ -184,14 +184,14 @@ void BufferTypeBase::AggregatedBufferCounts::remove_buffer(const std::atomic<Ent
                                                            const std::atomic<EntryCount>* dead_entries) {
     auto itr =
         std::find_if(_counts.begin(), _counts.end(), [=](const auto& elem) { return elem.used_ptr == used_entries; });
-    assert(itr != _counts.end());
-    assert(itr->dead_ptr == dead_entries);
+    CHECK(itr != _counts.end());
+    CHECK(itr->dead_ptr == dead_entries);
     _counts.erase(itr);
 }
 
 BufferTypeBase::BufferCounts BufferTypeBase::AggregatedBufferCounts::last_buffer() const noexcept {
     BufferCounts result;
-    assert(!_counts.empty());
+    CHECK(!_counts.empty());
     const auto& last = _counts.back();
     result.used_entries += last.used_ptr->load(std::memory_order_relaxed);
     result.dead_entries += last.dead_ptr->load(std::memory_order_relaxed);

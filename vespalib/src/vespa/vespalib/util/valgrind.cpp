@@ -1,20 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/valgrind.h>
 
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <cassert>
-
 namespace vespalib {
 
 size_t Valgrind::testSystemCall(const void* buf, size_t sz) {
     int fh = open("/dev/null", O_RDWR, 0644);
-    assert(fh != -1);
+    CHECK(fh != -1);
     size_t written = write(fh, buf, sz);
     close(fh);
-    assert(written == sz);
+    CHECK(written == sz);
     return written;
 }
 

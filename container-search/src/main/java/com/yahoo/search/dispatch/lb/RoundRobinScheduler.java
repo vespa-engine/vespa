@@ -26,7 +26,7 @@ class RoundRobinScheduler implements GroupScheduler {
         int groupId = needle;
         for (int i = 0; i < scoreboard.size(); i++) {
             TrackedGroup candidate = scoreboard.get(groupId);
-            if (rejectedGroups == null || !rejectedGroups.contains(candidate.id())) {
+            if (!rejectedGroups.contains(candidate.id())) {
                 TrackedGroup better = betterGroup(bestCandidate, candidate);
                 if (better == candidate)
                     bestCandidate = candidate;

@@ -410,6 +410,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
 
         properties().setParentQuery(this);
+        // select.grouping may reference other query properties (@name), which may have been set after it above.
+        // Parse it eagerly here, now that all properties are set, so an invalid grouping fails at construction.
+        select.resolveGrouping();
         trace.traceProperties();
     }
 
@@ -694,7 +697,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
 
     /**
-     * Encodes this query tree into the given buffer
+     * Encodes this query tree into the given buffer, using the legacy binary stack dump format.
+     * The backend now receives the query tree as protobuf (see Item.toProtobuf), and some items,
+     * like SparseTensorWandItem, can only be serialized that way and throw from encode.
      *
      * @param buffer the buffer to encode the query to
      * @return the number of encoded query tree items
@@ -880,6 +885,12 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                        .append('"');
                 }
                 yql.append("}]");
+            } else if (sorterType == Sorting.FeatureSorter.class) {
+                yql.append("[{\"")
+                   .append(YqlParser.SORTING_FUNCTION)
+                   .append("\": \"")
+                   .append(Sorting.FEATURE)
+                   .append("\"}]");
             }
             yql.append(maybeQuote(f.getFieldName()));
             if (f.getSortOrder() == Order.DESCENDING) {

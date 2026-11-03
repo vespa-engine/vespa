@@ -6,10 +6,10 @@
 #include "slime.h"
 #include "strfmt.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/memory_input.h>
 #include <vespa/vespalib/locale/c.h>
 
-#include <cassert>
 #include <cinttypes>
 #include <cmath>
 #include <sstream>
@@ -396,7 +396,7 @@ void writeUtf8(uint32_t codepoint, std::string& str, uint32_t mask = 0xffffff80)
 void JsonDecoder::readString(std::string& str) {
     str.clear();
     char quote = c;
-    assert(quote == '"' || quote == '\'');
+    CHECK(quote == '"' || quote == '\'');
     next();
     for (;;) {
         switch (c) {
@@ -596,7 +596,7 @@ int insertNumber(Inserter& inserter, bool isLong, const std::string& value, char
         errorCode = (errno == ERANGE ? 0 : errno);
         inserter.insertDouble(val);
     }
-    assert(errorCode == 0 || errorCode == ERANGE || errorCode == EINVAL);
+    CHECK(errorCode == 0 || errorCode == ERANGE || errorCode == EINVAL);
     return errorCode;
 }
 

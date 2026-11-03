@@ -2,6 +2,7 @@
 
 #include "fileheader.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/vespalib/data/fileheader.h>
@@ -9,7 +10,6 @@
 
 #include <arpa/inet.h>
 
-#include <cassert>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -43,7 +43,7 @@ bool FileHeader::taste(const std::string& name, const TuneFileSeqRead& tuneFileR
         fileSize = file.getSize();
         try {
             headerLen = header.readFile(file);
-            assert(headerLen >= header.getSize());
+            CHECK(headerLen >= header.getSize());
             (void)headerLen;
         } catch (vespalib::IllegalHeaderException& e) {
             if (e.getMessage() != "Failed to read header info." && e.getMessage() != "Failed to verify magic bits.") {

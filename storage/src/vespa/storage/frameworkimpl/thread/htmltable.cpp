@@ -5,8 +5,9 @@
 namespace storage {
 
 Column::Column(const std::string& colName, HtmlTable* table) : _colName(colName), _alignment(RIGHT) {
-    if (table != nullptr)
+    if (table != nullptr) {
         table->addColumn(*this);
+    }
 }
 
 Column::~Column() {
@@ -20,8 +21,9 @@ HtmlTable::~HtmlTable() {
 
 void HtmlTable::print(std::ostream& out) {
     out << "<table border=\"1\" cellpadding=\"2\" cellspacing=\"0\">\n<tr><th";
-    if (!_colHeaders.empty())
+    if (!_colHeaders.empty()) {
         out << " rowspan=\"2\"";
+    }
     out << ">" << _rowId << "</th>";
     if (!_colHeaders.empty()) {
         for (uint32_t i = 0; i < _colHeaders.size(); ++i) {
@@ -55,8 +57,9 @@ void HtmlTable::print(std::ostream& out) {
 
 PercentageColumn::PercentageColumn(const std::string& colName, uint64_t total, HtmlTable* table)
     : ValueColumn<double>(colName, " %", table), _total(total), _values() {
-    if (total != 0)
+    if (total != 0) {
         _totalIsAvg = true;
+    }
 }
 
 PercentageColumn::~PercentageColumn() {
@@ -154,8 +157,9 @@ template <typename T> T ValueColumn<T>::getTotalValue() {
     for (const auto& val : _values) {
         value += val.second;
     }
-    if (_totalIsAvg)
+    if (_totalIsAvg) {
         value /= _values.size();
+    }
     return value;
 }
 

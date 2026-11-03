@@ -157,8 +157,9 @@ public:
     bool has_held_buffers() const noexcept { return _store.has_held_buffers(); }
 
     template <typename FunctionType> void foreach_key(EntryRef ref, FunctionType func) const {
-        if (!ref.valid())
+        if (!ref.valid()) {
             return;
+        }
         if (isLeafRef(ref)) {
             mapLeafRef(ref)->foreach_key(func);
         } else {
@@ -167,8 +168,9 @@ public:
     }
 
     template <typename FunctionType> void foreach(EntryRef ref, FunctionType func) const {
-        if (!ref.valid())
+        if (!ref.valid()) {
             return;
+        }
         if (isLeafRef(ref)) {
             mapLeafRef(ref)->foreach(func);
         } else {

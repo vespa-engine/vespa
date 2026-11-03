@@ -149,67 +149,108 @@ public class JsonFormat {
             addressObject.setString(type.dimensions().get(i).name(), address.label(i));
     }
 
-    private static final char[] hexDigits = {
-        '0', '1', '2', '3', '4', '5', '6', '7',
-        '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
-    };
+    private static final byte[] hexDigits = "0123456789ABCDEF".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
 
-
-    private static String asHexString(IndexedTensor tensor) {
-        return asHexString(tensor.sizeAsInt(),
-                           tensor.type().valueType(),
-                           i -> tensor.get(i),
-                           i -> tensor.getFloat(i));
+    /** Two hex chars (as UTF-8 bytes) per byte value: hexPairs[b*2], hexPairs[b*2+1] */
+    private static final byte[] hexPairs = new byte[512];
+    static {
+        for (int b = 0; b < 256; b++) {
+            hexPairs[b * 2] = hexDigits[b >>> 4];
+            hexPairs[b * 2 + 1] = hexDigits[b & 0xF];
+        }
     }
 
-    private static String asHexString(int denseSize,
-                                      TensorType.Value cellType,
-                                      Function<Integer, Double> dblSrc,
-                                      Function<Integer, Float> fltSrc)
-    {
-        StringBuilder buf = new StringBuilder();
+
+    private static byte[] asHexString(IndexedTensor tensor) {
+        int denseSize = tensor.sizeAsInt();
+        TensorType.Value cellType = tensor.type().valueType();
+        byte[] buf = new byte[denseSize * hexCharsPerCell(cellType)];
+        int pos = 0;
         switch (cellType) {
             case DOUBLE:
-                for (int i = 0; i < denseSize; i++) {
-                    double d = dblSrc.apply(i);
-                    long bits = Double.doubleToRawLongBits(d);
-                    for (int nibble = 16; nibble-- > 0; ) {
-                        int digit = (int) (bits >> (4 * nibble)) & 0xF;
-                        buf.append(hexDigits[digit]);
-                    }
-                }
+                for (int i = 0; i < denseSize; i++)
+                    pos = putHexDouble(buf, pos, tensor.get(i));
                 break;
             case FLOAT:
-                for (int i = 0; i < denseSize; i++) {
-                    float f = fltSrc.apply(i);
-                    int bits = Float.floatToRawIntBits(f);
-                    for (int nibble = 8; nibble-- > 0; ) {
-                        int digit = (bits >> (4 * nibble)) & 0xF;
-                        buf.append(hexDigits[digit]);
-                    }
-                }
+                for (int i = 0; i < denseSize; i++)
+                    pos = putHexFloat(buf, pos, tensor.getFloat(i));
                 break;
             case BFLOAT16:
-                for (int i = 0; i < denseSize; i++) {
-                    float f = fltSrc.apply(i);
-                    int bits = Float.floatToRawIntBits(f);
-                    for (int nibble = 8; nibble-- > 4; ) {
-                        int digit = (bits >> (4 * nibble)) & 0xF;
-                        buf.append(hexDigits[digit]);
-                    }
-                }
+                for (int i = 0; i < denseSize; i++)
+                    pos = putHexBFloat16(buf, pos, tensor.getFloat(i));
                 break;
             case INT8:
-                for (int i = 0; i < denseSize; i++) {
-                    byte bits = fltSrc.apply(i).byteValue();
-                    for (int nibble = 2; nibble-- > 0; ) {
-                        int digit = (bits >> (4 * nibble)) & 0xF;
-                        buf.append(hexDigits[digit]);
-                    }
-                }
+                for (int i = 0; i < denseSize; i++)
+                    pos = putHexByte(buf, pos, (byte) tensor.getFloat(i));
                 break;
         }
-        return buf.toString();
+        return buf;
+    }
+
+    private static byte[] asHexString(double[] cells, TensorType.Value cellType) {
+        byte[] buf = new byte[cells.length * hexCharsPerCell(cellType)];
+        int pos = 0;
+        switch (cellType) {
+            case DOUBLE:
+                for (int i = 0; i < cells.length; i++)
+                    pos = putHexDouble(buf, pos, cells[i]);
+                break;
+            case FLOAT:
+                for (int i = 0; i < cells.length; i++)
+                    pos = putHexFloat(buf, pos, (float) cells[i]);
+                break;
+            case BFLOAT16:
+                for (int i = 0; i < cells.length; i++)
+                    pos = putHexBFloat16(buf, pos, (float) cells[i]);
+                break;
+            case INT8:
+                for (int i = 0; i < cells.length; i++)
+                    pos = putHexByte(buf, pos, (byte) (float) cells[i]);
+                break;
+        }
+        return buf;
+    }
+
+    private static int hexCharsPerCell(TensorType.Value cellType) {
+        return switch (cellType) {
+            case DOUBLE -> 16;
+            case FLOAT -> 8;
+            case BFLOAT16 -> 4;
+            case INT8 -> 2;
+        };
+    }
+
+    private static int putHexDouble(byte[] buf, int pos, double value) {
+        long bits = Double.doubleToRawLongBits(value);
+        pos = putHexByte(buf, pos, (int) (bits >>> 56));
+        pos = putHexByte(buf, pos, (int) (bits >>> 48));
+        pos = putHexByte(buf, pos, (int) (bits >>> 40));
+        pos = putHexByte(buf, pos, (int) (bits >>> 32));
+        pos = putHexByte(buf, pos, (int) (bits >>> 24));
+        pos = putHexByte(buf, pos, (int) (bits >>> 16));
+        pos = putHexByte(buf, pos, (int) (bits >>> 8));
+        return putHexByte(buf, pos, (int) bits);
+    }
+
+    private static int putHexFloat(byte[] buf, int pos, float value) {
+        int bits = Float.floatToRawIntBits(value);
+        pos = putHexByte(buf, pos, bits >>> 24);
+        pos = putHexByte(buf, pos, bits >>> 16);
+        pos = putHexByte(buf, pos, bits >>> 8);
+        return putHexByte(buf, pos, bits);
+    }
+
+    private static int putHexBFloat16(byte[] buf, int pos, float value) {
+        int bits = Float.floatToRawIntBits(value);
+        pos = putHexByte(buf, pos, bits >>> 24);
+        return putHexByte(buf, pos, bits >>> 16);
+    }
+
+    private static int putHexByte(byte[] buf, int pos, int byteValue) {
+        int b = (byteValue & 0xFF) * 2;
+        buf[pos] = hexPairs[b];
+        buf[pos + 1] = hexPairs[b + 1];
+        return pos + 2;
     }
 
     private static void encodeDenseValues(IndexedTensor tensor, Cursor target) {
@@ -233,10 +274,7 @@ public class JsonFormat {
 
     private static void encodeLabeledSubspace(String label, MixedTensor.DenseSubspace subspace, TensorType denseSubType, Cursor cursor, boolean hexForDensePart) {
         if (hexForDensePart) {
-            cursor.setString(label, asHexString(subspace.cells.length,
-                                                denseSubType.valueType(),
-                                                i -> subspace.cells[i],
-                                                i -> (float)subspace.cells[i]));
+            cursor.setString(label, asHexString(subspace.cells, denseSubType.valueType()));
         } else {
             IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
             var target = cursor.setArray(label);

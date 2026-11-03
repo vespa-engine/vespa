@@ -1,10 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
+import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.text.XML;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -32,7 +40,8 @@ public class NodesSpecificationTest {
                                                    bandwidth='1ZbPs'
                                                    disk-speed='fast'
                                                    storage-type='local'
-                                                   architecture='x86_64'>
+                                                   architecture='x86_64'
+                                                   max-cost-factor='1.5'>
                                           <gpu count='1g' memory='3' />
                                         </resources>
                                       </nodes>
@@ -67,6 +76,8 @@ public class NodesSpecificationTest {
 
         assertEquals(Architecture.x86_64, spec.minResources().nodeResources().architecture());
         assertEquals(Architecture.x86_64, spec.maxResources().nodeResources().architecture());
+
+        assertEquals(1.5, spec.maxCostFactor());
     }
 
     @Test
@@ -238,12 +249,63 @@ public class NodesSpecificationTest {
         assertTrue(spec.profile().isEmpty());
     }
 
+    @Test
+    void testDockerImageNotSupportedInPublicCloudSystems() {
+        for (var system : List.of(SystemName.Public, SystemName.PublicCd, SystemName.kubernetes, SystemName.kubernetesCd)) {
+            var exception = assertThrows(IllegalArgumentException.class,
+                                         () -> nodesSpecification("<nodes count='3' docker-image='example.com/vespa/custom'/>",
+                                                                  hostedDeployState(system)));
+            assertEquals("Specifying 'docker-image' on <nodes> is not supported in Vespa Cloud", exception.getMessage());
+        }
+    }
+
+    @Test
+    void testDockerImageAllowedInNonPublicSystems() {
+        for (var system : List.of(SystemName.main, SystemName.cd, SystemName.Default)) {
+            var spec = nodesSpecification("<nodes count='3' docker-image='example.com/vespa/custom'/>",
+                                          hostedDeployState(system));
+            assertEquals(Optional.of(DockerImage.fromString("example.com/vespa/custom")), spec.dockerImageRepo());
+        }
+    }
+
+    @Test
+    void testDockerImageAllowedWhenNotHosted() {
+        var deployState = new DeployState.Builder().properties(new TestProperties())
+                                                    .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
+                                                    .build();
+        var spec = nodesSpecification("<nodes count='3' docker-image='example.com/vespa/custom'/>", deployState);
+        assertEquals(Optional.of(DockerImage.fromString("example.com/vespa/custom")), spec.dockerImageRepo());
+    }
+
+    @Test
+    void testOperatorGivenDockerImageAllowedInPublicCloudSystems() {
+        Document nodesXml = XML.getDocument("<nodes count='3'/>");
+        var operatorImage = DockerImage.fromString("example.com/vespa/operator-selected");
+        var spec = NodesSpecification.create(false, false, Version.emptyVersion,
+                                             new ModelElement(nodesXml.getDocumentElement()),
+                                             Optional.of(operatorImage), CloudAccount.unspecified(),
+                                             CloudResourceTags.empty(), List.of(),
+                                             hostedDeployState(SystemName.Public));
+        assertEquals(Optional.of(operatorImage), spec.dockerImageRepo());
+    }
+
+    private static DeployState hostedDeployState(SystemName system) {
+        return new DeployState.Builder().properties(new TestProperties().setHostedVespa(true))
+                                        .zone(new Zone(system, Environment.prod, RegionName.defaultName()))
+                                        .build();
+    }
+
     private NodesSpecification nodesSpecification(String nodesElement) {
+        return nodesSpecification(nodesElement, new DeployState.Builder().build());
+    }
+
+    private NodesSpecification nodesSpecification(String nodesElement, DeployState deployState) {
         Document nodesXml = XML.getDocument(nodesElement);
         return NodesSpecification.create(false, false, Version.emptyVersion,
                                          new ModelElement(nodesXml.getDocumentElement()),
-                                         Optional.empty(), Optional.empty(),
-                                         CloudResourceTags.empty(), List.of());
+                                         Optional.empty(), CloudAccount.unspecified(),
+                                         CloudResourceTags.empty(), List.of(),
+                                         deployState);
 
     }
 

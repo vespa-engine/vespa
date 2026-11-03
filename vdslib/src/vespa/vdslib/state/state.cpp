@@ -9,7 +9,7 @@
 namespace storage::lib {
 
 const State& State::get(std::string_view serialized) {
-    if (serialized.size() == 1)
+    if (serialized.size() == 1) {
         switch (serialized[0]) {
         case '-':
             return UNKNOWN;
@@ -28,6 +28,7 @@ const State& State::get(std::string_view serialized) {
         default:
             break;
         }
+    }
     throw vespalib::IllegalArgumentException("Unknown state " + std::string(serialized) + " given.", VESPA_STRLOC);
 }
 

@@ -2,16 +2,16 @@
 package ai.vespa.modelintegration.evaluator;
 
 import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
-import net.jpountz.xxhash.XXHashFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 
 /**
- * Session options for ONNX Runtime evaluation
+ * Session options for ONNX Runtime evaluation.
+ * Runtimes that batch requests use the padding options, present when padding buckets are configured.
+ * Runtimes that can pool use the runtime pooling, present when an embedder asks the runtime to pool a model output.
  *
  * @author lesters
  * @author bjorncs
@@ -25,20 +25,19 @@ public record OnnxEvaluatorOptions(
         boolean gpuDeviceRequired,
         boolean optimizeModel,
         int batchingMaxSize,
-        Optional<Duration> batchingMaxDelay,
-        int numModelInstances,
+        Optional<Integer> numModelInstances,
         Optional<Path> modelConfigOverride,
+        Optional<OnnxPadderOptions> padding,
+        Optional<OnnxPoolingOptions> runtimePooling,
         int availableProcessors
 ) {
 
-    // Unlike hashCode, this hash doesn't change between runs
-    public long calculateHash() {
-        var bytes = toString().getBytes(StandardCharsets.UTF_8);
-        return XXHashFactory.fastestInstance().hash64().hash(bytes, 0, bytes.length, 0);
-    }
-
     public OnnxEvaluatorOptions {
         Objects.requireNonNull(executionMode, "executionMode cannot be null");
+        Objects.requireNonNull(numModelInstances, "numModelInstances cannot be null");
+        Objects.requireNonNull(modelConfigOverride, "modelConfigOverride cannot be null");
+        Objects.requireNonNull(padding, "padding cannot be null");
+        Objects.requireNonNull(runtimePooling, "runtimePooling cannot be null");
     }
 
     public static OnnxEvaluatorOptions createDefault() {
@@ -60,16 +59,15 @@ public record OnnxEvaluatorOptions(
                 .setBatchingMaxSize(config.batching().maxSize())
                 .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
                 .setModelConfigOverride(config.modelConfigOverride())
+                .setPadding(OnnxPadderOptions.of(config))
                 .setOptimizeModel(config.optimizeModel());
 
         if (config.gpuDevice() >= 0) {
             builder.setGpuDevice(config.gpuDevice());
         }
-        
-        if (config.batching().maxDelayMillis() > 0) {
-            builder.setBatchingMaxDelay(Duration.ofMillis(config.batching().maxDelayMillis()));
-        }
-        
+
+        // batching.maxDelayMillis is deprecated and intentionally ignored by both ONNX runtimes.
+
         return builder.build();
     }
 
@@ -102,9 +100,10 @@ public record OnnxEvaluatorOptions(
         private boolean gpuDeviceRequired;
         private boolean optimizeModel;
         private int batchingMaxSize;
-        private Optional<Duration> batchingMaxDelay;
-        private int numModelInstances;
+        private Optional<Integer> numModelInstances;
         private Optional<Path> modelConfigOverride;
+        private Optional<OnnxPadderOptions> padding;
+        private Optional<OnnxPoolingOptions> runtimePooling;
 
         // Used to calculate number of threads
         private int availableProcessors;
@@ -122,10 +121,11 @@ public record OnnxEvaluatorOptions(
             gpuDeviceRequired = false;
             optimizeModel = false;
             batchingMaxSize = 1;
-            batchingMaxDelay = Optional.empty();
-            numModelInstances = 1;
+            numModelInstances = Optional.empty();
             modelConfigOverride = Optional.empty();
-            
+            padding = Optional.empty();
+            runtimePooling = Optional.empty();
+
             this.availableProcessors = availableProcessors;
         }
         
@@ -137,9 +137,11 @@ public record OnnxEvaluatorOptions(
             this.gpuDeviceRequired = options.gpuDeviceRequired();
             this.optimizeModel = options.optimizeModel();
             this.batchingMaxSize = options.batchingMaxSize();
-            this.batchingMaxDelay = options.batchingMaxDelay;
             this.numModelInstances = options.numModelInstances();
             this.modelConfigOverride = options.modelConfigOverride;
+            this.padding = options.padding();
+            this.runtimePooling = options.runtimePooling();
+            this.availableProcessors = options.availableProcessors();
         }
 
         public Builder setExecutionMode(String mode) {
@@ -172,14 +174,6 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
-        private static int calculateThreads(int threadsFactor, int availableProcessors) {
-            if (threadsFactor >= 0) {
-                return threadsFactor;
-            }
-
-            return Math.max(1, (int) Math.ceil(-1d * availableProcessors / threadsFactor));
-        }
-
         public Builder setGpuDevice(int deviceNumber, boolean required) {
             this.gpuDeviceNumber = deviceNumber;
             this.gpuDeviceRequired = required;
@@ -201,13 +195,16 @@ public record OnnxEvaluatorOptions(
             return this;
         }
         
-        public Builder setBatchingMaxDelay(Duration maxDelay) {
-            this.batchingMaxDelay = Optional.of(maxDelay);
-            return this;
-        }
-
+        /**
+         * Sets the number of model instances from a concurrency factor.
+         * A non-positive factor leaves the number of instances unset, so the runtime derives a default.
+         * Application package schemas only allow positive explicit factors.
+         * Non-positive values can occur through the config default or a raw config override.
+         */
         public Builder setConcurrency(double concurrencyFactor, ConcurrencyFactorType concurrencyFactorType) {
-            this.numModelInstances = calculateNumModelInstances(concurrencyFactor, concurrencyFactorType);
+            this.numModelInstances = concurrencyFactor > 0
+                    ? Optional.of(calculateNumModelInstances(concurrencyFactor, concurrencyFactorType))
+                    : Optional.empty();
             return this;
         }
 
@@ -221,8 +218,26 @@ public record OnnxEvaluatorOptions(
             }
         }
 
+        public Builder setNumModelInstances(int numModelInstances) {
+            if (numModelInstances <= 0) {
+                throw new IllegalArgumentException("Number of model instances must be positive, got " + numModelInstances);
+            }
+            this.numModelInstances = Optional.of(numModelInstances);
+            return this;
+        }
+
         public Builder setModelConfigOverride(Optional<Path> configFile) {
             this.modelConfigOverride = configFile;
+            return this;
+        }
+
+        public Builder setPadding(Optional<OnnxPadderOptions> padding) {
+            this.padding = padding;
+            return this;
+        }
+
+        public Builder setRuntimePooling(Optional<OnnxPoolingOptions> runtimePooling) {
+            this.runtimePooling = runtimePooling;
             return this;
         }
 
@@ -235,15 +250,69 @@ public record OnnxEvaluatorOptions(
                     gpuDeviceRequired,
                     optimizeModel,
                     batchingMaxSize,
-                    batchingMaxDelay,
                     numModelInstances,
                     modelConfigOverride,
+                    padding,
+                    runtimePooling,
                     availableProcessors
             );
         }
     }
 
+    /**
+     * Returns the number of threads for the given factor.
+     * A non-negative factor is an absolute number of threads.
+     * A negative factor divides the CPU cores by its magnitude, rounding up, with at least one thread.
+     */
+    public static int calculateThreads(int threadsFactor, int availableProcessors) {
+        if (threadsFactor >= 0) {
+            return threadsFactor;
+        }
+
+        return Math.max(1, (int) Math.ceil(-1d * availableProcessors / threadsFactor));
+    }
+
     public boolean requestingGpu() {
         return gpuDeviceNumber > -1;
+    }
+
+    public boolean isParallel() {
+        return executionMode == ExecutionMode.PARALLEL;
+    }
+
+    /** Returns the inter-op threads ONNX Runtime uses. It uses one thread in sequential execution mode. */
+    public int effectiveInterOpThreads() {
+        return isParallel() ? interOpThreads : 1;
+    }
+
+    public OnnxEvaluatorOptions withNumModelInstances(int numModelInstances) {
+        return new Builder(this).setNumModelInstances(numModelInstances).build();
+    }
+
+    /** Returns these options padding with the given attention mask input, if padding is configured */
+    public OnnxEvaluatorOptions withAttentionMask(String name) {
+        return withPadding(padding -> padding.withAttentionMask(name));
+    }
+
+    /** Returns these options padding to at most the given max tokens, the longest input, if padding is configured */
+    public OnnxEvaluatorOptions withMaxTokens(int maxTokens) {
+        return withPadding(padding -> padding.withMaxTokens(maxTokens));
+    }
+
+    /** Returns these options without padding, which runtimes that do not pad key their sessions on */
+    public OnnxEvaluatorOptions withoutPadding() {
+        return padding.isEmpty() ? this : new Builder(this).setPadding(Optional.empty()).build();
+    }
+
+    private OnnxEvaluatorOptions withPadding(UnaryOperator<OnnxPadderOptions> operator) {
+        return padding.isEmpty() ? this : new Builder(this).setPadding(padding.map(operator)).build();
+    }
+
+    public OnnxEvaluatorOptions withRuntimePooling(OnnxPoolingOptions pooling) {
+        return new Builder(this).setRuntimePooling(Optional.of(pooling)).build();
+    }
+
+    public OnnxEvaluatorOptions withoutRuntimePooling() {
+        return runtimePooling.isEmpty() ? this : new Builder(this).setRuntimePooling(Optional.empty()).build();
     }
 }

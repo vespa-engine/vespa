@@ -1,0 +1,4 @@
+name: bogus metric check
+metric: not-a-real-metric
+duration: 5m
+max: 10

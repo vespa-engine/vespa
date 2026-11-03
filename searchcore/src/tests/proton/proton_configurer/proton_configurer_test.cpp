@@ -1,15 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config-attributes.h>
-#include <vespa/config-bucketspaces.h>
-#include <vespa/config-imported-fields.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-summary.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/document_db_config_owner.h>
@@ -19,7 +12,8 @@
 #include <vespa/searchcore/proton/server/proton_config_snapshot.h>
 #include <vespa/searchcore/proton/server/proton_configurer.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
-#include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/searchcore/proton/test/bootstrap_config_set_builder.h>
+#include <vespa/searchcore/proton/test/document_db_config_set_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -31,12 +25,13 @@ using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using namespace cloud::config::filedistribution;
-using vespa::config::content::core::BucketspacesConfig;
 using vespa::config::content::core::BucketspacesConfigBuilder;
 
 using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
 using config::ConfigUri;
 using document::DocumentTypeRepo;
+using proton::test::BootstrapConfigSetBuilder;
+using proton::test::DocumentDBConfigSetBuilder;
 using search::TuneFileDocumentDB;
 using search::fef::OnnxModels;
 using search::fef::RankingConstants;
@@ -45,50 +40,18 @@ using search::index::Schema;
 using std::map;
 using vespalib::HwInfo;
 
-struct DBConfigFixture {
+struct DBConfigFixture : public DocumentDBConfigSetBuilder {
     using UP = std::unique_ptr<DBConfigFixture>;
-    AttributesConfigBuilder     _attributesBuilder;
-    RankProfilesConfigBuilder   _rankProfilesBuilder;
-    IndexschemaConfigBuilder    _indexschemaBuilder;
-    SummaryConfigBuilder        _summaryBuilder;
-    JuniperrcConfigBuilder      _juniperrcBuilder;
-    ImportedFieldsConfigBuilder _importedFieldsBuilder;
-
-    std::shared_ptr<const Schema> buildSchema() {
-        return DocumentDBConfig::build_schema(_attributesBuilder, _indexschemaBuilder);
-    }
-
-    static std::shared_ptr<const RankingConstants> buildRankingConstants() {
-        return std::make_shared<RankingConstants>();
-    }
-
-    static std::shared_ptr<const RankingExpressions> buildRankingExpressions() {
-        return std::make_shared<RankingExpressions>();
-    }
-
-    static std::shared_ptr<const OnnxModels> buildOnnxModels() { return std::make_shared<OnnxModels>(); }
 
     DocumentDBConfig::SP getConfig(int64_t generation, std::shared_ptr<DocumenttypesConfig> documentTypes,
-                                   std::shared_ptr<const DocumentTypeRepo> repo, const std::string& configId,
-                                   const std::string& docTypeName) {
-        return std::make_shared<DocumentDBConfig>(
-            generation, std::make_shared<RankProfilesConfig>(_rankProfilesBuilder), buildRankingConstants(),
-            buildRankingExpressions(), buildOnnxModels(), std::make_shared<IndexschemaConfig>(_indexschemaBuilder),
-            std::make_shared<AttributesConfig>(_attributesBuilder), std::make_shared<SummaryConfig>(_summaryBuilder),
-            std::make_shared<JuniperrcConfig>(_juniperrcBuilder), std::move(documentTypes), std::move(repo),
-            std::make_shared<ImportedFieldsConfig>(_importedFieldsBuilder), std::make_shared<TuneFileDocumentDB>(),
-            buildSchema(), std::make_shared<DocumentDBMaintenanceConfig>(), search::LogDocumentStore::Config(),
-            ThreadingServiceConfig::make(), AllocConfig::makeDefault(), DocumentMetaStoreConfig::make(), configId,
-            docTypeName);
+                                   const std::string& configId, const std::string& docTypeName) {
+        return build(generation, *documentTypes, docTypeName, configId);
     }
 };
 
 struct ConfigFixture {
     const std::string                     _configId;
-    ProtonConfigBuilder                   _protonBuilder;
-    DocumenttypesConfigBuilder            _documenttypesBuilder;
-    FiledistributorrpcConfigBuilder       _filedistBuilder;
-    BucketspacesConfigBuilder             _bucketspacesBuilder;
+    BootstrapConfigSetBuilder             _bootstrap_config_builder;
     map<std::string, DBConfigFixture::UP> _dbConfig;
     int                                   _idcounter;
     int64_t                               _generation;
@@ -96,10 +59,7 @@ struct ConfigFixture {
 
     explicit ConfigFixture(const std::string& id)
         : _configId(id),
-          _protonBuilder(),
-          _documenttypesBuilder(),
-          _filedistBuilder(),
-          _bucketspacesBuilder(),
+          _bootstrap_config_builder(),
           _dbConfig(),
           _idcounter(-1),
           _generation(1),
@@ -116,55 +76,54 @@ struct ConfigFixture {
         dt.id = _idcounter--;
         dt.name = name;
         dt.version = 0;
-        _documenttypesBuilder.documenttype.push_back(dt);
+        _bootstrap_config_builder.documenttypes.documenttype.push_back(dt);
 
         ProtonConfigBuilder::Documentdb db;
         db.inputdoctypename = name;
         db.configid = _configId + "/" + name;
-        _protonBuilder.documentdb.push_back(db);
+        _bootstrap_config_builder.proton.documentdb.push_back(db);
 
         BucketspacesConfigBuilder::Documenttype bsdt;
         bsdt.name = name;
         bsdt.bucketspace = bucket_space;
-        _bucketspacesBuilder.documenttype.push_back(bsdt);
+        _bootstrap_config_builder.bucketspaces.documenttype.push_back(bsdt);
 
         DBConfigFixture::UP fixture = std::make_unique<DBConfigFixture>();
         return _dbConfig.emplace(std::make_pair(name, std::move(fixture))).first->second.get();
     }
 
     void removeDocType(const std::string& name) {
-        for (auto it(_documenttypesBuilder.documenttype.begin()), mt(_documenttypesBuilder.documenttype.end());
+        auto& documenttypes_builder = _bootstrap_config_builder.documenttypes;
+        for (auto it(documenttypes_builder.documenttype.begin()), mt(documenttypes_builder.documenttype.end());
              it != mt; it++)
         {
             if ((*it).name.compare(name) == 0) {
-                _documenttypesBuilder.documenttype.erase(it);
+                documenttypes_builder.documenttype.erase(it);
                 break;
             }
         }
 
-        for (auto it(_protonBuilder.documentdb.begin()), mt(_protonBuilder.documentdb.end()); it != mt; it++) {
+        auto& proton_builder = _bootstrap_config_builder.proton;
+        for (auto it(proton_builder.documentdb.begin()), mt(proton_builder.documentdb.end()); it != mt; it++) {
             if ((*it).inputdoctypename.compare(name) == 0) {
-                _protonBuilder.documentdb.erase(it);
+                proton_builder.documentdb.erase(it);
                 break;
             }
         }
         _dbConfig.erase(name);
-        for (auto it(_bucketspacesBuilder.documenttype.begin()), mt(_bucketspacesBuilder.documenttype.end());
+        auto& bucketspaces_builder = _bootstrap_config_builder.bucketspaces;
+        for (auto it(bucketspaces_builder.documenttype.begin()), mt(bucketspaces_builder.documenttype.end());
              it != mt; ++it)
         {
             if (it->name == name) {
-                _bucketspacesBuilder.documenttype.erase(it);
+                bucketspaces_builder.documenttype.erase(it);
                 break;
             }
         }
     }
 
     BootstrapConfig::SP getBootstrapConfig(int64_t generation) const {
-        return std::make_shared<BootstrapConfig>(
-            generation, std::make_shared<DocumenttypesConfig>(_documenttypesBuilder),
-            std::make_shared<DocumentTypeRepo>(_documenttypesBuilder), std::make_shared<ProtonConfig>(_protonBuilder),
-            std::make_shared<FiledistributorrpcConfig>(), std::make_shared<BucketspacesConfig>(_bucketspacesBuilder),
-            std::make_shared<TuneFileDocumentDB>(), HwInfo());
+        return _bootstrap_config_builder.build(generation, HwInfo());
     }
 
     std::shared_ptr<ProtonConfigSnapshot> getConfigSnapshot() {
@@ -179,7 +138,7 @@ struct ConfigFixture {
         for (auto& db : _dbConfig) {
             DocTypeName name(db.first);
             dbconfigs.insert(std::make_pair(
-                name, db.second->getConfig(generation, doctypes, repo, _configId + "/" + db.first, db.first)));
+                name, db.second->getConfig(generation, doctypes, _configId + "/" + db.first, db.first)));
         }
         _cachedConfigSnapshot = std::make_shared<ProtonConfigSnapshot>(bootstrap, dbconfigs);
         return _cachedConfigSnapshot;

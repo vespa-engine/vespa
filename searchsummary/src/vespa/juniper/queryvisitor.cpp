@@ -19,9 +19,9 @@ LOG_SETUP(".juniper.queryvisitor");
  */
 
 void QueryVisitor::insert(QueryExpr* expr) {
-    if (_current)
+    if (_current) {
         _current = _current->AddChild(expr);
-    else {
+    } else {
         // Just a sanity check that there are no overflow stack elements
         if (_got_stack && expr) {
             if (_query && _query->StackComplete()) {
@@ -69,8 +69,9 @@ void QueryVisitor::postprocess_query() {
         }
     }
     SimplifyStack(_query);
-    if (!_query)
+    if (!_query) {
         return;
+    }
     // convert special case of one query term to a node with 1 child:
     if (_query->_arity == 0) {
         auto* newroot = new QueryNode(1, _query->_weight, _query->_weight);
@@ -80,8 +81,9 @@ void QueryVisitor::postprocess_query() {
     // Handle limit in root node only for now..
     if (!_current && _qhandle->_options & X_LIMIT) {
         QueryNode* qn = _query->AsNode();
-        if (qn)
+        if (qn) {
             qn->_limit = _qhandle->_limit;
+        }
     }
     _query->ComputeThreshold();
 }

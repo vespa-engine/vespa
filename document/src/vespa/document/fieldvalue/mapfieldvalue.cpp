@@ -5,6 +5,7 @@
 #include "iteratorhandler.h"
 #include "weightedsetfieldvalue.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/vespalib/util/xmlstream.h>
@@ -12,7 +13,6 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <ostream>
 
 #include <vespa/log/log.h>
@@ -222,8 +222,9 @@ FieldValue& MapFieldValue::assign(const FieldValue& value) {
 
 int MapFieldValue::compare(const FieldValue& other) const {
     int diff = FieldValue::compare(other);
-    if (diff != 0)
+    if (diff != 0) {
         return diff;
+    }
 
     const MapFieldValue& o(dynamic_cast<const MapFieldValue&>(other));
 
@@ -261,8 +262,9 @@ void MapFieldValue::print(std::ostream& out, bool verbose, const std::string& in
         out << " - ";
         item.second->print(out, verbose, indent + "  ");
     }
-    if (size() > 0)
+    if (size() > 0) {
         out << "\n" << indent;
+    }
     out << ")";
 }
 
@@ -329,7 +331,7 @@ ssize_t MapFieldValue::findIndex(const FieldValue& key) const {
         auto found = _lookupMap->find(key);
         if (found != _lookupMap->end()) {
             uint32_t index = *found;
-            assert(_present[index]);
+            CHECK(_present[index]);
             return index;
         }
     }

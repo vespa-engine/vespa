@@ -2,6 +2,7 @@
 
 #include "storebybucket.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -9,7 +10,6 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <algorithm>
-#include <cassert>
 
 namespace search::docstore {
 
@@ -36,8 +36,8 @@ StoreByBucket::CompressChunksTracker::CompressChunksTracker()
 }
 
 StoreByBucket::CompressChunksTracker::~CompressChunksTracker() {
-    assert(_inflight_memory == 0);
-    assert(_inflight_chunks == 0);
+    CHECK(_inflight_memory == 0);
+    CHECK(_inflight_chunks == 0);
 }
 
 bool StoreByBucket::CompressChunksTracker::is_full(size_t chunk_size) const noexcept {

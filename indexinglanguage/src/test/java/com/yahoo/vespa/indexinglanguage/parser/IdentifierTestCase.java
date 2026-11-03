@@ -14,7 +14,8 @@ public class IdentifierTestCase {
 
     @Test
     public void requireThatThereAreNoReservedWords() throws ParseException {
-        List<String> tokens = List.of("attribute",
+        List<String> tokens = List.of("abs",
+                                            "attribute",
                                             "base64decode",
                                             "base64encode",
                                             "clear_state",

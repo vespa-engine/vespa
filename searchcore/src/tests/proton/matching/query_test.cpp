@@ -2,6 +2,9 @@
 // Unit tests for query.
 
 #include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/matching/ann_deadline_configuration.h>
 #include <vespa/searchcore/proton/matching/blueprintbuilder.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
@@ -12,12 +15,17 @@
 #include <vespa/searchcore/proton/matching/sameelementmodifier.h>
 #include <vespa/searchcore/proton/matching/termdataextractor.h>
 #include <vespa/searchcore/proton/matching/viewresolver.h>
+#include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
+#include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/searchlib/fef/test/attribute_map.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
+#include <vespa/searchlib/fef/test/mock_attribute_context.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/tree/customtypetermvisitor.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
@@ -27,17 +35,24 @@
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/termasstring.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
 using document::PositionDataType;
+using search::AttributeBlueprintFactory;
+using search::AttributeFactory;
+using search::AttributeVector;
 using search::SerializedQueryTree;
+using search::attribute::DistanceMetric;
+using search::attribute::HnswIndexParams;
 using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::IllegalHandle;
@@ -47,6 +62,7 @@ using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
+using search::fef::test::AttributeMap;
 using search::query::CustomTypeTermVisitor;
 using search::query::Node;
 using search::query::QueryBuilder;
@@ -64,7 +80,9 @@ using search::queryeval::FakeSearchable;
 using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecList;
 using search::queryeval::GlobalFilter;
+using search::queryeval::InFlow;
 using search::queryeval::IntermediateBlueprint;
+using search::queryeval::NearestNeighborBlueprint;
 using search::queryeval::ParallelWeakAndBlueprint;
 using search::queryeval::RankBlueprint;
 using search::queryeval::Searchable;
@@ -73,8 +91,12 @@ using search::queryeval::SimpleBlueprint;
 using search::queryeval::SimpleResult;
 using search::queryeval::SourceBlenderBlueprint;
 using search::queryeval::termAsString;
+using search::tensor::TensorAttribute;
 using std::string;
 using std::vector;
+using vespalib::eval::SimpleValue;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::ValueType;
 namespace fef_test = search::fef::test;
 using CollectionType = FieldInfo::CollectionType;
 
@@ -111,7 +133,7 @@ void setupIndexEnvironments() {
     resolved_index_env.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, resolved_field2,
                                                 field_id + 1);
 
-    attribute_index_env.getFields().emplace_back(FieldType::ATTRIBUTE, CollectionType::SINGLE, field, 0);
+    attribute_index_env.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, field);
     FieldInfo loc_field_info = FieldInfo(FieldType::ATTRIBUTE, CollectionType::SINGLE,
                                          PositionDataType::getZCurveFieldName(loc_field), field_id + 1);
     plain_index_env.getFields().push_back(loc_field_info);
@@ -237,6 +259,7 @@ public:
     void visit(ProtonLocationTerm& n) override { checkNode(n, 0, true); }
     void visit(ProtonPrefixTerm& n) override { checkNode(n, 1, false); }
     void visit(ProtonRangeTerm& n) override { checkNode(n, 2, false); }
+    void visit(ProtonStringRangeTerm&) override {}
     void visit(ProtonStringTerm& n) override { checkNode(n, 2, false); }
     void visit(ProtonSubstringTerm& n) override { checkNode(n, 0, true); }
     void visit(ProtonSuffixTerm& n) override { checkNode(n, 2, false); }
@@ -248,6 +271,7 @@ public:
     void visit(ProtonPredicateQuery&) override {}
     void visit(ProtonRegExpTerm&) override {}
     void visit(ProtonNearestNeighborTerm&) override {}
+    void visit(ProtonSparseTensorWandTerm&) override {}
     void visit(ProtonInTerm&) override {}
     void visit(ProtonWordAlternatives&) override {}
 };
@@ -355,6 +379,7 @@ public:
     void visit(ProtonLocationTerm&) override {}
     void visit(ProtonPrefixTerm&) override {}
     void visit(ProtonRangeTerm&) override {}
+    void visit(ProtonStringRangeTerm&) override {}
 
     void visit(ProtonStringTerm& n) override {
         const ITermData& term_data = n;
@@ -383,6 +408,7 @@ public:
     void visit(ProtonPredicateQuery&) override {}
     void visit(ProtonRegExpTerm&) override {}
     void visit(ProtonNearestNeighborTerm&) override {}
+    void visit(ProtonSparseTensorWandTerm&) override {}
     void visit(ProtonFuzzyTerm&) override {}
     void visit(ProtonInTerm&) override {}
     void visit(ProtonWordAlternatives&) override {}
@@ -644,9 +670,9 @@ TEST(QueryTest, requireThatQueryGluesEverythingTogether) {
 
 void checkQueryAddsLocation(const string& loc_in, const string& loc_out) {
     fef_test::IndexEnvironment index_environment;
-    index_environment.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, field, 0);
-    index_environment.getFields().emplace_back(FieldType::ATTRIBUTE, CollectionType::SINGLE,
-                                               PositionDataType::getZCurveFieldName(loc_field), 1);
+    index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, field);
+    index_environment.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE,
+                               PositionDataType::getZCurveFieldName(loc_field));
 
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addStringTerm(string_term, field, 1, Weight(2));
@@ -809,7 +835,7 @@ TEST(QueryTest, requireThatNoDocsGiveZeroDocFrequency) {
 TEST(QueryTest, requireThatWeakAndBlueprintsAreCreatedCorrectly) {
     using search::queryeval::WeakAndBlueprint;
 
-    ProtonWeakAnd wand(123, "view");
+    ProtonWeakAnd wand(123);
     wand.append(Node::UP(new ProtonStringTerm("foo", field, 0, Weight(3))));
     wand.append(Node::UP(new ProtonStringTerm("bar", field, 0, Weight(7))));
 
@@ -1026,6 +1052,74 @@ TEST(QueryTest, requireThatSameElementIteratorsCanBeBuilt) {
     EXPECT_TRUE(iterator->seek(8));
 }
 
+Node::UP buildLabelWrapperQueryTree(double score, const ViewResolver& resolver,
+                                    const search::fef::IIndexEnvironment& idxEnv) {
+    QueryBuilder<ProtonNodeTypes> query_builder;
+    query_builder.add_label_wrapper(7, score);
+    query_builder.addStringTerm(string_term, field, 1, Weight(2));
+    Node::UP           node = query_builder.build();
+    ResolveViewVisitor visitor(resolver, idxEnv);
+    node->accept(visitor);
+    return node;
+}
+
+TEST(QueryTest, label_wrapper_is_term_data_for_the_reserved_no_field) {
+    Node::UP node = buildLabelWrapperQueryTree(2.5, ViewResolver(), plain_index_env);
+    auto*    wrapper = dynamic_cast<ProtonLabelWrapper*>(node.get());
+    ASSERT_TRUE(wrapper != nullptr);
+
+    // Addressable by unique id, so that "vespa.label.<label>.id" can reach it
+    EXPECT_EQ(7u, wrapper->getUniqueId());
+    EXPECT_EQ(1u, wrapper->getPhraseLength());
+
+    // Exactly one field entry, and it is the reserved "no field" rather than any
+    // field of the child, so per-field features cannot see the wrapper
+    ASSERT_EQ(1u, wrapper->numFields());
+    EXPECT_EQ(search::fef::FieldInfo::no_field().id(), wrapper->field(0).getFieldId());
+    EXPECT_TRUE(plain_index_env.getField(wrapper->field(0).getFieldId())->is_no_field());
+    EXPECT_EQ(nullptr, wrapper->lookupField(field_id));
+
+    MatchDataLayout         mdl;
+    MatchDataReserveVisitor visitor(mdl);
+    node->accept(visitor);
+    EXPECT_NE(search::fef::IllegalHandle, wrapper->field(0).getHandle());
+    // one for the wrapper, one for the child term
+    MatchData::UP match_data = mdl.createMatchData();
+    EXPECT_EQ(2u, match_data->getNumTermFields());
+}
+
+TEST(QueryTest, label_wrapper_exposes_its_score_as_a_raw_score) {
+    Fixture  f;
+    Node::UP node = buildLabelWrapperQueryTree(2.5, ViewResolver(), plain_index_env);
+    auto*    wrapper = dynamic_cast<ProtonLabelWrapper*>(node.get());
+    ASSERT_TRUE(wrapper != nullptr);
+
+    FakeSearchContext context(10);
+    context.addIdx(0).idx(0).getFake().addResult(field, string_term, FakeResult().doc(4).pos(0).doc(8).pos(1));
+
+    SearchIterator::UP iterator = f.getIterator(*node, context);
+    ASSERT_TRUE(iterator);
+    auto handle = wrapper->field(0).getHandle();
+    ASSERT_NE(search::fef::IllegalHandle, handle);
+    const auto* tfmd = f._match_data->resolveTermField(handle);
+    ASSERT_TRUE(tfmd != nullptr);
+
+    // matching is decided by the child alone
+    EXPECT_FALSE(iterator->seek(3));
+    ASSERT_TRUE(iterator->seek(4));
+    iterator->unpack(4);
+    EXPECT_EQ(4u, tfmd->getDocId());
+    EXPECT_EQ(2.5, tfmd->getRawScore());
+
+    ASSERT_TRUE(iterator->seek(8));
+    iterator->unpack(8);
+    EXPECT_EQ(8u, tfmd->getDocId());
+    EXPECT_EQ(2.5, tfmd->getRawScore());
+
+    // no ranking data for a document the child does not match
+    EXPECT_FALSE(tfmd->has_ranking_data(9));
+}
+
 TEST(QueryTest, andnot_below_same_element_is_elementwise) {
     QueryBuilder<ProtonNodeTypes> builder;
     builder.addSameElement(1, "top", 0, Weight(1));
@@ -1099,7 +1193,7 @@ TEST(QueryTest, global_filter_is_calculated_and_handled) {
         GlobalFilterBlueprint bp(result, false);
         auto res = Query::handle_global_filter(bp, doom, ann_deadline_config, docid_limit, 0, 1, ttb(), setup_stats,
                                                nullptr);
-        EXPECT_FALSE(res);
+        EXPECT_EQ(Query::GlobalFilterOutcome::UNCHANGED, res);
         EXPECT_FALSE(bp.filter);
         EXPECT_EQ(-1.0, bp.estimated_hit_ratio);
     }
@@ -1107,7 +1201,7 @@ TEST(QueryTest, global_filter_is_calculated_and_handled) {
         GlobalFilterBlueprint bp(result, true);
         auto res = Query::handle_global_filter(bp, doom, ann_deadline_config, docid_limit, 0.31, 1, ttb(),
                                                setup_stats, nullptr);
-        EXPECT_FALSE(res);
+        EXPECT_EQ(Query::GlobalFilterOutcome::UNCHANGED, res);
         EXPECT_FALSE(bp.filter);
         EXPECT_EQ(-1.0, bp.estimated_hit_ratio);
     }
@@ -1115,7 +1209,7 @@ TEST(QueryTest, global_filter_is_calculated_and_handled) {
         GlobalFilterBlueprint bp(result, true);
         auto res = Query::handle_global_filter(bp, doom, ann_deadline_config, docid_limit, 0, 0.3, ttb(), setup_stats,
                                                nullptr);
-        EXPECT_TRUE(res);
+        EXPECT_EQ(Query::GlobalFilterOutcome::FILTER_SET, res);
         EXPECT_TRUE(bp.filter);
         EXPECT_TRUE(bp.filter->is_active());
         EXPECT_EQ(0.3, bp.estimated_hit_ratio);
@@ -1129,7 +1223,7 @@ TEST(QueryTest, global_filter_is_calculated_and_handled) {
         GlobalFilterBlueprint bp(result, true);
         auto res = Query::handle_global_filter(bp, doom, ann_deadline_config, docid_limit, 0, 0.29, ttb(),
                                                setup_stats, nullptr);
-        EXPECT_TRUE(res);
+        EXPECT_EQ(Query::GlobalFilterOutcome::FILTER_SET, res);
         EXPECT_TRUE(bp.filter);
         EXPECT_FALSE(bp.filter->is_active());
         EXPECT_EQ(0.3, bp.estimated_hit_ratio);
@@ -1151,7 +1245,7 @@ TEST(QueryTest, normal_term_doesnt_need_ranking) {
 
 TEST(QueryTest, weak_and_term_needs_ranking) {
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addWeakAnd(1, 10, "f1");
+    builder.addWeakAnd(1, 10);
     builder.addStringTerm("xyz", "f1", 1, Weight(1));
     EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
 }
@@ -1170,6 +1264,163 @@ TEST(QueryTest, nearest_neighbor_term_needs_ranking) {
     hnsw_params.explore_additional_hits = 100;
     builder.add_nearest_neighbor_term("qtensor", "f1", 1, Weight(1), 10, true, hnsw_params);
     EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
+}
+
+const string nn_field = "nn_field";
+const string nn_tensor_type = "tensor<float>(x[2])";
+
+std::shared_ptr<AttributeVector> make_hnsw_tensor_attribute(uint32_t num_docs) {
+    search::attribute::Config cfg(search::attribute::BasicType::TENSOR, search::attribute::CollectionType::SINGLE);
+    cfg.setTensorType(ValueType::from_spec(nn_tensor_type));
+    cfg.set_distance_metric(DistanceMetric::Euclidean);
+    cfg.set_hnsw_index_params(HnswIndexParams(4, 20, DistanceMetric::Euclidean));
+    auto  attr = AttributeFactory::createAttribute(nn_field, cfg);
+    auto& tensor_attr = dynamic_cast<TensorAttribute&>(*attr);
+    attr->addReservedDoc();
+    for (uint32_t i = 1; i <= num_docs; ++i) {
+        uint32_t docid = 0;
+        attr->addDoc(docid);
+        auto value = SimpleValue::from_spec(TensorSpec(nn_tensor_type).add({{"x", 0}}, i).add({{"x", 1}}, 0));
+        tensor_attr.setTensor(docid, *value);
+    }
+    attr->commit();
+    return attr;
+}
+
+// Blueprint placed in the expensive cost tier, like the WhiteListBlueprint in the document meta store.
+class ExpensiveWhiteListBlueprint : public SimpleBlueprint {
+public:
+    explicit ExpensiveWhiteListBlueprint(const SimpleResult& result) : SimpleBlueprint(result) {
+        set_cost_tier(State::COST_TIER_EXPENSIVE);
+    }
+};
+
+class AttributeSearchContext : public FakeSearchContext {
+    AttributeBlueprintFactory _attribute_factory;
+
+public:
+    search::queryeval::Searchable& getAttributes() override { return _attribute_factory; }
+};
+
+class WhiteListAndNearestNeighborFixture {
+public:
+    static constexpr uint32_t num_docs = 100;
+    static constexpr uint32_t docid_limit = num_docs + 1;
+
+    AttributeMap                            attributes;
+    search::fef::test::MockAttributeContext attribute_context;
+    FakeRequestContext                      request_context;
+    fef_test::IndexEnvironment              index_env;
+    AttributeSearchContext                  context;
+    MatchDataLayout                         mdl;
+    Query                                   query;
+
+    WhiteListAndNearestNeighborFixture();
+    ~WhiteListAndNearestNeighborFixture();
+
+    // Builds, optimizes and handles the global filter for a query with a single nearest neighbor term, where the
+    // white list matches the given (active) documents.
+    void plan(const SimpleResult& active_docs, bool approximate = true) {
+        QueryBuilder<ProtonNodeTypes>                  builder;
+        search::query::NearestNeighborTerm::HnswParams hnsw_params;
+        hnsw_params.approximate_threshold = 0.05;
+        builder.add_nearest_neighbor_term("qtensor", nn_field, 1, Weight(1), 10, approximate, hnsw_params);
+        auto serialized_query_tree = StackDumpCreator::createSerializedQueryTree(*builder.build());
+        query.buildTree(*serialized_query_tree, "", ViewResolver(), index_env);
+        query.setWhiteListBlueprint(std::make_unique<ExpensiveWhiteListBlueprint>(active_docs));
+
+        query.reserve_handles(mdl);
+        query.make_blueprint(request_context, context, mdl);
+        query.optimize(InFlow(true), false, false);
+        query.fetchPostings(ExecuteInfo::FULL);
+
+        proton::matching::AnnDeadlineConfiguration ann_deadline_config(vespalib::steady_time::max());
+        search::queryeval::QuerySetupStats         setup_stats;
+        search::engine::RelativeTime               relative_time(std::make_unique<search::engine::SteadyClock>());
+        search::engine::Trace                      trace(relative_time, 0);
+        query.handle_global_filter(request_context, ann_deadline_config, docid_limit, 0.05, 1.0, setup_stats, trace,
+                                   false, false);
+    }
+
+    const AndBlueprint& root() const { return dynamic_cast<const AndBlueprint&>(*query.peekRoot()); }
+};
+
+WhiteListAndNearestNeighborFixture::WhiteListAndNearestNeighborFixture()
+    : attributes(),
+      attribute_context(attributes),
+      request_context(&attribute_context),
+      index_env(),
+      context(),
+      mdl(),
+      query() {
+    attributes.add(make_hnsw_tensor_attribute(num_docs));
+    request_context.set_query_tensor("qtensor", TensorSpec(nn_tensor_type).add({{"x", 0}}, 3).add({{"x", 1}}, 0));
+    index_env.getFields().emplace_back(FieldType::ATTRIBUTE, CollectionType::SINGLE, nn_field, field_id);
+    context.setLimit(docid_limit);
+}
+
+WhiteListAndNearestNeighborFixture::~WhiteListAndNearestNeighborFixture() = default;
+
+TEST(QueryTest, white_list_comes_before_nearest_neighbor_when_skipping_global_filter) {
+    WhiteListAndNearestNeighborFixture f;
+    // Only one active document, i.e., the estimated hit ratio is below the global filter lower limit,
+    // and we fall back to exact search without a global filter. The nearest neighbor blueprint must be moved
+    // to the expensive cost tier, so that the white list (also in the expensive cost tier) comes first and is strict.
+    // Otherwise, the distance to all (also inactive) documents would be computed.
+    f.plan(SimpleResult().addHit(1));
+
+    const auto& root = f.root();
+    ASSERT_EQ(2u, root.childCnt());
+    EXPECT_TRUE(dynamic_cast<const ExpensiveWhiteListBlueprint*>(&root.getChild(0)));
+    EXPECT_TRUE(root.getChild(0).strict());
+    auto nn = dynamic_cast<const NearestNeighborBlueprint*>(&root.getChild(1));
+    ASSERT_TRUE(nn != nullptr);
+    EXPECT_FALSE(nn->strict());
+    EXPECT_EQ(NearestNeighborBlueprint::Algorithm::EXACT, nn->get_algorithm());
+    EXPECT_EQ(Blueprint::State::COST_TIER_EXPENSIVE, nn->getState().cost_tier());
+}
+
+SimpleResult all_docs_but_one_active() {
+    SimpleResult active_docs;
+    for (uint32_t docid = 1; docid <= WhiteListAndNearestNeighborFixture::num_docs; ++docid) {
+        if (docid != 50) {
+            active_docs.addHit(docid);
+        }
+    }
+    return active_docs;
+}
+
+TEST(QueryTest, nearest_neighbor_comes_before_white_list_when_doing_exact_search) {
+    WhiteListAndNearestNeighborFixture f;
+    // All documents but one are active, and exact search is requested, i.e., no global filter is involved.
+    // The nearest neighbor blueprint must stay in the normal cost tier to come before the white list and be strict.
+    f.plan(all_docs_but_one_active(), false);
+
+    const auto& root = f.root();
+    ASSERT_EQ(2u, root.childCnt());
+    auto nn = dynamic_cast<const NearestNeighborBlueprint*>(&root.getChild(0));
+    ASSERT_TRUE(nn != nullptr);
+    EXPECT_TRUE(nn->strict());
+    EXPECT_EQ(NearestNeighborBlueprint::Algorithm::EXACT, nn->get_algorithm());
+    EXPECT_TRUE(dynamic_cast<const ExpensiveWhiteListBlueprint*>(&root.getChild(1)));
+    EXPECT_FALSE(root.getChild(1).strict());
+}
+
+TEST(QueryTest, nearest_neighbor_comes_before_white_list_when_using_global_filter) {
+    WhiteListAndNearestNeighborFixture f;
+    // All documents but one are active, i.e., the estimated hit ratio is above the global filter lower limit,
+    // and the global filter (including the white list) is used by the nearest neighbor search.
+    // The nearest neighbor blueprint should be strict, the white list should not.
+    f.plan(all_docs_but_one_active());
+
+    const auto& root = f.root();
+    ASSERT_EQ(2u, root.childCnt());
+    auto nn = dynamic_cast<const NearestNeighborBlueprint*>(&root.getChild(0));
+    ASSERT_TRUE(nn != nullptr);
+    EXPECT_TRUE(nn->strict());
+    EXPECT_EQ(NearestNeighborBlueprint::Algorithm::INDEX_TOP_K_WITH_FILTER, nn->get_algorithm());
+    EXPECT_TRUE(dynamic_cast<const ExpensiveWhiteListBlueprint*>(&root.getChild(1)));
+    EXPECT_FALSE(root.getChild(1).strict());
 }
 
 } // namespace

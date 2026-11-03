@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <chrono>
 #include <random>
 #include <string>
@@ -139,9 +140,9 @@ struct Program : public Sim {
 
     size_t get_alt_size() const { return (_out_cnt - _bound.size()); }
     size_t get_alt_offset(size_t alt) const {
-        assert(alt < _alt_cnt);
+        CHECK(alt < _alt_cnt);
         size_t r_offset = (_alt_cnt - alt) * get_alt_size();
-        assert(_program.size() >= r_offset);
+        CHECK(_program.size() >= r_offset);
         return (_program.size() - r_offset);
     }
 

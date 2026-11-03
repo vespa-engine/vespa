@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.h>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/searchlib/attribute/save_utils.h>
@@ -51,7 +52,7 @@ public:
         return false;
     }
     uint32_t clearDoc(uint32_t docId) override {
-        assert(docId < _mvMapping.size());
+        CHECK(docId < _mvMapping.size());
         _mvMapping.set(docId, ConstArrayRef());
         return 1u;
     }

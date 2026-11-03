@@ -22,12 +22,14 @@ template <class Self, class NodeTypes> class TemplateTermVisitor : public Custom
     void visit(typename NodeTypes::LocationTerm& n) override { myVisit(n); }
     void visit(typename NodeTypes::PrefixTerm& n) override { myVisit(n); }
     void visit(typename NodeTypes::RangeTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::StringRangeTerm& n) override { myVisit(n); }
     void visit(typename NodeTypes::StringTerm& n) override { myVisit(n); }
     void visit(typename NodeTypes::SubstringTerm& n) override { myVisit(n); }
     void visit(typename NodeTypes::SuffixTerm& n) override { myVisit(n); }
     void visit(typename NodeTypes::PredicateQuery& n) override { myVisit(n); }
     void visit(typename NodeTypes::RegExpTerm& n) override { myVisit(n); }
     void visit(typename NodeTypes::NearestNeighborTerm& n) override { myVisit(n); }
+    void visit(typename NodeTypes::SparseTensorWandTerm& n) override { myVisit(n); }
     void visit(typename NodeTypes::FuzzyTerm& n) override { myVisit(n); }
 
     // Phrases are terms with children. This visitor will not visit

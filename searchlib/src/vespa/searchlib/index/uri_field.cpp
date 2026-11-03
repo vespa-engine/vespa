@@ -2,7 +2,7 @@
 
 #include "uri_field.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search::index {
 
@@ -56,21 +56,11 @@ void UriField::setup(const Schema& schema, const std::string& field) {
     _hostname = schema.getIndexFieldId(field + ".hostname");
 }
 
-bool UriField::mightBePartofUri(std::string_view name) {
-    size_t dotPos = name.find('.');
-    if ((dotPos != 0) && (dotPos != std::string::npos)) {
-        std::string_view suffix = name.substr(dotPos + 1);
-        return ((suffix == "all") || (suffix == "scheme") || (suffix == "host") || (suffix == "port") ||
-                (suffix == "path") || (suffix == "query") || (suffix == "fragment") || (suffix == "hostname"));
-    }
-    return false;
-}
-
 void UriField::markUsed(UsedFieldsMap& usedFields, uint32_t field) {
     if (field == Schema::UNKNOWN_FIELD_ID) {
         return;
     }
-    assert(usedFields.size() > field);
+    CHECK(usedFields.size() > field);
     usedFields[field] = true;
 }
 

@@ -29,6 +29,20 @@ public class AdjustPositionSummaryFieldsTestCase {
     }
 
     @Test
+    void test_pos_summary_sourced_from_original_and_from_zcurve_field() {
+        // Two summary fields in the same schema, resolving the z-curve attribute name via the
+        // two different branches in scanSummary(): "my_pos" has the position field itself as
+        // source (name -> name + "_zcurve"), while "my_pos2" has the z-curve attribute field
+        // itself as source (name already ends with "_zcurve", so it is used as-is).
+        SearchModel model = new SearchModel(false);
+        model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, "pos");
+        model.addSummaryField("my_pos2", PositionDataType.INSTANCE, null, "pos_zcurve");
+        model.resolve();
+        model.assertSummaryField("my_pos", PositionDataType.INSTANCE, SummaryTransform.GEOPOS, "pos_zcurve");
+        model.assertSummaryField("my_pos2", PositionDataType.INSTANCE, SummaryTransform.GEOPOS, "pos_zcurve");
+    }
+
+    @Test
     void test_imported_pos_summary() {
         SearchModel model = new SearchModel();
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
@@ -126,42 +140,6 @@ public class AdjustPositionSummaryFieldsTestCase {
         });
         assertTrue(exception.getMessage().contains("For schema 'child', field 'my_pos': "
                 + "No position attribute 'my_pos_zcurve'"));
-    }
-
-    @Test
-    void test_my_pos_position_summary_bad_datatype() {
-        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
-            SearchModel model = new SearchModel();
-            model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
-            model.addSummaryField("my_pos.position", DataType.STRING, null, "pos");
-            model.resolve();
-        });
-        assertTrue(exception.getMessage().contains("For schema 'child', field 'my_pos.position': "
-                + "exists with type 'datatype string (code: 2)', should be of type 'datatype Array<string> (code: -1486737430)"));
-    }
-
-    @Test
-    void test_my_pos_position_summary_bad_transform() {
-        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
-            SearchModel model = new SearchModel();
-            model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
-            model.addSummaryField("my_pos.position", DataType.getArray(DataType.STRING), null, "pos");
-            model.resolve();
-        });
-        assertTrue(exception.getMessage().contains("For schema 'child', field 'my_pos.position': "
-                + "has summary transform 'none', should have transform 'positions'"));
-    }
-
-    @Test
-    void test_my_pos_position_summary_bad_source() {
-        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
-            SearchModel model = new SearchModel();
-            model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
-            model.addSummaryField("my_pos.position", DataType.getArray(DataType.STRING), SummaryTransform.POSITIONS, "pos");
-            model.resolve();
-        });
-        assertTrue(exception.getMessage().contains("For schema 'child', field 'my_pos.position': "
-                + "has source '[source field 'pos']', should have source 'source field 'my_pos_zcurve''"));
     }
 
     static class SearchModel extends ParentChildSearchModel {

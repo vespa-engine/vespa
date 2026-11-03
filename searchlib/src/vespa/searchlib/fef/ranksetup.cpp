@@ -7,8 +7,12 @@
 #include "idumpfeaturevisitor.h"
 #include "indexproperties.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <algorithm>
 
 using vespalib::make_string_short::fmt;
 
@@ -25,6 +29,11 @@ public:
 namespace search::fef {
 
 RankSetup::MutateOperation::~MutateOperation() = default;
+RankSetup::SortSelection::SortSelection() = default;
+RankSetup::SortSelection::SortSelection(const SortSelection&) = default;
+RankSetup::SortSelection::SortSelection(SortSelection&&) noexcept = default;
+RankSetup::SortSelection& RankSetup::SortSelection::operator=(SortSelection&&) noexcept = default;
+RankSetup::SortSelection::~SortSelection() = default;
 
 using namespace indexproperties;
 
@@ -56,6 +65,9 @@ RankSetup::RankSetup(const BlueprintFactory& factory, const IIndexEnvironment& i
       _match_features(),
       _summaryFeatures(),
       _dumpFeatures(),
+      _sort_features(),
+      _sort_resolver(std::make_shared<BlueprintResolver>(factory, indexEnv)),
+      _sort_seed_by_public(),
       _warnings(),
       _feature_rename_map(),
       _sort_blueprints_by_cost(false),
@@ -102,6 +114,9 @@ void RankSetup::configure() {
     std::vector<std::string> dumpFeatures = dump::Feature::lookup(_indexEnv.getProperties());
     for (const auto& feature : dumpFeatures) {
         addDumpFeature(feature);
+    }
+    for (const auto& feature : sort::Feature::lookup(_indexEnv.getProperties())) {
+        add_sort_feature(feature);
     }
     for (const auto& rename : feature_rename::Rename::lookup(_indexEnv.getProperties())) {
         _feature_rename_map[rename.first] = rename.second;
@@ -155,28 +170,33 @@ void RankSetup::configure() {
 }
 
 void RankSetup::setFirstPhaseRank(const std::string& featureName) {
-    assert(!_compiled);
+    CHECK(!_compiled);
     _firstPhaseRankFeature = featureName;
 }
 
 void RankSetup::setSecondPhaseRank(const std::string& featureName) {
-    assert(!_compiled);
+    CHECK(!_compiled);
     _secondPhaseRankFeature = featureName;
 }
 
 void RankSetup::add_match_feature(const std::string& match_feature) {
-    assert(!_compiled);
+    CHECK(!_compiled);
     _match_features.push_back(match_feature);
 }
 
 void RankSetup::addSummaryFeature(const std::string& summaryFeature) {
-    assert(!_compiled);
+    CHECK(!_compiled);
     _summaryFeatures.push_back(summaryFeature);
 }
 
 void RankSetup::addDumpFeature(const std::string& dumpFeature) {
-    assert(!_compiled);
+    CHECK(!_compiled);
     _dumpFeatures.push_back(dumpFeature);
+}
+
+void RankSetup::add_sort_feature(const std::string& sort_feature) {
+    CHECK(!_compiled);
+    _sort_features.push_back(sort_feature);
 }
 
 void RankSetup::compileAndCheckForErrors(BlueprintResolver& bpr) {
@@ -188,7 +208,7 @@ void RankSetup::compileAndCheckForErrors(BlueprintResolver& bpr) {
     }
 }
 bool RankSetup::compile() {
-    assert(!_compiled);
+    CHECK(!_compiled);
     if (!_firstPhaseRankFeature.empty()) {
         FeatureNameParser parser(_firstPhaseRankFeature);
         if (parser.valid()) {
@@ -229,6 +249,19 @@ bool RankSetup::compile() {
     compileAndCheckForErrors(*_second_phase_resolver);
     compileAndCheckForErrors(*_match_resolver);
     compileAndCheckForErrors(*_summary_resolver);
+    for (const auto& backend : _sort_features) {
+        _sort_resolver->addSeed(backend);
+        std::string public_name = backend;
+        auto        rename = _feature_rename_map.find(backend);
+        if (rename != _feature_rename_map.end()) {
+            public_name = rename->second;
+        }
+        _sort_seed_by_public[public_name] = FeatureNameParser(backend).featureName();
+    }
+    compileAndCheckForErrors(*_sort_resolver);
+    if (!_compileError) {
+        check_sort_features();
+    }
     _indexEnv.hintFeatureMotivation(IIndexEnvironment::DUMP);
     compileAndCheckForErrors(*_dumpResolver);
     _compiled = true;
@@ -236,7 +269,7 @@ bool RankSetup::compile() {
 }
 
 void RankSetup::prepareSharedState(const IQueryEnvironment& queryEnv, IObjectStore& objectStore) const {
-    assert(_compiled && !_compileError);
+    CHECK(_compiled && !_compileError);
     for (const auto& spec : _first_phase_resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
@@ -247,6 +280,69 @@ void RankSetup::prepareSharedState(const IQueryEnvironment& queryEnv, IObjectSto
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
     for (const auto& spec : _summary_resolver->getExecutorSpecs()) {
+        spec.blueprint->prepareSharedState(queryEnv, objectStore);
+    }
+}
+
+void RankSetup::check_sort_features() {
+    const auto& specs = _sort_resolver->getExecutorSpecs();
+    for (const auto& [seed, ref] : _sort_resolver->getSeedMap()) {
+        if (specs[ref.executor].output_types[ref.output].is_object()) {
+            _warnings.emplace_back(fmt("sort feature '%s' must produce a double, not an object", seed.c_str()));
+            _compileError = true;
+        }
+        // Only what this sort feature depends on, not what it shares a resolver with.
+        auto selected = _sort_resolver->select_seeds({seed});
+        for (const auto& spec : selected->getExecutorSpecs()) {
+            const auto& base = spec.blueprint->getBaseName();
+            if (base == "firstPhaseRank" || base == "firstPhaseMax") {
+                _warnings.emplace_back(fmt("sort feature '%s' cannot depend on %s", seed.c_str(), base.c_str()));
+                _compileError = true;
+            }
+        }
+    }
+}
+
+RankSetup::SortSelection RankSetup::select_sort_features(const std::vector<std::string>& public_names) const {
+    CHECK(_compiled && !_compileError);
+    std::vector<const std::string*> seed_of;
+    std::vector<std::string>        seeds;
+    seed_of.reserve(public_names.size());
+    for (const auto& public_name : public_names) {
+        auto it = _sort_seed_by_public.find(public_name);
+        if (it == _sort_seed_by_public.end()) {
+            vespalib::Issue::report("'%s' is not an allowed sort feature", public_name.c_str());
+            return {};
+        }
+        seed_of.push_back(&it->second);
+        if (std::find(seeds.begin(), seeds.end(), it->second) == seeds.end()) {
+            seeds.push_back(it->second);
+        }
+    }
+    SortSelection selection;
+    // Several public names may share a seed, so only distinct seeds tell whether all of them are selected.
+    if (seeds.size() == _sort_resolver->getSeedMap().size()) {
+        selection.resolver = _sort_resolver;
+    } else {
+        selection.resolver = _sort_resolver->select_seeds(seeds);
+    }
+    const auto& seed_map = selection.resolver->getSeedMap();
+    selection.seed_index.reserve(seed_of.size());
+    for (const std::string* seed : seed_of) {
+        selection.seed_index.push_back(std::distance(seed_map.begin(), seed_map.find(*seed)));
+    }
+    return selection;
+}
+
+RankProgram::UP RankSetup::create_sort_program(const SortSelection& selection) const {
+    CHECK(selection.valid());
+    return std::make_unique<RankProgram>(selection.resolver);
+}
+
+void RankSetup::prepare_sort_shared_state(const IQueryEnvironment& queryEnv, IObjectStore& objectStore,
+                                          const SortSelection& selection) const {
+    CHECK(selection.valid());
+    for (const auto& spec : selection.resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
 }

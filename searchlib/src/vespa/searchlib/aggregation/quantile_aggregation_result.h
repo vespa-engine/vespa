@@ -46,7 +46,8 @@ public:
 
 private:
     [[nodiscard]] const ResultNode& onGetRank() const override { return *_no_rank; }
-    void onPrepare(const ResultNode& result, bool useForInit) override;
+    void onPrepare(const ResultNode& result) override;
+    void initForUnitTest(const ResultNode& result) override;
 };
 
 } // namespace search::aggregation

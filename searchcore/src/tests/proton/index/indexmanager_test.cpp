@@ -1,9 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
+#include <vespa/document/datatype/collectiondatatype.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/structdatatype.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/repo/newconfigbuilder.h>
-#include <vespa/fastos/file.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcorespi/index/index_manager_stats.h>
@@ -12,17 +17,23 @@
 #include <vespa/searchcorespi/index/indexfusiontarget.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/memoryindex/compact_words_store.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
+#include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
+#include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
@@ -40,21 +51,31 @@
 #include <vespa/log/log.h>
 LOG_SETUP("indexmanager_test");
 
+using document::ArrayFieldValue;
 using document::Document;
 using document::FieldValue;
 using document::StringFieldValue;
+using document::StructDataType;
+using document::StructFieldValue;
 using proton::index::IndexConfig;
 using proton::index::IndexManager;
+using search::FileKit;
 using search::SerialNum;
 using search::TuneFileAttributes;
 using search::TuneFileIndexing;
 using search::TuneFileIndexManager;
+using search::fef::MatchDataLayout;
+using search::fef::TermFieldHandle;
 using search::index::DummyFileHeaderContext;
 using search::index::FieldLengthInfo;
 using search::index::Schema;
 using search::index::test::MockFieldLengthInspector;
 using search::memoryindex::CompactWordsStore;
 using search::memoryindex::FieldIndexCollection;
+using search::query::SimpleStringTerm;
+using search::queryeval::FakeRequestContext;
+using search::queryeval::FieldSpec;
+using search::queryeval::FieldSpecList;
 using search::queryeval::Source;
 using search::test::DocBuilder;
 using search::test::SchemaBuilder;
@@ -94,6 +115,25 @@ Schema getSchema(std::optional<bool> interleaved_features) {
     return SchemaBuilder(db).add_all_indexes(interleaved_features).build();
 }
 
+const string struct_field_index_name = "sa.name";
+
+auto add_struct_fields = [](auto& builder, auto& header) {
+    auto elem = header.createStruct("elem").addField("name", builder.stringTypeRef()).ref();
+    header.addField(field_name, builder.stringTypeRef()).addField("sa", header.createArray(elem).ref());
+};
+
+// Index of the struct field 'name' in the array of struct field 'sa', in addition to the plain index.
+Schema get_struct_schema(std::optional<bool> interleaved_features) {
+    auto               schema = getSchema(interleaved_features);
+    Schema::IndexField index_field(struct_field_index_name, search::index::schema::DataType::STRING,
+                                   search::index::schema::CollectionType::ARRAY);
+    if (interleaved_features.has_value()) {
+        index_field.set_interleaved_features(interleaved_features.value());
+    }
+    schema.addIndexField(index_field);
+    return schema;
+}
+
 void removeTestData() {
     std::filesystem::remove_all(std::filesystem::path(index_dir));
 }
@@ -120,15 +160,19 @@ struct IndexManagerTest : public ::testing::Test {
     std::unique_ptr<IndexManager> _index_manager;
     std::optional<bool>           _interleaved_features;
     DocBuilder                    _builder;
+    Schema (*_make_schema)(std::optional<bool>);
 
-    IndexManagerTest()
+    IndexManagerTest() : IndexManagerTest(add_fields, getSchema) {}
+
+    IndexManagerTest(DocBuilder::AddFieldsType add_fields_func, Schema (*make_schema)(std::optional<bool>))
         : _serial_num(0),
           _reconfigurer(),
           _fileHeaderContext(),
           _service(1),
           _index_manager(),
           _interleaved_features(),
-          _builder(add_fields) {
+          _builder(std::move(add_fields_func)),
+          _make_schema(make_schema) {
         removeTestData();
         std::filesystem::create_directory(std::filesystem::path(index_dir));
         resetIndexManager();
@@ -239,7 +283,7 @@ void IndexManagerTest::resetIndexManager(SerialNum serial_num) {
     _index_manager.reset();
     _index_manager = std::make_unique<IndexManager>(
         index_dir, std::shared_ptr<search::diskindex::IPostingListCache>(), IndexConfig(),
-        getSchema(_interleaved_features), serial_num, _reconfigurer, _service.write(), _service.shared(),
+        _make_schema(_interleaved_features), serial_num, _reconfigurer, _service.write(), _service.shared(),
         TuneFileIndexManager(), TuneFileAttributes(), _fileHeaderContext);
     _serial_num = std::max(serial_num, _index_manager->getFlushedSerialNum());
 }
@@ -309,7 +353,7 @@ set<uint32_t> readDiskIds(const string& dir, const string& type) {
 
 TEST_F(IndexManagerTest, require_that_memory_index_is_flushed) {
     using seconds = std::chrono::seconds;
-    FastOS_StatInfo stat;
+    vespalib::system_time modified_time;
     {
         addDocument(docid);
 
@@ -324,8 +368,12 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed) {
         runAsMaster([&]() { flushTask = target.initFlush(2, std::make_shared<search::FlushToken>()); });
         flushTask->run();
         EXPECT_FALSE(target.can_flush(2));
-        EXPECT_TRUE(FastOS_File::Stat("test_data/index.flush.1", &stat));
-        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime());
+        std::filesystem::path index_flush_1_path("test_data/index.flush.1");
+        std::error_code       ec;
+        ASSERT_TRUE(std::filesystem::exists(index_flush_1_path, ec));
+        ASSERT_FALSE(ec);
+        modified_time = FileKit::getModificationTime(index_flush_1_path.string());
+        EXPECT_EQ(modified_time, target.getLastFlushTime());
         EXPECT_EQ(2u, target.getFlushedSerialNum());
 
         sources = get_source_collection();
@@ -344,7 +392,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed) {
     { // verify last flush time when loading disk index
         resetIndexManager();
         IndexFlushTarget target(_index_manager->getMaintainer());
-        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime());
+        EXPECT_EQ(modified_time, target.getLastFlushTime());
         EXPECT_EQ(2u, target.getFlushedSerialNum());
 
         // updated serial number & flush time when nothing to flush
@@ -354,7 +402,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed) {
         runAsMaster([&]() { task = target.initFlush(3, std::make_shared<search::FlushToken>()); });
         EXPECT_FALSE(task);
         EXPECT_EQ(3u, target.getFlushedSerialNum());
-        EXPECT_LT(stat._modifiedTime, target.getLastFlushTime());
+        EXPECT_LT(modified_time, target.getLastFlushTime());
         EXPECT_NEAR(now.count(), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()).count(), 2);
     }
 }
@@ -423,8 +471,9 @@ TEST_F(IndexManagerTest, require_that_remove_document_updates_selector) {
 TEST_F(IndexManagerTest, require_that_source_selector_is_flushed) {
     addDocument(docid);
     flushIndexManager();
-    FastOS_File file((index_dir + "/index.flush.1/selector.dat").c_str());
-    ASSERT_TRUE(file.OpenReadOnlyExisting());
+    std::error_code ec;
+    ASSERT_TRUE(std::filesystem::exists(std::filesystem::path(index_dir + "/index.flush.1/selector.dat"), ec));
+    ASSERT_FALSE(ec);
 }
 
 VESPA_THREAD_STACK_TAG(invert_executor)
@@ -690,8 +739,9 @@ TEST_F(IndexManagerTest, require_that_existing_indexes_are_to_be_fusioned_on_sta
 TEST_F(IndexManagerTest, require_that_serial_number_is_written_on_flush) {
     addDocument(docid);
     flushIndexManager();
-    FastOS_File file((index_dir + "/index.flush.1/serial.dat").c_str());
-    EXPECT_TRUE(file.OpenReadOnly());
+    std::error_code ec;
+    ASSERT_TRUE(std::filesystem::exists(std::filesystem::path(index_dir + "/index.flush.1/serial.dat"), ec));
+    ASSERT_FALSE(ec);
 }
 
 TEST_F(IndexManagerTest, require_that_serial_number_is_copied_on_fusion) {
@@ -703,8 +753,9 @@ TEST_F(IndexManagerTest, require_that_serial_number_is_copied_on_fusion) {
     fusion_spec.flush_ids.push_back(1);
     fusion_spec.flush_ids.push_back(2);
     _index_manager->getMaintainer().runFusion(fusion_spec, std::make_shared<search::FlushToken>());
-    FastOS_File file((index_dir + "/index.fusion.2/serial.dat").c_str());
-    EXPECT_TRUE(file.OpenReadOnly());
+    std::error_code ec;
+    ASSERT_TRUE(std::filesystem::exists(std::filesystem::path(index_dir + "/index.fusion.2/serial.dat"), ec));
+    ASSERT_FALSE(ec);
 }
 
 TEST_F(IndexManagerTest, require_that_serial_number_is_read_on_load) {
@@ -796,7 +847,7 @@ TEST_F(IndexManagerTest, require_that_compact_lid_space_works) {
 template <typename IndexType> IndexType* as_index_type(const IIndexCollection& col, uint32_t source_id) {
     auto& searchable = col.getSearchable(source_id);
     auto* result = dynamic_cast<IndexType*>(&searchable);
-    assert(result != nullptr);
+    CHECK(result != nullptr);
     return result;
 }
 
@@ -1017,6 +1068,109 @@ auto test_values = testing::Combine(
 
 INSTANTIATE_TEST_SUITE_P(MultiIndexManagerEnableInterleavedFeaturesTest, IndexManagerEnableInterleavedFeaturesTest,
                          test_values, param_as_string);
+
+using ElementIds = std::vector<uint32_t>;
+
+/*
+ * Feeds documents with a struct field index, and searches the struct field index through the index manager.
+ * Feeding a document that is already indexed (as when a document update is applied) must remove the words of
+ * the old version, both when these are in the memory index and when they have been flushed to a disk index.
+ */
+struct StructFieldIndexManagerTest : public IndexManagerTest {
+    StructFieldIndexManagerTest() : IndexManagerTest(add_struct_fields, get_struct_schema) {}
+    ~StructFieldIndexManagerTest() override;
+
+    Document::UP make_struct_doc(uint32_t id, const std::vector<string>& names) {
+        auto        doc = _builder.make_document("id:ns:searchdocument::" + std::to_string(id));
+        auto        array = _builder.make_array("sa");
+        const auto& elem_type = dynamic_cast<const StructDataType&>(
+            _builder.get_document_type().getField("sa").getDataType().cast_collection()->getNestedType());
+        for (const auto& name : names) {
+            StructFieldValue elem(elem_type);
+            elem.setValue("name", StringFieldBuilder(_builder).tokenize(name).build());
+            array.add(elem);
+        }
+        doc->setValue("sa", array);
+        return doc;
+    }
+
+    void put_struct_doc(uint32_t id, const std::vector<string>& names) {
+        auto           doc = make_struct_doc(id, names);
+        SerialNum      serial_num = ++_serial_num;
+        vespalib::Gate gate;
+        runAsIndex([&]() {
+            _index_manager->putDocument(id, *doc, serial_num, {});
+            _index_manager->commit(serial_num, std::make_shared<vespalib::GateCallback>(gate));
+        });
+        gate.await();
+    }
+
+    // Returns the element ids of the hits for the term in the given document, empty when there is no hit.
+    ElementIds search(const string& term, uint32_t id) {
+        FakeRequestContext request_context;
+        MatchDataLayout    mdl;
+        TermFieldHandle    handle = mdl.allocTermField(0);
+        SimpleStringTerm   node(term, struct_field_index_name, 0, search::query::Weight(0));
+        auto               searchable = _index_manager->getSearchable();
+        auto               blueprint = searchable->createBlueprint(
+            request_context, FieldSpecList().add(FieldSpec(struct_field_index_name, 0, handle)), node, mdl);
+        blueprint->basic_plan(true, 1000);
+        blueprint->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+        auto match_data = mdl.createMatchData();
+        auto iterator = blueprint->createSearch(*match_data);
+        iterator->initFullRange();
+        ElementIds result;
+        if (iterator->seek(id)) {
+            iterator->unpack(id);
+            for (auto it = match_data->resolveTermField(handle)->getIterator(); it.valid(); it.next()) {
+                result.push_back(it.getElementId());
+            }
+        }
+        return result;
+    }
+};
+
+StructFieldIndexManagerTest::~StructFieldIndexManagerTest() = default;
+
+TEST_F(StructFieldIndexManagerTest, struct_field_index_can_be_searched) {
+    put_struct_doc(docid, {"foo bar", "baz"});
+    EXPECT_EQ(ElementIds({0}), search("foo", docid));
+    EXPECT_EQ(ElementIds({0}), search("bar", docid));
+    EXPECT_EQ(ElementIds({1}), search("baz", docid));
+    EXPECT_EQ(ElementIds(), search("qux", docid));
+}
+
+TEST_F(StructFieldIndexManagerTest, refeed_removes_old_words_from_memory_index) {
+    put_struct_doc(docid, {"foo bar", "baz"});
+    put_struct_doc(docid, {"baz", "qux foo"});
+    EXPECT_EQ(ElementIds({1}), search("foo", docid));
+    EXPECT_EQ(ElementIds(), search("bar", docid));
+    EXPECT_EQ(ElementIds({0}), search("baz", docid));
+    EXPECT_EQ(ElementIds({1}), search("qux", docid));
+}
+
+TEST_F(StructFieldIndexManagerTest, refeed_hides_old_words_in_disk_index) {
+    put_struct_doc(docid, {"foo bar", "baz"});
+    flushIndexManager();
+    assertStats(1, 1, 2, 2);
+    put_struct_doc(docid, {"qux"});
+    EXPECT_EQ(ElementIds(), search("foo", docid));
+    EXPECT_EQ(ElementIds(), search("bar", docid));
+    EXPECT_EQ(ElementIds(), search("baz", docid));
+    EXPECT_EQ(ElementIds({0}), search("qux", docid));
+}
+
+TEST_F(StructFieldIndexManagerTest, refeed_after_fusion_gives_new_words_only) {
+    put_struct_doc(docid, {"foo bar", "baz"});
+    flushIndexManager();
+    put_struct_doc(docid, {"baz", "qux"});
+    flushIndexManager();
+    run_fusion(true);
+    EXPECT_EQ(ElementIds(), search("foo", docid));
+    EXPECT_EQ(ElementIds(), search("bar", docid));
+    EXPECT_EQ(ElementIds({0}), search("baz", docid));
+    EXPECT_EQ(ElementIds({1}), search("qux", docid));
+}
 
 } // namespace
 

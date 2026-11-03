@@ -2,10 +2,10 @@
 
 #include "socket_handle.h"
 
+#include <vespa/check_require.h>
+
 #include <errno.h>
 #include <sys/socket.h>
-
-#include <cassert>
 
 namespace vespalib {
 
@@ -64,7 +64,7 @@ int SocketHandle::get_so_error() const {
     if (getsockopt(_fd, SOL_SOCKET, SO_ERROR, &so_error, &opt_len) != 0) {
         return errno;
     }
-    assert(opt_len == sizeof(so_error));
+    CHECK(opt_len == sizeof(so_error));
     return so_error;
 }
 

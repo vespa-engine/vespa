@@ -2,6 +2,7 @@
 vespa_add_library(vespadefaults
     SOURCES
     defaults.cpp
+    check_require.cpp
     INSTALL lib64
     DEPENDS
 )
@@ -33,5 +34,5 @@ endfunction()
 
 vespa_configure_config_h()
 
-install(FILES defaults.h DESTINATION include/vespa)
+install(FILES defaults.h check_require.h DESTINATION include/vespa)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINATION include/vespa)

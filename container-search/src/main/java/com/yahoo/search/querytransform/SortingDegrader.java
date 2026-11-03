@@ -9,7 +9,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.grouping.GroupingQueryParser;
-import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.properties.DefaultProperties;
 import com.yahoo.search.query.ranking.MatchPhase;
@@ -17,8 +16,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.chain.After;
 import com.yahoo.yolean.chain.Before;
 
-import java.util.List;
-import java.util.Set;
 
 /**
  * If the query is eligible, specify that the query should degrade if it causes too many hits
@@ -59,7 +56,10 @@ public class SortingDegrader extends Searcher {
         if ( ! query.getSelect().getGrouping().isEmpty()) return false;
         if ( ! query.properties().getBoolean(DEGRADING, true)) return false;
 
-        Index index = indexFacts.getIndex(query.getRanking().getSorting().fieldOrders().get(0).getFieldName());
+        Sorting.FieldOrder primarySort = query.getRanking().getSorting().fieldOrders().get(0); // ensured above
+        if (primarySort.getSorter() instanceof Sorting.FeatureSorter) return false;
+
+        Index index = indexFacts.getIndex(primarySort.getFieldName());
         if (index == null) return false;
         if ( ! index.isFastSearch()) return false;
         if ( ! index.isNumerical()) return false;
@@ -76,7 +76,7 @@ public class SortingDegrader extends Searcher {
 
         matchPhase.setAttribute(primarySort.getFieldName());
         matchPhase.setAscending(primarySort.getSortOrder() == Sorting.Order.ASCENDING);
-        if (matchPhase.getMaxHits() == null)
+        if (matchPhase.getMaxHits() == null && matchPhase.getTotalMaxHits() == null)
             matchPhase.setMaxHits(decideDefaultMaxHits(query));
     }
 

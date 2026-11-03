@@ -3,6 +3,7 @@ package ai.vespa.modelintegration.evaluator;
 
 import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
+import ai.onnxruntime.OrtLoggingLevel;
 import ai.onnxruntime.OrtSession;
 import ai.vespa.modelintegration.utils.ModelPathOrData;
 import com.yahoo.component.AbstractComponent;
@@ -13,7 +14,6 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,6 +28,7 @@ import static com.yahoo.yolean.Exceptions.throwUnchecked;
  * @author bjorncs
  */
 public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntime {
+
     private static final Logger log = Logger.getLogger(EmbeddedOnnxRuntime.class.getName());
 
     private static final OrtEnvironmentResult ortEnvironment = getOrtEnvironment();
@@ -89,7 +90,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
             return true;
         } catch (OrtException e) {
             return e.getCode() == OrtException.OrtErrorCode.ORT_NO_SUCHFILE;
-        } catch (UnsatisfiedLinkError | RuntimeException | NoClassDefFoundError e) {
+        } catch (LinkageError | RuntimeException e) {
             return false;
         }
     }
@@ -100,9 +101,9 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
                 ? OrtSession.SessionOptions.OptLevel.ALL_OPT
                 : OrtSession.SessionOptions.OptLevel.NO_OPT;
         sessionOpts.setOptimizationLevel(optLevel);
-        var execMode = vespaOpts.executionMode() == OnnxEvaluatorOptions.ExecutionMode.PARALLEL ? PARALLEL : SEQUENTIAL;
-        sessionOpts.setExecutionMode(execMode);
-        sessionOpts.setInterOpNumThreads(execMode == PARALLEL ? vespaOpts.interOpThreads() : 1);
+        sessionOpts.setSessionLogLevel(OrtLoggingLevel.ORT_LOGGING_LEVEL_INFO);
+        sessionOpts.setExecutionMode(vespaOpts.isParallel() ? PARALLEL : SEQUENTIAL);
+        sessionOpts.setInterOpNumThreads(vespaOpts.effectiveInterOpThreads());
         sessionOpts.setIntraOpNumThreads(vespaOpts.intraOpThreads());
         sessionOpts.setCPUArenaAllocator(false);
         if (loadCuda) sessionOpts.addCUDA(vespaOpts.gpuDeviceNumber());
@@ -148,7 +149,8 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
     }
 
     private ReferencedOrtSession getOrCreateSession(ModelPathOrData model, OnnxEvaluatorOptions vespaOpts, boolean loadCuda) throws OrtException {
-        var sessionId = new OrtSessionId(model.calculateHash(), vespaOpts, loadCuda);
+        // Padding is done outside the session, so options differing only in it share one
+        var sessionId = new OrtSessionId(model.calculateHash(), vespaOpts.withoutPadding().withoutRuntimePooling(), loadCuda);
         synchronized (monitor) {
             var existingSession = sessions.get(sessionId);
             if (existingSession != null) {
@@ -186,7 +188,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
     private static OrtEnvironmentResult getOrtEnvironment() {
         try {
             return new OrtEnvironmentResult(OrtEnvironment.getEnvironment(), null);
-        } catch (UnsatisfiedLinkError | RuntimeException | NoClassDefFoundError e) {
+        } catch (LinkageError | RuntimeException e) {
             log.log(Level.FINE, e, () -> "Failed to load ONNX runtime");
             return new OrtEnvironmentResult(null, e);
         }
@@ -228,4 +230,5 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
             } catch (OrtException e) { throw new OnnxRuntimeException(e); }
         }
     }
+
 }

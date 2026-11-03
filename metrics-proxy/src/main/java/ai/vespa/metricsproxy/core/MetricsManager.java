@@ -152,7 +152,7 @@ public class MetricsManager {
      * However, if the timestamp of the packet is too far off in time, we don't adjust it because
      * we would otherwise be masking a real problem with retrieving the metrics.
      */
-    static MetricsPacket.Builder adjustTimestamp(MetricsPacket.Builder builder, Instant startTime) {
+    public static MetricsPacket.Builder adjustTimestamp(MetricsPacket.Builder builder, Instant startTime) {
         Duration age = Duration.between(startTime, builder.getTimestamp());
         if (age.abs().minusMinutes(1).isNegative())
             builder.timestamp(startTime);

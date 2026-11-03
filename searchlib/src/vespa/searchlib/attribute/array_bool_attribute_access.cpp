@@ -2,10 +2,9 @@
 
 #include "array_bool_attribute_access.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
-
-#include <cassert>
 
 namespace search::attribute {
 
@@ -115,7 +114,7 @@ bool ArrayBoolAttributeAccess::is_sortable() const noexcept {
 std::unique_ptr<attribute::ISortBlobWriter>
 ArrayBoolAttributeAccess::make_sort_blob_writer(bool, const common::BlobConverter*, common::sortspec::MissingPolicy,
                                                 std::string_view) const {
-    assert(false && "ArrayBoolAttributeAccess is not sortable");
+    CHECK(false && "ArrayBoolAttributeAccess is not sortable");
     return {};
 }
 

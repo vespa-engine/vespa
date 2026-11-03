@@ -4,7 +4,7 @@
 
 #include "lidstatevector.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 using vespalib::Generation;
 
@@ -15,7 +15,7 @@ LidHoldList::~LidHoldList() = default;
 
 void LidHoldList::add(const uint32_t data, Generation generation) {
     if (!_holdList.empty()) {
-        assert(generation >= _holdList.back().second);
+        CHECK(generation >= _holdList.back().second);
     }
     _holdList.emplace_back(data, generation);
 }

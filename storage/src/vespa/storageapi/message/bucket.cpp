@@ -103,14 +103,16 @@ void MergeBucketCommand::print(std::ostream& out, bool verbose, const std::strin
     out << "MergeBucketCommand(" << getBucketId() << ", to time " << _maxTimestamp
         << ", cluster state version: " << _clusterStateVersion << ", nodes: [";
     for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        if (i != 0)
+        if (i != 0) {
             out << ", ";
+        }
         out << _nodes[i];
     }
     out << "], chain: [";
     for (uint32_t i = 0; i < _chain.size(); ++i) {
-        if (i != 0)
+        if (i != 0) {
             out << ", ";
+        }
         out << _chain[i];
     }
     out << "]";
@@ -144,14 +146,16 @@ void MergeBucketReply::print(std::ostream& out, bool verbose, const std::string&
     out << "MergeBucketReply(" << getBucketId() << ", to time " << _maxTimestamp
         << ", cluster state version: " << _clusterStateVersion << ", nodes: [";
     for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        if (i != 0)
+        if (i != 0) {
             out << ", ";
+        }
         out << _nodes[i];
     }
     out << "], chain: [";
     for (uint32_t i = 0; i < _chain.size(); ++i) {
-        if (i != 0)
+        if (i != 0) {
             out << ", ";
+        }
         out << _chain[i];
     }
     out << "])";
@@ -189,8 +193,9 @@ GetBucketDiffCommand::~GetBucketDiffCommand() = default;
 void GetBucketDiffCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "GetBucketDiffCommand(" << getBucketId() << ", to time " << _maxTimestamp << ", nodes: [";
     for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        if (i != 0)
+        if (i != 0) {
             out << ", ";
+        }
         out << _nodes[i];
     }
 
@@ -222,8 +227,9 @@ GetBucketDiffReply::~GetBucketDiffReply() = default;
 void GetBucketDiffReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "GetBucketDiffReply(" << getBucketId() << ", to time " << _maxTimestamp << ", nodes: [";
     for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        if (i != 0)
+        if (i != 0) {
             out << ", ";
+        }
         out << _nodes[i];
     }
     if (_diff.empty()) {
@@ -295,13 +301,15 @@ void ApplyBucketDiffCommand::print(std::ostream& out, bool verbose, const std::s
     for (std::vector<Entry>::const_iterator it = _diff.begin(); it != _diff.end(); ++it) {
         totalSize += it->_headerBlob.size();
         totalSize += it->_bodyBlob.size();
-        if (it->filled())
+        if (it->filled()) {
             ++filled;
+        }
     }
     out << "ApplyBucketDiffCommand(" << getBucketId() << ", nodes: [";
     for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        if (i != 0)
+        if (i != 0) {
             out << ", ";
+        }
         out << _nodes[i];
     }
     out << "], " << _diff.size() << " entries of " << totalSize << " bytes, " << (100.0 * filled / _diff.size())
@@ -337,13 +345,15 @@ void ApplyBucketDiffReply::print(std::ostream& out, bool verbose, const std::str
     for (const Entry& entry : _diff) {
         totalSize += entry._headerBlob.size();
         totalSize += entry._bodyBlob.size();
-        if (entry.filled())
+        if (entry.filled()) {
             ++filled;
+        }
     }
     out << "ApplyBucketDiffReply(" << getBucketId() << ", nodes: [";
     for (uint32_t i = 0; i < _nodes.size(); ++i) {
-        if (i != 0)
+        if (i != 0) {
             out << ", ";
+        }
         out << _nodes[i];
     }
     out << "], " << _diff.size() << " entries of " << totalSize << " bytes, " << (100.0 * filled / _diff.size())

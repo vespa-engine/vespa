@@ -36,6 +36,7 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.text.StringUtilities;
+import com.yahoo.vespa.indexinglanguage.expressions.AbsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Base64DecodeExpression;
@@ -48,14 +49,20 @@ import com.yahoo.vespa.indexinglanguage.expressions.ChunkExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ClearStateExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Components;
 import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.DocumentIdExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EchoExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.EmbedExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExactExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8EncodeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex16EncodeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex8FloatEncodeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExcessHex16DoubleEncodeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionValueExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExpressionList;
 import com.yahoo.vespa.indexinglanguage.expressions.FlattenExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GenerateExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetLanguageExpression;
@@ -102,6 +109,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ToIntegerExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToLongExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToStringExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ToTensorExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToUriExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToWsetExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TokenizeExpression;
@@ -243,6 +251,7 @@ TOKEN :
     <SCOLON: ";"> |
     <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
              ("'" (~["'"] | "\\'")* "'")> |
+    <ABS: "abs"> |
     <ATTRIBUTE: "attribute"> |
     <BASE64_DECODE: "base64decode"> |
     <BASE64_ENCODE: "base64encode"> |
@@ -253,13 +262,19 @@ TOKEN :
     <CHUNK: "chunk"> |
     <CLEAR_STATE: "clear_state"> |
     <CREATE_IF_NON_EXISTENT: "create_if_non_existent"> |
+    <DOCUMENT_ID: "documentid"> |
     <ECHO: "echo"> |
     <ELSE: "else"> |
     <EMBED: "embed"> |
     <GENERATE: "generate"> |
     <EXACT: "exact"> |
+    <EXHEX8_ENCODE: "exhex8encode"> |
+    <EXHEX16_ENCODE: "exhex16encode"> |
+    <EXHEX8_FLOAT_ENCODE: "exhex8floatencode"> |
+    <EXHEX16_DOUBLE_ENCODE: "exhex16doubleencode"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
+    <FOR_EACH_FIELD: "for_each_field"> |
     <GET_FIELD: "get_field"> |
     <GET_LANGUAGE: "get_language"> |
     <GET_VALUE: "get_value"> |
@@ -308,6 +323,7 @@ TOKEN :
     <TO_POS: "to_pos"> |
     <TO_EPOCH_SECOND: "to_epoch_second"> |
     <TO_STRING: "to_string"> |
+    <TO_TENSOR: "to_tensor"> |
     <TO_URI: "to_uri"> |
     <TO_WSET: "to_wset"> |
     <TRIM: "trim"> |
@@ -402,20 +418,27 @@ Expression value() :
     Expression val;
 }
 {
-    ( val = attributeExp()          |
+    ( val = absExp()                |
+      val = attributeExp()          |
       val = base64DecodeExp()       |
       val = base64EncodeExp()       |
       val = binarizeExp()           |
       val = busy_waitExp()          |
       val = chunkExp()              |
       val = clearStateExp()         |
+      val = documentIdExp()         |
       val = echoExp()               |
       val = embedExp()              |
       val = generateExp()           |
       val = exactExp()              |
       val = executionValueExp()     |
+      val = exHex8EncodeExp()       |
+      val = exHex16EncodeExp()      |
+      val = exHex8FloatEncodeExp()  |
+      val = exHex16DoubleEncodeExp() |
       val = flattenExp()            |
       val = forEachExp()            |
+      val = forEachFieldExp()       |
       val = getFieldExp()           |
       val = getLanguageExp()        |
       val = getValueExp()           |
@@ -460,12 +483,19 @@ Expression value() :
       val = toLongExp()             |
       val = toPosExp()              |
       val = toStringExp()           |
+      val = toTensorExp()           |
       val = toUriExp()              |
       val = toWsetExp()             |
       val = trimExp()               |
       val = zcurveExp()             |
       ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
     { return val; }
+}
+
+Expression absExp() : { }
+{
+    ( <ABS> )
+    { return new AbsExpression(); }
 }
 
 Expression attributeExp() :
@@ -511,6 +541,15 @@ Expression clearStateExp() : { }
     { return new ClearStateExpression(); }
 }
 
+Expression documentIdExp() :
+{
+    String val = null;
+}
+{
+    ( <DOCUMENT_ID> [ val = identifier() ] )
+    { return new DocumentIdExpression(val); }
+}
+
 Expression echoExp() : { }
 {
     ( <ECHO> )
@@ -546,6 +585,30 @@ Expression exactExp() :
     { return new ExactExpression(config); }
 }
 
+Expression exHex8EncodeExp() : { }
+{
+    ( <EXHEX8_ENCODE> )
+    { return new ExcessHex8EncodeExpression(); }
+}
+
+Expression exHex16EncodeExp() : { }
+{
+    ( <EXHEX16_ENCODE> )
+    { return new ExcessHex16EncodeExpression(); }
+}
+
+Expression exHex8FloatEncodeExp() : { }
+{
+    ( <EXHEX8_FLOAT_ENCODE> )
+    { return new ExcessHex8FloatEncodeExpression(); }
+}
+
+Expression exHex16DoubleEncodeExp() : { }
+{
+    ( <EXHEX16_DOUBLE_ENCODE> )
+    { return new ExcessHex16DoubleEncodeExpression(); }
+}
+
 Expression flattenExp() : { }
 {
     ( <FLATTEN> )
@@ -559,6 +622,16 @@ Expression forEachExp() :
 {
     ( <FOR_EACH> <LCURLY> nl() val = statement() nl() <RCURLY> )
     { return new ForEachExpression(val); }
+}
+
+Expression forEachFieldExp() :
+{
+    String path;
+    Expression val;
+}
+{
+    ( <FOR_EACH_FIELD> path = string() <LCURLY> nl() val = statement() nl() <RCURLY> )
+    { return new ForEachFieldExpression(path, val); }
 }
 
 Expression getFieldExp() :
@@ -915,6 +988,15 @@ Expression toStringExp() : { }
     { return new ToStringExpression(); }
 }
 
+Expression toTensorExp() :
+{
+    String val;
+}
+{
+    ( <TO_TENSOR> val = identifier() )
+    { return new ToTensorExpression(val); }
+}
+
 Expression toUriExp() : { }
 {
     ( <TO_URI> )
@@ -994,7 +1076,8 @@ String identifier() :
 }
 {
     ( val = string()             |
-      ( <ATTRIBUTE>              |
+      ( <ABS>                    |
+        <ATTRIBUTE>              |
         <BASE64_DECODE>          |
         <BASE64_ENCODE>          |
         <BINARIZE>               |
@@ -1004,12 +1087,14 @@ String identifier() :
         <CHUNK>                  |
         <CLEAR_STATE>            |
         <CREATE_IF_NON_EXISTENT> |
+        <DOCUMENT_ID>            |
         <ECHO>                   |
         <EXACT>                  |
         <ELSE>                   |
         <EMBED>                  |
         <FLATTEN>                |
         <FOR_EACH>               |
+        <FOR_EACH_FIELD>         |
         <GENERATE>               |
         <GET_FIELD>              |
         <GET_LANGUAGE>           |
@@ -1056,6 +1141,7 @@ String identifier() :
         <TO_LONG>                |
         <TO_POS>                 |
         <TO_STRING>              |
+        <TO_TENSOR>              |
         <TO_URI>                 |
         <TO_WSET>                |
         <TOKENIZE>               |

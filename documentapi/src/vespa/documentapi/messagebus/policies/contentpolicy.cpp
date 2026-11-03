@@ -2,6 +2,7 @@
 
 #include "contentpolicy.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/base/documentid.h>
@@ -15,8 +16,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/config/helper/configfetcher.hpp>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".contentpolicy");
@@ -162,7 +161,7 @@ void ContentPolicy::doSelect(mbus::RoutingContext& context) {
 
         // Pick a distributor using ideal state algorithm
         try {
-            assert(cur_distribution);
+            CHECK(cur_distribution);
             distributor = cur_distribution->getIdealDistributorNode(*cur_state, id);
         } catch (storage::lib::TooFewBucketBitsInUseException& e) {
             auto reply = std::make_unique<WrongDistributionReply>(cur_state->toString());

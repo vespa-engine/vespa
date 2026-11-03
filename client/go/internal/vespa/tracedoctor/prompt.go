@@ -134,6 +134,17 @@ matching the query.
 for the best results after first phase ranking. This step is optional and if the time is zero the
 query was executed with only a single ranking phase</AI>`
 
+const sortFeaturesTaskPromptStr = `<AI>The following table also includes this task:
+*sort features*: time spent evaluating the rank features the query sorts by, given as feature(...) in the
+sort specification. Recording the values and sorting the hits are not included.
+The parts of each distinct sort key that depend on the document are evaluated for every matched hit.
+When first phase ranking runs, only the hits kept by any first phase rank-score-drop-limit are evaluated.
+Values that do not depend on the document, such as query(...) features, are evaluated during setup,
+once per sort key in each matching thread, and are included in this time.
+Sort keys are evaluated separately from first phase ranking, even when they use the same features.
+When first phase ranking does not run and the sort keys need match data, unpacking that data is
+counted under *matching*.</AI>`
+
 const matchThreadTimelinePromptStr = `<AI>
 The following table shows the timeline for a single matching thread.
 
@@ -152,6 +163,15 @@ This is more detailed information about what happens inside the *first phase* ta
 
 const secondPhaseProfilingPromptStr = `<AI>The following table shows profiling information for second phase ranking.
 This is more detailed information about what happens inside the *second phase* task from the table above.
+</AI>`
+
+const sortFeaturesProfilingPromptStr = `<AI>The following table shows profiling information for sort feature evaluation.
+This is more detailed information about what happens inside the *sort features* task from the table above.
+The *count* column shows how many times the feature or function was actually computed in this thread,
+added up over the sort keys. It is not the number of hits. Within a sort key, a value is computed at most
+once per hit, however often it is referenced, and a branch that is not taken is usually not computed.
+Values that do not depend on the document have small counts, because they are evaluated once per sort key
+during setup.
 </AI>`
 
 const slowToMedianPromptStr = `<AI>The report for the slowest node is complete.
@@ -258,6 +278,12 @@ func matchThreadSummaryPrompt(ctx *Context, out *output) {
 	}
 }
 
+func sortFeaturesTaskPrompt(ctx *Context, out *output) {
+	if ctx.makePrompt {
+		out.fmt("%s\n", sortFeaturesTaskPromptStr)
+	}
+}
+
 func matchThreadTimelinePrompt(ctx *Context, out *output) {
 	if ctx.makePrompt {
 		out.fmt("%s\n", matchThreadTimelinePromptStr)
@@ -279,6 +305,12 @@ func firstPhaseProfilingPrompt(ctx *Context, out *output) {
 func secondPhaseProfilingPrompt(ctx *Context, out *output) {
 	if ctx.makePrompt {
 		out.fmt("%s\n", secondPhaseProfilingPromptStr)
+	}
+}
+
+func sortFeaturesProfilingPrompt(ctx *Context, out *output) {
+	if ctx.makePrompt {
+		out.fmt("%s\n", sortFeaturesProfilingPromptStr)
 	}
 }
 

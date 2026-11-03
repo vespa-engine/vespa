@@ -4,7 +4,7 @@
 
 #include "document_inverter.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search::memoryindex {
 
@@ -31,7 +31,7 @@ void DocumentInverterCollection::switch_active_inverter() {
         return;
     }
     if (_num_inverters >= _max_inverters) {
-        assert(!_inflight_inverters.empty());
+        CHECK(!_inflight_inverters.empty());
         _active_inverter = std::move(_inflight_inverters.front());
         _inflight_inverters.pop_front();
         _active_inverter->wait_for_zero_ref_count();

@@ -2,6 +2,7 @@
 
 #include "tensor_partial_update.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/array_array_map.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/vespalib/util/overload.h>
@@ -10,7 +11,6 @@
 #include <vespa/vespalib/util/unconstify_span.h>
 #include <vespa/vespalib/util/visit_ranges.h>
 
-#include <cassert>
 #include <set>
 
 #include <vespa/log/log.h>
@@ -71,7 +71,7 @@ struct DenseCoords {
         ++current;
     }
     size_t get_dense_index() const {
-        assert(current == dim_sizes.size());
+        CHECK(current == dim_sizes.size());
         return offset;
     }
 };
@@ -132,9 +132,9 @@ struct AddressHandler {
             return;
         }
         // implicitly checked above, must hold:
-        assert(input_dims.size() == modifier_dims.size());
+        CHECK(input_dims.size() == modifier_dims.size());
         // the plan should now be fully built:
-        assert(input_dims.size() == dimension_plan.size());
+        CHECK(input_dims.size() == dimension_plan.size());
     }
 
     void handle_address() {
@@ -147,8 +147,8 @@ struct AddressHandler {
                 *out++ = from_modifier.addr[i];
             }
         }
-        assert(out == for_output.addr.end());
-        assert(dense_converter.current == dense_converter.dim_sizes.size());
+        CHECK(out == for_output.addr.end());
+        CHECK(dense_converter.current == dense_converter.dim_sizes.size());
     }
 
     ~AddressHandler();
@@ -275,7 +275,7 @@ Value::UP PerformInsertSubspaces::invoke(const Value& input, SparseCoords& outpu
     copy_tensor_with_filter<ICT>(input, dsss, output_addrs, *builder, no_filter);
     sub_spaces.each_entry([&](std::span<const string_id> keys, std::span<const double> values) {
         auto dst = builder->add_subspace(keys).begin();
-        assert(dsss == values.size());
+        CHECK(dsss == values.size());
         for (size_t i = 0; i < dsss; ++i) {
             dst[i] = values[i];
         }
@@ -363,7 +363,7 @@ struct ModifierCoords {
     ModifierCoords(const SparseCoords& input_coords, const std::vector<size_t>& input_dim_indexes,
                    const ValueType& modifier_type)
         : lookup_refs(modifier_type.dimensions().size()), lookup_view_dims(modifier_type.dimensions().size()) {
-        assert(modifier_type.dimensions().size() == input_dim_indexes.size());
+        CHECK(modifier_type.dimensions().size() == input_dim_indexes.size());
         for (size_t i = 0; i < input_dim_indexes.size(); ++i) {
             // Setup the modifier dimensions to point to the matching input dimensions.
             lookup_refs[i] = &input_coords.addr[input_dim_indexes[i]];

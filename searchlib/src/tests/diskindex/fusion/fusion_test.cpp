@@ -105,14 +105,16 @@ std::string toString(FieldPositionsIterator posItr, bool hasElements = false, bo
     ss << posItr.getFieldLength() << ":";
     bool first = true;
     for (; posItr.valid(); posItr.next()) {
-        if (!first)
+        if (!first) {
             ss << ",";
+        }
         ss << posItr.getPosition();
         first = false;
         if (hasElements) {
             ss << "[e=" << posItr.getElementId();
-            if (hasWeights)
+            if (hasWeights) {
                 ss << ",w=" << posItr.getElementWeight();
+            }
             ss << ",l=" << posItr.getElementLen() << "]";
         }
     }

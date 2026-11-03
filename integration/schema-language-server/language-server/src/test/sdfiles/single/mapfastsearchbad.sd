@@ -1,0 +1,35 @@
+schema mapfastsearchbad {
+    document mapfastsearchbad {
+        struct entry {
+            field mykey type string { }
+            field myvalue type int { }
+        }
+        field unknown_setting type array<entry> {
+            indexing: summary
+            fast-search-map-field lookup {
+                foo: mykey
+                key: mykey
+                value: myvalue
+            }
+        }
+        field repeated_key type array<entry> {
+            indexing: summary
+            fast-search-map-field lookup {
+                key: mykey
+                key: myvalue
+                value: myvalue
+            }
+        }
+        field repeated_lookup type array<entry> {
+            indexing: summary
+            fast-search-map-field lookup {
+                key: mykey
+                value: myvalue
+            }
+            fast-search-map-field lookup {
+                key: myvalue
+                value: mykey
+            }
+        }
+    }
+}

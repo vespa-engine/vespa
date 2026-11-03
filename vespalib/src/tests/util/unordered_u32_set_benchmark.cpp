@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/unordered_u32_set.h>
 
@@ -78,7 +79,7 @@ template <typename SetT, typename KeyTransform> static void BM_lookup_existing(b
     for (uint32_t i = 1; i <= range_len; ++i) { // assume range always < UINT32_MAX/128
         (void)set.insert(KeyTransform::apply(i));
     }
-    assert(set.size() == range_len);
+    CHECK(set.size() == range_len);
     benchmark::ClobberMemory();
     // For simplicity, we spray&pray with pseudo-random values in the inserted
     // range. The use of uniform_int_distribution adds a bit of constant overhead
@@ -87,7 +88,7 @@ template <typename SetT, typename KeyTransform> static void BM_lookup_existing(b
     std::uniform_int_distribution dist(1u, range_len);
     for (auto _ : state) {
         auto ret = set.contains(KeyTransform::apply(dist(prng)));
-        assert(ret);
+        CHECK(ret);
         benchmark::DoNotOptimize(ret);
     }
 }
@@ -98,7 +99,7 @@ template <typename SetT, typename KeyTransform> static void BM_lookup_missing(be
     for (uint32_t i = 1; i <= range_len; ++i) { // assume range always <= INT32_MAX/128
         (void)set.insert(KeyTransform::apply(i));
     }
-    assert(set.size() == range_len);
+    CHECK(set.size() == range_len);
     benchmark::ClobberMemory();
     std::minstd_rand              prng;
     std::uniform_int_distribution dist(1u, UINT32_MAX);
@@ -107,7 +108,7 @@ template <typename SetT, typename KeyTransform> static void BM_lookup_missing(be
         // any of the inserted values.
         const uint32_t k = KeyTransform::apply(dist(prng)) | 0x80000000;
         auto           ret = set.contains(k);
-        assert(!ret);
+        CHECK(!ret);
         benchmark::DoNotOptimize(ret);
     }
 }

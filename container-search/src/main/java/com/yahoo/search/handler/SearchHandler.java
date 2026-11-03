@@ -3,6 +3,8 @@ package com.yahoo.search.handler;
 
 import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.cloud.ZoneInfo;
+import ai.vespa.telemetry.api.trace.OtelTracing;
+import ai.vespa.telemetry.api.trace.TraceAttributes;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Vtag;
@@ -47,6 +49,7 @@ import com.yahoo.search.statistics.ElapsedTime;
 import com.yahoo.slime.Inspector;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
+import io.opentelemetry.api.trace.Span;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -369,7 +372,12 @@ public class SearchHandler extends LoggingRequestHandler {
             // check and set (instead of set directly) to avoid overwriting stuff from prepareForBreakdownAnalysis()
             execution.context().setDetailedDiagnostics(true);
         }
-        Result result = execution.search(query);
+        Result result = OtelTracing.instrument("chain.search", () -> {
+            Span.current()
+                .setAttribute(TraceAttributes.SEARCH_CHAIN,       searchChain.getId().stringValue())
+                .setAttribute(TraceAttributes.QUERY_RANK_PROFILE, query.getRanking().getProfile());
+            return execution.search(query);
+        });
         if (result.getQuery() == null)
             result.setQuery(query);
 

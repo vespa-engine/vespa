@@ -83,6 +83,33 @@ QueryTerm::QueryTerm(Type type, string index, std::unique_ptr<NumericRangeSpec> 
       _fieldInfo() {
 }
 
+QueryTerm::QueryTerm(Type type, string index, std::unique_ptr<StringRangeSpec> string_range)
+    : QueryTermUCS4(type, std::move(string_range)),
+      _hitList(),
+      _index(std::move(index)),
+      _result(),
+      _encoding(0x01),
+      _isRanked(false),
+      _filter(true),
+      _weight(100),
+      _uniqueId(0),
+      _fieldInfo() {
+}
+
+QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, string index, Type type,
+                     std::unique_ptr<StringRangeSpec> range_spec)
+    : QueryTermUCS4(type, std::move(range_spec)),
+      _hitList(),
+      _index(std::move(index)),
+      _result(org.release()),
+      _encoding(0x01),
+      _isRanked(true),
+      _filter(false),
+      _weight(100),
+      _uniqueId(0),
+      _fieldInfo() {
+}
+
 QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, string_view termS, string indexS, Type type,
                      Normalizing normalizing)
     : QueryTermUCS4(QueryNormalization::optional_fold(termS, type, normalizing), type),
@@ -174,6 +201,10 @@ void QueryTerm::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef:
 }
 
 NearestNeighborQueryNode* QueryTerm::as_nearest_neighbor_query_node() noexcept {
+    return nullptr;
+}
+
+SparseTensorWandQueryNode* QueryTerm::as_sparse_tensor_wand_query_node() noexcept {
     return nullptr;
 }
 

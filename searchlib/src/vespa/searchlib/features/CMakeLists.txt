@@ -15,6 +15,7 @@ vespa_add_library(searchlib_features OBJECT
     debug_attribute_wait.cpp
     debug_wait.cpp
     dense_tensor_attribute_executor.cpp
+    dequantizing_tensor_attribute_executor.cpp
     direct_tensor_attribute_executor.cpp
     distance_calculator_bundle.cpp
     distancefeature.cpp
@@ -25,6 +26,8 @@ vespa_add_library(searchlib_features OBJECT
     elementwise_blueprint.cpp
     elementwise_bm25_blueprint.cpp
     elementwise_bm25_executor.cpp
+    elementwise_matches_blueprint.cpp
+    elementwise_matches_executor.cpp
     elementwise_output.cpp
     elementwise_utils.cpp
     euclidean_distance_feature.cpp
@@ -45,6 +48,7 @@ vespa_add_library(searchlib_features OBJECT
     item_raw_score_feature.cpp
     jarowinklerdistancefeature.cpp
     matchcountfeature.cpp
+    matches_for_labels_feature.cpp
     matchesfeature.cpp
     matchfeature.cpp
     max_reduce_prod_join_replacer.cpp

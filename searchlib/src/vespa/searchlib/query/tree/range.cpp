@@ -114,10 +114,12 @@ std::string Range::getRangeString() const {
 bool operator==(const Range& r1, const Range& r2) {
     const NumericRangeSpec* s1 = r1.getSpec();
     const NumericRangeSpec* s2 = r2.getSpec();
-    if (s1 == s2)
+    if (s1 == s2) {
         return true;
-    if (!s1 || !s2)
+    }
+    if (!s1 || !s2) {
         return false;
+    }
     return (*s1 == *s2);
 }
 

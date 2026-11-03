@@ -4,12 +4,11 @@
 #include "getdocidnamespacespecificfunctionnode.h"
 #include "getymumchecksumfunctionnode.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/locale/c.h>
-
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.documentfieldnode");
@@ -50,6 +49,8 @@ DocumentFieldNode& DocumentFieldNode::operator=(const DocumentFieldNode& rhs) {
     return *this;
 }
 
+namespace {
+
 std::unique_ptr<ResultNode> deduceResultNode(std::string_view fieldName, const FieldValue& fv,
                                              bool preserveAccurateTypes, bool nestedMultiValue) {
     std::unique_ptr<ResultNode> value;
@@ -86,7 +87,7 @@ std::unique_ptr<ResultNode> deduceResultNode(std::string_view fieldName, const F
             value = deduceResultNode(fieldName, *static_cast<const CollectionFieldValue&>(fv).createNested(),
                                      preserveAccurateTypes, nestedMultiValue);
         } else {
-            assert(fv.isA(FieldValue::Type::MAP));
+            CHECK(fv.isA(FieldValue::Type::MAP));
             value = deduceResultNode(fieldName, *static_cast<const MapFieldValue&>(fv).createValue(),
                                      preserveAccurateTypes, nestedMultiValue);
         }
@@ -121,6 +122,8 @@ std::unique_ptr<ResultNode> deduceResultNode(std::string_view fieldName, const F
     }
     return value;
 }
+
+} // namespace
 
 void DocumentFieldNode::onPrepare(bool preserveAccurateTypes) {
     LOG(debug, "DocumentFieldNode::onPrepare(this=%p)", this);
@@ -175,10 +178,12 @@ void DocumentFieldNode::onDocType(const DocumentType& docType) {
 
 bool DocumentFieldNode::hasMultiValue() const {
     for (const auto& entry : _fieldPath) {
-        if (entry->getDataType().isArray())
+        if (entry->getDataType().isArray()) {
             return true;
-        if (entry->getDataType().isMap())
+        }
+        if (entry->getDataType().isMap()) {
             return true;
+        }
     }
     return false;
 }
@@ -191,19 +196,12 @@ class FieldValue2ResultNode : public ResultNode {
 public:
     DECLARE_EXPRESSIONNODE(FieldValue2ResultNode);
     FieldValue2ResultNode(const FieldValue* fv = nullptr) : _fv(fv) {}
-    int64_t onGetInteger(size_t index) const override {
-        (void)index;
-        return _fv ? _fv->getAsLong() : 0;
-    }
-    double onGetFloat(size_t index) const override {
-        (void)index;
-        return _fv ? _fv->getAsDouble() : 0;
-    }
-    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
-        (void)index;
+    int64_t onGetInteger(size_t) const override { return _fv ? _fv->getAsLong() : 0; }
+    double onGetFloat(size_t) const override { return _fv ? _fv->getAsDouble() : 0; }
+    ConstBufferRef onGetString(size_t, BufferRef buf) const override {
         if (_fv) {
-            std::pair<const char*, size_t> raw = _fv->getAsRaw();
-            return ConstBufferRef(raw.first, raw.second);
+            std::span<const char> raw = _fv->getAsRaw();
+            return ConstBufferRef(raw.data(), raw.size());
         }
         return buf;
     }
@@ -217,7 +215,7 @@ private:
     const FieldValue* _fv;
 };
 
-char DefaultValue::null = 0;
+char DefaultValue::_null = 0;
 
 void DefaultValue::set(const ResultNode&) {
     throw std::runtime_error("DefaultValue::set(const ResultNode&) is not possible.");
@@ -260,12 +258,14 @@ DefaultValue DocumentFieldNode::SingleHandler::_defaultValue;
 
 void DocumentFieldNode::SingleHandler::onPrimitive(uint32_t, const Content& c) {
     LOG(spam, "SingleHandler::onPrimitive: field value '%s'", c.getValue().toString().c_str());
+    set_found_value(true);
     FieldValue2ResultNode converter(&c.getValue());
     _result.set(converter);
 }
 
 void DocumentFieldNode::MultiHandler::onPrimitive(uint32_t, const Content& c) {
     LOG(spam, "MultiHandler::onPrimitive: field value '%s'", c.getValue().toString().c_str());
+    set_found_value(true);
     FieldValue2ResultNode converter(&c.getValue());
     _result.push_back_safe(converter);
 }

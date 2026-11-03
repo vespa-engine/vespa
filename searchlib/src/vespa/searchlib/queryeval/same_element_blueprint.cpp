@@ -7,13 +7,13 @@
 #include "field_spec.hpp"
 #include "same_element_search.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
 #include <vespa/vespalib/objects/visit.hpp>
 
 #include <algorithm>
-#include <cassert>
 #include <map>
 #include <memory>
 
@@ -70,7 +70,7 @@ uint8_t SameElementBlueprint::calculate_cost_tier() const {
 
 std::unique_ptr<SearchIterator> SameElementBlueprint::createSearchImpl(MatchData& md) const {
     auto* tfmd = md.resolveTermField(_field.getHandle());
-    assert(tfmd != nullptr);
+    CHECK(tfmd != nullptr);
     return create_same_element_search(md, *tfmd);
 }
 
@@ -158,7 +158,8 @@ Blueprint::UP SameElementBlueprint::get_replacement() {
 
                 return std::make_unique<ArrayBoolBlueprint>(
                     _expose_match_data_for_same_element ? _field : state.field(0),
-                    array_bool_context->get_attribute(), _element_filter, array_bool_context->get_want_true());
+                    array_bool_context->get_attribute(), _element_filter, array_bool_context->get_want_true(),
+                    _expose_match_data_for_same_element);
             }
         }
     }

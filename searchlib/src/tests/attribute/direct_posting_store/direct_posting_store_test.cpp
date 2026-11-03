@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
@@ -91,7 +92,7 @@ struct DirectPostingStoreTest : public ::testing::TestWithParam<TestParam> {
         : attr(make_attribute(GetParam().type, GetParam().col_type, true)),
           has_weight(GetParam().col_type != CollectionType::SINGLE),
           api(extract_api()) {
-        assert(api != nullptr);
+        CHECK(api != nullptr);
         add_docs(attr);
         if (GetParam().type == BasicType::STRING) {
             populate_string(attr);
@@ -268,9 +269,9 @@ public:
     SearchIterator::UP create(bool strict) const override {
         (void)strict;
         const auto* api = _attr->as_docid_with_weight_posting_store();
-        assert(api != nullptr);
+        CHECK(api != nullptr);
         auto dict_entry = api->lookup("123", api->get_dictionary_snapshot());
-        assert(dict_entry.posting_idx.valid());
+        CHECK(dict_entry.posting_idx.valid());
         return std::make_unique<queryeval::DocidWithWeightSearchIterator>(_tfmd, *api, dict_entry);
     }
 

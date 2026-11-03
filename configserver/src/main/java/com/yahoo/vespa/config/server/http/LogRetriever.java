@@ -5,19 +5,18 @@ import ai.vespa.http.HttpURL;
 import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.yolean.Exceptions;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
-import java.net.NoRouteToHostException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.config.server.http.ConnectionFailures.isConnectionFailure;
 import static java.util.logging.Level.INFO;
 
 /**
@@ -35,25 +34,32 @@ public class LogRetriever {
     /**
      * Fetches logs from the log server for a given application.
      * An empty response will be returned if we are unable to fetch logs and
-     * the deployment is less than 10 minutes old OR we get an exception related to DNS or
-     * communication with the node
+     * the deployment is less than 10 minutes old. If we are unable to connect to the
+     * log server host (e.g. because it is restarting or retired), 503 Service Unavailable is returned.
      */
     @SuppressWarnings("deprecation")
     public HttpResponse getLogs(HttpURL logServerUri, Optional<Instant> deployTime) {
-        HttpGet get = new HttpGet(logServerUri.asURI());
+        var uri = logServerUri.asURI();
+        var host = uri.getHost();
+        var get = new HttpGet(uri);
         try {
             return new ProxyResponse(httpClient.execute(get));
         } catch (IOException ioe) {
             if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(10)))) {
                 // Application has been deleted or a real DNS issue or host not up yet, either way it's not
                 // an internal server error and client should just retry
-                log.log(INFO, "Communication with host " + logServerUri.asURI().getHost() + " failed when getting logs (" +
+                log.log(INFO, "Communication with host " + host + " failed when getting logs (" +
                         ioe.getClass().getName() + ", returning empty response");
                 return new EmptyResponse();
             }
 
-            return new HttpErrorResponse(500, HttpErrorResponse.ErrorCode.INTERNAL_SERVER_ERROR.name(),
-                                         "Failed to retrieve logs from log server (" + ioe.getClass().getName() + "): " + ioe.getMessage());
+            if (isConnectionFailure(ioe))
+                return HttpErrorResponse.serviceUnavailable(
+                        "Could not connect to the log server on " + host + ". The host may be restarting or retired (" +
+                        Exceptions.toMessageString(ioe) + ")");
+
+            return HttpErrorResponse.internalServerError(
+                    "Failed to retrieve logs from log server (" + ioe.getClass().getName() + "): " + ioe.getMessage());
         }
     }
 

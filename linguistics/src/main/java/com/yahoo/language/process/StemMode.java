@@ -12,6 +12,7 @@ public enum StemMode {
 
     NONE,
     DEFAULT,
+    ALL_STEMS,
     ALL,
     SHORTEST,
     BEST;

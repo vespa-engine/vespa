@@ -8,6 +8,7 @@
 #include "i_document_subdb_owner.h"
 #include "reconfig_params.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -48,7 +49,8 @@ SearchableDocSubDB::SearchableDocSubDB(const Config& cfg, const Context& ctx)
       _tensorLoader(FastValueBuilderFactory::get()),
       _constantValueCache(_tensorLoader),
       _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueCache, ctx._now_ref,
-                  getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
+                  getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey(),
+                  ctx._delete_search_view_executor),
       _warmupExecutor(ctx._warmupExecutor),
       _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>()),
       _flushConfig(),
@@ -185,7 +187,7 @@ void SearchableDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketS
 }
 
 void SearchableDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
 
     AttributeManager::SP     attrMgr = getAndResetInitAttributeManager();
     const IIndexManager::SP& indexMgr = getIndexManager();
@@ -196,7 +198,7 @@ void SearchableDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
         SearchView::create(getSummaryManager()->createSummarySetup(
                                configSnapshot.getSummaryConfig(), configSnapshot.getJuniperrcConfig(),
                                configSnapshot.getDocumentTypeRepoSP(), attrMgr, *configSnapshot.getSchemaSP()),
-                           std::move(matchView)));
+                           std::move(matchView), _configurer.delete_search_view_executor()));
 
     auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);
     {
@@ -207,7 +209,7 @@ void SearchableDocSubDB::initViews(const DocumentDBConfig& configSnapshot) {
 }
 
 void SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter, const DocumentDBConfig& configSnapshot) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
     auto feedView = std::make_shared<SearchableFeedView>(
         getStoreOnlyFeedViewContext(configSnapshot), getFeedViewPersistentParams(),
         FastAccessFeedView::Context(std::move(attrWriter), _docIdLimit),
@@ -225,7 +227,7 @@ void SearchableDocSubDB::initFeedView(IAttributeWriter::SP attrWriter, const Doc
  * flush engine has not started.
  */
 bool SearchableDocSubDB::reconfigure(std::unique_ptr<Configure> configure) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
 
     getFeedView()->forceCommitAndWait(
         search::CommitParam(_getSerialNum.getSerialNum(), search::CommitParam::UpdateStats::SKIP));
@@ -236,8 +238,9 @@ bool SearchableDocSubDB::reconfigure(std::unique_ptr<Configure> configure) {
 
     bool ret = true;
 
-    if (configure)
+    if (configure) {
         ret = configure->configure(); // Perform index manager reconfiguration now
+    }
     reconfigureIndexSearchable();
     return ret;
 }
@@ -269,7 +272,7 @@ void SearchableDocSubDB::reconfigure_index_metrics(const Schema& schema) {
 }
 
 void SearchableDocSubDB::setIndexSchema(std::shared_ptr<const Schema> schema, SerialNum serialNum) {
-    assert(_writeService.master().isCurrentThread());
+    CHECK(_writeService.master().isCurrentThread());
 
     SearchView::SP oldSearchView = _rSearchView.get();
     IFeedView::SP  oldFeedView = _iFeedView.get();

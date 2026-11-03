@@ -2,12 +2,12 @@
 
 #include "job_load_sampler.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace proton {
 
 void JobLoadSampler::updateIntegral(time_point now, uint32_t jobCnt) {
-    assert(now >= _lastUpdateTime);
+    CHECK(now >= _lastUpdateTime);
     std::chrono::duration<double> duration = now - _lastUpdateTime;
     _loadIntegral += duration.count() * jobCnt;
     _lastUpdateTime = now;
@@ -26,7 +26,7 @@ void JobLoadSampler::endJob(time_point now) {
 }
 
 double JobLoadSampler::sampleLoad(time_point now) {
-    assert(now >= _lastSampleTime);
+    CHECK(now >= _lastSampleTime);
     updateIntegral(now, _currJobCnt);
     std::chrono::duration<double> duration = now - _lastSampleTime;
     double                        load = (duration.count() > 0) ? (_loadIntegral / duration.count()) : 0;

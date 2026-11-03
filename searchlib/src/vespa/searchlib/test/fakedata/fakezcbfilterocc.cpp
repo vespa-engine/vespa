@@ -4,6 +4,7 @@
 
 #include "fpfactory.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/queryeval/iterators.h>
@@ -25,8 +26,9 @@ static void zcbEncode(std::vector<uint8_t>& bytes, uint32_t num) {
     } else if (num < (1 << 21)) {
         num <<= 3;
         num += 4;
-    } else
+    } else {
         num <<= 4;
+    }
 
     do {
         bytes.push_back(num & 0xff);
@@ -158,11 +160,13 @@ void FakeFilterOccZCBArrayIterator::doSeek(uint32_t docId) {
     const uint8_t* oCompr = _valI;
     uint32_t       oDocId = getDocId();
 
-    if (getUnpacked())
+    if (getUnpacked()) {
         clearUnpacked();
+    }
     while (oDocId < docId) {
-        if (--_residue == 0)
+        if (--_residue == 0) {
             goto atbreak;
+        }
         ZCBDECODE(oCompr, oDocId += 1 +);
     }
     _valI = oCompr;
@@ -182,7 +186,7 @@ void FakeFilterOccZCBArrayIterator::doUnpack(uint32_t docId) {
     if (getUnpacked()) {
         return;
     }
-    assert(docId == getDocId());
+    CHECK(docId == getDocId());
     _matchData[0]->reset(docId);
     setUnpacked();
 }

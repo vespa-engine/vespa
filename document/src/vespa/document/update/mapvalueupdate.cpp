@@ -25,13 +25,16 @@ MapValueUpdate::MapValueUpdate(std::unique_ptr<FieldValue> key, std::unique_ptr<
 MapValueUpdate::~MapValueUpdate() = default;
 
 bool MapValueUpdate::operator==(const ValueUpdate& other) const {
-    if (other.getType() != Map)
+    if (other.getType() != Map) {
         return false;
+    }
     const MapValueUpdate& o(static_cast<const MapValueUpdate&>(other));
-    if (*_key != *o._key)
+    if (*_key != *o._key) {
         return false;
-    if (*_update != *o._update)
+    }
+    if (*_update != *o._update) {
         return false;
+    }
     return true;
 }
 

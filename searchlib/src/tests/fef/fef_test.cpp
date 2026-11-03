@@ -247,4 +247,21 @@ TEST(FefTest, FilterThreshold_can_represent_a_threshold_value) {
     EXPECT_TRUE(b.is_filter(0.51));
 }
 
+TEST(FefTest, no_field_describes_the_absence_of_a_field) {
+    const FieldInfo& field = FieldInfo::no_field();
+    EXPECT_TRUE(field.is_no_field());
+    EXPECT_TRUE(field.type() == FieldType::NONE);
+    EXPECT_TRUE(field.name().empty());
+    EXPECT_EQ(0u, field.id());
+    EXPECT_TRUE(field.collection() == FieldInfo::CollectionType::SINGLE);
+    EXPECT_TRUE(field.get_data_type() == FieldInfo::DataType::RAW);
+    EXPECT_FALSE(field.hasAttribute());
+    EXPECT_FALSE(field.isFilter());
+    EXPECT_EQ(ElementGap(std::nullopt), field.get_element_gap());
+    // The instance is shared, so its address is stable.
+    EXPECT_EQ(&field, &FieldInfo::no_field());
+    // A declared field is never mistaken for the "no field".
+    EXPECT_FALSE(FieldInfo(FieldType::INDEX, FieldInfo::CollectionType::SINGLE, "foo", 1).is_no_field());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

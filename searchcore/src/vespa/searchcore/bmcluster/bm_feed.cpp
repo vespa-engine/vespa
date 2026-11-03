@@ -21,7 +21,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
-#include <cassert>
 #include <chrono>
 
 #include <vespa/log/log.h>

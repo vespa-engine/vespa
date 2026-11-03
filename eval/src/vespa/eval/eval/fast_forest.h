@@ -6,7 +6,6 @@
 
 #include <vespa/vespalib/util/optimized.h>
 
-#include <cassert>
 #include <cmath>
 #include <memory>
 

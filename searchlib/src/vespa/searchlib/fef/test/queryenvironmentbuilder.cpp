@@ -16,7 +16,10 @@ SimpleTermData& QueryEnvironmentBuilder::addAllFields() {
     td.setWeight(search::query::Weight(100));
     const IIndexEnvironment& idxEnv = *_queryEnv.getIndexEnv();
     for (uint32_t i = 0; i < idxEnv.getNumFields(); ++i) {
-        const FieldInfo*     info = idxEnv.getField(i);
+        const FieldInfo* info = idxEnv.getField(i);
+        if (info->is_no_field()) {
+            continue;
+        }
         SimpleTermFieldData& tfd = td.addField(info->id());
         tfd.setHandle(_layout.allocTermField(tfd.getFieldId()));
     }

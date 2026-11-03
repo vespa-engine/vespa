@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -1750,7 +1751,7 @@ void ConformanceTest::testJoinTargetExistsPostCondition(const PersistenceProvide
 
 void ConformanceTest::populateBucket(const Bucket& b, PersistenceProvider& spi, uint32_t from, uint32_t to,
                                      document::TestDocMan& testDocMan) {
-    assert(from <= to);
+    CHECK(from <= to);
     for (uint32_t i = from; i < to; ++i) {
         const uint32_t location = b.getBucketId().getId();
         Document::SP   doc1 = testDocMan.createRandomDocumentAtLocation(location, i);

@@ -5,6 +5,7 @@
 #include "attribute_header.h"
 #include "attributefilebufferwriter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
@@ -50,7 +51,7 @@ void updateHeader(const std::string& name, uint64_t fileBitSize) {
     h.putTag(Tag("fileBitSize", fileBitSize));
     h.rewriteFile(f);
     bool sync_ok = f.Sync();
-    assert(sync_ok);
+    CHECK(sync_ok);
 }
 
 /*
@@ -74,8 +75,8 @@ FileBackedBufferWriter::~FileBackedBufferWriter() = default;
 void FileBackedBufferWriter::onFlush(size_t nowLen) {
     // Note: Must use const ptr to indicate that buffer is pre-filled.
     auto buf(std::make_unique<BufferBuf>(static_cast<const void*>(_buf->getFree()), nowLen));
-    assert(buf->getDataLen() == nowLen);
-    assert(buf->getData() == _buf->getFree());
+    CHECK(buf->getDataLen() == nowLen);
+    CHECK(buf->getData() == _buf->getFree());
     _fileWriter.writeBuf(std::move(buf));
 }
 
@@ -117,7 +118,7 @@ void AttributeFileWriter::writeHeader() {
     _fileHeaderContext.addTags(header, _file->GetFileName());
     addTags(header);
     size_t headerLen = header.writeFile(*_file);
-    assert((headerLen % FileSettings::DIRECTIO_ALIGNMENT) == 0);
+    CHECK((headerLen % FileSettings::DIRECTIO_ALIGNMENT) == 0);
     _fileBitSize = headerLen * 8;
 }
 
@@ -153,9 +154,9 @@ void AttributeFileWriter::close() {
     if (_file->IsOpened()) {
         bool synk_ok = _file->Sync();
         auto file_size = _file->getSize();
-        assert(synk_ok);
+        CHECK(synk_ok);
         bool close_ok = _file->Close();
-        assert(close_ok);
+        CHECK(close_ok);
         updateHeader(_file->GetFileName(), _fileBitSize);
         DiskSpaceCalculator disk_space_calculator;
         _size_on_disk = disk_space_calculator(file_size);

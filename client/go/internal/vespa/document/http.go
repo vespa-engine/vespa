@@ -252,7 +252,9 @@ func (c *Client) createRequest(method, url string, body []byte, buf *bytes.Buffe
 		if err := zw.Close(); err != nil {
 			return nil, err
 		}
-		r = buf
+		// The request body must not share memory with buf: The transport may continue reading the body after Do
+		// returns, while buf is re-used for the response and then returned to the pool
+		r = bytes.NewReader(bytes.Clone(buf.Bytes()))
 	} else {
 		r = bytes.NewReader(body)
 	}

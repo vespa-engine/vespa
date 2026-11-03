@@ -32,7 +32,6 @@ vespa_add_library(searchcore_attribute STATIC
     attributemanager.cpp
     attributes_initializer_base.cpp
     attributesconfigscout.cpp
-    document_field_extractor.cpp
     document_field_populator.cpp
     document_field_retriever.cpp
     filter_attribute_manager.cpp
@@ -43,6 +42,7 @@ vespa_add_library(searchcore_attribute STATIC
     initialized_attributes_result.cpp
     reserved_memory_for_attribute_load_calculator.cpp
     sequential_attributes_initializer.cpp
+    shrink_attribute_lid_space_flush_target.cpp
     DEPENDS
     searchcore_flushengine
     searchcore_pcommon

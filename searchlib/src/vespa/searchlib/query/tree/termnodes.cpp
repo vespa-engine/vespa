@@ -8,7 +8,6 @@
 
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <cassert>
 #include <charconv>
 
 using vespalib::IllegalArgumentException;
@@ -33,12 +32,14 @@ WordAlternatives::WordAlternatives(std::unique_ptr<TermVector> terms, const std:
 NumberTerm::~NumberTerm() = default;
 PrefixTerm::~PrefixTerm() = default;
 RangeTerm::~RangeTerm() = default;
+StringRangeTerm::~StringRangeTerm() = default;
 StringTerm::~StringTerm() = default;
 SubstringTerm::~SubstringTerm() = default;
 SuffixTerm::~SuffixTerm() = default;
 LocationTerm::~LocationTerm() = default;
 RegExpTerm::~RegExpTerm() = default;
 NearestNeighborTerm::~NearestNeighborTerm() = default;
+SparseTensorWandTerm::~SparseTensorWandTerm() = default;
 WeightedSetTerm::~WeightedSetTerm() = default;
 DotProduct::~DotProduct() = default;
 WandTerm::~WandTerm() = default;

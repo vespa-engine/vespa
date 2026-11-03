@@ -35,6 +35,7 @@ const (
 	targetFlag      = "target"
 	colorFlag       = "color"
 	quietFlag       = "quiet"
+	progressFlag    = "progress"
 	debugModeFlag   = "debug"
 
 	anyTarget = iota
@@ -53,6 +54,7 @@ type CLI struct {
 	exec       executor
 	isTerminal func() bool
 	spinner    func(w io.Writer, message string, fn func() error) error
+	progress   *deploymentProgress
 
 	now           func() time.Time
 	retryInterval time.Duration
@@ -249,7 +251,13 @@ For detailed description of flags and configuration, see 'vespa help config'.
 	}
 	cli.configureSpinner()
 	cli.configureCommands()
-	cmd.PersistentPreRunE = cli.configureOutput
+	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		if err := cli.configureOutput(cmd, args); err != nil {
+			return err
+		}
+		cli.maybePromptSkillsInstall(cmd) // Offer to install Vespa AI-assistant skills the first time any command is run
+		return nil
+	}
 	cmd.FParseErrWhitelist.UnknownFlags = true // Ignore unknown flags, so that we can pass them to external commands
 	return &cli, nil
 }
@@ -300,6 +308,7 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 		zone        string
 		color       string
 		quiet       bool
+		progress    bool
 		debugMode   bool
 	)
 	c.cmd.PersistentFlags().StringVarP(&target, targetFlag, "t", "local", `The target platform to use. Must be "local", "cloud", "hosted" or an URL`)
@@ -309,6 +318,7 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone (cloud only)")
 	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
 	c.cmd.PersistentFlags().BoolVarP(&quiet, quietFlag, "q", false, "Print only errors")
+	c.cmd.PersistentFlags().BoolVar(&progress, progressFlag, true, "Show live deployment progress in interactive terminals")
 	c.cmd.PersistentFlags().BoolVar(&debugMode, debugModeFlag, false, `Print debugging output`)
 	c.cmd.PersistentFlags().MarkHidden(debugModeFlag)
 
@@ -341,6 +351,7 @@ func (c *CLI) configureCommands() {
 	prodCmd := newProdCmd()
 	statusCmd := newStatusCmd(c, false)
 	applicationCmd := newApplicationCmd()
+	skillsCmd := newSkillsCmd()
 
 	certCmd.AddCommand(newCertAddCmd(c))                // auth cert add
 	authCmd.AddCommand(certCmd)                         // auth cert
@@ -384,6 +395,10 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(applicationCmd)                  // application
 	applicationCmd.AddCommand(newApplicationListCmd(c)) // list
 	applicationCmd.AddCommand(newApplicationShowCmd(c)) // show
+	skillsCmd.AddCommand(newSkillsListCmd(c))           // skills list
+	skillsCmd.AddCommand(newSkillsInstallCmd(c))        // skills install
+	skillsCmd.AddCommand(newSkillsUpdateCmd(c))         // skills update
+	rootCmd.AddCommand(skillsCmd)                       // skills
 }
 
 func (c *CLI) bindWaitFlag(cmd *cobra.Command, defaultSecs int, value *int) {
@@ -410,6 +425,10 @@ func (c *CLI) printSuccess(msg ...interface{}) {
 }
 
 func (c *CLI) printInfo(msg ...interface{}) {
+	if c.progress != nil {
+		c.progress.printAbove(fmt.Sprint(msg...))
+		return
+	}
 	fmt.Fprintln(c.Stderr, fmt.Sprint(msg...))
 }
 
@@ -426,10 +445,16 @@ func (c *CLI) printDebug(msg ...interface{}) {
 }
 
 func (c *CLI) printWarning(msg interface{}, hints ...string) {
-	fmt.Fprintln(c.Stderr, color.YellowString("Warning:"), msg)
+	var out strings.Builder
+	fmt.Fprint(&out, color.YellowString("Warning:"), " ", msg)
 	for _, hint := range hints {
-		fmt.Fprintln(c.Stderr, color.CyanString("Hint:"), hint)
+		fmt.Fprint(&out, "\n", color.CyanString("Hint:"), " ", hint)
 	}
+	if c.progress != nil {
+		c.progress.printAbove(out.String())
+		return
+	}
+	fmt.Fprintln(c.Stderr, out.String())
 }
 
 func (c *CLI) confirm(question string, confirmByDefault bool) (bool, error) {
@@ -650,6 +675,13 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL
 	logLevel := opts.logLevel
 	if logLevel == "" {
 		logLevel = "info"
+	}
+	if progress := c.progress; progress != nil {
+		progress.copyLogLevel = vespa.LogLevel(logLevel)
+		deploymentOptions.OnProgress = func(id int64, snapshot vespa.RunProgress) {
+			progress.setURL(deployment.System.ConsoleRunURL(deployment, id))
+			progress.updateRun(id, snapshot)
+		}
 	}
 	logOptions := vespa.LogOptions{
 		Writer: c.Stdout,

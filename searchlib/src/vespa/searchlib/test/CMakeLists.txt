@@ -14,6 +14,7 @@ vespa_add_library(searchlib_test
     searchiteratorverifier.cpp
     schema_builder.cpp
     string_field_builder.cpp
+    tensor_divergence.cpp
     test_features.cpp
     vector_buffer_writer.cpp
     weightedchildrenverifiers.cpp

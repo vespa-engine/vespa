@@ -62,7 +62,7 @@ public record Ini(SortedMap<String, SortedMap<String, String>> entries) {
                 printer.printf(Locale.ROOT, "%s = %s\n", key, quote(value));
             });
             if (!section.equals(entries.lastKey())) {
-                printer.println();
+                printer.print('\n');
             }
         });
     }

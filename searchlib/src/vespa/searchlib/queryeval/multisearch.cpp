@@ -2,20 +2,20 @@
 
 #include "multisearch.h"
 
-#include <vespa/vespalib/objects/visit.hpp>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <vespa/vespalib/objects/visit.hpp>
 
 namespace search::queryeval {
 
 void MultiSearch::insert(size_t index, SearchIterator::UP search) {
-    assert(index <= _children.size());
+    CHECK(index <= _children.size());
     _children.insert(_children.begin() + index, std::move(search));
     onInsert(index);
 }
 
 SearchIterator::UP MultiSearch::remove(size_t index) {
-    assert(index < _children.size());
+    CHECK(index < _children.size());
     SearchIterator::UP search = std::move(_children[index]);
     _children.erase(_children.begin() + index);
     onRemove(index);

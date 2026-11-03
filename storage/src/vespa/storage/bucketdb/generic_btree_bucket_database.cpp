@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "generic_btree_bucket_database.h"
 
+#include <vespa/check_require.h>
+
 namespace storage::bucketdb {
 
 using document::BucketId;
@@ -33,7 +35,7 @@ uint8_t getMinDiffBits(uint16_t minBits, const BucketId& a, const BucketId& b) {
 
 uint8_t next_parent_bit_seek_level(uint8_t minBits, const BucketId& a, const BucketId& b) {
     const uint8_t min_used = std::min(a.getUsedBits(), b.getUsedBits());
-    assert(min_used >= minBits); // Always monotonically descending towards leaves
+    CHECK(min_used >= minBits); // Always monotonically descending towards leaves
     for (uint32_t i = minBits; i <= min_used; i++) {
         BucketId a1(i, a.getRawId());
         BucketId b1(i, b.getRawId());

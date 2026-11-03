@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/persistence/spi/context.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
@@ -81,7 +82,7 @@ public:
      * a reply, to ensure it is stored in case of failure after reply creation.
      */
     void setReply(std::shared_ptr<api::StorageReply> reply) {
-        assert(!_reply);
+        CHECK(!_reply);
         _reply = std::move(reply);
     }
 

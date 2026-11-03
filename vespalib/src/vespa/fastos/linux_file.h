@@ -26,7 +26,7 @@ protected:
     int64_t              _filePointer; // Only maintained/used in directio mode
 
 public:
-    FastOS_Linux_File() : FastOS_Linux_File(nullptr) {}
+    FastOS_Linux_File();
     explicit FastOS_Linux_File(const char* filename);
     ~FastOS_Linux_File() override;
     bool GetDirectIORestrictions(size_t& memoryAlignment, size_t& transferGranularity,

@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -89,6 +90,25 @@ public class VespaImportTestCase {
             assertEquals("Unexpected model name 'misnamed': " +
                          "Model 'expectedname' must be saved in a file named 'expectedname.model'", e.getMessage());
         }
+    }
+
+    @Test
+    public void testExpressionFileOutsideModelDirectoryIsRejected() {
+        var e = assertThrows(IllegalArgumentException.class, () -> importModel("traversal_expression"));
+        assertEquals("function 'outside' references 'd/../../outside.expression', which is outside the model directory",
+                     rootCause(e).getMessage());
+    }
+
+    @Test
+    public void testConstantFileOutsideModelDirectoryIsRejected() {
+        var e = assertThrows(IllegalArgumentException.class, () -> importModel("traversal_constant"));
+        assertEquals("constant 'outside' references 'd/../../outside.json', which is outside the model directory",
+                     rootCause(e).getMessage());
+    }
+
+    private static Throwable rootCause(Throwable t) {
+        while (t.getCause() != null) t = t.getCause();
+        return t;
     }
 
     private ImportedModel importModel(String name) {

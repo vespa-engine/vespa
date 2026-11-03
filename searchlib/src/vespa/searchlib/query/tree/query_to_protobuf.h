@@ -10,11 +10,10 @@
 #include "weighted_integer_term_vector.h"
 #include "weighted_string_term_vector.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/engine/search_protocol_proto.h>
 #include <vespa/searchlib/query/numeric_range_spec.h>
-
-#include <cassert>
 
 namespace search::query {
 
@@ -33,7 +32,7 @@ public:
         ProtoQueryTree tree;
         _item_stack.push_back(tree.mutable_root());
         const_cast<Node&>(node).accept(*this);
-        assert(_item_stack.size() == 1);
+        CHECK(_item_stack.size() == 1);
         return tree;
     }
 
@@ -63,6 +62,8 @@ private:
             child = parent->mutable_item_and_not()->add_children();
         } else if (parent->has_item_rank()) {
             child = parent->mutable_item_rank()->add_children();
+        } else if (parent->has_item_label_wrapper()) {
+            child = parent->mutable_item_label_wrapper()->mutable_child();
         } else if (parent->has_item_near()) {
             child = parent->mutable_item_near()->add_children();
         } else if (parent->has_item_onear()) {
@@ -101,7 +102,6 @@ private:
 
     void visit(WeakAnd& node) override {
         auto* item = _item_stack.back()->mutable_item_weak_and();
-        item->set_index(node.getView());
         item->set_target_num_hits(node.getTargetNumHits());
         visitNodes(node.getChildren());
     }
@@ -177,7 +177,7 @@ private:
             }
             break;
         case MultiTerm::Type::UNKNOWN:
-            assert(num_terms == 0);
+            CHECK(num_terms == 0);
             break;
         }
     }
@@ -232,6 +232,13 @@ private:
 
     void visit(Rank& node) override {
         _item_stack.back()->mutable_item_rank();
+        visitNodes(node.getChildren());
+    }
+
+    void visit(LabelWrapper& node) override {
+        auto* item = _item_stack.back()->mutable_item_label_wrapper();
+        item->set_unique_id(node.getId());
+        item->set_score(node.getLabelScore());
         visitNodes(node.getChildren());
     }
 
@@ -339,6 +346,26 @@ private:
         }
     }
 
+    void visit(StringRangeTerm& node) override {
+        const auto& range = node.getTerm();
+        if (!range) {
+            return;
+        }
+        auto* item = _item_stack.back()->mutable_item_string_range_term();
+        copyTermState(node, item->mutable_properties());
+        if (range->left) {
+            item->set_lower_limit(*range->left);
+        }
+        if (range->right) {
+            item->set_upper_limit(*range->right);
+        }
+        item->set_lower_inclusive(range->left_closed);
+        item->set_upper_inclusive(range->right_closed);
+        if (range->has_range_limit()) {
+            item->set_range_limit(range->range_limit);
+        }
+    }
+
     void visit(StringTerm& node) override {
         auto* item = _item_stack.back()->mutable_item_word_term();
         copyTermState(node, item->mutable_properties());
@@ -390,6 +417,14 @@ private:
         item->set_allow_approximate(node.get_allow_approximate());
         item->set_explore_additional_hits(node.get_explore_additional_hits());
         item->set_distance_threshold(node.get_distance_threshold());
+    }
+
+    void visit(SparseTensorWandTerm& node) override {
+        auto* item = _item_stack.back()->mutable_item_sparse_tensor_wand();
+        copyTermState(node, item->mutable_properties());
+        item->set_query_tensor_name(node.get_query_tensor_name());
+        item->set_target_num_hits(node.get_target_num_hits());
+        item->set_score_threshold(node.get_score_threshold());
     }
 
     void visit(TrueQueryNode&) override { _item_stack.back()->mutable_item_true(); }

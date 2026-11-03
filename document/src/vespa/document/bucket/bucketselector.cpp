@@ -80,8 +80,9 @@ struct BucketVisitor : public document::select::Visitor {
     void compare(const select::IdValueNode& node, const select::ValueNode& valnode, const select::Operator& op) {
         if (node.getType() == IdValueNode::ALL) {
             auto val = dynamic_cast<const StringValueNode*>(&valnode);
-            if (!val)
+            if (!val) {
                 return;
+            }
             std::string docId(val->getValue());
             if (op == FunctionOperator::EQ || !GlobOperator::containsVariables(docId)) {
                 _buckets.emplace_back(58, IdString(docId).getLocation());
@@ -89,15 +90,17 @@ struct BucketVisitor : public document::select::Visitor {
             }
         } else if (node.getType() == IdValueNode::USER) {
             auto val = dynamic_cast<const IntegerValueNode*>(&valnode);
-            if (!val)
+            if (!val) {
                 return;
+            }
             IdString id(vespalib::make_string("id::test:n=%" PRIu64 ":", val->getValue()));
             _buckets.emplace_back(32, id.getNumber());
             _unknown = false;
         } else if (node.getType() == IdValueNode::GROUP) {
             auto val = dynamic_cast<const StringValueNode*>(&valnode);
-            if (!val)
+            if (!val) {
                 return;
+            }
             std::string group(val->getValue());
             if (op == FunctionOperator::EQ || !GlobOperator::containsVariables(group)) {
                 _buckets.emplace_back(32, IdString::makeLocation(group));
@@ -114,8 +117,9 @@ struct BucketVisitor : public document::select::Visitor {
             }
         } else if (node.getType() == IdValueNode::BUCKET) {
             auto val = dynamic_cast<const IntegerValueNode*>(&valnode);
-            if (!val)
+            if (!val) {
                 return;
+            }
 
             BucketId bid(val->getValue());
             if (!bid.getUsedBits()) {

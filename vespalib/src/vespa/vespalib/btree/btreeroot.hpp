@@ -25,8 +25,9 @@ std::string BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::toString(BTreeNod
         const InternalNodeType* inode = allocator.mapInternalRef(node);
         ss << "{" << allocator.toString(inode) << ",children(" << inode->validSlots() << ")[";
         for (size_t i = 0; i < inode->validSlots(); ++i) {
-            if (i > 0)
+            if (i > 0) {
                 ss << ",";
+            }
             ss << "c[" << i << "]" << toString(inode->getChild(i), allocator);
         }
         ss << "]}";
@@ -47,10 +48,12 @@ bool BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::isValid(BTreeN
         if (level != lnode->getLevel()) {
             return false;
         }
-        if (lnode->validSlots() > LeafNodeType::maxSlots())
+        if (lnode->validSlots() > LeafNodeType::maxSlots()) {
             return false;
-        if (lnode->validSlots() < LeafNodeType::minSlots() && !ignoreMinSlots)
+        }
+        if (lnode->validSlots() < LeafNodeType::minSlots() && !ignoreMinSlots) {
             return false;
+        }
         for (size_t i = 1; i < lnode->validSlots(); ++i) {
             if (!comp(lnode->getKey(i - 1), lnode->getKey(i))) {
                 return false;
@@ -70,10 +73,12 @@ bool BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::isValid(BTreeN
         if (level != inode->getLevel()) {
             return false;
         }
-        if (inode->validSlots() > InternalNodeType::maxSlots())
+        if (inode->validSlots() > InternalNodeType::maxSlots()) {
             return false;
-        if (inode->validSlots() < InternalNodeType::minSlots() && !ignoreMinSlots)
+        }
+        if (inode->validSlots() < InternalNodeType::minSlots() && !ignoreMinSlots) {
             return false;
+        }
         size_t   lChildren = 0;
         size_t   iChildren = 0;
         uint32_t validLeaves = 0;
@@ -82,13 +87,15 @@ bool BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::isValid(BTreeN
                 return false;
             }
             const BTreeNode::Ref childRef = inode->getChild(i);
-            if (!allocator.isValidRef(childRef))
+            if (!allocator.isValidRef(childRef)) {
                 return false;
+            }
             validLeaves += allocator.validLeaves(childRef);
-            if (allocator.isLeafRef(childRef))
+            if (allocator.isLeafRef(childRef)) {
                 lChildren++;
-            else
+            } else {
                 iChildren++;
+            }
             if (comp(inode->getKey(i), allocator.getLastKey(childRef))) {
                 return false;
             }
@@ -193,8 +200,9 @@ void BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::clear(NodeAllocatorType&
     if (NodeAllocatorType::isValidRef(_root)) {
         this->recursiveDelete(_root, allocator);
         _root = BTreeNode::Ref();
-        if (NodeAllocatorType::isValidRef(getFrozenRootRelaxed()))
+        if (NodeAllocatorType::isValidRef(getFrozenRootRelaxed())) {
             allocator.needFreeze(this);
+        }
     }
 }
 
@@ -269,8 +277,9 @@ bool BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::isValidFrozen(
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT>
 size_t BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::bitSize(const NodeAllocatorType& allocator) const {
     size_t ret = sizeof(BTreeRootT) * 8;
-    if (NodeAllocatorType::isValidRef(_root))
+    if (NodeAllocatorType::isValidRef(_root)) {
         ret += bitSize(_root, allocator);
+    }
     return ret;
 }
 
@@ -294,8 +303,9 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT, type
 void BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::thaw(Iterator& itr) {
     bool oldFrozen = isFrozen();
     _root = itr.thaw(_root);
-    if (oldFrozen && !isFrozen())
+    if (oldFrozen && !isFrozen()) {
         itr.getAllocator().needFreeze(this);
+    }
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
@@ -304,8 +314,9 @@ void BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::assign(Builder
 
     bool oldFrozen = isFrozen();
     _root = rhs.handover();
-    if (oldFrozen && !isFrozen())
+    if (oldFrozen && !isFrozen()) {
         allocator.needFreeze(this);
+    }
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
@@ -314,8 +325,9 @@ bool BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::insert(const K
                                                                          const AggrCalcT& aggrCalc) {
     Iterator itr(BTreeNode::Ref(), allocator);
     itr.lower_bound(_root, key, comp);
-    if (itr.valid() && !comp(key, itr.getKey()))
+    if (itr.valid() && !comp(key, itr.getKey())) {
         return false; // Element already exists
+    }
     insert(itr, key, data, aggrCalc);
     return true;
 }
@@ -327,8 +339,9 @@ void BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::insert(Iterato
     using Inserter = BTreeInserter<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>;
     bool oldFrozen = isFrozen();
     Inserter::insert(_root, itr, key, data, aggrCalc);
-    if (oldFrozen && !isFrozen())
+    if (oldFrozen && !isFrozen()) {
         itr.getAllocator().needFreeze(this);
+    }
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>
@@ -337,8 +350,9 @@ bool BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::remove(const K
                                                                          const AggrCalcT& aggrCalc) {
     Iterator itr(BTreeNode::Ref(), allocator);
     itr.lower_bound(_root, key, comp);
-    if (!itr.valid() || comp(key, itr.getKey()))
+    if (!itr.valid() || comp(key, itr.getKey())) {
         return false;
+    }
     remove(itr, aggrCalc);
     return true;
 }
@@ -348,8 +362,9 @@ void BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::remove(Iterato
     using Remover = BTreeRemover<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>;
     bool oldFrozen = isFrozen();
     Remover::remove(_root, itr, aggrCalc);
-    if (oldFrozen && !isFrozen())
+    if (oldFrozen && !isFrozen()) {
         itr.getAllocator().needFreeze(this);
+    }
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, class AggrCalcT>

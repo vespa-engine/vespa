@@ -54,9 +54,10 @@ IFlushTarget::SerialNum IndexFlushTarget::getFlushedSerialNum() const {
     return _indexMaintainer.getFlushedSerialNum();
 }
 
-IFlushTarget::Task::UP IndexFlushTarget::initFlush(SerialNum serialNum, std::shared_ptr<search::IFlushToken>) {
+void IndexFlushTarget::init_flush(SerialNum   serialNum, std::shared_ptr<search::IFlushToken>,
+                                  TaskPromise task_promise) {
     // the target must live until this task is done (handled by flush engine).
-    return _indexMaintainer.initFlush(serialNum, &_lastStats);
+    task_promise.set_value(_indexMaintainer.initFlush(serialNum, &_lastStats));
 }
 
 bool IndexFlushTarget::can_flush(SerialNum current_serial) const noexcept {

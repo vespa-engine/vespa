@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -57,7 +58,7 @@ void verifyGetElementIds(queryeval::SearchIterator& itr, const std::vector<std::
         const auto& expected = expectedALL[docId];
         elems.clear();
         EXPECT_EQ(expected.empty(), !itr.seek(docId));
-        assert(expected.empty() != itr.seek(docId));
+        CHECK(expected.empty() != itr.seek(docId));
         if (itr.seek(docId)) {
             itr.get_element_ids(docId, elems);
             EXPECT_EQ(expected.size(), elems.size());

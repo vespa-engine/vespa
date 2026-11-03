@@ -2,9 +2,9 @@
 
 #include "annotationreferencedatatype.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
 
-#include <cassert>
 #include <ostream>
 
 using std::ostream;
@@ -19,7 +19,7 @@ AnnotationReferenceDataType::AnnotationReferenceDataType(const AnnotationType& t
 AnnotationReferenceDataType::~AnnotationReferenceDataType() = default;
 
 const AnnotationType& AnnotationReferenceDataType::getAnnotationType() const {
-    assert(_type);
+    CHECK(_type);
     return *_type;
 }
 

@@ -44,8 +44,9 @@ class QueryBuilderBase {
         WeightOverride() noexcept : _active(false), _weight(0) {}
         explicit WeightOverride(Weight weight) noexcept : _active(true), _weight(weight) {}
         void adjustWeight(Weight& weight) const {
-            if (_active)
+            if (_active) {
                 weight = _weight;
+            }
         }
     };
     struct NodeInfo {
@@ -127,8 +128,8 @@ template <class NodeTypes> typename NodeTypes::Or* createOr() {
 }
 
 template <class NodeTypes>
-typename NodeTypes::WeakAnd* createWeakAnd(uint32_t targetNumHits, const std::string& view) {
-    return new typename NodeTypes::WeakAnd(targetNumHits, view);
+typename NodeTypes::WeakAnd* createWeakAnd(uint32_t targetNumHits) {
+    return new typename NodeTypes::WeakAnd(targetNumHits);
 }
 template <class NodeTypes> typename NodeTypes::Equiv* createEquiv(int32_t id, Weight weight) {
     return new typename NodeTypes::Equiv(id, weight);
@@ -155,6 +156,9 @@ template <class NodeTypes, typename... Args> typename NodeTypes::WandTerm* creat
 template <class NodeTypes> typename NodeTypes::Rank* createRank() {
     return new typename NodeTypes::Rank;
 }
+template <class NodeTypes> typename NodeTypes::LabelWrapper* createLabelWrapper(int32_t id, double score) {
+    return new typename NodeTypes::LabelWrapper(id, score);
+}
 
 template <class NodeTypes>
 typename NodeTypes::Near* createNear(size_t distance, size_t num_negative_terms, size_t exclusion_distance) {
@@ -180,6 +184,11 @@ template <class NodeTypes>
 typename NodeTypes::RangeTerm* createRangeTerm(const Range& term, const std::string& view, int32_t id,
                                                Weight weight) {
     return new typename NodeTypes::RangeTerm(term, view, id, weight);
+}
+template <class NodeTypes>
+typename NodeTypes::StringRangeTerm* createStringRangeTerm(const StringRange& term, const std::string& view,
+                                                           int32_t id, Weight weight) {
+    return new typename NodeTypes::StringRangeTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::StringTerm* createStringTerm(const std::string& term, const std::string& view, int32_t id,
@@ -222,6 +231,14 @@ create_nearest_neighbor_term(std::string_view query_tensor_name, std::string fie
                              typename NodeTypes::NearestNeighborTerm::HnswParams hnsw_params) {
     return new typename NodeTypes::NearestNeighborTerm(query_tensor_name, field_name, id, weight, target_num_hits,
                                                        allow_approximate, std::move(hnsw_params));
+}
+
+template <class NodeTypes>
+typename NodeTypes::SparseTensorWandTerm*
+create_sparse_tensor_wand_term(std::string_view query_tensor_name, std::string field_name, int32_t id, Weight weight,
+                               uint32_t target_num_hits, double score_threshold) {
+    return new typename NodeTypes::SparseTensorWandTerm(query_tensor_name, field_name, id, weight, target_num_hits,
+                                                        score_threshold);
 }
 
 template <class NodeTypes>
@@ -286,8 +303,8 @@ public:
                                child_count);
     }
     typename NodeTypes::Or& addOr(int child_count) { return addIntermediate(createOr<NodeTypes>(), child_count); }
-    typename NodeTypes::WeakAnd& addWeakAnd(int child_count, uint32_t targetNumHits, const string& view) {
-        return addIntermediate(createWeakAnd<NodeTypes>(targetNumHits, view), child_count);
+    typename NodeTypes::WeakAnd& addWeakAnd(int child_count, uint32_t targetNumHits) {
+        return addIntermediate(createWeakAnd<NodeTypes>(targetNumHits), child_count);
     }
     typename NodeTypes::Equiv& addEquiv(int child_count, int32_t id, Weight weight) {
         return addIntermediate(createEquiv<NodeTypes>(id, weight), child_count);
@@ -351,6 +368,10 @@ public:
         return addIntermediate(createRank<NodeTypes>(), child_count);
     }
 
+    typename NodeTypes::LabelWrapper& add_label_wrapper(int32_t id, double score) {
+        return addIntermediate(createLabelWrapper<NodeTypes>(id, score), 1);
+    }
+
     typename NodeTypes::NumberTerm& addNumberTerm(const string& term, const string& view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createNumberTerm<NodeTypes>(term, view, id, weight));
@@ -362,6 +383,11 @@ public:
     typename NodeTypes::RangeTerm& addRangeTerm(const Range& range, const string& view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createRangeTerm<NodeTypes>(range, view, id, weight));
+    }
+    typename NodeTypes::StringRangeTerm& add_string_range_term(const StringRange& range, const string& view,
+                                                               int32_t id, Weight weight) {
+        adjustWeight(weight);
+        return addTerm(createStringRangeTerm<NodeTypes>(range, view, id, weight));
     }
     typename NodeTypes::StringTerm& addStringTerm(const string& term, const string& view, int32_t id, Weight weight) {
         adjustWeight(weight);
@@ -405,6 +431,14 @@ public:
         adjustWeight(weight);
         return addTerm(create_nearest_neighbor_term<NodeTypes>(
             query_tensor_name, field_name, id, weight, target_num_hits, allow_approximate, std::move(hnsw_params)));
+    }
+    typename NodeTypes::SparseTensorWandTerm& add_sparse_tensor_wand_term(string_view query_tensor_name,
+                                                                          string field_name, int32_t id,
+                                                                          Weight weight, uint32_t target_num_hits,
+                                                                          double score_threshold) {
+        adjustWeight(weight);
+        return addTerm(create_sparse_tensor_wand_term<NodeTypes>(query_tensor_name, field_name, id, weight,
+                                                                 target_num_hits, score_threshold));
     }
     typename NodeTypes::TrueQueryNode& add_true_node() { return addTerm(create_true<NodeTypes>()); }
     typename NodeTypes::FalseQueryNode& add_false_node() { return addTerm(create_false<NodeTypes>()); }

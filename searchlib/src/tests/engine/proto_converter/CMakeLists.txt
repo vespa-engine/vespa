@@ -1,4 +1,7 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+vespa_compile_flag_for(proto_converter_test.cpp "-Wno-inline")
+
 vespa_add_executable(searchlib_engine_proto_converter_test_app TEST
     SOURCES
     proto_converter_test.cpp

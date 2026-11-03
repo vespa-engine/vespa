@@ -3,6 +3,8 @@
 
 #include "bucketdocuments.h"
 
+#include <vespa/check_require.h>
+
 #include <map>
 
 namespace proton::test {
@@ -25,7 +27,7 @@ public:
     void addDoc(uint32_t userId, const Document& userDoc) { _docs[userId].addDoc(userDoc); }
     const BucketDocuments& getUserDocs(uint32_t userId) const {
         auto itr = _docs.find(userId);
-        assert(itr != _docs.end());
+        CHECK(itr != _docs.end());
         return itr->second;
     }
     document::BucketId getBucket(uint32_t userId) const { return getUserDocs(userId).getBucket(); }

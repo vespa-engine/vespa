@@ -1,14 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
+import ai.vespa.rankingexpression.importer.MlModelImportCacheImpl;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -40,6 +45,29 @@ public class MlModelsTest {
         finally {
             IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             IOUtils.recursiveDeleteDir(storedAppDir.toFile());
+        }
+    }
+
+    @Test
+    void testMl_serving_with_model_import_cache(@TempDir java.nio.file.Path cacheDir) throws IOException {
+        Path appDir = Path.fromString("src/test/cfg/application/ml_models");
+        var cache = new MlModelImportCacheImpl(cacheDir);
+        try {
+            verify(new ImportedModelTester("ml_models", appDir, TestDeployState.createBuilder().modelImportCache(cache)).createVespaModel());
+            assertEquals(3, cachedModels(cacheDir), "ONNX, XGBoost and LightGBM models are cached");
+            IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+
+            verify(new ImportedModelTester("ml_models", appDir, TestDeployState.createBuilder().modelImportCache(cache)).createVespaModel());
+            assertEquals(3, cachedModels(cacheDir));
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+        }
+    }
+
+    private static long cachedModels(java.nio.file.Path cacheDir) throws IOException {
+        try (Stream<java.nio.file.Path> files = Files.walk(cacheDir)) {
+            return files.filter(file -> file.getFileName().toString().equals("model.json")).count();
         }
     }
 

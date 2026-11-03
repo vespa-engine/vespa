@@ -2150,23 +2150,23 @@ TEST_F(ProdFeaturesTest, test_term) {
         FtFeatureTest ft(_factory, StringList().add("term(1)").add("term(2)"));
         ft.getIndexEnv()
             .getBuilder()
-            .addField(FieldType::INDEX, CollectionType::SINGLE, "idx1")      // field 0
-            .addField(FieldType::INDEX, CollectionType::SINGLE, "idx2")      // field 1
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "attr"); // field 2
+            .addField(FieldType::INDEX, CollectionType::SINGLE, "idx1")      // field 1
+            .addField(FieldType::INDEX, CollectionType::SINGLE, "idx2")      // field 2
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "attr"); // field 3
         ft.getQueryEnv().getBuilder().addAllFields().setUniqueId(0);
         ft.getQueryEnv()
             .getBuilder()
             .addAllFields()
             .setUniqueId(1)
             .setWeight(search::query::Weight(200))
-            .lookupField(0)
+            .lookupField(1)
             ->setDocFreq(50, 100);
         ft.getQueryEnv()
             .getBuilder()
             .addAttributeNode("attr")
             ->setUniqueId(2)
             .setWeight(search::query::Weight(400))
-            .lookupField(2)
+            .lookupField(3)
             ->setDocFreq(25, 100);
         // setup connectedness between term 1 and term 0
         ft.getQueryEnv().getProperties().add("vespa.term.1.connexity", "0");

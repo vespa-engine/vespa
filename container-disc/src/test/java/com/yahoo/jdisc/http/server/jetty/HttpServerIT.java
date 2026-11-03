@@ -47,6 +47,7 @@ import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import javax.net.ssl.SSLContext;
@@ -952,6 +953,32 @@ public class HttpServerIT {
     }
 
     @Test
+    void requireThatRequestAndResponseBytesAreReported() throws Exception {
+        var metricConsumer = new MetricConsumerMock();
+        int requestSize = 12345;
+        int responseSize = 6789;
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                new ReadThenRespondRequestHandler(responseSize),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder(),
+                binder -> binder.bind(MetricConsumer.class).toInstance(metricConsumer.mockitoMock()));
+        driver.client().newPost("/status.html")
+                .setBinaryContent(new byte[requestSize])
+                .execute()
+                .expectStatusCode(is(OK));
+        assertTrue(driver.close());
+
+        assertEquals(requestSize, sumOfSetValues(metricConsumer, MetricDefinitions.NUM_BYTES_RECEIVED));
+        assertEquals(responseSize, sumOfSetValues(metricConsumer, MetricDefinitions.NUM_BYTES_SENT));
+    }
+
+    private static long sumOfSetValues(MetricConsumerMock metricConsumer, String name) {
+        var values = ArgumentCaptor.forClass(Number.class);
+        verify(metricConsumer.mockitoMock(), atLeast(1)).set(eq(name), values.capture(), any());
+        return values.getAllValues().stream().mapToLong(Number::longValue).sum();
+    }
+
+    @Test
     void requestHeaderValueContainingCommaIsInterpretedAsASingleValue() throws IOException {
         JettyTestDriver driver = JettyTestDriver.newInstance(new RequestHeaderEchoingHandler("X-Foo"));
         driver.client().newGet("/")
@@ -1129,6 +1156,30 @@ public class HttpServerIT {
             request.setTimeout(100, TimeUnit.MILLISECONDS);
             responseHandler = handler;
             return null;
+        }
+    }
+
+    private static class ReadThenRespondRequestHandler extends AbstractRequestHandler implements ContentChannel {
+
+        private final int responseSize;
+        private ResponseHandler responseHandler;
+
+        ReadThenRespondRequestHandler(int responseSize) { this.responseSize = responseSize; }
+
+        @Override
+        public synchronized ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            this.responseHandler = handler;
+            return this;
+        }
+
+        @Override public void write(ByteBuffer buf, CompletionHandler ch) { ch.completed(); }
+
+        @Override
+        public synchronized void close(CompletionHandler completionHandler) {
+            completionHandler.completed();
+            var content = responseHandler.handleResponse(new Response(OK));
+            content.write(ByteBuffer.wrap(new byte[responseSize]), null);
+            content.close(null);
         }
     }
 

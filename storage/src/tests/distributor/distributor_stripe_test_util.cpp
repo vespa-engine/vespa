@@ -2,6 +2,7 @@
 
 #include "distributor_stripe_test_util.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -322,7 +323,7 @@ void DistributorStripeTestUtil::sendReply(Operation& op, int idx, api::ReturnCod
     if (idx == -1) {
         idx = _sender.commands().size() - 1;
     }
-    assert(idx >= 0 && idx < static_cast<int>(_sender.commands().size()));
+    CHECK(idx >= 0 && idx < static_cast<int>(_sender.commands().size()));
 
     std::shared_ptr<api::StorageCommand> cmd = _sender.command(idx);
     api::StorageReply::SP                reply(cmd->makeReply().release());

@@ -71,7 +71,7 @@ public class PrepareParamsTest {
         assertTrue(prepareParams.vespaVersionToBuildFirst().isEmpty());
         assertTrue(prepareParams.getTimeoutBudget().hasTimeLeft());
         assertTrue(prepareParams.containerEndpoints().isEmpty());
-        assertTrue(prepareParams.cloudAccount().isEmpty());
+        assertTrue(prepareParams.cloudAccount().isUnspecified());
     }
 
     @Test
@@ -229,7 +229,7 @@ public class PrepareParamsTest {
     public void testCloudAccount() {
         String json = "{\"cloudAccount\": {\"id\": \"012345678912\"}}";
         PrepareParams params = PrepareParams.fromJson(json.getBytes(StandardCharsets.UTF_8), TenantName.defaultName(), Duration.ZERO);
-        assertEquals(CloudAccount.from("012345678912"), params.cloudAccount().get());
+        assertEquals(CloudAccount.from("012345678912"), params.cloudAccount());
     }
 
     @Test

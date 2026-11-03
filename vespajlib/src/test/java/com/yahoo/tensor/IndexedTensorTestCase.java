@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -47,6 +49,26 @@ public class IndexedTensorTestCase {
     @Test
     public void testNegativeLabels() {
         assertThrows(IndexOutOfBoundsException.class, () ->TensorAddress.of(-1, 0, 1, 1234567, -1234567));
+    }
+
+    @Test
+    public void testLookupByMappedAddress() {
+        Tensor tensor = Tensor.from("tensor(x[3]):[1.0, 2.0, 3.0]");
+
+        TensorAddress inBoundsLabel = TensorAddress.ofLabels("2");
+        assertEquals(3.0, tensor.get(inBoundsLabel), 0.0);
+        assertEquals(3.0, tensor.getAsDouble(inBoundsLabel), 0.0);
+        assertTrue(tensor.has(inBoundsLabel));
+
+        TensorAddress outofBoundsLabel = TensorAddress.of(3);
+        assertEquals(0.0, tensor.get(outofBoundsLabel), 0.0);
+        assertNull(tensor.getAsDouble(outofBoundsLabel));
+        assertFalse(tensor.has(outofBoundsLabel));
+
+        TensorAddress nonNumericLabel = TensorAddress.ofLabels("notANumber");
+        assertEquals(0.0, tensor.get(nonNumericLabel), 0.0);
+        assertNull(tensor.getAsDouble(nonNumericLabel));
+        assertFalse(tensor.has(nonNumericLabel));
     }
 
     private void verifyFloat(String spec) {

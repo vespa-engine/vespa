@@ -84,7 +84,7 @@ public final class PrepareParams {
     private final List<TenantVault> tenantVaults;
     private final List<TenantSecretStore> tenantSecretStores;
     private final List<X509Certificate> operatorCertificates;
-    private final Optional<CloudAccount> cloudAccount;
+    private final CloudAccount cloudAccount;
     private final CloudResourceTags cloudResourceTags;
     private final List<DataplaneToken> dataplaneTokens;
 
@@ -107,7 +107,7 @@ public final class PrepareParams {
                           boolean force,
                           boolean waitForResourcesInPrepare,
                           List<X509Certificate> operatorCertificates,
-                          Optional<CloudAccount> cloudAccount,
+                          CloudAccount cloudAccount,
                           CloudResourceTags cloudResourceTags,
                           List<DataplaneToken> dataplaneTokens) {
         this.timeoutBudget = timeoutBudget;
@@ -155,7 +155,7 @@ public final class PrepareParams {
         private List<TenantVault> tenantVaults = List.of();
         private List<TenantSecretStore> tenantSecretStores = List.of();
         private List<X509Certificate> operatorCertificates = List.of();
-        private Optional<CloudAccount> cloudAccount = Optional.empty();
+        private CloudAccount cloudAccount = CloudAccount.unspecified();
         private CloudResourceTags cloudResourceTags = CloudResourceTags.empty();
         private List<DataplaneToken> dataplaneTokens = List.of();
 
@@ -321,7 +321,7 @@ public final class PrepareParams {
         }
 
         public Builder cloudAccount(CloudAccount cloudAccount) {
-            this.cloudAccount = Optional.ofNullable(cloudAccount);
+            this.cloudAccount = cloudAccount;
             return this;
         }
 
@@ -408,7 +408,7 @@ public final class PrepareParams {
                 .force(booleanValue(params, FORCE_PARAM_NAME))
                 .waitForResourcesInPrepare(booleanValue(params, WAIT_FOR_RESOURCES_IN_PREPARE))
                 .operatorCertificates(deserialize(params.field(OPERATOR_CERTIFICATES), PrepareParams::readOperatorCertificates, List.of()))
-                .cloudAccount(deserialize(params.field(CLOUD_ACCOUNT), CloudAccountSerializer::fromSlime, null))
+                .cloudAccount(deserialize(params.field(CLOUD_ACCOUNT), CloudAccountSerializer::fromSlime, CloudAccount.unspecified()))
                 .cloudResourceTags(deserialize(params.field(CLOUD_RESOURCE_TAGS), CloudResourceTagsSerializer::fromSlime, CloudResourceTags.empty()))
                 .dataplaneTokens(deserialize(params.field(DATAPLANE_TOKENS), DataplaneTokenSerializer::fromSlime, List.of()))
                 .build();
@@ -533,9 +533,7 @@ public final class PrepareParams {
         return operatorCertificates;
     }
 
-    public Optional<CloudAccount> cloudAccount() {
-        return cloudAccount;
-    }
+    public CloudAccount cloudAccount() { return cloudAccount; }
 
     public CloudResourceTags cloudResourceTags() {
         return cloudResourceTags;

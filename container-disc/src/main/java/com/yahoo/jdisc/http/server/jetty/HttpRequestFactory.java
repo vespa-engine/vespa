@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
+import io.opentelemetry.context.Context;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.Request;
 
@@ -40,7 +41,13 @@ class HttpRequestFactory {
             jdiscHttpReq.context().put(RequestUtils.JDICS_REQUEST_PORT, Request.getLocalPort(jettyRequest));
             var sslSessionData = (EndPoint.SslSessionData) jettyRequest.getAttribute(EndPoint.SslSessionData.ATTRIBUTE);
             if (sslSessionData != null) jdiscHttpReq.context().put(RequestUtils.JDISC_REQUEST_SSLSESSION, sslSessionData.sslSession());
+
+            // Bridge the SERVER span's OpenTelemetry Context (created by JettyServerSpanHandler) into the jdisc
+            // request context, which crosses to the handler worker thread so it can parent child spans.
+            if (jettyRequest.getAttribute(JettyServerSpanHandler.OTEL_CONTEXT_REQUEST_ATTRIBUTE) instanceof Context otelContext)
+                jdiscHttpReq.context().put(RequestUtils.JDISC_REQUEST_OTEL_CONTEXT, otelContext);
             jettyRequest.setAttribute(HttpRequest.class.getName(), jdiscHttpReq);
+
             copyHeaders(jettyRequest, jdiscHttpReq);
             return jdiscHttpReq;
         } catch (IllegalArgumentException e) {

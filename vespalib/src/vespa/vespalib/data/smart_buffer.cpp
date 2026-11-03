@@ -2,7 +2,7 @@
 
 #include "smart_buffer.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 
@@ -43,7 +43,7 @@ Memory SmartBuffer::obtain() {
 }
 
 Input& SmartBuffer::evict(size_t bytes) {
-    assert(read_len() >= bytes);
+    CHECK(read_len() >= bytes);
     _read_pos += bytes;
     if (_read_pos == _write_pos) {
         _read_pos = 0;
@@ -58,7 +58,7 @@ WritableMemory SmartBuffer::reserve(size_t bytes) {
 }
 
 Output& SmartBuffer::commit(size_t bytes) {
-    assert(write_len() >= bytes);
+    CHECK(write_len() >= bytes);
     _write_pos += bytes;
     return *this;
 }

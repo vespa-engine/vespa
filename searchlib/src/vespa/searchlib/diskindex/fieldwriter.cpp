@@ -7,6 +7,7 @@
 #include "pagedict4file.h"
 #include "zcposocc.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/error.h>
 
 #include <filesystem>
@@ -94,7 +95,7 @@ void FieldWriter::flush() {
     _posoccfile->flushWord();
     PostingListCounts& counts = _posoccfile->getCounts();
     if (counts._numDocs != 0) {
-        assert(_compactWordNum != 0);
+        CHECK(_compactWordNum != 0);
         _dictFile->writeWord(_word, counts);
         // Write bitmap entries
         if (_bvc.getCrossedBitVectorLimit()) {
@@ -103,16 +104,16 @@ void FieldWriter::flush() {
         _bvc.clear();
         counts.clear();
     } else {
-        assert(counts._bitLength == 0);
-        assert(_bvc.empty());
-        assert(_compactWordNum == 0);
+        CHECK(counts._bitLength == 0);
+        CHECK(_bvc.empty());
+        CHECK(_compactWordNum == 0);
     }
 }
 
 void FieldWriter::newWord(uint64_t wordNum, std::string_view word) {
-    assert(wordNum <= _numWordIds);
-    assert(wordNum != noWordNum());
-    assert(wordNum > _wordNum);
+    CHECK(wordNum <= _numWordIds);
+    CHECK(wordNum != noWordNum());
+    CHECK(wordNum > _wordNum);
     flush();
     _wordNum = wordNum;
     ++_compactWordNum;

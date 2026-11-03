@@ -31,10 +31,12 @@ int main(int argc, char** argv) {
         ++person;
         std::vector<std::string> friends;
         int32_t                  want = (uint32_t)std::exp(rnd.nextNormal(logmean, lstddev));
-        if (want < 17)
+        if (want < 17) {
             want = (uint32_t)(std::exp(logmean) + 0.99);
-        if (want < 1)
+        }
+        if (want < 1) {
             want = 1;
+        }
 
         printf("me: %u friends:", person);
         while (want > 0) {

@@ -5,12 +5,11 @@
 #include "file_settings.h"
 #include "filesizecalculator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file_interface.h>
 #include <vespa/searchlib/common/create_and_freeze_times.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/util/size_literals.h>
-
-#include <cassert>
 
 namespace search {
 
@@ -38,7 +37,7 @@ FileWithHeader::FileWithHeader(std::unique_ptr<FastOS_FileInterface> file_in)
         _size_on_disk = calc(_file_size);
         if (!extract_file_size(_header, *_file, _file_size)) {
             bool close_ok = _file->Close();
-            assert(close_ok);
+            CHECK(close_ok);
         }
         _flush_duration = common::CreateAndFreezeTimes(_header).get_flush_duration();
     }
@@ -56,7 +55,7 @@ void FileWithHeader::rewind() {
 
 void FileWithHeader::close() {
     bool close_ok = _file->Close();
-    assert(close_ok);
+    CHECK(close_ok);
 }
 
 } // namespace search

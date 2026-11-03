@@ -31,29 +31,34 @@ void ClientStatus::SetError(const char* errorMsg) {
 }
 
 void ClientStatus::ResponseTime(double ms) {
-    if (ms < 0)
+    if (ms < 0) {
         return; // should never happen.
-    if (ms > _maxTime)
+    }
+    if (ms > _maxTime) {
         _maxTime = ms;
-    if (ms < _minTime || _requestCnt == 0)
+    }
+    if (ms < _minTime || _requestCnt == 0) {
         _minTime = ms;
+    }
     _totalTime += ms;
 
     size_t t = (size_t)(ms * _timetableResolution + 0.5);
-    if (t >= _timetable.size())
+    if (t >= _timetable.size()) {
         _higherCnt++;
-    else
+    } else {
         _timetable[t]++;
+    }
     _requestCnt++;
 }
 
 void ClientStatus::AddRequestStatus(uint32_t status) {
     auto it = _requestStatusDistribution.find(status);
 
-    if (it != _requestStatusDistribution.end())
+    if (it != _requestStatusDistribution.end()) {
         it->second++;
-    else
+    } else {
         _requestStatusDistribution[status] = 1;
+    }
 }
 
 void ClientStatus::Merge(const ClientStatus& status) {
@@ -62,28 +67,32 @@ void ClientStatus::Merge(const ClientStatus& status) {
         return;
     }
 
-    if (_maxTime < status._maxTime)
+    if (_maxTime < status._maxTime) {
         _maxTime = status._maxTime;
-    if ((_requestCnt == 0) || (_minTime > status._minTime && status._requestCnt > 0))
+    }
+    if ((_requestCnt == 0) || (_minTime > status._minTime && status._requestCnt > 0)) {
         _minTime = status._minTime;
+    }
     _skipCnt += status._skipCnt;
     _failCnt += status._failCnt;
     _overtimeCnt += status._overtimeCnt;
     _totalTime += status._totalTime;
     _realTime += status._realTime;
     _requestCnt += status._requestCnt;
-    for (size_t i = 0; i < _timetable.size(); i++)
+    for (size_t i = 0; i < _timetable.size(); i++) {
         _timetable[i] += status._timetable[i];
+    }
     _higherCnt += status._higherCnt;
     _reuseCnt += status._reuseCnt;
     _zeroHitQueries += status._zeroHitQueries;
 
     for (const auto& entry : status._requestStatusDistribution) {
         auto it = _requestStatusDistribution.find(entry.first);
-        if (it != _requestStatusDistribution.end())
+        if (it != _requestStatusDistribution.end()) {
             it->second += entry.second;
-        else
+        } else {
             _requestStatusDistribution[entry.first] = entry.second;
+        }
     }
 }
 
@@ -100,10 +109,12 @@ double ClientStatus::GetAverage() {
 }
 
 double ClientStatus::GetPercentile(double percent) {
-    if (percent < 0.0)
+    if (percent < 0.0) {
         percent = 0.0;
-    if (percent > 100.0)
+    }
+    if (percent > 100.0) {
         percent = 100.0;
+    }
 
     double target = ((double)(_requestCnt - 1)) * (percent / 100.0);
     long   t1 = (long)std::floor(target);

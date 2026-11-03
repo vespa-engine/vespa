@@ -144,11 +144,13 @@ size_t FUTF8StrChrFieldSearcher::match(const char* folded, size_t sz, QueryTerm&
     const char* n = folded;
     const char* e = n + sz;
 
-    while (!*n)
+    while (!*n) {
         n++;
+    }
     while (true) {
-        if (n >= e)
+        if (n >= e) {
             break;
+        }
 
         const char* tt = term;
         while ((tt < et) && (*tt == *n)) {
@@ -170,11 +172,13 @@ size_t FUTF8StrChrFieldSearcher::match(const char* folded, size_t sz, size_t min
     termcount_t words(0);
     const char* n = folded;
     const char* e = n + sz;
-    while (!*n)
+    while (!*n) {
         n++;
+    }
     for (;;) {
-        if (n >= e)
+        if (n >= e) {
             break;
+        }
         for (QueryTerm **it = qtl, **mt = qtl + qtlSize; it != mt; it++) {
             QueryTerm&  qt = **it;
             const char* term;

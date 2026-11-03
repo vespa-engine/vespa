@@ -20,8 +20,9 @@ using namespace std::string_literals;
 namespace storage {
 
 void TestAndSetHelper::resolveDocumentType(const document::DocumentTypeRepo& documentTypeRepo) {
-    if (_docTypePtr != nullptr)
+    if (_docTypePtr != nullptr) {
         return;
+    }
     if (!_docId.hasDocType()) {
         throw TestAndSetException(api::ReturnCode(api::ReturnCode::ILLEGAL_PARAMETERS, "Document id has no doctype"));
     }

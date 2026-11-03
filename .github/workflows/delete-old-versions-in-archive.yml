@@ -13,12 +13,15 @@ on:
   schedule:
    - cron: '0 6 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   delete-old-cloudsmith-artifacts:
     runs-on: ubuntu-latest
 
     container:
-        image: almalinux:8
+        image: almalinux:8@sha256:2d0f2eb2a83cc09dbc2eb92fade4dbe8f709628149e81aa00aec70630406603b
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           CLOUDSMITH_API_TOKEN: ${{ secrets.CLOUDSMITH_API_TOKEN }}
@@ -31,7 +34,9 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Delete old artifacts
         run: |

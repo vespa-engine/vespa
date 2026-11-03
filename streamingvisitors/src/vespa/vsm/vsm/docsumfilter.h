@@ -15,7 +15,8 @@ using search::docsummary::IDocsumStore;
 
 namespace search::docsummary {
 class IStringFieldConverter;
-}
+class SlimeFillerFilter;
+} // namespace search::docsummary
 
 namespace vsm {
 
@@ -70,9 +71,15 @@ public:
     std::unique_ptr<const search::docsummary::IDocsumStoreDocument> get_document(uint32_t id) override;
 
     search::docsummary::DocsumStoreFieldValue get_summary_field(uint32_t entry_idx, const Document& doc);
+    /**
+     * Inserts the summary field, keeping only the struct sub-fields matched by struct_fields_filter when
+     * that is not nullptr. The filter belongs to the field in the requested document-summary, while
+     * entry_idx is an index into the document-summary used by vsmsummary.cfg, cf. DocsumFilter::init().
+     */
     void insert_summary_field(uint32_t entry_idx, const Document& doc, search::common::ElementIds selected_elements,
-                              vespalib::slime::Inserter&                 inserter,
-                              search::docsummary::IStringFieldConverter* converter);
+                              vespalib::slime::Inserter&                   inserter,
+                              search::docsummary::IStringFieldConverter*   converter,
+                              const search::docsummary::SlimeFillerFilter* struct_fields_filter);
     bool has_flatten_juniper_command(uint32_t entry_idx) const;
     FieldModifier* get_field_modifier(uint32_t entry_idx);
 };

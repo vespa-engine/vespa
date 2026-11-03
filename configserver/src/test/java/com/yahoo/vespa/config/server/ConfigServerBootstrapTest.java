@@ -76,7 +76,7 @@ public class ConfigServerBootstrapTest {
         // Take a host away (from a cluster having multiple)
         // so that there are too few for the application, to verify we can still bootstrap
         provisioner.allocations().entrySet().stream()
-                   .filter(entry -> entry.getKey().id().value().equals("music"))
+                   .filter(entry -> entry.getKey().cluster().id().value().equals("music"))
                    .findFirst().orElseThrow()
                    .getValue().remove(0);
         Bootstrapper bootstrap = createBootstrapper(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY);
@@ -92,8 +92,8 @@ public class ConfigServerBootstrapTest {
         assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(() -> bootstrap.vipStatus().isInRotation(), "failed waiting for server to be in rotation");
-        assertEquals(List.of("ApplicationPackageMaintainer", "FileDistributionMaintainer", "HostRegistryMaintainer",
-                             "PendingRestartsMaintainer", "ReindexingMaintainer", "RestartOnDeployMaintainer",
+        assertEquals(List.of("ApplicationPackageMaintainer", "FileDistributionMaintainer", "HostRegistryMaintainer", "MlModelImportCacheMaintainer",
+                             "ReindexingMaintainer", "RestartOnDeployMaintainer",
                              "SessionsMaintainer", "TenantsMaintainer"),
                      bootstrap.configServerMaintenance().maintainers().stream()
                               .map(Maintainer::name)

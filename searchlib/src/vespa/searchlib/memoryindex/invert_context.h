@@ -8,6 +8,7 @@ namespace document {
 class DataType;
 class Document;
 class Field;
+class FieldPath;
 } // namespace document
 
 namespace search::index {
@@ -29,11 +30,24 @@ class DocumentInverterContext;
  * RemoveTask operations have completed).
  */
 class InvertContext : public BundledFieldsContext {
-    using IndexedFields = std::vector<std::unique_ptr<const document::Field>>;
+public:
+    /*
+     * Where the value of an index is found in the document. At most one of these is set: the document field,
+     * or the field path of an index of a struct field in an array of struct or map. Neither is set when the
+     * index does not match the document type.
+     */
+    struct IndexedField {
+        std::unique_ptr<const document::Field>     field;
+        std::unique_ptr<const document::FieldPath> struct_field_path;
+    };
+
+private:
+    using IndexedFields = std::vector<IndexedField>;
+    using IndexedUriFields = std::vector<std::unique_ptr<const document::Field>>;
     std::vector<uint32_t>             _pushers;
     std::string                       _document_field_names;
     mutable IndexedFields             _document_fields;
-    mutable IndexedFields             _document_uri_fields;
+    mutable IndexedUriFields          _document_uri_fields;
     mutable const document::DataType* _data_type;
 
 public:
@@ -44,7 +58,7 @@ public:
     const std::vector<uint32_t>& get_pushers() const noexcept { return _pushers; }
     void set_data_type(const DocumentInverterContext& doc_inv_context, const document::Document& doc) const;
     const IndexedFields& get_document_fields() const noexcept { return _document_fields; }
-    const IndexedFields& get_document_uri_fields() const noexcept { return _document_uri_fields; }
+    const IndexedUriFields& get_document_uri_fields() const noexcept { return _document_uri_fields; }
 };
 
 } // namespace search::memoryindex

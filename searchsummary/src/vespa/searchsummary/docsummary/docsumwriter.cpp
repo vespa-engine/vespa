@@ -81,7 +81,7 @@ void DynamicDocsumWriter::insertDocsum(const ResolveClassInfo& rci, uint32_t doc
             } else {
                 if (doc) {
                     doc->insert_summary_field(outCfg->name(), elements_selector.get_selected_elements(docid, state),
-                                              inserter);
+                                              inserter, nullptr, outCfg->struct_fields_filter());
                 }
             }
         }

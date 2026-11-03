@@ -5,7 +5,7 @@
 #include "array_traverser.h"
 #include "object_traverser.h"
 
-#include <cassert>
+#include <vector>
 
 namespace vespalib::slime {
 

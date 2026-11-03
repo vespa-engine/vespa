@@ -23,8 +23,9 @@ bool RegexPredicateNode::check(const ResultNode* result) const {
         const auto* rv = static_cast<const ResultNodeVector*>(result);
         for (size_t i = 0; i < rv->size(); i++) {
             HoldString tmp(*rv, i);
-            if (_re.regex.full_match(tmp))
+            if (_re.regex.full_match(tmp)) {
                 return true;
+            }
         }
         return false;
     } else {

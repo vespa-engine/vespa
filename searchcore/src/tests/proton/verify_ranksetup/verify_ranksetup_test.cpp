@@ -145,8 +145,9 @@ struct CommonSetup {
             allFields.insert(field.first);
         }
         for (const auto& field : attributes) {
-            if (allFields.count(field.first) != 0)
+            if (allFields.count(field.first) != 0) {
                 continue;
+            }
             write_vsmfield(out, i, field.first, field.second.dataType);
             out.fmt("fieldspec[%zu].fieldtype ATTRIBUTE\n", i);
             i++;

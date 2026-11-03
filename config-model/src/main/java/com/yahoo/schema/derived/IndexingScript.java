@@ -2,15 +2,23 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.ComplexAttributeFieldUtils;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
+import com.yahoo.schema.document.MatchType;
+import com.yahoo.schema.processing.ExactMatch;
+import com.yahoo.schema.processing.TextMatch;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig.Ilscript.Builder;
+import com.yahoo.vespa.configdefinition.IlscriptsConfig.Ilscript.Complexfield;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ClearStateExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExactExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GuardExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
@@ -28,6 +36,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * An indexing language script derived from a schema. An indexing script contains a set of indexing
@@ -39,6 +48,8 @@ public final class IndexingScript extends Derived {
 
     private final List<String> docFields = new ArrayList<>();
     private final List<Expression> expressions = new ArrayList<>();
+    /** Sorted to keep the derived config stable. */
+    private final Set<String> fastMapSearchFields = new TreeSet<>();
     private List<ImmutableSDField> fieldsSettingLanguage;
     private final boolean isStreaming;
 
@@ -62,10 +73,47 @@ public final class IndexingScript extends Derived {
         if (field.hasFullIndexingDocprocRights())
             docFields.add(field.getName());
 
-        if (field.usesStructOrMap() && ! GeoPos.isAnyPos(field)) return; // unsupported
+        // Must be collected before the returns below, as a map field always uses a map.
+        if (field.hasFastMapSearch()) {
+            fastMapSearchFields.add(field.getName());
+        }
+
+        if (field.usesStructOrMap() && ! GeoPos.isAnyPos(field)) {
+            if ( ! isStreaming)
+                addExpression(structFieldIndexingScript(field, schema));
+            return; // other indexing of struct fields is unsupported
+        }
         if (fieldsSettingLanguage.size() == 1 && fieldsSettingLanguage.get(0).equals(field)) return; // Already added
 
         addExpression(field.getIndexingScript());
+    }
+
+    /**
+     * Returns "input field | for_each_field "f1" { tokenize ... } | ... | passthrough field",
+     * which annotates the string values of the indexed struct fields in place, so that the backend can index them,
+     * while passing the complex field through unchanged otherwise.
+     * The struct fields are named by their path in the complex field, e.g "f1", "key" or "value.f1".
+     * Returns an empty script if the field has no (supported) struct field indexes.
+     * This is only used in indexed mode, as streaming search tokenizes struct fields itself.
+     */
+    public static ScriptExpression structFieldIndexingScript(ImmutableSDField field, Schema schema) {
+        var structFields = ComplexIndexFieldUtils.supportedIndexedStructFields(field, ComplexIndexFieldUtils.Mode.of(schema));
+        if (structFields.isEmpty()) return new ScriptExpression();
+        var expressions = new ArrayList<Expression>();
+        expressions.add(new InputExpression(field.getName()));
+        for (ImmutableSDField structField : structFields) {
+            expressions.add(new ForEachFieldExpression(ComplexAttributeFieldUtils.localStructFieldName(field, structField),
+                                                       annotateExpression(structField, schema)));
+        }
+        expressions.add(new PassthroughExpression(field.getName()));
+        return new ScriptExpression(new StatementExpression(expressions));
+    }
+
+    private static Expression annotateExpression(ImmutableSDField structField, Schema schema) {
+        MatchType matchType = structField.getMatching().getType();
+        if (matchType == MatchType.EXACT || matchType == MatchType.WORD)
+            return new ExactExpression(ExactMatch.toAnnotatorConfig(structField.getMatching()));
+        return new TokenizeExpression(null, TextMatch.findAnnotatorConfig(schema, structField));
     }
 
     private void addExpression(ScriptExpression expression) {
@@ -94,6 +142,9 @@ public final class IndexingScript extends Derived {
         IlscriptsConfig.Ilscript.Builder ilscriptBuilder = new IlscriptsConfig.Ilscript.Builder();
         ilscriptBuilder.doctype(getName());
         ilscriptBuilder.docfield(docFields);
+        for (String fieldName : fastMapSearchFields) {
+            ilscriptBuilder.complexfield(e -> e.name(fieldName).why(Complexfield.Why.FAST_MAP_SEARCH));
+        }
         addContentInOrder(ilscriptBuilder);
         configBuilder.ilscript(ilscriptBuilder);
     }

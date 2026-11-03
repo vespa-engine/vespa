@@ -5,6 +5,7 @@
 #include "attribute_directory.h"
 #include "attributedisklayout.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
@@ -70,7 +71,7 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute& fattr, SerialNum syncTo
     // Called by attribute field writer executor
     _flushFile = _writer->getSnapshotDir(_syncToken) + "/" + attr.getName();
     _saver = attr.initSave(_flushFile);
-    assert(_saver);
+    CHECK(_saver);
 }
 
 FlushableAttribute::Flusher::~Flusher() = default;
@@ -80,7 +81,7 @@ bool FlushableAttribute::Flusher::saveAttribute() {
     SerialNumFileHeaderContext fileHeaderContext(_fattr._fileHeaderContext, _syncToken);
     bool                       saveSuccess = true;
     auto                       create_time = std::chrono::steady_clock::now();
-    assert(_saver);
+    CHECK(_saver);
     if (_saver->hasGenerationGuard() && _fattr._hwInfo.disk().slow()) {
         saveSuccess = _saver->save(_saveTarget);
         _saver.reset();
@@ -196,30 +197,32 @@ IFlushTarget::Time FlushableAttribute::getLastFlushTime() const {
     return _attrDir->getLastFlushTime();
 }
 
-IFlushTarget::Task::UP FlushableAttribute::internalInitFlush(SerialNum currentSerial) {
+void FlushableAttribute::internal_init_flush(SerialNum currentSerial, TaskPromise task_promise) {
     // Called by attribute field writer thread while document db executor waits
     _attr->reclaim_unused_memory();
     SerialNum syncToken = std::max(currentSerial, _attr->getStatus().getLastSyncToken());
     auto      writer = _attrDir->tryGetWriter();
     if (!writer) {
-        return Task::UP();
+        task_promise.set_value({});
+        return;
     }
     if (syncToken <= getFlushedSerialNum()) {
         writer->setLastFlushTime(vespalib::system_clock::now());
         LOG(debug, "No attribute vector to flush. Update flush time to current: lastFlushTime(%f)",
             vespalib::to_s(getLastFlushTime().time_since_epoch()));
-        return Task::UP();
+        task_promise.set_value({});
+        return;
     }
-    return std::make_unique<Flusher>(*this, syncToken, std::move(writer));
+    task_promise.set_value(std::make_unique<Flusher>(*this, syncToken, std::move(writer)));
 }
 
-IFlushTarget::Task::UP FlushableAttribute::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) {
+void FlushableAttribute::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
+                                    TaskPromise task_promise) {
     // Called by document db executor
-    std::promise<IFlushTarget::Task::UP> promise;
-    std::future<IFlushTarget::Task::UP>  future = promise.get_future();
     _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(_attr->getNamePrefix()),
-                                  [&]() { promise.set_value(internalInitFlush(currentSerial)); });
-    return future.get();
+                                  [this, currentSerial, task_promise(std::move(task_promise))]() mutable {
+                                      internal_init_flush(currentSerial, std::move(task_promise));
+                                  });
 }
 
 bool FlushableAttribute::can_flush(SerialNum current_serial) const noexcept {

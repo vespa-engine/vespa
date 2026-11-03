@@ -4,10 +4,10 @@
 #include "match_algorithm.hpp"
 #include "table_dfa.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <algorithm>
-#include <cassert>
 #include <map>
 #include <ostream>
 #include <queue>
@@ -68,14 +68,15 @@ struct Position {
         return std::tie(edits, index) < std::tie(rhs.edits, rhs.index);
     }
     template <uint8_t N>
-    void add_elementary_transitions(const std::vector<bool>& bits, std::vector<Position>& dst) const {
-        assert(bits.size() > index);
+    [[maybe_unused]] void add_elementary_transitions(const std::vector<bool>& bits,
+                                                     std::vector<Position>&   dst) const {
+        CHECK(bits.size() > index);
         if (!bits[index]) {
             dst.emplace_back(index, edits + 1);
             dst.emplace_back(index + 1, edits + 1);
         }
         for (uint32_t e = 0; (edits + e) <= N; ++e) {
-            assert(bits.size() > (index + e));
+            CHECK(bits.size() > (index + e));
             if (bits[index + e]) {
                 dst.emplace_back(index + e + 1, edits + e);
             }
@@ -121,7 +122,7 @@ struct State {
         }
         return min;
     }
-    template <uint8_t N> static State create(std::vector<Position> list_in) {
+    template <uint8_t N> [[maybe_unused]] static State create(std::vector<Position> list_in) {
         State result;
         auto  want = [&result](Position pos) {
             if (pos.edits > N) {
@@ -142,14 +143,14 @@ struct State {
         }
         return result;
     }
-    template <uint8_t N> State next(const std::vector<bool>& bits) const {
+    template <uint8_t N> [[maybe_unused]] State next(const std::vector<bool>& bits) const {
         std::vector<Position> tmp;
         for (const auto& pos : list) {
             pos.add_elementary_transitions<N>(bits, tmp);
         }
         return create<N>(std::move(tmp));
     }
-    template <uint8_t N> std::vector<uint8_t> make_edit_vector() const {
+    template <uint8_t N> [[maybe_unused]] std::vector<uint8_t> make_edit_vector() const {
         std::vector<uint8_t> result(window_size<N>(), N + 1);
         for (const auto& pos : list) {
             for (uint32_t i = 0; i < window_size<N>(); ++i) {
@@ -184,33 +185,33 @@ struct StateRepo {
     StateRepo() noexcept : seen(), refs() {
         auto failed_idx = state_to_idx(State::failed());
         auto start_idx = state_to_idx(State::start());
-        assert(failed_idx == 0);
-        assert(start_idx == 1);
+        CHECK(failed_idx == 0);
+        CHECK(start_idx == 1);
     }
     ~StateRepo();
     size_t size() const { return seen.size(); }
     uint32_t state_to_idx(const State& state) {
-        assert(state.minimal_boundary() == 0);
+        CHECK(state.minimal_boundary() == 0);
         uint32_t next = refs.size();
         auto [pos, inserted] = seen.emplace(state, next);
         if (inserted) {
             refs.push_back(pos);
         }
-        assert(seen.size() == refs.size());
+        CHECK(seen.size() == refs.size());
         return pos->second;
     }
     const State& idx_to_state(uint32_t idx) const {
-        assert(idx < refs.size());
+        CHECK(idx < refs.size());
         return refs[idx]->first;
     }
 };
 [[maybe_unused]] StateRepo::~StateRepo() = default;
 
-template <uint8_t N> std::vector<bool> expand_bits(uint32_t value) {
+template <uint8_t N> [[maybe_unused]] std::vector<bool> expand_bits(uint32_t value) {
     static_assert(N < 10);
     std::vector<bool> result(window_size<N>());
     uint32_t          look_for = num_transitions<N>();
-    assert(value < look_for);
+    CHECK(value < look_for);
     for (size_t i = 0; i < result.size(); ++i) {
         look_for >>= 1;
         result[i] = (value & look_for);
@@ -218,7 +219,7 @@ template <uint8_t N> std::vector<bool> expand_bits(uint32_t value) {
     return result;
 }
 
-template <uint8_t N> StateRepo make_state_repo() {
+template <uint8_t N> [[maybe_unused]] StateRepo make_state_repo() {
     StateRepo repo;
     for (uint32_t idx = 0; idx < repo.size(); ++idx) {
         const State& state = repo.idx_to_state(idx);
@@ -249,7 +250,7 @@ template <uint8_t N> struct Tfa {
     std::array<std::array<uint8_t, window_size<N>()>, num_states<N>()> edits;
 };
 
-template <uint8_t N> std::unique_ptr<Tfa<N>> make_tfa() {
+template <uint8_t N> [[maybe_unused]] std::unique_ptr<Tfa<N>> make_tfa() {
     auto      tfa = std::make_unique<Tfa<N>>();
     StateRepo repo;
     uint32_t  state_idx = 0;
@@ -259,23 +260,23 @@ template <uint8_t N> std::unique_ptr<Tfa<N>> make_tfa() {
             State    new_state = state.next<N>(expand_bits<N>(i));
             uint32_t step = new_state.normalize();
             uint32_t new_state_idx = repo.state_to_idx(new_state);
-            assert(step < 256);
-            assert(new_state_idx < 256);
+            CHECK(step < 256);
+            CHECK(new_state_idx < 256);
             tfa->table[state_idx][i].step = step;
             tfa->table[state_idx][i].state = new_state_idx;
         }
         auto edits = state.make_edit_vector<N>();
-        assert(edits.size() == window_size<N>());
+        CHECK(edits.size() == window_size<N>());
         for (uint32_t i = 0; i < window_size<N>(); ++i) {
             tfa->edits[state_idx][i] = edits[i];
         }
     }
-    assert(repo.size() == num_states<N>());
-    assert(state_idx == num_states<N>());
+    CHECK(repo.size() == num_states<N>());
+    CHECK(state_idx == num_states<N>());
     return tfa;
 }
 
-template <typename T> std::string format_vector(const std::vector<T>& vector, bool compact = false) {
+template <typename T> [[maybe_unused]] std::string format_vector(const std::vector<T>& vector, bool compact = false) {
     std::string str = compact ? "" : "[";
     for (size_t i = 0; i < vector.size(); ++i) {
         if (i > 0 && !compact) {
@@ -321,7 +322,7 @@ template <uint8_t N> struct TfaState {
     }
     // for pretty graphviz dumping; actual edits needed to reach the word end from a valid state
     constexpr uint32_t exact_edits(uint32_t end) const noexcept {
-        assert(valid());
+        CHECK(valid());
         uint32_t res = end;
         for (uint32_t i = 0; i < window_size<N>(); ++i) {
             if (uint32_t e = InlineTfa<N>::edits[state][i]; e <= N) {
@@ -451,8 +452,8 @@ template <uint8_t N> auto TableDfa<N>::make_lookup(const std::vector<uint32_t>& 
     };
     for (size_t i = 0; i < str.size(); ++i) {
         for (size_t j = 0; j < window_size(); ++j) {
-            assert(result[i].list[j].input == 0);
-            assert(result[i].list[j].match == 0);
+            CHECK(result[i].list[j].input == 0);
+            CHECK(result[i].list[j].match == 0);
             if ((i + j) < str.size()) {
                 uint32_t c = str[i + j];
                 if (!have_already(c, i)) {

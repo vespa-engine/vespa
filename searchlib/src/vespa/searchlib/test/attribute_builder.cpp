@@ -2,6 +2,7 @@
 
 #include "attribute_builder.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -11,8 +12,6 @@
 #include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
-
-#include <cassert>
 
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
@@ -54,7 +53,7 @@ void fill_helper(AttributeVector& attr, std::initializer_list<ValueType> values)
 
 template <typename AttrType, typename ValueType>
 void fill_array_helper(AttributeVector& attr, std::initializer_list<std::initializer_list<ValueType>> values) {
-    assert(attr.hasMultiValue());
+    CHECK(attr.hasMultiValue());
     add_docs(attr, values.size());
     auto&    real = dynamic_cast<AttrType&>(attr);
     uint32_t docid = 1;
@@ -70,7 +69,7 @@ void fill_array_helper(AttributeVector& attr, std::initializer_list<std::initial
 template <typename AttrType, typename ValueType>
 void fill_wset_helper(AttributeVector&                                                            attr,
                       std::initializer_list<std::initializer_list<std::pair<ValueType, int32_t>>> values) {
-    assert(attr.hasMultiValue());
+    CHECK(attr.hasMultiValue());
     add_docs(attr, values.size());
     auto&    real = dynamic_cast<AttrType&>(attr);
     uint32_t docid = 1;

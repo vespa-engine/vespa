@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "mergeoperation.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
@@ -160,7 +161,7 @@ void MergeOperation::onStart(DistributorStripeMessageSender& sender) {
 }
 
 bool MergeOperation::sourceOnlyCopyChangedDuringMerge(const BucketDatabase::Entry& currentState) const {
-    assert(currentState.valid());
+    CHECK(currentState.valid());
     for (const auto& mnode : _mnodes) {
         const BucketCopy* copyBefore(_infoBefore.getNode(mnode.index));
         if (!copyBefore) {
@@ -186,7 +187,7 @@ bool MergeOperation::sourceOnlyCopyChangedDuringMerge(const BucketDatabase::Entr
 
 void MergeOperation::deleteSourceOnlyNodes(const BucketDatabase::Entry&    currentState,
                                            DistributorStripeMessageSender& sender) {
-    assert(currentState.valid());
+    CHECK(currentState.valid());
     std::vector<uint16_t> sourceOnlyNodes;
     for (const auto& mnode : _mnodes) {
         const uint16_t    nodeIndex = mnode.index;

@@ -91,7 +91,9 @@ void FtTestAppBase::FT_LOG(const search::fef::Blueprint& prototype, const search
     LOG(info, "Testing blueprint '%s'.", prototype.getBaseName().c_str());
     std::vector<std::string> arr;
     for (const auto& it : env.getFields()) {
-        arr.push_back(it.name());
+        if (!it.is_no_field()) {
+            arr.push_back(it.name());
+        }
     }
     FT_LOG("Environment  ", arr);
     FT_LOG("Parameters   ", params);

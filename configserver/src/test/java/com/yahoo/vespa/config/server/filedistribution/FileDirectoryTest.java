@@ -8,12 +8,14 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -21,6 +23,12 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 public class FileDirectoryTest {
+
+    private static final List<String> references = List.of("6bc0de8175d0cf33c2d4cca86c64b0d954b41b44096954b90fd149ce5ce9179f",
+                                                          "b48994fa5fa5700bc19ed8bc52537fe4942faeaa21d4802264730a5c21ed7d49",
+                                                          "da94598bef60a61bea45583e6c8b40e8c65c6d79877a9619c005463330305201",
+                                                          "8a1174fbf2f578cad93afcb748413667175b5f926fe2434e49cfbf875253b555",
+                                                          "a52c4c81e16d8a3006ea728777fdc11a57b5d04fa8835958bca9113c8d83cbd3");
 
     private FileDirectory fileDirectory;
 
@@ -38,9 +46,20 @@ public class FileDirectoryTest {
         FileReference bar = createFile("bar");
 
         assertTrue(fileDirectory.getFile(foo).get().exists());
-        assertEquals("ea315b7acac56246", foo.value());
+        assertEquals(references.get(0), foo.value());
         assertTrue(fileDirectory.getFile(bar).get().exists());
-        assertEquals("2b8e97f15c854e1d", bar.value());
+        assertEquals(references.get(1), bar.value());
+    }
+
+    @Test
+    public void requireThatFileReferenceResolvingToRootIsRejected() throws IOException {
+        createFile("foo");
+        createFile("bar");
+
+        // A reference resolving to the root directory itself must never be served:
+        assertTrue(fileDirectory.getFile(new FileReference(".")).isEmpty());
+        assertTrue(fileDirectory.getFile(new FileReference("./")).isEmpty());
+        assertTrue(fileDirectory.getFile(new FileReference("")).isEmpty());
     }
 
     @Test
@@ -53,7 +72,7 @@ public class FileDirectoryTest {
         assertTrue(dir.exists());
         assertTrue(new File(dir, "foo").exists());
         assertFalse(new File(dir, "doesnotexist").exists());
-        assertEquals("bebc5a1aee74223d", fileReference.value());
+        assertEquals(references.get(2), fileReference.value());
 
         // Change contents of a file, file reference value should change
         createFileInSubDir(subDirectory, "foo", "new content");
@@ -61,7 +80,7 @@ public class FileDirectoryTest {
         dir = fileDirectory.getFile(fileReference2).get();
         assertTrue(new File(dir, "foo").exists());
         assertNotEquals(fileReference + " should not be equal to " + fileReference2, fileReference, fileReference2);
-        assertEquals("e5d4b3fe5ee3ede3", fileReference2.value());
+        assertEquals(references.get(3), fileReference2.value());
 
         // Add a file, should be available and file reference should have another value
         createFileInSubDir(subDirectory, "bar", "some other content");
@@ -69,7 +88,7 @@ public class FileDirectoryTest {
         dir = fileDirectory.getFile(fileReference3).get();
         assertTrue(new File(dir, "foo").exists());
         assertTrue(new File(dir, "bar").exists());
-        assertEquals("894bced3fc9d199b", fileReference3.value());
+        assertEquals(references.get(4), fileReference3.value());
     }
 
     @Test
@@ -84,7 +103,7 @@ public class FileDirectoryTest {
         assertTrue(foo.exists());
         FileTime fooCreatedTimestamp = Files.readAttributes(foo.toPath(), BasicFileAttributes.class).creationTime();
         assertFalse(new File(dir, "doesnotexist").exists());
-        assertEquals("bebc5a1aee74223d", fileReference.value());
+        assertEquals(references.get(2), fileReference.value());
 
         // Remove a file, directory should be deleted before adding a new file
         try { Thread.sleep(1000);} catch (InterruptedException e) {/*ignore */} // Needed since we have timestamp resolution of 1 second
@@ -98,7 +117,7 @@ public class FileDirectoryTest {
         // Check that creation timestamp is newer than the old one to be sure that a new file was written
         assertTrue(foo2CreatedTimestamp.compareTo(fooCreatedTimestamp) > 0);
         assertFalse(new File(dir, "doesnotexist").exists());
-        assertEquals("bebc5a1aee74223d", fileReference.value());
+        assertEquals(references.get(2), fileReference.value());
     }
 
     @Test
@@ -113,7 +132,7 @@ public class FileDirectoryTest {
         assertTrue(foo.exists());
         FileTime fooCreatedTimestamp = Files.readAttributes(foo.toPath(), BasicFileAttributes.class).creationTime();
         assertFalse(new File(dir, "doesnotexist").exists());
-        assertEquals("bebc5a1aee74223d", fileReference.value());
+        assertEquals(references.get(2), fileReference.value());
 
         try { Thread.sleep(1000);} catch (InterruptedException e) { /*ignore */ } // Needed since we have timestamp resolution of 1 second
         // Add a file that already exists, nothing should happen
@@ -121,7 +140,7 @@ public class FileDirectoryTest {
         FileReference fileReference3 = fileDirectory.addFile(subDirectory);
         dir = fileDirectory.getFile(fileReference3).get();
         assertTrue(new File(dir, "foo").exists());
-        assertEquals("bebc5a1aee74223d", fileReference3.value()); // same hash
+        assertEquals(references.get(2), fileReference3.value()); // same hash
 
         File foo2 = new File(dir, "foo");
         assertTrue(dir.exists());
@@ -146,5 +165,3 @@ public class FileDirectoryTest {
     }
 
 }
-
-

@@ -28,13 +28,15 @@ enum class MissingPolicy : uint8_t {
 struct FieldSortSpec {
     FieldSortSpec(std::string_view field, bool ascending, std::shared_ptr<BlobConverter> converter) noexcept;
     FieldSortSpec(std::string_view field, sortspec::SortOrder, std::shared_ptr<BlobConverter> converter,
-                  sortspec::MissingPolicy missing_policy, std::string missing_value) noexcept;
+                  sortspec::MissingPolicy missing_policy, std::string missing_value,
+                  bool is_rank_feature = false) noexcept;
     ~FieldSortSpec();
     std::string                    _field;
     sortspec::SortOrder            _sort_order;
     std::shared_ptr<BlobConverter> _converter;
     sortspec::MissingPolicy        _missing_policy;
     std::string                    _missing_value;
+    bool                           _is_rank_feature;
     bool is_ascending() const noexcept { return _sort_order == sortspec::SortOrder::ASCENDING; }
 };
 

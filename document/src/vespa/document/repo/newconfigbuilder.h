@@ -7,7 +7,6 @@
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/datatype.h>
 
-#include <cassert>
 #include <map>
 #include <string>
 #include <vector>

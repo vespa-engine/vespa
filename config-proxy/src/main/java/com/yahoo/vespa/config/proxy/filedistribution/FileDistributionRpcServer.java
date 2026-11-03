@@ -13,6 +13,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.security.tls.Capability;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
+import com.yahoo.vespa.filedistribution.FileReferenceDownloadPermissionDeniedException;
 
 import java.io.File;
 import java.util.Map;
@@ -78,6 +79,7 @@ class FileDistributionRpcServer {
     private static final int baseFileProviderErrorCode = baseErrorCode + 0x1000;
 
     private static final int fileReferenceNotFound = baseFileProviderErrorCode;
+    private static final int fileReferencePermissionDenied = baseFileProviderErrorCode + 1;
 
     private void getFile(Request req) {
         req.detach();
@@ -106,14 +108,19 @@ class FileDistributionRpcServer {
     private void downloadFile(Request req) {
         FileReference fileReference = new FileReference(req.parameters().get(0).asString());
         log.log(Level.FINE, () -> "getFile() called for file reference '" + fileReference.value() + "'");
-        Optional<File> file = downloader.getFile(new FileReferenceDownload(fileReference, HostName.getLocalhost()));
-        if (file.isPresent()) {
-            new RequestTracker().trackRequest(file.get().getParentFile());
-            req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
-            log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' available at " + file.get());
-        } else {
-            log.log(Level.INFO, "File reference '" + fileReference.value() + "' not found");
-            req.setError(fileReferenceNotFound, "File reference '" + fileReference.value() + "' not found");
+        try {
+            Optional<File> file = downloader.getFile(new FileReferenceDownload(fileReference, HostName.getLocalhost()));
+            if (file.isPresent()) {
+                new RequestTracker().trackRequest(file.get().getParentFile());
+                req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
+                log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' available at " + file.get());
+            } else {
+                log.log(Level.INFO, "File reference '" + fileReference.value() + "' not found");
+                req.setError(fileReferenceNotFound, "File reference '" + fileReference.value() + "' not found");
+            }
+        } catch (FileReferenceDownloadPermissionDeniedException e) {
+            log.log(Level.INFO, "File reference '" + fileReference.value() + "' download denied: " + e.getMessage());
+            req.setError(fileReferencePermissionDenied, "File reference '" + fileReference.value() + "' access denied: " + e.getMessage());
         }
 
         req.returnRequest();

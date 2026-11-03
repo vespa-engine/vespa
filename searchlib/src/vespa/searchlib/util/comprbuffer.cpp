@@ -2,9 +2,9 @@
 
 #include "comprbuffer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastos/file.h>
 
-#include <cassert>
 #include <cstring>
 
 namespace search {
@@ -54,8 +54,9 @@ void ComprBuffer::allocComprBuf() {
          */
         paddingBefore = paddingAfter + 2 * _unitSize;
 
-        if (paddingBefore < memalign)
+        if (paddingBefore < memalign) {
             paddingBefore = memalign;
+        }
     }
     size_t fullpadding = paddingAfter + paddingBefore;
     size_t allocLen = _comprBufSize * _unitSize + fullpadding;
@@ -72,11 +73,12 @@ void ComprBuffer::allocComprBuf() {
 
 void ComprBuffer::expandComprBuf(uint32_t overflowUnits) {
     size_t newSize = static_cast<size_t>(_comprBufSize) * 2;
-    assert(static_cast<unsigned int>(newSize) == newSize);
-    if (newSize < 16)
+    CHECK(static_cast<unsigned int>(newSize) == newSize);
+    if (newSize < 16) {
         newSize = 16;
+    }
     size_t paddingAfter = minimumPadding() * _unitSize;
-    assert(overflowUnits <= minimumPadding());
+    CHECK(overflowUnits <= minimumPadding());
     Alloc  newBuf = Alloc::alloc(newSize * _unitSize + paddingAfter);
     size_t oldLen = (static_cast<size_t>(_comprBufSize) + overflowUnits) * _unitSize;
     if (oldLen > 0) {

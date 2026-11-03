@@ -2,6 +2,7 @@
 
 #define DEBUG_FROZENBTREE
 #define LOG_FROZENBTREEXX
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
@@ -85,9 +86,9 @@ FrozenBTreeTest::FrozenBTreeTest()
 FrozenBTreeTest::~FrozenBTreeTest() = default;
 
 void FrozenBTreeTest::allocTree() {
-    assert(_generationHandler == nullptr);
-    assert(_allocator == nullptr);
-    assert(_tree == nullptr);
+    CHECK(_generationHandler == nullptr);
+    CHECK(_allocator == nullptr);
+    CHECK(_tree == nullptr);
     _generationHandler = new GenerationHandler;
     _allocator = new NodeAllocator();
     _tree = new Tree;
@@ -145,8 +146,9 @@ void FrozenBTreeTest::fillRandomValues(unsigned int count) {
     _randomValues.clear();
     _randomValues.reserve(count);
     _randomGenerator.srand48(42);
-    for (i = 0; i < count; i++)
+    for (i = 0; i < count; i++) {
         _randomValues.push_back(_randomGenerator.lrand48());
+    }
 
     EXPECT_TRUE(_randomValues.size() == count);
 }
@@ -164,8 +166,9 @@ void FrozenBTreeTest::insertRandomValues(Tree& tree, NodeAllocator& allocator, c
         p = tree.find(*i, allocator);
         if (!p.valid()) {
             DataType val = *i + 42;
-            if (tree.insert(*i, val, allocator))
+            if (tree.insert(*i, val, allocator)) {
                 p = tree.find(*i, allocator);
+            }
         }
         ASSERT_TRUE(p.valid() && p.getKey() == *i && p.getData() == *i + 42);
 #ifdef DEBUG_FROZENBTREEX
@@ -189,8 +192,9 @@ void FrozenBTreeTest::removeRandomValues(Tree& tree, NodeAllocator& allocator, c
 #endif
         p = tree.find(*i, allocator);
         if (p.valid()) {
-            if (tree.remove(*i, allocator))
+            if (tree.remove(*i, allocator)) {
                 p = tree.find(*i, allocator);
+            }
         }
         ASSERT_TRUE(!p.valid());
 #ifdef DEBUG_FROZENBTREEX
@@ -264,10 +268,11 @@ void FrozenBTreeTest::sortRandomValues() {
         if (i == _sortedRandomValues.begin() || *i > prevVal) {
             okcnt++;
             _sortedRandomValues.push_back(*i);
-        } else if (*i == prevVal)
+        } else if (*i == prevVal) {
             okcnt++;
-        else
+        } else {
             LOG_ABORT("should not be reached");
+        }
         prevVal = *i;
     }
     EXPECT_TRUE(okcnt == sorted.size());
@@ -323,7 +328,7 @@ void FrozenBTreeTest::printSubEnumTree(BTreeNode::Ref node, NodeAllocator& alloc
            inode->validSlots());
     for (i = 0; i < inode->validSlots(); i++) {
         subNode = inode->getChild(i);
-        assert(subNode != BTreeNode::Ref());
+        CHECK(subNode != BTreeNode::Ref());
         printSubEnumTree(subNode, allocator, indent + 4);
     }
 }

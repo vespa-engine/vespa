@@ -17,5 +17,8 @@ schema test {
         indexing: attribute
       }
     }  
+    field fast_map type map<string, int> {
+      fast-search-map-field fast_lookup
+    }
   }
 }

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema;
 
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.ImmutableSDField;
 
 import java.util.LinkedHashSet;
@@ -90,6 +91,10 @@ public class DefaultRankProfile extends RankProfile {
             addSetting(field, RankSetting.Type.RANKTYPE, settings);
             addSetting(field, RankSetting.Type.LITERALBOOST, settings);
             addSetting(field, RankSetting.Type.PREFERBITVECTOR, settings);
+            for (ImmutableSDField structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field, ComplexIndexFieldUtils.Mode.of(schema()))) {
+                addSetting(structField, RankSetting.Type.RANKTYPE, settings);
+                addSetting(structField, RankSetting.Type.PREFERBITVECTOR, settings);
+            }
         }
 
         // For settings that really pertains to indexes do the explicit indexes too

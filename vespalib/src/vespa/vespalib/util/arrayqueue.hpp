@@ -2,8 +2,9 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
-#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <cstdlib>
@@ -245,7 +246,7 @@ public:
      * be invoked on an empty queue.
      **/
     void pop() {
-        assert(!empty());
+        CHECK(!empty());
         _data[offset(0)].~T();
         _skew = offset(1);
         --_used;
@@ -256,7 +257,7 @@ public:
      * be invoked on an empty queue.
      **/
     void popBack() {
-        assert(!empty());
+        CHECK(!empty());
         _data[offset(_used - 1)].~T();
         --_used;
     }
@@ -282,7 +283,7 @@ public:
      * @param idx index of the item we want to look at
      **/
     const T& peek(uint32_t idx) const {
-        assert(idx < _used);
+        CHECK(idx < _used);
         return _data[offset(idx)];
     }
 
@@ -297,7 +298,7 @@ public:
      * @param idx index of the item we want to access
      **/
     T& access(uint32_t idx) {
-        assert(idx < _used);
+        CHECK(idx < _used);
         return _data[offset(idx)];
     }
 

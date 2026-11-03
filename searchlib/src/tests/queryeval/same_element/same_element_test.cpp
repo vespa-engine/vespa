@@ -233,6 +233,39 @@ TEST(SameElementTest, require_that_strict_iterator_seeks_to_next_hit_and_can_unp
     EXPECT_TRUE(search->isAtEnd());
 }
 
+void verify_same_element_md(bool need_normal_features) {
+    SCOPED_TRACE(need_normal_features ? "need normal features" : "no normal features");
+    auto mdl = make_match_data_layout();
+    auto a = make_result({{5, {1, 3, 7, 12}}, {10, {1, 2}}});
+    auto b = make_result({{5, {3, 5, 7, 10}}, {10, {2}}});
+    auto bph = make_blueprint(*mdl, {a, b});
+    auto handle = dynamic_cast<const SameElementBlueprint&>(bph.bp()).get_field().getHandle();
+    bph = std::move(bph).finalize(false);
+    auto  md = mdl->createMatchData();
+    auto* tfmd = md->resolveTermField(handle);
+    tfmd->setNeedNormalFeatures(need_normal_features);
+    auto search = bph.bp().createSearch(*md);
+    search->initRange(1, 1000);
+    auto verify = [&](uint32_t docid, std::vector<uint32_t> exp) {
+        SCOPED_TRACE("docid=" + std::to_string(docid));
+        EXPECT_TRUE(search->seek(docid));
+        search->unpack(docid);
+        EXPECT_TRUE(tfmd->has_ranking_data(docid));
+        std::vector<uint32_t> act;
+        for (const auto& pos : *tfmd) {
+            act.push_back(pos.getElementId());
+        }
+        EXPECT_EQ(need_normal_features ? exp : std::vector<uint32_t>(), act);
+    };
+    verify(5, {3, 7});
+    verify(10, {2});
+}
+
+TEST(SameElementTest, require_that_matching_elements_are_exposed_in_same_element_match_data) {
+    verify_same_element_md(true);
+    verify_same_element_md(false);
+}
+
 TEST(SameElementTest, require_that_results_are_estimated_appropriately) {
     auto a = make_result({{5, {0}}, {5, {0}}, {5, {0}}});
     auto b = make_result({{5, {0}}, {5, {0}}});

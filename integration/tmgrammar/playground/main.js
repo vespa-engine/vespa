@@ -115,7 +115,7 @@ async function render() {
 async function init() {
   output.textContent = 'Loading…';
 
-  const grammar = await fetch('/repo/grammar/vespa-schema.tmLanguage.json').then(r => r.json());
+  const grammar = await fetch('/repo/grammars/vespa-schema.tmLanguage.json').then(r => r.json());
 
   highlighter = await createHighlighter({
     themes: THEMES.map(t => t.id),

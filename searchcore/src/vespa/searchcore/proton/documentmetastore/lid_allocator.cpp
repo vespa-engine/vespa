@@ -2,6 +2,7 @@
 
 #include "lid_allocator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
@@ -74,7 +75,7 @@ void LidAllocator::ensureSpace(uint32_t newSize, uint32_t newCapacity) {
 }
 
 void LidAllocator::unregisterLid(DocId lid) {
-    assert(!_pendingHoldLids.testBit(lid));
+    CHECK(!_pendingHoldLids.testBit(lid));
     if (isFreeListConstructed()) {
         _pendingHoldLids.setBit(lid);
     }
@@ -91,20 +92,20 @@ void LidAllocator::unregister_lids(const std::vector<DocId>& lids) {
     }
     auto high =
         isFreeListConstructed() ? _pendingHoldLids.set_bits(lids) : _pendingHoldLids.assert_not_set_bits(lids);
-    assert(high < _usedLids.size());
+    CHECK(high < _usedLids.size());
     _usedLids.clear_bits(lids);
-    assert(high < _activeLids.size());
+    CHECK(high < _activeLids.size());
     _activeLids.consider_clear_bits(lids);
     _numActiveLids.store(_activeLids.count(), std::memory_order_relaxed);
 }
 
 void LidAllocator::moveLidBegin(DocId fromLid, DocId toLid) {
     (void)fromLid;
-    assert(!_pendingHoldLids.testBit(fromLid));
-    assert(!_pendingHoldLids.testBit(toLid));
+    CHECK(!_pendingHoldLids.testBit(fromLid));
+    CHECK(!_pendingHoldLids.testBit(toLid));
     if (isFreeListConstructed()) {
-        assert(!_freeLids.testBit(fromLid));
-        assert(_freeLids.testBit(toLid));
+        CHECK(!_freeLids.testBit(fromLid));
+        CHECK(_freeLids.testBit(toLid));
         _freeLids.clearBit(toLid);
     }
 }
@@ -125,8 +126,8 @@ void LidAllocator::moveLidEnd(DocId fromLid, DocId toLid) {
 void LidAllocator::holdLids(const std::vector<DocId>& lids, DocId lidLimit, Generation currentGeneration) {
     (void)lidLimit;
     for (const auto& lid : lids) {
-        assert(lid > 0);
-        assert(holdLidOK(lid, lidLimit));
+        CHECK(lid > 0);
+        CHECK(holdLidOK(lid, lidLimit));
         _pendingHoldLids.clearBit(lid);
         _holdLids.add(lid, currentGeneration);
     }
@@ -151,7 +152,7 @@ bool LidAllocator::holdLidOK(DocId lid, DocId lidLimit) const {
 }
 
 void LidAllocator::constructFreeList(DocId lidLimit) {
-    assert(!isFreeListConstructed());
+    CHECK(!isFreeListConstructed());
     _holdLids.clear();
     for (uint32_t lid = 1; lid < lidLimit; ++lid) {
         if (!validLid(lid)) {
@@ -183,7 +184,7 @@ private:
         return {rel_est, bitvector_cost(), do_not_make_me_strict * bitvector_strict_cost(rel_est)};
     }
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda) const override {
-        assert(tfmda.size() == 0);
+        CHECK(tfmda.size() == 0);
         (void)tfmda;
         return create_search_helper(strict());
     }
@@ -238,7 +239,7 @@ void LidAllocator::updateActiveLids(DocId lid, bool active) {
 void LidAllocator::clearDocs(DocId lidLow, DocId lidLimit) {
     (void)lidLow;
     (void)lidLimit;
-    assert(_usedLids.getNextTrueBit(lidLow) >= lidLimit);
+    CHECK(_usedLids.getNextTrueBit(lidLow) >= lidLimit);
 }
 
 void LidAllocator::shrinkLidSpace(DocId committedDocIdLimit) {

@@ -1,0 +1,154 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#pragma once
+
+#include "type_stable_vector.h"
+
+#include <vespa/check_require.h>
+
+#include <vespa/vespalib/util/array.hpp>
+
+namespace vespalib {
+
+template <typename T>
+TypeStableVectorHeld<T>::TypeStableVectorHeld(size_t size, T&& data) noexcept
+    : GenerationHeldBase(size), _data(std::move(data)) {
+}
+
+template <typename T> TypeStableVectorHeld<T>::~TypeStableVectorHeld() = default;
+
+template <typename T> size_t TypeStableVectorBase<T>::calcNewSize(size_t baseSize) const noexcept {
+    return _growStrategy.calc_new_size(baseSize);
+}
+
+template <typename T> size_t TypeStableVectorBase<T>::calcNewSize() const noexcept {
+    return calcNewSize(_data.capacity());
+}
+
+template <typename T> void TypeStableVectorBase<T>::unsafe_resize(size_t n) {
+    _data.resize(n);
+    update_vector_start();
+}
+
+template <typename T> void TypeStableVectorBase<T>::unsafe_reserve(size_t n) {
+    _data.reserve(n);
+    update_vector_start();
+}
+
+template <typename T> void TypeStableVectorBase<T>::ensure_size(size_t n, T fill) {
+    reserve(n);
+    while (size() < n) {
+        _data.push_back(fill);
+    }
+}
+
+template <typename T> void TypeStableVectorBase<T>::reset() {
+    // Assumes no readers at this moment
+    _data.reset();
+    _data.reserve(16);
+}
+
+template <typename T> TypeStableVectorBase<T>::~TypeStableVectorBase() = default;
+
+template <typename T> void TypeStableVectorBase<T>::expand(size_t newCapacity) {
+    auto tmpData = create_replacement_vector();
+    tmpData.reserve(newCapacity);
+    for (const T& v : _data) {
+        tmpData.push_back_fast(v);
+    }
+    replaceVector(std::move(tmpData));
+}
+
+template <typename T> void TypeStableVectorBase<T>::replaceVector(ArrayType replacement) {
+    std::atomic_thread_fence(std::memory_order_release);
+    replacement.swap(_data); // atomic switch of underlying data
+    size_t holdSize = replacement.capacity() * sizeof(T);
+    auto   hold = std::make_unique<TypeStableVectorHeld<ArrayType>>(holdSize, std::move(replacement));
+    _genHolder.insert(std::move(hold));
+    onReallocation();
+}
+
+template <typename T> void TypeStableVectorBase<T>::expandAndInsert(const T& v) {
+    expand(calcNewSize());
+    CHECK(_data.size() < _data.capacity());
+    _data.push_back(v);
+}
+
+template <typename T> void TypeStableVectorBase<T>::shrink(size_t newSize) {
+    CHECK(newSize <= _data.size());
+    _data.resize(newSize);
+    size_t wantedCapacity = calcNewSize(newSize);
+    if (wantedCapacity >= _data.capacity()) {
+        return;
+    }
+    if (!_data.try_unreserve(wantedCapacity)) {
+        auto tmpData = create_replacement_vector();
+        tmpData.reserve(wantedCapacity);
+        tmpData.resize(newSize);
+        for (uint32_t i = 0; i < newSize; ++i) {
+            tmpData[i] = _data[i];
+        }
+        std::atomic_thread_fence(std::memory_order_release);
+        // Users of type stable vector must ensure that no readers use old size
+        // after swap.  Attribute vectors uses _committedDocIdLimit for this.
+        tmpData.swap(_data); // atomic switch of underlying data
+        size_t holdSize = tmpData.capacity() * sizeof(T);
+        auto   hold = std::make_unique<TypeStableVectorHeld<ArrayType>>(holdSize, std::move(tmpData));
+        _genHolder.insert(std::move(hold));
+        onReallocation();
+    }
+}
+
+template <typename T>
+TypeStableVectorBase<T>::TypeStableVectorBase(GrowStrategy growStrategy, GenerationHolderType& genHolder,
+                                              const Alloc& initialAlloc)
+    : _data(initialAlloc), _vector_start(nullptr), _growStrategy(growStrategy), _genHolder(genHolder) {
+    _data.reserve(_growStrategy.getInitialCapacity());
+    update_vector_start();
+}
+
+template <typename T> MemoryUsage TypeStableVectorBase<T>::getMemoryUsage() const noexcept {
+    MemoryUsage retval;
+    retval.incAllocatedBytes(_data.capacity() * sizeof(T));
+    retval.incUsedBytes(_data.size() * sizeof(T));
+    return retval;
+}
+
+template <typename T> void TypeStableVectorBase<T>::update_vector_start() noexcept {
+    _vector_start.store(_data.data(), std::memory_order_release);
+}
+
+template <typename T> void TypeStableVectorBase<T>::onReallocation() {
+    update_vector_start();
+}
+
+template <typename T> void TypeStableVector<T>::onReallocation() {
+    TypeStableVectorBase<T>::onReallocation();
+    _genHolderStore.assign_generation(_generation);
+}
+
+template <typename T>
+TypeStableVector<T>::TypeStableVector()
+    : TypeStableVectorBase<T>(GrowStrategy(16, 1.0, 0, 0), _genHolderStore), _generation(0), _genHolderStore() {
+}
+
+template <typename T>
+TypeStableVector<T>::TypeStableVector(GrowStrategy growStrategy)
+    : TypeStableVectorBase<T>(growStrategy, _genHolderStore), _generation(0), _genHolderStore() {
+}
+
+template <typename T> TypeStableVector<T>::~TypeStableVector() {
+    _genHolderStore.reclaim_all();
+}
+
+template <typename T> void TypeStableVector<T>::reclaim_memory(Generation oldest_used_gen) {
+    _genHolderStore.reclaim(oldest_used_gen);
+}
+
+template <typename T> MemoryUsage TypeStableVector<T>::getMemoryUsage() const noexcept {
+    MemoryUsage retval(TypeStableVectorBase<T>::getMemoryUsage());
+    retval.mergeGenerationHeldBytes(_genHolderStore.get_held_bytes());
+    return retval;
+}
+
+} // namespace vespalib

@@ -2,7 +2,7 @@
 
 #include "monitored_refcount.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 
@@ -10,7 +10,7 @@ MonitoredRefCount::MonitoredRefCount() : _lock(), _cv(), _refCount(0u) {
 }
 
 MonitoredRefCount::~MonitoredRefCount() {
-    assert(_refCount == 0u);
+    CHECK(_refCount == 0u);
 }
 
 void MonitoredRefCount::retain() noexcept {

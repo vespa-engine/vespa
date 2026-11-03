@@ -120,7 +120,7 @@ void Test::testFieldMatchBluePrint() {
     { // test dumping with a filter index field
         FtIndexEnvironment ie;
         ie.getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
-        ie.getFields()[0].setFilter(true);
+        ie.getFields().back().setFilter(true);
 
         StringList  dump;
         std::string bn = "fieldMatch(foo)";
@@ -975,7 +975,7 @@ void Test::testFieldMatchExecutorRemaining() {
             ASSERT_TRUE(mdb->setFieldLength("foo", 3));
             ASSERT_TRUE(mdb->addOccurence("foo", 0, 1));
             // add hit with query term 'b'
-            mdb->getTermFieldMatchData(1, 0)->reset(1);
+            mdb->getTermFieldMatchData(1, 1)->reset(1);
             ASSERT_TRUE(mdb->apply(1));
             ASSERT_TRUE(ft.execute(
                 toRankResult(
@@ -986,9 +986,9 @@ void Test::testFieldMatchExecutorRemaining() {
         { // no pos occ for term a & b
             MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
             // add hit with query term 'a'
-            mdb->getTermFieldMatchData(0, 0)->reset(1);
+            mdb->getTermFieldMatchData(0, 1)->reset(1);
             // add hit with query term 'b'
-            mdb->getTermFieldMatchData(1, 0)->reset(1);
+            mdb->getTermFieldMatchData(1, 1)->reset(1);
             ASSERT_TRUE(mdb->apply(1));
             { // reset lazy evaluation
                 RankResult dummy;

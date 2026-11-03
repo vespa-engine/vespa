@@ -7,7 +7,7 @@ Auto-generate a TextMate grammar for the Vespa schema language.
 
 Reads token declarations from the CongoCC parser grammars and scope
 classifications from SchemaSemanticTokenConfig.java, then emits
-grammar/vespa-schema.tmLanguage.json.
+grammars/vespa-schema.tmLanguage.json.
 
 The generated scopes are chosen to match the colors produced by the
 Java LSP semantic tokens in VS Code's default Dark+ theme:
@@ -50,7 +50,7 @@ INDEXING_CCC = LSP / "src/main/ccc/indexinglanguage/IndexingParser.ccc"
 RANKING_CCC = LSP / "src/main/ccc/rankingexpression/RankingExpressionParser.ccc"
 SEMANTIC_CFG = LSP / "src/main/java/ai/vespa/schemals/lsp/schema/semantictokens/SchemaSemanticTokenConfig.java"
 BUILTIN_FUNCS = LSP / "src/main/java/ai/vespa/schemals/schemadocument/resolvers/RankExpression/BuiltInFunctions.java"
-OUTPUT = TMGRAMMAR / "grammar/vespa-schema.tmLanguage.json"
+OUTPUT = TMGRAMMAR / "grammars/vespa-schema.tmLanguage.json"
 
 # ---------------------------------------------------------------------------
 # 1a  Parse .ccc token declarations
@@ -432,7 +432,7 @@ def build_grammar(
         ],
     }
 
-    # --- tensor type: tensor<float>(x[384]) ---
+    # --- tensor type: tensor<float>(x[384]), or tensor(x[384]) with the default value type ---
     # Break the tensor type into subcomponents for rich highlighting:
     #   tensor  → keyword.control
     #   float   → storage.type.tensor (value type: float, double, bfloat16, int8, etc.)
@@ -441,8 +441,10 @@ def build_grammar(
     #   {}      → mapped dimension marker
     #   < > ( ) [ ] , → punctuation
     repository["tensor-type"] = {
-        "begin": r"\b(tensor)\s*(<)",
-        "end": r"(\))",
+        "begin": r"\b(tensor)\s*(?:(<)|(?=\())",
+        # A tensor type is on one line. Ending at the end of the line too keeps an unclosed
+        # type from coloring the lines after it.
+        "end": r"(\))|$",
         "beginCaptures": {
             "1": {"name": "keyword.control.vespa"},
             "2": {"name": "punctuation.definition.typeparameters.begin.vespa"},
@@ -628,15 +630,33 @@ def build_grammar(
         },
     })
 
-    # function [inline] NAME(args)
+    # model NAME [inherits PARENT] – a rank profile in a .model file. Only at the start of a line,
+    # so that "model" used as a name elsewhere is not colored as a keyword.
     declaration_patterns.append({
-        "match": r"\b(function)\s+(?:(inline)\s+)?(" + _IDENT + r")\s*(\([^)]*\))",
+        "match": r"^\s*(model)\s+(" + _IDENT_DASH + r")(?:\s+(inherits)\s+(" + _IDENT_DASH + r"))?",
         "captures": {
+            "1": {"name": "keyword.declaration.vespa"},
+            "2": {"name": "entity.name.function.vespa"},
+            "3": {"name": "keyword.control.vespa"},
+            "4": {"name": "entity.other.inherited-class.vespa"},
+        },
+    })
+
+    # function [inline] NAME(args) – like the LSP, color the parameter names but not the parentheses
+    declaration_patterns.append({
+        "begin": r"\b(function)\s+(?:(inline)\s+)?(" + _IDENT + r")\s*(\()",
+        "beginCaptures": {
             "1": {"name": "keyword.declaration.vespa"},
             "2": {"name": "storage.modifier.vespa"},
             "3": {"name": "entity.name.function.vespa"},
-            "4": {"name": "variable.parameter.vespa"},
+            "4": {"name": "punctuation.section.parens.begin.vespa"},
         },
+        "end": r"\)",
+        "endCaptures": {"0": {"name": "punctuation.section.parens.end.vespa"}},
+        "patterns": [
+            {"match": _IDENT, "name": "variable.parameter.vespa"},
+            {"match": ",", "name": "punctuation.separator.comma.vespa"},
+        ],
     })
 
     # annotation NAME [inherits PARENT] – LSP leaves name uncolored
@@ -847,8 +867,53 @@ def build_grammar(
         "patterns": [{"include": "#ranking-expression"}],
     }
 
+    # --- explanations: free text documentation, which may contain braces and '#' ---
+    # A rank profile explanation may end with javadoc style "@input name explanation" tags.
+    repository["explanation-tag"] = {
+        "match": r"^\s*(@input)\b(?:\s+(query\(\s*[a-zA-Z_]\w*\s*\)|[a-zA-Z_]\w*))?",
+        "captures": {
+            "1": {"name": "storage.type.class.documentation.vespa"},
+            "2": {"name": "variable.parameter.documentation.vespa"},
+        },
+    }
+    repository["explanation-braces"] = {
+        "begin": r"\{",
+        "end": r"\}",
+        "patterns": [
+            {"include": "#explanation-tag"},
+            {"include": "#explanation-braces"},
+        ],
+    }
+    repository["explanation-block"] = {
+        "name": "meta.block.explanation.vespa",
+        "contentName": "comment.block.documentation.vespa",
+        "begin": r"\b(explanation)\s*(\{)",
+        "beginCaptures": {
+            "1": {"name": "keyword.control.vespa"},
+            "2": {"name": "punctuation.section.block.begin.vespa"},
+        },
+        "end": r"(\})",
+        "endCaptures": {
+            "1": {"name": "punctuation.section.block.end.vespa"},
+        },
+        "patterns": [
+            {"include": "#explanation-tag"},
+            {"include": "#explanation-braces"},
+        ],
+    }
+    repository["explanation-inline"] = {
+        "name": "meta.inline.explanation.vespa",
+        "contentName": "comment.line.documentation.vespa",
+        "begin": r"\b(explanation)\s*(:)",
+        "beginCaptures": {
+            "1": {"name": "keyword.control.vespa"},
+            "2": {"name": "punctuation.separator.vespa"},
+        },
+        "end": r"$",
+    }
+
     # --- feature list block: match-features { ... } ---
-    feature_kws = "match-features|summary-features|rank-features"
+    feature_kws = "match-features|summary-features|rank-features|sort-features"
     feature_lookbehind = r"(?<![a-zA-Z0-9_-])"
     repository["feature-list-block"] = {
         "name": "meta.block.feature-list.vespa",
@@ -1046,6 +1111,8 @@ def build_grammar(
         {"include": "#comment"},
         {"include": "#string-double"},
         {"include": "#string-single"},
+        {"include": "#explanation-block"},
+        {"include": "#explanation-inline"},
         {"include": "#tensor-type"},
         {"include": "#indexing-block"},
         {"include": "#indexing-inline"},

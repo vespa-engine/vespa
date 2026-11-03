@@ -1,0 +1,41 @@
+schema sortfeatures {
+    document sortfeatures {
+        field title type string {
+            indexing: index | summary
+            index: enable-bm25
+        }
+        field price type int {
+            indexing: attribute | summary
+        }
+    }
+
+    rank-profile short_form {
+        function title_bm25() {
+            expression: bm25(title)
+        }
+        first-phase {
+            expression: bm25(title)
+        }
+        sort-features: title_bm25 nativeRank
+    }
+
+    rank-profile block_form {
+        function title_bm25() {
+            expression: bm25(title)
+        }
+        first-phase {
+            expression: title_bm25
+        }
+        sort-features {
+            title_bm25
+            nativeRank
+        }
+    }
+
+    rank-profile empty_block {
+        first-phase {
+            expression: bm25(title)
+        }
+        sort-features {}
+    }
+}

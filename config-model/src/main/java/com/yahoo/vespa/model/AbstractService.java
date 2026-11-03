@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.deploy.DeployState;
@@ -56,6 +57,8 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
     /** The optional PRELOAD libraries for this Service. */
     // Please keep non-null, as passed to command line in service startup
     private String preload = null;
+
+    private static final String SHELL_METACHARACTERS = ";|&$`()<>'\"\\#~!\n\r";
 
     private final Map<String, Object> environmentVariables = new TreeMap<>();
 
@@ -377,6 +380,24 @@ public abstract class AbstractService extends TreeConfigProducer<AnyConfigProduc
             this.preload = preload;
         }
     }
+
+    /**
+     * Logs a warning if the given value contains characters with special meaning to the shell. Values such as
+     * JVM options and preload end up in the startup command, which is run by the config sentinel using /bin/sh -c.
+     * TODO: Throw IllegalArgumentException instead of logging a warning when applications have been fixed
+     */
+    public static void validateNoShellMetacharacters(String what, String value, DeployLogger logger) {
+        if (value == null) return;
+        for (char c : value.toCharArray()) {
+            if (SHELL_METACHARACTERS.indexOf(c) >= 0) {
+                logger.logApplicationPackage(Level.WARNING, "Invalid " + what + " '" + value +
+                                                            "': must not contain shell metacharacters (found '" + c + "')." +
+                                                            " This will fail deployment in a future Vespa version");
+                return;
+            }
+        }
+    }
+
     /** If larger or equal to 0 it means that explicit mmaps shall not be included in coredump.*/
     public void setMMapNoCoreLimit(long noCoreLimit) {
         if (noCoreLimit >= 0) {

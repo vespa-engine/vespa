@@ -17,4 +17,7 @@ public class LongstringField extends DocsumField {
         return value.asString("");
     }
 
+    @Override
+    boolean isString() { return true; }
+
 }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.parser;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.vespa.indexinglanguage.expressions.AbsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Base64DecodeExpression;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ExactExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.FlattenExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetFieldExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GetVarExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.GuardExpression;
@@ -53,6 +55,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.ToIntegerExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToLongExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToStringExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ToTensorExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ToWsetExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TokenizeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TrimExpression;
@@ -72,6 +75,7 @@ public class ExpressionTestCase {
 
     @Test
     public void requireThatAllExpressionTypesAreParsed() throws ParseException {
+        assertExpression(AbsExpression.class, "abs");
         assertExpression(ArithmeticExpression.class, "1 + 2");
         assertExpression(AttributeExpression.class, "attribute");
         assertExpression(Base64DecodeExpression.class, "base64decode");
@@ -83,6 +87,8 @@ public class ExpressionTestCase {
         assertExpression(ExactExpression.class, "exact max-token-length: 10", Optional.of("exact max-token-length:10"));
         assertExpression(FlattenExpression.class, "flatten");
         assertExpression(ForEachExpression.class, "for_each { 1 }");
+        assertExpression(ForEachFieldExpression.class, "for_each_field \"a.value\" { 1 }");
+        assertExpression(ForEachFieldExpression.class, "for_each_field \"a\" { lowercase | trim | tokenize }");
         assertExpression(GetFieldExpression.class, "get_field field1");
         assertExpression(GetVarExpression.class, "get_var myvar1");
         assertExpression(GuardExpression.class, "guard { 1 }");
@@ -131,6 +137,7 @@ public class ExpressionTestCase {
         assertExpression(ToLongExpression.class, "to_long");
         assertExpression(ToPositionExpression.class, "to_pos");
         assertExpression(ToStringExpression.class, "to_string");
+        assertExpression(ToTensorExpression.class, "to_tensor chunk");
         assertExpression(ToWsetExpression.class, "to_wset");
         assertExpression(ToBoolExpression.class, "to_bool");
         assertExpression(ToWsetExpression.class, "to_wset create_if_non_existent");

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -42,7 +43,7 @@ public:
     [[nodiscard]] SimpleTermFieldData& get() const { return _ref.field(_idx); }
 
     void next() {
-        assert(valid());
+        CHECK(valid());
         ++_idx;
     }
 };

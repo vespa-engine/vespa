@@ -26,9 +26,6 @@ Maven Project containing the language server implementation.
 - [./ccc](./language-server/src/main/ccc/): CongoCC parsers. These include the Schema, Indexing language and Ranking expressions parsers, ported from JavaCC to CongoCC.
 The CongoCC Maven plugin generates Java classes from the parsers and places them in [./target/generated-sources/ccc](./language-server/target/generated-sources/ccc/).
 
-- [./python](./language-server/src/main/python/): Python code from fetching documentation from the Vespa documentation GitHub repo and placing Markdown files in
-[./target/generated-resources](./language-server/target/generated-resources/)
-
 - [./java/ai/vespa/schemals](./language-server/src/main/java/ai/vespa/schemals/): The actual language server logic.
     Files in the root of this directory contains the code for setting up the language server. It is launched by SchemaLSLauncher, 
     while SchemaLanguageServer handles initialize and setting up capabilities. The other files are wrappers for handling incoming and
@@ -60,7 +57,7 @@ The CongoCC Maven plugin generates Java classes from the parsers and places them
 
 The language server needs a client to start it. Therefore running and testing the language server happens through an editor with an extension or a plugin. The language server is primary developed for VSCode, but it can run on other editors as well. This guide is for running the extension in a development environment. In the `clients` folder are the different extensions and plugins for the supported editors.
 
-### Build the langauge server
+### Build the language server
 - Use `mvn install -pl :schema-language-server -Pschema-language-server -amd` in the project root to build the language server
 
 ### Visual Studio Code (VSCode)

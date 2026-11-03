@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/testcomponentregister.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
@@ -37,7 +38,7 @@ struct MyApp : public TickingThread {
     void start(ThreadPool& p) { _threadPool->start(p); }
 
     ThreadWaitInfo doCriticalTick(ThreadIndex index) override {
-        assert(index < _context.size());
+        CHECK(index < _context.size());
         Context& c(_context[index]);
         if (_doCritOverlapTest) {
             uint32_t oldTick = load_relaxed(_critOverlapCounter);
@@ -49,7 +50,7 @@ struct MyApp : public TickingThread {
         return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     }
     ThreadWaitInfo doNonCriticalTick(ThreadIndex index) override {
-        assert(index < _context.size());
+        CHECK(index < _context.size());
         Context& c(_context[index]);
         c._nonCritTickCount.fetch_add(1, std::memory_order_relaxed);
         return ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;

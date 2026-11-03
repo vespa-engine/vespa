@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
-import com.google.common.base.Charsets;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.Language;
@@ -305,7 +304,7 @@ public class MinimalQueryInserterTestCase {
                 + "where (x > 0 AND y contains \"foo\" AND z contains \"bar\") "
                 + "order by x limit 20 offset 10 timeout 30 "
                 + "| all(group(y) max(3) each(output(count())))";
-        Query query = new Query("search/?yql=" + URLEncoder.encode(select, Charsets.UTF_8));
+        Query query = new Query("search/?yql=" + URLEncoder.encode(select, StandardCharsets.UTF_8));
         execution.search(query);
 
         assertEquals(10, query.getHits());

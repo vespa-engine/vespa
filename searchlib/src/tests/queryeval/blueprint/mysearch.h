@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -165,7 +166,7 @@ public:
         return *this;
     }
     MyLeafSpec& cost_tier(uint32_t value) {
-        assert(value > 0);
+        CHECK(value > 0);
         _cost_tier = value;
         return *this;
     }

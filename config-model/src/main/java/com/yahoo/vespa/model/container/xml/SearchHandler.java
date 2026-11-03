@@ -36,8 +36,8 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
     SearchHandler(DeployState ds,
                   ApplicationContainerCluster cluster,
                   List<BindingPattern> bindings,
-                  Element threadpoolOptions) {
-        super(cluster.getSearchChains(), HANDLER_SPEC, new Threadpool(ds, threadpoolOptions));
+                  Element searchElement) {
+        super(cluster.getSearchChains(), HANDLER_SPEC, new Threadpool(ds, searchElement));
         bindings.forEach(this::addServerBindings);
     }
 
@@ -54,14 +54,16 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
         return List.of(SearchHandler.DEFAULT_BINDING, SearchHandler.DEFAULT_BINDING_NO_SLASH);
     }
 
+    /** The thread pool instance used by search handlers. */
     private static class Threadpool extends ContainerThreadpool {
 
-        Threadpool(DeployState ds, Element options) {
-            super(ds, "search-handler", options);
+        Threadpool(DeployState ds, Element searchElement) {
+            super(ds, "search-handler", searchElement);
         }
 
         @Override
         public void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
+            // TODO: Resolve parameters in the config model, not by modifying the config output.
             builder.maxThreadExecutionTimeSeconds(190)
                     .keepAliveTime(5.0)
                     .relativeMaxThreads(10)

@@ -60,8 +60,9 @@ int MyApp::main(int, char**) {
     timeout.Unschedule(); // cancel timeout
     ms = (clock::now() - t);
 
-    if (queue.GetPacketCnt_NoLock() == 0)
+    if (queue.GetPacketCnt_NoLock() == 0) {
         fprintf(stderr, "timeout canceled; no timeout packet delivered\n");
+    }
     fprintf(stderr, "time since timeout was scheduled: %f ms\n", ms.count());
 
     fprintf(stderr, "scheduling timeout in 1 seconds...\n");
@@ -71,8 +72,9 @@ int MyApp::main(int, char**) {
     packet = queue.DequeuePacket(&context); // wait for timeout
     ms = (clock::now() - t);
 
-    if (packet->IsTimeoutCMD())
+    if (packet->IsTimeoutCMD()) {
         fprintf(stderr, "got timeout packet\n");
+    }
     fprintf(stderr, "time since timeout was scheduled: %f ms\n", ms.count());
 
     transport.ShutDown(true);

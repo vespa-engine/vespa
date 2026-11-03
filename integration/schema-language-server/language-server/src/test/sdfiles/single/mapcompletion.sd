@@ -1,0 +1,60 @@
+schema mapcompletion {
+    document mapcompletion {
+        field string_values type map<string, string> {
+            indexing: summary
+
+        }
+        field int_values type map<string, int> {
+            indexing: summary
+
+        }
+        field long_values type map<string, long> {
+            indexing: summary
+
+        }
+        field plain type string {
+            indexing: summary
+
+        }
+        field strings type array<string> {
+            indexing: summary
+
+        }
+        field short_form type map<string, string> {
+            indexing: summary
+            fast-search-map-field lookup
+        }
+        field block_form type map<int, int> {
+            indexing: summary
+            fast-search-map-field lookup {
+
+            }
+        }
+        field double_values type map<string, double> {
+            indexing: summary
+
+        }
+        field double_keys type map<double, string> {
+            indexing: summary
+
+        }
+        struct entry {
+            field mykey type string { }
+            field myvalue type int { }
+        }
+        field entries type array<entry> {
+            indexing: summary
+
+        }
+        field entry_block type array<entry> {
+            indexing: summary
+            fast-search-map-field lookup {
+
+            }
+        }
+        field int_keys type map<int, string> {
+            indexing: summary
+
+        }
+    }
+}

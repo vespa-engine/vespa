@@ -2,9 +2,8 @@
 
 #include "authority.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 namespace {
 
@@ -41,6 +40,6 @@ std::string make_host_header_value(const vespalib::SocketSpec& sni_spec, bool us
     }
     // use SocketSpec formatter to ensure ipv6 addresses are quoted
     std::string spec_str = sni_spec.spec();
-    assert(spec_str.find("tcp/") == 0);
+    CHECK(spec_str.find("tcp/") == 0);
     return spec_str.substr(4);
 }

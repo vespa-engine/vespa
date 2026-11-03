@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
+import ai.vespa.telemetry.api.trace.OtelTracing;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
@@ -13,7 +14,12 @@ import com.yahoo.jdisc.handler.OverloadException;
 import com.yahoo.jdisc.handler.ReadableContentChannel;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.http.server.jetty.RequestUtils;
 import com.yahoo.container.core.HandlerMetricContextUtil;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
 
 import java.time.Duration;
 import java.util.Map;
@@ -181,7 +187,8 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         @Override
         public void run() {
             try (ResourceReference reference = requestReference) {
-                processRequest();
+                OtelTracing.instrument(parentContext(), "handler." + ThreadedRequestHandler.this.getClass().getSimpleName(),
+                        this::processRequest);
             }
         }
 
@@ -189,6 +196,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             try {
                 ThreadedRequestHandler.this.handleRequest(request, content, this);
             } catch (Exception e) {
+                Span.current().recordException(e).setStatus(StatusCode.ERROR);
                 log.log(Level.WARNING, "Uncaught exception in " + ThreadedRequestHandler.this.getClass().getName() +
                                        ".", e);
             }
@@ -198,6 +206,12 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             // so respond with status 500 if we get here and no response has been generated.
             if ( ! allowAsyncResponse)
                 respondWithErrorIfNotResponded();
+        }
+
+        /** The SERVER-span Context bridged into the jdisc request by container-disc (L1), or root() when absent. */
+        private Context parentContext() {
+            return request.context().get(RequestUtils.JDISC_REQUEST_OTEL_CONTEXT) instanceof Context c
+                    ? c : Context.root();
         }
 
         @Override
@@ -253,19 +267,19 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
 
     private static class NullRequestMetric implements Metric {
         @Override
-        public void set(String key, Number val, Context ctx) {
+        public void set(String key, Number val, Metric.Context ctx) {
         }
 
         @Override
-        public void add(String key, Number val, Context ctx) {
+        public void add(String key, Number val, Metric.Context ctx) {
         }
 
         @Override
-        public Context createContext(Map<String, ?> properties) {
+        public Metric.Context createContext(Map<String, ?> properties) {
             return NullFeedContext.INSTANCE;
         }
 
-        private static class NullFeedContext implements Context {
+        private static class NullFeedContext implements Metric.Context {
             private static final NullFeedContext INSTANCE = new NullFeedContext();
         }
 

@@ -3,12 +3,13 @@
 #include "distancefeature.h"
 
 #include "distance_calculator_bundle.h"
-#include "utils.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/positiondatatype.h>
-#include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchcommon/common/datatype.h>
 #include <vespa/searchlib/common/geo_gcd.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
+#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/vespalib/geo/zcurve.h>
@@ -49,7 +50,7 @@ ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironmen
 
 void ConvertRawscoreToDistance::execute(uint32_t docId) {
     feature_t min_distance = std::numeric_limits<feature_t>::max();
-    assert(_md);
+    CHECK(_md);
     for (const auto& elem : _bundle.elements()) {
         const TermFieldMatchData* tfmd = _md->resolveTermField(elem.handle);
         if (tfmd->has_ranking_data(docId)) {
@@ -155,7 +156,7 @@ DistanceBlueprint::DistanceBlueprint()
       _field_name(),
       _label_name(),
       _attr_name(),
-      _attr_id(search::index::Schema::UNKNOWN_FIELD_ID),
+      _attr_id(fef::IllegalFieldId),
       _use_geo_pos(false),
       _use_nns_tensor(false),
       _use_item_label(false) {

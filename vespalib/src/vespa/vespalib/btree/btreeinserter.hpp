@@ -11,7 +11,7 @@ namespace vespalib::btree {
 namespace {
 
 template <typename NodeType, typename NodeAllocatorType>
-void considerThawNode(NodeType*& node, BTreeNode::Ref& ref, NodeAllocatorType& allocator) {
+[[maybe_unused]] void considerThawNode(NodeType*& node, BTreeNode::Ref& ref, NodeAllocatorType& allocator) {
     if (node->getFrozen()) {
         auto thawed = allocator.thawNode(ref, node);
         ref = thawed.ref;

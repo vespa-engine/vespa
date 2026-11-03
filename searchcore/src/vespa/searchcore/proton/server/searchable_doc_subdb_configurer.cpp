@@ -7,6 +7,7 @@
 #include "searchable_feed_view.h"
 #include "searchview.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec.h>
@@ -64,18 +65,19 @@ void SearchableDocSubDBConfigurer::reconfigureSearchView(std::shared_ptr<MatchVi
     // make sure the initial search does not spend time waiting for
     // expression compilation completion during rank program setup.
     vespalib::eval::CompileCache::wait_pending();
-    _searchView.set(SearchView::create(curr->getSummarySetup(), std::move(matchView)));
+    _searchView.set(SearchView::create(curr->getSummarySetup(), std::move(matchView), _delete_search_view_executor));
 }
 
 void SearchableDocSubDBConfigurer::reconfigureSearchView(std::shared_ptr<ISummaryManager::ISummarySetup> summarySetup,
                                                          std::shared_ptr<MatchView>                      matchView) {
-    _searchView.set(SearchView::create(std::move(summarySetup), std::move(matchView)));
+    _searchView.set(SearchView::create(std::move(summarySetup), std::move(matchView), _delete_search_view_executor));
 }
 
 SearchableDocSubDBConfigurer::SearchableDocSubDBConfigurer(
     const std::shared_ptr<ISummaryManager>& summaryMgr, SearchViewHolder& searchView, FeedViewHolder& feedView,
     matching::QueryLimiter& queryLimiter, const vespalib::eval::ConstantValueFactory& constant_value_factory,
-    const std::atomic<steady_time>& now_ref, const std::string& subDbName, uint32_t distributionKey)
+    const std::atomic<steady_time>& now_ref, const std::string& subDbName, uint32_t distributionKey,
+    std::shared_ptr<vespalib::Executor> delete_search_view_executor_)
     : _summaryMgr(summaryMgr),
       _searchView(searchView),
       _feedView(feedView),
@@ -83,7 +85,8 @@ SearchableDocSubDBConfigurer::SearchableDocSubDBConfigurer(
       _constant_value_factory(constant_value_factory),
       _now_ref(now_ref),
       _subDbName(subDbName),
-      _distributionKey(distributionKey) {
+      _distributionKey(distributionKey),
+      _delete_search_view_executor(std::move(delete_search_view_executor_)) {
 }
 
 SearchableDocSubDBConfigurer::~SearchableDocSubDBConfigurer() = default;
@@ -141,8 +144,8 @@ IReprocessingInitializer::UP createAttributeReprocessingInitializer(
     const std::string& subDbName, search::SerialNum serialNum) {
     const document::DocumentType* newDocType = newConfig.getDocumentType();
     const document::DocumentType* oldDocType = oldConfig.getDocumentType();
-    assert(newDocType != nullptr);
-    assert(oldDocType != nullptr);
+    CHECK(newDocType != nullptr);
+    CHECK(oldDocType != nullptr);
     DocumentTypeInspector inspector(*oldDocType, *newDocType);
     IndexschemaInspector  oldIndexschemaInspector(oldConfig.getIndexschemaConfig());
     return std::make_unique<AttributeReprocessingInitializer>(

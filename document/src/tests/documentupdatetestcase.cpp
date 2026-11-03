@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/testdocman.h>
@@ -789,7 +790,7 @@ std::unique_ptr<TensorFieldValue> makeTensorFieldValue(const TensorSpec& spec, c
 const vespalib::eval::Value& asTensor(const FieldValue& fieldValue) {
     auto&       tensorFieldValue = dynamic_cast<const TensorFieldValue&>(fieldValue);
     const auto* tensor = tensorFieldValue.getAsTensorPtr();
-    assert(tensor);
+    CHECK(tensor);
     return *tensor;
 }
 

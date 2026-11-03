@@ -3,10 +3,9 @@
 
 #include "hexdump.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
-
-#include <cassert>
 
 namespace vespalib {
 
@@ -29,7 +28,7 @@ nbostream::nbostream(const void* buf, size_t sz) : nbostream(buf, sz, false) {
 
 nbostream::nbostream(Alloc&& buf, size_t sz)
     : _wbuf(std::move(buf), sz), _rbuf(_wbuf.data(), sz), _rp(0), _wp(sz), _state(ok), _longLivedBuffer(false) {
-    assert(_wbuf.size() >= sz);
+    CHECK(_wbuf.size() >= sz);
 }
 
 nbostream::nbostream(const nbostream& rhs) : _wbuf(), _rbuf(), _rp(0), _wp(0), _state(ok), _longLivedBuffer(false) {

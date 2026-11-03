@@ -18,15 +18,14 @@ import com.yahoo.vespa.objects.Serializer;
 public class AverageAggregationResult extends AggregationResult {
 
     public static final int classId = registerClass(0x4000 + 85, AverageAggregationResult.class, AverageAggregationResult::new);
-    private NumericResultNode sum;
-    private long count;
+    private NumericResultNode sum = new FloatResultNode(0.0);
+
+    private long count = 0;
 
     /**
-     * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
+     * Constructs an empty result node.
      */
-    public AverageAggregationResult() {
-
-    }
+    public AverageAggregationResult() {}
 
     /**
      * Constructs an instance of this class with given sum and count values.

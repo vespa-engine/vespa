@@ -62,8 +62,9 @@ int main(int, char**) {
     std::string  res;
     while (i < 100) {
         res = fs2->revLookup(i);
-        if (res.size() == 0)
+        if (res.size() == 0) {
             break;
+        }
         fs2->lookup(res);
         printf("    %d -> %s -> %d\n", i, res.c_str(), fs2->hash());
         i++;

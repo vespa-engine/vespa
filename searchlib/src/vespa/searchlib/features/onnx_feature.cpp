@@ -2,6 +2,7 @@
 
 #include "onnx_feature.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
@@ -104,7 +105,7 @@ public:
 
 OnnxBlueprint::OnnxBlueprint(std::string_view baseName)
     : Blueprint(baseName), _cache_token(), _debug_model(), _model(nullptr), _wire_info() {
-    assert((baseName == "onnx") || (baseName == "onnxModel"));
+    CHECK((baseName == "onnx") || (baseName == "onnxModel"));
 }
 
 OnnxBlueprint::~OnnxBlueprint() = default;
@@ -134,7 +135,7 @@ bool OnnxBlueprint::setup(const IIndexEnvironment& env, const ParameterList& par
         }
         if (auto maybe_input = defineInput(input_feature.value(), AcceptInput::OBJECT)) {
             const FeatureType& feature_input = maybe_input.value();
-            assert(feature_input.is_object());
+            CHECK(feature_input.is_object());
             if (!planner.bind_input_type(feature_input.type(), model_input)) {
                 return fail("incompatible type for input (%s -> %s): %s -> %s", input_feature.value().c_str(),
                             model_input.name.c_str(), feature_input.type().to_spec().c_str(),
@@ -171,7 +172,7 @@ bool OnnxBlueprint::setup(const IIndexEnvironment& env, const ParameterList& par
 }
 
 FeatureExecutor& OnnxBlueprint::createExecutor(const IQueryEnvironment&, Stash& stash) const {
-    assert(_model != nullptr);
+    CHECK(_model != nullptr);
     return stash.create<OnnxFeatureExecutor>(*_model, _wire_info);
 }
 

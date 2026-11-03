@@ -10,12 +10,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.CN;
@@ -23,6 +25,7 @@ import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_DNS;
 import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_URI;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author bjorncs
@@ -96,6 +99,57 @@ public class TransportSecurityOptionsJsonSerializerTest {
                 Paths.get("src/test/resources/transport-security-options-with-disable-hostname-validation-set-to-false.json")), UTF_8);
         String actualOutput = new String(Files.readAllBytes(outputFile.toPath()), UTF_8);
         assertJsonEquals(expectedOutput, actualOutput);
+    }
+
+    private static String jsonWithAuthorizedPeers(String peersJson) {
+        return String.format(Locale.ROOT, """
+               {
+                 "files" : {
+                   "private-key": "foo.key",
+                   "certificates": "mycert.pem",
+                   "ca-certificates": "ca.pem"
+                 },
+                 "authorized-peers": [
+                   %s
+                 ]
+               }
+               """, peersJson);
+    }
+
+    private static InputStream asStream(String str) {
+        return new ByteArrayInputStream(str.getBytes(UTF_8));
+    }
+
+    private static void parseAuthorizedPeers(String peersJson) {
+        String fullJson = jsonWithAuthorizedPeers(peersJson);
+        new TransportSecurityOptionsJsonSerializer().deserialize(asStream(fullJson));
+    }
+
+    @Test
+    void present_but_empty_authorized_peers_array_throws_exception() {
+        var e = assertThrows(IllegalArgumentException.class, () -> parseAuthorizedPeers(""));
+        assertEquals("'authorized-peers' cannot be empty", e.getMessage());
+    }
+
+    @Test
+    void missing_required_credentials_field_throws_exception() {
+        var e = assertThrows(IllegalArgumentException.class, () -> parseAuthorizedPeers("""
+                {
+                  "name": "foo"
+                }
+                """));
+        assertEquals("'required-credentials' missing", e.getMessage());
+    }
+
+    @Test
+    void empty_required_credentials_array_throws_exception() {
+        var e = assertThrows(IllegalArgumentException.class, () -> parseAuthorizedPeers("""
+                {
+                  "name": "foo",
+                  "required-credentials":[]
+                }
+                """));
+        assertEquals("'required-credentials' cannot be empty", e.getMessage());
     }
 
     private static void assertJsonEquals(String inputJson, String expectedJson) throws JsonProcessingException {

@@ -2,7 +2,7 @@
 
 #include "constant_value_cache.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 namespace eval {
@@ -29,7 +29,7 @@ ConstantValue::UP ConstantValueCache::create(const std::string& path, const std:
         return std::make_unique<Token>(_cache, pos);
     } else {
         auto res = _cache->cached.emplace(std::move(key), _factory.create(path, type));
-        assert(res.second);
+        CHECK(res.second);
         return std::make_unique<Token>(_cache, res.first);
     }
 }

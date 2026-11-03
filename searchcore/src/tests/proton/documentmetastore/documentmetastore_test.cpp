@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
@@ -140,9 +141,11 @@ struct BoolVector : public std::vector<bool> {
 
     uint32_t countTrue() const {
         uint32_t res(0);
-        for (uint32_t i = 0; i < size(); ++i)
-            if ((*this)[i])
+        for (uint32_t i = 0; i < size(); ++i) {
+            if ((*this)[i]) {
                 ++res;
+            }
+        }
         return res;
     }
 };
@@ -785,7 +788,7 @@ void requireThatBasicBucketInfoWorks() {
         dms.removes_complete({lid});
         m.erase(std::make_pair(bucketId, gid));
     }
-    assert(!m.empty());
+    CHECK(!m.empty());
     BucketState     cksum;
     BucketId        prevBucket = m.begin()->first.first;
     uint32_t        cnt = 0u;
@@ -1248,9 +1251,9 @@ SplitAndJoinFixture::SplitAndJoinFixture()
         bid2s[gids.back().bid2].push_back(gids.back());
         bid3s[gids.back().bid3].push_back(gids.back());
     }
-    assert(2u == bid1s.size());
-    assert(4u == bid2s.size());
-    assert(8u == bid3s.size());
+    CHECK(2u == bid1s.size());
+    CHECK(4u == bid2s.size());
+    CHECK(8u == bid3s.size());
     bid10Gids = &bid1s[bid10];
     bid11Gids = &bid1s[bid11];
     bid21Gids = &bid2s[bid21];
@@ -1265,7 +1268,7 @@ BoolVector getBoolVector(const GlobalIdVector& gids, size_t sz) {
     BoolVector retval(sz);
     for (size_t i = 0; i < gids.size(); ++i) {
         uint32_t lid(gids[i].lid);
-        assert(lid <= sz && lid > 0u);
+        CHECK(lid <= sz && lid > 0u);
         retval[lid - 1] = true;
     }
     return retval;
@@ -1276,7 +1279,7 @@ BoolVector getBoolVectorFiltered(const GlobalIdVector& gids, size_t sz, const Bu
     for (size_t i = 0; i < gids.size(); ++i) {
         const GlobalIdEntry& g(gids[i]);
         uint32_t             lid(g.lid);
-        assert(lid <= sz && lid > 0u);
+        CHECK(lid <= sz && lid > 0u);
         if (g.bid3 == skip) {
             continue;
         }

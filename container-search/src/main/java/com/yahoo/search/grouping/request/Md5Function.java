@@ -18,7 +18,18 @@ public class Md5Function extends FunctionNode {
      * @param numBits The number of bits of the md5 to include.
      */
     public Md5Function(GroupingExpression exp, int numBits) {
-        this(null, null, exp, new LongValue(numBits));
+        this(null, null, exp, new LongValue(validateNumBits(numBits)));
+    }
+
+    /** The largest number of bits of an md5: the length of the digest */
+    private static final int MAX_NUM_BITS = 128;
+
+    private static int validateNumBits(int numBits) {
+        if (numBits < 1 || numBits > MAX_NUM_BITS) {
+            throw new IllegalArgumentException("md5 requires a number of bits between 1 and " + MAX_NUM_BITS +
+                                               ", but got " + numBits);
+        }
+        return numBits;
     }
 
     private Md5Function(String label, Integer level, GroupingExpression exp, LongValue numBits) {

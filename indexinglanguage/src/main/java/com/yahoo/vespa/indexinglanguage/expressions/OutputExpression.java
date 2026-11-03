@@ -2,17 +2,22 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * @author Simon Thoresen Hult
  */
 public abstract class OutputExpression extends Expression {
+
+    /** Field names expressible without quotes: dot-joined indexing language identifiers. */
+    private static final Pattern identifierFieldName = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_-]*(\\.[a-zA-Z_][a-zA-Z0-9_-]*)*");
 
     private final String image;
     private final String fieldName;
@@ -50,7 +55,15 @@ public abstract class OutputExpression extends Expression {
 
     @Override
     public String toString() {
-        return image + (fieldName != null ? " " + fieldName : "");
+        return image + (fieldName != null ? " " + fieldNameImage(fieldName) : "");
+    }
+
+    /** Returns the field name in a form the indexing language parser accepts: verbatim, or quoted if necessary. */
+    private static String fieldNameImage(String fieldName) {
+        if (identifierFieldName.matcher(fieldName).matches()) {
+            return fieldName;
+        }
+        return "\"" + StringUtilities.escape(fieldName, '"') + "\"";
     }
 
     @Override

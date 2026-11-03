@@ -4,6 +4,7 @@
 
 #include "querynodes.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
 
 using search::fef::ITermData;
@@ -27,7 +28,7 @@ public:
     }
 
     void visit(ProtonNodeTypes::AndNot& n) override {
-        assert(n.getChildren().size() > 0);
+        CHECK(n.getChildren().size() > 0);
         n.getChildren()[0]->accept(*this);
     }
 
@@ -45,6 +46,13 @@ public:
         for (size_t i = 0; i < cnt; ++i) {
             list[i]->accept(*this);
         }
+    }
+
+    void visit(ProtonNodeTypes::LabelWrapper& n) override {
+        // Addressed by label from rank features such as itemRawScore, but unlike other
+        // term data it is not a ranking leaf: its child subtree is ranked as usual.
+        _term_data.push_back(&n);
+        visitChildren(n);
     }
 
     void visit(ProtonNodeTypes::Equiv& n) override {

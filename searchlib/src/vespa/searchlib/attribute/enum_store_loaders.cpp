@@ -5,6 +5,8 @@
 #include "i_enum_store.h"
 #include "i_enum_store_dictionary.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/util/array.hpp>
 
 #include <algorithm>
@@ -18,7 +20,7 @@ EnumeratedLoaderBase::~EnumeratedLoaderBase() = default;
 
 void EnumeratedLoaderBase::load_unique_values(const void* src, size_t available) {
     ssize_t sz = _store.load_unique_values(src, available, _indexes);
-    assert(static_cast<size_t>(sz) == available);
+    CHECK(static_cast<size_t>(sz) == available);
 }
 
 void EnumeratedLoaderBase::release_enum_indexes() {
@@ -56,8 +58,8 @@ void EnumeratedLoaderBase::build_enum_value_remapping() {
         _enum_value_remapping[entry.second] = enum_value;
         ++enum_value;
     }
-    assert(std::adjacent_find(_indexes.begin(), _indexes.end(),
-                              [&comp](Index lhs, Index rhs) { return !comp.less(lhs, rhs); }) == _indexes.end());
+    CHECK(std::adjacent_find(_indexes.begin(), _indexes.end(),
+                             [&comp](Index lhs, Index rhs) { return !comp.less(lhs, rhs); }) == _indexes.end());
 }
 
 void EnumeratedLoaderBase::free_enum_value_remapping() {
@@ -70,7 +72,7 @@ EnumeratedLoader::EnumeratedLoader(IEnumStore& store) : EnumeratedLoaderBase(sto
 EnumeratedLoader::~EnumeratedLoader() = default;
 
 void EnumeratedLoader::set_ref_counts() {
-    assert(_enums_histogram.size() == _indexes.size());
+    CHECK(_enums_histogram.size() == _indexes.size());
     for (uint32_t i = 0; i < _indexes.size(); ++i) {
         _store.set_ref_count(_indexes[i], _enums_histogram[i]);
     }

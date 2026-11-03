@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "docsumcontext.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
@@ -113,14 +114,14 @@ DocsumReply::UP DocsumContext::getDocsums() {
 }
 
 void DocsumContext::fillSummaryFeatures(search::docsummary::GetDocsumsState& state) {
-    assert(&_docsumState == &state);
+    CHECK(&_docsumState == &state);
     if (_matcher->canProduceSummaryFeatures()) {
         state._summaryFeatures = _matcher->getSummaryFeatures(_request, _searchCtx, _attrCtx, _sessionMgr);
     }
 }
 
 void DocsumContext::fillRankFeatures(search::docsummary::GetDocsumsState& state) {
-    assert(&_docsumState == &state);
+    CHECK(&_docsumState == &state);
     // check if we are allowed to run
     if (!state._args.dumpFeatures()) {
         return;

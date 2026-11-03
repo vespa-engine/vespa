@@ -209,8 +209,9 @@ void Fast_LatinTokenizer<IsSeparator, IsPunctuation>::SetNewText(char* text, siz
 template <typename IsSeparator, typename IsPunctuation>
 void Fast_LatinTokenizer<IsSeparator, IsPunctuation>::SkipBlanks() {
 
-    if (!_moreTokens)
+    if (!_moreTokens) {
         return;
+    }
     // Initialized with '\0' terminated buffer?
     if (_end == nullptr) {
         while (*_next != '\0' && _isSeparator(*_next)) {

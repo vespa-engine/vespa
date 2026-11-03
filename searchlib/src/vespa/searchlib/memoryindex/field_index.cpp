@@ -5,6 +5,7 @@
 #include "ordered_field_index_inserter.h"
 #include "posting_iterator.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
@@ -160,7 +161,7 @@ void FieldIndex<interleaved_features>::dump(search::index::FieldIndexBuilder& in
         if (clusterSize == 0) {
             const PostingList* tree = _postingListStore.getTreeEntry(plist);
             auto               pitr = tree->begin(_postingListStore.getAllocator());
-            assert(pitr.valid());
+            CHECK(pitr.valid());
             for (; pitr.valid(); ++pitr) {
                 features.set_doc_id(pitr.getKey());
                 const PostingListEntryType& entry(pitr.getData());

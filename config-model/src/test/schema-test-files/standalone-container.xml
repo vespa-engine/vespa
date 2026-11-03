@@ -46,6 +46,7 @@
     <timeout>5.55</timeout>
     <route>default</route>
     <maxpendingdocs>100</maxpendingdocs>
+    <legacy-feed-api>disable</legacy-feed-api>
   </document-api>
 
   <search>

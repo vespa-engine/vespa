@@ -22,6 +22,9 @@
 LOG_SETUP(".searchlib.aggregation.grouping");
 
 using namespace search::expression;
+using search::aggregation::Group;
+using search::aggregation::Grouping;
+using search::aggregation::GroupingLevel;
 using vespalib::Deserializer;
 using vespalib::Serializer;
 
@@ -63,22 +66,10 @@ void selectGroups(const vespalib::ObjectPredicate& p, vespalib::ObjectOperation&
         group.select(p, op);
     }
     Group::GroupList list = group.groups();
-    for (uint32_t i(0), m(group.getChildrenSize()); i < m; ++i) {
+    for (uint32_t i = 0; i < group.getChildrenSize(); ++i) {
         selectGroups(p, op, *list[i], first, last, curr + 1);
     }
 }
-
-using search::StringAttribute;
-using search::aggregation::Group;
-using search::aggregation::Grouping;
-using search::aggregation::GroupingLevel;
-using search::expression::AttributeNode;
-using search::expression::EnumResultNode;
-using search::expression::EnumResultNodeVector;
-using search::expression::ExpressionNode;
-using search::expression::ExpressionTree;
-using search::expression::ResultNode;
-using search::expression::StringResultNode;
 
 class EnumConverter : public vespalib::ObjectOperation, public vespalib::ObjectPredicate {
 private:
@@ -104,7 +95,7 @@ public:
         }
         EnumConverter    enumConverter(_grouping, tmplevel);
         Group::GroupList list = group.groups();
-        for (uint32_t i(0), m(group.getChildrenSize()); i < m; ++i) {
+        for (uint32_t i = 0; i < group.getChildrenSize(); ++i) {
             list[i]->select(enumConverter, enumConverter);
         }
     }
@@ -175,6 +166,10 @@ Grouping::Grouping(const Grouping&) = default;
 Grouping& Grouping::operator=(const Grouping&) = default;
 Grouping::~Grouping() = default;
 
+std::span<const RankedHit> Grouping::limit_to_top_n(std::span<const RankedHit> hits) const noexcept {
+    return {hits.data(), getMaxN(hits.size())};
+}
+
 void Grouping::selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) {
     for (GroupingLevel& level : _levels) {
         level.select(predicate, operation);
@@ -199,7 +194,7 @@ void Grouping::postMerge() {
 }
 
 void Grouping::preAggregate(bool isOrdered) {
-    for (size_t i(0), m(_levels.size()); i < m; i++) {
+    for (size_t i = 0; i < _levels.size(); i++) {
         _levels[i].prepare(this, i, isOrdered);
     }
     _root.preAggregate();
@@ -208,7 +203,8 @@ void Grouping::preAggregate(bool isOrdered) {
 void Grouping::aggregate(DocId from, DocId to) {
     preAggregate(false);
     if (to > from) {
-        for (DocId i(from), m(i + getMaxN(to - from)); i < m; i++) {
+        const DocId end = from + getMaxN(to - from);
+        for (DocId i = from; i < end; i++) {
             aggregate(i, 0.0);
         }
     }
@@ -218,14 +214,14 @@ void Grouping::aggregate(DocId from, DocId to) {
 void Grouping::postProcess() {
     postAggregate();
     postMerge();
-    bool hasEnums(false);
-    for (size_t i(0), m(_levels.size()); !hasEnums && (i < m); i++) {
+    bool hasEnums = false;
+    for (size_t i = 0; !hasEnums && (i < _levels.size()); i++) {
         const GroupingLevel& l = _levels[i];
-        const ResultNode&    id(*l.getExpression().getResult());
+        const ResultNode&    id = *l.getExpression().getResult();
         hasEnums = id.inherits(EnumResultNode::classId) || id.inherits(EnumResultNodeVector::classId);
-        const Group& g(l.getGroupPrototype());
-        for (size_t j(0), n(g.getAggrSize()); !hasEnums && (j < n); j++) {
-            const ResultNode& r(*g.getAggregationResult(j).getResult());
+        const Group& g = l.getGroupPrototype();
+        for (size_t j = 0; !hasEnums && (j < g.getAggrSize()); j++) {
+            const ResultNode& r = *g.getAggregationResult(j).getResult();
             hasEnums = r.inherits(EnumResultNode::classId) || r.inherits(EnumResultNodeVector::classId);
         }
     }
@@ -236,13 +232,13 @@ void Grouping::postProcess() {
     sortById();
 }
 
-void Grouping::aggregate(const RankedHit* rankedHit, unsigned int len) {
-    bool isOrdered(!needResort());
+void Grouping::aggregate(std::span<const RankedHit> hits) {
+    bool isOrdered = !needResort();
     preAggregate(isOrdered);
     HitsAggregationResult::SetOrdered pred;
     select(pred, pred);
-    for (unsigned int i(0), m(getMaxN(len)); i < m; i++) {
-        aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
+    for (const auto& hit : limit_to_top_n(hits)) {
+        aggregate(hit.getDocId(), hit.getRank());
     }
     postProcess();
 }
@@ -310,10 +306,11 @@ void Grouping::cleanTemporary() {
 }
 
 bool Grouping::needResort() const {
-    bool resort(_root.needResort());
+    bool resort = _root.needResort();
     for (const auto& level : _levels) {
-        if (resort)
+        if (resort) {
             break;
+        }
         resort = level.needResort();
     }
     return (resort && getTopN() <= 0);

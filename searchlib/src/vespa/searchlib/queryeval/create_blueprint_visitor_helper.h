@@ -70,6 +70,7 @@ public:
     void visit(query::ONear&) override { illegalVisit(); }
     void visit(query::Or&) override { illegalVisit(); }
     void visit(query::Rank&) override { illegalVisit(); }
+    void visit(query::LabelWrapper&) override { illegalVisit(); }
     void visit(query::WeakAnd&) override { illegalVisit(); }
     void visit(query::SameElement&) override { illegalVisit(); }
 
@@ -85,11 +86,14 @@ public:
     void visit(query::LocationTerm& n) override = 0;
     void visit(query::PrefixTerm& n) override = 0;
     void visit(query::RangeTerm& n) override = 0;
+    void visit(query::StringRangeTerm& n) override = 0;
     void visit(query::StringTerm& n) override = 0;
     void visit(query::SubstringTerm& n) override = 0;
     void visit(query::SuffixTerm& n) override = 0;
     void visit(query::RegExpTerm& n) override = 0;
     void visit(query::NearestNeighborTerm& n) override = 0;
+    // Only supported for tensor attributes; gives an empty blueprint unless overridden.
+    void visit(query::SparseTensorWandTerm&) override {}
     void visit(query::FuzzyTerm& n) override = 0;
 
     void visit(query::TrueQueryNode&) final override;

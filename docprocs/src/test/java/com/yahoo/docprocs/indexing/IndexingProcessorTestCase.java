@@ -2,6 +2,7 @@
 package com.yahoo.docprocs.indexing;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
@@ -12,7 +13,10 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.TensorDataType;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.language.process.Chunker;
@@ -20,6 +24,7 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.TimeoutException;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -153,12 +158,16 @@ public class IndexingProcessorTestCase {
 
     @Test
     public void testPutLongHash() {
-        // Config of the following schema, derived Nov 2024, by SchemaTestCase.testDeriving in the config-model
+        // Config of the following schema, derived Oct 2026, by SchemaTestCase.testDerivingHash in the config-model
         //
         //                schema page {
         //
         //                    field domain_hash type long {
         //                        indexing: input domain | hash | attribute
+        //                    }
+        //
+        //                    field domain_bucket type int {
+        //                        indexing: input domain | hash | _ % 1000 | abs | attribute
         //                    }
         //
         //                    document page {
@@ -179,6 +188,7 @@ public class IndexingProcessorTestCase {
         Document output = ((DocumentPut)tester.process(input)).getDocument();
         assertEquals("domain1", output.getFieldValue("domain").getWrappedValue());
         assertEquals(1386505442371493468L, output.getFieldValue("domain_hash").getWrappedValue());
+        assertEquals(212, output.getFieldValue("domain_bucket").getWrappedValue());
     }
 
     @Test
@@ -512,6 +522,131 @@ public class IndexingProcessorTestCase {
         String reason = progress.getReason().get();
         assertTrue("Expected reason to contain 'timed out', got: " + reason, reason.contains("timed out"));
         assertTrue("Expected reason to contain '5000ms', got: " + reason, reason.contains("5000ms"));
+    }
+
+    @Test
+    public void requireThatElementAssignIsProcessedByIndexingScript() {
+        var tester = elementAssignTester("input a | for_each { lowercase } | index a");
+        var output = (DocumentUpdate)tester.process(elementAssign(tester, "a[2]", new StringFieldValue("HELLO")));
+        assertSingleElementAssign(output, "a[2]", "hello");
+    }
+
+    /**
+     * A field which no indexing statement takes as its only input has no script to run the assigned
+     * element through. The update must then be passed on as fed rather than failing the whole update.
+     */
+    @Test
+    public void requireThatElementAssignOfFieldWithoutIndexingStatementIsPassedOn() {
+        var tester = elementAssignTester("input b | index b");
+        var output = (DocumentUpdate)tester.process(elementAssign(tester, "a[2]", new StringFieldValue("HELLO")));
+        assertSingleElementAssign(output, "a[2]", "HELLO");
+    }
+
+    /**
+     * The script for a field includes every statement taking only that field as input, including
+     * ones writing derived fields. Nothing guarantees a derived field is element-wise aligned with
+     * the target field, so only the element of the target field is reconstructed.
+     */
+    @Test
+    public void requireThatElementAssignEmitsOnlyTheTargetField() {
+        var tester = elementAssignTester("input a | for_each { lowercase } | index a",
+                                         "input a | for_each { lowercase } | index c");
+        var output = (DocumentUpdate)tester.process(elementAssign(tester, "a[2]", new StringFieldValue("HELLO")));
+        assertSingleElementAssign(output, "a[2]", "hello");
+        assertTrue(output.fieldUpdates().isEmpty());
+    }
+
+    /** Statements writing other fields are not run, as their output is dropped and they may be expensive or fail. */
+    @Test
+    public void requireThatElementAssignDoesNotRunStatementsForOtherFields() {
+        var tester = elementAssignTester("input a | for_each { lowercase } | index a",
+                                         "input a | embed | attribute e");
+        var output = (DocumentUpdate)tester.process(elementAssign(tester, "a[2]", new StringFieldValue("HELLO")));
+        assertSingleElementAssign(output, "a[2]", "hello");
+        assertTrue(output.fieldUpdates().isEmpty());
+    }
+
+    /** When the script routes the target field elsewhere only, there is no processed element to emit. */
+    @Test
+    public void requireThatElementAssignIsPassedOnWhenScriptDoesNotOutputTargetField() {
+        var tester = elementAssignTester("input a | for_each { lowercase } | index c");
+        var output = (DocumentUpdate)tester.process(elementAssign(tester, "a[2]", new StringFieldValue("HELLO")));
+        assertSingleElementAssign(output, "a[2]", "HELLO");
+    }
+
+    @Test
+    public void requireThatElementAssignOfWrongTypeIsRejectedAsInvalidInput() {
+        var tester = elementAssignTester("input a | for_each { lowercase } | index a");
+        var progress = tester.processForProgress(elementAssign(tester, "a[2]", new IntegerFieldValue(5)));
+        assertInvalidInput("Cannot assign a value of type int to 'a[2]': The elements of 'a' are of type string", progress);
+    }
+
+    /** A script not outputting a single element for the assigned one leaves nothing to assign. */
+    @Test
+    public void requireThatElementAssignNotProcessedToSingleElementIsRejectedAsInvalidInput() {
+        var tester = elementAssignTester("input a | join \" \" | split \" \" | index a");
+        var progress = tester.processForProgress(elementAssign(tester, "a[2]", new StringFieldValue("HELLO WORLD")));
+        assertInvalidInput("Cannot assign to 'a[2]': The indexing statements of 'a' must output a single element " +
+                           "for an element assign, but got an array of 2 elements", progress);
+    }
+
+    /** The value is validated even when there is no script to process it, rather than passing it on to fail later. */
+    @Test
+    public void requireThatElementAssignWithoutValueIsRejectedAsInvalidInputAlsoWithoutIndexingStatement() {
+        var tester = elementAssignTester("input b | index b");
+        var progress = tester.processForProgress(elementAssign(tester, "a[2]", null));
+        assertInvalidInput("Cannot assign to 'a[2]': No value given", progress);
+    }
+
+    private static DocumentUpdate elementAssign(IndexingProcessorTester tester, String fieldPath, FieldValue value) {
+        DocumentType type = tester.getDocumentType("test");
+        DocumentUpdate update = new DocumentUpdate(type, "id:ns:test::1");
+        update.addFieldPathUpdate(new AssignFieldPathUpdate(type, fieldPath, "", value));
+        return update;
+    }
+
+    private static void assertSingleElementAssign(DocumentUpdate output, String fieldPath, String value) {
+        assertEquals(1, output.fieldPathUpdates().size());
+        AssignFieldPathUpdate assign = (AssignFieldPathUpdate)output.fieldPathUpdates().iterator().next();
+        assertEquals(fieldPath, assign.getOriginalFieldPath());
+        assertEquals(new StringFieldValue(value), assign.getNewValue());
+    }
+
+    private static void assertInvalidInput(String message, DocumentProcessor.Progress progress) {
+        assertEquals(DocumentProcessor.Progress.INVALID_INPUT, progress);
+        assertEquals("Operation on 'id:ns:test::1' contains invalid input: " + message, progress.getReason().get());
+    }
+
+    private static IndexingProcessorTester elementAssignTester(String... ilscriptContents) {
+        var documentTypes = new DocumentTypeManager();
+        var test = new DocumentType("test");
+        test.addField("a", DataType.getArray(DataType.STRING));
+        test.addField("b", DataType.STRING);
+        test.addField("c", DataType.getArray(DataType.STRING));
+        test.addField("e", new TensorDataType(TensorType.fromSpec("tensor<float>(p{},x[4])")));
+        documentTypes.register(test);
+
+        var ilscript = new IlscriptsConfig.Ilscript.Builder()
+                                                   .doctype("test")
+                                                   .docfield("a")
+                                                   .docfield("b")
+                                                   .docfield("c")
+                                                   .docfield("e");
+
+        for (String content : ilscriptContents) {
+            ilscript.content(content);
+        }
+
+        IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
+        config.ilscript(ilscript);
+        var scripts = new ScriptManager(documentTypes,
+                                        new IlscriptsConfig(config),
+                                        new SimpleLinguistics(),
+                                        Chunker.throwsOnUse.asMap(),
+                                        Embedder.throwsOnUse.asMap(),
+                                        FieldGenerator.throwsOnUse.asMap(),
+                                        MetricReceiver.nullImplementation);
+        return new IndexingProcessorTester(documentTypes, scripts);
     }
 
     static class PartialUpdateTester {

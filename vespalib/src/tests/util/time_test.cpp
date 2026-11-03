@@ -105,3 +105,23 @@ TEST(TimeTest, saturated_add_with_overflow) {
     EXPECT_EQ(saturated_add(future, duration::max()), steady_time::max());
     EXPECT_EQ(saturated_add(past, duration::min()), steady_time::min());
 }
+
+TEST(TimeTest, gmtime_conversion_gives_same_answer) {
+    for (time_t t = -123456789; t < (1L << 32); t += 12345) {
+        struct tm expected;
+        gmtime_r(&t, &expected);
+        struct tm got;
+        toGmtDateAndTime(t, got);
+        EXPECT_EQ(expected.tm_sec, got.tm_sec);
+        EXPECT_EQ(expected.tm_min, got.tm_min);
+        EXPECT_EQ(expected.tm_hour, got.tm_hour);
+        EXPECT_EQ(expected.tm_mday, got.tm_mday);
+        EXPECT_EQ(expected.tm_mon, got.tm_mon);
+        EXPECT_EQ(expected.tm_year, got.tm_year);
+        EXPECT_EQ(expected.tm_wday, got.tm_wday);
+        EXPECT_EQ(expected.tm_yday, got.tm_yday);
+        EXPECT_EQ(expected.tm_isdst, got.tm_isdst);
+        EXPECT_EQ(expected.tm_gmtoff, got.tm_gmtoff);
+        EXPECT_EQ(std::string(expected.tm_zone), std::string(got.tm_zone));
+    }
+}

@@ -142,6 +142,12 @@ public class FileServer {
         CompressionType compressionType = chooseCompressionType(acceptedCompressionTypes);
         log.log(Level.FINE, () -> "accepted compression types: " + acceptedCompressionTypes + ", will use " + compressionType);
         if (file.isDirectory()) {
+            File expectedParent = new File(fileDirectory.getRoot(), reference.value());
+            if (!file.getParentFile().toPath().normalize().equals(expectedParent.toPath().normalize())) {
+                throw new IllegalStateException("Refusing to serve file reference '" + reference.value() +
+                                                 "': resolved directory '" + file.getAbsolutePath() +
+                                                 "' is not contained within its expected reference directory");
+            }
             Path tempFile = Files.createTempFile(tempFilereferencedataDir, tempFilereferencedataPrefix, reference.value());
             var start = Instant.now();
             File compressedFile = new FileReferenceCompressor(compressed, compressionType)

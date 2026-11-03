@@ -4,10 +4,9 @@
 
 #include "features_size_flush.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
-
-#include <cassert>
 
 using search::index::DocIdAndFeatures;
 using search::index::PostingListCounts;
@@ -38,7 +37,7 @@ template <bool bigEndian> void Zc4PostingWriter<bigEndian>::reset_chunk() {
 
 template <bool bigEndian> void Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore) {
     uint32_t numDocs = _docIds.size();
-    assert(numDocs > 0);
+    CHECK(numDocs > 0);
 
     /*
      * When flushing due to feature size, posting list variant with skip info is always selected and the "more"
@@ -127,7 +126,7 @@ void Zc4PostingWriter<bigEndian>::write_docid_and_features(const DocIdAndFeature
         _encode_features->writeFeatures(features);
         uint64_t writeOffset = _encode_features->getWriteOffset();
         uint64_t featureSize = writeOffset - _featureOffset;
-        assert(static_cast<uint32_t>(featureSize) == featureSize);
+        CHECK(static_cast<uint32_t>(featureSize) == featureSize);
         _docIds.emplace_back(features.doc_id(), features.field_length(), features.num_occs(),
                              static_cast<uint32_t>(featureSize));
         _featureOffset = writeOffset;
@@ -138,7 +137,7 @@ void Zc4PostingWriter<bigEndian>::write_docid_and_features(const DocIdAndFeature
 
 template <bool bigEndian> void Zc4PostingWriter<bigEndian>::flush_word_no_skip() {
     // Too few document ids for skip info.
-    assert(_docIds.size() < _minSkipDocs && _counts._segments.empty());
+    CHECK(_docIds.size() < _minSkipDocs && _counts._segments.empty());
 
     if (_encode_features != nullptr) {
         _encode_features->flush();
@@ -160,9 +159,9 @@ template <bool bigEndian> void Zc4PostingWriter<bigEndian>::flush_word_no_skip()
         e.encodeExpGolomb(docId - baseDocId, docIdK);
         baseDocId = docId + 1;
         if (_encode_interleaved_features) {
-            assert(elem._field_length > 0);
+            CHECK(elem._field_length > 0);
             e.encodeExpGolomb(elem._field_length - 1, K_VALUE_ZCPOSTING_FIELD_LENGTH);
-            assert(elem._num_occs > 0);
+            CHECK(elem._num_occs > 0);
             e.encodeExpGolomb(elem._num_occs - 1, K_VALUE_ZCPOSTING_NUM_OCCS);
         }
         if (featureSize != 0) {

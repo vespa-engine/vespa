@@ -9,12 +9,12 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/util/time.h>
 
 #include <atomic>
-#include <cassert>
 #include <ostream>
 #include <set>
 #include <vector>
@@ -73,12 +73,12 @@ private:
         DeadlineSet byDeadlineSet;
         void insert(CommandEntry toadd) {
             auto [iter, added] = byPriAndSeqSet.emplace(std::move(toadd));
-            assert(added);
+            CHECK(added);
             const CommandEntry& entry = *iter;
             byDeadlineSet.insert(&entry);
         }
         void erase(MainSet::iterator iter) {
-            assert(iter != byPriAndSeqSet.end());
+            CHECK(iter != byPriAndSeqSet.end());
             const CommandEntry& entry = *iter;
             byDeadlineSet.erase(&entry);
             byPriAndSeqSet.erase(iter);
@@ -181,8 +181,9 @@ std::vector<typename CommandQueue<Command>::CommandEntry> CommandQueue<Command>:
     auto                      now = _clock.getMonotonicTime();
     while (!empty()) {
         auto iter = tbegin();
-        if (iter->_deadline > now)
+        if (iter->_deadline > now) {
             break;
+        }
         timed_out.emplace_back(*iter);
         _commands.remove(timed_out.back());
     }

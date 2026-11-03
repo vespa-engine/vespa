@@ -5,6 +5,9 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.StructDataType;
 import com.yahoo.path.Path;
 import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -13,6 +16,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.search.query.ranking.ElementGap;
 import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.expressiontransforms.ExpressionTransforms;
@@ -51,6 +55,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,6 +69,8 @@ public class RankProfile implements Cloneable {
     public final static String FIRST_PHASE = "firstphase";
     public final static String SECOND_PHASE = "secondphase";
     public final static String GLOBAL_PHASE = "globalphase";
+
+    private static final Pattern SCHEMA_IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 
     /** The schema-unique name of this rank profile */
     private final String name;
@@ -136,6 +143,8 @@ public class RankProfile implements Cloneable {
 
     private Set<ReferenceNode> rankFeatures;
 
+    private Set<ReferenceNode> sortFeatures;
+
     /** The properties of this - a multimap */
     private Map<String, List<RankProperty>> rankProperties = new LinkedHashMap<>();
 
@@ -167,6 +176,10 @@ public class RankProfile implements Cloneable {
     private Boolean strict;
 
     private Boolean useSignificanceModel;
+
+    private String explanation = null;
+
+    private Map<Reference, String> inputExplanations = Map.of();
 
     private final ApplicationPackage applicationPackage;
     private final DeployLogger deployLogger;
@@ -242,6 +255,23 @@ public class RankProfile implements Cloneable {
     public void setStrict(Boolean strict) {
         this.strict = strict;
     }
+
+    /** Sets a free text explanation of the content and usage of this rank profile, or null to remove it. */
+    public void setExplanation(String explanation) { this.explanation = explanation; }
+
+    /** Returns the free text explanation of the content and usage of this rank profile, if any. Explanations are not inherited. */
+    public Optional<String> getExplanation() { return Optional.ofNullable(explanation); }
+
+    /**
+     * Sets free text explanations of inputs of this rank profile.
+     * The inputs may be declared in this or an inherited profile.
+     */
+    public void setInputExplanations(Map<Reference, String> inputExplanations) {
+        this.inputExplanations = Map.copyOf(inputExplanations);
+    }
+
+    /** Returns the free text explanations of inputs given in this rank profile. Input explanations are not inherited. */
+    public Map<Reference, String> getInputExplanations() { return inputExplanations; }
 
     public void setUseSignificanceModel(Boolean useSignificanceModel) {
         this.useSignificanceModel = useSignificanceModel;
@@ -716,6 +746,33 @@ public class RankProfile implements Cloneable {
         for (ReferenceNode feature : features) {
             rankFeatures.add(feature);
         }
+    }
+
+    /** Returns a read-only view of the sort features to use in this profile. This is never null */
+    public Set<ReferenceNode> getSortFeatures() {
+        if (sortFeatures != null) return Collections.unmodifiableSet(sortFeatures);
+        return uniquelyInherited(RankProfile::getSortFeatures, f -> ! f.isEmpty(), "sort-features")
+                .orElse(Set.of());
+    }
+
+    /**
+     * Adds the content of the given feature list to the internal list of sort features.
+     * Each entry must be a bare schema identifier.
+     */
+    public void addSortFeatures(FeatureList features) {
+        if (sortFeatures == null)
+            sortFeatures = new LinkedHashSet<>();
+        for (ReferenceNode feature : features) {
+            validateSortFeature(feature);
+            sortFeatures.add(feature);
+        }
+    }
+
+    private void validateSortFeature(ReferenceNode feature) {
+        var reference = feature.reference();
+        if ( ! reference.isIdentifier() || ! SCHEMA_IDENTIFIER.matcher(reference.name()).matches())
+            throw new IllegalArgumentException("sort-features entries must be bare schema identifiers " +
+                                               "([A-Za-z_][A-Za-z0-9_]*), got '" + feature + "'");
     }
 
     /** Returns a read only flattened list view of the rank properties to use in this profile. This is never null. */
@@ -1199,6 +1256,7 @@ public class RankProfile implements Cloneable {
             clone.summaryFeatures = summaryFeatures != null ? new LinkedHashSet<>(this.summaryFeatures) : null;
             clone.matchFeatures = matchFeatures != null ? new LinkedHashSet<>(this.matchFeatures) : null;
             clone.rankFeatures = rankFeatures != null ? new LinkedHashSet<>(this.rankFeatures) : null;
+            clone.sortFeatures = sortFeatures != null ? new LinkedHashSet<>(this.sortFeatures) : null;
             clone.rankProperties = new LinkedHashMap<>(this.rankProperties);
             clone.inputs = new LinkedHashMap<>(this.inputs);
             clone.functions = new LinkedHashMap<>(this.functions);
@@ -1229,6 +1287,7 @@ public class RankProfile implements Cloneable {
 
     private void compileThis(QueryProfileRegistry queryProfiles, ImportedMlModels importedModels) {
         checkNameCollisions(getFunctions(), constants());
+        checkInputExplanations();
         ExpressionTransforms expressionTransforms = new ExpressionTransforms();
 
         Map<Reference, TensorType> featureTypes = featureTypes();
@@ -1259,6 +1318,9 @@ public class RankProfile implements Cloneable {
         }
         for (ReferenceNode sf : getSummaryFeatures()) {
             verifyNoNormalizers("summary-feature " + sf, sf, allNormalizers, context);
+        }
+        for (ReferenceNode sortFeature : getSortFeatures()) {
+            verifyNoNormalizers("sort-feature " + sortFeature, sortFeature, allNormalizers, context);
         }
         if (globalPhaseRanking != null) {
             var needInputs = new HashSet<String>();
@@ -1296,6 +1358,14 @@ public class RankProfile implements Cloneable {
                 }
             }
             addImplicitMatchFeatures(addIfMissing);
+        }
+    }
+
+    private void checkInputExplanations() {
+        for (var input : inputExplanations.keySet()) {
+            if ( ! inputs().containsKey(input))
+                throw new IllegalArgumentException("The explanation has '@input " + input + "', but this profile " +
+                                                   "has no such input. Inputs must be declared in an inputs block");
         }
     }
 
@@ -1385,6 +1455,12 @@ public class RankProfile implements Cloneable {
     public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles,
                                                 Map<Reference, TensorType> featureTypes) {
         MapEvaluationTypeContext context = new MapEvaluationTypeContext(getExpressionFunctions(), featureTypes);
+        if (schema != null) {
+            context.setElementwiseMatchesFields(Stream.concat(allFields(), allImportedFields())
+                                                      .filter(RankProfile::isArrayOfStructOrMap)
+                                                      .map(ImmutableSDField::getName)
+                                                      .collect(Collectors.toSet()));
+        }
 
         constants().forEach((k, v) -> context.setType(k, v.type()));
 
@@ -1478,6 +1554,19 @@ public class RankProfile implements Cloneable {
             }
             return false;
         }
+    }
+
+    /**
+     * Returns whether the field may be represented as a virtual field in the backend, which is what
+     * elementwise(matches(field),...) requires. Position fields are never virtual fields. Whether the struct-fields
+     * make the field virtual depends on the indexing mode (indexed search requires at least one struct-field
+     * attribute or index, streaming search does not), which is not known here, so that is checked by the backend.
+     */
+    private static boolean isArrayOfStructOrMap(ImmutableSDField field) {
+        var type = field.getDataType();
+        if (GeoPos.isAnyPos(type)) return false;
+        return (type instanceof MapDataType) ||
+               (type instanceof ArrayDataType arrayType && arrayType.getNestedType() instanceof StructDataType);
     }
 
     private void addAttributeFeatureTypes(ImmutableSDField field, Map<Reference, TensorType> featureTypes) {

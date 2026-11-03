@@ -24,6 +24,8 @@ public class Matching implements Cloneable, Serializable {
 
     private boolean typeUserSet = false;
 
+    private boolean caseUserSet = false;
+
     private boolean algorithmUserSet = false;
 
     /** The gram size is the n in n-gram, or empty if not set. Should only be set with gram matching. */
@@ -56,6 +58,13 @@ public class Matching implements Cloneable, Serializable {
 
     public Matching setCase(Case casing) {
         this.casing = casing;
+        caseUserSet = true;
+        return this;
+    }
+
+    /** Sets the casing inherited from an enclosing field, which is not the same as setting it in the schema. */
+    public Matching inheritCase(Case casing) {
+        this.casing = casing;
         return this;
     }
 
@@ -66,6 +75,9 @@ public class Matching implements Cloneable, Serializable {
     public Integer maxTokenLength() { return maxTokenLength; }
     public Matching maxTokenLength(int maxTokenLength) { this.maxTokenLength = maxTokenLength; return this; }
     public boolean isTypeUserSet() { return typeUserSet; }
+
+    /** Returns whether the casing was set in the schema, as opposed to being the default. */
+    public boolean isCaseUserSet() { return caseUserSet; }
 
     public MatchAlgorithm getAlgorithm() { return algorithm; }
 

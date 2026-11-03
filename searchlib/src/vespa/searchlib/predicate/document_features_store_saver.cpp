@@ -4,6 +4,8 @@
 
 #include "nbo_write.h"
 
+#include <vespa/check_require.h>
+
 #include <vespa/vespalib/util/transient_vector_snapshot.hpp>
 
 using search::BufferWriter;
@@ -58,7 +60,7 @@ void serialize_ranges(BufferWriter& writer, const RefsVectorSnapshot& refs_snaps
     uint32_t ranges_size = 0;
     auto     refs_span = refs_snapshot.span();
     if (!refs_span.empty()) {
-        assert(!refs_span.front()._ranges.valid());
+        CHECK(!refs_span.front()._ranges.valid());
         for (auto& cur_refs : refs_span) {
             if (cur_refs._ranges.valid()) {
                 ++ranges_size;
@@ -87,7 +89,7 @@ void serialize_features(BufferWriter& writer, const RefsVectorSnapshot& refs_sna
     uint32_t features_size = 0;
     auto     refs_span = refs_snapshot.span();
     if (!refs_span.empty()) {
-        assert(!refs_span.front()._features.valid());
+        CHECK(!refs_span.front()._features.valid());
         for (auto& cur_refs : refs_span) {
             if (cur_refs._features.valid()) {
                 ++features_size;

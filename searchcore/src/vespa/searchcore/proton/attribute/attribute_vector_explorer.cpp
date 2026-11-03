@@ -85,6 +85,12 @@ void convertPostingBaseToSlime(const IPostingListAttributeBase& postingBase, Cur
     convertMemoryUsageToSlime(memory_usage.bitvectors, cursor.setObject("bitvectors"));
 }
 
+void convert_quantization_params_to_slime(const search::attribute::QuantizationParams& params, Cursor& object) {
+    auto& quant = object.setObject("quantization");
+    quant.setLong("bits", params.bits());
+    quant.setString("mode", search::attribute::to_string(params.quantization_mode()));
+}
+
 void convert_config_to_slime(const Config& cfg, bool full, Cursor& object) {
     object.setString("type", cfg.type_to_string());
     object.setBool("fast_search", cfg.fastSearch());
@@ -93,6 +99,10 @@ void convert_config_to_slime(const Config& cfg, bool full, Cursor& object) {
     if (full) {
         if (cfg.basicType().type() == BasicType::TENSOR) {
             object.setString("distance_metric", DistanceMetricUtils::to_string(cfg.distance_metric()));
+            if (cfg.quantization_params().has_value()) {
+                object.setString("unquantized_type", cfg.unquantized_tensor_type().to_spec());
+                convert_quantization_params_to_slime(*cfg.quantization_params(), object);
+            }
         }
         if (cfg.hnsw_index_params().has_value()) {
             const auto& hnsw_cfg = cfg.hnsw_index_params().value();

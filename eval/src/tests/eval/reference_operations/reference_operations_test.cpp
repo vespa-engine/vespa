@@ -138,8 +138,9 @@ TEST(ReferenceCellCastTest, cell_cast_works) {
             for (const auto& gen : gen_list) {
                 auto input = gen.cpy().cells(from_type);
                 auto expect = gen.cpy().cells(to_type);
-                if (input.bad_scalar() || expect.bad_scalar())
+                if (input.bad_scalar() || expect.bad_scalar()) {
                     continue;
+                }
                 auto actual = ReferenceOperations::cell_cast(input, to_type);
                 EXPECT_EQ(actual, expect);
             }

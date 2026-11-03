@@ -6,6 +6,8 @@
 
 #include <vespa/juniper/query.h>
 
+#include <cstdlib>
+
 namespace search::docsummary {
 
 void JuniperDFWTermVisitor::visitProperty(const search::fef::Property::Value& key,

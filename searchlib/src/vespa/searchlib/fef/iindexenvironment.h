@@ -43,16 +43,18 @@ public:
     virtual const Properties& getProperties() const = 0;
 
     /**
-     * Obtain the number of fields
+     * Obtain the size of the field table, i.e. one more than the number of
+     * declared fields, since the special "no field" instance is held first.
      *
-     * @return number of fields
+     * @return number of fields, including the "no field"
      **/
     virtual uint32_t getNumFields() const = 0;
 
     /**
      * Obtain a field by using the field enumeration. The legal range
-     * for id is [0, getNumFields>. If id is out of bounds, 0 will be
-     * returned.
+     * for id is [0, getNumFields>. Id 0 always yields the special "no field"
+     * instance, see FieldInfo::no_field(); declared fields have ids in the
+     * range [1, getNumFields>. If id is out of bounds, nullptr is returned.
      *
      * @return information about a single field
      **/
@@ -60,7 +62,8 @@ public:
 
     /**
      * Obtain a field by using the field name. If the field is not
-     * found, 0 will be returned.
+     * found, nullptr is returned. The "no field" is not name addressable, so
+     * looking up the empty name always fails.
      *
      * @return information about a single field
      **/

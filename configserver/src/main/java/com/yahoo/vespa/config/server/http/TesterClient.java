@@ -66,6 +66,13 @@ public class TesterClient {
         try {
             return new ProxyResponse(httpClient.execute(request));
         } catch (IOException e) {
+            if (ConnectionFailures.isConnectionFailure(e)) {
+                String message = messageIfRequestFails + ": Could not connect to tester container on " +
+                                 request.getAuthority() + ". The host may be restarting or retired (" +
+                                 Exceptions.toMessageString(e) + ")";
+                logger.info(message);
+                return HttpErrorResponse.serviceUnavailable(message);
+            }
             logger.warning(messageIfRequestFails + ": " + Exceptions.toMessageString(e));
             return HttpErrorResponse.internalServerError(Exceptions.toMessageString(e));
         }

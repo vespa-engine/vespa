@@ -4,11 +4,10 @@
 
 #include "features_size_flush.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-
-#include <cassert>
 
 namespace search::diskindex {
 
@@ -125,7 +124,7 @@ template <bool bigEndian> void ZcRareWordPostingIteratorBase<bigEndian>::doUnpac
         _matchData[0]->clear_hidden_from_ranking();
         return;
     }
-    assert(docId == getDocId());
+    CHECK(docId == getDocId());
     if (_decode_normal_features) {
         if (_unpack_normal_features) {
             _decodeContext->unpackFeatures(_matchData, docId);
@@ -282,7 +281,7 @@ template <bool bigEndian> void ZcPostingIterator<bigEndian>::readWordStart(uint3
     _chunk._lastDocId = docIdLimit - 1 - val64;
     if (_hasMore || hasMore) {
         if (!_counts._segments.empty()) {
-            assert(_chunk._lastDocId == _counts._segments[_chunkNo]._lastDoc);
+            CHECK(_chunk._lastDocId == _counts._segments[_chunkNo]._lastDoc);
         }
     }
 
@@ -293,7 +292,7 @@ template <bool bigEndian> void ZcPostingIterator<bigEndian>::readWordStart(uint3
     }
 
     UC64_DECODECONTEXT_STORE(o, d._);
-    assert((d.getBitOffset() & 7) == 0);
+    CHECK((d.getBitOffset() & 7) == 0);
     const uint8_t* bcompr = d.getByteCompr();
     _zc_decoder_start = bcompr;
     _zc_decoder.set_cur(bcompr);
@@ -496,24 +495,24 @@ void ZcPostingIteratorBase::doSeek(uint32_t docId) {
     }
     uint32_t oDocId = getDocId();
 #if DEBUG_ZCPOSTING_ASSERT
-    assert(oDocId <= _l1._skipDocId);
-    assert(docId <= _l1._skipDocId);
-    assert(oDocId <= _l2._skipDocId);
-    assert(docId <= _l2._skipDocId);
-    assert(oDocId <= _l3._skipDocId);
-    assert(docId <= _l3._skipDocId);
-    assert(oDocId <= _l4._skipDocId);
-    assert(docId <= _l4._skipDocId);
+    CHECK(oDocId <= _l1._skipDocId);
+    CHECK(docId <= _l1._skipDocId);
+    CHECK(oDocId <= _l2._skipDocId);
+    CHECK(docId <= _l2._skipDocId);
+    CHECK(oDocId <= _l3._skipDocId);
+    CHECK(docId <= _l3._skipDocId);
+    CHECK(oDocId <= _l4._skipDocId);
+    CHECK(docId <= _l4._skipDocId);
 #endif
     ZcDecoder zc_decoder(_zc_decoder);
     uint32_t  field_length = _field_length;
     uint32_t  num_occs = _num_occs;
     while (__builtin_expect(oDocId < docId, true)) {
 #if DEBUG_ZCPOSTING_ASSERT
-        assert(oDocId <= _l1._skipDocId);
-        assert(oDocId <= _l2._skipDocId);
-        assert(oDocId <= _l3._skipDocId);
-        assert(oDocId <= _l4._skipDocId);
+        CHECK(oDocId <= _l1._skipDocId);
+        CHECK(oDocId <= _l2._skipDocId);
+        CHECK(oDocId <= _l3._skipDocId);
+        CHECK(oDocId <= _l4._skipDocId);
 #endif
         oDocId += (1 + zc_decoder.decode32());
 #if DEBUG_ZCPOSTING_PRINTF
@@ -542,7 +541,7 @@ template <bool bigEndian> void ZcPostingIterator<bigEndian>::doUnpack(uint32_t d
         _matchData[0]->clear_hidden_from_ranking();
         return;
     }
-    assert(docId == getDocId());
+    CHECK(docId == getDocId());
     if (_decode_normal_features && _unpack_normal_features) {
         if (_featureSeekPos != 0) {
             // Handle deferred feature position seek now.

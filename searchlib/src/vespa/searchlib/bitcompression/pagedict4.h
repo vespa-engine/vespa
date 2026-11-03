@@ -4,7 +4,8 @@
 
 #include "countcompression.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
+
 #include <string>
 
 namespace search::bitcompression {
@@ -21,32 +22,32 @@ public:
 
     bool operator>=(const PageDict4StartOffset& rhs) const {
         if (_fileOffset >= rhs._fileOffset) {
-            assert(_accNumDocs >= rhs._accNumDocs);
+            CHECK(_accNumDocs >= rhs._accNumDocs);
             return true;
         }
-        assert(_accNumDocs < rhs._accNumDocs);
+        CHECK(_accNumDocs < rhs._accNumDocs);
         return false;
     }
 
     bool operator>(const PageDict4StartOffset& rhs) const {
         if (_fileOffset > rhs._fileOffset) {
-            assert(_accNumDocs > rhs._accNumDocs);
+            CHECK(_accNumDocs > rhs._accNumDocs);
             return true;
         }
-        assert(_accNumDocs <= rhs._accNumDocs);
+        CHECK(_accNumDocs <= rhs._accNumDocs);
         return false;
     }
 
     bool operator==(const PageDict4StartOffset& rhs) const {
         if (_fileOffset == rhs._fileOffset) {
-            assert(_accNumDocs == rhs._accNumDocs);
+            CHECK(_accNumDocs == rhs._accNumDocs);
             return true;
         }
-        assert(_accNumDocs != rhs._accNumDocs);
+        CHECK(_accNumDocs != rhs._accNumDocs);
         if (_fileOffset < rhs._fileOffset) {
-            assert(_accNumDocs < rhs._accNumDocs);
+            CHECK(_accNumDocs < rhs._accNumDocs);
         } else {
-            assert(_accNumDocs > rhs._accNumDocs);
+            CHECK(_accNumDocs > rhs._accNumDocs);
         }
         return false;
     }

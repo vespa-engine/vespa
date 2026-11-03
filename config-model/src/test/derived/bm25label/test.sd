@@ -48,4 +48,21 @@ schema bm25label {
             expression: bm25_for_labels(myfield){label:mylabel}
         }
     }
+
+    # matches_for_labels is independent of enable-bm25; these profiles pin the
+    # config-model tensor type entry, not the normalized bm25 names above.
+    rank-profile matches-for-labels {
+        first-phase {
+            expression: reduce(matches_for_labels(myfield), max, label)
+        }
+        match-features {
+            matches_for_labels(myfield)
+        }
+    }
+
+    rank-profile matches-for-labels-slice {
+        first-phase {
+            expression: matches_for_labels(myfield){label:mylabel}
+        }
+    }
 }

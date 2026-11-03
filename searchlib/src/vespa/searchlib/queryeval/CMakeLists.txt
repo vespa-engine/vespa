@@ -33,6 +33,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     global_filter.cpp
     hitcollector.cpp
     intermediate_blueprints.cpp
+    label_wrapper_blueprint.cpp
     isourceselector.cpp
     iterator_pack.cpp
     iterators.cpp
@@ -65,6 +66,8 @@ vespa_add_library(searchlib_queryeval OBJECT
     simplesearch.cpp
     sorted_hit_sequence.cpp
     sourceblendersearch.cpp
+    sparse_tensor_wand_blueprint.cpp
+    sparse_tensor_wand_search.cpp
     split_float.cpp
     termasstring.cpp
     termwise_blueprint_helper.cpp

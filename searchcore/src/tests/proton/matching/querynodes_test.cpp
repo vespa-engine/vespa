@@ -163,14 +163,11 @@ public:
         }
 
         fef_test::IndexEnvironment index_environment;
-        uint32_t                   fieldId = 0;
         for (int i = 0; i < _field_count; ++i) {
-            FieldInfo field_info(FieldType::INDEX, CollectionType::SINGLE, field[i], fieldId++);
-            index_environment.getFields().push_back(field_info);
+            index_environment.addField(FieldType::INDEX, CollectionType::SINGLE, field[i]);
         }
         for (int i = 0; i < _attribute_count; ++i) {
-            FieldInfo field_info(FieldType::ATTRIBUTE, CollectionType::SINGLE, attribute[i], fieldId++);
-            index_environment.getFields().push_back(field_info);
+            index_environment.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, attribute[i]);
         }
 
         ResolveViewVisitor resolve_visitor(resolver, index_environment);

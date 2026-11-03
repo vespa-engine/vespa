@@ -19,25 +19,28 @@ TEST_F(ProdFeaturesTest, test_framework) {
         {
             const FieldInfo* info = indexEnv.getFieldByName("foo");
             ASSERT_TRUE(info != nullptr);
-            EXPECT_EQ(info->id(), 0u);
+            EXPECT_EQ(info->id(), 1u);
             EXPECT_TRUE(info->type() == FieldType::INDEX);
             EXPECT_TRUE(info->collection() == CollectionType::SINGLE);
         }
         {
             const FieldInfo* info = indexEnv.getFieldByName("bar");
             ASSERT_TRUE(info != nullptr);
-            EXPECT_EQ(info->id(), 1u);
+            EXPECT_EQ(info->id(), 2u);
             EXPECT_TRUE(info->type() == FieldType::ATTRIBUTE);
             EXPECT_TRUE(info->collection() == CollectionType::WEIGHTEDSET);
         }
         {
             const FieldInfo* info = indexEnv.getFieldByName("baz");
             ASSERT_TRUE(info != nullptr);
-            EXPECT_EQ(info->id(), 2u);
+            EXPECT_EQ(info->id(), 3u);
             EXPECT_TRUE(info->type() == FieldType::INDEX);
             EXPECT_TRUE(info->collection() == CollectionType::ARRAY);
         }
         ASSERT_TRUE(indexEnv.getFieldByName("qux") == nullptr);
+        // Field id 0 is the "no field", which is not name addressable.
+        ASSERT_TRUE(indexEnv.getFieldByName("") == nullptr);
+        ASSERT_TRUE(indexEnv.getField(0)->is_no_field());
     }
 
     QueryEnvironment queryEnv(&indexEnv);
@@ -46,13 +49,14 @@ TEST_F(ProdFeaturesTest, test_framework) {
         QueryEnvironmentBuilder qeb(queryEnv, layout);
         {
             SimpleTermData& tr = qeb.addAllFields();
-            ASSERT_TRUE(tr.lookupField(0) != nullptr);
             ASSERT_TRUE(tr.lookupField(1) != nullptr);
             ASSERT_TRUE(tr.lookupField(2) != nullptr);
-            EXPECT_TRUE(tr.lookupField(3) == nullptr);
-            EXPECT_TRUE(tr.lookupField(0)->getHandle() == 0u);
-            EXPECT_TRUE(tr.lookupField(1)->getHandle() == 1u);
-            EXPECT_TRUE(tr.lookupField(2)->getHandle() == 2u);
+            ASSERT_TRUE(tr.lookupField(3) != nullptr);
+            EXPECT_TRUE(tr.lookupField(0) == nullptr); // the "no field" is skipped
+            EXPECT_TRUE(tr.lookupField(4) == nullptr);
+            EXPECT_TRUE(tr.lookupField(1)->getHandle() == 0u);
+            EXPECT_TRUE(tr.lookupField(2)->getHandle() == 1u);
+            EXPECT_TRUE(tr.lookupField(3)->getHandle() == 2u);
             const ITermData* tp = queryEnv.getTerm(0);
             ASSERT_TRUE(tp != nullptr);
             EXPECT_EQ(tp, &tr);
@@ -60,11 +64,11 @@ TEST_F(ProdFeaturesTest, test_framework) {
         {
             SimpleTermData* tr = qeb.addAttributeNode("bar");
             ASSERT_TRUE(tr != nullptr);
-            ASSERT_TRUE(tr->lookupField(1) != nullptr);
+            ASSERT_TRUE(tr->lookupField(2) != nullptr);
             EXPECT_TRUE(tr->lookupField(0) == nullptr);
-            EXPECT_TRUE(tr->lookupField(2) == nullptr);
+            EXPECT_TRUE(tr->lookupField(1) == nullptr);
             EXPECT_TRUE(tr->lookupField(3) == nullptr);
-            EXPECT_TRUE(tr->lookupField(1)->getHandle() == 3u);
+            EXPECT_TRUE(tr->lookupField(2)->getHandle() == 3u);
             const ITermData* tp = queryEnv.getTerm(1);
             ASSERT_TRUE(tp != nullptr);
             EXPECT_EQ(tp, tr);
@@ -88,7 +92,7 @@ TEST_F(ProdFeaturesTest, test_framework) {
 
         {
             {
-                TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(0, 0);
+                TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(0, 1);
                 ASSERT_TRUE(tfmd != nullptr);
 
                 FieldPositionsIterator itr = tfmd->getIterator(); // foo (index)
@@ -102,14 +106,14 @@ TEST_F(ProdFeaturesTest, test_framework) {
                 ASSERT_TRUE(!itr.valid());
             }
             {
-                TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(0, 1);
+                TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(0, 2);
                 ASSERT_TRUE(tfmd != nullptr);
 
                 FieldPositionsIterator itr = tfmd->getIterator(); // bar (attribute)
                 ASSERT_TRUE(!itr.valid());
             }
             {
-                TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(0, 2);
+                TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(0, 3);
                 ASSERT_TRUE(tfmd != nullptr);
 
                 FieldPositionsIterator itr = tfmd->getIterator(); // baz (index)
@@ -124,7 +128,7 @@ TEST_F(ProdFeaturesTest, test_framework) {
             }
         }
         {
-            TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(1, 1);
+            TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(1, 2);
             ASSERT_TRUE(tfmd != nullptr);
 
             FieldPositionsIterator itr = tfmd->getIterator(); // bar (attribute)
@@ -133,10 +137,10 @@ TEST_F(ProdFeaturesTest, test_framework) {
     }
     { // check that data is cleared
         MatchDataBuilder mdb(queryEnv, *data);
-        EXPECT_TRUE(mdb.getTermFieldMatchData(0, 0)->has_invalid_docid());
         EXPECT_TRUE(mdb.getTermFieldMatchData(0, 1)->has_invalid_docid());
         EXPECT_TRUE(mdb.getTermFieldMatchData(0, 2)->has_invalid_docid());
-        EXPECT_TRUE(mdb.getTermFieldMatchData(1, 1)->has_invalid_docid());
+        EXPECT_TRUE(mdb.getTermFieldMatchData(0, 3)->has_invalid_docid());
+        EXPECT_TRUE(mdb.getTermFieldMatchData(1, 2)->has_invalid_docid());
 
         // test illegal things
         ASSERT_TRUE(!mdb.addOccurence("foo", 1, 10)); // invalid term/field combination

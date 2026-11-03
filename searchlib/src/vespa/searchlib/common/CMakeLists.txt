@@ -7,6 +7,7 @@ vespa_add_library(searchlib_common OBJECT
     bitvectoriterator.cpp
     condensedbitvectors.cpp
     create_and_freeze_times.cpp
+    document_field_extractor.cpp
     documentlocations.cpp
     documentsummary.cpp
     fileheadercontext.cpp
@@ -34,7 +35,6 @@ vespa_add_library(searchlib_common OBJECT
     sortdata.cpp
     sortresults.cpp
     sortspec.cpp
-    threaded_compactable_lid_space.cpp
     transient_bitvector_snapshot.cpp
     tunefileinfo.cpp
     unique_issues.cpp

@@ -42,8 +42,9 @@ public:
 
 template <typename T> T HttpUrlPath::get(const std::string& id, const T& defaultValue) const {
     std::map<std::string, std::string>::const_iterator it = _attributes.find(id);
-    if (it == _attributes.end())
+    if (it == _attributes.end()) {
         return defaultValue;
+    }
     T                  val;
     std::istringstream ist(it->second);
     ist >> val;

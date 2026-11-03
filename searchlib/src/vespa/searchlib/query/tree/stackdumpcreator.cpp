@@ -5,14 +5,15 @@
 #include "intermediatenodes.h"
 #include "termnodes.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/objects/nbo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 
-#include <cassert>
 #include <vector>
 
 using search::ParseItem;
@@ -55,7 +56,7 @@ class QueryNodeConverter : public QueryVisitor {
 
     void append_type_and_features(ParseItem::ItemType type, uint8_t item_features) {
         uint32_t type_code = static_cast<uint32_t>(type);
-        assert(type_code < ParseItem::item_type_extension_mark + 0x80);
+        CHECK(type_code < ParseItem::item_type_extension_mark + 0x80);
         if (type_code >= ParseItem::item_type_extension_mark) {
             appendByte(ParseItem::item_type_extension_mark | item_features);
             appendByte(type - ParseItem::item_type_extension_mark);
@@ -136,7 +137,7 @@ class QueryNodeConverter : public QueryVisitor {
     void visit(Or& node) override { createIntermediate(node, ParseItem::ITEM_OR); }
 
     void visit(WeakAnd& node) override {
-        createIntermediateX(node, ParseItem::ITEM_WEAK_AND, node.getTargetNumHits(), node.getView());
+        createIntermediateX(node, ParseItem::ITEM_WEAK_AND, node.getTargetNumHits(), "");
     }
 
     void visit(Equiv& node) override { createIntermediate(node, ParseItem::ITEM_EQUIV); }
@@ -202,6 +203,14 @@ class QueryNodeConverter : public QueryVisitor {
 
     void visit(Rank& node) override { createIntermediate(node, ParseItem::ITEM_RANK); }
 
+    void visit(LabelWrapper& node) override {
+        append_type_and_features(ParseItem::ITEM_LABEL_WRAPPER, static_cast<uint8_t>(ParseItem::IF_UNIQUEID));
+        appendCompressedPositiveNumber(node.getId());
+        appendCompressedPositiveNumber(node.getChildren().size());
+        appendDouble(node.getLabelScore());
+        visitNodes(node.getChildren());
+    }
+
     template <typename T> void appendTerm(const TermBase<T>& node);
 
     void createTermNode(const Term& node, ParseItem::ItemType type) {
@@ -245,6 +254,36 @@ class QueryNodeConverter : public QueryVisitor {
 
     void visit(RangeTerm& node) override { createTerm(node, ParseItem::ITEM_NUMTERM); }
 
+    void visit(StringRangeTerm& node) override {
+        createTermNode(node, ParseItem::ITEM_STRING_RANGE_TERM);
+        const auto& range = node.getTerm();
+        bool        left_unbounded = !range || !range->left;
+        bool        right_unbounded = !range || !range->right;
+        bool        left_closed = !range || range->left_closed;
+        bool        right_closed = !range || range->right_closed;
+        uint8_t     flags = 0;
+        if (left_unbounded) {
+            flags |= ParseItem::SRT_LEFT_UNBOUNDED;
+        }
+        if (right_unbounded) {
+            flags |= ParseItem::SRT_RIGHT_UNBOUNDED;
+        }
+        if (left_closed) {
+            flags |= ParseItem::SRT_LEFT_CLOSED;
+        }
+        if (right_closed) {
+            flags |= ParseItem::SRT_RIGHT_CLOSED;
+        }
+        appendByte(flags);
+        if (!left_unbounded) { // This implies that we have a value
+            appendString(*range->left);
+        }
+        if (!right_unbounded) { // This implies that we have a value
+            appendString(*range->right);
+        }
+        appendCompressedNumber(range.has_value() ? range->range_limit : 0);
+    }
+
     void visit(StringTerm& node) override { createTerm(node, ParseItem::ITEM_TERM); }
 
     void visit(SubstringTerm& node) override { createTerm(node, ParseItem::ITEM_SUBSTRINGTERM); }
@@ -268,6 +307,10 @@ class QueryNodeConverter : public QueryVisitor {
         appendCompressedPositiveNumber(node.get_allow_approximate() ? 0x1 : 0x0);
         appendCompressedPositiveNumber(node.get_explore_additional_hits());
         appendDouble(node.get_distance_threshold());
+    }
+
+    void visit(SparseTensorWandTerm&) override {
+        throw vespalib::IllegalArgumentException("SparseTensorWandTerm cannot be serialized as a stack dump");
     }
 
     void visit(InTerm& node) override {

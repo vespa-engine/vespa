@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
+
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -132,7 +133,7 @@ private:
     constexpr Handle(uint32_t value) noexcept : _value(value) {}
     template <size_t type> static constexpr Handle make(uint32_t offset) noexcept {
         static_assert(type <= max_type);
-        assert(offset <= max_offset);
+        CHECK(offset <= max_offset);
         return Handle((type << offset_bits) | offset);
     }
 
@@ -169,7 +170,7 @@ private:
 
     constexpr ArrayHandle(Handle base, uint32_t size) noexcept : _base(base), _size(size) {}
     template <size_t type> static constexpr ArrayHandle make(uint32_t offset, size_t size) noexcept {
-        assert((size_t(offset) + size) <= (Handle::max_offset + 1));
+        CHECK((size_t(offset) + size) <= (Handle::max_offset + 1));
         return ArrayHandle(Handle::make<type>(offset), size);
     }
 
@@ -179,7 +180,7 @@ public:
     constexpr size_t size() const noexcept { return _size; }
     constexpr bool empty() const noexcept { return _size == 0; }
     constexpr Handle at(size_t i) const noexcept {
-        assert(i < _size);
+        CHECK(i < _size);
         return {_base._value + uint32_t(i)};
     }
     constexpr auto begin() const noexcept { return HandleIterator(_base._value); }
@@ -230,10 +231,10 @@ public:
     }
     template <typename T> const T& resolve(Handle h) const noexcept {
         static constexpr size_t I = type_id<T, MyDomain>();
-        assert(h.type() == I);
+        CHECK(h.type() == I);
         auto   array = all_of<T>();
         size_t offset = h.offset();
-        assert(offset < array.size());
+        CHECK(offset < array.size());
         return array[offset];
     }
     template <typename T> T& resolve(Handle h) noexcept {
@@ -241,10 +242,10 @@ public:
     }
     template <typename T> std::span<const T> resolve_array(ArrayHandle ah) const noexcept {
         static constexpr size_t I = type_id<T, MyDomain>();
-        assert(ah._base.type() == I);
+        CHECK(ah._base.type() == I);
         auto   array = all_of<T>();
         size_t offset = ah._base.offset();
-        assert(offset + ah.size() <= array.size());
+        CHECK(offset + ah.size() <= array.size());
         return array.subspan(offset, ah.size());
     }
     template <typename T> std::span<T> resolve_array(ArrayHandle ah) noexcept {
@@ -306,7 +307,7 @@ public:
             };
             (handle_array.template operator()<Ts, Is>(), ...);
         }(typename MyDomain::index_sequence{});
-        assert(need_size <= UINT32_MAX);
+        CHECK(need_size <= UINT32_MAX);
         constexpr auto align = detail::full_align<MyDomain, Target>();
         char*          mem = static_cast<char*>(::operator new(need_size, align));
         DataUP         result(new (mem) Target(DataKey{}));
@@ -328,7 +329,7 @@ public:
             };
             (construct_array.template operator()<Ts, Is>(), ...);
         }(typename MyDomain::index_sequence{});
-        assert(offset == need_size);
+        CHECK(offset == need_size);
         return result;
     }
 };

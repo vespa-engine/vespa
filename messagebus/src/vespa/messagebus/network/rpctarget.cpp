@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "rpctarget.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -67,7 +68,7 @@ void RPCTarget::RequestDone(FRT_RPCRequest* raw_req) {
     HandlerList handlers;
     {
         std::lock_guard guard(_lock);
-        assert(_state == TARGET_INVOKED);
+        CHECK(_state == TARGET_INVOKED);
         if (req->CheckReturnTypes("s")) {
             FRT_Values& val = *req->GetReturn();
             try {

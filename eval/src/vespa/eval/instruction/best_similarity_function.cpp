@@ -2,6 +2,7 @@
 
 #include "best_similarity_function.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/util/binary_hamming_distance.h>
@@ -113,8 +114,8 @@ bool check_dims(const ValueType& pri, const ValueType& sec, const std::string& b
 size_t get_dim_size(const ValueType& type, const std::string& dim) {
     size_t npos = ValueType::Dimension::npos;
     size_t idx = type.dimension_index(dim);
-    assert(idx != npos);
-    assert(type.dimensions()[idx].is_indexed());
+    CHECK(idx != npos);
+    CHECK(type.dimensions()[idx].is_indexed());
     return type.dimensions()[idx].size;
 }
 

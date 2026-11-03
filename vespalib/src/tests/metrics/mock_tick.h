@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/metrics/clock.h>
 
 #include <atomic>
-#include <cassert>
 #include <condition_variable>
 #include <mutex>
 
@@ -67,7 +67,7 @@ public:
     TimeStamp give(TimeStamp next_value) {
         TimeStamp prev_value = pop(_prev);
         push(_next, next_value);
-        assert(peek(_prev).count() == next_value.count());
+        CHECK(peek(_prev).count() == next_value.count());
         return prev_value;
     }
     bool alive() const override { return _alive; }

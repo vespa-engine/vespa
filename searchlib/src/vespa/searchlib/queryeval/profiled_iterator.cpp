@@ -31,7 +31,9 @@ std::unique_ptr<SearchIterator> create(Profiler& profiler, std::unique_ptr<Searc
     return std::make_unique<ProfiledIterator>(
         profiler, std::move(search), profiler.resolve(prefix + "::initRange"), profiler.resolve(prefix + "::doSeek"),
         profiler.resolve(prefix + "::doUnpack"), profiler.resolve(prefix + "::get_hits"),
-        profiler.resolve(prefix + "::or_hits_into"), profiler.resolve(prefix + "::and_hits_into"), ctor_token);
+        profiler.resolve(prefix + "::or_hits_into"), profiler.resolve(prefix + "::and_hits_into"),
+        profiler.resolve(prefix + "::get_element_ids"), profiler.resolve(prefix + "::and_element_ids_into"),
+        ctor_token);
 }
 
 } // namespace
@@ -72,11 +74,13 @@ void ProfiledIterator::and_hits_into(BitVector& result, uint32_t begin_id) {
 }
 
 void ProfiledIterator::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) {
+    TaskGuard guard(_profiler, _get_element_ids_tag);
     _search->get_element_ids(docid, element_ids);
     setDocId(_search->getDocId());
 }
 
 void ProfiledIterator::and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) {
+    TaskGuard guard(_profiler, _and_element_ids_into_tag);
     _search->and_element_ids_into(docid, element_ids);
     setDocId(_search->getDocId());
 }

@@ -106,15 +106,17 @@ void Compare::visit(Visitor& v) const {
 }
 
 void Compare::print(std::ostream& out, bool verbose, const std::string& indent) const {
-    if (_parentheses)
+    if (_parentheses) {
         out << '(';
+    }
     _left->print(out, verbose, indent);
     out << " ";
     _operator.print(out, verbose, indent);
     out << " ";
     _right->print(out, verbose, indent);
-    if (_parentheses)
+    if (_parentheses) {
         out << ')';
+    }
 }
 
 } // namespace document::select

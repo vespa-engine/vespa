@@ -4,15 +4,15 @@
 
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/entryref.h>
-#include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/vespalib/util/transient_vector_snapshot.h>
+#include <vespa/vespalib/util/type_stable_vector.h>
 
 namespace search::attribute {
 
 using EntryRefVectorSnapshot = vespalib::TransientVectorSnapshot<vespalib::datastore::EntryRef>;
 
 /*
- * Create a vector of entry refs from an rcu vector containing atomic
+ * Create a vector of entry refs from a type stable vector containing atomic
  * entry refs. The new vector can be used by a flush thread while
  * saving an attribute vector as long as the proper generation guard
  * is also held.
@@ -20,7 +20,7 @@ using EntryRefVectorSnapshot = vespalib::TransientVectorSnapshot<vespalib::datas
  * The function must be called from the attribute write thread.
  */
 EntryRefVectorSnapshot
-make_entry_ref_vector_snapshot(const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
-                               uint32_t                                                            size);
+make_entry_ref_vector_snapshot(const vespalib::TypeStableVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
+                               uint32_t                                                                   size);
 
 } // namespace search::attribute

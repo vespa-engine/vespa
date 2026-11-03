@@ -3,6 +3,7 @@
 
 #include "numeric_range_spec.h"
 #include "query_normalization.h"
+#include "string_range_spec.h"
 
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/util/memory.h>
@@ -36,12 +37,14 @@ public:
     QueryTermSimple& operator=(QueryTermSimple&&) = delete;
     QueryTermSimple(const string& term_, Type type);
     QueryTermSimple(Type type, std::unique_ptr<NumericRangeSpec> range);
+    QueryTermSimple(Type type, std::unique_ptr<StringRangeSpec> range);
     virtual ~QueryTermSimple();
 
     /**
      * Extracts the content of this query term as a range with low and high values.
      */
     template <typename N> RangeResult<N> getRange() const noexcept;
+    const StringRangeSpec* get_string_range_spec() const noexcept;
     int getRangeLimit() const noexcept { return activeRange().rangeLimit; }
     size_t getMaxPerGroup() const noexcept { return activeRange().maxPerGroup; }
     size_t getDiversityCutoffGroups() const noexcept { return activeRange().diversityCutoffGroups; }
@@ -63,6 +66,8 @@ public:
     bool isGeoLoc() const noexcept { return (_type == Type::GEO_LOCATION); }
     bool isFuzzy() const noexcept { return (_type == Type::FUZZYTERM); }
     bool is_nearest_neighbor() const noexcept { return (_type == Type::NEAREST_NEIGHBOR); }
+    bool is_sparse_tensor_wand() const noexcept { return (_type == Type::SPARSE_TENSOR_WAND); }
+    bool is_string_range() const noexcept { return (_type == Type::STRING_RANGE); }
     bool empty() const noexcept { return _term.empty(); }
     virtual void visitMembers(vespalib::ObjectVisitor& visitor) const;
     string getClassName() const;
@@ -75,6 +80,7 @@ public:
 private:
     static NumericRangeSpec           emptyNumericRange;
     std::unique_ptr<NumericRangeSpec> _numeric_range = {};
+    std::unique_ptr<StringRangeSpec>  _string_range = {};
     bool getRangeInternal(int64_t& low, int64_t& high) const noexcept;
     template <typename N> RangeResult<N> getIntegerRange() const noexcept;
     template <typename N> RangeResult<N> getFloatRange() const noexcept;

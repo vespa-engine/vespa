@@ -2,6 +2,7 @@
 
 #include "handlerecorder.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/tls_linkage.h>
@@ -11,7 +12,7 @@
 #include <vespa/vespalib/util/array_equal.hpp>
 
 #include <algorithm>
-#include <cassert>
+#include <cstdlib>
 
 using search::fef::MatchData;
 using search::fef::MatchDataDetails;
@@ -24,10 +25,11 @@ __thread HandleRecorder* _T_recorder TLS_LINKAGE = nullptr;
 __thread bool                        _T_assert_all_handles_are_registered = false;
 } // namespace
 
-HandleRecorder::HandleRecorder() : _handles() {
+HandleRecorder::HandleRecorder() : _handles(), _registration_attempted(false) {
 }
 
-HandleRecorder::HandleRecorder(const HandleRecorder::HandleMap& initial_handles) : _handles(initial_handles) {
+HandleRecorder::HandleRecorder(const HandleRecorder::HandleMap& initial_handles)
+    : _handles(initial_handles), _registration_attempted(false) {
 }
 
 namespace {
@@ -84,13 +86,14 @@ void HandleRecorder::register_handle(TermFieldHandle handle, MatchDataDetails re
     if (_T_recorder != nullptr) {
         _T_recorder->add(handle, requested_details);
     } else if (_T_assert_all_handles_are_registered) {
-        assert(_T_recorder != nullptr);
+        CHECK(_T_recorder != nullptr);
     }
 }
 
 void HandleRecorder::add(TermFieldHandle handle, MatchDataDetails requested_details)
 
 {
+    _registration_attempted = true;
     if (requested_details == MatchDataDetails::Normal || requested_details == MatchDataDetails::Interleaved) {
         _handles[handle] =
             static_cast<MatchDataDetails>(static_cast<int>(_handles[handle]) | static_cast<int>(requested_details));

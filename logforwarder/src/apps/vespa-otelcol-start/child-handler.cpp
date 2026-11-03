@@ -21,8 +21,9 @@ ChildHandler::ChildHandler() : _childRunning(false), _childPid(0) {
 ChildHandler::~ChildHandler() = default;
 
 bool ChildHandler::checkChild() {
-    if (!_childRunning)
+    if (!_childRunning) {
         return true;
+    }
     int waitStatus = 0;
     int r = waitpid(_childPid, &waitStatus, WNOHANG);
     if (r == 0) {
@@ -82,20 +83,23 @@ void ChildHandler::startChild(const std::string& progPath, const std::string& cf
 }
 
 void ChildHandler::stopChild() {
-    if (!_childRunning)
+    if (!_childRunning) {
         return;
+    }
     LOG(info, "stopChild");
     _terminating = true;
     kill(_childPid, SIGTERM);
     for (int retry = 0; retry < 10; ++retry) {
-        if (checkChild())
+        if (checkChild()) {
             return;
+        }
         usleep(12500 + retry * 20000);
     }
     kill(_childPid, SIGKILL);
     for (int retry = 0; retry < 10; ++retry) {
-        if (checkChild())
+        if (checkChild()) {
             return;
+        }
         usleep(12500 + retry * 20000);
     }
     LOG(error, "Could not terminate child process %d", _childPid);

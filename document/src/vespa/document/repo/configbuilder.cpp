@@ -2,6 +2,7 @@
 
 #include "configbuilder.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/datatype/structdatatype.h>
 
 namespace document::config_builder {
@@ -55,8 +56,8 @@ DocTypeRep& DocTypeRep::annotationType(int32_t id, const std::string& name, cons
 
 DocTypeRep DocumenttypesConfigBuilderHelper::document(int32_t id, const std::string& name,
                                                       const DatatypeConfig& header, const DatatypeConfig& body) {
-    assert(header.type == DatatypeConfig::Type::STRUCT);
-    assert(body.type == DatatypeConfig::Type::STRUCT);
+    CHECK(header.type == DatatypeConfig::Type::STRUCT);
+    CHECK(body.type == DatatypeConfig::Type::STRUCT);
     _config.documenttype.resize(_config.documenttype.size() + 1);
     _config.documenttype.back().id = id;
     _config.documenttype.back().name = name;

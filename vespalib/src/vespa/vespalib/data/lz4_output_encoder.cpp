@@ -2,17 +2,17 @@
 
 #include "lz4_output_encoder.h"
 
-#include <lz4frame.h>
+#include <vespa/check_require.h>
 
-#include <cassert>
+#include <lz4frame.h>
 
 namespace vespalib {
 
 void Lz4OutputEncoder::encode_frame() {
     auto   dst = _output.reserve(LZ4F_compressFrameBound(_used, nullptr));
     size_t written = LZ4F_compressFrame(dst.data, dst.size, &_buffer[0], _used, nullptr);
-    assert(!LZ4F_isError(written));
-    assert(written <= dst.size);
+    CHECK(!LZ4F_isError(written));
+    CHECK(written <= dst.size);
     _output.commit(written);
     _used = 0;
 }

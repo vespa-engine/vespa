@@ -8,8 +8,9 @@ server[].port int default=2181
 # if true, only connect to server on localhost (must be in one of the servers above)
 zookeeperLocalhostAffinity bool default=false
 
-# session timeout, the high default is used by config servers
-zookeeperSessionTimeoutSeconds int default=120
+# session timeout. Related to tick time on server, read ZooKeeper docs
+# and check with tick time configured for server if you change this value
+zookeeperSessionTimeoutSeconds int default=30
 
 # Jute maxbuffer. Used by zookeeper to determine max buffer when serializing/deserializing
 # Value used in server must equal or than this one (so if decreasing it one must be sure

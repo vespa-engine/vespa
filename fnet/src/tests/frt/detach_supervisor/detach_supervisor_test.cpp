@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
@@ -12,7 +13,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
 
-#include <cassert>
 #include <thread>
 
 using namespace vespalib;
@@ -70,11 +70,11 @@ struct RpcFixture : FRT_Invokable {
         int num_ok = 0;
         if (!req->CheckReturnTypes("l")) {
             EXPECT_EQ(req->GetErrorCode(), FRTE_RPC_CONNECTION);
-            assert(req->GetErrorCode() == FRTE_RPC_CONNECTION);
+            CHECK(req->GetErrorCode() == FRTE_RPC_CONNECTION);
         } else {
             uint64_t ret = req->GetReturn()->GetValue(0)._intval64;
             EXPECT_EQ(ret, expect);
-            assert(ret == expect);
+            CHECK(ret == expect);
             ++num_ok;
         }
         return num_ok;

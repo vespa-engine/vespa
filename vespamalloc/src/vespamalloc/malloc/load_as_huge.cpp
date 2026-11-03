@@ -4,8 +4,8 @@
 
 #include <link.h>
 #include <sys/mman.h>
+#include <vespamalloc/malloc/check_require.h>
 
-#include <cassert>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
@@ -19,9 +19,9 @@ namespace {
 constexpr size_t HUGEPAGE_SIZE = 0x200000;
 
 void* mmap_huge(size_t sz) {
-    assert((sz % HUGEPAGE_SIZE) == 0);
+    CHECK((sz % HUGEPAGE_SIZE) == 0);
     void* mem = mmap(nullptr, sz, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-    assert(mem != MAP_FAILED);
+    CHECK(mem != MAP_FAILED);
     if (madvise(mem, sz, MADV_HUGEPAGE) != 0) {
         fprintf(stderr, "load_as_huge.cpp:mmap_huge = > madvise(%p, %ld, MADV_HUGEPAGE) FAILED, errno= %d = %s\n",
                 mem, sz, errno, strerror(errno));
@@ -41,7 +41,7 @@ size_t round_huge_up(size_t v) {
  * Then remaps the areas back to its original location.
  */
 bool remap_segments(size_t base_vaddr, const Elf64_Phdr* segments, size_t count) {
-    assert(count > 0);
+    CHECK(count > 0);
     const Elf64_Phdr& first = segments[0];
     const Elf64_Phdr& last = segments[count - 1];
     size_t            start_vaddr = base_vaddr + first.p_vaddr;
@@ -60,10 +60,10 @@ bool remap_segments(size_t base_vaddr, const Elf64_Phdr* segments, size_t count)
         size_t vaddr = base_vaddr + segments[i].p_vaddr;
         size_t huge_offset = vaddr - huge_start;
         char*  dest = new_huge + huge_offset;
-        assert(dest >= last_end);
+        CHECK(dest >= last_end);
         if (dest > last_end) {
             int munmap_retval = munmap(last_end, dest - last_end);
-            assert(munmap_retval == 0);
+            CHECK(munmap_retval == 0);
         }
         size_t sz = segments[i].p_memsz;
         last_end = dest + sz;
@@ -75,24 +75,26 @@ bool remap_segments(size_t base_vaddr, const Elf64_Phdr* segments, size_t count)
         }
         vespamalloc::independent_non_inlined_memcpy(dest, reinterpret_cast<void*>(vaddr), sz);
         int prot = PROT_READ;
-        if (segments[i].p_flags & PF_X)
+        if (segments[i].p_flags & PF_X) {
             prot |= PROT_EXEC;
-        if (segments[i].p_flags & PF_W)
+        }
+        if (segments[i].p_flags & PF_W) {
             prot |= PROT_WRITE;
+        }
         int mprotect_retval = mprotect(dest, sz, prot);
         if (mprotect_retval != 0) {
             fprintf(stderr, "mprotect(%p, %ld, %x) FAILED = %d, errno= %d = %s\n", dest, sz, prot, mprotect_retval,
                     errno, strerror(errno));
         }
         void* remapped = mremap(dest, sz, sz, MREMAP_FIXED | MREMAP_MAYMOVE, vaddr);
-        assert(remapped != MAP_FAILED);
-        assert(remapped == reinterpret_cast<void*>(vaddr));
+        CHECK(remapped != MAP_FAILED);
+        CHECK(remapped == reinterpret_cast<void*>(vaddr));
         fprintf(stdout, "remapped dest=%p, size=%lu to %p\n", dest, sz, remapped);
     }
-    assert(new_huge_end >= last_end);
+    CHECK(new_huge_end >= last_end);
     if (new_huge_end > last_end) {
         int munmap_retval = munmap(last_end, new_huge_end - last_end);
-        assert(munmap_retval);
+        CHECK(munmap_retval == 0);
     }
     return true;
 }

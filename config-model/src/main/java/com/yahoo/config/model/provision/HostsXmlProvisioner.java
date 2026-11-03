@@ -15,7 +15,7 @@ import java.util.Optional;
 
 /**
  * A host provisioner based on a hosts.xml file.
- * No state in this provisioner, i.e it does not know anything about the active
+ * No state in this provisioner, i.e. it does not know anything about the active
  * application if one exists. Pre-condition: A valid hosts file.
  *
  * @author hmusum
@@ -51,7 +51,7 @@ public class HostsXmlProvisioner implements HostProvisioner {
 
     /** Called when provisioning nodes using &lt;nodes count=... */
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity quantity, ProvisionContext context) {
+    public List<HostSpec> prepare(ClusterSpec cluster, ProvisionContext context) {
         throw new UnsupportedOperationException("Using <nodes count=\"...\"> is not supported when there is a " +
                                                 "hosts.xml file. Remove hosts.xml to make this deployable on " +
                                                 "Vespa Cloud and single-node self-hosted instances.");

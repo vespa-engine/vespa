@@ -4,6 +4,7 @@
 
 #include "distribution_config_util.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -15,7 +16,6 @@
 #include <vespa/config/print/asciiconfigreader.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-#include <cassert>
 #include <cmath>
 
 #include <vespa/log/bufferedlogger.h>
@@ -148,7 +148,7 @@ void Distribution::configure(const vespa::config::content::StorDistributionConfi
         if (path.empty()) {
             nodeGraph = std::move(group);
         } else {
-            assert(nodeGraph);
+            CHECK(nodeGraph);
             Group* parent = nodeGraph.get();
             for (uint32_t j = 0; j < path.size() - 1; ++j) {
                 parent = parent->getSubGroups()[path[j]];
@@ -283,7 +283,7 @@ void Distribution::getIdealGroups(const document::BucketId& bucket, const Cluste
     }
     std::sort(tmpResults.begin(), tmpResults.end());
     if (!_global) [[likely]] {
-        assert(parent.redundancy_value_within_bounds(redundancy));
+        CHECK(parent.redundancy_value_within_bounds(redundancy));
         const Group::Distribution& redundancyArray = parent.getDistribution(redundancy);
         if (tmpResults.size() > redundancyArray.size()) {
             tmpResults.resize(redundancyArray.size());
@@ -479,7 +479,7 @@ uint16_t Distribution::getIdealDistributorNode(const ClusterState& state, const 
                                                const char* upStates) const {
     std::vector<uint16_t> nodes;
     getIdealNodes(NodeType::DISTRIBUTOR, state, bucket, nodes, upStates);
-    assert(nodes.size() <= 1);
+    CHECK(nodes.size() <= 1);
     if (nodes.empty()) {
         vespalib::asciistream ss;
         ss << "There is no legal distributor target in state with version " << state.getVersion();
@@ -496,7 +496,7 @@ Distribution::splitNodesIntoLeafGroups(std::span<const uint16_t> nodeList) const
         if (group == nullptr) {
             LOGBP(warning, "Node %u is not assigned to a group. Should not happen?", node);
         } else {
-            assert(group->isLeafGroup());
+            CHECK(group->isLeafGroup());
             nodes[group->getIndex()].push_back(node);
         }
     }

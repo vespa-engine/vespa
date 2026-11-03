@@ -7,7 +7,7 @@ import com.yahoo.config.subscription.ConfigInterruptedException;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.DefContent;
@@ -42,14 +42,14 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         @Override public boolean isError() { return false;}
         @Override public long getNewGeneration() { return 0; }
         @Override public boolean responseIsApplyOnRestart() { return false; }
-        @Override public PayloadChecksums getNewChecksums() { return null; }
+        @Override public PayloadChecksum getNewChecksum() { return null; }
         @Override public boolean hasUpdatedConfig() { return false; }
         @Override public Trace getResponseTrace() { return null; }
         @Override public DefContent getDefContent() { return null; }
         @Override public ConfigKey<?> getConfigKey() { return null; }
         @Override public boolean validateParameters() { return false; }
         @Override public String getRequestDefMd5() { return null; }
-        @Override public PayloadChecksums getRequestConfigChecksums() { return null; }
+        @Override public PayloadChecksum getRequestConfigChecksum() { return null; }
         @Override public long getRequestGeneration() { return 0; }
         @Override public Request getRequest() { return null; }
         @Override public String getShortDescription() { return null;}
@@ -139,7 +139,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     protected void setNewConfig(JRTClientConfigRequest jrtReq) {
         try {
             T configInstance = toConfigInstance(jrtReq);
-            setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), configInstance, jrtReq.getNewChecksums());
+            setConfig(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), configInstance, jrtReq.getNewChecksum());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Bad config in response", e);
         }
@@ -151,7 +151,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             setConfigAndGeneration(jrtReq.getNewGeneration(),
                                    jrtReq.responseIsApplyOnRestart(),
                                    configInstance,
-                                   jrtReq.getNewChecksums());
+                                   jrtReq.getNewChecksum());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Bad config in response", e);
         }

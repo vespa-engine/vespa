@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -85,7 +86,7 @@ public:
 
     [[nodiscard]] std::shared_ptr<api::StorageMessage> pop_first_message() {
         std::lock_guard lock(_mutex);
-        assert(!_enqueued.empty());
+        CHECK(!_enqueued.empty());
         auto msg = std::move(_enqueued.front());
         _enqueued.pop_front();
         return msg;
@@ -197,7 +198,7 @@ public:
     ~StorageApiNode();
 
     [[nodiscard]] const MockMetadataPropagator& meta_propagator_mock() noexcept {
-        assert(_metadata_propagator);
+        CHECK(_metadata_propagator);
         return *_metadata_propagator;
     }
 
@@ -226,7 +227,7 @@ public:
     void send_response(const std::shared_ptr<api::StorageReply>& reply) {
         std::unique_ptr<StorageTransportContext> context(
             dynamic_cast<StorageTransportContext*>(reply->getTransportContext().release()));
-        assert(context);
+        CHECK(context);
         _service->encode_rpc_v1_response(*context->_request->raw_request(), *reply);
         context->_request->returnRequest();
     }
@@ -285,7 +286,7 @@ struct StorageApiRpcServiceTest : Test {
 
         auto recv_msg = _node_1->wait_and_receive_single_message();
         auto recv_as_put = std::dynamic_pointer_cast<api::PutCommand>(recv_msg);
-        assert(recv_as_put);
+        CHECK(recv_as_put);
         return recv_as_put;
     }
     [[nodiscard]] std::shared_ptr<api::PutCommand> send_and_receive_put_command_at_node_1() {
@@ -301,7 +302,7 @@ struct StorageApiRpcServiceTest : Test {
 
         auto recv_reply = _node_0->wait_and_receive_single_message();
         auto recv_as_put_reply = std::dynamic_pointer_cast<api::PutReply>(recv_reply);
-        assert(recv_as_put_reply);
+        CHECK(recv_as_put_reply);
         return recv_as_put_reply;
     }
 

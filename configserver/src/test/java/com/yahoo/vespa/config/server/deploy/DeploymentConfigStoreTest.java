@@ -18,6 +18,8 @@ import org.junit.rules.TemporaryFolder;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,8 +70,31 @@ public class DeploymentConfigStoreTest {
         assertEquals(List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY), window.days());
         assertEquals(List.of(8, 9, 10), window.hours());
         assertEquals(ZoneId.of("UTC"), window.zone());
+        assertEquals(Optional.of(LocalDate.of(2026, 1, 1)), window.fromDate());
+        assertEquals(Optional.of(LocalTime.of(9, 0)), window.fromTime());
+        assertEquals(Optional.of(LocalDate.of(2026, 12, 31)), window.toDate());
+        assertEquals(Optional.of(LocalTime.of(17, 30)), window.toTime());
 
         assertTrue(call.telemetryExporterConfiguration().isEmpty());
+    }
+
+    @Test
+    public void stores_region_specific_block_windows_only_in_their_regions() {
+        CapturingDeploymentConfigStore store = new CapturingDeploymentConfigStore();
+        Zone prodZone = new Zone(Environment.prod, RegionName.from("us-south-1"));
+
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .hostedConfigserverConfig(prodZone)
+                .modelFactory(createHostedModelFactory())
+                .deploymentConfigStore(store)
+                .build();
+
+        tester.deployApp("src/test/apps/hosted-with-backup/");
+
+        assertEquals(1, store.calls.size());
+        List<BlockWindow> windows = store.calls.get(0).blockWindows();
+        assertEquals(2, windows.size());
+        assertEquals(List.of(DayOfWeek.SATURDAY), windows.get(1).days());
     }
 
     @Test

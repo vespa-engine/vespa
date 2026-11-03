@@ -42,6 +42,7 @@ public class ParsedRankProfile extends ParsedBlock {
     private Double targetHitsMaxAdjustmentFactor = null;
     private final List<FeatureList> matchFeatures = new ArrayList<>();
     private final List<FeatureList> rankFeatures = new ArrayList<>();
+    private final List<FeatureList> sortFeatures = new ArrayList<>();
     private final List<FeatureList> summaryFeatures = new ArrayList<>();
     private Integer keepRankCount = null;
     private Integer totalKeepRankCount = null;
@@ -104,6 +105,7 @@ public class ParsedRankProfile extends ParsedBlock {
     Optional<Double> getTargetHitsMaxAdjustmentFactor() { return Optional.ofNullable(this.targetHitsMaxAdjustmentFactor); }
     List<FeatureList> getMatchFeatures() { return List.copyOf(this.matchFeatures); }
     List<FeatureList> getRankFeatures() { return List.copyOf(this.rankFeatures); }
+    List<FeatureList> getSortFeatures() { return List.copyOf(this.sortFeatures); }
     List<FeatureList> getSummaryFeatures() { return List.copyOf(this.summaryFeatures); }
     Optional<Integer> getKeepRankCount() { return Optional.ofNullable(this.keepRankCount); }
     Optional<Integer> getTotalKeepRankCount() { return Optional.ofNullable(this.totalKeepRankCount); }
@@ -147,6 +149,7 @@ public class ParsedRankProfile extends ParsedBlock {
     public void addSummaryFeatures(FeatureList features) { this.summaryFeatures.add(features); }
     public void addMatchFeatures(FeatureList features) { this.matchFeatures.add(features); }
     public void addRankFeatures(FeatureList features) { this.rankFeatures.add(features); }
+    public void addSortFeatures(FeatureList features) { this.sortFeatures.add(features); }
 
     public void inherit(String other) { inherited.add(other); }
 

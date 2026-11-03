@@ -62,8 +62,9 @@ bool ParameterTest::validate(const IIndexEnvironment& env, const std::vector<std
 
 bool ParameterTest::validate(const IIndexEnvironment& env, const std::vector<std::string>& params,
                              const ParameterDescriptions& descs, const ParameterValidator::Result& result) {
-    if (!validate(env, params, descs))
+    if (!validate(env, params, descs)) {
         return false;
+    }
     ParameterValidator         pv(env, params, descs);
     ParameterValidator::Result actual = pv.validate();
     bool                       failed = false;
@@ -77,8 +78,9 @@ bool ParameterTest::validate(const IIndexEnvironment& env, const std::vector<std
     }
     bool retval = true;
     for (size_t i = 0; i < result.getParameters().size(); ++i) {
-        if (!assertParameter(result.getParameters()[i], actual.getParameters()[i]))
+        if (!assertParameter(result.getParameters()[i], actual.getParameters()[i])) {
             retval = false;
+        }
     }
     return retval;
 }
@@ -181,6 +183,9 @@ TEST_F(ParameterTest, test_validator) {
     EXPECT_FALSE(validate(env, SL().add("baz"), PDS().desc().string().string()));
     EXPECT_FALSE(validate(env, SL().add("baz").add("baz"), PDS().desc().string()));
     EXPECT_FALSE(validate(env, SL().add("baz"), PDS().desc().field()));
+    // The "no field" held first in the index environment is not name addressable.
+    EXPECT_FALSE(validate(env, SL().add(""), PDS().desc().field()));
+    EXPECT_FALSE(validate(env, SL().add(""), PDS().desc().indexField(ParameterCollection::ANY)));
     EXPECT_FALSE(validate(env, SL().add("bar"), PDS().desc().indexField(ParameterCollection::SINGLE)));
     EXPECT_FALSE(validate(env, SL().add("foo"), PDS().desc().indexField(ParameterCollection::NONE)));
     EXPECT_FALSE(validate(env, SL().add("foo"), PDS().desc().indexField(ParameterCollection::ARRAY)));

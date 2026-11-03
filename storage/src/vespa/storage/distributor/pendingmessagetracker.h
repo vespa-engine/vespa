@@ -4,6 +4,7 @@
 #include "content_node_message_stats_tracker.h"
 #include "nodeinfo.h"
 
+#include <vespa/check_require.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageframework/generic/component/component.h>
 #include <vespa/storageframework/generic/component/componentregister.h>
@@ -11,7 +12,6 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 
-#include <cassert>
 #include <chrono>
 #include <functional>
 #include <mutex>
@@ -215,7 +215,7 @@ private:
         // generic emplace, keeping indexes in sync
         template <typename... Args> void emplace(Args&&... args) {
             auto [iter, added] = byMessageIdSet.emplace(std::forward<Args>(args)...);
-            assert(added);
+            CHECK(added);
             const MessageEntry& entry = *iter;
             byNodeAndBucketSet.insert(&entry);
             byBucketAndTypeSet.insert(&entry);
@@ -224,7 +224,7 @@ private:
         // remove by key, keeping indexes in sync
         void remove(const MessageEntry& key) {
             auto iter = byMessageIdSet.find(key);
-            assert(iter != byMessageIdSet.end());
+            CHECK(iter != byMessageIdSet.end());
             const MessageEntry& entry = *iter;
             byNodeAndBucketSet.erase(&entry);
             byBucketAndTypeSet.erase(&entry);

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -167,7 +168,7 @@ void BucketManagerTest::addBucketsToDB(uint32_t count) {
 
     // Make sure we have at least one empty bucket
     TestBucketInfo& info = (++_bucketInfo.begin())->second;
-    assert(info.size != 0);
+    CHECK(info.size != 0);
     info.size = 0;
     info.count = 0;
     info.crc = 0;
@@ -195,16 +196,16 @@ bool BucketManagerTest::wasBlockedDueToLastModified(api::StorageMessage* msg, ui
 
     _top->sendDown(api::StorageMessage::SP(msg));
     if (_top->getNumReplies() == 1) {
-        assert(_bottom->getNumCommands() == 0);
-        assert(!dynamic_cast<api::StorageReply&>(*_top->getReply(0)).getResult().success());
+        CHECK(_bottom->getNumCommands() == 0);
+        CHECK(!dynamic_cast<api::StorageReply&>(*_top->getReply(0)).getResult().success());
         return true;
     } else {
-        assert(_top->getNumReplies() == 0);
+        CHECK(_top->getNumReplies() == 0);
 
         // Check that bucket database now has the operation's timestamp as last modified.
         {
             StorBucketDatabase::WrappedEntry entry(_node->getStorageBucketDatabase().get(id, "foo"));
-            assert(entry->info.getLastModified() == lastModified);
+            CHECK(entry->info.getLastModified() == lastModified);
         }
 
         return false;
@@ -547,10 +548,10 @@ public:
         // We expect there to be no other pending messages at this point.
         std::shared_ptr<api::StorageReply> reply(cmd->makeReply());
         auto as_state_reply = std::dynamic_pointer_cast<api::SetSystemStateReply>(reply);
-        assert(as_state_reply);
-        assert(_self._top->getNumReplies() == 0);
+        CHECK(as_state_reply);
+        CHECK(_self._top->getNumReplies() == 0);
         _self._manager->onUp(as_state_reply);
-        assert(_self._top->getNumReplies() == 1);
+        CHECK(_self._top->getNumReplies() == 1);
         (void)_self._top->getRepliesOnce(); // Clear state reply sent up chain
     }
 

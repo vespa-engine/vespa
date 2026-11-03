@@ -4,6 +4,7 @@
 
 #include "doc_builder.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
@@ -12,8 +13,6 @@
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/searchlib/util/linguisticsannotation.h>
 #include <vespa/vespalib/text/utf8.h>
-
-#include <cassert>
 
 using document::Annotation;
 using document::AnnotationType;
@@ -47,7 +46,7 @@ void StringFieldBuilder::start_annotate() {
 }
 
 void StringFieldBuilder::add_span() {
-    assert(_value.size() > _span_start);
+    CHECK(_value.size() > _span_start);
     const SpanNode& span = _span_list->add(std::make_unique<Span>(_span_start, _value.size() - _span_start));
     _last_span = &span;
     _span_start = _value.size();
@@ -70,7 +69,7 @@ StringFieldBuilder& StringFieldBuilder::token(const std::string& val, bool is_wo
 }
 
 StringFieldBuilder& StringFieldBuilder::alt_word(const std::string& val) {
-    assert(_last_span != nullptr);
+    CHECK(_last_span != nullptr);
     _span_tree->annotate(*_last_span, Annotation(*AnnotationType::TERM, std::make_unique<StringFieldValue>(val)));
     return *this;
 }

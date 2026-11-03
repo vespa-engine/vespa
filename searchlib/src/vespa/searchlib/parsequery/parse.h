@@ -64,7 +64,11 @@ public:
         ITEM_FUZZY = 30,
         ITEM_STRING_IN = 31,
         ITEM_NUMERIC_IN = 32,
-        ITEM_UNDEF = 33,
+        ITEM_LABEL_WRAPPER = 33,
+        ITEM_STRING_RANGE_TERM = 34,
+        ITEM_SPARSE_TENSOR_WAND = 35, // protobuf only, never in a stack dump
+        // sentinel, kept last: it moves up as item types are added
+        ITEM_UNDEF = 36,
     };
 
     /*
@@ -95,6 +99,17 @@ public:
         IFLAG_PREFIX_MATCH = 0x00000010
     };
 
+    /**
+     * Bits of the extra flag byte following the generic term header
+     * of an ITEM_STRING_RANGE_TERM item.
+     */
+    enum StringRangeTermFlags {
+        SRT_LEFT_UNBOUNDED = 0x01,
+        SRT_RIGHT_UNBOUNDED = 0x02,
+        SRT_LEFT_CLOSED = 0x04,
+        SRT_RIGHT_CLOSED = 0x08,
+    };
+
     /** Extra information on each item (creator id) coded in bit 3 of flags */
     static inline ItemCreator GetCreator(uint8_t flags) { return static_cast<ItemCreator>((flags >> 3) & 0x01); }
 
@@ -118,10 +133,14 @@ public:
             return TermType::SUFFIXTERM;
         case ParseItem::ITEM_FUZZY:
             return TermType::FUZZYTERM;
+        case ParseItem::ITEM_STRING_RANGE_TERM:
+            return TermType::STRING_RANGE;
         case ParseItem::ITEM_GEO_LOCATION_TERM:
             return TermType::GEO_LOCATION;
         case ParseItem::ITEM_NEAREST_NEIGHBOR:
             return TermType::NEAREST_NEIGHBOR;
+        case ParseItem::ITEM_SPARSE_TENSOR_WAND:
+            return TermType::SPARSE_TENSOR_WAND;
         default:
             return TermType::WORD;
         }

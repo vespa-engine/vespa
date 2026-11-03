@@ -2,6 +2,7 @@
 
 #include "combiningfeedview.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
@@ -48,10 +49,10 @@ CombiningFeedView::CombiningFeedView(const std::vector<IFeedView::SP>& views, do
     for (const auto& view : views) {
         _metaStores.push_back(view->getDocumentMetaStorePtr());
     }
-    assert(getReadyFeedView() != nullptr);
-    assert(getRemFeedView() != nullptr);
+    CHECK(getReadyFeedView() != nullptr);
+    CHECK(getRemFeedView() != nullptr);
     if (hasNotReadyFeedView()) {
-        assert(getNotReadyFeedView() != nullptr);
+        CHECK(getNotReadyFeedView() != nullptr);
     }
 }
 
@@ -69,11 +70,13 @@ void CombiningFeedView::findPrevDbdId(const document::GlobalId& gid, DocumentOpe
         skipSubDbId = newId.getSubDbId();
     }
     for (uint32_t subDbId = 0; subDbId < subDbIdLim; ++subDbId) {
-        if (subDbId == skipSubDbId)
+        if (subDbId == skipSubDbId) {
             continue;
+        }
         const documentmetastore::IStore* metaStore = _metaStores[subDbId];
-        if (metaStore == nullptr)
+        if (metaStore == nullptr) {
             continue;
+        }
         documentmetastore::IStore::Result inspectRes(
             const_cast<documentmetastore::IStore*>(metaStore)->inspectExisting(gid, op.get_prepare_serial_num()));
         if (inspectRes._found) {
@@ -106,7 +109,7 @@ void CombiningFeedView::preparePut(PutOperation& putOp) {
 }
 
 void CombiningFeedView::handlePut(FeedToken token, const PutOperation& putOp) {
-    assert(putOp.getValidDbdId());
+    CHECK(putOp.getValidDbdId());
     uint32_t subDbId = putOp.getSubDbId();
     uint32_t prevSubDbId = putOp.getPrevSubDbId();
     if (putOp.getValidPrevDbdId() && prevSubDbId != subDbId) {
@@ -125,9 +128,9 @@ void CombiningFeedView::prepareUpdate(UpdateOperation& updOp) {
 }
 
 void CombiningFeedView::handleUpdate(FeedToken token, const UpdateOperation& updOp) {
-    assert(updOp.getValidDbdId());
-    assert(updOp.getValidPrevDbdId());
-    assert(!updOp.changedDbdId());
+    CHECK(updOp.getValidDbdId());
+    CHECK(updOp.getValidPrevDbdId());
+    CHECK(!updOp.changedDbdId());
     uint32_t subDbId(updOp.getSubDbId());
     _views[subDbId]->handleUpdate(std::move(token), updOp);
 }
@@ -150,7 +153,7 @@ void CombiningFeedView::handleRemove(FeedToken token, const RemoveOperation& rmO
             _views[subDbId]->handleRemove(std::move(token), rmOp);
         }
     } else {
-        assert(rmOp.getValidPrevDbdId());
+        CHECK(rmOp.getValidPrevDbdId());
         uint32_t prevSubDbId = rmOp.getPrevSubDbId();
         _views[prevSubDbId]->handleRemove(token, rmOp);
     }
@@ -170,18 +173,18 @@ void CombiningFeedView::handleDeleteBucket(const DeleteBucketOperation& delOp, c
 
 bool CombiningFeedView::isMoveStillValid(const MoveOperation& moveOp) const {
     uint32_t subDbId = moveOp.getPrevSubDbId();
-    assert(subDbId < _views.size());
+    CHECK(subDbId < _views.size());
     return _views[subDbId]->isMoveStillValid(moveOp);
 }
 
 void CombiningFeedView::prepareMove(MoveOperation& moveOp) {
     uint32_t subDbId = moveOp.getSubDbId();
-    assert(subDbId < _views.size());
+    CHECK(subDbId < _views.size());
     _views[subDbId]->prepareMove(moveOp);
 }
 
 void CombiningFeedView::handleMove(const MoveOperation& moveOp, const DoneCallback& moveDoneCtx) {
-    assert(moveOp.getValidDbdId());
+    CHECK(moveOp.getValidDbdId());
     uint32_t subDbId = moveOp.getSubDbId();
     uint32_t prevSubDbId = moveOp.getPrevSubDbId();
     if (moveOp.getValidPrevDbdId() && prevSubDbId != subDbId) {
@@ -212,7 +215,7 @@ void CombiningFeedView::handlePruneRemovedDocuments(const PruneRemovedDocumentsO
 
 void CombiningFeedView::handleCompactLidSpace(const CompactLidSpaceOperation& op, const DoneCallback& onDone) {
     uint32_t subDbId = op.getSubDbId();
-    assert(subDbId < _views.size());
+    CHECK(subDbId < _views.size());
     _views[subDbId]->handleCompactLidSpace(op, onDone);
 }
 

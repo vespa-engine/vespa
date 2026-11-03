@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
+import static com.yahoo.container.protect.Error.BACKEND_COMMUNICATION_ERROR;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_ANN_TIMEOUT;
@@ -262,6 +264,44 @@ public class InterleavedSearchInvokerTest {
     }
 
     @Test
+    void connectionFailureDuringQueryIsPartialWhenOtherNodesAnswer() throws IOException {
+        invokers.add(new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError("Connection reset"), failedNodeCoverage()));
+        invokers.add(new MockInvoker(1, createCoverage(49845, 49845, 49845, 1, 1, 0)));
+        try (SearchInvoker invoker = createInterleavedInvoker(new Group(0, List.of()), 0)) {
+
+            // The failed node answers first, before it is known whether any other node will
+            expectedEvents.add(new Event(null, 100, 0));
+            expectedEvents.add(new Event(null, 200, 1));
+
+            Result result = invoker.search(query, 1.0);
+
+            assertEquals(1, result.hits().getErrorHit().errors().size());
+            ErrorMessage error = result.hits().getError();
+            assertEquals(BACKEND_COMMUNICATION_ERROR.code, error.getCode());
+            assertTrue(error.isPartial(), "Another node in the group answered");
+            assertEquals(1, result.getCoverage(false).getNodes());
+            assertEquals(2, result.getCoverage(false).getNodesTried());
+        }
+    }
+
+    @Test
+    void connectionFailuresDuringQueryAreNotPartialWhenNoNodeAnswers() throws IOException {
+        invokers.add(new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError("Connection reset"), failedNodeCoverage()));
+        invokers.add(new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError("Connection refused"), failedNodeCoverage()));
+        try (SearchInvoker invoker = createInterleavedInvoker(new Group(0, List.of()), 0)) {
+
+            expectedEvents.add(new Event(null, 100, 0));
+            expectedEvents.add(new Event(null, 200, 1));
+
+            Result result = invoker.search(query, 1.0);
+
+            Set<ErrorMessage> errors = result.hits().getErrorHit().errors();
+            assertEquals(2, errors.size());
+            assertTrue(errors.stream().noneMatch(ErrorMessage::isPartial), "No node in the group searched");
+        }
+    }
+
+    @Test
     void topKProbabilityOverrideTakesEffect() throws IOException {
         assertTopKProbabilityOverride(null, 8, new Group(0, List.of()));
         assertTopKProbabilityOverride(0.8, 7, new Group(0, List.of()));
@@ -289,6 +329,57 @@ public class InterleavedSearchInvokerTest {
         node1.setActiveDocuments(10);
         group.aggregateNodeValues();
         assertTopKProbabilityOverride(0.8, 8, group);
+    }
+
+    @Test
+    void topKIsEstimatedForAllNodesWhenBalanced() throws IOException {
+        assertEquals(33, hitsRequestedPerNode(300, repeat(24, 100_000)));
+    }
+
+    @Test
+    void topKIsEstimatedFromTheLargestNodeWhenSkewed() throws IOException {
+        // Scaling down: 14 retiring nodes have no active documents left
+        assertEquals(59, hitsRequestedPerNode(300, concat(repeat(10, 100_000), repeat(14, 0))));
+        // Scaling up: 12 new nodes are still empty
+        assertEquals(52, hitsRequestedPerNode(300, concat(repeat(12, 100_000), repeat(12, 0))));
+        // Redistribution in progress: as if 1_200_000 / 60_000 = 20 nodes
+        assertEquals(37, hitsRequestedPerNode(300, concat(repeat(12, 60_000), repeat(12, 40_000))));
+        // All content on a single node: every node is asked for all hits
+        assertEquals(300, hitsRequestedPerNode(300, concat(repeat(1, 100_000), repeat(23, 0))));
+    }
+
+    /** Returns the hits requested from the first node when searching for the given hits in a group with these active documents per node. */
+    private int hitsRequestedPerNode(int hits, long[] activeDocumentsPerNode) throws IOException {
+        invokers.clear();
+        List<Node> nodes = new ArrayList<>();
+        for (int i = 0; i < activeDocumentsPerNode.length; i++) {
+            Node node = new Node("test", i, "host" + i, 0, false);
+            node.setWorking(true);
+            node.setActiveDocuments(activeDocumentsPerNode[i]);
+            nodes.add(node);
+        }
+        Group group = new Group(0, nodes);
+        group.aggregateNodeValues();
+        try (SearchInvoker invoker = createInterleavedInvoker(group, nodes.size())) {
+            for (int i = 0; i < nodes.size(); i++)
+                expectedEvents.add(new Event(null, 0, i));
+            query.setHits(hits);
+            invoker.search(query, 1.0);
+            assertTrue(expectedEvents.isEmpty(), "All test scenario events processed");
+            return ((MockInvoker) invokers.get(0)).hitsRequested;
+        }
+    }
+
+    private static long[] repeat(int count, long value) {
+        long[] values = new long[count];
+        Arrays.fill(values, value);
+        return values;
+    }
+
+    private static long[] concat(long[] first, long[] second) {
+        long[] values = Arrays.copyOf(first, first.length + second.length);
+        System.arraycopy(second, 0, values, first.length, second.length);
+        return values;
     }
 
     @Test
@@ -528,6 +619,12 @@ public class InterleavedSearchInvokerTest {
         coverage.setTargetActive(targetActiveDocs);
         coverage.setNodesTried(nodesTried);
         coverage.setDegradedReason(degradedReason);
+        return coverage;
+    }
+
+    private static Coverage failedNodeCoverage() {
+        Coverage coverage = new Coverage(0, 0, 0);
+        coverage.setNodesTried(1);
         return coverage;
     }
 

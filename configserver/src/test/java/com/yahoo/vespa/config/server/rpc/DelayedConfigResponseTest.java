@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.config.PayloadChecksums;
+import com.yahoo.vespa.config.PayloadChecksum;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.protocol.CompressionType;
@@ -80,7 +80,7 @@ public class DelayedConfigResponseTest {
     private JRTServerConfigRequest createRequest(String configName, String configId, long generation, long timeout, String namespace) {
         Request request = createWithParams(new ConfigKey<>(configName, configId, namespace, null),
                                            DefContent.fromList(List.of()), "fromHost",
-                                           PayloadChecksums.empty(), generation, timeout, Trace.createDummy(),
+                                           PayloadChecksum.empty(), generation, timeout, Trace.createDummy(),
                                            CompressionType.UNCOMPRESSED, Optional.empty())
                 .getRequest();
         return JRTServerConfigRequestV3.createFromRequest(request);

@@ -151,6 +151,7 @@ public enum ContainerMetrics implements VespaMetrics {
     
     TOTAL_HITS_PER_QUERY("totalhits_per_query", Unit.HIT_PER_QUERY, "The total number of documents found to match queries"),
     EMPTY_RESULTS("empty_results", Unit.OPERATION, "Number of queries matching no documents"),
+    REQUESTS("requests", Unit.OPERATION, "The number of requests processed by the rate limiter"),
     REQUESTS_OVER_QUOTA("requestsOverQuota", Unit.OPERATION, "The number of requests rejected due to exceeding quota"),
     
     RELEVANCE_AT_1("relevance.at_1", Unit.SCORE, "The relevance of hit number 1"),
@@ -213,6 +214,7 @@ public enum ContainerMetrics implements VespaMetrics {
 
     EMBEDDER_LATENCY("embedder.latency", Unit.MILLISECOND, "Time spent creating an embedding"),
     EMBEDDER_SEQUENCE_LENGTH("embedder.sequence_length", Unit.ITEM, "Number of tokens in the input sequence"),
+    EMBEDDER_PADDED_SEQUENCE_LENGTH("embedder.padded_sequence_length", Unit.ITEM, "Number of tokens in the input sequence evaluated by the model, including padding to padding-buckets"),
     EMBEDDER_REQUEST_COUNT("embedder.request.count", Unit.REQUEST, "Number of embedder API requests"),
     EMBEDDER_REQUEST_FAILURE_COUNT("embedder.request.failure.count", Unit.REQUEST, "Number of failed embedder API requests"),
 
@@ -221,6 +223,7 @@ public enum ContainerMetrics implements VespaMetrics {
     EMBEDDER_BATCH_COUNT("embedder.batch.count", Unit.OPERATION, "Number of batch dispatches"),
 
     INFERENCE_PENDING("inference.pending", Unit.ITEM, "Number of pending inference requests in a queue"),
+    INFERENCE_QUEUE_DEPTH("inference.queue.depth", Unit.ITEM, "Time-averaged number of inference requests waiting in a queue"),
     INFERENCE_REQUEST_RATE("inference.request.rate", Unit.OPERATION_PER_SECOND, "Successful inference requests per second"),
     INFERENCE_FAILURE_RATE("inference.failure.rate", Unit.OPERATION_PER_SECOND, "Failed inference requests per second"),
     INFERENCE_REQUEST_LATENCY("inference.request.latency", Unit.MILLISECOND, "Average inference request latency"),

@@ -4,6 +4,7 @@
 
 #include "annotationdeserializer.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/idstringexception.h>
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
@@ -305,7 +306,7 @@ ByteBuffer deCompress(CompressionConfig::Type compression, uint32_t uncompressed
                       vespalib::ConstBufferRef compressed) {
     using vespalib::compression::decompress;
 
-    assert(compressed.size() != 0);
+    CHECK(compressed.size() != 0);
 
     ByteBuffer           newSerialization(vespalib::alloc::Alloc::alloc(uncompressedLength), uncompressedLength);
     vespalib::DataBuffer unCompressed(newSerialization.getBuffer(), newSerialization.getLength());
@@ -322,7 +323,7 @@ ByteBuffer deCompress(CompressionConfig::Type compression, uint32_t uncompressed
                                        compressed.size(), uncompressedLength, unCompressed.getDataLen()),
                                    VESPA_STRLOC);
     }
-    assert(newSerialization.getBuffer() == unCompressed.getData());
+    CHECK(newSerialization.getBuffer() == unCompressed.getData());
     LOG_ASSERT(uncompressedLength == newSerialization.getRemaining());
     return newSerialization;
 }

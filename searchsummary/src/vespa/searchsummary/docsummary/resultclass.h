@@ -7,6 +7,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 
+#include <span>
 #include <string>
 
 namespace search {
@@ -85,9 +86,11 @@ public:
      * @return true(success)/false(fail)
      * @param name the name of the field to add.
      * @param docsum_field_writer field writer for writing field
+     * @param struct_fields the struct sub-fields to include in the output, empty means all of them
      **/
     bool addConfigEntry(const std::string& name, const SummaryElementsSelector& summary_elements_selector,
-                        std::unique_ptr<DocsumFieldWriter> docsum_field_writer);
+                        std::unique_ptr<DocsumFieldWriter> docsum_field_writer,
+                        std::span<const std::string>       struct_fields);
     bool addConfigEntry(const std::string& name);
 
     /**

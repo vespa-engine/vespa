@@ -249,6 +249,12 @@ public class AttributeFields extends Derived {
             ib.hnsw.multithreadedindexing(params.multiThreadedIndexing());
             aaB.index(ib);
         }
+        if (attribute.quantizationParams().isPresent()) {
+            var qb = new AttributesConfig.Attribute.Quantization.Builder();
+            var params = attribute.quantizationParams().get();
+            qb.bits(params.bits());
+            aaB.quantization(qb);
+        }
         Dictionary dictionary = attribute.getDictionary();
         if (dictionary != null) {
             aaB.dictionary.type(convert(dictionary.getType()));

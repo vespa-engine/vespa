@@ -86,7 +86,7 @@ class DimensionCache {
                 continue;
             }
             Identifier id = new Identifier(metric, leastOld.getKey());
-            if ( ! toPresent.hasIdentifier(id)) {
+            if ( ! toPresent.hasIdentifier(id) && ! leastOld.getValue().metric.isCounter()) {
                 toPresent.put(id, leastOld.getValue().metric.pruneData());
                 --toAdd;
             }

@@ -10,6 +10,7 @@
 #include "autovec_unrolled.h"
 #include "fn_table.h"
 #include "private_helpers.hpp"
+#include "scalar_block_bit_packing.hpp"
 
 #include <cblas.h>
 
@@ -87,6 +88,49 @@ void bitOperation(Operation operation, void* aOrg, const void* bOrg, size_t byte
     }
 }
 
+// We noinline the bit (un-)packing functions to ensure the bitwise dispatching function
+// is just a jump table and doesn't get muddled with a bunch of attempted inlining across
+// different bit widths.
+__attribute__((noinline)) void scalar_block_bit_pack_1(const uint8_t* __restrict__ raw, uint8_t* __restrict__ packed,
+                                                       const size_t sz) noexcept {
+    scalar_block_bit_pack<1>(raw, packed, sz);
+}
+
+__attribute__((noinline)) void scalar_block_bit_pack_2(const uint8_t* __restrict__ raw, uint8_t* __restrict__ packed,
+                                                       const size_t sz) noexcept {
+    scalar_block_bit_pack<2>(raw, packed, sz);
+}
+
+__attribute__((noinline)) void scalar_block_bit_pack_3(const uint8_t* __restrict__ raw, uint8_t* __restrict__ packed,
+                                                       const size_t sz) noexcept {
+    scalar_block_bit_pack<3>(raw, packed, sz);
+}
+
+__attribute__((noinline)) void scalar_block_bit_pack_4(const uint8_t* __restrict__ raw, uint8_t* __restrict__ packed,
+                                                       const size_t sz) noexcept {
+    scalar_block_bit_pack<4>(raw, packed, sz);
+}
+
+__attribute__((noinline)) void scalar_block_bit_unpack_1(const uint8_t* __restrict__ packed,
+                                                         uint8_t* __restrict__ raw, const size_t sz) noexcept {
+    scalar_block_bit_unpack<1>(packed, raw, sz);
+}
+
+__attribute__((noinline)) void scalar_block_bit_unpack_2(const uint8_t* __restrict__ packed,
+                                                         uint8_t* __restrict__ raw, const size_t sz) noexcept {
+    scalar_block_bit_unpack<2>(packed, raw, sz);
+}
+
+__attribute__((noinline)) void scalar_block_bit_unpack_3(const uint8_t* __restrict__ packed,
+                                                         uint8_t* __restrict__ raw, const size_t sz) noexcept {
+    scalar_block_bit_unpack<3>(packed, raw, sz);
+}
+
+__attribute__((noinline)) void scalar_block_bit_unpack_4(const uint8_t* __restrict__ packed,
+                                                         uint8_t* __restrict__ raw, const size_t sz) noexcept {
+    scalar_block_bit_unpack<4>(packed, raw, sz);
+}
+
 int64_t my_dot_product_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
     return helper::multiplyAdd(a, b, sz);
 }
@@ -136,6 +180,34 @@ size_t my_population_count(const uint64_t* buf, size_t sz) noexcept {
 }
 void my_convert_bfloat16_to_float(const uint16_t* src, float* dest, size_t sz) noexcept {
     helper::convert_bfloat16_to_float(src, dest, sz);
+}
+void my_pack_bits(const uint8_t* raw, uint8_t* packed, const uint8_t bits, const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return scalar_block_bit_pack_1(raw, packed, sz);
+    case 2:
+        return scalar_block_bit_pack_2(raw, packed, sz);
+    case 3:
+        return scalar_block_bit_pack_3(raw, packed, sz);
+    case 4:
+        return scalar_block_bit_pack_4(raw, packed, sz);
+    default:
+        abort();
+    }
+}
+void my_unpack_bits(const uint8_t* packed, uint8_t* raw, const uint8_t bits, const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return scalar_block_bit_unpack_1(packed, raw, sz);
+    case 2:
+        return scalar_block_bit_unpack_2(packed, raw, sz);
+    case 3:
+        return scalar_block_bit_unpack_3(packed, raw, sz);
+    case 4:
+        return scalar_block_bit_unpack_4(packed, raw, sz);
+    default:
+        abort();
+    }
 }
 void my_or_bit(void* aOrg, const void* bOrg, size_t bytes) noexcept {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a | b; }, aOrg, bOrg, bytes);

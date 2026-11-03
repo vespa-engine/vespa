@@ -119,7 +119,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 onnxModelCost,
                 wantedDockerImageRepository,
                 modelFactory.version(),
-                wantedNodeVespaVersion);
+                wantedNodeVespaVersion,
+                Optional.empty());
         MetricUpdater applicationMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(applicationId));
         ServerCache serverCache = new ServerCache(configDefinitionRepo, zkClient.getUserConfigDefinitions());
         return new Application(modelFactory.createModel(modelContext),

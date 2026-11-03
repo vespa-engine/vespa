@@ -6,6 +6,7 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.language.Linguistics;
 import com.yahoo.prelude.ConfigurationException;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -85,7 +86,7 @@ public class SemanticSearcher extends Searcher {
 
         int traceLevel = query.properties().getInteger(tracelevelRules, query.getTrace().getLevel() - 2);
         if (traceLevel < 0) traceLevel = 0;
-        RuleBase ruleBase = resolveRuleBase(query);
+        RuleBase ruleBase = resolveRuleBase(query.properties().getString(rulesRulebase));
         if (ruleBase == null)
             return execution.search(query);
 
@@ -96,12 +97,11 @@ public class SemanticSearcher extends Searcher {
             return execution.search(query);
     }
 
-    private RuleBase resolveRuleBase(Query query) {
-        String ruleBaseName = query.properties().getString(rulesRulebase);
-        if (ruleBaseName == null || ruleBaseName.equals("")) return getDefaultRuleBase();
+    private RuleBase resolveRuleBase(String ruleBaseName) {
+        if (ruleBaseName == null || ruleBaseName.isEmpty()) return getDefaultRuleBase();
         RuleBase ruleBase = getRuleBase(ruleBaseName);
         if (ruleBase == null)
-            throw new RuleBaseException("Requested rule base '" + ruleBaseName + "' does not exist");
+            throw new IllegalInputException("Requested rule base '" + ruleBaseName + "' does not exist");
         return ruleBase;
     }
 

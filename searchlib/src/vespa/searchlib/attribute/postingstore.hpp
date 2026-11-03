@@ -3,6 +3,7 @@
 
 #include "postingstore.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/growablebitvector.h>
 
 namespace search::attribute {
@@ -10,8 +11,9 @@ namespace search::attribute {
 template <typename DataT>
 template <typename FunctionType>
 void PostingStore<DataT>::foreach_frozen_key(EntryRef ref, FunctionType func) const {
-    if (!ref.valid())
+    if (!ref.valid()) {
         return;
+    }
     RefType  iRef(ref);
     uint32_t typeId = getTypeId(iRef);
     uint32_t clusterSize = getClusterSize(typeId);
@@ -21,7 +23,7 @@ void PostingStore<DataT>::foreach_frozen_key(EntryRef ref, FunctionType func) co
             EntryRef              ref2(bve->_tree);
             RefType               iRef2(ref2);
             if (iRef2.valid()) {
-                assert(isBTree(iRef2));
+                CHECK(isBTree(iRef2));
                 const BTreeType* tree = getTreeEntry(iRef2);
                 _allocator.getNodeStore().foreach_key(tree->getFrozenRoot(), func);
             } else {
@@ -34,7 +36,7 @@ void PostingStore<DataT>::foreach_frozen_key(EntryRef ref, FunctionType func) co
                 }
             }
         } else {
-            assert(isBTree(typeId));
+            CHECK(isBTree(typeId));
             const BTreeType* tree = getTreeEntry(iRef);
             _allocator.getNodeStore().foreach_key(tree->getFrozenRoot(), func);
         }
@@ -50,8 +52,9 @@ void PostingStore<DataT>::foreach_frozen_key(EntryRef ref, FunctionType func) co
 template <typename DataT>
 template <typename FunctionType>
 void PostingStore<DataT>::foreach_frozen(EntryRef ref, FunctionType func) const {
-    if (!ref.valid())
+    if (!ref.valid()) {
         return;
+    }
     RefType  iRef(ref);
     uint32_t typeId = getTypeId(iRef);
     uint32_t clusterSize = getClusterSize(typeId);
@@ -61,7 +64,7 @@ void PostingStore<DataT>::foreach_frozen(EntryRef ref, FunctionType func) const 
             EntryRef              ref2(bve->_tree);
             RefType               iRef2(ref2);
             if (iRef2.valid()) {
-                assert(isBTree(iRef2));
+                CHECK(isBTree(iRef2));
                 const BTreeType* tree = getTreeEntry(iRef2);
                 _allocator.getNodeStore().foreach(tree->getFrozenRoot(), func);
             } else {

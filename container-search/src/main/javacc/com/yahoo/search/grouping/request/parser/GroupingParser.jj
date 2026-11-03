@@ -28,11 +28,101 @@ import java.util.ArrayList;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.function.Function;
 import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.search.grouping.request.*;
+import com.yahoo.search.yql.ParameterListParser;
 
 @SuppressWarnings({ "ConstantIfStatement", "UnnecessarySemicolon", "Convert2Diamond", "FinalPrivateMethod" })
 public class GroupingParser {
+
+    private Function<String, String> parameters = null;
+
+    /**
+     * Sets the function used to resolve parameter references on the form @name to their values.
+     * The function returns null for a parameter which is not set. If no function is set, any parameter reference
+     * is an error. Values are substituted verbatim and are never parsed as grouping syntax.
+     */
+    public void setParameters(Function<String, String> parameters) {
+        this.parameters = parameters;
+    }
+
+    private String resolveParameter(String name) throws ParseException {
+        if (parameters == null) {
+            throw new ParseException("Parameter '@" + name + "' cannot be resolved as no query properties are available");
+        }
+        String value = parameters.apply(name);
+        if (value == null) {
+            throw new ParseException("Input '" + name + "' is not set");
+        }
+        return value;
+    }
+
+    /** Converts a number of bits to an int, failing on values which do not fit rather than wrapping around */
+    private static int toNumBits(String function, Number num, int maxBits) throws ParseException {
+        long bits = num.longValue();
+        if (bits < 1 || bits > maxBits) {
+            throw new ParseException(function + " requires a number of bits between 1 and " + maxBits + ", but got " + num);
+        }
+        return (int)bits;
+    }
+
+    /**
+     * Resolves a parameter used as a list of values, on the same format as a list parameter in YQL.
+     */
+    private List<String> resolveParameterList(String name) throws ParseException {
+        String value = resolveParameter(name);
+        try {
+            return ParameterListParser.stringTokens(value);
+        } catch (IllegalArgumentException e) {
+            throw new ParseException("Input '" + name + "' is not a valid list: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Rejects a non-positive value.
+     */
+    private static Number checkPositive(String clause, Number num) throws ParseException {
+        if (num.doubleValue() <= 0) {
+            throw new ParseException(clause + " must be a positive number, but got " + num);
+        }
+        return num;
+    }
+
+    // An integer or a decimal number, optionally negative, with an optional exponent.
+    // Deliberately narrower than what Long.valueOf and Double.valueOf accept: no leading '+', no Java type
+    // suffixes such as 10d, and no hex floats.
+    private static final java.util.regex.Pattern NUMBER_PATTERN =
+            java.util.regex.Pattern.compile("-?[0-9]+(\\.[0-9]*)?([eE][+-]?[0-9]+)?");
+
+    private static Number resolveParameterNumber(String name, String value) throws ParseException {
+        String str = value.trim();
+        if ( ! NUMBER_PATTERN.matcher(str).matches()) {
+            throw new ParseException("Input '" + name + "' must be a number, but was '" + value + "'");
+        }
+        try {
+            return Long.valueOf(str);
+        } catch (NumberFormatException e) {
+            // not an integer, try as a double below
+        }
+        Double number = Double.valueOf(str);
+        if (number.isInfinite()) {
+            throw new ParseException("Input '" + name + "' must be a number, but was '" + value + "'");
+        }
+        return number;
+    }
+
+    /**
+     * Resolves a parameter used where an int is expected. The value must be an integer within the given bounds,
+     * so that the narrowing done by the caller is lossless.
+     */
+    private Number resolveParameterInteger(String name, String clause, long min, long max) throws ParseException {
+        Number num = resolveParameterNumber(name, resolveParameter(name));
+        if (num instanceof Double || num.longValue() < min || num.longValue() > max) {
+            throw new ParseException(clause + " must be an integer between " + min + " and " + max + ", but got " + num);
+        }
+        return num;
+    }
 
     private static Number resolveNumber(String str) {
         if (str.indexOf('.') >= 0) {
@@ -64,6 +154,8 @@ TOKEN :
 // NOTE: Whenever you add a new token, you need to also add it do the identifier() rule at the bottom of this grammar.
 // NOTE: Failure to do so will cause the token image to become a reserved word. To prevent regression on this, add the
 // NOTE: new token to the GroupingParserTestCase#requireThatTokenImagesAreNotReservedWords() test.
+// NOTE: A parameter reference (@name) is a single token, with the same name rules as an identifier in YQL.
+// NOTE: Its value is resolved from query properties, see parameter().
 //
 TOKEN :
 {
@@ -71,6 +163,7 @@ TOKEN :
     <SCOLON: ";"> |
     <COMMA: ","> |
     <DOLLAR: "$"> |
+    <PARAMETER: "@" ["A"-"Z","a"-"z","_"] (["A"-"Z","a"-"z","0"-"9","_","-"])*> |
     <DOT: "."> |
     <EQ: "="> |
     <INFIX_ADD: "+"> |
@@ -97,6 +190,8 @@ TOKEN :
     <ALIAS: "alias"> |
     <ALL: "all"> |
     <AND: "and"> |
+    <ARGMAX: "argmax"> |
+    <ARGMIN: "argmin"> |
     <ARRAY: "array"> |
     <AS: "as"> |
     <AT: "at"> |
@@ -124,6 +219,7 @@ TOKEN :
     <GROUP: "group"> |
     <HINT: "hint"> |
     <HYPOT: "hypot"> |
+    <IN: "in"> |
     <ISTRUE: "istrue"> |
     <KEEP: "keep"> |
     <LOG: "log"> |
@@ -274,7 +370,7 @@ void operationBody(GroupingOperation parent) :
     FilterExpression filterExp = null;
     ConstantValue<?> maxOperand = null;
     String str;
-    Number num;
+    Number num = null;
     GroupingExpression exp;
     List<GroupingExpression> lst;
 }
@@ -285,17 +381,17 @@ void operationBody(GroupingOperation parent) :
       ( <HINT>      lbrace() str = identifier()                           rbrace() { parent.addHint(str); }                   ) |
       ( <FILTER>    lbrace() filterExp = filterExp(parent)                rbrace() { parent.setFilterBy(filterExp); }         ) |
       ( <KEEP>      lbrace() filterExp = filterExp(parent)                rbrace() { parent.setFilterBy(filterExp); }         ) |
-      ( <MAX>       lbrace() ( maxOperand = infinitePositiveValue() | maxOperand = constantValue() ) rbrace()
+      ( <MAX>       { maxOperand = null; } lbrace() ( maxOperand = infinitePositiveValue() | num = integerNumber("max", Integer.MAX_VALUE) ) rbrace()
       {
-            if (maxOperand instanceof InfiniteValue) {
+            if (maxOperand != null) {
                 parent.setMax(GroupingOperation.UNLIMITED_MAX);
             } else {
-                parent.setMax(((Number)maxOperand.getValue()).intValue());
+                parent.setMax(checkPositive("max", num).intValue());
             }
       } ) |
       ( <ORDER>     lbrace() lst = expList(parent)                        rbrace() { parent.addOrderBy(lst); }                ) |
       ( <OUTPUT>    lbrace() lst = expList(parent)                        rbrace() { parent.addOutputs(lst); }                ) |
-      ( <PRECISION> lbrace() num = number()                               rbrace() { parent.setPrecision(num.intValue()); }   ) |
+      ( <PRECISION> lbrace() num = integerNumber("precision", Integer.MAX_VALUE) rbrace() { parent.setPrecision(checkPositive("precision", num).intValue()); } ) |
       ( <WHERE>     lbrace() str = where()                                rbrace() { parent.setWhere(str); }                  ) )*
     (                              operation(parent)                                                                            )*
 }
@@ -378,10 +474,13 @@ GroupingExpression value(GroupingOperation grp) :
       ( ( lbrace() exp = exp(grp) rbrace() )           |
                    exp = addFunction(grp)              |
                    exp = andFunction(grp)              |
+                   exp = argmaxAggregator(grp)         |
+                   exp = argminAggregator(grp)         |
                    exp = attributeFunction()           |
                    exp = avgExpression(grp)            |
                    exp = catFunction(grp)              |
-                   exp = constantValue()               |
+                   exp = literalConstantValue()        |
+                   exp = parameterStringValue()        |
                    exp = countAggregator()             |
                    exp = debugWaitFunction(grp)        |
                    exp = divFunction(grp)              |
@@ -405,7 +504,7 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = sortFunction(grp)             |
                    exp = arrayAtLookup(grp)            |
                    exp = interpolatedLookup(grp)       |
-                   exp = quantilesExpression(grp)       |
+                   exp = quantilesExpression(grp)      |
                    exp = stddevAggregator(grp)         |
                    exp = stringValue()                 |
                    exp = strCatFunction(grp)           |
@@ -542,6 +641,24 @@ ConstantValue constantValue() :
     { return num instanceof Double ? new DoubleValue((Double)num) : new LongValue((Long)num); }
 }
 
+ConstantValue literalConstantValue() :
+{
+    Number num;
+}
+{
+    ( num = literalNumber() )
+    { return num instanceof Double ? new DoubleValue((Double)num) : new LongValue((Long)num); }
+}
+
+StringValue parameterStringValue() :
+{
+    String str;
+}
+{
+    ( str = parameter() )
+    { return new StringValue(str); }
+}
+
 ConstantValue constantValueSigned() :
 {
     Number num;
@@ -639,8 +756,8 @@ GroupingExpression md5Function(GroupingOperation grp) :
     Number num;
 }
 {
-    ( <MD5> lbrace() exp = exp(grp) comma() num = number() rbrace() )
-    { return new Md5Function(exp, num.intValue()); }
+    ( <MD5> lbrace() exp = exp(grp) comma() num = integerNumber("md5 bits", 128) rbrace() )
+    { return new Md5Function(exp, toNumBits("md5", num, 128)); }
 }
 
 GroupingExpression quantilesExpression(GroupingOperation grp) :
@@ -808,7 +925,7 @@ StringValue stringValueUnquoted() :
     String str;
 }
 {
-    ( str = string() )
+    ( str = literalString() )
     { return new StringValue(str); }
 }
 
@@ -850,6 +967,24 @@ SumAggregator sumAggregator(GroupingOperation grp) :
 {
     ( <SUM> lbrace() exp = exp(grp) rbrace() )
     { return new SumAggregator(exp); }
+}
+
+ArgmaxAggregator argmaxAggregator(GroupingOperation grp) :
+{
+    GroupingExpression key, exp;
+}
+{
+    ( <ARGMAX> lbrace() key = exp(grp) comma() exp = exp(grp) rbrace() )
+    { return new ArgmaxAggregator(key, exp); }
+}
+
+ArgminAggregator argminAggregator(GroupingOperation grp) :
+{
+    GroupingExpression key, exp;
+}
+{
+    ( <ARGMIN> lbrace() key = exp(grp) comma() exp = exp(grp) rbrace() )
+    { return new ArgminAggregator(key, exp); }
 }
 
 SummaryValue summaryValue() :
@@ -988,8 +1123,8 @@ XorBitFunction xorBitFunction(GroupingOperation grp) :
     Number num;
 }
 {
-    ( <XORBIT> lbrace() exp = exp(grp) comma() num = number() rbrace() )
-    { return new XorBitFunction(exp, num.intValue()); }
+    ( <XORBIT> lbrace() exp = exp(grp) comma() num = integerNumber("xorbit bits", 64) rbrace() )
+    { return new XorBitFunction(exp, toNumBits("xorbit", num, 64)); }
 }
 
 FilterExpression filterPrimary(GroupingOperation grp) :
@@ -1000,7 +1135,8 @@ FilterExpression filterPrimary(GroupingOperation grp) :
     (( lbrace() f = filterExp(grp) rbrace() ) |
     ( f = regexPredicate(grp) )              |
     ( f = rangePredicate(grp) )              |
-    ( f = istruePredicate(grp) ))
+    ( f = istruePredicate(grp) )             |
+    ( f = inPredicate(grp) ))
     { return f; }
 }
 
@@ -1023,7 +1159,7 @@ RangePredicate rangePredicate(GroupingOperation grp) :
     BooleanValue upperInclusive = new BooleanValue(false);
 }
 {
-    <RANGE> lbrace() lower = number() comma() upper = number() comma() exp = exp(grp) [ comma()  lowerInclusive = booleanValue() comma() upperInclusive = booleanValue() ] rbrace()
+    <RANGE> lbrace() lower = rangeBound() comma() upper = rangeBound() comma() exp = exp(grp) [ comma()  lowerInclusive = booleanValue() comma() upperInclusive = booleanValue() ] rbrace()
     { return new RangePredicate(lower, upper, exp, lowerInclusive.getValue(), upperInclusive.getValue()); }
 }
 
@@ -1034,6 +1170,20 @@ IsTruePredicate istruePredicate(GroupingOperation grp) :
 {
     <ISTRUE> lbrace() exp = exp(grp) rbrace()
     { return new IsTruePredicate(exp); }
+}
+
+InPredicate inPredicate(GroupingOperation grp) :
+{
+    GroupingExpression exp;
+    String arg;
+    List<String> args = new ArrayList<String>();
+}
+{
+    <IN> lbrace() exp = exp(grp)
+    ( comma() ( ( arg = literalString() { args.add(arg); } ) |
+                ( arg = parameterName() { args.addAll(resolveParameterList(arg)); } ) ) )+
+    rbrace()
+    { return new InPredicate(exp, args); }
 }
 
 FilterExpression orPredicate(GroupingOperation grp) :
@@ -1105,11 +1255,51 @@ Number signedNumber() :
 
 Number number() :
 {
+    Number num;
+}
+{
+    ( num = literalNumber() | num = parameterNumber() )
+    { return num; }
+}
+
+// A number used where an int is expected. A literal is narrowed by the caller as before, while a parameter
+// must be an integer between 1 and max, as it may come from the request.
+Number integerNumber(String clause, int max) :
+{
+    Number num;
+    String name;
+}
+{
+    ( num = literalNumber() | name = parameterName() { num = resolveParameterInteger(name, clause, 1, max); } )
+    { return num; }
+}
+
+// A bound of range(): a number literal which may be negative, or a parameter
+Number rangeBound() :
+{
+    Number num;
+}
+{
+    ( num = signedNumber() | num = parameterNumber() )
+    { return num; }
+}
+
+Number literalNumber() :
+{
     String str;
 }
 {
     ( ( <INTEGER> | <FLOAT> ) { str = token.image; } space() )
     { return resolveNumber(str); }
+}
+
+Number parameterNumber() :
+{
+    String name;
+}
+{
+    ( name = parameterName() )
+    { return resolveParameterNumber(name, resolveParameter(name)); }
 }
 
 BooleanValue booleanValue() :
@@ -1133,8 +1323,35 @@ String string() :
     String ret;
 }
 {
+    ( ret = literalString() | ret = parameter() )
+    { return ret; }
+}
+
+String literalString() :
+{
+    String ret;
+}
+{
     ( ret = identifier() | ( <STRING> { ret = UnicodeUtilities.unquote(token.image); } space() ) )
     { return ret; }
+}
+
+String parameterName() :
+{
+    String name;
+}
+{
+    ( <PARAMETER> { name = token.image.substring(1); } space() )
+    { return name; }
+}
+
+String parameter() :
+{
+    String name;
+}
+{
+    ( name = parameterName() )
+    { return resolveParameter(name); }
 }
 
 String identifier() :
@@ -1149,6 +1366,8 @@ String identifier() :
         <ALIAS> |
         <ALL> |
         <AND> |
+        <ARGMAX> |
+        <ARGMIN> |
         <ARRAY> |
         <AS> |
         <AT> |
@@ -1177,6 +1396,7 @@ String identifier() :
         <HINT> |
         <HYPOT> |
         <IDENTIFIER> |
+        <IN> |
         <ISTRUE> |
         <KEEP> |
         <KM> |

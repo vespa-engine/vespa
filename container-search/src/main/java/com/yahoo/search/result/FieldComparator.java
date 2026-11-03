@@ -3,6 +3,7 @@ package com.yahoo.search.result;
 
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Inspectable;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.query.Sorting;
 
 import java.util.Comparator;
@@ -52,6 +53,10 @@ public class FieldComparator extends ChainableComparator {
     @Override
     public int compare(Hit first, Hit second) {
         for (Sorting.FieldOrder fieldOrder : sorting.fieldOrders() ) {
+            if (fieldOrder.getSorter() instanceof Sorting.FeatureSorter) {
+                throw new IllegalInputException(
+                        "Cannot sort hits by feature(" + fieldOrder.getFieldName() + ") without backend sort data");
+            }
             String fieldName = fieldOrder.getFieldName();
             Object a = getField(first,fieldName);
             Object b = getField(second,fieldName);

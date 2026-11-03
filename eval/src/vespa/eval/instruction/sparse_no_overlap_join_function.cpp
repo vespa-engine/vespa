@@ -4,6 +4,7 @@
 
 #include "generic_join.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/typify.h>
 
 #include <vespa/eval/eval/fast_value.hpp>
@@ -41,17 +42,17 @@ const Value& my_fast_no_overlap_sparse_join(const FastAddrMap& lhs_map, const Fa
             abort();
         }
     }
-    assert(out_idx == output_addr.size());
+    CHECK(out_idx == output_addr.size());
     for (size_t lhs_subspace = 0; lhs_subspace < lhs_map.size(); ++lhs_subspace) {
         auto l_addr = lhs_map.get_addr(lhs_subspace);
-        assert(l_addr.size() == store_lhs_idx.size());
+        CHECK(l_addr.size() == store_lhs_idx.size());
         for (size_t i = 0; i < store_lhs_idx.size(); ++i) {
             size_t addr_idx = store_lhs_idx[i];
             output_addr[addr_idx] = l_addr[i];
         }
         for (size_t rhs_subspace = 0; rhs_subspace < rhs_map.size(); ++rhs_subspace) {
             auto r_addr = rhs_map.get_addr(rhs_subspace);
-            assert(r_addr.size() == store_rhs_idx.size());
+            CHECK(r_addr.size() == store_rhs_idx.size());
             for (size_t i = 0; i < store_rhs_idx.size(); ++i) {
                 size_t addr_idx = store_rhs_idx[i];
                 output_addr[addr_idx] = r_addr[i];
@@ -99,7 +100,7 @@ bool is_sparse_like(const ValueType& type) {
 
 SparseNoOverlapJoinFunction::SparseNoOverlapJoinFunction(const tensor_function::Join& original)
     : tensor_function::Join(original.result_type(), original.lhs(), original.rhs(), original.function()) {
-    assert(compatible_types(result_type(), lhs().result_type(), rhs().result_type()));
+    CHECK(compatible_types(result_type(), lhs().result_type(), rhs().result_type()));
 }
 
 InterpretedFunction::Instruction SparseNoOverlapJoinFunction::compile_self(const ValueBuilderFactory& factory,
@@ -115,7 +116,7 @@ bool SparseNoOverlapJoinFunction::compatible_types(const ValueType& res, const V
         is_sparse_like(rhs) &&
         (res.count_mapped_dimensions() == (lhs.count_mapped_dimensions() + rhs.count_mapped_dimensions())))
     {
-        assert(is_sparse_like(res));
+        CHECK(is_sparse_like(res));
         return true;
     }
     return false;

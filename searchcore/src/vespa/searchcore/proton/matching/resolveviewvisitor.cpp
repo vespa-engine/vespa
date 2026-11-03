@@ -50,4 +50,9 @@ void ResolveViewVisitor::visit(ProtonNodeTypes::SameElement& n) {
     visitTerm(n);
 }
 
+void ResolveViewVisitor::visit(ProtonNodeTypes::LabelWrapper& n) {
+    visitChildren(n);
+    n.resolve();
+}
+
 } // namespace proton::matching

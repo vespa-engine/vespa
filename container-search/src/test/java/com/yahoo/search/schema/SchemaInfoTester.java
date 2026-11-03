@@ -5,12 +5,14 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.schema.RankProfile.InputType;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -61,16 +63,25 @@ public class SchemaInfoTester {
                 .addInput("query(myTensor3)", InputType.fromSpec("tensor(x[2],y[2])"))
                 .addInput("query(myTensor4)", InputType.fromSpec("tensor<float>(x[5])"));
         schemas.add(new Schema.Builder("a")
+                            .setExplanation("Schema a")
                             .add(common.build())
-                            .add(new Field.Builder("field1", "string").setIndex(true).addAlias("alias1").addAlias("alias2").build())
+                            .add(new Field.Builder("field1", "string").setIndex(true).addAlias("alias1").addAlias("alias2")
+                                                                      .setExplanation("Field 1\nin schema a")
+                                                                      .setMatchType(Field.MatchType.TEXT).build())
                             .add(new Field.Builder("field2", "int").setAttribute(true).build())
+                            .add(new Field.Builder("field3", "tensor<float>(x[5])").setAttribute(true).setInputExpression("embed(e5, @input)").build())
+                            .add(new FieldSet.Builder("default").addField("field1").build())
+                            .add(new FieldSet.Builder("structFields").addField("struct1.x").addField("struct1.y").build())
+                            .add(new FieldSet.Builder("mixed").addField("struct1.x").addField("field2").build())
                             .add(new RankProfile.Builder("inconsistent")
                                          .addInput("query(myTensor1)", InputType.fromSpec("tensor(a{},b{})"))
                                          .build())
                             .add(new RankProfile.Builder("withParameters")
+                                         .setExplanation("Profile with parameters")
                                          .setSecondPhase(new SecondPhase.Builder().setRerankCount(201).build())
                                          .setKeepRankCount(401)
                                          .setMatchPhase(new MatchPhase.Builder().setMaxHits(801).build())
+                                         .addSortFeature("foo")
                                          .build())
                             .add(new RankProfile.Builder("withTotalParameters")
                                          .setSecondPhase(new SecondPhase.Builder().setTotalRerankCount(2001).build())
@@ -90,7 +101,11 @@ public class SchemaInfoTester {
                                          .build())
                             .add(new RankProfile.Builder("bOnly")
                                          .setUseSignificanceModel(true)
-                                         .addInput("query(myTensor1)", InputType.fromSpec("tensor(a{},b{})"))
+                                         .addInput(new RankProfile.Input("query(myTensor1)",
+                                                                         InputType.fromSpec("tensor(a{},b{})"),
+                                                                         Optional.of(Tensor.from("tensor(a{},b{}):{{a:x,b:y}:1.0}")),
+                                                                         Optional.of("The first tensor")
+                                         ))
                                          .build())
                             .build());
         List<Cluster> clusters = new ArrayList<>();
@@ -113,20 +128,32 @@ public class SchemaInfoTester {
         // ----- Schema A
         var schemaA = new SchemaInfoConfig.Schema.Builder();
         schemaA.name("a");
+        schemaA.explanation("Schema a");
 
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field1").type("string")
-                                                                 .index(true).attribute(false).bitPacked(false)
-                                                                 .alias("alias1").alias("alias2"));
+                                                                 .index(true).attribute(false)
+                                                                 .alias("alias1").alias("alias2")
+                                                                 .explanation("Field 1\nin schema a")
+                                                                 .matchType(SchemaInfoConfig.Schema.Field.MatchType.TEXT));
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field2").type("int")
-                                                                 .index(false).attribute(true).bitPacked(false));
+                                                                 .index(false).attribute(true));
+        schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field3").type("tensor<float>(x[5])")
+                                                                 .index(false).attribute(true)
+                                                                 .inputExpression("embed(e5, @input)"));
+
+        schemaA.fieldset(new SchemaInfoConfig.Schema.Fieldset.Builder().name("default").field("field1"));
+        schemaA.fieldset(new SchemaInfoConfig.Schema.Fieldset.Builder().name("structFields").field("struct1.x").field("struct1.y"));
+        schemaA.fieldset(new SchemaInfoConfig.Schema.Fieldset.Builder().name("mixed").field("struct1.x").field("field2"));
 
         schemaA.rankprofile(rankProfileCommon);
 
         var rankProfileWithParameters = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileWithParameters.name("withParameters");
+        rankProfileWithParameters.explanation("Profile with parameters");
         rankProfileWithParameters.rerankCount(201);
         rankProfileWithParameters.keepRankCount(401);
         rankProfileWithParameters.matchPhaseMaxHits(801);
+        rankProfileWithParameters.sortFeature("foo");
         schemaA.rankprofile(rankProfileWithParameters);
 
         var rankProfileWithTotalParameters = new SchemaInfoConfig.Schema.Rankprofile.Builder();
@@ -165,7 +192,10 @@ public class SchemaInfoTester {
         var rankProfileBOnly = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileBOnly.name("bOnly")
                 .significance(new SchemaInfoConfig.Schema.Rankprofile.Significance.Builder().useModel(true));
-        rankProfileBOnly.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));
+        rankProfileBOnly.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)")
+                                                                                      .type("tensor(a{},b{})")
+                                                                                      .defaultValue("tensor(a{},b{}):{{a:x,b:y}:1.0}")
+                                                                                      .explanation("The first tensor"));
         schemaB.rankprofile(rankProfileBOnly);
 
         schemaInfoInfoConfig.schema(schemaB);

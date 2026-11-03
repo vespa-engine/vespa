@@ -78,6 +78,19 @@ struct Rename {
 
 } // namespace feature_rename
 
+namespace sort {
+
+/**
+ * Property for the set of rank features that may be used as sorting keys.
+ **/
+struct Feature {
+    static const std::string              NAME;
+    static const std::vector<std::string> DEFAULT_VALUE;
+    static std::vector<std::string> lookup(const Properties& props);
+};
+
+} // namespace sort
+
 namespace match {
 
 /**

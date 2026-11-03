@@ -2,6 +2,7 @@
 
 #include "fieldsearchspec.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
@@ -14,6 +15,7 @@
 #include <vespa/vsm/searcher/geo_pos_field_searcher.h>
 #include <vespa/vsm/searcher/intfieldsearcher.h>
 #include <vespa/vsm/searcher/nearest_neighbor_field_searcher.h>
+#include <vespa/vsm/searcher/sparse_tensor_wand_field_searcher.h>
 #include <vespa/vsm/searcher/utf8exactstringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8flexiblestringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
@@ -75,7 +77,8 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT& fid, const std::string& fname, 
       _reconfigured(false) {
     switch (searchDef) {
     default:
-        Issue::report("Unknown searchdef = %d. Defaulting to AUTOUTF8", static_cast<int>(searchDef));
+        LOG(warning, "Unknown searchdef = %d for field '%s'. Defaulting to AUTOUTF8", static_cast<int>(searchDef),
+            fname.c_str());
         [[fallthrough]];
     case VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8:
     case VsmfieldsConfig::Fieldspec::Searchmethod::NONE:
@@ -125,6 +128,17 @@ void FieldSearchSpec::reconfig(const QueryTerm& term) {
     if (_reconfigured) {
         return;
     }
+    if (term.is_sparse_tensor_wand() && (_searchMethod == VsmfieldsConfig::Fieldspec::Searchmethod::NONE)) {
+        // Tensor fields not supporting nearest neighbor search have no dedicated search method (NONE).
+        // Other fields with NONE (e.g. predicate and reference fields) also end up here, and are
+        // reported by SparseTensorWandFieldSearcher::prepare() as not being tensor fields.
+        _searcher = std::make_unique<SparseTensorWandFieldSearcher>(id());
+        propagate_settings_to_searcher();
+        LOG(debug, "Reconfigured to use SparseTensorWandFieldSearcher for field '%s' with id '%d'", name().c_str(),
+            id());
+        _reconfigured = true;
+        return;
+    }
     switch (_searchMethod) {
     case VsmfieldsConfig::Fieldspec::Searchmethod::NONE:
     case VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8:
@@ -132,7 +146,7 @@ void FieldSearchSpec::reconfig(const QueryTerm& term) {
     case VsmfieldsConfig::Fieldspec::Searchmethod::SSE2UTF8:
         if ((term.isSubstring() && _arg1 != "substring") || (term.isSuffix() && _arg1 != "suffix") ||
             (term.isExactstring() && _arg1 != "exact") || (term.isPrefix() && _arg1 == "suffix") ||
-            (term.isRegex() || term.isFuzzy()))
+            (term.isRegex() || term.isFuzzy() || term.is_string_range()))
         {
             _searcher = std::make_unique<UTF8FlexibleStringFieldSearcher>(id());
             propagate_settings_to_searcher();
@@ -262,7 +276,8 @@ FieldIdTList buildFieldSet(const VsmfieldsConfig::Documenttype::Index& ci, const
             if (foundField != specMap.end()) {
                 ifm.push_back(foundField->second.id());
             } else {
-                Issue::report("Field %s not defined. Ignoring....", cf.name.c_str());
+                LOG(warning, "Field '%s' is not defined. Cannot add to index view '%s'.", cf.name.c_str(),
+                    ci.name.c_str());
             }
         }
     }
@@ -285,10 +300,31 @@ search::Normalizing FieldSearchSpecMap::convert_normalize_mode(VsmfieldsConfig::
 
 void FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle&                conf,
                                          const search::fef::IIndexEnvironment& index_env) {
+    /*
+     * The vsm field id space must be identical to the field id space of the
+     * index environment, which is built from this same config, cf.
+     * streaming::IndexEnvPrototype::detectFields(). Rather than counting along
+     * in parallel, take each id from the index environment. Field id 0 is the
+     * reserved "no field" in both id spaces and never denotes a vsm field.
+     */
+    CHECK(index_env.getNumFields() > 0);
+    CHECK(index_env.getField(0)->is_no_field());
     LOG(spam, "Parsing %zd fields", conf->fieldspec.size());
     for (const VsmfieldsConfig::Fieldspec& cfs : conf->fieldspec) {
         LOG(spam, "Parsing %s", cfs.name.c_str());
-        FieldIdT        fieldId = specMap().size();
+        const auto* field = index_env.getFieldByName(cfs.name);
+        if (field == nullptr) {
+            LOG(warning,
+                "Field '%s' is not registered in the index environment. "
+                "Cannot add a field search spec for it.",
+                cfs.name.c_str());
+            continue;
+        }
+        FieldIdT fieldId = field->id();
+        if (specMap().contains(fieldId)) {
+            LOG(warning, "We already have a field search spec for field '%s'. Drop the new one.", cfs.name.c_str());
+            continue;
+        }
         FieldSearchSpec fss(fieldId, cfs.name, cfs.searchmethod, convert_normalize_mode(cfs.normalize), cfs.arg1,
                             cfs.maxlength);
         _specMap[fieldId] = std::move(fss);
@@ -297,12 +333,15 @@ void FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle&                c
     }
     /*
      * Index env is based on same vsm fields config but has additional
-     * virtual fields, cf. IndexEnvironment::add_virtual_fields().
+     * virtual fields, cf. IndexEnvironment::add_virtual_fields(). Propagate
+     * their name to field id mapping without assuming where in the id space
+     * they live.
      */
-    for (uint32_t field_id = specMap().size(); field_id < index_env.getNumFields(); ++field_id) {
+    for (uint32_t field_id = 1; field_id < index_env.getNumFields(); ++field_id) {
         auto& field = *index_env.getField(field_id);
-        assert(field.type() == search::fef::FieldType::VIRTUAL);
-        _nameIdMap.add(field.name(), field_id);
+        if (field.type() == search::fef::FieldType::VIRTUAL) {
+            _nameIdMap.add(field.name(), field_id);
+        }
     }
 
     LOG(spam, "Parsing %zd document types", conf->documenttype.size());

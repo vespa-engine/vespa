@@ -96,8 +96,9 @@ class IntermediatePredicateNode : public PredicateNode {
 public:
     IntermediatePredicateNode(const std::vector<PredicateNode*> children) : _children(children) {}
     ~IntermediatePredicateNode() {
-        for (size_t i = 0; i < _children.size(); ++i)
+        for (size_t i = 0; i < _children.size(); ++i) {
             delete _children[i];
+        }
     }
 
     size_t getSize() const { return _children.size(); }

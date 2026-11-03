@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "serializablearray.h"
 
+#include <vespa/check_require.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/util/serializableexceptions.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <algorithm>
-#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.serializable-array");
@@ -78,7 +78,7 @@ void SerializableArray::clear() {
 
 void SerializableArray::set(int id, ByteBuffer buffer) {
     Entry e(id, buffer.getRemaining(), buffer.getBuffer());
-    assert(buffer.getRemaining() < 0x80000000ul);
+    CHECK(buffer.getRemaining() < 0x80000000ul);
     ensure(_owned)[id] = std::move(buffer);
     auto it = find(id);
     if (it == _entries.end()) {

@@ -4,9 +4,9 @@
 #include "domain.h"
 #include "domainpart.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 
-#include <cassert>
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -62,7 +62,7 @@ void Session::visit() {
 }
 
 void Session::startVisit() {
-    assert(!_visitRunning);
+    CHECK(!_visitRunning);
     _visitRunning = true;
 }
 void Session::visitOnly() {

@@ -2,20 +2,19 @@
 
 #include "flush_target_candidates.h"
 
-#include "flush_target_candidate.h"
 #include "tls_stats.h"
+
+using proton::flushengine::PrepareRestartCostsConfig;
+using search::SerialNum;
 
 namespace proton {
 
-using search::SerialNum;
-
-using Config = PrepareRestartFlushStrategy::Config;
 using TlsReplayCost = FlushTargetCandidates::TlsReplayCost;
 
 namespace {
 
-SerialNum calculateReplayStartSerial(std::span<const FlushTargetCandidate> candidates, size_t num_candidates,
-                                     const flushengine::TlsStats& tlsStats) {
+[[nodiscard]] SerialNum calculateReplayStartSerial(std::span<const FlushTargetCandidate> candidates,
+                                                   size_t num_candidates, const flushengine::TlsStats& tlsStats) {
     if (num_candidates == 0) {
         return tlsStats.getFirstSerial();
     }
@@ -25,8 +24,9 @@ SerialNum calculateReplayStartSerial(std::span<const FlushTargetCandidate> candi
     return candidates[num_candidates].get_flushed_serial() + 1;
 }
 
-TlsReplayCost calculateTlsReplayCost(const flushengine::TlsStats& tlsStats, const Config& cfg,
-                                     SerialNum replayStartSerial) {
+[[nodiscard]] TlsReplayCost calculateTlsReplayCost(const flushengine::TlsStats&     tlsStats,
+                                                   const PrepareRestartCostsConfig& cfg,
+                                                   SerialNum                        replayStartSerial) noexcept {
     SerialNum replayEndSerial = tlsStats.getLastSerial();
     SerialNum numTotalOperations = replayEndSerial - tlsStats.getFirstSerial() + 1;
     if (numTotalOperations == 0) {
@@ -35,36 +35,46 @@ TlsReplayCost calculateTlsReplayCost(const flushengine::TlsStats& tlsStats, cons
     double    numBytesPerOperation = (double)tlsStats.getNumBytes() / (double)numTotalOperations;
     SerialNum numOperationsToReplay = replayEndSerial + 1 - replayStartSerial;
     double    numBytesToReplay = numBytesPerOperation * numOperationsToReplay;
-    return TlsReplayCost((numBytesToReplay * cfg.tlsReplayByteCost),
-                         (numOperationsToReplay * cfg.tlsReplayOperationCost));
-}
-
-double calculateFlushTargetsWriteCost(std::span<const FlushTargetCandidate> candidates, size_t num_candidates) {
-    double result = 0;
-    for (size_t i = 0; i < num_candidates; ++i) {
-        result += candidates[i].get_write_cost();
-    }
-    return result;
-}
-
-double calculate_flush_targets_read_cost(std::span<const FlushTargetCandidate> candidates, size_t num_candidates) {
-    double result = 0;
-    for (size_t i = 0; i < num_candidates; ++i) {
-        result += candidates[i].get_read_cost();
-    }
-    return result;
+    return TlsReplayCost((numBytesToReplay * cfg.tls_replay_byte_cost),
+                         (numOperationsToReplay * cfg.tls_replay_operation_cost));
 }
 
 } // namespace
 
-FlushTargetCandidates::FlushTargetCandidates(std::span<const FlushTargetCandidate> candidates, size_t num_candidates,
-                                             const flushengine::TlsStats& tlsStats, const Config& cfg)
+FlushTargetCandidates::FlushTargetCandidates(std::span<const FlushTargetCandidate> candidates,
+                                             const flushengine::TlsStats&          tlsStats,
+                                             const PrepareRestartCostsConfig&      cfg) noexcept
     : _candidates(candidates),
-      _num_candidates(std::min(num_candidates, _candidates.size())),
-      _tlsReplayCost(
-          calculateTlsReplayCost(tlsStats, cfg, calculateReplayStartSerial(_candidates, _num_candidates, tlsStats))),
-      _flushTargetsWriteCost(calculateFlushTargetsWriteCost(_candidates, _num_candidates)),
-      _flush_targets_read_cost(calculate_flush_targets_read_cost(_candidates, num_candidates)) {
+      _num_candidates(0),
+      _tlsReplayCost(calculateTlsReplayCost(tlsStats, cfg, calculateReplayStartSerial(_candidates, 0, tlsStats))),
+      _flush_targets_replay_cost(0.0),
+      _flushTargetsWriteCost(0.0),
+      _flush_targets_read_cost(0.0),
+      _tls_stats(&tlsStats),
+      _prepare_restart_costs_config(&cfg) {
+    for (const auto& candidate : candidates) {
+        if (candidate.get_always_flush()) {
+            _flushTargetsWriteCost += candidate.get_write_cost();
+            _flush_targets_read_cost += candidate.get_read_cost();
+        } else {
+            _flush_targets_replay_cost += candidate.replay_cost();
+        }
+    }
+}
+
+void FlushTargetCandidates::inc_num_candidates() noexcept {
+    if (_num_candidates < _candidates.size()) {
+        auto& candidate = _candidates[_num_candidates];
+        ++_num_candidates;
+        _tlsReplayCost =
+            calculateTlsReplayCost(*_tls_stats, *_prepare_restart_costs_config,
+                                   calculateReplayStartSerial(_candidates, _num_candidates, *_tls_stats));
+        if (!candidate.get_always_flush()) {
+            _flush_targets_replay_cost -= candidate.replay_cost();
+            _flushTargetsWriteCost += candidate.get_write_cost();
+            _flush_targets_read_cost += candidate.get_read_cost();
+        }
+    }
 }
 
 FlushContext::List FlushTargetCandidates::getCandidates() const {

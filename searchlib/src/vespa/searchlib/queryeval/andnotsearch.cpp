@@ -145,6 +145,7 @@ void AndNotSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& elemen
     std::vector<uint32_t> temp_element_ids;
     std::vector<uint32_t> result;
     for (auto& child : others) {
+        temp_element_ids.clear();
         child->get_element_ids(docid, temp_element_ids);
         if (!temp_element_ids.empty()) {
             result.clear();

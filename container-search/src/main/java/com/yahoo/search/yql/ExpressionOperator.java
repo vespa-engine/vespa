@@ -46,6 +46,7 @@ enum ExpressionOperator implements Operator {
 
     INDEX(ExpressionOperator.class, ExpressionOperator.class),
     PROPREF(ExpressionOperator.class, String.class),
+    MAPREF(ExpressionOperator.class, ExpressionOperator.class),
 
     CALL(TypeCheckers.LIST_OF_STRING, TypeCheckers.EXPRS),
 

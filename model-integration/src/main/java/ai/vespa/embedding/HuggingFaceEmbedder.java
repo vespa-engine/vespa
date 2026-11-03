@@ -3,6 +3,7 @@ package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
+import ai.vespa.modelintegration.evaluator.OnnxPoolingOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import ai.vespa.modelintegration.utils.ModelPathHelper;
 import ai.vespa.modelintegration.utils.OnnxExternalDataResolver;
@@ -21,6 +22,7 @@ import com.yahoo.text.Text;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGEST_FIRST;
@@ -80,7 +82,16 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         validateName(outputs, outputName, "output");
         int outputDimensions = outputs.get(outputName).dimensions().size();
         var poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
-        if (outputDimensions == 2) {
+        if (evaluator.runtimePooling().isPresent()) {
+            // The runtime pools the output, so this embedder uses strategy NONE. A runtime that ignores
+            // the request must fail here. Otherwise this embedder would treat token embeddings as pooled.
+            if (outputDimensions != 2) {
+                throw new IllegalArgumentException("Expected 2 output dimensions for '" + outputName +
+                                                   "' pooled by the ONNX runtime, but got type: " + outputs.get(outputName) +
+                                                   ". The runtime did not apply the pooling it was asked for.");
+            }
+            poolingStrategy = PoolingStrategy.NONE;
+        } else if (outputDimensions == 2) {
             if (poolingStrategy != PoolingStrategy.NONE) {
                 throw new IllegalArgumentException("Expected pooling-strategy 'none' with 2 output dimensions");
             }
@@ -104,14 +115,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     public HuggingFaceEmbedder(OnnxRuntime onnx, Embedder.Runtime runtime, HuggingFaceEmbedderConfig embedderConfig, OnnxEvaluatorConfig onnxConfig, ModelPathHelper modelHelper) {
         this.runtime = runtime;
         
-        var resolver = new OnnxExternalDataResolver(modelHelper);
-        var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig);
-        evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
-        
-        this.analysis = analyze(evaluator, embedderConfig);
-        normalize = embedderConfig.normalize();
-        prepender = new TextPrepender(embedderConfig.prependQuery(), embedderConfig.prependDocument());
         var tokenizerPath = modelHelper.getModelPathResolvingIfNecessary(embedderConfig.tokenizerPathReference());
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
@@ -119,14 +122,39 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                 .setPadding(false);
         var info = HuggingFaceTokenizer.getModelInfo(tokenizerPath);
         log.fine(() -> Text.format("'%s' has info '%s'", tokenizerPath, info));
-        if (info.maxLength() == -1 || info.truncation() != LONGEST_FIRST) {
-            // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
-            int maxLength = info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens()
-                    ? info.maxLength()
-                    : embedderConfig.transformerMaxTokens();
-            builder.setTruncation(true).setMaxLength(maxLength);
-        }
+        // Force truncation to max token vector length accepted by model if tokenizer.json contains no valid truncation configuration
+        boolean forceTruncation = info.maxLength() == -1 || info.truncation() != LONGEST_FIRST;
+        int maxLength = ! forceTruncation ? info.maxLength() // The longest input the model gets, as the tokenizer truncates to it
+                        : info.maxLength() > 0 && info.maxLength() <= embedderConfig.transformerMaxTokens() ? info.maxLength()
+                        : embedderConfig.transformerMaxTokens();
+        if (forceTruncation) builder.setTruncation(true).setMaxLength(maxLength);
         this.tokenizer = builder.build();
+
+        var resolver = new OnnxExternalDataResolver(modelHelper);
+        var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
+        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig).withAttentionMask(embedderConfig.transformerAttentionMask()).withMaxTokens(maxLength);
+        onnxOpts = runtimePooling(embedderConfig).map(onnxOpts::withRuntimePooling).orElse(onnxOpts);
+        evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
+
+        this.analysis = analyze(evaluator, embedderConfig);
+        normalize = embedderConfig.normalize();
+        prepender = new TextPrepender(embedderConfig.prependQuery(), embedderConfig.prependDocument());
+    }
+
+    /**
+     * Returns the pooling this configuration asks the runtime to do, or empty for strategy none.
+     * Runtime pooling avoids transferring the token embeddings. Normalization stays in this embedder,
+     * since it may truncate the embedding to the target type first.
+     */
+    static Optional<OnnxPoolingOptions> runtimePooling(HuggingFaceEmbedderConfig config) {
+        var strategy = switch (config.poolingStrategy()) {
+            case mean -> OnnxPoolingOptions.Strategy.MEAN;
+            case cls -> OnnxPoolingOptions.Strategy.CLS;
+            case last -> OnnxPoolingOptions.Strategy.LAST;
+            case none -> null;
+        };
+        return Optional.ofNullable(strategy)
+                       .map(s -> new OnnxPoolingOptions(s, config.transformerOutput(), config.transformerAttentionMask()));
     }
 
     private static void validateName(Map<String, TensorType> types, String name, String type) {
@@ -178,6 +206,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         var start = System.nanoTime();
         var encoding = tokenizer.encode(text, context.getLanguage());
         runtime.sampleSequenceLength(encoding.ids().size(), context);
+        runtime.samplePaddedSequenceLength(evaluator.paddedLength(encoding.ids().size()), context);
         Tensor inputSequence = createTensorRepresentation(encoding.ids(), "d1").expand("d0");
         Tensor attentionMask = createTensorRepresentation(encoding.attentionMask(), "d1").expand("d0");
         Map<String, Tensor> inputs;
@@ -198,10 +227,12 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                 .evaluate(inputs, OnnxEmbedderTimeout.remainingOrThrow(context))
                 .get(analysis.outputName());
         long[] resultShape = tokenEmbeddings.shape();
-        // shape should have batch, sequence, embedding dimensionality
+        // The shape is [batch, sequence, embedding], or [batch, embedding] if the output is already pooled
         if (resultShape.length != analysis.outputDimensions()) {
             throw new IllegalArgumentException("Expected " + analysis.outputDimensions + " output dimensions for output name '" +
-                                               analysis.outputName() + "': [batch, sequence, embedding], got " + resultShape.length);
+                                               analysis.outputName() + "': " +
+                                               (analysis.outputDimensions == 3 ? "[batch, sequence, embedding]" : "[batch, embedding]") +
+                                               ", got " + resultShape.length);
         }
         runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return new HFEmbeddingResult(tokenEmbeddings, attentionMask, context.getEmbedderId());

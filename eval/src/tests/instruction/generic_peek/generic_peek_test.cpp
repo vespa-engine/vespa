@@ -143,8 +143,9 @@ void verify_peek_equal(const TensorSpec& input, const PeekSpec& spec, const Valu
     for (const auto& [dim_name, ignored] : spec) {
         reduce_dims.push_back(dim_name);
     }
-    if (reduce_dims.empty())
+    if (reduce_dims.empty()) {
         return;
+    }
     ValueType result_type = param_type.peek(reduce_dims);
     auto      expect = reference_peek(input, spec);
     SCOPED_TRACE(fmt("peek input: %s\n  peek spec: %s\n  peek result %s\n", input.to_string().c_str(),
@@ -167,8 +168,9 @@ void fill_dims_and_check(const TensorSpec& input, PeekSpec spec, std::vector<Val
     for (int64_t label_value : {-2, -1, 0, 1, 3}) {
         if (dim.is_indexed()) {
             size_t index = label_value;
-            if (index >= dim.size)
+            if (index >= dim.size) {
                 continue;
+            }
             TensorSpec::Label label(index);
             spec.insert_or_assign(dim.name, label);
         } else {

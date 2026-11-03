@@ -49,14 +49,6 @@
       <!-- END: Transitive dependencies for openai-java -->
 
       <!-- START: Transitive dependencies for grpc -->
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-bom</artifactId>
-        <version>${grpc.vespa.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-
       <!-- Override scope from 'runtime' to 'compile' -->
       <dependency>
         <groupId>com.google.code.gson</groupId>
@@ -291,7 +283,6 @@
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-netty-shaded</artifactId>
-      <version>${grpc.vespa.version}</version>
       <exclusions>
         <exclusion>
           <groupId>com.google.android</groupId>
@@ -306,12 +297,10 @@
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-protobuf</artifactId>
-      <version>${grpc.vespa.version}</version>
     </dependency>
     <dependency>
       <groupId>io.grpc</groupId>
       <artifactId>grpc-stub</artifactId>
-      <version>${grpc.vespa.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.codehaus.mojo</groupId>
@@ -407,7 +396,7 @@
             <binaryMavenPlugin>
               <groupId>io.grpc</groupId>
               <artifactId>protoc-gen-grpc-java</artifactId>
-              <version>${grpc.vespa.version}</version>
+              <version>${gen-grpc-java.vespa.version}</version>
               <options>@generated=omit</options>
             </binaryMavenPlugin>
           </binaryMavenPlugins>

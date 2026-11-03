@@ -9,6 +9,7 @@
 #include "iocomponent.h"
 #include "transport.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/util/atomic.h>
@@ -44,8 +45,9 @@ void FNET_TransportThread::AddComponent(FNET_IOComponent* comp) {
             _componentsTail->_ioc_next = comp;
         }
         _componentsTail = comp;
-        if (_timeOutHead == nullptr)
+        if (_timeOutHead == nullptr) {
             _timeOutHead = comp;
+        }
         store_relaxed(_componentCnt, load_relaxed(_componentCnt) + 1);
     } else {
         comp->_ioc_prev = nullptr;
@@ -61,16 +63,21 @@ void FNET_TransportThread::AddComponent(FNET_IOComponent* comp) {
 }
 
 void FNET_TransportThread::RemoveComponent(FNET_IOComponent* comp) {
-    if (comp == _componentsHead)
+    if (comp == _componentsHead) {
         _componentsHead = comp->_ioc_next;
-    if (comp == _timeOutHead)
+    }
+    if (comp == _timeOutHead) {
         _timeOutHead = comp->_ioc_next;
-    if (comp == _componentsTail)
+    }
+    if (comp == _componentsTail) {
         _componentsTail = comp->_ioc_prev;
-    if (comp->_ioc_prev != nullptr)
+    }
+    if (comp->_ioc_prev != nullptr) {
         comp->_ioc_prev->_ioc_next = comp->_ioc_next;
-    if (comp->_ioc_next != nullptr)
+    }
+    if (comp->_ioc_next != nullptr) {
         comp->_ioc_next->_ioc_prev = comp->_ioc_prev;
+    }
     store_relaxed(_componentCnt, load_relaxed(_componentCnt) - 1);
 }
 
@@ -81,7 +88,7 @@ void FNET_TransportThread::UpdateTimeOut(FNET_IOComponent* comp) {
 }
 
 void FNET_TransportThread::AddDeleteComponent(FNET_IOComponent* comp) {
-    assert(!comp->_flags._ioc_delete);
+    CHECK(!comp->_flags._ioc_delete);
     comp->_flags._ioc_delete = true;
     comp->_ioc_prev = nullptr;
     comp->_ioc_next = _deleteList;
@@ -92,7 +99,7 @@ void FNET_TransportThread::FlushDeleteList() {
     while (_deleteList != nullptr) {
         FNET_IOComponent* tmp = _deleteList;
         _deleteList = tmp->_ioc_next;
-        assert(tmp->_flags._ioc_delete);
+        CHECK(tmp->_flags._ioc_delete);
         tmp->internal_subref();
     }
 }
@@ -326,12 +333,14 @@ void FNET_TransportThread::ShutDown(bool waitFinished) {
 }
 
 void FNET_TransportThread::WaitFinished() {
-    if (is_finished())
+    if (is_finished()) {
         return;
+    }
 
     std::unique_lock<std::mutex> guard(_shutdownLock);
-    while (!is_finished())
+    while (!is_finished()) {
         _shutdownCond.wait(guard);
+    }
 }
 
 bool FNET_TransportThread::InitEventLoop() {
@@ -447,10 +456,12 @@ bool FNET_TransportThread::EventLoopIteration() {
         FlushDeleteList();
     } // -- END OF MAIN EVENT LOOP --
 
-    if (!should_shut_down())
+    if (!should_shut_down()) {
         return true;
-    if (is_finished())
+    }
+    if (is_finished()) {
         return false;
+    }
 
     endEventLoop();
     return false;
@@ -470,7 +481,7 @@ void FNET_TransportThread::endEventLoop() {
     // close and remove all I/O Components
     FNET_IOComponent* component = _componentsHead;
     while (component != nullptr) {
-        assert(component == _componentsHead);
+        CHECK(component == _componentsHead);
         FNET_IOComponent* tmp = component;
         component = component->_ioc_next;
         RemoveComponent(tmp);
@@ -496,8 +507,8 @@ void FNET_TransportThread::endEventLoop() {
         }
     }
 
-    assert(_componentsHead == nullptr && _componentsTail == nullptr && _timeOutHead == nullptr &&
-           load_relaxed(_componentCnt) == 0 && _queue.IsEmpty_NoLock() && _myQueue.IsEmpty_NoLock());
+    CHECK(_componentsHead == nullptr && _componentsTail == nullptr && _timeOutHead == nullptr &&
+          load_relaxed(_componentCnt) == 0 && _queue.IsEmpty_NoLock() && _myQueue.IsEmpty_NoLock());
 
     {
         std::lock_guard<std::mutex> guard(_shutdownLock);

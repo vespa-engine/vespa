@@ -16,7 +16,7 @@ import { join, relative } from 'path';
 
 const TMGRAMMAR = join(import.meta.dirname, '..');
 const VESPA_ROOT = join(TMGRAMMAR, '..', '..');
-const GRAMMAR_PATH = join(TMGRAMMAR, 'grammar/vespa-schema.tmLanguage.json');
+const GRAMMAR_PATH = join(TMGRAMMAR, 'grammars/vespa-schema.tmLanguage.json');
 const TEST_DIR = join(VESPA_ROOT, 'integration/schema-language-server/language-server/src/test/sdfiles');
 
 // Parse CLI args

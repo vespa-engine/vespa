@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
+import com.yahoo.searchlib.expression.FloatResultNode;
 import com.yahoo.searchlib.expression.ResultNode;
 import com.yahoo.searchlib.expression.SingleResultNode;
 import com.yahoo.vespa.objects.Deserializer;
@@ -16,14 +17,12 @@ import com.yahoo.vespa.objects.Serializer;
 public class MinAggregationResult extends AggregationResult {
 
     public static final int classId = registerClass(0x4000 + 84, MinAggregationResult.class, MinAggregationResult::new);
-    private SingleResultNode min;
+    private SingleResultNode min = new FloatResultNode(Double.MAX_VALUE);
 
     /**
-     * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
+     * Constructs an empty result node.
      */
-    public MinAggregationResult() {
-
-    }
+    public MinAggregationResult() {}
 
     /**
      * Constructs an instance of this class with given min value.

@@ -12,19 +12,19 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::StringPostingSearchContext(Bas
                                                                              const AttrT& toBeSearched)
     : Parent(std::move(base_sc), useBitVector, toBeSearched) {
     if (this->valid()) {
-        if (this->isPrefix()) {
-            auto comp = _enumStore.make_folded_comparator_prefix(this->queryTerm()->getTerm());
+        if (matcher().isPrefix()) {
+            auto comp = _enumStore.prefix_lookup_comparator(this->queryTerm()->getTerm());
             this->lookupRange(comp, comp);
-        } else if (this->isRegex()) {
+        } else if (matcher().isRegex()) {
             std::string prefix(RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
-            auto        comp = _enumStore.make_folded_comparator_prefix(prefix.c_str());
+            auto        comp = _enumStore.prefix_lookup_comparator(prefix.c_str());
             this->lookupRange(comp, comp);
-        } else if (this->isFuzzy()) {
-            std::string prefix(this->getFuzzyMatcher().getPrefix());
-            auto        comp = _enumStore.make_folded_comparator_prefix(prefix.c_str());
+        } else if (matcher().isFuzzy()) {
+            std::string prefix(matcher().getFuzzyMatcher().getPrefix());
+            auto        comp = _enumStore.prefix_lookup_comparator(prefix.c_str());
             this->lookupRange(comp, comp);
         } else {
-            auto comp = _enumStore.make_folded_comparator(this->queryTerm()->getTerm());
+            auto comp = _enumStore.string_lookup_comparator(this->queryTerm()->getTerm());
             this->lookupTerm(comp);
         }
         if (this->_uniqueValues == 1u) {
@@ -44,23 +44,23 @@ StringPostingSearchContext<BaseSC, AttrT, DataT>::StringPostingSearchContext(Bas
 template <typename BaseSC, typename AttrT, typename DataT>
 bool StringPostingSearchContext<BaseSC, AttrT, DataT>::use_dictionary_entry(
     PostingListSearchContext::DictionaryConstIterator& it) const {
-    if (this->isRegex()) {
-        if (this->getRegex().valid() &&
-            this->getRegex().partial_match(_enumStore.get_value(it.getKey().load_acquire())))
+    if (matcher().isRegex()) {
+        if (matcher().getRegex().valid() &&
+            matcher().getRegex().partial_match(_enumStore.get_value(it.getKey().load_acquire())))
         {
             return true;
         }
         ++it;
         return false;
-    } else if (this->isCased()) {
-        if (this->match(_enumStore.get_value(it.getKey().load_acquire()))) {
+    } else if (matcher().isCased()) {
+        if (matcher().match(_enumStore.get_value(it.getKey().load_acquire()))) {
             return true;
         }
         ++it;
         return false;
-    } else if (this->isFuzzy()) {
-        return this->is_fuzzy_match(_enumStore.get_value(it.getKey().load_acquire()), it,
-                                    _enumStore.get_data_store());
+    } else if (matcher().isFuzzy()) {
+        return matcher().is_fuzzy_match(_enumStore.get_value(it.getKey().load_acquire()), it,
+                                        _enumStore.get_data_store());
     }
     return true;
 }
@@ -68,7 +68,7 @@ bool StringPostingSearchContext<BaseSC, AttrT, DataT>::use_dictionary_entry(
 template <typename BaseSC, typename AttrT, typename DataT>
 bool StringPostingSearchContext<BaseSC, AttrT, DataT>::use_posting_lists_when_non_strict(
     const ExecuteInfo& info) const {
-    if (this->isFuzzy()) {
+    if (matcher().isFuzzy()) {
         uint32_t           exp_doc_hits = this->_docIdLimit * info.hit_rate();
         constexpr uint32_t fuzzy_use_posting_lists_doc_limit = 10000;
         /**

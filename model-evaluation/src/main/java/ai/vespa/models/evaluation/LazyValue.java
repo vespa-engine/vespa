@@ -34,7 +34,7 @@ class LazyValue extends Value {
 
     private Value computedValue() {
         if (computedValue == null)
-            computedValue = model.requireReferencedFunction(function).getBody().evaluate(context);
+            computedValue = model.requireReferencedFunction(function).getBody().evaluate(context).freeze();
         return computedValue;
     }
 

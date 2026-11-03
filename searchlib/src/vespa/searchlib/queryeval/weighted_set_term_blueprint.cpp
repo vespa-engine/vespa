@@ -7,6 +7,7 @@
 #include "orsearch.h"
 #include "weighted_set_term_search.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 
@@ -103,7 +104,7 @@ FlowStats WeightedSetTermBlueprint::calculate_flow_stats(uint32_t docid_limit) c
 }
 
 SearchIterator::UP WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray& tfmda) const {
-    assert(tfmda.size() == 1);
+    CHECK(tfmda.size() == 1);
     if ((_terms.size() == 1) && tfmda[0]->isNotNeeded()) {
         if (const LeafBlueprint* leaf = _terms[0]->asLeaf(); leaf != nullptr) {
             // Always returning a strict iterator independently of what was required,

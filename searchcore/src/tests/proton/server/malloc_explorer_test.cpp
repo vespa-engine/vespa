@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/searchcore/proton/server/malloc_info_explorer.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -7,7 +8,6 @@
 #include <dlfcn.h>
 
 #include <atomic>
-#include <cassert>
 #include <string>
 
 namespace {
@@ -26,7 +26,7 @@ using mi_stats_fun_ptr = void (*)(mi_output_fun*, void*);
 void mi_stats_print_out(mi_output_fun* out_fn, void* arg) {
 #ifdef RTLD_NEXT // "reserved for future use" under POSIX, but implemented functionally under glibc
     static const auto maybe_real_stats = reinterpret_cast<mi_stats_fun_ptr>(dlsym(RTLD_NEXT, "mi_stats_print_out"));
-    assert(maybe_real_stats != mi_stats_print_out); // No infinite recursion please
+    CHECK(maybe_real_stats != mi_stats_print_out); // No infinite recursion please
 #else
     const mi_stats_fun_ptr maybe_real_stats = nullptr;
 #endif

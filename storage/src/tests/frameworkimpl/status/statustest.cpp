@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
@@ -22,14 +23,14 @@ using namespace ::testing;
 std::string fetch(int port, const std::string& path) {
     auto crypto = vespalib::CryptoEngine::get_default();
     auto socket = vespalib::SocketSpec::from_port(port).client_address().connect();
-    assert(socket.valid());
+    CHECK(socket.valid());
     auto        conn = vespalib::SyncCryptoSocket::create_client(*crypto, std::move(socket),
                                                                  vespalib::SocketSpec::from_host_port("localhost", port));
     std::string http_req = vespalib::make_string("GET %s HTTP/1.1\r\n"
                                                  "Host: localhost:%d\r\n"
                                                  "\r\n",
                                                  path.c_str(), port);
-    assert(conn->write(http_req.data(), http_req.size()) == ssize_t(http_req.size()));
+    CHECK(conn->write(http_req.data(), http_req.size()) == ssize_t(http_req.size()));
     char        buf[1024];
     std::string result;
     ssize_t     res = conn->read(buf, sizeof(buf));
@@ -37,7 +38,7 @@ std::string fetch(int port, const std::string& path) {
         result.append(std::string_view(buf, res));
         res = conn->read(buf, sizeof(buf));
     }
-    assert(res == 0);
+    CHECK(res == 0);
     return result;
 }
 

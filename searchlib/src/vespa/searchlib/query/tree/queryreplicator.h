@@ -11,7 +11,7 @@
 #include "weighted_integer_term_vector.h"
 #include "weighted_string_term_vector.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace search::query {
 
@@ -50,7 +50,7 @@ private:
     }
 
     void visit(WeakAnd& node) override {
-        _builder.addWeakAnd(node.getChildren().size(), node.getTargetNumHits(), node.getView());
+        _builder.addWeakAnd(node.getChildren().size(), node.getTargetNumHits());
         visitNodes(node.getChildren());
     }
 
@@ -112,6 +112,11 @@ private:
         visitNodes(node.getChildren());
     }
 
+    void visit(LabelWrapper& node) override {
+        _builder.add_label_wrapper(node.getId(), node.getLabelScore());
+        visitNodes(node.getChildren());
+    }
+
     void visit(NumberTerm& node) override {
         copyState(node, _builder.addNumberTerm(node.getTerm(), node.getView(), node.getId(), node.getWeight()));
     }
@@ -122,6 +127,11 @@ private:
 
     void visit(PrefixTerm& node) override {
         copyState(node, _builder.addPrefixTerm(node.getTerm(), node.getView(), node.getId(), node.getWeight()));
+    }
+
+    void visit(StringRangeTerm& node) override {
+        copyState(node,
+                  _builder.add_string_range_term(node.getTerm(), node.getView(), node.getId(), node.getWeight()));
     }
 
     void visit(RangeTerm& node) override {
@@ -153,6 +163,12 @@ private:
         copyState(node, _builder.add_nearest_neighbor_term(node.get_query_tensor_name(), node.getView(), node.getId(),
                                                            node.getWeight(), node.get_target_num_hits(),
                                                            node.get_allow_approximate(), node.get_hnsw_params()));
+    }
+
+    void visit(SparseTensorWandTerm& node) override {
+        copyState(node, _builder.add_sparse_tensor_wand_term(node.get_query_tensor_name(), node.getView(),
+                                                             node.getId(), node.getWeight(),
+                                                             node.get_target_num_hits(), node.get_score_threshold()));
     }
 
     void visit(TrueQueryNode&) override { _builder.add_true_node(); }
@@ -201,7 +217,7 @@ private:
             return replica;
         }
         case MultiTerm::Type::UNKNOWN:
-            assert(num_terms == 0);
+            CHECK(num_terms == 0);
         }
         return std::make_unique<WeightedStringTermVector>(num_terms);
     }
@@ -217,7 +233,7 @@ private:
             QueryReplicator<NodeTypes> replicator;
             auto                       replicated = replicator.replicate(*child);
             auto*                      string_term = dynamic_cast<StringTerm*>(replicated.release());
-            assert(string_term);
+            CHECK(string_term);
             children.emplace_back(string_term);
         }
         return children;

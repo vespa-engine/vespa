@@ -69,6 +69,23 @@ private:
 };
 
 class FileChunk {
+protected:
+    class ChunkInfo {
+    public:
+        ChunkInfo() noexcept : _lastSerial(0), _offset(0), _size(0) {}
+        ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial) noexcept;
+        uint64_t getOffset() const { return _offset; }
+        uint32_t getSize() const { return _size; }
+        uint64_t getLastSerial() const { return _lastSerial; }
+
+        bool valid() const { return (_offset != 0) || (_size != 0) || (_lastSerial != 0); }
+
+    private:
+        uint64_t _lastSerial;
+        uint64_t _offset;
+        uint32_t _size;
+    };
+
 public:
     using unique_lock = std::unique_lock<std::mutex>;
     class NameId {
@@ -182,7 +199,8 @@ public:
      */
     void verify(bool reportOnly) const;
 
-    uint32_t getNumChunks() const;
+    [[nodiscard]] virtual uint32_t getNumChunks() const;
+    [[nodiscard]] virtual ChunkInfo get_chunk_info(uint32_t chunk_id) const;
     size_t getNumBuckets() const { return _sumNumBuckets; }
     size_t getNumUniqueBuckets() const { return _numUniqueBuckets; }
 
@@ -225,22 +243,6 @@ protected:
     void setDiskFootprint(size_t sz) { _diskFootprint.store(sz, std::memory_order_relaxed); }
     void set_size_on_disk(size_t sz) { _size_on_disk.store(sz, std::memory_order_relaxed); }
     static size_t adjustSize(size_t sz);
-
-    class ChunkInfo {
-    public:
-        ChunkInfo() noexcept : _lastSerial(0), _offset(0), _size(0) {}
-        ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial) noexcept;
-        uint64_t getOffset() const { return _offset; }
-        uint32_t getSize() const { return _size; }
-        uint64_t getLastSerial() const { return _lastSerial; }
-
-        bool valid() const { return (_offset != 0) || (_size != 0) || (_lastSerial != 0); }
-
-    private:
-        uint64_t _lastSerial;
-        uint64_t _offset;
-        uint32_t _size;
-    };
 
     void setNumUniqueBuckets(size_t numUniqueBuckets) { _numUniqueBuckets = numUniqueBuckets; }
     ssize_t read(uint32_t lid, SubChunkId chunkId, const ChunkInfo& chunkInfo, vespalib::DataBuffer& buffer) const;

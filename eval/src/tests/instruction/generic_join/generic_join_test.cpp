@@ -122,12 +122,14 @@ TEST(GenericJoinTest, generic_join_works_for_simple_and_fast_values) {
         const auto& r = join_layouts[i + 1];
         for (CellType lct : CellTypeUtils::list_types()) {
             auto lhs = l.cpy().cells(lct);
-            if (lhs.bad_scalar())
+            if (lhs.bad_scalar()) {
                 continue;
+            }
             for (CellType rct : CellTypeUtils::list_types()) {
                 auto rhs = r.cpy().cells(rct);
-                if (rhs.bad_scalar())
+                if (rhs.bad_scalar()) {
                     continue;
+                }
                 for (auto fun : {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
                     SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.gen().to_string().c_str(),
                                      rhs.gen().to_string().c_str()));

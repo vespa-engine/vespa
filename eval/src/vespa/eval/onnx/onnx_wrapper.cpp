@@ -2,6 +2,7 @@
 
 #include "onnx_wrapper.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/cell_type.h>
 #include <vespa/eval/eval/dense_cells_value.h>
 #include <vespa/eval/eval/value_type.h>
@@ -335,7 +336,7 @@ void Onnx::WirePlanner::do_model_probe(const Onnx& model) {
         param_values.reserve(model.inputs().size());
         for (const auto& input : model.inputs()) {
             const auto& pos = _input_types.find(input.name);
-            assert(pos != _input_types.end());
+            CHECK(pos != _input_types.end());
             auto   vespa_type = pos->second;
             auto   sizes = extract_sizes(vespa_type);
             size_t num_cells = vespa_type.dense_subspace_size();
@@ -424,7 +425,7 @@ std::map<std::string, size_t> Onnx::WirePlanner::get_bound_sizes(const TensorInf
         if (dim.is_symbolic()) {
             auto pos = _symbolic_sizes.find(dim.name);
             if (pos != _symbolic_sizes.end()) {
-                assert(pos->second != 0);
+                CHECK(pos->second != 0);
                 result.emplace(dim.name, pos->second);
             }
         }
@@ -484,7 +485,7 @@ Onnx::WireInfo Onnx::WirePlanner::get_wire_info(const Onnx& model) const {
     WireInfo info;
     for (const auto& input : model.inputs()) {
         const auto& pos = _input_types.find(input.name);
-        assert(pos != _input_types.end());
+        CHECK(pos != _input_types.end());
         auto vespa_type = pos->second;
         info.onnx_inputs.emplace_back(input.elements, extract_sizes(vespa_type));
         info.vespa_inputs.push_back(std::move(vespa_type));
@@ -573,10 +574,10 @@ Onnx::EvalContext::EvalContext(const Onnx& model, const WireInfo& wire_info)
       _results(),
       _param_binders(),
       _result_converters() {
-    assert(_wire_info.vespa_inputs.size() == _model.inputs().size());
-    assert(_wire_info.onnx_inputs.size() == _model.inputs().size());
-    assert(_wire_info.onnx_outputs.size() == _model.outputs().size());
-    assert(_wire_info.vespa_outputs.size() == _model.outputs().size());
+    CHECK(_wire_info.vespa_inputs.size() == _model.inputs().size());
+    CHECK(_wire_info.onnx_inputs.size() == _model.inputs().size());
+    CHECK(_wire_info.onnx_outputs.size() == _model.outputs().size());
+    CHECK(_wire_info.vespa_outputs.size() == _model.outputs().size());
     _param_values.reserve(_model.inputs().size());
     _result_values.reserve(_model.outputs().size());
     _results.reserve(_model.outputs().size());
@@ -604,7 +605,7 @@ Onnx::EvalContext::EvalContext(const Onnx& model, const WireInfo& wire_info)
         }
     }
     // make sure references to Ort::Value inside _result_values are safe
-    assert(result_guard == _result_values.begin());
+    CHECK(result_guard == _result_values.begin());
 }
 
 Onnx::EvalContext::~EvalContext() = default;

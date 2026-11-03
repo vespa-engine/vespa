@@ -27,6 +27,7 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
@@ -860,6 +861,169 @@ rank-profile feature_logging {
         assertTrue(expression.contains("attribute(myrank)"), "Expression should contain discriminant: " + expression);
         assertTrue(expression.contains("10000"), "Expression should contain case result: " + expression);
         assertTrue(expression.contains("2500"), "Expression should contain case result: " + expression);
+    }
+
+    @Test
+    void sortFeaturesAreDeclaredInheritedReplacedAndCleared() throws ParseException {
+        RankProfileRegistry registry = new RankProfileRegistry();
+        ApplicationBuilder builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+            schema test {
+              document test {}
+              rank-profile parent {
+                function title_bm25() { expression: 1.0 }
+                sort-features {
+                  title_bm25
+                }
+              }
+              rank-profile child inherits parent {}
+              rank-profile cleared inherits parent {
+                sort-features {}
+              }
+              rank-profile replaced inherits parent {
+                function other_key() { expression: 2.0 }
+                sort-features: other_key
+              }
+            }
+            """);
+        builder.build(true);
+        Schema schema = builder.getSchema();
+        assertEquals(Set.of("title_bm25"), names(registry.get(schema, "parent").getSortFeatures()));
+        assertEquals(Set.of("title_bm25"), names(registry.get(schema, "child").getSortFeatures()));
+        assertEquals(Set.of(), names(registry.get(schema, "cleared").getSortFeatures()));
+        assertEquals(Set.of("other_key"), names(registry.get(schema, "replaced").getSortFeatures()));
+
+        var compiledCleared = registry.get(schema, "cleared").compile(new QueryProfileRegistry(), new ImportedMlModels());
+        assertEquals(Set.of(), names(compiledCleared.getSortFeatures()));
+    }
+
+    @Test
+    void sortFeaturesRejectNonIdentifiers() throws ParseException {
+        assertIllegalSortFeature("bm25(title)");
+        assertIllegalSortFeature("foo.out");
+        assertIllegalSortFeature("foo$");
+        assertIllegalSortFeature("foo$()");
+    }
+
+    @Test
+    void sortFeaturesRejectTensorOutput() throws ParseException {
+        try {
+            buildSchema("""
+                schema test {
+                  document test {}
+                  rank-profile test {
+                    function tensor_key() {
+                      expression: tensor(x[1]):[1]
+                    }
+                    sort-features { tensor_key }
+                  }
+                }
+                """);
+            fail();
+        }
+        catch (IllegalArgumentException e) {
+            String message = Exceptions.toMessageString(e);
+            assertTrue(message.contains("sort feature"), message);
+            assertTrue(message.contains("must produce a double"), message);
+        }
+    }
+
+    @Test
+    void sortFeaturesEmitPublicAndBackendNamesIndependently() throws ParseException {
+        RankProfileRegistry registry = new RankProfileRegistry();
+        ApplicationBuilder builder = new ApplicationBuilder(registry);
+        builder.addSchema("""
+            schema test {
+              document test {}
+              rank-profile test {
+                function foo() { expression: 1.0 }
+                sort-features {
+                  foo
+                  nativeRank
+                }
+              }
+            }
+            """);
+        builder.build(true);
+        Schema schema = builder.getSchema();
+        RankProfile profile = registry.get(schema, "test");
+        assertEquals(Set.of("foo", "nativeRank"), names(profile.getSortFeatures()));
+
+        RawRankProfile rawProfile = createRawRankProfile(profile, schema);
+        assertEquals(Set.of("rankingExpression(foo)", "nativeRank"),
+                     Set.copyOf(findProperties(rawProfile.configProperties(), "vespa.sort.feature")));
+        assertTrue(hasRename(rawProfile.configProperties(), "rankingExpression(foo)", "foo"));
+        assertFalse(hasRename(rawProfile.configProperties(), "nativeRank", "nativeRank"));
+    }
+
+    @Test
+    void sortFeaturesConflictAcrossParents() throws ParseException {
+        try {
+            buildSchema("""
+                schema test {
+                  document test {}
+                  rank-profile p1 {
+                    sort-features { a }
+                  }
+                  rank-profile p2 {
+                    sort-features { b }
+                  }
+                  rank-profile child inherits p1, p2 {}
+                }
+                """);
+            fail();
+        }
+        catch (IllegalArgumentException e) {
+            String message = Exceptions.toMessageString(e);
+            assertTrue(message.contains("sort-features"), message);
+        }
+    }
+
+    private static Application buildSchema(String schema) throws ParseException {
+        RankProfileRegistry registry = new RankProfileRegistry();
+        ApplicationBuilder builder = new ApplicationBuilder(registry);
+        builder.addSchema(schema);
+        return builder.build(true);
+    }
+
+    private static void assertIllegalSortFeature(String entry) throws ParseException {
+        try {
+            buildSchema("""
+                schema test {
+                  document test {}
+                  rank-profile test {
+                    sort-features { %s }
+                  }
+                }
+                """.formatted(entry));
+            fail("Should reject sort-features entry: " + entry);
+        }
+        catch (IllegalArgumentException | ParseException e) {
+            String message = Exceptions.toMessageString(e);
+            assertTrue(message.contains("sort-features") ||
+                       message.contains("identifier") ||
+                       message.contains("feature"),
+                       message);
+        }
+    }
+
+    private static Set<String> names(Set<com.yahoo.searchlib.rankingexpression.rule.ReferenceNode> features) {
+        return features.stream().map(com.yahoo.searchlib.rankingexpression.rule.ReferenceNode::getName).collect(java.util.stream.Collectors.toSet());
+    }
+
+    private static List<String> findProperties(List<Pair<String, String>> properties, String key) {
+        return properties.stream().filter(p -> p.getFirst().equals(key)).map(Pair::getSecond).toList();
+    }
+
+    private static boolean hasRename(List<Pair<String, String>> properties, String backend, String publicName) {
+        for (int i = 0; i + 1 < properties.size(); i++) {
+            if (properties.get(i).getFirst().equals("vespa.feature.rename") &&
+                properties.get(i).getSecond().equals(backend) &&
+                properties.get(i + 1).getFirst().equals("vespa.feature.rename") &&
+                properties.get(i + 1).getSecond().equals(publicName))
+                return true;
+        }
+        return false;
     }
 
 }

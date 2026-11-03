@@ -2,7 +2,7 @@
 
 #include "xmlstatusreporter.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace storage {
 namespace framework {
@@ -21,7 +21,7 @@ void XmlStatusReporter::initXmlReport(vespalib::XmlOutputStream& xos, const Http
 void XmlStatusReporter::finalizeXmlReport(vespalib::XmlOutputStream& xos, const HttpUrlPath&) const {
     using namespace vespalib::xml;
     xos << XmlEndTag();
-    assert(xos.isFinalized());
+    CHECK(xos.isFinalized());
 }
 
 std::string XmlStatusReporter::getReportContentType(const HttpUrlPath&) const {

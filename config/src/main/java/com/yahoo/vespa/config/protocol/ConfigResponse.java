@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.vespa.config.PayloadChecksum;
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.text.AbstractUtf8Array;
 
 import java.io.IOException;
@@ -32,6 +31,6 @@ public interface ConfigResponse {
 
     CompressionInfo getCompressionInfo();
 
-    PayloadChecksums getPayloadChecksums();
+    PayloadChecksum getPayloadChecksum();
 
 }

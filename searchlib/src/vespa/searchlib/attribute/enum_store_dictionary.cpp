@@ -2,6 +2,7 @@
 
 #include "enum_store_dictionary.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
 
@@ -59,7 +60,7 @@ void EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::free_unused_values(
 
     EntryRef prev;
     for (const auto& index : to_remove) {
-        assert(prev <= index);
+        CHECK(prev <= index);
         if (index != prev) {
             _enumStore.free_value_if_unused(index, unused);
             prev = index;
@@ -70,18 +71,18 @@ void EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::free_unused_values(
 
 template <typename BTreeDictionaryT, typename HashDictionaryT>
 void EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::remove(const EntryComparator& comp, EntryRef ref) {
-    assert(ref.valid());
+    CHECK(ref.valid());
     if constexpr (has_btree_dictionary) {
         auto itr = this->_btree_dict.lowerBound(AtomicEntryRef(ref), comp);
-        assert(itr.valid() && itr.getKey().load_relaxed() == ref);
+        CHECK(itr.valid() && itr.getKey().load_relaxed() == ref);
         if constexpr (std::is_same_v<BTreeDictionaryT, EnumPostingTree>) {
-            assert(!itr.getData().load_relaxed().valid());
+            CHECK(!itr.getData().load_relaxed().valid());
         }
         this->_btree_dict.remove(itr);
     }
     if constexpr (has_hash_dictionary) {
         auto* result = this->_hash_dict.remove(comp, ref);
-        assert(result != nullptr && result->first.load_relaxed() == ref);
+        CHECK(result != nullptr && result->first.load_relaxed() == ref);
     }
 }
 
@@ -234,19 +235,19 @@ void EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::update_posting_list
     if constexpr (has_btree_dictionary) {
         auto& dict = this->_btree_dict;
         auto  itr = dict.lowerBound(AtomicEntryRef(idx), cmp);
-        assert(itr.valid() && itr.getKey().load_relaxed() == idx);
+        CHECK(itr.valid() && itr.getKey().load_relaxed() == idx);
         EntryRef old_posting_idx(itr.getData().load_relaxed());
         EntryRef new_posting_idx = updater(old_posting_idx);
         itr.getWData().store_release(new_posting_idx);
         if constexpr (has_hash_dictionary) {
             auto find_result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), idx);
-            assert(find_result != nullptr && find_result->first.load_relaxed() == idx);
-            assert(find_result->second.load_relaxed() == old_posting_idx);
+            CHECK(find_result != nullptr && find_result->first.load_relaxed() == idx);
+            CHECK(find_result->second.load_relaxed() == old_posting_idx);
             find_result->second.store_release(new_posting_idx);
         }
     } else {
         auto find_result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), idx);
-        assert(find_result != nullptr && find_result->first.load_relaxed() == idx);
+        CHECK(find_result != nullptr && find_result->first.load_relaxed() == idx);
         EntryRef old_posting_idx = find_result->second.load_relaxed();
         EntryRef new_posting_idx = updater(old_posting_idx);
         find_result->second.store_release(new_posting_idx);
@@ -272,9 +273,8 @@ bool EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::normalize_posting_l
                 if constexpr (has_hash_dictionary) {
                     auto find_result =
                         this->_hash_dict.find(this->_hash_dict.get_default_comparator(), itr.getKey().load_relaxed());
-                    assert(find_result != nullptr &&
-                           find_result->first.load_relaxed() == itr.getKey().load_relaxed());
-                    assert(find_result->second.load_relaxed() == old_posting_idx);
+                    CHECK(find_result != nullptr && find_result->first.load_relaxed() == itr.getKey().load_relaxed());
+                    CHECK(find_result->second.load_relaxed() == old_posting_idx);
                     find_result->second.store_release(new_posting_idx);
                 }
             }
@@ -332,7 +332,7 @@ template <typename HashDictionaryT> ChangeWriter<HashDictionaryT>::~ChangeWriter
 
 template <typename HashDictionaryT> bool ChangeWriter<HashDictionaryT>::write(const std::vector<EntryRef>& refs) {
     bool changed = false;
-    assert(refs.size() == _tree_refs.size());
+    CHECK(refs.size() == _tree_refs.size());
     auto tree_ref = _tree_refs.begin();
     for (auto ref : refs) {
         EntryRef old_ref(tree_ref->second->load_relaxed());
@@ -344,14 +344,14 @@ template <typename HashDictionaryT> bool ChangeWriter<HashDictionaryT>::write(co
             if constexpr (has_hash_dictionary) {
                 auto find_result =
                     this->_hash_dict->find(this->_hash_dict->get_default_comparator(), tree_ref->first);
-                assert(find_result != nullptr && find_result->first.load_relaxed() == tree_ref->first);
-                assert(find_result->second.load_relaxed() == old_ref);
+                CHECK(find_result != nullptr && find_result->first.load_relaxed() == tree_ref->first);
+                CHECK(find_result->second.load_relaxed() == old_ref);
                 find_result->second.store_release(ref);
             }
         }
         ++tree_ref;
     }
-    assert(tree_ref == _tree_refs.end());
+    CHECK(tree_ref == _tree_refs.end());
     _tree_refs.clear();
     return changed;
 }
@@ -440,75 +440,6 @@ const EnumPostingTree& EnumStoreDictionary<vespalib::datastore::NoBTreeDictionar
 template <typename BTreeDictionaryT, typename HashDictionaryT>
 const EnumPostingTree& EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::get_posting_dictionary() const {
     return this->_btree_dict;
-}
-
-EnumStoreFoldedDictionary::EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<EntryComparator> compare,
-                                                     std::unique_ptr<EntryComparator> folded_compare)
-    : EnumStoreDictionary<EnumPostingTree>(enumStore, std::move(compare)),
-      _folded_compare(std::move(folded_compare)) {
-}
-
-EnumStoreFoldedDictionary::~EnumStoreFoldedDictionary() = default;
-
-UniqueStoreAddResult EnumStoreFoldedDictionary::add(const EntryComparator&    comp,
-                                                    std::function<EntryRef()> insertEntry) {
-    static_assert(!has_hash_dictionary, "Folded Dictionary does not support hash dictionary");
-    auto it = _btree_dict.lowerBound(AtomicEntryRef(), comp);
-    if (it.valid() && !comp.less(EntryRef(), it.getKey().load_relaxed())) {
-        // Entry already exists
-        return UniqueStoreAddResult(it.getKey().load_relaxed(), false);
-    }
-    EntryRef newRef = insertEntry();
-    _btree_dict.insert(it, AtomicEntryRef(newRef), AtomicEntryRef());
-    // Maybe move posting list reference from next entry
-    ++it;
-    if (it.valid() && it.getData().load_relaxed().valid() &&
-        !_folded_compare->less(newRef, it.getKey().load_relaxed()))
-    {
-        EntryRef posting_list_ref(it.getData().load_relaxed());
-        _btree_dict.thaw(it);
-        it.writeData(AtomicEntryRef());
-        --it;
-        assert(it.valid() && it.getKey().load_relaxed() == newRef);
-        it.writeData(AtomicEntryRef(posting_list_ref));
-    }
-    return UniqueStoreAddResult(newRef, true);
-}
-
-void EnumStoreFoldedDictionary::remove(const EntryComparator& comp, EntryRef ref) {
-    static_assert(!has_hash_dictionary, "Folded Dictionary does not support hash dictionary");
-    assert(ref.valid());
-    auto it = _btree_dict.lowerBound(AtomicEntryRef(ref), comp);
-    assert(it.valid() && it.getKey().load_relaxed() == ref);
-    EntryRef posting_list_ref(it.getData().load_relaxed());
-    _btree_dict.remove(it);
-    // Maybe copy posting list reference to next entry
-    if (posting_list_ref.valid()) {
-        if (it.valid() && !it.getData().load_relaxed().valid() &&
-            !_folded_compare->less(ref, it.getKey().load_relaxed()))
-        {
-            this->_btree_dict.thaw(it);
-            it.writeData(AtomicEntryRef(posting_list_ref));
-        } else {
-            LOG_ABORT("Posting list not cleared for removed unique value");
-        }
-    }
-}
-
-void EnumStoreFoldedDictionary::collect_folded(Index idx, EntryRef root,
-                                               const std::function<void(EntryRef)>& callback) const {
-    BTreeDictionaryType::ConstIterator itr(vespalib::btree::BTreeNode::Ref(), _btree_dict.getAllocator());
-    itr.lower_bound(root, AtomicEntryRef(idx), *_folded_compare);
-    while (itr.valid() && !_folded_compare->less(idx, itr.getKey().load_acquire())) {
-        callback(itr.getKey().load_acquire());
-        ++itr;
-    }
-}
-
-IEnumStore::Index EnumStoreFoldedDictionary::remap_index(Index idx) {
-    auto itr = _btree_dict.find(AtomicEntryRef(idx), *_folded_compare);
-    assert(itr.valid());
-    return itr.getKey().load_acquire();
 }
 
 template class EnumStoreDictionary<EnumTree>;

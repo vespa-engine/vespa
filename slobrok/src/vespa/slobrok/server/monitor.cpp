@@ -2,6 +2,7 @@
 
 #include "monitor.h"
 
+#include <vespa/check_require.h>
 #include <vespa/fnet/channel.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
@@ -20,7 +21,7 @@ Monitor::~Monitor() {
 }
 
 void Monitor::enable(FRT_Target* monitorTarget) {
-    assert(monitorTarget != nullptr);
+    CHECK(monitorTarget != nullptr);
     Unschedule();
     disconnect();
     _enabled = true;

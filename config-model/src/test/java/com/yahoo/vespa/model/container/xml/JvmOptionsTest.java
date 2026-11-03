@@ -302,4 +302,42 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         }
     }
 
+    @Test
+    void requireThatShellMetacharactersInJvmOptionsAreLogged() throws IOException, SAXException {
+        assertShellMetacharactersLogged(buildModelWithJvmOptions(false, "options", "-Xms1g; touch /tmp/x"));
+        assertShellMetacharactersLogged(buildModelWithJvmOptions(false, "gc-options", "-XX:+UseG1GC;id"));
+        assertShellMetacharactersLogged(buildModelWithLegacyJvmOptions(false, "jvm-options", "-Xms1g $(id)"));
+        assertShellMetacharactersLogged(buildModelWithNodeAttribute("jvm-options", "-Xms1g|id"));
+    }
+
+    @Test
+    void requireThatShellMetacharactersInPreloadAreLogged() throws IOException, SAXException {
+        assertShellMetacharactersLogged(buildModelWithLegacyJvmOptions(false, "preload", "/lib/x.so;id"));
+        assertShellMetacharactersLogged(buildModelWithNodeAttribute("preload", "/lib/x.so`id`"));
+    }
+
+    @Test
+    void requireThatValidPreloadIsNotLogged() throws IOException, SAXException {
+        var logger = buildModelWithLegacyJvmOptions(false, "preload", "/opt/vespa/lib64/vespa/malloc/libvespamalloc.so");
+        assertEquals(0, logger.msgs.size());
+    }
+
+    private static void assertShellMetacharactersLogged(TestLogger logger) {
+        assertTrue(logger.msgs.stream().anyMatch(msg -> msg.getFirst() == Level.WARNING &&
+                                                        msg.getSecond().contains("must not contain shell metacharacters")),
+                   logger.msgs.toString());
+    }
+
+    private TestLogger buildModelWithNodeAttribute(String attribute, String value) throws IOException, SAXException {
+        TestLogger logger = new TestLogger();
+        String servicesXml =
+                "<container version='1.0'>" +
+                        "  <nodes>" +
+                        "    <node hostalias='mockhost' " + attribute + "='" + value + "'/>" +
+                        "  </nodes>" +
+                        "</container>";
+        buildModel(new TestProperties(), logger, servicesXml);
+        return logger;
+    }
+
 }

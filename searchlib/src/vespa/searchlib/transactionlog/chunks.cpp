@@ -2,6 +2,7 @@
 
 #include "chunks.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -54,7 +55,7 @@ Encoding::Compression toCompression(CompressionConfig::Type type) {
 
 Encoding CCITTCRC32NoneChunk::onEncode(nbostream& os) const {
     size_t start = os.wp();
-    assert(getEntries().size() == 1);
+    CHECK(getEntries().size() == 1);
     serializeEntries(os);
     os << int32_t(Encoding::calcCrc(Encoding::Crc::ccitt_crc32, os.data() + start, os.size() - start));
     return Encoding(Encoding::Crc::ccitt_crc32, Encoding::Compression::none);
@@ -69,7 +70,7 @@ void CCITTCRC32NoneChunk::onDecode(nbostream& is) {
 
 Encoding XXH64NoneChunk::onEncode(nbostream& os) const {
     size_t start = os.wp();
-    assert(getEntries().size() == 1);
+    CHECK(getEntries().size() == 1);
     serializeEntries(os);
     os << int32_t(Encoding::calcCrc(Encoding::Crc::xxh64, os.data() + start, os.size() - start));
     return Encoding(Encoding::Crc::xxh64, Encoding::Compression::none);

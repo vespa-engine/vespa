@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain;
 
+import ai.vespa.telemetry.api.trace.OtelTracing;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -132,7 +133,7 @@ public class AsyncExecution {
     private static <T> Future<T> getFuture(Executor executor, Callable<T> callable) {
         FutureTask<T> future = new FutureTask<>(callable);
         try {
-            executor.execute(future);
+            executor.execute(OtelTracing.withCurrentContext(future));
         } catch (RejectedExecutionException e) {
             future.run();
         }
@@ -149,7 +150,7 @@ public class AsyncExecution {
     private FutureResult getFutureResult(Executor executor, Callable<Result> callable, Query query) {
         FutureResult future = new FutureResult(callable, execution, query);
         try {
-            executor.execute(future);
+            executor.execute(OtelTracing.withCurrentContext(future));
         } catch (RejectedExecutionException e) {
             future.run();
         }

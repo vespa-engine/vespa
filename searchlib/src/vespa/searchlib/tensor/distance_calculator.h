@@ -6,6 +6,7 @@
 #include "i_tensor_attribute.h"
 #include "vector_bundle.h"
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value_type.h>
 
 #include <optional>
@@ -40,7 +41,7 @@ public:
 
     const tensor::ITensorAttribute& attribute_tensor() const { return _attr_tensor; }
     const vespalib::eval::Value& query_tensor() const noexcept {
-        assert(_query_tensor != nullptr);
+        CHECK(_query_tensor != nullptr);
         return *_query_tensor;
     }
     const BoundDistanceFunction& function() const noexcept { return *_dist_fun; }

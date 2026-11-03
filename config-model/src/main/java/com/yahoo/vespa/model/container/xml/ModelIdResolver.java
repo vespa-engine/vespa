@@ -70,6 +70,11 @@ public class ModelIdResolver {
         register(m, "embeddinggemma-300m", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-300m/model.onnx", Set.of(ONNX_MODEL));
         register(m, "embeddinggemma-300m-vocab", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-300m/tokenizer.json", Set.of(HF_TOKENIZER));
 
+        register(m, "embeddinggemma-2", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-2/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "embeddinggemma-2-vocab", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-2/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "embeddinggemma-2-int8", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-2-int8/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "embeddinggemma-2-int8-vocab", "https://data.vespa-cloud.com/onnx_models/embeddinggemma-2-int8/tokenizer.json", Set.of(HF_TOKENIZER));
+
         register(m, "nomic-ai-modernbert", "https://data.vespa-cloud.com/onnx_models/nomic-ai-modernbert-embed-base/model.onnx", Set.of(ONNX_MODEL));
         register(m, "nomic-ai-modernbert-vocab", "https://data.vespa-cloud.com/onnx_models/nomic-ai-modernbert-embed-base/tokenizer.json", Set.of(HF_TOKENIZER));
 
@@ -94,6 +99,9 @@ public class ModelIdResolver {
         register(m, "snowflake-arctic-embed-m-v2.0-vocab", "https://data.vespa-cloud.com/onnx_models/snowflake-arctic-embed-m-v2.0/tokenizer.json", Set.of(HF_TOKENIZER));
         register(m, "snowflake-arctic-embed-m-v2.0-int8", "https://data.vespa-cloud.com/onnx_models/snowflake-arctic-embed-m-v2.0-int8/model.onnx", Set.of(ONNX_MODEL));
         register(m, "snowflake-arctic-embed-m-v2.0-int8-vocab", "https://data.vespa-cloud.com/onnx_models/snowflake-arctic-embed-m-v2.0-int8/tokenizer.json", Set.of(HF_TOKENIZER));
+
+        register(m, "snowflake-arctic-embed-xs", "https://data.vespa-cloud.com/onnx_models/snowflake-arctic-embed-xs/model.onnx", Set.of(ONNX_MODEL));                                          
+        register(m, "snowflake-arctic-embed-xs-vocab", "https://data.vespa-cloud.com/onnx_models/snowflake-arctic-embed-xs/tokenizer.json", Set.of(HF_TOKENIZER));  
 
         register(m, "voyage-4-nano", "https://data.vespa-cloud.com/onnx_models/voyage-4-nano/model.onnx", Set.of(ONNX_MODEL));
         register(m, "voyage-4-nano-vocab", "https://data.vespa-cloud.com/onnx_models/voyage-4-nano/tokenizer.json", Set.of(HF_TOKENIZER));

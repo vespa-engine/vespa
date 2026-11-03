@@ -4,8 +4,6 @@
 
 #include "allocatedbitvector.h"
 
-#include <cassert>
-
 namespace search {
 
 TransientBitVectorSnapshot::TransientBitVectorSnapshot(Index size, const BitVector& org) : _bv(), _tracker() {

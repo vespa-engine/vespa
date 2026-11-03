@@ -1,13 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search;
 
+import ai.vespa.telemetry.api.trace.OtelTracing;
+import ai.vespa.telemetry.api.trace.TraceAttributes;
 import com.yahoo.component.ComponentId;
 import com.yahoo.prelude.fastsearch.PartialSummaryHandler;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Response;
 import com.yahoo.search.searchchain.Execution;
+import io.opentelemetry.api.trace.Span;
 
 import java.util.logging.Logger;
+
 
 /**
  * Superclass of all {@link com.yahoo.component.Component Components} which produces Results in response to
@@ -132,7 +136,16 @@ public abstract class Searcher extends Processor {
     /** Use the search method in Searcher processors. This forwards to it. */
     @Override
     public final Response process(com.yahoo.processing.Request request, com.yahoo.processing.execution.Execution execution) {
-        return search((Query)request, (Execution)execution);
+        return OtelTracing.instrument("searcher.search", () -> {
+            // The span name is fixed, so these attributes are the ONLY thing telling one searcher's span from the
+            // next one's: a chain nests them, and every one of them is named "searcher.search".
+            // stringValue() is the precomputed canonical form; getIdString() would render via ComponentId.toString(),
+            // which spells a namespace as " in ns" rather than "@ns".
+            Span.current()
+                .setAttribute(TraceAttributes.SEARCHER_ID,    getId().stringValue())
+                .setAttribute(TraceAttributes.SEARCHER_CLASS, getClass().getName());
+            return search((Query)request, (Execution)execution);
+        });
     }
 
     /**
@@ -172,7 +185,22 @@ public abstract class Searcher extends Processor {
             int fillStartTraceAt = 6;
             if (result.getQuery().getTrace().getLevel() >= fillStartTraceAt)
                 result.getQuery().trace("Hits need fill(" + summaryClass + "); hasFilled=" + hasFilled + " in " + this.getClass(), fillStartTraceAt);
-            fill(result, summaryClass, execution);
+
+            String sc = summaryClass;   // summaryClass is reassigned above, so capture a final copy for the lambda
+            OtelTracing.instrument("searcher.ensureFilled", () -> {
+                Span span = Span.current();
+                // The fill call walks the whole chain - fill() below dispatches to the next searcher unless this
+                // one overrides it - so these spans nest one per searcher, all under the same fixed name. As on
+                // the search span, the searcher identity is what tells them apart.
+                span.setAttribute(TraceAttributes.SEARCHER_ID,        getId().stringValue())
+                    .setAttribute(TraceAttributes.SEARCHER_CLASS,     getClass().getName())
+                    .setAttribute(TraceAttributes.FILL_SUMMARY_CLASS, sc);
+                // Guarded because it is the one attribute whose value is not a field read: getConcreteSize
+                // walks the whole hit tree when the result has subgroups, as grouping results do.
+                if (span.isRecording())
+                    span.setAttribute(TraceAttributes.FILL_HITS, result.hits().getConcreteSize());
+                fill(result, sc, execution);
+            });
         }
     }
 

@@ -10,11 +10,10 @@
 #include "remove_task.h"
 #include "url_field_inverter.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/schedule_sequenced_task_callback.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/retain_guard.h>
-
-#include <cassert>
 
 namespace search::memoryindex {
 
@@ -92,7 +91,7 @@ void DocumentInverter::pushDocuments(const OnWriteDoneType& on_write_done) {
     for (auto& invert_context : invert_contexts) {
         PushTasks push_tasks;
         for (auto& pusher : invert_context.get_pushers()) {
-            assert(pusher < all_push_tasks.size());
+            CHECK(pusher < all_push_tasks.size());
             push_tasks.emplace_back(all_push_tasks[pusher]);
         }
         invert_threads.execute(invert_context.get_id(), [push_tasks(std::move(push_tasks))]() {});

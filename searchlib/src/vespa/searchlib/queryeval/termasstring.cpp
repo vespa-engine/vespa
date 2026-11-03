@@ -20,6 +20,7 @@ using search::query::Equiv;
 using search::query::FalseQueryNode;
 using search::query::FuzzyTerm;
 using search::query::InTerm;
+using search::query::LabelWrapper;
 using search::query::LocationTerm;
 using search::query::Near;
 using search::query::NearestNeighborTerm;
@@ -35,6 +36,8 @@ using search::query::RangeTerm;
 using search::query::Rank;
 using search::query::RegExpTerm;
 using search::query::SameElement;
+using search::query::SparseTensorWandTerm;
+using search::query::StringRangeTerm;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
@@ -92,6 +95,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     void visit(Phrase&) override { illegalVisit(); }
     void visit(SameElement&) override { illegalVisit(); }
     void visit(Rank&) override { illegalVisit(); }
+    void visit(LabelWrapper&) override { illegalVisit(); }
     void visit(WeakAnd&) override { illegalVisit(); }
     void visit(WeightedSetTerm&) override { illegalVisit(); }
     void visit(DotProduct&) override { illegalVisit(); }
@@ -103,6 +107,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     void visit(LocationTerm& n) override { visitTerm(n); }
     void visit(PrefixTerm& n) override { visitTerm(n); }
     void visit(RangeTerm& n) override { visitTerm(n); }
+    void visit(StringRangeTerm&) override { illegalVisit(); }
     void visit(StringTerm& n) override { visitTerm(n); }
     void visit(SubstringTerm& n) override { visitTerm(n); }
     void visit(SuffixTerm& n) override { visitTerm(n); }
@@ -110,6 +115,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     void visit(FuzzyTerm& n) override { visitTerm(n); }
     void visit(PredicateQuery&) override { illegalVisit(); }
     void visit(NearestNeighborTerm&) override { illegalVisit(); }
+    void visit(SparseTensorWandTerm&) override { illegalVisit(); }
     void visit(TrueQueryNode&) override { illegalVisit(); }
     void visit(FalseQueryNode&) override { illegalVisit(); }
 };

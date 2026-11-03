@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -94,6 +95,18 @@ class ArchiveStreamReaderTest {
                 assertTrue(expectException, "Unexpected exception for '" + name + "'");
             }
         });
+    }
+
+    @Test
+    void controlCharactersInPathAreRejected() {
+        List<String> names = List.of("components/legit\t55dc2c3483b4ee7c\rfoo.jar",
+                                     "components/foo\nbar.jar");
+        for (String name : names) {
+            try {
+                readAll(zip(Map.of(name, "foo")), Options.standard().pathPredicate(name::equals));
+                fail("Expected exception for '" + name + "'");
+            } catch (IllegalArgumentException ignored) {}
+        }
     }
 
     private static Map<String, String> readAll(InputStream inputStream, Options options) {

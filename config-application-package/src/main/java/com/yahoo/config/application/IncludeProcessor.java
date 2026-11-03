@@ -15,6 +15,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -24,6 +25,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author hmusum
  */
 class IncludeProcessor implements PreProcessor {
+
+    // Guards against unbounded recursion, e.g. caused by a file including itself, directly or indirectly.
+    private static final int MAX_INCLUDES = 1000;
 
     private final FileWrapper application;
 
@@ -37,13 +41,16 @@ class IncludeProcessor implements PreProcessor {
 
     public Document process(Document input) throws IOException, TransformerException {
         Document doc = Xml.copyDocument(input);
-        includeFile(application, doc.getDocumentElement());
+        includeFile(application, doc.getDocumentElement(), new AtomicInteger());
         return doc;
     }
 
-    private static void includeFile(FileWrapper currentFolder, Element currentElement) throws IOException {
+    private static void includeFile(FileWrapper currentFolder, Element currentElement, AtomicInteger includeCount) throws IOException {
         NodeList list = currentElement.getElementsByTagNameNS(XmlPreProcessor.preprocessNamespaceUri, "include");
         while (list.getLength() > 0) {
+            if (includeCount.incrementAndGet() > MAX_INCLUDES)
+                throw new IllegalArgumentException("Too many includes, max " + MAX_INCLUDES + " includes are allowed");
+
             Element elem = (Element) list.item(0);
             Element parent = (Element) elem.getParentNode();
             String filename = elem.getAttribute("file");
@@ -54,7 +61,7 @@ class IncludeProcessor implements PreProcessor {
 
             Document subFile = IncludeProcessor.parseIncludeFile(file, parent.getTagName(), required);
             includeFile(file.parent().orElseThrow(() -> new NoSuchElementException(file + " has no parent")),
-                        subFile.getDocumentElement());
+                        subFile.getDocumentElement(), includeCount);
 
             //System.out.println("document before merging: " + documentAsString(doc));
             IncludeProcessor.mergeInto(parent, XML.getChildren(subFile.getDocumentElement()));

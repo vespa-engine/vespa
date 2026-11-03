@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/parsequery/parse.h>
+#include <vespa/searchlib/query/string_range_spec.h>
 
 #include <memory>
 #include <string>
@@ -39,11 +40,13 @@ public:
 
         std::unique_ptr<query::PredicateQueryTerm> predicateQueryTerm;
         std::unique_ptr<query::TermVector>         termVector;
+        std::unique_ptr<StringRangeSpec>           string_range_spec;
 
         std::string_view index_view;
         std::string_view term_view;
         int64_t          integerTerm = 0;
 
+        double label_score = 0;
         double distanceThreshold = 0;
         double scoreThreshold = 0;
         double thresholdBoostFactor = 0;
@@ -106,6 +109,7 @@ public:
 
     std::unique_ptr<query::PredicateQueryTerm> getPredicateQueryTerm();
     std::unique_ptr<query::TermVector> get_terms();
+    std::unique_ptr<StringRangeSpec> get_string_range_spec();
 
     /** The index name (field name) in the current item */
     std::string_view index_as_view() const noexcept { return _d.index_view; }
@@ -115,6 +119,9 @@ public:
 
     /** Get the term in the current item */
     std::string_view getTerm() const noexcept { return _d.term_view; }
+
+    /** The label score of the current item (label wrapper) */
+    [[nodiscard]] double get_label_score() const noexcept { return _d.label_score; }
 
     int64_t getIntegerTerm() const noexcept { return _d.integerTerm; }
 

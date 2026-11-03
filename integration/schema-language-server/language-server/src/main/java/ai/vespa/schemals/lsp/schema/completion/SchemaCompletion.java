@@ -11,7 +11,7 @@ import ai.vespa.schemals.lsp.schema.completion.provider.BodyKeywordCompletion;
 import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.schema.completion.provider.EmptyFileCompletion;
 import ai.vespa.schemals.lsp.schema.completion.provider.FieldsCompletion;
-import ai.vespa.schemals.lsp.schema.completion.provider.IndexingLangaugeCompletion;
+import ai.vespa.schemals.lsp.schema.completion.provider.IndexingLanguageCompletion;
 import ai.vespa.schemals.lsp.schema.completion.provider.InheritanceCompletion;
 import ai.vespa.schemals.lsp.schema.completion.provider.InheritsCompletion;
 import ai.vespa.schemals.lsp.schema.completion.provider.RankingExpressionCompletion;
@@ -34,7 +34,7 @@ public class SchemaCompletion {
         new InheritsCompletion(),
         new InheritanceCompletion(),
         new StructFieldCompletion(),
-        new IndexingLangaugeCompletion(),
+        new IndexingLanguageCompletion(),
         new RankingExpressionCompletion()
     };
 

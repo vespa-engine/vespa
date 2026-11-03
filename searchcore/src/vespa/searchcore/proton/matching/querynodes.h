@@ -61,6 +61,8 @@ public:
     ProtonTermData& operator=(const ProtonTermData&) = delete;
     ~ProtonTermData() override;
     void resolveFromChildren(const std::vector<search::query::Node*>& children);
+    // clear fields, and use just the reserved "no field"
+    void resolve_no_field();
     void allocateTerms(search::fef::MatchDataLayout& mdl);
     void setDocumentFrequency(uint32_t estHits, uint32_t numDocs);
     // clear fields, and use just the provided entry:
@@ -133,6 +135,23 @@ struct ProtonAndNot final : public search::query::SimpleAndNot {
     ~ProtonAndNot() override;
 };
 
+/*
+ * A label wrapper is term data so that rank features can address it by label, but it
+ * searches no field of its own: it holds the reserved "no field" and exposes its score
+ * as the raw score of that handle.
+ */
+struct ProtonLabelWrapper final : public search::query::LabelWrapper, public ProtonTermData {
+    using search::query::LabelWrapper::LabelWrapper;
+    ~ProtonLabelWrapper() override;
+
+    void resolve() { ProtonTermData::resolve_no_field(); }
+
+    // ITermData interface
+    [[nodiscard]] uint32_t getPhraseLength() const final { return 1; }
+    [[nodiscard]] search::query::Weight getWeight() const final { return search::query::Weight(100); }
+    [[nodiscard]] uint32_t getUniqueId() const final { return search::query::LabelWrapper::getId(); }
+};
+
 struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
     using ProtonTermBase::ProtonTermBase;
     ~ProtonEquiv() override;
@@ -158,12 +177,14 @@ using ProtonPhrase = ProtonTerm<search::query::Phrase>;
 
 using ProtonPrefixTerm = ProtonTerm<search::query::PrefixTerm>;
 using ProtonRangeTerm = ProtonTerm<search::query::RangeTerm>;
+using ProtonStringRangeTerm = ProtonTerm<search::query::StringRangeTerm>;
 using ProtonStringTerm = ProtonTerm<search::query::StringTerm>;
 using ProtonSubstringTerm = ProtonTerm<search::query::SubstringTerm>;
 using ProtonSuffixTerm = ProtonTerm<search::query::SuffixTerm>;
 using ProtonWeightedSetTerm = ProtonTerm<search::query::WeightedSetTerm>;
 using ProtonDotProduct = ProtonTerm<search::query::DotProduct>;
 using ProtonWandTerm = ProtonTerm<search::query::WandTerm>;
+using ProtonSparseTensorWandTerm = ProtonTerm<search::query::SparseTensorWandTerm>;
 using ProtonPredicateQuery = ProtonTerm<search::query::PredicateQuery>;
 using ProtonRegExpTerm = ProtonTerm<search::query::RegExpTerm>;
 using ProtonFuzzyTerm = ProtonTerm<search::query::FuzzyTerm>;
@@ -193,7 +214,9 @@ struct ProtonNodeTypes {
     using SameElement = ProtonSameElement;
     using PrefixTerm = ProtonPrefixTerm;
     using RangeTerm = ProtonRangeTerm;
+    using StringRangeTerm = ProtonStringRangeTerm;
     using Rank = ProtonRank;
+    using LabelWrapper = ProtonLabelWrapper;
     using StringTerm = ProtonStringTerm;
     using SubstringTerm = ProtonSubstringTerm;
     using SuffixTerm = ProtonSuffixTerm;
@@ -204,6 +227,7 @@ struct ProtonNodeTypes {
     using PredicateQuery = ProtonPredicateQuery;
     using RegExpTerm = ProtonRegExpTerm;
     using NearestNeighborTerm = ProtonNearestNeighborTerm;
+    using SparseTensorWandTerm = ProtonSparseTensorWandTerm;
     using TrueQueryNode = ProtonTrue;
     using FalseQueryNode = ProtonFalse;
     using FuzzyTerm = ProtonFuzzyTerm;
@@ -216,12 +240,14 @@ extern template struct ProtonTerm<search::query::NumberTerm>;
 extern template struct ProtonTerm<search::query::Phrase>;
 extern template struct ProtonTerm<search::query::PrefixTerm>;
 extern template struct ProtonTerm<search::query::RangeTerm>;
+extern template struct ProtonTerm<search::query::StringRangeTerm>;
 extern template struct ProtonTerm<search::query::StringTerm>;
 extern template struct ProtonTerm<search::query::SubstringTerm>;
 extern template struct ProtonTerm<search::query::SuffixTerm>;
 extern template struct ProtonTerm<search::query::WeightedSetTerm>;
 extern template struct ProtonTerm<search::query::DotProduct>;
 extern template struct ProtonTerm<search::query::WandTerm>;
+extern template struct ProtonTerm<search::query::SparseTensorWandTerm>;
 extern template struct ProtonTerm<search::query::PredicateQuery>;
 extern template struct ProtonTerm<search::query::RegExpTerm>;
 extern template struct ProtonTerm<search::query::FuzzyTerm>;

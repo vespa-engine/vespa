@@ -1,20 +1,26 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for querybuilder.
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/parsequery/parse.h>
+#include <vespa/searchlib/query/proto_tree_converter.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
 #include <vespa/searchlib/query/tree/point.h>
+#include <vespa/searchlib/query/tree/query_to_protobuf.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("querybuilder_test");
 #include <vespa/searchlib/query/tree/querytreecreator.h>
+
+#include <vespa/searchlib/query/proto_tree_converter.hpp>
 
 using search::SerializedQueryTree;
 using search::SimpleQueryStackDumpIterator;
@@ -37,6 +43,15 @@ const Point    position{100, 100};
 const int      max_distance = 20;
 const uint32_t x_aspect = 0;
 const Location location(position, max_distance, x_aspect);
+
+std::vector<StringRange> string_ranges() {
+    return {StringRange(std::in_place, "aaa", true, "zzz", false),
+            StringRange(std::in_place, std::nullopt, true, "zzz", true),
+            StringRange(std::in_place, "aaa", false, std::nullopt, false),
+            StringRange(std::in_place, std::nullopt, false, std::nullopt, false),
+            StringRange(std::in_place, "aaa", true, "zzz", false, 42),
+            StringRange(std::in_place, "aaa", true, "zzz", false, -42)};
+}
 
 PredicateQueryTerm::UP getPredicateQueryTerm() {
     auto pqt = std::make_unique<PredicateQueryTerm>();
@@ -83,7 +98,7 @@ template <class NodeTypes> Node::UP createQueryTree() {
         }
         builder.addRangeTerm(range, view[9], id[9], weight[9]);
         builder.addLocationTerm(location, view[10], id[10], weight[10]);
-        builder.addWeakAnd(2, 123, view[0]);
+        builder.addWeakAnd(2, 123);
         {
             builder.addStringTerm(str[4], view[4], id[4], weight[4]);
             builder.addStringTerm(str[5], view[5], id[5], weight[5]);
@@ -119,7 +134,7 @@ template <class NodeTypes> Node::UP createQueryTree() {
         builder.addFuzzyTerm(str[5], view[5], id[5], weight[5], 3, 1, false);
     }
     Node::UP node = builder.build();
-    assert(node.get());
+    CHECK(node.get());
     return node;
 }
 
@@ -171,7 +186,7 @@ bool checkTerm(const Term* term, const typename Term::Type& t, const string& f, 
 
 template <class NodeType> NodeType* as_node(Node* node) {
     auto* result = dynamic_cast<NodeType*>(node);
-    assert(result != nullptr);
+    CHECK(result != nullptr);
     return result;
 }
 
@@ -199,7 +214,7 @@ template <class NodeTypes> void checkQueryTreeTypes(Node* node, bool skip_negati
     using FalseNode = typename NodeTypes::FalseQueryNode;
     using FuzzyTerm = typename NodeTypes::FuzzyTerm;
 
-    assert(node);
+    CHECK(node);
     auto* and_node = as_node<And>(node);
     EXPECT_EQ(13u, and_node->getChildren().size());
 
@@ -352,6 +367,7 @@ struct AbstractTypes {
     using Phrase = search::query::Phrase;
     using PrefixTerm = search::query::PrefixTerm;
     using RangeTerm = search::query::RangeTerm;
+    using StringRangeTerm = search::query::StringRangeTerm;
     using Rank = search::query::Rank;
     using StringTerm = search::query::StringTerm;
     using SubstringTerm = search::query::SubstringTerm;
@@ -408,7 +424,7 @@ struct MyONear : ONear {
 };
 
 struct MyWeakAnd : WeakAnd {
-    MyWeakAnd(uint32_t minHits, const string& v) : WeakAnd(minHits, v) {}
+    MyWeakAnd(uint32_t minHits) : WeakAnd(minHits) {}
     ~MyWeakAnd() override;
 };
 
@@ -446,6 +462,11 @@ struct MyRank : Rank {
     ~MyRank() override;
 };
 
+struct MyLabelWrapper : LabelWrapper {
+    using LabelWrapper::LabelWrapper;
+    ~MyLabelWrapper() override;
+};
+
 struct MyNumberTerm : NumberTerm {
     MyNumberTerm(Type t, const string& f, int32_t i, Weight w) : NumberTerm(t, f, i, w) {}
     ~MyNumberTerm() override;
@@ -464,6 +485,11 @@ struct MyPrefixTerm : PrefixTerm {
 struct MyRangeTerm : RangeTerm {
     MyRangeTerm(const Type& t, const string& f, int32_t i, Weight w) : RangeTerm(t, f, i, w) {}
     ~MyRangeTerm() override;
+};
+
+struct MyStringRangeTerm : StringRangeTerm {
+    MyStringRangeTerm(const Type& t, const string& f, int32_t i, Weight w) : StringRangeTerm(t, f, i, w) {}
+    ~MyStringRangeTerm() override;
 };
 
 struct MyStringTerm : StringTerm {
@@ -497,6 +523,11 @@ struct MyNearestNeighborTerm : NearestNeighborTerm {
         : NearestNeighborTerm(query_tensor_name, field_name, i, w, target_num_hits, allow_approximate,
                               std::move(hnsw_params)) {}
     ~MyNearestNeighborTerm() override;
+};
+
+struct MySparseTensorWandTerm : SparseTensorWandTerm {
+    using SparseTensorWandTerm::SparseTensorWandTerm;
+    ~MySparseTensorWandTerm() override;
 };
 
 struct MyTrue : TrueQueryNode {
@@ -549,6 +580,7 @@ MyDotProduct::~MyDotProduct() = default;
 MyWandTerm::~MyWandTerm() = default;
 
 MyRank::~MyRank() = default;
+MyLabelWrapper::~MyLabelWrapper() = default;
 
 MyNumberTerm::~MyNumberTerm() = default;
 
@@ -557,6 +589,8 @@ MyLocationTerm::~MyLocationTerm() = default;
 MyPrefixTerm::~MyPrefixTerm() = default;
 
 MyRangeTerm::~MyRangeTerm() = default;
+
+MyStringRangeTerm::~MyStringRangeTerm() = default;
 
 MyStringTerm::~MyStringTerm() = default;
 
@@ -569,6 +603,8 @@ MyPredicateQuery::~MyPredicateQuery() = default;
 MyRegExpTerm::~MyRegExpTerm() = default;
 
 MyNearestNeighborTerm::~MyNearestNeighborTerm() = default;
+
+MySparseTensorWandTerm::~MySparseTensorWandTerm() = default;
 
 MyTrue::~MyTrue() = default;
 
@@ -593,7 +629,9 @@ struct MyQueryNodeTypes {
     using SameElement = MySameElement;
     using PrefixTerm = MyPrefixTerm;
     using RangeTerm = MyRangeTerm;
+    using StringRangeTerm = MyStringRangeTerm;
     using Rank = MyRank;
+    using LabelWrapper = MyLabelWrapper;
     using StringTerm = MyStringTerm;
     using SubstringTerm = MySubstringTerm;
     using SuffixTerm = MySuffixTerm;
@@ -604,6 +642,7 @@ struct MyQueryNodeTypes {
     using PredicateQuery = MyPredicateQuery;
     using RegExpTerm = MyRegExpTerm;
     using NearestNeighborTerm = MyNearestNeighborTerm;
+    using SparseTensorWandTerm = MySparseTensorWandTerm;
     using TrueQueryNode = MyTrue;
     using FalseQueryNode = MyFalse;
     using FuzzyTerm = MyFuzzyTerm;
@@ -792,6 +831,146 @@ TEST(QueryBuilderTest, fuzzy_node_can_be_created) {
     }
 }
 
+TEST(QueryBuilderTest, label_wrapper_node_survives_stack_dump_round_trip) {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    builder.add_label_wrapper(id[3], 2.5);
+    builder.addStringTerm(str[0], view[0], id[0], weight[0]);
+    Node::UP node = builder.build();
+
+    auto stackDump = StackDumpCreator::create(*node);
+    auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
+    auto iterator = serializedQueryTree->makeIterator();
+
+    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
+    auto*    wrapper = as_node<LabelWrapper>(new_node.get());
+    EXPECT_EQ(id[3], wrapper->getId());
+    EXPECT_EQ(2.5, wrapper->getLabelScore());
+    ASSERT_EQ(1u, wrapper->getChildren().size());
+    auto* string_term = as_node<StringTerm>(wrapper->getChildren()[0]);
+    EXPECT_TRUE(checkTerm(string_term, str[0], view[0], id[0], weight[0]));
+}
+
+TEST(QueryBuilderTest, label_wrapper_node_survives_protobuf_round_trip) {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    builder.add_label_wrapper(id[3], 2.5);
+    builder.addStringTerm(str[0], view[0], id[0], weight[0]);
+    Node::UP node = builder.build();
+
+    QueryToProtobuf converter;
+    auto            protoQueryTree = converter.serialize(*node);
+    auto            serializedQueryTree =
+        SerializedQueryTree::fromProtobuf(std::make_unique<decltype(protoQueryTree)>(protoQueryTree));
+
+    // via ProtoTreeConverter
+    auto  new_node = serializedQueryTree->apply(QueryTreeCreator<SimpleQueryNodeTypes>());
+    auto* wrapper = as_node<LabelWrapper>(new_node.get());
+    EXPECT_EQ(id[3], wrapper->getId());
+    EXPECT_EQ(2.5, wrapper->getLabelScore());
+    ASSERT_EQ(1u, wrapper->getChildren().size());
+    EXPECT_TRUE(checkTerm(as_node<StringTerm>(wrapper->getChildren()[0]), str[0], view[0], id[0], weight[0]));
+
+    // via ProtoTreeIterator
+    auto iterator = serializedQueryTree->makeIterator();
+    new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
+    wrapper = as_node<LabelWrapper>(new_node.get());
+    EXPECT_EQ(id[3], wrapper->getId());
+    EXPECT_EQ(2.5, wrapper->getLabelScore());
+    ASSERT_EQ(1u, wrapper->getChildren().size());
+    EXPECT_TRUE(checkTerm(as_node<StringTerm>(wrapper->getChildren()[0]), str[0], view[0], id[0], weight[0]));
+}
+
+TEST(QueryBuilderTest, string_range_node_survives_protobuf_round_trip) {
+    for (const auto& expected : string_ranges()) {
+        QueryBuilder<SimpleQueryNodeTypes> builder;
+        builder.add_string_range_term(expected, view[9], id[9], weight[9]);
+        Node::UP node = builder.build();
+
+        QueryToProtobuf converter;
+        auto            proto_query_tree = converter.serialize(*node);
+        auto            serialized_query_tree =
+            SerializedQueryTree::fromProtobuf(std::make_unique<decltype(proto_query_tree)>(proto_query_tree));
+
+        // via ProtoTreeConverter
+        auto new_node = serialized_query_tree->apply(QueryTreeCreator<SimpleQueryNodeTypes>());
+        EXPECT_TRUE(checkTerm(as_node<StringRangeTerm>(new_node.get()), expected, view[9], id[9], weight[9]));
+
+        // via ProtoTreeIterator -> StackDumpQueryCreator
+        auto iterator = serialized_query_tree->makeIterator();
+        new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
+        EXPECT_TRUE(checkTerm(as_node<StringRangeTerm>(new_node.get()), expected, view[9], id[9], weight[9]));
+    }
+}
+
+TEST(QueryBuilderTest, string_range_node_survives_stack_dump_round_trip) {
+    for (const auto& expected : string_ranges()) {
+        QueryBuilder<SimpleQueryNodeTypes> builder;
+        builder.add_string_range_term(expected, view[9], id[9], weight[9]);
+        Node::UP node = builder.build();
+
+        auto stackDump = StackDumpCreator::create(*node);
+        auto serializedQueryTree = SerializedQueryTree::fromStackDump(stackDump);
+        auto iterator = serializedQueryTree->makeIterator();
+
+        Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(*iterator);
+        EXPECT_TRUE(checkTerm(as_node<StringRangeTerm>(new_node.get()), expected, view[9], id[9], weight[9]));
+    }
+}
+
+TEST(QueryBuilderTest, string_range_node_can_be_replicated) {
+    for (const auto& expected : string_ranges()) {
+        QueryBuilder<SimpleQueryNodeTypes> builder;
+        builder.add_string_range_term(expected, view[9], id[9], weight[9]);
+        Node::UP node = builder.build();
+
+        Node::UP new_node = QueryTreeCreator<MyQueryNodeTypes>::replicate(*node);
+        EXPECT_TRUE(checkTerm(as_node<MyStringRangeTerm>(new_node.get()), expected, view[9], id[9], weight[9]));
+    }
+}
+
+namespace {
+
+Node::UP make_sparse_tensor_wand_query() {
+    QueryBuilder<SimpleQueryNodeTypes> builder;
+    auto& term = builder.add_sparse_tensor_wand_term("query_tensor", "doc_tensor", id[3], weight[5], 17, 2.5);
+    term.setRanked(false);
+    return builder.build();
+}
+
+template <typename NodeType> void check_sparse_tensor_wand_term(Node* node) {
+    auto* term = as_node<NodeType>(node);
+    ASSERT_TRUE(term != nullptr);
+    EXPECT_EQ("query_tensor", term->get_query_tensor_name());
+    EXPECT_EQ("doc_tensor", term->getView());
+    EXPECT_EQ(id[3], term->getId());
+    EXPECT_EQ(weight[5].percent(), term->getWeight().percent());
+    EXPECT_EQ(17u, term->get_target_num_hits());
+    EXPECT_EQ(2.5, term->get_score_threshold());
+    EXPECT_FALSE(term->isRanked());
+}
+
+} // namespace
+
+TEST(QueryBuilderTest, sparse_tensor_wand_node_survives_protobuf_round_trip) {
+    Node::UP        node = make_sparse_tensor_wand_query();
+    QueryToProtobuf converter;
+    auto            proto_query_tree = converter.serialize(*node);
+    auto            serialized_query_tree =
+        SerializedQueryTree::fromProtobuf(std::make_unique<decltype(proto_query_tree)>(proto_query_tree));
+    auto new_node = serialized_query_tree->apply(QueryTreeCreator<SimpleQueryNodeTypes>());
+    check_sparse_tensor_wand_term<SparseTensorWandTerm>(new_node.get());
+}
+
+TEST(QueryBuilderTest, sparse_tensor_wand_node_can_be_replicated) {
+    Node::UP node = make_sparse_tensor_wand_query();
+    Node::UP new_node = QueryTreeCreator<MyQueryNodeTypes>::replicate(*node);
+    check_sparse_tensor_wand_term<MySparseTensorWandTerm>(new_node.get());
+}
+
+TEST(QueryBuilderTest, sparse_tensor_wand_node_cannot_be_stack_dumped) {
+    Node::UP node = make_sparse_tensor_wand_query();
+    EXPECT_THROW(StackDumpCreator::create(*node), vespalib::IllegalArgumentException);
+}
+
 TEST(QueryBuilderTest, require_that_empty_intermediate_node_can_be_added) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addAnd(0);
@@ -809,7 +988,7 @@ TEST(QueryBuilderTest, require_that_empty_intermediate_node_can_be_added) {
 }
 
 TEST(QueryBuilderTest, control_size_of_SimpleQueryStackDumpIterator) {
-    EXPECT_EQ(184u, sizeof(SimpleQueryStackDumpIterator));
+    EXPECT_EQ(200u, sizeof(SimpleQueryStackDumpIterator));
 }
 
 TEST(QueryBuilderTest, test_query_parsing_error) {

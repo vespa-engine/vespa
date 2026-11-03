@@ -4,10 +4,11 @@ package com.yahoo.prelude.semantics.test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.semantics.RuleBase;
-import com.yahoo.prelude.semantics.RuleBaseException;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.prelude.semantics.SemanticSearcher;
 import com.yahoo.search.Query;
+import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
@@ -18,7 +19,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests creating a set of rule bases (the same set as in inheritingrules) from config
@@ -34,9 +35,23 @@ public class ConfigurationTestCase {
     }
 
     protected void assertSemantics(String result, String input, String baseName) {
-        Query query = new Query(QueryTestCase.httpEncode("?query=" + input + "&tracelevel=0&tracelevel.rules=0&rules.rulebase=" + baseName));
-        doSearch(searcher, query, 0, 10);
+        var query = createQuery(input, baseName);
+        doQuery(query);
         assertEquals(result, query.getModel().getQueryTree().getRoot().toString());
+    }
+
+    private static Query createQuery(String input, String baseName) {
+        return new Query(QueryTestCase.httpEncode("?query=" + input + "&tracelevel=0&tracelevel.rules=0&rules.rulebase=" + baseName));
+    }
+
+    private Result doQuery(Query query) {
+        return doSearch(searcher, query, 0, 10);
+    }
+
+    private void assertError(String expectedErrorMessage, String input, String baseName) {
+        Query query = createQuery(input, baseName);
+        var e = assertThrows(IllegalInputException.class, () -> doQuery(query));
+        assertEquals(expectedErrorMessage, e.getMessage());
     }
 
     protected void assertSemanticsRulesOff(String result, String input) {
@@ -93,13 +108,6 @@ public class ConfigurationTestCase {
     void testSearcher() {
         assertSemantics("WEAKAND vehiclebrand:skoda", "vw cars",   "grandchild");
         assertSemantics("WEAKAND vehiclebrand:skoda", "vw cars",   "grandchild.sd");
-        try {
-            assertSemantics("WEAKAND vw cars",    "vw cars",   "doesntexist");
-            fail("No exception on missing rule base");
-        }
-        catch (RuleBaseException e) {
-            // Success
-        }
         assertSemantics("WEAKAND vw cars",       "vw cars",   "grandchild.sd&rules.off");
         assertSemanticsRulesOff("WEAKAND vw cars",       "vw cars");
 
@@ -112,12 +120,14 @@ public class ConfigurationTestCase {
 
         assertSemantics("WEAKAND vw car",        "vw cars",   "parent");
         assertSemantics("WEAKAND skoda car",     "skoda cars", "parent");
+
+        assertError("Requested rule base 'doesntexist' does not exist", "vw cars", "doesntexist");
     }
 
-    private void doSearch(Searcher searcher, Query query, int offset, int hits) {
+    private Result doSearch(Searcher searcher, Query query, int offset, int hits) {
         query.setOffset(offset);
         query.setHits(hits);
-        createExecution(searcher).search(query);
+        return createExecution(searcher).search(query);
     }
 
     private Execution createExecution(Searcher searcher) {

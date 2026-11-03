@@ -34,6 +34,7 @@ func main() {
 			os.Exit(exitCode)
 		}
 	}()
+	os.Setenv("ORT_DISABLE_TELEMETRY", "1")
 	action := basename(os.Args[0])
 	if action == "vespa-wrapper" && len(os.Args) > 1 {
 		action = os.Args[1]

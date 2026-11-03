@@ -5,13 +5,13 @@
 #include "isequencedtaskexecutor.h"
 #include "thread.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/util/executor_idle_tracking.h>
 #include <vespa/vespalib/util/gate.h>
 
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/eventbarrier.hpp>
 
-#include <cassert>
 #include <condition_variable>
 #include <mutex>
 #include <optional>
@@ -36,7 +36,7 @@ private:
         TaggedTask(const TaggedTask& rhs) = delete;
         TaggedTask& operator=(const TaggedTask& rhs) = delete;
         TaggedTask& operator=(TaggedTask&& rhs) {
-            assert(task.get() == nullptr); // no overwrites
+            CHECK(task.get() == nullptr); // no overwrites
             task = std::move(rhs.task);
             token = rhs.token;
             return *this;
@@ -56,8 +56,8 @@ private:
         void set_max_pending(size_t max_pending_in) {
             max_pending = std::max(1uL, max_pending_in);
             wakeup_limit = std::max(1uL, size_t(max_pending * 0.9));
-            assert(wakeup_limit > 0);
-            assert(wakeup_limit <= max_pending);
+            CHECK(wakeup_limit > 0);
+            CHECK(wakeup_limit <= max_pending);
         }
         bool is_above_max_pending(size_t pending) { return (pending >= max_pending) && is_max_pending_hard; }
         Config(size_t num_threads_in, size_t max_waiting_in, size_t max_pending_in, bool is_max_pending_hard_in)
@@ -66,7 +66,7 @@ private:
               max_pending(1000),
               wakeup_limit(900),
               is_max_pending_hard(is_max_pending_hard_in) {
-            assert(num_threads > 0);
+            CHECK(num_threads > 0);
             set_max_pending(max_pending_in);
         }
     };

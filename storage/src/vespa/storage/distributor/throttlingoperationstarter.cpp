@@ -2,7 +2,7 @@
 
 #include "throttlingoperationstarter.h"
 
-#include <cassert>
+#include <vespa/check_require.h>
 
 namespace storage::distributor {
 
@@ -35,7 +35,7 @@ bool ThrottlingOperationStarter::may_allow_operation_with_priority(Priority prio
 
 void ThrottlingOperationStarter::signalOperationFinished(const Operation& op) {
     (void)op;
-    assert(_pendingCount > 0);
+    CHECK(_pendingCount > 0);
     --_pendingCount;
 }
 

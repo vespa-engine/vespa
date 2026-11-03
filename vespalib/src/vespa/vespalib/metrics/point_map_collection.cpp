@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "point_map_collection.h"
 
-#include <assert.h>
+#include <vespa/check_require.h>
 
 namespace vespalib {
 namespace metrics {
@@ -29,7 +29,7 @@ using Guard = std::lock_guard<std::mutex>;
 
 const PointMap& PointMapCollection::lookup(size_t id) const {
     Guard guard(_lock);
-    assert(id < _vec.size());
+    CHECK(id < _vec.size());
     PointMapMap::const_iterator iter = _vec[id];
     return iter->first.backingMap();
 }

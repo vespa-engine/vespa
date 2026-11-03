@@ -5,6 +5,7 @@
 #include "eventlogger.h"
 #include "fusionspec.h"
 
+#include <vespa/check_require.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
@@ -55,7 +56,7 @@ void readSelectorArray(const string& selector_name, SelectorArray& selector_arra
         if (source >= id_map.size()) {
             source = id_map.size() - 1;
         }
-        assert(source < id_map.size());
+        CHECK(source < id_map.size());
         selector_array.push_back(id_map[source]);
     }
 }

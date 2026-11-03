@@ -42,4 +42,11 @@ public class NoRankingSearcherTestCase {
         assertEquals("default", q.getRanking().getProfile());
     }
 
+    @Test
+    void testSortOnFeatureKeepsProfile() {
+        Query q = new Query("?query=a&sorting=-feature(foo)&ranking=hello");
+        new Execution(s, Execution.Context.createContextStub()).search(q);
+        assertEquals("hello", q.getRanking().getProfile());
+    }
+
 }

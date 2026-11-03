@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/storage/persistence/messages.h>
@@ -311,7 +312,7 @@ TEST_F(OperationAbortingTest, do_not_abort_recheck_bucket_commands) {
 api::BucketInfo OperationAbortingTest::getBucketInfoFromDB(const document::BucketId& id) const {
     StorBucketDatabase::WrappedEntry entry(
         _node->getStorageBucketDatabase().get(id, "foo", StorBucketDatabase::CREATE_IF_NONEXISTING));
-    assert(entry.exists());
+    CHECK(entry.exists());
     return entry->info;
 }
 

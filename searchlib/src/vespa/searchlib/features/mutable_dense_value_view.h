@@ -2,9 +2,8 @@
 
 #pragma once
 
+#include <vespa/check_require.h>
 #include <vespa/eval/eval/value.h>
-
-#include <cassert>
 
 namespace search::features::mutable_value {
 
@@ -21,7 +20,7 @@ private:
 public:
     explicit MutableDenseValueView(const ValueType& type_in);
     void setCells(TypedCells cells_in) noexcept {
-        assert(cells_in.type == _type.cell_type());
+        CHECK(cells_in.type == _type.cell_type());
         _cells = cells_in;
     }
     const ValueType& type() const override { return _type; }

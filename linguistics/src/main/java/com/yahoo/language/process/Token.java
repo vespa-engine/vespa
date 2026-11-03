@@ -34,6 +34,12 @@ public interface Token {
     /** Returns the offset position of this token */
     long getOffset();
 
+    /**
+     * Returns how far this token's position advances relative to the previous.
+     * This default implementation returns 1.
+     */
+    default long getPositionIncrement() { return 1; }
+
     /** Returns the script of this token */
     TokenScript getScript();
 

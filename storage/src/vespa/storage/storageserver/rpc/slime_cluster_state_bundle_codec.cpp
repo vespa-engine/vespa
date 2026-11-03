@@ -2,6 +2,7 @@
 
 #include "slime_cluster_state_bundle_codec.h"
 
+#include <vespa/check_require.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/config/configgen/configpayload.h>
@@ -76,10 +77,10 @@ struct ConfigArrayConverter : ArrayTraverser {
     explicit ConfigArrayConverter(Cursor& out) noexcept : _out(out) {}
 
     void entry([[maybe_unused]] size_t idx, const Inspector& in) override {
-        assert(in.type().getId() == OBJECT::ID);
+        CHECK(in.type().getId() == OBJECT::ID);
         auto  type = in["type"].asString();
         auto& value = in["value"];
-        assert(value.valid());
+        CHECK(value.valid());
         if (type == "int") {
             _out.addLong(value.asLong());
         } else if (type == "bool") {
@@ -89,7 +90,7 @@ struct ConfigArrayConverter : ArrayTraverser {
         } else if (type == "double") {
             _out.addDouble(value.asDouble());
         } else if (type == "array") {
-            assert(value.type().getId() == ARRAY::ID);
+            CHECK(value.type().getId() == ARRAY::ID);
             ConfigArrayConverter arr_conv(_out.addArray());
             value.traverse(arr_conv);
         } else if (type == "struct") {
@@ -106,10 +107,10 @@ struct ConfigObjectConverter : ObjectTraverser {
     explicit ConfigObjectConverter(Cursor& out) noexcept : _out(out) {}
 
     void field(const Memory& name, const Inspector& in) override {
-        assert(in.type().getId() == OBJECT::ID);
+        CHECK(in.type().getId() == OBJECT::ID);
         auto  type = in["type"].asString();
         auto& value = in["value"];
-        assert(value.valid());
+        CHECK(value.valid());
         if (type == "int") {
             _out.setLong(name, value.asLong());
         } else if (type == "bool") {
@@ -119,7 +120,7 @@ struct ConfigObjectConverter : ObjectTraverser {
         } else if (type == "double") {
             _out.setDouble(name, value.asDouble());
         } else if (type == "array") {
-            assert(value.type().getId() == ARRAY::ID);
+            CHECK(value.type().getId() == ARRAY::ID);
             ConfigArrayConverter arr_conv(_out.setArray(name));
             value.traverse(arr_conv);
         } else if (type == "struct") {
@@ -180,7 +181,7 @@ EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(const lib::Cluste
 
     EncodedClusterStateBundle encoded_bundle;
     encoded_bundle._compression_type = actual_type;
-    assert(to_compress.size() <= INT32_MAX);
+    CHECK(to_compress.size() <= INT32_MAX);
     encoded_bundle._uncompressed_length = to_compress.size();
     encoded_bundle._buffer = std::move(buf);
     return encoded_bundle;

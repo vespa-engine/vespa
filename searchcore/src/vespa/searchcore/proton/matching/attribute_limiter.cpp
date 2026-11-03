@@ -4,6 +4,7 @@
 
 #include "rangequerylocator.h"
 
+#include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/numeric_range_spec.h>
 #include <vespa/searchlib/query/tree/range.h>
@@ -66,8 +67,11 @@ const std::string& toString(AttributeLimiter::DiversityCutoffStrategy strategy) 
 
 AttributeLimiter::BlueprintAndMatchData AttributeLimiter::create_match_data(size_t want_hits, size_t max_group_size,
                                                                             double hit_rate, bool strictSearch) {
-    std::lock_guard<std::mutex>  guard(_lock);
-    const uint32_t               my_field_id = 0;
+    std::lock_guard<std::mutex> guard(_lock);
+    // A synthetic field id for this local match data only; the attribute itself
+    // is resolved by name below. Using the "no field" id keeps it from being
+    // confused with any field of the index environment.
+    const uint32_t               my_field_id = search::fef::FieldInfo::no_field().id();
     search::fef::MatchDataLayout layout;
     auto                         my_handle = layout.allocTermField(my_field_id);
     if (!_blueprint) {

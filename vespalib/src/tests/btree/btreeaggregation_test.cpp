@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
@@ -125,13 +126,14 @@ public:
 
     void erase(uint32_t key) {
         MTree::iterator it(_tree.find(key));
-        if (it == _tree.end())
+        if (it == _tree.end()) {
             return;
+        }
         int32_t          oval = it->second;
         MRTree::iterator rit(_rtree.find(oval));
-        assert(rit != _rtree.end());
+        CHECK(rit != _rtree.end());
         size_t ecount = rit->second.erase(key);
-        assert(ecount == 1);
+        CHECK(ecount == 1);
         (void)ecount;
         if (rit->second.empty()) {
             _rtree.erase(oval);
@@ -165,13 +167,13 @@ template <typename ManagerType> void cleanup(GenerationHandler& g, ManagerType& 
 template <typename ManagerType, typename NodeType>
 void cleanup(GenerationHandler& g, ManagerType& m, BTreeNode::Ref n1Ref, NodeType* n1,
              BTreeNode::Ref n2Ref = BTreeNode::Ref(), NodeType* n2 = nullptr) {
-    assert(ManagerType::isValidRef(n1Ref));
+    CHECK(ManagerType::isValidRef(n1Ref));
     m.holdNode(n1Ref, n1);
     if (n2 != nullptr) {
-        assert(ManagerType::isValidRef(n2Ref));
+        CHECK(ManagerType::isValidRef(n2Ref));
         m.holdNode(n2Ref, n2);
     } else {
-        assert(!ManagerType::isValidRef(n2Ref));
+        CHECK(!ManagerType::isValidRef(n2Ref));
     }
     cleanup(g, m);
 }
@@ -582,8 +584,8 @@ void BTreeAggregationTest::buildSubTree(const std::vector<LeafPair>& sub, size_t
         mock.insert(num, val);
     }
     tree.assign(builder);
-    assert(numEntries == tree.size());
-    assert(tree.isValid());
+    CHECK(numEntries == tree.size());
+    CHECK(tree.isValid());
 
     EXPECT_TRUE(assertAggregated(mock, tree, "build_sub_tree"));
     EXPECT_EQ(numEntries, tree.size());
@@ -664,8 +666,9 @@ TEST_F(BTreeAggregationTest, require_that_we_can_insert_and_remove_from_tree) {
         MyTree::Iterator itre = itr;
         MyTree::Iterator itre2;
         MyTree::Iterator ritr = itr;
-        while (itre.valid())
+        while (itre.valid()) {
             ++itre;
+        }
         if (numEntries > 0) {
             EXPECT_TRUE(ritr.valid());
             EXPECT_EQ(0u, ritr.position());
@@ -847,10 +850,12 @@ struct UpdKeyComp {
     mutable size_t _numErrors;
     UpdKeyComp(int remainder) : _remainder(remainder), _numErrors(0) {}
     bool operator()(const int& lhs, const int& rhs) const {
-        if (lhs % 2 != _remainder)
+        if (lhs % 2 != _remainder) {
             ++_numErrors;
-        if (rhs % 2 != _remainder)
+        }
+        if (rhs % 2 != _remainder) {
             ++_numErrors;
+        }
         return lhs < rhs;
     }
 };

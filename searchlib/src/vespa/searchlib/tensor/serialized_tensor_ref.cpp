@@ -2,6 +2,8 @@
 
 #include "serialized_tensor_ref.h"
 
+#include <vespa/check_require.h>
+
 namespace search::tensor {
 
 SerializedTensorRef::SerializedTensorRef() : _vectors(), _num_mapped_dimensions(0), _labels() {
@@ -15,7 +17,7 @@ SerializedTensorRef::SerializedTensorRef(VectorBundle vectors, uint32_t num_mapp
 SerializedTensorRef::~SerializedTensorRef() = default;
 
 std::span<const vespalib::string_id> SerializedTensorRef::get_labels(uint32_t subspace) const {
-    assert(subspace < _vectors.subspaces());
+    CHECK(subspace < _vectors.subspaces());
     return {_labels.data() + subspace * _num_mapped_dimensions, _num_mapped_dimensions};
 }
 

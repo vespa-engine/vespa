@@ -5,48 +5,97 @@ import com.yahoo.language.Language;
 import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.TokenType;
+import com.yahoo.language.simple.SimpleToken;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
+import com.yahoo.search.schema.FieldSet;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * A parser which delegates all tokenization and processing to the linguistics component.
  * The full string is given as-is to the linguistics component for tokenization, and
- * what comes back is assumes fully processed including stemming (if applicable).
+ * what comes back is assumed fully processed including stemming (if applicable).
  * The returned tokens are collected into a single parent item.
  *
  * @author bratseth
  */
 public final class LinguisticsParser extends AbstractParser {
 
+    private static final com.yahoo.language.process.Token paddingToken = new SimpleToken("(ignored)").setType(TokenType.ALPHABETIC);
+
     public LinguisticsParser(ParserEnvironment environment) {
         super(environment);
     }
 
     @Override
-    Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
-               IndexFacts.Session indexFacts, String defaultIndex, Parsable parsable) {
-        setState(language, indexFacts, defaultIndex);
-        var parameters = new LinguisticsParameters(linguisticsProfileFor(defaultIndex),
-                                                   parsingLanguage,
-                                                   StemMode.BEST,
-                                                   true,
-                                                   true);
-        var parent = newComposite();
-        for (com.yahoo.language.process.Token token : environment.getLinguistics().getTokenizer().tokenize(queryToParse, parameters)) {
-            if ( ! token.getType().isIndexable()) continue;
-            parent.addItem(toItem(token, defaultIndex));
+    Item parse(String text, String filter, Language language,
+               IndexFacts.Session indexFacts, String fieldOrFieldSet, Parsable parsable) {
+        setState(language, indexFacts, fieldOrFieldSet);
+        List<FieldProfile> linguisticProfiles = linguisticProfilesForFieldArgument(fieldOrFieldSet, parsable);
+        List<FieldTokens> tokensPerField =
+                linguisticProfiles.stream()
+                                  .map(profile -> FieldTokens.create(profile, text, language, environment))
+                                  .toList();
+        if (linguisticProfiles.size() > 1)
+            tokensPerField.forEach(FieldTokens::padSkippedPositions);
+        return combineTokensInto(newComposite(), tokensPerField);
+    }
+
+    /** Iterates over the tokens of each resulting tokenization in parallel to create an OR item for each token. */
+    private Item combineTokensInto(CompositeItem parent, List<FieldTokens> tokensPerField) {
+        for (List<FieldToken> nextTokens = nextTokens(tokensPerField);
+             !nextTokens.isEmpty();
+             nextTokens = nextTokens(tokensPerField)) {
+            nextTokens = nextTokens.stream().filter(token -> token.token() != paddingToken).toList();
+            if (nextTokens.size() == 1) {
+                parent.addItem(toItem(nextTokens.get(0).token(), nextTokens.get(0).fieldOrFieldSet()));
+            }
+            else if (nextTokens.size() > 1) {
+                OrItem orOverFields = new OrItem();
+                for (FieldToken nextToken : nextTokens)
+                    orOverFields.addItem(toItem(nextToken.token(), nextToken.fieldOrFieldSet()));
+                parent.addItem(orOverFields);
+            }
         }
         return parent;
+    }
+
+    private List<FieldToken> nextTokens(List<FieldTokens> tokensPerField) {
+        if (tokensPerField.size() == 1) { // Shortcut
+            var fieldToken = nextIndexable(tokensPerField.get(0));
+            return fieldToken != null ? List.of(fieldToken) : List.of();
+        }
+        List<FieldToken> next = new ArrayList<>();
+        for (FieldTokens fieldTokens : tokensPerField) {
+            var fieldToken = nextIndexable(fieldTokens);
+            if (fieldToken != null)
+                next.add(fieldToken);
+        }
+        return next;
+    }
+
+    private FieldToken nextIndexable(FieldTokens tokens) {
+        while (tokens.tokens().hasNext()) {
+            var token = tokens.tokens().next();
+            if ( ! token.getType().isIndexable()) continue;
+            return new FieldToken(tokens.fieldOrFieldSet(), token);
+        }
+        return null;
     }
 
     @Override
@@ -54,7 +103,25 @@ public final class LinguisticsParser extends AbstractParser {
         throw new RuntimeException(); // Not used since this overrides the parse method to delegate tokenization
     }
 
-    private Item toItem(com.yahoo.language.process.Token token, String defaultIndex) {
+    private List<FieldProfile> linguisticProfilesForFieldArgument(String fieldOrFieldSet, Parsable parsable) {
+        var schemaInfo = environment.getSchemaInfo().newSession(parsable.getSources(), parsable.getRestrict());
+        Optional<FieldSet> fieldSet = schemaInfo.fieldSet(fieldOrFieldSet);
+        if (fieldSet.isPresent()) {
+            Set<String> profiles = new HashSet<>();
+            List<FieldProfile> fieldProfiles = new ArrayList<>();
+            for (var field : fieldSet.get().fieldNames()) {
+                String profile = linguisticsProfileFor(field);
+                profiles.add(profile);
+                fieldProfiles.add(new FieldProfile(field, profile));
+            }
+            if (profiles.size() > 1) // Expand each field in the query
+                return fieldProfiles;
+        }
+        // Search one field, or if this is a fieldset, let the content layer expand
+        return List.of(new FieldProfile(fieldOrFieldSet, linguisticsProfileFor(fieldOrFieldSet)));
+    }
+
+    private Item toItem(com.yahoo.language.process.Token token, String index) {
         TermItem item;
         if (token.getType() == TokenType.NUMERIC) {
             item = new IntItem(token.getTokenString());
@@ -70,14 +137,64 @@ public final class LinguisticsParser extends AbstractParser {
             List<WordAlternativesItem.Alternative> alternatives = new ArrayList<>();
             for (int i = 0; i < token.getNumStems(); i++)
                 alternatives.add(new WordAlternativesItem.Alternative(token.getStem(i), 1.0));
-            item = new WordAlternativesItem(defaultIndex, true, new Substring(token.getOrig()), alternatives);
+            item = new WordAlternativesItem(index, true, new Substring(token.getOrig()), alternatives);
             item.setQueryType(environment.getType());
             item.setNormalizable(false); // Disable downstream normalizing
             item.setLowercased(true); // Disable downstream lowercasing
         }
-        item.setIndexName(defaultIndex);
+        item.setIndexName(index);
         item.setQueryType(environment.getType());
         return item;
+    }
+
+    private record FieldProfile(String fieldOrFieldSet, String profile) {}
+
+    private record FieldToken(String fieldOrFieldSet, com.yahoo.language.process.Token token) {}
+
+    private static class FieldTokens {
+
+        private final String fieldOrFieldSet;
+        private Iterator<com.yahoo.language.process.Token> tokens;
+
+        private FieldTokens(String fieldOrFieldSet, Iterator<com.yahoo.language.process.Token> tokens) {
+            this.fieldOrFieldSet = fieldOrFieldSet;
+            this.tokens = tokens;
+        }
+
+        String fieldOrFieldSet() { return fieldOrFieldSet; }
+        Iterator<com.yahoo.language.process.Token> tokens() { return tokens; }
+
+        private static Iterable<com.yahoo.language.process.Token> tokenize(String queryToParse,
+                                                                           String profile,
+                                                                           Language language,
+                                                                           ParserEnvironment environment) {
+            var parameters = new LinguisticsParameters(profile, language, StemMode.BEST, true, true);
+            return environment.getLinguistics().getTokenizer().tokenize(queryToParse, parameters);
+        }
+
+        /**
+         * This translates token t with positionIncrement i>1 into i tokens where t is the last and the others are
+         * non-text (skipped), such that we align tokens in multiple iterators correctly.
+         * Since tokenize does not return a ListIterator we cannot do this without first consuming the token stream
+         * as it requires being able to push tokens back.
+         */
+        private void padSkippedPositions() {
+            List<com.yahoo.language.process.Token> paddedTokens = new ArrayList<>();
+            for (var i = tokens; i.hasNext();) {
+                var token = i.next();
+                for (long position = token.getPositionIncrement(); position > 1; position--) {
+                    paddedTokens.add(paddingToken);
+                }
+                paddedTokens.add(token);
+            }
+            this.tokens = paddedTokens.iterator();
+        }
+
+        static FieldTokens create(FieldProfile profile, String text, Language language, ParserEnvironment environment) {
+            return new FieldTokens(profile.fieldOrFieldSet(),
+                                   tokenize(text, profile.profile(), language, environment).iterator());
+        }
+
     }
 
 }

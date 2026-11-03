@@ -5,9 +5,8 @@
 #include "thread.h"
 #include "threadpool.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
-#include <cassert>
 
 namespace storage::framework {
 
@@ -153,7 +152,7 @@ public:
     }
 
     void start(ThreadPool& pool) override {
-        assert(!_tickers.empty());
+        CHECK(!_tickers.empty());
         for (uint32_t i = 0; i < _tickers.size(); ++i) {
             vespalib::asciistream ost;
             ost << _name.c_str() << " thread " << i;

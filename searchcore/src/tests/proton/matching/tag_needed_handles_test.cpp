@@ -144,11 +144,11 @@ TagNeededHandlesTest::~TagNeededHandlesTest() = default;
 void TagNeededHandlesTest::SetUpTestSuite() {
     _index_env = std::make_unique<IndexEnvironment>();
     auto& fields = _index_env->getFields();
-    fields.emplace_back(FieldType::INDEX, CollectionType::ARRAY, field1, 0);
+    fields.emplace_back(FieldType::INDEX, CollectionType::ARRAY, field1, 1);
     fields.back().setFilter(true);
-    fields.emplace_back(FieldType::INDEX, CollectionType::ARRAY, field2, 1);
+    fields.emplace_back(FieldType::INDEX, CollectionType::ARRAY, field2, 2);
     fields.back().set_filter_threshold(FilterThreshold(0.5));
-    fields.emplace_back(FieldType::ATTRIBUTE, CollectionType::ARRAY, field3, 2);
+    fields.emplace_back(FieldType::ATTRIBUTE, CollectionType::ARRAY, field3, 3);
     _view_resolver = std::make_unique<ViewResolver>();
     auto& resolver = *_view_resolver;
     resolver.add(view, field1);

@@ -3,10 +3,9 @@
 
 #include "initializer_task.h"
 
+#include <vespa/check_require.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/executor.h>
-
-#include <cassert>
 
 namespace proton::initializer {
 
@@ -34,7 +33,7 @@ class TaskRunner {
         bool done() const { return !_doneTask; }
         void execute(vespalib::Executor::Task::UP task) {
             auto res = _contextExecutor.execute(std::move(task));
-            assert(!res);
+            CHECK(!res);
         }
         void setDone() { execute(std::move(_doneTask)); }
         const InitializerTask::SP& rootTask() { return _rootTask; }
