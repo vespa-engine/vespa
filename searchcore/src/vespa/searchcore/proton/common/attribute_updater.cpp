@@ -389,7 +389,6 @@ void AttributeUpdater::handle_field_path_update(AttributeVector& vec, uint32_t l
         update.getOriginalFieldPath().c_str());
     switch (target.kind()) {
     case FieldPathTarget::Kind::ASSIGN_ELEMENT: {
-        // FieldPathTarget::parse only classifies value assigns as ASSIGN_ELEMENT.
         const auto& assign = static_cast<const AssignFieldPathUpdate&>(update);
         assign_element(vec, lid, target.index(), assign.getValue());
         break;
