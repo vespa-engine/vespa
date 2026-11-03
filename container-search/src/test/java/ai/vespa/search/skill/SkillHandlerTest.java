@@ -3,7 +3,6 @@ package ai.vespa.search.skill;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import org.junit.jupiter.api.Test;
 
@@ -27,13 +26,13 @@ public class SkillHandlerTest {
 
     @Test
     void testIndex() throws IOException {
-        String expectedIndex = """
-               # Agent skills of this application
+        var expectedIndex = """
+            # Agent skills of this application
 
-               Each skill is a SKILL.md document at the given path, which may link to more documents.
+            Each skill is a SKILL.md document at the given path, which may link to more documents.
 
-               - `vespa-application-schemas` at `/skills/v1/schemas`: The schemas, fields and rank profiles of this Vespa application, with notes from its authors. Use this when writing queries against this application.
-               """;
+            - `vespa-application-schemas` at `/skills/v1/schemas`: The schemas, fields and rank profiles of this Vespa application, with notes from its authors. Use this when writing queries against this application.
+            """;
         for (String path : List.of("/skills/v1", "/skills/v1/")) {
             HttpResponse response = get(path);
             assertEquals(200, response.getStatus());
