@@ -16,6 +16,20 @@ private:
     using RegexpUtil = vespalib::RegexpUtil;
     using Parent::_enumStore;
     using Parent::matcher;
+
+    class LookupAdapter {
+        StringPostingSearchContext& _sc;
+
+    public:
+        explicit LookupAdapter(StringPostingSearchContext& sc) : _sc(sc) {}
+        void lookupSingle() { _sc.lookupSingle(); }
+        void lookupTerm(const vespalib::datastore::EntryComparator& comp) { _sc.lookupTerm(comp); }
+        void lookupRange(const vespalib::datastore::EntryComparator& low,
+                         const vespalib::datastore::EntryComparator& high) {
+            _sc.lookupRange(low, high);
+        }
+    };
+
     // Note: Steps iterator one or more steps when not using dictionary entry
     bool use_dictionary_entry(PostingListSearchContext::DictionaryConstIterator& it) const override;
     // Note: Uses copy of dictionary iterator to avoid stepping original.
