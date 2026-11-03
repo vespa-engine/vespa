@@ -35,22 +35,22 @@ public class MatchSettingsResolvingTestCase extends AbstractExportingTestCase {
 
     @Test
     void testMapDefaults() throws IOException, ParseException {
-        assertCorrectDeriving("matchsettings_map_def", new TestProperties());
+        assertCorrectDeriving("matchsettings_map_def", new TestProperties().allowStructFieldIndex("allow_alone"));
     }
 
     @Test
     void testMapWithStructSettings() throws IOException, ParseException {
-        assertCorrectDeriving("matchsettings_map_wss", new TestProperties());
+        assertCorrectDeriving("matchsettings_map_wss", new TestProperties().allowStructFieldIndex("allow_alone"));
     }
 
     @Test
     void testMapWithFieldSettings() throws IOException, ParseException {
-        assertCorrectDeriving("matchsettings_map_wfs", new TestProperties());
+        assertCorrectDeriving("matchsettings_map_wfs", new TestProperties().allowStructFieldIndex("allow_alone"));
     }
 
     @Test
     void testMapAfter() throws IOException, ParseException {
-        assertCorrectDeriving("matchsettings_map_after", new TestProperties());
+        assertCorrectDeriving("matchsettings_map_after", new TestProperties().allowStructFieldIndex("allow_alone"));
     }
 
 

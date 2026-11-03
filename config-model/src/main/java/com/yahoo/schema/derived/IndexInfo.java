@@ -13,6 +13,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.BooleanIndexDefinition;
 import com.yahoo.schema.document.Case;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.FastMapSearchFields;
 import com.yahoo.searchlib.document.FastMapSearch;
 import com.yahoo.schema.document.FieldSet;
@@ -211,7 +212,9 @@ public class IndexInfo extends Derived {
             addIndexCommand(index.getName(), CMD_INDEX); // List the indices
         }
 
-        if (needLowerCase(field)) {
+        boolean doesIndexing = doesIndexing(field, schema);
+
+        if (needLowerCase(field, doesIndexing)) {
             addIndexCommand(field, CMD_LOWERCASE);
         }
 
@@ -220,11 +223,11 @@ public class IndexInfo extends Derived {
         }
 
         Attribute attribute = field.getAttribute();
-        if ((field.doesAttributing() || (attribute != null && !isPositionField(parent))) && !field.doesIndexing()) {
+        if ((field.doesAttributing() || (attribute != null && !isPositionField(parent))) && !doesIndexing) {
             addIndexCommand(field.getName(), CMD_ATTRIBUTE);
             if (attribute != null && attribute.isFastSearch())
                 addIndexCommand(field.getName(), CMD_FAST_SEARCH);
-        } else if (field.doesIndexing()) {
+        } else if (doesIndexing) {
             if (stemSomehow(field, schema)) {
                 addIndexCommand(field, CMD_STEM + ":" + field.getEffectiveSearchStemming(schema).toStemMode());
             }
@@ -274,8 +277,13 @@ public class IndexInfo extends Derived {
         return false;
     }
 
-    private static boolean needLowerCase(ImmutableSDField field) {
-        return ( field.doesIndexing() && field.getMatching().getCase() != Case.CASED) ||
+    /** Returns whether the field is indexed, including struct field indexes in indexed mode. */
+    private boolean doesIndexing(ImmutableSDField field, Schema schema) {
+        return isStreaming ? field.doesIndexing() : ComplexIndexFieldUtils.doesIndexing(field, schema);
+    }
+
+    private static boolean needLowerCase(ImmutableSDField field, boolean doesIndexing) {
+        return ( doesIndexing && field.getMatching().getCase() != Case.CASED) ||
                field.doesLowerCasing() ||
                ((field.doesAttributing() || (field.getAttribute() != null)) &&
                 isAnyChildString(field.getDataType())
@@ -409,13 +417,13 @@ public class IndexInfo extends Derived {
         Matching fieldSetMatching = fieldSet.getMatching(); // null if no explicit matching
         // First a pass over the fields to read some params to decide field settings implicitly:
         for (ImmutableSDField field : fieldSet.fields()) {
-            if (field.doesIndexing()) {
+            if (doesIndexing(field, schema)) {
                 anyIndexing = true;
             }
             if (field.doesAttributing()) {
                 anyAttributing = true;
             }
-            if (needLowerCase(field)) {
+            if (needLowerCase(field, doesIndexing(field, schema))) {
                 anyLowerCasing = true;
             }
             if (stemming(field)) {

@@ -126,7 +126,7 @@ public class ExportingTestCase extends AbstractExportingTestCase {
 
     @Test
     void testIndexSchema() throws IOException, ParseException {
-        assertCorrectDeriving("indexschema");
+        assertCorrectDeriving("indexschema", new TestProperties().allowStructFieldIndex("allow_alone"));
     }
 
     @Test

@@ -3,20 +3,19 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.util.logging.Level.WARNING;
 
 /**
- * Validates that complex fields (of type struct or map) do not have any struct fields with 'indexing: index'.
- * This is not supported and will confuse the user if not validated.
+ * Validates that complex fields (of type struct or map) do not have any unsupported struct fields with 'indexing: index'.
+ * Supported struct field indexes are listed in {@link ComplexIndexFieldUtils}; other struct field indexes
+ * are not supported and will confuse the user if not validated.
  *
  * Only applies for indexed search clusters.
  *
@@ -36,17 +35,19 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
     }
 
     private static void validateComplexFields(String clusterName, Schema schema, Context context) {
+        var mode = ComplexIndexFieldUtils.Mode.of(schema);
         String unsupportedFields = schema.allFields()
-                .filter(ComplexFieldsWithStructFieldIndexesValidator::hasStructFieldsWithIndex)
-                .map(ComplexFieldsWithStructFieldIndexesValidator::toString)
+                .filter(field -> ! ComplexIndexFieldUtils.unsupportedIndexedStructFields(field, mode).isEmpty())
+                .map(field -> toString(field, mode))
                 .collect(Collectors.joining(", "));
 
         if (unsupportedFields.isEmpty()) return;
 
-        if (context.deployState().featureFlags().failWhenConfiguringIndexedMapOfArray()) {
+        if (mode != ComplexIndexFieldUtils.Mode.IGNORE) {
             throw new IllegalArgumentException(Text.format(
                     "For cluster '%s', schema '%s': The following complex fields have struct fields with 'indexing: index' " +
-                            "which is not supported: %s. Remove setting or change to 'indexing: attribute' if needed for matching.",
+                            "which is not supported: %s. " +
+                            "Remove setting or change to 'indexing: attribute' if needed for matching.",
                     clusterName, schema.getName(), unsupportedFields));
 
         } else {
@@ -60,26 +61,15 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
 
     }
 
-    private static boolean hasStructFieldsWithIndex(ImmutableSDField field) {
-        return (!field.isImportedField() && field.usesStructOrMap() && hasStructFieldsWithIndex(field.getStructFields()));
+    private static String toString(ImmutableSDField field, ComplexIndexFieldUtils.Mode mode) {
+        var structFields = ComplexIndexFieldUtils.unsupportedIndexedStructFields(field, mode);
+        // When struct field indexes are not enabled at all, the reason is the same for all of them
+        if ( ! mode.allowsIndexing())
+            return field.getName() + " (" + structFields.stream().map(ImmutableSDField::getName).collect(Collectors.joining(", ")) + ")";
+        return field.getName() + " (" + structFields.stream()
+                                                    .map(structField -> structField.getName() + ": " +
+                                                                        ComplexIndexFieldUtils.unsupportedReason(field, structField, mode).orElseThrow())
+                                                    .collect(Collectors.joining("; ")) + ")";
     }
 
-    private static String toString(ImmutableSDField field) {
-        return field.getName() + " (" + String.join(", ", getStructFieldsWithIndex(field.getStructFields())) + ")";
-    }
-
-    private static boolean hasStructFieldsWithIndex(Collection<? extends ImmutableSDField> structFields) {
-        return !getStructFieldsWithIndex(structFields).isEmpty();
-    }
-
-    private static List<String> getStructFieldsWithIndex(Collection<? extends ImmutableSDField> structFields) {
-        var result = new ArrayList<String>();
-        for (var structField : structFields) {
-            if (structField.wasConfiguredToDoIndexing()) {
-                result.add(structField.getName());
-            }
-            result.addAll(getStructFieldsWithIndex(structField.getStructFields()));
-        }
-        return result;
-    }
 }
