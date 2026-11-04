@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeoutException;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
@@ -58,6 +59,7 @@ class HttpFeedClient implements FeedClient {
     private final Map<String, Supplier<String>> requestHeaders;
     private final RequestStrategy requestStrategy;
     private final ShutdownLifecycle lifecycle;
+    private final ThreadFactory shutdownThreads;
     private final boolean speedTest;
     private final LongSupplier nanoClock;
 
@@ -71,6 +73,12 @@ class HttpFeedClient implements FeedClient {
     }
 
     HttpFeedClient(FeedClientBuilderImpl builder, ClusterFactory clusterFactory, RequestStrategy requestStrategy) throws IOException {
+        this(builder, clusterFactory, requestStrategy, task -> new Thread(task, "feed-client-shutdown"));
+    }
+
+    HttpFeedClient(FeedClientBuilderImpl builder, ClusterFactory clusterFactory, RequestStrategy requestStrategy,
+                   ThreadFactory shutdownThreads) throws IOException {
+        this.shutdownThreads = shutdownThreads;
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
         this.requestStrategy = requestStrategy;
         this.lifecycle = new ShutdownLifecycle(() -> requestStrategy != null && requestStrategy.isProgressThread());
@@ -131,8 +139,13 @@ class HttpFeedClient implements FeedClient {
     @Override
     public ShutdownHandle closeAsync(boolean graceful) {
         if (lifecycle.request(graceful)) {
-            Thread worker = new Thread(this::shutdown, "feed-client-shutdown");
-            worker.start();
+            try {
+                Thread worker = shutdownThreads.newThread(this::shutdown);
+                worker.start();
+            } catch (Throwable failure) {
+                // Inline cleanup could block a progress thread; FAILED does not certify release.
+                lifecycle.finish(failure);
+            }
         }
         return lifecycle;
     }

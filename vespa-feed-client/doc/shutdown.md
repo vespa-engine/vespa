@@ -1,6 +1,6 @@
 # Vespa feed-client shutdown: failure modes and changes
 
-This document accompanies the Java feed-client shutdown contribution. It describes the implementation through `f96c9e24790`, compared with baseline `a6384ff4a54`. The affected code is `HttpFeedClient`, `HttpRequestStrategy`, the new `ShutdownLifecycle`, and the public `ShutdownHandle` API.
+This document accompanies the Java feed-client shutdown contribution. It describes the code in this PR, based on upstream `37ffa51ddd1`, including the review fixes below. The affected code is `HttpFeedClient`, `HttpRequestStrategy`, the new `ShutdownLifecycle`, and the public `ShutdownHandle` API.
 
 The client now tracks accepted operations from request construction through public result publication. Callers share one shutdown outcome, can escalate a graceful close to abort, and can observe completion without owning cleanup. The table below covers the changed paths and new API controls. Some handoff races and resource-release issues remain open; they are listed at the end.
 
@@ -15,18 +15,20 @@ A request can belong to the client before it has a strategy slot. It can also re
 | One monitor for admission and lifecycle transitions | Admission and shutdown agree on which work the client owns | Adds bookkeeping and synchronization; impact measurements are pending |
 | Track operations separately from strategy slots | Construction, result mapping and cancelled public results remain accounted for | Operations remain retained until their internal work resolves |
 | Reuse existing retry, throttling and per-document sequencing | Keep this change focused on ownership and shutdown | Existing policy and handoff limitations still need integration testing |
-| One cleanup worker and shared outcome | Repeated callers do not start cleanup twice or lose its failure | Worker-start failure handling is still unfinished |
+| One cleanup worker and shared outcome | Repeated callers do not start cleanup twice or lose its failure | Startup failure is retained as FAILED; no inline blocking fallback |
 | A read-only shutdown handle | Waiting, timing out or being interrupted does not cancel shared shutdown | Existing callback code that blocks in close must use closeAsync and wait elsewhere |
 | Identify known progress threads | Prevent a thread from waiting for shutdown that needs that thread | This does not detect arbitrary user dependency cycles |
-| Use finally for remaining cleanup | One transport failure must not skip executor shutdown | FAILED records an unsuccessful cleanup, not complete resource release |
+| Attempt remaining cleanup and retain failures | One transport failure must not skip executor shutdown | FAILED records an unsuccessful cleanup, not complete resource release |
 
 ## Reading the examples and tests
 
 Snippets are shortened Java excerpts or API examples. Comments omit surrounding code; they are not standalone programs. Each case links to the test source and names the relevant methods. Latches and controlled dependencies force the important ordering. Timeouts bound waits and detect hangs; timing-sensitive checks still need reruns on the maintainer’s environment.
 
-The affected API/client/CLI reactor passed all 52 tests on JDK 17, including the normal install-phase ABI and packaging checks. The archive timestamp was set explicitly to a valid reproducible value. The test refactor uses JUnit parameterization for both progress-thread contexts, bounded future completion for callback assertions and shared latch/clock fixtures. The public API additions are recorded in the ABI specification.
+After the review fixes, a clean affected API/client/CLI reactor passed all 59 tests on JDK 17, including the normal install-phase ABI and packaging checks. The archive timestamp was set explicitly to a valid reproducible value. The test refactor uses JUnit parameterization for both progress-thread contexts, bounded future completion for callback assertions and shared latch/clock fixtures. The public API additions are recorded in the ABI specification.
 
 The generated lifecycle test uses 64 fixed seeds with 100 commands each and prints the history on failure. Earlier mutation checks caught dropped internal-resolution ownership and abort reverting to graceful drain. These are component results; full Vespa integration and impact measurements remain outstanding.
+
+Four new regression cases first failed against the old behavior: worker creation failure, worker start failure, false success after executor timeout, and backlog traversal. After repair they passed. Separate mutations removing the admission and mapping waits were both caught by the strengthened ordering tests. The final clean build restored all production guards and passed with zero failures or skips.
 
 ## Failure-mode table
 
@@ -48,6 +50,10 @@ The generated lifecycle test uses 64 fixed seeds with 100 commands each and prin
 | [V14](#v14) | The dispatch loop sends queued work after abort | Changed in this branch |
 | [V15](#v15) | An observer interferes with shared shutdown | New API contract and controls |
 | [V16](#v16) | A snapshot reports contradictory state | New API validation |
+| [V17](#v17) | Worker startup failure strands shutdown | Fixed; cleanup may remain incomplete |
+| [V18](#v18) | Executor timeout is mistaken for success | Fixed; timeout reports FAILED |
+| [V19](#v19) | Every completion scans the whole backlog | Fixed; impact measurements pending |
+| [V20](#v20) | A test checks before cleanup has run | Test ordering corrected |
 
 <a id="v01"></a>
 
@@ -55,7 +61,7 @@ The generated lifecycle test uses 64 fixed seeds with 100 commands each and prin
 
 A send can pass the open check and pause while constructing its request. Graceful close could drain an empty strategy and destroy it before that send registers.
 
-Admit under the lifecycle monitor before construction. Graceful shutdown waits for admitted construction before draining the strategy.
+Admit under the lifecycle monitor before construction. Graceful shutdown waits for admitted construction before draining the strategy. The test observes the cleanup worker waiting in awaitAdmissions before checking that destruction has not started.
 
 ```java
 ShutdownLifecycle.Operation operation = lifecycle.admit();
@@ -95,11 +101,11 @@ Evidence: [HttpFeedClientShutdownTest](../../vespa-feed-client/src/test/java/ai/
 
 The transport response can be ready while conversion to the public Result is still blocked. Strategy counters alone do not cover that work.
 
-Retain the operation through internal resolution and public result publication. This does not promise to wait for arbitrary user continuations on caller-owned threads.
+Retain the operation through internal resolution and public result publication. This does not promise to wait for arbitrary user continuations on caller-owned threads. The test observes the cleanup worker in awaitOperations while result mapping is held.
 
 ```java
-operations.removeIf(operation -> operation.registered
-        && operation.resolved && operation.result.isDone());
+if (operation.registered && operation.resolved && operation.result.isDone())
+    operations.remove(operation);
 ```
 
 ![Response mapping outlives graceful drain: Transport response ready → Result mapping held → Close misses mapping; Track public operation → Finish mapping → Publish result](shutdown-diagrams/images/V03.png)
@@ -222,15 +228,14 @@ Evidence: [HttpFeedClientShutdownTest](../../vespa-feed-client/src/test/java/ai/
 
 A transport-close exception could skip shutdown of the result executor or the reset-accounting executor.
 
-Use finally blocks to attempt both executor cleanups even when transport close throws. The injected tests check that the captured workers exit and the failure remains visible.
+Attempt transport close and executor shutdown as separate cleanup stages. Keep the first failure and attach later failures. The injected tests check that the captured workers exit and the original failure remains visible.
 
 ```java
-try {
-    cluster.close();
-} finally {
-    resultExecutor.shutdown();
-    // Wait for executor termination.
-}
+try { cluster.close(); }
+catch (Throwable t) { failure = retainFailure(failure, t); }
+try { resultExecutor.shutdown(); }
+catch (Throwable t) { failure = retainFailure(failure, t); }
+failure = awaitTermination(resultExecutor, terminationTimeout, "result processing", failure);
 ```
 
 ![Transport close skips worker cleanup when it throws: Transport close throws → Next cleanup skipped → Worker left alive; Attempt transport close → Always shut down workers → Keep failure visible](shutdown-diagrams/images/V10.png)
@@ -246,15 +251,13 @@ Reset-accounting tasks need the same monitor that close previously held while aw
 Release the monitor before waiting for executor termination. Existing reset and shutdown tests exercise the surrounding path; this case still needs a dedicated ordered regression.
 
 ```java
-try {
-    synchronized (monitor) {
-        try { delegate.close(); }
-        finally { executor.shutdown(); }
-    }
-} finally {
-    // Existing timeout and interruption handling omitted.
-    executor.awaitTermination(1, TimeUnit.MINUTES);
+synchronized (monitor) {
+    try { delegate.close(); }
+    catch (Throwable t) { failure = t; }
+    try { executor.shutdown(); }
+    catch (Throwable t) { failure = retainFailure(failure, t); }
 }
+failure = awaitTermination(executor, terminationTimeout, "reset accounting", failure);
 ```
 
 ![Cleanup waits while holding the accounting monitor: Close holds monitor → Waits for accounting task → Task needs monitor; Request executor shutdown → Release monitor → Then await termination](shutdown-diagrams/images/V11.png)
@@ -355,6 +358,83 @@ if (phase == Phase.TERMINATED && outstandingOperations != 0)
 
 Evidence: [ShutdownHandleTest](../../vespa-feed-client-api/src/test/java/ai/vespa/feed/client/ShutdownHandleTest.java): `snapshotRejectsContradictoryOutcomeAndOwnership`.
 
+<a id="v17"></a>
+
+## V17: Worker startup failure strands shutdown
+
+Admission closed before thread creation and start. A failure there left no worker to publish an outcome, so later callers could wait forever.
+
+Catch creation/start failure and publish FAILED with the original cause. Later callers observe that same failure. No blocking cleanup runs inside closeAsync as a fallback; FAILED explicitly permits resources to remain unreleased.
+
+```java
+try {
+    Thread worker = shutdownThreads.newThread(this::shutdown);
+    worker.start();
+} catch (Throwable failure) {
+    lifecycle.finish(failure);
+}
+```
+
+![Worker startup failure strands shutdown: Close admission → Worker cannot start → No terminal outcome; Retain startup failure → Publish FAILED → Late waits see failure](shutdown-diagrams/images/V17.png)
+
+Evidence: [HttpFeedClientShutdownTest](../../vespa-feed-client/src/test/java/ai/vespa/feed/client/impl/HttpFeedClientShutdownTest.java): `workerStartupFailureRemainsObservable`, with creation and start failure parameters; also checks no inline destruction.
+
+<a id="v18"></a>
+
+## V18: Executor timeout is mistaken for success
+
+A held result callback can keep its executor alive after the public future is complete. Previously, an executor timeout only logged a warning and shutdown could report success.
+
+Both result-processing and reset-accounting executor waits now retain timeout or interruption as cleanup failure. Preserve the interrupt flag and any earlier error. A real held result callback exercises the timeout; mock-executor cases cover interruption, error aggregation and successful termination.
+
+```java
+if (!executor.awaitTermination(timeout.toNanos(), TimeUnit.NANOSECONDS))
+    return retainFailure(failure, new FeedException(
+            "Timed out waiting for " + name + " executor termination"));
+```
+
+![Executor timeout is mistaken for success: Callback held → Executor wait times out → Success reported; Retain timeout failure → Publish FAILED → No release claim](shutdown-diagrams/images/V18.png)
+
+Evidence: [HttpFeedClientShutdownTest](../../vespa-feed-client/src/test/java/ai/vespa/feed/client/impl/HttpFeedClientShutdownTest.java): `executorTimeoutCannotReportSuccessfulTermination`; [HttpRequestStrategyTest](../../vespa-feed-client/src/test/java/ai/vespa/feed/client/impl/HttpRequestStrategyTest.java): `executorTimeoutPreservesEarlierCleanupFailure`, `executorInterruptionIsRetainedAndInterruptFlagRestored`, `completedExecutorDoesNotCreateCleanupFailure`.
+
+<a id="v19"></a>
+
+## V19: Every completion scans the whole backlog
+
+Registration and publication each scanned every outstanding operation under one monitor. Building a backlog therefore added quadratic traversal work.
+
+Remove the affected operation directly. Snapshot and shutdown waits inspect only publication calls that may still be inside inline callbacks. A counting test checks that registration and publication never iterate the outstanding set; this is not a throughput benchmark.
+
+```java
+private boolean removeCompleted(Operation operation) {
+    if (!operation.registered || !operation.resolved || !operation.result.isDone()) return false;
+    operations.remove(operation);
+    return true;
+}
+```
+
+![Every completion scans the whole backlog: Register next operation → Scan whole backlog → Repeated growing cost; Check this operation → Remove it directly → Keep other work tracked](shutdown-diagrams/images/V19.png)
+
+Evidence: [ShutdownLifecycleTest](../../vespa-feed-client/src/test/java/ai/vespa/feed/client/impl/ShutdownLifecycleTest.java): `registrationAndPublicationDoNotScanTheOutstandingBacklog` uses 256 outstanding operations and counts traversal without wall-clock thresholds.
+
+<a id="v20"></a>
+
+## V20: A test checks before cleanup has run
+
+The close caller could enter a wait before the separate cleanup worker ran. Checking destruction at that moment could let a broken implementation pass.
+
+Capture the actual cleanup worker and observe its lifecycle wait while the operation is held. The tests now detect removing the admission wait and removing the mapping wait in separate mutation runs. Both mutations were restored before the final build.
+
+```java
+client.closeAsync(true);
+awaitLifecycleWait(cleanupWorker.get(), "awaitAdmissions");
+assertFalse(strategy.destroyed.get());
+```
+
+![A test checks before cleanup has run: Close caller waits → Cleanup not scheduled yet → Test can pass too early; Observe cleanup worker → Confirm lifecycle wait → Then check destruction](shutdown-diagrams/images/V20.png)
+
+Evidence: [HttpFeedClientShutdownTest](../../vespa-feed-client/src/test/java/ai/vespa/feed/client/impl/HttpFeedClientShutdownTest.java): `gracefulCloseWaitsForAdmittedConstruction`, `responseMappingRemainsOwnedUntilPublicResultIsPublished`; both removed-wait mutations were detected.
+
 ## What this branch does not finish
 
 | Open item | Why it matters | Next check |
@@ -362,9 +442,7 @@ Evidence: [ShutdownHandleTest](../../vespa-feed-client-api/src/test/java/ai/vesp
 | Idle reset leaves the old delegate open | No later completion may arrive to close it | Add old-generation retirement and a before/after resource test |
 | Late completion after callback-executor shutdown | Rejected accounting can leave old resources open | Test an ordered late completion with real transport cleanup |
 | Atomic registry, capacity and queue handoffs | Abort checks and subsequent actions are separate | Force abort between check and action, including same-ID successors |
-| Shutdown worker cannot start | Admission may close without a worker publishing an outcome | Inject thread-start failure and retain an observable failure |
-| Executor timeout or interruption | Current paths can warn and continue without confirming worker exit | Hold a worker through the timeout and check the claimed terminal state |
-| Independent stall diagnostics | Early stalls may never reach the existing termination warning | Add bounded diagnostics with controlled time and a blocked logging handler |
+| Independent stall diagnostics | Early stalls can occur before any executor wait | Add bounded diagnostics with controlled time and a blocked logging handler |
 | Delegate visibility and wider cleanup combinations | Source inspection leaves concurrency and resource questions | Check stats/reset callers, rejection, partial close and multiple failures |
 
 The separate source experiments reproduced the idle-reset and late-callback resource failures. They are follow-up defects, not fixes supplied by this branch. The full Jetty integration environment is unavailable here, and GitHub Actions is blocked by billing. A Vespa maintainer needs to run the before/after cases with the real transport and check worker, socket and file retention.
@@ -376,7 +454,8 @@ Performance measurements remain deferred. The agreed comparison uses distinct-ID
 Run the affected Maven reactor with the repository’s supported JDK and normal checks:
 
 ```sh
-mvn -pl vespa-feed-client-api,vespa-feed-client,vespa-feed-client-cli -am test
+mvn -B -Dproject.build.outputTimestamp=2026-11-04T00:00:00Z \
+  -pl vespa-feed-client-api,vespa-feed-client,vespa-feed-client-cli -am clean install
 ```
 
 For individual ordering tests, use the method names beside each case. Keep the baseline failure, changed-version result and environment together. Extend the held-dependency cases with real HTTP delays, connection resets, same-ID chains and combined cleanup failures before treating this as ready for production.

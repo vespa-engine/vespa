@@ -45,6 +45,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HttpRequestStrategyTest {
 
     @Test
+    void executorTimeoutPreservesEarlierCleanupFailure() throws Exception {
+        var executor = org.mockito.Mockito.mock(java.util.concurrent.ExecutorService.class);
+        RuntimeException primary = new IllegalStateException("transport close failed");
+        Throwable failure = HttpRequestStrategy.awaitTermination(executor, Duration.ZERO, "test", primary);
+        assertSame(primary, failure);
+        assertEquals(1, primary.getSuppressed().length);
+        assertInstanceOf(FeedException.class, primary.getSuppressed()[0]);
+        assertTrue(primary.getSuppressed()[0].getMessage().contains("Timed out"));
+    }
+
+    @Test
+    void executorInterruptionIsRetainedAndInterruptFlagRestored() throws Exception {
+        var executor = org.mockito.Mockito.mock(java.util.concurrent.ExecutorService.class);
+        InterruptedException injected = new InterruptedException("cleanup wait interrupted");
+        org.mockito.Mockito.when(executor.awaitTermination(0, TimeUnit.NANOSECONDS)).thenThrow(injected);
+        assertFalse(Thread.currentThread().isInterrupted());
+        try {
+            Throwable failure = HttpRequestStrategy.awaitTermination(executor, Duration.ZERO, "test", null);
+            assertInstanceOf(FeedException.class, failure);
+            assertSame(injected, failure.getCause());
+            assertTrue(Thread.currentThread().isInterrupted());
+        } finally { Thread.interrupted(); }
+    }
+
+    @Test
+    void completedExecutorDoesNotCreateCleanupFailure() throws Exception {
+        var executor = org.mockito.Mockito.mock(java.util.concurrent.ExecutorService.class);
+        org.mockito.Mockito.when(executor.awaitTermination(0, TimeUnit.NANOSECONDS)).thenReturn(true);
+        org.junit.jupiter.api.Assertions.assertNull(
+                HttpRequestStrategy.awaitTermination(executor, Duration.ZERO, "test", null));
+    }
+
+    @Test
     void concurrentDestroyWaitsForTransportCleanup() throws Exception {
         // A CAS-only destroy lets another caller report success before transport cleanup finishes.
         CountDownLatch closeEntered = new CountDownLatch(1);

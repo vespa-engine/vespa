@@ -28,6 +28,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static ai.vespa.feed.client.impl.ShutdownTestSupport.awaitLatch;
+import static ai.vespa.feed.client.impl.ShutdownTestSupport.awaitLifecycleWait;
+import static ai.vespa.feed.client.impl.ShutdownTestSupport.recordingThreads;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -36,49 +38,95 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HttpFeedClientShutdownTest {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void workerStartupFailureRemainsObservable(boolean failsAtStart) throws Exception {
+        RuntimeException injected = new IllegalStateException("worker cannot start");
+        ImmediateStrategy strategy = new ImmediateStrategy();
+        FeedClient client = new HttpFeedClient(
+                new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))), DryrunCluster::new,
+                strategy, task -> {
+                    if (!failsAtStart) throw injected;
+                    return new Thread(task) {
+                        @Override public synchronized void start() { throw injected; }
+                    };
+                });
+        ShutdownHandle handle = assertDoesNotThrow(() -> client.closeAsync(true));
+        assertEquals(ShutdownHandle.Phase.FAILED, handle.snapshot().phase());
+        assertSame(injected, assertThrows(FeedException.class,
+                () -> handle.await(Duration.ZERO)).getCause());
+        assertSame(handle, client.closeAsync(false));
+        assertThrows(FeedException.class, client::close);
+        assertFalse(strategy.destroyed.get(), "startup failure must not run inline blocking cleanup");
+        assertThrows(IllegalStateException.class,
+                () -> client.remove(DocumentId.of("ns", "type", "1"), OperationParameters.empty()));
+    }
+
+    @Test
+    void executorTimeoutCannotReportSuccessfulTermination() throws Exception {
+        CountDownLatch dispatched = new CountDownLatch(1);
+        CountDownLatch callbackEntered = new CountDownLatch(1);
+        CountDownLatch releaseCallback = new CountDownLatch(1);
+        AtomicReference<CompletableFuture<HttpResponse>> response = new AtomicReference<>();
+        AtomicReference<Thread> worker = new AtomicReference<>();
+        FeedClientBuilderImpl builder = new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123")));
+        Cluster cluster = (request, vessel) -> { response.set(vessel); dispatched.countDown(); };
+        HttpRequestStrategy strategy = new HttpRequestStrategy(builder, () -> cluster,
+                new DynamicThrottler(builder), Duration.ofMillis(50));
+        FeedClient client = new HttpFeedClient(builder, DryrunCluster::new, strategy);
+        var result = client.remove(DocumentId.of("ns", "type", "1"), OperationParameters.empty());
+        var callback = result.thenRun(() -> {
+            worker.set(Thread.currentThread());
+            callbackEntered.countDown();
+            awaitLatch(releaseCallback);
+        });
+        try {
+            assertTrue(dispatched.await(10, TimeUnit.SECONDS));
+            response.get().complete(HttpResponse.of(200, "{}".getBytes(UTF_8)));
+            assertTrue(callbackEntered.await(10, TimeUnit.SECONDS));
+            ShutdownHandle handle = client.closeAsync(true);
+            FeedException failure = assertThrows(FeedException.class, () -> handle.await(Duration.ofSeconds(10)));
+            assertInstanceOf(java.util.concurrent.CompletionException.class, failure.getCause());
+            assertEquals("Timed out waiting for result processing executor termination",
+                         failure.getCause().getCause().getMessage());
+            assertEquals(ShutdownHandle.Phase.FAILED, handle.snapshot().phase());
+            assertEquals(1, releaseCallback.getCount(), "test still holds the callback");
+            assertTrue(worker.get().isAlive(), "held callback has not exited");
+        } finally {
+            releaseCallback.countDown();
+            callback.get(10, TimeUnit.SECONDS);
+            if (worker.get() != null) worker.get().join(10000);
+        }
+    }
+
     @Test
     void gracefulCloseWaitsForAdmittedConstruction() throws Exception {
-        // Removing admission ownership must permit close to destroy the strategy too early.
         CountDownLatch constructing = new CountDownLatch(1);
         CountDownLatch resumeConstruction = new CountDownLatch(1);
         AtomicReference<Thread> submittingThread = new AtomicReference<>();
+        AtomicReference<Thread> cleanupWorker = new AtomicReference<>();
         AtomicReference<Throwable> failure = new AtomicReference<>();
         ImmediateStrategy strategy = new ImmediateStrategy();
         FeedClientBuilderImpl builder = constructionPausedOn(submittingThread, constructing, resumeConstruction);
-        FeedClient client = new HttpFeedClient(builder, DryrunCluster::new, strategy);
+        FeedClient client = new HttpFeedClient(builder, DryrunCluster::new, strategy, recordingThreads(cleanupWorker));
         AtomicReference<CompletableFuture<Result>> result = new AtomicReference<>();
         Thread sender = new Thread(() -> {
             submittingThread.set(Thread.currentThread());
             try { result.set(client.remove(DocumentId.of("ns", "type", "1"), OperationParameters.empty())); }
             catch (Throwable t) { failure.set(t); }
         });
-        Thread closer = new Thread(() -> {
-            try { client.close(); }
-            catch (Throwable t) { failure.set(t); }
-        });
-        boolean destroyedBeforeAdmissionFinished;
         sender.start();
         try {
-            assertTrue(constructing.await(10, TimeUnit.SECONDS), "submission reached construction");
-            closer.start();
-            // The fixture never blocks close itself. Wait for close either to finish (the bug)
-            // or to suspend waiting for client-owned work. The clock latch creates the race;
-            // this bound only detects a broken fixture or a stalled test process.
-            long limit = System.nanoTime() + Duration.ofSeconds(10).toNanos();
-            while (closer.isAlive() && closer.getState() != Thread.State.WAITING &&
-                   closer.getState() != Thread.State.TIMED_WAITING && System.nanoTime() < limit)
-                Thread.yield();
-            assertTrue(!closer.isAlive() || closer.getState() == Thread.State.WAITING ||
-                       closer.getState() == Thread.State.TIMED_WAITING, "close reached a stable wait or returned");
-            destroyedBeforeAdmissionFinished = strategy.destroyed.get();
+            assertTrue(constructing.await(10, TimeUnit.SECONDS));
+            client.closeAsync(true);
+            awaitLifecycleWait(cleanupWorker.get(), "awaitAdmissions");
+            assertFalse(strategy.destroyed.get(), "cleanup must wait for admitted construction");
         } finally {
             resumeConstruction.countDown();
             sender.join(10000);
-            if (closer.getState() != Thread.State.NEW) closer.join(10000);
+            client.closeAsync(false).await(Duration.ofSeconds(10));
         }
-        assertFalse(sender.isAlive(), "sender stopped");
-        assertFalse(closer.isAlive(), "closer stopped");
-        assertFalse(destroyedBeforeAdmissionFinished, "graceful close destroyed strategy before admitted construction finished");
+        assertFalse(sender.isAlive());
         assertNull(failure.get());
         assertEquals(Result.Type.success, result.get().get(10, TimeUnit.SECONDS).type());
     }
@@ -335,11 +383,14 @@ class HttpFeedClientShutdownTest {
         CompletableFuture<HttpResponse> response = new CompletableFuture<>();
         CountDownLatch mappingEntered = new CountDownLatch(1);
         CountDownLatch resumeMapping = new CountDownLatch(1);
+        AtomicReference<Thread> cleanupWorker = new AtomicReference<>();
         ImmediateStrategy strategy = new ImmediateStrategy() {
             @Override public CompletableFuture<HttpResponse> enqueue(DocumentId id, HttpRequest request) { return response; }
             @Override public void await() { response.join(); }
         };
-        FeedClient client = newClient(strategy);
+        FeedClient client = new HttpFeedClient(
+                new FeedClientBuilderImpl(List.of(URI.create("https://dummy:123"))),
+                DryrunCluster::new, strategy, recordingThreads(cleanupWorker));
         CompletableFuture<Result> result = client.remove(DocumentId.of("ns", "type", "1"), OperationParameters.empty());
         Thread completing = new Thread(() -> response.complete(new HttpResponse() {
             @Override public int code() { return 200; }
@@ -349,26 +400,20 @@ class HttpFeedClientShutdownTest {
                 return "{\"message\":\"accepted\"}".getBytes(UTF_8);
             }
         }));
-        Thread closer = new Thread(client::close);
-        boolean prematureDestroy;
         completing.start();
         try {
             assertTrue(mappingEntered.await(10, TimeUnit.SECONDS));
             assertFalse(result.isDone());
-            assertEquals(1, client.termination().snapshot().outstandingOperations(), "mapped outcome still owned");
-            closer.start();
-            long limit = System.nanoTime() + Duration.ofSeconds(10).toNanos();
-            while (closer.isAlive() && closer.getState() != Thread.State.WAITING &&
-                   closer.getState() != Thread.State.TIMED_WAITING && System.nanoTime() < limit)
-                Thread.yield();
-            prematureDestroy = strategy.destroyed.get();
+            assertEquals(1, client.termination().snapshot().outstandingOperations());
+            client.closeAsync(true);
+            awaitLifecycleWait(cleanupWorker.get(), "awaitOperations");
+            assertFalse(strategy.destroyed.get(), "cleanup must wait for result publication");
         } finally {
             resumeMapping.countDown();
             completing.join(10000);
-            if (closer.getState() != Thread.State.NEW) closer.join(10000);
-            client.close();
+            client.closeAsync(false).await(Duration.ofSeconds(10));
         }
-        assertFalse(prematureDestroy, "public result mapping must remain owned");
+        assertFalse(completing.isAlive());
         assertEquals(Result.Type.success, result.get(10, TimeUnit.SECONDS).type());
         assertEquals(0, client.termination().snapshot().outstandingOperations());
     }

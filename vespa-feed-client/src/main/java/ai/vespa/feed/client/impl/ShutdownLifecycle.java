@@ -27,6 +27,7 @@ final class ShutdownLifecycle implements ShutdownHandle {
     private final ThreadLocal<Integer> publicationDepth = ThreadLocal.withInitial(() -> 0);
 
     private final Set<Operation> operations = new HashSet<>();
+    private final Set<Operation> publishing = new HashSet<>();
 
     final class Operation {
         final CompletableFuture<Result> result = new CompletableFuture<>();
@@ -34,7 +35,11 @@ final class ShutdownLifecycle implements ShutdownHandle {
         private boolean registered;
 
         void publish(Result value, Throwable failure) {
-            synchronized (ShutdownLifecycle.this) { resolved = true; ShutdownLifecycle.this.notifyAll(); }
+            synchronized (ShutdownLifecycle.this) {
+                resolved = true;
+                publishing.add(this);
+                ShutdownLifecycle.this.notifyAll();
+            }
             int depth = publicationDepth.get();
             publicationDepth.set(depth + 1);
             try {
@@ -42,13 +47,24 @@ final class ShutdownLifecycle implements ShutdownHandle {
                 else result.completeExceptionally(failure);
             } finally {
                 if (depth == 0) publicationDepth.remove(); else publicationDepth.set(depth);
-                synchronized (ShutdownLifecycle.this) { prune(); ShutdownLifecycle.this.notifyAll(); }
+                synchronized (ShutdownLifecycle.this) {
+                    removeCompleted(this);
+                    publishing.remove(this);
+                    ShutdownLifecycle.this.notifyAll();
+                }
             }
         }
     }
 
-    private void prune() {
-        operations.removeIf(operation -> operation.registered && operation.resolved && operation.result.isDone());
+    private boolean removeCompleted(Operation operation) {
+        if (!operation.registered || !operation.resolved || !operation.result.isDone()) return false;
+        operations.remove(operation);
+        return true;
+    }
+
+    private void prunePublications() {
+        // Only publication calls can have completed a future without returning from inline callbacks.
+        publishing.removeIf(this::removeCompleted);
     }
 
     synchronized Operation admit() {
@@ -62,17 +78,17 @@ final class ShutdownLifecycle implements ShutdownHandle {
     synchronized void registered(Operation operation) {
         operation.registered = true;
         pendingAdmissions--;
-        prune();
+        removeCompleted(operation);
         notifyAll();
     }
 
     synchronized void awaitOperations(BooleanSupplier keepWaiting) throws InterruptedException {
-        prune();
+        prunePublications();
         while (keepWaiting.getAsBoolean() && !operations.isEmpty()) {
             // CompletableFuture publishes its value before running inline user callbacks.
             // Such callbacks may prevent publish() from returning and notifying us again.
             wait(10);
-            prune();
+            prunePublications();
         }
     }
 
@@ -103,7 +119,7 @@ final class ShutdownLifecycle implements ShutdownHandle {
     }
 
     @Override public synchronized Snapshot snapshot() {
-        prune();
+        prunePublications();
         return new Snapshot(phase, failure, pendingAdmissions, operations.size());
     }
 

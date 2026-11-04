@@ -11,6 +11,7 @@ import ai.vespa.feed.client.OperationStats;
 import ai.vespa.feed.client.impl.HttpFeedClient.ClusterFactory;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
@@ -38,7 +39,6 @@ import static java.util.logging.Level.FINER;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
-import static java.util.logging.Level.WARNING;
 
 /**
  * Controls request execution and retries.
@@ -69,6 +69,7 @@ class HttpRequestStrategy implements RequestStrategy {
     private final CompletableFuture<Void> destruction = new CompletableFuture<>();
     private final AtomicLong delayedCount = new AtomicLong(0);
     private final Thread dispatcher;
+    private final Duration terminationTimeout;
     private volatile Thread resultThread;
     private final ExecutorService resultExecutor = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "feed-client-result-executor");
@@ -85,8 +86,14 @@ class HttpRequestStrategy implements RequestStrategy {
     }
 
     HttpRequestStrategy(FeedClientBuilderImpl builder, ClusterFactory clusterFactory, Throttler throttler) throws IOException {
+        this(builder, clusterFactory, throttler, Duration.ofMinutes(1));
+    }
+
+    HttpRequestStrategy(FeedClientBuilderImpl builder, ClusterFactory clusterFactory, Throttler throttler,
+                        Duration terminationTimeout) throws IOException {
+        this.terminationTimeout = terminationTimeout;
         this.throttler = throttler;
-        this.resettableCluster = new ResettableCluster(clusterFactory);
+        this.resettableCluster = new ResettableCluster(clusterFactory, terminationTimeout);
         this.cluster = builder.benchmark ? new BenchmarkingCluster(resettableCluster, throttler, System::nanoTime) : resettableCluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
@@ -346,25 +353,16 @@ class HttpRequestStrategy implements RequestStrategy {
     @Override
     public void destroy() {
         if (destroyed.compareAndSet(false, true)) {
-            try {
-                inflightById.values().forEach(RetriableFuture::complete);
-                try {
-                    cluster.close();
-                } finally {
-                    resultExecutor.shutdown();
-                    try {
-                        if ( ! resultExecutor.awaitTermination(1, TimeUnit.MINUTES))
-                            log.log(WARNING, "Failed processing results within 1 minute");
-                    }
-                    catch (InterruptedException e) {
-                        log.log(WARNING, "Interrupted waiting for results to be processed");
-                        Thread.currentThread().interrupt();
-                    }
-                }
-                destruction.complete(null);
-            } catch (Throwable failure) {
-                destruction.completeExceptionally(failure);
-            }
+            Throwable failure = null;
+            try { inflightById.values().forEach(RetriableFuture::complete); }
+            catch (Throwable t) { failure = t; }
+            try { cluster.close(); }
+            catch (Throwable t) { failure = retainFailure(failure, t); }
+            try { resultExecutor.shutdown(); }
+            catch (Throwable t) { failure = retainFailure(failure, t); }
+            failure = awaitTermination(resultExecutor, terminationTimeout, "result processing", failure);
+            if (failure == null) destruction.complete(null);
+            else destruction.completeExceptionally(failure);
         }
         destruction.join();
         if (Thread.currentThread() != dispatcher) {
@@ -376,6 +374,25 @@ class HttpRequestStrategy implements RequestStrategy {
         }
     }
 
+    private static Throwable retainFailure(Throwable first, Throwable next) {
+        if (first == null) return next;
+        if (first != next) first.addSuppressed(next);
+        return first;
+    }
+
+    static Throwable awaitTermination(ExecutorService executor, Duration timeout, String name, Throwable failure) {
+        try {
+            if (!executor.awaitTermination(timeout.toNanos(), TimeUnit.NANOSECONDS))
+                return retainFailure(failure, new FeedException("Timed out waiting for " + name + " executor termination"));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return retainFailure(failure, new FeedException("Interrupted waiting for " + name + " executor termination", e));
+        } catch (Throwable t) {
+            return retainFailure(failure, t);
+        }
+        return failure;
+    }
+
     /**
      * Oof, this is an attempt to see if there's a terminal bug in the Jetty client library that sometimes
      * renders a client instance permanently unusable. If this is the case, replacing the client altogether
@@ -384,12 +401,14 @@ class HttpRequestStrategy implements RequestStrategy {
     private static class ResettableCluster implements Cluster {
 
         private final Object monitor = new Object();
+        private final Duration terminationTimeout;
         private final ClusterFactory clusterFactory;
         private final ExecutorService executor = Executors.newSingleThreadExecutor();
         private AtomicLong inflight = new AtomicLong(0);
         private Cluster delegate;
 
-        ResettableCluster(ClusterFactory clusterFactory) throws IOException {
+        ResettableCluster(ClusterFactory clusterFactory, Duration terminationTimeout) throws IOException {
+            this.terminationTimeout = terminationTimeout;
             this.clusterFactory = clusterFactory;
             this.delegate = clusterFactory.create();
         }
@@ -415,22 +434,18 @@ class HttpRequestStrategy implements RequestStrategy {
 
         @Override
         public void close() {
-            try {
-                synchronized (monitor) {
-                    try { delegate.close(); }
-                    finally { executor.shutdown(); }
-                }
-            } finally {
-                // Accounting tasks take monitor; waiting while holding it prevents termination.
-                try {
-                    if ( ! executor.awaitTermination(1, TimeUnit.MINUTES))
-                        log.log(WARNING, "Failed shutting down HTTP client within 1 minute");
-                }
-                catch (InterruptedException e) {
-                    log.log(WARNING, "Interrupted waiting for HTTP client to shut down");
-                    Thread.currentThread().interrupt();
-                }
+            Throwable failure = null;
+            synchronized (monitor) {
+                try { delegate.close(); }
+                catch (Throwable t) { failure = t; }
+                try { executor.shutdown(); }
+                catch (Throwable t) { failure = retainFailure(failure, t); }
             }
+            // Accounting tasks take monitor; wait only after releasing it.
+            failure = awaitTermination(executor, terminationTimeout, "reset accounting", failure);
+            if (failure instanceof RuntimeException) throw (RuntimeException) failure;
+            if (failure instanceof Error) throw (Error) failure;
+            if (failure != null) throw new FeedException("Reset accounting cleanup failed", failure);
         }
 
         private void sync() throws InterruptedException {

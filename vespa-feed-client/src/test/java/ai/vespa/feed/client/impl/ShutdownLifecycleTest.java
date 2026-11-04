@@ -14,6 +14,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ShutdownLifecycleTest {
     @Test
+    void registrationAndPublicationDoNotScanTheOutstandingBacklog() throws Exception {
+        ShutdownLifecycle lifecycle = new ShutdownLifecycle(() -> false);
+        // Count traversal directly: a timing threshold would depend on host load.
+        var operations = org.mockito.Mockito.spy(new java.util.HashSet<ShutdownLifecycle.Operation>());
+        var field = ShutdownLifecycle.class.getDeclaredField("operations");
+        field.setAccessible(true);
+        field.set(lifecycle, operations);
+        var pending = new ArrayList<ShutdownLifecycle.Operation>();
+        for (int i = 0; i < 256; i++) pending.add(lifecycle.admit());
+        for (var operation : pending) lifecycle.registered(operation);
+        pending.get(0).publish(null, new IllegalStateException("resolved"));
+        org.mockito.Mockito.verify(operations, org.mockito.Mockito.never()).iterator();
+        assertEquals(255, lifecycle.snapshot().outstandingOperations());
+    }
+
+    @Test
     void generatedHandoffHistoriesPreserveOwnershipAndMonotonicShutdown() {
         // Removing resolution ownership or permitting ABORTING -> DRAINING must break these properties.
         // This is a sequential component state-machine test, not a JVM concurrency stress claim.
