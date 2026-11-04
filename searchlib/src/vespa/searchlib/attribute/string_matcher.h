@@ -43,7 +43,7 @@ public:
 
     /*
      * Methods for dictionary lookups. Used by StringPostingSearchContext.
-     * lookup_in_dictionary is also ued by StringSearchContext with an EnumHintSearchContext.
+     * lookup_in_dictionary is also used by StringSearchContext with an EnumHintSearchContext.
      */
     bool lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const;
     bool use_dictionary_entry(const EnumStoreT<const char*>& enum_store, EnumPostingTree::ConstIterator& it) const;
