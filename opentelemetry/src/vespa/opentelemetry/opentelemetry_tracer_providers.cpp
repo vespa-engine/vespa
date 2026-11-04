@@ -7,12 +7,14 @@
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 
+#include <opentelemetry/context/propagation/global_propagator.h>
 #include <opentelemetry/exporters/memory/in_memory_span_exporter_factory.h>
 #include <opentelemetry/exporters/ostream/span_exporter_factory.h>
 #include <opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h>
 #include <opentelemetry/sdk/trace/batch_span_processor_factory.h>
 #include <opentelemetry/sdk/trace/simple_processor_factory.h>
 #include <opentelemetry/sdk/trace/tracer_provider_factory.h>
+#include <opentelemetry/trace/propagation/http_trace_context.h>
 #include <opentelemetry/trace/provider.h>
 
 #include <format>
@@ -88,6 +90,8 @@ void OpenTelemetryTracerProviders::init_grpc_tracer_provider(
     std::shared_ptr<opentelemetry::trace::TracerProvider> provider =
         opentelemetry::sdk::trace::TracerProviderFactory::Create(std::move(processor), resource);
     opentelemetry::trace::Provider::SetTracerProvider(provider);
+    opentelemetry::context::propagation::GlobalTextMapPropagator::SetGlobalPropagator(
+        std::make_shared<opentelemetry::trace::propagation::HttpTraceContext>());
 }
 
 void OpenTelemetryTracerProviders::init_grpc_tracer_provider(const std::string& service_name,

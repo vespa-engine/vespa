@@ -15,9 +15,11 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
 
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -84,7 +86,15 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
             responseAvailable();
             return incomingContext;
         }
-        SerializedQuery serializedQuery = getSerializedQuery(incomingContext, contentShare, timeout.request());
+        SerializedQuery serializedQuery;
+        if (span.isRecording()) {
+            try (var scope = span.makeCurrent()) {
+                Objects.requireNonNull(scope);
+                serializedQuery = getSerializedQuery(incomingContext, contentShare, timeout.request(), true);
+            }
+        } else {
+            serializedQuery = getSerializedQuery(incomingContext, contentShare, timeout.request(), false);
+        }
         nodeConnection.request(RPC_METHOD,
                                serializedQuery.compressedPayload.type(),
                                serializedQuery.compressedPayload.uncompressedSize(),
@@ -163,9 +173,9 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         return searcher.getName();
     }
 
-    private SerializedQuery getSerializedQuery(Object incomingContext, double contentShare, double requestTimeout) {
+    private SerializedQuery getSerializedQuery(Object incomingContext, double contentShare, double requestTimeout, boolean tracing) {
         if (incomingContext instanceof SerializedQuery serializedQuery
-            && newSerializationWillBeSimilar(contentShare, serializedQuery))
+            && newSerializationWillBeSimilar(contentShare, serializedQuery) && !tracing)
             return serializedQuery;
         return new SerializedQuery(compressor, query, contentShare,
                                    ProtobufSerialization.serializeSearchRequest(query,

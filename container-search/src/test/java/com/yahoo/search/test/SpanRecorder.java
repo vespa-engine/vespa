@@ -7,6 +7,7 @@ import ai.vespa.telemetry.api.trace.ScopedTracer;
 import ai.vespa.telemetry.api.trace.OtelTracing;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.context.propagation.TextMapPropagator;
@@ -65,7 +66,7 @@ public final class SpanRecorder implements AutoCloseable {
                 .build();
         telemetry = new Telemetry() {
             @Override public ScopedTracer tracer(String scope) { return new ScopedTracer(tracerProvider.get(scope)); }
-            @Override public TextMapPropagator textMapPropagator() { return NoopTelemetry.INSTANCE.textMapPropagator(); }
+            @Override public TextMapPropagator textMapPropagator() { return W3CTraceContextPropagator.getInstance(); }
         };
         parent = telemetry.tracer(OtelTracing.DEFAULT_SCOPE).startSpan(parentSpanName, SpanKind.INTERNAL, Context.root());
         context = Telemetry.store(Context.root().with(parent), telemetry);

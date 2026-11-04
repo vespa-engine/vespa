@@ -66,7 +66,7 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
 
     private void sendPing() {
         var connection = connectionPool.getConnection(node.key());
-        var ping = SearchProtocol.MonitorRequest.newBuilder().build().toByteArray();
+        var ping = ProtobufSerialization.serializeMonitorRequest();
         double timeoutSeconds = ((double) clusterMonitor.getConfiguration().getRequestTimeout()) / 1000.0;
         Compressor.Compression compressionResult = compressor.compress(PING_COMPRESSION, ping);
         connection.request(RPC_METHOD, compressionResult.type(), ping.length, compressionResult.data(), this, timeoutSeconds);

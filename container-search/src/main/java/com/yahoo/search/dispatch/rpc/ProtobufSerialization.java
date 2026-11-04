@@ -4,6 +4,7 @@ package com.yahoo.search.dispatch.rpc;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.StringProperty;
 import ai.vespa.searchlib.searchprotocol.protobuf.SearchProtocol.TensorProperty;
+import ai.vespa.telemetry.api.Telemetry;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.yahoo.data.access.helpers.MatchFeatureData;
@@ -33,6 +34,9 @@ import com.yahoo.searchlib.aggregation.FS4Hit;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.vespa.objects.BufferSerializer;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.propagation.TextMapSetter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +55,11 @@ public class ProtobufSerialization {
     private static final ThreadLocal<GrowableByteBuffer> threadLocalBuffer = ThreadLocal.withInitial(() -> new GrowableByteBuffer(4096));
 
     static byte[] serializeSearchRequest(Query query, int hits, String nodeId, double contentShare, double requestTimeout) {
-        return convertFromQuery(query, hits, nodeId, contentShare, requestTimeout).toByteArray();
+        return serializeSearchRequest(createSearchRequestBuilder(query, hits, nodeId, contentShare, requestTimeout));
+    }
+
+    static byte[] serializeSearchRequest(SearchProtocol.SearchRequest.Builder builder) {
+        return createSearchRequest(builder).toByteArray();
     }
 
     private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors, boolean softTimeout, boolean annTimeout) {
@@ -62,8 +70,14 @@ public class ProtobufSerialization {
         }
     }
 
-    static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String nodeId, double contentShare,
-                                                         double requestTimeout) {
+    static SearchProtocol.SearchRequest createSearchRequest(SearchProtocol.SearchRequest.Builder builder) {
+        mergeToSearchRequestFromTracing(builder);
+        return builder.build();
+    }
+
+    static SearchProtocol.SearchRequest.Builder createSearchRequestBuilder(Query query, int hits, String nodeId, double contentShare,
+                                                                           double requestTimeout) {
+
         var builder = SearchProtocol.SearchRequest.newBuilder().setHits(hits).setOffset(query.getOffset())
                 .setTimeout((int) (requestTimeout * 1000));
         var documentDb = query.getModel().getDocumentDb();
@@ -105,7 +119,7 @@ public class ProtobufSerialization {
 
         mergeToSearchRequestFromRanking(query.getRanking(), context, scratchPad, builder);
 
-        return builder.build();
+        return builder;
     }
 
     public static int getTraceLevelForBackend(Query query) {
@@ -167,6 +181,36 @@ public class ProtobufSerialization {
         }
     }
 
+    private static void mergeToSearchRequestFromTracing(SearchProtocol.SearchRequest.Builder builder) {
+        var metadataBuilder = createTelemetryMetadataBuilderIfRecording();
+        if (metadataBuilder != null) {
+            builder.setTelemetryMetadata(metadataBuilder);
+        } else {
+            builder.clearTelemetryMetadata();
+        }
+    }
+
+    private static SearchProtocol.TelemetryMetadata.Builder createTelemetryMetadataBuilderIfRecording() {
+        var context = Context.current();
+        var span = Span.fromContext(context);
+        if (!span.isRecording()) {
+            return null;
+        }
+        var telemetry = Telemetry.from(context);
+        var metadataBuilder = SearchProtocol.TelemetryMetadata.newBuilder();
+
+        var propagator = telemetry.textMapPropagator();
+        propagator.inject(context, metadataBuilder, traceContextSetter);
+        return metadataBuilder;
+    }
+
+    private static final TextMapSetter<SearchProtocol.TelemetryMetadata.Builder> traceContextSetter =
+        (builder, key, value) -> {
+            if (builder != null) {
+                builder.putTraceContext(key, value);
+            }
+        };
+
     static SearchProtocol.DocsumRequest.Builder createDocsumRequestBuilder(Query query,
                                                                            String serverId,
                                                                            String summaryClass,
@@ -210,12 +254,26 @@ public class ProtobufSerialization {
         return builder;
     }
 
-    static byte[] serializeDocsumRequest(SearchProtocol.DocsumRequest.Builder builder, List<FastHit> documents) {
+    static SearchProtocol.DocsumRequest createDocsumRequest(SearchProtocol.DocsumRequest.Builder builder, List<FastHit> documents) {
         builder.clearGlobalIds();
         for (var hit : documents) {
             builder.addGlobalIds(ByteString.copyFrom(hit.getRawGlobalId()));
         }
-        return builder.build().toByteArray();
+        mergeToDocsumRequestFromTracing(builder);
+        return builder.build();
+    }
+
+    static byte[] serializeDocsumRequest(SearchProtocol.DocsumRequest.Builder builder, List<FastHit> documents) {
+        return createDocsumRequest(builder, documents).toByteArray();
+    }
+
+    private static void mergeToDocsumRequestFromTracing(SearchProtocol.DocsumRequest.Builder builder) {
+        var metadataBuilder = createTelemetryMetadataBuilderIfRecording();
+        if (metadataBuilder != null) {
+            builder.setTelemetryMetadata(metadataBuilder);
+        } else {
+            builder.clearTelemetryMetadata();
+        }
     }
 
     private static void mergeQueryDataToDocsumRequest(Query query,
@@ -353,6 +411,25 @@ public class ProtobufSerialization {
                 stringProperties.accept(propB);
             }
         }, tensorProperties);
+    }
+
+    static SearchProtocol.MonitorRequest.Builder createMonitorRequestBuilder() {
+        var builder = SearchProtocol.MonitorRequest.newBuilder();
+        return builder;
+    }
+
+    static byte[] serializeMonitorRequest() {
+       return serializeMonitorRequest(createMonitorRequestBuilder());
+    }
+
+    static byte[] serializeMonitorRequest(SearchProtocol.MonitorRequest.Builder builder) {
+        var metadataBuilder = createTelemetryMetadataBuilderIfRecording();
+        if (metadataBuilder != null) {
+            builder.setTelemetryMetadata(metadataBuilder);
+        } else {
+            builder.clearTelemetryMetadata();
+        }
+        return builder.build().toByteArray();
     }
 
 }

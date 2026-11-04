@@ -31,6 +31,7 @@ import io.opentelemetry.context.Context;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -134,8 +135,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         var builder = ProtobufSerialization.createDocsumRequestBuilder(
                 result.getQuery(), serverId, askForSummary, onlyFields, summaryNeedsQuery, timeout.request());
         hitsByNode.forEach((nodeId, hits) -> {
-            var payload = ProtobufSerialization.serializeDocsumRequest(builder, hits);
-            sendDocsumsRequest(nodeId, hits, payload, result, timeout.client());
+            sendDocsumsRequest(nodeId, hits, builder, result, timeout.client());
         });
     }
 
@@ -191,7 +191,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     }
 
     /** Send a docsums request to a node. Responses will be added to the given receiver. */
-    private void sendDocsumsRequest(int nodeId, List<FastHit> hits, byte[] payload, Result result,
+    private void sendDocsumsRequest(int nodeId, List<FastHit> hits, SearchProtocol.DocsumRequest.Builder builder, Result result,
                                     double clientTimeout) {
         Client.NodeConnection node = resourcePool.getConnection(nodeId);
         if (node == null) {
@@ -204,7 +204,6 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             return;
         }
         Query query = result.getQuery();
-        Compressor.Compression compressionResult = compressor.compress(query, payload);
 
         Span span = OtelTracing.startSpan(Context.current(), "node.fill", SpanKind.CLIENT);
         // Every value is a parameter or a constant, so no isRecording() guard is warranted. There is no
@@ -216,11 +215,19 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             .setAttribute(TraceAttributes.FILL_HITS_REQUESTED, hits.size())
             .setAttribute(TraceAttributes.FILL_RETRY,          hits.get(0).getDistributionKey() != nodeId);
 
-        // End BEFORE enqueueing, as RpcSearchInvoker.receive does, so the same statement holds on both paths:
-        // the caller thread can never observe a response whose span is still recording. It also keeps the span
-        // ending even if receive() throws - responses is a BOUNDED queue and uses add(), which throws when full.
-        node.request(RPC_METHOD, compressionResult.type(), payload.length, compressionResult.data(),
-                roe -> { endSpan(span, roe); receive(roe, hits); }, clientTimeout);
+        try (var scope = span.makeCurrent()) {
+            Objects.requireNonNull(scope);
+            var payload = ProtobufSerialization.serializeDocsumRequest(builder, hits);
+            Compressor.Compression compressionResult = compressor.compress(query, payload);
+            // End BEFORE enqueueing, as RpcSearchInvoker.receive does, so the same statement holds on both paths:
+            // the caller thread can never observe a response whose span is still recording. It also keeps the span
+            // ending even if receive() throws - responses is a BOUNDED queue and uses add(), which throws when full.
+            node.request(RPC_METHOD, compressionResult.type(), payload.length, compressionResult.data(),
+                roe -> {
+                    endSpan(span, roe);
+                    receive(roe, hits);
+                }, clientTimeout);
+        }
     }
 
     /**
