@@ -30,7 +30,7 @@ const QueryTermUCS4* StringSearchContextT<Matcher>::queryTerm() const {
 
 template <typename Matcher>
 bool StringSearchContextT<Matcher>::valid() const {
-    return _matcher.isValid();
+    return _matcher.is_valid();
 }
 
 template <typename Matcher>

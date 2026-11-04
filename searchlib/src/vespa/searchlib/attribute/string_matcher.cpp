@@ -22,21 +22,17 @@ StringMatcher::StringMatcher(StringMatcher&&) noexcept = default;
 
 StringMatcher::~StringMatcher() = default;
 
-bool StringMatcher::isValid() const {
-    return (_query_term && (!_query_term->empty()));
-}
-
 bool StringMatcher::lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const {
-    if (isValid()) {
-        if (isPrefix()) {
+    if (is_valid()) {
+        if (_helper.isPrefix()) {
             auto comp = enum_store.prefix_lookup_comparator(get_query_term_ptr()->getTerm());
             dict.lookupRange(comp, comp);
-        } else if (isRegex()) {
+        } else if (_helper.isRegex()) {
             std::string prefix(vespalib::RegexpUtil::get_prefix(get_query_term_ptr()->getTerm()));
             auto        comp = enum_store.prefix_lookup_comparator(prefix.c_str());
             dict.lookupRange(comp, comp);
-        } else if (isFuzzy()) {
-            std::string prefix(getFuzzyMatcher().getPrefix());
+        } else if (_helper.isFuzzy()) {
+            std::string prefix(_helper.getFuzzyMatcher().getPrefix());
             auto        comp = enum_store.prefix_lookup_comparator(prefix.c_str());
             dict.lookupRange(comp, comp);
         } else {
@@ -51,7 +47,7 @@ bool StringMatcher::lookup_in_dictionary(const EnumStoreT<const char*>& enum_sto
 
 bool StringMatcher::use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info,
                                                       uint32_t                      docid_limit) const {
-    if (isFuzzy()) {
+    if (_helper.isFuzzy()) {
         uint32_t           exp_doc_hits = docid_limit * info.hit_rate();
         constexpr uint32_t fuzzy_use_posting_lists_doc_limit = 10000;
         /**

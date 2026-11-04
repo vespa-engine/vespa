@@ -38,21 +38,10 @@ public:
     StringMatcher(StringMatcher&&) noexcept;
     ~StringMatcher();
 
-    bool isValid() const;
-    bool match(const char* src) const { return _helper.isMatch(src); }
-    bool isPrefix() const { return _helper.isPrefix(); }
-    bool isRegex() const { return _helper.isRegex(); }
-    bool isCased() const { return _helper.isCased(); }
-    bool isFuzzy() const { return _helper.isFuzzy(); }
-    const vespalib::Regex& getRegex() const { return _helper.getRegex(); }
-    const vespalib::FuzzyMatcher& getFuzzyMatcher() const { return _helper.getFuzzyMatcher(); }
-    const QueryTermUCS4* get_query_term_ptr() const noexcept { return _query_term.get(); }
+    [[nodiscard]] bool is_valid() const { return _query_term && (!_query_term->empty()); }
+    [[nodiscard]] bool match(const char* src) const { return _helper.isMatch(src); }
+    [[nodiscard]] const QueryTermUCS4* get_query_term_ptr() const noexcept { return _query_term.get(); }
 
-    template <typename DictionaryConstIteratorType>
-    bool is_fuzzy_match(const char* word, DictionaryConstIteratorType& itr,
-                        const DfaStringComparator::DataStoreType& data_store) const {
-        return _helper.is_fuzzy_match(word, itr, data_store);
-    }
     bool lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const;
 
     /*
@@ -60,20 +49,23 @@ public:
      */
     template <typename DictionaryConstIteratorType>
     bool use_dictionary_entry(const EnumStoreT<const char*>& enum_store, DictionaryConstIteratorType& it) const {
-        if (isRegex()) {
-            if (getRegex().valid() && getRegex().partial_match(enum_store.get_value(it.getKey().load_acquire()))) {
+        if (_helper.isRegex()) {
+            if (_helper.getRegex().valid() &&
+                _helper.getRegex().partial_match(enum_store.get_value(it.getKey().load_acquire())))
+            {
                 return true;
             }
             ++it;
             return false;
-        } else if (isCased()) {
+        } else if (_helper.isCased()) {
             if (match(enum_store.get_value(it.getKey().load_acquire()))) {
                 return true;
             }
             ++it;
             return false;
-        } else if (isFuzzy()) {
-            return is_fuzzy_match(enum_store.get_value(it.getKey().load_acquire()), it, enum_store.get_data_store());
+        } else if (_helper.isFuzzy()) {
+            return _helper.is_fuzzy_match(enum_store.get_value(it.getKey().load_acquire()), it,
+                                          enum_store.get_data_store());
         }
         return true;
     }
