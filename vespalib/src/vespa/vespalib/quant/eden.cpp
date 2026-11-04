@@ -3,12 +3,12 @@
 #include "eden.h"
 
 #include "centroid.h"
-#include "codebooks.h"
 #include "hadamard.h"
 #include "multi_bit_packer.h"
 
 #include <vespa/check_require.h>
 #include <vespa/vespalib/hwaccelerated/autovec_unrolled.h>
+#include <vespa/vespalib/hwaccelerated/eden_codebooks.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
 
 #include <cmath>
@@ -18,6 +18,7 @@ namespace vespalib::quant {
 
 using hwaccelerated::squared_euclidean_length;
 using hwaccelerated::sum_indexed_unrolled;
+namespace codebooks = hwaccelerated::codebooks;
 
 namespace {
 
@@ -47,10 +48,6 @@ constexpr size_t scale_bytes = sizeof(float);
     return buf + scale_bytes;
 }
 
-[[nodiscard]] std::span<const float> f32_codebook(uint8_t bits) noexcept {
-    return {codebooks::unit_norm_centroids_f32[bits - 1], 1u << bits};
-}
-
 } // namespace
 
 EdenQuantizer::EdenQuantizer(const size_t dimensions, const uint8_t bits, const uint64_t seed)
@@ -68,7 +65,7 @@ EdenQuantizer::EdenQuantizer(const size_t dimensions, const uint8_t bits, const 
 EdenQuantizer::~EdenQuantizer() = default;
 
 std::span<const float> EdenQuantizer::my_codebook() const noexcept {
-    return {codebooks::unit_norm_centroids_bf16_as_f32[_bits - 1], 1u << _bits};
+    return codebooks::eden_bf16_codebook(_bits);
 }
 
 EdenQuantizer::ScaleAndCentroidIndexesPtr
@@ -126,8 +123,8 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
     // (meaning ever so slightly more statistically optimal threshold placement), and
     // one for mapping the resulting centroid index to a lower precision floating
     // point value.
-    const auto   selection_codebook = f32_codebook(_bits);
-    const auto   codebook = my_codebook();
+    const auto selection_codebook = codebooks::eden_f32_codebook(_bits);
+    const auto codebook = my_codebook();
     // Normalization factor to bring each rotated coordinate into expected N(0, 1).
     // Moving the sqrt(d) factor here means that we don't have to precompute scaled
     // centroids specifically for our dimensionality, but can use the N(0, 1) ones.
@@ -186,18 +183,12 @@ void EdenQuantizer::rotate_vector_inplace(std::span<float> vec) const noexcept {
 }
 
 float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   query,
-                                                   std::span<const uint8_t> quant_vec) noexcept {
+                                                   std::span<const uint8_t> quant_vec) const noexcept {
     CHECK(query.size() == _dimensions);
-    const auto [scale, centroid_idx] = unary_unpack_bits_to_scratch_space(quant_vec);
-    const auto codebook = my_codebook();
-    // Taunt the auto-vectorizer by explicitly running parallel fp accumulators.
-    // 8x is only slightly faster than 4x (on M3 AArch64), but 4x is by itself ~4x
-    // faster than the naive scalar loop version.
-    // clang-format off: lambda formatting
-    return scale * sum_indexed_unrolled<8, float>(_dimensions, [&](size_t idx) noexcept {
-        return query[idx] * codebook[centroid_idx[idx]];
-    });
-    // clang-format on
+    CHECK(quant_vec.size() == _quantized_size);
+    const float    scale = extract_scale_factor(quant_vec.data());
+    const uint8_t* bit_buf = packed_bits_buf(quant_vec.data());
+    return scale * hwaccelerated::eden_f32_q_dot_product(query.data(), bit_buf, _bits, _dimensions);
 }
 
 float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,

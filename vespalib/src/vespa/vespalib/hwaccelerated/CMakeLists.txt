@@ -10,6 +10,7 @@ endif()
 
 vespa_add_library(vespa_hwaccelerated
     SOURCES
+    eden_codebooks.cpp
     fn_table.cpp
     float8_luts.cpp
     iaccelerated.cpp

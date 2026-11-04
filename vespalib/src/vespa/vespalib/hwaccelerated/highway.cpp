@@ -22,10 +22,24 @@
 
 #include "hwy_kernel-inl.h"
 #include "hwy_aux_ops-inl.h"
+#include "hwy_block_bit_packing-inl.h"
 #include <hwy/contrib/dot/dot-inl.h>
 #include <hwy/contrib/bit_pack/bit_pack-inl.h>
 
 // clang-format on
+
+#if 0
+#include <hwy/print-inl.h>
+#define DEBUG_PRINT_LANES4(d, name, v) hn::Print(d, name, v, 0, 4)
+#define DEBUG_PRINT_LANES8(d, name, v) hn::Print(d, name, v, 0, 8)
+#define DEBUG_PRINT_LANES16(d, name, v) hn::Print(d, name, v, 0, 16)
+#define DEBUG_PRINT_LANES32(d, name, v) hn::Print(d, name, v, 0, 32)
+#else
+#define DEBUG_PRINT_LANES4(d, name, v)
+#define DEBUG_PRINT_LANES8(d, name, v)
+#define DEBUG_PRINT_LANES16(d, name, v)
+#define DEBUG_PRINT_LANES32(d, name, v)
+#endif
 
 HWY_BEFORE_NAMESPACE();
 namespace vespalib::hwaccelerated { // NOLINT: must nest namespaces
@@ -367,6 +381,144 @@ HWY_NOINLINE void my_hwy_unpack_bits(const uint8_t* HWY_RESTRICT packed, uint8_t
     }
 }
 
+// These are the EDEN per-bit centroid index -> value LUTs, represented in BF16 precision.
+// For all BF16 LUTs, first 16 bytes are the MSB values, last 16 bytes are the LSB values.
+// We intentionally lay out the MSB/LSB LUTs back-to-back in memory so that these two
+// loads will be collapsed into a single 2x contiguous memory vector load instruction
+// (LDP; load pair) on AArch64 NEON.
+alignas(32) constexpr uint8_t bf16_lut_b1[32] = {
+    0xbf, 0x3f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // MSB
+    0x4c, 0x4c, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // LSB
+};
+alignas(32) constexpr uint8_t bf16_lut_b2[32] = {
+    0xbe, 0xbf, 0x3e, 0x3f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // MSB
+    0xe7, 0xc1, 0xe7, 0xc1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // LSB
+};
+alignas(32) constexpr uint8_t bf16_lut_b3[32] = {
+    0xbe, 0xbf, 0xbf, 0xc0, 0x3e, 0x3f, 0x3f, 0x40, 0, 0, 0, 0, 0, 0, 0, 0, // MSB
+    0x7a, 0x41, 0xac, 0x09, 0x7a, 0x41, 0xac, 0x09, 0, 0, 0, 0, 0, 0, 0, 0  // LSB
+};
+alignas(32) constexpr uint8_t bf16_lut_b4[32] = {
+    0xbe, 0xbe, 0xbf, 0xbf, 0xbf, 0xbf, 0xc0, 0xc0, 0x3e, 0x3e, 0x3f, 0x3f, 0x3f, 0x3f, 0x40, 0x40, // MSB
+    0x03, 0xc6, 0x28, 0x71, 0xa0, 0xcf, 0x04, 0x2e, 0x03, 0xc6, 0x28, 0x71, 0xa0, 0xcf, 0x04, 0x2e  // LSB
+};
+
+template <uint8_t Bits>
+HWY_NOINLINE float hwy_eden_f32_q_dot(const float* HWY_RESTRICT f32_lhs, const uint8_t* HWY_RESTRICT packed_rhs,
+                                      const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz) noexcept {
+    // Important: all of these are _fixed_ lane count tags, not ScalableTag!
+    const hn::Full128<uint8_t>                            du8;
+    const hn::Repartition<hwy::bfloat16_t, decltype(du8)> dbf16;
+    const hn::Repartition<float, decltype(dbf16)>         df32;
+
+    using VU8 = hn::Vec<decltype(du8)>;
+    using VBF16 = hn::Vec<decltype(dbf16)>;
+    using VF32 = hn::Vec<decltype(df32)>;
+
+    // The input vector `rhs_v` contains 16 u8 values that are the unpacked centroid
+    // indexes from the packed vector bitstream. We know at most 4 LSBs can be set
+    // in this vector. To compute a dot product with the input f32 vector `f32_lhs`,
+    // we do as follows:
+    //  1. Parallel lookup from lhs centroid indexes to their MSB/LSB u8 values. This
+    //     has _unspecified_ results for input indexes > 15, but we know this cannot
+    //     happen in our case.
+    //  2. Fuse (interleave) MSBs with LSBs to form the full BF16 values of the
+    //     centroids. This vector has a 16-bit lane size, so the 16*u8 input vector
+    //     is distributed to 2x 8*bf16 vectors, split into upper and lower parts.
+    //  3. Each of the 2x 8*bf16 vectors are further widened into 4x 4*f32 vectors
+    //     to be able to used for f32 arithmetic. This will be a << 16 in practice.
+    //     Again we do this on lower/upper halves of the source vectors.
+    //  4. Load the lhs f32 vectors from memory; this is straight forward if at
+    //     least 16 elements are valid (i.e. a full block invocation). If this is
+    //     a _partial_ invocation (remainder processing edge case), we use the non-
+    //     faulting LoadN function which returns zero in OOB lanes. The lhs `v` vector
+    //     is also guaranteed to be zero in these lanes, but zero is a valid centroid
+    //     index that will map to a _non-zero_ centroid _value_. Since the lhs f32
+    //     multiplier will be zero, these will not contribute to the final sum, and
+    //     the end effect is as-if we had explicitly masked these lanes away.
+    //  5. Finally, do 4x fused multiply-adds of the matching lhs/rhs vector pairs,
+    //     accumulating into 4 distinct accumulator registers to avoid dependencies.
+    //
+    // Note that we take the f32_lhs ptr by _ref_ so that the kernel invocation can
+    // increment the read position appropriately.
+    auto kernel = [du8, dbf16, df32, &f32_lhs, bf16_lut](const InvocationMeta auto meta, const VU8 rhs_v, VF32& accu0,
+                                                         VF32& accu1, VF32& accu2, VF32& accu3) VESPA_HWY_LAMBDA {
+        // The compiler will hoist the LUT loads out of the loop and into the prologue.
+        // We don't do this outside of the kernel since I have bad experiences with GCC
+        // spilling lambda-captured vectors to memory... :I
+        const VU8 bf16_msb_lut = hn::LoadDup128(du8, bf16_lut);
+        const VU8 bf16_lsb_lut = hn::LoadDup128(du8, bf16_lut + 16);
+        const VU8 bf16_msb = hn::TableLookupBytes(bf16_msb_lut, rhs_v);
+        const VU8 bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, rhs_v);
+        // Glue the MSB/LSB pairs together. Note the reverse LUT order since we use little
+        // endian. InterleaveWhole(Lower|Upper) is used rather than just Interleave, as the
+        // latter works _within_ 128-bit _blocks_ and not across them.
+        //
+        // Example; assume 32-lane (256-bit) u8 inputs:
+        //
+        //  X = a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 aa ab ac ad ae af b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 ba bb bc bd be bf
+        //  Y = c0 c1 c2 c3 c4 c5 c6 c7 c8 c9 ca cb cc cd ce cf d0 d1 d2 d3 d4 d5 d6 d7 d8 d9 da db dc dd de df
+        //
+        // InterleaveLower(X, Y):
+        //      a0 c0 a1 c1 a2 c2 a3 c3 a4 c4 a5 c5 a6 c6 a7 c7 b0 d0 b1 d1 b2 d2 b3 d3 b4 d4 b5 d5 b6 d6 b7 d7
+        //
+        // Note the discontinuity when crossing a 16 lane boundary. This therefore cannot be
+        // directly matched with contiguous buffer data read from memory.
+        //
+        // InterleaveWholeLower(X, Y):
+        //      a0 c0 a1 c1 a2 c2 a3 c3 a4 c4 a5 c5 a6 c6 a7 c7 a8 c8 a9 c9 aa ca ab cb ac cc ad dd ae ce af cf
+        //
+        // Which _is_ contiguous. Note that Whole is more expensive on AVX{2,3} due to block-crossing.
+        // This doesn't matter for 128-bit vectors, but using Whole generalizes to higher bit widths.
+        const VBF16 bf16_lo = hn::BitCast(dbf16, hn::InterleaveWholeLower(du8, bf16_lsb, bf16_msb));
+        const VBF16 bf16_hi = hn::BitCast(dbf16, hn::InterleaveWholeUpper(du8, bf16_lsb, bf16_msb));
+
+        const VF32 rhs_f32_lo_lo = hn::PromoteLowerTo(df32, bf16_lo);
+        const VF32 rhs_f32_lo_hi = hn::PromoteUpperTo(df32, bf16_lo);
+        const VF32 rhs_f32_hi_lo = hn::PromoteLowerTo(df32, bf16_hi);
+        const VF32 rhs_f32_hi_hi = hn::PromoteUpperTo(df32, bf16_hi);
+
+        HWY_LANES_CONSTEXPR const size_t NF32 = hn::Lanes(df32);
+
+        VF32 lhs_f32_lo_lo, lhs_f32_lo_hi, lhs_f32_hi_lo, lhs_f32_hi_hi;
+        if constexpr (!meta.is_partial()) {
+            lhs_f32_lo_lo = hn::LoadU(df32, f32_lhs + NF32 * 0);
+            lhs_f32_lo_hi = hn::LoadU(df32, f32_lhs + NF32 * 1);
+            lhs_f32_hi_lo = hn::LoadU(df32, f32_lhs + NF32 * 2);
+            lhs_f32_hi_hi = hn::LoadU(df32, f32_lhs + NF32 * 3);
+            f32_lhs += NF32 * 4;
+        } else {
+            size_t rem = meta.partial_count(); // Always > 0 when `is_partial()` is true
+            lhs_f32_lo_lo = hn::LoadN(df32, f32_lhs + NF32 * 0, std::min(rem, NF32));
+            rem -= std::min(rem, NF32);
+            lhs_f32_lo_hi = rem > 0 ? hn::LoadN(df32, f32_lhs + NF32 * 1, std::min(rem, NF32)) : hn::Zero(df32);
+            rem -= std::min(rem, NF32);
+            lhs_f32_hi_lo = rem > 0 ? hn::LoadN(df32, f32_lhs + NF32 * 2, std::min(rem, NF32)) : hn::Zero(df32);
+            rem -= std::min(rem, NF32);
+            lhs_f32_hi_hi = rem > 0 ? hn::LoadN(df32, f32_lhs + NF32 * 3, std::min(rem, NF32)) : hn::Zero(df32);
+            f32_lhs += meta.partial_count();
+        }
+        accu0 = hn::MulAdd(lhs_f32_lo_lo, rhs_f32_lo_lo, accu0);
+        accu1 = hn::MulAdd(lhs_f32_lo_hi, rhs_f32_lo_hi, accu1);
+        accu2 = hn::MulAdd(lhs_f32_hi_lo, rhs_f32_hi_lo, accu2);
+        accu3 = hn::MulAdd(lhs_f32_hi_hi, rhs_f32_hi_hi, accu3);
+    };
+
+    VF32 accu0 = hn::Zero(df32);
+    VF32 accu1 = hn::Zero(df32);
+    VF32 accu2 = hn::Zero(df32);
+    VF32 accu3 = hn::Zero(df32);
+    VF32 accu4 = hn::Zero(df32);
+    VF32 accu5 = hn::Zero(df32);
+    VF32 accu6 = hn::Zero(df32);
+    VF32 accu7 = hn::Zero(df32);
+
+    with_unpacked_rhs_bits<Bits>(packed_rhs, sz, kernel, FnAccuArity<4>{}, accu0, accu1, accu2, accu3, accu4, accu5,
+                                 accu6, accu7);
+    return LaneReduceSum{}(
+        df32, parallel_reduce_accumulators(VecAdd{}, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7));
+}
+
 HWY_INLINE
 const char* my_hwy_target_name() noexcept {
     return hwy::TargetName(HWY_TARGET);
@@ -388,6 +540,22 @@ float my_dot_product_f32(const float* a, const float* b, size_t sz) noexcept {
 }
 double my_dot_product_f64(const double* a, const double* b, size_t sz) noexcept {
     return my_hwy_dot_double(a, b, sz);
+}
+[[maybe_unused]]
+float my_eden_f32_q_dot_product(const float* lhs, const uint8_t* packed_rhs, const uint8_t bits,
+                                const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return hwy_eden_f32_q_dot<1>(lhs, packed_rhs, bf16_lut_b1, sz);
+    case 2:
+        return hwy_eden_f32_q_dot<2>(lhs, packed_rhs, bf16_lut_b2, sz);
+    case 3:
+        return hwy_eden_f32_q_dot<3>(lhs, packed_rhs, bf16_lut_b3, sz);
+    case 4:
+        return hwy_eden_f32_q_dot<4>(lhs, packed_rhs, bf16_lut_b4, sz);
+    default:
+        abort();
+    }
 }
 double my_squared_euclidean_distance_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
     return my_hwy_square_euclidean_distance_int8(a, b, sz);
@@ -457,6 +625,7 @@ public:
         ft.dot_product_bf16 = my_dot_product_bf16;
         ft.dot_product_f32 = my_dot_product_f32;
         ft.dot_product_f64 = my_dot_product_f64;
+        ft.eden_f32_q_dot_product = my_eden_f32_q_dot_product;
         ft.squared_euclidean_distance_i8 = my_squared_euclidean_distance_i8;
         ft.squared_euclidean_distance_bf16 = my_squared_euclidean_distance_bf16;
         ft.squared_euclidean_distance_f32 = my_squared_euclidean_distance_f32;
@@ -477,6 +646,8 @@ public:
         // Additionally, BF16 squared Euclidean distance is reduced on Axion and Graviton 4
         // SVE+SVE2 (but _not_ on Graviton 3 SVE... need auto-tuning on startup).
         ft.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_BF16, FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_BF16});
+        // We use BF16 for centroid computations, so same applies to quantized dot product(s).
+        ft.tag_fns_as_suboptimal({FnTable::FnId::EDEN_F32_Q_DOT_PRODUCT});
         // SVE (1st edition) does not have signed subtraction with widening, causing i8
         // Euclidean to be slower than under NEON. SVE2 does have this, but int8 operations
         // are still slightly slower for the SVEs. So tag as suboptimal for now.
