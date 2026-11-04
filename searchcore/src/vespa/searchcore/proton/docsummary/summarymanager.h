@@ -40,6 +40,7 @@ public:
                      search::IAttributeManager::SP attributeMgr, search::IDocumentStore::SP docStore,
                      std::shared_ptr<const search::IDocumentIdProvider> document_id_provider,
                      std::shared_ptr<const document::DocumentTypeRepo> repo, const search::index::Schema& schema);
+        ~SummarySetup() override;
 
         search::docsummary::IDocsumWriter& getDocsumWriter() const override { return *_docsumWriter; }
         const search::docsummary::ResultConfig& getResultConfig() override {
