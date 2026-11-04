@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_dictionary_lookup.h"
 #include "posting_list_folded_search_context.h"
 #include "postinglistsearchcontext.h"
 
@@ -16,6 +17,19 @@ private:
     using RegexpUtil = vespalib::RegexpUtil;
     using Parent::_enumStore;
     using Parent::matcher;
+
+    class DictionaryLookupAdapter : public IDictionaryLookup {
+        StringPostingSearchContext& _sc;
+
+    public:
+        explicit DictionaryLookupAdapter(StringPostingSearchContext& sc) : _sc(sc) {}
+        void lookupTerm(const vespalib::datastore::EntryComparator& comp) override { _sc.lookupTerm(comp); }
+        void lookupRange(const vespalib::datastore::EntryComparator& low,
+                         const vespalib::datastore::EntryComparator& high) override {
+            _sc.lookupRange(low, high);
+        }
+    };
+
     // Note: Steps iterator one or more steps when not using dictionary entry
     bool use_dictionary_entry(PostingListSearchContext::DictionaryConstIterator& it) const override;
     // Note: Uses copy of dictionary iterator to avoid stepping original.

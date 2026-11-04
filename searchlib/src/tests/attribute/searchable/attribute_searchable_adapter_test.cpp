@@ -371,11 +371,10 @@ TEST(AttributeSearchableAdapterTest, require_that_string_range_terms_work) {
         // Not contained in range
         EXPECT_FALSE(
             search(make_string_range_term("bar", true, "fon", true), attribute_manager, fast_search, true, true));
-        // The following two cannot be expected to be empty since the closed range contains foo
         EXPECT_FALSE(
-            search(make_string_range_term("foo", false, "fox", true), attribute_manager, fast_search, true, false));
+            search(make_string_range_term("foo", false, "fox", true), attribute_manager, fast_search, true, true));
         EXPECT_FALSE(
-            search(make_string_range_term("bar", true, "foo", false), attribute_manager, fast_search, true, false));
+            search(make_string_range_term("bar", true, "foo", false), attribute_manager, fast_search, true, true));
     }
 }
 

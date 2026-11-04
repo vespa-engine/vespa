@@ -2,18 +2,26 @@
 
 #pragma once
 
+#include "enumstore.h"
 #include "string_search_helper.h"
 
+#include <vespa/searchlib/query/query_term_ucs4.h>
+#include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
+#include <vespa/vespalib/util/regexp.h>
 
 namespace search {
 class QueryTermSimple;
-template <class EntryT> class EnumStoreT;
 } // namespace search
+
+namespace search::queryeval {
+class ExecuteInfo;
+}
 
 namespace search::attribute {
 
 class EnumHintSearchContext;
+class IDictionaryLookup;
 
 /*
  * Class used to determine if an attribute vector string value is a match for
@@ -45,7 +53,32 @@ public:
                         const DfaStringComparator::DataStoreType& data_store) const {
         return _helper.is_fuzzy_match(word, itr, data_store);
     }
-    void setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store, EnumHintSearchContext& enum_hint_sc);
+    bool lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const;
+
+    /*
+     * The methods below are needed in StringPostingSearchContext
+     */
+    template <typename DictionaryConstIteratorType>
+    bool use_dictionary_entry(const EnumStoreT<const char*>& enum_store, DictionaryConstIteratorType& it) const {
+        if (isRegex()) {
+            if (getRegex().valid() && getRegex().partial_match(enum_store.get_value(it.getKey().load_acquire()))) {
+                return true;
+            }
+            ++it;
+            return false;
+        } else if (isCased()) {
+            if (match(enum_store.get_value(it.getKey().load_acquire()))) {
+                return true;
+            }
+            ++it;
+            return false;
+        } else if (isFuzzy()) {
+            return is_fuzzy_match(enum_store.get_value(it.getKey().load_acquire()), it, enum_store.get_data_store());
+        }
+        return true;
+    }
+
+    bool use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info, uint32_t docid_limit) const;
 };
 
 } // namespace search::attribute

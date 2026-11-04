@@ -7,7 +7,6 @@
 #include "string_direct_posting_store_adapter.hpp"
 #include "string_matcher_factory.h"
 #include "string_posting_search_context.hpp"
-#include "string_range_posting_search_context.hpp"
 
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_simple.h>
@@ -93,9 +92,7 @@ MultiValueStringPostingAttributeT<B, T>::getSearch(QueryTermSimpleUP            
         std::move(qTerm), cased, params.fuzzy_matching_algorithm(),
         [&]<typename Matcher>(Matcher&& matcher) -> std::unique_ptr<attribute::SearchContext> {
             using BaseSC = attribute::MultiStringEnumSearchContextT<T, Matcher>;
-            using SC = std::conditional_t<std::is_same_v<Matcher, attribute::StringRangeMatcher>,
-                                          attribute::StringRangePostingSearchContext<BaseSC, SelfType, int32_t>,
-                                          attribute::StringPostingSearchContext<BaseSC, SelfType, int32_t>>;
+            using SC = attribute::StringPostingSearchContext<BaseSC, SelfType, int32_t>;
             BaseSC base_sc(std::move(matcher), *this, this->_mvMapping.make_read_view(doc_id_limit),
                            this->_enumStore);
             return std::make_unique<SC>(std::move(base_sc), params.useBitVector(), *this);

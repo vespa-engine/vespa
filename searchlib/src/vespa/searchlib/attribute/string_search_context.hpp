@@ -37,7 +37,7 @@ template <typename Matcher>
 void StringSearchContextT<Matcher>::set_and_setup_enum_hint_sc(const EnumStoreT<const char*>& enum_store,
                                                                EnumHintSearchContext&         enum_hint_sc) {
     _plsc = &enum_hint_sc;
-    _matcher.setup_enum_hint_sc(enum_store, enum_hint_sc);
+    _matcher.lookup_in_dictionary(enum_store, enum_hint_sc);
 }
 
 } // namespace search::attribute
