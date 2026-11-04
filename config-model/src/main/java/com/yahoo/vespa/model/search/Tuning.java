@@ -215,10 +215,24 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
                     }
                 }
 
+                public enum UpdateStrategy {
+                    INVALIDATE, UPDATE;
+
+                    public static UpdateStrategy fromString(String name) {
+                        return switch (name) {
+                            case "invalidate" -> INVALIDATE;
+                            case "update" -> UPDATE;
+                            default -> throw new IllegalArgumentException("Unknown summary cache update-strategy '" + name +
+                                                                          "', expected 'invalidate' or 'update'");
+                        };
+                    }
+                }
+
                 public static class Component {
                     public Long maxSize = null;
                     public Double maxSizePercent = null;
                     public Long initialEntries = null;
+                    public UpdateStrategy updateStrategy = null;
                     public Compression compression = null;
                     private final boolean outputInt;
 
@@ -239,6 +253,9 @@ public class Tuning extends AnyConfigProducer implements ProtonConfig.Producer {
                             if (maxSizePercent !=null) cache.maxbytes(-maxSizePercent.longValue());
                             if (maxSize!=null) cache.maxbytes(maxSize);
                             if (initialEntries!=null) cache.initialentries(initialEntries);
+                        }
+                        if (updateStrategy != null) {
+                            cache.update_strategy(ProtonConfig.Summary.Cache.Update_strategy.Enum.valueOf(updateStrategy.name()));
                         }
                         if (compression != null) {
                             compression.getConfig(cache.compression);
