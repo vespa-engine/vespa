@@ -16,6 +16,24 @@ fi
 : "${LOCAL_RPM_REPO:?Environment variable LOCAL_RPM_REPO must be set (path to local RPM repo)}"
 : "${LOCAL_MVN_REPO:?Environment variable LOCAL_MVN_REPO must be set (path to local Maven repo)}"
 
+with_retry() {
+    local prog=$1
+    shift
+    if "$prog" "$@"; then return; fi
+    echo "Failed: $prog (retrying)" >&2
+    if "$prog" "$@"; then return; fi
+    echo "Failed again: $prog with args" "$@" "(retrying after 3 seconds)" >&2
+    sleep 3
+    if "$prog" "$@"; then return; fi
+    echo "Failed AGAIN: $prog with args" "$@" "(retrying after 15 more seconds)" >&2
+    sleep 15
+    if "$prog" "$@"; then return; fi
+    echo "FAILED 4 TIMES: >>> $prog" "$@" "<<< (waiting 60 seconds before final retry)" >&2
+    sleep 60
+    echo "FINAL RETRY: >>> $prog" "$@" "<<<" >&2
+    "$prog" "$@"
+}
+
 echo "--- 📤 Publishing build artifacts"
 cd "$WORKDIR/artifacts/$ARCH"
 
@@ -31,7 +49,7 @@ cp -a "${LOCAL_RPM_REPO}"/vespa-config-model-fat-*.rpm .
 
 echo "Signing artifacts..."
 for FILE in *.tar *.rpm; do
-    cosign sign-blob -y --oidc-provider=buildkite-agent --output-signature "$FILE.sig" --output-certificate "$FILE.pem" "$FILE"
+    with_retry cosign sign-blob -y --oidc-provider=buildkite-agent --output-signature "$FILE.sig" --output-certificate "$FILE.pem" "$FILE"
 done
 
 ARTIFACT_DESTINATION="${VESPA_ENGINE_ARTIFACTS_BUCKET}/${VESPA_ENGINE_ARTIFACTS_PREFIX}/${VESPA_VERSION}/artifacts/${ARCH}"
