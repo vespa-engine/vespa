@@ -656,21 +656,18 @@ TEST(PropertiesTest, second_phase_rank_score_drop_limit) {
               hitcollector::SecondPhaseRankScoreDropLimit::lookup(p, 4.0));
 }
 
-TEST(PropertiesTest, second_phase_prefetch_attributes) {
-    using Names = std::vector<std::string>;
-    std::string_view name = rank::SecondPhasePrefetchAttributes::NAME;
-    EXPECT_EQ(std::string("vespa.rank.secondphase.prefetch_attributes"), name);
+TEST(PropertiesTest, second_phase_prefetch_paged_attributes) {
+    std::string_view name = rank::SecondPhasePrefetchPagedAttributes::NAME;
+    EXPECT_EQ(std::string("vespa.rank.secondphase.prefetch_paged_attributes"), name);
     Properties p;
-    EXPECT_EQ(Names(), rank::SecondPhasePrefetchAttributes::lookup(p));
-    EXPECT_EQ(Names({"x"}), rank::SecondPhasePrefetchAttributes::lookup(p, {"x"}));
-    p.add(name, "a");
-    p.add(name, " b , c\td  ");
-    p.add(name, "a,c,,e");
-    EXPECT_EQ(Names({"a", "b", "c", "d", "e"}), rank::SecondPhasePrefetchAttributes::lookup(p));
-    EXPECT_EQ(Names({"a", "b", "c", "d", "e"}), rank::SecondPhasePrefetchAttributes::lookup(p, {"x"}));
-    // an empty value overrides the default, e.g. to disable prefetching for a query
-    p.clear().add(name, "");
-    EXPECT_EQ(Names(), rank::SecondPhasePrefetchAttributes::lookup(p, {"x"}));
+    EXPECT_FALSE(rank::SecondPhasePrefetchPagedAttributes::check(p));
+    EXPECT_TRUE(rank::SecondPhasePrefetchPagedAttributes::check(p, true));
+    p.add(name, "true");
+    EXPECT_TRUE(rank::SecondPhasePrefetchPagedAttributes::check(p));
+    EXPECT_TRUE(rank::SecondPhasePrefetchPagedAttributes::check(p, false));
+    p.clear().add(name, "false");
+    EXPECT_FALSE(rank::SecondPhasePrefetchPagedAttributes::check(p));
+    EXPECT_FALSE(rank::SecondPhasePrefetchPagedAttributes::check(p, true));
 }
 
 TEST(PropertiesTest, filter_threshold_setting) {

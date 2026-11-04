@@ -488,6 +488,39 @@ TEST_F(RankSetupTest, compilation) {
     }
 }
 
+TEST_F(RankSetupTest, second_phase_attributes_are_detected) {
+    using Names = std::vector<std::string>;
+    using search::fef::FieldType;
+    IndexEnvironment env;
+    for (const auto* name : {"a", "b", "c", "d"}) {
+        env.addField(FieldType::ATTRIBUTE, FieldInfo::CollectionType::SINGLE, name);
+    }
+    env.addField(FieldType::INDEX, FieldInfo::CollectionType::SINGLE, "idx");
+    {
+        RankSetup rs(_factory, env);
+        rs.setFirstPhaseRank("staticrank(c)");
+        rs.setSecondPhaseRank("rankingExpression(\"staticrank(b)+staticrank(a)+staticrank(b)\")");
+        rs.add_match_feature("staticrank(d)");
+        ASSERT_TRUE(rs.compile()) << rs.getJoinedWarnings();
+        EXPECT_EQ(Names({"b", "a"}), rs.get_second_phase_attributes());
+    }
+    {
+        // parameters of features given as parameters, and only attribute fields
+        RankSetup rs(_factory, env);
+        rs.setFirstPhaseRank("value(1)");
+        rs.setSecondPhaseRank("mysum(staticrank(d),staticrank(idx),staticrank(unknown))");
+        ASSERT_TRUE(rs.compile()) << rs.getJoinedWarnings();
+        EXPECT_EQ(Names({"d"}), rs.get_second_phase_attributes());
+    }
+    {
+        // no second phase
+        RankSetup rs(_factory, env);
+        rs.setFirstPhaseRank("staticrank(a)");
+        ASSERT_TRUE(rs.compile());
+        EXPECT_EQ(Names(), rs.get_second_phase_attributes());
+    }
+}
+
 TEST_F(RankSetupTest, rank_setup) {
     using namespace search::fef::indexproperties;
     IndexEnvironment env;
@@ -533,6 +566,7 @@ TEST_F(RankSetupTest, rank_setup) {
     env.getProperties().add(matching::WeakAndStopWordAdjustLimit::NAME, "0.05");
     env.getProperties().add(matching::WeakAndStopWordDropLimit::NAME, "0.5");
     env.getProperties().add(matching::WeakAndAllowDropAll::NAME, "true");
+    env.getProperties().add(rank::SecondPhasePrefetchPagedAttributes::NAME, "true");
 
     RankSetup rs(_factory, env);
     RankSetup empty_rs(_factory, empty_env);
@@ -587,6 +621,8 @@ TEST_F(RankSetupTest, rank_setup) {
     EXPECT_EQ(rs.get_weakand_stop_word_adjust_limit(), 0.05);
     EXPECT_EQ(rs.get_weakand_stop_word_drop_limit(), 0.5);
     EXPECT_EQ(rs.get_weakand_allow_drop_all(), true);
+    EXPECT_FALSE(empty_rs.get_second_phase_prefetch_paged_attributes());
+    EXPECT_TRUE(rs.get_second_phase_prefetch_paged_attributes());
 }
 
 bool RankSetupTest::testExecution(const std::string& initRank, feature_t initScore, const std::string& finalRank,

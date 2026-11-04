@@ -470,6 +470,7 @@ struct MockAttributeVector : NotImplementedAttribute {
         _prefetched.assign(docids.begin(), docids.end());
         return {docids.size(), 100 * docids.size()};
     }
+    bool supports_prefetch_docs() const noexcept override { return true; }
 
     bool is_sortable() const noexcept override { return true; }
     std::unique_ptr<ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
@@ -602,6 +603,7 @@ TEST(ImportedAttributeVectorTest, prefetch_docs_is_forwarded_with_remapped_lids)
     SerializeFixture<SingleStringAttrFixture> f;
     // child lid 2 -> parent lid 3, child lid 4 -> parent lid 7, child lids 1 and 5 have no reference,
     // and child lid 100 is beyond the docid limit
+    EXPECT_TRUE(f.get_imported_attr()->supports_prefetch_docs());
     auto result = f.get_imported_attr()->prefetch_docs(std::vector<uint32_t>{1, 2, 4, 5, 100});
     EXPECT_EQ(std::vector<uint32_t>({3, 7}), f.mock_target->_prefetched);
     EXPECT_EQ(2u, result.ranges);

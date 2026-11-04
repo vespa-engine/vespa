@@ -281,7 +281,7 @@ bool TensorAttribute::supports_get_serialized_tensor_ref() const {
 }
 
 TensorAttribute::PrefetchResult TensorAttribute::prefetch_docs(std::span<const DocId> docids) const {
-    if (!get_memory_allocator()) {
+    if (!supports_prefetch_docs()) {
         // Not paged, tensors are already in memory.
         return {};
     }

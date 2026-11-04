@@ -75,6 +75,7 @@ public:
     bool isImported() const override;
     bool isUndefined(DocId doc) const override;
     PrefetchResult prefetch_docs(std::span<const DocId> docids) const override;
+    bool           supports_prefetch_docs() const noexcept override;
     template <typename MultiValueType>
     const IMultiValueReadView<MultiValueType>* make_read_view_helper(MultiValueTag<MultiValueType> tag,
                                                                      vespalib::Stash&              stash) const;
