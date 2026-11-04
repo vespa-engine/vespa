@@ -156,11 +156,13 @@ vespa_add_library(searchlib_attribute OBJECT
     singlestringpostattribute.cpp
     sourceselector.cpp
     string_fuzzy_matcher.cpp
+    string_fuzzy_search_helper.cpp
     string_matcher.cpp
-    string_regex_matcher.cpp
     string_posting_search_context.cpp
     string_range_matcher.cpp
     string_range_search_helper.cpp
+    string_regex_matcher.cpp
+    string_regex_search_helper.cpp
     string_search_context.cpp
     string_search_helper.cpp
     string_sort_blob_writer.cpp
