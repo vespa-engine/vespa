@@ -391,6 +391,8 @@ def test_scope_spotchecks(grammar: dict) -> tuple[bool, list[str]]:
         # Tensor keyword → keyword.control (begin capture)
         ("tensor<float>(x[384])", "tensor", "keyword.control.vespa", "tensor-type"),
         ("tensor(x[384])", "tensor", "keyword.control.vespa", "tensor-type"),
+        # Dimension size → integer, like a numeric literal (Rouge maps it to Literal.Number.Integer)
+        ("tensor(x[384])", "384", "constant.numeric.integer.vespa", "tensor-type"),
         # Comment # → punctuation
         ("# comment", "#", "punctuation.definition.comment.vespa", "comment"),
         # Variable $ → punctuation

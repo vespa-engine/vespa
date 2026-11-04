@@ -176,7 +176,7 @@
           "match": "\\[(\\d+)\\]",
           "captures": {
             "1": {
-              "name": "constant.numeric.vespa"
+              "name": "constant.numeric.integer.vespa"
             }
           }
         },
