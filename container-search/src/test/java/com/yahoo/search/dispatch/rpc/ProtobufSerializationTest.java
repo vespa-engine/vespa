@@ -53,7 +53,7 @@ public class ProtobufSerializationTest {
         assertEquals("\"\\006\\001\\001\\001x\\001?\\231\\231\\232\"",
                 contentsOf(request1.getTensorFeatureOverrides(1).getValue()));
         assertFalse(request1.hasProfiling());
-        assertTrue(request1.getMetadata().getTraceContextMap().isEmpty());
+        assertTrue(request1.getTelemetryMetadata().getTraceContextMap().isEmpty());
 
         query.prepare(); // calling prepare() moves "overrides" to "features" - content stays the same
         SearchProtocol.SearchRequest request2 = ProtobufSerialization.createSearchRequestBuilder(query, 9, "serverId", 1.0, 0.5).build();
@@ -66,14 +66,14 @@ public class ProtobufSerializationTest {
                 contentsOf(request2.getTensorRankProperties(1).getValue()));
         assertEquals(0, request2.getFeatureOverridesCount());
         assertEquals(0, request2.getTensorFeatureOverridesCount());
-        assertTrue(request2.getMetadata().getTraceContextMap().isEmpty());
+        assertTrue(request2.getTelemetryMetadata().getTraceContextMap().isEmpty());
 
         var builder3 = ProtobufSerialization.createSearchRequestBuilder(query, 9, "serverId", 1.0, 0.5);
         SpanRecorder recorder = SpanRecorder.underParentSpan("search");
         AtomicReference<SearchProtocol.SearchRequest> request3Holder = new AtomicReference<>();
         recorder.record(() -> request3Holder.set(ProtobufSerialization.createSearchRequest(builder3)));
         var request3 = request3Holder.get();
-        assertFalse(request3.getMetadata().getTraceContextMap().isEmpty());
+        assertFalse(request3.getTelemetryMetadata().getTraceContextMap().isEmpty());
     }
 
     @Test
@@ -87,13 +87,13 @@ public class ProtobufSerializationTest {
         assertEquals(63, bytes.length);
 
         var request = ProtobufSerialization.createDocsumRequest(builder, List.of(hit));
-        assertTrue(request.getMetadata().getTraceContextMap().isEmpty());
+        assertTrue(request.getTelemetryMetadata().getTraceContextMap().isEmpty());
 
         SpanRecorder recorder = SpanRecorder.underParentSpan("docsum");
         AtomicReference<SearchProtocol.DocsumRequest> request2Holder = new AtomicReference<>();
         recorder.record(() -> request2Holder.set(ProtobufSerialization.createDocsumRequest(builder, List.of(hit))));
         var request2 = request2Holder.get();
-        assertFalse(request2.getMetadata().getTraceContextMap().isEmpty());
+        assertFalse(request2.getTelemetryMetadata().getTraceContextMap().isEmpty());
     }
 
     private String contentsOf(ByteString property) {

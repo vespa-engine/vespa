@@ -22,7 +22,7 @@
 LOG_SETUP(".engine.proto_rpc_adapter");
 
 using opentelemetry::trace::Provider;
-using vespa_opentelemetry::ProtoTelemetryCarrier;
+using vespa_opentelemetry::ProtoTelemetryServerCarrier;
 using vespa_opentelemetry::RpcServerTools;
 
 namespace search::engine {
@@ -105,8 +105,8 @@ struct SearchRequestDecoder : SearchRequest::Source::Decoder {
             return {};
         }
         // Note: Decoding here is delayed
-        ProtoTelemetryCarrier carrier(msg.metadata().trace_context());
-        auto                  request_context = RpcServerTools::make_optional_request_context(carrier);
+        ProtoTelemetryServerCarrier carrier(msg.telemetry_metadata().trace_context());
+        auto                        request_context = RpcServerTools::make_optional_request_context(carrier);
         if (request_context.has_value()) {
             auto provider = Provider::GetTracerProvider();
             auto tracer = provider->GetTracer(proton_rpc_server);
@@ -163,8 +163,8 @@ struct DocsumRequestDecoder : DocsumRequest::Source::Decoder {
             return std::unique_ptr<DocsumRequest>(nullptr);
         }
         // Note: Decoding here is delayed
-        ProtoTelemetryCarrier carrier(msg.metadata().trace_context());
-        auto                  request_context = RpcServerTools::make_optional_request_context(carrier);
+        ProtoTelemetryServerCarrier carrier(msg.telemetry_metadata().trace_context());
+        auto                        request_context = RpcServerTools::make_optional_request_context(carrier);
         if (request_context.has_value()) {
             auto provider = Provider::GetTracerProvider();
             auto tracer = provider->GetTracer(proton_rpc_server);
@@ -296,8 +296,8 @@ void ProtoRpcAdapter::rpc_ping(FRT_RPCRequest* rpc) {
     ProtoMonitorRequest msg;
     if (decode_message(*rpc->GetParams(), msg)) {
         // Note: Decoding here is delayed
-        ProtoTelemetryCarrier carrier(msg.metadata().trace_context());
-        auto                  request_context = RpcServerTools::make_optional_request_context(carrier);
+        ProtoTelemetryServerCarrier carrier(msg.telemetry_metadata().trace_context());
+        auto                        request_context = RpcServerTools::make_optional_request_context(carrier);
         if (request_context.has_value()) {
             auto provider = Provider::GetTracerProvider();
             auto tracer = provider->GetTracer(proton_rpc_server);

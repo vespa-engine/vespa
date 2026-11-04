@@ -182,15 +182,15 @@ public class ProtobufSerialization {
     }
 
     private static void mergeToSearchRequestFromTracing(SearchProtocol.SearchRequest.Builder builder) {
-        var metadataBuilder = createTelemetryMetadataBuilder();
+        var metadataBuilder = createTelemetryMetadataBuilderIfRecording();
         if (metadataBuilder != null) {
-            builder.setMetadata(metadataBuilder);
+            builder.setTelemetryMetadata(metadataBuilder);
         } else {
-            builder.clearMetadata();
+            builder.clearTelemetryMetadata();
         }
     }
 
-    private static SearchProtocol.TelemetryMetadata.Builder createTelemetryMetadataBuilder() {
+    private static SearchProtocol.TelemetryMetadata.Builder createTelemetryMetadataBuilderIfRecording() {
         var context = Context.current();
         var span = Span.fromContext(context);
         if (!span.isRecording()) {
@@ -200,11 +200,11 @@ public class ProtobufSerialization {
         var metadataBuilder = SearchProtocol.TelemetryMetadata.newBuilder();
 
         var propagator = telemetry.textMapPropagator();
-        propagator.inject(context, metadataBuilder, SetTraceContext);
+        propagator.inject(context, metadataBuilder, traceContextSetter);
         return metadataBuilder;
     }
 
-    private static final TextMapSetter<SearchProtocol.TelemetryMetadata.Builder> SetTraceContext =
+    private static final TextMapSetter<SearchProtocol.TelemetryMetadata.Builder> traceContextSetter =
         (builder, key, value) -> {
             if (builder != null) {
                 builder.putTraceContext(key, value);
@@ -256,7 +256,6 @@ public class ProtobufSerialization {
 
     static SearchProtocol.DocsumRequest createDocsumRequest(SearchProtocol.DocsumRequest.Builder builder, List<FastHit> documents) {
         builder.clearGlobalIds();
-        builder.clearMetadata();
         for (var hit : documents) {
             builder.addGlobalIds(ByteString.copyFrom(hit.getRawGlobalId()));
         }
@@ -269,11 +268,11 @@ public class ProtobufSerialization {
     }
 
     private static void mergeToDocsumRequestFromTracing(SearchProtocol.DocsumRequest.Builder builder) {
-        var metadataBuilder = createTelemetryMetadataBuilder();
+        var metadataBuilder = createTelemetryMetadataBuilderIfRecording();
         if (metadataBuilder != null) {
-            builder.setMetadata(metadataBuilder);
+            builder.setTelemetryMetadata(metadataBuilder);
         } else {
-            builder.clearMetadata();
+            builder.clearTelemetryMetadata();
         }
     }
 
@@ -424,11 +423,11 @@ public class ProtobufSerialization {
     }
 
     static byte[] serializeMonitorRequest(SearchProtocol.MonitorRequest.Builder builder) {
-        var metadataBuilder = createTelemetryMetadataBuilder();
+        var metadataBuilder = createTelemetryMetadataBuilderIfRecording();
         if (metadataBuilder != null) {
-            builder.setMetadata(metadataBuilder);
+            builder.setTelemetryMetadata(metadataBuilder);
         } else {
-            builder.clearMetadata();
+            builder.clearTelemetryMetadata();
         }
         return builder.build().toByteArray();
     }

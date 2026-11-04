@@ -26,7 +26,7 @@ Context RpcServerTools::make_request_context(const TextMapCarrier& carrier) {
     return propagator->Extract(carrier, current_context);
 }
 
-std::optional<Context> RpcServerTools::make_optional_request_context(const ProtoTelemetryCarrier& carrier) {
+std::optional<Context> RpcServerTools::make_optional_request_context(const ProtoTelemetryServerCarrier& carrier) {
     std::optional<Context> request_context;
     if (!carrier.empty()) {
         request_context.emplace(make_request_context(carrier));

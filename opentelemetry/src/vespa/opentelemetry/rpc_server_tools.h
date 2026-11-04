@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "proto_telemetry_carrier.h"
+#include "proto_telemetry_server_carrier.h"
 
 #include <opentelemetry/context/context.h>
 #include <opentelemetry/trace/tracer.h>
@@ -23,7 +23,8 @@ public:
     using TextMapCarrier = opentelemetry::context::propagation::TextMapCarrier;
     using Tracer = opentelemetry::trace::Tracer;
     [[nodiscard]] static Context make_request_context(const TextMapCarrier& carrier);
-    [[nodiscard]] static std::optional<Context> make_optional_request_context(const ProtoTelemetryCarrier& carrier);
+    [[nodiscard]] static std::optional<Context>
+    make_optional_request_context(const ProtoTelemetryServerCarrier& carrier);
     [[nodiscard]] static std::shared_ptr<Span> make_server_span(const Context& request_context, Tracer& tracer,
                                                                 const std::string& span_name);
 };

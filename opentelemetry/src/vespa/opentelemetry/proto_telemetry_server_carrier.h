@@ -11,12 +11,12 @@ namespace vespa_opentelemetry {
  * Class for getting key/value pairs from a protobuf map when setting up a new opentelemetry
  * context associated with an rpc request.
  */
-class ProtoTelemetryCarrier : public opentelemetry::context::propagation::TextMapCarrier {
+class ProtoTelemetryServerCarrier : public opentelemetry::context::propagation::TextMapCarrier {
 public:
     using Map = google::protobuf::Map<std::string, std::string>;
 
-    explicit ProtoTelemetryCarrier(const Map& map) noexcept;
-    ~ProtoTelemetryCarrier();
+    explicit ProtoTelemetryServerCarrier(const Map& map) noexcept;
+    ~ProtoTelemetryServerCarrier();
 
     bool empty() const noexcept;
     opentelemetry::nostd::string_view Get(opentelemetry::nostd::string_view key) const noexcept override;

@@ -27,7 +27,7 @@ message SearchRequest {
     int32 profile_depth = 18; // new meaning: default ProfilingParams.depth
     Profiling profiling = 19;
     QueryTree query_tree = 20; // to replace blob above
-    TelemetryMetadata metadata = 21;
+    TelemetryMetadata telemetry_metadata = 21;
 }
 
 message Profiling {
@@ -109,7 +109,7 @@ message DocsumRequest {
     repeated bytes global_ids = 15;
     repeated string fields = 16;
     QueryTree query_tree = 17; // to replace blob above
-    TelemetryMetadata metadata = 18;
+    TelemetryMetadata telemetry_metadata = 18;
 }
 
 message DocsumReply {
@@ -118,7 +118,7 @@ message DocsumReply {
 }
 
 message MonitorRequest {
-    TelemetryMetadata metadata = 1;
+    TelemetryMetadata telemetry_metadata = 1;
 }
 
 message MonitorReply {
