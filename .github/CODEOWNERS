@@ -24,7 +24,7 @@
 /config-application-package/ @hmusum
 /config-class-plugin/ @hmusum
 /config-lib/ @gjoranv
-/config-model/ @hmusum @gjoranv
+/config-model/ @hmusum @arnej27959
 /config-model-api/ @hmusum
 /config-model-fat/ @gjoranv @hmusum
 /config-provisioning/ @hmusum @bratseth
