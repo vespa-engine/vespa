@@ -14,6 +14,8 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutionException;
@@ -21,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -31,13 +34,213 @@ import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.CLOSED;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.HALF_OPEN;
 import static ai.vespa.feed.client.FeedClient.CircuitBreaker.State.OPEN;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static ai.vespa.feed.client.impl.ShutdownTestSupport.awaitLatch;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HttpRequestStrategyTest {
+
+    @Test
+    void concurrentDestroyWaitsForTransportCleanup() throws Exception {
+        // A CAS-only destroy lets another caller report success before transport cleanup finishes.
+        CountDownLatch closeEntered = new CountDownLatch(1);
+        CountDownLatch releaseClose = new CountDownLatch(1);
+        MockCluster cluster = new MockCluster() {
+            @Override public void close() {
+                closeEntered.countDown();
+                awaitLatch(releaseClose);
+            }
+        };
+        HttpRequestStrategy strategy = new HttpRequestStrategy(
+                new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123"))), () -> cluster);
+        var callers = Executors.newFixedThreadPool(2);
+        var first = callers.submit(strategy::destroy);
+        try {
+            assertTrue(closeEntered.await(10, TimeUnit.SECONDS));
+            var second = callers.submit(strategy::destroy);
+            assertThrows(TimeoutException.class, () -> second.get(100, TimeUnit.MILLISECONDS),
+                         "concurrent destroy must wait for transport cleanup");
+            releaseClose.countDown();
+            first.get(10, TimeUnit.SECONDS);
+            second.get(10, TimeUnit.SECONDS);
+        } finally {
+            releaseClose.countDown();
+            callers.shutdown();
+            assertTrue(callers.awaitTermination(10, TimeUnit.SECONDS));
+        }
+    }
+
+    @Test
+    void transportCleanupFailureDoesNotLeaveResultWorkerRunning() throws Exception {
+        // A transport close exception must not skip the remaining owned resource cleanup.
+        RuntimeException injected = new IllegalStateException("injected transport cleanup failure");
+        AtomicReference<Thread> resultWorker = new AtomicReference<>();
+        Cluster cluster = new Cluster() {
+            @Override public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
+                vessel.complete(HttpResponse.of(200, null));
+            }
+            @Override public void close() { throw injected; }
+        };
+        CircuitBreaker breaker = new CircuitBreaker() {
+            @Override public State state() { return CLOSED; }
+            @Override public void success() { resultWorker.set(Thread.currentThread()); }
+        };
+        HttpRequestStrategy strategy = new HttpRequestStrategy(
+                new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123"))).setCircuitBreaker(breaker),
+                () -> cluster);
+        strategy.enqueue(DocumentId.of("ns", "type", "1"),
+                         new HttpRequest("DELETE", "/", "", null, null, Duration.ofSeconds(1), () -> 0))
+                .get(10, TimeUnit.SECONDS);
+        strategy.await();
+        assertSame(injected, assertThrows(CompletionException.class, strategy::destroy).getCause());
+        assertSame(injected, assertThrows(CompletionException.class, strategy::destroy).getCause());
+        resultWorker.get().join(1000);
+        assertFalse(resultWorker.get().isAlive(), "result worker must terminate despite transport cleanup failure");
+    }
+
+    @Test
+    void abortDoesNotDispatchQueuedRequestsAfterBlockedDispatchReturns() throws Exception {
+        // The inner dispatch loop must observe abort before taking another queued request.
+        CountDownLatch dispatchEntered = new CountDownLatch(1);
+        CountDownLatch releaseDispatch = new CountDownLatch(1);
+        CountDownLatch extraDispatch = new CountDownLatch(1);
+        AtomicInteger dispatched = new AtomicInteger();
+        Cluster cluster = new Cluster() {
+            @Override public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
+                if (dispatched.incrementAndGet() == 1) {
+                    dispatchEntered.countDown();
+                    awaitLatch(releaseDispatch);
+                } else extraDispatch.countDown();
+                vessel.completeExceptionally(new FeedException("injected transport stop"));
+            }
+        };
+        HttpRequestStrategy strategy = new HttpRequestStrategy(
+                new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123"))), () -> cluster);
+        HttpRequest request = new HttpRequest("DELETE", "/", "", null, null, Duration.ofSeconds(1), () -> 0);
+        var first = strategy.enqueue(DocumentId.of("ns", "type", "1"), request);
+        assertTrue(dispatchEntered.await(10, TimeUnit.SECONDS));
+        var queued = strategy.enqueue(DocumentId.of("ns", "type", "2"), request);
+        var cleanup = Executors.newSingleThreadExecutor();
+        var destroyed = cleanup.submit(strategy::destroy);
+        try {
+            assertThrows(ExecutionException.class, () -> first.get(10, TimeUnit.SECONDS));
+            assertThrows(ExecutionException.class, () -> queued.get(10, TimeUnit.SECONDS));
+            releaseDispatch.countDown();
+            destroyed.get(10, TimeUnit.SECONDS);
+            assertFalse(extraDispatch.await(100, TimeUnit.MILLISECONDS),
+                        "abort must not dispatch requests still queued when destruction began");
+        } finally {
+            releaseDispatch.countDown();
+            cleanup.shutdown();
+            assertTrue(cleanup.awaitTermination(10, TimeUnit.SECONDS));
+        }
+    }
+
+    @Test
+    void transportCleanupFailureDoesNotLeaveResetAccountingWorkerRunning() throws Exception {
+        // A throwing current transport must not strand the reset-accounting executor.
+        AtomicReference<CircuitBreaker.State> state = new AtomicReference<>(CLOSED);
+        AtomicReference<CompletableFuture<HttpResponse>> response = new AtomicReference<>();
+        AtomicReference<Thread> accountingWorker = new AtomicReference<>();
+        CountDownLatch dispatched = new CountDownLatch(1);
+        CountDownLatch replacementCreated = new CountDownLatch(1);
+        CountDownLatch originalClosed = new CountDownLatch(1);
+        RuntimeException injected = new IllegalStateException("replacement transport close failed");
+        Cluster original = new Cluster() {
+            @Override public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
+                response.set(vessel);
+                dispatched.countDown();
+            }
+            @Override public void close() {
+                accountingWorker.set(Thread.currentThread());
+                originalClosed.countDown();
+            }
+        };
+        Cluster replacement = new Cluster() {
+            @Override public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
+                vessel.complete(HttpResponse.of(200, null));
+            }
+            @Override public void close() { throw injected; }
+        };
+        AtomicInteger created = new AtomicInteger();
+        HttpRequestStrategy strategy = new HttpRequestStrategy(
+                new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123"))).setCircuitBreaker(state::get),
+                () -> {
+                    if (created.getAndIncrement() == 0) return original;
+                    replacementCreated.countDown();
+                    return replacement;
+                });
+        var result = strategy.enqueue(DocumentId.of("ns", "type", "1"),
+                new HttpRequest("DELETE", "/", "", null, null, Duration.ofSeconds(1), () -> 0));
+        assertTrue(dispatched.await(10, TimeUnit.SECONDS));
+        state.set(HALF_OPEN);
+        assertTrue(replacementCreated.await(10, TimeUnit.SECONDS));
+        state.set(CLOSED);
+        response.get().complete(HttpResponse.of(200, null));
+        result.get(10, TimeUnit.SECONDS);
+        assertTrue(originalClosed.await(10, TimeUnit.SECONDS));
+        strategy.await();
+        assertSame(injected, assertThrows(CompletionException.class, strategy::destroy).getCause());
+        accountingWorker.get().join(1000);
+        assertFalse(accountingWorker.get().isAlive(), "reset accounting worker must terminate despite transport close failure");
+    }
+
+    @Test
+    void capacityWaiterCannotAcquireOrOfferAfterAbort() throws Exception {
+        // A waiter already registered before abort must not acquire a new slot after cleanup.
+        CountDownLatch capacityEntered = new CountDownLatch(1);
+        CountDownLatch releaseCapacity = new CountDownLatch(1);
+        CountDownLatch dispatched = new CountDownLatch(2);
+        AtomicReference<Thread> waiterThread = new AtomicReference<>();
+        AtomicBoolean pause = new AtomicBoolean(true);
+        AtomicInteger sent = new AtomicInteger();
+        Throttler throttler = new FixedThrottler() {
+            @Override public long targetInflight() {
+                if (Thread.currentThread() == waiterThread.get() && pause.compareAndSet(true, false)) {
+                    capacityEntered.countDown();
+                    awaitLatch(releaseCapacity);
+                }
+                return 2;
+            }
+            @Override public void sent(long inflight, CompletableFuture<HttpResponse> response) { sent.incrementAndGet(); }
+        };
+        List<CompletableFuture<HttpResponse>> responses = new CopyOnWriteArrayList<>();
+        Cluster cluster = new Cluster() {
+            @Override public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
+                responses.add(vessel);
+                dispatched.countDown();
+            }
+            @Override public void close() {
+                responses.forEach(response -> response.completeExceptionally(new FeedException("transport stopped")));
+            }
+        };
+        HttpRequestStrategy strategy = new HttpRequestStrategy(
+                new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123"))), () -> cluster, throttler);
+        HttpRequest request = new HttpRequest("DELETE", "/", "", null, null, Duration.ofSeconds(1), () -> 0);
+        strategy.enqueue(DocumentId.of("ns", "type", "1"), request);
+        strategy.enqueue(DocumentId.of("ns", "type", "2"), request);
+        assertTrue(dispatched.await(10, TimeUnit.SECONDS));
+        AtomicReference<CompletableFuture<HttpResponse>> waitingResult = new AtomicReference<>();
+        Thread waiter = new Thread(() -> {
+            waiterThread.set(Thread.currentThread());
+            waitingResult.set(strategy.enqueue(DocumentId.of("ns", "type", "3"), request));
+        });
+        waiter.start();
+        try {
+            assertTrue(capacityEntered.await(10, TimeUnit.SECONDS));
+            strategy.destroy();
+        } finally {
+            releaseCapacity.countDown();
+            waiter.join(10000);
+        }
+        assertFalse(waiter.isAlive());
+        assertThrows(ExecutionException.class, () -> waitingResult.get().get(10, TimeUnit.SECONDS));
+        assertEquals(2, sent.get(), "aborted capacity waiter must not acquire and offer a new slot");
+    }
 
     @Test
     void testConcurrency() throws IOException {
@@ -333,6 +536,13 @@ class HttpRequestStrategyTest {
                      assertThrows(ExecutionException.class, retried::get).getMessage());
         assertEquals("ai.vespa.feed.client.FeedException: Operation aborted",
                      assertThrows(ExecutionException.class, strategy.enqueue(id1, request)::get).getMessage());
+    }
+
+    private static class FixedThrottler implements Throttler {
+        @Override public void sent(long inflight, CompletableFuture<HttpResponse> response) { }
+        @Override public void success() { }
+        @Override public void throttled(long inflight) { }
+        @Override public long targetInflight() { return 2; }
     }
 
     static class MockCluster implements Cluster {
