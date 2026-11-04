@@ -44,9 +44,37 @@ template <typename P> bool cache<P>::SizeConstrainedLru::try_replace_and_update_
     auto* maybe_existing = Lru::find_and_ref(key); // Bump to LRU head iff already existing
     if (maybe_existing) {
         const auto new_kv_size = _owner.calcSize(key, value);
-        sub_size_bytes(_owner.calcSize(key, *maybe_existing));
+        const auto old_kv_size = _owner.calcSize(key, *maybe_existing);
+        sub_size_bytes(old_kv_size);
         add_size_bytes(new_kv_size);
         *maybe_existing = std::move(value);
+        if (new_kv_size > old_kv_size) {
+            // Growing an entry may push the segment beyond its byte capacity. Evict from
+            // the LRU tail until we're within limits.
+            // For the protected segment, evicted entries are demoted to the probationary segment.
+            Lru::trim();
+        }
+        return true;
+    }
+    return false;
+}
+
+template <typename P> bool cache<P>::SizeConstrainedLru::try_update(const KeyT& key, ValueT& value) {
+    // Updates are not considered evidence of future reads, so replacing an existing
+    // entry deliberately does _not_ bump it to the LRU head.
+    auto iter = Lru::find_no_ref(key);
+    if (iter != Lru::end()) {
+        const auto new_kv_size = _owner.calcSize(key, value);
+        const auto old_kv_size = _owner.calcSize(key, *iter);
+        sub_size_bytes(old_kv_size);
+        add_size_bytes(new_kv_size);
+        *iter = std::move(value);
+        if (new_kv_size > old_kv_size) {
+            // Growing an entry may push the segment beyond its byte capacity. Evict from
+            // the LRU tail (which may be the replaced entry itself) until we're within limits.
+            // For the protected segment, evicted entries are demoted to the probationary segment.
+            Lru::trim();
+        }
         return true;
     }
     return false;
@@ -353,6 +381,19 @@ template <typename P> void cache<P>::write(const K& key, V value) {
             increment_stat(_lfu_dropped, guard);
         }
         increment_stat(_write, guard); // TODO only increment when not updating?
+    }
+}
+
+template <typename P> void cache<P>::update(const K& key, V value) {
+    std::lock_guard storeGuard(getLock(key));
+    _store.write(key, value);
+    {
+        std::lock_guard guard(_hashLock);
+        if (_probationary_segment.try_update(key, value)) {
+            increment_stat(_update, guard);
+        } else if (multi_segment() && _protected_segment.try_update(key, value)) {
+            increment_stat(_update, guard);
+        }
     }
 }
 

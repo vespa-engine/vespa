@@ -118,7 +118,18 @@ template <typename P> class cache {
         // implies the mapping has been updated by consuming `value` (i.e. its contents
         // has been std::move()'d away and it is now in a logically empty state).
         // Otherwise, both the mapping and `value` remains unmodified and false is returned.
+        // Replacing an existing entry also updates its LRU position. If the entry grows,
+        // the segment is trimmed to stay within its capacity (which may evict the entry itself).
         [[nodiscard]] bool try_replace_and_update_size(const KeyT& key, ValueT& value);
+
+        // Returns true iff `key` existed in the mapping prior to the call, which also
+        // implies the mapping has been updated by consuming `value` (i.e. its contents
+        // has been std::move()'d away and it is now in a logically empty state).
+        // Otherwise, both the mapping and `value` remains unmodified and false is returned.
+        // Updating an existing entry does _not_ update its LRU position. If the entry grows,
+        // the segment is trimmed to stay within its capacity (which may evict the entry itself).
+        [[nodiscard]] bool try_update(const KeyT& key, ValueT& value);
+
         // Iff `key` was present in the mapping prior to the call, its entry is removed
         // from the mapping and true is returned. Otherwise, the mapping remains unmodified
         // and false is returned.
@@ -301,6 +312,11 @@ public:
      * Object is then put at head of LRU list.
      */
     void write(const K& key, V value);
+
+    /**
+     * Update the cache (if present) and write through to backing store.
+     */
+    void update(const K& key, V value);
 
     /**
      * Tell if an object with given key exists in the cache.

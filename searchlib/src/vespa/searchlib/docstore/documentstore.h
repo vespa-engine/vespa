@@ -106,7 +106,8 @@ public:
 private:
     bool useCache() const;
     Config::UpdateStrategy updateStrategy() const;
-    void writeThroughCache(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream& stream);
+    enum class CacheOp { WRITE, UPDATE };
+    void writeThroughCache(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream& stream, CacheOp cacheOp);
 
     template <class> class WrapVisitor;
     class WrapVisitorProgress;
