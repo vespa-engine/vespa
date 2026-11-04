@@ -2,8 +2,6 @@
 
 #include "string_regex_search_helper.h"
 
-#include "dfa_fuzzy_matcher.h"
-
 #include <vespa/check_require.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 

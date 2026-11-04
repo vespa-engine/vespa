@@ -12,9 +12,7 @@
 namespace search::attribute {
 
 StringRegexMatcher::StringRegexMatcher(std::unique_ptr<QueryTermSimple> query_term, bool cased)
-    : _query_term(static_cast<QueryTermUCS4*>(query_term.release())),
-      _helper(*_query_term, cased, vespalib::FuzzyMatchingAlgorithm::BruteForce) {
-    CHECK(_helper.isRegex());
+    : _query_term(static_cast<QueryTermUCS4*>(query_term.release())), _helper(*_query_term, cased) {
 }
 
 StringRegexMatcher::StringRegexMatcher(StringRegexMatcher&&) noexcept = default;
@@ -35,8 +33,8 @@ bool StringRegexMatcher::lookup_in_dictionary(const EnumStoreT<const char*>& enu
 
 bool StringRegexMatcher::use_dictionary_entry(const EnumStoreT<const char*>&  enum_store,
                                               EnumPostingTree::ConstIterator& it) const {
-    if (_helper.getRegex().valid() &&
-        _helper.getRegex().partial_match(enum_store.get_value(it.getKey().load_acquire())))
+    if (_helper.get_regex().valid() &&
+        _helper.get_regex().partial_match(enum_store.get_value(it.getKey().load_acquire())))
     {
         return true;
     }

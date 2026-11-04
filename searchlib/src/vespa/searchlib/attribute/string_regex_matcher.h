@@ -3,7 +3,7 @@
 #pragma once
 
 #include "i_enum_store_dictionary.h"
-#include "string_search_helper.h"
+#include "string_regex_search_helper.h"
 
 #include <vespa/searchlib/query/query_term_ucs4.h>
 
@@ -27,8 +27,8 @@ class IDictionaryLookup;
  */
 class StringRegexMatcher {
 private:
-    std::unique_ptr<QueryTermUCS4> _query_term;
-    attribute::StringSearchHelper  _helper;
+    std::unique_ptr<QueryTermUCS4>     _query_term;
+    attribute::StringRegexSearchHelper _helper;
 
 public:
     StringRegexMatcher(std::unique_ptr<QueryTermSimple> qTerm, bool cased);
@@ -36,7 +36,7 @@ public:
     ~StringRegexMatcher();
 
     [[nodiscard]] bool is_valid() const { return _query_term && (!_query_term->empty()); }
-    [[nodiscard]] bool match(const char* src) const { return _helper.isMatch(src); }
+    [[nodiscard]] bool match(const char* src) const { return _helper.is_match(src); }
     [[nodiscard]] const QueryTermUCS4* get_query_term_ptr() const noexcept { return _query_term.get(); }
 
     /*

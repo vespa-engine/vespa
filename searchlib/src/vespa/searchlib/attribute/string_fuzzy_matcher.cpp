@@ -15,7 +15,6 @@ StringFuzzyMatcher::StringFuzzyMatcher(std::unique_ptr<QueryTermSimple> query_te
                                        vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm)
     : _query_term(static_cast<QueryTermUCS4*>(query_term.release())),
       _helper(*_query_term, cased, fuzzy_matching_algorithm) {
-    CHECK(_helper.isFuzzy());
 }
 
 StringFuzzyMatcher::StringFuzzyMatcher(StringFuzzyMatcher&&) noexcept = default;
@@ -25,7 +24,7 @@ StringFuzzyMatcher::~StringFuzzyMatcher() = default;
 bool StringFuzzyMatcher::lookup_in_dictionary(const EnumStoreT<const char*>& enum_store,
                                               IDictionaryLookup&             dict) const {
     if (is_valid()) {
-        std::string prefix(_helper.getFuzzyMatcher().getPrefix());
+        std::string prefix(_helper.get_fuzzy_matcher().getPrefix());
         auto        comp = enum_store.prefix_lookup_comparator(prefix.c_str());
         dict.lookupRange(comp, comp);
         return true;
@@ -36,7 +35,7 @@ bool StringFuzzyMatcher::lookup_in_dictionary(const EnumStoreT<const char*>& enu
 
 bool StringFuzzyMatcher::use_dictionary_entry(const EnumStoreT<const char*>&  enum_store,
                                               EnumPostingTree::ConstIterator& it) const {
-    if (_helper.isCased()) {
+    if (_helper.is_cased()) {
         if (match(enum_store.get_value(it.getKey().load_acquire()))) {
             return true;
         }
