@@ -489,6 +489,12 @@ public:
      * @return what was hinted (nothing if not supported or not needed).
      */
     virtual PrefetchResult prefetch_docs(std::span<const DocId>) const { return {}; }
+
+    /**
+     * Returns true if this attribute has paged (file backed) memory and supports prefetching
+     * the values of documents with prefetch_docs().
+     */
+    virtual bool supports_prefetch_docs() const noexcept { return false; }
 };
 
 } // namespace search::attribute

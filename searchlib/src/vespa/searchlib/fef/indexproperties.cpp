@@ -6,7 +6,6 @@
 
 #include <vespa/vespalib/locale/c.h>
 
-#include <algorithm>
 #include <charconv>
 #include <limits>
 
@@ -109,37 +108,11 @@ std::string SecondPhase::lookup(const Properties& props) {
     return lookupString(props, NAME, DEFAULT_VALUE);
 }
 
-const std::string              SecondPhasePrefetchAttributes::NAME("vespa.rank.secondphase.prefetch_attributes");
-const std::vector<std::string> SecondPhasePrefetchAttributes::DEFAULT_VALUE;
+const std::string SecondPhasePrefetchPagedAttributes::NAME("vespa.rank.secondphase.prefetch_paged_attributes");
+const bool        SecondPhasePrefetchPagedAttributes::DEFAULT_VALUE(false);
 
-std::vector<std::string> SecondPhasePrefetchAttributes::lookup(const Properties& props) {
-    return lookup(props, DEFAULT_VALUE);
-}
-
-std::vector<std::string> SecondPhasePrefetchAttributes::lookup(const Properties&               props,
-                                                               const std::vector<std::string>& defaultValue) {
-    Property p = props.lookup(NAME);
-    if (!p.found()) {
-        return defaultValue;
-    }
-    std::vector<std::string> result;
-    for (uint32_t i = 0; i < p.size(); ++i) {
-        std::string_view value = p.getAt(i);
-        while (!value.empty()) {
-            auto start = value.find_first_not_of(", \t\n");
-            if (start == std::string_view::npos) {
-                break;
-            }
-            value.remove_prefix(start);
-            auto        end = std::min(value.find_first_of(", \t\n"), value.size());
-            std::string name(value.substr(0, end));
-            if (std::find(result.begin(), result.end(), name) == result.end()) {
-                result.push_back(std::move(name));
-            }
-            value.remove_prefix(end);
-        }
-    }
-    return result;
+bool SecondPhasePrefetchPagedAttributes::check(const Properties& props, bool fallback) {
+    return lookupBool(props, NAME, fallback);
 }
 
 } // namespace rank

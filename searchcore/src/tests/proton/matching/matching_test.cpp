@@ -99,14 +99,17 @@ template <typename Pred> bool wait_until(Pred pred) {
 }
 
 /*
- * Attribute that records the documents it is asked to prefetch.
+ * Attribute that pretends to be paged, and records the documents it is asked to prefetch.
  */
 class PrefetchProbeAttribute : public SingleInt32ExtAttribute {
     mutable std::mutex                         _lock;
     mutable std::vector<std::vector<uint32_t>> _calls;
+    std::atomic<bool>                          _paged{true};
 
 public:
     using SingleInt32ExtAttribute::SingleInt32ExtAttribute;
+    bool supports_prefetch_docs() const noexcept override { return _paged.load(std::memory_order_relaxed); }
+    void set_paged(bool value) noexcept { _paged.store(value, std::memory_order_relaxed); }
     PrefetchResult prefetch_docs(std::span<const DocId> docids) const override {
         std::lock_guard guard(_lock);
         _calls.emplace_back(docids.begin(), docids.end());
@@ -1340,7 +1343,7 @@ TEST_F(MatchingTest, require_that_reranking_is_performed_with_multi_threaded_mat
     }
 }
 
-TEST_F(MatchingTest, require_that_attributes_are_prefetched_for_reranked_hits_when_configured) {
+TEST_F(MatchingTest, require_that_paged_attributes_are_prefetched_for_reranked_hits_when_enabled) {
     using DocIds = std::vector<uint32_t>;
     auto& a2 = shared_state().a2();
     a2.take_prefetched();
@@ -1348,7 +1351,7 @@ TEST_F(MatchingTest, require_that_attributes_are_prefetched_for_reranked_hits_wh
         MyWorld world(shared_state());
         world.basicSetup();
         world.setupSecondPhaseRanking();
-        world.config.add(indexproperties::rank::SecondPhasePrefetchAttributes::NAME, "a2,not_an_attribute");
+        world.config.add(indexproperties::rank::SecondPhasePrefetchPagedAttributes::NAME, "true");
         world.basicResults();
         SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
         SearchReply::UP   reply = world.performSearch(*request, threads);
@@ -1359,7 +1362,7 @@ TEST_F(MatchingTest, require_that_attributes_are_prefetched_for_reranked_hits_wh
     }
 }
 
-TEST_F(MatchingTest, require_that_attributes_are_not_prefetched_unless_configured) {
+TEST_F(MatchingTest, require_that_attributes_are_not_prefetched_unless_enabled_and_paged) {
     using DocIds = std::vector<uint32_t>;
     auto& a2 = shared_state().a2();
     a2.take_prefetched();
@@ -1375,15 +1378,14 @@ TEST_F(MatchingTest, require_that_attributes_are_not_prefetched_unless_configure
         EXPECT_EQ(DocIds(), a2.take_prefetched());
     }
     {
-        // prefetch disabled by an empty query override
+        // prefetch disabled by a query override
         MyWorld world(shared_state());
         world.basicSetup();
         world.setupSecondPhaseRanking();
-        world.config.add(indexproperties::rank::SecondPhasePrefetchAttributes::NAME, "a2");
+        world.config.add(indexproperties::rank::SecondPhasePrefetchPagedAttributes::NAME, "true");
         world.basicResults();
         SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
-        request->propertiesMap.lookupCreate(MapNames::RANK)
-            .add(indexproperties::rank::SecondPhasePrefetchAttributes::NAME, "");
+        request->propertiesMap.lookupCreate(MapNames::RANK).add(indexproperties::rank::SecondPhasePrefetchPagedAttributes::NAME, "false");
         SearchReply::UP reply = world.performSearch(*request, 1);
         EXPECT_EQ(3u, world.matchingStats.docsReRanked());
         EXPECT_EQ(DocIds(), a2.take_prefetched());
@@ -1395,16 +1397,44 @@ TEST_F(MatchingTest, require_that_attributes_are_not_prefetched_unless_configure
         world.setupSecondPhaseRanking();
         world.basicResults();
         SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
-        request->propertiesMap.lookupCreate(MapNames::RANK)
-            .add(indexproperties::rank::SecondPhasePrefetchAttributes::NAME, "a2");
+        request->propertiesMap.lookupCreate(MapNames::RANK).add(indexproperties::rank::SecondPhasePrefetchPagedAttributes::NAME, "true");
         SearchReply::UP reply = world.performSearch(*request, 1);
         EXPECT_EQ(DocIds({700, 800, 900}), a2.take_prefetched());
+    }
+    {
+        // attribute used by second phase is not paged
+        a2.set_paged(false);
+        MyWorld world(shared_state());
+        world.basicSetup();
+        world.setupSecondPhaseRanking();
+        world.config.add(indexproperties::rank::SecondPhasePrefetchPagedAttributes::NAME, "true");
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        SearchReply::UP   reply = world.performSearch(*request, 1);
+        a2.set_paged(true);
+        EXPECT_EQ(3u, world.matchingStats.docsReRanked());
+        EXPECT_EQ(DocIds(), a2.take_prefetched());
+    }
+    {
+        // paged attribute is not used by second phase
+        MyWorld world(shared_state());
+        world.basicSetup();
+        Properties cfg;
+        cfg.add(indexproperties::rank::SecondPhase::NAME, "attribute(a1)");
+        cfg.add(indexproperties::hitcollector::HeapSize::NAME, "3");
+        world.config.import(cfg);
+        world.config.add(indexproperties::rank::SecondPhasePrefetchPagedAttributes::NAME, "true");
+        world.basicResults();
+        SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+        SearchReply::UP   reply = world.performSearch(*request, 1);
+        EXPECT_EQ(3u, world.matchingStats.docsReRanked());
+        EXPECT_EQ(DocIds(), a2.take_prefetched());
     }
     {
         // no second phase
         MyWorld world(shared_state());
         world.basicSetup();
-        world.config.add(indexproperties::rank::SecondPhasePrefetchAttributes::NAME, "a2");
+        world.config.add(indexproperties::rank::SecondPhasePrefetchPagedAttributes::NAME, "true");
         world.basicResults();
         SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
         SearchReply::UP   reply = world.performSearch(*request, 1);

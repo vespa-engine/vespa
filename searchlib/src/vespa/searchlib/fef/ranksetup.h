@@ -65,7 +65,8 @@ private:
     BlueprintResolver::SP                        _dumpResolver;
     std::string                                  _firstPhaseRankFeature;
     std::string                                  _secondPhaseRankFeature;
-    std::vector<std::string>                     _second_phase_prefetch_attributes;
+    bool                                         _second_phase_prefetch_paged_attributes;
+    std::vector<std::string>                     _second_phase_attributes;
     std::string                                  _degradationAttribute;
     double                                       _termwise_limit;
     uint32_t                                     _numThreads;
@@ -118,6 +119,7 @@ private:
     bool                                         _mutateAllowQueryOverride;
 
     void compileAndCheckForErrors(BlueprintResolver& bp);
+    void detect_second_phase_attributes();
     void check_sort_features();
 
 public:
@@ -177,14 +179,19 @@ public:
     const std::string& getSecondPhaseRank() const { return _secondPhaseRankFeature; }
 
     /**
-     * Set/get the names of (paged) attributes to prefetch before second phase rank is calculated.
+     * Set/get whether paged attributes read by second phase rank should be prefetched before it is calculated.
      **/
-    void set_second_phase_prefetch_attributes(std::vector<std::string> names) {
-        _second_phase_prefetch_attributes = std::move(names);
+    void set_second_phase_prefetch_paged_attributes(bool value) noexcept {
+        _second_phase_prefetch_paged_attributes = value;
     }
-    const std::vector<std::string>& get_second_phase_prefetch_attributes() const noexcept {
-        return _second_phase_prefetch_attributes;
-    }
+    bool get_second_phase_prefetch_paged_attributes() const noexcept { return _second_phase_prefetch_paged_attributes; }
+
+    /**
+     * Get the names of the attributes that are referenced by the features used to calculate
+     * second phase rank. This is detected when compiling, and is the set of candidates for
+     * second phase prefetching. Names not naming an attribute field are left out.
+     **/
+    const std::vector<std::string>& get_second_phase_attributes() const noexcept { return _second_phase_attributes; }
 
     /**
      * Set the termwise limit

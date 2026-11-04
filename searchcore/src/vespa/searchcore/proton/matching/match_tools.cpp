@@ -276,18 +276,18 @@ MatchToolsFactory::MatchToolsFactory(
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         _object_store = &_queryEnv.getObjectStore();
-        if (!_rankSetup.getSecondPhaseRank().empty()) {
-            auto names = rank::SecondPhasePrefetchAttributes::lookup(
-                rankProperties, _rankSetup.get_second_phase_prefetch_attributes());
+        if (!_rankSetup.getSecondPhaseRank().empty() &&
+            rank::SecondPhasePrefetchPagedAttributes::check(rankProperties,
+                                                            _rankSetup.get_second_phase_prefetch_paged_attributes())) {
+            const auto& names = _rankSetup.get_second_phase_attributes();
             for (const auto& name : names) {
-                if (const auto* attr = attributeContext.getAttribute(name)) {
+                const auto* attr = attributeContext.getAttribute(name);
+                if (attr != nullptr && attr->supports_prefetch_docs()) {
                     _second_phase_prefetch_attributes.push_back(attr);
                 }
             }
-            if (!names.empty()) {
-                trace.addEvent(5, vespalib::make_string("Prefetch %zu of %zu configured attributes in second phase",
-                                                        _second_phase_prefetch_attributes.size(), names.size()));
-            }
+            trace.addEvent(5, vespalib::make_string("Prefetch %zu paged of %zu attributes used in second phase",
+                                                    _second_phase_prefetch_attributes.size(), names.size()));
         }
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
         std::string attribute = DegradationAttribute::lookup(rankProperties, _rankSetup.getDegradationAttribute());

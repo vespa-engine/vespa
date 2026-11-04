@@ -1003,6 +1003,7 @@ void Fixture::test_prefetch_docs() {
         }
     }
     const search::attribute::IAttributeVector& attr = *_attr;
+    EXPECT_EQ(_traits.use_mmap_file_allocator, attr.supports_prefetch_docs());
     EXPECT_EQ(0u, attr.prefetch_docs(DocIds{}).bytes);
     // docs without tensor, and docs beyond the docid limit, are ignored
     EXPECT_EQ(0u, attr.prefetch_docs(DocIds{1, 4, 100}).bytes);

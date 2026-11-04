@@ -291,6 +291,10 @@ ImportedAttributeVectorReadGuard::prefetch_docs(std::span<const DocId> docids) c
     return _target_attribute.prefetch_docs(target_docids);
 }
 
+bool ImportedAttributeVectorReadGuard::supports_prefetch_docs() const noexcept {
+    return _target_attribute.supports_prefetch_docs();
+}
+
 bool ImportedAttributeVectorReadGuard::is_sortable() const noexcept {
     return _target_attribute.is_sortable();
 }
