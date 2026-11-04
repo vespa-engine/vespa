@@ -519,6 +519,64 @@ HWY_NOINLINE float hwy_eden_f32_q_dot(const float* HWY_RESTRICT f32_lhs, const u
         df32, parallel_reduce_accumulators(VecAdd{}, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7));
 }
 
+template <uint8_t Bits>
+HWY_NOINLINE float hwy_eden_q_q_dot(const uint8_t* HWY_RESTRICT packed_lhs, const uint8_t* HWY_RESTRICT packed_rhs,
+                                    const uint8_t* HWY_RESTRICT bf16_lut, const size_t sz) noexcept {
+    // Important: all of these are _fixed_ lane count tags, not ScalableTag!
+    const hn::Full128<uint8_t>                            du8;
+    const hn::Repartition<hwy::bfloat16_t, decltype(du8)> dbf16;
+    const hn::Repartition<float, decltype(dbf16)>         df32;
+
+    using VU8 = hn::Vec<decltype(du8)>;
+    using VBF16 = hn::Vec<decltype(dbf16)>;
+    using VF32 = hn::Vec<decltype(df32)>;
+
+    auto kernel = [du8, dbf16, df32, bf16_lut](const InvocationMeta auto meta, const VU8 lhs_v, const VU8 rhs_v,
+                                               VF32& accu0, VF32& accu1, VF32& accu2, VF32& accu3) VESPA_HWY_LAMBDA {
+        // The compiler will hoist the LUT loads out of the loop and into the prologue.
+        const VU8 bf16_msb_lut = hn::LoadDup128(du8, bf16_lut);
+        const VU8 bf16_lsb_lut = hn::LoadDup128(du8, bf16_lut + 16);
+
+        const VU8 lhs_bf16_msb = hn::TableLookupBytes(bf16_msb_lut, lhs_v);
+        const VU8 lhs_bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, lhs_v);
+        VU8       rhs_bf16_msb = hn::TableLookupBytes(bf16_msb_lut, rhs_v);
+        VU8       rhs_bf16_lsb = hn::TableLookupBytes(bf16_lsb_lut, rhs_v);
+
+        if constexpr (meta.is_partial()) {
+            // It suffices to zero out one of the sides of the multiplication for it to be as-if masked away
+            const auto in_bounds = hn::FirstN(du8, meta.partial_count());
+            rhs_bf16_msb = hn::IfThenElseZero(in_bounds, rhs_bf16_msb);
+            rhs_bf16_lsb = hn::IfThenElseZero(in_bounds, rhs_bf16_lsb);
+        }
+        // Glue the MSB/LSB pairs together. Note the reverse LUT order since we use little endian.
+        // Since lhs and rhs are processed symmetrically and we allow ourselves to pretend that FP
+        // additions commute, we can use non-block-crossing interleaving (see `hwy_eden_f32_q_dot`
+        // for an example of the differing semantics).
+        const VBF16 lhs_bf16_lo = hn::BitCast(dbf16, hn::InterleaveLower(du8, lhs_bf16_lsb, lhs_bf16_msb));
+        const VBF16 lhs_bf16_hi = hn::BitCast(dbf16, hn::InterleaveUpper(du8, lhs_bf16_lsb, lhs_bf16_msb));
+        const VBF16 rhs_bf16_lo = hn::BitCast(dbf16, hn::InterleaveLower(du8, rhs_bf16_lsb, rhs_bf16_msb));
+        const VBF16 rhs_bf16_hi = hn::BitCast(dbf16, hn::InterleaveUpper(du8, rhs_bf16_lsb, rhs_bf16_msb));
+        // This will use native BFloat16 dot product instructions on supported archs
+        accu0 = hn::ReorderWidenMulAccumulate(df32, lhs_bf16_lo, rhs_bf16_lo, accu0, accu1);
+        accu2 = hn::ReorderWidenMulAccumulate(df32, lhs_bf16_hi, rhs_bf16_hi, accu2, accu3);
+    };
+
+    VF32 accu0 = hn::Zero(df32);
+    VF32 accu1 = hn::Zero(df32);
+    VF32 accu2 = hn::Zero(df32);
+    VF32 accu3 = hn::Zero(df32);
+    VF32 accu4 = hn::Zero(df32);
+    VF32 accu5 = hn::Zero(df32);
+    VF32 accu6 = hn::Zero(df32);
+    VF32 accu7 = hn::Zero(df32);
+
+    with_unpacked_lhs_rhs_bits<Bits>(packed_lhs, packed_rhs, sz, kernel, FnAccuArity<4>{}, accu0, accu1, accu2, accu3,
+                                     accu4, accu5, accu6, accu7);
+
+    return LaneReduceSum{}(
+        df32, parallel_reduce_accumulators(VecAdd{}, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7));
+}
+
 HWY_INLINE
 const char* my_hwy_target_name() noexcept {
     return hwy::TargetName(HWY_TARGET);
@@ -541,7 +599,6 @@ float my_dot_product_f32(const float* a, const float* b, size_t sz) noexcept {
 double my_dot_product_f64(const double* a, const double* b, size_t sz) noexcept {
     return my_hwy_dot_double(a, b, sz);
 }
-[[maybe_unused]]
 float my_eden_f32_q_dot_product(const float* lhs, const uint8_t* packed_rhs, const uint8_t bits,
                                 const size_t sz) noexcept {
     switch (bits) {
@@ -553,6 +610,21 @@ float my_eden_f32_q_dot_product(const float* lhs, const uint8_t* packed_rhs, con
         return hwy_eden_f32_q_dot<3>(lhs, packed_rhs, bf16_lut_b3, sz);
     case 4:
         return hwy_eden_f32_q_dot<4>(lhs, packed_rhs, bf16_lut_b4, sz);
+    default:
+        abort();
+    }
+}
+float my_eden_q_q_dot_product(const uint8_t* packed_lhs, const uint8_t* packed_rhs, const uint8_t bits,
+                              const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return hwy_eden_q_q_dot<1>(packed_lhs, packed_rhs, bf16_lut_b1, sz);
+    case 2:
+        return hwy_eden_q_q_dot<2>(packed_lhs, packed_rhs, bf16_lut_b2, sz);
+    case 3:
+        return hwy_eden_q_q_dot<3>(packed_lhs, packed_rhs, bf16_lut_b3, sz);
+    case 4:
+        return hwy_eden_q_q_dot<4>(packed_lhs, packed_rhs, bf16_lut_b4, sz);
     default:
         abort();
     }
@@ -626,6 +698,7 @@ public:
         ft.dot_product_f32 = my_dot_product_f32;
         ft.dot_product_f64 = my_dot_product_f64;
         ft.eden_f32_q_dot_product = my_eden_f32_q_dot_product;
+        ft.eden_q_q_dot_product = my_eden_q_q_dot_product;
         ft.squared_euclidean_distance_i8 = my_squared_euclidean_distance_i8;
         ft.squared_euclidean_distance_bf16 = my_squared_euclidean_distance_bf16;
         ft.squared_euclidean_distance_f32 = my_squared_euclidean_distance_f32;
@@ -647,7 +720,7 @@ public:
         // SVE+SVE2 (but _not_ on Graviton 3 SVE... need auto-tuning on startup).
         ft.tag_fns_as_suboptimal({FnTable::FnId::DOT_PRODUCT_BF16, FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_BF16});
         // We use BF16 for centroid computations, so same applies to quantized dot product(s).
-        ft.tag_fns_as_suboptimal({FnTable::FnId::EDEN_F32_Q_DOT_PRODUCT});
+        ft.tag_fns_as_suboptimal({FnTable::FnId::EDEN_F32_Q_DOT_PRODUCT, FnTable::FnId::EDEN_Q_Q_DOT_PRODUCT});
         // SVE (1st edition) does not have signed subtraction with widening, causing i8
         // Euclidean to be slower than under NEON. SVE2 does have this, but int8 operations
         // are still slightly slower for the SVEs. So tag as suboptimal for now.

@@ -584,7 +584,7 @@ void scalar_block_bit_unpack(const uint8_t* __restrict__ packed, uint8_t* __rest
 }
 
 template <uint8_t Bits, typename Fn>
-void scalar_block_bit_unpack_lambda(const uint8_t* packed, const size_t sz, Fn fn) noexcept {
+void with_scalar_unpacked_rhs_bits(const uint8_t* packed, const size_t sz, Fn fn) noexcept {
     static_assert(Bits >= 1 && Bits <= 4, "Unsupported bit count");
     constexpr uint8_t B = Bits;
     using BlockBitPacker = ScalarVerticalBlockBitPacker<B>;
@@ -625,6 +625,65 @@ void scalar_block_bit_unpack_lambda(const uint8_t* packed, const size_t sz, Fn f
     if (rem > 0 && rem < 8) { // <= 7
         RemainderBitPacker::unpack1_to_7(packed, tmp_raw, rem);
         fn(tmp_raw, rem);
+    }
+}
+
+template <uint8_t Bits, typename Fn>
+void with_scalar_unpacked_lhs_rhs_bits(const uint8_t* packed_lhs, const uint8_t* packed_rhs, const size_t sz,
+                                       Fn fn) noexcept {
+    static_assert(Bits >= 1 && Bits <= 4, "Unsupported bit count");
+    constexpr uint8_t B = Bits;
+    using BlockBitPacker = ScalarVerticalBlockBitPacker<B>;
+    using RemainderBitPacker = ScalarHorizontalRemainderBitPacker<B>;
+
+    alignas(16) uint8_t tmp_lhs_raw[128];
+    alignas(16) uint8_t tmp_rhs_raw[128];
+
+    size_t i = 0;
+    for (; i + 128 <= sz; i += 128) {
+        BlockBitPacker::template unpack<16>(packed_lhs, tmp_lhs_raw);
+        BlockBitPacker::template unpack<16>(packed_rhs, tmp_rhs_raw);
+        fn(tmp_lhs_raw, tmp_rhs_raw, 128);
+        packed_lhs += 16 * B;
+        packed_rhs += 16 * B;
+    }
+    size_t rem = sz - i;
+    if (rem >= 64) { // <= 127
+        BlockBitPacker::template unpack<8>(packed_lhs, tmp_lhs_raw);
+        BlockBitPacker::template unpack<8>(packed_rhs, tmp_rhs_raw);
+        fn(tmp_lhs_raw, tmp_rhs_raw, 64);
+        packed_lhs += 8 * B;
+        packed_rhs += 8 * B;
+        rem -= 64;
+    }
+    if (rem >= 32) { // <= 63
+        BlockBitPacker::template unpack<4>(packed_lhs, tmp_lhs_raw);
+        BlockBitPacker::template unpack<4>(packed_rhs, tmp_rhs_raw);
+        fn(tmp_lhs_raw, tmp_rhs_raw, 32);
+        packed_lhs += 4 * B;
+        packed_rhs += 4 * B;
+        rem -= 32;
+    }
+    if (rem >= 16) { // <= 31
+        BlockBitPacker::template unpack<2>(packed_lhs, tmp_lhs_raw);
+        BlockBitPacker::template unpack<2>(packed_rhs, tmp_rhs_raw);
+        fn(tmp_lhs_raw, tmp_rhs_raw, 16);
+        packed_lhs += 2 * B;
+        packed_rhs += 2 * B;
+        rem -= 16;
+    }
+    if (rem >= 8) { // <= 15
+        BlockBitPacker::template unpack<1>(packed_lhs, tmp_lhs_raw);
+        BlockBitPacker::template unpack<1>(packed_rhs, tmp_rhs_raw);
+        fn(tmp_lhs_raw, tmp_rhs_raw, 8);
+        packed_lhs += 1 * B;
+        packed_rhs += 1 * B;
+        rem -= 8;
+    }
+    if (rem > 0 && rem < 8) { // <= 7
+        RemainderBitPacker::unpack1_to_7(packed_lhs, tmp_lhs_raw, rem);
+        RemainderBitPacker::unpack1_to_7(packed_rhs, tmp_rhs_raw, rem);
+        fn(tmp_lhs_raw, tmp_rhs_raw, rem);
     }
 }
 

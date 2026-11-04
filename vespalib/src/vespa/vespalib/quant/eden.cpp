@@ -192,15 +192,16 @@ float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   quer
 }
 
 float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
-                                                   std::span<const uint8_t> rhs) noexcept {
-    const auto [lhs_unp, rhs_unp] = binary_unpack_bits_to_scratch_space(lhs, rhs);
-    const auto codebook = my_codebook();
-    // clang-format off: lambda formatting
-    const float dot = sum_indexed_unrolled<8, float>(_dimensions, [&](size_t idx) noexcept {
-        return codebook[lhs_unp.centroid_idx[idx]] * codebook[rhs_unp.centroid_idx[idx]];
-    });
-    // clang-format on
-    return lhs_unp.scale * rhs_unp.scale * dot;
+                                                   std::span<const uint8_t> rhs) const noexcept {
+    CHECK(lhs.size() == _quantized_size);
+    CHECK(rhs.size() == _quantized_size);
+    const float    lhs_scale = extract_scale_factor(lhs.data());
+    const uint8_t* lhs_bit_buf = packed_bits_buf(lhs.data());
+    const float    rhs_scale = extract_scale_factor(rhs.data());
+    const uint8_t* rhs_bit_buf = packed_bits_buf(rhs.data());
+
+    const float dot = hwaccelerated::eden_q_q_dot_product(lhs_bit_buf, rhs_bit_buf, _bits, _dimensions);
+    return lhs_scale * rhs_scale * dot;
 }
 
 float EdenQuantizer::pre_rotated_query_squared_euclidean_distance(std::span<const float>   query,
