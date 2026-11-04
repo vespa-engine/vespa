@@ -3,6 +3,7 @@
 #include "string_matcher.h"
 
 #include "enumhintsearchcontext.h"
+#include "enumstore.h"
 #include "i_dictionary_lookup.h"
 
 #include <vespa/searchlib/query/query_term_ucs4.h>
@@ -43,6 +44,29 @@ bool StringMatcher::lookup_in_dictionary(const EnumStoreT<const char*>& enum_sto
     }
 
     return false;
+}
+
+bool StringMatcher::use_dictionary_entry(const EnumStoreT<const char*>&  enum_store,
+                                         EnumPostingTree::ConstIterator& it) const {
+    if (_helper.isRegex()) {
+        if (_helper.getRegex().valid() &&
+            _helper.getRegex().partial_match(enum_store.get_value(it.getKey().load_acquire())))
+        {
+            return true;
+        }
+        ++it;
+        return false;
+    } else if (_helper.isCased()) {
+        if (match(enum_store.get_value(it.getKey().load_acquire()))) {
+            return true;
+        }
+        ++it;
+        return false;
+    } else if (_helper.isFuzzy()) {
+        return _helper.is_fuzzy_match(enum_store.get_value(it.getKey().load_acquire()), it,
+                                      enum_store.get_data_store());
+    }
+    return true;
 }
 
 bool StringMatcher::use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info,

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_enum_store_dictionary.h"
 #include "string_range_search_helper.h"
 
 #include <vespa/searchlib/query/query_term_simple.h>
@@ -13,7 +14,7 @@ template <class EntryT> class EnumStoreT;
 
 namespace search::queryeval {
 class ExecuteInfo;
-}
+} // namespace search::queryeval
 
 namespace search::attribute {
 
@@ -42,14 +43,14 @@ public:
         return dynamic_cast<QueryTermUCS4*>(_query_term.get());
     }
 
+    /*
+     * Methods for dictionary lookups. Used by StringPostingSearchContext.
+     * lookup_in_dictionary is also ued by StringSearchContext with an EnumHintSearchContext.
+     */
     bool lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const;
 
-    /*
-     * The methods below are needed in StringPostingSearchContext
-     */
-    template <typename DictionaryConstIteratorType>
     bool use_dictionary_entry(const EnumStoreT<const char*>& /*enum_store*/,
-                              DictionaryConstIteratorType& /*it*/) const {
+                              EnumPostingTree::ConstIterator& /*it*/) const {
         return true;
     }
 

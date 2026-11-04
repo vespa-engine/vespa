@@ -2,21 +2,20 @@
 
 #pragma once
 
-#include "enumstore.h"
+#include "i_enum_store_dictionary.h"
 #include "string_search_helper.h"
 
 #include <vespa/searchlib/query/query_term_ucs4.h>
-#include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
-#include <vespa/vespalib/util/regexp.h>
 
 namespace search {
+template <class EntryT> class EnumStoreT;
 class QueryTermSimple;
 } // namespace search
 
 namespace search::queryeval {
 class ExecuteInfo;
-}
+} // namespace search::queryeval
 
 namespace search::attribute {
 
@@ -42,34 +41,12 @@ public:
     [[nodiscard]] bool match(const char* src) const { return _helper.isMatch(src); }
     [[nodiscard]] const QueryTermUCS4* get_query_term_ptr() const noexcept { return _query_term.get(); }
 
-    bool lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const;
-
     /*
-     * The methods below are needed in StringPostingSearchContext
+     * Methods for dictionary lookups. Used by StringPostingSearchContext.
+     * lookup_in_dictionary is also ued by StringSearchContext with an EnumHintSearchContext.
      */
-    template <typename DictionaryConstIteratorType>
-    bool use_dictionary_entry(const EnumStoreT<const char*>& enum_store, DictionaryConstIteratorType& it) const {
-        if (_helper.isRegex()) {
-            if (_helper.getRegex().valid() &&
-                _helper.getRegex().partial_match(enum_store.get_value(it.getKey().load_acquire())))
-            {
-                return true;
-            }
-            ++it;
-            return false;
-        } else if (_helper.isCased()) {
-            if (match(enum_store.get_value(it.getKey().load_acquire()))) {
-                return true;
-            }
-            ++it;
-            return false;
-        } else if (_helper.isFuzzy()) {
-            return _helper.is_fuzzy_match(enum_store.get_value(it.getKey().load_acquire()), it,
-                                          enum_store.get_data_store());
-        }
-        return true;
-    }
-
+    bool lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const;
+    bool use_dictionary_entry(const EnumStoreT<const char*>& enum_store, EnumPostingTree::ConstIterator& it) const;
     bool use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info, uint32_t docid_limit) const;
 };
 
