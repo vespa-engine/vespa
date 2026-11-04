@@ -29,8 +29,8 @@ public class RestartOnDeployForTritonOnnxRuntimeValidatorTest {
     // An ONNX embedder, so that the cluster uses Triton when the flag is on.
     private static final String EMBEDDER = """
         <component id='modernbert' type='hugging-face-embedder'>
-          <transformer-model url='https://example.com/model.onnx'/>
-          <tokenizer-model url='https://example.com/tokenizer.json'/>
+          <transformer-model url='https://example.invalid/model.onnx'/>
+          <tokenizer-model url='https://example.invalid/tokenizer.json'/>
         </component>
         """;
 

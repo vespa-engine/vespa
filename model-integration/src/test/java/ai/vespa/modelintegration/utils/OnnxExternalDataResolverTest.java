@@ -37,7 +37,7 @@ class OnnxExternalDataResolverTest {
         var externalDataFile = Paths.get("src/test/models/onnx/external_data/external_data.bin");
         var modelRef = ModelReference.unresolved(
                 Optional.empty(),
-                Optional.of(new UrlReference("https://my.website/add_with_external_data.onnx")),
+                Optional.of(new UrlReference("https://my.website.invalid/add_with_external_data.onnx")),
                 Optional.of("my-bearer-token"),
                 Optional.empty());
 
@@ -45,7 +45,7 @@ class OnnxExternalDataResolverTest {
         when(modelPathHelper.getModelPathResolvingIfNecessary(modelRef)).thenReturn(model);
         var externalDataFileRef = ModelReference.unresolved(
                 Optional.empty(),
-                Optional.of(new UrlReference("https://my.website/external_data.bin")),
+                Optional.of(new UrlReference("https://my.website.invalid/external_data.bin")),
                 Optional.of("my-bearer-token"),
                 Optional.empty());
 
@@ -85,7 +85,7 @@ class OnnxExternalDataResolverTest {
         var model = Files.write(directory.resolve("model.onnx"), Onnx.ModelProto.newBuilder()
                 .setGraph(Onnx.GraphProto.newBuilder().addInitializer(tensor)).build().toByteArray());
         var modelRef = ModelReference.unresolved(
-                Optional.empty(), Optional.of(new UrlReference("https://my.website/model.onnx")),
+                Optional.empty(), Optional.of(new UrlReference("https://my.website.invalid/model.onnx")),
                 Optional.empty(), Optional.empty());
         var modelPathHelper = mock(ModelPathHelper.class);
         when(modelPathHelper.getModelPathResolvingIfNecessary(modelRef)).thenReturn(model);

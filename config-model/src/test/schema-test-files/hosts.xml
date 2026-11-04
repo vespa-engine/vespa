@@ -15,7 +15,7 @@
     <alias>searchnode-2</alias>
   </host>
 
-  <host name="example.yahoo.com">
+  <host name="host.example.invalid">
     <alias>host2</alias>
     <alias>distributor-3</alias>
   </host>

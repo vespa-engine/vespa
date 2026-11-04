@@ -68,9 +68,9 @@ public class ConfigSentinelClientTest {
                 "container-clustercontroller state=RUNNING mode=AUTO pid=25020 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"admin/cluster-controllers/0\"\n" +
                 "distributor state=RUNNING mode=AUTO pid=25024 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/distributor/0\"\n" +
                 "docprocservice state=RUNNING mode=AUTO pid=11973 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"docproc/cluster.search.indexing/0\"\n" +
-                "logd state=RUNNING mode=AUTO pid=25016 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"hosts/vespa19.dev.gq1.yahoo.com/logd\"\n" +
+                "logd state=RUNNING mode=AUTO pid=25016 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"hosts/vespa19.dev.gq1.example.invalid/logd\"\n" +
                 "logserver state=RUNNING mode=AUTO pid=25018 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"admin/logserver\"\n" +
-                "metricsproxy state=RUNNING mode=AUTO pid=13107 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"hosts/vespa19.dev.gq1.yahoo.com/metricsproxy\"\n" +
+                "metricsproxy state=RUNNING mode=AUTO pid=13107 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"hosts/vespa19.dev.gq1.example.invalid/metricsproxy\"\n" +
                 "searchnode state=RUNNING mode=AUTO pid=25023 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"search/search/cluster.search/0\"\n" +
                 "slobrok state=RUNNING mode=AUTO pid=25019 exitstatus=0 autostart=TRUE autorestart=TRUE id=\"client\"\n" +
                 "\n";

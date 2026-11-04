@@ -57,8 +57,8 @@ public class UseTritonTest {
             <services version="1.0">
               <container id="container" version="1.0">
                 <component id="embedder" type="hugging-face-embedder">
-                  <transformer-model url="https://example.com/model.onnx"/>
-                  <tokenizer-model url="https://example.com/tokenizer.json"/>
+                  <transformer-model url="https://example.invalid/model.onnx"/>
+                  <tokenizer-model url="https://example.invalid/tokenizer.json"/>
                 </component>
                 %s
               </container>
@@ -177,7 +177,7 @@ public class UseTritonTest {
     private static final SidecarSpec TRITON_SIDECAR = SidecarSpec.builder()
             .id(0)
             .name(SidecarProvider.TRITON_SIDECAR_NAME)
-            .image(DockerImage.fromString("example.com/test/triton:1.0"))
+            .image(DockerImage.fromString("example.invalid/test/triton:1.0"))
             .minCpu(1)
             .build();
 
@@ -249,7 +249,7 @@ public class UseTritonTest {
                 .zone(new Zone(SystemName.PublicCd, Environment.prod, RegionName.from("us-east-1")))
                 .properties(new TestProperties().setHostedVespa(true).setMultitenant(true).setUseTriton(true))
                 .modelHostProvisioner(new InMemoryProvisioner(8, RESOURCES, false))
-                .endpoints(Set.of(new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("container.example.com"))))
+                .endpoints(Set.of(new ContainerEndpoint("container", ApplicationClusterEndpoint.Scope.zone, List.of("container.example.invalid"))))
                 .modelImporters(List.of(new OnnxImporter()))
                 .sidecarProvider(new TritonSidecarProvider())
                 .build();

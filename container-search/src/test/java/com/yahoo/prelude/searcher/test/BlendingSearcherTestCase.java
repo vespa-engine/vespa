@@ -139,17 +139,17 @@ public class BlendingSearcherTestCase {
         Result r3 = new Result(q);
 
         r1.setTotalHitCount(13);
-        r1.hits().add(new Hit("http://host1.com", 101){
+        r1.hits().add(new Hit("http://host1.example.invalid", 101){
             {
                 setSource("one");
             }
         });
-        r1.hits().add(new Hit("http://host2.com", 102){
+        r1.hits().add(new Hit("http://host2.example.invalid", 102){
             {
                 setSource("one");
             }
         });
-        r1.hits().add(new Hit("http://host3.com", 103){
+        r1.hits().add(new Hit("http://host3.example.invalid", 103){
             {
                 setSource("one");
             }
@@ -157,17 +157,17 @@ public class BlendingSearcherTestCase {
         chain1.addResult(q, r1);
 
         r2.setTotalHitCount(17);
-        r2.hits().add(new Hit("http://host1.com", 101){
+        r2.hits().add(new Hit("http://host1.example.invalid", 101){
             {
                 setSource("two");
             }
         });
-        r2.hits().add(new Hit("http://host2.com", 102){
+        r2.hits().add(new Hit("http://host2.example.invalid", 102){
             {
                 setSource("two");
             }
         });
-        r2.hits().add(new Hit("http://host4.com", 104){
+        r2.hits().add(new Hit("http://host4.example.invalid", 104){
             {
                 setSource("two");
             }
@@ -175,17 +175,17 @@ public class BlendingSearcherTestCase {
         chain2.addResult(q, r2);
 
         r3.setTotalHitCount(37);
-        r3.hits().add(new Hit("http://host5.com", 100){
+        r3.hits().add(new Hit("http://host5.example.invalid", 100){
             {
                 setSource("three");
             }
         });
-        r3.hits().add(new Hit("http://host6.com", 106){
+        r3.hits().add(new Hit("http://host6.example.invalid", 106){
             {
                 setSource("three");
             }
         });
-        r3.hits().add(new Hit("http://host7.com", 105){
+        r3.hits().add(new Hit("http://host7.example.invalid", 105){
             {
                 setSource("three");
             }
@@ -199,7 +199,7 @@ public class BlendingSearcherTestCase {
         Result br1 = new Execution(blender1, Execution.Context.createContextStub()).search(q);
         assertEquals(3, br1.getHitCount());
         assertEquals(13, br1.getTotalHitCount());
-        assertEquals("http://host3.com/", br1.hits().get(0).getId().toString());
+        assertEquals("http://host3.example.invalid/", br1.hits().get(0).getId().toString());
 
         BlendingSearcherWrapper blender2 = new BlendingSearcherWrapper();
         blender2.addSource("two", chain1);
@@ -209,7 +209,7 @@ public class BlendingSearcherTestCase {
         Result br2 = new Execution(blender2, Execution.Context.createContextStub()).search(q);
         assertEquals(6, br2.getHitCount());
         assertEquals(30, br2.getTotalHitCount());
-        assertEquals("http://host4.com/", br2.hits().get(0).getId().toString());
+        assertEquals("http://host4.example.invalid/", br2.hits().get(0).getId().toString());
 
         BlendingSearcherWrapper blender3 = new BlendingSearcherWrapper();
         blender3.addSource("four", chain1);
@@ -220,27 +220,27 @@ public class BlendingSearcherTestCase {
         Result br3 = new Execution(blender3, Execution.Context.createContextStub()).search(q);
         assertEquals(9, br3.getHitCount());
         assertEquals(67, br3.getTotalHitCount());
-        assertEquals("http://host6.com/", br3.hits().get(0).getId().toString());
+        assertEquals("http://host6.example.invalid/", br3.hits().get(0).getId().toString());
 
         q.setWindow(0, 10);
         Result br4 = new Execution(blender3, Execution.Context.createContextStub()).search(q);
         assertEquals(9, br4.getHitCount());
-        assertEquals("http://host6.com/", br4.hits().get(0).getId().toString());
+        assertEquals("http://host6.example.invalid/", br4.hits().get(0).getId().toString());
 
         q.setWindow(3, 10);
         Result br5 = new Execution(blender3, Execution.Context.createContextStub()).search(q);
         assertEquals(6, br5.getHitCount());
-        assertEquals("http://host3.com/", br5.hits().get(0).getId().toString());
+        assertEquals("http://host3.example.invalid/", br5.hits().get(0).getId().toString());
 
         q.setWindow(3, 10);
         br5 = new Execution(blender3, Execution.Context.createContextStub()).search(q);
         assertEquals(6, br5.getHitCount());
-        assertEquals("http://host3.com/", br5.hits().get(0).getId().toString());
+        assertEquals("http://host3.example.invalid/", br5.hits().get(0).getId().toString());
 
         q.setWindow(3, 10);
         br5 = new Execution(blender3, Execution.Context.createContextStub()).search(q);
         assertEquals(6, br5.getHitCount());
-        assertEquals("http://host3.com/", br5.hits().get(0).getId().toString());
+        assertEquals("http://host3.example.invalid/", br5.hits().get(0).getId().toString());
 
     }
 
@@ -253,9 +253,9 @@ public class BlendingSearcherTestCase {
         Result r2 = new Result(q);
 
         r1.setTotalHitCount(1);
-        r1.hits().add(new FastHit("http://host1.com/", 101));
+        r1.hits().add(new FastHit("http://host1.example.invalid/", 101));
         docSource1.addResult(q, r1);
-        r2.hits().add(new FastHit("http://host1.com/", 102));
+        r2.hits().add(new FastHit("http://host1.example.invalid/", 102));
         r2.setTotalHitCount(1);
         docSource2.addResult(q, r2);
 
@@ -279,7 +279,7 @@ public class BlendingSearcherTestCase {
 
         r1.setTotalHitCount(0);
         docSource1.addResult(q, r1);
-        r2.hits().add(new FastHit("http://host1.com/", 102));
+        r2.hits().add(new FastHit("http://host1.example.invalid/", 102));
         r2.setTotalHitCount(1);
         docSource2.addResult(q, r2);
 
@@ -315,13 +315,13 @@ public class BlendingSearcherTestCase {
         Result r2 = new Result(q);
 
         r1.setTotalHitCount(3);
-        Hit r1h1 = new Hit("http://host1.com/relevancy101", 101);
+        Hit r1h1 = new Hit("http://host1.example.invalid/relevancy101", 101);
         r1h1.setField("foobar", "3");
         r1h1.setQuery(q);
-        Hit r1h2 = new Hit("http://host2.com/relevancy102", 102);
+        Hit r1h2 = new Hit("http://host2.example.invalid/relevancy102", 102);
         r1h2.setField("foobar", "6");
         r1h2.setQuery(q);
-        Hit r1h3 = new Hit("http://host3.com/relevancy103", 103);
+        Hit r1h3 = new Hit("http://host3.example.invalid/relevancy103", 103);
         r1h3.setField("foobar", "2");
         r1h3.setQuery(q);
         r1.hits().add(r1h1);
@@ -330,13 +330,13 @@ public class BlendingSearcherTestCase {
         docSource1.addResult(q, r1);
 
         r2.setTotalHitCount(3);
-        Hit r2h1 = new Hit("http://host1.com/relevancy201", 201);
+        Hit r2h1 = new Hit("http://host1.example.invalid/relevancy201", 201);
         r2h1.setField("foobar", "5");
         r2h1.setQuery(q);
-        Hit r2h2 = new Hit("http://host2.com/relevancy202", 202);
+        Hit r2h2 = new Hit("http://host2.example.invalid/relevancy202", 202);
         r2h2.setField("foobar", "1");
         r2h2.setQuery(q);
-        Hit r2h3 = new Hit("http://host3.com/relevancy203", 203);
+        Hit r2h3 = new Hit("http://host3.example.invalid/relevancy203", 203);
         r2h3.setField("foobar", "4");
         r2h3.setQuery(q);
         r2.hits().add(r2h1);
@@ -373,11 +373,11 @@ public class BlendingSearcherTestCase {
         Result r2 = new Result(q);
 
         r1.setTotalHitCount(3);
-        Hit r1h1 = new Hit("http://host1.com/relevancy101", 101);
+        Hit r1h1 = new Hit("http://host1.example.invalid/relevancy101", 101);
         r1h1.setField("attributefoobar", "3");
-        Hit r1h2 = new Hit("http://host2.com/relevancy102", 102);
+        Hit r1h2 = new Hit("http://host2.example.invalid/relevancy102", 102);
         r1h2.setField("attributefoobar", "6");
-        Hit r1h3 = new Hit("http://host3.com/relevancy103", 103);
+        Hit r1h3 = new Hit("http://host3.example.invalid/relevancy103", 103);
         r1h3.setField("attributefoobar", "2");
         r1.hits().add(r1h1);
         r1.hits().add(r1h2);
@@ -385,11 +385,11 @@ public class BlendingSearcherTestCase {
         docSource1.addResult(q, r1);
 
         r2.setTotalHitCount(3);
-        Hit r2h1 = new Hit("http://host1.com/relevancy201", 201);
+        Hit r2h1 = new Hit("http://host1.example.invalid/relevancy201", 201);
         r2h1.setField("attributefoobar", "5");
-        Hit r2h2 = new Hit("http://host2.com/relevancy202", 202);
+        Hit r2h2 = new Hit("http://host2.example.invalid/relevancy202", 202);
         r2h2.setField("attributefoobar", "1");
-        Hit r2h3 = new Hit("http://host3.com/relevancy203", 203);
+        Hit r2h3 = new Hit("http://host3.example.invalid/relevancy203", 203);
         r2h3.setField("attributefoobar", "4");
         r2.hits().add(r2h1);
         r2.hits().add(r2h2);

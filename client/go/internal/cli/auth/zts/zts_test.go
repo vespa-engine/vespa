@@ -15,7 +15,7 @@ func (c *manualClock) advance(d time.Duration) { c.t = c.t.Add(d) }
 
 func TestAccessToken(t *testing.T) {
 	httpClient := mock.HTTPClient{}
-	client, err := NewClient(&httpClient, "vespa.vespa", "http://example.com")
+	client, err := NewClient(&httpClient, "vespa.vespa", "http://example.invalid")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestAccessToken(t *testing.T) {
 	// Request body is included in error
 	httpClient.NextResponseString(503, "broken!")
 	_, err = client.AccessToken()
-	want := "zts: got status 503 (broken!) from http://example.com/zts/v1/oauth2/token"
+	want := "zts: got status 503 (broken!) from http://example.invalid/zts/v1/oauth2/token"
 	if got := err.Error(); got != want {
 		t.Errorf("got err=%q, want %q", got, want)
 	}

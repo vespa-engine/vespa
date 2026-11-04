@@ -19,12 +19,12 @@ public class URITestCase {
 
     @Test
     public void testEquality() {
-        URI one = new URI("http://www.nils.arne.com");
-        URI two = new URI("http://www.nils.arne.com");
+        URI one = new URI("http://www.nils.arne.invalid");
+        URI two = new URI("http://www.nils.arne.invalid");
 
         assertEquals(one, two);
         assertEquals(one.hashCode(), two.hashCode());
-        assertEquals("http://www.nils.arne.com/", one.toString());
+        assertEquals("http://www.nils.arne.invalid/", one.toString());
 
         assertEqualURIs(
                 "http://info.t.fast.no/art.php?sid=29&mode=thread&order=0",
@@ -39,8 +39,8 @@ public class URITestCase {
         assertEqualURIs("http://a/b/c/g;x=1/y", "http://a/b/c/g;x=1/y");
         assertEquals("http://a/b/c/g#s/../x",
                 new URI("http://a/b/c/g#s/../x", true).stringValue());
-        assertEquals("http://www.strange_host.com/b",
-                new URI("http://www.strange_host.com/b", true).stringValue());
+        assertEquals("http://www.strange_host.invalid/b",
+                new URI("http://www.strange_host.invalid/b", true).stringValue());
     }
 
     @Test
@@ -54,20 +54,20 @@ public class URITestCase {
     @Test
     public void testValid() {
         assertTrue(
-                new URI("http://www.one.com/isValid?even=if&theres=args").isValid());
+                new URI("http://www.one.invalid/isValid?even=if&theres=args").isValid());
         assertTrue(
-                !new URI("http://www.one.com/isValid?even=if&theres=args").isOpaque());
+                !new URI("http://www.one.invalid/isValid?even=if&theres=args").isOpaque());
 
         assertTrue(!(new URI("not\\uri?", false, true).isValid()));
 
-        assertTrue(new URI("http://www.strange_host.com/b").isValid());
-        assertTrue(!new URI("http://www.strange_host.com/b").isOpaque());
+        assertTrue(new URI("http://www.strange_host.invalid/b").isValid());
+        assertTrue(!new URI("http://www.strange_host.invalid/b").isOpaque());
     }
 
     @Test
     public void testSorting() {
-        URI first = new URI("http://aisfirst.kanoo.com");
-        URI second = new URI("www.thentheresw.com");
+        URI first = new URI("http://aisfirst.kanoo.invalid");
+        URI second = new URI("www.thentheresw.invalid");
 
         assertTrue(first.compareTo(second) < 0);
         assertTrue(second.compareTo(second) == 0);
@@ -77,8 +77,8 @@ public class URITestCase {
     @Test
     public void testHost() {
         assertEquals("a.b.c", new URI("http://A.B.C:567").getHost());
-        assertEquals("www.kanoo.com",
-                new URI("www.kanoo.com/foo", false, true).getHost());
+        assertEquals("www.kanoo.invalid",
+                new URI("www.kanoo.invalid/foo", false, true).getHost());
         assertEquals("a.b.c", new URI("http://a.b.C/foo").getHost());
         assertEquals("a.b.c", new URI("http://a.b.C").getHost());
         assertEquals("a", new URI("http://A").getHost());
@@ -344,12 +344,12 @@ public class URITestCase {
 
     @Test
     public void testURLTestCom() {
-        URI uri = new URI("http://test.com/index.htm?p1=q%20test&p2=r%10d", true);
+        URI uri = new URI("http://test.invalid/index.htm?p1=q%20test&p2=r%10d", true);
         assertTrue(uri.isValid());
         assertEquals("http", uri.getScheme());
-        assertEquals("test.com", uri.getHost());
-        assertEquals("test.com", uri.getDomain());
-        assertEquals("com", uri.getMainTld());
+        assertEquals("test.invalid", uri.getHost());
+        assertEquals("test.invalid", uri.getDomain());
+        assertEquals("invalid", uri.getMainTld());
         assertEquals(-1, uri.getPort());
         assertEquals("/index.htm", uri.getPath());
         assertEquals("index.htm", uri.getFilename());
@@ -378,12 +378,12 @@ public class URITestCase {
 
     @Test
     public void testURLFooCom() {
-        URI uri = new URI("http://foo.com/ui;.gif", true);
+        URI uri = new URI("http://foo.invalid/ui;.gif", true);
         assertTrue(uri.isValid());
         assertEquals("http", uri.getScheme());
-        assertEquals("foo.com", uri.getHost());
-        assertEquals("foo.com", uri.getDomain());
-        assertEquals("com", uri.getMainTld());
+        assertEquals("foo.invalid", uri.getHost());
+        assertEquals("foo.invalid", uri.getDomain());
+        assertEquals("invalid", uri.getMainTld());
         assertEquals(-1, uri.getPort());
         assertEquals("/ui;.gif", uri.getPath());
         assertEquals("ui", uri.getFilename());
@@ -395,12 +395,12 @@ public class URITestCase {
 
     @Test
     public void testURLFooCom2() {
-        URI uri = new URI("http://foo.com/ui;par1=1/par2=2", true);
+        URI uri = new URI("http://foo.invalid/ui;par1=1/par2=2", true);
         assertTrue(uri.isValid());
         assertEquals("http", uri.getScheme());
-        assertEquals("foo.com", uri.getHost());
-        assertEquals("foo.com", uri.getDomain());
-        assertEquals("com", uri.getMainTld());
+        assertEquals("foo.invalid", uri.getHost());
+        assertEquals("foo.invalid", uri.getDomain());
+        assertEquals("invalid", uri.getMainTld());
         assertEquals(-1, uri.getPort());
         assertEquals("/ui;par1=1/par2=2", uri.getPath());
         assertEquals("ui", uri.getFilename());
@@ -430,12 +430,12 @@ public class URITestCase {
 
     @Test
     public void testURLAmpersand() {
-        URI uri = new URI("http://canonsarang.com/zboard/data/gallery04/HU&BANG.jpg", true);
+        URI uri = new URI("http://canonsarang.invalid/zboard/data/gallery04/HU&BANG.jpg", true);
         assertTrue(uri.isValid());
         assertEquals("http", uri.getScheme());
-        assertEquals("canonsarang.com", uri.getHost());
-        assertEquals("canonsarang.com", uri.getDomain());
-        assertEquals("com", uri.getMainTld());
+        assertEquals("canonsarang.invalid", uri.getHost());
+        assertEquals("canonsarang.invalid", uri.getDomain());
+        assertEquals("invalid", uri.getMainTld());
         assertEquals(-1, uri.getPort());
         assertEquals("/zboard/data/gallery04/HU&BANG.jpg", uri.getPath());
         assertEquals("HU&BANG.jpg", uri.getFilename());

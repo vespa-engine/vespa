@@ -69,32 +69,32 @@ func TestClientSend(t *testing.T) {
 		{
 			Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "123"}}`)},
 			"PUT",
-			"https://example.com:1337/document/v1/ns/type/docid/doc1?timeout=5000ms&create=true",
+			"https://example.invalid:1337/document/v1/ns/type/docid/doc1?timeout=5000ms&create=true",
 		},
 		{
 			Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "456"}}`)},
 			"PUT",
-			"https://example.com:1337/document/v1/ns/type/docid/doc2?timeout=5000ms",
+			"https://example.invalid:1337/document/v1/ns/type/docid/doc2?timeout=5000ms",
 		},
 		{
 			Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationRemove},
 			"DELETE",
-			"https://example.com:1337/document/v1/ns/type/docid/doc3?timeout=5000ms",
+			"https://example.invalid:1337/document/v1/ns/type/docid/doc3?timeout=5000ms",
 		},
 		{
 			Document{Condition: "foo", Id: mustParseId("id:ns:type::doc4"), Operation: OperationUpdate, Body: []byte(`{"fields":{"baz": "789"}}`)},
 			"PUT",
-			"https://example.com:1337/document/v1/ns/type/docid/doc4?timeout=5000ms&condition=foo",
+			"https://example.invalid:1337/document/v1/ns/type/docid/doc4?timeout=5000ms&condition=foo",
 		},
 		{
 			Document{Id: mustParseId("id:ns:type::doc5"), Operation: OperationPut, Body: []byte(`{"fields":{"baz": "789"}}`)},
 			"POST",
-			"https://example.com:1337/document/v1/ns/type/docid/doc5?timeout=5000ms",
+			"https://example.invalid:1337/document/v1/ns/type/docid/doc5?timeout=5000ms",
 		},
 	}
 	httpClient := mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
-		BaseURL: "https://example.com:1337",
+		BaseURL: "https://example.invalid:1337",
 		Timeout: time.Duration(5 * time.Second),
 	}, []httputil.Client{&httpClient})
 	clock := manualClock{t: time.Now(), tick: time.Second}
@@ -175,7 +175,7 @@ func TestClientSend(t *testing.T) {
 func TestClientGet(t *testing.T) {
 	httpClient := mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
-		BaseURL: "https://example.com:1337",
+		BaseURL: "https://example.invalid:1337",
 		Timeout: time.Duration(5 * time.Second),
 	}, []httputil.Client{&httpClient})
 	clock := manualClock{t: time.Now(), tick: time.Second}
@@ -203,13 +203,13 @@ func TestClientGet(t *testing.T) {
 		t.Errorf("got %+v, want %+v", result, want)
 	}
 	gotURL := httpClient.LastRequest.URL.String()
-	wantURL := "https://example.com:1337/document/v1/mynamespace/music/docid/doc1"
+	wantURL := "https://example.invalid:1337/document/v1/mynamespace/music/docid/doc1"
 	if gotURL != wantURL {
 		t.Errorf("got URL=%s, want %s", gotURL, wantURL)
 	}
 	client.Get(id, "[all]")
 	gotURL = httpClient.LastRequest.URL.String()
-	wantURL = "https://example.com:1337/document/v1/mynamespace/music/docid/doc1?fieldSet=%5Ball%5D"
+	wantURL = "https://example.invalid:1337/document/v1/mynamespace/music/docid/doc1?fieldSet=%5Ball%5D"
 	if gotURL != wantURL {
 		t.Errorf("got URL=%s, want %s", gotURL, wantURL)
 	}
@@ -218,7 +218,7 @@ func TestClientGet(t *testing.T) {
 func TestClientSendCompressed(t *testing.T) {
 	httpClient := &mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
-		BaseURL: "https://example.com:1337",
+		BaseURL: "https://example.invalid:1337",
 		Timeout: time.Duration(5 * time.Second),
 	}, []httputil.Client{httpClient})
 
@@ -251,7 +251,7 @@ func TestClientSendCompressedBodyReadAfterResponse(t *testing.T) {
 	// consuming the request. Simulate this by not reading the body in Do, and reading it after Send returns.
 	httpClient := &mock.HTTPClient{}
 	client, _ := NewClient(ClientOptions{
-		BaseURL:     "https://example.com:1337",
+		BaseURL:     "https://example.invalid:1337",
 		Compression: CompressionGzip,
 	}, []httputil.Client{httpClient})
 
@@ -326,7 +326,7 @@ func TestClientMethodAndURL(t *testing.T) {
 			},
 			ClientOptions{},
 			"POST",
-			"https://example.com/document/v1/ns/type/number/123/user",
+			"https://example.invalid/document/v1/ns/type/number/123/user",
 		},
 		{
 			Document{
@@ -334,7 +334,7 @@ func TestClientMethodAndURL(t *testing.T) {
 			},
 			ClientOptions{},
 			"POST",
-			"https://example.com/document/v1/ns/type/group/foo/user",
+			"https://example.invalid/document/v1/ns/type/group/foo/user",
 		},
 		{
 			Document{
@@ -342,7 +342,7 @@ func TestClientMethodAndURL(t *testing.T) {
 			},
 			ClientOptions{},
 			"POST",
-			"https://example.com/document/v1/ns/type/docid/user::specific",
+			"https://example.invalid/document/v1/ns/type/docid/user::specific",
 		},
 		{
 			Document{
@@ -350,7 +350,7 @@ func TestClientMethodAndURL(t *testing.T) {
 			},
 			ClientOptions{Route: "elsewhere"},
 			"POST",
-			"https://example.com/document/v1/ns/type/docid/:?route=elsewhere",
+			"https://example.invalid/document/v1/ns/type/docid/:?route=elsewhere",
 		},
 		{
 			Document{
@@ -359,7 +359,7 @@ func TestClientMethodAndURL(t *testing.T) {
 			},
 			ClientOptions{},
 			"POST",
-			"https://example.com/document/v1/ns/type-with-%2F/docid/user?condition=foo%2Fbar",
+			"https://example.invalid/document/v1/ns/type-with-%2F/docid/user?condition=foo%2Fbar",
 		},
 		{
 			Document{
@@ -370,7 +370,7 @@ func TestClientMethodAndURL(t *testing.T) {
 			},
 			ClientOptions{Timeout: 10 * time.Second, TraceLevel: 5, Speedtest: true},
 			"PUT",
-			"https://example.com/document/v1/ns/type/docid/user?timeout=10000ms&tracelevel=5&dryRun=true&condition=false&create=true",
+			"https://example.invalid/document/v1/ns/type/docid/user?timeout=10000ms&tracelevel=5&dryRun=true&condition=false&create=true",
 		},
 		{
 			Document{
@@ -379,12 +379,12 @@ func TestClientMethodAndURL(t *testing.T) {
 			},
 			ClientOptions{},
 			"DELETE",
-			"https://example.com/document/v1/ns/type/docid/user",
+			"https://example.invalid/document/v1/ns/type/docid/user",
 		},
 	}
 	httpClient := mock.HTTPClient{}
 	client, _ := NewClient(ClientOptions{
-		BaseURL: "https://example.com/",
+		BaseURL: "https://example.invalid/",
 	}, []httputil.Client{&httpClient})
 	for i, tt := range tests {
 		client.options.Timeout = tt.options.Timeout
@@ -403,7 +403,7 @@ func benchmarkClientSend(b *testing.B, compression Compression, document Documen
 	httpClient := mock.HTTPClient{}
 	client, _ := NewClient(ClientOptions{
 		Compression: compression,
-		BaseURL:     "https://example.com:1337",
+		BaseURL:     "https://example.invalid:1337",
 		Timeout:     time.Duration(5 * time.Second),
 	}, []httputil.Client{&httpClient})
 	b.ResetTimer() // ignore setup

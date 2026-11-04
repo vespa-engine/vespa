@@ -253,7 +253,7 @@ public class NodesSpecificationTest {
     void testDockerImageNotSupportedInPublicCloudSystems() {
         for (var system : List.of(SystemName.Public, SystemName.PublicCd, SystemName.kubernetes, SystemName.kubernetesCd)) {
             var exception = assertThrows(IllegalArgumentException.class,
-                                         () -> nodesSpecification("<nodes count='3' docker-image='example.com/vespa/custom'/>",
+                                         () -> nodesSpecification("<nodes count='3' docker-image='example.invalid/vespa/custom'/>",
                                                                   hostedDeployState(system)));
             assertEquals("Specifying 'docker-image' on <nodes> is not supported in Vespa Cloud", exception.getMessage());
         }
@@ -262,9 +262,9 @@ public class NodesSpecificationTest {
     @Test
     void testDockerImageAllowedInNonPublicSystems() {
         for (var system : List.of(SystemName.main, SystemName.cd, SystemName.Default)) {
-            var spec = nodesSpecification("<nodes count='3' docker-image='example.com/vespa/custom'/>",
+            var spec = nodesSpecification("<nodes count='3' docker-image='example.invalid/vespa/custom'/>",
                                           hostedDeployState(system));
-            assertEquals(Optional.of(DockerImage.fromString("example.com/vespa/custom")), spec.dockerImageRepo());
+            assertEquals(Optional.of(DockerImage.fromString("example.invalid/vespa/custom")), spec.dockerImageRepo());
         }
     }
 
@@ -273,14 +273,14 @@ public class NodesSpecificationTest {
         var deployState = new DeployState.Builder().properties(new TestProperties())
                                                     .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
                                                     .build();
-        var spec = nodesSpecification("<nodes count='3' docker-image='example.com/vespa/custom'/>", deployState);
-        assertEquals(Optional.of(DockerImage.fromString("example.com/vespa/custom")), spec.dockerImageRepo());
+        var spec = nodesSpecification("<nodes count='3' docker-image='example.invalid/vespa/custom'/>", deployState);
+        assertEquals(Optional.of(DockerImage.fromString("example.invalid/vespa/custom")), spec.dockerImageRepo());
     }
 
     @Test
     void testOperatorGivenDockerImageAllowedInPublicCloudSystems() {
         Document nodesXml = XML.getDocument("<nodes count='3'/>");
-        var operatorImage = DockerImage.fromString("example.com/vespa/operator-selected");
+        var operatorImage = DockerImage.fromString("example.invalid/vespa/operator-selected");
         var spec = NodesSpecification.create(false, false, Version.emptyVersion,
                                              new ModelElement(nodesXml.getDocumentElement()),
                                              Optional.of(operatorImage), CloudAccount.unspecified(),

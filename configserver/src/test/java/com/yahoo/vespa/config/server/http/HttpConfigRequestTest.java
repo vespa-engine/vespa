@@ -18,7 +18,7 @@ public class HttpConfigRequestTest {
     public void require_that_request_can_be_created() {
         final ConfigKey<?> configKey = new ConfigKey<>("foo", "myid", "bar");
 
-        HttpConfigRequest request = HttpConfigRequest.createFromRequestV1(HttpRequest.createTestRequest("http://example.yahoo.com:8080/config/v1/" +
+        HttpConfigRequest request = HttpConfigRequest.createFromRequestV1(HttpRequest.createTestRequest("http://host.example.invalid:8080/config/v1/" +
                 configKey.getNamespace() + "." + configKey.getName() + "/" + configKey.getConfigId(), GET));
         assertEquals(configKey, request.getConfigKey());
         assertTrue(request.getDefContent().isEmpty());
@@ -27,7 +27,7 @@ public class HttpConfigRequestTest {
     @Test
     public void require_namespace_can_have_dots() {
         final ConfigKey<?> configKey = new ConfigKey<>("foo", "myid", "bar.baz");
-        HttpConfigRequest request = HttpConfigRequest.createFromRequestV1(HttpRequest.createTestRequest("http://example.yahoo.com:8080/config/v1/" +
+        HttpConfigRequest request = HttpConfigRequest.createFromRequestV1(HttpRequest.createTestRequest("http://host.example.invalid:8080/config/v1/" +
                 configKey.getNamespace() + "." + configKey.getName() + "/" + configKey.getConfigId(), GET));
         assertEquals(request.getConfigKey().getNamespace(), "bar.baz");
     }
@@ -35,6 +35,6 @@ public class HttpConfigRequestTest {
     @Test
     public void require_that_request_can_be_created_with_advanced_uri() {
         HttpConfigRequest.createFromRequestV1(HttpRequest.createTestRequest(
-                "http://example.yahoo.com:19071/config/v1/vespa.config.cloud.sentinel/host-01.example.yahoo.com", GET));
+                "http://host.example.invalid:19071/config/v1/vespa.config.cloud.sentinel/host-01.host.example.invalid", GET));
     }
 }

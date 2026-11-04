@@ -2619,7 +2619,7 @@ public class ModelProvisioningTest {
         Set<ContainerEndpoint> endpoints = Arrays.stream(cluster)
                                                  .map(c -> new ContainerEndpoint(c,
                                                                                  ApplicationClusterEndpoint.Scope.zone,
-                                                                                 List.of(c + ".example.com")))
+                                                                                 List.of(c + ".example.invalid")))
                                                  .collect(Collectors.toSet());
         return new DeployState.Builder().endpoints(endpoints);
     }
@@ -2701,7 +2701,7 @@ public class ModelProvisioningTest {
         var sidecar = SidecarSpec.builder()
                 .id(0)
                 .name("test-sidecar")
-                .image(DockerImage.fromString("example.com/test/sidecar:1.0"))
+                .image(DockerImage.fromString("example.invalid/test/sidecar:1.0"))
                 .minCpu(1)
                 .build();
 
@@ -2764,7 +2764,7 @@ public class ModelProvisioningTest {
                   <content version='1.0' id='content1'>
                     <redundancy>1</redundancy>
                     <documents/>
-                    <nodes count='2' docker-image='example.com/vespa/custom'/>
+                    <nodes count='2' docker-image='example.invalid/vespa/custom'/>
                   </content>
                 </services>
                 """;
@@ -2781,7 +2781,7 @@ public class ModelProvisioningTest {
         // The attribute is still honored in non-public hosted systems
         VespaModel model = tester.createModel(new Zone(SystemName.main, Environment.prod, RegionName.defaultName()),
                                               xml, true, deployStateWithClusterEndpoints("container1"));
-        assertEquals(Optional.of(DockerImage.fromString("example.com/vespa/custom")),
+        assertEquals(Optional.of(DockerImage.fromString("example.invalid/vespa/custom")),
                      model.provisioned().clusters().get(ClusterSpec.Id.from("content1")).dockerImageRepo());
     }
 

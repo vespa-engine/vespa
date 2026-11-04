@@ -16,18 +16,18 @@ func TestConfigWriting(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "config")
 	httpClient := mock.HTTPClient{}
 	flowConfigResponse := `{
-  "audience": "https://example.com/api/v2/",
+  "audience": "https://example.invalid/api/v2/",
   "client-id": "some-id",
-  "device-code-endpoint": "https://example.com/oauth/device/code",
-  "oauth-token-endpoint": "https://example.com/oauth/token"
+  "device-code-endpoint": "https://example.invalid/oauth/device/code",
+  "oauth-token-endpoint": "https://example.invalid/oauth/token"
 }`
 	httpClient.NextResponseString(200, flowConfigResponse)
-	client, err := NewClient(&httpClient, Options{ConfigPath: configPath, SystemName: "public", SystemURL: "http://example.com"})
+	client, err := NewClient(&httpClient, Options{ConfigPath: configPath, SystemName: "public", SystemURL: "http://example.invalid"})
 	require.Nil(t, err)
-	assert.Equal(t, "https://example.com/api/v2/", client.Authenticator.Audience)
+	assert.Equal(t, "https://example.invalid/api/v2/", client.Authenticator.Audience)
 	assert.Equal(t, "some-id", client.Authenticator.ClientID)
-	assert.Equal(t, "https://example.com/oauth/device/code", client.Authenticator.DeviceCodeEndpoint)
-	assert.Equal(t, "https://example.com/oauth/token", client.Authenticator.OauthTokenEndpoint)
+	assert.Equal(t, "https://example.invalid/oauth/device/code", client.Authenticator.DeviceCodeEndpoint)
+	assert.Equal(t, "https://example.invalid/oauth/token", client.Authenticator.OauthTokenEndpoint)
 
 	creds1 := Credentials{
 		AccessToken: "some-token",
@@ -57,7 +57,7 @@ func TestConfigWriting(t *testing.T) {
 
 	// Switch to another system
 	httpClient.NextResponseString(200, flowConfigResponse)
-	client, err = NewClient(&httpClient, Options{ConfigPath: configPath, SystemName: "publiccd", SystemURL: "http://example.com"})
+	client, err = NewClient(&httpClient, Options{ConfigPath: configPath, SystemName: "publiccd", SystemURL: "http://example.invalid"})
 	require.Nil(t, err)
 	creds2 := Credentials{
 		AccessToken: "another-token",

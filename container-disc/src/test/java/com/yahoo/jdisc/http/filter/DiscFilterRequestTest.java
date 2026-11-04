@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class DiscFilterRequestTest {
 
 	private static HttpRequest newRequest(URI uri, HttpRequest.Method method, HttpRequest.Version version) {
-		InetSocketAddress address = new InetSocketAddress("example.yahoo.com", 69);
+		InetSocketAddress address = new InetSocketAddress("host.example.invalid", 69);
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         driver.activateContainer(driver.newContainerBuilder());
         HttpRequest request = HttpRequest.newServerRequest(driver, uri, method, version, address);
@@ -143,7 +143,7 @@ public class DiscFilterRequestTest {
 
     @Test
     void testParameterAPIsAsList() {
-        URI uri = URI.create("http://example.yahoo.com:8080/test?param1=abc&param2=xyz&param2=pqr");
+        URI uri = URI.create("http://host.example.invalid:8080/test?param1=abc&param2=xyz&param2=pqr");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         DiscFilterRequest request = new DiscFilterRequest(httpReq);
         assertEquals(request.getParameter("param1"), "abc");
@@ -159,7 +159,7 @@ public class DiscFilterRequestTest {
 
     @Test
     void testParameterAPI() {
-        URI uri = URI.create("http://example.yahoo.com:8080/test?param1=abc&param2=xyz&param2=pqr");
+        URI uri = URI.create("http://host.example.invalid:8080/test?param1=abc&param2=xyz&param2=pqr");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         DiscFilterRequest request = new DiscFilterRequest(httpReq);
         assertEquals(request.getParameter("param1"), "abc");
@@ -229,7 +229,7 @@ public class DiscFilterRequestTest {
     @Test
     void testGetRemotePortLocalPort() {
 
-        URI uri = URI.create("http://example.yahoo.com:8080/test");
+        URI uri = URI.create("http://host.example.invalid:8080/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         DiscFilterRequest request = new DiscFilterRequest(httpReq);
 
@@ -237,7 +237,7 @@ public class DiscFilterRequestTest {
         assertEquals(8080, request.getLocalPort());
 
         if (request.getRemoteHost() != null) // if we have network
-            assertEquals("example.yahoo.com", request.getRemoteHost());
+            assertEquals("host.example.invalid", request.getRemoteHost());
 
         request.setRemoteAddr("1.1.1.1");
 
@@ -246,7 +246,7 @@ public class DiscFilterRequestTest {
 
     @Test
     void testCharacterEncoding() {
-        URI uri = URI.create("http://example.yahoo.com:8080/test");
+        URI uri = URI.create("http://host.example.invalid:8080/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         DiscFilterRequest request = new DiscFilterRequest(httpReq);
         request.setHeaders(HttpHeaders.Names.CONTENT_TYPE, "text/html;charset=UTF-8");
@@ -266,14 +266,14 @@ public class DiscFilterRequestTest {
     @Test
     void testGetServerPort() {
         {
-            URI uri = URI.create("http://example.yahoo.com/test");
+            URI uri = URI.create("http://host.example.invalid/test");
             HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
             DiscFilterRequest request = new DiscFilterRequest(httpReq);
             assertEquals(request.getServerPort(), 80);
 
         }
         {
-            URI uri = URI.create("https://example.yahoo.com/test");
+            URI uri = URI.create("https://host.example.invalid/test");
             HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
             DiscFilterRequest request = new DiscFilterRequest(httpReq);
             assertEquals(request.getServerPort(), 443);
@@ -283,13 +283,13 @@ public class DiscFilterRequestTest {
     @Test
     void testIsSecure() {
         {
-            URI uri = URI.create("http://example.yahoo.com/test");
+            URI uri = URI.create("http://host.example.invalid/test");
             HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
             DiscFilterRequest request = new DiscFilterRequest(httpReq);
             assertFalse(request.isSecure());
         }
         {
-            URI uri = URI.create("https://example.yahoo.com/test");
+            URI uri = URI.create("https://host.example.invalid/test");
             HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
             DiscFilterRequest request = new DiscFilterRequest(httpReq);
             assertTrue(request.isSecure());
@@ -306,7 +306,7 @@ public class DiscFilterRequestTest {
 
     @Test
     void testGetUntreatedHeaders() {
-        URI uri = URI.create("http://example.yahoo.com/test");
+        URI uri = URI.create("http://host.example.invalid/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         httpReq.headers().add("key1", "value1");
         httpReq.headers().add("key2", List.of("value1", "value2"));
@@ -321,7 +321,7 @@ public class DiscFilterRequestTest {
 
     @Test
     void testClearCookies() {
-        URI uri = URI.create("http://example.yahoo.com/test");
+        URI uri = URI.create("http://host.example.invalid/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         httpReq.headers().put(HttpHeaders.Names.COOKIE, "XYZ=value");
         DiscFilterRequest request = new DiscFilterRequest(httpReq);
@@ -331,7 +331,7 @@ public class DiscFilterRequestTest {
 
     @Test
     void testGetWrapedCookies() {
-        URI uri = URI.create("http://example.yahoo.com/test");
+        URI uri = URI.create("http://host.example.invalid/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         httpReq.headers().put(HttpHeaders.Names.COOKIE, "XYZ=value");
         DiscFilterRequest request = new DiscFilterRequest(httpReq);
@@ -343,7 +343,7 @@ public class DiscFilterRequestTest {
 
     @Test
     void testAddCookie() {
-        URI uri = URI.create("http://example.yahoo.com/test");
+        URI uri = URI.create("http://host.example.invalid/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         DiscFilterRequest request = new DiscFilterRequest(httpReq);
         request.addCookie(JDiscCookieWrapper.wrap(new Cookie("name", "value")));
