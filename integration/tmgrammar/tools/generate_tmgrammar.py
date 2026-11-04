@@ -437,7 +437,7 @@ def build_grammar(
     #   tensor  → keyword.control
     #   float   → storage.type.tensor (value type: float, double, bfloat16, int8, etc.)
     #   x       → variable.other.dimension (dimension name)
-    #   384     → constant.numeric (dimension size)
+    #   384     → constant.numeric.integer (dimension size, as numeric-literal scopes integers)
     #   {}      → mapped dimension marker
     #   < > ( ) [ ] , → punctuation
     repository["tensor-type"] = {
@@ -471,7 +471,7 @@ def build_grammar(
             {
                 "match": r"\[(\d+)\]",
                 "captures": {
-                    "1": {"name": "constant.numeric.vespa"},
+                    "1": {"name": "constant.numeric.integer.vespa"},
                 },
             },
             # Mapped dimension marker: {}
