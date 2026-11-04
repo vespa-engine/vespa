@@ -2,21 +2,20 @@
 
 #pragma once
 
-#include "enumstore.h"
+#include "i_enum_store_dictionary.h"
 #include "string_search_helper.h"
 
 #include <vespa/searchlib/query/query_term_ucs4.h>
-#include <vespa/vespalib/fuzzy/fuzzy_matcher.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
-#include <vespa/vespalib/util/regexp.h>
 
 namespace search {
+template <class EntryT> class EnumStoreT;
 class QueryTermSimple;
 } // namespace search
 
 namespace search::queryeval {
 class ExecuteInfo;
-}
+} // namespace search::queryeval
 
 namespace search::attribute {
 
@@ -38,46 +37,16 @@ public:
     StringMatcher(StringMatcher&&) noexcept;
     ~StringMatcher();
 
-    bool isValid() const;
-    bool match(const char* src) const { return _helper.isMatch(src); }
-    bool isPrefix() const { return _helper.isPrefix(); }
-    bool isRegex() const { return _helper.isRegex(); }
-    bool isCased() const { return _helper.isCased(); }
-    bool isFuzzy() const { return _helper.isFuzzy(); }
-    const vespalib::Regex& getRegex() const { return _helper.getRegex(); }
-    const vespalib::FuzzyMatcher& getFuzzyMatcher() const { return _helper.getFuzzyMatcher(); }
-    const QueryTermUCS4* get_query_term_ptr() const noexcept { return _query_term.get(); }
-
-    template <typename DictionaryConstIteratorType>
-    bool is_fuzzy_match(const char* word, DictionaryConstIteratorType& itr,
-                        const DfaStringComparator::DataStoreType& data_store) const {
-        return _helper.is_fuzzy_match(word, itr, data_store);
-    }
-    bool lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const;
+    [[nodiscard]] bool is_valid() const { return _query_term && (!_query_term->empty()); }
+    [[nodiscard]] bool match(const char* src) const { return _helper.isMatch(src); }
+    [[nodiscard]] const QueryTermUCS4* get_query_term_ptr() const noexcept { return _query_term.get(); }
 
     /*
-     * The methods below are needed in StringPostingSearchContext
+     * Methods for dictionary lookups. Used by StringPostingSearchContext.
+     * lookup_in_dictionary is also used by StringSearchContext with an EnumHintSearchContext.
      */
-    template <typename DictionaryConstIteratorType>
-    bool use_dictionary_entry(const EnumStoreT<const char*>& enum_store, DictionaryConstIteratorType& it) const {
-        if (isRegex()) {
-            if (getRegex().valid() && getRegex().partial_match(enum_store.get_value(it.getKey().load_acquire()))) {
-                return true;
-            }
-            ++it;
-            return false;
-        } else if (isCased()) {
-            if (match(enum_store.get_value(it.getKey().load_acquire()))) {
-                return true;
-            }
-            ++it;
-            return false;
-        } else if (isFuzzy()) {
-            return is_fuzzy_match(enum_store.get_value(it.getKey().load_acquire()), it, enum_store.get_data_store());
-        }
-        return true;
-    }
-
+    bool lookup_in_dictionary(const EnumStoreT<const char*>& enum_store, IDictionaryLookup& dict) const;
+    bool use_dictionary_entry(const EnumStoreT<const char*>& enum_store, EnumPostingTree::ConstIterator& it) const;
     bool use_posting_lists_when_non_strict(const queryeval::ExecuteInfo& info, uint32_t docid_limit) const;
 };
 
