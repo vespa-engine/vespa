@@ -16,6 +16,7 @@
     <module>zookeeper-server-common</module>
     <module>zookeeper-server</module>
     <module>zookeeper-server-3.9.6</module>
+    <module>zookeeper-server-3.9.7</module>
   </modules>
   <dependencies>
     <dependency>
