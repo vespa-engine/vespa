@@ -264,7 +264,7 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_ML_MODEL_IMPORT_CACHE = defineFeatureFlag(
-            "use-ml-model-import-cache", false,
+            "use-ml-model-import-cache", true,
             List.of("hmusum"), "2026-10-18", "2027-04-18",
             "Whether to cache imported ONNX, XGBoost and LightGBM models on config server disk between deployments.",
             "Takes effect on the next deployment.",

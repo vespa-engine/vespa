@@ -93,7 +93,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean enableLandlock = false;
     private boolean enableLegacyFeedHandler = true;
     private boolean productDiscovery = false;
-    private boolean useMlModelImportCache = false;
+    private boolean useMlModelImportCache = true;
     private OpenTelemetryConfiguration opentelemetrySdk = OpenTelemetrySettings.createDisabled();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
