@@ -12,6 +12,11 @@ import ai.vespa.feed.client.impl.HttpFeedClient.ClusterFactory;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Set;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
@@ -406,6 +411,9 @@ class HttpRequestStrategy implements RequestStrategy {
         private final ExecutorService executor = Executors.newSingleThreadExecutor();
         private AtomicLong inflight = new AtomicLong(0);
         private Cluster delegate;
+        private final Set<Cluster> retired = Collections.newSetFromMap(new IdentityHashMap<>());
+        private boolean closed;
+        private Throwable retirementFailure;
 
         ResettableCluster(ClusterFactory clusterFactory, Duration terminationTimeout) throws IOException {
             this.terminationTimeout = terminationTimeout;
@@ -416,30 +424,45 @@ class HttpRequestStrategy implements RequestStrategy {
         @Override
         public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
             synchronized (monitor) {
+                if (closed) {
+                    vessel.completeExceptionally(new FeedException("Cluster is closed"));
+                    return;
+                }
                 AtomicLong usedCounter = inflight;
                 usedCounter.incrementAndGet();
                 Cluster usedCluster = delegate;
                 usedCluster.dispatch(request, vessel);
-                vessel.whenCompleteAsync((__, ___) -> {
-                                             synchronized (monitor) {
-                                                 closeRetiredIfIdle(usedCluster, usedCounter.decrementAndGet());
-                                             }
-                                         },
-                                         executor);
+                vessel.whenComplete((__, ___) -> {
+                    synchronized (monitor) {
+                        // After shutdown, accounting must not depend on a stopped executor.
+                        if (closed) usedCounter.decrementAndGet();
+                        else executor.execute(() -> retireIfIdle(usedCluster, usedCounter, true));
+                    }
+                });
             }
         }
 
         @Override
         public void close() {
             Throwable failure = null;
+            List<Cluster> toClose;
             synchronized (monitor) {
-                try { delegate.close(); }
-                catch (Throwable t) { failure = t; }
+                closed = true;
+                toClose = new ArrayList<>(retired);
+                retired.clear();
+                toClose.add(delegate);
                 try { executor.shutdown(); }
+                catch (Throwable t) { failure = t; }
+            }
+            // Transport close may await callbacks. Never hold their accounting monitor here.
+            for (Cluster cluster : toClose) {
+                try { cluster.close(); }
                 catch (Throwable t) { failure = retainFailure(failure, t); }
             }
-            // Accounting tasks take monitor; wait only after releasing it.
             failure = awaitTermination(executor, terminationTimeout, "reset accounting", failure);
+            synchronized (monitor) {
+                if (retirementFailure != null) failure = retainFailure(failure, retirementFailure);
+            }
             if (failure instanceof RuntimeException) throw (RuntimeException) failure;
             if (failure instanceof Error) throw (Error) failure;
             if (failure != null) throw new FeedException("Reset accounting cleanup failed", failure);
@@ -466,22 +489,32 @@ class HttpRequestStrategy implements RequestStrategy {
 
         @Override public void resetStats() { delegate.resetStats(); }
 
-        // Both reset and completion accounting hold monitor while deciding retirement.
-        private void closeRetiredIfIdle(Cluster cluster, long remaining) {
-            if (remaining == 0 && cluster != delegate) {
+        private void retireIfIdle(Cluster cluster, AtomicLong counter, boolean completed) {
+            synchronized (monitor) {
+                long remaining = completed ? counter.decrementAndGet() : counter.get();
+                if (remaining != 0 || cluster == delegate || !retired.remove(cluster)) return;
+            }
+            try {
                 log.log(INFO, "Closing old HTTP client");
                 cluster.close();
+            } catch (Throwable t) {
+                synchronized (monitor) { retirementFailure = retainFailure(retirementFailure, t); }
             }
         }
 
         void reset() throws IOException {
             synchronized (monitor) {
+                if (closed) return;
                 log.log(INFO, "Replacing underlying HTTP client to attempt recovery");
                 Cluster previous = delegate;
                 AtomicLong previousInflight = inflight;
                 delegate = clusterFactory.create();
                 inflight = new AtomicLong(0);
-                closeRetiredIfIdle(previous, previousInflight.get());
+                retired.remove(delegate);
+                if (previous != delegate) {
+                    retired.add(previous);
+                    executor.execute(() -> retireIfIdle(previous, previousInflight, false));
+                }
             }
         }
 

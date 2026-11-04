@@ -485,11 +485,12 @@ class HttpRequestStrategyTest {
     @CsvSource({"true", "false"})
     void resetFailureStillClosesTheOwnedCluster(boolean creationFails) throws Exception {
         CountDownLatch ownedClosed = new CountDownLatch(1);
+        RuntimeException retirementFailure = new IllegalStateException("injected retirement failure");
         MockCluster original = new MockCluster() {
             @Override public void close() {
                 super.close();
-                if (creationFails) ownedClosed.countDown();
-                else throw new IllegalStateException("injected retirement failure");
+                ownedClosed.countDown();
+                if (!creationFails) throw retirementFailure;
             }
         };
         MockCluster replacement = new MockCluster() {
@@ -507,12 +508,146 @@ class HttpRequestStrategyTest {
                 });
         try {
             state.set(HALF_OPEN);
-            assertTrue(ownedClosed.await(10, TimeUnit.SECONDS), "reset failure must release the owned delegate");
+            assertTrue(ownedClosed.await(10, TimeUnit.SECONDS), "reset must attempt cleanup of the owned delegate");
         } finally {
-            strategy.destroy();
+            if (creationFails) strategy.destroy();
+            else assertSame(retirementFailure, assertThrows(CompletionException.class, strategy::destroy).getCause());
         }
         assertEquals(1, original.closeCalls.get());
         assertEquals(creationFails ? 0 : 1, replacement.closeCalls.get());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, after, false, false", "true, after, false, false",
+                "false, during, false, false", "true, during, false, false", "false, never, false, false",
+                "false, after, true, false", "false, after, false, true", "false, after, true, true"})
+    void lateRetiredResponseDoesNotLoseCleanup(boolean exceptional, String completion,
+                                             boolean oldCloseFails, boolean currentCloseFails) throws Exception {
+        RuntimeException oldFailure = new IllegalStateException("old close failed");
+        RuntimeException currentFailure = new IllegalStateException("current close failed");
+        AtomicReference<CompletableFuture<HttpResponse>> pending = new AtomicReference<>();
+        Runnable respond = () -> {
+            if (exceptional) pending.get().completeExceptionally(new IOException("late transport failure"));
+            else pending.get().complete(HttpResponse.of(200, null));
+        };
+        MockCluster original = new MockCluster() {
+            @Override public void close() {
+                super.close();
+                if (completion.equals("during")) {
+                    Thread callback = new Thread(respond, "test-transport-callback");
+                    callback.start();
+                    try { callback.join(5000); }
+                    catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new AssertionError(e); }
+                    assertFalse(callback.isAlive(), "transport close must not hold the callback accounting monitor");
+                }
+                if (oldCloseFails) throw oldFailure;
+            }
+        };
+        MockCluster replacement = new MockCluster() {
+            @Override public void close() {
+                super.close();
+                if (currentCloseFails) throw currentFailure;
+            }
+        };
+        CountDownLatch dispatched = new CountDownLatch(1);
+        original.expect((__, vessel) -> { pending.set(vessel); dispatched.countDown(); });
+        replacement.expect((__, vessel) -> vessel.complete(HttpResponse.of(200, null)));
+        AtomicReference<CircuitBreaker.State> state = new AtomicReference<>(CLOSED);
+        AtomicInteger created = new AtomicInteger();
+        CountDownLatch replaced = new CountDownLatch(1);
+        HttpRequestStrategy strategy = new HttpRequestStrategy(
+                new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123")))
+                        .setCircuitBreaker(state::get),
+                () -> {
+                    if (created.getAndIncrement() == 0) return original;
+                    state.set(CLOSED);
+                    replaced.countDown();
+                    return replacement;
+                });
+        HttpRequest request = new HttpRequest("DELETE", "/", "", null, null, Duration.ofSeconds(60), () -> 0);
+        try {
+            strategy.enqueue(DocumentId.of("ns", "type", "pending"), request);
+            assertTrue(dispatched.await(10, TimeUnit.SECONDS));
+            state.set(HALF_OPEN);
+            assertTrue(replaced.await(10, TimeUnit.SECONDS));
+            strategy.enqueue(DocumentId.of("ns", "type", "replacement"), request).get(10, TimeUnit.SECONDS);
+            assertEquals(0, original.closeCalls.get(), "active retired transport stays available before shutdown");
+            // Stops accounting before the old response; one failure must not skip another close.
+            if (oldCloseFails || currentCloseFails) {
+                Throwable failure = assertThrows(CompletionException.class, strategy::destroy).getCause();
+                assertSame(oldCloseFails ? oldFailure : currentFailure, failure);
+                if (oldCloseFails && currentCloseFails) assertSame(currentFailure, failure.getSuppressed()[0]);
+            } else strategy.destroy();
+            int closesAtShutdown = original.closeCalls.get();
+            if (completion.equals("after")) respond.run();
+            if (!completion.equals("never"))
+                assertFalse(pending.get().complete(HttpResponse.of(200, null)), "duplicate completion must not repeat cleanup");
+            assertEquals(1, closesAtShutdown, "shutdown must release the retired transport without needing a late callback");
+            assertEquals(1, original.closeCalls.get(), "late completion must not close the transport twice");
+            assertEquals(1, replacement.closeCalls.get());
+        } finally {
+            if (oldCloseFails || currentCloseFails) assertThrows(CompletionException.class, strategy::destroy);
+            else strategy.destroy();
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, false", "true, false", "true, true"})
+    void shutdownWaitsForClaimedRetirement(boolean fails, boolean currentFails) throws Exception {
+        CountDownLatch retiring = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        CountDownLatch replacementClosed = new CountDownLatch(1);
+        RuntimeException injected = new IllegalStateException("retirement failed");
+        RuntimeException currentFailure = new IllegalStateException("current close failed");
+        MockCluster original = new MockCluster() {
+            @Override public void close() {
+                super.close();
+                retiring.countDown();
+                awaitLatch(release);
+                if (fails) throw injected;
+            }
+        };
+        MockCluster replacement = new MockCluster() {
+            @Override public void close() {
+                super.close(); replacementClosed.countDown();
+                if (currentFails) throw currentFailure;
+            }
+        };
+        AtomicReference<CircuitBreaker.State> state = new AtomicReference<>(CLOSED);
+        AtomicInteger created = new AtomicInteger();
+        HttpRequestStrategy strategy = new HttpRequestStrategy(
+                new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123"))).setCircuitBreaker(state::get),
+                () -> {
+                    if (created.getAndIncrement() == 0) return original;
+                    state.set(CLOSED);
+                    return replacement;
+                });
+        var cleanup = Executors.newSingleThreadExecutor();
+        try {
+            state.set(HALF_OPEN);
+            assertTrue(retiring.await(10, TimeUnit.SECONDS));
+            var outcome = cleanup.submit(strategy::destroy);
+            assertTrue(replacementClosed.await(5, TimeUnit.SECONDS), "blocked retirement must not hold the ownership monitor");
+            assertThrows(TimeoutException.class, () -> outcome.get(100, TimeUnit.MILLISECONDS));
+            release.countDown();
+            if (fails) {
+                Throwable failure = assertThrows(ExecutionException.class,
+                        () -> outcome.get(10, TimeUnit.SECONDS)).getCause().getCause();
+                assertSame(currentFails ? currentFailure : injected, failure);
+                if (currentFails) {
+                    assertEquals(1, failure.getSuppressed().length);
+                    assertSame(injected, failure.getSuppressed()[0]);
+                }
+                assertSame(failure, assertThrows(CompletionException.class, strategy::destroy).getCause());
+            } else outcome.get(10, TimeUnit.SECONDS);
+            assertEquals(1, original.closeCalls.get());
+            assertEquals(1, replacement.closeCalls.get());
+        } finally {
+            release.countDown();
+            cleanup.shutdown();
+            assertTrue(cleanup.awaitTermination(10, TimeUnit.SECONDS));
+            try { strategy.destroy(); } catch (CompletionException expected) { assertTrue(fails); }
+        }
     }
 
     @Test
