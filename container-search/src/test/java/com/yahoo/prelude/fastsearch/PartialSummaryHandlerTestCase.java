@@ -4,10 +4,16 @@ package com.yahoo.prelude.fastsearch;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
+import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.schema.DocumentSummary;
 import com.yahoo.search.schema.Schema;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -349,6 +355,146 @@ public class PartialSummaryHandlerTestCase {
         // we will do this in dispatch code:
         toTest.markFilled(hit2);
         assertEquals(2, result.hits().getFilled().size());
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = { "default", "[presentation]" })
+    void testOverlappingSummaryFetchesOnlyMissingFields(String summaryClass) {
+        var query = createQuery(null);
+        var hit = createHit(query, "first3");
+        var result = createResult(query, hit);
+        var handler = new PartialSummaryHandler(createDocsumDefinitionSet());
+        handler.wantToFill(result, summaryClass);
+
+        assertEquals("default", handler.askForSummary());
+        assertEquals(Set.of("CHUNK", "SCORE", "BYTES"), handler.askForFields());
+        assertEquals(handler.askForFields(), handler.effectiveDocsumDef().fields().keySet());
+        assertFalse(handler.resultAlreadyFilled());
+        assertTrue(handler.needFill(hit));
+        // Fill checks must still cover the whole request, not just the fields fetched this time.
+        assertTrue(handler.needFill(createHit(query, "last3")));
+
+        handler.markFilled(hit);
+        assertTrue(hit.isFilled(summaryClass));
+        assertFalse(handler.needFill(hit));
+        var nextFill = new PartialSummaryHandler(createDocsumDefinitionSet());
+        nextFill.wantToFill(result, "default");
+        assertTrue(nextFill.resultAlreadyFilled());
+    }
+
+    @Test
+    void testNamedPresentationSummaryFetchesOnlyMissingFields() {
+        var query = createQuery("middle2");
+        var hit = createHit(query, "first3");
+        var handler = new PartialSummaryHandler(createDocsumDefinitionSet());
+        handler.wantToFill(createResult(query, hit), PartialSummaryHandler.PRESENTATION);
+
+        assertEquals("middle2", handler.askForSummary());
+        assertEquals(Set.of("CHUNK"), handler.askForFields());
+        handler.markFilled(hit);
+        assertTrue(hit.isFilled("middle2"));
+        assertTrue(hit.isFilled(PartialSummaryHandler.PRESENTATION));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { "[presentation]", "[f:CHUNK,WORDS]" })
+    void testExplicitFieldsFetchOnlyMissingFields(String summaryClass) {
+        var query = createQuery(null);
+        query.getPresentation().setSummaryFields("WORDS,CHUNK");
+        var hit = createHit(query, "first3");
+        var handler = new PartialSummaryHandler(createDocsumDefinitionSet());
+        handler.wantToFill(createResult(query, hit), summaryClass);
+
+        assertEquals(Set.of("CHUNK"), handler.askForFields());
+        assertEquals(Set.of("CHUNK"), handler.effectiveDocsumDef().fields().keySet());
+        assertEquals(Set.of("WORDS", "CHUNK"), query.getPresentation().getSummaryFields());
+        handler.markFilled(hit);
+        assertTrue(hit.isFilled("[f:CHUNK,WORDS]"));
+        assertFalse(hit.isFilled("default"));
+        assertFalse(handler.needFill(hit));
+    }
+
+    @Test
+    void testFieldsAreOmittedOnlyWhenFilledOnEveryHit() {
+        var query = createQuery(null);
+        var first = createHit(query, "first3");
+        var second = createHit(query);
+        var nested = new HitGroup("nested");
+        nested.add(second);
+        var result = createResult(query, first, nested, new Hit("unfillable"));
+        var handler = new PartialSummaryHandler(createDocsumDefinitionSet());
+        handler.wantToFill(result, "middle2");
+
+        assertNull(handler.askForFields());
+        assertTrue(handler.needFill(first));
+        assertTrue(handler.needFill(second));
+
+        second.setFilled("first3");
+        handler = new PartialSummaryHandler(createDocsumDefinitionSet());
+        handler.wantToFill(result, "middle2");
+        assertEquals(Set.of("CHUNK"), handler.askForFields());
+    }
+
+    @Test
+    void testOverlappingFieldsFromMultiplePreviousFills() {
+        var query = createQuery(null);
+        var hit = createHit(query, "first3", "[f:CHUNK]");
+        var handler = new PartialSummaryHandler(createDocsumDefinitionSet());
+        handler.wantToFill(createResult(query, hit), "default");
+
+        assertEquals(Set.of("SCORE", "BYTES"), handler.askForFields());
+        assertTrue(handler.needFill(hit));
+    }
+
+    @Test
+    void testConflictingSummaryAndFieldsOmitPreviousFieldsAfterResolvingSummary() {
+        var query = createQuery("first3");
+        query.getPresentation().setSummaryFields("TOPIC,SCORE");
+        var hit = createHit(query, "[f:TOPIC]");
+        var handler = new PartialSummaryHandler(createDocsumDefinitionSet());
+        handler.wantToFill(createResult(query, hit), PartialSummaryHandler.PRESENTATION);
+
+        assertEquals("[all]", handler.askForSummary());
+        assertEquals(Set.of("TITLE", "WORDS", "SCORE"), handler.askForFields());
+        handler.markFilled(hit);
+        assertTrue(hit.isFilled("[f:SCORE,TITLE,TOPIC,WORDS]"));
+        assertFalse(hit.isFilled("[all]"));
+    }
+
+    @Test
+    void testPreviouslyFilledFieldsOutsideSummaryDoNotRequireAnotherSummary() {
+        var query = createQuery("middle2");
+        query.getPresentation().setSummaryFields("TOPIC,CHUNK");
+        var hit = createHit(query, "first3");
+        var handler = new PartialSummaryHandler(createDocsumDefinitionSet());
+        handler.wantToFill(createResult(query, hit), PartialSummaryHandler.PRESENTATION);
+
+        assertEquals("middle2", handler.askForSummary());
+        assertEquals(Set.of("CHUNK"), handler.askForFields());
+        handler.markFilled(hit);
+        assertTrue(hit.isFilled("[f:CHUNK,TOPIC]"));
+    }
+
+    @Test
+    void testStreamingHasNoPreviousFillToOmit() {
+        var query = createQuery("middle2");
+        query.getPresentation().setSummaryFields("WORDS,CHUNK");
+        var handler = new PartialSummaryHandler(createDocsumDefinitionSet());
+        handler.wantToFill(query);
+
+        assertEquals("middle2", handler.askForSummary());
+        assertEquals(Set.of("WORDS", "CHUNK"), handler.askForFields());
+        assertEquals(handler.askForFields(), handler.effectiveDocsumDef().fields().keySet());
+    }
+
+    @Test
+    void testNoFillableHits() {
+        var query = createQuery(null);
+        var handler = new PartialSummaryHandler(createDocsumDefinitionSet());
+        handler.wantToFill(createResult(query, new Hit("unfillable")), "default");
+        assertTrue(handler.resultAlreadyFilled());
+        assertNull(handler.askForFields());
     }
 
     static class TraceToString extends com.yahoo.yolean.trace.TraceVisitor {
