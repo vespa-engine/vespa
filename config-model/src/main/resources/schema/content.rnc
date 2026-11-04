@@ -382,6 +382,7 @@ Tuning = element tuning {
                element maxsize-percent { xsd:double { minInclusive = "0.0" maxInclusive = "50.0" } }? &
                # initialentries is deprecated and will be gone on vespa 9
                element initialentries { xsd:nonNegativeInteger }? &
+               element update-strategy { string "invalidate" | string "update" }? &
                TuningCompression?
             }? &
             element logstore {

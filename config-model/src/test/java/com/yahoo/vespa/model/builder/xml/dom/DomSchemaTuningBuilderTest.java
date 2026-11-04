@@ -187,6 +187,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
                 "<maxsize>128</maxsize>",
                 "<maxsize-percent>30.7</maxsize-percent>",
                 "<initialentries>64</initialentries>",
+                "<update-strategy>update</update-strategy>",
                 "<compression>",
                 "<type>none</type>",
                 "<level>3</level>",
@@ -208,6 +209,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
         assertEquals(Tuning.SearchNode.IoType.DIRECTIO, t.searchNode.summary.io.read);
         assertEquals(128, t.searchNode.summary.store.cache.maxSize.longValue());
         assertEquals(30.7, t.searchNode.summary.store.cache.maxSizePercent, DELTA);
+        assertEquals(Tuning.SearchNode.Summary.Store.UpdateStrategy.UPDATE, t.searchNode.summary.store.cache.updateStrategy);
         assertEquals(Tuning.SearchNode.Summary.Store.Compression.Type.NONE,
                 t.searchNode.summary.store.cache.compression.type);
         assertEquals(3, t.searchNode.summary.store.cache.compression.level.intValue());
@@ -222,6 +224,7 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
         assertEquals(cfg.summary().read().io(), ProtonConfig.Summary.Read.Io.DIRECTIO);
         assertEquals(cfg.summary().cache().maxbytes(), 128);
         assertEquals(cfg.summary().cache().initialentries(), 64);
+        assertEquals(ProtonConfig.Summary.Cache.Update_strategy.UPDATE, cfg.summary().cache().update_strategy());
         assertEquals(cfg.summary().cache().compression().type(), ProtonConfig.Summary.Cache.Compression.Type.NONE);
         assertEquals(cfg.summary().cache().compression().level(), 3);
         assertEquals(cfg.summary().log().maxfilesize(), 512);
@@ -245,9 +248,11 @@ public class DomSchemaTuningBuilderTest extends DomBuilderTest {
 
         assertNull(t.searchNode.summary.store.cache.maxSize);
         assertEquals(30.7, t.searchNode.summary.store.cache.maxSizePercent, DELTA);
+        assertNull(t.searchNode.summary.store.cache.updateStrategy);
 
         ProtonConfig cfg = getProtonCfg(t);
         assertEquals(cfg.summary().cache().maxbytes(), -30);
+        assertEquals(ProtonConfig.Summary.Cache.Update_strategy.INVALIDATE, cfg.summary().cache().update_strategy());
     }
 
     @Test

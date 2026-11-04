@@ -233,6 +233,8 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 c.maxSizePercent = asDouble(e);
             } else if (equals("initialentries", e)) {
                 c.initialEntries = asLong(e);
+            } else if (equals("update-strategy", e)) {
+                c.updateStrategy = Tuning.SearchNode.Summary.Store.UpdateStrategy.fromString(asString(e));
             } else if (equals("compression", e)) {
                 c.compression = new Tuning.SearchNode.Summary.Store.Compression();
                 handleSummaryStoreCompression(e, c.compression);

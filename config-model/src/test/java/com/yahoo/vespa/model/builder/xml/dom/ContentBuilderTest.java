@@ -637,6 +637,7 @@ public class ContentBuilderTest extends DomBuilderTest {
                         "              <store>" +
                         "                <cache>" +
                         "                  <maxsize>8192</maxsize>" +
+                        "                  <update-strategy>update</update-strategy>" +
                         "                  <compression>" +
                         "                    <type>lz4</type>" +
                         "                    <level>8</level>" +
@@ -668,6 +669,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertTrue(cfg.contains("summary.cache.maxbytes 8192"));
         assertTrue(cfg.contains("summary.cache.compression.level 8"));
         assertTrue(cfg.contains("summary.cache.compression.type LZ4"));
+        assertTrue(cfg.contains("summary.cache.update_strategy UPDATE"));
         assertTrue(cfg.contains("summary.read.io DIRECTIO"));
     }
 
