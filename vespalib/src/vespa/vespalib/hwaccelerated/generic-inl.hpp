@@ -140,13 +140,30 @@ __attribute__((noinline)) float do_eden_f32_q_dot_product(const float* lhs, cons
     const auto codebook = codebooks::eden_bf16_codebook(Bits);
     size_t     i = 0;
     float      dot = 0;
-    scalar_block_bit_unpack_lambda<Bits>(packed_rhs, sz, [&](const uint8_t* idx, const size_t chunk_sz) noexcept {
+    with_scalar_unpacked_rhs_bits<Bits>(packed_rhs, sz, [&](const uint8_t* idx, const size_t chunk_sz) noexcept {
         dot += sum_indexed_unrolled<4, float>(chunk_sz, [&](const size_t j) noexcept {
             const float c_j = codebook[idx[j]];
             return lhs[i + j] * c_j;
         });
         i += chunk_sz;
     });
+    return dot;
+}
+
+template <uint8_t Bits>
+__attribute__((noinline)) float do_eden_q_q_dot_product(const uint8_t* packed_lhs, const uint8_t* packed_rhs,
+                                                        const size_t sz) noexcept {
+    const auto codebook = codebooks::eden_bf16_codebook(Bits);
+    float      dot = 0;
+    with_scalar_unpacked_lhs_rhs_bits<Bits>(
+        packed_lhs, packed_rhs, sz,
+        [&](const uint8_t* lhs_idx, const uint8_t* rhs_idx, const size_t chunk_sz) noexcept {
+            dot += sum_indexed_unrolled<4, float>(chunk_sz, [&](const size_t j) noexcept {
+                const float c_l = codebook[lhs_idx[j]];
+                const float c_r = codebook[rhs_idx[j]];
+                return c_l * c_r;
+            });
+        });
     return dot;
 }
 
@@ -186,6 +203,21 @@ float my_eden_f32_q_dot_product(const float* lhs, const uint8_t* packed_rhs, con
         return do_eden_f32_q_dot_product<3>(lhs, packed_rhs, sz);
     case 4:
         return do_eden_f32_q_dot_product<4>(lhs, packed_rhs, sz);
+    default:
+        abort();
+    }
+}
+float my_eden_q_q_dot_product(const uint8_t* packed_lhs, const uint8_t* packed_rhs, const uint8_t bits,
+                              const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return do_eden_q_q_dot_product<1>(packed_lhs, packed_rhs, sz);
+    case 2:
+        return do_eden_q_q_dot_product<2>(packed_lhs, packed_rhs, sz);
+    case 3:
+        return do_eden_q_q_dot_product<3>(packed_lhs, packed_rhs, sz);
+    case 4:
+        return do_eden_q_q_dot_product<4>(packed_lhs, packed_rhs, sz);
     default:
         abort();
     }

@@ -28,6 +28,8 @@ using DotProductF32Fn = float (*)(const float* a, const float* b, size_t sz) noe
 using DotProductF64Fn = double (*)(const double* a, const double* b, size_t sz) noexcept;
 
 using EdenF32QDotProductFn = float (*)(const float* lhs, const uint8_t* packed_rhs, uint8_t bits, size_t sz) noexcept;
+using EdenQQDotProductFn = float (*)(const uint8_t* packed_lhs, const uint8_t* packed_rhs, uint8_t bits,
+                                     size_t sz) noexcept;
 
 using SquaredEuclideanDistanceI8Fn = double (*)(const int8_t* a, const int8_t* b, size_t sz) noexcept;
 using SquaredEuclideanDistanceBF16Fn = double (*)(const BFloat16* a, const BFloat16* b, size_t sz) noexcept;
@@ -77,6 +79,7 @@ struct FnTable {
     DotProductF64Fn  dot_product_f64 = nullptr;
 
     EdenF32QDotProductFn eden_f32_q_dot_product = nullptr;
+    EdenQQDotProductFn   eden_q_q_dot_product = nullptr;
 
     SquaredEuclideanDistanceI8Fn   squared_euclidean_distance_i8 = nullptr;
     SquaredEuclideanDistanceBF16Fn squared_euclidean_distance_bf16 = nullptr;
@@ -111,6 +114,7 @@ struct FnTable {
         DOT_PRODUCT_F32,
         DOT_PRODUCT_F64,
         EDEN_F32_Q_DOT_PRODUCT,
+        EDEN_Q_Q_DOT_PRODUCT,
         SQUARED_EUCLIDEAN_DISTANCE_I8,
         SQUARED_EUCLIDEAN_DISTANCE_BF16,
         SQUARED_EUCLIDEAN_DISTANCE_F32,
@@ -190,6 +194,7 @@ struct FnTable {
     VISITOR(DotProductF32Fn, dot_product_f32, FnTable::FnId::DOT_PRODUCT_F32)                                       \
     VISITOR(DotProductF64Fn, dot_product_f64, FnTable::FnId::DOT_PRODUCT_F64)                                       \
     VISITOR(EdenF32QDotProductFn, eden_f32_q_dot_product, FnTable::FnId::EDEN_F32_Q_DOT_PRODUCT)                    \
+    VISITOR(EdenQQDotProductFn, eden_q_q_dot_product, FnTable::FnId::EDEN_Q_Q_DOT_PRODUCT)                          \
     VISITOR(SquaredEuclideanDistanceI8Fn, squared_euclidean_distance_i8,                                            \
             FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_I8)                                                           \
     VISITOR(SquaredEuclideanDistanceBF16Fn, squared_euclidean_distance_bf16,                                        \

@@ -475,6 +475,17 @@ void check_f32_q_dot_product_eq(std::span<const IAccelerated*> accels, std::span
     }
 }
 
+void check_q_q_dot_product_eq(std::span<const IAccelerated*> accels, std::span<const uint8_t> packed_lhs,
+                              std::span<const uint8_t> packed_rhs, const uint8_t bits, const size_t sz,
+                              const float expected) {
+    for (const auto* accel : accels) {
+        SCOPED_TRACE(accel->target_info().to_string());
+        ScopedFnTableOverride fn_scope(accel->fn_table());
+        const float           actual = eden_q_q_dot_product(packed_lhs.data(), packed_rhs.data(), bits, sz);
+        ASSERT_THAT(actual, FloatNear(expected, 0.000001 * sz)) << "with bits=" << int(bits) << ", length=" << sz;
+    }
+}
+
 // SIMD quantized vector processing requires juggling multiple vector BF16 LUT lookups and
 // fusing them into new, wider vectors. Getting things wrong here (e.g. wrong high/low vector
 // part extraction, wrong lane interleaving etc.) is uncomfortably easy. This test does its
@@ -542,6 +553,77 @@ void verify_eden_f32_q_dot_product(std::span<const IAccelerated*> accels, const 
     }
 }
 
+void verify_eden_q_q_dot_product_no_lane_confusion(std::span<const IAccelerated*> accels, const uint8_t bits,
+                                                   const size_t test_length) {
+    CHECK(bits >= 1 && bits <= 4);
+    const auto codebook = codebooks::eden_bf16_codebook(bits);
+
+    std::vector<uint8_t> lhs_idx(test_length), rhs_idx(test_length);
+    const uint8_t        highest_centroid_value_idx = (1u << bits) - 1;
+    const uint8_t        lowest_centroid_value_idx = highest_centroid_value_idx / 2;
+    std::ranges::fill(lhs_idx, lowest_centroid_value_idx);
+    std::ranges::fill(rhs_idx, lowest_centroid_value_idx);
+    const size_t         packed_size = packed_bytes(bits, test_length);
+    std::vector<uint8_t> packed_lhs(packed_size), packed_rhs(packed_size);
+
+    const float c_lo = codebook[lowest_centroid_value_idx];
+    const float c_hi = codebook[highest_centroid_value_idx];
+    const float c_lo_sq = c_lo * c_lo;
+    const float c_hi_sq = c_hi * c_hi;
+    for (size_t i = 0; i < test_length; ++i) {
+        lhs_idx[i] = highest_centroid_value_idx;
+        rhs_idx[i] = highest_centroid_value_idx;
+
+        bit_pack_reference_output(lhs_idx.data(), packed_lhs.data(), bits, test_length);
+        bit_pack_reference_output(rhs_idx.data(), packed_rhs.data(), bits, test_length);
+
+        const float expected_hi_hi = c_lo_sq * static_cast<float>(test_length - 1) + c_hi_sq;
+        ASSERT_NO_FATAL_FAILURE(
+            check_q_q_dot_product_eq(accels, packed_lhs, packed_rhs, bits, test_length, expected_hi_hi));
+        lhs_idx[i] = lowest_centroid_value_idx;
+        bit_pack_reference_output(lhs_idx.data(), packed_lhs.data(), bits, test_length);
+        const float expected_lo_hi = c_lo_sq * static_cast<float>(test_length - 1) + (c_lo * c_hi);
+        ASSERT_NO_FATAL_FAILURE(
+            check_q_q_dot_product_eq(accels, packed_lhs, packed_rhs, bits, test_length, expected_lo_hi));
+        rhs_idx[i] = lowest_centroid_value_idx; // Reset for next position iteration
+    }
+}
+
+void verify_eden_q_q_dot_product(std::span<const IAccelerated*> accels, const uint8_t bits,
+                                 const size_t test_length) {
+    CHECK(bits >= 1 && bits <= 4);
+    CHECK(test_length >= 32); // Due to boundary testing
+    const auto             codebook = codebooks::eden_bf16_codebook(bits);
+    Xoshiro256PlusPlusPrng prng(0x1baaadf00000d);
+
+    std::vector<float>   lhs(test_length), rhs(test_length);
+    std::vector<uint8_t> lhs_idx(test_length), rhs_idx(test_length);
+    const size_t         packed_size = packed_bytes(bits, test_length);
+    std::vector<uint8_t> packed_lhs(packed_size), packed_rhs(packed_size);
+
+    auto make_random_idx = [&] noexcept { return prng() & ((1u << bits) - 1); };
+    auto map_idx_to_centroid = [&](const uint8_t idx) noexcept { return codebook[idx]; };
+
+    constexpr size_t rounds = 100;
+    for (size_t i = 0; i < rounds; ++i) {
+        std::ranges::generate(lhs_idx, make_random_idx);
+        std::ranges::generate(rhs_idx, make_random_idx);
+        std::ranges::transform(lhs_idx.begin(), lhs_idx.end(), lhs.begin(), map_idx_to_centroid);
+        std::ranges::transform(rhs_idx.begin(), rhs_idx.end(), rhs.begin(), map_idx_to_centroid);
+        for (size_t j = 0; j < 32; j++) {
+            const size_t       trunc_length = test_length - j;
+            const size_t       trunc_packed_size = packed_bytes(bits, trunc_length);
+            std::span<uint8_t> trunc_packed_lhs(packed_lhs.data(), trunc_packed_size);
+            std::span<uint8_t> trunc_packed_rhs(packed_rhs.data(), trunc_packed_size);
+            bit_pack_reference_output(lhs_idx.data() + j, trunc_packed_lhs.data(), bits, trunc_length);
+            bit_pack_reference_output(rhs_idx.data() + j, trunc_packed_rhs.data(), bits, trunc_length);
+            const float real_dot = dot_product(lhs.data() + j, rhs.data() + j, trunc_length);
+            ASSERT_NO_FATAL_FAILURE(
+                check_q_q_dot_product_eq(accels, trunc_packed_lhs, trunc_packed_rhs, bits, trunc_length, real_dot));
+        }
+    }
+}
+
 } // namespace
 
 TEST_F(HwAcceleratedTest, eden_f32_q_dot_product_does_not_have_lane_confusion) {
@@ -561,6 +643,27 @@ TEST_F(HwAcceleratedTest, eden_f32_q_dot_product_impls_match_source_of_truth) {
     for (uint8_t bits : {1, 2, 3, 4}) {
         for (size_t sz : {32, 64, 128, 256, 1024, 4096, 8192}) {
             ASSERT_NO_FATAL_FAILURE(verify_eden_f32_q_dot_product(accelerators, bits, sz));
+        }
+    }
+}
+
+TEST_F(HwAcceleratedTest, eden_q_q_dot_product_does_not_have_lane_confusion) {
+    auto accelerators = all_accelerators_to_test();
+    for (uint8_t bits : {1, 2, 3, 4}) {
+        for (ssize_t sz : {2, 8, 32, 128, 512, 2048}) {
+            for (ssize_t boundary : {-1, 0, 1}) {
+                ASSERT_NO_FATAL_FAILURE(
+                    verify_eden_q_q_dot_product_no_lane_confusion(accelerators, bits, sz + boundary));
+            }
+        }
+    }
+}
+
+TEST_F(HwAcceleratedTest, eden_q_q_dot_product_impls_match_source_of_truth) {
+    auto accelerators = all_accelerators_to_test();
+    for (uint8_t bits : {1, 2, 3, 4}) {
+        for (size_t sz : {32, 64, 128, 256, 1024, 4096, 8192}) {
+            ASSERT_NO_FATAL_FAILURE(verify_eden_q_q_dot_product(accelerators, bits, sz));
         }
     }
 }
