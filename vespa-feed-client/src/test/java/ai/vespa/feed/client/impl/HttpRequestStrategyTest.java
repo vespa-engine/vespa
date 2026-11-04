@@ -8,6 +8,8 @@ import ai.vespa.feed.client.FeedException;
 import ai.vespa.feed.client.HttpResponse;
 import ai.vespa.feed.client.OperationStats;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.net.URI;
@@ -438,6 +440,81 @@ class HttpRequestStrategyTest {
         assertEquals(5, stats.exceptions());
     }
 
+    @ParameterizedTest
+    @CsvSource({"false, false", "true, false", "false, true", "true, true"})
+    void idleResetClosesRetiredClusterExactlyOnce(boolean hasCompletedRequest, boolean reusesCluster) throws Exception {
+        MockCluster original = new MockCluster();
+        MockCluster replacement = reusesCluster ? original : new MockCluster();
+        original.expect((__, vessel) -> vessel.complete(HttpResponse.of(200, null)));
+        replacement.expect((__, vessel) -> vessel.complete(HttpResponse.of(200, null)));
+        AtomicReference<CircuitBreaker.State> state = new AtomicReference<>(CLOSED);
+        CountDownLatch replacementCreated = new CountDownLatch(1);
+        AtomicInteger created = new AtomicInteger();
+        HttpRequestStrategy strategy = new HttpRequestStrategy(
+                new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123")))
+                        .setCircuitBreaker(state::get),
+                () -> {
+                    if (created.getAndIncrement() == 0) return original;
+                    state.set(CLOSED);
+                    replacementCreated.countDown();
+                    return replacement;
+                });
+        HttpRequest request = new HttpRequest("DELETE", "/", "", null, null, Duration.ofSeconds(1), () -> 0);
+        try {
+            if (hasCompletedRequest) {
+                strategy.enqueue(DocumentId.of("ns", "type", "before"), request).get(10, TimeUnit.SECONDS);
+                strategy.await(); // Include the existing reset-accounting executor barrier.
+            }
+            state.set(HALF_OPEN);
+            assertTrue(replacementCreated.await(10, TimeUnit.SECONDS));
+            // The same dispatcher must finish reset before it can handle this request.
+            assertEquals(200, strategy.enqueue(DocumentId.of("ns", "type", "after"), request)
+                    .get(10, TimeUnit.SECONDS).code());
+            strategy.await();
+            assertEquals(reusesCluster ? 0 : 1, original.closeCalls.get(),
+                    "close only a retired idle delegate, without waiting for another response");
+            assertEquals(0, replacement.closeCalls.get(), "the replacement is still in use");
+        } finally {
+            strategy.destroy();
+        }
+        assertEquals(1, original.closeCalls.get(), "shutdown must not close the retired delegate twice");
+        assertEquals(1, replacement.closeCalls.get());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true", "false"})
+    void resetFailureStillClosesTheOwnedCluster(boolean creationFails) throws Exception {
+        CountDownLatch ownedClosed = new CountDownLatch(1);
+        MockCluster original = new MockCluster() {
+            @Override public void close() {
+                super.close();
+                if (creationFails) ownedClosed.countDown();
+                else throw new IllegalStateException("injected retirement failure");
+            }
+        };
+        MockCluster replacement = new MockCluster() {
+            @Override public void close() { super.close(); ownedClosed.countDown(); }
+        };
+        AtomicReference<CircuitBreaker.State> state = new AtomicReference<>(CLOSED);
+        AtomicInteger created = new AtomicInteger();
+        HttpRequestStrategy strategy = new HttpRequestStrategy(
+                new FeedClientBuilderImpl(List.of(URI.create("https://dummy.com:123")))
+                        .setCircuitBreaker(state::get),
+                () -> {
+                    if (created.getAndIncrement() == 0) return original;
+                    if (creationFails) throw new IOException("injected replacement creation failure");
+                    return replacement;
+                });
+        try {
+            state.set(HALF_OPEN);
+            assertTrue(ownedClosed.await(10, TimeUnit.SECONDS), "reset failure must release the owned delegate");
+        } finally {
+            strategy.destroy();
+        }
+        assertEquals(1, original.closeCalls.get());
+        assertEquals(creationFails ? 0 : 1, replacement.closeCalls.get());
+    }
+
     @Test
     void testResettingCluster() throws ExecutionException, InterruptedException, IOException {
         List<MockCluster> clusters = List.of(new MockCluster(), new MockCluster());
@@ -480,10 +557,13 @@ class HttpRequestStrategyTest {
         assertEquals(504, secondResponse.get().code());
         strategy.await();
         assertTrue(clusters.get(0).closed.get());
+        assertEquals(1, clusters.get(0).closeCalls.get());
         assertFalse(clusters.get(1).closed.get());
         strategy.destroy();
         strategy.await();
         assertTrue(clusters.get(1).closed.get());
+        assertEquals(1, clusters.get(0).closeCalls.get());
+        assertEquals(1, clusters.get(1).closeCalls.get());
     }
 
     @Test
@@ -582,6 +662,7 @@ class HttpRequestStrategyTest {
 
         final AtomicReference<BiConsumer<HttpRequest, CompletableFuture<HttpResponse>>> dispatch = new AtomicReference<>();
         final AtomicBoolean closed = new AtomicBoolean(false);
+        final AtomicInteger closeCalls = new AtomicInteger();
 
         void expect(BiConsumer<HttpRequest, CompletableFuture<HttpResponse>> expected) {
             dispatch.set(expected);
@@ -594,6 +675,7 @@ class HttpRequestStrategyTest {
 
         @Override
         public void close() {
+            closeCalls.incrementAndGet();
             closed.set(true);
         }
 

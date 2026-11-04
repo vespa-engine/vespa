@@ -35,7 +35,7 @@ These checks support the current changes and clarify their limits; they did not 
 
 Snippets are shortened Java excerpts or API examples. Comments omit surrounding code; they are not standalone programs. Each case links to the test source and names the relevant methods. Latches and controlled dependencies force the important ordering. Timeouts bound waits and detect hangs; timing-sensitive checks still need reruns on the maintainer’s environment.
 
-After the review fixes, a clean affected API/client/CLI reactor passed all 59 tests on JDK 17, including the normal install-phase ABI and packaging checks. The archive timestamp was set explicitly to a valid reproducible value. The test refactor uses JUnit parameterization for both progress-thread contexts, bounded future completion for callback assertions and shared latch/clock fixtures. The public API additions are recorded in the ABI specification.
+After the review fixes and idle-retirement change, a clean affected API/client/CLI reactor passed all 65 tests on JDK 17, including the normal install-phase ABI and packaging checks. The archive timestamp was set explicitly to a valid reproducible value. The test refactor uses JUnit parameterization for both progress-thread contexts, bounded future completion for callback assertions and shared latch/clock fixtures. The public API additions are recorded in the ABI specification.
 
 The generated lifecycle test uses 64 fixed seeds with 100 commands each and prints the history on failure. Earlier mutation checks caught dropped internal-resolution ownership and abort reverting to graceful drain. These are component results; full Vespa integration and impact measurements remain outstanding.
 
@@ -43,7 +43,9 @@ Four new regression cases first failed against the old behavior: worker creation
 
 ## Failure-mode table
 
-Additional controlled JDK runs recorded 52 observations: thirteen scenarios on JDK 21 and JDK 26, each in mixed and interpreted mode. Three scenarios distinguish timeout with a held worker, interruption with the flag restored, and successful termination. All observations matched their expected endpoints. These runs support the JDK wait contract; they do not replace the 59 Java component tests or real transport validation. Run identifiers, parameters, runtime versions, logs and rendered plots are retained in the separate evaluated notebooks.
+Additional controlled JDK runs recorded 52 observations: thirteen scenarios on JDK 21 and JDK 26, each in mixed and interpreted mode. Three scenarios distinguish timeout with a held worker, interruption with the flag restored, and successful termination. All observations matched their expected endpoints. These runs support the JDK wait contract; they do not replace the 65 Java component tests or real transport validation. Run identifiers, parameters, runtime versions, logs and rendered plots are retained in the separate evaluated notebooks.
+
+Idle reset now uses the same retirement condition as response completion. Two regression cases first observed zero closes instead of one. The expanded controls cover fresh and previously used idle delegates, same-instance replacement, creation failure, throwing retirement and active requests. The source experiment compares unchanged before/after inputs using real file channels and the same release checks; late callback rejection remains a separate defect.
 
 | Case | Failure mode | Status |
 | --- | --- | --- |
@@ -67,6 +69,7 @@ Additional controlled JDK runs recorded 52 observations: thirteen scenarios on J
 | [V18](#v18) | Executor timeout is mistaken for success | Fixed; timeout reports FAILED |
 | [V19](#v19) | Every completion scans the whole backlog | Fixed; impact measurements pending |
 | [V20](#v20) | A test checks before cleanup has run | Test ordering corrected |
+| [V21](#v21) | Idle reset abandons the old delegate | Fixed for successful idle retirement |
 
 <a id="v01"></a>
 
@@ -448,17 +451,37 @@ assertFalse(strategy.destroyed.get());
 
 Evidence: [HttpFeedClientShutdownTest](../../vespa-feed-client/src/test/java/ai/vespa/feed/client/impl/HttpFeedClientShutdownTest.java): `gracefulCloseWaitsForAdmittedConstruction`, `responseMappingRemainsOwnedUntilPublicResultIsPublished`; both removed-wait mutations were detected.
 
+<a id="v21"></a>
+
+## V21: Idle reset abandons the old delegate
+
+Reset replaced the delegate and its in-flight counter, but only a later response callback closed the old delegate. When the old count was already zero, no callback remained to release it.
+
+Keep the previous delegate and counter until replacement creation succeeds. Publish the replacement and its counter, then use the same retirement check as response completion: close only a distinct retired delegate whose count is zero. Active requests retain their old delegate until the final response. Tests cover unused and fully drained delegates, same-instance factories, creation failure and retirement failure. Exactly-once call counts do not guarantee release when close throws.
+
+```java
+Cluster previous = delegate;
+AtomicLong previousInflight = inflight;
+delegate = clusterFactory.create();
+inflight = new AtomicLong(0);
+closeRetiredIfIdle(previous, previousInflight.get());
+```
+
+![Idle reset abandons the old delegate: Old count is zero → Reset replaces delegate → No callback closes old; Install replacement → Check retired and idle → Close old delegate now](shutdown-diagrams/images/V21.png)
+
+Evidence: [HttpRequestStrategyTest](../../vespa-feed-client/src/test/java/ai/vespa/feed/client/impl/HttpRequestStrategyTest.java): `idleResetClosesRetiredClusterExactlyOnce` (four parameter combinations), `resetFailureStillClosesTheOwnedCluster` (two injected failures), and strengthened `testResettingCluster` active-request controls. Both initial idle-regression cases failed before the change; the final reactor passed 65 tests.
+
 ## What this branch does not finish
 
 | Open item | Why it matters | Next check |
 | --- | --- | --- |
-| Idle reset leaves the old delegate open | No later completion may arrive to close it | Add old-generation retirement and a before/after resource test |
+| Retired-delegate close fails | The existing dispatcher policy logs the error and cleans up the replacement; old-resource release is not guaranteed | Retain retirement failures in the shared outcome and test partial release |
 | Late completion after callback-executor shutdown | Rejected accounting can leave old resources open | Test an ordered late completion with real transport cleanup |
 | Atomic registry, capacity and queue handoffs | Abort checks and subsequent actions are separate | Force abort between check and action, including same-ID successors |
 | Independent stall diagnostics | Early stalls can occur before any executor wait | Add bounded diagnostics with controlled time and a blocked logging handler |
 | Delegate visibility and wider cleanup combinations | Source inspection leaves concurrency and resource questions | Check stats/reset callers, rejection, partial close and multiple failures |
 
-The separate source experiments reproduced the idle-reset and late-callback resource failures. They are follow-up defects, not fixes supplied by this branch. The full Jetty integration environment is unavailable here, and GitHub Actions is blocked by billing. A Vespa maintainer needs to run the before/after cases with the real transport and check worker, socket and file retention.
+Earlier source experiments reproduced idle-reset and late-callback resource failures. This branch now fixes successful idle retirement; late-callback rejection remains open. Retirement still invokes close under the existing monitor, on the dispatcher for idle reset; a slow close can delay dispatch. The full Jetty integration environment is unavailable here, and GitHub Actions is blocked by billing. A Vespa maintainer needs to run the before/after cases with the real transport and check worker, socket and file retention.
 
 Performance measurements remain deferred. The agreed comparison uses distinct-ID and same-ID workloads at low and saturated load, reporting throughput, submission/shutdown latency, allocation and retained resources. A repeatable throughput or p95 submission-latency regression above 5% needs review. No performance acceptance is claimed.
 

@@ -422,10 +422,7 @@ class HttpRequestStrategy implements RequestStrategy {
                 usedCluster.dispatch(request, vessel);
                 vessel.whenCompleteAsync((__, ___) -> {
                                              synchronized (monitor) {
-                                                 if (usedCounter.decrementAndGet() == 0 && usedCluster != delegate) {
-                                                     log.log(INFO, "Closing old HTTP client");
-                                                     usedCluster.close();
-                                                 }
+                                                 closeRetiredIfIdle(usedCluster, usedCounter.decrementAndGet());
                                              }
                                          },
                                          executor);
@@ -469,11 +466,22 @@ class HttpRequestStrategy implements RequestStrategy {
 
         @Override public void resetStats() { delegate.resetStats(); }
 
+        // Both reset and completion accounting hold monitor while deciding retirement.
+        private void closeRetiredIfIdle(Cluster cluster, long remaining) {
+            if (remaining == 0 && cluster != delegate) {
+                log.log(INFO, "Closing old HTTP client");
+                cluster.close();
+            }
+        }
+
         void reset() throws IOException {
             synchronized (monitor) {
                 log.log(INFO, "Replacing underlying HTTP client to attempt recovery");
+                Cluster previous = delegate;
+                AtomicLong previousInflight = inflight;
                 delegate = clusterFactory.create();
                 inflight = new AtomicLong(0);
+                closeRetiredIfIdle(previous, previousInflight.get());
             }
         }
 
