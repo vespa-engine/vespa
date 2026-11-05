@@ -453,8 +453,8 @@ TEST_F(StringAttributeTest, test_string_matcher_factory) {
     for (bool cased : {false, true}) {
         EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::WORD, cased));
         EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::PREFIXTERM, cased));
-        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("x.z", QTT::REGEXP, cased));
-        EXPECT_TRUE(creates_string_matcher<attribute::StringMatcher>("xyz", QTT::FUZZYTERM, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringRegexMatcher>("x.z", QTT::REGEXP, cased));
+        EXPECT_TRUE(creates_string_matcher<attribute::StringFuzzyMatcher>("xyz", QTT::FUZZYTERM, cased));
         EXPECT_TRUE(creates_string_matcher<attribute::StringRangeMatcher>(
             std::make_unique<QueryTermUCS4>(
                 QTT::STRING_RANGE, std::make_unique<StringRangeSpec>(StringRangeSpec{"BAR", true, "FOO", true})),
