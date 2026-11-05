@@ -76,7 +76,7 @@ public class SchemaSkillTest {
 
             ## Fields
 
-            - `title` (string; index; match: text; aliases: `name`): The product title.
+            - `title` (string; index; match: text): The product title.
             - `weight` (float; attribute): Weight in kg.
               Not set for digital products.
             - `embedding` (tensor<float>(x[4]); attribute): Embedding of the title.

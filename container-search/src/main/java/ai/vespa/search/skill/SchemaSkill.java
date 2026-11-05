@@ -131,8 +131,6 @@ public class SchemaSkill extends AbstractComponent {
           .append("; ").append(matching(field, schema));
         if (isSearchable(field) && field.matchType() != Field.MatchType.NONE)
             md.append("; match: ").append(field.matchType().name().toLowerCase(Locale.ROOT)); // as in the schema
-        if ( ! field.aliases().isEmpty())
-            md.append("; aliases: ").append(field.aliases().stream().map(SchemaSkill::code).collect(Collectors.joining(", ")));
         md.append(")");
         appendExplanation(field.explanation(), md, level + 1);
         md.append("\n");
