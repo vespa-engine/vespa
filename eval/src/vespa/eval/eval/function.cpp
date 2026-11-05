@@ -7,6 +7,7 @@
 #include "call_nodes.h"
 #include "delete_node.h"
 #include "operator_nodes.h"
+#include "string_stuff.h"
 #include "tensor_nodes.h"
 
 #include <vespa/check_require.h>
@@ -460,7 +461,7 @@ std::string get_ident(ParseContext& ctx, bool allow_empty) {
     return ident;
 }
 
-size_t get_size_t(ParseContext& ctx) {
+std::string get_number(ParseContext& ctx) {
     ctx.skip_spaces();
     std::string num;
     for (; std::isdigit(static_cast<unsigned char>(ctx.get())); ctx.next()) {
@@ -469,7 +470,7 @@ size_t get_size_t(ParseContext& ctx) {
     if (num.empty()) {
         ctx.fail("expected number");
     }
-    return atoi(num.c_str());
+    return num;
 }
 
 bool is_label_end(char c) {
@@ -664,11 +665,12 @@ TensorSpec::Address get_tensor_address(ParseContext& ctx, const ValueType& type)
             if (dim.is_mapped()) {
                 addr.emplace(dim_name, get_label(ctx));
             } else {
-                size_t idx = get_size_t(ctx);
+                std::string num = get_number(ctx);
+                size_t      idx = as_number(num);
                 if (idx < dim.size) {
                     addr.emplace(dim_name, idx);
                 } else {
-                    ctx.fail(make_string("dimension index too large: %zu", idx));
+                    ctx.fail(make_string("dimension index too large: %s", num.c_str()));
                 }
             }
         } else {

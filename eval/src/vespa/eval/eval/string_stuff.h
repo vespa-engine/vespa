@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include "tensor_spec.h"
-
+#include <cstddef>
 #include <string>
 
 namespace vespalib::eval {
@@ -43,19 +42,19 @@ struct CommaTracker {
 std::string as_quoted_string(const std::string& str);
 
 /**
- * Is this string a positive integer (dimension index)
+ * Is this string a non-negative decimal integer (only digits, at
+ * least one). Note that this does not check whether the value fits
+ * in size_t; use as_number for that.
  **/
 bool is_number(const std::string& str);
 
 /**
- * Convert this string to a positive integer (dimension index)
+ * Convert this string to a non-negative integer (e.g. a dimension
+ * index or an indexed dimension size). Strings that are not numbers
+ * (see is_number) or that do not fit in size_t result in SIZE_MAX,
+ * which callers should treat as out of range (it fails any bounds
+ * check against a dimension size, and is >= Dimension::npos).
  **/
 size_t as_number(const std::string& str);
-
-/**
- * Convert a tensor spec address into a string on the form:
- * '{dim1:label,dim2:index, ...}'
- **/
-std::string as_string(const TensorSpec::Address& address);
 
 } // namespace vespalib::eval

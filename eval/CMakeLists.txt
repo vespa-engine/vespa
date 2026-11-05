@@ -38,6 +38,7 @@ vespa_define_module(
     src/tests/eval/reference_evaluation
     src/tests/eval/reference_operations
     src/tests/eval/simple_value
+    src/tests/eval/string_stuff
     src/tests/eval/tensor_function
     src/tests/eval/tensor_lambda
     src/tests/eval/tensor_spec

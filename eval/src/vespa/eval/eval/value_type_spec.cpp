@@ -2,6 +2,7 @@
 
 #include "value_type_spec.h"
 
+#include "string_stuff.h"
 #include "value_type.h"
 
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -112,16 +113,17 @@ std::string parse_ident(ParseContext& ctx) {
     return ident;
 }
 
-size_t parse_int(ParseContext& ctx) {
+ValueType::Dimension::size_type parse_dim_size(ParseContext& ctx) {
     ctx.skip_spaces();
     std::string num;
     for (; std::isdigit(static_cast<unsigned char>(ctx.get())); ctx.next()) {
         num.push_back(ctx.get());
     }
-    if (num.empty()) {
+    size_t value = as_number(num);
+    if (value >= ValueType::Dimension::npos) {
         ctx.fail();
     }
-    return atoi(num.c_str());
+    return value;
 }
 
 ValueType::Dimension parse_dimension(ParseContext& ctx) {
@@ -137,7 +139,7 @@ ValueType::Dimension parse_dimension(ParseContext& ctx) {
         if (ctx.get() == ']') {
             dimension.size = 0;
         } else {
-            dimension.size = parse_int(ctx);
+            dimension.size = parse_dim_size(ctx);
             ctx.skip_spaces();
         }
         ctx.eat(']');

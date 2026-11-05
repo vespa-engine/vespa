@@ -2,10 +2,9 @@
 
 #include "string_stuff.h"
 
-#include <vespa/vespalib/util/stringfmt.h>
-
 #include <cctype>
-#include <cstdlib>
+#include <charconv>
+#include <limits>
 
 namespace vespalib::eval {
 
@@ -48,6 +47,9 @@ std::string as_quoted_string(const std::string& str) {
 }
 
 bool is_number(const std::string& str) {
+    if (str.empty()) {
+        return false;
+    }
     for (char c : str) {
         if (!std::isdigit(static_cast<unsigned char>(c))) {
             return false;
@@ -57,22 +59,13 @@ bool is_number(const std::string& str) {
 }
 
 size_t as_number(const std::string& str) {
-    return atoi(str.c_str());
-}
-
-std::string as_string(const TensorSpec::Address& address) {
-    CommaTracker label_list;
-    std::string  str = "{";
-    for (const auto& label : address) {
-        label_list.maybe_add_comma(str);
-        if (label.second.is_mapped()) {
-            str += make_string("%s:%s", label.first.c_str(), as_quoted_string(label.second.name).c_str());
-        } else {
-            str += make_string("%s:%zu", label.first.c_str(), label.second.index);
-        }
+    size_t      value = 0;
+    const char* end = str.data() + str.size();
+    auto [ptr, ec] = std::from_chars(str.data(), end, value);
+    if ((ec != std::errc{}) || (ptr != end)) {
+        return std::numeric_limits<size_t>::max();
     }
-    str += "}";
-    return str;
+    return value;
 }
 
 } // namespace vespalib::eval

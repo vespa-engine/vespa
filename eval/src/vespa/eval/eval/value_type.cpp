@@ -7,6 +7,7 @@
 #include <vespa/check_require.h>
 
 #include <algorithm>
+#include <limits>
 #include <ostream>
 
 namespace vespalib::eval {
@@ -35,12 +36,22 @@ void sort_dimensions(DimensionList& dimensions) {
 }
 
 bool verify_dimensions(const DimensionList& dimensions) {
+    size_t dense_size = 1;
     for (size_t i = 0; i < dimensions.size(); ++i) {
+        if (dimensions[i].name.empty()) {
+            return false;
+        }
         if (dimensions[i].size == 0) {
             return false;
         }
         if ((i > 0) && (dimensions[i - 1].name == dimensions[i].name)) {
             return false;
+        }
+        if (dimensions[i].is_indexed()) {
+            if (dense_size > (std::numeric_limits<size_t>::max() / dimensions[i].size)) {
+                return false;
+            }
+            dense_size *= dimensions[i].size;
         }
     }
     return true;
@@ -81,10 +92,17 @@ struct MyJoin {
     ~MyJoin();
 
 private:
+    void add_concat(const std::string& name, size_t size) {
+        if (size < Dimension::npos) {
+            dimensions.emplace_back(name, size);
+        } else {
+            mismatch = true;
+        }
+    }
     void add(const Dimension& a) {
         if (a.name == concat_dim) {
             if (a.is_indexed()) {
-                dimensions.emplace_back(a.name, a.size + 1);
+                add_concat(a.name, size_t(a.size) + 1);
             } else {
                 mismatch = true;
             }
@@ -95,7 +113,7 @@ private:
     void unify(const Dimension& a, const Dimension& b) {
         if (a.name == concat_dim) {
             if (a.is_indexed() && b.is_indexed()) {
-                dimensions.emplace_back(a.name, a.size + b.size);
+                add_concat(a.name, size_t(a.size) + size_t(b.size));
             } else {
                 mismatch = true;
             }

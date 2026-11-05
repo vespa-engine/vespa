@@ -3,6 +3,7 @@
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/param_usage.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/approx.h>
 
 using vespalib::approx_equal;
 using namespace vespalib::eval;

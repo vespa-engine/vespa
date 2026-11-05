@@ -306,6 +306,8 @@ TEST(NodeTypesTest, require_that_tensor_peek_resolves_correct_type) {
     verify("tensor(x[3]){x:double}", "error");
     verify("tensor(x[3]){x:(double)}", "double");
     verify("tensor(x[3]){x:3}", "error");
+    verify("tensor(x[3]){x:4294967297}", "error");           // would wrap to 1 if truncated to 32 bits
+    verify("tensor(x[3]){x:99999999999999999999}", "error"); // does not fit in 64 bits
     verify("tensor(x{}){x:1}", "double");
     verify("tensor(x{}){x:foo}", "double");
     verify("tensor(x{}){x:(double)}", "double");
