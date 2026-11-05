@@ -69,6 +69,11 @@ struct CornerCheck {
         : target(hp), context(numProbes, hp.first, hp.second, orb), probes() {}
 };
 
+// Guard against starting services when this node has broken connectivity to
+// otherwise reachable peers. Ask a few neighbors with verified bidirectional
+// connectivity whether they can reach each failed peer. A positive answer
+// indicates a connectivity problem involving this node; if none can reach
+// the peer, it is most probably just down.
 void classifyConnFails(ConnectivityMap& connectivityMap, const SpecMap& specMap, RpcServer& rpcServer) {
     std::vector<HostAndPort> failedConnSpecs;
     std::vector<HostAndPort> goodNeighborSpecs;
