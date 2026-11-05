@@ -80,6 +80,12 @@ public interface ImmutableSDField {
 
     ScriptExpression getIndexingScript();
 
+    /**
+     * Returns the script annotating the indexed struct fields of this complex field in an indexed search cluster,
+     * or an empty script if there are none.
+     */
+    ScriptExpression getStructFieldIndexingScript();
+
     Matching getMatching();
 
     NormalizeLevel getNormalizing();

@@ -139,6 +139,12 @@ public class ImmutableImportedSDField implements ImmutableSDField {
         throw createUnsupportedException("indexing");
     }
 
+    /** Imported fields have no struct field indexes, as they are not indexed in this schema. */
+    @Override
+    public ScriptExpression getStructFieldIndexingScript() {
+        return new ScriptExpression();
+    }
+
     @Override
     public Matching getMatching() {
         return importedField.targetField().getMatching();

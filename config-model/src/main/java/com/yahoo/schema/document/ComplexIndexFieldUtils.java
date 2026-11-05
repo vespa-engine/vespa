@@ -6,7 +6,6 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.schema.ImmutableSchema;
-import com.yahoo.schema.Schema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,22 +86,25 @@ public class ComplexIndexFieldUtils {
                                          .toList();
     }
 
+    /**
+     * Returns whether the given field is indexed in an indexed search cluster.
+     * A struct field doing indexing is indexed if it inherits that from its complex field (as is the case when
+     * struct field indexes are not supported), or if it is a supported struct field index. An unsupported
+     * struct field index is also indexed if the complex field has no indexing statement, as before struct field
+     * indexes were supported.
+     */
+    public static boolean doesIndexing(ImmutableSDField field, ImmutableSchema schema) {
+        if ( ! field.doesIndexing()) return false;
+        if (schema == null || ! field.getName().contains(".")) return true;
+        ImmutableSDField topLevelField = schema.getField(field.getName().substring(0, field.getName().indexOf('.')));
+        if (topLevelField == null || topLevelField.isImportedField()) return true;
+        if (topLevelField.doesIndexing() || topLevelField.getIndexingScript().isEmpty()) return true;
+        return field.wasConfiguredToDoIndexing() && isSupportedIndexedStructField(topLevelField, field, Mode.of(schema));
+    }
+
     /** Returns whether the given struct field, of the given complex field, can be indexed. */
     public static boolean isSupportedIndexedStructField(ImmutableSDField field, ImmutableSDField structField, Mode mode) {
         return unsupportedReason(field, structField, mode).isEmpty();
-    }
-
-    /**
-     * Returns whether the given field is indexed in an indexed search cluster: either it does indexing itself,
-     * or it is a supported struct field index (whose own indexing script may have been replaced by that of its parent).
-     */
-    public static boolean doesIndexing(ImmutableSDField field, Schema schema) {
-        if (field.doesIndexing()) return true;
-        if (schema == null || ! field.getName().contains(".")) return false;
-        ImmutableSDField topLevelField = schema.getField(field.getName().substring(0, field.getName().indexOf('.')));
-        if (topLevelField == null) return false;
-        return supportedIndexedStructFields(topLevelField, Mode.of(schema)).stream()
-                                                                           .anyMatch(structField -> structField.getName().equals(field.getName()));
     }
 
     /** Returns why the given struct field, of the given complex field, cannot be indexed, or empty if it can. */

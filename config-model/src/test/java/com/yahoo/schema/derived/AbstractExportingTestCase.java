@@ -31,15 +31,24 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
                                         String schemaName,
                                         TestProperties properties,
                                         DeployLogger logger) throws IOException, ParseException {
+        return derive(dirName, dirName, schemaName, properties, SchemaInfo.IndexMode.INDEX, logger);
+    }
+
+    private DerivedConfiguration derive(String schemaDirName,
+                                        String dirName,
+                                        String schemaName,
+                                        TestProperties properties,
+                                        SchemaInfo.IndexMode indexMode,
+                                        DeployLogger logger) throws IOException, ParseException {
         File toDir = new File(tempDir + dirName);
         toDir.mkdirs();
         deleteContent(toDir);
 
-        ApplicationBuilder builder = ApplicationBuilder.createFromDirectory(schemaRoot + dirName + "/",
+        ApplicationBuilder builder = ApplicationBuilder.createFromDirectory(schemaRoot + schemaDirName + "/",
                                                                             new MockFileRegistry(),
                                                                             logger,
                                                                             properties);
-        return derive(dirName, schemaName, properties, builder, logger);
+        return derive(dirName, schemaName, properties, indexMode, builder, logger);
     }
 
     private DerivedConfiguration derive(String dirName,
@@ -47,12 +56,21 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
                                         TestProperties properties,
                                         ApplicationBuilder builder,
                                         DeployLogger logger) throws IOException {
+        return derive(dirName, schemaName, properties, SchemaInfo.IndexMode.INDEX, builder, logger);
+    }
+
+    private DerivedConfiguration derive(String dirName,
+                                        String schemaName,
+                                        TestProperties properties,
+                                        SchemaInfo.IndexMode indexMode,
+                                        ApplicationBuilder builder,
+                                        DeployLogger logger) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(new DeployState.Builder()
                                                                               .properties(properties)
                                                                               .deployLogger(logger)
                                                                               .rankProfileRegistry(builder.getRankProfileRegistry())
                                                                               .queryProfiles(builder.getQueryProfileRegistry())
-                                                                              .build(), builder.getSchema(schemaName), SchemaInfo.IndexMode.INDEX);
+                                                                              .build(), builder.getSchema(schemaName), indexMode);
         return export(dirName, builder, config);
     }
 
@@ -112,6 +130,20 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
                                                          TestProperties properties,
                                                          DeployLogger logger) throws IOException, ParseException {
         DerivedConfiguration derived = derive(dirName, schemaName, properties, logger);
+        assertCorrectConfigFiles(dirName);
+        return derived;
+    }
+
+    /**
+     * Derives config from the schema in schemaDirName below the test dir, in the given index mode,
+     * and verifies that every .cfg file in dirName has a corresponding file with the same content.
+     * This allows verifying the config derived from the same schema in several index modes.
+     */
+    protected DerivedConfiguration assertCorrectDeriving(String schemaDirName,
+                                                         String dirName,
+                                                         TestProperties properties,
+                                                         SchemaInfo.IndexMode indexMode) throws IOException, ParseException {
+        DerivedConfiguration derived = derive(schemaDirName, dirName, null, properties, indexMode, new TestableDeployLogger());
         assertCorrectConfigFiles(dirName);
         return derived;
     }

@@ -1,0 +1,39 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+schema test {
+    document test {
+        struct inner {
+            field g type string {}
+            field h type string {}
+        }
+        struct s {
+            field a type string {}
+            field b type string {}
+            field n type inner {}
+        }
+        # parent indexes, struct field overrides with attribute
+        field f1 type array<s> {
+            indexing: index | summary
+            struct-field a { indexing: attribute }
+        }
+        # parent summary only, struct field overrides with index
+        field f2 type array<s> {
+            indexing: summary
+            struct-field a { indexing: index }
+        }
+        # map with parent summary, overrides on key and value
+        field f3 type map<string, s> {
+            indexing: summary
+            struct-field key { indexing: attribute }
+            struct-field value.a { indexing: index }
+        }
+        # nested override two levels down
+        field f4 type array<s> {
+            indexing: summary
+            struct-field n.g { indexing: index }
+        }
+        # no parent indexing, for comparison
+        field f5 type array<s> {
+            struct-field a { indexing: index | summary }
+        }
+    }
+}

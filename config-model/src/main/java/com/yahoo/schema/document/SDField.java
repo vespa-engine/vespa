@@ -29,6 +29,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.LowerCaseExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.PackBitsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
@@ -60,6 +61,12 @@ public class SDField extends Field implements ImmutableSDField {
 
     /** The indexing statements to be applied to this value during indexing */
     private ScriptExpression indexingScript = new ScriptExpression();
+
+    /**
+     * The statements indexing the struct fields of this complex field,
+     * see {@link com.yahoo.schema.processing.StructFieldIndexing}
+     */
+    private ScriptExpression structFieldIndexingScript = new ScriptExpression();
 
     /** The default rank type for indices of this field */
     private RankType rankType = RankType.DEFAULT;
@@ -441,15 +448,18 @@ public class SDField extends Field implements ImmutableSDField {
         }
     }
 
-    /** Sets the indexing script of this, or null to not use a script */
-
+    /**
+     * Sets the indexing script of this, or null to not use a script.
+     * This does not change the indexing scripts of the struct fields of this,
+     * see {@link #setIndexingFromSchema}.
+     */
     public void setIndexingScript(String schemaName, ScriptExpression exp) {
         if (exp == null) {
             exp = new ScriptExpression();
         }
         indexingScript = exp;
         if (indexingScript.isEmpty()) {
-            return; // TODO: This causes empty expressions not to be propagate to struct fields!! BAD BAD BAD!!
+            return;
         }
         if (!wasConfiguredToDoAttributing()) {
             wasConfiguredToDoAttributing = doesAttributing();
@@ -476,13 +486,53 @@ public class SDField extends Field implements ImmutableSDField {
                 }
             }.visit(indexingScript);
         }
+    }
+
+    /**
+     * Sets the indexing script of this, as given by an indexing statement in the schema,
+     * and adds it to the indexing scripts of all its struct fields (recursively),
+     * as struct fields inherit the indexing statements of their parent.
+     */
+    public void setIndexingFromSchema(String schemaName, ScriptExpression exp) {
+        setIndexingScript(schemaName, exp);
+        addIndexingScriptToStructFields(schemaName, indexingScript);
+    }
+
+    /**
+     * Adds the given indexing statements to those of this, and of all its struct fields (recursively).
+     * This is used for an indexing statement given for a struct field, which applies in addition to
+     * the statements it inherits from its parent, so the parent's statements must be set first.
+     */
+    public void addIndexingFromSchema(String schemaName, ScriptExpression exp) {
+        if (exp == null || exp.isEmpty()) return;
+        if (indexingScript.isEmpty()) {
+            setIndexingScript(schemaName, exp);
+        } else {
+            var statements = new ArrayList<StatementExpression>(indexingScript.asList());
+            statements.addAll(exp.asList());
+            setIndexingScript(schemaName, new ScriptExpression(statements));
+        }
+        addIndexingScriptToStructFields(schemaName, exp);
+    }
+
+    // An empty script is not inherited, so struct fields keep their own indexing statements
+    private void addIndexingScriptToStructFields(String schemaName, ScriptExpression exp) {
+        if (exp.isEmpty()) return;
         for (SDField structField : getStructFields()) {
-            structField.setIndexingScript(schemaName, exp);
+            structField.addIndexingFromSchema(schemaName, exp);
         }
     }
 
     @Override
     public ScriptExpression getIndexingScript() { return indexingScript; }
+
+    /** Sets the statements indexing the struct fields of this complex field, or null (or empty) for none. */
+    public void setStructFieldIndexingScript(ScriptExpression script) {
+        structFieldIndexingScript = (script == null) ? new ScriptExpression() : script;
+    }
+
+    @Override
+    public ScriptExpression getStructFieldIndexingScript() { return structFieldIndexingScript; }
 
     @SuppressWarnings("deprecation")
     @Override

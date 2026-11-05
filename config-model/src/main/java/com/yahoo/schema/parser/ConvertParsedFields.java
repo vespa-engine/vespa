@@ -204,7 +204,7 @@ public class ConvertParsedFields {
     }
 
     // from grammar, things that can be inside struct-field block
-    private void convertCommonFieldSettings(Schema schema, SDField field, ParsedField parsed) {
+    private void convertCommonFieldSettings(Schema schema, SDField field, ParsedField parsed, boolean isStructField) {
         try {
             convertMatchSettings(field, parsed.matchSettings());
         } catch (IllegalArgumentException e) {
@@ -212,7 +212,10 @@ public class ConvertParsedFields {
         }
         var indexing = parsed.getIndexing();
         if (indexing.isPresent()) {
-            field.setIndexingScript(schema.getName(), indexing.get().script());
+            if (isStructField) // in addition to what is inherited from the parent
+                field.addIndexingFromSchema(schema.getName(), indexing.get().script());
+            else
+                field.setIndexingFromSchema(schema.getName(), indexing.get().script());
         }
         if (field.doesAttributing() && !GeoPos.isAnyPos(field.getDataType())) {
             Attribute.validateDataType(schema.getName(), field.getName(), field.getDataType());
@@ -244,6 +247,7 @@ public class ConvertParsedFields {
         for (String command : parsed.getQueryCommands()) {
             field.addQueryCommand(command);
         }
+        // After the indexing statement of this field, as its struct fields inherit that
         for (var structField : parsed.getStructFields()) {
             convertStructField(schema, field, structField);
         }
@@ -360,7 +364,7 @@ public class ConvertParsedFields {
             throw new IllegalArgumentException("Struct field '" + parsed.name() + "' has not been defined in struct " +
                                                "for field '" + field.getName() + "'.");
         }
-        convertCommonFieldSettings(schema, structField, parsed);
+        convertCommonFieldSettings(schema, structField, parsed, true);
     }
 
     private void convertExtraFieldSettings(Schema schema, SDField field, ParsedField parsed) {
@@ -477,7 +481,7 @@ public class ConvertParsedFields {
         String name = parsed.name();
         DataType dataType = context.resolveType(parsed.getType());
         var field = new SDField(document, name, dataType);
-        convertCommonFieldSettings(schema, field, parsed);
+        convertCommonFieldSettings(schema, field, parsed, false);
         convertExtraFieldSettings(schema, field, parsed);
         document.addField(field);
         return field;
@@ -487,7 +491,7 @@ public class ConvertParsedFields {
         String name = parsed.name();
         DataType dataType = context.resolveType(parsed.getType());
         var field = new SDField(schema.getDocument(), name, dataType);
-        convertCommonFieldSettings(schema, field, parsed);
+        convertCommonFieldSettings(schema, field, parsed, false);
         convertExtraFieldSettings(schema, field, parsed);
         schema.addExtraField(field);
     }
@@ -504,7 +508,7 @@ public class ConvertParsedFields {
         for (var parsedField : parsed.getFields()) {
             var fieldType = context.resolveType(parsedField.getType());
             var field = new SDField(document, parsedField.name(), fieldType);
-            convertCommonFieldSettings(schema, field, parsedField);
+            convertCommonFieldSettings(schema, field, parsedField, false);
             structProxy.addField(field);
             if (parsedField.hasIdOverride()) {
                 structProxy.setFieldId(field, parsedField.idOverride());

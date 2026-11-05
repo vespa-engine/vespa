@@ -30,7 +30,7 @@ public class IndexingOperation implements FieldOperation {
     public ScriptExpression getScript() { return script; }
 
     public void apply(String schemaName, SDField field) {
-        field.setIndexingScript(schemaName, script);
+        field.setIndexingFromSchema(schemaName, script);
     }
 
     /** Creates an indexing operation which will use the simple linguistics implementation suitable for testing */
