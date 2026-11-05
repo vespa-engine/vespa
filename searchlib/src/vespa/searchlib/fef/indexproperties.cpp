@@ -579,6 +579,16 @@ double Factor::lookup(const Properties& props, double default_value) {
 
 } // namespace matching
 
+namespace grouping {
+
+const std::string EnumOptimization::NAME("vespa.grouping.enum_optimization");
+const bool        EnumOptimization::DEFAULT_VALUE(true);
+bool EnumOptimization::check(const Properties& props, bool fallback) {
+    return lookupBool(props, NAME, fallback);
+}
+
+} // namespace grouping
+
 namespace softtimeout {
 
 const std::string Enabled::NAME("vespa.softtimeout.enable");

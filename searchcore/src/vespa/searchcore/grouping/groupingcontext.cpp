@@ -54,11 +54,17 @@ GroupingContext::GroupingContext(const BitVector& validLids, const std::atomic<s
 
 GroupingContext::GroupingContext(const BitVector& validLids, const std::atomic<steady_time>& now_ref,
                                  vespalib::steady_time timeOfDoom)
-    : _validLids(validLids), _now_ref(now_ref), _timeOfDoom(timeOfDoom), _os(), _groupingList() {
+    : _validLids(validLids),
+      _now_ref(now_ref),
+      _timeOfDoom(timeOfDoom),
+      _os(),
+      _groupingList(),
+      _enum_optimization_enabled(true) {
 }
 
 GroupingContext::GroupingContext(const GroupingContext& rhs)
     : GroupingContext(rhs._validLids, rhs._now_ref, rhs._timeOfDoom) {
+    _enum_optimization_enabled = rhs._enum_optimization_enabled;
 }
 
 void GroupingContext::addGrouping(std::shared_ptr<Grouping> g) {

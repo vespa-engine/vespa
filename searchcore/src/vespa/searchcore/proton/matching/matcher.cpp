@@ -48,6 +48,7 @@ using search::attribute::IAttributeContext;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::RankSetup;
+using search::fef::indexproperties::grouping::EnumOptimization;
 using search::fef::indexproperties::hitcollector::ArraySize;
 using search::fef::indexproperties::hitcollector::FirstPhaseRankScoreDropLimit;
 using search::fef::indexproperties::hitcollector::HeapSize;
@@ -331,6 +332,8 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
             LOG(error, "Failed to deserialize grouping context: %s", e.message());
             return reply;
         }
+        groupingContext.set_enum_optimization_enabled(
+            EnumOptimization::check(request.propertiesMap.rankProperties()));
         SessionId sessionId(request.sessionId.data(), request.sessionId.size());
         bool      shouldCacheSearchSession = false;
         bool      shouldCacheGroupingSession = false;

@@ -532,6 +532,19 @@ struct Factor {
 
 } // namespace matching
 
+namespace grouping {
+/**
+ * Whether string attributes used in grouping expressions are grouped on
+ * their enum values instead of the actual strings. Enabled by default.
+ **/
+struct EnumOptimization {
+    static const std::string NAME;
+    static const bool        DEFAULT_VALUE;
+    static bool check(const Properties& props) { return check(props, DEFAULT_VALUE); }
+    static bool check(const Properties& props, bool fallback);
+};
+} // namespace grouping
+
 namespace softtimeout {
 /**
  * Enables or disables the soft timeout.

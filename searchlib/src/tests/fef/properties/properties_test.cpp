@@ -680,4 +680,14 @@ TEST(PropertiesTest, element_gap) {
     EXPECT_EQ(std::optional<ElementGap>(ElementGap(3)), matching::ElementGap::lookup_for_field(p, "foo"));
 }
 
+TEST(PropertiesTest, grouping_enum_optimization) {
+    Properties p;
+    EXPECT_TRUE(grouping::EnumOptimization::check(p));
+    p.add(grouping::EnumOptimization::NAME, "false");
+    EXPECT_FALSE(grouping::EnumOptimization::check(p));
+    p.clear();
+    p.add(grouping::EnumOptimization::NAME, "true");
+    EXPECT_TRUE(grouping::EnumOptimization::check(p));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

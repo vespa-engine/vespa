@@ -112,6 +112,9 @@ public:
      */
     [[nodiscard]] bool needRanking() const noexcept;
 
+    void set_enum_optimization_enabled(bool enabled) noexcept { _enum_optimization_enabled = enabled; }
+    [[nodiscard]] bool enum_optimization_enabled() const noexcept { return _enum_optimization_enabled; }
+
     void groupUnordered(std::span<const RankedHit> hits, const search::BitVector* overflow);
     void groupInRelevanceOrder(std::span<const RankedHit> hits);
 
@@ -127,6 +130,7 @@ private:
     steady_time                     _timeOfDoom;
     vespalib::nbostream             _os;
     GroupingList                    _groupingList;
+    bool                            _enum_optimization_enabled;
 };
 
 } // namespace search::grouping

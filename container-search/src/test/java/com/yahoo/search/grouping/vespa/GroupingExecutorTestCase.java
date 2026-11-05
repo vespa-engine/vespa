@@ -13,6 +13,7 @@ import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.grouping.GroupingQueryParser;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.AllOperation;
 import com.yahoo.search.grouping.request.GroupingOperation;
@@ -614,6 +615,27 @@ public class GroupingExecutorTestCase {
     //
     // --------------------------------------------------------------------------------
 
+    @Test
+    void requireThatEnumOptimizationCanBeDisabled() {
+        assertNull(enumOptimizationRankProperty(newQuery()));
+
+        Query query = newQuery();
+        query.properties().set(GroupingQueryParser.PARAM_ENUM_OPTIMIZATION, false);
+        assertEquals(List.of("false"), enumOptimizationRankProperty(query));
+
+        query = newQuery();
+        query.properties().set(GroupingQueryParser.PARAM_ENUM_OPTIMIZATION, true);
+        assertNull(enumOptimizationRankProperty(query));
+    }
+
+    private static List<String> enumOptimizationRankProperty(Query query) {
+        GroupingRequest req = GroupingRequest.newInstance(query);
+        req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(count())))"));
+        RankPropertyCollector collector = new RankPropertyCollector();
+        newExecution(new GroupingExecutor(), collector).search(query);
+        return collector.enumOptimization;
+    }
+
     private static Query newQuery() {
         return new Query("?query=dummy");
     }
@@ -683,6 +705,17 @@ public class GroupingExecutorTestCase {
             for (Grouping grp : GroupingExecutor.getGroupingList(query)) {
                 lst.add(grp.clone());
             }
+            return exec.search(query);
+        }
+    }
+
+    private static class RankPropertyCollector extends Searcher {
+
+        List<String> enumOptimization = null;
+
+        @Override
+        public Result search(Query query, Execution exec) {
+            enumOptimization = query.getRanking().getProperties().get("vespa.grouping.enum_optimization");
             return exec.search(query);
         }
     }

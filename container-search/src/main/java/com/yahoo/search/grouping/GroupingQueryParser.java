@@ -41,6 +41,7 @@ public class GroupingQueryParser extends Searcher {
     @Beta public static final CompoundName PARAM_DEFAULT_MAX_GROUPS = CompoundName.from("grouping.defaultMaxGroups");
     @Beta public static final CompoundName PARAM_DEFAULT_PRECISION_FACTOR = CompoundName.from("grouping.defaultPrecisionFactor");
     @Beta public static final CompoundName GROUPING_GLOBAL_MAX_GROUPS = CompoundName.from("grouping.globalMaxGroups");
+    @Beta public static final CompoundName PARAM_ENUM_OPTIMIZATION = CompoundName.from("grouping.enumOptimization");
     private static final ThreadLocal<ZoneCache> zoneCache = new ThreadLocal<>();
 
     @Override
