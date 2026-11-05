@@ -29,7 +29,17 @@ A request can belong to the client before it has a strategy slot. It can also re
 | Cancellation can complete a public future before mapping resolves | Remove an operation only after registration, internal resolution and public completion. Keep eligible retained entries discoverable by the publication scan. |
 | The admission and mapping waits protect different stages | The admission wait orders strategy drainage after construction. The operation wait orders graceful destruction after mapping. Removing the first wait alone does not establish premature destruction if the later wait still blocks. |
 
-These checks support the current changes and clarify their limits; they did not identify another implementation change within these four fixes. The PR remains a draft for the open handoff, resource-release, integration and impact checks below.
+The ownership review adds these requirements for maintaining V21 and V22:
+
+| Requirement | Why it matters | Review check |
+| --- | --- | --- |
+| Enter transport shutdown once | `HttpRequestStrategy.destroy()` uses `destroyed.compareAndSet(false, true)` to select one cleanup caller. The private `ResettableCluster.close()` adds the current delegate on every call; it is not independently safe to call repeatedly. | Preserve the outer gate and shared destruction outcome when changing callers. |
+| Keep response accounting separate from transport ownership | A response may never arrive. Shutdown must still claim and close its retired transport; a late callback only decrements the captured counter. | Check both no-response and response-during-close cases. A remaining response count alone does not show an open channel. |
+| Claim before closing, then wait for worker cleanup | Removing an identity from `retired` selects its cleanup owner under the monitor. Close runs outside the monitor, and shutdown waits for cleanup already claimed by the worker. | Preserve the claim, monitor boundary and executor wait together. |
+| Preserve transport identity and callback accounting | The checks assume fresh transport identities and one accounting callback per dispatched response future, with no counter overflow. Completing the same future twice does not run its callback twice. | Do not treat idle same-instance tests or duplicate future completion as coverage for arbitrary identity reuse or duplicate callback execution. |
+| Check resource release separately | A normal return from `close()` records completion of that call. Actual release depends on the transport implementation. A timeout or throwing close can leave resources behind. | Inspect sockets, channels and worker retention with the real transport, including partial failure. |
+
+The current code and controlled histories support these ownership rules. They do not establish every ordering across multiple transports or every JVM visibility interaction. Monitor-protected decisions must stay together when changing the implementation. A blocked close can still stall shutdown; the executor timeout does not bound the preceding transport close calls. The PR remains a draft for the open handoff, resource-release, integration and impact checks below.
 
 ## Reading the examples and tests
 
@@ -43,7 +53,7 @@ Four new regression cases first failed against the old behavior: worker creation
 
 ## Failure-mode table
 
-Additional controlled JDK runs recorded 52 observations: thirteen scenarios on JDK 21 and JDK 26, each in mixed and interpreted mode. Three scenarios distinguish timeout with a held worker, interruption with the flag restored, and successful termination. All observations matched their expected endpoints. These runs support the JDK wait contract; they do not replace the 76 Java component tests or real transport validation. Run identifiers, parameters, runtime versions, logs and rendered plots are retained in the separate evaluated notebooks.
+Additional controlled JDK runs recorded 52 observations: thirteen scenarios on JDK 21 and JDK 26, each in mixed and interpreted mode. Three scenarios distinguish timeout with a held worker, interruption with the flag restored, and successful termination. All observations matched their expected endpoints. These runs support the JDK wait contract; they do not replace the 76 Java component tests or real transport validation. Run identifiers, parameters, runtime versions, logs and rendered plots are retained in the separate evaluated notebooks. The saved evidence-history notebook compares earlier runs without executing those JVM experiments again. The separate ownership-history notebook illustrates seven checked sequences, including no response and failed cleanup; its steps are not elapsed time or a promise about JVM scheduling. These notebooks add no Java test executions to the count above.
 
 Idle reset now uses the same retirement condition as response completion. Two regression cases first observed zero closes instead of one. The expanded controls cover fresh and previously used idle delegates, same-instance replacement, creation failure, throwing retirement and active requests. The source experiment compares unchanged before/after inputs using real file channels and the same release checks; the new ownership comparison checks late response cleanup separately. Shutdown now closes retired delegates even when responses never arrive, and late callbacks only finish accounting.
 
