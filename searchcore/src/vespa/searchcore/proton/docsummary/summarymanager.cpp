@@ -92,6 +92,8 @@ SummaryManager::SummarySetup::SummarySetup(const std::string& baseDir, const Sum
     _docsumWriter = std::make_unique<DynamicDocsumWriter>(std::move(resultConfig));
 }
 
+SummaryManager::SummarySetup::~SummarySetup() = default;
+
 IDocsumStore::UP SummaryManager::SummarySetup::createDocsumStore() {
     return std::make_unique<DocumentStoreAdapter>(*_docStore, *_repo);
 }

@@ -68,6 +68,7 @@ struct MyDocument {
     MyDocument(int id_in) : id(id_in), vec(), vec2() {}
     MyDocument(int id_in, std::string vec_in, std::string vec2_in = "")
         : id(id_in), vec(std::move(vec_in)), vec2(std::move(vec2_in)) {}
+    ~MyDocument();
     std::unique_ptr<Document> to_document(const DocumentTypeRepo& repo, const DataType& doc_type) const {
         auto result = std::make_unique<Document>(repo, doc_type, DocumentId(get_doc_id(id)));
         result->setValue("id", std::make_unique<IntFieldValue>(id));
@@ -76,6 +77,8 @@ struct MyDocument {
         return result;
     }
 };
+
+MyDocument::~MyDocument() = default;
 
 using DocumentVector = std::vector<MyDocument>;
 
@@ -97,7 +100,7 @@ std::ostream& operator<<(std::ostream& oss, const MyHit& hit) {
 
 class RequestBuilder {
 private:
-    vdslib::Parameters                 _params;
+    vdslib::Parameters                               _params;
     QueryBuilder<SimpleQueryNodeTypes>               _builder;
     int32_t                                          _term_id;
     bool                                             _use_protobuf;
@@ -127,6 +130,7 @@ public:
         summary_class("default");
         summary_count(10);
     }
+    ~RequestBuilder();
     RequestBuilder& set_param(const std::string& key, const std::string& value) {
         _params.set(key, value);
         return *this;
@@ -179,6 +183,8 @@ public:
         return _params;
     }
 };
+
+RequestBuilder::~RequestBuilder() = default;
 
 struct VisitorSession {
     std::unique_ptr<SearchVisitor> search_visitor;
@@ -339,10 +345,9 @@ void check_score_threshold_raised_by_hits(SearchVisitorTest& test, bool dump_fea
         // Unpacks match data a second time for the dump processor, which must not add the hit to the heap again
         builder.dump_features();
     }
-    auto res = test.execute_query(builder.build(), {{1, "tensor(x{}):{b:4}"},
-                                                    {2, "tensor(x{}):{b:3}"},
-                                                    {3, "tensor(x{}):{a:5}"},
-                                                    {4, "tensor(x{}):{a:7}"}});
+    auto res = test.execute_query(
+        builder.build(),
+        {{1, "tensor(x{}):{b:4}"}, {2, "tensor(x{}):{b:3}"}, {3, "tensor(x{}):{a:5}"}, {4, "tensor(x{}):{a:7}"}});
     // After documents 1 and 2 the heap is full with threshold 6, so document 3 does not match
     expect_hits({{1, 8.0}, {4, 7.0}, {2, 6.0}}, *res);
 }
@@ -355,14 +360,13 @@ TEST_F(SearchVisitorTest, sparse_tensor_wand_score_threshold_is_raised_by_hits) 
 }
 
 TEST_F(SearchVisitorTest, sparse_tensor_wand_searching_fieldset_sets_raw_score_per_field) {
-    auto res = execute_query(RequestBuilder()
-                                 .rank_profile("sparse_tensor_wand")
-                                 .sparse_tensor_wand_term("qt", "vecs", 1, 0.0)
-                                 .query_tensor("qt", "tensor(x{}):{a:1,b:2}")
-                                 .build(),
-                             {{1, "tensor(x{}):{a:1}", "tensor(x{}):{b:1}"},
-                              {2, "tensor(x{}):{a:3}"},
-                              {3, "", "tensor(x{}):{a:2.5}"}});
+    auto res = execute_query(
+        RequestBuilder()
+            .rank_profile("sparse_tensor_wand")
+            .sparse_tensor_wand_term("qt", "vecs", 1, 0.0)
+            .query_tensor("qt", "tensor(x{}):{a:1,b:2}")
+            .build(),
+        {{1, "tensor(x{}):{a:1}", "tensor(x{}):{b:1}"}, {2, "tensor(x{}):{a:3}"}, {3, "", "tensor(x{}):{a:2.5}"}});
     // Rank is rawScore(vec) + 1000 * rawScore(vec2). The best field score of document 1 (2) sets the
     // threshold, which document 2 (3) raises, so document 3 (2.5) does not match.
     expect_hits({{1, 2001.0}, {2, 3.0}}, *res);
