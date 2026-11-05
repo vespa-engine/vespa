@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,6 +50,19 @@ public class FileDirectoryTest {
         assertEquals(references.get(0), foo.value());
         assertTrue(fileDirectory.getFile(bar).get().exists());
         assertEquals(references.get(1), bar.value());
+    }
+
+    @Test
+    public void requireThatFileIsAddedOnlyIfMatchingExpectedReference() throws IOException {
+        File file = temporaryFolder.newFile("foo");
+        IOUtils.writeFile(file, "foo", false);
+        FileReference expected = new FileReference(references.get(0));
+
+        assertFalse(fileDirectory.addFileIfMatching(file, new FileReference(references.get(1)), Optional.empty()));
+        assertTrue(fileDirectory.getFile(new FileReference(references.get(1))).isEmpty());
+
+        assertTrue(fileDirectory.addFileIfMatching(file, expected, Optional.empty()));
+        assertTrue(fileDirectory.getFile(expected).get().exists());
     }
 
     @Test

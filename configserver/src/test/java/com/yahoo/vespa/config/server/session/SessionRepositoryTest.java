@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.Model;
@@ -21,7 +22,11 @@ import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
+import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
+import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
@@ -47,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.LongPredicate;
 
 import static org.junit.Assert.assertEquals;
@@ -68,6 +74,8 @@ public class SessionRepositoryTest {
     private static final File appJdiscOnly = new File("src/test/apps/app-jdisc-only");
 
     private MockCurator curator;
+    private ConfigserverConfig configserverConfig;
+    private FileDistributionFactory fileDistributionFactory;
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
     private SessionRepository sessionRepository;
@@ -85,19 +93,25 @@ public class SessionRepositoryTest {
     }
 
     private void setup(ModelFactoryRegistry modelFactoryRegistry) throws Exception {
+        setup(modelFactoryRegistry, MockFileDistributionFactory::new);
+    }
+
+    private void setup(ModelFactoryRegistry modelFactoryRegistry,
+                       Function<ConfigserverConfig, FileDistributionFactory> fileDistributionFactoryCreator) throws Exception {
         curator = new MockCurator();
         File configserverDbDir = temporaryFolder.newFolder().getAbsoluteFile();
-        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+        configserverConfig = new ConfigserverConfig.Builder()
                 .configServerDBDir(configserverDbDir.getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
                 .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
                 .sessionLifetime(5)
                 .build();
+        fileDistributionFactory = fileDistributionFactoryCreator.apply(configserverConfig);
         tenantRepository = new TestTenantRepository.Builder()
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
                 .withFlagSource(flagSource)
-                .withFileDistributionFactory(new MockFileDistributionFactory(configserverConfig))
+                .withFileDistributionFactory(fileDistributionFactory)
                 .withModelFactoryRegistry(modelFactoryRegistry)
                 .build();
         tenantRepository.addTenant(SessionRepositoryTest.tenantName);
@@ -106,6 +120,38 @@ public class SessionRepositoryTest {
                 .withFlagSource(flagSource)
                 .build();
         sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
+    }
+
+    @Test
+    public void file_references_are_added_from_distributed_application_package() throws Exception {
+        setup(new ModelFactoryRegistry(List.of(VespaModelFactory.createTestFactory())),
+              config -> new FileDistributionFactory(config, new FileDirectory(config)));
+        File app = temporaryFolder.newFolder();
+        IOUtils.copyDirectory(testApp, app);
+        File components = new File(app, "components");
+        components.mkdir();
+        IOUtils.copy(new File("src/test/apps/components/com.yahoo.searcher1.jar"), new File(components, "com.yahoo.searcher1.jar"));
+        long sessionId = deploy(applicationId, app);
+
+        FileDirectory fileDirectory = fileDistributionFactory.fileDirectory();
+        var zkClient = sessionRepository.createSessionZooKeeperClient(sessionId);
+        FileReference applicationPackageReference = zkClient.readApplicationPackageReference().get();
+        List<FileReference> fileReferences = zkClient.loadApplicationPackage().getFileRegistries().values().stream()
+                .flatMap(registry -> registry.export().stream())
+                .map(entry -> entry.reference)
+                .filter(reference -> ! reference.equals(applicationPackageReference))
+                .distinct()
+                .toList();
+        assertFalse("Expected file references other than the application package", fileReferences.isEmpty());
+
+        // Simulate a config server that has only downloaded the application package
+        fileReferences.forEach(reference -> IOUtils.recursiveDeleteDir(new File(fileDirectory.getRoot(), reference.value())));
+        IOUtils.recursiveDeleteDir(new TenantFileSystemDirs(new ConfigServerDB(configserverConfig), tenantName).getUserApplicationDir(sessionId));
+        fileReferences.forEach(reference -> assertTrue(fileDirectory.getFile(reference).isEmpty()));
+
+        sessionRepository.createLocalSessionFromDistributedApplicationPackage(sessionId);
+
+        fileReferences.forEach(reference -> assertTrue(reference.value(), fileDirectory.getFile(reference).isPresent()));
     }
 
     @Test
