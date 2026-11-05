@@ -36,7 +36,7 @@ public:
             }
         }
 
-        return func(StringMatcher(std::move(query_term), cased, fuzzy_matching_algorithm));
+        return func(StringMatcher(std::move(query_term), cased));
     }
 };
 

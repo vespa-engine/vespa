@@ -24,7 +24,7 @@ class IDictionaryLookup;
 
 /*
  * Class used to determine if an attribute vector string value is a match for
- * the query string value.
+ * the exact or prefix query term.
  */
 class StringMatcher {
 private:
@@ -32,13 +32,12 @@ private:
     attribute::StringSearchHelper  _helper;
 
 public:
-    StringMatcher(std::unique_ptr<QueryTermSimple> qTerm, bool cased,
-                  vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm);
+    StringMatcher(std::unique_ptr<QueryTermSimple> qTerm, bool cased);
     StringMatcher(StringMatcher&&) noexcept;
     ~StringMatcher();
 
     [[nodiscard]] bool is_valid() const { return _query_term && (!_query_term->empty()); }
-    [[nodiscard]] bool match(const char* src) const { return _helper.isMatch(src); }
+    [[nodiscard]] bool match(const char* src) const { return _helper.is_match(src); }
     [[nodiscard]] const QueryTermUCS4* get_query_term_ptr() const noexcept { return _query_term.get(); }
 
     /*
