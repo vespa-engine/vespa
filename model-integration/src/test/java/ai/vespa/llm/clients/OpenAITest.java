@@ -258,7 +258,7 @@ public class OpenAITest {
         
         // Prepare a prompt and parameters with an invalid endpoint
         var prompt = StringPrompt.from("This should fail");
-        var endpoint = "https://api.invalid.com/v1/invalid";
+        var endpoint = "https://api.example.invalid/v1/invalid";
         var parameters = new InferenceParameters(API_KEY, key -> null);
         parameters.setEndpoint(endpoint);
         

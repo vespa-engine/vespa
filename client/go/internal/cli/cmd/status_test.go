@@ -97,12 +97,12 @@ func TestStatusError(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	client.NextResponseError(io.EOF)
-	assert.NotNil(t, cli.Run("status", "container", "-t", "http://example.com"))
+	assert.NotNil(t, cli.Run("status", "container", "-t", "http://example.invalid"))
 	assert.Equal(t,
-		"Container at http://example.com is not ready: unhealthy container at http://example.com/status.html: EOF\n",
+		"Container at http://example.invalid is not ready: unhealthy container at http://example.invalid/status.html: EOF\n",
 		stdout.String())
 	assert.Equal(t,
-		"Error: services not ready: http://example.com\n",
+		"Error: services not ready: http://example.invalid\n",
 		stderr.String())
 }
 

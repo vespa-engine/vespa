@@ -7,7 +7,7 @@ package com.yahoo.geo;
  *
  * <pre>
  * Input from:
- * http://gws.maps.yahoo.com/findlocation?q=sunnyvale,ca&amp;amp;flags=X
+ * http://gws.maps.example.invalid/findlocation?q=sunnyvale,ca&amp;amp;flags=X
  * which gives this format:
  * &lt;boundingbox&gt;
  * &lt;north&gt;37.44899&lt;/north&gt;&lt;south&gt;37.3323&lt;/south&gt;&lt;east&gt;-121.98241&lt;/east&gt;&lt;west&gt;-122.06566&lt;/west&gt;

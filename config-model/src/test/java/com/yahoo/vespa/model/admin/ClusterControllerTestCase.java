@@ -215,13 +215,13 @@ public class ClusterControllerTestCase extends DomBuilderTest {
                 "  <host name=\"localhost\">\n" +
                 "    <alias>node1</alias>\n" +
                 "  </host>\n" +
-                "  <host name=\"my.host1.com\">\n" +
+                "  <host name=\"my.host1.example.invalid\">\n" +
                 "    <alias>node2</alias>\n" +
                 "  </host>\n" +
-                "  <host name=\"my.host2.com\">\n" +
+                "  <host name=\"my.host2.example.invalid\">\n" +
                 "    <alias>node3</alias>\n" +
                 "  </host>\n" +
-                "  <host name=\"my.host3.com\">\n" +
+                "  <host name=\"my.host3.example.invalid\">\n" +
                 "    <alias>node4</alias>\n" +
                 "  </host>\n" +
                 "</hosts>";
@@ -258,7 +258,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         CuratorConfig config = builder.build();
 
         assertEquals(3, config.server().size());
-        assertEquals("my.host1.com", config.server().get(0).hostname());
+        assertEquals("my.host1.example.invalid", config.server().get(0).hostname());
         assertEquals(2181, config.server().get(0).port());
         assertFalse(config.zookeeperLocalhostAffinity());
     }

@@ -105,7 +105,7 @@ TEST(ModelInspectTest, yamlDump) {
 TEST(ModelInspectTest, listHosts) {
     Model f1;
     f1.model.listHosts();
-    f1.contains("example.yahoo.com");
+    f1.contains("host.example.invalid");
 }
 
 TEST(ModelInspectTest, listServices) {
@@ -132,7 +132,7 @@ TEST(ModelInspectTest, listConfigIds) {
 
 TEST(ModelInspectTest, listHost) {
     Model f1;
-    ASSERT_EQ(0, f1.model.listHost("example.yahoo.com"));
+    ASSERT_EQ(0, f1.model.listHost("host.example.invalid"));
     f1.contains("search/qrsclusters/default/qrserver.0");
     ASSERT_EQ(1, f1.model.listHost("nothere"));
 }
@@ -148,7 +148,7 @@ TEST(ModelInspectTest, listCluster) {
 TEST(ModelInspectTest, listAllPorts) {
     Model f1;
     f1.model.listAllPorts();
-    f1.contains("example.yahoo.com:19080");
+    f1.contains("host.example.invalid:19080");
 }
 
 TEST(ModelInspectTest, listService) {
@@ -167,15 +167,15 @@ TEST(ModelInspectTest, listService_with_cluster) {
 
 TEST(ModelInspectTest, listConfigId) {
     Model f1;
-    ASSERT_EQ(0, f1.model.listConfigId("hosts/example.yahoo.com/logd"));
-    f1.contains("logd @ example.yahoo.com : hosts");
+    ASSERT_EQ(0, f1.model.listConfigId("hosts/host.example.invalid/logd"));
+    f1.contains("logd @ host.example.invalid : hosts");
     ASSERT_EQ(1, f1.model.listConfigId("nothere"));
 }
 
 TEST(ModelInspectTest, getIndexOf) {
     Model f1;
-    ASSERT_EQ(0, f1.model.getIndexOf("logd", "example.yahoo.com"));
-    ASSERT_EQ(1, f1.model.getIndexOf("nothere", "example.yahoo.com"));
+    ASSERT_EQ(0, f1.model.getIndexOf("logd", "host.example.invalid"));
+    ASSERT_EQ(1, f1.model.getIndexOf("nothere", "host.example.invalid"));
     ASSERT_EQ(1, f1.model.getIndexOf("nothere", "nothere"));
 }
 
@@ -183,21 +183,21 @@ TEST(ModelInspectTest, tag_filter_match) {
     TagFilterFlags f1("http");
     Model          f2(f1);
     f2.model.listService("qrserver");
-    f2.contains("tcp/example.yahoo.com:4080");
+    f2.contains("tcp/host.example.invalid:4080");
 }
 
 TEST(ModelInspectTest, tag_filter_no_match) {
     TagFilterFlags f1("nothing");
     Model          f2(f1);
     f2.model.listService("qrserver");
-    f2.missing("tcp/example.yahoo.com:4080");
+    f2.missing("tcp/host.example.invalid:4080");
 }
 
 TEST(ModelInspectTest, makeuri) {
     MakeUriFlags f1;
     Model        f2(f1);
     f2.model.listService("qrserver");
-    f2.contains("http://example.yahoo.com:4080");
+    f2.contains("http://host.example.invalid:4080");
 }
 
 TEST(ModelInspectTest, action_no_command) {

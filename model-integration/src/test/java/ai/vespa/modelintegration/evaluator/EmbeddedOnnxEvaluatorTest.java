@@ -90,10 +90,10 @@ public class EmbeddedOnnxEvaluatorTest {
         var model = Paths.get("src/test/models/onnx/external_data/add_with_external_data.onnx");
         var dataFile = Paths.get("src/test/models/onnx/external_data/external_data.bin");
         var modelRef = ModelReference.unresolved(
-                Optional.empty(), Optional.of(new UrlReference("https://my.website/add_with_external_data.onnx")),
+                Optional.empty(), Optional.of(new UrlReference("https://my.website.invalid/add_with_external_data.onnx")),
                 Optional.empty(), Optional.empty());
         var dataRef = ModelReference.unresolved(
-                Optional.empty(), Optional.of(new UrlReference("https://my.website/external_data.bin")),
+                Optional.empty(), Optional.of(new UrlReference("https://my.website.invalid/external_data.bin")),
                 Optional.empty(), Optional.empty());
         var modelPathHelper = mock(ModelPathHelper.class);
         when(modelPathHelper.getModelPathResolvingIfNecessary(modelRef)).thenReturn(model);

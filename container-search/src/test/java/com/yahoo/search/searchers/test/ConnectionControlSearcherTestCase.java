@@ -35,7 +35,7 @@ public class ConnectionControlSearcherTestCase {
 
     @Test
     final void test() throws URISyntaxException {
-        URI uri = new URI("http://finance.yahoo.com/?connectioncontrol.maxlifetime=1");
+        URI uri = new URI("http://finance.example.invalid/?connectioncontrol.maxlifetime=1");
         long connectedAtMillis = 0L;
         long nowMillis = 2L * 1000L;
         Result r = doSearch(uri, connectedAtMillis, nowMillis);
@@ -44,7 +44,7 @@ public class ConnectionControlSearcherTestCase {
 
     @Test
     final void testForcedClose() throws URISyntaxException {
-        URI uri = new URI("http://finance.yahoo.com/?connectioncontrol.maxlifetime=0");
+        URI uri = new URI("http://finance.example.invalid/?connectioncontrol.maxlifetime=0");
         long connectedAtMillis = 0L;
         long nowMillis = 0L;
         Result r = doSearch(uri, connectedAtMillis, nowMillis);
@@ -63,7 +63,7 @@ public class ConnectionControlSearcherTestCase {
 
     @Test
     final void testNoMaxLifetime() throws URISyntaxException {
-        URI uri = new URI("http://finance.yahoo.com/");
+        URI uri = new URI("http://finance.example.invalid/");
         long connectedAtMillis = 0L;
         long nowMillis = 0L;
         Result r = doSearch(uri, connectedAtMillis, nowMillis);
@@ -72,7 +72,7 @@ public class ConnectionControlSearcherTestCase {
 
     @Test
     final void testYoungEnoughConnection() throws URISyntaxException {
-        URI uri = new URI("http://finance.yahoo.com/?connectioncontrol.maxlifetime=1");
+        URI uri = new URI("http://finance.example.invalid/?connectioncontrol.maxlifetime=1");
         long connectedAtMillis = 0L;
         long nowMillis = 500L;
         Result r = doSearch(uri, connectedAtMillis, nowMillis);

@@ -121,7 +121,7 @@ public class DeploymentConfigStoreTest {
         TelemetryExporterConfiguration.Exporter exporter = telemetry.exporters().get(0);
         assertEquals("my-exporter", exporter.id());
         assertEquals(TelemetryExporterConfiguration.Exporter.ExporterType.otlphttp, exporter.type());
-        assertEquals("https://otel.example.com/v1", exporter.endpoint().get());
+        assertEquals("https://otel.example.invalid/v1", exporter.endpoint().get());
 
         assertTrue(exporter.auth().isPresent());
         assertEquals("bearer", exporter.auth().get().type());

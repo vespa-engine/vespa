@@ -21,11 +21,11 @@ public class DockerImageTest {
     void parse() {
         Map<String, DockerImage> tests = Map.of(
                                "", DockerImage.EMPTY,
-                               "registry.example.com:9999/vespa/vespa:7.42", new DockerImage("registry.example.com:9999", "vespa/vespa", Optional.of("7.42")),
-                               "registry.example.com/vespa/vespa:7.42", new DockerImage("registry.example.com", "vespa/vespa", Optional.of("7.42")),
-                               "registry.example.com:9999/vespa/vespa", new DockerImage("registry.example.com:9999", "vespa/vespa", Optional.empty()),
-                               "registry.example.com/vespa/vespa", new DockerImage("registry.example.com", "vespa/vespa", Optional.empty()),
-                               "registry.example.com/project/repo/vespa/vespa", new DockerImage("registry.example.com/project/repo", "vespa/vespa", Optional.empty())
+                               "registry.example.invalid:9999/vespa/vespa:7.42", new DockerImage("registry.example.invalid:9999", "vespa/vespa", Optional.of("7.42")),
+                               "registry.example.invalid/vespa/vespa:7.42", new DockerImage("registry.example.invalid", "vespa/vespa", Optional.of("7.42")),
+                               "registry.example.invalid:9999/vespa/vespa", new DockerImage("registry.example.invalid:9999", "vespa/vespa", Optional.empty()),
+                               "registry.example.invalid/vespa/vespa", new DockerImage("registry.example.invalid", "vespa/vespa", Optional.empty()),
+                               "registry.example.invalid/project/repo/vespa/vespa", new DockerImage("registry.example.invalid/project/repo", "vespa/vespa", Optional.empty())
         );
         tests.forEach((value, expected) -> {
             DockerImage parsed = DockerImage.fromString(value);
@@ -41,16 +41,16 @@ public class DockerImageTest {
     @Test
     void tag_as_version() {
         Map<String, Version> tests = Map.of(
-                "registry.example.com/vespa/vespa:8.703.17", new Version(8, 703, 17),
-                "registry.example.com/vespa/vespa:8.703.17-alma9", new Version(8, 703, 17),
-                "registry.example.com/vespa/vespa", Version.emptyVersion
+                "registry.example.invalid/vespa/vespa:8.703.17", new Version(8, 703, 17),
+                "registry.example.invalid/vespa/vespa:8.703.17-alma9", new Version(8, 703, 17),
+                "registry.example.invalid/vespa/vespa", Version.emptyVersion
         );
         tests.forEach((value, expected) -> assertEquals(expected, DockerImage.fromString(value).tagAsVersion()));
     }
 
     @Test
     void registry_cannot_contain_slash() {
-        DockerImage image = DockerImage.fromString("registry.example.com/vespa/vespa");
+        DockerImage image = DockerImage.fromString("registry.example.invalid/vespa/vespa");
         assertThrows(IllegalArgumentException.class, () -> image.withRegistry(""));
         assertThrows(IllegalArgumentException.class, () -> image.withRegistry("my-registry/path/"));
     }
@@ -58,10 +58,10 @@ public class DockerImageTest {
     @Test
     void parse_invalid() {
         List<String> tests = List.of(
-                               "registry.example.com",
-                               "registry.example.com/",
-                               "registry.example.com/repository",
-                               "registry.example.com/repository:",
+                               "registry.example.invalid",
+                               "registry.example.invalid/",
+                               "registry.example.invalid/repository",
+                               "registry.example.invalid/repository:",
                                "foo",
                                "foo:1.2.3"
         );

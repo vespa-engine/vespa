@@ -34,7 +34,7 @@ public class TelemetryExporterTest {
         String services = "<services>"
                 + "  <admin version='4.0'>"
                 + "    <telemetry>"
-                + "      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.com/v1'>"
+                + "      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.invalid/v1'>"
                 + "        <auth>"
                 + "          <bearer-token vault='my-vault' secret-name='my-token'/>"
                 + "        </auth>"
@@ -57,7 +57,7 @@ public class TelemetryExporterTest {
         var exporter = exporters.get(0);
         assertEquals("my-exporter", exporter.id());
         assertEquals(ExporterType.otlphttp, exporter.type());
-        assertEquals("https://otel.example.com/v1", exporter.endpoint().get());
+        assertEquals("https://otel.example.invalid/v1", exporter.endpoint().get());
 
         assertTrue(exporter.auth().isPresent());
         var auth = exporter.auth().get();
@@ -77,7 +77,7 @@ public class TelemetryExporterTest {
         String services = "<services>"
                 + "  <admin version='4.0'>"
                 + "    <telemetry>"
-                + "      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.com/v1'>"
+                + "      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.invalid/v1'>"
                 + "        <auth>"
                 + "          <api-key vault='my-vault' secret-name='my-key' header='X-API-Key'/>"
                 + "        </auth>"
@@ -99,7 +99,7 @@ public class TelemetryExporterTest {
         String services = "<services>"
                 + "  <admin version='4.0'>"
                 + "    <telemetry>"
-                + "      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.com/v1'>"
+                + "      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.invalid/v1'>"
                 + "        <auth>"
                 + "          <basic-auth vault='my-vault' username-secret-name='my-user' password-secret-name='my-pass'/>"
                 + "        </auth>"
@@ -122,8 +122,8 @@ public class TelemetryExporterTest {
         String services = "<services>"
                 + "  <admin version='4.0'>"
                 + "    <telemetry>"
-                + "      <exporter id='first' type='otlphttp' endpoint='https://first.example.com/v1'/>"
-                + "      <exporter id='second' type='otlp' endpoint='https://second.example.com:4317'/>"
+                + "      <exporter id='first' type='otlphttp' endpoint='https://first.example.invalid/v1'/>"
+                + "      <exporter id='second' type='otlp' endpoint='https://second.example.invalid:4317'/>"
                 + "    </telemetry>"
                 + "  </admin>"
                 + "</services>";
@@ -142,7 +142,7 @@ public class TelemetryExporterTest {
         String services = "<services>"
                 + "  <admin version='4.0'>"
                 + "    <telemetry>"
-                + "      <exporter id='no-auth' type='otlphttp' endpoint='https://otel.example.com/v1'>"
+                + "      <exporter id='no-auth' type='otlphttp' endpoint='https://otel.example.invalid/v1'>"
                 + "        <metric-set id='Vespa9'/>"
                 + "      </exporter>"
                 + "    </telemetry>"
@@ -160,7 +160,7 @@ public class TelemetryExporterTest {
         String services = "<services>"
                 + "  <admin version='4.0'>"
                 + "    <telemetry>"
-                + "      <exporter id='minimal' type='otlphttp' endpoint='https://otel.example.com/v1'/>"
+                + "      <exporter id='minimal' type='otlphttp' endpoint='https://otel.example.invalid/v1'/>"
                 + "    </telemetry>"
                 + "  </admin>"
                 + "</services>";
@@ -176,7 +176,7 @@ public class TelemetryExporterTest {
         String services = "<services>"
                 + "  <admin version='4.0'>"
                 + "    <telemetry>"
-                + "      <exporter id='metrics-only' type='otlphttp' endpoint='https://otel.example.com/v1'>"
+                + "      <exporter id='metrics-only' type='otlphttp' endpoint='https://otel.example.invalid/v1'>"
                 + "        <metric-set id='Vespa9'/>"
                 + "      </exporter>"
                 + "    </telemetry>"
@@ -195,7 +195,7 @@ public class TelemetryExporterTest {
         String services = "<services>"
                 + "  <admin version='4.0'>"
                 + "    <telemetry>"
-                + "      <exporter id='multi' type='otlphttp' endpoint='https://otel.example.com/v1'>"
+                + "      <exporter id='multi' type='otlphttp' endpoint='https://otel.example.invalid/v1'>"
                 + "        <metric-set id='default'/>"
                 + "        <metric-set id='vespa'/>"
                 + "      </exporter>"
@@ -215,7 +215,7 @@ public class TelemetryExporterTest {
         String services = "<services>"
                 + "  <admin version='4.0'>"
                 + "    <telemetry>"
-                + "      <exporter id='logs-only' type='otlphttp' endpoint='https://otel.example.com/v1'>"
+                + "      <exporter id='logs-only' type='otlphttp' endpoint='https://otel.example.invalid/v1'>"
                 + "        <logs>"
                 + "          <type id='container-logs'/>"
                 + "          <type id='access-logs'/>"

@@ -32,7 +32,7 @@ import java.util.Optional;
  * <pre>
  * DocumentType musicType = DocumentTypeManager.getInstance().getDocumentType("music", 0);
  * DocumentUpdate docUpdate = new DocumentUpdate(musicType,
- *         new DocumentId("id:test:music::http://music.yahoo.com/"));
+ *         new DocumentId("id:test:music::http://music.example.invalid/"));
  * FieldUpdate update = FieldUpdate.createAssign(musicType.getField("artist"), "lillbabs");
  * docUpdate.addFieldUpdate(update);
  * </pre>

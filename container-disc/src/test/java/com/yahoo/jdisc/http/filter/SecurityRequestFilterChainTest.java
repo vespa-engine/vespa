@@ -29,7 +29,7 @@ public class SecurityRequestFilterChainTest {
 
 
     private static HttpRequest newRequest(URI uri, HttpRequest.Method method, HttpRequest.Version version) {
-        InetSocketAddress address = new InetSocketAddress("java.corp.yahoo.com", 69);
+        InetSocketAddress address = new InetSocketAddress("java.corp.example.invalid", 69);
         TestDriver driver = TestDriver.newSimpleApplicationInstanceWithoutOsgi();
         driver.activateContainer(driver.newContainerBuilder());
         HttpRequest request = HttpRequest.newServerRequest(driver, uri, method, version, address);

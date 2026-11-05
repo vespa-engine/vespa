@@ -68,7 +68,7 @@ public class DiscFilterResponseTest {
 
     @Test
     void testAddCookie() {
-        URI uri = URI.create("http://example.com/test");
+        URI uri = URI.create("http://example.invalid/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
         DiscFilterResponse response = new DiscFilterResponse(httpResp);
@@ -81,7 +81,7 @@ public class DiscFilterResponseTest {
 
     @Test
     void testSetCookie() {
-        URI uri = URI.create("http://example.com/test");
+        URI uri = URI.create("http://example.invalid/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
         DiscFilterResponse response = new DiscFilterResponse(httpResp);
@@ -94,7 +94,7 @@ public class DiscFilterResponseTest {
 
     @Test
     void testSetHeader() {
-        URI uri = URI.create("http://example.com/test");
+        URI uri = URI.create("http://example.invalid/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
         DiscFilterResponse response = new DiscFilterResponse(httpResp);
