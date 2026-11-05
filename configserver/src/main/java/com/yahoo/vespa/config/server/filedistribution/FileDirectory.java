@@ -177,9 +177,9 @@ public class FileDirectory extends AbstractComponent {
      * @return true if source matched the expected reference and was added (or already existed)
      */
     public boolean addFileIfMatching(File source, FileReference expected, Optional<ApplicationId> owner) throws IOException {
-        if ( ! computeHash(source).equals(expected.value())) return false;
-
         try (Lock lock = locks.lock(expected)) {
+            if ( ! computeHash(source).equals(expected.value())) return false;
+
             addFile(source, expected, owner);
             return true;
         }
