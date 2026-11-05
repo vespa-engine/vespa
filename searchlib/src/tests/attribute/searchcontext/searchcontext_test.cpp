@@ -1304,11 +1304,20 @@ std::string to_hex(uint32_t n) {
     return std::format("{:016X}", n);
 }
 
-std::unique_ptr<QueryTermSimple> make_string_range_query_term(std::optional<uint32_t> left, bool left_closed,
-                                                              std::optional<uint32_t> right, bool right_closed) {
-    return std::make_unique<QueryTermUCS4>(QueryTermSimple::Type::WORD,
-                                           std::make_unique<StringRangeSpec>(left.transform(to_hex), left_closed,
-                                                                             right.transform(to_hex), right_closed));
+std::unique_ptr<QueryTermSimple> make_string_range_query_term(const std::optional<std::string>& left,
+                                                              bool                              left_closed,
+                                                              const std::optional<std::string>& right,
+                                                              bool right_closed, int32_t range_limit = 0) {
+    return std::make_unique<QueryTermUCS4>(
+        QueryTermSimple::Type::WORD,
+        std::make_unique<StringRangeSpec>(left, left_closed, right, right_closed, range_limit));
+}
+
+std::unique_ptr<QueryTermSimple> make_hex_string_range_query_term(std::optional<uint32_t> left, bool left_closed,
+                                                                  std::optional<uint32_t> right, bool right_closed,
+                                                                  int32_t range_limit = 0) {
+    return make_string_range_query_term(left.transform(to_hex), left_closed, right.transform(to_hex), right_closed,
+                                        range_limit);
 }
 
 DocSet make_range_doc_set(uint32_t n, std::optional<uint32_t> left, bool left_closed, std::optional<uint32_t> right,
@@ -1341,36 +1350,85 @@ void SearchContextTest::test_lexical_range_search(const std::string& name, const
     for (uint32_t i = 1; i <= n; ++i) {
         // (-\infty, i]
         // (lower bound 5 is ignored)
-        perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(std::nullopt, false, i, true),
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_hex_string_range_query_term(std::nullopt, false, i, true),
                        make_range_doc_set(n, std::nullopt, false, i, true));
         // [i, \infty)
         // (upped bound 10 is ignored)
-        perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(i, true, std::nullopt, false),
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_hex_string_range_query_term(i, true, std::nullopt, false),
                        make_range_doc_set(n, i, true, std::nullopt, false));
     }
 
     // (-\infty, \infty)
     // bounds 5 and 10 are ignored
     perform_search(queryeval::ExecuteInfo::FULL, attr,
-                   make_string_range_query_term(std::nullopt, false, std::nullopt, false),
+                   make_hex_string_range_query_term(std::nullopt, false, std::nullopt, false),
                    make_range_doc_set(n, std::nullopt, false, std::nullopt, false));
 
     // bounded intervals
     for (uint32_t i = 1; i <= n; ++i) {
         for (uint32_t j = 1; j <= n; ++j) {
             // [i, j]
-            perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(i, true, j, true),
+            perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(i, true, j, true),
                            make_range_doc_set(n, i, true, j, true));
             // (i, j]
-            perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(i, false, j, true),
+            perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(i, false, j, true),
                            make_range_doc_set(n, i, false, j, true));
             // [i, j)
-            perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(i, true, j, false),
+            perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(i, true, j, false),
                            make_range_doc_set(n, i, true, j, false));
             // (i, j)
-            perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term(i, false, j, false),
+            perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(i, false, j, false),
                            make_range_doc_set(n, i, false, j, false));
         }
+    }
+
+    // Test range limit
+    if (cfg.fastSearch()) {
+        // Bounded, ascending
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(2, true, 8, true, 1),
+                       make_range_doc_set(n, 2, true, 2, true));
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(2, true, 8, true, 2),
+                       make_range_doc_set(n, 2, true, 3, true));
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(2, false, 8, true, 2),
+                       make_range_doc_set(n, 3, true, 4, true));
+
+        // Bounded, descending
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(2, true, 8, true, -1),
+                       make_range_doc_set(n, 8, true, 8, true));
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(2, true, 8, true, -2),
+                       make_range_doc_set(n, 7, true, 8, true));
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(2, true, 8, false, -2),
+                       make_range_doc_set(n, 6, true, 7, true));
+
+        // Unbounded, ascending
+        // Range limit will be ignored due to use of empty string as placeholder, cf. StringRangeMatcher
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_hex_string_range_query_term(std::nullopt, false, 8, true, 1),
+                       make_range_doc_set(n, 1, true, 8, true));
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_hex_string_range_query_term(std::nullopt, false, 8, true, 2),
+                       make_range_doc_set(n, 1, true, 8, true));
+        // Also when starting from empty string
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term("", true, to_hex(8), true, 1),
+                       make_range_doc_set(n, 1, true, 8, true));
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_string_range_query_term("", true, to_hex(8), true, 2),
+                       make_range_doc_set(n, 1, true, 8, true));
+
+        // Unbounded, descending
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_hex_string_range_query_term(2, true, std::nullopt, false, -1),
+                       make_range_doc_set(n, 15, true, 15, true));
+        perform_search(queryeval::ExecuteInfo::FULL, attr,
+                       make_hex_string_range_query_term(2, true, std::nullopt, false, -2),
+                       make_range_doc_set(n, 14, true, 15, true));
+    } else {
+        // No fast search. Range limit cannot work. Check that it is ignored.
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(2, true, 8, true, 1),
+                       make_range_doc_set(n, 2, true, 8, true));
+        perform_search(queryeval::ExecuteInfo::FULL, attr, make_hex_string_range_query_term(2, true, 8, true, -1),
+                       make_range_doc_set(n, 2, true, 8, true));
     }
 
     // Long range, cf. testPrefixSearch
@@ -1383,7 +1441,7 @@ void SearchContextTest::test_lexical_range_search(const std::string& name, const
     attr.commit(CommitParam::UpdateStats::FORCE);
     // [n + 1, n + longrange_values]
     perform_search(queryeval::ExecuteInfo::FULL, attr,
-                   make_string_range_query_term(n + 1, true, n + longrange_values, true),
+                   make_hex_string_range_query_term(n + 1, true, n + longrange_values, true),
                    make_range_doc_set(n + longrange_values, n + 1, true, n + longrange_values, true));
 }
 
@@ -1392,16 +1450,6 @@ TEST_F(SearchContextTest, test_lexical_range_search) {
         test_lexical_range_search(cfg.first, cfg.second);
     }
 }
-
-namespace {
-
-std::unique_ptr<QueryTermSimple> make_string_range_query_term(std::optional<std::string> left, bool left_closed,
-                                                              std::optional<std::string> right, bool right_closed) {
-    return std::make_unique<QueryTermUCS4>(QueryTermSimple::Type::WORD,
-                                           std::make_unique<StringRangeSpec>(left, left_closed, right, right_closed));
-}
-
-} // namespace
 
 /*
  * Lexical range search over a dictionary holding several values that only differ by case.
