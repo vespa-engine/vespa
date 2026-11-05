@@ -2,8 +2,10 @@
 
 #pragma once
 
+#include "string_fuzzy_matcher.h"
 #include "string_matcher.h"
 #include "string_range_matcher.h"
+#include "string_regex_matcher.h"
 
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
