@@ -171,6 +171,20 @@ public class FileDirectory extends AbstractComponent {
         }
     }
 
+    /**
+     * Adds source with the expected file reference, if the content of source matches it.
+     *
+     * @return true if source matched the expected reference and was added (or already existed)
+     */
+    public boolean addFileIfMatching(File source, FileReference expected, Optional<ApplicationId> owner) throws IOException {
+        if ( ! computeHash(source).equals(expected.value())) return false;
+
+        try (Lock lock = locks.lock(expected)) {
+            addFile(source, expected, owner);
+            return true;
+        }
+    }
+
     public boolean delete(FileReference fileReference, Function<FileReference, Boolean> isInUse, Function<File, Boolean> isOld) {
         try (Lock lock = locks.lock(fileReference)) {
             if (isInUse.apply(fileReference))
