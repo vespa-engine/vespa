@@ -199,8 +199,32 @@ float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
     const uint8_t* lhs_bit_buf = packed_bits_buf(lhs.data());
     const float    rhs_scale = extract_scale_factor(rhs.data());
     const uint8_t* rhs_bit_buf = packed_bits_buf(rhs.data());
-
-    const float dot = hwaccelerated::eden_q_q_dot_product(lhs_bit_buf, rhs_bit_buf, _bits, _dimensions);
+    float          dot;
+    if (_bits == 1) {
+        // 1-bit quantized vs. quantized dot product can be optimized substantially by mapping it
+        // to a Hamming distance problem, i.e. popcount(lhs XOR rhs).
+        // Any 1-bit index maps to a single absolute centroid value `C`, i.e. only the sign differs.
+        // Assuming 0 maps to -C and 1 maps to +C (the inverse can be the case, it doesn't matter):
+        //
+        //  lhs   rhs   lhs XOR rhs    expr    result
+        //   0     0         0        -C*-C      C*C
+        //   0     1         1        -C* C    -(C*C)
+        //   1     0         1         C*-C    -(C*C)
+        //   1     1         0         C* C      C*C
+        //
+        // From this we can see that per-dimension products are always negative when lhs XOR rhs
+        // is 1, which in turn means the Hamming distance is exactly equal to the number of -(C*C)
+        // contributions. Conversely, the number of dimensions minus the Hamming distance is the
+        // number of +(C*C) contributions.
+        // Note that we require that any padding bits at the end of the vectors shall always be
+        // zero, so these shall never spuriously add to the Hamming distance.
+        const size_t    bit_buf_size = _quantized_size - scale_bytes;
+        const size_t    n_neg = hwaccelerated::binary_hamming_distance(lhs_bit_buf, rhs_bit_buf, bit_buf_size);
+        constexpr float c = codebooks::eden_bf16_codebook(1)[1]; // +C centroid value
+        dot = static_cast<float>(_dimensions - n_neg) * (c * c) + static_cast<float>(n_neg) * -(c * c);
+    } else {
+        dot = hwaccelerated::eden_q_q_dot_product(lhs_bit_buf, rhs_bit_buf, _bits, _dimensions);
+    }
     return lhs_scale * rhs_scale * dot;
 }
 
