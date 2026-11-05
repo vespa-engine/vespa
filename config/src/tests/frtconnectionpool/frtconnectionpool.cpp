@@ -73,15 +73,15 @@ TEST_F(FRTConnectionPoolTest, test_basic_hash_based_selection) {
     }
 
     ServerSpec::HostSpecList hostnames;
-    hostnames.push_back("sutter-01.host.example.invalid");
-    hostnames.push_back("stroustrup-02.host.example.invalid");
+    hostnames.push_back("sutter-10.host.example.invalid");
+    hostnames.push_back("stroustrup-33.host.example.invalid");
     hostnames.push_back("alexandrescu-03.host.example.invalid");
     const ServerSpec  spec2(std::move(hostnames));
     FRTConnectionPool sourcePool2(_transport, spec2, timingValues);
-    sourcePool2.setHostname("sutter-01.host.example.invalid");
-    EXPECT_EQ("stroustrup-02.host.example.invalid", sourcePool2.getNextHashBased()->getAddress());
-    sourcePool2.setHostname("stroustrup-02.host.example.invalid");
-    EXPECT_EQ("sutter-01.host.example.invalid", sourcePool2.getNextHashBased()->getAddress());
+    sourcePool2.setHostname("sutter-10.host.example.invalid");
+    EXPECT_EQ("stroustrup-33.host.example.invalid", sourcePool2.getNextHashBased()->getAddress());
+    sourcePool2.setHostname("stroustrup-33.host.example.invalid");
+    EXPECT_EQ("sutter-10.host.example.invalid", sourcePool2.getNextHashBased()->getAddress());
     sourcePool2.setHostname("alexandrescu-03.host.example.invalid");
     EXPECT_EQ("alexandrescu-03.host.example.invalid", sourcePool2.getNextHashBased()->getAddress());
 }
