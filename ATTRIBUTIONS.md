@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-11-02
+Last updated: 2026-11-05
 
 ---
 
@@ -956,6 +956,13 @@ Last updated: 2026-11-02
 ## org.apache.zookeeper 3.9.6 — Apache 2.0
 
 - Homepage: <http://zookeeper.apache.org>
+- The Apache Software Foundation
+
+---
+
+## org.apache.zookeeper 3.9.7 — Apache 2.0
+
+- Homepage: <https://www.apache.org/>
 - The Apache Software Foundation
 
 ---
