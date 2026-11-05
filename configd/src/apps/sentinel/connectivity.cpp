@@ -9,8 +9,13 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+#include <algorithm>
 #include <chrono>
+#include <iterator>
+#include <memory>
+#include <random>
 #include <thread>
+#include <vector>
 
 #include <vespa/log/log.h>
 
@@ -53,6 +58,22 @@ std::string spec(const SpecMap::value_type& host_and_port) {
     return fmt("tcp/%s:%d", host_and_port.first.c_str(), host_and_port.second);
 }
 
+// max number of good neighbors asked to verify each failed connection
+constexpr size_t maxCornerProbes = 3;
+
+struct CornerCheck {
+    HostAndPort         target;
+    OutwardCheckContext context;
+    ConnectivityMap     probes;
+    CornerCheck(const HostAndPort& hp, size_t numProbes, FRT_Supervisor& orb)
+        : target(hp), context(numProbes, hp.first, hp.second, orb), probes() {}
+};
+
+// Guard against starting services when this node has broken connectivity to
+// otherwise reachable peers. Ask a few neighbors with verified bidirectional
+// connectivity whether they can reach each failed peer. A positive answer
+// indicates a connectivity problem involving this node; if none can reach
+// the peer, it is most probably just down.
 void classifyConnFails(ConnectivityMap& connectivityMap, const SpecMap& specMap, RpcServer& rpcServer) {
     std::vector<HostAndPort> failedConnSpecs;
     std::vector<HostAndPort> goodNeighborSpecs;
@@ -76,20 +97,27 @@ void classifyConnFails(ConnectivityMap& connectivityMap, const SpecMap& specMap,
     if ((failedConnSpecs.size() == 0) || (goodNeighborSpecs.size() == 0)) {
         return;
     }
+    std::mt19937 rng(std::random_device{}());
+    size_t       numProbes = std::min(maxCornerProbes, goodNeighborSpecs.size());
+    int          ping_timeout = 1000 + 50 * numProbes + 3 * connectivityMap.size();
+    // ask a few random good neighbors to check each failed host, all in parallel
+    std::vector<std::unique_ptr<CornerCheck>> cornerChecks;
     for (const auto& toClassify : failedConnSpecs) {
-        const auto& [nameToCheck, portToCheck] = toClassify;
-        auto cmIter = connectivityMap.find(nameToCheck);
-        LOG_ASSERT(cmIter != connectivityMap.end());
-        OutwardCheckContext cornerContext(goodNeighborSpecs.size(), nameToCheck, portToCheck, rpcServer.orb());
-        ConnectivityMap     cornerProbes;
-        int                 ping_timeout = 1000 + 50 * goodNeighborSpecs.size();
-        for (const auto& hp : goodNeighborSpecs) {
-            cornerProbes.try_emplace(hp.first, spec(hp), cornerContext, ping_timeout);
+        auto& cc = *cornerChecks.emplace_back(std::make_unique<CornerCheck>(toClassify, numProbes, rpcServer.orb()));
+        std::vector<HostAndPort> picked;
+        std::sample(goodNeighborSpecs.begin(), goodNeighborSpecs.end(), std::back_inserter(picked), numProbes, rng);
+        for (const auto& hp : picked) {
+            cc.probes.try_emplace(hp.first, spec(hp), cc.context, ping_timeout);
         }
-        cornerContext.latch.await();
+    }
+    for (auto& cc : cornerChecks) {
+        cc->context.latch.await();
+    }
+    std::vector<HostAndPort> upAccordingToOthers;
+    for (const auto& cc : cornerChecks) {
         size_t numReportsUp = 0;
         size_t numReportsDown = 0;
-        for (const auto& [hostname, probe] : cornerProbes) {
+        for (const auto& [hostname, probe] : cc->probes) {
             if (probe.result() == CcResult::INDIRECT_PING_FAIL) {
                 ++numReportsDown;
             }
@@ -99,17 +127,29 @@ void classifyConnFails(ConnectivityMap& connectivityMap, const SpecMap& specMap,
         }
         if (numReportsUp > 0) {
             LOG(debug, "Unreachable: %s is up according to %zd hosts (down according to me + %zd others)",
-                nameToCheck.c_str(), numReportsUp, numReportsDown);
-            OutwardCheckContext reverseContext(1, myHostname, rpcServer.getPort(), rpcServer.orb());
-            OutwardCheck        check(spec(toClassify), reverseContext, 1000);
-            reverseContext.latch.await();
-            auto secondResult = check.result();
-            if (secondResult == CcResult::CONN_FAIL) {
-                cmIter->second.classifyResult(CcResult::UNREACHABLE_UP);
-            } else {
-                LOG(debug, "Recheck %s gives new result: %s", nameToCheck.c_str(), toString(secondResult).c_str());
-                cmIter->second.classifyResult(secondResult);
-            }
+                cc->target.first.c_str(), numReportsUp, numReportsDown);
+            upAccordingToOthers.push_back(cc->target);
+        }
+    }
+    if (upAccordingToOthers.empty()) {
+        return;
+    }
+    // re-check (in parallel) the hosts that others can reach
+    OutwardCheckContext reverseContext(upAccordingToOthers.size(), myHostname, rpcServer.getPort(), rpcServer.orb());
+    ConnectivityMap     reverseChecks;
+    for (const auto& hp : upAccordingToOthers) {
+        reverseChecks.try_emplace(hp.first, spec(hp), reverseContext, 1000);
+    }
+    reverseContext.latch.await();
+    for (const auto& [nameToCheck, check] : reverseChecks) {
+        auto cmIter = connectivityMap.find(nameToCheck);
+        LOG_ASSERT(cmIter != connectivityMap.end());
+        auto secondResult = check.result();
+        if (secondResult == CcResult::CONN_FAIL) {
+            cmIter->second.classifyResult(CcResult::UNREACHABLE_UP);
+        } else {
+            LOG(debug, "Recheck %s gives new result: %s", nameToCheck.c_str(), toString(secondResult).c_str());
+            cmIter->second.classifyResult(secondResult);
         }
     }
 }
