@@ -220,7 +220,7 @@ float EdenQuantizer::quantized_lhs_rhs_dot_product(std::span<const uint8_t> lhs,
         // zero, so these shall never spuriously add to the Hamming distance.
         const size_t    bit_buf_size = _quantized_size - scale_bytes;
         const size_t    n_neg = hwaccelerated::binary_hamming_distance(lhs_bit_buf, rhs_bit_buf, bit_buf_size);
-        constexpr float c = 0x1.98p-1; // BFloat16 precision
+        constexpr float c = codebooks::eden_bf16_codebook(1)[1]; // +C centroid value
         dot = static_cast<float>(_dimensions - n_neg) * (c * c) + static_cast<float>(n_neg) * -(c * c);
     } else {
         dot = hwaccelerated::eden_q_q_dot_product(lhs_bit_buf, rhs_bit_buf, _bits, _dimensions);
