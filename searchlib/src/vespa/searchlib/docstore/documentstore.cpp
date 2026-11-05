@@ -181,12 +181,17 @@ std::unique_ptr<document::Document> DocumentStore::read(DocumentIdT lid, const D
     return std::unique_ptr<document::Document>();
 }
 
-void DocumentStore::writeThroughCache(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream& stream) {
-    Value                value(syncToken);
+void DocumentStore::writeThroughCache(uint64_t syncToken, DocumentIdT lid, const vespalib::nbostream& stream, CacheOp cacheOp) {
     vespalib::DataBuffer buf(stream.size());
     buf.writeBytes(stream.peek(), stream.size());
+    Value value(syncToken);
     value.set(std::move(buf), stream.size(), _store->getCompression());
-    _cache->write(lid, std::move(value)); // Writes to both cache and backing store
+    if (cacheOp == CacheOp::WRITE) {
+        _cache->write(lid, std::move(value)); // Writes to both cache and backing store
+    } else {
+        CHECK(cacheOp == CacheOp::UPDATE);
+        _cache->update(lid, std::move(value)); // Writes to backing store, updates cache if it is there
+    }
 }
 
 void DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const document::Document& doc) {
@@ -204,7 +209,7 @@ void DocumentStore::write(uint64_t syncToken, DocumentIdT lid, const vespalib::n
             break;
         case Config::UpdateStrategy::UPDATE:
             if (_cache->hasKey(lid)) {
-                writeThroughCache(syncToken, lid, stream);
+                writeThroughCache(syncToken, lid, stream, CacheOp::UPDATE);
             } else {
                 _backingStore.write(syncToken, lid, stream.peek(), stream.size());
             }
@@ -230,7 +235,7 @@ void DocumentStore::move(uint64_t syncToken, DocumentIdT fromLid, DocumentIdT to
         // The cached copy at fromLid is invalidated when fromLid is removed.
         nbostream stream(12345);
         doc.serialize(stream);
-        writeThroughCache(syncToken, toLid, stream);
+        writeThroughCache(syncToken, toLid, stream, CacheOp::WRITE);
         _visitCache->invalidate(toLid);
     } else {
         write(syncToken, toLid, doc);
