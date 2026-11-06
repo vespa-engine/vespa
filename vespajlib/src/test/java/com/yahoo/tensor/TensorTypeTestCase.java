@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -46,6 +47,19 @@ public class TensorTypeTestCase {
     @Test
     public void requireThatIndexedBoundDimensionMustHaveNonZeroSize() {
         assertIllegalTensorType("tensor(x[0])", "Size of bound dimension 'x' must be at least 1");
+    }
+
+    @Test
+    public void requireThatDimensionNamesMustBeValidIdentifiers() {
+        for (String name : new String[] { "x", "X", "_", "_x", "x_1", "abc123" }) {
+            TensorType.Dimension.mapped(name);
+            TensorType.Dimension.indexed(name, 3);
+        }
+        for (String name : new String[] { "", "1x", "@x", "x$", "-x", "x-y", "x y", " x", "x.y", "x{},y", "x[3]", "æ", "x\0y" }) {
+            assertThrows(name, IllegalArgumentException.class, () -> TensorType.Dimension.mapped(name));
+            assertThrows(name, IllegalArgumentException.class, () -> TensorType.Dimension.indexed(name, 3));
+        }
+        assertIllegalTensorType("tensor(1x[3])", "A dimension name must be an identifier");
     }
 
     @Test

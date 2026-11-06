@@ -29,6 +29,8 @@ import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
 public class TensorType {
 
     static Ascii7BitMatcher labelMatcher = new Ascii7BitMatcher("-_@" + charsAndNumbers(), "_@$" + charsAndNumbers());
+    private static final String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    private static final Ascii7BitMatcher dimensionNameMatcher = new Ascii7BitMatcher("_" + letters, "_" + charsAndNumbers());
 
     /** The permissible cell value types. Default is double. */
     public enum Value {
@@ -437,8 +439,8 @@ public class TensorType {
         static private String requireIdentifier(String name) {
             if (name == null)
                 throw new IllegalArgumentException("A dimension name cannot be null");
-            if ( ! TensorType.labelMatcher.matches(name))
-                throw new IllegalArgumentException("A dimension name must be an identifier or integer, not '" + name + "'");
+            if ( ! dimensionNameMatcher.matches(name))
+                throw new IllegalArgumentException("A dimension name must be an identifier, not '" + name + "'");
             return name;
         }
 

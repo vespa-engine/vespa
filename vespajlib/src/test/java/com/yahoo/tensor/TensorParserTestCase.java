@@ -375,9 +375,9 @@ public class TensorParserTestCase {
 
     @Test
     public void testIllegalStrings() {
-        assertIllegal("A dimension name must be an identifier or integer, not ''x''",
+        assertIllegal("A dimension name must be an identifier, not ''x''",
                       "{{'x':\"l0\"}:1.0}");
-        assertIllegal("A dimension name must be an identifier or integer, not '\"x\"'",
+        assertIllegal("A dimension name must be an identifier, not '\"x\"'",
                       "{{\"x\":\"l0\", \"y\":\"l0\"}:1.0, {\"x\":\"l0\", \"y\":\"l1\"}:2.0}");
  //     assertIllegal("At {x:0}: '1-.0' is not a valid double",
  //                   "{{x:0}:1-.0}");
