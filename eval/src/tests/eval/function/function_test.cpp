@@ -900,6 +900,13 @@ TEST(FunctionTest, require_that_verbose_tensor_create_detects_invalid_dimension_
 
 TEST(FunctionTest, require_that_verbose_tensor_create_detects_out_of_bounds_indexes_for_indexed_dimensions) {
     verify_error("tensor(x[1]):{{x:1}:1}", "[tensor(x[1]):{{x:1]...[dimension index too large: 1]...[}:1}]");
+    // would wrap to 0 if truncated to 32 bits
+    verify_error("tensor(x[1]):{{x:4294967296}:1}",
+                 "[tensor(x[1]):{{x:4294967296]...[dimension index too large: 4294967296]...[}:1}]");
+    // does not fit in 64 bits
+    verify_error(
+        "tensor(x[1]):{{x:99999999999999999999}:1}",
+        "[tensor(x[1]):{{x:99999999999999999999]...[dimension index too large: 99999999999999999999]...[}:1}]");
 }
 
 TEST(FunctionTest, require_that_verbose_tensor_create_detects_non_numeric_indexes_for_indexed_dimensions) {
@@ -969,6 +976,11 @@ TEST(FunctionTest, require_that_convenient_tensor_create_allows_under_specified_
 
 TEST(FunctionTest, require_that_convenient_tensor_create_detects_invalid_tensor_type) {
     verify_error("tensor(x[,y}):ignored", "[tensor(x[,y})]...[invalid tensor type]...[:ignored]");
+}
+
+TEST(FunctionTest, require_that_tensor_types_with_empty_dimension_names_are_rejected) {
+    verify_error("tensor([3]):[1,2,3]*2", "[tensor([3])]...[invalid tensor type]...[:[1,2,3]*2]");
+    verify_error("tensor(x[2],[2])(x)", "[tensor(x[2],[2])]...[invalid tensor type]...[(x)]");
 }
 
 TEST(FunctionTest, require_that_convenient_tensor_create_detects_too_large_indexed_dimensions) {

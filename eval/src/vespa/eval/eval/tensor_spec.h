@@ -79,4 +79,10 @@ public:
 bool operator==(const TensorSpec& lhs, const TensorSpec& rhs);
 std::ostream& operator<<(std::ostream& out, const TensorSpec& tensor);
 
+/**
+ * Convert a tensor spec address into a string on the form:
+ * '{dim1:label,dim2:index, ...}'
+ **/
+std::string as_string(const TensorSpec::Address& address);
+
 } // namespace vespalib::eval

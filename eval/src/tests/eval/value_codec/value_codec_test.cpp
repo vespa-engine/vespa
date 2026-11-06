@@ -394,4 +394,23 @@ TEST(ValueCodecTest, bad_dense_tensors_are_caught) {
 
 //-----------------------------------------------------------------------------
 
+TEST(ValueCodecTest, claimed_size_overflow_is_caught) {
+    // tensor(x[2^30],y[2^30],z[2]) is a valid type with 2^61 cells;
+    // as doubles that is 2^64 bytes, which wraps to 0 in size_t
+    nbostream data;
+    data.putInt1_4Bytes(2); // dense, default cell type (double)
+    data.putInt1_4Bytes(3);
+    data.writeSmallString("x");
+    data.putInt1_4Bytes(1u << 30);
+    data.writeSmallString("y");
+    data.putInt1_4Bytes(1u << 30);
+    data.writeSmallString("z");
+    data.putInt1_4Bytes(2);
+    data << 1.0;
+    VESPA_EXPECT_EXCEPTION(decode_value(data, factory), vespalib::eval::DecodeValueException,
+                           "serialized input claims 1 blocks of size 2305843009213693952*8, but only");
+}
+
+//-----------------------------------------------------------------------------
+
 GTEST_MAIN_RUN_ALL_TESTS()

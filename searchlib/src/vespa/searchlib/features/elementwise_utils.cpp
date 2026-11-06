@@ -49,6 +49,9 @@ std::optional<std::string> ElementwiseUtils::build_output_tensor_type(ValueType&
         return make_string("'%s' is not a valid tensor cell type", cell_type_name.c_str());
     }
     output_tensor_type = ValueType::make_type(cell_type.value(), {{dimension_name}});
+    if (output_tensor_type.is_error()) {
+        return make_string("'%s' is not a valid tensor dimension name", dimension_name.c_str());
+    }
     return std::nullopt;
 }
 

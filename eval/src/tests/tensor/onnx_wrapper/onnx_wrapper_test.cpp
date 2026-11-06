@@ -83,6 +83,16 @@ TEST(WirePlannerTest, all_output_dimensions_must_be_bound) {
     EXPECT_TRUE(planner.make_output_type(info3).is_error());
 }
 
+TEST(WirePlannerTest, too_large_output_dimension_sizes_are_rejected) {
+    constexpr size_t  npos = ValueType::Dimension::npos;
+    Onnx::WirePlanner planner;
+    auto              make_info = [](size_t size) { return TensorInfo{"info", {DZ(size)}, ElementType::FLOAT}; };
+    EXPECT_EQ(planner.make_output_type(make_info(npos - 1)).to_spec(), "tensor<float>(d0[4294967294])");
+    EXPECT_TRUE(planner.make_output_type(make_info(npos)).is_error());            // would become mapped
+    EXPECT_TRUE(planner.make_output_type(make_info(npos + 4)).is_error());        // would wrap to 3
+    EXPECT_TRUE(planner.make_output_type(make_info(size_t(1) << 32)).is_error()); // would wrap to 0
+}
+
 TEST(WirePlannerTest, dimensions_resolve_left_to_right) {
     Onnx::WirePlanner planner;
     ValueType         type1 = ValueType::from_spec("tensor<float>(a[5],b[10])");

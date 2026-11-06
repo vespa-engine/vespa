@@ -4,6 +4,7 @@
 
 #include "array_array_map.h"
 #include "function.h"
+#include "string_stuff.h"
 #include "value.h"
 #include "value_codec.h"
 #include "value_type.h"
@@ -357,6 +358,21 @@ std::string TensorSpec::diff(const TensorSpec& lhs, const std::string& lhs_desc,
                  [](const auto& a, const auto& b) { return (a.first < b.first); });
     table.add(Entry::separator());
     return table.to_string();
+}
+
+std::string as_string(const TensorSpec::Address& address) {
+    CommaTracker label_list;
+    std::string  str = "{";
+    for (const auto& label : address) {
+        label_list.maybe_add_comma(str);
+        if (label.second.is_mapped()) {
+            str += make_string("%s:%s", label.first.c_str(), as_quoted_string(label.second.name).c_str());
+        } else {
+            str += make_string("%s:%zu", label.first.c_str(), label.second.index);
+        }
+    }
+    str += "}";
+    return str;
 }
 
 } // namespace vespalib::eval

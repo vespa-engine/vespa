@@ -12,7 +12,16 @@
 using vespalib::BFloat16;
 using namespace vespalib::eval;
 
-const size_t npos = ValueType::Dimension::npos;
+constexpr size_t npos = ValueType::Dimension::npos;
+constexpr size_t max_size = npos - 1; // largest valid indexed dimension size
+
+ValueType x_type(size_t size) {
+    return ValueType::make_type(CellType::DOUBLE, {{"x", ValueType::Dimension::size_type(size)}});
+}
+
+std::string x_spec(size_t size) {
+    return "tensor(x[" + std::to_string(size) + "])";
+}
 
 ValueType type(const std::string& type_str) {
     ValueType ret = ValueType::from_spec(type_str);
@@ -109,6 +118,43 @@ TEST(ValueTypeTest, require_that_use_of_zero_size_dimensions_result_in_error_typ
 
 TEST(ValueTypeTest, require_that_duplicate_dimension_names_result_in_error_types) {
     EXPECT_TRUE(ValueType::make_type(CellType::DOUBLE, {{"x"}, {"x"}}).is_error());
+}
+
+TEST(ValueTypeTest, require_that_empty_dimension_names_result_in_error_types) {
+    EXPECT_TRUE(ValueType::make_type(CellType::DOUBLE, {{""}}).is_error());
+    EXPECT_TRUE(ValueType::make_type(CellType::DOUBLE, {{"", 3}}).is_error());
+    EXPECT_TRUE(ValueType::make_type(CellType::DOUBLE, {{"x"}, {""}}).is_error());
+}
+
+TEST(ValueTypeTest, require_that_dimension_names_must_be_valid_identifiers) {
+    for (const char* name : {"x", "X", "_", "_x", "x_1", "abc123"}) {
+        EXPECT_FALSE(ValueType::make_type(CellType::DOUBLE, {{name}}).is_error()) << name;
+        EXPECT_FALSE(ValueType::make_type(CellType::DOUBLE, {{name, 3}}).is_error()) << name;
+    }
+    for (const char* name : {"1x", "@x", "x$", "x-y", "x y", " x", "x.y", "x{},y", "x[3]", "\xc3\xa6"}) {
+        EXPECT_TRUE(ValueType::make_type(CellType::DOUBLE, {{name}}).is_error()) << name;
+        EXPECT_TRUE(ValueType::make_type(CellType::DOUBLE, {{name, 3}}).is_error()) << name;
+    }
+    EXPECT_TRUE(ValueType::make_type(CellType::DOUBLE, {{std::string("x\0y", 3)}}).is_error());
+}
+
+TEST(ValueTypeTest, require_that_rename_to_invalid_dimension_name_results_in_error_type) {
+    EXPECT_EQ(type("tensor(x[3])").rename({"x"}, {"1y"}), type("error"));
+    EXPECT_EQ(type("tensor(x{})").rename({"x"}, {"@y"}), type("error"));
+}
+
+TEST(ValueTypeTest, require_that_concat_with_invalid_dimension_name_results_in_error_type) {
+    EXPECT_EQ(ValueType::concat(type("double"), type("double"), "1x"), type("error"));
+}
+
+TEST(ValueTypeTest, require_that_dense_subspace_size_does_not_overflow) {
+    auto ok_type = ValueType::make_type(CellType::DOUBLE, {{"x", max_size}, {"y", max_size}});
+    EXPECT_FALSE(ok_type.is_error());
+    EXPECT_EQ(ok_type.dense_subspace_size(), max_size * max_size);
+    EXPECT_TRUE(
+        ValueType::make_type(CellType::DOUBLE, {{"x", max_size}, {"y", max_size}, {"z", max_size}}).is_error());
+    // mapped dimensions do not count
+    EXPECT_FALSE(ValueType::make_type(CellType::DOUBLE, {{"m"}, {"x", max_size}, {"y", max_size}}).is_error());
 }
 
 //-----------------------------------------------------------------------------
@@ -280,6 +326,18 @@ TEST(ValueTypeTest, require_that_malformed_value_type_spec_is_parsed_as_error) {
     EXPECT_TRUE(ValueType::from_spec("tensor<bfloat16>()").is_error());
     EXPECT_TRUE(ValueType::from_spec("tensor<int8>()").is_error());
     EXPECT_TRUE(ValueType::from_spec("tensor<int7>(x[10])").is_error());
+    EXPECT_TRUE(ValueType::from_spec("tensor({})").is_error());
+    EXPECT_TRUE(ValueType::from_spec("tensor([3])").is_error());
+    EXPECT_TRUE(ValueType::from_spec("tensor(x{},{})").is_error());
+    EXPECT_TRUE(ValueType::from_spec("tensor(x[3],[3])").is_error());
+}
+
+TEST(ValueTypeTest, require_that_parsed_indexed_dimension_size_must_be_below_npos) {
+    EXPECT_EQ(type(x_spec(max_size)), x_type(max_size));
+    EXPECT_TRUE(ValueType::from_spec(x_spec(npos)).is_error());
+    EXPECT_TRUE(ValueType::from_spec(x_spec(npos + 1)).is_error());
+    // does not fit in 64 bits
+    EXPECT_TRUE(ValueType::from_spec("tensor(x[99999999999999999999])").is_error());
 }
 
 struct ParseResult {
@@ -678,6 +736,13 @@ TEST(ValueTypeTest, require_that_types_can_be_concatenated) {
     verify_concat(type("tensor(x[2],y[2])"), type("tensor(x[3])"), "x", type("tensor(x[5],y[2])"));
     verify_concat(type("tensor(x[2],y[2])"), type("tensor(y[7])"), "y", type("tensor(x[2],y[9])"));
     verify_concat(type("tensor(x[5])"), type("tensor(y[7])"), "z", type("tensor(x[5],y[7],z[2])"));
+}
+
+TEST(ValueTypeTest, require_that_concat_does_not_overflow_dimension_size) {
+    verify_concat(x_type(max_size - 1), type("double"), "x", x_type(max_size));
+    verify_concat(x_type(max_size), type("double"), "x", type("error"));
+    verify_concat(x_type(max_size / 2), x_type(max_size / 2), "x", x_type(max_size));
+    verify_concat(x_type(max_size / 2 + 1), x_type(max_size / 2), "x", type("error"));
 }
 
 TEST(ValueTypeTest, require_that_cell_type_is_handled_correctly_for_concat) {

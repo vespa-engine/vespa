@@ -473,7 +473,7 @@ ValueType Onnx::WirePlanner::make_output_type(const TensorInfo& onnx_out) const 
                 return ValueType::error_type();
             }
         }
-        if ((dim_size == 0) || (dim_list.size() > 9)) {
+        if ((dim_size == 0) || (dim_size >= ValueType::Dimension::npos) || (dim_list.size() > 9)) {
             return ValueType::error_type();
         }
         dim_list.emplace_back(fmt("d%zu", dim_list.size()), dim_size);
