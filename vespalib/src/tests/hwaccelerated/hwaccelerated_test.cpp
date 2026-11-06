@@ -5,6 +5,7 @@
 
 #include <vespa/check_require.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/hwaccelerated/centroid.h>
 #include <vespa/vespalib/hwaccelerated/eden_codebooks.h>
 #include <vespa/vespalib/hwaccelerated/float4.h>
 #include <vespa/vespalib/hwaccelerated/float8_luts.h>
@@ -17,6 +18,7 @@
 
 #include <gmock/gmock.h>
 
+#include <format>
 #include <limits>
 #include <random>
 
@@ -624,6 +626,62 @@ void verify_eden_q_q_dot_product(std::span<const IAccelerated*> accels, const ui
     }
 }
 
+void verify_eden_centroid_quantization(std::span<const IAccelerated*> accels, const uint8_t bits,
+                                       const size_t test_length) {
+    CHECK(bits >= 1 && bits <= 4);
+    CHECK(test_length >= 32); // Due to boundary testing
+    Xoshiro256PlusPlusPrng prng(0x1baaadf00000d);
+
+    const auto    codebook = codebooks::eden_f32_codebook(bits);
+    const uint8_t highest_centroid_value_idx = (1u << bits) - 1;
+    const uint8_t lowest_centroid_value_idx = highest_centroid_value_idx / 2;
+    const float   min_centroid = codebook[lowest_centroid_value_idx];
+    const float   max_centroid = codebook[highest_centroid_value_idx];
+    // Stuff a bit of padding on each side for added boundary testing
+    std::uniform_real_distribution value_dist(min_centroid - 0.5f, max_centroid + 0.5f);
+    std::uniform_real_distribution nx_dist(-3.f, 3.f); // Chosen by mental dice throw
+    std::vector<float>             in(test_length);
+    std::vector<uint8_t>           out(test_length);
+    std::vector<uint8_t>           truth(test_length);
+
+    constexpr size_t rounds = 10;
+    for (size_t i = 0; i < rounds; ++i) {
+        // TODO consider a non random sampling-based approach to this so we can better test
+        //  "very close to" -> "even closer to" -> "exactly at" threshold boundary cases.
+        std::ranges::generate(in, [&] noexcept { return value_dist(prng); });
+        const float nx = nx_dist(prng);
+        for (size_t j = 0; j < test_length; ++j) {
+            truth[j] = closest_centroid_index<float>(in[j] * nx, codebook);
+        }
+        for (size_t offset = 0; offset < 32; ++offset) {
+            const size_t trunc_length = test_length - offset;
+            for (const auto* accel : accels) {
+                SCOPED_TRACE(accel->target_info().to_string());
+                ScopedFnTableOverride fn_scope(accel->fn_table());
+
+                std::ranges::fill(out, 0xff);
+                auto out_sub = std::span(out.data() + offset, trunc_length);
+                eden_quantize_centroids(in.data() + offset, out_sub.data(), bits, nx, trunc_length);
+                auto truth_sub = std::span(truth.data() + offset, trunc_length);
+                // If a value ends up exactly on a threshold boundary, both the centroid on
+                // its left and right are technically speaking equally correct. So if the
+                // indexes differ, cross-check with the relative distances.
+                // TODO or should we require rounding in a particular direction?
+                for (size_t k = 0; k < trunc_length; ++k) {
+                    const uint8_t truth_idx = truth_sub[k];
+                    const uint8_t my_idx = out_sub[k];
+                    if (my_idx != truth_idx) {
+                        float truth_dist = std::abs((in[k] * nx) - codebook[truth_idx]);
+                        float my_dist = std::abs((in[k] * nx) - codebook[my_idx]);
+                        ASSERT_THAT(my_dist, FloatEq(truth_dist))
+                            << "my_idx=" << my_idx << ", truth_idx=" << truth_idx << ", at offset=" << offset;
+                    }
+                }
+            }
+        }
+    }
+}
+
 } // namespace
 
 TEST_F(HwAcceleratedTest, eden_f32_q_dot_product_does_not_have_lane_confusion) {
@@ -664,6 +722,17 @@ TEST_F(HwAcceleratedTest, eden_q_q_dot_product_impls_match_source_of_truth) {
     for (uint8_t bits : {1, 2, 3, 4}) {
         for (size_t sz : {32, 64, 128, 256, 1024, 4096, 8192}) {
             ASSERT_NO_FATAL_FAILURE(verify_eden_q_q_dot_product(accelerators, bits, sz));
+        }
+    }
+}
+
+TEST_F(HwAcceleratedTest, eden_centroid_quantization_matches_source_of_truth) {
+    auto accelerators = all_accelerators_to_test();
+    for (uint8_t bits : {1, 2, 3, 4}) {
+        SCOPED_TRACE(std::format("bits = {}", bits));
+        for (size_t sz : {32, 64, 128, 256, 1024, 4096, 8192}) {
+            SCOPED_TRACE(std::format("input length = {}", sz));
+            ASSERT_NO_FATAL_FAILURE(verify_eden_centroid_quantization(accelerators, bits, sz));
         }
     }
 }

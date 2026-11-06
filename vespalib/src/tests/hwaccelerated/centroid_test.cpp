@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/quant/centroid.h>
+#include <vespa/vespalib/hwaccelerated/centroid.h>
 
 #include <array>
 
 using namespace ::testing;
 
-namespace vespalib::quant {
+namespace vespalib::hwaccelerated {
 
 // This use-case doesn't make sense at all, but let's ensure that the code generalizes.
 TEST(CentroidTest, single_centroid_choice_is_obvious) {
@@ -48,4 +48,4 @@ TEST(CentroidTest, centroid_distance_can_be_non_uniform) {
     EXPECT_EQ(idx_of(14.0001), 3);
 }
 
-} // namespace vespalib::quant
+} // namespace vespalib::hwaccelerated

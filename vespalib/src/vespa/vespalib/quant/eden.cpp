@@ -2,9 +2,7 @@
 
 #include "eden.h"
 
-#include "centroid.h"
 #include "hadamard.h"
-#include "multi_bit_packer.h"
 
 #include <vespa/check_require.h>
 #include <vespa/vespalib/hwaccelerated/autovec_unrolled.h>
@@ -119,12 +117,7 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
     _rotator.rotate_forward(_rot_tmp);
     // By convention, `y <- Rx`, i.e. the result of rotating `x` by matrix `R`
     const float* y = _rot_tmp.data();
-    // Use two codebooks, one higher precision for selecting the nearest centroids
-    // (meaning ever so slightly more statistically optimal threshold placement), and
-    // one for mapping the resulting centroid index to a lower precision floating
-    // point value.
-    const auto selection_codebook = codebooks::eden_f32_codebook(_bits);
-    const auto codebook = my_codebook();
+    const auto   codebook = my_codebook();
     // Normalization factor to bring each rotated coordinate into expected N(0, 1).
     // Moving the sqrt(d) factor here means that we don't have to precompute scaled
     // centroids specifically for our dimensionality, but can use the N(0, 1) ones.
@@ -144,22 +137,19 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
     float    yq_dot = 0; // <y, q>
     float    scale = 0;
     uint8_t* idx_buf = lhs_scratch_idx_space();
+    hwaccelerated::eden_quantize_centroids(y, idx_buf, _bits, nx, d);
     if (quant_mode == QuantMode::InnerProduct) { // EDEN-unbiased
         for (size_t i = 0; i < d; ++i) {
-            const uint8_t idx = closest_centroid_index<float>(y[i] * nx, selection_codebook);
-            const float   c_i = codebook[idx];
+            const float c_i = codebook[idx_buf[i]];
             yq_dot += y[i] * c_i;
-            idx_buf[i] = idx;
         }
         scale = x_norm2 / yq_dot;
     } else /* MSE/EDEN-biased */ {
         float q_norm2 = 0; // _squared_ Euclidean norm
         for (size_t i = 0; i < d; ++i) {
-            const uint8_t idx = closest_centroid_index<float>(y[i] * nx, selection_codebook);
-            const float   c_i = codebook[idx];
+            const float c_i = codebook[idx_buf[i]];
             yq_dot += y[i] * c_i;
             q_norm2 += c_i * c_i;
-            idx_buf[i] = idx;
         }
         scale = yq_dot / q_norm2;
     }
