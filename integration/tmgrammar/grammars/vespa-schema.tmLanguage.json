@@ -508,7 +508,7 @@
         },
         {
           "name": "keyword.control.indexing.vespa",
-          "match": "\\b(select_input|for_each|default|switch|case|else|if)\\b"
+          "match": "\\b(for_each_field|select_input|for_each|default|switch|case|else|if)\\b"
         },
         {
           "name": "entity.name.function.indexing.vespa",
