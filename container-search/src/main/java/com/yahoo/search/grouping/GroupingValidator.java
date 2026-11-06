@@ -5,7 +5,9 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
+import com.yahoo.prelude.IndexFacts;
 import com.yahoo.processing.IllegalInputException;
+import com.yahoo.search.grouping.request.AttributeFunction;
 import com.yahoo.search.grouping.request.AttributeMapLookupValue;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.processing.request.CompoundName;
@@ -26,7 +28,7 @@ import static com.yahoo.search.grouping.GroupingQueryParser.SELECT_PARAMETER_PAR
 /**
  * This searcher ensure that all {@link GroupingRequest} objects attached to a {@link Query} makes sense to the search
  * cluster for which this searcher has been deployed. This searcher uses exceptions to signal invalid grouping
- * requests.
+ * requests. Field aliases used as attribute names are replaced by the names they refer to.
  *
  * @author Simon Thoresen Hult
  */
@@ -57,6 +59,14 @@ public class GroupingValidator extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
+        if (query.getSelect().getGrouping().isEmpty()) return execution.search(query);
+
+        IndexFacts indexFacts = execution.context().getIndexFacts();
+        if (indexFacts != null) {
+            ExpressionVisitor resolver = new AliasResolver(indexFacts.newSession(query));
+            for (GroupingRequest req : query.getSelect().getGrouping())
+                req.getRootOperation().visitExpressions(resolver);
+        }
         if (enabled && query.properties().getBoolean(PARAM_ENABLED, true)) {
             ExpressionVisitor visitor = new MyVisitor();
             for (GroupingRequest req : query.getSelect().getGrouping())
@@ -164,4 +174,29 @@ public class GroupingValidator extends Searcher {
             }
         }
     }
+
+    private class AliasResolver implements ExpressionVisitor {
+
+        private final IndexFacts.Session indexFacts;
+
+        AliasResolver(IndexFacts.Session indexFacts) {
+            this.indexFacts = indexFacts;
+        }
+
+        @Override
+        public void visitExpression(GroupingExpression exp) {
+            if (exp instanceof AttributeMapLookupValue) return; // addresses the key and value attributes directly
+            if (exp instanceof AttributeValue value) {
+                value.setAttributeName(resolve(value.getAttributeName()));
+            } else if (exp instanceof AttributeFunction function) {
+                function.setAttributeName(resolve(function.getAttributeName()));
+            }
+        }
+
+        private String resolve(String name) {
+            if (attributes.containsKey(name)) return name;
+            return indexFacts.getCanonicName(name);
+        }
+    }
+
 }

@@ -2921,6 +2921,7 @@
       "public void <init>(java.lang.String)",
       "public com.yahoo.search.grouping.request.AttributeFunction copy()",
       "public java.lang.String getAttributeName()",
+      "public void setAttributeName(java.lang.String)",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
     ],
     "fields" : [ ]
@@ -2955,6 +2956,7 @@
       "public void <init>(java.lang.String)",
       "public com.yahoo.search.grouping.request.AttributeValue copy()",
       "public java.lang.String getAttributeName()",
+      "public void setAttributeName(java.lang.String)",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
     ],
     "fields" : [ ]
@@ -9525,8 +9527,8 @@
       "public boolean isIndex()",
       "public boolean hasFastMapSearch()",
       "public com.yahoo.search.schema.Field$MatchType matchType()",
-      "public java.util.Optional explanation()",
       "public java.util.Optional inputExpression()",
+      "public java.util.Optional explanation()",
       "public java.util.List fastMapSearches()",
       "public java.util.Optional fastMapSearch(java.lang.String)",
       "public boolean equals(java.lang.Object)",
