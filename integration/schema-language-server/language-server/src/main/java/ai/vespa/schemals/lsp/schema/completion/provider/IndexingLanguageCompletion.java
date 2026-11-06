@@ -68,6 +68,7 @@ public class IndexingLanguageCompletion implements CompletionProvider {
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("exhex8floatencode")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("exhex16doubleencode")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("for_each")),
+                CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("for_each_field")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("generate")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("get_field")),
                 CompletionUtils.withSortingPrefix("c", CompletionUtils.constructBasic("get_language")),
