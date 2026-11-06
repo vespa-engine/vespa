@@ -44,6 +44,8 @@ using PopulationCountFn = size_t (*)(const uint64_t* buf, size_t sz) noexcept;
 
 using ConvertBFloat16ToFloatFn = void (*)(const uint16_t* src, float* dest, size_t sz) noexcept;
 
+using EdenQuantizeCentroidsFn = void (*)(const float* src, uint8_t* dest, uint8_t bits, float nx, size_t sz) noexcept;
+
 using PackBitsFn = void (*)(const uint8_t* raw, uint8_t* packed, uint8_t bits, size_t sz) noexcept;
 using UnpackBitsFn = void (*)(const uint8_t* packed, uint8_t* raw, uint8_t bits, size_t sz) noexcept;
 
@@ -94,6 +96,8 @@ struct FnTable {
 
     ConvertBFloat16ToFloatFn convert_bfloat16_to_float = nullptr;
 
+    EdenQuantizeCentroidsFn eden_quantize_centroids = nullptr;
+
     PackBitsFn   pack_bits = nullptr;
     UnpackBitsFn unpack_bits = nullptr;
 
@@ -123,6 +127,7 @@ struct FnTable {
         BINARY_HAMMING_DISTANCE,
         POPULATION_COUNT,
         CONVERT_BFLOAT16_TO_FLOAT,
+        EDEN_QUANTIZE_CENTROIDS,
         PACK_BITS,
         UNPACK_BITS,
         OR_BIT,
@@ -207,6 +212,7 @@ struct FnTable {
     VISITOR(BinaryHammingDistanceFn, binary_hamming_distance, FnTable::FnId::BINARY_HAMMING_DISTANCE)               \
     VISITOR(PopulationCountFn, population_count, FnTable::FnId::POPULATION_COUNT)                                   \
     VISITOR(ConvertBFloat16ToFloatFn, convert_bfloat16_to_float, FnTable::FnId::CONVERT_BFLOAT16_TO_FLOAT)          \
+    VISITOR(EdenQuantizeCentroidsFn, eden_quantize_centroids, FnTable::FnId::EDEN_QUANTIZE_CENTROIDS)               \
     VISITOR(PackBitsFn, pack_bits, FnTable::FnId::PACK_BITS)                                                        \
     VISITOR(UnpackBitsFn, unpack_bits, FnTable::FnId::UNPACK_BITS)                                                  \
     VISITOR(OrBitFn, or_bit, FnTable::FnId::OR_BIT)                                                                 \

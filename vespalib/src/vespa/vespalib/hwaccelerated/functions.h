@@ -84,6 +84,10 @@ inline void convert_bfloat16_to_float(const uint16_t* src, float* dest, size_t s
     dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(convert_bfloat16_to_float)(src, dest, sz);
 }
 
+inline void eden_quantize_centroids(const float* src, uint8_t* dest, uint8_t bits, float nx, size_t sz) noexcept {
+    dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(eden_quantize_centroids)(src, dest, bits, nx, sz);
+}
+
 /*
  * Computes the number of bytes that `pack(raw, packed, bits, n)` will write into `packed` when
  * packing `n` u8 elements from `raw`, using `bits` number of bits per element. This number includes

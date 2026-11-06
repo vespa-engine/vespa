@@ -8,6 +8,7 @@
 #endif
 
 #include "autovec_unrolled.h"
+#include "centroid.h"
 #include "eden_codebooks.h"
 #include "fn_table.h"
 #include "private_helpers.hpp"
@@ -246,6 +247,13 @@ size_t my_population_count(const uint64_t* buf, size_t sz) noexcept {
 }
 void my_convert_bfloat16_to_float(const uint16_t* src, float* dest, size_t sz) noexcept {
     helper::convert_bfloat16_to_float(src, dest, sz);
+}
+void my_eden_quantize_centroids(const float* src, uint8_t* dest, const uint8_t bits, const float nx,
+                               const size_t sz) noexcept {
+    const auto selection_codebook = codebooks::eden_f32_codebook(bits);
+    for (size_t i = 0; i < sz; ++i) {
+        dest[i] = closest_centroid_index<float>(src[i] * nx, selection_codebook);
+    }
 }
 void my_pack_bits(const uint8_t* raw, uint8_t* packed, const uint8_t bits, const size_t sz) noexcept {
     switch (bits) {
