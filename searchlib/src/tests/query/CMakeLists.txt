@@ -55,6 +55,14 @@ vespa_add_executable(searchlib_streaming_query_test_app TEST
     GTest::gtest
 )
 vespa_add_test(NAME searchlib_streaming_query_test_app COMMAND searchlib_streaming_query_test_app)
+vespa_add_executable(searchlib_string_range_spec_test_app TEST
+    SOURCES
+    string_range_spec_test.cpp
+    DEPENDS
+    vespa_searchlib
+    GTest::gtest
+)
+vespa_add_test(NAME searchlib_string_range_spec_test_app COMMAND searchlib_string_range_spec_test_app)
 vespa_add_executable(searchlib_streaming_query_large_test_app TEST
     SOURCES
     streaming_query_large_test.cpp

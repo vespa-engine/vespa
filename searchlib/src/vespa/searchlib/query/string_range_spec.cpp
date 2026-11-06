@@ -29,4 +29,8 @@ StringRangeSpec::StringRangeSpec(std::optional<std::string> left_in, bool left_c
 StringRangeSpec::StringRangeSpec(const StringRangeSpec&) = default;
 StringRangeSpec::~StringRangeSpec() = default;
 
+bool StringRangeSpec::includes_empty_string() const noexcept {
+    return (!left || (left->empty() && left_closed)) && (!right || !right->empty() || right_closed);
+}
+
 } // namespace search

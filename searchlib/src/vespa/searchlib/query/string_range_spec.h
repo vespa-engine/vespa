@@ -30,6 +30,7 @@ struct StringRangeSpec {
     ~StringRangeSpec();
 
     bool has_range_limit() const noexcept { return range_limit != 0; }
+    bool includes_empty_string() const noexcept;
 
     constexpr auto operator<=>(const StringRangeSpec& rhs) const noexcept = default;
 };

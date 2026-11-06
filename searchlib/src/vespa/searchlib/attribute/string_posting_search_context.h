@@ -28,6 +28,8 @@ private:
                          const vespalib::datastore::EntryComparator& high) override {
             _sc.lookupRange(low, high);
         }
+        bool supports_range_limit() const override { return _sc._dictionary.get_has_btree_dictionary(); }
+        void apply_range_limit(long range_limit) override { _sc.applyRangeLimit(range_limit); }
     };
 
     // Note: Steps iterator one or more steps when not using dictionary entry

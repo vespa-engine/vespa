@@ -73,6 +73,12 @@ bool StringRangeMatcher::lookup_in_dictionary(const EnumStoreT<const char*>& enu
                     enum_store.get_data_store()));
         }
 
+        // Range limit currently only supported if range excludes the empty string
+        // since single-value string attributes always contain the empty string in the dictionary.
+        if (range_spec->has_range_limit() && dict.supports_range_limit() && !range_spec->includes_empty_string()) {
+            dict.apply_range_limit(range_spec->range_limit);
+        }
+
         return true;
     }
     return false;

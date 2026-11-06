@@ -18,6 +18,9 @@ public:
     virtual void lookupTerm(const vespalib::datastore::EntryComparator& comp) = 0;
     virtual void lookupRange(const vespalib::datastore::EntryComparator& low,
                              const vespalib::datastore::EntryComparator& high) = 0;
+
+    virtual bool supports_range_limit() const { return false; }
+    virtual void apply_range_limit(long /*range_limit*/) {}
 };
 
 } // namespace search::attribute
