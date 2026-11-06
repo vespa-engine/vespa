@@ -37,7 +37,7 @@
 %global _vespa_gtest_version 1.18.0
 %global _vespa_protobuf_version 7.36.2
 %global _vespa_openblas_version 0.3.27
-%global _vespa_mimalloc_version 3.3.2
+%global _vespa_mimalloc_version 3.6.1
 %global _vespa_highway_version 1.4.0
 %global _vespa_onnxruntime_version 1.31.0
 %global _vespa_jllama_version 4.7.10
