@@ -1,5 +1,7 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchcore_documentmetastore STATIC
+    INSTALL lib64
+    OUTPUT_NAME vespa_searchcore_documentmetastore
     SOURCES
     document_meta_store_explorer.cpp
     document_meta_store_initializer_result.cpp
