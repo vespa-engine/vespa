@@ -692,6 +692,7 @@ fi
 %exclude %{_prefix}/lib64/libvespadefaults.so
 %exclude %{_prefix}/lib64/libvespalib.so
 %exclude %{_prefix}/lib64/libvespalog.so
+%exclude %{_prefix}/lib64/*.a
 %exclude %{_prefix}/lib64/vespa
 
 %files clients
@@ -811,6 +812,7 @@ fi
 %defattr(-,root,root,-)
 %dir %{_prefix}
 %{_prefix}/include
+%{_prefix}/lib64/*.a
 %{_prefix}/share/cmake
 
 %files crypto-cli-standalone
