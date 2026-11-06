@@ -185,7 +185,8 @@ struct ContentDecoder {
     static std::unique_ptr<Value> invoke(nbostream& input, const DecodeState& state,
                                          const ValueBuilderFactory& factory) {
         SmallVector<std::string_view> address(state.num_mapped_dims);
-        if (state.num_blocks * state.subspace_size * sizeof(T) > input.size()) {
+        // avoid overflow; equivalent to num_blocks * subspace_size * sizeof(T) > input.size()
+        if (state.num_blocks > (input.size() / sizeof(T)) / state.subspace_size) {
             auto err = fmt("serialized input claims %zu blocks of size %zu*%zu, but only %zu bytes available",
                            state.num_blocks, state.subspace_size, sizeof(T), input.size());
             throw IllegalStateException(err);
