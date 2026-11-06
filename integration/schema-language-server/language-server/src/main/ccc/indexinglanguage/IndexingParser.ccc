@@ -198,6 +198,7 @@ TOKEN :
     <EXHEX16_DOUBLE_ENCODE: "exhex16doubleencode"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
+    <FOR_EACH_FIELD: "for_each_field"> |
     <GENERATE: "generate"> |
     <GET_FIELD: "get_field"> |
     <GET_LANGUAGE: "get_language"> |
@@ -366,6 +367,7 @@ Expression value() :
       val = exHex16DoubleEncodeExp() |
       val = flattenExp()            |
       val = forEachExp()            |
+      val = forEachFieldExp()       |
       val = generateExp()           |
       val = getFieldExp()           |
       val = getLanguageExp()        |
@@ -554,6 +556,16 @@ Expression forEachExp() :
  
     ( <FOR_EACH> <LCURLY> consumeNL() val = statement() consumeNL() <RCURLY> )
     { return new ForEachExpression(val); }
+;
+
+Expression forEachFieldExp() :
+{
+    String path;
+    Expression val;
+}
+ 
+    ( <FOR_EACH_FIELD> path = stringLiteral() <LCURLY> consumeNL() val = statement() consumeNL() <RCURLY> )
+    { return new ForEachFieldExpression(path, val); }
 ;
 
 Expression generateExp() :
@@ -1019,6 +1031,7 @@ String identifierStr() :
         <EMBED>                  |
         <FLATTEN>                |
         <FOR_EACH>               |
+        <FOR_EACH_FIELD>         |
         <GENERATE>               |
         <GET_FIELD>              |
         <GET_LANGUAGE>           |
