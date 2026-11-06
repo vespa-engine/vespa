@@ -80,6 +80,7 @@ public class SchemaSkillTest {
             - `weight` (float; attribute): Weight in kg.
               Not set for digital products.
             - `embedding` (tensor<float>(x[4]); attribute): Embedding of the title.
+              To search, use `embed(e5, @input)`
             - `attributes` (map<string, string>; searchable through its struct fields and by lookup)
               - `attributes.key` (string; attribute): The attribute name.
                 Such as color or material.
