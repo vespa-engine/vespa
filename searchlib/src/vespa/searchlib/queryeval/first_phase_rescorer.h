@@ -4,7 +4,9 @@
 
 #include "scores.h"
 
+#include <cmath>
 #include <cstdint>
+#include <limits>
 
 namespace search::queryeval {
 
@@ -51,7 +53,17 @@ class FirstPhaseRescorer {
 public:
     FirstPhaseRescorer(const std::pair<Scores, Scores>& ranges);
     static bool need_rescore(const std::pair<Scores, Scores>& ranges);
-    double rescore(uint32_t, double score) const noexcept { return ((score * _scale) - _adjust); }
+    double rescore(uint32_t, double score) const noexcept {
+        if (score == std::numeric_limits<double>::infinity()) [[unlikely]] {
+            // This will not happen in practice, is just for robustness
+            return std::numeric_limits<double>::infinity();
+        }
+        if (std::isnan(score) || score == -std::numeric_limits<double>::infinity()) [[unlikely]] {
+            return -std::numeric_limits<double>::infinity();
+        }
+
+        return score * _scale - _adjust;
+    }
 };
 
 } // namespace search::queryeval

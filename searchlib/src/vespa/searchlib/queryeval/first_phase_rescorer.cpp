@@ -8,7 +8,37 @@ FirstPhaseRescorer::FirstPhaseRescorer(const std::pair<Scores, Scores>& ranges) 
     if (need_rescore(ranges)) {
         auto& first_phase_scores = ranges.first;
         auto& second_phase_scores = ranges.second;
-        // scale and adjust the first phase score according to the
+
+        if (std::isnan(second_phase_scores.high) || std::isnan(second_phase_scores.low) ||
+            second_phase_scores.low == -std::numeric_limits<double>::infinity())
+        {
+            // We map everything to -Infinity to make it not come before second_phase_scores.low
+            _scale = 0.0;
+            _adjust = std::numeric_limits<double>::infinity();
+            return;
+        }
+
+        if (second_phase_scores.low == std::numeric_limits<double>::infinity()) {
+            // Keep everything at the current score as it cannot come before second_phase_scores.low
+            _scale = 1.0;
+            _adjust = 0.0;
+            return;
+        }
+
+        // At this point, second_phase_scores.low has to be finite
+        // Cover the remaining special cases by moving everything that is not +Infinity
+        // behind second_phase_scores.low
+        if (std::isinf(second_phase_scores.high) || !std::isfinite(first_phase_scores.high) ||
+            !std::isfinite(first_phase_scores.low))
+        {
+            // Move everything after second_phase_scores.low
+            _scale = 1.0;
+            _adjust = first_phase_scores.low - second_phase_scores.low;
+            return;
+        }
+
+        // Now, both all bounds are finite
+        // Scale and adjust the first phase score according to the
         // first phase and second phase heap score values to avoid that
         // a score from the first phase is larger than second_phase_scores.low
         double first_phase_range = first_phase_scores.high - first_phase_scores.low;
