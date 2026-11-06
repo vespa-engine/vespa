@@ -188,6 +188,18 @@ CellType parse_cell_type(ParseContext& ctx) {
 
 } // namespace
 
+bool is_valid_dimension_name(const std::string& name) {
+    if (name.empty() || !is_ident(name[0], true)) {
+        return false;
+    }
+    for (size_t i = 1; i < name.size(); ++i) {
+        if (!is_ident(name[i], false)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 ValueType parse_spec(const char* pos_in, const char* end_in, const char*& pos_out,
                      std::vector<ValueType::Dimension>* unsorted) {
     ParseContext ctx(pos_in, end_in, pos_out);

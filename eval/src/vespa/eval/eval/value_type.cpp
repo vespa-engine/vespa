@@ -38,7 +38,7 @@ void sort_dimensions(DimensionList& dimensions) {
 bool verify_dimensions(const DimensionList& dimensions) {
     size_t dense_size = 1;
     for (size_t i = 0; i < dimensions.size(); ++i) {
-        if (dimensions[i].name.empty()) {
+        if (!value_type::is_valid_dimension_name(dimensions[i].name)) {
             return false;
         }
         if (dimensions[i].size == 0) {

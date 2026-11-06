@@ -126,6 +126,27 @@ TEST(ValueTypeTest, require_that_empty_dimension_names_result_in_error_types) {
     EXPECT_TRUE(ValueType::make_type(CellType::DOUBLE, {{"x"}, {""}}).is_error());
 }
 
+TEST(ValueTypeTest, require_that_dimension_names_must_be_valid_identifiers) {
+    for (const char* name : {"x", "X", "_", "_x", "x_1", "abc123"}) {
+        EXPECT_FALSE(ValueType::make_type(CellType::DOUBLE, {{name}}).is_error()) << name;
+        EXPECT_FALSE(ValueType::make_type(CellType::DOUBLE, {{name, 3}}).is_error()) << name;
+    }
+    for (const char* name : {"1x", "@x", "x$", "x-y", "x y", " x", "x.y", "x{},y", "x[3]", "\xc3\xa6"}) {
+        EXPECT_TRUE(ValueType::make_type(CellType::DOUBLE, {{name}}).is_error()) << name;
+        EXPECT_TRUE(ValueType::make_type(CellType::DOUBLE, {{name, 3}}).is_error()) << name;
+    }
+    EXPECT_TRUE(ValueType::make_type(CellType::DOUBLE, {{std::string("x\0y", 3)}}).is_error());
+}
+
+TEST(ValueTypeTest, require_that_rename_to_invalid_dimension_name_results_in_error_type) {
+    EXPECT_EQ(type("tensor(x[3])").rename({"x"}, {"1y"}), type("error"));
+    EXPECT_EQ(type("tensor(x{})").rename({"x"}, {"@y"}), type("error"));
+}
+
+TEST(ValueTypeTest, require_that_concat_with_invalid_dimension_name_results_in_error_type) {
+    EXPECT_EQ(ValueType::concat(type("double"), type("double"), "1x"), type("error"));
+}
+
 TEST(ValueTypeTest, require_that_dense_subspace_size_does_not_overflow) {
     auto ok_type = ValueType::make_type(CellType::DOUBLE, {{"x", max_size}, {"y", max_size}});
     EXPECT_FALSE(ok_type.is_error());

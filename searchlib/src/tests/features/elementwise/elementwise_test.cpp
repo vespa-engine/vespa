@@ -125,6 +125,13 @@ TEST_F(ElementwiseBlueprintTest, blueprint_setup_fails_when_cell_type_is_malform
     expect_setup_fail({"bm25(is)", "x", "complex"});
 }
 
+TEST_F(ElementwiseBlueprintTest, blueprint_setup_fails_when_dimension_name_is_invalid) {
+    expect_setup_fail({"bm25(is)", "1x"});
+    expect_setup_fail({"bm25(is)", "x-y"});
+    expect_setup_fail({"matches(va)", "1x"});
+    expect_setup_fail({"matches(va)", "x-y"});
+}
+
 TEST_F(ElementwiseBlueprintTest, blueprint_setup_succeeds_for_index_field) {
     expect_bm25_setup_succeed({"bm25(is)", "x"});
     expect_bm25_setup_succeed({"bm25(ia)", "x"});

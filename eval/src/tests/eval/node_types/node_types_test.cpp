@@ -124,6 +124,8 @@ TEST(NodeTypesTest, require_that_rename_resolves_correct_type) {
     verify("rename(tensor(x{},y[1],z[5]),x,y)", "error");
     verify("rename(tensor(x{},y[1],z[5]),x,x)", "tensor(x{},y[1],z[5])");
     verify("rename(tensor(x{},y[1],z[5]),x,w)", "tensor(w{},y[1],z[5])");
+    verify("rename(tensor(x{},y[1],z[5]),x,1w)", "error"); // not a valid dimension name
+    verify("rename(tensor(x{},y[1],z[5]),x,@w)", "error"); // not a valid dimension name
     verify("rename(tensor(x{},y[1],z[5]),y,w)", "tensor(x{},w[1],z[5])");
     verify("rename(tensor(x{},y[1],z[5]),z,w)", "tensor(x{},y[1],w[5])");
     verify("rename(tensor(x{},y[1],z[5]),(x,y,z),(z,y,x))", "tensor(z{},y[1],x[5])");
@@ -337,6 +339,7 @@ TEST(NodeTypesTest, require_that_tensor_concat_resolves_correct_type) {
     verify("concat(tensor(x[2]),tensor(x[3]),x)", "tensor(x[5])");
     verify("concat(tensor(x[2]),tensor(x[2]),y)", "tensor(x[2],y[2])");
     verify("concat(tensor(x[2]),tensor(x[3]),y)", "error");
+    verify("concat(double,double,1x)", "error"); // not a valid dimension name
     verify("concat(tensor(x[2]),tensor(x{}),x)", "error");
     verify("concat(tensor(x[2]),tensor(y{}),x)", "tensor(x[3],y{})");
     verify("concat(tensor<float>(x[2]),tensor<float>(x[3]),x)", "tensor<float>(x[5])");
