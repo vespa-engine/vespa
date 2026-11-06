@@ -218,6 +218,18 @@ public class FederationSearcher extends ForkingSearcher {
         return errors;
     }
 
+    private static List<String> concat(List<String> first, List<String> second) {
+        if (second.isEmpty()) {
+            return first;
+        }
+        if (first.isEmpty()) {
+            return second;
+        }
+        List<String> all = new ArrayList<>(first);
+        all.addAll(second);
+        return all;
+    }
+
     private static List<SearchChainInvocationSpec> extractSpecs(List<ResolveResult> results) {
         List<SearchChainInvocationSpec> errors = List.of();
         for (ResolveResult result : results) {
@@ -240,9 +252,13 @@ public class FederationSearcher extends ForkingSearcher {
         Result mergedResults = execution.search(query);
 
         var targets = getTargets(query.getModel().getSources(), query.properties());
-        warnIfUnresolvedSearchChains(extractErrors(targets), mergedResults.hits());
+        var excludedTargets = resolveExcludedSources(query.getModel().getExcludedSources(), query.properties());
+        warnIfUnresolvedSearchChains(concat(extractErrors(targets), extractErrors(excludedTargets)), mergedResults.hits());
 
-        var prunedTargets = pruneTargetsWithoutDocumentTypes(query.getModel().getRestrict(), extractSpecs(targets));
+        var prunedTargets = pruneTargetsWithoutDocumentTypes(query.getModel().getRestrict(),
+                                                             pruneExcludedTargets(query.getModel().getExcludedSources(),
+                                                                                  extractSpecs(excludedTargets),
+                                                                                  extractSpecs(targets)));
 
         var regularTargetHandlers = resolveSearchChains(prunedTargets, execution.searchChainRegistry());
         query.errors().addAll(regularTargetHandlers.errors());
@@ -502,6 +518,21 @@ public class FederationSearcher extends ForkingSearcher {
         return List.copyOf(result);
     }
 
+    private List<ResolveResult> resolveExcludedSources(Set<String> excludedSourcesInQuery, Properties properties) {
+        if (excludedSourcesInQuery.isEmpty()) {
+            return List.of();
+        }
+
+        List<ResolveResult> result = new ArrayList<>();
+        Set<String> excludedSources = virtualSourceResolver.resolve(excludedSourcesInQuery);
+
+        for (String source : excludedSources) {
+            result.addAll(sourceRefResolver.resolveForExclusion(asSourceSpec(source), properties));
+        }
+
+        return List.copyOf(result);
+    }
+
     public List<ResolveResult> defaultSearchChains(Properties sourceToProviderMap) {
         List<ResolveResult> result = new ArrayList<>();
 
@@ -616,6 +647,64 @@ public class FederationSearcher extends ForkingSearcher {
         }
 
         return prunedTargets;
+    }
+
+    /**
+     * Removes the targets which are excluded by the query, either because the target itself is excluded,
+     * or because all the schemas of the target are excluded.
+     */
+    private List<SearchChainInvocationSpec> pruneExcludedTargets(Set<String> excludedSources,
+                                                                 List<SearchChainInvocationSpec> excludedTargets,
+                                                                 List<SearchChainInvocationSpec> targets) {
+        if (excludedSources.isEmpty()) {
+            return targets;
+        }
+
+        List<SearchChainInvocationSpec> prunedTargets = new ArrayList<>();
+
+        for (SearchChainInvocationSpec target : targets) {
+            if (isExcluded(target, excludedTargets)) {
+                continue;
+            }
+            if (allSchemasExcluded(target, excludedSources)) {
+                continue;
+            }
+            prunedTargets.add(target);
+        }
+
+        return prunedTargets;
+    }
+
+    /** Returns whether all schemas of the target are excluded, either by schema name or as 'cluster.schema' */
+    private static boolean allSchemasExcluded(SearchChainInvocationSpec target, Set<String> excludedSources) {
+        if (target.schemas.isEmpty()) {
+            return false;
+        }
+        for (String schema : target.schemas) {
+            if ( ! excludedSources.contains(schema) &&
+                ! excludedSources.contains(target.searchChainId.getName() + "." + schema)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns whether the target is one of the excluded targets.
+     * A 'cluster.schema' target shares search chain id with its cluster, so the schemas are compared as well:
+     * Excluding a cluster excludes all its 'cluster.schema' targets, while excluding 'cluster.schema'
+     * does not exclude the cluster.
+     */
+    private static boolean isExcluded(SearchChainInvocationSpec target, List<SearchChainInvocationSpec> excludedTargets) {
+        for (SearchChainInvocationSpec excluded : excludedTargets) {
+            if (Objects.equals(target.searchChainId, excluded.searchChainId) &&
+                Objects.equals(target.source, excluded.source) &&
+                Objects.equals(target.provider, excluded.provider) &&
+                excluded.schemas.containsAll(target.schemas)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean documentTypeIntersectionIsNonEmpty(Set<String> restrict, SearchChainInvocationSpec target) {

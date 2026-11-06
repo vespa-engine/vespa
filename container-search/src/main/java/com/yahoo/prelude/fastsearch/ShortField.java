@@ -21,7 +21,7 @@ public class ShortField extends DocsumField {
         } else {
             return Short.valueOf(value);
         }
-    }        
+    }
 
     @Override
     public Object convert(Inspector value) {

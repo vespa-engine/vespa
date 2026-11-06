@@ -2,7 +2,7 @@
 package com.yahoo.search.federation.sourceref;
 
 /**
- * @author baldersheim
+ * @author Henning Baldersheim
  */
 public record ResolveResult(SearchChainInvocationSpec invocationSpec, String errorMsg) {
     ResolveResult(SearchChainInvocationSpec invocationSpec) {
