@@ -49,19 +49,17 @@ public class Ascii7BitMatcher {
         }
         return true;
     }
-    static public String charsAndNumbers() {
-        char[] chars = new char[26*2+10];
-        int i = 0;
-        for (char c = 'A'; c <= 'Z'; c++) {
-            chars[i++] = c;
-        }
-        for (char c = 'a'; c <= 'z'; c++) {
-            chars[i++] = c;
-        }
-        for (char c = '0'; c <= '9'; c++) {
-            chars[i++] = c;
-        }
-        return new String(chars);
-    }
 
+    private static final String LCC = "abcdefghijklmnopqrstuvwxyz"; // lowercase letters
+    private static final String UCC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; // uppercase letters
+    private static final String NUM = "0123456789"; // digits
+    private static final String CHS = UCC + LCC; // all letters
+    private static final String CAU = "_" + CHS; // letters and underscore
+    private static final String CAN = CHS + NUM; // letters and digits
+    private static final String CNU = "_" + CAN; // letters, digits and underscore
+
+    static public String asciiLetters() { return CHS; }
+    static public String charsAndUnderscore() { return CAU; }
+    static public String charsAndNumbers() { return CAN; }
+    static public String charsNumbersAndUnderscore() { return CNU; }
 }

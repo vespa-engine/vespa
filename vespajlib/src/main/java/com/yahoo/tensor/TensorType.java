@@ -16,8 +16,6 @@ import java.util.Set;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
-
 /**
  * A tensor type with its dimensions. This is immutable.
  * <p>
@@ -28,9 +26,10 @@ import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
  */
 public class TensorType {
 
-    static Ascii7BitMatcher labelMatcher = new Ascii7BitMatcher("-_@" + charsAndNumbers(), "_@$" + charsAndNumbers());
-    private static final String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    private static final Ascii7BitMatcher dimensionNameMatcher = new Ascii7BitMatcher("_" + letters, "_" + charsAndNumbers());
+    static Ascii7BitMatcher labelMatcher = new Ascii7BitMatcher("-_@" + Ascii7BitMatcher.charsAndNumbers(), "_@$" + Ascii7BitMatcher.charsAndNumbers());
+    private static final String identStart = Ascii7BitMatcher.charsAndUnderscore();
+    private static final String identChars = Ascii7BitMatcher.charsNumbersAndUnderscore();
+    private static final Ascii7BitMatcher dimensionNameMatcher = new Ascii7BitMatcher(identStart, identChars);
 
     /** The permissible cell value types. Default is double. */
     public enum Value {
