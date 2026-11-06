@@ -314,9 +314,9 @@ public:
     void write(const K& key, V value);
 
     /**
-     * Update the cache (if present) and write through to backing store.
+     * Notify the cache that value was updated in the backing store.
      */
-    void update(const K& key, V value);
+    void updated(const K& key);
 
     /**
      * Tell if an object with given key exists in the cache.

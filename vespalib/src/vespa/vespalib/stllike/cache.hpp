@@ -384,16 +384,18 @@ template <typename P> void cache<P>::write(const K& key, V value) {
     }
 }
 
-template <typename P> void cache<P>::update(const K& key, V value) {
+template <typename P> void cache<P>::updated(const K& key) {
+    V value;
     std::lock_guard storeGuard(getLock(key));
-    _store.write(key, value);
-    {
+    if (_store.read(key, value)) {
         std::lock_guard guard(_hashLock);
         if (_probationary_segment.try_update(key, value)) {
             increment_stat(_update, guard);
         } else if (multi_segment() && _protected_segment.try_update(key, value)) {
             increment_stat(_update, guard);
         }
+    } else {
+        invalidate(key);
     }
 }
 
