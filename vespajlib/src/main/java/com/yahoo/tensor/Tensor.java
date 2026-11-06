@@ -38,7 +38,7 @@ import static com.yahoo.tensor.functions.ScalarFunctions.Hamming;
  * <p>
  * A tensor consists of a set of <i>dimension</i> names and a set of <i>cells</i> containing scalar <i>values</i>.
  * Each cell is identified by its <i>address</i>, which consists of a set of dimension-label pairs which defines
- * the location of that cell. Both dimensions and labels are string on the form of an identifier or integer.
+ * the location of that cell. Dimension names are identifiers ([A-Za-z_][A-Za-z0-9_]*) and labels are strings.
  * <p>
  * The size of the set of dimensions of a tensor is called its <i>rank</i>.
  * <p>
