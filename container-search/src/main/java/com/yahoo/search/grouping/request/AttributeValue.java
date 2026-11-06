@@ -10,7 +10,7 @@ package com.yahoo.search.grouping.request;
  */
 public class AttributeValue extends DocumentValue {
 
-    private final String name;
+    private String name;
 
     /**
      * Constructs a new instance of this class.
@@ -18,17 +18,17 @@ public class AttributeValue extends DocumentValue {
      * @param attributeName the attribute name to assign to this.
      */
     public AttributeValue(String attributeName) {
-        this(null, null, attributeName);
+        this(attributeName, null, null, attributeName);
     }
 
-    private AttributeValue(String label, Integer level, String attributeName) {
-        super(attributeName, label, level);
+    private AttributeValue(String image, String label, Integer level, String attributeName) {
+        super(image, label, level);
         this.name = attributeName;
     }
 
     @Override
     public AttributeValue copy() {
-        return new AttributeValue(getLabel(), getLevelOrNull(), getAttributeName());
+        return new AttributeValue(getImage(), getLabel(), getLevelOrNull(), getAttributeName());
     }
 
     /**
@@ -38,6 +38,14 @@ public class AttributeValue extends DocumentValue {
      */
     public String getAttributeName() {
         return name;
+    }
+
+    /**
+     * Sets the name of the attribute to retrieve, e.g. to replace a field alias by the name it refers to.
+     * This does not change the image of this expression, so result labels are kept as written.
+     */
+    public void setAttributeName(String attributeName) {
+        this.name = attributeName;
     }
 
 }

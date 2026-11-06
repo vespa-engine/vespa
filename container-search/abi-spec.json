@@ -2923,6 +2923,7 @@
       "public void <init>(java.lang.String)",
       "public com.yahoo.search.grouping.request.AttributeFunction copy()",
       "public java.lang.String getAttributeName()",
+      "public void setAttributeName(java.lang.String)",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
     ],
     "fields" : [ ]
@@ -2957,6 +2958,7 @@
       "public void <init>(java.lang.String)",
       "public com.yahoo.search.grouping.request.AttributeValue copy()",
       "public java.lang.String getAttributeName()",
+      "public void setAttributeName(java.lang.String)",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
     ],
     "fields" : [ ]

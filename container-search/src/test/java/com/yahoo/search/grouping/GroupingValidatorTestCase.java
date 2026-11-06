@@ -1,9 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping;
 
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.ClusterConfig;
+import com.yahoo.search.grouping.request.AttributeValue;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
@@ -43,6 +48,22 @@ public class GroupingValidatorTestCase {
         Query query = createQuery("all(group(foo) each(output(max(bar))))");
         query.properties().set(GroupingValidator.PARAM_ENABLED, "false");
         validateGrouping(List.of("foo"), query);
+    }
+
+    @Test
+    void field_aliases_of_available_attributes_do_not_throw() {
+        Query query = createQuery("all(group(bar) each(output(count())))");
+        validateGrouping(List.of("foo"), createIndexFacts(), query);
+        var groupBy = (AttributeValue)query.getSelect().getGrouping().get(0).getRootOperation().getGroupBy();
+        assertEquals("bar", groupBy.getAttributeName(), "Validation does not rewrite the request");
+    }
+
+    @Test
+    void unknown_names_are_not_resolved() {
+        var e = assertThrows(UnavailableAttributeException.class,
+                             () -> validateGrouping(List.of("foo"), createIndexFacts(),
+                                                    createQuery("all(group(qux) each(output(count())))")));
+        assertEquals(createMessage("qux"), e.getMessage());
     }
 
     @Test
@@ -266,6 +287,22 @@ public class GroupingValidatorTestCase {
 
     private static void validateGrouping(String clusterName, AttributesConfig attributesConfig, Query query) {
         validateGrouping(clusterName, ClusterConfig.IndexMode.Enum.INDEX, attributesConfig, query);
+    }
+
+    private static void validateGrouping(Collection<String> attributeNames, IndexFacts indexFacts, Query query) {
+        ClusterConfig clusterConfig = new ClusterConfig.Builder()
+                .clusterName("myCluster")
+                .indexMode(ClusterConfig.IndexMode.Enum.INDEX).build();
+        new Execution(new GroupingValidator(clusterConfig, createAttributesConfig(attributeNames)),
+                      Execution.Context.createContextStub(indexFacts))
+                .search(query);
+    }
+
+    private static IndexFacts createIndexFacts() {
+        SearchDefinition sd = new SearchDefinition("test");
+        sd.addIndex(new Index("foo"));
+        sd.addAlias("bar", "foo");
+        return new IndexFacts(new IndexModel(sd));
     }
 
     private static void validateGrouping(String clusterName, ClusterConfig.IndexMode.Enum indexMode,

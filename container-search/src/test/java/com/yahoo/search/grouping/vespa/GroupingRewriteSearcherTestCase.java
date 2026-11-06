@@ -2,11 +2,17 @@
 package com.yahoo.search.grouping.vespa;
 
 import com.yahoo.component.chain.Chain;
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.search.Query;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.GroupingValidator;
+import com.yahoo.search.grouping.request.AttributeFunction;
+import com.yahoo.search.grouping.request.AttributeValue;
 import com.yahoo.search.grouping.request.FastSearchMapDecodeFunction;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.schema.Cluster;
@@ -17,6 +23,7 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -114,6 +121,65 @@ public class GroupingRewriteSearcherTestCase {
                          "is not supported in streaming mode (cluster 'myCluster').",
                          exception.getMessage());
         }
+    }
+
+    @Test
+    void field_aliases_are_resolved_to_attribute_names() {
+        for (var indexMode : ClusterConfig.IndexMode.Enum.values()) {
+            String grouping = "all(group(bar) filter(regex(\"x\", baz)) each(output(max(attribute(bar)), sum(baz))))";
+            Query query = createQuery(grouping);
+            resolveAliases(indexMode, query);
+            assertEquals(List.of("foo", "baz", "foo", "baz"), attributeNames(query), indexMode.toString());
+            assertEquals(grouping, query.getSelect().getGrouping().get(0).getRootOperation().toString(),
+                         "Labels are kept as written");
+        }
+    }
+
+    @Test
+    void resolved_field_alias_survives_copy() {
+        Query query = createQuery("all(group(bar) each(output(count())))");
+        resolveAliases(ClusterConfig.IndexMode.Enum.INDEX, query);
+        var copy = query.getSelect().getGrouping().get(0).getRootOperation().copy(null);
+        assertEquals("foo", ((AttributeValue)copy.getGroupBy()).getAttributeName());
+        assertEquals("bar", copy.getGroupBy().toString());
+    }
+
+    @Test
+    void field_aliases_pass_validation_and_are_resolved() {
+        var attributesConfig = new AttributesConfig.Builder()
+                .attribute(new AttributesConfig.Attribute.Builder().name("foo")
+                                   .datatype(AttributesConfig.Attribute.Datatype.INT64))
+                .build();
+        var clusterConfig = clusterConfig(ClusterConfig.IndexMode.Enum.INDEX);
+        Query query = createQuery("all(group(bar) each(output(count())))");
+        new Execution(new Chain<Searcher>(new GroupingValidator(clusterConfig, attributesConfig),
+                                          new GroupingRewriteSearcher(clusterConfig, attributesConfig)),
+                      Execution.Context.createContextStub(aliasIndexFacts()))
+                .search(query);
+        assertEquals(List.of("foo"), attributeNames(query));
+    }
+
+    private static IndexFacts aliasIndexFacts() {
+        SearchDefinition sd = new SearchDefinition("test");
+        sd.addIndex(new Index("foo"));
+        sd.addIndex(new Index("baz"));
+        sd.addAlias("bar", "foo");
+        return new IndexFacts(new IndexModel(sd));
+    }
+
+    private static void resolveAliases(ClusterConfig.IndexMode.Enum indexMode, Query query) {
+        new Execution(new GroupingRewriteSearcher(clusterConfig(indexMode), new AttributesConfig.Builder().build()),
+                      Execution.Context.createContextStub(aliasIndexFacts()))
+                .search(query);
+    }
+
+    private static List<String> attributeNames(Query query) {
+        List<String> names = new ArrayList<>();
+        query.getSelect().getGrouping().get(0).getRootOperation().visitExpressions(exp -> {
+            if (exp instanceof AttributeValue value) names.add(value.getAttributeName());
+            else if (exp instanceof AttributeFunction function) names.add(function.getAttributeName());
+        });
+        return names;
     }
 
     private static AttributesConfig createFastMapLookupConfig() {
