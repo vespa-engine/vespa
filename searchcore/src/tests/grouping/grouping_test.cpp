@@ -2,6 +2,7 @@
 
 #include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
@@ -11,10 +12,13 @@
 #include <vespa/searchlib/aggregation/maxaggregationresult.h>
 #include <vespa/searchlib/aggregation/minaggregationresult.h>
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/expression/enumresultnode.h>
 #include <vespa/searchlib/expression/integerresultnode.h>
+#include <vespa/searchlib/expression/stringresultnode.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/testclock.h>
@@ -264,6 +268,37 @@ TEST(GroupingTest, testGroupingManager) {
     context.addGrouping(bp);
     GroupingManager manager(context);
     ASSERT_TRUE(!manager.empty());
+}
+
+TEST(GroupingTest, enum_optimization_can_be_disabled_per_context) {
+    DoomFixture f1;
+    MyWorld     world;
+    world.attributeContext.add(
+        AttributeFactory::createAttribute("str", Config(BasicType::STRING, CollectionType::SINGLE)));
+    AllocatedBitVector bv(1);
+
+    GroupingContext context(bv, f1.clock.nowRef(), f1.timeOfDoom);
+    EXPECT_TRUE(context.enum_optimization_enabled());
+    context.set_enum_optimization_enabled(false);
+    GroupingContext copy(context);
+    EXPECT_FALSE(copy.enum_optimization_enabled());
+
+    for (bool enabled : {true, false}) {
+        SCOPED_TRACE(enabled ? "enabled" : "disabled");
+        GroupingContext ctx(bv, f1.clock.nowRef(), f1.timeOfDoom);
+        ctx.set_enum_optimization_enabled(enabled);
+        auto request = std::make_shared<Grouping>();
+        request->setFirstLevel(0).setLastLevel(0).addLevel(
+            createGL(MU<AttributeNode>("str"), MU<AttributeNode>("attr0")));
+        ctx.addGrouping(request);
+        GroupingManager manager(ctx);
+        manager.init(world.attributeContext, nullptr);
+        ASSERT_EQ(1u, ctx.getGroupingList().size());
+        const ResultNode* result = ctx.getGroupingList()[0]->levels()[0].getExpression().getResult();
+        ASSERT_TRUE(result != nullptr);
+        EXPECT_EQ(enabled, result->inherits(EnumResultNode::classId));
+        EXPECT_EQ(!enabled, result->inherits(StringResultNode::classId));
+    }
 }
 
 TEST(GroupingTest, testGroupingSession) {

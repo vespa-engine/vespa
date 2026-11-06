@@ -34,6 +34,7 @@ bool GroupingManager::empty() const {
 void GroupingManager::init(const IAttributeContext& attrCtx, const document::DocumentType* documentType) {
     GroupingContext::GroupingList  list;
     GroupingContext::GroupingList& groupingList(_groupingContext.getGroupingList());
+    bool                           enum_optimization = _groupingContext.enum_optimization_enabled();
     for (size_t i = 0; i < groupingList.size(); ++i) {
         Grouping& grouping = *groupingList[i];
         try {
@@ -44,7 +45,7 @@ void GroupingManager::init(const IAttributeContext& attrCtx, const document::Doc
 
                 if (en.inherits(AttributeNode::classId)) {
                     auto& an = static_cast<AttributeNode&>(en);
-                    an.enableEnumOptimization(true);
+                    an.enableEnumOptimization(enum_optimization);
                 }
             }
             aggregation::NonAttribute2DocumentAccessor nonAttributes2DocumentAccess(attrCtx);
