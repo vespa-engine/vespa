@@ -1,13 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping;
 
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.ClusterConfig;
+import com.yahoo.search.grouping.request.AttributeFunction;
+import com.yahoo.search.grouping.request.AttributeValue;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -41,6 +48,43 @@ public class GroupingValidatorTestCase {
         Query query = createQuery("all(group(foo) each(output(max(bar))))");
         query.properties().set(GroupingValidator.PARAM_ENABLED, "false");
         validateGrouping(List.of("foo"), query);
+    }
+
+    @Test
+    void field_aliases_are_resolved_to_attribute_names() {
+        Query query = createQuery("all(group(bar) each(output(max(attribute(bar)), sum(baz))))");
+        validateGrouping(List.of("foo", "baz"), createIndexFacts(), query);
+        assertEquals(List.of("foo", "foo", "baz"), attributeNames(query));
+        assertEquals("all(group(bar) each(output(max(attribute(bar)), sum(baz))))",
+                     query.getSelect().getGrouping().get(0).getRootOperation().toString());
+    }
+
+    @Test
+    void resolved_alias_survives_copy() {
+        Query query = createQuery("all(group(bar) each(output(count())))");
+        validateGrouping(List.of("foo"), createIndexFacts(), query);
+        GroupingOperation copy = query.getSelect().getGrouping().get(0).getRootOperation().copy(null);
+        assertEquals("foo", ((AttributeValue)copy.getGroupBy()).getAttributeName());
+        assertEquals("bar", copy.getGroupBy().toString());
+    }
+
+    @Test
+    void field_aliases_are_resolved_when_validation_is_disabled() {
+        Query query = createQuery("all(group(bar) each(output(count())))");
+        query.properties().set(GroupingValidator.PARAM_ENABLED, "false");
+        validateGrouping(List.of(), createIndexFacts(), query);
+        assertEquals(List.of("foo"), attributeNames(query));
+    }
+
+    @Test
+    void unknown_names_are_not_resolved() {
+        try {
+            validateGrouping(List.of("foo"), createIndexFacts(), createQuery("all(group(qux) each(output(count())))"));
+            fail("Expected exception");
+        }
+        catch (UnavailableAttributeException e) {
+            assertEquals(createMessage("qux"), e.getMessage());
+        }
     }
 
     @Test
@@ -256,12 +300,37 @@ public class GroupingValidatorTestCase {
         validateGrouping("myCluster", createAttributesConfig(attributeNames), query);
     }
 
+    private static void validateGrouping(Collection<String> attributeNames, IndexFacts indexFacts, Query query) {
+        validateGrouping("myCluster", createAttributesConfig(attributeNames), indexFacts, query);
+    }
+
     private static void validateGrouping(String clusterName, AttributesConfig attributesConfig, Query query) {
+        validateGrouping(clusterName, attributesConfig, null, query);
+    }
+
+    private static void validateGrouping(String clusterName, AttributesConfig attributesConfig, IndexFacts indexFacts, Query query) {
         ClusterConfig.Builder clusterConfig = new ClusterConfig.Builder()
                 .clusterName(clusterName)
                 .indexMode(ClusterConfig.IndexMode.Enum.INDEX);
         new Execution(new GroupingValidator(clusterConfig.build(), attributesConfig),
-                      Execution.Context.createContextStub())
+                      Execution.Context.createContextStub(indexFacts))
                 .search(query);
+    }
+
+    private static IndexFacts createIndexFacts() {
+        SearchDefinition sd = new SearchDefinition("test");
+        sd.addIndex(new Index("foo"));
+        sd.addIndex(new Index("baz"));
+        sd.addAlias("bar", "foo");
+        return new IndexFacts(new IndexModel(sd));
+    }
+
+    private static List<String> attributeNames(Query query) {
+        List<String> names = new ArrayList<>();
+        query.getSelect().getGrouping().get(0).getRootOperation().visitExpressions(exp -> {
+            if (exp instanceof AttributeValue value) names.add(value.getAttributeName());
+            else if (exp instanceof AttributeFunction function) names.add(function.getAttributeName());
+        });
+        return names;
     }
 }
