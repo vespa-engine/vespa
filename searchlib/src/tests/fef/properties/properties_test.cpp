@@ -656,6 +656,20 @@ TEST(PropertiesTest, second_phase_rank_score_drop_limit) {
               hitcollector::SecondPhaseRankScoreDropLimit::lookup(p, 4.0));
 }
 
+TEST(PropertiesTest, second_phase_prefetch_paged_attributes) {
+    std::string_view name = rank::SecondPhasePrefetchPagedAttributes::NAME;
+    EXPECT_EQ(std::string("vespa.rank.secondphase.prefetch_paged_attributes"), name);
+    Properties p;
+    EXPECT_FALSE(rank::SecondPhasePrefetchPagedAttributes::check(p));
+    EXPECT_TRUE(rank::SecondPhasePrefetchPagedAttributes::check(p, true));
+    p.add(name, "true");
+    EXPECT_TRUE(rank::SecondPhasePrefetchPagedAttributes::check(p));
+    EXPECT_TRUE(rank::SecondPhasePrefetchPagedAttributes::check(p, false));
+    p.clear().add(name, "false");
+    EXPECT_FALSE(rank::SecondPhasePrefetchPagedAttributes::check(p));
+    EXPECT_FALSE(rank::SecondPhasePrefetchPagedAttributes::check(p, true));
+}
+
 TEST(PropertiesTest, filter_threshold_setting) {
     Properties p;
     EXPECT_EQ(std::nullopt, matching::FilterThreshold::lookup(p));

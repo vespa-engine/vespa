@@ -4,6 +4,7 @@
 
 #include "blueprint.h"
 #include "featurenameparser.h"
+#include "fieldinfo.h"
 #include "idumpfeaturevisitor.h"
 #include "indexproperties.h"
 
@@ -17,6 +18,24 @@
 using vespalib::make_string_short::fmt;
 
 namespace {
+
+/*
+ * Collect the parameters of a feature, including the parameters of features
+ * given as parameters (e.g. 'x' for 'tensorFromLabels(attribute(x),dim)').
+ */
+void collect_feature_parameters(const std::string& feature_name, std::vector<std::string>& result) {
+    search::fef::FeatureNameParser parser(feature_name);
+    if (!parser.valid()) {
+        return;
+    }
+    for (const auto& param : parser.parameters()) {
+        result.push_back(param);
+        if (param.find('(') != std::string::npos) {
+            collect_feature_parameters(param, result);
+        }
+    }
+}
+
 class VisitorAdapter : public search::fef::IDumpFeatureVisitor {
     search::fef::BlueprintResolver& _resolver;
 
@@ -47,6 +66,8 @@ RankSetup::RankSetup(const BlueprintFactory& factory, const IIndexEnvironment& i
       _dumpResolver(std::make_shared<BlueprintResolver>(factory, indexEnv)),
       _firstPhaseRankFeature(),
       _secondPhaseRankFeature(),
+      _second_phase_prefetch_paged_attributes(false),
+      _second_phase_attributes(),
       _degradationAttribute(),
       _termwise_limit(1.0),
       _numThreads(0),
@@ -103,6 +124,7 @@ RankSetup::~RankSetup() = default;
 void RankSetup::configure() {
     setFirstPhaseRank(rank::FirstPhase::lookup(_indexEnv.getProperties()));
     setSecondPhaseRank(rank::SecondPhase::lookup(_indexEnv.getProperties()));
+    set_second_phase_prefetch_paged_attributes(rank::SecondPhasePrefetchPagedAttributes::check(_indexEnv.getProperties()));
     for (const auto& feature : match::Feature::lookup(_indexEnv.getProperties())) {
         add_match_feature(feature);
     }
@@ -247,6 +269,7 @@ bool RankSetup::compile() {
     _indexEnv.hintFeatureMotivation(IIndexEnvironment::RANK);
     compileAndCheckForErrors(*_first_phase_resolver);
     compileAndCheckForErrors(*_second_phase_resolver);
+    detect_second_phase_attributes();
     compileAndCheckForErrors(*_match_resolver);
     compileAndCheckForErrors(*_summary_resolver);
     for (const auto& backend : _sort_features) {
@@ -281,6 +304,25 @@ void RankSetup::prepareSharedState(const IQueryEnvironment& queryEnv, IObjectSto
     }
     for (const auto& spec : _summary_resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
+    }
+}
+
+void RankSetup::detect_second_phase_attributes() {
+    _second_phase_attributes.clear();
+    if (_secondPhaseRankFeature.empty()) {
+        return;
+    }
+    std::vector<std::string> params;
+    for (const auto& spec : _second_phase_resolver->getExecutorSpecs()) {
+        collect_feature_parameters(spec.blueprint->getName(), params);
+    }
+    for (const auto& name : params) {
+        const auto* field = _indexEnv.getFieldByName(name);
+        if (field != nullptr && field->hasAttribute() &&
+            std::find(_second_phase_attributes.begin(), _second_phase_attributes.end(), name) ==
+                _second_phase_attributes.end()) {
+            _second_phase_attributes.push_back(name);
+        }
     }
 }
 

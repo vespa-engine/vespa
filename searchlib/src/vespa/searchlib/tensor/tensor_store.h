@@ -8,6 +8,8 @@
 #include <vespa/vespalib/datastore/i_compactable.h>
 #include <vespa/vespalib/util/generation.h>
 
+#include <span>
+
 namespace vespalib {
 struct StateExplorer;
 class nbostream;
@@ -56,6 +58,13 @@ public:
     virtual bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const = 0;
     virtual const DenseTensorStore* as_dense() const;
     virtual DenseTensorStore* as_dense();
+
+    /*
+     * Returns the memory holding the stored tensor, or an empty span if the stored tensor
+     * is not kept in a single contiguous memory area (or the ref is invalid).
+     * Used to hint that the memory will be read soon (cf. IAttributeVector::prefetch_docs).
+     */
+    virtual std::span<const char> get_raw_memory(EntryRef ref) const noexcept;
 
     // Inherit doc from DataStoreBase
     void reclaim_memory(vespalib::Generation oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }

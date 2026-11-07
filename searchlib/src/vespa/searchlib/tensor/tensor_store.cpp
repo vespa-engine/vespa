@@ -21,6 +21,10 @@ DenseTensorStore* TensorStore::as_dense() {
     return nullptr;
 }
 
+std::span<const char> TensorStore::get_raw_memory(EntryRef) const noexcept {
+    return {};
+}
+
 std::unique_ptr<vespalib::StateExplorer> TensorStore::make_state_explorer() const {
     return std::make_unique<DataStoreExplorer>(_store);
 }
