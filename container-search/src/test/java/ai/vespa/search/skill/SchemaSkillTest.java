@@ -80,6 +80,7 @@ public class SchemaSkillTest {
             - `weight` (float; attribute): Weight in kg.
               Not set for digital products.
             - `embedding` (tensor<float>(x[4]); attribute): Embedding of the title.
+              To search, use `embed(e5, @input)`
             - `attributes` (map<string, string>; searchable through its struct fields and by lookup)
               - `attributes.key` (string; attribute): The attribute name.
                 Such as color or material.
@@ -131,7 +132,8 @@ public class SchemaSkillTest {
                 .add(new Field.Builder("weight", "float").setAttribute(true)
                                                          .setExplanation("Weight in kg.\nNot set for digital products.").build())
                 .add(new Field.Builder("embedding", "tensor<float>(x[4])").setAttribute(true)
-                                                                          .setExplanation("Embedding of the title.").build())
+                                                                                          .setExplanation("Embedding of the title.")
+                                                                                          .setInputExpression("embed(e5, @input)").build())
                 .add(new Field.Builder("attributes", "map<string, string>").addFastMapSearch("by_key").build())
                 .add(new Field.Builder("attributes.key", "string").setAttribute(true)
                                                                   .setExplanation("The attribute name.\nSuch as color or material.").build())

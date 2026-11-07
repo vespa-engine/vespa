@@ -133,6 +133,7 @@ public class SchemaSkill extends AbstractComponent {
             md.append("; match: ").append(field.matchType().name().toLowerCase(Locale.ROOT)); // as in the schema
         md.append(")");
         appendExplanation(field.explanation(), md, level + 1);
+        appendInputExpression(field.inputExpression(), md, level + 1);
         md.append("\n");
     }
 
@@ -147,9 +148,13 @@ public class SchemaSkill extends AbstractComponent {
      * (1 for top level items) so they stay in the item.
      */
     private static void appendExplanation(Optional<String> explanation, StringBuilder md, int level) {
-        explanation.map(String::strip)
-                   .filter(text -> ! text.isEmpty())
-                   .ifPresent(text -> md.append(": ").append(text.replace("\n", "\n" + "  ".repeat(level))));
+        if (explanation.isEmpty() || explanation.get().isEmpty()) return;
+        md.append(": ").append(explanation.get().strip().replace("\n", "\n" + "  ".repeat(level)));
+    }
+
+    private static void appendInputExpression(Optional<String> inputExpression, StringBuilder md, int level) {
+        if (inputExpression.isEmpty()) return;
+        md.append("\n").append("  ".repeat(level)).append("To search, use `").append(inputExpression.get()).append("`");
     }
 
     /** Returns the type of an input as it is declared in a rank profile, where an empty tensor type is a double. */
