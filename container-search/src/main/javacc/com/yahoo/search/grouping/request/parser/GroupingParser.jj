@@ -208,6 +208,7 @@ TOKEN :
     <COSH: "cosh"> |
     <COUNT: "count"> |
     <DEBUGWAIT: "debugwait"> |
+    <DECODEFASTMAPLOOKUP: "decodefastmaplookup"> |
     <DIV: "div"> |
     <DOCIDNSSPECIFIC: "docidnsspecific"> |
     <EACH: "each"> |
@@ -483,6 +484,7 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = parameterStringValue()        |
                    exp = countAggregator()             |
                    exp = debugWaitFunction(grp)        |
+                   exp = decodeFastMapLookupFunction()  |
                    exp = divFunction(grp)              |
                    exp = docIdNsSpecificValue()        |
                    exp = fixedWidthFunction(grp)       |
@@ -695,6 +697,28 @@ DebugWaitFunction debugWaitFunction(GroupingOperation grp) :
                            busy = booleanValue()
                   rbrace() )
   	{ return new DebugWaitFunction(arg, new DoubleValue(waitTime.doubleValue()), busy); }
+}
+
+DecodeFastMapLookupFunction decodeFastMapLookupFunction() :
+{
+    StringBuilder fieldName = new StringBuilder();
+    String str;
+    String lookupName = null;
+    String separator = null;
+}
+{
+    ( <DECODEFASTMAPLOOKUP> lbrace() str = identifier() { fieldName.append(str); }
+      ( <DOT> str = identifier()
+        {
+            if (lookupName != null) fieldName.append(".").append(lookupName);
+            lookupName = str;
+        }
+      )+
+      [ comma() separator = string() ] rbrace() )
+    {
+        return separator == null ? new DecodeFastMapLookupFunction(fieldName.toString(), lookupName)
+                                 : new DecodeFastMapLookupFunction(fieldName.toString(), lookupName, separator);
+    }
 }
 
 DivFunction divFunction(GroupingOperation grp) :
@@ -1384,6 +1408,7 @@ String identifier() :
         <COSH> |
         <COUNT> |
         <DEBUGWAIT> |
+        <DECODEFASTMAPLOOKUP> |
         <DIV> |
         <DOCIDNSSPECIFIC> |
         <EACH> |

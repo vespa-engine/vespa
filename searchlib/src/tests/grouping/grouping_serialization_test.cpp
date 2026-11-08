@@ -18,6 +18,7 @@
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
 #include <vespa/searchlib/aggregation/xoraggregationresult.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/expression/decode_fast_map_lookup_node.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/geo_distance_function_node.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
@@ -160,6 +161,8 @@ TEST(GroupingSerializationTest, testSpecialNodes) {
     {
         f.checkObject(GetDocIdNamespaceSpecificFunctionNode(ResultNode::UP(new Int64ResultNode(7))));
     }
+    f.checkObject(DecodeFastMapLookupNode("map.lookup"));
+    f.checkObject(DecodeFastMapLookupNode("map.lookup", ": "));
 }
 
 TEST(GroupingSerializationTest, testFunctionNodes) {

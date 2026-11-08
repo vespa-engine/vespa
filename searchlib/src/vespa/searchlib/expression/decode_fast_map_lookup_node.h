@@ -15,9 +15,10 @@ class AttributeNode;
  * The node is named "fieldname.lookupname", and reads the hidden array of string attribute
  * "fieldname$lookupname" through an attribute node it creates itself, where each element is the key,
  * a separator (0x7F) and the encoded value.
- * The result is an array of strings, one per entry, on the form key + "=" + decoded value.
+ * The result is an array of strings, one per entry, on the form key + separator + decoded value,
+ * where the separator is ":" unless set otherwise.
  *
- * Only the name is serialized. The value type needed for decoding must be given by configure() with the
+ * The name and the separator are serialized. The value type needed for decoding must be given by configure() with the
  * fast map lookup of the field before the node is prepared.
  */
 class DecodeFastMapLookupNode : public FunctionNode {
@@ -26,10 +27,11 @@ public:
     enum class ValueType : uint8_t { UNKNOWN, INT, LONG, FLOAT, DOUBLE, STRING };
 
     static constexpr char encoded_separator = 0x7F;
-    static constexpr std::string_view decoded_separator = "=";
+    static constexpr std::string_view default_separator = ":";
 
 private:
     std::string                    _name;
+    std::string                    _separator;
     ValueType                      _valueType;
     std::unique_ptr<AttributeNode> _input; // reads the hidden attribute; created from the name, not serialized
 
@@ -42,7 +44,7 @@ public:
     DECLARE_NBO_SERIALIZE;
     DECLARE_EXPRESSIONNODE(DecodeFastMapLookupNode);
     DecodeFastMapLookupNode() noexcept;
-    explicit DecodeFastMapLookupNode(std::string_view name);
+    explicit DecodeFastMapLookupNode(std::string_view name, std::string_view separator = default_separator);
     DecodeFastMapLookupNode(const DecodeFastMapLookupNode&);
     DecodeFastMapLookupNode& operator=(const DecodeFastMapLookupNode&);
     ~DecodeFastMapLookupNode() override;
@@ -53,13 +55,19 @@ public:
     void configure(const FastMapLookup& lookup);
 
     [[nodiscard]] const std::string& getName() const noexcept { return _name; }
+    [[nodiscard]] const std::string& getSeparator() const noexcept { return _separator; }
+    DecodeFastMapLookupNode& setSeparator(std::string_view separator) {
+        _separator = separator;
+        return *this;
+    }
     [[nodiscard]] ValueType getValueType() const noexcept { return _valueType; }
 
     /** Returns the name of the hidden attribute, "fieldname$lookupname" for node name "fieldname.lookupname". */
     [[nodiscard]] std::string lookupAttributeName() const;
 
-    /** Returns the decoded form of one element of the hidden attribute. */
-    static std::string decode(std::string_view encoded, ValueType valueType);
+    /** Returns the decoded form of one element of the hidden attribute, with the given separator between key and value. */
+    static std::string decode(std::string_view encoded, ValueType valueType,
+                              std::string_view separator = default_separator);
 
     static ValueType toValueType(std::string_view typeName);
 

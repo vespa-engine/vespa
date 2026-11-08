@@ -14,12 +14,15 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.grouping.request.AttributeValue;
+import com.yahoo.search.grouping.request.DecodeFastMapLookupFunction;
 import com.yahoo.search.grouping.request.ExpressionVisitor;
 import com.yahoo.search.grouping.request.GroupingExpression;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.yahoo.search.grouping.GroupingQueryParser.SELECT_PARAMETER_PARSING;
 
@@ -38,6 +41,7 @@ public class GroupingValidator extends Searcher {
     public static final String GROUPING_VALIDATED = "GroupingValidated";
     public static final CompoundName PARAM_ENABLED = CompoundName.from("validate_" + GroupingQueryParser.PARAM_REQUEST);
     private final HashMap<String, AttributesConfig.Attribute> attributes = new HashMap<>();
+    private final Set<String> fastMapLookups = new HashSet<>();
     private final String clusterName;
     private final boolean enabled;
 
@@ -52,6 +56,9 @@ public class GroupingValidator extends Searcher {
         clusterName = clusterConfig.clusterName();
         for (AttributesConfig.Attribute attr : attributesConfig.attribute()) {
             attributes.put(attr.name(), attr);
+        }
+        for (AttributesConfig.FastMapLookups lookup : attributesConfig.fastMapLookups()) {
+            fastMapLookups.add(lookup.fieldName() + "." + lookup.lookupName());
         }
     }
 
@@ -131,6 +138,13 @@ public class GroupingValidator extends Searcher {
                 (isMapLookup ? " for map lookup" : ""));
     }
 
+    private void verifyHasFastMapLookup(DecodeFastMapLookupFunction function) {
+        if ( ! fastMapLookups.contains(function.getName())) {
+            throw new IllegalInputException("Grouping request references fast map lookup '" + function.getName() +
+                                            "' which is not available in cluster '" + clusterName + "'.");
+        }
+    }
+
     private void verifyCompatibleAttributeTypes(String keyAttributeName,
                                                 String keySourceAttributeName) {
         AttributesConfig.Attribute keyAttribute = attributes.get(keyAttributeName);
@@ -161,6 +175,8 @@ public class GroupingValidator extends Searcher {
                 }
             } else if (exp instanceof AttributeValue) {
                 verifyHasAttribute(((AttributeValue) exp).getAttributeName(), false);
+            } else if (exp instanceof DecodeFastMapLookupFunction function) {
+                verifyHasFastMapLookup(function);
             }
         }
     }

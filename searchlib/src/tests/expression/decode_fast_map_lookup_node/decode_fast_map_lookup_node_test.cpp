@@ -55,49 +55,63 @@ std::string decode(std::string_view key, std::string_view encoded_value, ValueTy
 } // namespace
 
 TEST(DecodeFastMapLookupNodeTest, int_values_are_decoded_from_excess_hex) {
-    EXPECT_EQ("k=0", decode("k", "80000000", ValueType::INT));
-    EXPECT_EQ("k=7", decode("k", "80000007", ValueType::INT));
-    EXPECT_EQ("k=-1", decode("k", "7fffffff", ValueType::INT));
-    EXPECT_EQ("k=-2147483648", decode("k", "00000000", ValueType::INT));
-    EXPECT_EQ("k=2147483647", decode("k", "ffffffff", ValueType::INT));
-    EXPECT_EQ("k=2147483647", decode("k", "FFFFFFFF", ValueType::INT));
+    EXPECT_EQ("k:0", decode("k", "80000000", ValueType::INT));
+    EXPECT_EQ("k:7", decode("k", "80000007", ValueType::INT));
+    EXPECT_EQ("k:-1", decode("k", "7fffffff", ValueType::INT));
+    EXPECT_EQ("k:-2147483648", decode("k", "00000000", ValueType::INT));
+    EXPECT_EQ("k:2147483647", decode("k", "ffffffff", ValueType::INT));
+    EXPECT_EQ("k:2147483647", decode("k", "FFFFFFFF", ValueType::INT));
 }
 
 TEST(DecodeFastMapLookupNodeTest, long_values_are_decoded_from_excess_hex) {
-    EXPECT_EQ("k=5", decode("k", "8000000000000005", ValueType::LONG));
-    EXPECT_EQ("k=-2", decode("k", "7ffffffffffffffe", ValueType::LONG));
-    EXPECT_EQ("k=-9223372036854775808", decode("k", "0000000000000000", ValueType::LONG));
-    EXPECT_EQ("k=9223372036854775807", decode("k", "ffffffffffffffff", ValueType::LONG));
+    EXPECT_EQ("k:5", decode("k", "8000000000000005", ValueType::LONG));
+    EXPECT_EQ("k:-2", decode("k", "7ffffffffffffffe", ValueType::LONG));
+    EXPECT_EQ("k:-9223372036854775808", decode("k", "0000000000000000", ValueType::LONG));
+    EXPECT_EQ("k:9223372036854775807", decode("k", "ffffffffffffffff", ValueType::LONG));
 }
 
 TEST(DecodeFastMapLookupNodeTest, float_values_are_decoded_from_excess_hex) {
-    EXPECT_EQ("k=0", decode("k", "80000000", ValueType::FLOAT));
-    EXPECT_EQ("k=-0", decode("k", "7fffffff", ValueType::FLOAT));
-    EXPECT_EQ("k=1", decode("k", "bf800000", ValueType::FLOAT));
-    EXPECT_EQ("k=-1.5", decode("k", "403fffff", ValueType::FLOAT));
-    EXPECT_EQ("k=inf", decode("k", "ff800000", ValueType::FLOAT));
-    EXPECT_EQ("k=-inf", decode("k", "007fffff", ValueType::FLOAT));
+    EXPECT_EQ("k:0", decode("k", "80000000", ValueType::FLOAT));
+    EXPECT_EQ("k:-0", decode("k", "7fffffff", ValueType::FLOAT));
+    EXPECT_EQ("k:1", decode("k", "bf800000", ValueType::FLOAT));
+    EXPECT_EQ("k:-1.5", decode("k", "403fffff", ValueType::FLOAT));
+    EXPECT_EQ("k:inf", decode("k", "ff800000", ValueType::FLOAT));
+    EXPECT_EQ("k:-inf", decode("k", "007fffff", ValueType::FLOAT));
 }
 
 TEST(DecodeFastMapLookupNodeTest, double_values_are_decoded_from_excess_hex) {
-    EXPECT_EQ("k=2.5", decode("k", "c004000000000000", ValueType::DOUBLE));
-    EXPECT_EQ("k=-0.25", decode("k", "402fffffffffffff", ValueType::DOUBLE));
-    EXPECT_EQ("k=0.1", decode("k", "bfb999999999999a", ValueType::DOUBLE));
+    EXPECT_EQ("k:2.5", decode("k", "c004000000000000", ValueType::DOUBLE));
+    EXPECT_EQ("k:-0.25", decode("k", "402fffffffffffff", ValueType::DOUBLE));
+    EXPECT_EQ("k:0.1", decode("k", "bfb999999999999a", ValueType::DOUBLE));
 }
 
 TEST(DecodeFastMapLookupNodeTest, string_values_and_numeric_keys_are_kept_as_is) {
-    EXPECT_EQ("k=some value", decode("k", "some value", ValueType::STRING));
-    EXPECT_EQ("k=", decode("k", "", ValueType::STRING));
-    EXPECT_EQ("42=7", decode("42", "80000007", ValueType::INT));
-    EXPECT_EQ("=7", decode("", "80000007", ValueType::INT));
+    EXPECT_EQ("k:some value", decode("k", "some value", ValueType::STRING));
+    EXPECT_EQ("k:", decode("k", "", ValueType::STRING));
+    EXPECT_EQ("42:7", decode("42", "80000007", ValueType::INT));
+    EXPECT_EQ(":7", decode("", "80000007", ValueType::INT));
+}
+
+TEST(DecodeFastMapLookupNodeTest, separator_between_key_and_value_can_be_given) {
+    EXPECT_EQ("k: 7", DecodeFastMapLookupNode::decode(entry("k", "80000007"), ValueType::INT, ": "));
+    EXPECT_EQ("k7", DecodeFastMapLookupNode::decode(entry("k", "80000007"), ValueType::INT, ""));
+    EXPECT_EQ("no separator", DecodeFastMapLookupNode::decode("no separator", ValueType::INT, ": "));
+}
+
+TEST(DecodeFastMapLookupNodeTest, separator_defaults_to_colon_and_can_be_set) {
+    EXPECT_EQ(":", DecodeFastMapLookupNode("m.lookup").getSeparator());
+    EXPECT_EQ(":", DecodeFastMapLookupNode().getSeparator());
+    EXPECT_EQ("=", DecodeFastMapLookupNode("m.lookup", "=").getSeparator());
+    DecodeFastMapLookupNode node("m.lookup");
+    EXPECT_EQ("->", node.setSeparator("->").getSeparator());
 }
 
 TEST(DecodeFastMapLookupNodeTest, malformed_entries_are_kept_undecoded) {
     EXPECT_EQ("no separator", DecodeFastMapLookupNode::decode("no separator", ValueType::INT));
-    EXPECT_EQ("k=8000007", decode("k", "8000007", ValueType::INT));
-    EXPECT_EQ("k=8000000x", decode("k", "8000000x", ValueType::INT));
-    EXPECT_EQ("k=80000000", decode("k", "80000000", ValueType::LONG));
-    EXPECT_EQ("k=80000000", decode("k", "80000000", ValueType::UNKNOWN));
+    EXPECT_EQ("k:8000007", decode("k", "8000007", ValueType::INT));
+    EXPECT_EQ("k:8000000x", decode("k", "8000000x", ValueType::INT));
+    EXPECT_EQ("k:80000000", decode("k", "80000000", ValueType::LONG));
+    EXPECT_EQ("k:80000000", decode("k", "80000000", ValueType::UNKNOWN));
 }
 
 TEST(DecodeFastMapLookupNodeTest, value_type_names_are_parsed) {
@@ -129,23 +143,25 @@ TEST(DecodeFastMapLookupNodeTest, configure_requires_matching_name_and_known_val
     EXPECT_THROW(malformed.configure(make_lookup("m", "lookup", "int")), std::runtime_error);
 }
 
-TEST(DecodeFastMapLookupNodeTest, only_name_is_serialized_but_copies_keep_value_type) {
-    DecodeFastMapLookupNode node("m.lookup");
+TEST(DecodeFastMapLookupNodeTest, name_and_separator_are_serialized_but_only_copies_keep_value_type) {
+    DecodeFastMapLookupNode node("m.lookup", ": ");
     node.configure(make_lookup("m", "lookup", "int"));
     DecodeFastMapLookupNode copy(node);
     EXPECT_EQ("m.lookup", copy.getName());
+    EXPECT_EQ(": ", copy.getSeparator());
     EXPECT_EQ(ValueType::INT, copy.getValueType());
 
     vespalib::nbostream     os;
     vespalib::NBOSerializer serializer(os);
     serializer << node;
-    // class id, no result yet, then the name as length and bytes: nothing about the hidden input
-    EXPECT_EQ(4u + 1u + 4u + 8u, os.size());
+    // class id, no result yet, then the name and separator as length and bytes: nothing about the hidden input
+    EXPECT_EQ(4u + 1u + 4u + 8u + 4u + 2u, os.size());
     auto deserialized = vespalib::Identifiable::create(serializer);
     ASSERT_TRUE(deserialized);
     auto* result = dynamic_cast<DecodeFastMapLookupNode*>(deserialized.get());
     ASSERT_NE(nullptr, result);
     EXPECT_EQ("m.lookup", result->getName());
+    EXPECT_EQ(": ", result->getSeparator());
     EXPECT_EQ(ValueType::UNKNOWN, result->getValueType());
 }
 
@@ -209,15 +225,22 @@ DecodeFastMapLookupNodeAttributeTest::~DecodeFastMapLookupNodeAttributeTest() = 
 
 TEST_F(DecodeFastMapLookupNodeAttributeTest, entries_of_hidden_attribute_are_decoded_per_document) {
     auto tree = make_tree(make_configured_node("m", "int"));
-    EXPECT_EQ((std::vector<std::string>{"a=1", "b=-1"}), values_of(tree, 1));
+    EXPECT_EQ((std::vector<std::string>{"a:1", "b:-1"}), values_of(tree, 1));
     EXPECT_EQ((std::vector<std::string>{}), values_of(tree, 2));
-    EXPECT_EQ((std::vector<std::string>{"c=0"}), values_of(tree, 3));
-    EXPECT_EQ((std::vector<std::string>{"a=1", "b=-1"}), values_of(tree, 1));
+    EXPECT_EQ((std::vector<std::string>{"c:0"}), values_of(tree, 3));
+    EXPECT_EQ((std::vector<std::string>{"a:1", "b:-1"}), values_of(tree, 1));
+}
+
+TEST_F(DecodeFastMapLookupNodeAttributeTest, entries_are_decoded_with_set_separator) {
+    auto node = make_configured_node("m", "int");
+    node->setSeparator(" -> ");
+    auto tree = make_tree(std::move(node));
+    EXPECT_EQ((std::vector<std::string>{"a -> 1", "b -> -1"}), values_of(tree, 1));
 }
 
 TEST_F(DecodeFastMapLookupNodeAttributeTest, string_values_are_decoded) {
     auto tree = make_tree(make_configured_node("s", "string"));
-    EXPECT_EQ((std::vector<std::string>{"x=hello"}), values_of(tree, 1));
+    EXPECT_EQ((std::vector<std::string>{"x:hello"}), values_of(tree, 1));
 }
 
 TEST_F(DecodeFastMapLookupNodeAttributeTest, deserialized_node_decodes_when_configured_again) {
@@ -230,7 +253,7 @@ TEST_F(DecodeFastMapLookupNodeAttributeTest, deserialized_node_decodes_when_conf
     EXPECT_THROW(make_tree(std::make_unique<DecodeFastMapLookupNode>(*node)), std::runtime_error);
     node->configure(make_lookup("m", "lookup", "int"));
     auto tree = make_tree(std::move(node));
-    EXPECT_EQ((std::vector<std::string>{"a=1", "b=-1"}), values_of(tree, 1));
+    EXPECT_EQ((std::vector<std::string>{"a:1", "b:-1"}), values_of(tree, 1));
 }
 
 TEST_F(DecodeFastMapLookupNodeAttributeTest, copy_of_configured_node_has_its_own_input) {
@@ -238,9 +261,9 @@ TEST_F(DecodeFastMapLookupNodeAttributeTest, copy_of_configured_node_has_its_own
     auto copy = std::make_unique<DecodeFastMapLookupNode>(*node);
     auto tree = make_tree(std::move(node));
     auto copy_tree = make_tree(std::move(copy));
-    EXPECT_EQ((std::vector<std::string>{"c=0"}), values_of(copy_tree, 3));
-    EXPECT_EQ((std::vector<std::string>{"a=1", "b=-1"}), values_of(tree, 1));
-    EXPECT_EQ((std::vector<std::string>{"c=0"}), values_of(copy_tree, 3));
+    EXPECT_EQ((std::vector<std::string>{"c:0"}), values_of(copy_tree, 3));
+    EXPECT_EQ((std::vector<std::string>{"a:1", "b:-1"}), values_of(tree, 1));
+    EXPECT_EQ((std::vector<std::string>{"c:0"}), values_of(copy_tree, 3));
 }
 
 TEST_F(DecodeFastMapLookupNodeAttributeTest, prepare_fails_without_configuration) {

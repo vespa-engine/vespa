@@ -19,6 +19,7 @@ import com.yahoo.searchlib.aggregation.SumAggregationResult;
 import com.yahoo.searchlib.expression.AddFunctionNode;
 import com.yahoo.searchlib.expression.AndPredicateNode;
 import com.yahoo.searchlib.expression.AttributeMapLookupNode;
+import com.yahoo.searchlib.expression.DecodeFastMapLookupNode;
 import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
@@ -736,6 +737,19 @@ public class RequestBuilderTestCase {
         test.expectedOutput = AttributeMapLookupNode.fromKeySourceAttribute("map{attribute(key_source)}", "map.key", "map.value", "key_source").toString();
         test.request = "all(group(map{attribute(key_source)}) each(output(count())))";
         test.outputWriter = (groupingList, transform) -> groupingList.get(0).getLevels().get(0).getExpression().toString();
+        assertOutput(test);
+    }
+
+    @Test
+    void requireThatDecodeFastMapLookupNodeIsCreated() {
+        RequestTest test = new RequestTest();
+        test.expectedOutput = new DecodeFastMapLookupNode("map.lookup").toString();
+        test.request = "all(group(decodefastmaplookup(map.lookup)) each(output(count())))";
+        test.outputWriter = (groupingList, transform) -> groupingList.get(0).getLevels().get(0).getExpression().toString();
+        assertOutput(test);
+
+        test.expectedOutput = new DecodeFastMapLookupNode("map.lookup", ": ").toString();
+        test.request = "all(group(decodefastmaplookup(map.lookup, \": \")) each(output(count())))";
         assertOutput(test);
     }
 

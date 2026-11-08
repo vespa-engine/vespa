@@ -777,7 +777,7 @@ TEST(GroupingTest, decode_fast_map_lookup_nodes_are_configured_from_fast_map_loo
     GroupingManager manager(context);
     manager.init(world.attributeContext, nullptr);
     ASSERT_EQ(1u, context.getGroupingList().size());
-    std::map<std::string, int64_t> expected{{"a=1", 3}, {"b=-1", 1}};
+    std::map<std::string, int64_t> expected{{"a:1", 3}, {"b:-1", 1}};
     EXPECT_EQ(expected, FastMapWorld::group(context));
 }
 
@@ -792,7 +792,7 @@ TEST(GroupingTest, decode_fast_map_lookup_nodes_are_configured_in_thread_context
     // The second thread context is deserialized, which drops the value type, and must be configured again.
     auto ctx1 = session.createThreadContext(1, world.attributeContext, nullptr);
     ASSERT_EQ(1u, ctx1->getGroupingList().size());
-    std::map<std::string, int64_t> expected{{"a=1", 3}, {"b=-1", 1}};
+    std::map<std::string, int64_t> expected{{"a:1", 3}, {"b:-1", 1}};
     EXPECT_EQ(expected, FastMapWorld::group(*ctx1));
 }
 

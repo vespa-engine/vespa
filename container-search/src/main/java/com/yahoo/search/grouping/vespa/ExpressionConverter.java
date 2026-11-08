@@ -23,6 +23,7 @@ import com.yahoo.search.grouping.request.DayOfMonthFunction;
 import com.yahoo.search.grouping.request.DayOfWeekFunction;
 import com.yahoo.search.grouping.request.DayOfYearFunction;
 import com.yahoo.search.grouping.request.DebugWaitFunction;
+import com.yahoo.search.grouping.request.DecodeFastMapLookupFunction;
 import com.yahoo.search.grouping.request.DivFunction;
 import com.yahoo.search.grouping.request.DocIdNsSpecificValue;
 import com.yahoo.search.grouping.request.DoubleValue;
@@ -124,6 +125,7 @@ import com.yahoo.searchlib.expression.BucketResultNode;
 import com.yahoo.searchlib.expression.CatFunctionNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.DebugWaitFunctionNode;
+import com.yahoo.searchlib.expression.DecodeFastMapLookupNode;
 import com.yahoo.searchlib.expression.DivideFunctionNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FilterExpressionNode;
@@ -350,6 +352,9 @@ class ExpressionConverter {
             return new DebugWaitFunctionNode(toExpressionNode(waitFunction.getArg(0)),
                                              waitFunction.getWaitTime(),
                                              waitFunction.getBusyWait());
+        }
+        if (exp instanceof DecodeFastMapLookupFunction function) {
+            return new DecodeFastMapLookupNode(function.getName(), function.getSeparator());
         }
         if (exp instanceof DocIdNsSpecificValue) {
             return new GetDocIdNamespaceSpecificFunctionNode();

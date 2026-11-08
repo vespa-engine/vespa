@@ -3159,6 +3159,26 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.DecodeFastMapLookupFunction" : {
+    "superClass" : "com.yahoo.search.grouping.request.DocumentValue",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
+      "public com.yahoo.search.grouping.request.DecodeFastMapLookupFunction copy()",
+      "public java.lang.String getFieldName()",
+      "public java.lang.String getLookupName()",
+      "public java.lang.String getName()",
+      "public java.lang.String getSeparator()",
+      "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [
+      "public static final java.lang.String DEFAULT_SEPARATOR"
+    ]
+  },
   "com.yahoo.search.grouping.request.DivFunction" : {
     "superClass" : "com.yahoo.search.grouping.request.FunctionNode",
     "interfaces" : [ ],

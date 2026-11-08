@@ -211,6 +211,35 @@ public class GroupingValidatorTestCase {
         }
     }
 
+    @Test
+    void available_fast_map_lookup_does_not_throw() {
+        validateGrouping(createFastMapLookupConfig(), "all(group(decodefastmaplookup(map.lookup)) each(output(count())))");
+        validateGrouping(createFastMapLookupConfig(), "all(group(decodefastmaplookup(map.lookup, \": \")) each(output(count())))");
+    }
+
+    @Test
+    void unavailable_fast_map_lookup_throws() {
+        try {
+            validateGrouping(createFastMapLookupConfig(), "all(group(decodefastmaplookup(map.other)) each(output(count())))");
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Grouping request references fast map lookup 'map.other' which is not available in cluster 'myCluster'.",
+                         e.getMessage());
+        }
+    }
+
+    private static AttributesConfig createFastMapLookupConfig() {
+        var builder = new AttributesConfig.Builder();
+        builder.attribute(new AttributesConfig.Attribute.Builder().name("map$lookup")
+                                  .datatype(AttributesConfig.Attribute.Datatype.STRING)
+                                  .collectiontype(AttributesConfig.Attribute.Collectiontype.ARRAY));
+        builder.fastMapLookups(new AttributesConfig.FastMapLookups.Builder()
+                                       .fieldName("map").lookupName("lookup")
+                                       .keyField("key").keyType("string")
+                                       .valueField("value").valueType("int"));
+        return new AttributesConfig(builder);
+    }
+
     private static AttributesConfig setupMismatchingKeySourceAttribute(boolean matchingDataType) {
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
         builder.attribute(new AttributesConfig.Attribute.Builder().name("map.key")

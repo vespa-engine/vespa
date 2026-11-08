@@ -3,6 +3,7 @@ package com.yahoo.search.grouping.request.parser;
 
 import com.yahoo.search.grouping.request.AllOperation;
 import com.yahoo.search.grouping.request.AttributeMapLookupValue;
+import com.yahoo.search.grouping.request.DecodeFastMapLookupFunction;
 import com.yahoo.search.grouping.request.EachOperation;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.grouping.request.LongValue;
@@ -58,6 +59,29 @@ public class GroupingParserTestCase {
     }
 
     @Test
+    void testDecodeFastMapLookupFunction() {
+        assertParse("all(group(decodefastmaplookup(map.lookup)) each(output(count())))");
+        assertParse("all(group(decodefastmaplookup(map.lookup, \":\")))", "all(group(decodefastmaplookup(map.lookup)))");
+        assertParse("all(group(decodefastmaplookup(map.lookup, \"=\")))");
+        assertParse("all(group(decodefastmaplookup(map.lookup, \": \")))");
+        assertParse("all(group(decodefastmaplookup(map.lookup, \"\")))");
+        assertParse("all(group(decodefastmaplookup(a.b.lookup)))");
+        assertParse("all(group(decodefastmaplookup(map.lookup)) order(-count()) each(each(output(summary()))))");
+
+        var grouping = (DecodeFastMapLookupFunction) GroupingOperation.fromString(
+                "all(group(decodefastmaplookup(a.b.lookup, \": \")))").getGroupBy();
+        assertEquals("a.b", grouping.getFieldName());
+        assertEquals("lookup", grouping.getLookupName());
+        assertEquals("a.b.lookup", grouping.getName());
+        assertEquals(": ", grouping.getSeparator());
+
+        assertIllegalArgument("all(group(decodefastmaplookup(map)))",
+                              "Encountered \" \")\" \")\"\" at line 1, column 34.");
+        assertIllegalArgument("all(group(decodefastmaplookup(map.lookup, 7)))",
+                              "Encountered \" <INTEGER> \"7\"\" at line 1, column 43.");
+    }
+
+    @Test
     void testAttributeFunctions() {
         assertParse("all(group(foo) each(output(sum(attribute(bar)))))",
                 "all(group(foo) each(output(sum(attribute(bar)))))");
@@ -94,6 +118,7 @@ public class GroupingParserTestCase {
                 "cosh",
                 "count",
                 "debugwait",
+                "decodefastmaplookup",
                 "div",
                 "docidnsspecific",
                 "each",

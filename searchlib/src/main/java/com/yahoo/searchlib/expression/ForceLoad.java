@@ -79,7 +79,8 @@ public class ForceLoad {
                 "XorBitFunctionNode",
                 "MultiArgFunctionNode",
                 "DebugWaitFunctionNode",
-                "PositionDocumentFieldNode"
+                "PositionDocumentFieldNode",
+                "DecodeFastMapLookupNode"
         };
         com.yahoo.system.ForceLoad.forceLoad(pkg, classes,
                                              ForceLoad.class.getClassLoader());

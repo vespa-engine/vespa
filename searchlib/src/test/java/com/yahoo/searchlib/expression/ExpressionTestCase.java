@@ -231,6 +231,40 @@ public class ExpressionTestCase {
     }
 
     @Test
+    public void testDecodeFastMapLookupNode() {
+        try {
+            new DecodeFastMapLookupNode(null);
+            fail("Should not be able to set null name.");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+        try {
+            new DecodeFastMapLookupNode("map.lookup", null);
+            fail("Should not be able to set null separator.");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+        DecodeFastMapLookupNode a = new DecodeFastMapLookupNode("map.lookup");
+        assertEquals("map.lookup", a.getName());
+        assertEquals(":", a.getSeparator());
+        DecodeFastMapLookupNode b = (DecodeFastMapLookupNode)assertSerialize(a);
+        assertEquals("map.lookup", b.getName());
+        assertEquals(":", b.getSeparator());
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+        assertNotEquals(a, new DecodeFastMapLookupNode("map.other"));
+        assertNotEquals(a, new AttributeNode("map.lookup"));
+
+        DecodeFastMapLookupNode c = new DecodeFastMapLookupNode("map.lookup", ": ");
+        assertEquals(": ", c.getSeparator());
+        assertNotEquals(a, c);
+        assertEquals(c, new DecodeFastMapLookupNode("map.lookup").setSeparator(": "));
+        DecodeFastMapLookupNode d = (DecodeFastMapLookupNode)assertSerialize(c);
+        assertEquals(": ", d.getSeparator());
+        assertEquals(c, d);
+    }
+
+    @Test
     public void testAttributeMapLookupNode() {
         assertEquals(AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "my_key"),
                      AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "my_key"));

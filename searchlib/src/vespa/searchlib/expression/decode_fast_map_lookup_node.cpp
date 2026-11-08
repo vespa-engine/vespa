@@ -107,17 +107,18 @@ std::string toLookupAttributeName(const std::string& name) {
 } // namespace
 
 DecodeFastMapLookupNode::DecodeFastMapLookupNode() noexcept
-    : FunctionNode(), _name(), _valueType(ValueType::UNKNOWN), _input() {
+    : FunctionNode(), _name(), _separator(default_separator), _valueType(ValueType::UNKNOWN), _input() {
 }
 
-DecodeFastMapLookupNode::DecodeFastMapLookupNode(std::string_view name)
-    : FunctionNode(), _name(name), _valueType(ValueType::UNKNOWN), _input() {
+DecodeFastMapLookupNode::DecodeFastMapLookupNode(std::string_view name, std::string_view separator)
+    : FunctionNode(), _name(name), _separator(separator), _valueType(ValueType::UNKNOWN), _input() {
     createInput();
 }
 
 DecodeFastMapLookupNode::DecodeFastMapLookupNode(const DecodeFastMapLookupNode& rhs)
     : FunctionNode(rhs),
       _name(rhs._name),
+      _separator(rhs._separator),
       _valueType(rhs._valueType),
       _input(rhs._input ? std::make_unique<AttributeNode>(*rhs._input) : nullptr) {
 }
@@ -126,6 +127,7 @@ DecodeFastMapLookupNode& DecodeFastMapLookupNode::operator=(const DecodeFastMapL
     if (this != &rhs) {
         FunctionNode::operator=(rhs);
         _name = rhs._name;
+        _separator = rhs._separator;
         _valueType = rhs._valueType;
         _input = rhs._input ? std::make_unique<AttributeNode>(*rhs._input) : nullptr;
     }
@@ -162,7 +164,8 @@ std::string DecodeFastMapLookupNode::lookupAttributeName() const {
     return attributeName;
 }
 
-std::string DecodeFastMapLookupNode::decode(std::string_view encoded, ValueType valueType) {
+std::string DecodeFastMapLookupNode::decode(std::string_view encoded, ValueType valueType,
+                                            std::string_view separator) {
     auto pos = encoded.find(encoded_separator);
     if (pos == std::string_view::npos) {
         return std::string(encoded);
@@ -174,8 +177,8 @@ std::string DecodeFastMapLookupNode::decode(std::string_view encoded, ValueType 
         decoded = value;
     }
     std::string result;
-    result.reserve(key.size() + decoded_separator.size() + decoded.size());
-    result.append(key).append(decoded_separator).append(decoded);
+    result.reserve(key.size() + separator.size() + decoded.size());
+    result.append(key).append(separator).append(decoded);
     return result;
 }
 
@@ -210,7 +213,7 @@ void DecodeFastMapLookupNode::onExecute() const {
     auto&       decoded = static_cast<StringResultNodeVector&>(updateResult()).getVector();
     decoded.resize(encoded.size());
     for (size_t i = 0; i < encoded.size(); ++i) {
-        decoded[i].set(decode(encoded[i].get(), _valueType));
+        decoded[i].set(decode(encoded[i].get(), _valueType, _separator));
     }
 }
 
@@ -225,12 +228,12 @@ void DecodeFastMapLookupNode::selectMembers(const vespalib::ObjectPredicate& pre
 
 Serializer& DecodeFastMapLookupNode::onSerialize(Serializer& os) const {
     FunctionNode::onSerialize(os);
-    return os << _name;
+    return os << _name << _separator;
 }
 
 Deserializer& DecodeFastMapLookupNode::onDeserialize(Deserializer& is) {
     FunctionNode::onDeserialize(is);
-    is >> _name;
+    is >> _name >> _separator;
     createInput();
     return is;
 }
@@ -238,6 +241,7 @@ Deserializer& DecodeFastMapLookupNode::onDeserialize(Deserializer& is) {
 void DecodeFastMapLookupNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
     FunctionNode::visitMembers(visitor);
     visit(visitor, "name", _name);
+    visit(visitor, "separator", _separator);
     visit(visitor, "valueType", std::string(toString(_valueType)));
 }
 
