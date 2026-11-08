@@ -1,6 +1,10 @@
 // Copyright Vespa.ai. Licensed under the Apache License, Version 2.0.
 package ai.vespa.triton;
 
+import ai.onnxruntime.NodeInfo;
+import ai.onnxruntime.OrtEnvironment;
+import ai.onnxruntime.OrtSession;
+import ai.onnxruntime.TensorInfo;
 import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.BatchDimensionTestModels;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
@@ -9,7 +13,10 @@ import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import com.google.protobuf.TextFormat;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.tensor.TensorType;
+import inference.ModelConfigOuterClass.DataType;
 import inference.ModelConfigOuterClass.ModelConfig;
+import inference.ModelConfigOuterClass.ModelInput;
+import inference.ModelConfigOuterClass.ModelOutput;
 import inference.ModelConfigOuterClass.ModelInstanceGroup.Kind;
 import onnx.Onnx;
 import org.junit.jupiter.api.Test;
@@ -21,6 +28,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,14 +64,16 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 class TritonOnnxRuntimeDefaultsTest {
 
     private static final String MODEL_PATH = "src/test/models/onnx/transformer/dummy_transformer.onnx";
-    private static final String REJECTS_BATCHING = "Failed loading model: failed to load 'model' version 1: Invalid argument: " +
-            "autofill failed for model 'model': model does not support batching while non-zero max_batch_size is specified";
+    // The message Triton 26.09 returns.
+    private static final String REJECTS_BATCHING = "INVALID_ARGUMENT: load failed for model 'model': version 1 is at UNAVAILABLE state: " +
+            "Invalid argument: autofill failed for model 'model': model does not support batching while non-zero max_batch_size is specified;";
 
     private static final boolean SHARED_SESSION = true;
     private static final boolean SEPARATE_SESSIONS = false;
 
+    // Options as embedders build them. Tests of other models set firstDimensionIsBatch to false.
     private static OnnxEvaluatorOptions.Builder options(int cpuCores) {
-        return new OnnxEvaluatorOptions.Builder(cpuCores);
+        return new OnnxEvaluatorOptions.Builder(cpuCores).setFirstDimensionIsBatch(true);
     }
 
     private static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options) {
@@ -79,6 +89,69 @@ class TritonOnnxRuntimeDefaultsTest {
         assertFalse(shouldPadForBatching(float32, options(16).setGpuDevice(0).build()), "Should not pad without batching");
         assertFalse(shouldPadForBatching(float32, options(16).setBatchingMaxSize(0).setGpuDevice(0).build()), "Should not pad without batching");
         assertTrue(shouldPadForBatching("not-a-local-file", options(16).setBatchingMaxSize(8).setGpuDevice(0).build()));
+    }
+
+    // Triton loads a model config that specifies inputs and outputs only if they match the shapes ONNX Runtime reports.
+    // The test therefore checks the specified shapes against a real ONNX Runtime session.
+    @Test
+    void specifies_inputs_and_outputs_with_the_shapes_onnx_runtime_reports(@TempDir Path directory) throws Exception {
+        for (var testCase : BatchDimensionTestModels.cases()) {
+            var model = Files.write(directory.resolve(testCase.name() + ".onnx"), testCase.model().toByteArray()).toString();
+            var specified = TritonOnnxRuntime.declaredInputsAndOutputs(model);
+            // An input or output without a declared shape cannot be specified.
+            if (testCase.name().startsWith("unshaped_")) {
+                assertTrue(specified.isEmpty(), testCase.name());
+                continue;
+            }
+            try (var options = new OrtSession.SessionOptions();
+                 var session = OrtEnvironment.getEnvironment().createSession(model, options)) {
+                var inputShapes = new TreeMap<String, List<Long>>();
+                specified.orElseThrow().getInputList().forEach(input -> inputShapes.put(input.getName(), input.getDimsList()));
+                var outputShapes = new TreeMap<String, List<Long>>();
+                specified.orElseThrow().getOutputList().forEach(output -> outputShapes.put(output.getName(), output.getDimsList()));
+                assertEquals(onnxRuntimeShapes(session.getInputInfo()), inputShapes, testCase.name());
+                assertEquals(onnxRuntimeShapes(session.getOutputInfo()), outputShapes, testCase.name());
+            }
+        }
+    }
+
+    @Test
+    void specifies_the_element_types_as_triton_names_them(@TempDir Path directory) throws IOException {
+        var model = Files.write(directory.resolve("cross_encoder.onnx"),
+                                BatchDimensionTestModels.crossEncoder(true).toByteArray()).toString();
+        var specified = TritonOnnxRuntime.declaredInputsAndOutputs(model).orElseThrow();
+        assertEquals(List.of(DataType.TYPE_INT64, DataType.TYPE_INT64),
+                     specified.getInputList().stream().map(ModelInput::getDataType).toList());
+        assertEquals(List.of(DataType.TYPE_FP32), specified.getOutputList().stream().map(ModelOutput::getDataType).toList());
+        assertTrue(TritonOnnxRuntime.declaredInputsAndOutputs("not-a-local-file").isEmpty());
+
+        // An element type newer than the ONNX protobuf definition in Vespa cannot be specified.
+        var unknownType = Onnx.ModelProto.newBuilder().setGraph(Onnx.GraphProto.newBuilder()
+                .addInput(valueInfo("x", 99)).addOutput(valueInfo("y", 1))).build();
+        var unknownTypeModel = Files.write(directory.resolve("unknown_type.onnx"), unknownType.toByteArray()).toString();
+        assertTrue(TritonOnnxRuntime.declaredInputsAndOutputs(unknownTypeModel).isEmpty());
+    }
+
+    // A model config without inputs does not stop Triton's auto-complete from replacing max batch size 0.
+    @Test
+    void specifies_nothing_for_a_model_whose_only_input_is_an_initializer(@TempDir Path directory) throws IOException {
+        var onlyInitializer = Onnx.ModelProto.newBuilder().setGraph(Onnx.GraphProto.newBuilder()
+                .addInput(valueInfo("w", 1)).addOutput(valueInfo("y", 1))
+                .addInitializer(Onnx.TensorProto.newBuilder().setName("w").setDataType(1).addDims(1).addFloatData(1))).build();
+        var model = Files.write(directory.resolve("only_initializer.onnx"), onlyInitializer.toByteArray()).toString();
+        assertTrue(TritonOnnxRuntime.declaredInputsAndOutputs(model).isEmpty());
+    }
+
+    private static Onnx.ValueInfoProto valueInfo(String name, int elemType) {
+        return Onnx.ValueInfoProto.newBuilder().setName(name).setType(Onnx.TypeProto.newBuilder().setTensorType(
+                Onnx.TypeProto.Tensor.newBuilder().setElemType(elemType).setShape(Onnx.TensorShapeProto.newBuilder()
+                        .addDim(Onnx.TensorShapeProto.Dimension.newBuilder().setDimParam("batch"))))).build();
+    }
+
+    private static Map<String, List<Long>> onnxRuntimeShapes(Map<String, NodeInfo> infos) {
+        var shapes = new TreeMap<String, List<Long>>();
+        infos.forEach((name, info) -> shapes.put(name, Arrays.stream(((TensorInfo) info.getInfo()).getShape()).boxed().toList()));
+        return shapes;
     }
 
     @Test
@@ -325,6 +398,67 @@ class TritonOnnxRuntimeDefaultsTest {
             assertTrue(TritonOnnxRuntime.declaresBatchDimension(model));
         } finally {
             runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void models_whose_first_dimension_is_not_a_batch_load_with_max_batch_size_0(@TempDir Path directory) throws IOException {
+        var model = Files.write(directory.resolve("pairwise_similarity.onnx"),
+                                BatchDimensionTestModels.pairwiseSimilarity().toByteArray()).toString();
+        var options = options(8).setFirstDimensionIsBatch(false).build();
+        var name = TritonOnnxRuntime.generateModelName(model, resolveInstanceCount(options, true), true, Optional.empty());
+        var repository = directory.resolve("repository");
+        var client = mock(TritonOnnxClient.class);
+        var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), client);
+        try (var evaluator = runtime.evaluatorOf(model, options)) {
+            var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
+            assertEquals(0, config.getMaxBatchSize());
+            assertEquals(1, config.getInputCount());
+            assertEquals(1, config.getOutputCount());
+            assertFalse(config.hasDynamicBatching());
+            assertEquals(Optional.of(false), runtime.supportsBatching(name));
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    // Max batch size 1 rejects requests with more than one row, so only a rejected config falls back to it.
+    // Other errors, such as Triton being unavailable, fail the load.
+    @Test
+    void models_whose_first_dimension_is_not_a_batch_fall_back_only_when_triton_rejects_the_config(@TempDir Path directory)
+            throws IOException {
+        var model = Files.write(directory.resolve("pairwise_similarity.onnx"),
+                                BatchDimensionTestModels.pairwiseSimilarity().toByteArray()).toString();
+        var options = options(8).setFirstDimensionIsBatch(false).build();
+        var name = TritonOnnxRuntime.generateModelName(model, resolveInstanceCount(options, true), true, Optional.empty());
+        var rejectsSpecifiedInputsAndOutputs = "INVALID_ARGUMENT: load failed for model 'model': version 1 is at UNAVAILABLE state: " +
+                "Invalid argument: unable to load model 'model', configuration expects datatype TYPE_FP16 for input 'documents', " +
+                "model provides TYPE_FP32;";
+        for (var error : List.of(rejectsSpecifiedInputsAndOutputs, "UNAVAILABLE: io exception: Connection refused")) {
+            var repository = directory.resolve("repository-" + error.hashCode());
+            var client = mock(TritonOnnxClient.class);
+            doThrow(new TritonOnnxClient.TritonException(error)).doNothing().when(client).loadUntilModelReady(name);
+            var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
+                    .modelRepositoryPath(repository.toString()).shareOnnxSessionBetweenInstances(true).build(), client);
+            try {
+                if (error.equals(rejectsSpecifiedInputsAndOutputs)) {
+                    try (var evaluator = runtime.evaluatorOf(model, options)) {
+                        verify(client, times(2)).loadUntilModelReady(name);
+                        var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")),
+                                                      ModelConfig.class);
+                        assertEquals(1, config.getMaxBatchSize());
+                        assertEquals(0, config.getInputCount());
+                        assertFalse(config.hasDynamicBatching());
+                        assertEquals(Optional.of(true), runtime.supportsBatching(name));
+                    }
+                } else {
+                    assertThrows(TritonOnnxClient.TritonException.class, () -> runtime.evaluatorOf(model, options));
+                    verify(client, times(1)).loadUntilModelReady(name);
+                }
+            } finally {
+                runtime.deconstruct();
+            }
         }
     }
 

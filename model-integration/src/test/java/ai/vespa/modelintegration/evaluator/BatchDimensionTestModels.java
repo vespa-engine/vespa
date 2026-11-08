@@ -34,6 +34,7 @@ public class BatchDimensionTestModels {
                 // From IR version 4, such an initializer is a default that a request may override
                 new Case("initializer_input_ir8", matMulWithInitializerAsInput(8, 13), true),
                 new Case("cross_encoder", crossEncoder(true), true),
+                new Case("pairwise_similarity", pairwiseSimilarity(), true),
 
                 new Case("fixed_one", identity(tensor("x", 1, 3), tensor("y", 1, 3)), false),
                 new Case("fixed_eight", identity(tensor("x", 8, 3), tensor("y", 8, 3)), false),
@@ -99,6 +100,22 @@ public class BatchDimensionTestModels {
                 .addInput(tensorOfType("input_ids", 7, tokens))
                 .addInput(tensorOfType("attention_mask", 7, tokens))
                 .addOutput(tensorOfType("logits", 1, logits));
+        return model(graph, 8, 13);
+    }
+
+    /**
+     * A model that compares every row with every other row: documents [batch, 4] -> similarity [batch, batch].
+     * Its first dimension is named batch, but it is not a batch,
+     * since each output row depends on all input rows.
+     */
+    public static Onnx.ModelProto pairwiseSimilarity() {
+        var graph = Onnx.GraphProto.newBuilder()
+                .addNode(Onnx.NodeProto.newBuilder().setOpType("Transpose").addInput("documents").addOutput("transposed")
+                                 .addAttribute(Onnx.AttributeProto.newBuilder().setName("perm").addInts(1).addInts(0)
+                                                       .setType(Onnx.AttributeProto.AttributeType.INTS)))
+                .addNode(node("MatMul", "documents", "transposed", "similarity"))
+                .addInput(tensor("documents", "batch", 4))
+                .addOutput(tensor("similarity", "batch", "batch"));
         return model(graph, 8, 13);
     }
 

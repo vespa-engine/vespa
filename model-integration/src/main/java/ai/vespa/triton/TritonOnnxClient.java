@@ -227,8 +227,8 @@ public class TritonOnnxClient implements AutoCloseable {
                     return;
                 }
             } catch (TritonException | TimeoutException e) {
-                // Triton rejects batching for a model the same way on every attempt.
-                if (e instanceof TritonException tritonException && isBatchingRejection(tritonException)) {
+                // Triton rejects a config the same way on every attempt.
+                if (e instanceof TritonException tritonException && isConfigRejection(tritonException)) {
                     throw tritonException;
                 }
                 lastException = e;
@@ -253,10 +253,20 @@ public class TritonOnnxClient implements AutoCloseable {
      * Returns whether the error is Triton's ONNX Runtime backend refusing to load a model with a non-zero max batch size,
      * since an input or output of the model has no batch dimension.
      * Only Triton's auto-complete reports this error.
-     * The configs that TritonOnnxRuntime generates list no inputs or outputs, so they need auto-complete anyway.
+     * TritonOnnxRuntime specifies the inputs and outputs only in model configs with max batch size 0,
+     * so the others need auto-complete.
      */
     public static boolean isBatchingRejection(TritonException e) {
         return Exceptions.toMessageString(e).contains("does not support batching while non-zero max_batch_size");
+    }
+
+    /**
+     * Returns whether the error is Triton refusing to load a model with its config, such as rejecting batching
+     * or inputs and outputs specified in the model config that are not matching the model.
+     * Triton reports a model file that is missing or partly written with other errors, which a retry may fix.
+     */
+    public static boolean isConfigRejection(TritonException e) {
+        return Exceptions.toMessageString(e).contains("UNAVAILABLE state: Invalid argument:");
     }
 
     /**

@@ -30,8 +30,16 @@ public class OnnxEvaluatorOptionsTest {
         assertEquals(2, options.intraOpThreads());
         assertEquals(2, options.gpuDeviceNumber());
         assertEquals(1, options.batchingMaxSize());
+        assertTrue(options.firstDimensionIsBatch());
         assertTrue(options.numModelInstances().isEmpty());
         assertTrue(options.modelConfigOverride().isEmpty());
+    }
+
+    @Test
+    public void only_embedder_config_sets_first_dimension_is_batch() {
+        assertFalse(OnnxEvaluatorOptions.createDefault().firstDimensionIsBatch());
+        assertFalse(new OnnxEvaluatorOptions.Builder(16).build().firstDimensionIsBatch());
+        assertTrue(OnnxEvaluatorOptions.of(new OnnxEvaluatorConfig.Builder().build(), 8).firstDimensionIsBatch());
     }
 
     @Test
@@ -82,24 +90,34 @@ public class OnnxEvaluatorOptionsTest {
     }
 
     @Test
+    public void padding_and_runtime_pooling_need_first_dimension_is_batch() {
+        var builder = new OnnxEvaluatorOptions.Builder(16).setFirstDimensionIsBatch(false);
+        assertThrows(IllegalArgumentException.class,
+                     () -> builder.setPadding(Optional.of(OnnxPadderOptions.of(List.of(8, 16)))).build());
+        builder.setPadding(Optional.empty());
+        assertThrows(IllegalArgumentException.class,
+                     () -> builder.setRuntimePooling(Optional.of(new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "output", "attention_mask"))).build());
+    }
+
+    @Test
     public void optional_components_cannot_be_null() {
         var options = OnnxEvaluatorOptions.createDefault();
         assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
                 options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
                 options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
-                options.batchingMaxSize(), options.numModelInstances(), options.modelConfigOverride(), options.padding(), null, options.availableProcessors()));
+                options.batchingMaxSize(), options.firstDimensionIsBatch(), options.numModelInstances(), options.modelConfigOverride(), options.padding(), null, options.availableProcessors()));
         assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
                 options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
                 options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
-                options.batchingMaxSize(), null, options.modelConfigOverride(), options.padding(), options.runtimePooling(), options.availableProcessors()));
+                options.batchingMaxSize(), options.firstDimensionIsBatch(), null, options.modelConfigOverride(), options.padding(), options.runtimePooling(), options.availableProcessors()));
         assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
                 options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
                 options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
-                options.batchingMaxSize(), options.numModelInstances(), null, options.padding(), options.runtimePooling(), options.availableProcessors()));
+                options.batchingMaxSize(), options.firstDimensionIsBatch(), options.numModelInstances(), null, options.padding(), options.runtimePooling(), options.availableProcessors()));
         assertThrows(NullPointerException.class, () -> new OnnxEvaluatorOptions(
                 options.executionMode(), options.interOpThreads(), options.intraOpThreads(),
                 options.gpuDeviceNumber(), options.gpuDeviceRequired(), options.optimizeModel(),
-                options.batchingMaxSize(), options.numModelInstances(), options.modelConfigOverride(), null, options.runtimePooling(), options.availableProcessors()));
+                options.batchingMaxSize(), options.firstDimensionIsBatch(), options.numModelInstances(), options.modelConfigOverride(), null, options.runtimePooling(), options.availableProcessors()));
     }
 
     @Test

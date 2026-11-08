@@ -58,7 +58,8 @@ class EmbeddedOnnxRuntimeTest {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
         var runtime = EmbeddedOnnxRuntime.createTestInstance();
         String model = "src/test/models/onnx/simple/simple.onnx";
-        var padding = new OnnxEvaluatorOptions.Builder().setPadding(Optional.of(OnnxPadderOptions.of(List.of(16)))).build();
+        var padding = new OnnxEvaluatorOptions.Builder()
+                .setFirstDimensionIsBatch(true).setPadding(Optional.of(OnnxPadderOptions.of(List.of(16)))).build();
         var evaluator1 = runtime.evaluatorOf(model, padding);
         var evaluator2 = runtime.evaluatorOf(model, padding.withMaxTokens(8));
         var evaluator3 = runtime.evaluatorOf(model, OnnxEvaluatorOptions.createDefault());

@@ -58,8 +58,9 @@ class TritonOnnxRuntimeTest {
     private static final String MASKED_MODEL_PATH = "src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx";
 
     private static TritonServerContainer tritonContainer;
+    // Options as embedders build them. Tests of other models set firstDimensionIsBatch to false.
     private final OnnxEvaluatorOptions.Builder optsBuilder =
-            new OnnxEvaluatorOptions.Builder(8).setOptimizeModel(true);
+            new OnnxEvaluatorOptions.Builder(8).setOptimizeModel(true).setFirstDimensionIsBatch(true);
 
     // Used by most of the test. Some use their own.
     @BeforeAll
@@ -513,13 +514,14 @@ class TritonOnnxRuntimeTest {
         }
     }
 
-    // Global-phase ranking evaluates a cross-encoder in the container, with options without batching or padding.
+    // Global-phase ranking evaluates a cross-encoder in the container through ModelsEvaluator,
+    // with options without batching or padding, whose first dimension is not a batch.
     @Test
     void rerankers_score_the_same_as_with_the_embedded_runtime(@TempDir Path directory) throws Exception {
         var inputs = Map.of("input_ids", Tensor.from("tensor(d0[1],d1[8]):[[1, 2, 3, 4, 5, 0, 0, 0]]"),
                             "attention_mask", Tensor.from("tensor(d0[1],d1[8]):[[1, 1, 1, 1, 1, 0, 0, 0]]"));
         var runtime = createRuntime();
-        var opts = optsBuilder.build();
+        var opts = optsBuilder.setFirstDimensionIsBatch(false).build();
         try {
             for (var withBatchDimension : new boolean[] {true, false}) {
                 var model = Files.write(directory.resolve("cross_encoder_" + withBatchDimension + ".onnx"),
@@ -532,12 +534,71 @@ class TritonOnnxRuntimeTest {
                     var actual = evaluator.evaluate(inputs, "logits");
                     assertEquals(expected.type(), actual.type(), model);
                     assertEquals(expected.sum().asDouble(), actual.sum().asDouble(), 1e-6, model);
-                    assertEquals(withBatchDimension ? 1 : 0, maxBatchSizeInTriton(modelName(model, opts)), model);
+                    assertEquals(0, maxBatchSizeInTriton(modelName(model, opts)), model);
                 }
             }
         } finally {
             runtime.deconstruct();
         }
+    }
+
+    // A pairwise similarity model takes all rows as one input to one inference call.
+    // With max batch size 0, Triton takes any number of rows. With 1, it rejects more than one row.
+    @Test
+    void models_whose_first_dimension_is_not_a_batch_take_any_number_of_rows(@TempDir Path directory) throws Exception {
+        var model = Files.write(directory.resolve("pairwise_similarity.onnx"),
+                                BatchDimensionTestModels.pairwiseSimilarity().toByteArray()).toString();
+        var runtime = createRuntime();
+        var unbatched = optsBuilder.setFirstDimensionIsBatch(false).build();
+        var batched = optsBuilder.setFirstDimensionIsBatch(true).build();
+        try (var embedded = EmbeddedOnnxRuntime.createTestInstance().evaluatorOf(model)) {
+            try (var evaluator = runtime.evaluatorOf(model, unbatched)) {
+                for (var rows : new int[] {1, 3, 20}) {
+                    var inputs = Map.of("documents", documents(rows));
+                    assertEquals(embedded.evaluate(inputs, "similarity"), evaluator.evaluate(inputs, "similarity"),
+                                 rows + " rows");
+                }
+                assertEquals(0, maxBatchSizeInTriton(modelName(model, unbatched)));
+            }
+            try (var evaluator = runtime.evaluatorOf(model, batched)) {
+                assertEquals(1, maxBatchSizeInTriton(modelName(model, batched)));
+                var exception = assertThrows(RuntimeException.class,
+                                             () -> evaluator.evaluate(Map.of("documents", documents(3)), "similarity"));
+                assertTrue(Exceptions.toMessageString(exception).contains("batch-size must be <= 1"),
+                           Exceptions.toMessageString(exception));
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    @Test
+    void triton_loads_models_whose_first_dimension_is_not_a_batch_with_max_batch_size_0(@TempDir Path directory)
+            throws Exception {
+        var runtime = createRuntime();
+        var opts = optsBuilder.setFirstDimensionIsBatch(false).build();
+        var testCases = new ArrayList<>(BatchDimensionTestModels.cases());
+        testCases.addAll(BatchDimensionTestModels.casesWhereShapeInferenceRemovesBatchDimension());
+        try {
+            for (var testCase : testCases) {
+                var model = Files.write(directory.resolve(testCase.name() + ".onnx"), testCase.model().toByteArray());
+                try (var evaluator = runtime.evaluatorOf(model.toString(), opts)) {
+                    // An output without a declared shape cannot be specified in the model config.
+                    assertEquals(testCase.name().equals("unshaped_output") ? 1 : 0,
+                                 maxBatchSizeInTriton(modelName(model.toString(), opts)), testCase.name());
+                }
+            }
+        } finally {
+            runtime.deconstruct();
+        }
+    }
+
+    private static Tensor documents(int rows) {
+        var builder = Tensor.Builder.of("tensor<float>(d0[" + rows + "],d1[4])");
+        for (int row = 0; row < rows; row++)
+            for (int column = 0; column < 4; column++)
+                builder.cell((row + 1) * 0.5 - column, row, column);
+        return builder.build();
     }
 
     @Test

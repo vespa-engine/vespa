@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -184,22 +185,45 @@ class TritonOnnxClientTest {
         }
     }
 
+    // The messages are the ones Triton 26.09 returns.
     @Test
-    void loadUntilModelReady_fails_without_retrying_when_triton_rejects_batching() {
-        var modelName = "test-model";
+    void loadUntilModelReady_fails_without_retrying_when_triton_rejects_the_config() {
+        var rejections = List.of(
+                "INVALID_ARGUMENT: load failed for model 'test-model': version 1 is at UNAVAILABLE state: Invalid argument: " +
+                "autofill failed for model 'test-model': model does not support batching while non-zero max_batch_size is specified;",
+                "INVALID_ARGUMENT: load failed for model 'test-model': version 1 is at UNAVAILABLE state: Invalid argument: " +
+                "unable to load model 'test-model', configuration expects datatype TYPE_FP16 for input 'x', model provides TYPE_FP32;");
+        for (var rejection : rejections) {
+            try (var tritonClient = createTritonClient()) {
+                var client = spy(tritonClient);
+                doThrow(new TritonOnnxClient.TritonException("Failed to load model", new RuntimeException(rejection)))
+                        .when(client).loadModel("test-model");
 
+                var thrown = assertThrows(TritonOnnxClient.TritonException.class, () -> client.loadUntilModelReady("test-model"));
+
+                assertTrue(TritonOnnxClient.isConfigRejection(thrown), rejection);
+                verify(client, times(1)).loadModel("test-model");
+            }
+        }
+        assertTrue(TritonOnnxClient.isBatchingRejection(new TritonOnnxClient.TritonException(
+                "Failed to load model", new RuntimeException(rejections.get(0)))));
+    }
+
+    // Triton reports a model file that is not completely copied yet as an internal error.
+    @Test
+    void loadUntilModelReady_retries_when_the_model_file_is_incomplete() {
         try (var tritonClient = createTritonClient()) {
             var client = spy(tritonClient);
+            var incomplete = new TritonOnnxClient.TritonException("Failed to load model", new RuntimeException(
+                    "INVALID_ARGUMENT: load failed for model 'test-model': version 1 is at UNAVAILABLE state: Internal: " +
+                    "onnx runtime error 7: Load model from /models/test-model/1/model.onnx failed:Protobuf parsing failed.;"));
+            doThrow(incomplete).doNothing().when(client).loadModel("test-model");
+            doReturn(false, true).when(client).isModelReady("test-model");
 
-            var exception = new TritonOnnxClient.TritonException(
-                    "Failed to load model", new RuntimeException("autofill failed for model 'test-model': " +
-                            "model does not support batching while non-zero max_batch_size is specified"));
-            doThrow(exception).when(client).loadModel(modelName);
+            client.loadUntilModelReady("test-model");
 
-            var thrown = assertThrows(TritonOnnxClient.TritonException.class, () -> client.loadUntilModelReady(modelName));
-
-            assertTrue(TritonOnnxClient.isBatchingRejection(thrown));
-            verify(client, times(1)).loadModel(modelName);
+            assertFalse(TritonOnnxClient.isConfigRejection(incomplete));
+            verify(client, times(2)).loadModel("test-model");
         }
     }
 

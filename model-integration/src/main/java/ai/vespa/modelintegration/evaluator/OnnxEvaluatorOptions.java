@@ -10,8 +10,6 @@ import java.util.function.UnaryOperator;
 
 /**
  * Session options for ONNX Runtime evaluation.
- * Runtimes that batch requests use the padding options, present when padding buckets are configured.
- * Runtimes that can pool use the runtime pooling, present when an embedder asks the runtime to pool a model output.
  *
  * @author lesters
  * @author bjorncs
@@ -25,6 +23,7 @@ public record OnnxEvaluatorOptions(
         boolean gpuDeviceRequired,
         boolean optimizeModel,
         int batchingMaxSize,
+        boolean firstDimensionIsBatch,
         Optional<Integer> numModelInstances,
         Optional<Path> modelConfigOverride,
         Optional<OnnxPadderOptions> padding,
@@ -38,6 +37,8 @@ public record OnnxEvaluatorOptions(
         Objects.requireNonNull(modelConfigOverride, "modelConfigOverride cannot be null");
         Objects.requireNonNull(padding, "padding cannot be null");
         Objects.requireNonNull(runtimePooling, "runtimePooling cannot be null");
+        if (!firstDimensionIsBatch && (padding.isPresent() || runtimePooling.isPresent()))
+            throw new IllegalArgumentException("Padding and runtime pooling need a model whose first dimension is a batch");
     }
 
     public static OnnxEvaluatorOptions createDefault() {
@@ -57,6 +58,8 @@ public record OnnxEvaluatorOptions(
                 .setExecutionMode(config.executionMode().toString())
                 .setThreadsFromFactors(config.interOpThreads(), config.intraOpThreads())
                 .setBatchingMaxSize(config.batching().maxSize())
+                // OnnxEvaluatorConfig configures embedders, whose first dimension is a batch.
+                .setFirstDimensionIsBatch(true)
                 .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
                 .setModelConfigOverride(config.modelConfigOverride())
                 .setPadding(OnnxPadderOptions.of(config))
@@ -100,6 +103,7 @@ public record OnnxEvaluatorOptions(
         private boolean gpuDeviceRequired;
         private boolean optimizeModel;
         private int batchingMaxSize;
+        private boolean firstDimensionIsBatch;
         private Optional<Integer> numModelInstances;
         private Optional<Path> modelConfigOverride;
         private Optional<OnnxPadderOptions> padding;
@@ -121,6 +125,8 @@ public record OnnxEvaluatorOptions(
             gpuDeviceRequired = false;
             optimizeModel = false;
             batchingMaxSize = 1;
+            // A variable first dimension is not always a batch, e.g. in a pairwise similarity model.
+            firstDimensionIsBatch = false;
             numModelInstances = Optional.empty();
             modelConfigOverride = Optional.empty();
             padding = Optional.empty();
@@ -137,6 +143,7 @@ public record OnnxEvaluatorOptions(
             this.gpuDeviceRequired = options.gpuDeviceRequired();
             this.optimizeModel = options.optimizeModel();
             this.batchingMaxSize = options.batchingMaxSize();
+            this.firstDimensionIsBatch = options.firstDimensionIsBatch();
             this.numModelInstances = options.numModelInstances();
             this.modelConfigOverride = options.modelConfigOverride;
             this.padding = options.padding();
@@ -192,6 +199,16 @@ public record OnnxEvaluatorOptions(
 
         public Builder setBatchingMaxSize(int maxSize) {
             this.batchingMaxSize = maxSize;
+            return this;
+        }
+
+        /**
+         * Sets whether the first dimension of the model's inputs and outputs is a batch:
+         * the model computes each row on its own, so a runtime may combine rows from several requests.
+         * False by default.
+         */
+        public Builder setFirstDimensionIsBatch(boolean firstDimensionIsBatch) {
+            this.firstDimensionIsBatch = firstDimensionIsBatch;
             return this;
         }
         
@@ -250,6 +267,7 @@ public record OnnxEvaluatorOptions(
                     gpuDeviceRequired,
                     optimizeModel,
                     batchingMaxSize,
+                    firstDimensionIsBatch,
                     numModelInstances,
                     modelConfigOverride,
                     padding,
