@@ -10,4 +10,16 @@ FastMapLookups::FastMapLookups(std::vector<FastMapLookup> lookups) noexcept : _l
 
 FastMapLookups::~FastMapLookups() = default;
 
+const FastMapLookup* FastMapLookups::find(std::string_view lookup_attribute) const noexcept {
+    for (const auto& lookup : _lookups) {
+        const auto& field = lookup.field_name;
+        const auto& name = lookup.lookup_name;
+        if (lookup_attribute.size() == field.size() + 1 + name.size() && lookup_attribute.starts_with(field) &&
+            lookup_attribute[field.size()] == '$' && lookup_attribute.ends_with(name)) {
+            return &lookup;
+        }
+    }
+    return nullptr;
+}
+
 } // namespace search::grouping

@@ -2,11 +2,13 @@
 
 #include "groupingmanager.h"
 
+#include "fast_map_lookups.h"
 #include "groupingcontext.h"
 
 #include <vespa/searchlib/aggregation/attribute_node_replacer.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/expression/decode_fast_map_lookup_node.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -25,7 +27,36 @@ using search::aggregation::Grouping;
 using search::aggregation::GroupingLevel;
 using search::expression::AttributeNode;
 using search::expression::ConfigureStaticParams;
+using search::expression::DecodeFastMapLookupNode;
 using search::expression::ExpressionNode;
+
+namespace {
+
+/**
+ * Configures each fast map lookup decode node with the fast map lookup it names. The value type needed
+ * for decoding is not serialized with the node, so this must be done each time a grouping is initialized.
+ */
+class ConfigureFastMapLookups : public vespalib::ObjectOperation, public vespalib::ObjectPredicate {
+    const FastMapLookups* _lookups;
+
+public:
+    explicit ConfigureFastMapLookups(const FastMapLookups* lookups) noexcept : _lookups(lookups) {}
+    void execute(vespalib::Identifiable& obj) override {
+        auto&                node = static_cast<DecodeFastMapLookupNode&>(obj);
+        std::string          attribute = node.lookupAttributeName();
+        const FastMapLookup* lookup = (_lookups != nullptr) ? _lookups->find(attribute) : nullptr;
+        if (lookup == nullptr) {
+            throw std::runtime_error(
+                vespalib::make_string("No fast map lookup for attribute '%s' in schema", attribute.c_str()));
+        }
+        node.configure(*lookup);
+    }
+    bool check(const vespalib::Identifiable& obj) const override {
+        return obj.inherits(DecodeFastMapLookupNode::classId);
+    }
+};
+
+} // namespace
 
 bool GroupingManager::empty() const {
     return _groupingContext.empty();
@@ -48,6 +79,8 @@ void GroupingManager::init(const IAttributeContext& attrCtx, const document::Doc
                     an.enableEnumOptimization(enum_optimization);
                 }
             }
+            ConfigureFastMapLookups configureFastMapLookups(_groupingContext.get_fast_map_lookups());
+            grouping.select(configureFastMapLookups, configureFastMapLookups);
             aggregation::NonAttribute2DocumentAccessor nonAttributes2DocumentAccess(attrCtx);
             ConfigureStaticParams                      stuff(&attrCtx, documentType);
             grouping.configureStaticStuff(stuff);

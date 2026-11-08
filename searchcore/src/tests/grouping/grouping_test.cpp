@@ -17,6 +17,7 @@
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/expression/decode_fast_map_lookup_node.h>
 #include <vespa/searchlib/expression/enumresultnode.h>
 #include <vespa/searchlib/expression/integerresultnode.h>
 #include <vespa/searchlib/expression/stringresultnode.h>
@@ -25,6 +26,7 @@
 #include <vespa/vespalib/util/testclock.h>
 
 #include <iostream>
+#include <map>
 
 #include <vespa/log/log.h>
 LOG_SETUP("grouping_test");
@@ -690,6 +692,137 @@ TEST(GroupingTest, fast_map_lookups_are_shared_by_context_copies_and_thread_cont
     auto ctx1 = session.createThreadContext(1, world.attributeContext, &world.documentType);
     EXPECT_EQ(lookups.get(), ctx0->get_fast_map_lookups());
     EXPECT_EQ(lookups.get(), ctx1->get_fast_map_lookups());
+}
+
+namespace {
+
+FastMapLookup make_lookup(const std::string& field_name, const std::string& lookup_name) {
+    return {.field_name = field_name,
+            .lookup_name = lookup_name,
+            .key_field = "key",
+            .key_type = "string",
+            .value_field = "value",
+            .value_type = "int"};
+}
+
+struct FastMapWorld {
+    MockAttributeContext       attributeContext;
+    search::AllocatedBitVector bv;
+    std::shared_ptr<const FastMapLookups> lookups;
+
+    static std::string entry(const std::string& key, const std::string& encoded_value) {
+        return key + DecodeFastMapLookupNode::encoded_separator + encoded_value;
+    }
+
+    FastMapWorld() : attributeContext(), bv(4), lookups() {
+        bv.setInterval(0, 3);
+        std::vector<std::vector<std::string>> entries{{entry("a", "80000001"), entry("b", "7fffffff")},
+                                                      {entry("a", "80000001")},
+                                                      {}};
+        auto                   map = std::make_shared<MultiStringExtAttribute>("m$lookup");
+        auto                   val = std::make_shared<SingleInt32ExtAttribute>("val");
+        AttributeVector::DocId docid;
+        for (uint32_t i = 0; i < entries.size(); ++i) {
+            map->addDoc(docid);
+            for (const auto& e : entries[i]) {
+                map->add(e.c_str());
+            }
+            val->addDoc(docid);
+            val->add(i + 1, docid); // value = docid + 1
+        }
+        attributeContext.add(map);
+        attributeContext.add(val);
+        lookups = std::make_shared<const FastMapLookups>(std::vector<FastMapLookup>{make_lookup("m", "lookup")});
+    }
+    ~FastMapWorld();
+
+    static Grouping make_request() {
+        Grouping request;
+        request.setFirstLevel(0)
+            .setLastLevel(1)
+            .addLevel(createGL(MU<DecodeFastMapLookupNode>("m.lookup"), MU<AttributeNode>("val")));
+        return request;
+    }
+
+    // Returns the sum of 'val' per decoded entry, after grouping all documents.
+    static std::map<std::string, int64_t> group(GroupingContext& context) {
+        std::vector<RankedHit> hits{{0, 30.0}, {1, 20.0}, {2, 10.0}};
+        GroupingManager        man(context);
+        man.groupInRelevanceOrder(0, {hits.data(), hits.size()});
+        std::map<std::string, int64_t> result;
+        for (const auto& grouping : context.getGroupingList()) {
+            const Group& root = grouping->getRoot();
+            for (uint32_t i = 0; i < root.getChildrenSize(); ++i) {
+                const Group& group = *root.groups()[i];
+                char         buf[100];
+                auto         id = group.getId().getString(vespalib::BufferRef(buf, sizeof(buf)));
+                auto&        sum = static_cast<const SumAggregationResult&>(group.getAggregationResult(0));
+                result[std::string(id.c_str(), id.size())] = sum.getSum().getInteger();
+            }
+        }
+        return result;
+    }
+};
+
+FastMapWorld::~FastMapWorld() = default;
+
+} // namespace
+
+TEST(GroupingTest, decode_fast_map_lookup_nodes_are_configured_from_fast_map_lookups) {
+    DoomFixture     f1;
+    FastMapWorld    world;
+    GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+    context.set_fast_map_lookups(world.lookups);
+    context.addGrouping(std::make_shared<Grouping>(FastMapWorld::make_request()));
+    GroupingManager manager(context);
+    manager.init(world.attributeContext, nullptr);
+    ASSERT_EQ(1u, context.getGroupingList().size());
+    std::map<std::string, int64_t> expected{{"a=1", 3}, {"b=-1", 1}};
+    EXPECT_EQ(expected, FastMapWorld::group(context));
+}
+
+TEST(GroupingTest, decode_fast_map_lookup_nodes_are_configured_in_thread_contexts) {
+    DoomFixture     f1;
+    FastMapWorld    world;
+    GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+    context.set_fast_map_lookups(world.lookups);
+    context.addGrouping(std::make_shared<Grouping>(FastMapWorld::make_request()));
+    GroupingSession session(SessionId(), context, world.attributeContext, nullptr);
+    session.prepareThreadContextCreation(2);
+    // The second thread context is deserialized, which drops the value type, and must be configured again.
+    auto ctx1 = session.createThreadContext(1, world.attributeContext, nullptr);
+    ASSERT_EQ(1u, ctx1->getGroupingList().size());
+    std::map<std::string, int64_t> expected{{"a=1", 3}, {"b=-1", 1}};
+    EXPECT_EQ(expected, FastMapWorld::group(*ctx1));
+}
+
+TEST(GroupingTest, grouping_with_unknown_fast_map_lookup_is_ignored) {
+    DoomFixture  f1;
+    FastMapWorld world;
+    for (bool with_lookups : {false, true}) {
+        SCOPED_TRACE(with_lookups ? "other lookups" : "no lookups");
+        GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+        if (with_lookups) {
+            context.set_fast_map_lookups(
+                std::make_shared<const FastMapLookups>(std::vector<FastMapLookup>{make_lookup("m", "other")}));
+        }
+        context.addGrouping(std::make_shared<Grouping>(FastMapWorld::make_request()));
+        GroupingManager manager(context);
+        manager.init(world.attributeContext, nullptr);
+        EXPECT_TRUE(context.getGroupingList().empty());
+    }
+}
+
+TEST(GroupingTest, fast_map_lookups_are_found_by_lookup_attribute) {
+    FastMapLookups lookups(std::vector<FastMapLookup>{make_lookup("m", "lookup"), make_lookup("m.x", "y")});
+    ASSERT_NE(nullptr, lookups.find("m$lookup"));
+    EXPECT_EQ("lookup", lookups.find("m$lookup")->lookup_name);
+    ASSERT_NE(nullptr, lookups.find("m.x$y"));
+    EXPECT_EQ("m.x", lookups.find("m.x$y")->field_name);
+    EXPECT_EQ(nullptr, lookups.find("m$lookups"));
+    EXPECT_EQ(nullptr, lookups.find("mm$lookup"));
+    EXPECT_EQ(nullptr, lookups.find("m.lookup"));
+    EXPECT_EQ(nullptr, lookups.find("m"));
 }
 
 TEST(GroupingTest, test_session_timeout) {

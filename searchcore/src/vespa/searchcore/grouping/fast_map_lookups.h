@@ -3,6 +3,7 @@
 
 #include <vespa/searchcommon/common/schema.h>
 
+#include <string_view>
 #include <vector>
 
 namespace search::grouping {
@@ -22,6 +23,11 @@ public:
     ~FastMapLookups();
     [[nodiscard]] const std::vector<FastMapLookup>& lookups() const noexcept { return _lookups; }
     [[nodiscard]] bool empty() const noexcept { return _lookups.empty(); }
+
+    /**
+     * Returns the lookup whose hidden attribute is named "fieldname$lookupname", or nullptr if there is none.
+     */
+    [[nodiscard]] const FastMapLookup* find(std::string_view lookup_attribute) const noexcept;
     bool operator==(const FastMapLookups& rhs) const noexcept = default;
 };
 
