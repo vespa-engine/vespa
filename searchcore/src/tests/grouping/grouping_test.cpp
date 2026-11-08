@@ -3,6 +3,7 @@
 #include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcore/grouping/fast_map_lookups.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
@@ -659,6 +660,36 @@ TEST(GroupingTest, test_grouping_fork_and_join) {
     GroupingContext::GroupingList list = context.getGroupingList();
     ASSERT_TRUE(list.size() == 1);
     EXPECT_EQ(expect.asString(), list[0]->asString());
+}
+
+TEST(GroupingTest, fast_map_lookups_are_shared_by_context_copies_and_thread_contexts) {
+    DoomFixture f1;
+    MyWorld     world;
+
+    auto lookups = std::make_shared<const FastMapLookups>(std::vector<FastMapLookup>{
+        {.field_name = "m", .lookup_name = "lookup", .key_field = "key", .key_type = "string",
+         .value_field = "value", .value_type = "int"}});
+    GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+    EXPECT_EQ(nullptr, context.get_fast_map_lookups());
+    context.set_fast_map_lookups(lookups);
+    EXPECT_EQ(lookups.get(), context.get_fast_map_lookups());
+    EXPECT_EQ("m$lookup", context.get_fast_map_lookups()->lookups()[0].lookup_attribute());
+
+    GroupingContext copy(context);
+    EXPECT_EQ(lookups.get(), copy.get_fast_map_lookups());
+
+    Grouping request;
+    request.setRoot(Group().addResult(SumAggregationResult().setExpression(MU<AttributeNode>("attr0"))))
+        .addLevel(createGL(3, MU<AttributeNode>("attr0")))
+        .setFirstLevel(0)
+        .setLastLevel(1);
+    context.addGrouping(std::make_shared<Grouping>(request));
+    GroupingSession session(SessionId(), context, world.attributeContext, &world.documentType);
+    session.prepareThreadContextCreation(2);
+    auto ctx0 = session.createThreadContext(0, world.attributeContext, &world.documentType);
+    auto ctx1 = session.createThreadContext(1, world.attributeContext, &world.documentType);
+    EXPECT_EQ(lookups.get(), ctx0->get_fast_map_lookups());
+    EXPECT_EQ(lookups.get(), ctx1->get_fast_map_lookups());
 }
 
 TEST(GroupingTest, test_session_timeout) {

@@ -48,6 +48,19 @@ void writeFieldSets(vespalib::asciistream& os, const std::string& name, const st
 constexpr std::array<std::string_view, 7> uri_suffixes = {"scheme", "host",     "port",    "path",
                                                           "query",  "fragment", "hostname"};
 
+void writeFastMapLookups(vespalib::asciistream& os, const std::vector<Schema::FastMapLookup>& lookups) {
+    os << "fastmaplookup[" << lookups.size() << "]\n";
+    for (size_t i = 0; i < lookups.size(); ++i) {
+        const auto& lookup = lookups[i];
+        os << "fastmaplookup[" << i << "].fieldname " << lookup.field_name << "\n";
+        os << "fastmaplookup[" << i << "].lookupname " << lookup.lookup_name << "\n";
+        os << "fastmaplookup[" << i << "].keyfield " << lookup.key_field << "\n";
+        os << "fastmaplookup[" << i << "].keytype " << lookup.key_type << "\n";
+        os << "fastmaplookup[" << i << "].valuefield " << lookup.value_field << "\n";
+        os << "fastmaplookup[" << i << "].valuetype " << lookup.value_type << "\n";
+    }
+}
+
 void writeUriFields(vespalib::asciistream& os, const std::vector<std::string>& uriFields) {
     os << "urifield[" << uriFields.size() << "]\n";
     for (size_t i = 0; i < uriFields.size(); ++i) {
@@ -181,6 +194,7 @@ void Schema::writeToStream(vespalib::asciistream& os, bool saveToDisk) const {
     }
     if (!saveToDisk) {
         writeFields(os, "importedattributefields", _importedAttributeFields);
+        writeFastMapLookups(os, _fastMapLookups);
     }
 }
 
@@ -213,6 +227,7 @@ bool Schema::loadFromFile(const std::string& fileName) {
     }
     _explicitUriFields = ConfigParser::parse<bool>("explicituris", lines, false);
     _importedAttributeFields.clear(); // NOTE: these are not persisted to disk
+    _fastMapLookups.clear();          // NOTE: these are not persisted to disk
     _indexIds.clear();
     for (size_t i(0), m(_indexFields.size()); i < m; i++) {
         _indexIds[_indexFields[i].getName()] = i;
@@ -301,6 +316,11 @@ Schema& Schema::addFieldSet(const FieldSet& fieldSet) {
     return addField(fieldSet, *this, _fieldSets, _fieldSetIds);
 }
 
+Schema& Schema::add_fast_map_lookup(FastMapLookup lookup) {
+    _fastMapLookups.push_back(std::move(lookup));
+    return *this;
+}
+
 Schema& Schema::add_uri_field(std::string_view name) {
     if (std::find(_uriFields.begin(), _uriFields.end(), name) == _uriFields.end()) {
         _uriFields.emplace_back(name);
@@ -370,6 +390,7 @@ void Schema::swap(Schema& rhs) {
     _attributeFields.swap(rhs._attributeFields);
     _fieldSets.swap(rhs._fieldSets);
     _importedAttributeFields.swap(rhs._importedAttributeFields);
+    _fastMapLookups.swap(rhs._fastMapLookups);
     _uriFields.swap(rhs._uriFields);
     std::swap(_explicitUriFields, rhs._explicitUriFields);
     _indexIds.swap(rhs._indexIds);
@@ -383,6 +404,7 @@ void Schema::clear() {
     _attributeFields.clear();
     _fieldSets.clear();
     _importedAttributeFields.clear();
+    _fastMapLookups.clear();
     _uriFields.clear();
     _explicitUriFields = false;
     _indexIds.clear();
@@ -522,7 +544,7 @@ bool Schema::operator==(const Schema& rhs) const noexcept {
     // Uri fields are compared by content, as explicit uri fields are equal to the same detected uri fields.
     return _indexFields == rhs._indexFields && _attributeFields == rhs._attributeFields &&
            _fieldSets == rhs._fieldSets && _importedAttributeFields == rhs._importedAttributeFields &&
-           sorted_uri_fields(*this) == sorted_uri_fields(rhs);
+           _fastMapLookups == rhs._fastMapLookups && sorted_uri_fields(*this) == sorted_uri_fields(rhs);
 }
 
 bool Schema::operator!=(const Schema& rhs) const noexcept {
@@ -531,7 +553,7 @@ bool Schema::operator!=(const Schema& rhs) const noexcept {
 
 bool Schema::empty() const noexcept {
     return _indexFields.empty() && _attributeFields.empty() && _fieldSets.empty() &&
-           _importedAttributeFields.empty() && _uriFields.empty();
+           _importedAttributeFields.empty() && _fastMapLookups.empty() && _uriFields.empty();
 }
 
 } // namespace search::index

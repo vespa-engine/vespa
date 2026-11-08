@@ -10,6 +10,7 @@
 #include "match_tools.h"
 #include "sessionmanager.h"
 
+#include <vespa/searchcore/grouping/fast_map_lookups.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
@@ -168,7 +169,8 @@ Matcher::Matcher(const search::index::Schema& schema, Properties props, const st
       _startTime(my_clock::now()),
       _now_ref(now_ref),
       _queryLimiter(queryLimiter),
-      _distributionKey(distributionKey) {
+      _distributionKey(distributionKey),
+      _fast_map_lookups(std::make_shared<const FastMapLookups>(schema.get_fast_map_lookups())) {
     search::features::setup_search_features(_blueprintFactory);
     search::fef::test::setup_fef_test_plugin(_blueprintFactory);
     _rankSetup = std::make_shared<search::fef::RankSetup>(_blueprintFactory, _indexEnv);
@@ -325,6 +327,7 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
     { // we want to measure full set-up and tear-down time as part of
       // collateral time
         GroupingContext groupingContext(metaStore.getValidLids(), _now_ref, request.getTimeOfDoom());
+        groupingContext.set_fast_map_lookups(_fast_map_lookups);
         try {
             groupingContext.deserialize(request.groupSpec.data(), request.groupSpec.size());
         } catch (const vespalib::IllegalArgumentException& e) {

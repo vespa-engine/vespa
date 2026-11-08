@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/config-attributes.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config/common/configparser.h>
 #include <vespa/searchcommon/common/schema.h>
@@ -13,6 +14,7 @@
 LOG_SETUP("schema_test");
 
 using std::string;
+using vespa::config::search::AttributesConfigBuilder;
 using vespa::config::search::IndexschemaConfigBuilder;
 
 namespace search::index {
@@ -281,6 +283,77 @@ TEST(SchemaTest, require_that_imported_attribute_fields_are_not_saved_to_disk) {
         Schema s;
         ASSERT_TRUE(s.loadFromFile(fileName));
         EXPECT_EQ(0u, s.getNumImportedAttributeFields());
+    }
+}
+
+namespace {
+
+Schema::FastMapLookup make_fast_map_lookup(const std::string& field_name, const std::string& lookup_name) {
+    return {.field_name = field_name,
+            .lookup_name = lookup_name,
+            .key_field = "key",
+            .key_type = "string",
+            .value_field = "value",
+            .value_type = "int"};
+}
+
+} // namespace
+
+TEST(SchemaTest, require_that_schema_can_be_built_with_fast_map_lookups) {
+    AttributesConfigBuilder cfg;
+    cfg.fastMapLookups.resize(2);
+    cfg.fastMapLookups[0].fieldName = "m";
+    cfg.fastMapLookups[0].lookupName = "lookup";
+    cfg.fastMapLookups[0].keyType = "string";
+    cfg.fastMapLookups[0].valueType = "int";
+    cfg.fastMapLookups[1].fieldName = "arr";
+    cfg.fastMapLookups[1].lookupName = "reversed";
+    cfg.fastMapLookups[1].keyField = "myvalue";
+    cfg.fastMapLookups[1].keyType = "long";
+    cfg.fastMapLookups[1].valueField = "mykey";
+    cfg.fastMapLookups[1].valueType = "string";
+    Schema s;
+    SchemaBuilder::build(cfg, s);
+    std::vector<Schema::FastMapLookup> exp{make_fast_map_lookup("m", "lookup"),
+                                           {.field_name = "arr",
+                                            .lookup_name = "reversed",
+                                            .key_field = "myvalue",
+                                            .key_type = "long",
+                                            .value_field = "mykey",
+                                            .value_type = "string"}};
+    EXPECT_EQ(exp, s.get_fast_map_lookups());
+    EXPECT_EQ("m$lookup", s.get_fast_map_lookups()[0].lookup_attribute());
+    EXPECT_EQ("arr$reversed", s.get_fast_map_lookups()[1].lookup_attribute());
+    EXPECT_FALSE(s.empty());
+}
+
+TEST(SchemaTest, require_that_fast_map_lookups_affect_equality) {
+    Schema s1;
+    Schema s2;
+    s1.add_fast_map_lookup(make_fast_map_lookup("m", "lookup"));
+    EXPECT_NE(s1, s2);
+    s2.add_fast_map_lookup(make_fast_map_lookup("m", "lookup"));
+    EXPECT_EQ(s1, s2);
+    s2.clear();
+    EXPECT_TRUE(s2.get_fast_map_lookups().empty());
+    s1.swap(s2);
+    EXPECT_TRUE(s1.get_fast_map_lookups().empty());
+    EXPECT_EQ(1u, s2.get_fast_map_lookups().size());
+}
+
+TEST(SchemaTest, require_that_fast_map_lookups_are_not_saved_to_disk) {
+    const std::string fileName = "schema-no-fast-map-lookups.txt";
+    {
+        Schema s;
+        s.add_fast_map_lookup(make_fast_map_lookup("m", "lookup"));
+        EXPECT_NE(std::string::npos, s.toString().find("fastmaplookup[0].fieldname m"));
+        ASSERT_TRUE(s.saveToFile(fileName));
+    }
+    {
+        Schema s;
+        s.add_fast_map_lookup(make_fast_map_lookup("other", "lookup"));
+        ASSERT_TRUE(s.loadFromFile(fileName));
+        EXPECT_TRUE(s.get_fast_map_lookups().empty());
     }
 }
 

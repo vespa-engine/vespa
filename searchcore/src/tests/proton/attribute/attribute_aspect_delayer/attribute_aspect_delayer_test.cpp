@@ -83,6 +83,23 @@ AttributesConfig attrCfg(std::vector<AttributesConfig::Attribute> attributes) {
     return result;
 }
 
+AttributesConfig::FastMapLookups make_fast_map_lookup(const std::string& field_name, const std::string& lookup_name) {
+    AttributesConfig::FastMapLookups lookup;
+    lookup.fieldName = field_name;
+    lookup.lookupName = lookup_name;
+    lookup.keyType = "string";
+    lookup.valueType = "int";
+    return lookup;
+}
+
+AttributesConfig attrCfg(std::vector<AttributesConfig::Attribute>       attributes,
+                         std::vector<AttributesConfig::FastMapLookups> fast_map_lookups) {
+    AttributesConfigBuilder result;
+    result.attribute = std::move(attributes);
+    result.fastMapLookups = std::move(fast_map_lookups);
+    return result;
+}
+
 AttributesConfig::Attribute make_fa(const AttributesConfig::Attribute& cfg) {
     AttributesConfig::Attribute attr(cfg);
     attr.fastaccess = true;
@@ -154,6 +171,10 @@ public:
     void assertAttributeConfig(const std::vector<AttributesConfig::Attribute>& exp) {
         auto actConfig = _delayer.getAttributesConfig();
         EXPECT_EQ(exp, actConfig->attribute);
+    }
+    void assertFastMapLookups(const std::vector<AttributesConfig::FastMapLookups>& exp) {
+        auto actConfig = _delayer.getAttributesConfig();
+        EXPECT_EQ(exp, actConfig->fastMapLookups);
     }
     void assertSummaryConfig(const std::vector<SummaryConfig::Classes::Fields>& exp) {
         auto summaryConfig = _delayer.getSummaryConfig();
@@ -333,6 +354,38 @@ TEST_F(DelayerTest, require_that_removing_attribute_aspect_from_struct_field_is_
     setup(attrCfg({make_int32_sv_cfg("array.a")}), attrCfg({}), sCfg({make_summary_field("array")}));
     assertAttributeConfig({});
     assertSummaryConfig({make_summary_field("array")});
+}
+
+TEST_F(DelayerTest, require_that_fast_map_lookups_are_kept_when_lookup_attribute_is_present) {
+    auto lookup = make_fast_map_lookup("m", "lookup");
+    setup(attrCfg({make_int32_sv_cfg("m$lookup")}, {lookup}), attrCfg({make_int32_sv_cfg("m$lookup")}, {lookup}),
+          sCfg({}));
+    assertAttributeConfig({make_int32_sv_cfg("m$lookup")});
+    assertFastMapLookups({lookup});
+}
+
+TEST_F(DelayerTest, require_that_fast_map_lookup_is_dropped_when_adding_lookup_attribute_is_delayed) {
+    addFields({"m$lookup"});
+    setup(attrCfg({}), attrCfg({make_int32_sv_cfg("m$lookup")}, {make_fast_map_lookup("m", "lookup")}), sCfg({}));
+    assertAttributeConfig({});
+    assertFastMapLookups({});
+}
+
+TEST_F(DelayerTest, require_that_fast_map_lookup_is_kept_when_removing_lookup_attribute_is_delayed) {
+    addFields({"m$lookup"});
+    auto lookup = make_fast_map_lookup("m", "lookup");
+    setup(attrCfg({make_int32_sv_cfg("m$lookup")}, {lookup}), attrCfg({}), sCfg({}));
+    assertAttributeConfig({make_int32_sv_cfg("m$lookup")});
+    assertFastMapLookups({lookup});
+}
+
+TEST_F(DelayerTest, require_that_fast_map_lookup_is_not_repeated_when_in_both_old_and_new_config) {
+    auto old_lookup = make_fast_map_lookup("m", "lookup");
+    auto new_lookup = make_fast_map_lookup("m", "lookup");
+    new_lookup.valueType = "long";
+    setup(attrCfg({make_int32_sv_cfg("m$lookup")}, {old_lookup}),
+          attrCfg({make_int32_sv_cfg("m$lookup")}, {new_lookup}), sCfg({}));
+    assertFastMapLookups({new_lookup});
 }
 
 } // namespace proton

@@ -6,10 +6,13 @@
 #include <vespa/vespalib/util/time.h>
 
 #include <atomic>
+#include <memory>
 #include <span>
 #include <vector>
 
 namespace search::grouping {
+
+class FastMapLookups;
 
 /**
  * A Grouping Context contains all grouping expressions that should be evaluated
@@ -115,6 +118,19 @@ public:
     void set_enum_optimization_enabled(bool enabled) noexcept { _enum_optimization_enabled = enabled; }
     [[nodiscard]] bool enum_optimization_enabled() const noexcept { return _enum_optimization_enabled; }
 
+    /**
+     * Set the fast map lookups of the document type, for grouping on maps with fast map search.
+     * Copies of this context share them.
+     */
+    void set_fast_map_lookups(std::shared_ptr<const FastMapLookups> fast_map_lookups) noexcept {
+        _fast_map_lookups = std::move(fast_map_lookups);
+    }
+
+    /**
+     * Obtain the fast map lookups of the document type, or nullptr if they were not set.
+     */
+    [[nodiscard]] const FastMapLookups* get_fast_map_lookups() const noexcept { return _fast_map_lookups.get(); }
+
     void groupUnordered(std::span<const RankedHit> hits, const search::BitVector* overflow);
     void groupInRelevanceOrder(std::span<const RankedHit> hits);
 
@@ -131,6 +147,7 @@ private:
     vespalib::nbostream             _os;
     GroupingList                    _groupingList;
     bool                            _enum_optimization_enabled;
+    std::shared_ptr<const FastMapLookups> _fast_map_lookups;
 };
 
 } // namespace search::grouping

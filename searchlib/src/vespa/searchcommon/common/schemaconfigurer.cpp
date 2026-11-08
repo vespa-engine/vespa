@@ -128,6 +128,14 @@ void SchemaBuilder::build(const AttributesConfig& cfg, Schema& schema) {
                 Schema::Field(attr.name, convertDataType(attr.datatype), convertCollectionType(attr.collectiontype)));
         }
     }
+    for (const auto& lookup : cfg.fastMapLookups) {
+        schema.add_fast_map_lookup({.field_name = lookup.fieldName,
+                                    .lookup_name = lookup.lookupName,
+                                    .key_field = lookup.keyField,
+                                    .key_type = lookup.keyType,
+                                    .value_field = lookup.valueField,
+                                    .value_type = lookup.valueType});
+    }
 }
 
 void SchemaConfigurer::configure(const IndexschemaConfig& cfg) {

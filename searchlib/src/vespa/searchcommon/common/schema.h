@@ -141,6 +141,23 @@ public:
         bool operator!=(const FieldSet& rhs) const noexcept;
     };
 
+    /**
+     * A field with fast map search: a map, or an array of struct with the given key and value
+     * struct fields. Each key-value pair is stored as one string in the attribute named
+     * field_name + "$" + lookup_name.
+     **/
+    struct FastMapLookup {
+        std::string field_name;
+        std::string lookup_name;
+        std::string key_field;
+        std::string key_type;
+        std::string value_field;
+        std::string value_type;
+
+        [[nodiscard]] std::string lookup_attribute() const { return field_name + "$" + lookup_name; }
+        bool operator==(const FastMapLookup& rhs) const noexcept = default;
+    };
+
     static const uint32_t UNKNOWN_FIELD_ID;
 
 private:
@@ -148,6 +165,7 @@ private:
     std::vector<AttributeField>         _attributeFields;
     std::vector<FieldSet>               _fieldSets;
     std::vector<ImportedAttributeField> _importedAttributeFields;
+    std::vector<FastMapLookup>          _fastMapLookups;
     std::vector<std::string>            _uriFields;
     bool                                _explicitUriFields = false;
     using Name2IdMap = vespalib::hash_map<std::string, uint32_t>;
@@ -212,6 +230,11 @@ public:
     Schema& addFieldSet(const FieldSet& collection);
 
     Schema& addImportedAttributeField(const ImportedAttributeField& field);
+
+    /**
+     * Add a fast map lookup to this schema. Like imported attribute fields, these are not persisted to disk.
+     **/
+    Schema& add_fast_map_lookup(FastMapLookup lookup);
 
     /**
      * Add a uri field to this schema. A uri field 'x' is indexed as the index fields 'x', 'x.scheme', 'x.host',
@@ -344,6 +367,8 @@ public:
     const std::vector<ImportedAttributeField>& getImportedAttributeFields() const noexcept {
         return _importedAttributeFields;
     }
+
+    const std::vector<FastMapLookup>& get_fast_map_lookups() const noexcept { return _fastMapLookups; }
 
     void swap(Schema& rhs);
     void clear();
