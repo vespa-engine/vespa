@@ -296,7 +296,7 @@ public final class SchemaInfo extends Derived {
     }
 
     /** Returns this type as a spec on the form following "field [name] type " in schemas. */
-    private String toTypeSpec(DataType dataType) {
+    static String toTypeSpec(DataType dataType) {
         if (dataType instanceof PrimitiveDataType)
             return dataType.getName();
         if (dataType instanceof AnnotationReferenceDataType annotationType)

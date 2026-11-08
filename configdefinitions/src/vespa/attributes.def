@@ -32,7 +32,7 @@ attribute[].tensortype         string default=""
 # Whether this is an imported attribute (from parent document db) or not.
 attribute[].imported           bool default=false
 
-# Max amount of uncommitted memory during feed. (Default just shy of 128k) 
+# Max amount of uncommitted memory during feed. (Default just shy of 128k)
 attribute[].maxuncommittedmemory long default=130000
 
 # The distance metric to use for nearest neighbor search.
@@ -49,3 +49,13 @@ attribute[].index.hnsw.multithreadedindexing bool default=true
 # For tensor attributes, specifies the number of quantized bits used per dense dimension.
 # 0 bits implies no quantization is used, i.e. the tensor attribute is lossless.
 attribute[].quantization.bits int default=0
+
+# Fields with fast map search: a map, or an array of struct with the key and value
+# struct fields given here, looked up as fieldName.lookupName{"key"}.
+# The lookup is backed by the attribute named fieldName$lookupName.
+fastMapLookups[].fieldName string
+fastMapLookups[].lookupName string
+fastMapLookups[].keyField string default="key"
+fastMapLookups[].keyType string
+fastMapLookups[].valueField string default="value"
+fastMapLookups[].valueType string

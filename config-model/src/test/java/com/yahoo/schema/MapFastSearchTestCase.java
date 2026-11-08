@@ -3,6 +3,7 @@ package com.yahoo.schema;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.IndexInfo;
 import com.yahoo.schema.derived.IndexingScript;
 import com.yahoo.schema.derived.SchemaInfo;
@@ -12,6 +13,7 @@ import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.jupiter.api.Test;
 
@@ -287,6 +289,40 @@ public class MapFastSearchTestCase {
     }
 
     @Test
+    void requireFastMapFieldsAreExportedInAttributesConfig() throws ParseException {
+        String fields = joinLines("field plain type map<string, string> { }",
+                                  "field fastmap type map<string, int> { fast-search-map-field lookup }",
+                                  "field twolookups type array<entry> {",
+                                  "  fast-search-map-field lookup { key: mykey value: myvalue }",
+                                  "  fast-search-map-field reversed { key: myvalue value: mykey }",
+                                  "}");
+        var schema = build(getSdWithEntry("string", "long", fields));
+        var lookups = attributesConfigOf(schema).fastMapLookups();
+        assertEquals(3, lookups.size());
+
+        assertEquals("fastmap", lookups.get(0).fieldName());
+        assertEquals("lookup", lookups.get(0).lookupName());
+        assertEquals("key", lookups.get(0).keyField());
+        assertEquals("string", lookups.get(0).keyType());
+        assertEquals("value", lookups.get(0).valueField());
+        assertEquals("int", lookups.get(0).valueType());
+
+        assertEquals("twolookups", lookups.get(1).fieldName());
+        assertEquals("lookup", lookups.get(1).lookupName());
+        assertEquals("mykey", lookups.get(1).keyField());
+        assertEquals("string", lookups.get(1).keyType());
+        assertEquals("myvalue", lookups.get(1).valueField());
+        assertEquals("long", lookups.get(1).valueType());
+
+        assertEquals("twolookups", lookups.get(2).fieldName());
+        assertEquals("reversed", lookups.get(2).lookupName());
+        assertEquals("myvalue", lookups.get(2).keyField());
+        assertEquals("long", lookups.get(2).keyType());
+        assertEquals("mykey", lookups.get(2).valueField());
+        assertEquals("string", lookups.get(2).valueType());
+    }
+
+    @Test
     void requireFastArrayOfStructIsListedInIlscriptsConfig() throws ParseException {
         var config = ilscriptsConfigOf(build(getSdWithEntry("string", "string",
                                                             fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"))));
@@ -398,6 +434,12 @@ public class MapFastSearchTestCase {
                                         new Summaries(schema, new BaseDeployLogger(), new TestProperties()));
         var builder = new SchemaInfoConfig.Builder();
         schemaInfo.getConfig(builder);
+        return builder.build();
+    }
+
+    private static AttributesConfig attributesConfigOf(Schema schema) {
+        var builder = new AttributesConfig.Builder();
+        new AttributeFields(schema).getConfig(builder);
         return builder.build();
     }
 

@@ -5,6 +5,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.Dictionary;
+import com.yahoo.schema.document.FastMapSearchFields;
 import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.Ranking;
@@ -13,9 +14,11 @@ import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isArrayOfSimpleStruct;
@@ -34,6 +37,9 @@ public class AttributeFields extends Derived {
 
     private final Map<String, Attribute> attributes = new java.util.LinkedHashMap<>();
     private final Map<String, Attribute> importedAttributes = new java.util.LinkedHashMap<>();
+    private final List<FastMapLookup> fastMapLookups = new ArrayList<>();
+
+    private record FastMapLookup(String fieldName, FastMapSearchFields fields) {}
 
     /** Whether this has any position attribute */
     private boolean hasPosition = false;
@@ -48,6 +54,7 @@ public class AttributeFields extends Derived {
     /** Derives everything from a field */
     @Override
     protected void derive(ImmutableSDField field, Schema schema) {
+        deriveFastMapLookups(field);
         if (unsupportedFieldType(field)) {
             return; // Ignore complex struct and map fields for indexed search (only supported for streaming search)
         }
@@ -59,6 +66,12 @@ public class AttributeFields extends Derived {
             deriveMapOfPrimitiveType(field);
         } else {
             deriveAttributes(field);
+        }
+    }
+
+    private void deriveFastMapLookups(ImmutableSDField field) {
+        for (FastMapSearchFields fastMap : field.getFastMapSearches()) {
+            fastMapLookups.add(new FastMapLookup(field.getName(), fastMap));
         }
     }
 
@@ -299,6 +312,16 @@ public class AttributeFields extends Derived {
                 attrBuilder.maxuncommittedmemory(maxUnCommittedMemory);
                 builder.attribute(attrBuilder);
             }
+        }
+        for (FastMapLookup lookup : fastMapLookups) {
+            var fastMap = lookup.fields();
+            builder.fastMapLookups(new AttributesConfig.FastMapLookups.Builder()
+                                           .fieldName(lookup.fieldName())
+                                           .lookupName(fastMap.lookupName())
+                                           .keyField(fastMap.keyField())
+                                           .keyType(SchemaInfo.toTypeSpec(fastMap.keyType()))
+                                           .valueField(fastMap.valueField())
+                                           .valueType(SchemaInfo.toTypeSpec(fastMap.valueType())));
         }
     }
 
