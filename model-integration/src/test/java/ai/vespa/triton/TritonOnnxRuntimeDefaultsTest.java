@@ -77,7 +77,7 @@ class TritonOnnxRuntimeDefaultsTest {
     }
 
     private static boolean shouldPadForBatching(String modelPath, OnnxEvaluatorOptions options) {
-        return TritonOnnxRuntime.shouldPadForBatching(modelPath, options, () -> TritonOnnxRuntime.declaresBatchDimension(modelPath));
+        return TritonOnnxRuntime.shouldPadForBatching(modelPath, options, () -> TritonOnnxRuntime.hasDynamicFirstDimension(modelPath));
     }
 
     @Test
@@ -174,8 +174,8 @@ class TritonOnnxRuntimeDefaultsTest {
         // RankProfilesConfigImporter builds these options for global-phase ranking, without batching or padding
         var globalPhase = new OnnxEvaluatorOptions.Builder().setGpuDevice(0, false).build();
         assertFalse(shouldPadForBatching(batched, globalPhase));
-        assertTrue(TritonOnnxRuntime.declaresBatchDimension(batched));
-        assertFalse(TritonOnnxRuntime.declaresBatchDimension(fixed));
+        assertTrue(TritonOnnxRuntime.hasDynamicFirstDimension(batched));
+        assertFalse(TritonOnnxRuntime.hasDynamicFirstDimension(fixed));
     }
 
     @Test
@@ -191,8 +191,8 @@ class TritonOnnxRuntimeDefaultsTest {
         String float32 = "src/test/models/onnx/transformer/dummy_masked_attention_embedder.onnx";
         var config = new OnnxEvaluatorConfig.Builder();
         config.batching.maxSize(8);
-        assertTrue(shouldPadForBatching(float32, OnnxEvaluatorOptions.of(config.build(), 16)), "Should pad when no GPU device set, since Triton may place the model on a GPU.");
-        assertFalse(shouldPadForBatching(float32, OnnxEvaluatorOptions.of(config.gpuDevice(-1).build(), 16)), "Should not pad on CPU (device -1).");
+        assertTrue(shouldPadForBatching(float32, OnnxEvaluatorOptions.builder(config.build(), 16).build()), "Should pad when no GPU device set, since Triton may place the model on a GPU.");
+        assertFalse(shouldPadForBatching(float32, OnnxEvaluatorOptions.builder(config.gpuDevice(-1).build(), 16).build()), "Should not pad on CPU (device -1).");
     }
 
     @Test
@@ -234,7 +234,7 @@ class TritonOnnxRuntimeDefaultsTest {
 
     @Test
     void explicit_instance_count_is_preserved() {
-        var options = options(8).build().withNumModelInstances(3);
+        var options = options(8).setNumModelInstances(3).build();
         assertSame(options, resolveInstanceCount(options, SHARED_SESSION));
         assertSame(options, resolveInstanceCount(options, SEPARATE_SESSIONS));
     }
@@ -248,7 +248,7 @@ class TritonOnnxRuntimeDefaultsTest {
     void model_name_is_stable(@TempDir Path directory) throws IOException {
         // Naming only hashes the file contents, so a valid ONNX model is unnecessary.
         var model = Files.writeString(directory.resolve("model.onnx"), "model contents");
-        var options = options(8).setGpuDevice(0).build().withNumModelInstances(2);
+        var options = options(8).setGpuDevice(0).setNumModelInstances(2).build();
 
         // A fixed expected name detects changes in hashing or encoding across runs.
         assertEquals("model_98ad6a1dc766eee5",
@@ -273,7 +273,7 @@ class TritonOnnxRuntimeDefaultsTest {
                 assertEquals(name, TritonOnnxRuntime.generateModelName(MODEL_PATH, options, shareSession, Optional.empty()));
                 var defaultCount = TritonOnnxRuntime.defaultNumModelInstances(options, shareSession);
                 assertNotEquals(name, TritonOnnxRuntime.generateModelName(
-                        MODEL_PATH, options.withNumModelInstances(defaultCount), shareSession, Optional.empty()));
+                        MODEL_PATH, options.toBuilder().setNumModelInstances(defaultCount).build(), shareSession, Optional.empty()));
             }
         }
     }
@@ -281,7 +281,7 @@ class TritonOnnxRuntimeDefaultsTest {
     @Test
     void model_name_depends_on_file_contents(@TempDir Path directory) throws IOException {
         var model = Files.writeString(directory.resolve("model.onnx"), "model contents");
-        var options = options(8).build().withNumModelInstances(1);
+        var options = options(8).setNumModelInstances(1).build();
         var originalName = TritonOnnxRuntime.generateModelName(model.toString(), options,
                                                                SEPARATE_SESSIONS, Optional.empty());
 
@@ -294,7 +294,7 @@ class TritonOnnxRuntimeDefaultsTest {
 
     @Test
     void model_name_depends_on_session_sharing_with_the_same_instance_count() {
-        var options = options(8).build().withNumModelInstances(1);
+        var options = options(8).setNumModelInstances(1).build();
 
         assertNotEquals(modelName(options, SEPARATE_SESSIONS),
                         modelName(options, SHARED_SESSION));
@@ -302,8 +302,8 @@ class TritonOnnxRuntimeDefaultsTest {
 
     @Test
     void model_name_depends_on_thread_count() {
-        var options = options(8).build().withNumModelInstances(1);
-        var moreThreads = new OnnxEvaluatorOptions.Builder(options).setIntraOpThreads(4).build();
+        var options = options(8).setNumModelInstances(1).build();
+        var moreThreads = options.toBuilder().setIntraOpThreads(4).build();
 
         assertNotEquals(modelName(options, SHARED_SESSION),
                         modelName(moreThreads, SHARED_SESSION));
@@ -375,7 +375,7 @@ class TritonOnnxRuntimeDefaultsTest {
         }
     }
 
-    // ONNX Runtime's shape inference can remove a batch dimension that the model file declares.
+    // ONNX Runtime's shape inference can remove a dynamic first dimension that the model file declares.
     // Triton then rejects batching, and the runtime loads the model again with a max batch size of 0.
     @Test
     void model_is_loaded_again_without_batching_when_triton_rejects_batching(@TempDir Path directory) throws IOException {
@@ -393,9 +393,9 @@ class TritonOnnxRuntimeDefaultsTest {
             var config = TextFormat.parse(Files.readString(repository.resolve(name).resolve("config.pbtxt")), ModelConfig.class);
             assertEquals(0, config.getMaxBatchSize());
             assertFalse(config.hasDynamicBatching());
-            // Padding follows the batch dimension Triton loaded the model with, not the one in the model file
-            assertEquals(Optional.of(false), runtime.supportsBatching(name));
-            assertTrue(TritonOnnxRuntime.declaresBatchDimension(model));
+            // Padding follows the max batch size Triton loaded the model with, not the shapes in the model file
+            assertEquals(Optional.of(false), runtime.hasNonZeroMaxBatchSize(name));
+            assertTrue(TritonOnnxRuntime.hasDynamicFirstDimension(model));
         } finally {
             runtime.deconstruct();
         }
@@ -417,7 +417,7 @@ class TritonOnnxRuntimeDefaultsTest {
             assertEquals(1, config.getInputCount());
             assertEquals(1, config.getOutputCount());
             assertFalse(config.hasDynamicBatching());
-            assertEquals(Optional.of(false), runtime.supportsBatching(name));
+            assertEquals(Optional.of(false), runtime.hasNonZeroMaxBatchSize(name));
         } finally {
             runtime.deconstruct();
         }
@@ -450,7 +450,7 @@ class TritonOnnxRuntimeDefaultsTest {
                         assertEquals(1, config.getMaxBatchSize());
                         assertEquals(0, config.getInputCount());
                         assertFalse(config.hasDynamicBatching());
-                        assertEquals(Optional.of(true), runtime.supportsBatching(name));
+                        assertEquals(Optional.of(true), runtime.hasNonZeroMaxBatchSize(name));
                     }
                 } else {
                     assertThrows(TritonOnnxClient.TritonException.class, () -> runtime.evaluatorOf(model, options));
@@ -488,7 +488,7 @@ class TritonOnnxRuntimeDefaultsTest {
         }
     }
 
-    // Triton fails to load a model whose inputs or outputs have no batch dimension with a non-zero max batch size.
+    // Triton fails to load a model whose inputs or outputs have no dynamic first dimension with a non-zero max batch size.
     @Test
     void model_without_batch_dimension_is_not_batched(@TempDir Path directory) throws IOException {
         var unbatched = "src/test/models/onnx/add_float.onnx";
@@ -632,7 +632,7 @@ class TritonOnnxRuntimeDefaultsTest {
 
     @Test
     void model_name_depends_on_pooling() {
-        var options = options(8).build().withNumModelInstances(1);
+        var options = options(8).setNumModelInstances(1).build();
         var name = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, SHARED_SESSION, Optional.empty());
 
         var meanName = TritonOnnxRuntime.generateModelName(MODEL_PATH, options, SHARED_SESSION, Optional.of(MEAN_POOLING));
@@ -644,7 +644,7 @@ class TritonOnnxRuntimeDefaultsTest {
 
     @Test
     void model_name_depends_only_on_the_pooling_parameters_the_config_gets() {
-        var options = options(8).build().withNumModelInstances(1);
+        var options = options(8).setNumModelInstances(1).build();
         // The config leaves out the mask input for CLS and for the default name, so the mask does not tell models apart.
         assertEquals(modelName(options, OnnxPoolingOptions.Strategy.CLS, "attention_mask"),
                      modelName(options, OnnxPoolingOptions.Strategy.CLS, "mask"));
@@ -667,7 +667,7 @@ class TritonOnnxRuntimeDefaultsTest {
         var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
                 .modelRepositoryPath(repository.toString()).onnxPooling(true).build(), client);
         var options = options(8).build();
-        try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options.withRuntimePooling(MEAN_POOLING))) {
+        try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options.toBuilder().setRuntimePooling(Optional.of(MEAN_POOLING)).build())) {
             assertEquals(Optional.of(MEAN_POOLING), evaluator.runtimePooling());
             var name = TritonOnnxRuntime.generateModelName(
                     MODEL_PATH, resolveInstanceCount(options, SEPARATE_SESSIONS), SEPARATE_SESSIONS, Optional.of(MEAN_POOLING));
@@ -733,7 +733,7 @@ class TritonOnnxRuntimeDefaultsTest {
                 if (enabled && options.modelConfigOverride().isEmpty()) continue; // the case where pooling applies
                 var runtime = new TritonOnnxRuntime(new TritonConfig.Builder()
                         .modelRepositoryPath(repository.toString()).onnxPooling(enabled).build(), mock(TritonOnnxClient.class));
-                try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options.withRuntimePooling(MEAN_POOLING))) {
+                try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options.toBuilder().setRuntimePooling(Optional.of(MEAN_POOLING)).build())) {
                     assertTrue(evaluator.runtimePooling().isEmpty());
                     var resolved = options.modelConfigOverride().isPresent()
                             ? options : resolveInstanceCount(options, SEPARATE_SESSIONS);
@@ -748,7 +748,7 @@ class TritonOnnxRuntimeDefaultsTest {
         for (var mode : List.of(TritonConfig.ModelControlMode.NONE, TritonConfig.ModelControlMode.POLL)) {
             var runtime = new TritonOnnxRuntime(new TritonConfig.Builder().modelControlMode(mode)
                     .modelRepositoryPath(repository.toString()).onnxPooling(true).build(), mock(TritonOnnxClient.class));
-            try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options(8).build().withRuntimePooling(MEAN_POOLING))) {
+            try (var evaluator = runtime.evaluatorOf(MODEL_PATH, options(8).setRuntimePooling(Optional.of(MEAN_POOLING)).build())) {
                 assertTrue(evaluator.runtimePooling().isEmpty());
             } finally {
                 runtime.deconstruct();

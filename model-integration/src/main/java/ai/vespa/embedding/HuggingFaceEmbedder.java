@@ -132,8 +132,13 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
         var resolver = new OnnxExternalDataResolver(modelHelper);
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig).withAttentionMask(embedderConfig.transformerAttentionMask()).withMaxTokens(maxLength);
-        onnxOpts = runtimePooling(embedderConfig).map(onnxOpts::withRuntimePooling).orElse(onnxOpts);
+        // The first dimension of an embedder's model is a batch of texts.
+        var onnxOpts = OnnxEvaluatorOptions.builder(onnxConfig)
+                .setFirstDimensionIsBatch(true)
+                .setPaddingAttentionMask(embedderConfig.transformerAttentionMask())
+                .setPaddingMaxTokens(maxLength)
+                .setRuntimePooling(runtimePooling(embedderConfig))
+                .build();
         evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
 
         this.analysis = analyze(evaluator, embedderConfig);

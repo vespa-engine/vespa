@@ -251,7 +251,7 @@ public class TritonOnnxClient implements AutoCloseable {
 
     /**
      * Returns whether the error is Triton's ONNX Runtime backend refusing to load a model with a non-zero max batch size,
-     * since an input or output of the model has no batch dimension.
+     * since an input or output of the model has no dynamic first dimension.
      * Only Triton's auto-complete reports this error.
      * TritonOnnxRuntime specifies the inputs and outputs only in model configs with max batch size 0,
      * so the others need auto-complete.
@@ -262,7 +262,7 @@ public class TritonOnnxClient implements AutoCloseable {
 
     /**
      * Returns whether the error is Triton refusing to load a model with its config, such as rejecting batching
-     * or inputs and outputs specified in the model config that are not matching the model.
+     * or inputs and outputs specified in the model config that do not match the model.
      * Triton reports a model file that is missing or partly written with other errors, which a retry may fix.
      */
     public static boolean isConfigRejection(TritonException e) {

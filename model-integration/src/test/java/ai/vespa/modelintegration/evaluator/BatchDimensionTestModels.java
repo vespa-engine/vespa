@@ -6,7 +6,7 @@ import onnx.Onnx;
 import java.util.List;
 
 /**
- * Small models with and without a batch dimension.
+ * Small models with and without a dynamic first dimension.
  * OnnxStreamParserTest checks them against ONNX Runtime.
  * TritonOnnxRuntimeTest checks them against Triton.
  *
@@ -15,17 +15,16 @@ import java.util.List;
 public class BatchDimensionTestModels {
 
     /**
-     * A model, and whether Triton supports batching for it.
-     * Triton supports batching when ONNX Runtime reports a batch dimension for all inputs and outputs of the model.
+     * A model, and whether ONNX Runtime reports a dynamic first dimension for all its inputs and outputs.
      */
-    public record Case(String name, Onnx.ModelProto model, boolean supportsBatching) {}
+    public record Case(String name, Onnx.ModelProto model, boolean hasDynamicFirstDimension) {}
 
-    /** Models whose batch dimension {@link OnnxStreamParser#declaresBatchDimension} reads as ONNX Runtime reports it */
+    /** Models for which {@link OnnxStreamParser#hasDynamicFirstDimension} agrees with the shapes ONNX Runtime reports */
     public static List<Case> cases() {
         return List.of(
                 new Case("named", identity(tensor("x", "batch", 3), tensor("y", "batch", 3)), true),
                 new Case("unnamed", identity(tensor("x", null, 3), tensor("y", null, 3)), true),
-                // Some converters write a variable size as -1
+                // Some converters write a dynamic size as -1
                 new Case("minus_one", identity(tensor("x", -1, 3), tensor("y", -1, 3)), true),
                 // ONNX Runtime infers the shape of an output without one
                 new Case("unshaped_output", identity(tensor("x", "batch", 3), unshaped("y")), true),
@@ -47,8 +46,9 @@ public class BatchDimensionTestModels {
     }
 
     /**
-     * Models whose output ONNX Runtime infers to have no batch dimension, although the declared output has one.
-     * {@link OnnxStreamParser#declaresBatchDimension} reads only declared shapes, so it reports a batch dimension for these.
+     * Models whose output ONNX Runtime infers to have no dynamic first dimension, although the declared output has one.
+     * {@link OnnxStreamParser#hasDynamicFirstDimension} reads only declared shapes,
+     * so it reports a dynamic first dimension for these.
      * Triton then fails to load them with a non-zero max batch size, and TritonOnnxRuntime loads them again with 0.
      */
     public static List<Case> casesWhereShapeInferenceRemovesBatchDimension() {
@@ -72,7 +72,7 @@ public class BatchDimensionTestModels {
      * A cross-encoder that scores a tokenized pair, as global-phase reranking uses one.
      * It takes input_ids and attention_mask and returns one logit per pair: the masked sum of token embeddings,
      * projected to a score.
-     * With a batch dimension, the shapes are [batch, sequence] -> [batch, 1].
+     * With a dynamic first dimension, the shapes are [batch, sequence] -> [batch, 1].
      * Without one, they are [1, 8] -> [1, 1].
      */
     public static Onnx.ModelProto crossEncoder(boolean withBatchDimension) {

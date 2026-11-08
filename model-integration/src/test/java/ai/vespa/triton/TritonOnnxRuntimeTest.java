@@ -84,7 +84,7 @@ class TritonOnnxRuntimeTest {
         var pooling = new OnnxPoolingOptions(OnnxPoolingOptions.Strategy.MEAN, "last_hidden_state", "attention_mask");
         try {
             var exception = assertThrows(IllegalArgumentException.class,
-                    () -> runtime.evaluatorOf(MASKED_MODEL_PATH, optsBuilder.build().withRuntimePooling(pooling)));
+                    () -> runtime.evaluatorOf(MASKED_MODEL_PATH, optsBuilder.setRuntimePooling(Optional.of(pooling)).build()));
             assertTrue(exception.getMessage().startsWith("Triton did not pool output 'last_hidden_state'"), exception.getMessage());
             assertTrue(exception.getMessage().contains("Disable triton-onnx-pooling"), exception.getMessage());
         } finally {
@@ -232,7 +232,7 @@ class TritonOnnxRuntimeTest {
             assertModelRepo(client, 1, Map.of(modelName1, true, modelName2, false));
 
             // Explicit concurrency equal to the automatic default must reuse the same model.
-            var explicitOne = new OnnxEvaluatorOptions.Builder(opts)
+            var explicitOne = opts.toBuilder()
                     .setConcurrency(1, OnnxEvaluatorOptions.ConcurrencyFactorType.ABSOLUTE)
                     .build();
             var evaluator2 = runtime.evaluatorOf(modelPath1, explicitOne);
@@ -455,7 +455,7 @@ class TritonOnnxRuntimeTest {
         }
     }
 
-    // Triton fails to load a model without a batch dimension with a non-zero max batch size, so Vespa configures 0.
+    // Triton fails to load a model without a dynamic first dimension with a non-zero max batch size, so Vespa configures 0.
     @Test
     void load_and_evaluate_model_without_batch_dimension() {
         var runtime = createRuntime();
@@ -474,7 +474,7 @@ class TritonOnnxRuntimeTest {
     }
 
     // Triton decides whether a model can batch, so it is the reference for the max batch size Vespa configures.
-    // A model without a batch dimension needs 0, or Triton fails to load it.
+    // A model without a dynamic first dimension needs 0, or Triton fails to load it.
     // A model with one must keep the configured size, since Triton fills in its own default and dynamic batching for 0.
     @Test
     void triton_loads_models_with_the_max_batch_size_their_batch_dimension_allows(@TempDir Path directory)
@@ -485,7 +485,7 @@ class TritonOnnxRuntimeTest {
             for (var testCase : BatchDimensionTestModels.cases()) {
                 var model = Files.write(directory.resolve(testCase.name() + ".onnx"), testCase.model().toByteArray());
                 try (var evaluator = runtime.evaluatorOf(model.toString(), opts)) {
-                    assertEquals(testCase.supportsBatching() ? 8 : 0,
+                    assertEquals(testCase.hasDynamicFirstDimension() ? 8 : 0,
                                  maxBatchSizeInTriton(modelName(model.toString(), opts)), testCase.name());
                 }
             }
@@ -494,7 +494,7 @@ class TritonOnnxRuntimeTest {
         }
     }
 
-    // ONNX Runtime infers that these models have an output without a batch dimension.
+    // ONNX Runtime infers that these models have an output without a dynamic first dimension.
     // OnnxStreamParser reads only declared shapes, so the first load with a non-zero max batch size fails.
     // The runtime then loads the models again with a max batch size of 0.
     @Test

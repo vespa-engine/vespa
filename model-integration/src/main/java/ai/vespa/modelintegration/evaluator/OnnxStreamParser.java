@@ -45,13 +45,13 @@ public class OnnxStreamParser {
     }
 
     /**
-     * Returns whether every input and output of the model declares a batch dimension: a first dimension of variable size.
+     * Returns whether every input and output of the model has a dynamic first dimension, as declared in the model file.
      * A model exported with a [1, features] input, for example, has a first dimension of fixed size instead.
-     * Triton's ONNX Runtime backend refuses to batch a model without a batch dimension.
-     * The backend judges the shapes that ONNX Runtime reports, so this method reads them the same way.
+     * Triton's ONNX Runtime backend refuses to batch a model without a dynamic first dimension.
+     * The backend judges the shapes that ONNX Runtime reports, so this method reads declared shapes the way ONNX Runtime does.
      */
-    public static boolean declaresBatchDimension(Path model) throws IOException {
-        return getInputsAndOutputs(model).map(InputsAndOutputs::declaresBatchDimension).orElse(true);
+    public static boolean hasDynamicFirstDimension(Path model) throws IOException {
+        return getInputsAndOutputs(model).map(InputsAndOutputs::hasDynamicFirstDimension).orElse(true);
     }
 
     /** The inputs and outputs that a model declares, with their names, element types and shapes */
@@ -62,9 +62,9 @@ public class OnnxStreamParser {
             outputs = List.copyOf(outputs);
         }
 
-        boolean declaresBatchDimension() {
-            return inputs.stream().allMatch(input -> OnnxStreamParser.declaresBatchDimension(input, true))
-                   && outputs.stream().allMatch(output -> OnnxStreamParser.declaresBatchDimension(output, false));
+        boolean hasDynamicFirstDimension() {
+            return inputs.stream().allMatch(input -> OnnxStreamParser.hasDynamicFirstDimension(input, true))
+                   && outputs.stream().allMatch(output -> OnnxStreamParser.hasDynamicFirstDimension(output, false));
         }
     }
 
@@ -93,7 +93,7 @@ public class OnnxStreamParser {
         }
     }
 
-    private static boolean declaresBatchDimension(Onnx.ValueInfoProto value, boolean isInput) {
+    private static boolean hasDynamicFirstDimension(Onnx.ValueInfoProto value, boolean isInput) {
         var type = value.getType();
         // Triton's ONNX Runtime backend rejects inputs and outputs that are not tensors, whatever the batching.
         if (!type.hasTensorType()) return true;
@@ -103,8 +103,8 @@ public class OnnxStreamParser {
         var shape = type.getTensorType().getShape();
         if (shape.getDimCount() == 0) return false;
         var first = shape.getDim(0);
-        // Some converters write a variable size as -1.
-        // ONNX Runtime treats -1 as a variable size.
+        // Some converters write a dynamic size as -1.
+        // ONNX Runtime treats -1 as a dynamic size.
         return !first.hasDimValue() || first.getDimValue() == -1;
     }
 

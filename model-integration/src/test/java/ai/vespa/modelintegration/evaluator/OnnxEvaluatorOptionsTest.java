@@ -17,44 +17,61 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class OnnxEvaluatorOptionsTest {
     @Test
-    public void of_config_with_defaults() {
+    public void builder_of_config_with_defaults() {
         var configBuilder = new OnnxEvaluatorConfig.Builder();
         configBuilder.executionMode(OnnxEvaluatorConfig.ExecutionMode.Enum.parallel);
         configBuilder.gpuDevice(2);
         var config = configBuilder.build();
 
-        var options = OnnxEvaluatorOptions.of(config, 8);
+        var options = OnnxEvaluatorOptions.builder(config, 8).build();
 
         assertEquals(OnnxEvaluatorOptions.ExecutionMode.PARALLEL, options.executionMode());
         assertEquals(1, options.interOpThreads());
         assertEquals(2, options.intraOpThreads());
         assertEquals(2, options.gpuDeviceNumber());
         assertEquals(1, options.batchingMaxSize());
-        assertTrue(options.firstDimensionIsBatch());
         assertTrue(options.numModelInstances().isEmpty());
         assertTrue(options.modelConfigOverride().isEmpty());
     }
 
     @Test
-    public void only_embedder_config_sets_first_dimension_is_batch() {
+    public void first_dimension_is_not_a_batch_unless_set() {
         assertFalse(OnnxEvaluatorOptions.createDefault().firstDimensionIsBatch());
         assertFalse(new OnnxEvaluatorOptions.Builder(16).build().firstDimensionIsBatch());
-        assertTrue(OnnxEvaluatorOptions.of(new OnnxEvaluatorConfig.Builder().build(), 8).firstDimensionIsBatch());
+        assertFalse(OnnxEvaluatorOptions.builder(new OnnxEvaluatorConfig.Builder().build(), 8).build().firstDimensionIsBatch());
     }
 
     @Test
     public void padding_is_unset_unless_padding_buckets_are_configured() {
         var batchingOnly = new OnnxEvaluatorConfig.Builder();
         batchingOnly.batching.maxSize(8);
-        var options = OnnxEvaluatorOptions.of(batchingOnly.build(), 8);
+        var options = OnnxEvaluatorOptions.builder(batchingOnly.build(), 8).build();
         assertTrue(options.padding().isEmpty());
-        assertEquals(options, options.withAttentionMask("mask").withMaxTokens(32), "Nothing to refine without padding buckets");
+        assertEquals(options, OnnxEvaluatorOptions.builder(batchingOnly.build(), 8)
+                                                  .setPaddingAttentionMask("mask").setPaddingMaxTokens(32).build(),
+                     "Nothing to refine without padding buckets");
 
         var withBuckets = new OnnxEvaluatorConfig.Builder();
         withBuckets.batching.maxSize(8).paddingBuckets(List.of(16, 64));
-        var refined = OnnxEvaluatorOptions.of(withBuckets.build(), 8)
-                                          .withAttentionMask("mask").withMaxTokens(32)
+        var refined = OnnxEvaluatorOptions.builder(withBuckets.build(), 8)
+                                          .setFirstDimensionIsBatch(true)
+                                          .setPaddingAttentionMask("mask")
+                                          .setPaddingMaxTokens(32)
+                                          .build()
                                           .padding().orElseThrow();
+        assertEquals("mask", refined.attentionMaskName());
+        assertEquals(List.of(16, 32), refined.buckets());
+    }
+
+    @Test
+    public void padding_refinements_apply_regardless_of_setter_order() {
+        var refined = new OnnxEvaluatorOptions.Builder(16)
+                .setFirstDimensionIsBatch(true)
+                .setPaddingAttentionMask("mask")
+                .setPaddingMaxTokens(32)
+                .setPadding(Optional.of(OnnxPadderOptions.of(List.of(16, 64))))
+                .build()
+                .padding().orElseThrow();
         assertEquals("mask", refined.attentionMaskName());
         assertEquals(List.of(16, 32), refined.buckets());
     }
@@ -83,7 +100,7 @@ public class OnnxEvaluatorOptionsTest {
                 .build();
         assertEquals(Optional.of(8), relative.numModelInstances());
 
-        var copied = new OnnxEvaluatorOptions.Builder(absolute).build();
+        var copied = absolute.toBuilder().build();
         assertEquals(Optional.of(5), copied.numModelInstances());
         assertEquals(16, copied.availableProcessors());
         assertEquals(absolute, copied);
@@ -127,25 +144,25 @@ public class OnnxEvaluatorOptionsTest {
 
         for (int count : new int[] { 0, -1 }) {
             assertThrows(IllegalArgumentException.class,
-                         () -> new OnnxEvaluatorOptions.Builder(options).setNumModelInstances(count));
-            assertThrows(IllegalArgumentException.class, () -> options.withNumModelInstances(count));
+                         () -> options.toBuilder().setNumModelInstances(count));
+            assertThrows(IllegalArgumentException.class, () -> options.toBuilder().setNumModelInstances(count).build());
         }
     }
 
     @Test
-    public void of_config_with_negative_gpu_device_disables_gpu() {
+    public void builder_of_config_with_negative_gpu_device_disables_gpu() {
         var configBuilder = new OnnxEvaluatorConfig.Builder();
         configBuilder.gpuDevice(-1);
         var config = configBuilder.build();
 
-        var options = OnnxEvaluatorOptions.of(config, 8);
+        var options = OnnxEvaluatorOptions.builder(config, 8).build();
 
         assertEquals(-1, options.gpuDeviceNumber());
         assertFalse(options.requestingGpu());
     }
 
     @Test
-    public void of_config_with_all_params_set() {
+    public void builder_of_config_with_all_params_set() {
         var configBuilder = new OnnxEvaluatorConfig.Builder();
         configBuilder.executionMode(OnnxEvaluatorConfig.ExecutionMode.Enum.parallel);
         configBuilder.interOpThreads(4);
@@ -165,7 +182,7 @@ public class OnnxEvaluatorOptionsTest {
         configBuilder.modelConfigOverride(Optional.of(new FileReference("/path/to/config.pbtxt")));
         var config = configBuilder.build();
 
-        var options = OnnxEvaluatorOptions.of(config);
+        var options = OnnxEvaluatorOptions.builder(config).build();
 
         assertEquals(OnnxEvaluatorOptions.ExecutionMode.PARALLEL, options.executionMode());
         assertEquals(4, options.interOpThreads());
@@ -179,6 +196,6 @@ public class OnnxEvaluatorOptionsTest {
 
         var configWithDifferentDelay = new OnnxEvaluatorConfig.Builder(config);
         configWithDifferentDelay.batching.maxDelayMillis(100);
-        assertEquals(options, OnnxEvaluatorOptions.of(configWithDifferentDelay.build()));
+        assertEquals(options, OnnxEvaluatorOptions.builder(configWithDifferentDelay.build()).build());
     }
 }

@@ -61,7 +61,7 @@ class EmbeddedOnnxRuntimeTest {
         var padding = new OnnxEvaluatorOptions.Builder()
                 .setFirstDimensionIsBatch(true).setPadding(Optional.of(OnnxPadderOptions.of(List.of(16)))).build();
         var evaluator1 = runtime.evaluatorOf(model, padding);
-        var evaluator2 = runtime.evaluatorOf(model, padding.withMaxTokens(8));
+        var evaluator2 = runtime.evaluatorOf(model, padding.toBuilder().setPaddingMaxTokens(8).build());
         var evaluator3 = runtime.evaluatorOf(model, OnnxEvaluatorOptions.createDefault());
         assertSameSession(evaluator1, evaluator2);
         assertSameSession(evaluator1, evaluator3);

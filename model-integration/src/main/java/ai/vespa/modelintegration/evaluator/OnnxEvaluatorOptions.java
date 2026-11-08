@@ -6,7 +6,7 @@ import ai.vespa.modelintegration.evaluator.config.OnnxEvaluatorConfig;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.UnaryOperator;
+import java.util.OptionalInt;
 
 /**
  * Session options for ONNX Runtime evaluation.
@@ -45,12 +45,12 @@ public record OnnxEvaluatorOptions(
         return new Builder().build();
     }
 
-    public static OnnxEvaluatorOptions of(OnnxEvaluatorConfig config) {
-        return of(config, Runtime.getRuntime().availableProcessors());
+    public static Builder builder(OnnxEvaluatorConfig config) {
+        return builder(config, Runtime.getRuntime().availableProcessors());
     }
 
     // availableProcessors is injected to simplify testing
-    public static OnnxEvaluatorOptions of(OnnxEvaluatorConfig config, int availableProcessors) {
+    public static Builder builder(OnnxEvaluatorConfig config, int availableProcessors) {
         var concurrencyFactorType = OnnxEvaluatorOptions.ConcurrencyFactorType.fromString(
                 config.concurrency().factorType().toString());
 
@@ -58,8 +58,6 @@ public record OnnxEvaluatorOptions(
                 .setExecutionMode(config.executionMode().toString())
                 .setThreadsFromFactors(config.interOpThreads(), config.intraOpThreads())
                 .setBatchingMaxSize(config.batching().maxSize())
-                // OnnxEvaluatorConfig configures embedders, whose first dimension is a batch.
-                .setFirstDimensionIsBatch(true)
                 .setConcurrency(config.concurrency().factor(), concurrencyFactorType)
                 .setModelConfigOverride(config.modelConfigOverride())
                 .setPadding(OnnxPadderOptions.of(config))
@@ -71,7 +69,7 @@ public record OnnxEvaluatorOptions(
 
         // batching.maxDelayMillis is deprecated and intentionally ignored by both ONNX runtimes.
 
-        return builder.build();
+        return builder;
     }
 
 
@@ -108,6 +106,9 @@ public record OnnxEvaluatorOptions(
         private Optional<Path> modelConfigOverride;
         private Optional<OnnxPadderOptions> padding;
         private Optional<OnnxPoolingOptions> runtimePooling;
+        // Applied to the padding in build(), so that they do not depend on the order of the setters
+        private Optional<String> paddingAttentionMask = Optional.empty();
+        private OptionalInt paddingMaxTokens = OptionalInt.empty();
 
         // Used to calculate number of threads
         private int availableProcessors;
@@ -125,7 +126,7 @@ public record OnnxEvaluatorOptions(
             gpuDeviceRequired = false;
             optimizeModel = false;
             batchingMaxSize = 1;
-            // A variable first dimension is not always a batch, e.g. in a pairwise similarity model.
+            // A dynamic first dimension is not always a batch, e.g. in a pairwise similarity model.
             firstDimensionIsBatch = false;
             numModelInstances = Optional.empty();
             modelConfigOverride = Optional.empty();
@@ -253,12 +254,27 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
+        /** Sets the attention mask input that padding uses, if padding is configured */
+        public Builder setPaddingAttentionMask(String name) {
+            this.paddingAttentionMask = Optional.of(name);
+            return this;
+        }
+
+        /** Limits padding to at most the given max tokens, the longest input, if padding is configured */
+        public Builder setPaddingMaxTokens(int maxTokens) {
+            this.paddingMaxTokens = OptionalInt.of(maxTokens);
+            return this;
+        }
+
         public Builder setRuntimePooling(Optional<OnnxPoolingOptions> runtimePooling) {
             this.runtimePooling = runtimePooling;
             return this;
         }
 
         public OnnxEvaluatorOptions build() {
+            var refinedPadding = padding
+                    .map(p -> paddingAttentionMask.map(p::withAttentionMask).orElse(p))
+                    .map(p -> paddingMaxTokens.isPresent() ? p.withMaxTokens(paddingMaxTokens.getAsInt()) : p);
             return new OnnxEvaluatorOptions(
                     executionMode,
                     interOpThreads,
@@ -270,7 +286,7 @@ public record OnnxEvaluatorOptions(
                     firstDimensionIsBatch,
                     numModelInstances,
                     modelConfigOverride,
-                    padding,
+                    refinedPadding,
                     runtimePooling,
                     availableProcessors
             );
@@ -303,34 +319,7 @@ public record OnnxEvaluatorOptions(
         return isParallel() ? interOpThreads : 1;
     }
 
-    public OnnxEvaluatorOptions withNumModelInstances(int numModelInstances) {
-        return new Builder(this).setNumModelInstances(numModelInstances).build();
-    }
-
-    /** Returns these options padding with the given attention mask input, if padding is configured */
-    public OnnxEvaluatorOptions withAttentionMask(String name) {
-        return withPadding(padding -> padding.withAttentionMask(name));
-    }
-
-    /** Returns these options padding to at most the given max tokens, the longest input, if padding is configured */
-    public OnnxEvaluatorOptions withMaxTokens(int maxTokens) {
-        return withPadding(padding -> padding.withMaxTokens(maxTokens));
-    }
-
-    /** Returns these options without padding, which runtimes that do not pad key their sessions on */
-    public OnnxEvaluatorOptions withoutPadding() {
-        return padding.isEmpty() ? this : new Builder(this).setPadding(Optional.empty()).build();
-    }
-
-    private OnnxEvaluatorOptions withPadding(UnaryOperator<OnnxPadderOptions> operator) {
-        return padding.isEmpty() ? this : new Builder(this).setPadding(padding.map(operator)).build();
-    }
-
-    public OnnxEvaluatorOptions withRuntimePooling(OnnxPoolingOptions pooling) {
-        return new Builder(this).setRuntimePooling(Optional.of(pooling)).build();
-    }
-
-    public OnnxEvaluatorOptions withoutRuntimePooling() {
-        return runtimePooling.isEmpty() ? this : new Builder(this).setRuntimePooling(Optional.empty()).build();
+    public Builder toBuilder() {
+        return new Builder(this);
     }
 }

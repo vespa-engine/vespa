@@ -63,7 +63,12 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         tokenizer = new WordPieceEmbedder.Builder(embedderConfig.tokenizerVocab().toString()).build();
         
         var resolver = new OnnxExternalDataResolver();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig).withAttentionMask(attentionMaskName).withMaxTokens(maxTokens);
+        // The first dimension of an embedder's model is a batch of texts.
+        var onnxOpts = OnnxEvaluatorOptions.builder(onnxConfig)
+                .setFirstDimensionIsBatch(true)
+                .setPaddingAttentionMask(attentionMaskName)
+                .setPaddingMaxTokens(maxTokens)
+                .build();
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
         this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
         
