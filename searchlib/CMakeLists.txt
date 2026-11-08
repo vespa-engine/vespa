@@ -136,6 +136,7 @@ vespa_define_module(
     src/tests/engine/proto_rpc_adapter
     src/tests/expression/attributenode
     src/tests/expression/current_index_setup
+    src/tests/expression/decode_fast_map_lookup_node
     src/tests/expression/filter_predicate_node
     src/tests/expression/float_bucket_result_node
     src/tests/expression/interpolated_document_field_lookup_node

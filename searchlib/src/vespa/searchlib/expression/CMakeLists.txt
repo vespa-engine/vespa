@@ -12,6 +12,7 @@ vespa_add_library(searchlib_expression OBJECT
     catserializer.cpp
     current_index_setup.cpp
     debugwaitfunctionnode.cpp
+    decode_fast_map_lookup_node.cpp
     documentfieldnode.cpp
     enumattributeresult.cpp
     expressiontree.cpp
