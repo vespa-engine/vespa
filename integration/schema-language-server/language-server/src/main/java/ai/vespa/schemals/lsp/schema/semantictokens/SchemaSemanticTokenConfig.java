@@ -317,6 +317,7 @@ class SchemaSemanticTokenConfig {
     static final Set<ai.vespa.schemals.parser.indexinglanguage.Token.TokenType> indexingLanguageKeywords = new HashSet<>() {{
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.IF);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.FOR_EACH);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.FOR_EACH_FIELD);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.SWITCH);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.SELECT_INPUT);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.ELSE);
