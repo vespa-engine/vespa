@@ -23,6 +23,7 @@ import com.yahoo.search.grouping.request.DayOfMonthFunction;
 import com.yahoo.search.grouping.request.DayOfWeekFunction;
 import com.yahoo.search.grouping.request.DayOfYearFunction;
 import com.yahoo.search.grouping.request.DebugWaitFunction;
+import com.yahoo.search.grouping.request.DecodeFastMapLookupFunction;
 import com.yahoo.search.grouping.request.DivFunction;
 import com.yahoo.search.grouping.request.DocIdNsSpecificValue;
 import com.yahoo.search.grouping.request.DoubleValue;
@@ -124,6 +125,7 @@ import com.yahoo.searchlib.expression.BucketResultNode;
 import com.yahoo.searchlib.expression.CatFunctionNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.DebugWaitFunctionNode;
+import com.yahoo.searchlib.expression.DecodeFastMapLookupNode;
 import com.yahoo.searchlib.expression.DivideFunctionNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FilterExpressionNode;
@@ -350,6 +352,9 @@ class ExpressionConverter {
             return new DebugWaitFunctionNode(toExpressionNode(waitFunction.getArg(0)),
                                              waitFunction.getWaitTime(),
                                              waitFunction.getBusyWait());
+        }
+        if (exp instanceof DecodeFastMapLookupFunction function) {
+            return new DecodeFastMapLookupNode(function.getAttributeName(), toValueType(function), function.getSeparator());
         }
         if (exp instanceof DocIdNsSpecificValue) {
             return new GetDocIdNamespaceSpecificFunctionNode();
@@ -644,6 +649,20 @@ class ExpressionConverter {
             ret.add(bucket);
         }
         return ret;
+    }
+
+    private static DecodeFastMapLookupNode.ValueType toValueType(DecodeFastMapLookupFunction function) {
+        var type = function.getValueType().orElseThrow(() -> new IllegalInputException(
+                "The value type of fast map lookup '" + function.getName() + "' has not been resolved."));
+        return switch (type.kind()) {
+            case INT -> DecodeFastMapLookupNode.ValueType.INT;
+            case LONG -> DecodeFastMapLookupNode.ValueType.LONG;
+            case FLOAT -> DecodeFastMapLookupNode.ValueType.FLOAT;
+            case DOUBLE -> DecodeFastMapLookupNode.ValueType.DOUBLE;
+            case STRING -> DecodeFastMapLookupNode.ValueType.STRING;
+            default -> throw new IllegalInputException("Values of type " + type + " of fast map lookup '" +
+                                                       function.getName() + "' cannot be decoded.");
+        };
     }
 
     private BucketResultNode toBucket(GroupingExpression exp) {

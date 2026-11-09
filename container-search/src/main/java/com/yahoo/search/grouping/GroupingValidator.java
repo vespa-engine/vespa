@@ -14,12 +14,18 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.grouping.request.AttributeValue;
+import com.yahoo.search.grouping.request.DecodeFastMapLookupFunction;
 import com.yahoo.search.grouping.request.ExpressionVisitor;
 import com.yahoo.search.grouping.request.GroupingExpression;
+import com.yahoo.search.schema.Field;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
 import java.util.HashMap;
+import java.util.Set;
+import java.util.TreeMap;
 
 import static com.yahoo.search.grouping.GroupingQueryParser.SELECT_PARAMETER_PARSING;
 
@@ -39,7 +45,7 @@ public class GroupingValidator extends Searcher {
     public static final CompoundName PARAM_ENABLED = CompoundName.from("validate_" + GroupingQueryParser.PARAM_REQUEST);
     private final HashMap<String, AttributesConfig.Attribute> attributes = new HashMap<>();
     private final String clusterName;
-    private final boolean enabled;
+    private final boolean streamingMode;
 
     /**
      * Constructs a new instance of this searcher with the given component id and config.
@@ -48,7 +54,7 @@ public class GroupingValidator extends Searcher {
      */
     @Inject
     public GroupingValidator(ClusterConfig clusterConfig, AttributesConfig attributesConfig) {
-        enabled = (clusterConfig.indexMode() != ClusterConfig.IndexMode.Enum.STREAMING);
+        streamingMode = (clusterConfig.indexMode() == ClusterConfig.IndexMode.Enum.STREAMING);
         clusterName = clusterConfig.clusterName();
         for (AttributesConfig.Attribute attr : attributesConfig.attribute()) {
             attributes.put(attr.name(), attr);
@@ -57,12 +63,20 @@ public class GroupingValidator extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
-        if (enabled && query.properties().getBoolean(PARAM_ENABLED, true)) {
-            ExpressionVisitor visitor = new MyVisitor();
-            for (GroupingRequest req : query.getSelect().getGrouping())
-                req.getRootOperation().visitExpressions(visitor);
+        if (streamingMode) {
+            visitExpressions(query, new StreamingVisitor());
+        } else {
+            // Fast map lookups are resolved even when validation is disabled, as the backend needs the value type.
+            visitExpressions(query, new FastMapLookupResolver(query, execution.context().schemaInfo()));
+            if (query.properties().getBoolean(PARAM_ENABLED, true))
+                visitExpressions(query, new MyVisitor());
         }
         return execution.search(query);
+    }
+
+    private static void visitExpressions(Query query, ExpressionVisitor visitor) {
+        for (GroupingRequest req : query.getSelect().getGrouping())
+            req.getRootOperation().visitExpressions(visitor);
     }
 
     static private String datatypeAsString(AttributesConfig.Attribute attribute) {
@@ -161,6 +175,80 @@ public class GroupingValidator extends Searcher {
                 }
             } else if (exp instanceof AttributeValue) {
                 verifyHasAttribute(((AttributeValue) exp).getAttributeName(), false);
+            }
+        }
+    }
+
+    /**
+     * Sets the value type of each fast map lookup, from the schemas of this cluster that the query searches.
+     * The value type is serialized to the backend, so it must be the same in all those schemas.
+     */
+    private class FastMapLookupResolver implements ExpressionVisitor {
+
+        private final Query query;
+        private final SchemaInfo schemaInfo;
+
+        FastMapLookupResolver(Query query, SchemaInfo schemaInfo) {
+            this.query = query;
+            this.schemaInfo = schemaInfo;
+        }
+
+        @Override
+        public void visitExpression(GroupingExpression exp) {
+            if (exp instanceof DecodeFastMapLookupFunction function)
+                function.setValueType(resolveValueType(function));
+        }
+
+        private Field.Type resolveValueType(DecodeFastMapLookupFunction function) {
+            if ( ! attributes.containsKey(function.getAttributeName()))
+                throw unavailable(function);
+            var cluster = schemaInfo.clusters().get(clusterName);
+            Set<String> clusterSchemas = cluster != null ? cluster.schemas() : null;
+            var typesBySchema = new TreeMap<String, Field.Type>();
+            for (Schema schema : schemaInfo.newSession(query).schemas()) {
+                if (clusterSchemas != null && ! clusterSchemas.contains(schema.name())) continue;
+                Field field = schema.fields().get(function.getFieldName());
+                if (field == null) continue;
+                field.fastMapSearch(function.getLookupName())
+                     .ifPresent(fastMap -> typesBySchema.put(schema.name(), fastMap.valueType()));
+            }
+            if (typesBySchema.isEmpty())
+                throw unavailable(function);
+            if (typesBySchema.values().stream().distinct().count() > 1)
+                throw new IllegalInputException("Grouping request references fast map lookup '" + function.getName() +
+                                                "', which has different value types in the schemas searched in cluster '" +
+                                                clusterName + "': " + typesBySchema +
+                                                ". Restrict the query to schemas with the same value type.");
+            Field.Type type = typesBySchema.firstEntry().getValue();
+            if ( ! isDecodable(type))
+                throw new IllegalInputException("Grouping request references fast map lookup '" + function.getName() +
+                                                "', whose values of type " + type + " cannot be decoded.");
+            return type;
+        }
+
+        private IllegalInputException unavailable(DecodeFastMapLookupFunction function) {
+            return new IllegalInputException("Grouping request references fast map lookup '" + function.getName() +
+                                             "' which is not available in cluster '" + clusterName + "'.");
+        }
+
+        private static boolean isDecodable(Field.Type type) {
+            return switch (type.kind()) {
+                case INT, LONG, FLOAT, DOUBLE, STRING -> true;
+                default -> false;
+            };
+        }
+
+    }
+
+    /** Rejects expressions that the streaming search backend cannot evaluate. */
+    private class StreamingVisitor implements ExpressionVisitor {
+
+        @Override
+        public void visitExpression(GroupingExpression exp) {
+            if (exp instanceof DecodeFastMapLookupFunction function) {
+                throw new IllegalInputException("Grouping request references fast map lookup '" + function.getName() +
+                                                "', but decodefastmaplookup is not supported in streaming mode (cluster '" +
+                                                clusterName + "').");
             }
         }
     }
