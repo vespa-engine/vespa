@@ -632,11 +632,8 @@ void verify_eden_centroid_quantization(std::span<const IAccelerated*> accels, co
     CHECK(test_length >= 32); // Due to boundary testing
     Xoshiro256PlusPlusPrng prng(0x1baaadf00000d);
 
-    const auto    codebook = codebooks::eden_f32_codebook(bits);
-    const uint8_t highest_centroid_value_idx = (1u << bits) - 1;
-    const uint8_t lowest_centroid_value_idx = highest_centroid_value_idx / 2;
-    const float   min_centroid = codebook[lowest_centroid_value_idx];
-    const float   max_centroid = codebook[highest_centroid_value_idx];
+    const auto codebook = codebooks::eden_f32_codebook(bits);
+    const auto [min_centroid, max_centroid] = codebooks::eden_f32_codebook_min_max_value(bits);
     // Stuff a bit of padding on each side for added boundary testing
     std::uniform_real_distribution value_dist(min_centroid - 0.5f, max_centroid + 0.5f);
     std::uniform_real_distribution nx_dist(-3.f, 3.f); // Chosen by mental dice throw
