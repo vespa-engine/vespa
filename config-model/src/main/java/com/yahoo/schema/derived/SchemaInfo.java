@@ -183,13 +183,16 @@ public final class SchemaInfo extends Derived {
         fieldBuilder.matchType(toMatchType(field, isAttribute || isIndex));
         field.getExplanation().ifPresent(fieldBuilder::explanation);
         inputExpression.ifPresent(fieldBuilder::inputExpression);
-        for (var fastMapFields : field.getFastMapSearches()) {
-            fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
-                                                     .lookupName(fastMapFields.lookupName())
-                                                     .keyField(fastMapFields.keyField())
-                                                     .keyType(toTypeSpec(fastMapFields.keyType()))
-                                                     .valueField(fastMapFields.valueField())
-                                                     .valueType(toTypeSpec(fastMapFields.valueType())));
+        // An imported field reports the fast map searches of its parent field, but has no lookup attribute
+        if ( ! field.isImportedField()) {
+            for (var fastMapFields : field.getFastMapSearches()) {
+                fieldBuilder.fastMapSearchFields(new SchemaInfoConfig.Schema.Field.FastMapSearchFields.Builder()
+                                                         .lookupName(fastMapFields.lookupName())
+                                                         .keyField(fastMapFields.keyField())
+                                                         .keyType(toTypeSpec(fastMapFields.keyType()))
+                                                         .valueField(fastMapFields.valueField())
+                                                         .valueType(toTypeSpec(fastMapFields.valueType())));
+            }
         }
         schemaBuilder.field(fieldBuilder);
     }
