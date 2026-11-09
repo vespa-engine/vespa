@@ -10,6 +10,7 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/regex/regex.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -18,9 +19,11 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
+#include <sstream>
 #include <thread>
 
-#include <vespa/log/log.h>
+#include <vespa/log/logf.h>
 LOG_SETUP(".transactionlog.server");
 
 using search::common::FileHeaderContext;
@@ -29,6 +32,7 @@ using std::runtime_error;
 using vespalib::CpuUsage;
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
+using vespalib::Regex;
 using namespace std::chrono_literals;
 
 namespace search::transactionlog {
@@ -423,6 +427,24 @@ private:
     bool             _ok;
 };
 
+std::string make_string_from_frt_stringvalue(const FRT_StringValue& s) {
+    return std::string(s._str, s._len);
+}
+
+const std::string identifier_pattern("[A-Z_a-z][0-9A-Z_a-z]*");
+
+const auto identifier_regex = Regex::from_pattern(identifier_pattern);
+
+bool is_identifier(std::string_view sv) noexcept {
+    return identifier_regex.full_match(sv);
+}
+
+std::string quoted_string(std::string_view s) {
+    std::ostringstream ss;
+    ss << std::quoted(s);
+    return ss.str();
+}
+
 } // namespace
 
 void TransLogServer::createDomain(FRT_RPCRequest* req) {
@@ -430,14 +452,19 @@ void TransLogServer::createDomain(FRT_RPCRequest* req) {
     FRT_Values& params = *req->GetParams();
     FRT_Values& ret = *req->GetReturn();
 
-    const char* domainName = params[0]._string._str;
-    LOG(debug, "createDomain(%s)", domainName);
+    auto domain_name = make_string_from_frt_stringvalue(params[0]._string);
+    if (!is_identifier(domain_name)) {
+        LOGF(warning, "createDomain error: Bad domain name {}", quoted_string(domain_name));
+        ret.AddInt32(-2);
+        return;
+    }
+    LOG(debug, "createDomain(%s)", quoted_string(domain_name).c_str());
 
     std::lock_guard createDeleteGuard(_fileLock);
-    Domain::SP      domain(findDomain(domainName));
+    auto            domain(findDomain(domain_name));
     if (!domain) {
         try {
-            domain = std::make_shared<Domain>(domainName, dir(), _executor, _domainConfig, _fileHeaderContext);
+            domain = std::make_shared<Domain>(domain_name, dir(), _executor, _domainConfig, _fileHeaderContext);
             {
                 WriteGuard domainGuard(_domainMutex);
                 _domains[domain->name()] = domain;
@@ -445,7 +472,7 @@ void TransLogServer::createDomain(FRT_RPCRequest* req) {
             ReadGuard domainGuard(_domainMutex);
             writeDomainDir(domainGuard, dir(), domainList(), _domains);
         } catch (const std::exception& e) {
-            LOG(warning, "Failed creating %s domain. Exception = %s", domainName, e.what());
+            LOG(warning, "Failed creating %s domain. Exception = %s", quoted_string(domain_name).c_str(), e.what());
             retval = uint32_t(-1);
         }
     }
@@ -459,30 +486,39 @@ void TransLogServer::deleteDomain(FRT_RPCRequest* req) {
     FRT_Values& params = *req->GetParams();
     FRT_Values& ret = *req->GetReturn();
 
-    const char* domainName = params[0]._string._str;
-    LOG(debug, "deleteDomain(%s)", domainName);
+    auto domain_name = make_string_from_frt_stringvalue(params[0]._string);
+    if (!is_identifier(domain_name)) {
+        auto error_message = std::format("Bad domain name {}", quoted_string(domain_name));
+        LOGF(warning, "deleteDomain error: {}", error_message);
+        ret.AddInt32(-2);
+        ret.AddString(error_message.c_str());
+        return;
+    }
+    LOG(debug, "deleteDomain(%s)", quoted_string(domain_name).c_str());
 
     std::lock_guard createDeleteGuard(_fileLock);
-    Domain::SP      domain(findDomain(domainName));
+    auto            domain(findDomain(domain_name));
     if (!domain || (domain->getNumSessions() == 0)) {
         try {
             if (domain) {
                 domain->markDeleted();
                 WriteGuard domainGuard(_domainMutex);
-                _domains.erase(domainName);
+                _domains.erase(domain_name);
             }
-            std::filesystem::remove_all(std::filesystem::path(Domain::getDir(dir(), domainName)));
+            std::filesystem::remove_all(std::filesystem::path(Domain::getDir(dir(), domain_name)));
             vespalib::File::sync(dir());
             ReadGuard domainGuard(_domainMutex);
             writeDomainDir(domainGuard, dir(), domainList(), _domains);
         } catch (const std::exception& e) {
-            msg = make_string("Failed deleting %s domain. Exception = %s", domainName, e.what());
+            msg = make_string("Failed deleting %s domain. Exception = %s", quoted_string(domain_name).c_str(),
+                              e.what());
             retval = -1;
             LOG(warning, "%s", msg.c_str());
         }
     } else {
         retval = -2;
-        msg = vespalib::make_string("Domain '%s' is open. Can not delete open domains.", domainName);
+        msg = vespalib::make_string("Domain '%s' is open. Can not delete open domains.",
+                                    quoted_string(domain_name).c_str());
         LOG(warning, "%s", msg.c_str());
     }
     ret.AddInt32(retval);
@@ -494,10 +530,10 @@ void TransLogServer::openDomain(FRT_RPCRequest* req) {
     FRT_Values& params = *req->GetParams();
     FRT_Values& ret = *req->GetReturn();
 
-    const char* domainName = params[0]._string._str;
-    LOG(debug, "openDomain(%s)", domainName);
+    auto domain_name = make_string_from_frt_stringvalue(params[0]._string);
+    LOG(debug, "openDomain(%s)", quoted_string(domain_name).c_str());
 
-    Domain::SP domain(findDomain(domainName));
+    auto domain(findDomain(domain_name));
     if (!domain) {
         retval = uint32_t(-1);
     }
@@ -522,9 +558,9 @@ void TransLogServer::listDomains(FRT_RPCRequest* req) {
 void TransLogServer::domainStatus(FRT_RPCRequest* req) {
     FRT_Values& params = *req->GetParams();
     FRT_Values& ret = *req->GetReturn();
-    const char* domainName = params[0]._string._str;
-    LOG(debug, "domainStatus(%s)", domainName);
-    Domain::SP domain(findDomain(domainName));
+    auto        domain_name = make_string_from_frt_stringvalue(params[0]._string);
+    LOG(debug, "domainStatus(%s)", quoted_string(domain_name).c_str());
+    auto domain(findDomain(domain_name));
     if (domain) {
         ret.AddInt32(0);
         ret.AddInt64(domain->begin());
@@ -539,20 +575,20 @@ void TransLogServer::domainStatus(FRT_RPCRequest* req) {
 }
 
 std::shared_ptr<Writer> TransLogServer::getWriter(const std::string& domainName) const {
-    Domain::SP domain(findDomain(domainName));
+    auto domain(findDomain(domainName));
     if (domain) {
         return domain;
     } else {
-        throw IllegalArgumentException("Could not find domain " + domainName);
+        throw IllegalArgumentException("Could not find domain " + quoted_string(domainName));
     }
 }
 
 void TransLogServer::domainCommit(FRT_RPCRequest* req) {
     FRT_Values& params = *req->GetParams();
     FRT_Values& ret = *req->GetReturn();
-    const char* domainName = params[0]._string._str;
-    LOG(debug, "domainCommit(%s)(%d)", domainName, params[1]._data._len);
-    Domain::SP domain(findDomain(domainName));
+    auto        domain_name = make_string_from_frt_stringvalue(params[0]._string);
+    LOG(debug, "domainCommit(%s)(%d)", quoted_string(domain_name).c_str(), params[1]._data._len);
+    auto domain(findDomain(domain_name));
     if (domain) {
         Packet packet(params[1]._data._buf, params[1]._data._len);
         try {
@@ -568,11 +604,13 @@ void TransLogServer::domainCommit(FRT_RPCRequest* req) {
             ret.AddString("ok");
         } catch (const std::exception& e) {
             ret.AddInt32(-2);
-            ret.AddString(make_string("Exception during commit on %s : %s", domainName, e.what()).c_str());
+            ret.AddString(
+                make_string("Exception during commit on %s : %s", quoted_string(domain_name).c_str(), e.what())
+                    .c_str());
         }
     } else {
         ret.AddInt32(-1);
-        ret.AddString(make_string("Could not find domain %s", domainName).c_str());
+        ret.AddString(make_string("Could not find domain %s", quoted_string(domain_name).c_str()).c_str());
     }
 }
 
@@ -580,13 +618,13 @@ void TransLogServer::domainVisit(FRT_RPCRequest* req) {
     uint32_t retval(uint32_t(-1));
     FRT_Values& params = *req->GetParams();
     FRT_Values& ret = *req->GetReturn();
-    const char* domainName = params[0]._string._str;
-    LOG(debug, "domainVisit(%s)", domainName);
-    Domain::SP domain(findDomain(domainName));
+    auto        domain_name = make_string_from_frt_stringvalue(params[0]._string);
+    LOG(debug, "domainVisit(%s)", quoted_string(domain_name).c_str());
+    auto domain(findDomain(domain_name));
     if (domain) {
         SerialNum from(params[1]._intval64);
         SerialNum to(params[2]._intval64);
-        LOG(debug, "domainVisit(%s, %" PRIu64 ", %" PRIu64 ")", domainName, from, to);
+        LOG(debug, "domainVisit(%s, %" PRIu64 ", %" PRIu64 ")", quoted_string(domain_name).c_str(), from, to);
         retval =
             domain->visit(domain, from, to, std::make_unique<RPCDestination>(*_supervisor, req->GetConnection()));
     }
@@ -597,12 +635,12 @@ void TransLogServer::domainSessionRun(FRT_RPCRequest* req) {
     uint32_t retval(uint32_t(-1));
     FRT_Values& params = *req->GetParams();
     FRT_Values& ret = *req->GetReturn();
-    const char* domainName = params[0]._string._str;
+    auto        domain_name = make_string_from_frt_stringvalue(params[0]._string);
     int         sessionId(params[1]._intval32);
-    LOG(debug, "domainSessionRun(%s, %d)", domainName, sessionId);
-    Domain::SP domain(findDomain(domainName));
+    LOG(debug, "domainSessionRun(%s, %d)", quoted_string(domain_name).c_str(), sessionId);
+    auto domain(findDomain(domain_name));
     if (domain) {
-        LOG(debug, "Valid domain domainSessionRun(%s, %d)", domainName, sessionId);
+        LOG(debug, "Valid domain domainSessionRun(%s, %d)", quoted_string(domain_name).c_str(), sessionId);
         retval = domain->startSession(sessionId);
     }
     ret.AddInt32(retval);
@@ -617,15 +655,15 @@ void TransLogServer::domainSessionClose(FRT_RPCRequest* req) {
     uint32_t retval(uint32_t(-1));
     FRT_Values& params = *req->GetParams();
     FRT_Values& ret = *req->GetReturn();
-    const char* domainName = params[0]._string._str;
+    auto        domain_name = make_string_from_frt_stringvalue(params[0]._string);
     int         sessionId(params[1]._intval32);
-    LOG(debug, "domainSessionClose(%s, %d)", domainName, sessionId);
-    Domain::SP domain(findDomain(domainName));
+    LOG(debug, "domainSessionClose(%s, %d)", quoted_string(domain_name).c_str(), sessionId);
+    auto domain(findDomain(domain_name));
     if (domain) {
-        LOG(debug, "Valid domain domainSessionClose(%s, %d)", domainName, sessionId);
+        LOG(debug, "Valid domain domainSessionClose(%s, %d)", quoted_string(domain_name).c_str(), sessionId);
         retval = domain->closeSession(sessionId);
     }
-    LOG(debug, "domainSessionClose(%s, %d) = %d", domainName, sessionId, retval);
+    LOG(debug, "domainSessionClose(%s, %d) = %d", quoted_string(domain_name).c_str(), sessionId, retval);
     ret.AddInt32(retval);
 }
 
@@ -633,9 +671,9 @@ void TransLogServer::domainPrune(FRT_RPCRequest* req) {
     uint32_t retval(uint32_t(-1));
     FRT_Values& params = *req->GetParams();
     FRT_Values& ret = *req->GetReturn();
-    const char* domainName = params[0]._string._str;
-    LOG(debug, "domainPrune(%s)", domainName);
-    Domain::SP domain(findDomain(domainName));
+    auto        domain_name = make_string_from_frt_stringvalue(params[0]._string);
+    LOG(debug, "domainPrune(%s)", quoted_string(domain_name).c_str());
+    auto domain(findDomain(domain_name));
     if (domain) {
         SerialNum to(params[1]._intval64);
         SerialNum oldestActive = domain->findOldestActiveVisit();
@@ -650,10 +688,10 @@ void TransLogServer::domainPrune(FRT_RPCRequest* req) {
 
 void TransLogServer::domainSync(FRT_RPCRequest* req) {
     FRT_Values& params = *req->GetParams();
-    const char* domainName = params[0]._string._str;
+    auto        domain_name = make_string_from_frt_stringvalue(params[0]._string);
     SerialNum   syncTo(params[1]._intval64);
-    LOG(debug, "domainSync(%s, %" PRIu64 ")", domainName, syncTo);
-    Domain::SP domain(findDomain(domainName));
+    LOG(debug, "domainSync(%s, %" PRIu64 ")", quoted_string(domain_name).c_str(), syncTo);
+    auto domain(findDomain(domain_name));
 
     if (!domain) {
         FRT_Values& rvals = *req->GetReturn();

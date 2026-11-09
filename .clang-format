@@ -43,7 +43,7 @@ IncludeCategories:
   - Regex:           '^"'
     Priority:        1
     SortPriority:    1
-  - Regex:           '^<vespa/log/(log|bufferedlogger)[.]h'
+  - Regex:           '^<vespa/log/(log|logf|bufferedlogger)[.]h'
     Priority:        9
   - Regex:           '^<vespa/.*[.]h>'
     Priority:        3
