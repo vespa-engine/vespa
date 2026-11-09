@@ -157,6 +157,7 @@ vespa_define_module(
     src/tests/stllike
     src/tests/stringfmt
     src/tests/sync
+    src/tests/text/excess_hex
     src/tests/text/lowercase
     src/tests/text/stringtokenizer
     src/tests/text/utf8
