@@ -701,23 +701,20 @@ DebugWaitFunction debugWaitFunction(GroupingOperation grp) :
 
 DecodeFastMapLookupFunction decodeFastMapLookupFunction() :
 {
-    StringBuilder fieldName = new StringBuilder();
+    List<String> names = new ArrayList<String>();
     String str;
-    String lookupName = null;
     String separator = null;
 }
 {
-    ( <DECODEFASTMAPLOOKUP> lbrace() str = identifier() { fieldName.append(str); }
-      ( <DOT> str = identifier()
-        {
-            if (lookupName != null) fieldName.append(".").append(lookupName);
-            lookupName = str;
-        }
-      )+
+    ( <DECODEFASTMAPLOOKUP> lbrace() str = identifier() { names.add(str); }
+      ( <DOT> str = identifier() { names.add(str); } )+
       [ comma() separator = string() ] rbrace() )
     {
-        return separator == null ? new DecodeFastMapLookupFunction(fieldName.toString(), lookupName)
-                                 : new DecodeFastMapLookupFunction(fieldName.toString(), lookupName, separator);
+        // The last name is the lookup name, the others form the (possibly dotted) field name.
+        String fieldName = String.join(".", names.subList(0, names.size() - 1));
+        String lookupName = names.get(names.size() - 1);
+        return separator == null ? new DecodeFastMapLookupFunction(fieldName, lookupName)
+                                 : new DecodeFastMapLookupFunction(fieldName, lookupName, separator);
     }
 }
 
