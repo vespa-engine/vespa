@@ -85,6 +85,72 @@ TEST(DecodeFastMapLookupNodeTest, double_values_are_decoded_from_excess_hex) {
     EXPECT_EQ("k:0.1", decode("k", "bfb999999999999a", ValueType::DOUBLE));
 }
 
+TEST(DecodeFastMapLookupNodeTest, nan_and_large_exponents_are_decoded) {
+    EXPECT_EQ("k:nan", decode("k", "ffc00000", ValueType::FLOAT));
+    EXPECT_EQ("k:nan", decode("k", "fff8000000000000", ValueType::DOUBLE));
+    EXPECT_EQ("k:1e+30", decode("k", "f149f2ca", ValueType::FLOAT));
+    EXPECT_EQ("k:1e+300", decode("k", "fe37e43c8800759c", ValueType::DOUBLE));
+    EXPECT_EQ("k:1e-300", decode("k", "81a56e1fc2f8f359", ValueType::DOUBLE));
+}
+
+// The encoded values are those the Java encoders produce in vespajlib TextTestCase (testToExcessHex8,
+// testToExcessHex16, testFloatToExcessHex8 and testDoubleToExcessHex16); keep the two in sync.
+TEST(DecodeFastMapLookupNodeTest, values_encoded_by_java_text_are_decoded) {
+    struct Vector {
+        ValueType   type;
+        const char* encoded;
+        const char* decoded;
+    };
+    const std::vector<Vector> vectors{
+        {ValueType::INT, "00000000", "-2147483648"},
+        {ValueType::INT, "00000001", "-2147483647"},
+        {ValueType::INT, "7fffffff", "-1"},
+        {ValueType::INT, "80000000", "0"},
+        {ValueType::INT, "80000001", "1"},
+        {ValueType::INT, "8000000a", "10"},
+        {ValueType::INT, "fffffffe", "2147483646"},
+        {ValueType::INT, "ffffffff", "2147483647"},
+        {ValueType::LONG, "0000000000000000", "-9223372036854775808"},
+        {ValueType::LONG, "0000000000000001", "-9223372036854775807"},
+        {ValueType::LONG, "7fffffffffffffff", "-1"},
+        {ValueType::LONG, "8000000000000000", "0"},
+        {ValueType::LONG, "8000000000000001", "1"},
+        {ValueType::LONG, "800000000000000a", "10"},
+        {ValueType::LONG, "fffffffffffffffe", "9223372036854775806"},
+        {ValueType::LONG, "ffffffffffffffff", "9223372036854775807"},
+        {ValueType::LONG, "7fffffff80000000", "-2147483648"},
+        {ValueType::LONG, "800000007fffffff", "2147483647"},
+        {ValueType::FLOAT, "007fffff", "-inf"},
+        {ValueType::FLOAT, "00800000", "-3.4028235e+38"},
+        {ValueType::FLOAT, "407fffff", "-1"},
+        {ValueType::FLOAT, "7ffffffe", "-1e-45"},
+        {ValueType::FLOAT, "7fffffff", "-0"},
+        {ValueType::FLOAT, "80000000", "0"},
+        {ValueType::FLOAT, "80000001", "1e-45"},
+        {ValueType::FLOAT, "bf800000", "1"},
+        {ValueType::FLOAT, "ff7fffff", "3.4028235e+38"},
+        {ValueType::FLOAT, "ff800000", "inf"},
+        {ValueType::FLOAT, "ffc00000", "nan"},
+        {ValueType::FLOAT, "003fffff", "-nan"},
+        {ValueType::DOUBLE, "000fffffffffffff", "-inf"},
+        {ValueType::DOUBLE, "0010000000000000", "-1.7976931348623157e+308"},
+        {ValueType::DOUBLE, "400fffffffffffff", "-1"},
+        {ValueType::DOUBLE, "7ffffffffffffffe", "-5e-324"},
+        {ValueType::DOUBLE, "7fffffffffffffff", "-0"},
+        {ValueType::DOUBLE, "8000000000000000", "0"},
+        {ValueType::DOUBLE, "8000000000000001", "5e-324"},
+        {ValueType::DOUBLE, "bff0000000000000", "1"},
+        {ValueType::DOUBLE, "ffefffffffffffff", "1.7976931348623157e+308"},
+        {ValueType::DOUBLE, "fff0000000000000", "inf"},
+        {ValueType::DOUBLE, "fff8000000000000", "nan"},
+        {ValueType::DOUBLE, "0007ffffffffffff", "-nan"},
+    };
+    for (const auto& v : vectors) {
+        SCOPED_TRACE(v.encoded);
+        EXPECT_EQ(std::string("k:") + v.decoded, decode("k", v.encoded, v.type));
+    }
+}
+
 TEST(DecodeFastMapLookupNodeTest, string_values_and_numeric_keys_are_kept_as_is) {
     EXPECT_EQ("k:some value", decode("k", "some value", ValueType::STRING));
     EXPECT_EQ("k:", decode("k", "", ValueType::STRING));

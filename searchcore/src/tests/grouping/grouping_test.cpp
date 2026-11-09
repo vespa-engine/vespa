@@ -20,6 +20,7 @@
 #include <vespa/searchlib/expression/decode_fast_map_lookup_node.h>
 #include <vespa/searchlib/expression/enumresultnode.h>
 #include <vespa/searchlib/expression/integerresultnode.h>
+#include <vespa/searchlib/expression/numelemfunctionnode.h>
 #include <vespa/searchlib/expression/stringresultnode.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -736,11 +737,13 @@ struct FastMapWorld {
     }
     ~FastMapWorld();
 
-    static Grouping make_request() {
+    static Grouping make_request() { return make_request(MU<DecodeFastMapLookupNode>("m.lookup")); }
+
+    static Grouping make_request(ExpressionNode::UP level_expression) {
         Grouping request;
         request.setFirstLevel(0)
             .setLastLevel(1)
-            .addLevel(createGL(MU<DecodeFastMapLookupNode>("m.lookup"), MU<AttributeNode>("val")));
+            .addLevel(createGL(std::move(level_expression), MU<AttributeNode>("val")));
         return request;
     }
 
@@ -794,6 +797,21 @@ TEST(GroupingTest, decode_fast_map_lookup_nodes_are_configured_in_thread_context
     ASSERT_EQ(1u, ctx1->getGroupingList().size());
     std::map<std::string, int64_t> expected{{"a:1", 3}, {"b:-1", 1}};
     EXPECT_EQ(expected, FastMapWorld::group(*ctx1));
+}
+
+TEST(GroupingTest, decode_fast_map_lookup_nodes_nested_in_functions_are_configured_and_wired) {
+    DoomFixture     f1;
+    FastMapWorld    world;
+    GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
+    context.set_fast_map_lookups(world.lookups);
+    // numelem(decodefastmaplookup(m.lookup)): the decode node and its input are reached through the function node
+    context.addGrouping(std::make_shared<Grouping>(
+        FastMapWorld::make_request(MU<NumElemFunctionNode>(MU<DecodeFastMapLookupNode>("m.lookup")))));
+    GroupingManager manager(context);
+    manager.init(world.attributeContext, nullptr);
+    ASSERT_EQ(1u, context.getGroupingList().size());
+    std::map<std::string, int64_t> expected{{"0", 3}, {"1", 2}, {"2", 1}};
+    EXPECT_EQ(expected, FastMapWorld::group(context));
 }
 
 TEST(GroupingTest, grouping_with_unknown_fast_map_lookup_is_ignored) {
