@@ -65,7 +65,8 @@ public:
             return -inf;
         }
 
-        return (score - _first_low) * _scale + _second_low;
+        double rescored = (score - _first_low) * _scale + _second_low;
+        return std::isfinite(rescored) ? rescored : -inf;
     }
 };
 
