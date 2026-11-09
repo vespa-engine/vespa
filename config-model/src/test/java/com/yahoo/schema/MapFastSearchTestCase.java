@@ -3,6 +3,7 @@ package com.yahoo.schema;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.schema.derived.AttributeFields;
 import com.yahoo.schema.derived.IndexInfo;
 import com.yahoo.schema.derived.IndexingScript;
 import com.yahoo.schema.derived.SchemaInfo;
@@ -12,6 +13,7 @@ import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.jupiter.api.Test;
 
@@ -287,6 +289,36 @@ public class MapFastSearchTestCase {
     }
 
     @Test
+    void requireImportedFastMapFieldsHaveNoFastMapSearchOrLookupAttribute() throws ParseException {
+        var builder = new ApplicationBuilder();
+        builder.addSchema(joinLines("schema parent {",
+                                    "  document parent {",
+                                    "    field m type map<string, int> {",
+                                    "      indexing: summary",
+                                    "      struct-field key { indexing: attribute }",
+                                    "      struct-field value { indexing: attribute }",
+                                    "      fast-search-map-field lookup",
+                                    "    }",
+                                    "  }",
+                                    "}"));
+        builder.addSchema(joinLines("schema child {",
+                                    "  document child {",
+                                    "    field ref type reference<parent> { indexing: attribute }",
+                                    "  }",
+                                    "  import field ref.m as imported_m {}",
+                                    "}"));
+        builder.build(true);
+        var parent = builder.getSchema("parent");
+        var child = builder.getSchema("child");
+        assertEquals(1, fieldConfig(schemaInfoConfigOf(parent).schema(0), "m").fastMapSearchFields().size());
+        assertTrue(fieldConfig(schemaInfoConfigOf(child).schema(0), "imported_m").fastMapSearchFields().isEmpty());
+        assertTrue(attributeNamesOf(parent).contains("m$lookup"));
+        assertTrue(attributeNamesOf(child).contains("imported_m.key"));
+        assertFalse(attributeNamesOf(child).stream().anyMatch(name -> name.contains("$")),
+                    "Attributes: " + attributeNamesOf(child));
+    }
+
+    @Test
     void requireFastArrayOfStructIsListedInIlscriptsConfig() throws ParseException {
         var config = ilscriptsConfigOf(build(getSdWithEntry("string", "string",
                                                             fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"))));
@@ -399,6 +431,12 @@ public class MapFastSearchTestCase {
         var builder = new SchemaInfoConfig.Builder();
         schemaInfo.getConfig(builder);
         return builder.build();
+    }
+
+    private static List<String> attributeNamesOf(Schema schema) {
+        var builder = new AttributesConfig.Builder();
+        new AttributeFields(schema).getConfig(builder);
+        return builder.build().attribute().stream().map(AttributesConfig.Attribute::name).toList();
     }
 
     private static SchemaInfoConfig.Schema.Field fieldConfig(SchemaInfoConfig.Schema schema, String name) {
