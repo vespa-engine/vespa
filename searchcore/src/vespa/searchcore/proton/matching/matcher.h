@@ -23,8 +23,10 @@
 
 #include <mutex>
 
-namespace search::grouping {
+namespace search::expression {
 class FastMapLookups;
+}
+namespace search::grouping {
 class GroupingContext;
 class GroupingSession;
 } // namespace search::grouping
@@ -80,7 +82,7 @@ private:
     const std::atomic<steady_time>& _now_ref;
     QueryLimiter&                   _queryLimiter;
     uint32_t                        _distributionKey;
-    std::shared_ptr<const search::grouping::FastMapLookups> _fast_map_lookups;
+    std::shared_ptr<const search::expression::FastMapLookups> _fast_map_lookups;
 
     size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits,
                                       const Properties&                         rankProperties) const;

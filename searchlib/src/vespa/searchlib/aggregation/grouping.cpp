@@ -8,6 +8,7 @@
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/searchlib/expression/current_index_setup.h>
+#include <vespa/searchlib/expression/decode_fast_map_lookup_node.h>
 #include <vespa/searchlib/expression/documentaccessornode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/enumresultnode.h>
@@ -274,6 +275,10 @@ void Grouping::configureStaticStuff(const ConfigureStaticParams& params) {
         DocumentAccessorNode::Configure confDoc(*params._docType);
         select(confDoc, confDoc);
     }
+
+    // Must be done before the expression trees are prepared below.
+    DecodeFastMapLookupNode::Configure confFastMap(params._fastMapLookups);
+    select(confFastMap, confFastMap);
 
     if (params._enableNestedMultivalueGrouping) {
         CurrentIndexSetup   setup;

@@ -24,6 +24,8 @@ class RelevanceNode;
 class InterpolatedLookup;
 class ArrayAtLookup;
 
+class FastMapLookups;
+
 struct ConfigureStaticParams {
     ConfigureStaticParams(const attribute::IAttributeContext* attrCtx, const document::DocumentType* docType)
         : ConfigureStaticParams(attrCtx, docType, true) {}
@@ -33,6 +35,8 @@ struct ConfigureStaticParams {
     const attribute::IAttributeContext* _attrCtx;
     const document::DocumentType*       _docType;
     bool                                _enableNestedMultivalueGrouping;
+    // Used to configure DecodeFastMapLookupNode; a grouping with such a node fails to configure without it.
+    const FastMapLookups* _fastMapLookups = nullptr;
 };
 
 class ExpressionTree : public ExpressionNode {

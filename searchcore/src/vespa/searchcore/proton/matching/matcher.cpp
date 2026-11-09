@@ -10,7 +10,6 @@
 #include "match_tools.h"
 #include "sessionmanager.h"
 
-#include <vespa/searchcore/grouping/fast_map_lookups.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
@@ -20,6 +19,7 @@
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/engine/searchrequest.h>
+#include <vespa/searchlib/expression/fast_map_lookups.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
@@ -170,7 +170,7 @@ Matcher::Matcher(const search::index::Schema& schema, Properties props, const st
       _now_ref(now_ref),
       _queryLimiter(queryLimiter),
       _distributionKey(distributionKey),
-      _fast_map_lookups(std::make_shared<const FastMapLookups>(schema.get_fast_map_lookups())) {
+      _fast_map_lookups(std::make_shared<const search::expression::FastMapLookups>(schema.get_fast_map_lookups())) {
     search::features::setup_search_features(_blueprintFactory);
     search::fef::test::setup_fef_test_plugin(_blueprintFactory);
     _rankSetup = std::make_shared<search::fef::RankSetup>(_blueprintFactory, _indexEnv);

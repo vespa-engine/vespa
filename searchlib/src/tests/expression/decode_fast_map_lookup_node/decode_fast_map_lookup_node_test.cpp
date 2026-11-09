@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
@@ -8,6 +9,8 @@
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/searchlib/expression/decode_fast_map_lookup_node.h>
 #include <vespa/searchlib/expression/expressiontree.h>
+#include <vespa/searchlib/expression/fast_map_lookups.h>
+#include <vespa/searchlib/expression/numelemfunctionnode.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nboserializer.h>
@@ -17,12 +20,17 @@ using search::AttributeContext;
 using search::AttributeFactory;
 using search::AttributeManager;
 using search::StringAttribute;
+using search::aggregation::Grouping;
+using search::aggregation::GroupingLevel;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::expression::AttributeNode;
+using search::expression::ConfigureStaticParams;
 using search::expression::DecodeFastMapLookupNode;
 using search::expression::ExpressionTree;
+using search::expression::FastMapLookups;
+using search::expression::NumElemFunctionNode;
 using search::expression::ResultNodeVector;
 using search::expression::StringResultNodeVector;
 using ValueType = DecodeFastMapLookupNode::ValueType;
@@ -198,6 +206,37 @@ TEST(DecodeFastMapLookupNodeTest, configure_requires_known_value_type) {
     EXPECT_EQ(ValueType::LONG, node.getValueType());
 }
 
+TEST(DecodeFastMapLookupNodeTest, fast_map_lookups_are_found_by_name) {
+    FastMapLookups lookups({make_lookup("m", "lookup", "int"), make_lookup("m.x", "y", "long")});
+    ASSERT_NE(nullptr, lookups.find("m.lookup"));
+    EXPECT_EQ("lookup", lookups.find("m.lookup")->lookup_name);
+    ASSERT_NE(nullptr, lookups.find("m.x.y"));
+    EXPECT_EQ("m.x", lookups.find("m.x.y")->field_name);
+    EXPECT_EQ(nullptr, lookups.find("m$lookup"));
+    EXPECT_EQ(nullptr, lookups.find("m.other"));
+    EXPECT_EQ(nullptr, lookups.find("m"));
+}
+
+TEST(DecodeFastMapLookupNodeTest, configure_operation_configures_nested_nodes_by_name) {
+    FastMapLookups                     lookups({make_lookup("m", "lookup", "long")});
+    DecodeFastMapLookupNode::Configure configure(&lookups);
+    auto                               decode = std::make_unique<DecodeFastMapLookupNode>("m.lookup");
+    const DecodeFastMapLookupNode&     node = *decode;
+    NumElemFunctionNode                numelem(std::move(decode));
+    numelem.select(configure, configure);
+    EXPECT_EQ(ValueType::LONG, node.getValueType());
+}
+
+TEST(DecodeFastMapLookupNodeTest, configure_operation_fails_for_unknown_lookup) {
+    FastMapLookups                     lookups({make_lookup("m", "other", "int")});
+    DecodeFastMapLookupNode::Configure with_other_lookups(&lookups);
+    DecodeFastMapLookupNode::Configure without_lookups(nullptr);
+    DecodeFastMapLookupNode            node("m.lookup");
+    EXPECT_THROW(node.select(with_other_lookups, with_other_lookups), std::runtime_error);
+    EXPECT_THROW(node.select(without_lookups, without_lookups), std::runtime_error);
+    EXPECT_EQ(ValueType::UNKNOWN, node.getValueType());
+}
+
 TEST(DecodeFastMapLookupNodeTest, name_and_separator_are_serialized_but_only_copies_keep_value_type) {
     DecodeFastMapLookupNode node("m.lookup", ": ");
     node.configure(make_lookup("m", "lookup", "int"));
@@ -334,6 +373,28 @@ TEST_F(DecodeFastMapLookupNodeAttributeTest, prepare_fails_for_name_without_fiel
     auto no_lookup = std::make_unique<DecodeFastMapLookupNode>("m.");
     no_lookup->configure(make_lookup("m", "", "int"));
     EXPECT_THROW(make_tree(std::move(no_lookup)), std::runtime_error);
+}
+
+TEST_F(DecodeFastMapLookupNodeAttributeTest, grouping_configures_nodes_from_given_lookups) {
+    auto make_grouping = [] {
+        Grouping      grouping;
+        GroupingLevel level;
+        level.setExpression(std::make_unique<DecodeFastMapLookupNode>("m.lookup"));
+        grouping.addLevel(std::move(level));
+        grouping.setFirstLevel(0).setLastLevel(1);
+        return grouping;
+    };
+    FastMapLookups        lookups({make_lookup("m", "lookup", "int")});
+    Grouping              grouping = make_grouping();
+    ConfigureStaticParams params(&context, nullptr);
+    params._fastMapLookups = &lookups;
+    grouping.configureStaticStuff(params);
+    const auto& tree = grouping.getLevels()[0].getExpression();
+    EXPECT_EQ(ValueType::INT, static_cast<const DecodeFastMapLookupNode&>(*tree.getRoot()).getValueType());
+    EXPECT_EQ((std::vector<std::string>{"a:1", "b:-1"}), values_of(tree, 1));
+
+    Grouping without_lookups = make_grouping();
+    EXPECT_THROW(without_lookups.configureStaticStuff(ConfigureStaticParams(&context, nullptr)), std::runtime_error);
 }
 
 TEST_F(DecodeFastMapLookupNodeAttributeTest, prepare_fails_without_configuration) {

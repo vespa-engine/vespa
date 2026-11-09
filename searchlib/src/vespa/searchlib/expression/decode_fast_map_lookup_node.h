@@ -4,10 +4,13 @@
 #include "functionnode.h"
 
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/vespalib/objects/objectoperation.h>
+#include <vespa/vespalib/objects/objectpredicate.h>
 
 namespace search::expression {
 
 class AttributeNode;
+class FastMapLookups;
 
 /**
  * Decodes the entries of a map, or array of struct, with fast map search.
@@ -28,6 +31,20 @@ public:
 
     static constexpr char encoded_separator = 0x7F;
     static constexpr std::string_view default_separator = ":";
+
+    /**
+     * Configures each decode node with the fast map lookup of the same name. Throws if there is none,
+     * including when no lookups are given.
+     */
+    class Configure : public vespalib::ObjectOperation, public vespalib::ObjectPredicate {
+    public:
+        explicit Configure(const FastMapLookups* lookups) noexcept : _lookups(lookups) {}
+
+    private:
+        void execute(vespalib::Identifiable& obj) override;
+        bool check(const vespalib::Identifiable& obj) const override;
+        const FastMapLookups* _lookups;
+    };
 
 private:
     std::string                    _name;

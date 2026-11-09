@@ -3,6 +3,7 @@
 #include "decode_fast_map_lookup_node.h"
 
 #include "attributenode.h"
+#include "fast_map_lookups.h"
 #include "resultvector.h"
 
 #include <vespa/vespalib/objects/deserializer.h>
@@ -124,6 +125,19 @@ void DecodeFastMapLookupNode::configure(const FastMapLookup& lookup) {
             std::format("Unsupported value type '{}' for fast map lookup '{}'", lookup.value_type, _name));
     }
     _valueType = valueType;
+}
+
+void DecodeFastMapLookupNode::Configure::execute(vespalib::Identifiable& obj) {
+    auto&                node = static_cast<DecodeFastMapLookupNode&>(obj);
+    const FastMapLookup* lookup = (_lookups != nullptr) ? _lookups->find(node.getName()) : nullptr;
+    if (lookup == nullptr) {
+        throw std::runtime_error(std::format("No fast map lookup '{}' in schema", node.getName()));
+    }
+    node.configure(*lookup);
+}
+
+bool DecodeFastMapLookupNode::Configure::check(const vespalib::Identifiable& obj) const {
+    return obj.inherits(DecodeFastMapLookupNode::classId);
 }
 
 std::string DecodeFastMapLookupNode::decode(std::string_view encoded, ValueType valueType,

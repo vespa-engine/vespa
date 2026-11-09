@@ -7,12 +7,12 @@
 #include <string>
 #include <vector>
 
-namespace search::grouping {
+namespace search::expression {
 
 using FastMapLookup = search::index::Schema::FastMapLookup;
 
 /**
- * The fast map lookups of a document type, available to grouping.
+ * The fast map lookups of a document type, used to configure DecodeFastMapLookupNode in grouping.
  **/
 class FastMapLookups {
 private:
@@ -29,4 +29,4 @@ public:
     [[nodiscard]] const FastMapLookup* find(const std::string& name) const noexcept;
 };
 
-} // namespace search::grouping
+} // namespace search::expression

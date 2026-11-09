@@ -4,7 +4,7 @@
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-namespace search::grouping {
+namespace search::expression {
 
 FastMapLookups::FastMapLookups() = default;
 
@@ -21,4 +21,4 @@ const FastMapLookup* FastMapLookups::find(const std::string& name) const noexcep
     return (it != _lookups.end()) ? &it->second : nullptr;
 }
 
-} // namespace search::grouping
+} // namespace search::expression

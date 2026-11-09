@@ -13,6 +13,7 @@ vespa_add_library(searchlib_expression OBJECT
     current_index_setup.cpp
     debugwaitfunctionnode.cpp
     decode_fast_map_lookup_node.cpp
+    fast_map_lookups.cpp
     documentfieldnode.cpp
     enumattributeresult.cpp
     expressiontree.cpp

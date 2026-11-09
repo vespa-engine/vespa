@@ -3,7 +3,6 @@
 #include <vespa/check_require.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/searchcore/grouping/fast_map_lookups.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
@@ -19,6 +18,7 @@
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/searchlib/expression/decode_fast_map_lookup_node.h>
 #include <vespa/searchlib/expression/enumresultnode.h>
+#include <vespa/searchlib/expression/fast_map_lookups.h>
 #include <vespa/searchlib/expression/integerresultnode.h>
 #include <vespa/searchlib/expression/numelemfunctionnode.h>
 #include <vespa/searchlib/expression/stringresultnode.h>
@@ -831,16 +831,6 @@ TEST(GroupingTest, grouping_with_unknown_fast_map_lookup_is_ignored) {
     }
 }
 
-TEST(GroupingTest, fast_map_lookups_are_found_by_name) {
-    FastMapLookups lookups(std::vector<FastMapLookup>{make_lookup("m", "lookup"), make_lookup("m.x", "y")});
-    ASSERT_NE(nullptr, lookups.find("m.lookup"));
-    EXPECT_EQ("lookup", lookups.find("m.lookup")->lookup_name);
-    ASSERT_NE(nullptr, lookups.find("m.x.y"));
-    EXPECT_EQ("m.x", lookups.find("m.x.y")->field_name);
-    EXPECT_EQ(nullptr, lookups.find("m$lookup"));
-    EXPECT_EQ(nullptr, lookups.find("m.other"));
-    EXPECT_EQ(nullptr, lookups.find("m"));
-}
 
 TEST(GroupingTest, test_session_timeout) {
     DoomFixture    f1;
