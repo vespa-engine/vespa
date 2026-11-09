@@ -13,6 +13,10 @@
 #define VESPA_HWY_KERNEL_INL_H_TARGET
 #endif
 
+#include "hwy_kernel_dispatch-inl.h"
+
+#include <vespa/check_require.h>
+
 #include <hwy/highway.h>
 
 HWY_BEFORE_NAMESPACE();
@@ -626,6 +630,114 @@ struct HwyReduceKernel<UsesNAccumulators<8>, UnrolledByT, FnHasAccuArityT> {
         AccuV reduced =
             parallel_reduce_accumulators(accu_reducer_fn, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7);
         return lane_reducer_fn(da, reduced);
+    }
+};
+
+// Recursive unroller that will instantiate `UnrollFactor` static calls to `invoke()` on the
+// provided invoker type, with each call receiving a constexpr value of BlockInvocation<N> as
+// its very first argument. The remaining arguments are forwarded from the caller.
+// `N` is in `[0, UnrollFactor)` and is always instantiated in strictly increasing order.
+//
+// Recursion (rather than folding) is used to limit the inlining depth; we want to use all
+// possible dirty tricks to prevent the compiler from ever _not_ inlining what we do here.
+//
+// Not using the Unroller class since it's primarily meant for lambdas, and these are awkward
+// to use with Highway since they must be explicitly HWY_ATTR'd everywhere (without fail) to
+// avoid wrong target codegen.
+//
+// `UnrollFactor` must be at least 1 (which is equivalent to calling the invoker once).
+template <size_t UnrollFactor>
+struct UnrollingInvoker {
+    static_assert(UnrollFactor > 0);
+
+    template <size_t UnrollLbound, size_t UnrollUbound, typename Invoker, typename... Args>
+    HWY_API void do_invoke_unrolled(Args&&... args) noexcept {
+        if constexpr (UnrollLbound == UnrollUbound - 1) { // Leaf recursion case
+            constexpr size_t unroll_idx = UnrollLbound;
+            Invoker::invoke(BlockInvocation<unroll_idx>{}, std::forward<Args>(args)...);
+        } else {
+            static_assert(UnrollLbound < UnrollUbound);
+            constexpr size_t half = (UnrollUbound - UnrollLbound) / 2;
+            do_invoke_unrolled<UnrollLbound, UnrollLbound + half, Invoker>(std::forward<Args>(args)...);
+            if constexpr (half > 0) {
+                do_invoke_unrolled<UnrollLbound + half, UnrollUbound, Invoker>(std::forward<Args>(args)...);
+            }
+        }
+    }
+
+    // Important: no argument in `args` can be accepted by rvalue or moves by the caller,
+    // or behavior is undefined since arguments may be unexpectedly consumed/invalidated
+    // between invocations.
+    template <typename Invoker, typename... Args>
+    HWY_API void invoke(Args&&... args) noexcept {
+        do_invoke_unrolled<0, UnrollFactor, Invoker>(std::forward<Args>(args)...);
+    }
+};
+
+template <size_t UnrollFactor>
+struct KernelLoop {
+    static_assert(UnrollFactor > 0);
+
+    template <typename KernelInvoker, typename... Args>
+    HWY_API void process(const size_t lanes, const size_t n_elems, Args&&... args) noexcept {
+        size_t i = 0;
+        for (; (i + UnrollFactor * lanes) <= n_elems; i += UnrollFactor * lanes) {
+            UnrollingInvoker<UnrollFactor>::template invoke<KernelInvoker>(i, lanes, std::forward<Args>(args)...);
+        }
+        // Boundary case: up to (and including) UnrollFactor-1 whole vectors at the end
+        for (; (i + lanes) <= n_elems; i += lanes) {
+            KernelInvoker::invoke(BlockInvocation<0>{}, i, lanes, std::forward<Args>(args)...);
+        }
+        // Process up any final stragglers of < `lanes` elems
+        const size_t rem = n_elems - i;
+        if (rem != 0) {
+            KernelInvoker::invoke(PartialInvocation{rem}, i, lanes, std::forward<Args>(args)...);
+        }
+    }
+};
+
+struct ElementwiseTransformInvoker {
+    template <size_t UnrollIdx, typename DOut, typename TOut, typename DIn, typename TIn, typename KernelFn>
+    HWY_API void invoke(const BlockInvocation<UnrollIdx> meta, const size_t i, const size_t N, const DIn d_in,
+                        const TIn* HWY_RESTRICT input, const DOut d_out, TOut* HWY_RESTRICT out,
+                        KernelFn kernel_fn) noexcept {
+        static_assert(sizeof(hn::TFromD<DIn>) == sizeof(TIn));
+        static_assert(sizeof(hn::TFromD<DOut>) == sizeof(TOut));
+        const hn::Vec<DIn>  v_in = hn::LoadU(d_in, input + i + (N * UnrollIdx));
+        const hn::Vec<DOut> v_out = my_dispatch(meta, AccusAndFnArity<0, 0>{}, kernel_fn, v_in);
+        hn::StoreU(v_out, d_out, out + i + (N * UnrollIdx));
+    }
+
+    template <typename DOut, typename TOut, typename DIn, typename TIn, typename KernelFn>
+    HWY_API void invoke(const PartialInvocation meta, const size_t i, const size_t N, const DIn d_in,
+                        const TIn* HWY_RESTRICT input, const DOut d_out, TOut* HWY_RESTRICT out,
+                        KernelFn kernel_fn) noexcept {
+        (void)N;
+        static_assert(sizeof(hn::TFromD<DIn>) == sizeof(TIn));
+        static_assert(sizeof(hn::TFromD<DOut>) == sizeof(TOut));
+        const hn::Vec<DIn>  v_in = hn::LoadN(d_in, input + i, meta.partial_count());
+        const hn::Vec<DOut> v_out = my_dispatch(meta, AccusAndFnArity<0, 0>{}, kernel_fn, v_in);
+        hn::StoreN(v_out, d_out, out + i, meta.partial_count());
+    }
+};
+
+template <typename UnrolledByT>
+struct HwyTransformKernel {
+    static constexpr size_t UnrollFactor = UnrolledByT::unrolled_by_v;
+
+    // Precondition: `out` and `a` must not alias
+    template <typename DIn, typename DOut, typename TIn, typename TOut, typename KernelFn>
+    static void elementwise_transform(const DIn d_in, const DOut d_out, const TIn* HWY_RESTRICT input,
+                                      TOut* HWY_RESTRICT out, const size_t n_elems, KernelFn kernel_fn) noexcept {
+#if HWY_HAVE_CONSTEXPR_LANES
+        static_assert(hn::Lanes(d_out) == hn::Lanes(d_in),
+                      "Heterogeneous vector types must have same lane counts, or array strides will desync");
+#else // Scalable vectors
+        CHECK(hn::Lanes(d_out) == hn::Lanes(d_in));
+#endif
+        HWY_LANES_CONSTEXPR const size_t N = hn::Lanes(d_in);
+        KernelLoop<UnrollFactor>::template process<ElementwiseTransformInvoker>(N, n_elems, d_in, input, d_out, out,
+                                                                                kernel_fn);
     }
 };
 
