@@ -21,7 +21,8 @@ Scores sanitize_bounds(const Scores& bounds) {
 }
 } // namespace
 
-FirstPhaseRescorer::FirstPhaseRescorer(const std::pair<Scores, Scores>& ranges) : _scale(1.0), _adjust(0.0) {
+FirstPhaseRescorer::FirstPhaseRescorer(const std::pair<Scores, Scores>& ranges)
+    : _scale(1.0), _first_low(0.0), _second_low(0.0) {
     if (need_rescore(ranges)) {
         // Sanitize inputs
         auto first_phase_scores = sanitize_bounds(ranges.first);
@@ -42,21 +43,24 @@ FirstPhaseRescorer::FirstPhaseRescorer(const std::pair<Scores, Scores>& ranges) 
                 second_phase_range = 1.0;
             }
             _scale = second_phase_range / first_phase_range;
-            _adjust = first_phase_scores.low * _scale - second_phase_scores.low;
+            _first_low = first_phase_scores.low;
+            _second_low = second_phase_scores.low;
             return;
         }
 
         if (std::isfinite(first_phase_scores.low) && std::isfinite(second_phase_scores.low)) {
             // Shift everything to behind second_phase_scores.low
             _scale = 1.0;
-            _adjust = first_phase_scores.low - second_phase_scores.low;
+            _first_low = first_phase_scores.low;
+            _second_low = second_phase_scores.low;
             return;
         }
 
         // One of first_phase_scores.low and second_phase_scores.low is infinite
         // No reasonable handling of finite values, just map everything to -Infinity
         _scale = 0.0;
-        _adjust = std::numeric_limits<double>::infinity();
+        _first_low = 0.0;
+        _second_low = -std::numeric_limits<double>::infinity();
     }
 }
 

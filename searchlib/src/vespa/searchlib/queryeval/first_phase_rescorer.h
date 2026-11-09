@@ -49,7 +49,8 @@ namespace search::queryeval {
  */
 class FirstPhaseRescorer {
     double _scale;
-    double _adjust;
+    double _first_low;
+    double _second_low;
 
 public:
     FirstPhaseRescorer(const std::pair<Scores, Scores>& ranges);
@@ -64,7 +65,7 @@ public:
             return -inf;
         }
 
-        return score * _scale - _adjust;
+        return (score - _first_low) * _scale + _second_low;
     }
 };
 
