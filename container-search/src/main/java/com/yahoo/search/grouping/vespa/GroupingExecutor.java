@@ -90,7 +90,7 @@ public class GroupingExecutor extends Searcher {
 
         if (groupingMap.isEmpty()) return execution.search(query);
 
-        if ( ! query.properties().getBoolean(GroupingQueryParser.PARAM_ENUM_OPTIMIZATION, true)) {
+        if (shouldDisableEnumOptimization(query)) {
             query.getRanking().getProperties().put(ENUM_OPTIMIZATION_RANK_PROPERTY, "false");
         }
 
@@ -104,6 +104,10 @@ public class GroupingExecutor extends Searcher {
             result.hits().add(group);
         }
         return result;
+    }
+
+    private boolean shouldDisableEnumOptimization(Query query) {
+        return ! query.properties().getBoolean(GroupingQueryParser.PARAM_ENUM_OPTIMIZATION, true);
     }
 
     private String extractSummaryClass(Hit hit, String summaryClass) {
