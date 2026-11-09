@@ -2,8 +2,9 @@
 #pragma once
 
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 
-#include <string_view>
+#include <string>
 #include <vector>
 
 namespace search::grouping {
@@ -15,20 +16,17 @@ using FastMapLookup = search::index::Schema::FastMapLookup;
  **/
 class FastMapLookups {
 private:
-    std::vector<FastMapLookup> _lookups;
+    vespalib::hash_map<std::string, FastMapLookup> _lookups;
 
 public:
-    FastMapLookups() noexcept;
-    explicit FastMapLookups(std::vector<FastMapLookup> lookups) noexcept;
+    FastMapLookups();
+    explicit FastMapLookups(const std::vector<FastMapLookup>& lookups);
     ~FastMapLookups();
-    [[nodiscard]] const std::vector<FastMapLookup>& lookups() const noexcept { return _lookups; }
-    [[nodiscard]] bool empty() const noexcept { return _lookups.empty(); }
 
     /**
-     * Returns the lookup whose hidden attribute is named "fieldname$lookupname", or nullptr if there is none.
+     * Returns the lookup named "fieldname.lookupname", or nullptr if there is none.
      */
-    [[nodiscard]] const FastMapLookup* find(std::string_view lookup_attribute) const noexcept;
-    bool operator==(const FastMapLookups& rhs) const noexcept = default;
+    [[nodiscard]] const FastMapLookup* find(const std::string& name) const noexcept;
 };
 
 } // namespace search::grouping

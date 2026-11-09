@@ -322,8 +322,8 @@ TEST(SchemaTest, require_that_schema_can_be_built_with_fast_map_lookups) {
                                             .value_field = "mykey",
                                             .value_type = "string"}};
     EXPECT_EQ(exp, s.get_fast_map_lookups());
-    EXPECT_EQ("m$lookup", s.get_fast_map_lookups()[0].lookup_attribute());
-    EXPECT_EQ("arr$reversed", s.get_fast_map_lookups()[1].lookup_attribute());
+    EXPECT_EQ("m.lookup", s.get_fast_map_lookups()[0].name());
+    EXPECT_EQ("arr.reversed", s.get_fast_map_lookups()[1].name());
     EXPECT_FALSE(s.empty());
 }
 

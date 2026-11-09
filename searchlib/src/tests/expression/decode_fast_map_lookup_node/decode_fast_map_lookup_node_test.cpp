@@ -189,14 +189,6 @@ TEST(DecodeFastMapLookupNodeTest, value_type_names_are_parsed) {
     EXPECT_EQ(ValueType::UNKNOWN, DecodeFastMapLookupNode::toValueType("byte"));
 }
 
-TEST(DecodeFastMapLookupNodeTest, lookup_attribute_name_replaces_last_dot_with_dollar) {
-    EXPECT_EQ("m$lookup", DecodeFastMapLookupNode("m.lookup").lookupAttributeName());
-    EXPECT_EQ("a.b$c", DecodeFastMapLookupNode("a.b.c").lookupAttributeName());
-    EXPECT_THROW((void)DecodeFastMapLookupNode("m").lookupAttributeName(), std::runtime_error);
-    EXPECT_THROW((void)DecodeFastMapLookupNode(".lookup").lookupAttributeName(), std::runtime_error);
-    EXPECT_THROW((void)DecodeFastMapLookupNode("m.").lookupAttributeName(), std::runtime_error);
-}
-
 TEST(DecodeFastMapLookupNodeTest, configure_requires_known_value_type) {
     DecodeFastMapLookupNode node("m.lookup");
     EXPECT_EQ(ValueType::UNKNOWN, node.getValueType());
@@ -236,6 +228,7 @@ protected:
     DecodeFastMapLookupNodeAttributeTest() : mgr(), context(mgr) {
         add_string_array("m$lookup", {{entry("a", "80000001"), entry("b", "7fffffff")}, {}, {entry("c", "80000000")}});
         add_string_array("s$lookup", {{entry("x", "hello")}});
+        add_string_array("a.b$lookup", {{entry("d", "80000002")}});
     }
     ~DecodeFastMapLookupNodeAttributeTest() override;
 
@@ -327,6 +320,20 @@ TEST_F(DecodeFastMapLookupNodeAttributeTest, copy_of_configured_node_has_its_own
     EXPECT_EQ((std::vector<std::string>{"c:0"}), values_of(copy_tree, 3));
     EXPECT_EQ((std::vector<std::string>{"a:1", "b:-1"}), values_of(tree, 1));
     EXPECT_EQ((std::vector<std::string>{"c:0"}), values_of(copy_tree, 3));
+}
+
+TEST_F(DecodeFastMapLookupNodeAttributeTest, hidden_attribute_name_replaces_last_dot_with_dollar) {
+    auto tree = make_tree(make_configured_node("a.b", "int"));
+    EXPECT_EQ((std::vector<std::string>{"d:2"}), values_of(tree, 1));
+}
+
+TEST_F(DecodeFastMapLookupNodeAttributeTest, prepare_fails_for_name_without_field_or_lookup_name) {
+    auto no_field = std::make_unique<DecodeFastMapLookupNode>(".lookup");
+    no_field->configure(make_lookup("", "lookup", "int"));
+    EXPECT_THROW(make_tree(std::move(no_field)), std::runtime_error);
+    auto no_lookup = std::make_unique<DecodeFastMapLookupNode>("m.");
+    no_lookup->configure(make_lookup("m", "", "int"));
+    EXPECT_THROW(make_tree(std::move(no_lookup)), std::runtime_error);
 }
 
 TEST_F(DecodeFastMapLookupNodeAttributeTest, prepare_fails_without_configuration) {

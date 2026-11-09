@@ -117,21 +117,13 @@ void DecodeFastMapLookupNode::createInput() {
 }
 
 void DecodeFastMapLookupNode::configure(const FastMapLookup& lookup) {
-    assert(lookup.lookup_attribute() == toLookupAttributeName(_name));
+    assert(lookup.name() == _name);
     auto valueType = toValueType(lookup.value_type);
     if (valueType == ValueType::UNKNOWN) {
         throw std::runtime_error(
             std::format("Unsupported value type '{}' for fast map lookup '{}'", lookup.value_type, _name));
     }
     _valueType = valueType;
-}
-
-std::string DecodeFastMapLookupNode::lookupAttributeName() const {
-    auto attributeName = toLookupAttributeName(_name);
-    if (attributeName.empty()) {
-        throw std::runtime_error(std::format("Fast map lookup '{}' is not on the form fieldname.lookupname", _name));
-    }
-    return attributeName;
 }
 
 std::string DecodeFastMapLookupNode::decode(std::string_view encoded, ValueType valueType,

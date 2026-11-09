@@ -2,24 +2,23 @@
 
 #include "fast_map_lookups.h"
 
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
 namespace search::grouping {
 
-FastMapLookups::FastMapLookups() noexcept = default;
+FastMapLookups::FastMapLookups() = default;
 
-FastMapLookups::FastMapLookups(std::vector<FastMapLookup> lookups) noexcept : _lookups(std::move(lookups)) {}
+FastMapLookups::FastMapLookups(const std::vector<FastMapLookup>& lookups) : _lookups() {
+    for (const auto& lookup : lookups) {
+        _lookups[lookup.name()] = lookup;
+    }
+}
 
 FastMapLookups::~FastMapLookups() = default;
 
-const FastMapLookup* FastMapLookups::find(std::string_view lookup_attribute) const noexcept {
-    for (const auto& lookup : _lookups) {
-        const auto& field = lookup.field_name;
-        const auto& name = lookup.lookup_name;
-        if (lookup_attribute.size() == field.size() + 1 + name.size() && lookup_attribute.starts_with(field) &&
-            lookup_attribute[field.size()] == '$' && lookup_attribute.ends_with(name)) {
-            return &lookup;
-        }
-    }
-    return nullptr;
+const FastMapLookup* FastMapLookups::find(const std::string& name) const noexcept {
+    auto it = _lookups.find(name);
+    return (it != _lookups.end()) ? &it->second : nullptr;
 }
 
 } // namespace search::grouping

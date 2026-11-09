@@ -676,7 +676,7 @@ TEST(GroupingTest, fast_map_lookups_are_shared_by_context_copies_and_thread_cont
     EXPECT_EQ(nullptr, context.get_fast_map_lookups());
     context.set_fast_map_lookups(lookups);
     EXPECT_EQ(lookups.get(), context.get_fast_map_lookups());
-    EXPECT_EQ("m$lookup", context.get_fast_map_lookups()->lookups()[0].lookup_attribute());
+    EXPECT_NE(nullptr, context.get_fast_map_lookups()->find("m.lookup"));
 
     GroupingContext copy(context);
     EXPECT_EQ(lookups.get(), copy.get_fast_map_lookups());
@@ -831,15 +831,14 @@ TEST(GroupingTest, grouping_with_unknown_fast_map_lookup_is_ignored) {
     }
 }
 
-TEST(GroupingTest, fast_map_lookups_are_found_by_lookup_attribute) {
+TEST(GroupingTest, fast_map_lookups_are_found_by_name) {
     FastMapLookups lookups(std::vector<FastMapLookup>{make_lookup("m", "lookup"), make_lookup("m.x", "y")});
-    ASSERT_NE(nullptr, lookups.find("m$lookup"));
-    EXPECT_EQ("lookup", lookups.find("m$lookup")->lookup_name);
-    ASSERT_NE(nullptr, lookups.find("m.x$y"));
-    EXPECT_EQ("m.x", lookups.find("m.x$y")->field_name);
-    EXPECT_EQ(nullptr, lookups.find("m$lookups"));
-    EXPECT_EQ(nullptr, lookups.find("mm$lookup"));
-    EXPECT_EQ(nullptr, lookups.find("m.lookup"));
+    ASSERT_NE(nullptr, lookups.find("m.lookup"));
+    EXPECT_EQ("lookup", lookups.find("m.lookup")->lookup_name);
+    ASSERT_NE(nullptr, lookups.find("m.x.y"));
+    EXPECT_EQ("m.x", lookups.find("m.x.y")->field_name);
+    EXPECT_EQ(nullptr, lookups.find("m$lookup"));
+    EXPECT_EQ(nullptr, lookups.find("m.other"));
     EXPECT_EQ(nullptr, lookups.find("m"));
 }
 

@@ -43,7 +43,7 @@ public:
     explicit ConfigureFastMapLookups(const FastMapLookups* lookups) noexcept : _lookups(lookups) {}
     void execute(vespalib::Identifiable& obj) override {
         auto&                node = static_cast<DecodeFastMapLookupNode&>(obj);
-        const FastMapLookup* lookup = (_lookups != nullptr) ? _lookups->find(node.lookupAttributeName()) : nullptr;
+        const FastMapLookup* lookup = (_lookups != nullptr) ? _lookups->find(node.getName()) : nullptr;
         if (lookup == nullptr) {
             throw std::runtime_error(
                 vespalib::make_string("No fast map lookup '%s' in schema", node.getName().c_str()));

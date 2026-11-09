@@ -144,7 +144,7 @@ public:
     /**
      * A field with fast map search: a map, or an array of struct with the given key and value
      * struct fields. Each key-value pair is stored as one string in the attribute named
-     * field_name + "$" + lookup_name.
+     * field_name + "$" + lookup_name. Grouping refers to it by name(), field_name + "." + lookup_name.
      **/
     struct FastMapLookup {
         std::string field_name;
@@ -154,7 +154,7 @@ public:
         std::string value_field;
         std::string value_type;
 
-        [[nodiscard]] std::string lookup_attribute() const { return field_name + "$" + lookup_name; }
+        [[nodiscard]] std::string name() const { return field_name + "." + lookup_name; }
         bool operator==(const FastMapLookup& rhs) const noexcept = default;
     };
 

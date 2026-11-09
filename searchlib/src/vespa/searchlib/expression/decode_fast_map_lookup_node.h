@@ -50,8 +50,8 @@ public:
     ~DecodeFastMapLookupNode() override;
 
     /**
-     * Configure this node with the fast map lookup it decodes, which must have the same name as this node
-     * (the caller finds it by lookupAttributeName()). Throws if the value type cannot be decoded.
+     * Configure this node with the fast map lookup it decodes, which must have the same name as this node.
+     * Throws if the value type cannot be decoded.
      */
     void configure(const FastMapLookup& lookup);
 
@@ -62,9 +62,6 @@ public:
         return *this;
     }
     [[nodiscard]] ValueType getValueType() const noexcept { return _valueType; }
-
-    /** Returns the name of the hidden attribute, "fieldname$lookupname" for node name "fieldname.lookupname". */
-    [[nodiscard]] std::string lookupAttributeName() const;
 
     /**
      * Returns the decoded form of one element of the hidden attribute, with the given separator between key and value.
