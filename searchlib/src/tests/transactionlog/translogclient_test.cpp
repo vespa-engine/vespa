@@ -301,8 +301,8 @@ void fillDomainTest(Session* s1, const std::string& name) {
     CHECK(commit_res);
     VESPA_EXPECT_EXCEPTION(s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size())),
                            std::runtime_error,
-                           "commit failed with code -2. server says: Exception during commit on " + name +
-                               " : Incoming serial number(1) must be bigger than the last one (3).");
+                           "commit failed with code -2. server says: Exception during commit on \"" + name +
+                               "\" : Incoming serial number(1) must be bigger than the last one (3).");
     EXPECT_EQ(a.size(), 1u);
     EXPECT_EQ(a.range().from(), 1u);
     EXPECT_EQ(a.range().to(), 1u);
@@ -599,12 +599,23 @@ TEST(TransactionLogClientTest, testRemove) {
     TLS                    tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
     TransLogClient         tls(tlss.transport, "tcp/localhost:18377");
 
-    std::string name("test-delete");
+    std::string name("test_delete");
     createDomainTest(tls, name);
     auto s1 = openDomainTest(tls, name);
     fillDomainTest(s1.get(), name);
     visitDomainTest(tls, s1.get(), name);
     ASSERT_TRUE(tls.remove(name));
+}
+
+TEST(TransactionLogClientTest, testBadDomain) {
+    test::DirectoryHandler testDir("testbaddomain");
+    DummyFileHeaderContext fileHeaderContext;
+    TLS                    tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
+    TransLogClient         tls(tlss.transport, "tcp/localhost:18377");
+
+    std::string name("bad-domain");
+    ASSERT_FALSE(tls.create(name));
+    ASSERT_FALSE(tls.remove(name));
 }
 
 namespace {
@@ -710,7 +721,7 @@ void testSendingAlotOfDataAsync(const std::string& testDir) {
     const unsigned int NUM_PACKETS = 1000;
     const unsigned int NUM_ENTRIES = 100;
     const unsigned int TOTAL_NUM_ENTRIES = NUM_PACKETS * NUM_ENTRIES;
-    const std::string  MANY("many-async");
+    const std::string  MANY("many_async");
     {
         DummyFileHeaderContext fileHeaderContext;
         TLS                    tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x80000));
