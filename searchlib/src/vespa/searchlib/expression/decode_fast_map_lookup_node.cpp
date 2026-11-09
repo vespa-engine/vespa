@@ -7,9 +7,8 @@
 
 #include <vespa/vespalib/objects/deserializer.h>
 #include <vespa/vespalib/objects/serializer.h>
+#include <vespa/vespalib/text/excess_hex.h>
 
-#include <bit>
-#include <charconv>
 #include <format>
 
 using vespalib::Deserializer;
@@ -21,38 +20,12 @@ IMPLEMENT_EXPRESSIONNODE(DecodeFastMapLookupNode, FunctionNode);
 
 namespace {
 
-/**
- * Parses exactly sizeof(T) * 2 hex digits, as written by the excess hex encodings in config-model.
- */
-template <typename T> bool parseHex(std::string_view hex, T& bits) {
-    if (hex.size() != sizeof(T) * 2) {
+template <typename T> bool decodeExcessHex(std::string_view hex, std::string& out) {
+    auto value = vespalib::excess_hex::decode<T>(hex);
+    if (!value) {
         return false;
     }
-    auto [ptr, ec] = std::from_chars(hex.data(), hex.data() + hex.size(), bits, 16);
-    return ec == std::errc() && ptr == hex.data() + hex.size();
-}
-
-// Inverse of Text.toExcessHex8 / toExcessHex16: the value biased by flipping the sign bit.
-template <typename U, typename S> bool decodeExcessHex(std::string_view hex, std::string& out) {
-    U bits = 0;
-    if (!parseHex(hex, bits)) {
-        return false;
-    }
-    constexpr U sign_bit = U(1) << (sizeof(U) * 8 - 1);
-    out = std::format("{}", std::bit_cast<S>(U(bits ^ sign_bit)));
-    return true;
-}
-
-// Inverse of Text.floatToExcessHex8 / doubleToExcessHex16: positive values have the sign bit set,
-// while negative values have all bits inverted.
-template <typename U, typename F> bool decodeFloatExcessHex(std::string_view hex, std::string& out) {
-    U bits = 0;
-    if (!parseHex(hex, bits)) {
-        return false;
-    }
-    constexpr U sign_bit = U(1) << (sizeof(U) * 8 - 1);
-    bits = (bits & sign_bit) ? (bits ^ sign_bit) : ~bits;
-    out = std::format("{}", std::bit_cast<F>(bits));
+    out = std::format("{}", *value);
     return true;
 }
 
@@ -60,13 +33,13 @@ bool decodeValue(std::string_view encoded, DecodeFastMapLookupNode::ValueType va
     using ValueType = DecodeFastMapLookupNode::ValueType;
     switch (valueType) {
     case ValueType::INT:
-        return decodeExcessHex<uint32_t, int32_t>(encoded, out);
+        return decodeExcessHex<int32_t>(encoded, out);
     case ValueType::LONG:
-        return decodeExcessHex<uint64_t, int64_t>(encoded, out);
+        return decodeExcessHex<int64_t>(encoded, out);
     case ValueType::FLOAT:
-        return decodeFloatExcessHex<uint32_t, float>(encoded, out);
+        return decodeExcessHex<float>(encoded, out);
     case ValueType::DOUBLE:
-        return decodeFloatExcessHex<uint64_t, double>(encoded, out);
+        return decodeExcessHex<double>(encoded, out);
     case ValueType::STRING:
         out = encoded;
         return true;
