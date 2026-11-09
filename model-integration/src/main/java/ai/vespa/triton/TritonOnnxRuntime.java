@@ -299,7 +299,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
      */
     private boolean tryLoadModelWithMaxBatchSize0(String modelName, String modelPath, OnnxEvaluatorOptions options,
                                                   Optional<OnnxPoolingOptions> pooling) {
-        var inputsAndOutputsConfig = declaredInputsAndOutputs(modelPath);
+        var inputsAndOutputsConfig = declaredInputsAndOutputsConfig(modelPath);
         if (inputsAndOutputsConfig.isEmpty()) {
             log.warning("Loading model " + modelPath + " in Triton with max batch size 1, which takes one row per request, " +
                         "since its inputs and outputs cannot be specified in the model config");
@@ -312,6 +312,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
             // Other errors, such as Triton being unavailable, would also fail a load without specified inputs and outputs.
             if (!TritonOnnxClient.isConfigRejection(e)) throw e;
             // OnnxStreamParser reads declared shapes, but Triton checks the shapes ONNX Runtime infers.
+            // When shape inference removes the dynamic first dimension, Triton also rejects max batch size 1,
+            // and the model loads with max batch size 0 without specified inputs and outputs.
             log.warning("Loading model " + modelPath + " in Triton with max batch size 1, which takes one row per request, " +
                         "since Triton rejected the inputs and outputs specified in its model config: " +
                         Exceptions.toMessageString(e));
@@ -584,7 +586,7 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
      * Returns empty also for a model without inputs or outputs, since Triton's ONNX Runtime backend
      * skips auto-complete only for a model config that specifies at least one input and one output.
      */
-    static Optional<ModelConfig> declaredInputsAndOutputs(String modelPath) {
+    static Optional<ModelConfig> declaredInputsAndOutputsConfig(String modelPath) {
         try {
             var declared = OnnxStreamParser.getInputsAndOutputs(Path.of(modelPath));
             if (declared.isEmpty() || declared.get().inputs().isEmpty() || declared.get().outputs().isEmpty())
@@ -619,8 +621,9 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var dataType = onnxType == null ? null : TRITON_DATA_TYPES.get(onnxType);
         if (dataType == null) return Optional.empty();
         // Triton writes a dynamic size as -1, whether the model names the dimension or not.
+        // It also accepts no other size below 1, so a declared size of 0 is written as -1 too.
         var dims = tensor.getShape().getDimList().stream()
-                .map(dim -> dim.hasDimValue() && dim.getDimValue() >= 0 ? dim.getDimValue() : -1L).toList();
+                .map(dim -> dim.hasDimValue() && dim.getDimValue() > 0 ? dim.getDimValue() : -1L).toList();
         return Optional.of(new TritonTensor(dataType, dims));
     }
 

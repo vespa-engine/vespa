@@ -45,6 +45,10 @@ public record OnnxEvaluatorOptions(
         return new Builder().build();
     }
 
+    /**
+     * Returns a builder with the options from the config.
+     * A config with padding buckets needs setFirstDimensionIsBatch(true) before build().
+     */
     public static Builder builder(OnnxEvaluatorConfig config) {
         return builder(config, Runtime.getRuntime().availableProcessors());
     }

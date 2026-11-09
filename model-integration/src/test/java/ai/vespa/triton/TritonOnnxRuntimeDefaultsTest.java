@@ -97,7 +97,7 @@ class TritonOnnxRuntimeDefaultsTest {
     void specifies_inputs_and_outputs_with_the_shapes_onnx_runtime_reports(@TempDir Path directory) throws Exception {
         for (var testCase : BatchDimensionTestModels.cases()) {
             var model = Files.write(directory.resolve(testCase.name() + ".onnx"), testCase.model().toByteArray()).toString();
-            var specified = TritonOnnxRuntime.declaredInputsAndOutputs(model);
+            var specified = TritonOnnxRuntime.declaredInputsAndOutputsConfig(model);
             // An input or output without a declared shape cannot be specified.
             if (testCase.name().startsWith("unshaped_")) {
                 assertTrue(specified.isEmpty(), testCase.name());
@@ -119,17 +119,17 @@ class TritonOnnxRuntimeDefaultsTest {
     void specifies_the_element_types_as_triton_names_them(@TempDir Path directory) throws IOException {
         var model = Files.write(directory.resolve("cross_encoder.onnx"),
                                 BatchDimensionTestModels.crossEncoder(true).toByteArray()).toString();
-        var specified = TritonOnnxRuntime.declaredInputsAndOutputs(model).orElseThrow();
+        var specified = TritonOnnxRuntime.declaredInputsAndOutputsConfig(model).orElseThrow();
         assertEquals(List.of(DataType.TYPE_INT64, DataType.TYPE_INT64),
                      specified.getInputList().stream().map(ModelInput::getDataType).toList());
         assertEquals(List.of(DataType.TYPE_FP32), specified.getOutputList().stream().map(ModelOutput::getDataType).toList());
-        assertTrue(TritonOnnxRuntime.declaredInputsAndOutputs("not-a-local-file").isEmpty());
+        assertTrue(TritonOnnxRuntime.declaredInputsAndOutputsConfig("not-a-local-file").isEmpty());
 
         // An element type newer than the ONNX protobuf definition in Vespa cannot be specified.
         var unknownType = Onnx.ModelProto.newBuilder().setGraph(Onnx.GraphProto.newBuilder()
                 .addInput(valueInfo("x", 99)).addOutput(valueInfo("y", 1))).build();
         var unknownTypeModel = Files.write(directory.resolve("unknown_type.onnx"), unknownType.toByteArray()).toString();
-        assertTrue(TritonOnnxRuntime.declaredInputsAndOutputs(unknownTypeModel).isEmpty());
+        assertTrue(TritonOnnxRuntime.declaredInputsAndOutputsConfig(unknownTypeModel).isEmpty());
     }
 
     // A model config without inputs does not stop Triton's auto-complete from replacing max batch size 0.
@@ -139,7 +139,7 @@ class TritonOnnxRuntimeDefaultsTest {
                 .addInput(valueInfo("w", 1)).addOutput(valueInfo("y", 1))
                 .addInitializer(Onnx.TensorProto.newBuilder().setName("w").setDataType(1).addDims(1).addFloatData(1))).build();
         var model = Files.write(directory.resolve("only_initializer.onnx"), onlyInitializer.toByteArray()).toString();
-        assertTrue(TritonOnnxRuntime.declaredInputsAndOutputs(model).isEmpty());
+        assertTrue(TritonOnnxRuntime.declaredInputsAndOutputsConfig(model).isEmpty());
     }
 
     private static Onnx.ValueInfoProto valueInfo(String name, int elemType) {
