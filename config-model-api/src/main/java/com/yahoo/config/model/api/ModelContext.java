@@ -147,7 +147,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum", "vekterli"}) default boolean enableLandlock() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean enableLegacyFeedHandler() { return true; }
         @ModelFeatureFlag(owners = {"sebasabe"}) default boolean productDiscovery() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useMlModelImportCache() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useMlModelImportCache() { return true; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
