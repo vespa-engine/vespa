@@ -67,7 +67,7 @@ FirstPhaseRescorer::FirstPhaseRescorer(const std::pair<Scores, Scores>& ranges)
 bool FirstPhaseRescorer::need_rescore(const std::pair<Scores, Scores>& ranges) {
     auto& first_phase_scores = ranges.first;
     auto& second_phase_scores = ranges.second;
-    return (first_phase_scores.low > second_phase_scores.low);
+    return (sanitize_double(first_phase_scores.low) > sanitize_double(second_phase_scores.low));
 }
 
 } // namespace search::queryeval
