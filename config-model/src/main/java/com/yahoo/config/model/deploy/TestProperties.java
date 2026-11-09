@@ -85,6 +85,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private OptionalInt metricsProxyHeapSizeInMib = OptionalInt.empty();
     private OptionalInt metricsProxyAdminNodeHeapSizeInMib = OptionalInt.empty();
     private boolean ignoreConnectivityChecksAtStartup = false;
+    private boolean skipConnectivityChecksAtStartup = false;
     private double searchNodeReservedMemoryFactor = 0.0;
     private boolean failWhenConfiguringIndexedMapOfArray = true;
     private String allowStructFieldIndex = "disallow";
@@ -155,6 +156,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public ModelContext.FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return () -> metricsProxyHeapSizeInMib.orElse(0); }
     @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return metricsProxyAdminNodeHeapSizeInMib; }
     @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
+    @Override public boolean skipConnectivityChecksAtStartup() { return skipConnectivityChecksAtStartup; }
     @Override public double searchNodeReservedMemoryFactor() { return searchNodeReservedMemoryFactor; }
     @Override public boolean failWhenConfiguringIndexedMapOfArray() { return failWhenConfiguringIndexedMapOfArray; }
     @Override public String allowStructFieldIndex() { return allowStructFieldIndex; }
@@ -388,6 +390,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setIgnoreConnectivityChecksAtStartup(boolean value) {
         this.ignoreConnectivityChecksAtStartup = value;
+        return this;
+    }
+
+    public TestProperties setSkipConnectivityChecksAtStartup(boolean value) {
+        this.skipConnectivityChecksAtStartup = value;
         return this;
     }
 

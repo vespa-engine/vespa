@@ -73,6 +73,10 @@ void Env::boot(const std::string& configId) {
             auto model = _modelOwner.getModelConfig();
             if (model.has_value()) {
                 checker.configure(cfg.connectivity, model.value());
+                if (cfg.connectivity.skip) {
+                    _stateApi.myHealth.setOk();
+                    return;
+                }
             }
         }
         if (checker.checkConnectivity(*_rpcServer)) {

@@ -20,6 +20,7 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
     private final ApplicationId applicationId;
     private final Zone zone;
     private final boolean ignoreConnectivityChecks;
+    private final boolean skipConnectivityChecks;
 
     /**
      * Constructs a new ConfigSentinel for the given host.
@@ -31,6 +32,7 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
         this.applicationId = deployState.getProperties().applicationId();
         this.zone = deployState.zone();
         this.ignoreConnectivityChecks = deployState.featureFlags().ignoreConnectivityChecksAtStartup();
+        this.skipConnectivityChecks = deployState.featureFlags().skipConnectivityChecksAtStartup();
         portsMeta.on(0).tag("rpc").tag("admin");
         portsMeta.on(1).tag("telnet").tag("interactive").tag("http").tag("state");
         setProp("clustertype", "hosts");
@@ -73,7 +75,7 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
     @Override
     public void getConfig(SentinelConfig.Builder builder) {
         builder.application(getApplicationConfig());
-        builder.connectivity(b -> b.ignore(ignoreConnectivityChecks));
+        builder.connectivity(b -> b.ignore(ignoreConnectivityChecks).skip(skipConnectivityChecks));
         for (Service s : getHostResource().getServices()) {
             s.getStartupCommand().ifPresent(command -> builder.service(getServiceConfig(s, command)));
         }

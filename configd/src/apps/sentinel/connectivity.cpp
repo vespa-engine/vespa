@@ -183,7 +183,10 @@ void Connectivity::configure(const SentinelConfig::Connectivity& config, const M
     LOG(config, "connectivity.maxBadCount = %d", _config.maxBadCount);
     LOG(config, "connectivity.minOkPercent = %d", _config.minOkPercent);
     LOG(config, "connectivity.ignore = %s", _config.ignore ? "true" : "false");
-    _checkSpecs = specsFrom(model);
+    LOG(config, "connectivity.skip = %s", _config.skip ? "true" : "false");
+    if (! _config.skip) {
+        _checkSpecs = specsFrom(model);
+    }
 }
 
 bool Connectivity::checkConnectivity(RpcServer& rpcServer) {
