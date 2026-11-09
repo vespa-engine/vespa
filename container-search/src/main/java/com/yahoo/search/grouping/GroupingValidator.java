@@ -65,11 +65,16 @@ public class GroupingValidator extends Searcher {
     @Override
     public Result search(Query query, Execution execution) {
         if (enabled && query.properties().getBoolean(PARAM_ENABLED, true)) {
-            ExpressionVisitor visitor = new MyVisitor();
-            for (GroupingRequest req : query.getSelect().getGrouping())
-                req.getRootOperation().visitExpressions(visitor);
+            visitExpressions(query, new MyVisitor());
+        } else if ( ! enabled) {
+            visitExpressions(query, new StreamingVisitor());
         }
         return execution.search(query);
+    }
+
+    private static void visitExpressions(Query query, ExpressionVisitor visitor) {
+        for (GroupingRequest req : query.getSelect().getGrouping())
+            req.getRootOperation().visitExpressions(visitor);
     }
 
     static private String datatypeAsString(AttributesConfig.Attribute attribute) {
@@ -177,6 +182,19 @@ public class GroupingValidator extends Searcher {
                 verifyHasAttribute(((AttributeValue) exp).getAttributeName(), false);
             } else if (exp instanceof DecodeFastMapLookupFunction function) {
                 verifyHasFastMapLookup(function);
+            }
+        }
+    }
+
+    /** Rejects expressions that the streaming search backend cannot evaluate. */
+    private class StreamingVisitor implements ExpressionVisitor {
+
+        @Override
+        public void visitExpression(GroupingExpression exp) {
+            if (exp instanceof DecodeFastMapLookupFunction function) {
+                throw new IllegalInputException("Grouping request references fast map lookup '" + function.getName() +
+                                                "', but decodefastmaplookup is not supported in streaming mode (cluster '" +
+                                                clusterName + "').");
             }
         }
     }

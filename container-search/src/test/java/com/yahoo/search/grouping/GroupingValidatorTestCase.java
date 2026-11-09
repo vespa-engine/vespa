@@ -228,6 +228,28 @@ public class GroupingValidatorTestCase {
         }
     }
 
+    @Test
+    void fast_map_lookup_throws_in_streaming_mode() {
+        for (boolean validate : List.of(true, false)) {
+            var query = createQuery("all(group(decodefastmaplookup(map.lookup)) each(output(count())))");
+            query.properties().set(GroupingValidator.PARAM_ENABLED, validate);
+            try {
+                validateGrouping("myCluster", ClusterConfig.IndexMode.Enum.STREAMING, createFastMapLookupConfig(), query);
+                fail("Expected exception");
+            } catch (IllegalArgumentException e) {
+                assertEquals("Grouping request references fast map lookup 'map.lookup', but decodefastmaplookup " +
+                             "is not supported in streaming mode (cluster 'myCluster').",
+                             e.getMessage());
+            }
+        }
+    }
+
+    @Test
+    void other_grouping_is_not_validated_in_streaming_mode() {
+        validateGrouping("myCluster", ClusterConfig.IndexMode.Enum.STREAMING, createAttributesConfig(List.of()),
+                         createQuery("all(group(foo) each(output(max(bar))))"));
+    }
+
     private static AttributesConfig createFastMapLookupConfig() {
         var builder = new AttributesConfig.Builder();
         builder.attribute(new AttributesConfig.Attribute.Builder().name("map$lookup")
@@ -286,9 +308,14 @@ public class GroupingValidatorTestCase {
     }
 
     private static void validateGrouping(String clusterName, AttributesConfig attributesConfig, Query query) {
+        validateGrouping(clusterName, ClusterConfig.IndexMode.Enum.INDEX, attributesConfig, query);
+    }
+
+    private static void validateGrouping(String clusterName, ClusterConfig.IndexMode.Enum indexMode,
+                                         AttributesConfig attributesConfig, Query query) {
         ClusterConfig.Builder clusterConfig = new ClusterConfig.Builder()
                 .clusterName(clusterName)
-                .indexMode(ClusterConfig.IndexMode.Enum.INDEX);
+                .indexMode(indexMode);
         new Execution(new GroupingValidator(clusterConfig.build(), attributesConfig),
                       Execution.Context.createContextStub())
                 .search(query);
