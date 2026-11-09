@@ -212,8 +212,7 @@ public class RankProfileInputTest {
         assertEmbedQuery("embed(@param2)", "query(myTensor4)", embedding1, embedders, null, "embed into a tensor", cProfile);
         assertEmbedQuery("embed(emb1, @param2)", "query(myTensor4)", embedding1, embedders, null, "embed into a tensor", cProfile);
         assertEmbedQueryFails("embed(emb1, @noSuchParam)", "query(myTensor4)", embedding1, embedders,
-                              "Could not resolve query parameter reference 'noSuchParam' " +
-                              "used in an embed() argument");
+                              "Could not resolve query parameter reference 'noSuchParam'");
     }
 
     private Query createTensor1Query(String tensorString, String profile, String additionalParams) {

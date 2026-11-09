@@ -244,7 +244,7 @@ public class Ranking implements Cloneable {
 
     /**
      * Returns the rank features of this, an empty container (never null) if none are set.
-     * The returned object can be modified directly to change the rank properties of this.
+     * The returned object can be modified directly to change the rank features of this.
      */
     public RankFeatures getFeatures() {
         return rankFeatures;

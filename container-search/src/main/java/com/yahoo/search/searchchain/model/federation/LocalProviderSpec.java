@@ -39,6 +39,7 @@ public class LocalProviderSpec {
                             com.yahoo.search.querytransform.WandSearcher.class,
                             com.yahoo.search.querytransform.BooleanSearcher.class,
                             com.yahoo.prelude.searcher.ValidatePredicateSearcher.class,
+                            com.yahoo.search.searchers.NearestNeighborEmbeddingSearcher.class,
                             com.yahoo.search.searchers.ValidateNearestNeighborSearcher.class,
                             com.yahoo.search.searchers.ValidateMatchPhaseSearcher.class,
                             com.yahoo.search.searchers.ValidateFuzzySearcher.class,

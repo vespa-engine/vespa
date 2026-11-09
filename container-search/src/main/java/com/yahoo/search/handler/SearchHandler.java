@@ -23,7 +23,6 @@ import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.provider.DefaultEmbedderProvider;
 import com.yahoo.net.AcceptHeaderMatcher;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
@@ -42,6 +41,7 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.properties.DefaultProperties;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.schema.internal.TensorConverter;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.search.searchchain.SearchChainRegistry;
@@ -54,7 +54,6 @@ import io.opentelemetry.api.trace.Span;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -63,7 +62,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static java.io.InputStream.nullInputStream;
 
@@ -142,7 +140,7 @@ public class SearchHandler extends LoggingRequestHandler {
         super(executor, metric, true);
         log.log(Level.FINE, () -> "SearchHandler.init " + System.identityHashCode(this));
         this.queryProfileRegistry = queryProfileRegistry;
-        this.embedders = toMap(embedders);
+        this.embedders = TensorConverter.toMap(embedders);
         this.executionFactory = executionFactory;
 
         this.maxThreads = examineExecutor(executor);
@@ -586,16 +584,6 @@ public class SearchHandler extends LoggingRequestHandler {
         return HttpMethodAclMapping.standard()
                 .override(com.yahoo.jdisc.http.HttpRequest.Method.POST, AclMapping.Action.READ)
                 .build();
-    }
-
-    private Map<String, Embedder> toMap(ComponentRegistry<Embedder> embedders) {
-        var map = embedders.allComponentsById().entrySet().stream()
-                    .collect(Collectors.toMap(e -> e.getKey().stringValue(), Map.Entry::getValue));
-        if (map.size() > 1) {
-            map.remove(DefaultEmbedderProvider.class.getName());
-            // Ideally, this should be handled by dependency injection, however for now this workaround is necessary.
-        }
-        return Collections.unmodifiableMap(map);
     }
 
 }

@@ -46,13 +46,7 @@ public class RankProfileInputProperties extends Properties {
                     var deadline = timeLeftMs > 0
                             ? Instant.now().plusMillis(timeLeftMs)
                             : null;
-                    value = tensorConverter.convertTo(expectedType.tensorType(),
-                                                      name.last(),
-                                                      value,
-                                                      query.getModel().getLanguage(),
-                                                      context,
-                                                      query.properties(),
-                                                      deadline);
+                    value = convert(name, value, expectedType.tensorType(), context, deadline);
                 }
             }
             catch (IllegalArgumentException e) {
@@ -60,6 +54,22 @@ public class RankProfileInputProperties extends Properties {
             }
         }
         super.set(name, value, context);
+    }
+
+    /**
+     * Converts the value to a tensor of the given type, or, if it is a string which is not a tensor or embed expression,
+     * returns the text it specifies, to be embedded by {@link com.yahoo.search.searchers.NearestNeighborEmbeddingSearcher}
+     * using the embedder of the field it is searched against.
+     */
+    private Object convert(CompoundName name, Object value, TensorType type, Map<String, String> context, Instant deadline) {
+        try {
+            return tensorConverter.convertTo(type, name.last(), value, query.getModel().getLanguage(),
+                                             context, query.properties(), deadline);
+        }
+        catch (IllegalArgumentException e) {
+            if ( ! (value instanceof String text) || TensorConverter.isEmbed(text)) throw e;
+            return TensorConverter.resolve(text, context, query.properties());
+        }
     }
 
     @Override
