@@ -53,6 +53,8 @@ attribute[].quantization.bits int default=0
 # Fields with fast map search: a map, or an array of struct with the key and value
 # struct fields given here, looked up as fieldName.lookupName{"key"}.
 # The lookup is backed by the attribute named fieldName$lookupName.
+# keyType and valueType are schema type names, such as int, long, float, double and string.
+# Grouping can decode values of type int, long, float, double and string.
 fastMapLookups[].fieldName string
 fastMapLookups[].lookupName string
 fastMapLookups[].keyField string default="key"
