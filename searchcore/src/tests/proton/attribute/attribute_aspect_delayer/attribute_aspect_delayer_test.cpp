@@ -92,7 +92,7 @@ AttributesConfig::FastMapLookups make_fast_map_lookup(const std::string& field_n
     return lookup;
 }
 
-AttributesConfig attrCfg(std::vector<AttributesConfig::Attribute>       attributes,
+AttributesConfig attrCfg(std::vector<AttributesConfig::Attribute>      attributes,
                          std::vector<AttributesConfig::FastMapLookups> fast_map_lookups) {
     AttributesConfigBuilder result;
     result.attribute = std::move(attributes);

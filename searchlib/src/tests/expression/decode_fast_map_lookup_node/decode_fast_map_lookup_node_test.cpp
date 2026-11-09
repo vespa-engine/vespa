@@ -265,14 +265,15 @@ protected:
     AttributeContext context;
 
     DecodeFastMapLookupNodeAttributeTest() : mgr(), context(mgr) {
-        add_string_array("m$lookup", {{entry("a", "80000001"), entry("b", "7fffffff")}, {}, {entry("c", "80000000")}});
+        add_string_array("m$lookup",
+                         {{entry("a", "80000001"), entry("b", "7fffffff")}, {}, {entry("c", "80000000")}});
         add_string_array("s$lookup", {{entry("x", "hello")}});
         add_string_array("a.b$lookup", {{entry("d", "80000002")}});
     }
     ~DecodeFastMapLookupNodeAttributeTest() override;
 
     void add_string_array(const std::string& name, const std::vector<std::vector<std::string>>& values) {
-        auto attr = AttributeFactory::createAttribute(name, Config(BasicType::STRING, CollectionType::ARRAY));
+        auto  attr = AttributeFactory::createAttribute(name, Config(BasicType::STRING, CollectionType::ARRAY));
         auto& sattr = dynamic_cast<StringAttribute&>(*attr);
         attr->addReservedDoc();
         for (const auto& docValues : values) {

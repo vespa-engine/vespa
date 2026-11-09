@@ -159,11 +159,21 @@ std::string DecodeFastMapLookupNode::decode(std::string_view encoded, ValueType 
 }
 
 DecodeFastMapLookupNode::ValueType DecodeFastMapLookupNode::toValueType(std::string_view typeName) {
-    if (typeName == "int") return ValueType::INT;
-    if (typeName == "long") return ValueType::LONG;
-    if (typeName == "float") return ValueType::FLOAT;
-    if (typeName == "double") return ValueType::DOUBLE;
-    if (typeName == "string") return ValueType::STRING;
+    if (typeName == "int") {
+        return ValueType::INT;
+    }
+    if (typeName == "long") {
+        return ValueType::LONG;
+    }
+    if (typeName == "float") {
+        return ValueType::FLOAT;
+    }
+    if (typeName == "double") {
+        return ValueType::DOUBLE;
+    }
+    if (typeName == "string") {
+        return ValueType::STRING;
+    }
     return ValueType::UNKNOWN;
 }
 

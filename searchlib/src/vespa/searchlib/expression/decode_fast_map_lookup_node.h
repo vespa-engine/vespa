@@ -29,7 +29,7 @@ public:
     using FastMapLookup = search::index::Schema::FastMapLookup;
     enum class ValueType : uint8_t { UNKNOWN, INT, LONG, FLOAT, DOUBLE, STRING };
 
-    static constexpr char encoded_separator = 0x7F;
+    static constexpr char             encoded_separator = 0x7F;
     static constexpr std::string_view default_separator = ":";
 
     /**
@@ -81,7 +81,7 @@ public:
     [[nodiscard]] ValueType getValueType() const noexcept { return _valueType; }
 
     /**
-     * Returns the decoded form of one element of the hidden attribute, with the given separator between key and value.
+     * Returns the decoded form of one element of the hidden attribute, with separator between key and value.
      *
      * The key is kept as fed. Values are formatted with std::format("{}"): int and long in decimal, float and double
      * in the shortest form that round-trips (for example "1", "-1.5", "1e+30", "inf", "-inf" and "nan"), and strings

@@ -669,9 +669,13 @@ TEST(GroupingTest, fast_map_lookups_are_shared_by_context_copies_and_thread_cont
     DoomFixture f1;
     MyWorld     world;
 
-    auto lookups = std::make_shared<const FastMapLookups>(std::vector<FastMapLookup>{
-        {.field_name = "m", .lookup_name = "lookup", .key_field = "key", .key_type = "string",
-         .value_field = "value", .value_type = "int"}});
+    FastMapLookup   lookup{.field_name = "m",
+                           .lookup_name = "lookup",
+                           .key_field = "key",
+                           .key_type = "string",
+                           .value_field = "value",
+                           .value_type = "int"};
+    auto            lookups = std::make_shared<const FastMapLookups>(std::vector<FastMapLookup>{lookup});
     GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
     EXPECT_EQ(nullptr, context.get_fast_map_lookups());
     context.set_fast_map_lookups(lookups);
@@ -707,8 +711,8 @@ FastMapLookup make_lookup(const std::string& field_name, const std::string& look
 }
 
 struct FastMapWorld {
-    MockAttributeContext       attributeContext;
-    search::AllocatedBitVector bv;
+    MockAttributeContext                  attributeContext;
+    search::AllocatedBitVector            bv;
     std::shared_ptr<const FastMapLookups> lookups;
 
     static std::string entry(const std::string& key, const std::string& encoded_value) {
@@ -717,9 +721,8 @@ struct FastMapWorld {
 
     FastMapWorld() : attributeContext(), bv(4), lookups() {
         bv.setInterval(0, 3);
-        std::vector<std::vector<std::string>> entries{{entry("a", "80000001"), entry("b", "7fffffff")},
-                                                      {entry("a", "80000001")},
-                                                      {}};
+        std::vector<std::vector<std::string>> entries{
+            {entry("a", "80000001"), entry("b", "7fffffff")}, {entry("a", "80000001")}, {}};
         auto                   map = std::make_shared<MultiStringExtAttribute>("m$lookup");
         auto                   val = std::make_shared<SingleInt32ExtAttribute>("val");
         AttributeVector::DocId docid;
@@ -741,9 +744,8 @@ struct FastMapWorld {
 
     static Grouping make_request(ExpressionNode::UP level_expression) {
         Grouping request;
-        request.setFirstLevel(0)
-            .setLastLevel(1)
-            .addLevel(createGL(std::move(level_expression), MU<AttributeNode>("val")));
+        request.setFirstLevel(0).setLastLevel(1).addLevel(
+            createGL(std::move(level_expression), MU<AttributeNode>("val")));
         return request;
     }
 
@@ -830,7 +832,6 @@ TEST(GroupingTest, grouping_with_unknown_fast_map_lookup_is_ignored) {
         EXPECT_TRUE(context.getGroupingList().empty());
     }
 }
-
 
 TEST(GroupingTest, test_session_timeout) {
     DoomFixture    f1;

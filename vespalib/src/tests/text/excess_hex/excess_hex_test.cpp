@@ -62,9 +62,8 @@ TEST(ExcessHexTest, nan_is_decoded) {
 
 TEST(ExcessHexTest, ordering_of_encoded_strings_matches_ordering_of_values) {
     // Lexicographically increasing encodings must give increasing values.
-    const char* doubles[] = {"000fffffffffffff", "402fffffffffffff", "7fffffffffffffff",
-                             "8000000000000000", "bfb999999999999a", "c004000000000000",
-                             "fff0000000000000"};
+    const char* doubles[] = {"000fffffffffffff", "402fffffffffffff", "7fffffffffffffff", "8000000000000000",
+                             "bfb999999999999a", "c004000000000000", "fff0000000000000"};
     for (size_t i = 1; i < std::size(doubles); ++i) {
         EXPECT_LE(*decode<double>(doubles[i - 1]), *decode<double>(doubles[i])) << doubles[i];
     }
