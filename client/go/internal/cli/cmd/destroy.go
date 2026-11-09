@@ -42,7 +42,7 @@ $ vespa destroy --force`,
 			}
 			description := target.Deployment().String()
 			env := target.Deployment().Zone.Environment
-			if env != "dev" && env != "perf" {
+			if env != "dev" {
 				return errHint(fmt.Errorf("cannot remove production %s", description), "See https://docs.vespa.ai/en/operations/deleting-applications.html")
 			}
 			ok := force

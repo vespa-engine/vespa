@@ -170,7 +170,7 @@ func (s System) PrivateServicesURL(deployment Deployment) *url.URL {
 		deployment.Zone.Environment, deployment.Zone.Region)
 }
 
-// JobPackageURL returns the API URL for fetching the application package for a dev/perf deployment job.
+// JobPackageURL returns the API URL for fetching the application package for a dev deployment job.
 func (s System) JobPackageURL(deployment Deployment) *url.URL {
 	return s.apiURL(EndpointJobPackage,
 		deployment.Application.Tenant, deployment.Application.Application, deployment.Application.Instance,
