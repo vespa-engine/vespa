@@ -131,16 +131,13 @@ TEST(DecodeFastMapLookupNodeTest, lookup_attribute_name_replaces_last_dot_with_d
     EXPECT_THROW((void)DecodeFastMapLookupNode("m.").lookupAttributeName(), std::runtime_error);
 }
 
-TEST(DecodeFastMapLookupNodeTest, configure_requires_matching_name_and_known_value_type) {
+TEST(DecodeFastMapLookupNodeTest, configure_requires_known_value_type) {
     DecodeFastMapLookupNode node("m.lookup");
     EXPECT_EQ(ValueType::UNKNOWN, node.getValueType());
-    EXPECT_THROW(node.configure(make_lookup("m", "other", "int")), std::runtime_error);
     EXPECT_THROW(node.configure(make_lookup("m", "lookup", "byte")), std::runtime_error);
     EXPECT_EQ(ValueType::UNKNOWN, node.getValueType());
     node.configure(make_lookup("m", "lookup", "long"));
     EXPECT_EQ(ValueType::LONG, node.getValueType());
-    DecodeFastMapLookupNode malformed("m");
-    EXPECT_THROW(malformed.configure(make_lookup("m", "lookup", "int")), std::runtime_error);
 }
 
 TEST(DecodeFastMapLookupNodeTest, name_and_separator_are_serialized_but_only_copies_keep_value_type) {

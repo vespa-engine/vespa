@@ -9,6 +9,7 @@
 #include <vespa/vespalib/objects/serializer.h>
 #include <vespa/vespalib/text/excess_hex.h>
 
+#include <cassert>
 #include <format>
 
 using vespalib::Deserializer;
@@ -116,11 +117,7 @@ void DecodeFastMapLookupNode::createInput() {
 }
 
 void DecodeFastMapLookupNode::configure(const FastMapLookup& lookup) {
-    std::string attributeName = lookupAttributeName();
-    if (lookup.lookup_attribute() != attributeName) {
-        throw std::runtime_error(std::format("Fast map lookup '{}' does not match decode node '{}'",
-                                             lookup.lookup_attribute(), _name));
-    }
+    assert(lookup.lookup_attribute() == toLookupAttributeName(_name));
     auto valueType = toValueType(lookup.value_type);
     if (valueType == ValueType::UNKNOWN) {
         throw std::runtime_error(

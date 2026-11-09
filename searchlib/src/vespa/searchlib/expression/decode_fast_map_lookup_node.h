@@ -50,7 +50,8 @@ public:
     ~DecodeFastMapLookupNode() override;
 
     /**
-     * Configure this node with the fast map lookup it decodes, which must have the same name as this node.
+     * Configure this node with the fast map lookup it decodes, which must have the same name as this node
+     * (the caller finds it by lookupAttributeName()). Throws if the value type cannot be decoded.
      */
     void configure(const FastMapLookup& lookup);
 
@@ -65,7 +66,14 @@ public:
     /** Returns the name of the hidden attribute, "fieldname$lookupname" for node name "fieldname.lookupname". */
     [[nodiscard]] std::string lookupAttributeName() const;
 
-    /** Returns the decoded form of one element of the hidden attribute, with the given separator between key and value. */
+    /**
+     * Returns the decoded form of one element of the hidden attribute, with the given separator between key and value.
+     *
+     * The key is kept as fed. Values are formatted with std::format("{}"): int and long in decimal, float and double
+     * in the shortest form that round-trips (for example "1", "-1.5", "1e+30", "inf", "-inf" and "nan"), and strings
+     * as is. An element without the encoded separator, or with a value that is not valid excess hex for the value
+     * type, is returned as stored, without decoding.
+     */
     static std::string decode(std::string_view encoded, ValueType valueType,
                               std::string_view separator = default_separator);
 

@@ -43,11 +43,10 @@ public:
     explicit ConfigureFastMapLookups(const FastMapLookups* lookups) noexcept : _lookups(lookups) {}
     void execute(vespalib::Identifiable& obj) override {
         auto&                node = static_cast<DecodeFastMapLookupNode&>(obj);
-        std::string          attribute = node.lookupAttributeName();
-        const FastMapLookup* lookup = (_lookups != nullptr) ? _lookups->find(attribute) : nullptr;
+        const FastMapLookup* lookup = (_lookups != nullptr) ? _lookups->find(node.lookupAttributeName()) : nullptr;
         if (lookup == nullptr) {
             throw std::runtime_error(
-                vespalib::make_string("No fast map lookup for attribute '%s' in schema", attribute.c_str()));
+                vespalib::make_string("No fast map lookup '%s' in schema", node.getName().c_str()));
         }
         node.configure(*lookup);
     }
@@ -86,7 +85,7 @@ void GroupingManager::init(const IAttributeContext& attrCtx, const document::Doc
             grouping.configureStaticStuff(stuff);
             list.push_back(groupingList[i]);
         } catch (const std::exception& e) {
-            Issue::report("Could not locate attribute for grouping number %zd : %s. Ignoring this grouping.", i,
+            Issue::report("Could not set up grouping number %zd : %s. Ignoring this grouping.", i,
                           e.what());
         }
     }
