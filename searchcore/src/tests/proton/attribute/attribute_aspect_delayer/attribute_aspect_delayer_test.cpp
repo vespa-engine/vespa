@@ -356,35 +356,13 @@ TEST_F(DelayerTest, require_that_removing_attribute_aspect_from_struct_field_is_
     assertSummaryConfig({make_summary_field("array")});
 }
 
-TEST_F(DelayerTest, require_that_fast_map_lookups_are_kept_when_lookup_attribute_is_present) {
-    auto lookup = make_fast_map_lookup("m", "lookup");
-    setup(attrCfg({make_int32_sv_cfg("m$lookup")}, {lookup}), attrCfg({make_int32_sv_cfg("m$lookup")}, {lookup}),
-          sCfg({}));
-    assertAttributeConfig({make_int32_sv_cfg("m$lookup")});
-    assertFastMapLookups({lookup});
-}
-
-TEST_F(DelayerTest, require_that_fast_map_lookup_is_dropped_when_adding_lookup_attribute_is_delayed) {
-    addFields({"m$lookup"});
-    setup(attrCfg({}), attrCfg({make_int32_sv_cfg("m$lookup")}, {make_fast_map_lookup("m", "lookup")}), sCfg({}));
-    assertAttributeConfig({});
-    assertFastMapLookups({});
-}
-
-TEST_F(DelayerTest, require_that_fast_map_lookup_is_kept_when_removing_lookup_attribute_is_delayed) {
-    addFields({"m$lookup"});
-    auto lookup = make_fast_map_lookup("m", "lookup");
-    setup(attrCfg({make_int32_sv_cfg("m$lookup")}, {lookup}), attrCfg({}), sCfg({}));
-    assertAttributeConfig({make_int32_sv_cfg("m$lookup")});
-    assertFastMapLookups({lookup});
-}
-
-TEST_F(DelayerTest, require_that_fast_map_lookup_is_not_repeated_when_in_both_old_and_new_config) {
+TEST_F(DelayerTest, require_that_fast_map_lookups_are_passed_through_from_new_config) {
     auto old_lookup = make_fast_map_lookup("m", "lookup");
     auto new_lookup = make_fast_map_lookup("m", "lookup");
     new_lookup.valueType = "long";
-    setup(attrCfg({make_int32_sv_cfg("m$lookup")}, {old_lookup}),
-          attrCfg({make_int32_sv_cfg("m$lookup")}, {new_lookup}), sCfg({}));
+    addFields({"m$lookup"});
+    setup(attrCfg({}, {old_lookup}), attrCfg({make_int32_sv_cfg("m$lookup")}, {new_lookup}), sCfg({}));
+    assertAttributeConfig({});
     assertFastMapLookups({new_lookup});
 }
 

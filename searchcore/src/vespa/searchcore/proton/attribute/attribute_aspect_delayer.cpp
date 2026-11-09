@@ -85,7 +85,6 @@ class AttributeAspectConfigRewriter {
     bool is_delayed_remove_attribute_aspect(const std::string& name) const noexcept {
         return _delayed_remove_attribute_aspect.find(name) != _delayed_remove_attribute_aspect.end();
     }
-    void build_fast_map_lookups(AttributesConfigBuilder& attributes_config_builder) const;
 
 public:
     AttributeAspectConfigRewriter(const AttributesConfig&       old_attributes_config,
@@ -212,27 +211,10 @@ void AttributeAspectConfigRewriter::build_attributes_config(
             attributes_config_builder.attribute.emplace_back(oldAttr);
         }
     }
-    build_fast_map_lookups(attributes_config_builder);
-}
-
-void AttributeAspectConfigRewriter::build_fast_map_lookups(AttributesConfigBuilder& attributes_config_builder) const {
-    // A fast map lookup is only usable while its lookup attribute is present, so keep those
-    // lookups (from the new config, or the old one for a delayed removal) whose attribute is.
-    vespalib::hash_set<std::string> attribute_names;
-    for (const auto& attr : attributes_config_builder.attribute) {
-        attribute_names.insert(attr.name);
-    }
-    vespalib::hash_set<std::string> added;
-    auto add_present_lookups = [&](const AttributesConfig& config) {
-        for (const auto& lookup : config.fastMapLookups) {
-            std::string lookup_attribute = lookup.fieldName + "$" + lookup.lookupName;
-            if (attribute_names.contains(lookup_attribute) && added.insert(lookup_attribute).second) {
-                attributes_config_builder.fastMapLookups.emplace_back(lookup);
-            }
-        }
-    };
-    add_present_lookups(_new_attributes_config);
-    add_present_lookups(_old_attributes_config);
+    // Fast map lookups are not attribute aspects; pass them through unchanged. The schema used for
+    // grouping is built from the undelayed config, so a delayed lookup attribute is detected when
+    // the grouping is wired to attributes.
+    attributes_config_builder.fastMapLookups = _new_attributes_config.fastMapLookups;
 }
 
 void AttributeAspectConfigRewriter::build_summary_config(const SummaryConfig&  new_summary_config,

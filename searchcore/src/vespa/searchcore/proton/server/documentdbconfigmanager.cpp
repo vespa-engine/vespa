@@ -192,6 +192,7 @@ AttributesConfigSP filterImportedAttributes(const AttributesConfigSP& attrCfg) {
             result->attribute.push_back(attr);
         }
     }
+    result->fastMapLookups = attrCfg->fastMapLookups;
     return result;
 }
 
