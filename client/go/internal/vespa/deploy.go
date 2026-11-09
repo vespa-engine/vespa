@@ -153,7 +153,7 @@ func fetchFromController(deployment DeploymentOptions, path string) error {
 	d := deployment.Target.Deployment()
 	var pkgURL *url.URL
 	switch d.Zone.Environment {
-	case "dev", "perf":
+	case "dev":
 		pkgURL = d.System.JobPackageURL(d)
 	default:
 		pkgURL = d.System.ApplicationPackageURL(d.Application)
