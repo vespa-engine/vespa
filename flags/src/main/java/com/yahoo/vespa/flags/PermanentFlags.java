@@ -291,6 +291,14 @@ public class PermanentFlags {
             "Takes effect on next host restart",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+    public static final UnboundBooleanFlag SKIP_CONNECTIVITY_CHECKS_AT_STARTUP = defineFeatureFlag(
+            "skip-connectivity-checks-at-startup", false,
+            "Skip connectivity checks in config-sentinel at startup. " +
+                    "Normally the sentinel checks that a sufficient fraction of cluster nodes can reach each other before starting services. " +
+                    "When this flag is set, the checks are not performed at all and services are started immediately.",
+            "Takes effect on next host restart",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
     public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
             "zookeeper-pre-alloc-size", 65536,
             "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "

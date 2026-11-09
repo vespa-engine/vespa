@@ -1540,6 +1540,7 @@
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag tritonShareOnnxSessionFlag()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag tritonOnnxPoolingFlag()",
       "public boolean ignoreConnectivityChecksAtStartup()",
+      "public boolean skipConnectivityChecksAtStartup()",
       "public boolean requireExplicitDocprocCluster()",
       "public com.yahoo.config.model.api.ModelContext$FeatureFlag metricsProxyHeapSizeInMibFlag()",
       "public java.util.OptionalInt metricsProxyAdminNodeHeapSizeInMib()",

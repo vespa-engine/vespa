@@ -131,6 +131,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"glebashnik"}) default FeatureFlag<Boolean> tritonShareOnnxSessionFlag() { return () -> false; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default FeatureFlag<Boolean> tritonOnnxPoolingFlag() { return () -> false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean ignoreConnectivityChecksAtStartup() { return false; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean skipConnectivityChecksAtStartup() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean requireExplicitDocprocCluster() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return () -> 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return OptionalInt.empty(); }
