@@ -110,7 +110,10 @@ func newSkillsCmd() *cobra.Command {
 Skills teach AI coding assistants how to work with Vespa: schema authoring,
 application packages, queries, feeding and more. Skills are downloaded from
 https://github.com/vespa-engine/skills and installed for one or more
-agent harnesses: Claude Code, Codex, Cursor and Antigravity CLI.`,
+agent harnesses: Claude Code, Codex, Cursor and Antigravity CLI.
+
+Deployed applications can also serve skills documenting themselves, such as
+their schemas, which 'vespa skills get' prints.`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      false,
 		Args:              cobra.MinimumNArgs(1),
