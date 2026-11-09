@@ -10,6 +10,7 @@ import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.Ranking;
 import com.yahoo.schema.document.Sorting;
+import com.yahoo.searchlib.document.FastMapSearch;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
 
@@ -315,6 +316,11 @@ public class AttributeFields extends Derived {
         }
         for (FastMapLookup lookup : fastMapLookups) {
             var fastMap = lookup.fields();
+            // Only export lookups backed by a lookup attribute in this schema. This excludes
+            // imported fields, whose fast map search settings come from the parent field.
+            if ( ! attributes.containsKey(FastMapSearch.toLookupFieldName(lookup.fieldName(), fastMap.lookupName()))) {
+                continue;
+            }
             builder.fastMapLookups(new AttributesConfig.FastMapLookups.Builder()
                                            .fieldName(lookup.fieldName())
                                            .lookupName(fastMap.lookupName())

@@ -323,6 +323,30 @@ public class MapFastSearchTestCase {
     }
 
     @Test
+    void requireImportedFastMapFieldsAreNotExportedInAttributesConfig() throws ParseException {
+        var builder = new ApplicationBuilder();
+        builder.addSchema(joinLines("schema parent {",
+                                    "  document parent {",
+                                    "    field m type map<string, int> {",
+                                    "      indexing: summary",
+                                    "      struct-field key { indexing: attribute }",
+                                    "      struct-field value { indexing: attribute }",
+                                    "      fast-search-map-field lookup",
+                                    "    }",
+                                    "  }",
+                                    "}"));
+        builder.addSchema(joinLines("schema child {",
+                                    "  document child {",
+                                    "    field ref type reference<parent> { indexing: attribute }",
+                                    "  }",
+                                    "  import field ref.m as imported_m {}",
+                                    "}"));
+        builder.build(true);
+        assertEquals(1, attributesConfigOf(builder.getSchema("parent")).fastMapLookups().size());
+        assertTrue(attributesConfigOf(builder.getSchema("child")).fastMapLookups().isEmpty());
+    }
+
+    @Test
     void requireFastArrayOfStructIsListedInIlscriptsConfig() throws ParseException {
         var config = ilscriptsConfigOf(build(getSdWithEntry("string", "string",
                                                             fieldWithLookup("array<entry>", "key: mykey", "value: myvalue"))));
