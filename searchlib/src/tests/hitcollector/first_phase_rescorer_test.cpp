@@ -91,6 +91,46 @@ TEST(FirstPhaseRescorerTest, verify_invariant) {
     }
 }
 
+TEST(FirstPhaseRescorerTest, verify_invariant_is_robust_against_rounding) {
+    // Verifies that rescore(first_low) <= second_low also holds when the
+    // computation is subject to floating-point rounding errors.
+    std::vector<ScorePair> rounding_bounds = {
+        // second_low is absorbed when computed together with a much larger first_low
+        {{1e16, 1e16}, {-1.0, 0.0}},
+        // Rounding error with "ordinary" values
+        {{44.82237721780038, 84.7846254520088}, {-63.711917948293866, -42.99091007416019}},
+    };
+    for (auto& pair : rounding_bounds) {
+        ASSERT_TRUE(FirstPhaseRescorer::need_rescore(pair));
+        FirstPhaseRescorer rescorer(pair);
+        EXPECT_LE(rescorer.rescore(0, pair.first.low), pair.second.low);
+    }
+}
+
+TEST(FirstPhaseRescorerTest, verify_finite_bounds_with_overflow) {
+    // Verifies that finite bounds whose derived values (ranges, scale, adjust)
+    // overflow to infinity neither produce NaN nor violate the invariant.
+    std::vector<ScorePair> overflow_bounds = {
+        // second_high - second_low overflows, giving an infinite scale
+        {{1.0, 2.0}, {-1e308, 1e308}},
+        // first_low * scale overflows, giving an infinite adjust
+        {{1e300, 1e300}, {0.0, 1e10}},
+    };
+    for (auto& pair : overflow_bounds) {
+        ASSERT_TRUE(FirstPhaseRescorer::need_rescore(pair));
+        FirstPhaseRescorer rescorer(pair);
+        for (double score : second_phase_scores) {
+            double new_score = rescorer.rescore(0, score);
+            EXPECT_FALSE(std::isnan(new_score)) << "score=" << score;
+            if (score <= pair.first.low) {
+                EXPECT_LE(new_score, pair.second.low) << "score=" << score;
+            }
+        }
+        EXPECT_FALSE(std::isnan(rescorer.rescore(0, pair.first.low)));
+        EXPECT_LE(rescorer.rescore(0, pair.first.low), pair.second.low);
+    }
+}
+
 TEST(FirstPhaseRescorerTest, verify_new_score_is_not_nan) {
     for (auto& pair : get_bounds_with_inf_and_nan()) {
         FirstPhaseRescorer rescorer(pair);
