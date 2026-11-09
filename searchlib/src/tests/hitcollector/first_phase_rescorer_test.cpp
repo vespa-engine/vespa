@@ -115,6 +115,12 @@ TEST(FirstPhaseRescorerTest, verify_finite_bounds_with_overflow) {
         {{1.0, 2.0}, {-1e308, 1e308}},
         // first_low * scale overflows, giving an infinite adjust
         {{1e300, 1e300}, {0.0, 1e10}},
+        // first_high - first_low overflows, giving a zero scale
+        {{-1e308, 1e308}, {-1.5e308, 1.0}},
+        // Both first_high - first_low and second_high - second_low overflow, giving Inf / Inf
+        {{-1e308, 1e308}, {-1.5e308, 1e308}},
+        {{-1e308, std::numeric_limits<double>::max()},
+         {-std::numeric_limits<double>::max(), std::numeric_limits<double>::max()}},
     };
     for (auto& pair : overflow_bounds) {
         ASSERT_TRUE(FirstPhaseRescorer::need_rescore(pair));
