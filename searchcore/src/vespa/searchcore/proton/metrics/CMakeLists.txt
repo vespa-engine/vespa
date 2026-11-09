@@ -1,5 +1,7 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchcore_proton_metrics STATIC
+    INSTALL lib64
+    OUTPUT_NAME vespa_searchcore_proton_metrics
     SOURCES
     attribute_metrics.cpp
     attribute_metrics_entry.cpp
