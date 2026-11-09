@@ -2,6 +2,7 @@
 
 package com.yahoo.search.searchers;
 
+import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.SparseTensorWandItem;
@@ -16,7 +17,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
-import com.yahoo.yolean.chain.Before;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +29,6 @@ import java.util.Optional;
  *
  * @author arnej
  */
-@SuppressWarnings("removal")
 @Before(GroupingExecutor.COMPONENT_NAME) // Must happen before query.prepare()
 public class ValidateNearestNeighborSearcher extends Searcher {
 
