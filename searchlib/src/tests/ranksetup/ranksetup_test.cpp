@@ -488,34 +488,73 @@ TEST_F(RankSetupTest, compilation) {
     }
 }
 
+namespace {
+
+// Feature with a configurable base name, accepting anything as parameters (without resolving them as features).
+class StubBlueprint : public Blueprint {
+public:
+    explicit StubBlueprint(const std::string& name) : Blueprint(name) {}
+    void visitDumpFeatures(const IIndexEnvironment&, IDumpFeatureVisitor&) const override {}
+    Blueprint::UP createInstance() const override { return std::make_unique<StubBlueprint>(getBaseName()); }
+    bool setup(const IIndexEnvironment&, const StringVector&) override {
+        describeOutput("out", "out");
+        return true;
+    }
+    FeatureExecutor& createExecutor(const IQueryEnvironment&, vespalib::Stash& stash) const override {
+        return stash.create<SingleValueExecutor>(1.0);
+    }
+};
+
+} // namespace
+
 TEST_F(RankSetupTest, second_phase_attributes_are_detected) {
     using Names = std::vector<std::string>;
     using search::fef::FieldType;
     IndexEnvironment env;
-    for (const auto* name : {"a", "b", "c", "d"}) {
+    for (const auto* name : {"a", "b", "c", "d", "q"}) {
         env.addField(FieldType::ATTRIBUTE, FieldInfo::CollectionType::SINGLE, name);
     }
     env.addField(FieldType::INDEX, FieldInfo::CollectionType::SINGLE, "idx");
+    for (const auto* name : {"attribute", "dotProduct", "closeness", "tensorFromLabels", "query", "stub"}) {
+        _factory.addPrototype(std::make_shared<StubBlueprint>(name));
+    }
     {
+        // in order of appearance, without duplicates
         RankSetup rs(_factory, env);
-        rs.setFirstPhaseRank("staticrank(c)");
-        rs.setSecondPhaseRank("rankingExpression(\"staticrank(b)+staticrank(a)+staticrank(b)\")");
-        rs.add_match_feature("staticrank(d)");
+        rs.setFirstPhaseRank("value(1)");
+        rs.setSecondPhaseRank("rankingExpression(\"attribute(b)+dotProduct(a,vec)+attribute(b)\")");
+        rs.add_match_feature("attribute(d)");
         ASSERT_TRUE(rs.compile()) << rs.getJoinedWarnings();
         EXPECT_EQ(Names({"b", "a"}), rs.get_second_phase_attributes());
     }
     {
-        // parameters of features given as parameters, and only attribute fields
+        // only parameters of features known to read attributes, and only attribute fields
         RankSetup rs(_factory, env);
         rs.setFirstPhaseRank("value(1)");
-        rs.setSecondPhaseRank("mysum(staticrank(d),staticrank(idx),staticrank(unknown))");
+        rs.setSecondPhaseRank("mysum(attribute(d),attribute(idx),attribute(unknown),query(q),staticrank(a),stub(b))");
         ASSERT_TRUE(rs.compile()) << rs.getJoinedWarnings();
         EXPECT_EQ(Names({"d"}), rs.get_second_phase_attributes());
     }
     {
+        // features given as parameters, also when they are not resolved as separate features
+        RankSetup rs(_factory, env);
+        rs.setFirstPhaseRank("value(1)");
+        rs.setSecondPhaseRank("mysum(tensorFromLabels(attribute(c),dim),stub(attribute(a)))");
+        ASSERT_TRUE(rs.compile()) << rs.getJoinedWarnings();
+        EXPECT_EQ(Names({"c", "a"}), rs.get_second_phase_attributes());
+    }
+    {
+        // attributes always read by first phase are left out
+        RankSetup rs(_factory, env);
+        rs.setFirstPhaseRank("mysum(attribute(c),closeness(field,b))");
+        rs.setSecondPhaseRank("mysum(attribute(a),attribute(b),attribute(c))");
+        ASSERT_TRUE(rs.compile()) << rs.getJoinedWarnings();
+        EXPECT_EQ(Names({"a", "b"}), rs.get_second_phase_attributes());
+    }
+    {
         // no second phase
         RankSetup rs(_factory, env);
-        rs.setFirstPhaseRank("staticrank(a)");
+        rs.setFirstPhaseRank("attribute(a)");
         ASSERT_TRUE(rs.compile());
         EXPECT_EQ(Names(), rs.get_second_phase_attributes());
     }

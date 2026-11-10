@@ -2360,7 +2360,47 @@ int AttributeTest::test_paged_attribute(const std::string& name, const std::stri
         EXPECT_LT(size3, size4);
         result += 4;
     }
+    // Prefetch of paged memory (not supported by bool attributes).
+    const search::attribute::IAttributeVector& iattr = *av;
+    std::vector<uint32_t>                      docids = {1, 2, 3, static_cast<uint32_t>(av->getNumDocs() + 100)};
+    if (cfg.basicType() == search::attribute::BasicType::Type::BOOL) {
+        EXPECT_FALSE(iattr.supports_prefetch_docs());
+        EXPECT_EQ(0u, iattr.prefetch_docs(docids).bytes);
+    } else {
+        size_t page_size = vespalib::round_up_to_page_size(1);
+        EXPECT_TRUE(iattr.supports_prefetch_docs());
+        EXPECT_EQ(0u, iattr.prefetch_docs(std::vector<uint32_t>{}).bytes);
+        // documents beyond the docid limit are ignored
+        EXPECT_EQ(0u, iattr.prefetch_docs(std::vector<uint32_t>{docids.back()}).bytes);
+        auto prefetched = iattr.prefetch_docs(docids);
+        if (cfg.collectionType().isMultiValue()) {
+            // the page with the mapping from docid to values, and at least one page with values
+            EXPECT_LE(2u, prefetched.ranges);
+            EXPECT_LE(2 * page_size, prefetched.bytes);
+        } else {
+            // the neighbouring values (or enum indices) share a page
+            EXPECT_EQ(1u, prefetched.ranges);
+            EXPECT_EQ(page_size, prefetched.bytes);
+        }
+    }
     return result;
+}
+
+void test_not_paged_attributes_do_not_prefetch() {
+    for (auto collection_type : {CollectionType::SINGLE, CollectionType::ARRAY}) {
+        for (bool fast_search : {false, true}) {
+            search::attribute::Config cfg(BasicType::INT32, collection_type);
+            cfg.setFastSearch(fast_search);
+            auto av = createAttribute("not-paged", cfg);
+            av->addDocs(10);
+            av->commit();
+            const search::attribute::IAttributeVector& iattr = *av;
+            EXPECT_FALSE(iattr.supports_prefetch_docs());
+            auto prefetched = iattr.prefetch_docs(std::vector<uint32_t>{1, 2, 3});
+            EXPECT_EQ(0u, prefetched.ranges);
+            EXPECT_EQ(0u, prefetched.bytes);
+        }
+    }
 }
 
 void AttributeTest::test_paged_attributes() {
@@ -2385,6 +2425,7 @@ void AttributeTest::test_paged_attributes() {
     EXPECT_EQ(1, test_paged_attribute("std-bool-sv-paged", basedir + "/4.std-bool-sv-paged/swapfile", cfg5));
     vespalib::alloc::MmapFileAllocatorFactory::instance().setup("");
     fs::remove_all(fs::path(basedir));
+    test_not_paged_attributes_do_not_prefetch();
 }
 
 void testNamePrefix() {

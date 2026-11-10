@@ -65,10 +65,12 @@ public:
         size_t _docsMatched;
         size_t _docsRanked;
         size_t _docsReRanked;
+        size_t _second_phase_prefetched_bytes;
         size_t _softDoomed;
         Avg    _doomOvertime;
         Avg    _active_time;
         Avg    _wait_time;
+        Avg    _second_phase_prefetch_time;
         friend MatchingStats;
 
     public:
@@ -77,10 +79,12 @@ public:
               _docsMatched(0),
               _docsRanked(0),
               _docsReRanked(0),
+              _second_phase_prefetched_bytes(0),
               _softDoomed(0),
               _doomOvertime(),
               _active_time(),
-              _wait_time() {}
+              _wait_time(),
+              _second_phase_prefetch_time() {}
 
         Partition& docsCovered(size_t value) noexcept {
             _docsCovered = value;
@@ -102,6 +106,15 @@ public:
             return *this;
         }
         size_t docsReRanked() const noexcept { return _docsReRanked; }
+        // The paged attribute memory this thread prefetched before second phase ranking, and the time it took.
+        Partition& second_phase_prefetch(size_t bytes, double time_s) noexcept {
+            _second_phase_prefetched_bytes = bytes;
+            _second_phase_prefetch_time.set(time_s);
+            return *this;
+        }
+        size_t second_phase_prefetched_bytes() const noexcept { return _second_phase_prefetched_bytes; }
+        double second_phase_prefetch_time_avg() const noexcept { return _second_phase_prefetch_time.avg(); }
+        size_t second_phase_prefetch_time_count() const noexcept { return _second_phase_prefetch_time.count(); }
         Partition& softDoomed(bool v) noexcept {
             _softDoomed += v ? 1 : 0;
             return *this;
@@ -135,6 +148,8 @@ public:
             _docsMatched += rhs._docsMatched;
             _docsRanked += rhs._docsRanked;
             _docsReRanked += rhs._docsReRanked;
+            _second_phase_prefetched_bytes += rhs._second_phase_prefetched_bytes;
+            _second_phase_prefetch_time.add(rhs._second_phase_prefetch_time);
             _softDoomed += rhs._softDoomed;
             _doomOvertime.add(rhs._doomOvertime);
 
@@ -151,6 +166,7 @@ private:
     size_t _docsMatched;
     size_t _docsRanked;
     size_t _docsReRanked;
+    size_t _second_phase_prefetched_bytes;
     size_t _exact_nns_distances_computed;
     size_t _approximate_nns_distances_computed;
     size_t _approximate_nns_nodes_visited;
@@ -165,6 +181,7 @@ private:
     Avg                    _matchTime;
     Avg                    _groupingTime;
     Avg                    _rerankTime;
+    Avg                    _second_phase_prefetch_time;
     std::vector<Partition> _partitions;
 
 public:
@@ -306,6 +323,15 @@ public:
     size_t rerankTimeCount() const { return _rerankTime.count(); }
     double rerankTimeMin() const { return _rerankTime.min(); }
     double rerankTimeMax() const { return _rerankTime.max(); }
+
+    // Prefetching of paged attributes before second phase ranking. The bytes are summed over the match threads,
+    // while the time is tracked per match thread that prefetched something (they prefetch in parallel).
+    // These are set by merge_partition().
+    size_t second_phase_prefetched_bytes() const { return _second_phase_prefetched_bytes; }
+    double second_phase_prefetch_time_avg() const { return _second_phase_prefetch_time.avg(); }
+    size_t second_phase_prefetch_time_count() const { return _second_phase_prefetch_time.count(); }
+    double second_phase_prefetch_time_min() const { return _second_phase_prefetch_time.min(); }
+    double second_phase_prefetch_time_max() const { return _second_phase_prefetch_time.max(); }
 
     // used to merge in stats from each match thread
     MatchingStats& merge_partition(const Partition& partition, size_t id);

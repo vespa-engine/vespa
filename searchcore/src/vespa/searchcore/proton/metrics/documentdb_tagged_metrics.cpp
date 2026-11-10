@@ -157,6 +157,10 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
       docsMatched("docs_matched", {}, "Number of documents matched", this),
       docsRanked("docs_ranked", {}, "Number of documents ranked (first phase)", this),
       docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
+      second_phase_prefetched_bytes(
+          "second_phase_prefetched_bytes", {},
+          "Number of bytes of paged attribute memory prefetched for documents about to be re-ranked (second phase)",
+          this),
       exact_nns_distances_computed("exact_nns_distances_computed", {},
                                    "Number of distance computations in exact nearest-neighbor search", this),
       approximate_nns_distances_computed("approximate_nns_distances_computed", {},
@@ -174,6 +178,10 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
       matchTime("match_time", {}, "Average time (sec) for matching a query (1st phase)", this),
       groupingTime("grouping_time", {}, "Average time (sec) spent on grouping", this),
       rerankTime("rerank_time", {}, "Average time (sec) spent on 2nd phase ranking", this),
+      second_phase_prefetch_time(
+          "second_phase_prefetch_time", {},
+          "Average time (sec) a match thread spent prefetching paged attribute memory before 2nd phase ranking",
+          this),
       querySetupTime("query_setup_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
       query_approximate_nns_time(
           "query_approximate_nns_time", {},
@@ -217,6 +225,10 @@ void DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const 
     docsMatched.inc(stats.docsMatched());
     docsRanked.inc(stats.docsRanked());
     docsReRanked.inc(stats.docsReRanked());
+    second_phase_prefetched_bytes.inc(stats.second_phase_prefetched_bytes());
+    second_phase_prefetch_time.addValueBatch(
+        stats.second_phase_prefetch_time_avg(), stats.second_phase_prefetch_time_count(),
+        stats.second_phase_prefetch_time_min(), stats.second_phase_prefetch_time_max());
     exact_nns_distances_computed.inc(stats.exact_nns_distances_computed());
     approximate_nns_distances_computed.inc(stats.approximate_nns_distances_computed());
     approximate_nns_nodes_visited.inc(stats.approximate_nns_nodes_visited());

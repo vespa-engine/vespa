@@ -66,6 +66,10 @@ public:
     std::unique_ptr<attribute::SearchContext> getSearch(std::unique_ptr<QueryTermSimple>      term,
                                                         const attribute::SearchContextParams& params) const override;
 
+    using PrefetchResult = attribute::IAttributeVector::PrefetchResult;
+    PrefetchResult prefetch_docs(std::span<const DocId> docids) const override;
+    bool supports_prefetch_docs() const noexcept override { return static_cast<bool>(this->get_memory_allocator()); }
+
     void set(DocId doc, T v) { vespalib::atomic::store_ref_relaxed(_data[doc], v); }
 
     T getFast(DocId doc) const { return vespalib::atomic::load_ref_relaxed(_data.acquire_elem_ref(doc)); }

@@ -5,6 +5,7 @@
 #include "load_utils.h"
 #include "numeric_matcher.h"
 #include "numeric_range_matcher.h"
+#include "paged_memory_prefetcher.h"
 #include "primitivereader.h"
 #include "single_numeric_search_context.h"
 #include "singlenumericattribute.h"
@@ -197,6 +198,23 @@ template <typename B>
 size_t SingleValueNumericAttribute<B>::reserved_memory_for_flush(bool slow_disk) const noexcept {
     uint32_t committedDocIdLimit = this->getCommittedDocIdLimit();
     return slow_disk ? this->getEstimatedSaveByteSize() : committedDocIdLimit * sizeof(T);
+}
+
+template <typename B>
+typename SingleValueNumericAttribute<B>::PrefetchResult
+SingleValueNumericAttribute<B>::prefetch_docs(std::span<const DocId> docids) const {
+    if (!supports_prefetch_docs()) {
+        // Not paged, values are already in memory.
+        return {};
+    }
+    attribute::PagedMemoryPrefetcher prefetcher(docids.size());
+    const DocId                      docid_limit = this->getCommittedDocIdLimit();
+    for (DocId docid : docids) {
+        if (docid < docid_limit) {
+            prefetcher.add(&_data.acquire_elem_ref(docid), sizeof(T));
+        }
+    }
+    return prefetcher.result();
 }
 
 } // namespace search

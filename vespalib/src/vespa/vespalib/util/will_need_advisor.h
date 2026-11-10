@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace vespalib::alloc {
@@ -24,13 +25,16 @@ namespace vespalib::alloc {
  * reads in flight at once the submission order is not significant.
  *
  * Chunking is needed because the kernel caps the readahead done for a single
- * MADV_WILLNEED range (roughly to the device's max I/O size or the readahead
- * window); the rest of a longer range would silently not be read ahead.
+ * MADV_WILLNEED range (to the larger of the device's max I/O size and its readahead
+ * window); the rest of a longer range would silently not be read ahead. The cap
+ * for the device holding a file can be found with max_range_size_for_path().
  *
- * On Linux, all chunks are advised with a single process_madvise() call when
- * possible. If that is not supported (old kernel, missing CAP_SYS_NICE before
- * Linux 6.13, seccomp filter, ...) it falls back to one madvise() call per chunk,
- * and stops trying process_madvise() for the rest of the process lifetime.
+ * On Linux, all chunks are advised with as few process_madvise() calls as
+ * possible (a chunk that fails, e.g. because it is not mapped, is skipped and
+ * costs an extra call). If process_madvise() is not supported (old kernel,
+ * missing CAP_SYS_NICE before Linux 6.13, seccomp filter, ...) it falls back to
+ * one madvise() call per chunk, and stops trying process_madvise() for the rest
+ * of the process lifetime.
  *
  * Advising is best effort; failures are ignored except that they are not counted
  * in the result.
@@ -56,9 +60,11 @@ public:
 
 private:
     std::vector<Range> _ranges;
+    size_t             _max_range_size;
 
 public:
-    WillNeedAdvisor();
+    WillNeedAdvisor() : WillNeedAdvisor(default_max_range_size) {}
+    explicit WillNeedAdvisor(size_t max_range_size);
     ~WillNeedAdvisor();
     void reserve(size_t num_ranges) { _ranges.reserve(num_ranges); }
     void add(const void* buf, size_t size);
@@ -71,6 +77,11 @@ public:
                                   size_t max_range_size = default_max_range_size);
     // True if a batched (process_madvise) call has failed in this process, and batching is disabled.
     static bool batching_disabled() noexcept;
+    // The longest range the kernel will read ahead for a single MADV_WILLNEED range on memory backed by
+    // a file at the given path (or below it, if the path does not exist yet): the larger of the readahead
+    // window and the max I/O size of the device holding the file. Returns default_max_range_size if the
+    // device limits are not known (not Linux, or a file system without a visible block device).
+    static size_t max_range_size_for_path(const std::string& path);
 };
 
 } // namespace vespalib::alloc

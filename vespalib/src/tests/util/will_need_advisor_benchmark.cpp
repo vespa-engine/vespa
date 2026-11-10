@@ -8,7 +8,10 @@
 // cold: the pages are evicted from the page cache before each iteration. Compares touching the pages
 //       one by one (serial page faults, as without prefetch) with advising first, then touching.
 //
-// Usage: vespalib_util_will_need_advisor_benchmark_app [hits=100] [file_mib=1024] [iterations=20] [dir=.]
+// The default file is small, to be gentle on the disk when run unattended. Use a file larger than what the
+// page cache is likely to keep around (and a real disk, not tmpfs) for representative cold numbers.
+//
+// Usage: vespalib_util_will_need_advisor_benchmark_app [hits=100] [file_mib=128] [iterations=20] [dir=.]
 
 #include <vespa/vespalib/util/will_need_advisor.h>
 
@@ -117,7 +120,7 @@ void advise(const MappedFile& f, const std::vector<size_t>& pages, Method method
 
 int main(int argc, char** argv) {
     size_t      hits = (argc > 1) ? strtoul(argv[1], nullptr, 10) : 100;
-    size_t      file_mib = (argc > 2) ? strtoul(argv[2], nullptr, 10) : 1024;
+    size_t      file_mib = (argc > 2) ? strtoul(argv[2], nullptr, 10) : 128;
     size_t      iterations = (argc > 3) ? strtoul(argv[3], nullptr, 10) : 20;
     std::string dir = (argc > 4) ? argv[4] : ".";
     MappedFile  f(dir + "/will_need_advisor_benchmark.dat", file_mib << 20);

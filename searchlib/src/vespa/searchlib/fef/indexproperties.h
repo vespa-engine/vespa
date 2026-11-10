@@ -65,10 +65,11 @@ struct SecondPhase {
 
 /**
  * Property for whether to prefetch paged attributes before second phase rank is calculated
- * for the reranked hits. When enabled, the attributes read by the second phase features are
- * detected automatically, and those with paged (file backed) memory are told to start
- * asynchronous reads of the memory holding the values for all hits at once, instead of
- * taking one synchronous page fault per hit while ranking.
+ * for the reranked hits. When enabled, the attributes read by the second phase features (and
+ * not already read by the first phase features) are detected automatically, and those with
+ * paged (file backed) memory that support it (cf. IAttributeVector::supports_prefetch_docs())
+ * are told to start asynchronous reads of the memory holding the values for all hits at once,
+ * instead of taking one synchronous page fault per hit while ranking.
  **/
 struct SecondPhasePrefetchPagedAttributes {
     static const std::string NAME;

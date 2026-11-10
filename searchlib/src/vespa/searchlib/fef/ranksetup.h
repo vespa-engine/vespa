@@ -187,9 +187,15 @@ public:
     bool get_second_phase_prefetch_paged_attributes() const noexcept { return _second_phase_prefetch_paged_attributes; }
 
     /**
-     * Get the names of the attributes that are referenced by the features used to calculate
-     * second phase rank. This is detected when compiling, and is the set of candidates for
-     * second phase prefetching. Names not naming an attribute field are left out.
+     * Get the names of the attributes that may be read when calculating second phase rank, and that
+     * are not always read when calculating first phase rank. This is the set of candidates for second
+     * phase prefetching.
+     *
+     * This is detected when compiling, with a heuristic: The parameters of the features known to read
+     * an attribute named by a parameter (e.g. 'attribute(name)' and 'dotProduct(name,vector)') that
+     * name an attribute field. It may include attributes that end up not being read (e.g. 'name' for
+     * 'closeness(field,name)' when the distance was calculated while matching), and it knows nothing
+     * about features not in its list (e.g. ones added by plugins).
      **/
     const std::vector<std::string>& get_second_phase_attributes() const noexcept { return _second_phase_attributes; }
 

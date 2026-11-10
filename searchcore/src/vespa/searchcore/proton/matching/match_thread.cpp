@@ -347,13 +347,22 @@ void MatchThread::secondPhase(MatchTools& tools, HitCollector& hits) {
         DocumentScorer scorer(tools.rank_program(), tools.search(), prefetch_attributes);
         scorer.score(my_work);
         const auto& prefetch_stats = scorer.prefetch_stats();
-        for (size_t i = 0; i < prefetch_stats.size(); ++i) {
-            const auto& stats = prefetch_stats[i];
-            auto        msg =
-                vespalib::make_string("Prefetched attribute '%s' for %zu hits: %zu bytes in %zu ranges, %.3f ms",
-                                      prefetch_attributes[i]->getName().c_str(), my_work.size(), stats.result.bytes,
-                                      stats.result.ranges, vespalib::count_ns(stats.time) / 1e6);
-            trace->addEvent(4, msg);
+        if (!prefetch_stats.empty()) {
+            size_t             prefetched_bytes = 0;
+            vespalib::duration prefetch_time = vespalib::duration::zero();
+            for (size_t i = 0; i < prefetch_stats.size(); ++i) {
+                const auto& stats = prefetch_stats[i];
+                prefetched_bytes += stats.result.bytes;
+                prefetch_time += stats.time;
+                if (trace->shouldTrace(4)) {
+                    trace->addEvent(
+                        4, vespalib::make_string(
+                               "Prefetched attribute '%s' for %zu hits: %zu bytes in %zu ranges, %.3f ms",
+                               prefetch_attributes[i]->getName().c_str(), my_work.size(), stats.result.bytes,
+                               stats.result.ranges, vespalib::count_ns(stats.time) / 1e6));
+                }
+            }
+            thread_stats.second_phase_prefetch(prefetched_bytes, vespalib::to_s(prefetch_time));
         }
     }
     thread_stats.docsReRanked(my_work.size());

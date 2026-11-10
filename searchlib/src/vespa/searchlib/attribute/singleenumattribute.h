@@ -6,6 +6,8 @@
 
 #include <vespa/vespalib/util/type_stable_vector.h>
 
+#include <span>
+
 namespace search {
 
 class ReaderBase;
@@ -34,6 +36,10 @@ protected:
     }
     EnumHandle getE(DocId doc) const noexcept { return acquire_enum_entry_ref(doc).ref(); }
     EnumRefs make_read_view(size_t read_size) const noexcept { return _enumIndices.make_read_view(read_size); }
+    // Hint that the enum indices of the given documents (below the docid limit) will be read soon.
+    // The values in the enum store are shared between documents, and are not prefetched.
+    attribute::IAttributeVector::PrefetchResult prefetch_enum_indices(std::span<const DocId> docids,
+                                                                      DocId docid_limit) const;
     SingleValueEnumAttributeBase(const attribute::Config& c, GenerationHolder& genHolder,
                                  const vespalib::alloc::Alloc& initial_alloc);
     ~SingleValueEnumAttributeBase();
@@ -112,6 +118,14 @@ public:
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     void before_inc_generation(vespalib::Generation current_gen) override;
     EnumHandle getEnum(DocId doc) const override { return getE(doc); }
+    attribute::IAttributeVector::PrefetchResult prefetch_docs(std::span<const DocId> docids) const override {
+        if (!supports_prefetch_docs()) {
+            // Not paged, enum indices are already in memory.
+            return {};
+        }
+        return prefetch_enum_indices(docids, this->getCommittedDocIdLimit());
+    }
+    bool supports_prefetch_docs() const noexcept override { return static_cast<bool>(this->get_memory_allocator()); }
     uint32_t get(DocId doc, EnumHandle* e, uint32_t sz) const override {
         if (sz > 0) {
             e[0] = getE(doc);

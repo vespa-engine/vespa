@@ -22,12 +22,12 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/quantization_params.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
+#include <vespa/searchlib/attribute/paged_memory_prefetcher.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/datastore/i_compaction_context.h>
 #include <vespa/vespalib/quant/eden.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/will_need_advisor.h>
 
 #include <algorithm>
 
@@ -285,17 +285,16 @@ TensorAttribute::PrefetchResult TensorAttribute::prefetch_docs(std::span<const D
         // Not paged, tensors are already in memory.
         return {};
     }
-    vespalib::alloc::WillNeedAdvisor advisor;
-    advisor.reserve(docids.size());
-    const DocId docid_limit = getCommittedDocIdLimit();
+    // The mapping from docid to tensor is not paged, only the tensors.
+    attribute::PagedMemoryPrefetcher prefetcher(docids.size());
+    const DocId                      docid_limit = getCommittedDocIdLimit();
     for (DocId docid : docids) {
         if (docid < docid_limit) {
             auto memory = _tensorStore.get_raw_memory(acquire_entry_ref(docid));
-            advisor.add(memory.data(), memory.size());
+            prefetcher.add(memory.data(), memory.size());
         }
     }
-    auto result = advisor.advise();
-    return {result.ranges, result.bytes};
+    return prefetcher.result();
 }
 
 const vespalib::eval::ValueType& TensorAttribute::getTensorType() const {

@@ -132,6 +132,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet {
             metrics::LongCountMetric     docsMatched;
             metrics::LongCountMetric     docsRanked;
             metrics::LongCountMetric     docsReRanked;
+            metrics::LongCountMetric     second_phase_prefetched_bytes;
             metrics::LongCountMetric     exact_nns_distances_computed;
             metrics::LongCountMetric     approximate_nns_distances_computed;
             metrics::LongCountMetric     approximate_nns_nodes_visited;
@@ -143,6 +144,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet {
             metrics::DoubleAverageMetric matchTime;
             metrics::DoubleAverageMetric groupingTime;
             metrics::DoubleAverageMetric rerankTime;
+            metrics::DoubleAverageMetric second_phase_prefetch_time;
             metrics::DoubleAverageMetric querySetupTime;
             metrics::DoubleAverageMetric query_approximate_nns_time;
             metrics::DoubleAverageMetric queryLatency;

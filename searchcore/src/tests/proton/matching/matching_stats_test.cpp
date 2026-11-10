@@ -66,6 +66,31 @@ TEST(MatchingStatsTest, requireThatDocCountsAddUp) {
     EXPECT_EQ(2u, stats.limited_queries());
 }
 
+TEST(MatchingStatsTest, second_phase_prefetch_is_tracked_per_thread_that_prefetched) {
+    MatchingStats stats;
+    EXPECT_EQ(0u, stats.second_phase_prefetched_bytes());
+    EXPECT_EQ(0u, stats.second_phase_prefetch_time_count());
+    MatchingStats query;
+    query.merge_partition(MatchingStats::Partition().second_phase_prefetch(1000, 0.1), 0);
+    query.merge_partition(MatchingStats::Partition(), 1); // did not prefetch
+    query.merge_partition(MatchingStats::Partition().second_phase_prefetch(3000, 0.3), 2);
+    EXPECT_EQ(4000u, query.second_phase_prefetched_bytes());
+    EXPECT_EQ(2u, query.second_phase_prefetch_time_count());
+    EXPECT_NEAR(0.2, query.second_phase_prefetch_time_avg(), 0.00001);
+    EXPECT_NEAR(0.1, query.second_phase_prefetch_time_min(), 0.00001);
+    EXPECT_NEAR(0.3, query.second_phase_prefetch_time_max(), 0.00001);
+    stats.add(query);
+    stats.add(query);
+    stats.add(MatchingStats()); // query without prefetch
+    EXPECT_EQ(8000u, stats.second_phase_prefetched_bytes());
+    EXPECT_EQ(4u, stats.second_phase_prefetch_time_count());
+    EXPECT_NEAR(0.2, stats.second_phase_prefetch_time_avg(), 0.00001);
+    EXPECT_EQ(2000u, stats.getPartition(0).second_phase_prefetched_bytes());
+    EXPECT_EQ(0u, stats.getPartition(1).second_phase_prefetched_bytes());
+    EXPECT_EQ(2u, stats.getPartition(2).second_phase_prefetch_time_count());
+    EXPECT_NEAR(0.3, stats.getPartition(2).second_phase_prefetch_time_avg(), 0.00001);
+}
+
 TEST(MatchingStatsTest, requireThatAverageTimesAreRecorded) {
     MatchingStats stats;
     EXPECT_NEAR(0.0, stats.matchTimeAvg(), 0.00001);

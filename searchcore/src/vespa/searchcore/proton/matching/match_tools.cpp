@@ -286,8 +286,10 @@ MatchToolsFactory::MatchToolsFactory(
                     _second_phase_prefetch_attributes.push_back(attr);
                 }
             }
-            trace.addEvent(5, vespalib::make_string("Prefetch %zu paged of %zu attributes used in second phase",
-                                                    _second_phase_prefetch_attributes.size(), names.size()));
+            if (trace.shouldTrace(5)) {
+                trace.addEvent(5, vespalib::make_string("Prefetch %zu paged of %zu attributes used in second phase",
+                                                        _second_phase_prefetch_attributes.size(), names.size()));
+            }
         }
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
         std::string attribute = DegradationAttribute::lookup(rankProperties, _rankSetup.getDegradationAttribute());

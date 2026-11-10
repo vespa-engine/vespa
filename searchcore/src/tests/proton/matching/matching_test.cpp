@@ -113,7 +113,7 @@ public:
     PrefetchResult prefetch_docs(std::span<const DocId> docids) const override {
         std::lock_guard guard(_lock);
         _calls.emplace_back(docids.begin(), docids.end());
-        return {};
+        return {1, 100 * docids.size()};
     }
     // Returns the prefetched docids from all calls (sorted), and forgets them.
     std::vector<uint32_t> take_prefetched() {
@@ -127,6 +127,19 @@ public:
         std::sort(result.begin(), result.end());
         return result;
     }
+};
+
+/*
+ * Makes a PrefetchProbeAttribute pretend to not be paged while in scope.
+ */
+class NotPagedGuard {
+    PrefetchProbeAttribute& _attr;
+
+public:
+    explicit NotPagedGuard(PrefetchProbeAttribute& attr) : _attr(attr) { _attr.set_paged(false); }
+    NotPagedGuard(const NotPagedGuard&) = delete;
+    NotPagedGuard& operator=(const NotPagedGuard&) = delete;
+    ~NotPagedGuard() { _attr.set_paged(true); }
 };
 
 class MatchingTestSharedState {
@@ -1359,6 +1372,10 @@ TEST_F(MatchingTest, require_that_paged_attributes_are_prefetched_for_reranked_h
         ASSERT_EQ(9u, reply->hits.size());
         EXPECT_EQ(1800.0, reply->hits[0].metric);
         EXPECT_EQ(DocIds({700, 800, 900}), a2.take_prefetched());
+        // the probe reports 100 bytes per document
+        EXPECT_EQ(300u, world.matchingStats.second_phase_prefetched_bytes());
+        EXPECT_LT(0u, world.matchingStats.second_phase_prefetch_time_count());
+        EXPECT_GE(threads, world.matchingStats.second_phase_prefetch_time_count());
     }
 }
 
@@ -1376,6 +1393,8 @@ TEST_F(MatchingTest, require_that_attributes_are_not_prefetched_unless_enabled_a
         SearchReply::UP   reply = world.performSearch(*request, 1);
         EXPECT_EQ(3u, world.matchingStats.docsReRanked());
         EXPECT_EQ(DocIds(), a2.take_prefetched());
+        EXPECT_EQ(0u, world.matchingStats.second_phase_prefetched_bytes());
+        EXPECT_EQ(0u, world.matchingStats.second_phase_prefetch_time_count());
     }
     {
         // prefetch disabled by a query override
@@ -1403,15 +1422,14 @@ TEST_F(MatchingTest, require_that_attributes_are_not_prefetched_unless_enabled_a
     }
     {
         // attribute used by second phase is not paged
-        a2.set_paged(false);
-        MyWorld world(shared_state());
+        NotPagedGuard not_paged(a2);
+        MyWorld       world(shared_state());
         world.basicSetup();
         world.setupSecondPhaseRanking();
         world.config.add(indexproperties::rank::SecondPhasePrefetchPagedAttributes::NAME, "true");
         world.basicResults();
         SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
         SearchReply::UP   reply = world.performSearch(*request, 1);
-        a2.set_paged(true);
         EXPECT_EQ(3u, world.matchingStats.docsReRanked());
         EXPECT_EQ(DocIds(), a2.take_prefetched());
     }

@@ -493,6 +493,11 @@ public:
     /**
      * Returns true if this attribute has paged (file backed) memory and supports prefetching
      * the values of documents with prefetch_docs().
+     *
+     * This is supported by tensor attributes and by single value and multi value numeric and string
+     * attributes. For attributes with an enum store (string and fast-search attributes) the per document
+     * enum indices are prefetched, but not the unique values they refer to, as those are shared between
+     * documents. Bool, raw, reference and predicate attributes do not support prefetching.
      */
     virtual bool supports_prefetch_docs() const noexcept { return false; }
 };

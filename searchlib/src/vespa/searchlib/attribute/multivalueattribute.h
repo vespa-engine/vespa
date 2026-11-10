@@ -62,6 +62,8 @@ public:
     bool addDoc(DocId& doc) override;
     uint32_t getValueCount(DocId doc) const override;
     const attribute::MultiValueMappingBase* getMultiValueBase() const override { return &getMultiValueMapping(); }
+    attribute::IAttributeVector::PrefetchResult prefetch_docs(std::span<const DocId> docids) const override;
+    bool supports_prefetch_docs() const noexcept override { return static_cast<bool>(this->get_memory_allocator()); }
 
 private:
     int32_t getWeight(DocId doc, uint32_t idx) const override;

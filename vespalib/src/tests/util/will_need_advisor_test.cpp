@@ -132,3 +132,83 @@ TEST(WillNeedAdvisorTest, failing_ranges_are_not_counted) {
         EXPECT_EQ(batching_was_disabled, WillNeedAdvisor::batching_disabled());
     }
 }
+
+TEST(WillNeedAdvisorTest, batching_continues_after_failing_ranges) {
+    FileBackedMemory mem(1_Mi);
+    void*            hole = mmap(nullptr, 8 * page_size, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    ASSERT_NE(MAP_FAILED, hole);
+    ASSERT_EQ(0, munmap(hole, 8 * page_size));
+    // The ranges are advised in address order, so place the unmapped ranges between the mapped ones.
+    std::vector<const char*> good;
+    for (size_t i = 0; i < 20; ++i) {
+        good.push_back(mem.page(2 * i));
+    }
+    std::vector<const char*> bad = {static_cast<const char*>(hole), static_cast<const char*>(hole) + 2 * page_size,
+                                    static_cast<const char*>(hole) + 4 * page_size};
+    WillNeedAdvisor          advisor;
+    for (const char* ptr : good) {
+        advisor.add(ptr, 1);
+    }
+    for (const char* ptr : bad) {
+        advisor.add(ptr, 1);
+    }
+    auto result = advisor.advise(Method::BATCHED);
+    EXPECT_EQ(good.size(), result.ranges);
+    EXPECT_EQ(good.size() * page_size, result.bytes);
+    if (WillNeedAdvisor::batching_disabled()) {
+        fprintf(stderr, "process_madvise is not usable here, fell back to madvise per range\n");
+    } else {
+        // One call per failing range, and at most one more for the ranges after the last failing one.
+        EXPECT_LE(bad.size(), result.syscalls);
+        EXPECT_GE(bad.size() + 1, result.syscalls);
+    }
+}
+
+TEST(WillNeedAdvisorTest, many_failing_ranges_are_left_to_madvise_per_range) {
+    FileBackedMemory mem(1_Mi);
+    constexpr size_t num_bad = 20;
+    void*            hole = mmap(nullptr, 2 * num_bad * page_size, PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    ASSERT_NE(MAP_FAILED, hole);
+    ASSERT_EQ(0, munmap(hole, 2 * num_bad * page_size));
+    WillNeedAdvisor advisor;
+    for (size_t i = 0; i < 10; ++i) {
+        advisor.add(mem.page(2 * i), 1);
+    }
+    for (size_t i = 0; i < num_bad; ++i) {
+        advisor.add(static_cast<const char*>(hole) + 2 * i * page_size, 1);
+    }
+    auto result = advisor.advise(Method::BATCHED);
+    EXPECT_EQ(10u, result.ranges);
+    EXPECT_EQ(10 * page_size, result.bytes);
+    // bounded: never more than one call per range, plus the batched attempts given up on
+    EXPECT_GE(10 + num_bad + 10, result.syscalls);
+}
+
+TEST(WillNeedAdvisorTest, max_range_size_can_be_set) {
+    FileBackedMemory mem(1_Mi);
+    {
+        WillNeedAdvisor advisor(4 * page_size);
+        advisor.add(mem.page(0), 10 * page_size);
+        auto result = advisor.advise(Method::PER_RANGE);
+        EXPECT_EQ(3u, result.ranges);
+        EXPECT_EQ(10 * page_size, result.bytes);
+    }
+    {
+        WillNeedAdvisor advisor(64 * page_size);
+        advisor.add(mem.page(0), 10 * page_size);
+        auto result = advisor.advise(Method::PER_RANGE);
+        EXPECT_EQ(1u, result.ranges);
+        EXPECT_EQ(10 * page_size, result.bytes);
+    }
+}
+
+TEST(WillNeedAdvisorTest, max_range_size_for_path_is_sane) {
+    for (const char* path : {".", "/", "will-need-advisor-dir/does/not/exist/yet", ""}) {
+        size_t size = WillNeedAdvisor::max_range_size_for_path(path);
+        fprintf(stderr, "max range size for '%s': %zu\n", path, size);
+        EXPECT_LE(page_size, size);
+    }
+    // the path does not exist yet: the device of the closest existing parent directory is used
+    EXPECT_EQ(WillNeedAdvisor::max_range_size_for_path("."),
+              WillNeedAdvisor::max_range_size_for_path("will-need-advisor-dir/does/not/exist/yet"));
+}

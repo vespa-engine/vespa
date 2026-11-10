@@ -14,26 +14,84 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <algorithm>
+#include <map>
 
 using vespalib::make_string_short::fmt;
 
 namespace {
 
 /*
- * Collect the parameters of a feature, including the parameters of features
- * given as parameters (e.g. 'x' for 'tensorFromLabels(attribute(x),dim)').
+ * Whether a feature reads the values of an attribute named by one of its parameters.
  */
-void collect_feature_parameters(const std::string& feature_name, std::vector<std::string>& result) {
+enum class AttributeAccess {
+    NONE,
+    MAYBE, // only in some cases, e.g. 'closeness' when the distance was not calculated while matching
+    ALWAYS
+};
+
+AttributeAccess attribute_access(const std::string& base_name) {
+    static const std::map<std::string, AttributeAccess, std::less<>> features = {
+        {"age", AttributeAccess::ALWAYS},
+        {"attribute", AttributeAccess::ALWAYS},
+        {"attributeMatch", AttributeAccess::MAYBE},
+        {"closeness", AttributeAccess::MAYBE},
+        {"closest", AttributeAccess::MAYBE},
+        {"debugAttributeWait", AttributeAccess::ALWAYS},
+        {"distance", AttributeAccess::MAYBE},
+        {"distanceToPath", AttributeAccess::ALWAYS},
+        {"dotProduct", AttributeAccess::ALWAYS},
+        {"euclideanDistance", AttributeAccess::ALWAYS},
+        {"freshness", AttributeAccess::ALWAYS},
+        {"great_circle_distance", AttributeAccess::ALWAYS},
+        {"internalMaxReduceProdJoin", AttributeAccess::ALWAYS},
+        {"tensorFromLabels", AttributeAccess::ALWAYS},
+        {"tensorFromLabelsWithOffset", AttributeAccess::ALWAYS},
+        {"tensorFromStructs", AttributeAccess::ALWAYS},
+        {"tensorFromWeightedSet", AttributeAccess::ALWAYS}};
+    auto itr = features.find(base_name);
+    return (itr != features.end()) ? itr->second : AttributeAccess::NONE;
+}
+
+/*
+ * Collect the parameters of a feature that may name an attribute the feature reads with at least the
+ * given certainty. Features given as parameters are also looked into (e.g. 'x' for
+ * 'tensorFromLabels(attribute(x),dim)'), as not all of them are resolved as separate features.
+ */
+void collect_attribute_parameters(const std::string& feature_name, AttributeAccess min_access,
+                                  std::vector<std::string>& result) {
     search::fef::FeatureNameParser parser(feature_name);
     if (!parser.valid()) {
         return;
     }
+    bool reads_attribute = attribute_access(parser.baseName()) >= min_access;
     for (const auto& param : parser.parameters()) {
-        result.push_back(param);
         if (param.find('(') != std::string::npos) {
-            collect_feature_parameters(param, result);
+            collect_attribute_parameters(param, min_access, result);
+        } else if (reads_attribute) {
+            result.push_back(param);
         }
     }
+}
+
+/*
+ * The names of the attributes read (with at least the given certainty) by the features of a resolver,
+ * in order of appearance and without duplicates.
+ */
+std::vector<std::string> detect_attributes(const search::fef::BlueprintResolver&  resolver,
+                                           const search::fef::IIndexEnvironment& index_env,
+                                           AttributeAccess                       min_access) {
+    std::vector<std::string> params;
+    for (const auto& spec : resolver.getExecutorSpecs()) {
+        collect_attribute_parameters(spec.blueprint->getName(), min_access, params);
+    }
+    std::vector<std::string> result;
+    for (const auto& name : params) {
+        const auto* field = index_env.getFieldByName(name);
+        if (field != nullptr && field->hasAttribute() && std::find(result.begin(), result.end(), name) == result.end()) {
+            result.push_back(name);
+        }
+    }
+    return result;
 }
 
 class VisitorAdapter : public search::fef::IDumpFeatureVisitor {
@@ -312,16 +370,13 @@ void RankSetup::detect_second_phase_attributes() {
     if (_secondPhaseRankFeature.empty()) {
         return;
     }
-    std::vector<std::string> params;
-    for (const auto& spec : _second_phase_resolver->getExecutorSpecs()) {
-        collect_feature_parameters(spec.blueprint->getName(), params);
-    }
-    for (const auto& name : params) {
-        const auto* field = _indexEnv.getFieldByName(name);
-        if (field != nullptr && field->hasAttribute() &&
-            std::find(_second_phase_attributes.begin(), _second_phase_attributes.end(), name) ==
-                _second_phase_attributes.end()) {
-            _second_phase_attributes.push_back(name);
+    // All hits reranked in second phase have been ranked in first phase. The values always read by the
+    // first phase features were paged in then, and prefetching them again would only add overhead.
+    auto first_phase_attributes = detect_attributes(*_first_phase_resolver, _indexEnv, AttributeAccess::ALWAYS);
+    for (auto& name : detect_attributes(*_second_phase_resolver, _indexEnv, AttributeAccess::MAYBE)) {
+        if (std::find(first_phase_attributes.begin(), first_phase_attributes.end(), name) ==
+            first_phase_attributes.end()) {
+            _second_phase_attributes.push_back(std::move(name));
         }
     }
 }
