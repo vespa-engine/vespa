@@ -82,8 +82,7 @@ TEST(FirstPhaseRescorerTest, verify_invariant) {
                 double first_low = nan_to_neg_inf(pair.first.low);
                 double second_low = nan_to_neg_inf(pair.second.low);
 
-                if ((std::isfinite(score) || -score == std::numeric_limits<double>::infinity()) && score <= first_low)
-                {
+                if (score <= first_low) {
                     EXPECT_LE(rescorer.rescore(0, score), second_low);
                 }
             }
