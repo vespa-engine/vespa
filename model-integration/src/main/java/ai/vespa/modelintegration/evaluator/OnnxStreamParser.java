@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -44,45 +45,55 @@ public class OnnxStreamParser {
     }
 
     /**
-     * Returns whether every input and output of the model declares a batch dimension: a first dimension of variable size.
+     * Returns whether every input and output of the model has a dynamic first dimension, as declared in the model file.
      * A model exported with a [1, features] input, for example, has a first dimension of fixed size instead.
-     * Triton's ONNX Runtime backend refuses to batch a model without a batch dimension.
-     * The backend judges the shapes that ONNX Runtime reports, so this method reads them the same way.
+     * Triton's ONNX Runtime backend refuses to batch a model without a dynamic first dimension.
+     * The backend judges the shapes that ONNX Runtime reports, so this method reads declared shapes the way ONNX Runtime does.
      */
-    public static boolean declaresBatchDimension(Path model) throws IOException {
+    public static boolean hasDynamicFirstDimension(Path model) throws IOException {
+        return getInputsAndOutputs(model).map(InputsAndOutputs::hasDynamicFirstDimension).orElse(true);
+    }
+
+    /** The inputs and outputs that a model declares, with their names, element types and shapes */
+    public record InputsAndOutputs(List<Onnx.ValueInfoProto> inputs, List<Onnx.ValueInfoProto> outputs) {
+
+        public InputsAndOutputs {
+            inputs = List.copyOf(inputs);
+            outputs = List.copyOf(outputs);
+        }
+
+        boolean hasDynamicFirstDimension() {
+            return inputs.stream().allMatch(input -> OnnxStreamParser.hasDynamicFirstDimension(input, true))
+                   && outputs.stream().allMatch(output -> OnnxStreamParser.hasDynamicFirstDimension(output, false));
+        }
+    }
+
+    /**
+     * Returns the inputs and outputs that the model declares, or empty if the model has no graph.
+     * Initializers that the model also lists as inputs are left out, since ONNX Runtime does not take them as inputs.
+     * Only the inputs and outputs are read, so the nodes and weights of a large model stay out of memory.
+     */
+    public static Optional<InputsAndOutputs> getInputsAndOutputs(Path model) throws IOException {
         try (var bis = new BufferedInputStream(Files.newInputStream(model))) {
             var stream = CodedInputStream.newInstance(bis);
             while (!stream.isAtEnd()) {
                 var tag = stream.readTag();
                 if (WireFormat.getTagFieldNumber(tag) == 0) break;
                 if (WireFormat.getTagFieldNumber(tag) == Onnx.ModelProto.GRAPH_FIELD_NUMBER) {
-                    var graph = new GraphInputsAndOutputs();
-                    parseDelimited(stream, s -> parseGraphInputsAndOutputs(s, graph));
-                    return graph.declaresBatchDimension();
+                    var inputs = new ArrayList<Onnx.ValueInfoProto>();
+                    var outputs = new ArrayList<Onnx.ValueInfoProto>();
+                    var initializerNames = new HashSet<String>();
+                    parseDelimited(stream, s -> parseGraphInputsAndOutputs(s, inputs, outputs, initializerNames));
+                    inputs.removeIf(input -> initializerNames.contains(input.getName()));
+                    return Optional.of(new InputsAndOutputs(inputs, outputs));
                 }
                 stream.skipField(tag);
             }
-            return true;
+            return Optional.empty();
         }
     }
 
-    // Holds only what decides batching.
-    // The nodes and weights of a large model then stay out of memory.
-    private static class GraphInputsAndOutputs {
-        final List<Onnx.ValueInfoProto> inputs = new ArrayList<>();
-        final List<Onnx.ValueInfoProto> outputs = new ArrayList<>();
-        final Set<String> initializerNames = new HashSet<>();
-
-        boolean declaresBatchDimension() {
-            // Models may list initializers as inputs.
-            // ONNX Runtime does not take them as inputs.
-            return inputs.stream().filter(input -> !initializerNames.contains(input.getName()))
-                           .allMatch(input -> OnnxStreamParser.declaresBatchDimension(input, true))
-                   && outputs.stream().allMatch(output -> OnnxStreamParser.declaresBatchDimension(output, false));
-        }
-    }
-
-    private static boolean declaresBatchDimension(Onnx.ValueInfoProto value, boolean isInput) {
+    private static boolean hasDynamicFirstDimension(Onnx.ValueInfoProto value, boolean isInput) {
         var type = value.getType();
         // Triton's ONNX Runtime backend rejects inputs and outputs that are not tensors, whatever the batching.
         if (!type.hasTensorType()) return true;
@@ -92,27 +103,29 @@ public class OnnxStreamParser {
         var shape = type.getTensorType().getShape();
         if (shape.getDimCount() == 0) return false;
         var first = shape.getDim(0);
-        // Some converters write a variable size as -1.
-        // ONNX Runtime treats -1 as a variable size.
+        // Some converters write a dynamic size as -1.
+        // ONNX Runtime treats -1 as a dynamic size.
         return !first.hasDimValue() || first.getDimValue() == -1;
     }
 
-    private static void parseGraphInputsAndOutputs(CodedInputStream stream, GraphInputsAndOutputs graph) throws IOException {
+    private static void parseGraphInputsAndOutputs(CodedInputStream stream, List<Onnx.ValueInfoProto> inputs,
+                                                   List<Onnx.ValueInfoProto> outputs, Set<String> initializerNames)
+            throws IOException {
         while (!stream.isAtEnd()) {
             var tag = stream.readTag();
             if (WireFormat.getTagFieldNumber(tag) == 0) return;
             switch (WireFormat.getTagFieldNumber(tag)) {
                 case Onnx.GraphProto.INPUT_FIELD_NUMBER:
-                    graph.inputs.add(readValueInfo(stream));
+                    inputs.add(readValueInfo(stream));
                     break;
                 case Onnx.GraphProto.OUTPUT_FIELD_NUMBER:
-                    graph.outputs.add(readValueInfo(stream));
+                    outputs.add(readValueInfo(stream));
                     break;
                 case Onnx.GraphProto.INITIALIZER_FIELD_NUMBER:
-                    parseDelimited(stream, s -> parseTensorName(s, graph.initializerNames));
+                    parseDelimited(stream, s -> parseTensorName(s, initializerNames));
                     break;
                 case Onnx.GraphProto.SPARSE_INITIALIZER_FIELD_NUMBER:
-                    parseDelimited(stream, s -> parseSparseTensorName(s, graph.initializerNames));
+                    parseDelimited(stream, s -> parseSparseTensorName(s, initializerNames));
                     break;
                 default:
                     stream.skipField(tag);

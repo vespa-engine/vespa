@@ -73,7 +73,12 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         this.tokenizer = builder.build();
 
         var resolver = new OnnxExternalDataResolver();
-        var onnxOpts = OnnxEvaluatorOptions.of(onnxConfig).withAttentionMask(attentionMaskName).withMaxTokens(maxLength);
+        // The first dimension of an embedder's model is a batch of texts.
+        var onnxOpts = OnnxEvaluatorOptions.builder(onnxConfig)
+                .setFirstDimensionIsBatch(true)
+                .setPaddingAttentionMask(attentionMaskName)
+                .setPaddingMaxTokens(maxLength)
+                .build();
         var modelPath = resolver.resolveOnnxModel(embedderConfig.transformerModelReference()).toString();
         this.evaluator = onnx.evaluatorOf(modelPath, onnxOpts);
         

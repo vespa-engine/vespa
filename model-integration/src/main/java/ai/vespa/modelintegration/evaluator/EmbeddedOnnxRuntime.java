@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -149,8 +150,14 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
     }
 
     private ReferencedOrtSession getOrCreateSession(ModelPathOrData model, OnnxEvaluatorOptions vespaOpts, boolean loadCuda) throws OrtException {
-        // Padding is done outside the session, so options differing only in it share one
-        var sessionId = new OrtSessionId(model.calculateHash(), vespaOpts.withoutPadding().withoutRuntimePooling(), loadCuda);
+        // Padding is done outside the session, only Triton pools, and the session does not batch,
+        // so options differing only in padding, runtime pooling or firstDimensionIsBatch share one
+        var sessionIdOptions = vespaOpts.toBuilder()
+                .setPadding(Optional.empty())
+                .setRuntimePooling(Optional.empty())
+                .setFirstDimensionIsBatch(false)
+                .build();
+        var sessionId = new OrtSessionId(model.calculateHash(), sessionIdOptions, loadCuda);
         synchronized (monitor) {
             var existingSession = sessions.get(sessionId);
             if (existingSession != null) {
@@ -173,7 +180,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
         // Set GPU device required if GPU requested and GPUs are available on system
         if (gpusAvailable > 0 && vespaOpts.requestingGpu() && !vespaOpts.gpuDeviceRequired()) {
             // Create a new instance with updated gpuDeviceRequired value using the builder
-            return new OnnxEvaluatorOptions.Builder(vespaOpts)
+            return vespaOpts.toBuilder()
                     .setGpuDevice(vespaOpts.gpuDeviceNumber(), true)
                     .build();
         }

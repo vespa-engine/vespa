@@ -6,7 +6,7 @@ import onnx.Onnx;
 import java.util.List;
 
 /**
- * Small models with and without a batch dimension.
+ * Small models with and without a dynamic first dimension.
  * OnnxStreamParserTest checks them against ONNX Runtime.
  * TritonOnnxRuntimeTest checks them against Triton.
  *
@@ -15,17 +15,16 @@ import java.util.List;
 public class BatchDimensionTestModels {
 
     /**
-     * A model, and whether Triton supports batching for it.
-     * Triton supports batching when ONNX Runtime reports a batch dimension for all inputs and outputs of the model.
+     * A model, and whether ONNX Runtime reports a dynamic first dimension for all its inputs and outputs.
      */
-    public record Case(String name, Onnx.ModelProto model, boolean supportsBatching) {}
+    public record Case(String name, Onnx.ModelProto model, boolean hasDynamicFirstDimension) {}
 
-    /** Models whose batch dimension {@link OnnxStreamParser#declaresBatchDimension} reads as ONNX Runtime reports it */
+    /** Models for which {@link OnnxStreamParser#hasDynamicFirstDimension} agrees with the shapes ONNX Runtime reports */
     public static List<Case> cases() {
         return List.of(
                 new Case("named", identity(tensor("x", "batch", 3), tensor("y", "batch", 3)), true),
                 new Case("unnamed", identity(tensor("x", null, 3), tensor("y", null, 3)), true),
-                // Some converters write a variable size as -1
+                // Some converters write a dynamic size as -1
                 new Case("minus_one", identity(tensor("x", -1, 3), tensor("y", -1, 3)), true),
                 // ONNX Runtime infers the shape of an output without one
                 new Case("unshaped_output", identity(tensor("x", "batch", 3), unshaped("y")), true),
@@ -34,6 +33,7 @@ public class BatchDimensionTestModels {
                 // From IR version 4, such an initializer is a default that a request may override
                 new Case("initializer_input_ir8", matMulWithInitializerAsInput(8, 13), true),
                 new Case("cross_encoder", crossEncoder(true), true),
+                new Case("pairwise_similarity", pairwiseSimilarity(), true),
 
                 new Case("fixed_one", identity(tensor("x", 1, 3), tensor("y", 1, 3)), false),
                 new Case("fixed_eight", identity(tensor("x", 8, 3), tensor("y", 8, 3)), false),
@@ -46,8 +46,9 @@ public class BatchDimensionTestModels {
     }
 
     /**
-     * Models whose output ONNX Runtime infers to have no batch dimension, although the declared output has one.
-     * {@link OnnxStreamParser#declaresBatchDimension} reads only declared shapes, so it reports a batch dimension for these.
+     * Models whose output ONNX Runtime infers to have no dynamic first dimension, although the declared output has one.
+     * {@link OnnxStreamParser#hasDynamicFirstDimension} reads only declared shapes,
+     * so it reports a dynamic first dimension for these.
      * Triton then fails to load them with a non-zero max batch size, and TritonOnnxRuntime loads them again with 0.
      */
     public static List<Case> casesWhereShapeInferenceRemovesBatchDimension() {
@@ -71,7 +72,7 @@ public class BatchDimensionTestModels {
      * A cross-encoder that scores a tokenized pair, as global-phase reranking uses one.
      * It takes input_ids and attention_mask and returns one logit per pair: the masked sum of token embeddings,
      * projected to a score.
-     * With a batch dimension, the shapes are [batch, sequence] -> [batch, 1].
+     * With a dynamic first dimension, the shapes are [batch, sequence] -> [batch, 1].
      * Without one, they are [1, 8] -> [1, 1].
      */
     public static Onnx.ModelProto crossEncoder(boolean withBatchDimension) {
@@ -99,6 +100,22 @@ public class BatchDimensionTestModels {
                 .addInput(tensorOfType("input_ids", 7, tokens))
                 .addInput(tensorOfType("attention_mask", 7, tokens))
                 .addOutput(tensorOfType("logits", 1, logits));
+        return model(graph, 8, 13);
+    }
+
+    /**
+     * A model that compares every row with every other row: documents [batch, 4] -> similarity [batch, batch].
+     * Its first dimension is named batch, but it is not a batch,
+     * since each output row depends on all input rows.
+     */
+    public static Onnx.ModelProto pairwiseSimilarity() {
+        var graph = Onnx.GraphProto.newBuilder()
+                .addNode(Onnx.NodeProto.newBuilder().setOpType("Transpose").addInput("documents").addOutput("transposed")
+                                 .addAttribute(Onnx.AttributeProto.newBuilder().setName("perm").addInts(1).addInts(0)
+                                                       .setType(Onnx.AttributeProto.AttributeType.INTS)))
+                .addNode(node("MatMul", "documents", "transposed", "similarity"))
+                .addInput(tensor("documents", "batch", 4))
+                .addOutput(tensor("similarity", "batch", "batch"));
         return model(graph, 8, 13);
     }
 
