@@ -198,6 +198,14 @@ public class HuggingFaceEmbedderTest {
         assertEquals("tensor<float>(x[3]):[2013.0, 4587.0, 2987.5]", result.toAbbreviatedString());
     }
 
+    /**
+     * Model optimization is disabled since it makes ONNX Runtime fuse the quantized matmuls of the test model,
+     * which gives platform dependent results (e.g. different on arm64, where it uses KleidiAI kernels).
+     */
+    private static OnnxEvaluatorConfig unoptimizedOnnxConfig() {
+        return new OnnxEvaluatorConfig.Builder().optimizeModel(false).build();
+    }
+
     private static HuggingFaceEmbedder getSentenceEmbedder() {
         String vocabPath = "src/test/models/onnx/transformer/real_tokenizer.json";
         String modelPath = "src/test/models/onnx/transformer/mock_sentence_embedder.onnx";
@@ -224,7 +232,7 @@ public class HuggingFaceEmbedderTest {
         HuggingFaceEmbedderConfig.Builder builder = new HuggingFaceEmbedderConfig.Builder();
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
-        var onnxConfig = new OnnxEvaluatorConfig.Builder().build();
+        var onnxConfig = unoptimizedOnnxConfig();
         var mockModelPathHelper = new MockModelPathHelper();
         HuggingFaceEmbedder huggingFaceEmbedder = new HuggingFaceEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), onnxConfig, mockModelPathHelper);
 
@@ -266,7 +274,7 @@ public class HuggingFaceEmbedderTest {
         builder.normalize(true);
         builder.prependQuery("Represent this text: ");
         builder.prependDocument("This is a document: ");
-        var onnxConfig = new OnnxEvaluatorConfig.Builder().build();
+        var onnxConfig = unoptimizedOnnxConfig();
         var mockModelPathHelper = new MockModelPathHelper();
         HuggingFaceEmbedder huggingFaceEmbedder = new HuggingFaceEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), onnxConfig, mockModelPathHelper);
 
