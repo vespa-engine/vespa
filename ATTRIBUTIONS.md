@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-11-06
+Last updated: 2026-11-10
 
 ---
 
@@ -1338,7 +1338,7 @@ Last updated: 2026-11-06
 
 ---
 
-## vfile-message 4.0.3 — MIT
+## vfile-message 4.0.4 — MIT
 
 - Homepage: <https://github.com/vfile/vfile-message#readme>
 - Copyright Titus Wormer
