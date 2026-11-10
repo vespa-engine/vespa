@@ -715,7 +715,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // If the deployment contains certificate/private key reference, setup TLS port
         var builder = HostedSslConnectorFactory.builder(serverName, getMtlsDataplanePort(state, cluster))
                 .proxyProtocol(state.zone().cloud().useProxyProtocol() || enableTokenSupport(state, cluster))
-                .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
                 .endpointConnectionTtl(state.getProperties().endpointConnectionTtl())
                 .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent())
                 .httpComplianceViolations(state.getProperties().jdiscHttpComplianceViolations());

@@ -211,7 +211,7 @@ public interface ModelContext {
 
         default List<X509Certificate> operatorCertificates() { return List.of(); }
 
-        default List<String> tlsCiphersOverride() { return List.of(); }
+        @ModelFeatureFlag(owners = {"andreer"}, unusedSince = "8.790") default List<String> tlsCiphersOverride() { return List.of(); }
 
         List<String> environmentVariables();
 

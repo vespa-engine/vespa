@@ -26,7 +26,6 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     private record EntityLoggingEntry(String prefix, double sampleRate, BytesQuantity maxEntitySize) {}
 
     private final SslClientAuth clientAuth;
-    private final List<String> tlsCiphersOverride;
     private final boolean proxyProtocolEnabled;
     private final boolean tokenEndpoint;
     private final Duration endpointConnectionTtl;
@@ -41,7 +40,6 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     private HostedSslConnectorFactory(Builder builder) {
         super(new ConnectorFactory.Builder("tls"+builder.port, builder.port).sslProvider(createSslProvider(builder)));
         this.clientAuth = builder.clientAuth;
-        this.tlsCiphersOverride = List.copyOf(builder.tlsCiphersOverride);
         this.proxyProtocolEnabled = builder.proxyProtocolEnabled;
         this.tokenEndpoint = builder.tokenEndpoint;
         this.endpointConnectionTtl = builder.endpointConnectionTtl;
@@ -86,11 +84,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         }
         // Disables TLSv1.3 as it causes some browsers to prompt user for client certificate (when connector has 'want' auth)
         connectorBuilder.ssl.enabledProtocols(List.of("TLSv1.2"));
-        if (!tlsCiphersOverride.isEmpty()) {
-            connectorBuilder.ssl.enabledCipherSuites(tlsCiphersOverride.stream().sorted().toList());
-        } else {
-            connectorBuilder.ssl.enabledCipherSuites(TlsContext.ALLOWED_CIPHER_SUITES.stream().sorted().toList());
-        }
+        connectorBuilder.ssl.enabledCipherSuites(TlsContext.ALLOWED_CIPHER_SUITES.stream().sorted().toList());
         connectorBuilder
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder()
                                        .enabled(proxyProtocolEnabled))
@@ -118,7 +112,6 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         final List<String> remoteAddressHeaders = new ArrayList<>();
         final List<String> remotePortHeaders = new ArrayList<>();
         SslClientAuth clientAuth;
-        List<String> tlsCiphersOverride = List.of();
         boolean proxyProtocolEnabled;
         Duration endpointConnectionTtl;
         EndpointCertificateSecrets endpointCertificate;
@@ -132,7 +125,6 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         private Builder(String name, int port) { this.name = name; this.port = port; }
         public Builder clientAuth(SslClientAuth auth) { clientAuth = auth; return this; }
         public Builder endpointConnectionTtl(Duration ttl) { endpointConnectionTtl = ttl; return this; }
-        public Builder tlsCiphersOverride(Collection<String> ciphers) { tlsCiphersOverride = List.copyOf(ciphers); return this; }
         public Builder proxyProtocol(boolean enabled) { proxyProtocolEnabled = enabled; return this; }
         public Builder endpointCertificate(EndpointCertificateSecrets cert) { this.endpointCertificate = cert; return this; }
         public Builder tlsCaCertificatesPath(String path) { this.tlsCaCertificatesPath = path; return this; }
