@@ -395,13 +395,41 @@
               "name": "punctuation.section.parens.begin.vespa"
             }
           },
-          "end": "\\)",
-          "endCaptures": {
-            "0": {
-              "name": "punctuation.section.parens.end.vespa"
-            }
-          },
+          "end": "(?<=\\})",
           "patterns": [
+            {
+              "match": "\\)",
+              "name": "punctuation.section.parens.end.vespa"
+            },
+            {
+              "include": "#comment"
+            },
+            {
+              "name": "meta.block.function-body.vespa",
+              "begin": "\\{",
+              "beginCaptures": {
+                "0": {
+                  "name": "punctuation.section.block.begin.vespa"
+                }
+              },
+              "end": "\\}",
+              "endCaptures": {
+                "0": {
+                  "name": "punctuation.section.block.end.vespa"
+                }
+              },
+              "patterns": [
+                {
+                  "include": "#expression-block"
+                },
+                {
+                  "include": "#expression-inline"
+                },
+                {
+                  "include": "#ranking-expression"
+                }
+              ]
+            },
             {
               "match": "[a-zA-Z_]\\w*",
               "name": "variable.parameter.vespa"

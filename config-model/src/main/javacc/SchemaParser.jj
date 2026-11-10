@@ -55,7 +55,7 @@ import java.util.logging.Level;
 /**
  * The schema parser
  *
- * NOTE: When this grammar is changed, also change integration/intellij/src/main/bnf/ai/vespa/intellij/schema/parser/sd.bnf
+ * NOTE: When this grammar is changed, also change integration/schema-language-server/language-server/src/main/ccc/SchemaParser.ccc
  *
  * @author bratseth
  */
@@ -99,6 +99,75 @@ public class SchemaParser {
             token.next = null;
             jj_ntk = -1;
         }
+    }
+
+    /**
+     * Consumes the body of a function directly from the input stream, up to and including the brace
+     * closing the body, and returns the ranking expression it contains.
+     * This must be called right after the left brace opening the body has been consumed.
+     * For compatibility, the expression may also be wrapped in "expression: ..." or "expression { ... }".
+     */
+    private String functionBody(String functionName) throws ParseException {
+        SimpleCharStream input = (SimpleCharStream)token_source.input_stream;
+        if (token.next != null) {
+            input.backup(token.next.image.length());
+        }
+        try {
+            StringBuilder body = new StringBuilder();
+            int depth = 0;
+            while (true) {
+                char c = input.readChar();
+                if (c == '}' && depth == 0) break;
+                body.append(c);
+                if (c == '{') {
+                    depth++;
+                }
+                else if (c == '}') {
+                    depth--;
+                }
+                else if (c == '"' || c == '\'') { // string literal: may contain braces
+                    char quote = c;
+                    do {
+                        c = input.readChar();
+                        body.append(c);
+                        if (c == '\\') body.append(input.readChar());
+                    } while (c != quote);
+                }
+                else if (c == '#') { // comment: may contain braces
+                    do {
+                        c = input.readChar();
+                        body.append(c);
+                    } while (c != '\n');
+                }
+            }
+            return stripExpressionPrefix(body.toString().trim());
+        }
+        catch (java.io.IOException e) { // FastCharStream signals end of input this way
+            throw new ParseException("Unexpected end of input in the body of function '" + functionName + "'");
+        }
+        finally {
+            token.next = null;
+            jj_ntk = -1;
+        }
+    }
+
+    /**
+     * Removes the legacy "expression:" or "expression { }" wrapping from a function body, if present,
+     * together with any comments preceding it.
+     */
+    private static String stripExpressionPrefix(String body) {
+        String uncommented = body;
+        while (uncommented.startsWith("#")) {
+            int newline = uncommented.indexOf('\n');
+            uncommented = newline < 0 ? "" : uncommented.substring(newline + 1).trim();
+        }
+        if ( ! uncommented.startsWith("expression")) return body;
+        String rest = uncommented.substring("expression".length()).trim();
+        if (rest.startsWith(":"))
+            return rest.substring(1).trim();
+        if (rest.startsWith("{") && rest.endsWith("}"))
+            return rest.substring(1, rest.length() - 1).trim();
+        return body;
     }
 
     /**
@@ -2093,7 +2162,7 @@ void function(ParsedRankProfile profile) :
           [ parameter = identifier()         { func.addParameter(parameter); }
           ( <COMMA> parameter = identifier() { func.addParameter(parameter); } )* ]
       ")"
-      lbrace() expression = expression() (<NL>)* <RBRACE> )
+      (<NL>)* <LBRACE> { expression = functionBody(name); } )
     {
         func.setExpression(expression);
         func.setInline(inline);

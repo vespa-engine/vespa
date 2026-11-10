@@ -579,4 +579,54 @@ public class SchemaParserTestCase {
         checkFileParses("src/test/examples/summaryfieldcollision.sd");
         checkFileParses("src/test/examples/weightedset-summaryto.sd");
     }
+
+    @Test
+    void function_bodies_can_be_written_with_or_without_expression_prefix() throws Exception {
+        String input = joinLines
+                ("schema foo {",
+                 "  document foo {",
+                 "  }",
+                 "  rank-profile bar {",
+                 "    function legacySingleLine() {",
+                 "      expression: attribute(a) + 1",
+                 "    }",
+                 "    function legacyMultiLine() {",
+                 "      # A comment before the legacy prefix",
+                 "      expression {",
+                 "        attribute(a) + 2",
+                 "      }",
+                 "    }",
+                 "    function plainSingleLine() { attribute(a) + 3 }",
+                 "    function plainMultiLine(x, y)",
+                 "    {",
+                 "      # A comment with a brace }",
+                 "      reduce(tensor(d{}):{ {d:'}'}: x }, sum) +",
+                 "      if (y > 0, \"{\", 4)",
+                 "    }",
+                 "    first-phase {",
+                 "      expression: plainSingleLine",
+                 "    }",
+                 "  }",
+                 "}");
+        ParsedSchema schema = parseString(input);
+        var functions = schema.getRankProfiles().get(0).getFunctions();
+        assertEquals(4, functions.size());
+        assertEquals("attribute(a) + 1", functions.get(0).getExpression());
+        assertEquals("attribute(a) + 2", functions.get(1).getExpression());
+        assertEquals("attribute(a) + 3", functions.get(2).getExpression());
+        assertEquals(joinLines("# A comment with a brace }",
+                               "      reduce(tensor(d{}):{ {d:'}'}: x }, sum) +",
+                               "      if (y > 0, \"{\", 4)"),
+                     functions.get(3).getExpression());
+    }
+
+    @Test
+    void unterminated_function_body_fails() {
+        String input = joinLines
+                ("schema foo {",
+                 "  rank-profile bar {",
+                 "    function f() { attribute(a) + 1");
+        var e = assertThrows(ParseException.class, () -> parseString(input));
+        assertTrue(e.getMessage().contains("Unexpected end of input in the body of function 'f'"), e.getMessage());
+    }
 }

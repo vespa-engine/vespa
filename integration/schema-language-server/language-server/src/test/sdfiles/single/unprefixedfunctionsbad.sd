@@ -1,0 +1,28 @@
+schema unprefixedfunctionsbad {
+    document unprefixedfunctionsbad {
+    }
+
+    rank-profile profile1 {
+        function foo() { 1 + 2 }
+
+        function bar(x) {
+            x + foo
+        }
+    }
+
+    rank-profile profile2 inherits profile1 {
+        function baz() {
+            # Error: Undefined field
+            bar(attribute(nosuchfield))
+        }
+    }
+
+    rank-profile profile3 inherits profile1 {
+        function inline void() { 0 }
+    }
+
+    # Error
+    # Multiple definitions of foo and bar
+    rank-profile profile4 inherits profile2, profile3 {
+    }
+}

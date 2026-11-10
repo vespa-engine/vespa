@@ -1,0 +1,33 @@
+schema unprefixedfunctions {
+    document unprefixedfunctions {
+        field a type int {
+            indexing: attribute
+        }
+    }
+
+    rank-profile profile1 {
+        function legacySingleLine() {
+            expression: attribute(a) + 1
+        }
+
+        function legacyMultiLine() {
+            # A comment before the legacy prefix
+            expression {
+                attribute(a) + 2
+            }
+        }
+
+        function plainSingleLine() { attribute(a) + 3 }
+
+        function plainMultiLine(x, y)
+        {
+            # A comment
+            if (y > 0, x * legacySingleLine, plainSingleLine) +
+            reduce(tensor(d{}):{ {d:foo}: x }, sum)
+        }
+
+        first-phase {
+            expression: plainMultiLine(legacyMultiLine, 1)
+        }
+    }
+}
