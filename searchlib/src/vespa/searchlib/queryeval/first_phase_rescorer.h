@@ -35,7 +35,7 @@ namespace search::queryeval {
  * ===== Handling of special cases =====
  * How the rescore method handles special values:
  * - +/-NaN is treated as -Inf
- * - +Inf is always mapped to +Inf
+ * - +Inf is always mapped to second_low
  * - -Inf is always mapped to -Inf
  *
  * How special values in the bounds are handled:
@@ -43,8 +43,7 @@ namespace search::queryeval {
  * - If first_low and second_low are finite, but one of the other bounds is not, set scale := 1.0.
  * - Otherwise, just map all finite values to -Inf.
  *
- * Note that values coming out of first-phase ranking are either finite or negative infinity.
- * For such values, the following invariant holds:
+ * This guarantees that the following invariant holds:
  *     If x <= first_low, then rescore(x) <= second_low.
  */
 class FirstPhaseRescorer {
@@ -59,7 +58,7 @@ public:
         constexpr static double inf = std::numeric_limits<double>::infinity();
 
         if (score == inf) [[unlikely]] {
-            return inf;
+            return _second_low;
         }
         if (std::isnan(score) || score == -inf) [[unlikely]] {
             return -inf;
