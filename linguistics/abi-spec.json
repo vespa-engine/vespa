@@ -1087,5 +1087,145 @@
       "public abstract java.util.Optional getModel(com.yahoo.language.Language)"
     ],
     "fields" : [ ]
+  },
+  "com.yahoo.language.simple.SimpleDetector" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.language.detect.Detector"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.language.detect.Detection detect(byte[], int, int, com.yahoo.language.detect.Hint)",
+      "public com.yahoo.language.detect.Detection detect(java.nio.ByteBuffer, com.yahoo.language.detect.Hint)",
+      "public com.yahoo.language.detect.Detection detect(java.lang.String, com.yahoo.language.detect.Hint)",
+      "public com.yahoo.language.Language guessLanguage(byte[], int, int)",
+      "public com.yahoo.language.Language guessLanguage(java.lang.String)",
+      "public java.lang.String guessEncoding(byte[])",
+      "public java.lang.String guessEncoding(byte[], int, int)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.simple.SimpleLinguistics" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.language.Linguistics"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.language.process.Stemmer getStemmer()",
+      "public com.yahoo.language.process.Tokenizer getTokenizer()",
+      "public com.yahoo.language.process.Normalizer getNormalizer()",
+      "public com.yahoo.language.process.Transformer getTransformer()",
+      "public com.yahoo.language.process.Segmenter getSegmenter()",
+      "public com.yahoo.language.detect.Detector getDetector()",
+      "public com.yahoo.language.process.GramSplitter getGramSplitter()",
+      "public com.yahoo.language.process.CharacterClasses getCharacterClasses()",
+      "public boolean equals(com.yahoo.language.Linguistics)",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.simple.SimpleNormalizer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.language.process.Normalizer"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public java.lang.String normalize(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.simple.SimpleToken" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.language.process.Token"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public java.lang.String getOrig()",
+      "public int getNumStems()",
+      "public java.lang.String getStem(int)",
+      "public int getNumComponents()",
+      "public com.yahoo.language.process.Token getComponent(int)",
+      "public com.yahoo.language.simple.SimpleToken addStem(java.lang.String)",
+      "public com.yahoo.language.simple.SimpleToken addComponent(com.yahoo.language.process.Token)",
+      "public java.lang.String getTokenString()",
+      "public com.yahoo.language.simple.SimpleToken setTokenString(java.lang.String)",
+      "public com.yahoo.language.process.TokenType getType()",
+      "public com.yahoo.language.simple.SimpleToken setType(com.yahoo.language.process.TokenType)",
+      "public com.yahoo.language.process.TokenScript getScript()",
+      "public com.yahoo.language.simple.SimpleToken setScript(com.yahoo.language.process.TokenScript)",
+      "public boolean isSpecialToken()",
+      "public com.yahoo.language.simple.SimpleToken setSpecialToken(boolean)",
+      "public long getOffset()",
+      "public com.yahoo.language.simple.SimpleToken setOffset(long)",
+      "public long getPositionIncrement()",
+      "public com.yahoo.language.simple.SimpleToken setPositionIncrement(long)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "public java.lang.String toDetailString()",
+      "public boolean isIndexable()",
+      "public static com.yahoo.language.simple.SimpleToken fromStems(java.lang.String, java.util.List)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.simple.SimpleTokenType" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static com.yahoo.language.process.TokenType valueOf(int)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.simple.SimpleTokenizer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.language.process.Tokenizer"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(com.yahoo.language.process.Normalizer)",
+      "public void <init>(com.yahoo.language.process.Normalizer, com.yahoo.language.process.Transformer)",
+      "public void <init>(com.yahoo.language.process.Normalizer, com.yahoo.language.process.Transformer, com.yahoo.language.process.SpecialTokenRegistry)",
+      "public java.lang.Iterable tokenize(java.lang.String, com.yahoo.language.process.LinguisticsParameters)",
+      "public java.lang.Iterable tokenize(java.lang.String, java.util.function.Function)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.simple.SimpleTransformer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.language.process.Transformer"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public java.lang.String accentDrop(java.lang.String, com.yahoo.language.Language)"
+    ],
+    "fields" : [ ]
   }
 }
