@@ -94,13 +94,6 @@ public class PermanentFlags {
             "Takes effect on redeployment",
             INSTANCE_ID);
 
-    public static final UnboundListFlag<String> TLS_CIPHERS_OVERRIDE = defineListFlag(
-            "tls-ciphers-override", List.of(), String.class,
-            "Override TLS ciphers enabled for port 4443 on hosted application containers",
-            "Takes effect on redeployment",
-            INSTANCE_ID
-    );
-
     public static final UnboundDoubleFlag RESOURCE_LIMIT_DISK = defineDoubleFlag(
             "resource-limit-disk", 0.8,
             "Resource limit (between 0.0 and 1.0) for disk usage on content nodes, used by cluster controller for when to block feed",

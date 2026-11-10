@@ -370,7 +370,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public CloudResourceTags cloudResourceTags() { return cloudResourceTags; }
         @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
         @Override public boolean allowDisableMtls() { return flag(PermanentFlags.ALLOW_DISABLE_MTLS).value(); }
-        @Override public List<String> tlsCiphersOverride() { return flag(PermanentFlags.TLS_CIPHERS_OVERRIDE).value(); }
         @Override public List<String> environmentVariables() { return flag(PermanentFlags.ENVIRONMENT_VARIABLES).value(); }
         @Override public boolean allowUserFilters() { return flag(PermanentFlags.ALLOW_USER_FILTERS).value(); }
         @Override public Duration endpointConnectionTtl() { return Duration.ofSeconds(flag(PermanentFlags.ENDPOINT_CONNECTION_TTL).value()); }
