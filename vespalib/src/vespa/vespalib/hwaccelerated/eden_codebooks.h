@@ -117,6 +117,15 @@ constexpr float eden_unit_norm_centroids_bf16_as_f32[4][16] = {
     return {bits_buf, 1u << bits};
 }
 
+// Returns a pair of the minimum and maximum centroid _values_ present in the codebook.
+// Precondition: `bits` is in [1, 4]
+[[nodiscard]] constexpr std::pair<float, float> eden_f32_codebook_min_max_value(const uint8_t bits) noexcept {
+    const uint8_t highest_centroid_value_idx = (1u << bits) - 1;
+    const uint8_t lowest_centroid_value_idx = highest_centroid_value_idx / 2;
+    const auto    codebook = eden_f32_codebook(bits);
+    return {codebook[lowest_centroid_value_idx], codebook[highest_centroid_value_idx]};
+}
+
 // Precondition: `bits` is in [1, 4]
 [[nodiscard]] constexpr std::span<const float> eden_bf16_codebook(const uint8_t bits) noexcept {
     const float* bits_buf = eden_unit_norm_centroids_bf16_as_f32[bits - 1];

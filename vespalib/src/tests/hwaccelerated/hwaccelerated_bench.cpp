@@ -3,6 +3,7 @@
 #include "data_utils.h"
 #include "scoped_fn_table_override.h"
 
+#include <vespa/vespalib/hwaccelerated/eden_codebooks.h>
 #include <vespa/vespalib/hwaccelerated/functions.h>
 #include <vespa/vespalib/hwaccelerated/highway.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
@@ -174,6 +175,36 @@ void register_eden_f32_q_dot_product_benchmark(const uint8_t bits) {
         });
 }
 
+void register_eden_centroid_quantize_benchmark(const uint8_t bits) {
+    auto input_fn = [bits](const size_t sz) {
+        Xoshiro256PlusPlusPrng prng(1234567 * bits);
+
+        const auto [min_centroid, max_centroid] = codebooks::eden_f32_codebook_min_max_value(bits);
+        // Use a distribution that covers the entire centroid range. _Technically_ this
+        // should be a normal distribution to match the expected input distribution, but
+        // uniform distribution is a bit easier to reason about, and we don't expect this
+        // to matter in practice.
+        std::uniform_real_distribution value_dist(min_centroid - 0.5f, max_centroid + 0.5f);
+
+        std::vector<float>   lhs_raw_f32(sz);
+        std::vector<uint8_t> rhs_centroid_idx(sz);
+        std::ranges::generate(lhs_raw_f32, [&] noexcept { return value_dist(prng); });
+        return std::make_pair(std::move(lhs_raw_f32), std::move(rhs_centroid_idx));
+    };
+    auto quantize_fn = [bits](const float* lhs_raw_f32, uint8_t* rhs_centroid_idx, const size_t sz) noexcept {
+        // For benchmarking purposes we use a fixed normalization factor of 1.0
+        return eden_quantize_centroids(lhs_raw_f32, rhs_centroid_idx, bits, 1.0f, sz);
+    };
+    register_benchmark_for_all_accels(
+        FnTable::FnId::EDEN_QUANTIZE_CENTROIDS, quantize_fn, [input_fn, bits](auto accel, auto bench_fn) {
+            auto        target_info = accel->target_info();
+            std::string instance_name =
+                std::format("EDEN centroid quantization/{} {}/{}/{}", int(bits), bits > 1 ? "bits" : "bit",
+                            target_info.implementation_name(), target_info.target_name());
+            register_accel_binary_arg_benchmark<uint8_t>(instance_name, std::move(accel), input_fn, bench_fn);
+        });
+}
+
 void register_all_benchmark_suites() {
     auto euclidean_dist_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
         return squared_euclidean_distance(lhs, rhs, my_sz);
@@ -201,6 +232,7 @@ void register_all_benchmark_suites() {
     register_benchmarks<int8_t>("Dot Product", FnTable::FnId::DOT_PRODUCT_I8, dot_product_fn);
     for (const uint8_t bits : {1, 2, 3, 4}) {
         register_eden_f32_q_dot_product_benchmark(bits);
+        register_eden_centroid_quantize_benchmark(bits);
         register_pack_bits_benchmark(bits);
         register_unpack_bits_benchmark(bits);
     }
