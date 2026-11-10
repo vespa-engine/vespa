@@ -335,6 +335,32 @@ template <typename T, typename SumT = T> void verify_euclidean_distance() {
     }
 }
 
+template <typename T> void verify_bit_dot_product() {
+    constexpr size_t n_bits = 256; // multiple of 8; exceeds any current single vector width
+    constexpr size_t n_bytes = n_bits / 8;
+    srand(1);
+    std::vector<T>       lhs = create_and_fill<T>(n_bits);
+    std::vector<int8_t>  packed(n_bytes);
+    for (auto& b : packed) {
+        b = static_cast<int8_t>(rand() % 256);
+    }
+    for (bool big_bitorder : {false, true}) {
+        double expected = 0.0;
+        for (size_t i = 0; i < n_bits; ++i) {
+            auto byte = static_cast<uint8_t>(packed[i / 8]);
+            int  bit_in_byte = big_bitorder ? (7 - static_cast<int>(i % 8)) : static_cast<int>(i % 8);
+            if ((byte >> bit_in_byte) & 1) {
+                expected += static_cast<double>(lhs[i]);
+            }
+        }
+        double computed = bit_dot_product(lhs.data(), packed.data(), n_bits, big_bitorder);
+        if (expected != computed) {
+            fprintf(stderr, "Accelerator is not computing bit_dot_product correctly.\n");
+            LOG_ABORT("should not be reached");
+        }
+    }
+}
+
 void verify_population_count() {
     const uint64_t   words[7] = {0x123456789abcdef0L,  // 32
                                  0x0000000000000000L,  // 0
@@ -459,6 +485,9 @@ void verify_active_function_table() {
     verify_dot_product<int8_t, int64_t>();
     verify_dot_product<int32_t, int64_t>();
     verify_dot_product<int64_t>();
+    verify_bit_dot_product<float>();
+    verify_bit_dot_product<double>();
+    verify_bit_dot_product<BFloat16>();
     verify_euclidean_distance<int8_t, int64_t>();
     verify_euclidean_distance<float>();
     verify_euclidean_distance<double>();

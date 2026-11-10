@@ -60,6 +60,7 @@ vespa_define_module(
     src/tests/instruction/dense_single_reduce_function
     src/tests/instruction/dense_tensor_create_function
     src/tests/instruction/dense_tensor_peek_function
+    src/tests/instruction/dense_unpack_bits_dot_product_function
     src/tests/instruction/dense_xw_product_function
     src/tests/instruction/fast_rename_optimizer
     src/tests/instruction/generic_cell_cast

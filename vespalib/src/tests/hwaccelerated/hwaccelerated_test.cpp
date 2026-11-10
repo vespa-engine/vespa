@@ -18,6 +18,8 @@
 
 #include <gmock/gmock.h>
 
+#include <algorithm>
+#include <cmath>
 #include <format>
 #include <limits>
 #include <random>
@@ -184,6 +186,118 @@ TEST_F(HwAcceleratedTest, dot_product_impls_match_source_of_truth) {
     auto accelerators = all_accelerators_to_test();
     for (size_t test_length : test_lengths()) {
         ASSERT_NO_FATAL_FAILURE(verify_dot_product(accelerators, test_length)) << "with length " << test_length;
+    }
+}
+
+namespace {
+
+// Reference implementation of a dot product between `lhs` and a bit vector, where element
+// `i` is bit (i % 8) [little] or bit 7 - (i % 8) [big] of byte i / 8.
+template <typename T>
+double bit_dot_product_reference(std::span<const T> lhs, std::span<const int8_t> packed, const bool big_bitorder) {
+    double sum = 0; // Assume a double has sufficient precision for all test inputs/outputs
+    for (size_t i = 0; i < lhs.size(); i++) {
+        const auto   byte = static_cast<uint8_t>(packed[i / 8]);
+        const size_t bit_pos = big_bitorder ? (7 - (i % 8)) : (i % 8);
+        if ((byte >> bit_pos) & 1) {
+            sum += lhs[i];
+        }
+    }
+    return sum;
+}
+
+template <typename T>
+void check_bit_dot_product_near(std::span<const IAccelerated*> accels, std::span<const T> lhs,
+                                std::span<const int8_t> packed, const bool big_bitorder, const double expected,
+                                const double abs_error) {
+    CHECK(lhs.size() == packed.size() * 8);
+    for (const auto* accel : accels) {
+        SCOPED_TRACE(accel->target_info().to_string());
+        ScopedFnTableOverride fn_scope(accel->fn_table());
+        const double          actual = bit_dot_product(lhs.data(), packed.data(), lhs.size(), big_bitorder);
+        ASSERT_NEAR(expected, actual, abs_error)
+            << "with n_bits=" << lhs.size() << ", bitorder=" << (big_bitorder ? "big" : "little");
+    }
+}
+
+template <typename T>
+void verify_bit_dot_product(std::span<const IAccelerated*> accels, const size_t test_length,
+                            const double approx_factor) {
+    // The number of bits is always a multiple of 8, but is not otherwise required to be
+    // aligned to any particular vector width.
+    const size_t           n_bytes = test_length / 8;
+    Xoshiro256PlusPlusPrng prng(1234567);
+    const std::vector<T>   lhs = create_and_fill<T>(prng, n_bytes * 8);
+    const auto             packed = create_and_fill<int8_t>(prng, n_bytes);
+    for (const bool big_bitorder : {false, true}) {
+        // Chop off whole bytes from the front to cover all possible remainders relative to
+        // any realistic vector width. This includes an entirely empty input.
+        for (size_t j = 0; j <= std::min<size_t>(32, n_bytes); j++) {
+            const std::span<const T>      trunc_lhs(lhs.data() + (j * 8), (n_bytes - j) * 8);
+            const std::span<const int8_t> trunc_packed(packed.data() + j, n_bytes - j);
+            const double                  expected = bit_dot_product_reference(trunc_lhs, trunc_packed, big_bitorder);
+            ASSERT_NO_FATAL_FAILURE(check_bit_dot_product_near(accels, trunc_lhs, trunc_packed, big_bitorder,
+                                                               expected, std::fabs(expected * approx_factor)));
+        }
+    }
+}
+
+// The vectorized bit dot product kernels turn packed bits into per-lane masks by way of
+// per-lane "selector" constants, which differ between both bit orders and the position of
+// a vector within the word of packed bits that it shares with its neighbors. Getting just
+// one of these subtly wrong would be easy, and randomized inputs are not great at telling
+// us _which_ lane ended up testing the wrong bit. So explicitly test that every single
+// lhs element is matched up with exactly its own bit.
+template <typename T>
+void verify_bit_dot_product_no_lane_confusion(std::span<const IAccelerated*> accels, const size_t n_bytes,
+                                              const bool big_bitorder) {
+    const size_t        n_bits = n_bytes * 8;
+    std::vector<T>      lhs(n_bits);
+    std::vector<int8_t> packed(n_bytes);
+    for (size_t i = 0; i < n_bits; ++i) {
+        const size_t bit_pos = big_bitorder ? (7 - (i % 8)) : (i % 8);
+        // Only bit `i` is set, and only lhs element `i` has a distinct value. The dot product
+        // must then be exactly that value; if any other element is selected (either instead
+        // of, or in addition to, element `i`) the result will be something else.
+        std::ranges::fill(lhs, T(1.0f));
+        lhs[i] = T(100.0f);
+        packed[i / 8] = static_cast<int8_t>(1u << bit_pos);
+        ASSERT_NO_FATAL_FAILURE(check_bit_dot_product_near<T>(accels, lhs, packed, big_bitorder, 100.0, 0.0))
+            << "with only bit " << i << " set";
+        // Conversely, setting every bit _except_ `i` must select every element except `i`.
+        std::ranges::fill(packed, int8_t(-1));
+        packed[i / 8] = static_cast<int8_t>(~(1u << bit_pos));
+        ASSERT_NO_FATAL_FAILURE(check_bit_dot_product_near<T>(accels, lhs, packed, big_bitorder, n_bits - 1, 0.0))
+            << "with all bits except " << i << " set";
+        std::ranges::fill(packed, int8_t(0)); // Reset for next position iteration
+    }
+}
+
+} // namespace
+
+TEST_F(HwAcceleratedTest, bit_dot_product_does_not_have_lane_confusion) {
+    auto accelerators = all_accelerators_to_test();
+    for (const bool big_bitorder : {false, true}) {
+        for (const size_t n_bytes : {1, 2, 3, 4, 5, 7, 8, 9, 15, 16, 17, 31, 32, 33, 64}) {
+            ASSERT_NO_FATAL_FAILURE(
+                verify_bit_dot_product_no_lane_confusion<BFloat16>(accelerators, n_bytes, big_bitorder));
+            ASSERT_NO_FATAL_FAILURE(
+                verify_bit_dot_product_no_lane_confusion<float>(accelerators, n_bytes, big_bitorder));
+            ASSERT_NO_FATAL_FAILURE(
+                verify_bit_dot_product_no_lane_confusion<double>(accelerators, n_bytes, big_bitorder));
+        }
+    }
+}
+
+TEST_F(HwAcceleratedTest, bit_dot_product_impls_match_source_of_truth) {
+    auto accelerators = all_accelerators_to_test();
+    for (size_t test_length : test_lengths()) {
+        ASSERT_NO_FATAL_FAILURE(verify_bit_dot_product<BFloat16>(accelerators, test_length, 0.0001))
+            << "with length " << test_length;
+        ASSERT_NO_FATAL_FAILURE(verify_bit_dot_product<float>(accelerators, test_length, 0.0001))
+            << "with length " << test_length;
+        ASSERT_NO_FATAL_FAILURE(verify_bit_dot_product<double>(accelerators, test_length, 0.0))
+            << "with length " << test_length;
     }
 }
 

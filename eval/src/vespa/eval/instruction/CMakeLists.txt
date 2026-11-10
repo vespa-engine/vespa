@@ -16,6 +16,7 @@ vespa_add_library(eval_instruction OBJECT
     dense_single_reduce_function.cpp
     dense_tensor_create_function.cpp
     dense_tensor_peek_function.cpp
+    dense_unpack_bits_dot_product_function.cpp
     dense_xw_product_function.cpp
     fast_rename_optimizer.cpp
     generic_cell_cast.cpp

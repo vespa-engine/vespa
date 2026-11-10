@@ -31,6 +31,16 @@ using EdenF32QDotProductFn = float (*)(const float* lhs, const uint8_t* packed_r
 using EdenQQDotProductFn = float (*)(const uint8_t* packed_lhs, const uint8_t* packed_rhs, uint8_t bits,
                                      size_t sz) noexcept;
 
+// Dot product between `lhs` and a bit vector where each bit is a distinct element with
+// value 0 or 1. `lhs` has `n_bits` elements and `packed_bits` has `n_bits / 8` elements.
+// `n_bits` must be a multiple of 8. See `bit_dot_product()` in functions.h for details.
+using BitDotProductBF16Fn = float (*)(const BFloat16* lhs, const int8_t* packed_bits, size_t n_bits,
+                                      bool big_bitorder) noexcept;
+using BitDotProductF32Fn = float (*)(const float* lhs, const int8_t* packed_bits, size_t n_bits,
+                                     bool big_bitorder) noexcept;
+using BitDotProductF64Fn = double (*)(const double* lhs, const int8_t* packed_bits, size_t n_bits,
+                                      bool big_bitorder) noexcept;
+
 using SquaredEuclideanDistanceI8Fn = double (*)(const int8_t* a, const int8_t* b, size_t sz) noexcept;
 using SquaredEuclideanDistanceBF16Fn = double (*)(const BFloat16* a, const BFloat16* b, size_t sz) noexcept;
 using SquaredEuclideanDistanceF32Fn = double (*)(const float* a, const float* b, size_t sz) noexcept;
@@ -83,6 +93,10 @@ struct FnTable {
     EdenF32QDotProductFn eden_f32_q_dot_product = nullptr;
     EdenQQDotProductFn   eden_q_q_dot_product = nullptr;
 
+    BitDotProductBF16Fn bit_dot_product_bf16 = nullptr;
+    BitDotProductF32Fn  bit_dot_product_f32 = nullptr;
+    BitDotProductF64Fn  bit_dot_product_f64 = nullptr;
+
     SquaredEuclideanDistanceI8Fn   squared_euclidean_distance_i8 = nullptr;
     SquaredEuclideanDistanceBF16Fn squared_euclidean_distance_bf16 = nullptr;
     SquaredEuclideanDistanceF32Fn  squared_euclidean_distance_f32 = nullptr;
@@ -119,6 +133,9 @@ struct FnTable {
         DOT_PRODUCT_F64,
         EDEN_F32_Q_DOT_PRODUCT,
         EDEN_Q_Q_DOT_PRODUCT,
+        BIT_DOT_PRODUCT_BF16,
+        BIT_DOT_PRODUCT_F32,
+        BIT_DOT_PRODUCT_F64,
         SQUARED_EUCLIDEAN_DISTANCE_I8,
         SQUARED_EUCLIDEAN_DISTANCE_BF16,
         SQUARED_EUCLIDEAN_DISTANCE_F32,
@@ -200,6 +217,9 @@ struct FnTable {
     VISITOR(DotProductF64Fn, dot_product_f64, FnTable::FnId::DOT_PRODUCT_F64)                                       \
     VISITOR(EdenF32QDotProductFn, eden_f32_q_dot_product, FnTable::FnId::EDEN_F32_Q_DOT_PRODUCT)                    \
     VISITOR(EdenQQDotProductFn, eden_q_q_dot_product, FnTable::FnId::EDEN_Q_Q_DOT_PRODUCT)                          \
+    VISITOR(BitDotProductBF16Fn, bit_dot_product_bf16, FnTable::FnId::BIT_DOT_PRODUCT_BF16)                         \
+    VISITOR(BitDotProductF32Fn, bit_dot_product_f32, FnTable::FnId::BIT_DOT_PRODUCT_F32)                            \
+    VISITOR(BitDotProductF64Fn, bit_dot_product_f64, FnTable::FnId::BIT_DOT_PRODUCT_F64)                            \
     VISITOR(SquaredEuclideanDistanceI8Fn, squared_euclidean_distance_i8,                                            \
             FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_I8)                                                           \
     VISITOR(SquaredEuclideanDistanceBF16Fn, squared_euclidean_distance_bf16,                                        \

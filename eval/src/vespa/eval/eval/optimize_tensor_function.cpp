@@ -16,6 +16,7 @@
 #include <vespa/eval/instruction/dense_single_reduce_function.h>
 #include <vespa/eval/instruction/dense_tensor_create_function.h>
 #include <vespa/eval/instruction/dense_tensor_peek_function.h>
+#include <vespa/eval/instruction/dense_unpack_bits_dot_product_function.h>
 #include <vespa/eval/instruction/dense_xw_product_function.h>
 #include <vespa/eval/instruction/fast_rename_optimizer.h>
 #include <vespa/eval/instruction/inplace_map_function.h>
@@ -106,6 +107,7 @@ const TensorFunction& optimize_for_factory(const ValueBuilderFactory&, const Ten
         child.set(DenseTensorPeekFunction::optimize(child.get(), stash));
         child.set(DenseLambdaPeekOptimizer::optimize(child.get(), stash));
         child.set(UnpackBitsFunction::optimize(child.get(), stash));
+        child.set(DenseUnpackBitsDotProductFunction::optimize(child.get(), stash));
         child.set(FastRenameOptimizer::optimize(child.get(), stash));
         child.set(InplaceMapFunction::optimize(child.get(), stash));
         child.set(MixedSimpleJoinFunction::optimize(child.get(), stash));

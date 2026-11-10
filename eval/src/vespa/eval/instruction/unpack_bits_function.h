@@ -31,6 +31,7 @@ private:
 public:
     UnpackBitsFunction(const ValueType& res_type_in, const TensorFunction& packed, bool big);
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory& factory, Stash& stash) const override;
+    bool big_bitorder() const { return _big_bitorder; }
     bool result_is_mutable() const override { return true; }
     static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };

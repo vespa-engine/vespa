@@ -223,6 +223,32 @@ float my_eden_q_q_dot_product(const uint8_t* packed_lhs, const uint8_t* packed_r
         abort();
     }
 }
+// `SumT` is the type used for accumulating the sum, which is not necessarily the same as
+// the type of the lhs elements (BF16 is summed as f32, like for the Highway kernels).
+template <typename SumT, typename T>
+__attribute__((noinline)) SumT do_bit_dot_product(const T* lhs, const int8_t* packed_bits, const size_t n_bits,
+                                                  const bool big_bitorder) noexcept {
+    // XORing the bit position with 7 flips the bit order _within_ each byte, which
+    // is exactly the difference between big (MSB first) and little (LSB first).
+    const size_t flip = big_bitorder ? 7 : 0;
+    return sum_indexed_unrolled<8, SumT>(n_bits, [&](const size_t i) noexcept {
+        const auto byte = static_cast<uint8_t>(packed_bits[i / 8]);
+        // Branch-free select; an unset bit contributes zero.
+        return ((byte >> ((i % 8) ^ flip)) & 1) ? static_cast<SumT>(lhs[i]) : SumT{};
+    });
+}
+float my_bit_dot_product_f32(const float* lhs, const int8_t* packed_bits, const size_t n_bits,
+                             const bool big_bitorder) noexcept {
+    return do_bit_dot_product<float>(lhs, packed_bits, n_bits, big_bitorder);
+}
+double my_bit_dot_product_f64(const double* lhs, const int8_t* packed_bits, const size_t n_bits,
+                              const bool big_bitorder) noexcept {
+    return do_bit_dot_product<double>(lhs, packed_bits, n_bits, big_bitorder);
+}
+float my_bit_dot_product_bf16(const BFloat16* lhs, const int8_t* packed_bits, const size_t n_bits,
+                              const bool big_bitorder) noexcept {
+    return do_bit_dot_product<float>(lhs, packed_bits, n_bits, big_bitorder);
+}
 double my_squared_euclidean_distance_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
     return helper::squaredEuclideanDistance(a, b, sz);
 }

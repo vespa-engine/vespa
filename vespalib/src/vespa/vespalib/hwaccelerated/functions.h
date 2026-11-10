@@ -4,6 +4,8 @@
 
 #include "fn_table.h"
 
+#include <cassert>
+
 namespace vespalib::hwaccelerated {
 
 // These are freestanding functions that will be dispatched to the vectorized implementation
@@ -50,6 +52,37 @@ namespace vespalib::hwaccelerated {
 [[nodiscard]] inline float eden_q_q_dot_product(const uint8_t* packed_lhs, const uint8_t* packed_rhs,
                                                 const uint8_t bits, size_t sz) noexcept {
     return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(eden_q_q_dot_product)(packed_lhs, packed_rhs, bits, sz);
+}
+
+// Dot product between `lhs` and the bit vector `packed_bits`, where each bit is treated as
+// a distinct vector element with value 0 or 1. This is semantically equivalent to first
+// unpacking `packed_bits` (as the `unpack_bits` ranking expression function would) and then
+// computing a regular dot product, only without ever materializing the unpacked vector.
+//
+// `lhs` must have `n_bits` elements and `packed_bits` must have `n_bits / 8` elements.
+// `n_bits` _must_ be a multiple of 8, or the result will be bogus.
+//
+// `big_bitorder` decides the order of the bits _within_ each packed byte; most significant
+// bit first when true, least significant bit first when false. Bytes are always processed
+// in increasing order.
+//
+// Note: BF16 and f32 are both accumulated with f32 precision.
+[[nodiscard]] inline float bit_dot_product(const BFloat16* lhs, const int8_t* packed_bits, const size_t n_bits,
+                                           const bool big_bitorder) noexcept {
+    assert((n_bits % 8) == 0);
+    return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(bit_dot_product_bf16)(lhs, packed_bits, n_bits, big_bitorder);
+}
+
+[[nodiscard]] inline float bit_dot_product(const float* lhs, const int8_t* packed_bits, const size_t n_bits,
+                                           const bool big_bitorder) noexcept {
+    assert((n_bits % 8) == 0);
+    return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(bit_dot_product_f32)(lhs, packed_bits, n_bits, big_bitorder);
+}
+
+[[nodiscard]] inline double bit_dot_product(const double* lhs, const int8_t* packed_bits, const size_t n_bits,
+                                            const bool big_bitorder) noexcept {
+    assert((n_bits % 8) == 0);
+    return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(bit_dot_product_f64)(lhs, packed_bits, n_bits, big_bitorder);
 }
 
 [[nodiscard]] inline double squared_euclidean_distance(const int8_t* a, const int8_t* b, size_t sz) noexcept {

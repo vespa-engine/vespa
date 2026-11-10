@@ -1,0 +1,159 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/test/eval_fixture.h>
+#include <vespa/eval/eval/test/gen_spec.h>
+#include <vespa/eval/instruction/dense_dot_product_function.h>
+#include <vespa/eval/instruction/dense_unpack_bits_dot_product_function.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
+using namespace vespalib::eval;
+using namespace vespalib::eval::test;
+
+const ValueBuilderFactory& prod_factory = FastValueBuilderFactory::get();
+const ValueBuilderFactory& test_factory = SimpleValueBuilderFactory::get();
+
+//-----------------------------------------------------------------------------
+// All test data uses small integer values so that summation order and
+// intermediate precision (float vs double, BLAS vs plain loop) can never
+// affect the result: every partial sum stays exactly representable, so
+// EXPECT_EQ can safely compare bit-for-bit against the reference evaluator.
+
+auto packed_seq = Seq({-128, -43, 85, 127});
+auto query_seq = Seq({1, 2, 3, 5, 8, 13, 21, 34});
+
+auto packed_vx4 = GenSpec().seq(packed_seq).idx("x", 4).cells(CellType::INT8);   // -> 32 bits
+auto packed_vx8 = GenSpec().seq(packed_seq).idx("x", 8).cells(CellType::INT8);   // -> 64 bits
+auto packed_vx32 = GenSpec().seq(packed_seq).idx("x", 32).cells(CellType::INT8); // -> 256 bits
+auto packed_vxf = GenSpec().seq(packed_seq).idx("x", 8).cells(CellType::FLOAT);  // not int8
+
+auto query_f32 = GenSpec().seq(query_seq).idx("x", 32).cells(CellType::FLOAT);
+auto query_f64 = GenSpec().seq(query_seq).idx("x", 64).cells(CellType::FLOAT);
+auto query_d64 = GenSpec().seq(query_seq).idx("x", 64).cells(CellType::DOUBLE);
+auto query_b64 = GenSpec().seq(query_seq).idx("x", 64).cells(CellType::BFLOAT16);
+auto query_f256 = GenSpec().seq(query_seq).idx("x", 256).cells(CellType::FLOAT);
+auto query_y64 = GenSpec().seq(query_seq).idx("y", 64).cells(CellType::FLOAT);
+
+void assert_expr(const GenSpec& q_spec, const GenSpec& a_spec, const std::string& expr, bool optimized) {
+    EvalFixture::ParamRepo param_repo;
+    param_repo.add("q", q_spec);
+    param_repo.add("a", a_spec);
+    EvalFixture fast_fixture(prod_factory, expr, param_repo, true);
+    EvalFixture test_fixture(test_factory, expr, param_repo, true);
+    EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
+    auto        expect = EvalFixture::ref(expr, param_repo);
+    EXPECT_EQ(fast_fixture.result(), expect);
+    EXPECT_EQ(test_fixture.result(), expect);
+    EXPECT_EQ(slow_fixture.result(), expect);
+    EXPECT_EQ(fast_fixture.find_all<DenseUnpackBitsDotProductFunction>().size(), optimized ? 1u : 0u);
+    EXPECT_EQ(test_fixture.find_all<DenseUnpackBitsDotProductFunction>().size(), optimized ? 1u : 0u);
+    EXPECT_EQ(slow_fixture.find_all<DenseUnpackBitsDotProductFunction>().size(), 0u);
+}
+
+void assert_optimized(const GenSpec& q_spec, const GenSpec& a_spec, const std::string& expr) {
+    assert_expr(q_spec, a_spec, expr, true);
+}
+
+void assert_not_optimized(const GenSpec& q_spec, const GenSpec& a_spec, const std::string& expr) {
+    assert_expr(q_spec, a_spec, expr, false);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(DenseUnpackBitsDotProductFunctionTest, big_bitorder_is_optimized) {
+    assert_optimized(query_f64, packed_vx8, "reduce(q*tensor<float>(x[64])(bit(a{x:(x/8)},7-x%8)),sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, little_bitorder_is_optimized) {
+    assert_optimized(query_f64, packed_vx8, "reduce(q*tensor<float>(x[64])(bit(a{x:(x/8)},x%8)),sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, unpack_bits_times_query_is_also_optimized) {
+    assert_optimized(query_f64, packed_vx8, "reduce(tensor<float>(x[64])(bit(a{x:(x/8)},7-x%8))*q,sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, double_query_is_optimized) {
+    assert_optimized(query_d64, packed_vx8, "reduce(q*tensor<float>(x[64])(bit(a{x:(x/8)},7-x%8)),sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, bfloat16_query_is_optimized) {
+    assert_optimized(query_b64, packed_vx8, "reduce(q*tensor<float>(x[64])(bit(a{x:(x/8)},7-x%8)),sum,x)");
+    assert_optimized(query_b64, packed_vx8, "reduce(q*tensor<float>(x[64])(bit(a{x:(x/8)},x%8)),sum,x)");
+    assert_optimized(query_b64, packed_vx8, "reduce(q*tensor<bfloat16>(x[64])(bit(a{x:(x/8)},7-x%8)),sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, declared_unpacked_cell_type_is_irrelevant) {
+    assert_optimized(query_f64, packed_vx8, "reduce(q*tensor<bfloat16>(x[64])(bit(a{x:(x/8)},7-x%8)),sum,x)");
+    assert_optimized(query_d64, packed_vx8, "reduce(q*tensor<double>(x[64])(bit(a{x:(x/8)},7-x%8)),sum,x)");
+    assert_optimized(query_f64, packed_vx8, "reduce(q*tensor<int8>(x[64])(bit(a{x:(x/8)},7-x%8)),sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, map_subspaces_form_is_optimized) {
+    // this is the form generated by the ranking expression 'unpack_bits' function
+    assert_optimized(query_f64, packed_vx8,
+                     "reduce(q*map_subspaces(a,f(t)(tensor<float>(x[64])(bit(t{x:(x/8)},7-(x%8))))),sum,x)");
+    assert_optimized(query_b64, packed_vx8,
+                     "reduce(map_subspaces(a,f(t)(tensor<bfloat16>(x[64])(bit(t{x:(x/8)},(x%8)))))*q,sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, generated_plain_side_is_optimized) {
+    // the plain side is itself a tensor lambda, but not an unpack_bits one
+    assert_optimized(query_f64, packed_vx8,
+                     "reduce(tensor<float>(x[64])(q{x:(x)}+1)*tensor<float>(x[64])(bit(a{x:(x/8)},7-x%8)),sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, map_subspaces_of_mixed_tensor_is_not_optimized) {
+    auto packed_mixed = GenSpec().seq(packed_seq).map("m", 2).idx("x", 8).cells(CellType::INT8);
+    assert_not_optimized(query_f64, packed_mixed,
+                         "reduce(q*map_subspaces(a,f(t)(tensor<float>(x[64])(bit(t{x:(x/8)},7-(x%8))))),sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, various_vector_sizes) {
+    assert_optimized(query_f32, packed_vx4, "reduce(q*tensor<float>(x[32])(bit(a{x:(x/8)},7-x%8)),sum,x)");
+    assert_optimized(query_f256, packed_vx32, "reduce(q*tensor<float>(x[256])(bit(a{x:(x/8)},7-x%8)),sum,x)");
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(DenseUnpackBitsDotProductFunctionTest, source_must_be_int8) {
+    assert_not_optimized(query_f64, packed_vxf, "reduce(q*tensor<float>(x[64])(bit(a{x:(x/8)},7-x%8)),sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, mismatched_query_dimension_name_is_not_optimized) {
+    // "y" vs "x": a well-typed (dense outer-join then reduce) expression,
+    // but not a dot product, so neither this optimizer nor
+    // DenseDotProductFunction should fire.
+    assert_not_optimized(query_y64, packed_vx8, "reduce(q*tensor<float>(x[64])(bit(a{x:(x/8)},7-x%8)),sum)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, similar_expressions_are_not_optimized) {
+    assert_not_optimized(query_f64, packed_vx8, "reduce(q*tensor<float>(x[64])(bit(a{x:(x*8)},7-x%8)),sum,x)");
+    assert_not_optimized(query_f64, packed_vx8, "reduce(q*tensor<float>(x[64])(bit(a{x:(x/8)},8-x%8)),sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, both_sides_looking_like_unpack_bits_is_not_optimized) {
+    // pathological case; must still fall back to a correct (just not
+    // specially fused) evaluation rather than misbehave.
+    assert_not_optimized(query_f64, packed_vx8,
+                         "reduce(tensor<float>(x[64])(bit(a{x:(x/8)},7-x%8))"
+                         "*tensor<float>(x[64])(bit(a{x:(x/8)},x%8)),sum,x)");
+}
+
+TEST(DenseUnpackBitsDotProductFunctionTest, multi_dimensional_unpack_bits_falls_back_to_dense_dot_product) {
+    auto packed_txy = GenSpec().seq(packed_seq).idx("t", 1).idx("x", 3).idx("y", 4).cells(CellType::INT8);
+    auto query_txy = GenSpec().seq(query_seq).idx("t", 1).idx("x", 3).idx("y", 32).cells(CellType::FLOAT);
+    EvalFixture::ParamRepo param_repo;
+    param_repo.add("q", query_txy);
+    param_repo.add("a", packed_txy);
+    std::string expr = "reduce(q*tensor<float>(t[1],x[3],y[32])(bit(a{t:(t),x:(x),y:(y/8)},7-y%8)),sum)";
+    EvalFixture   fixture(prod_factory, expr, param_repo, true);
+    auto          expect = EvalFixture::ref(expr, param_repo);
+    EXPECT_EQ(fixture.result(), expect);
+    EXPECT_EQ(fixture.find_all<DenseUnpackBitsDotProductFunction>().size(), 0u);
+    EXPECT_EQ(fixture.find_all<DenseDotProductFunction>().size(), 1u);
+}
+
+//-----------------------------------------------------------------------------
+
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -10,6 +10,8 @@
 #include <hwy/base.h>
 
 #include <algorithm>
+#include <cassert>
+#include <cstring>
 #include <format>
 
 // clang-format off
@@ -125,6 +127,283 @@ float my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a, const BFloat16* HWY_RESTRI
     };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<4>, HasAccumulatorArity<2>>;
     return MyKernel::pairwise(dbf16, df32, a_bf16, b_bf16, sz, hn::Zero(df32), kernel_fn, VecAdd(), LaneReduceSum());
+}
+
+// Loads `n_bytes` in [1, sizeof(TU)] bytes from `p` into the low bits of a zero-extended TU,
+// where byte k ends up in bits [8k, 8k+8). `n_bytes` is a compile-time constant in the hot
+// loops of all fixed-width targets, so this will in practice be a single zero-extending load.
+template <typename TU>
+    requires(hwy::IsUnsigned<TU>())
+HWY_API TU load_packed_bytes(const uint8_t* HWY_RESTRICT p, const size_t n_bytes) noexcept {
+    static_assert(HWY_IS_LITTLE_ENDIAN, "byte k must map to bits [8k, 8k+8)");
+    TU word = 0;
+    std::memcpy(&word, p, n_bytes);
+    return word;
+}
+
+// The bit dot product kernel is shared between "native" (f32, f64) and BF16 lhs elements.
+// `LT` is the type of the lhs elements as they are stored in memory; it is either the lane
+// type of `D` itself, or `uint16_t` for the raw bits of a BF16 (in which case `D` must be
+// a f32 tag).
+template <class D, typename LT> using LhsTag = hn::Rebind<LT, D>;
+
+// Widens a vector of raw lhs elements as loaded from memory to the lane type of `D`.
+// This is a no-op unless the input is BF16, in which case elements are zero-extended to
+// 32 bits and shifted left by 16. Since a BF16 is by definition the upper half of an
+// IEEE-754 binary32, this is an _exact_ conversion.
+template <class D, typename LT> HWY_API hn::VFromD<D> widen_lhs(D d, hn::VFromD<LhsTag<D, LT>> raw) noexcept {
+    if constexpr (hwy::IsSame<LT, hn::TFromD<D>>()) {
+        return raw;
+    } else {
+        static_assert(hwy::IsSame<LT, uint16_t>() && hwy::IsSame<hn::TFromD<D>, float>());
+        const hn::RebindToUnsigned<D> du32;
+        return hn::BitCast(d, hn::ShiftLeft<16>(hn::PromoteTo(du32, raw)));
+    }
+}
+
+template <class D, typename LT> HWY_API hn::VFromD<D> load_lhs(D d, const LT* HWY_RESTRICT p) noexcept {
+    return widen_lhs<D, LT>(d, hn::LoadU(LhsTag<D, LT>(), p));
+}
+
+// Non-faulting partial load of the first `n` < Lanes(d) elements; all other lanes are zero.
+template <class D, typename LT>
+HWY_API hn::VFromD<D> load_lhs_n(D d, const LT* HWY_RESTRICT p, const size_t n) noexcept {
+    return widen_lhs<D, LT>(d, hn::LoadN(LhsTag<D, LT>(), p, n));
+}
+
+// Scalar version of `widen_lhs`
+template <typename T, typename LT> HWY_API T lhs_to_scalar(const LT v) noexcept {
+    if constexpr (hwy::IsSame<LT, T>()) {
+        return v;
+    } else {
+        static_assert(hwy::IsSame<LT, uint16_t>() && hwy::IsSame<T, float>());
+        return hwy::BitCastScalar<float>(static_cast<uint32_t>(v) << 16);
+    }
+}
+
+// accu[i] += v[i] for all lanes `i` where the mask is set. All other lanes are unchanged.
+template <typename V, typename M> HWY_API V masked_accumulate(V accu, M mask, V v) noexcept {
+#if (HWY_TARGET <= HWY_AVX3) || ((HWY_TARGET & HWY_ALL_SVE) != 0)
+    // Targets with dedicated mask/predicate registers get this as a single merge-masked add.
+    return hn::MaskedAddOr(accu, mask, accu, v);
+#else
+    // For everyone else, MaskedAddOr becomes an add followed by a blend. Zeroing out the
+    // unselected lanes prior to an unconditional add is cheaper (a single AND + ADD).
+    return hn::Add(accu, hn::IfThenElseZero(mask, v));
+#endif
+}
+
+// Computes the dot product between `lhs` (with `n_bits` elements) and a bit vector stored
+// as `n_bits / 8` bytes in `packed`, where every bit is treated as a distinct element with
+// value 0 or 1. This is what you get from the `unpack_bits` ranking expression function,
+// except that we never actually materialize the unpacked vector.
+//
+// Since a bit can only ever be 0 or 1, no multiplication is needed; the dot product is
+// simply the sum of all lhs elements whose bit is set. Vectorizing this boils down to
+// turning packed bits into a vector _mask_ as cheaply as possible:
+//
+//  1. Load a "word" of packed bytes and broadcast it to all (unsigned integer) lanes.
+//  2. AND the word with a per-lane "selector" constant of the form 1 << bit_pos, where
+//     bit_pos is the word-relative position of the bit that belongs to that particular
+//     lane. Lanes ending up non-zero are the lanes whose bit is set (this is `TestBit`).
+//  3. Use the resulting mask to add the selected lhs lanes to an accumulator.
+//
+// There are no LUTs, shuffles or gathers involved. Bit order is _entirely_ encoded in the
+// selector constants: the lane that holds element `i` of a word tests bit `i` for little
+// (LSB first) bit order and bit `i ^ 7` for big (MSB first) bit order. The latter is the
+// same as bit 7 - (i % 8) of byte i / 8, i.e. it flips the order within each byte, which
+// means we never have to reverse any bits in the input itself.
+//
+// A single broadcast word is shared by up to 4 consecutive vectors, each having their own
+// selector constant. This is surprisingly important; unless a word is exactly one lane wide,
+// it has to be broadcast via a general purpose register. Doing this once per vector turns
+// it into _the_ bottleneck of the entire loop on x64 (it is ~2x slower on AVX2). Example
+// for f32 on AVX2: a word is 32 bits, covers 4 vectors of 8 lanes each and is broadcast
+// straight from memory.
+//
+// We use 4 accumulators to break the loop-carried dependency on floating point adds.
+//
+// `T` is the lane type used for arithmetic and `LT` is the type lhs elements are stored as.
+// These are identical except for BF16, where LT is uint16_t and T is float; see `widen_lhs`.
+template <bool BigBitorder, typename T, typename LT>
+    requires(hwy::IsFloat<T>())
+HWY_NOINLINE T hwy_bit_dot(const LT* HWY_RESTRICT lhs, const uint8_t* HWY_RESTRICT packed,
+                           const size_t n_bits) noexcept {
+    using TU = hwy::MakeUnsigned<T>;
+    const hn::ScalableTag<T>                d;
+    const hn::RebindToUnsigned<decltype(d)> du;
+
+    using VF = hn::Vec<decltype(d)>;
+    using VU = hn::Vec<decltype(du)>;
+
+    HWY_LANES_CONSTEXPR const size_t N = hn::Lanes(d);
+    constexpr size_t                 lane_bits = sizeof(TU) * 8;
+    const size_t                     n_bytes = n_bits / 8;
+
+    if ((N < 2) || ((N & (N - 1)) != 0) || (N > lane_bits)) {
+        // Either a non-power of two lane count, or a vector has more lanes than there are bits
+        // in a single lane (the latter can only happen for SVE vectors > 1024 bits, which do
+        // not exist at the time of writing). Fall back to a boring, but correct, scalar loop.
+        T sum = 0;
+        for (size_t i = 0; i < n_bits; ++i) {
+            const size_t bit_pos = BigBitorder ? (7 - (i % 8)) : (i % 8);
+            if ((packed[i / 8] >> bit_pos) & 1) {
+                sum += lhs_to_scalar<T>(lhs[i]);
+            }
+        }
+        return sum;
+    }
+    // Since N is a power of two in [2, lane_bits] and lane_bits >= 32, a word is always
+    // a whole number of bytes and always fits in a single lane.
+    const size_t vecs_per_word = std::min<size_t>(4, lane_bits / N);
+    const size_t bytes_per_word = (vecs_per_word * N) / 8;
+    const size_t words_per_iter = 4 / vecs_per_word; // We always want to use all 4 accumulators
+
+    // Selector for the j-th vector of a word; lane k has _only_ bit (j*N + k) [little]
+    // or ((j*N + k) ^ 7) [big] set. Selectors >= vecs_per_word are never used, so let
+    // these wrap around to avoid shifting by more bits than there are in a lane.
+    auto make_selector = [du, N, vecs_per_word](const size_t j) VESPA_HWY_LAMBDA {
+        const VU iota = hn::Iota(du, static_cast<TU>((j % vecs_per_word) * N));
+        const VU bit_pos = BigBitorder ? hn::Xor(iota, hn::Set(du, TU{7})) : iota;
+        return hn::Shl(hn::Set(du, TU{1}), bit_pos);
+    };
+    const VU  sel0 = make_selector(0);
+    const VU  sel1 = make_selector(1);
+    const VU  sel2 = make_selector(2);
+    const VU  sel3 = make_selector(3);
+    const VU* sels[4] = {&sel0, &sel1, &sel2, &sel3};
+
+    VF  accu0 = hn::Zero(d);
+    VF  accu1 = hn::Zero(d);
+    VF  accu2 = hn::Zero(d);
+    VF  accu3 = hn::Zero(d);
+    VF* accus[4] = {&accu0, &accu1, &accu2, &accu3};
+
+    // Processes all the `vecs_per_word` vectors covered by the word starting at `byte_idx`.
+    auto kernel = [&](const size_t byte_idx, const size_t accu_offset) VESPA_HWY_LAMBDA {
+        const VU word = hn::Set(du, load_packed_bytes<TU>(packed + byte_idx, bytes_per_word));
+        for (size_t j = 0; j < vecs_per_word; ++j) {
+            const auto mask = hn::RebindMask(d, hn::TestBit(word, *sels[j]));
+            const VF   lhs_v = load_lhs(d, lhs + (byte_idx * 8) + (j * N));
+            VF&        accu = *accus[accu_offset + j];
+            accu = masked_accumulate(accu, mask, lhs_v);
+        }
+    };
+    size_t byte_idx = 0;
+    for (; (byte_idx + (words_per_iter * bytes_per_word)) <= n_bytes; byte_idx += words_per_iter * bytes_per_word) {
+        for (size_t w = 0; w < words_per_iter; ++w) {
+            kernel(byte_idx + (w * bytes_per_word), w * vecs_per_word);
+        }
+    }
+    for (; (byte_idx + bytes_per_word) <= n_bytes; byte_idx += bytes_per_word) {
+        kernel(byte_idx, 0);
+    }
+    if (byte_idx < n_bytes) {
+        // Trailing partial word. The word load zero-extends, so lanes beyond the end of the
+        // input can never be selected. We still have to be careful to not touch any lhs
+        // memory beyond `n_bits` elements, so the last vector may need a non-faulting load.
+        const size_t rem_bytes = n_bytes - byte_idx;
+        const size_t rem_bits = rem_bytes * 8;
+        const VU     word = hn::Set(du, load_packed_bytes<TU>(packed + byte_idx, rem_bytes));
+        for (size_t j = 0; (j * N) < rem_bits; ++j) {
+            const size_t n = std::min<size_t>(N, rem_bits - (j * N));
+            const LT*    p = lhs + (byte_idx * 8) + (j * N);
+            const auto   mask = hn::RebindMask(d, hn::TestBit(word, *sels[j]));
+            const VF     lhs_v = (n == N) ? load_lhs(d, p) : load_lhs_n(d, p, n);
+            VF&          accu = *accus[j];
+            accu = masked_accumulate(accu, mask, lhs_v);
+        }
+    }
+    return LaneReduceSum{}(d, parallel_reduce_accumulators(VecAdd{}, accu0, accu1, accu2, accu3));
+}
+
+// Dedicated BF16 bit dot product kernel for targets _without_ mask registers and where a
+// vector has either 8 (NEON, SSE4) or 16 (AVX2) u16 lanes.
+//
+// The generic kernel must widen all BF16 elements to f32 _before_ it can select which ones
+// to accumulate, which means it only gets to process half a vector of elements per load.
+// Here we instead do the selection directly on the raw u16 bit representation (an all-zero
+// BF16 is +0.0, so zeroing out a lane has the expected semantics), with a full vector
+// covering 1 or 2 packed bytes.
+//
+// The selected elements are then widened "in place" by reinterpreting each _pair_ of u16
+// lanes as a single u32 lane (we assume little endian):
+//
+//   u16 lanes:  | e0 | e1 | e2 | e3 | ...
+//   u32 lanes:  | e1:e0   | e3:e2   | ...
+//
+//   u32 << 16:         | e0:00   | e2:00   | ...  <- even elements as f32
+//   u32 & 0xffff0000:  | e1:00   | e3:00   | ...  <- odd elements as f32
+//
+// This needs neither zero-extension nor any (possibly block-crossing) shuffling of lanes.
+// It does mean that elements are not accumulated in their original order, but that does
+// not matter for a sum.
+//
+// Targets with mask registers (and/or wider vectors) are better served by the generic kernel.
+template <bool BigBitorder>
+HWY_NOINLINE float hwy_bit_dot_bf16(const uint16_t* HWY_RESTRICT lhs, const uint8_t* HWY_RESTRICT packed,
+                                    const size_t n_bits) noexcept {
+#if !((HWY_TARGET <= HWY_AVX3) || ((HWY_TARGET & HWY_ALL_SVE) != 0))
+    static_assert(HWY_IS_LITTLE_ENDIAN, "even u16 lanes must map to the lower half of u32 lanes");
+    const hn::ScalableTag<uint16_t>                 du16;
+    const hn::Repartition<uint32_t, decltype(du16)> du32;
+    const hn::Repartition<float, decltype(du16)>    df32;
+
+    using VU16 = hn::Vec<decltype(du16)>;
+    using VU32 = hn::Vec<decltype(du32)>;
+    using VF32 = hn::Vec<decltype(df32)>;
+
+    HWY_LANES_CONSTEXPR const size_t N16 = hn::Lanes(du16);
+    if ((N16 == 8) || (N16 == 16)) {
+        const size_t n_bytes = n_bits / 8;
+        const size_t bytes_per_vec = N16 / 8;
+
+        // See `hwy_bit_dot` for the rationale behind the selector constant.
+        const VU16 iota = hn::Iota(du16, 0);
+        const VU16 bit_pos = BigBitorder ? hn::Xor(iota, hn::Set(du16, uint16_t{7})) : iota;
+        const VU16 sel = hn::Shl(hn::Set(du16, uint16_t{1}), bit_pos);
+        const VU32 odd_mask = hn::Set(du32, uint32_t{0xffff0000u});
+
+        auto kernel = [&](const VU16 word, const VU16 lhs_v, VF32& accu0, VF32& accu1) VESPA_HWY_LAMBDA {
+            const VU32 selected = hn::BitCast(du32, hn::IfThenElseZero(hn::TestBit(word, sel), lhs_v));
+            accu0 = hn::Add(accu0, hn::BitCast(df32, hn::ShiftLeft<16>(selected))); // even elements
+            accu1 = hn::Add(accu1, hn::BitCast(df32, hn::And(selected, odd_mask))); // odd elements
+        };
+        auto full_kernel = [&](const size_t byte_idx, VF32& accu0, VF32& accu1) VESPA_HWY_LAMBDA {
+            const VU16 word = hn::Set(du16, load_packed_bytes<uint16_t>(packed + byte_idx, bytes_per_vec));
+            kernel(word, hn::LoadU(du16, lhs + (byte_idx * 8)), accu0, accu1);
+        };
+
+        VF32 accu0 = hn::Zero(df32);
+        VF32 accu1 = hn::Zero(df32);
+        VF32 accu2 = hn::Zero(df32);
+        VF32 accu3 = hn::Zero(df32);
+
+        size_t byte_idx = 0;
+        for (; (byte_idx + (2 * bytes_per_vec)) <= n_bytes; byte_idx += 2 * bytes_per_vec) {
+            full_kernel(byte_idx, accu0, accu1);
+            full_kernel(byte_idx + bytes_per_vec, accu2, accu3);
+        }
+        for (; (byte_idx + bytes_per_vec) <= n_bytes; byte_idx += bytes_per_vec) {
+            full_kernel(byte_idx, accu0, accu1);
+        }
+        if (byte_idx < n_bytes) {
+            // A single trailing byte, which can only happen with 16 lanes. Its 8 elements go in
+            // the lower half of the vector. The upper lanes are zero, as are the upper bits of
+            // the word, so these will never be selected.
+            const VU16 word = hn::Set(du16, uint16_t{packed[byte_idx]});
+            kernel(word, hn::LoadN(du16, lhs + (byte_idx * 8), 8), accu0, accu1);
+        }
+        return LaneReduceSum{}(df32, parallel_reduce_accumulators(VecAdd{}, accu0, accu1, accu2, accu3));
+    }
+#endif
+    return hwy_bit_dot<BigBitorder, float, uint16_t>(lhs, packed, n_bits);
+}
+
+// The packed bits are passed as int8 since that's the cell type they have in tensor-land,
+// but we only ever want to treat them as unsigned bytes.
+HWY_INLINE const uint8_t* as_u8(const int8_t* packed_bits) noexcept {
+    return reinterpret_cast<const uint8_t*>(packed_bits);
 }
 
 template <typename T>
@@ -629,6 +908,27 @@ float my_eden_q_q_dot_product(const uint8_t* packed_lhs, const uint8_t* packed_r
         abort();
     }
 }
+float my_bit_dot_product_f32(const float* lhs, const int8_t* packed_bits, const size_t n_bits,
+                             const bool big_bitorder) noexcept {
+    return big_bitorder ? hwy_bit_dot<true, float, float>(lhs, as_u8(packed_bits), n_bits)
+                        : hwy_bit_dot<false, float, float>(lhs, as_u8(packed_bits), n_bits);
+}
+double my_bit_dot_product_f64(const double* lhs, const int8_t* packed_bits, const size_t n_bits,
+                              const bool big_bitorder) noexcept {
+    return big_bitorder ? hwy_bit_dot<true, double, double>(lhs, as_u8(packed_bits), n_bits)
+                        : hwy_bit_dot<false, double, double>(lhs, as_u8(packed_bits), n_bits);
+}
+float my_bit_dot_product_bf16(const BFloat16* lhs, const int8_t* packed_bits, const size_t n_bits,
+                              const bool big_bitorder) noexcept {
+    static_assert(sizeof(BFloat16) == sizeof(uint16_t));
+    static_assert(alignof(BFloat16) == alignof(uint16_t));
+    // We make the assumption that vespalib::BFloat16 is a POD-like wrapper around the u16
+    // bitwise representation of a BF16, with zero padding bits. This lets us do our own
+    // widening, sidestepping any `__bf16` codegen shenanigans (see `my_hwy_dot_bf16`).
+    const auto* lhs_u16 = reinterpret_cast<const uint16_t*>(lhs);
+    return big_bitorder ? hwy_bit_dot_bf16<true>(lhs_u16, as_u8(packed_bits), n_bits)
+                        : hwy_bit_dot_bf16<false>(lhs_u16, as_u8(packed_bits), n_bits);
+}
 double my_squared_euclidean_distance_i8(const int8_t* a, const int8_t* b, size_t sz) noexcept {
     return my_hwy_square_euclidean_distance_int8(a, b, sz);
 }
@@ -699,6 +999,9 @@ public:
         ft.dot_product_f64 = my_dot_product_f64;
         ft.eden_f32_q_dot_product = my_eden_f32_q_dot_product;
         ft.eden_q_q_dot_product = my_eden_q_q_dot_product;
+        ft.bit_dot_product_bf16 = my_bit_dot_product_bf16;
+        ft.bit_dot_product_f32 = my_bit_dot_product_f32;
+        ft.bit_dot_product_f64 = my_bit_dot_product_f64;
         ft.squared_euclidean_distance_i8 = my_squared_euclidean_distance_i8;
         ft.squared_euclidean_distance_bf16 = my_squared_euclidean_distance_bf16;
         ft.squared_euclidean_distance_f32 = my_squared_euclidean_distance_f32;
