@@ -91,7 +91,6 @@ install(FILES
   default_build_settings.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/vespaConfig.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/vespaConfigVersion.cmake
-  cmake/vespaTargets.cmake
   DESTINATION ${VESPA_CMAKECONFIG_INSTALL_DIR})
 # End of exporting vespa cmake config
 
@@ -208,3 +207,6 @@ __create_module_targets(OBJECT_TARGETS "object")
 
 # Create module source dependencies
 __create_module_source_dependencies()
+
+install(EXPORT vespaTargets DESTINATION ${VESPA_CMAKECONFIG_INSTALL_DIR}
+  NAMESPACE vespa::)

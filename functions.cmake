@@ -213,7 +213,7 @@ function(vespa_add_library TARGET)
     __handle_test_targets()
 
     if(ARG_INSTALL)
-        install(TARGETS ${TARGET} DESTINATION ${ARG_INSTALL})
+        install(TARGETS ${TARGET} DESTINATION ${ARG_INSTALL} EXPORT vespaTargets)
         __install_header_files()
     endif()
 

@@ -13,6 +13,7 @@ if ((${VESPA_OS_DISTRO} STREQUAL "almalinux" OR ${VESPA_OS_DISTRO} STREQUAL "roc
            $<TARGET_OBJECTS:vespa_libstdcxx_compat_object>
         )
         set_target_properties(vespa_libstdcxx_compat PROPERTIES LINKER_LANGUAGE CXX)
+	install(TARGETS vespa_libstdcxx_compat DESTINATION lib64 EXPORT vespaTargets)
         add_custom_command(
             OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${FROM_CHARS_OBJECT}
             COMMAND ar xv "${VESPA_LIBSTDCXX_COMPAT_SOURCE_LIBRARY}" ${FROM_CHARS_OBJECT}
