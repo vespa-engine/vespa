@@ -60,6 +60,7 @@ type Submission struct {
 	Description string `json:"description,omitempty"`
 	AuthorEmail string `json:"authorEmail,omitempty"`
 	SourceURL   string `json:"sourceUrl,omitempty"`
+	SkipTests   bool   `json:"skipTests,omitempty"`
 }
 
 type LogLinePrepareResponse struct {
