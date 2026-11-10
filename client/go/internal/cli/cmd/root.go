@@ -398,6 +398,7 @@ func (c *CLI) configureCommands() {
 	skillsCmd.AddCommand(newSkillsListCmd(c))           // skills list
 	skillsCmd.AddCommand(newSkillsInstallCmd(c))        // skills install
 	skillsCmd.AddCommand(newSkillsUpdateCmd(c))         // skills update
+	skillsCmd.AddCommand(newSkillsGetCmd(c))            // skills get
 	rootCmd.AddCommand(skillsCmd)                       // skills
 }
 
