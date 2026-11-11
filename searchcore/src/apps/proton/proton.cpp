@@ -252,6 +252,17 @@ private:
     FNET_Transport _transport;
 };
 
+void runDeadlockMonitor() {
+    static const char *deadlock_monitor = "/usr/local/sbin/deadlock_monitor";
+    if (::getenv("PROTON_RUN_DEADLOCK_MONITOR") != nullptr) {
+        if (::access(deadlock_monitor, X_OK) == 0) {
+            int pid = ::getpid();
+            std::string cmd_line = std::format("{} {} &", deadlock_monitor, pid);
+            ::system(cmd_line.c_str());
+        }
+    }
+}
+
 } // namespace
 
 void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
@@ -354,6 +365,7 @@ int App::main(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     int result = 0;
+    runDeadlockMonitor();
     grpc_init();
     {
         App app;
