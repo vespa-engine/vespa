@@ -133,10 +133,7 @@ std::string DecodeFastMapLookupNode::decode(std::string_view encoded, ValueType 
     if (!decodeValue(value, valueType, decoded)) {
         decoded = value;
     }
-    std::string result;
-    result.reserve(key.size() + separator.size() + decoded.size());
-    result.append(key).append(separator).append(decoded);
-    return result;
+    return std::format("{}{}{}", key, separator, decoded);
 }
 
 void DecodeFastMapLookupNode::onPrepare(bool preserveAccurateTypes) {
