@@ -488,6 +488,78 @@ TEST_F(RankSetupTest, compilation) {
     }
 }
 
+namespace {
+
+// Feature with a configurable base name, accepting anything as parameters (without resolving them as features).
+class StubBlueprint : public Blueprint {
+public:
+    explicit StubBlueprint(const std::string& name) : Blueprint(name) {}
+    void visitDumpFeatures(const IIndexEnvironment&, IDumpFeatureVisitor&) const override {}
+    Blueprint::UP createInstance() const override { return std::make_unique<StubBlueprint>(getBaseName()); }
+    bool setup(const IIndexEnvironment&, const StringVector&) override {
+        describeOutput("out", "out");
+        return true;
+    }
+    FeatureExecutor& createExecutor(const IQueryEnvironment&, vespalib::Stash& stash) const override {
+        return stash.create<SingleValueExecutor>(1.0);
+    }
+};
+
+} // namespace
+
+TEST_F(RankSetupTest, second_phase_attributes_are_detected) {
+    using Names = std::vector<std::string>;
+    using search::fef::FieldType;
+    IndexEnvironment env;
+    for (const auto* name : {"a", "b", "c", "d", "q"}) {
+        env.addField(FieldType::ATTRIBUTE, FieldInfo::CollectionType::SINGLE, name);
+    }
+    env.addField(FieldType::INDEX, FieldInfo::CollectionType::SINGLE, "idx");
+    for (const auto* name : {"attribute", "dotProduct", "closeness", "tensorFromLabels", "query", "stub"}) {
+        _factory.addPrototype(std::make_shared<StubBlueprint>(name));
+    }
+    {
+        // in order of appearance, without duplicates
+        RankSetup rs(_factory, env);
+        rs.setFirstPhaseRank("value(1)");
+        rs.setSecondPhaseRank("rankingExpression(\"attribute(b)+dotProduct(a,vec)+attribute(b)\")");
+        rs.add_match_feature("attribute(d)");
+        ASSERT_TRUE(rs.compile()) << rs.getJoinedWarnings();
+        EXPECT_EQ(Names({"b", "a"}), rs.get_second_phase_attributes());
+    }
+    {
+        // only parameters of features known to read attributes, and only attribute fields
+        RankSetup rs(_factory, env);
+        rs.setFirstPhaseRank("value(1)");
+        rs.setSecondPhaseRank("mysum(attribute(d),attribute(idx),attribute(unknown),query(q),staticrank(a),stub(b))");
+        ASSERT_TRUE(rs.compile()) << rs.getJoinedWarnings();
+        EXPECT_EQ(Names({"d"}), rs.get_second_phase_attributes());
+    }
+    {
+        // features given as parameters, also when they are not resolved as separate features
+        RankSetup rs(_factory, env);
+        rs.setFirstPhaseRank("value(1)");
+        rs.setSecondPhaseRank("mysum(tensorFromLabels(attribute(c),dim),stub(attribute(a)))");
+        ASSERT_TRUE(rs.compile()) << rs.getJoinedWarnings();
+        EXPECT_EQ(Names({"c", "a"}), rs.get_second_phase_attributes());
+    }
+    {
+        // attributes always read by first phase are left out
+        RankSetup rs(_factory, env);
+        rs.setFirstPhaseRank("mysum(attribute(c),closeness(field,b))");
+        rs.setSecondPhaseRank("mysum(attribute(a),attribute(b),attribute(c))");
+        ASSERT_TRUE(rs.compile()) << rs.getJoinedWarnings();
+        EXPECT_EQ(Names({"a", "b"}), rs.get_second_phase_attributes());
+    }
+    {
+        // no second phase
+        RankSetup rs(_factory, env);
+        rs.setFirstPhaseRank("attribute(a)");
+        ASSERT_TRUE(rs.compile());
+        EXPECT_EQ(Names(), rs.get_second_phase_attributes());
+    }
+}
+
 TEST_F(RankSetupTest, rank_setup) {
     using namespace search::fef::indexproperties;
     IndexEnvironment env;
@@ -533,6 +605,7 @@ TEST_F(RankSetupTest, rank_setup) {
     env.getProperties().add(matching::WeakAndStopWordAdjustLimit::NAME, "0.05");
     env.getProperties().add(matching::WeakAndStopWordDropLimit::NAME, "0.5");
     env.getProperties().add(matching::WeakAndAllowDropAll::NAME, "true");
+    env.getProperties().add(rank::SecondPhasePrefetchPagedAttributes::NAME, "true");
 
     RankSetup rs(_factory, env);
     RankSetup empty_rs(_factory, empty_env);
@@ -587,6 +660,8 @@ TEST_F(RankSetupTest, rank_setup) {
     EXPECT_EQ(rs.get_weakand_stop_word_adjust_limit(), 0.05);
     EXPECT_EQ(rs.get_weakand_stop_word_drop_limit(), 0.5);
     EXPECT_EQ(rs.get_weakand_allow_drop_all(), true);
+    EXPECT_FALSE(empty_rs.get_second_phase_prefetch_paged_attributes());
+    EXPECT_TRUE(rs.get_second_phase_prefetch_paged_attributes());
 }
 
 bool RankSetupTest::testExecution(const std::string& initRank, feature_t initScore, const std::string& finalRank,

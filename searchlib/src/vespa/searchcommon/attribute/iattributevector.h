@@ -470,6 +470,36 @@ public:
      * @return returns a readonly enumrefs view with entries equal to number of docs committed.
      */
     virtual EnumRefs make_enum_read_view() const noexcept { return EnumRefs(); }
+
+    /**
+     * Result of prefetch_docs().
+     */
+    struct PrefetchResult {
+        size_t ranges = 0; // number of memory ranges successfully hinted
+        size_t bytes = 0;  // number of bytes successfully hinted
+    };
+
+    /**
+     * Best effort hint that the values of the given documents will be read soon, e.g. by second phase ranking.
+     *
+     * Attributes with paged (file backed) memory may use this to start asynchronous reads of the
+     * memory holding the values, instead of taking one synchronous page fault per document later.
+     *
+     * @param docids the documents whose values will be read soon.
+     * @return what was hinted (nothing if not supported or not needed).
+     */
+    virtual PrefetchResult prefetch_docs(std::span<const DocId>) const { return {}; }
+
+    /**
+     * Returns true if this attribute has paged (file backed) memory and supports prefetching
+     * the values of documents with prefetch_docs().
+     *
+     * This is supported by tensor attributes and by single value and multi value numeric and string
+     * attributes. For attributes with an enum store (string and fast-search attributes) the per document
+     * enum indices are prefetched, but not the unique values they refer to, as those are shared between
+     * documents. Bool, raw, reference and predicate attributes do not support prefetching.
+     */
+    virtual bool supports_prefetch_docs() const noexcept { return false; }
 };
 
 } // namespace search::attribute

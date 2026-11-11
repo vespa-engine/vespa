@@ -5,6 +5,7 @@
 #include "address_space_components.h"
 #include "copy_multi_value_read_view.h"
 #include "multivalueattribute.h"
+#include "paged_memory_prefetcher.h"
 #include "raw_multi_value_read_view.h"
 
 #include <vespa/searchcommon/attribute/config.h>
@@ -247,6 +248,33 @@ template <typename B, typename M> bool MultiValueAttribute<B, M>::addDoc(DocId& 
 
 template <typename B, typename M> void MultiValueAttribute<B, M>::onAddDocs(DocId lidLimit) {
     this->_mvMapping.reserve(lidLimit);
+}
+
+template <typename B, typename M>
+attribute::IAttributeVector::PrefetchResult
+MultiValueAttribute<B, M>::prefetch_docs(std::span<const DocId> docids) const {
+    if (!supports_prefetch_docs()) {
+        // Not paged, values are already in memory.
+        return {};
+    }
+    // Both the mapping from docid to values and the values are paged. The mapping is prefetched first, as it
+    // must be read to locate the values. For enumerated attributes the values are enum indices; the values in
+    // the enum store are shared between documents, and are not prefetched.
+    attribute::PagedMemoryPrefetcher prefetcher(docids.size());
+    const DocId                      docid_limit = this->getCommittedDocIdLimit();
+    for (DocId docid : docids) {
+        if (docid < docid_limit) {
+            prefetcher.add(_mvMapping.get_entry_ref_memory(docid), sizeof(vespalib::datastore::AtomicEntryRef));
+        }
+    }
+    prefetcher.flush();
+    for (DocId docid : docids) {
+        if (docid < docid_limit) {
+            auto values = _mvMapping.get(docid);
+            prefetcher.add(values.data(), values.size_bytes());
+        }
+    }
+    return prefetcher.result();
 }
 
 template <typename B, typename M> uint32_t MultiValueAttribute<B, M>::getValueCount(DocId doc) const {

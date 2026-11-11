@@ -6,6 +6,7 @@
 #include "enummodifier.h"
 #include "floatbase.h"
 #include "integerbase.h"
+#include "paged_memory_prefetcher.h"
 #include "stringbase.h"
 
 #include <vespa/log/log.h>
@@ -26,6 +27,17 @@ AttributeVector::DocId SingleValueEnumAttributeBase::addDoc(bool& incGeneration)
     incGeneration = _enumIndices.isFull();
     _enumIndices.push_back(AtomicEntryRef());
     return _enumIndices.size() - 1;
+}
+
+attribute::IAttributeVector::PrefetchResult
+SingleValueEnumAttributeBase::prefetch_enum_indices(std::span<const DocId> docids, DocId docid_limit) const {
+    attribute::PagedMemoryPrefetcher prefetcher(docids.size());
+    for (DocId docid : docids) {
+        if (docid < docid_limit) {
+            prefetcher.add(&_enumIndices.acquire_elem_ref(docid), sizeof(AtomicEntryRef));
+        }
+    }
+    return prefetcher.result();
 }
 
 void SingleValueEnumAttributeBase::remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v) {

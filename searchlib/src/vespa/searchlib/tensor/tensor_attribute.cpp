@@ -22,6 +22,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/quantization_params.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
+#include <vespa/searchlib/attribute/paged_memory_prefetcher.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/datastore/i_compaction_context.h>
 #include <vespa/vespalib/quant/eden.h>
@@ -277,6 +278,23 @@ SerializedTensorRef TensorAttribute::get_serialized_tensor_ref(uint32_t) const {
 
 bool TensorAttribute::supports_get_serialized_tensor_ref() const {
     return false;
+}
+
+TensorAttribute::PrefetchResult TensorAttribute::prefetch_docs(std::span<const DocId> docids) const {
+    if (!supports_prefetch_docs()) {
+        // Not paged, tensors are already in memory.
+        return {};
+    }
+    // The mapping from docid to tensor is not paged, only the tensors.
+    attribute::PagedMemoryPrefetcher prefetcher(docids.size());
+    const DocId                      docid_limit = getCommittedDocIdLimit();
+    for (DocId docid : docids) {
+        if (docid < docid_limit) {
+            auto memory = _tensorStore.get_raw_memory(acquire_entry_ref(docid));
+            prefetcher.add(memory.data(), memory.size());
+        }
+    }
+    return prefetcher.result();
 }
 
 const vespalib::eval::ValueType& TensorAttribute::getTensorType() const {

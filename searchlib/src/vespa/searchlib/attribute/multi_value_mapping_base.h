@@ -45,6 +45,9 @@ public:
     vespalib::MemoryUsage getMemoryUsage() const;
     size_t getTotalValueCnt() const { return _totalValues; }
 
+    // The memory holding the mapping from the document to its values (cf. IAttributeVector::prefetch_docs).
+    const void* get_entry_ref_memory(uint32_t docId) const noexcept { return &_indices.acquire_elem_ref(docId); }
+
     // Called when making snapshot of indices in saver or unit test.
     const RefVector& get_ref_vector() const noexcept { return _indices; }
 

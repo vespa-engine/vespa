@@ -29,6 +29,7 @@ MatchingStats::MatchingStats(double prev_soft_doom_factor) noexcept
       _docsMatched(0),
       _docsRanked(0),
       _docsReRanked(0),
+      _second_phase_prefetched_bytes(0),
       _exact_nns_distances_computed(0),
       _approximate_nns_distances_computed(0),
       _approximate_nns_nodes_visited(0),
@@ -42,6 +43,7 @@ MatchingStats::MatchingStats(double prev_soft_doom_factor) noexcept
       _matchTime(),
       _groupingTime(),
       _rerankTime(),
+      _second_phase_prefetch_time(),
       _partitions() {
 }
 
@@ -54,6 +56,8 @@ MatchingStats& MatchingStats::merge_partition(const Partition& partition, size_t
     _docsMatched += partition.docsMatched();
     _docsRanked += partition.docsRanked();
     _docsReRanked += partition.docsReRanked();
+    _second_phase_prefetched_bytes += partition.second_phase_prefetched_bytes();
+    _second_phase_prefetch_time.add(partition._second_phase_prefetch_time);
     _doomOvertime.add(partition._doomOvertime);
     if (partition.softDoomed()) {
         _softDoomed = 1;
@@ -87,6 +91,7 @@ MatchingStats& MatchingStats::add(const MatchingStats& rhs) noexcept {
     _docsMatched += rhs._docsMatched;
     _docsRanked += rhs._docsRanked;
     _docsReRanked += rhs._docsReRanked;
+    _second_phase_prefetched_bytes += rhs._second_phase_prefetched_bytes;
     _exact_nns_distances_computed += rhs._exact_nns_distances_computed;
     _approximate_nns_distances_computed += rhs._approximate_nns_distances_computed;
     _approximate_nns_nodes_visited += rhs._approximate_nns_nodes_visited;
@@ -100,6 +105,7 @@ MatchingStats& MatchingStats::add(const MatchingStats& rhs) noexcept {
     _matchTime.add(rhs._matchTime);
     _groupingTime.add(rhs._groupingTime);
     _rerankTime.add(rhs._rerankTime);
+    _second_phase_prefetch_time.add(rhs._second_phase_prefetch_time);
     for (size_t id = 0; id < rhs.getNumPartitions(); ++id) {
         get_writable_partition(_partitions, id).add(rhs.getPartition(id));
     }

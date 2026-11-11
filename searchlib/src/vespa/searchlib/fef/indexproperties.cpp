@@ -108,6 +108,13 @@ std::string SecondPhase::lookup(const Properties& props) {
     return lookupString(props, NAME, DEFAULT_VALUE);
 }
 
+const std::string SecondPhasePrefetchPagedAttributes::NAME("vespa.rank.secondphase.prefetch_paged_attributes");
+const bool        SecondPhasePrefetchPagedAttributes::DEFAULT_VALUE(false);
+
+bool SecondPhasePrefetchPagedAttributes::check(const Properties& props, bool fallback) {
+    return lookupBool(props, NAME, fallback);
+}
+
 } // namespace rank
 
 namespace execute {

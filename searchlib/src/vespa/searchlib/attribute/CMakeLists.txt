@@ -111,6 +111,7 @@ vespa_add_library(searchlib_attribute OBJECT
     numeric_search_context.cpp
     numeric_sort_blob_writer.cpp
     numericbase.cpp
+    paged_memory_prefetcher.cpp
     posting_iterator_pack.cpp
     posting_list_merger.cpp
     postingchange.cpp

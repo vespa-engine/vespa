@@ -65,6 +65,8 @@ private:
     BlueprintResolver::SP                        _dumpResolver;
     std::string                                  _firstPhaseRankFeature;
     std::string                                  _secondPhaseRankFeature;
+    bool                                         _second_phase_prefetch_paged_attributes;
+    std::vector<std::string>                     _second_phase_attributes;
     std::string                                  _degradationAttribute;
     double                                       _termwise_limit;
     uint32_t                                     _numThreads;
@@ -117,6 +119,7 @@ private:
     bool                                         _mutateAllowQueryOverride;
 
     void compileAndCheckForErrors(BlueprintResolver& bp);
+    void detect_second_phase_attributes();
     void check_sort_features();
 
 public:
@@ -174,6 +177,27 @@ public:
      * @return feature name for second phase rank
      **/
     const std::string& getSecondPhaseRank() const { return _secondPhaseRankFeature; }
+
+    /**
+     * Set/get whether paged attributes read by second phase rank should be prefetched before it is calculated.
+     **/
+    void set_second_phase_prefetch_paged_attributes(bool value) noexcept {
+        _second_phase_prefetch_paged_attributes = value;
+    }
+    bool get_second_phase_prefetch_paged_attributes() const noexcept { return _second_phase_prefetch_paged_attributes; }
+
+    /**
+     * Get the names of the attributes that may be read when calculating second phase rank, and that
+     * are not always read when calculating first phase rank. This is the set of candidates for second
+     * phase prefetching.
+     *
+     * This is detected when compiling, with a heuristic: The parameters of the features known to read
+     * an attribute named by a parameter (e.g. 'attribute(name)' and 'dotProduct(name,vector)') that
+     * name an attribute field. It may include attributes that end up not being read (e.g. 'name' for
+     * 'closeness(field,name)' when the distance was calculated while matching), and it knows nothing
+     * about features not in its list (e.g. ones added by plugins).
+     **/
+    const std::vector<std::string>& get_second_phase_attributes() const noexcept { return _second_phase_attributes; }
 
     /**
      * Set the termwise limit
