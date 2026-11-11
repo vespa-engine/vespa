@@ -179,7 +179,8 @@ FeatureResolver RankProgram::resolve(const BlueprintResolver::FeatureMap& featur
     for (const auto& entry : features) {
         const auto&           name = entry.first;
         auto                  ref = entry.second;
-        bool                  is_object = specs[ref.executor].output_types[ref.output].is_object();
+        const auto&           feature_type = specs[ref.executor].output_types[ref.output];
+        bool                  is_object = feature_type.is_object();
         FeatureExecutor*      executor = _executors[ref.executor];
         const NumberOrObject* raw_value = executor->outputs().get_raw(ref.output);
         LazyValue lazy_value = check_const(raw_value) ? LazyValue(raw_value) : LazyValue(raw_value, executor);
@@ -190,7 +191,7 @@ FeatureResolver RankProgram::resolve(const BlueprintResolver::FeatureMap& featur
                 is_object = false;
             }
         }
-        result.add(name, lazy_value, is_object);
+        result.add(name, lazy_value, is_object, is_object ? &feature_type.type() : nullptr);
     }
     return result;
 }

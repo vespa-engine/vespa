@@ -4,10 +4,11 @@
 
 namespace search::fef {
 
-FeatureResolver::FeatureResolver(size_t size_hint) : _names(), _features(), _is_object() {
+FeatureResolver::FeatureResolver(size_t size_hint) : _names(), _features(), _is_object(), _types() {
     _names.reserve(size_hint);
     _features.reserve(size_hint);
     _is_object.reserve(size_hint);
+    _types.reserve(size_hint);
 }
 
 FeatureResolver::~FeatureResolver() = default;

@@ -79,6 +79,7 @@ using search::index::schema::DataType;
 using storage::spi::Timestamp;
 using vespalib::FeatureSet;
 using vespalib::nbostream;
+using vespalib::steady_time;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 
@@ -386,6 +387,7 @@ struct MyWorld {
     const proton::IDocumentMetaStore& metaStore;
     MatchingStats                     matchingStats;
     vespalib::TestClock               clock;
+    const std::atomic<steady_time>*   now_ref; // the matcher's clock, defaults to clock
     QueryLimiter                      queryLimiter;
     EmptyRankingAssetsRepo            constantValueRepo;
 
@@ -750,7 +752,7 @@ struct MyWorld {
     }
 
     Matcher::SP createMatcher() {
-        return std::make_shared<Matcher>(schema, config, clock.nowRef(), queryLimiter, constantValueRepo, 0);
+        return std::make_shared<Matcher>(schema, config, *now_ref, queryLimiter, constantValueRepo, 0);
     }
 
     struct MySearchHandler : ISearchHandler {
@@ -801,12 +803,16 @@ struct MyWorld {
     }
 
     SearchReply::UP performSearch(const SearchRequest& req, size_t threads) {
+        CHECK(threads <= MatchingTestSharedState::max_threads);
+        vespalib::LimitedThreadBundleWrapper threadBundle(shared_state.thread_bundle(), threads);
+        return performSearch(req, threadBundle);
+    }
+
+    SearchReply::UP performSearch(const SearchRequest& req, vespalib::ThreadBundle& threadBundle) {
         Matcher::SP                    matcher = createMatcher();
         SearchSession::OwnershipBundle owned_objects(
             {std::make_unique<MockAttributeContext>(), std::make_unique<FakeSearchContext>()},
             std::make_shared<MySearchHandler>(matcher));
-        CHECK(threads <= MatchingTestSharedState::max_threads);
-        vespalib::LimitedThreadBundleWrapper threadBundle(shared_state.thread_bundle(), threads);
         SearchReply::UP reply = matcher->match(req, threadBundle, searchContext, attributeContext, *sessionManager,
                                                metaStore, metaStore.getBucketDB(), std::move(owned_objects));
         matchingStats.add(matcher->getStats());
@@ -868,6 +874,7 @@ MyWorld::MyWorld(MatchingTestSharedState& shared_state_in)
       metaStore(shared_state.meta_store()),
       matchingStats(),
       clock(),
+      now_ref(&clock.nowRef()),
       queryLimiter() {
 }
 MyWorld::~MyWorld() = default;
@@ -1022,6 +1029,59 @@ TEST_F(MatchingTest, require_that_match_features_are_calculated_with_multi_threa
         SearchReply::UP   reply = world.performSearch(*request, threads);
         EXPECT_GT(reply->hits.size(), 0u);
         MyWorld::verify_match_features(*reply, "f1");
+    }
+}
+
+/**
+ * Thread bundle that sets an artificial clock to the given time each time it
+ * has run. The matcher runs the bundle for matching, and then again for
+ * extracting match features.
+ **/
+class SetClockAfterRun : public vespalib::ThreadBundle {
+    vespalib::ThreadBundle&   _thread_bundle;
+    std::atomic<steady_time>& _now;
+    steady_time               _time;
+    size_t                    _runs;
+
+public:
+    SetClockAfterRun(vespalib::ThreadBundle& thread_bundle, std::atomic<steady_time>& now, steady_time time)
+        : _thread_bundle(thread_bundle), _now(now), _time(time), _runs(0) {}
+    size_t size() const override { return _thread_bundle.size(); }
+    void run(vespalib::Runnable* const* targets, size_t cnt) override {
+        _thread_bundle.run(targets, cnt);
+        _now.store(_time, std::memory_order_relaxed);
+        ++_runs;
+    }
+    size_t runs() const noexcept { return _runs; }
+};
+
+TEST_F(MatchingTest, require_that_match_features_get_default_values_on_hard_timeout_during_extraction) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.basicResults();
+    world.setup_match_features();
+    std::atomic<steady_time> now(vespalib::steady_clock::now());
+    world.now_ref = &now;
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    // The hard timeout is reached after matching, before match features are extracted.
+    SetClockAfterRun thread_bundle(vespalib::ThreadBundle::trivial(), now, request->getTimeOfDoom() + 1s);
+    SearchReply::UP  reply = world.performSearch(*request, thread_bundle);
+    EXPECT_EQ(thread_bundle.runs(), 2u); // matching, then match feature extraction
+    // All hits are returned, with default values of the correct type for their match features.
+    EXPECT_EQ(reply->totalHitCount, 9u);
+    ASSERT_EQ(reply->hits.size(), 9u);
+    ASSERT_EQ(reply->match_features.names.size(), 5u);
+    ASSERT_EQ(reply->match_features.values.size(), 5 * reply->hits.size());
+    auto zero_tensor = TensorSpec("tensor(x[3])").add({{"x", 0}}, 0).add({{"x", 1}}, 0).add({{"x", 2}}, 0);
+    for (size_t i = 0; i < reply->hits.size(); ++i) {
+        const auto* f = &reply->match_features.values[i * 5];
+        for (size_t j = 0; j < 4; ++j) {
+            EXPECT_TRUE(f[j].is_double());
+            EXPECT_EQ(f[j].as_double(), 0.0);
+        }
+        ASSERT_TRUE(f[4].is_data()); // rankingExpression("tensor(x[3])(x)")
+        nbostream buf(f[4].as_data().data, f[4].as_data().size);
+        EXPECT_EQ(spec_from_value(*SimpleValue::from_stream(buf)), zero_tensor);
     }
 }
 
