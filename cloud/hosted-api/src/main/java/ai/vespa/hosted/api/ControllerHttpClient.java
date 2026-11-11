@@ -484,6 +484,7 @@ public abstract class ControllerHttpClient {
         submission.projectId().ifPresent(projectId -> rootObject.setLong("projectId", projectId));
         submission.risk().ifPresent(risk -> rootObject.setLong("risk", risk));
         submission.description().ifPresent(description -> rootObject.setString("description", description));
+        if (submission.skipTests()) rootObject.setBool("skipTests", true);
         return toJson(slime);
     }
 
