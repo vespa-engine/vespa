@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-11-10
+Last updated: 2026-11-11
 
 ---
 
@@ -961,6 +961,13 @@ Last updated: 2026-11-10
 ## org.codehaus.plexus 1.30.0 — Apache 2.0
 
 - Homepage: <https://codehaus-plexus.github.io/plexus-pom/>
+- Codehaus Plexus
+
+---
+
+## org.codehaus.plexus 3.8.0 — Apache 2.0
+
+- Homepage: <https://codehaus-plexus.github.io/>
 - Codehaus Plexus
 
 ---
