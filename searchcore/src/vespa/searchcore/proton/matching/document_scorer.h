@@ -7,6 +7,8 @@
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
+#include <cmath>
+
 namespace search::fef {
 class RankProgram;
 }
@@ -32,7 +34,13 @@ public:
 
     search::feature_t doScore(uint32_t docId) {
         _searchItr.unpack(docId);
-        return _scoreFeature.as_number(docId);
+        double score = _scoreFeature.as_number(docId);
+        // Turn NaN into -Infinity like in first-phase ranking
+        // Leave +Infinity be +Infinity (unlike in first-phase ranking)
+        if (std::isnan(score)) {
+            score = -std::numeric_limits<double>::infinity();
+        }
+        return score;
     }
 
     // annotate hits with rank score, may change order

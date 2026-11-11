@@ -1303,6 +1303,22 @@ TEST_F(MatchingTest, require_that_reranking_is_performed_with_multi_threaded_mat
     }
 }
 
+TEST_F(MatchingTest, require_that_nan_second_phase_score_is_mapped_to_negative_infinity) {
+    MyWorld world(shared_state());
+    world.basicSetup(); // heap size 10, so all 9 hits are re-ranked
+    // Second phase score is attribute(a2) (= 2 * docid), except for doc 900, which gets NaN
+    world.config.add("rankingExpression(nan_for_900).rankingScript", "if(attribute(a1) == 900, 0/0, attribute(a2))");
+    world.config.add(indexproperties::rank::SecondPhase::NAME, "rankingExpression(nan_for_900)");
+    world.basicResults();
+    SearchRequest::SP request = MyWorld::createSimpleRequest("f1", "spread");
+    SearchReply::UP   reply = world.performSearch(*request, 1);
+    ASSERT_EQ(9u, reply->hits.size());
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::800").getGlobalId(), reply->hits[0].gid);
+    EXPECT_EQ(1600.0, reply->hits[0].metric);
+    EXPECT_EQ(document::DocumentId("id:ns:searchdocument::900").getGlobalId(), reply->hits[8].gid);
+    EXPECT_EQ(-std::numeric_limits<double>::infinity(), reply->hits[8].metric);
+}
+
 TEST_F(MatchingTest, require_that_reranking_is_not_diverse_when_not_requested_to_be) {
     MyWorld world(shared_state());
     world.basicSetup();
