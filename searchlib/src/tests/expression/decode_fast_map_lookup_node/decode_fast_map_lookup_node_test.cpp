@@ -158,11 +158,11 @@ TEST(DecodeFastMapLookupNodeTest, separator_between_key_and_value_can_be_given) 
 }
 
 TEST(DecodeFastMapLookupNodeTest, separator_defaults_to_colon_and_can_be_set) {
-    EXPECT_EQ(":", DecodeFastMapLookupNode("m$lookup", ValueType::INT).getSeparator());
-    EXPECT_EQ(":", DecodeFastMapLookupNode().getSeparator());
-    EXPECT_EQ("=", DecodeFastMapLookupNode("m$lookup", ValueType::INT, "=").getSeparator());
+    EXPECT_EQ(":", DecodeFastMapLookupNode("m$lookup", ValueType::INT).separator());
+    EXPECT_EQ(":", DecodeFastMapLookupNode().separator());
+    EXPECT_EQ("=", DecodeFastMapLookupNode("m$lookup", ValueType::INT, "=").separator());
     DecodeFastMapLookupNode node("m$lookup", ValueType::INT);
-    EXPECT_EQ("->", node.setSeparator("->").getSeparator());
+    EXPECT_EQ("->", node.separator("->").separator());
 }
 
 TEST(DecodeFastMapLookupNodeTest, malformed_entries_are_kept_undecoded) {
@@ -192,18 +192,18 @@ std::unique_ptr<DecodeFastMapLookupNode> serialize_and_deserialize(const DecodeF
 TEST(DecodeFastMapLookupNodeTest, attribute_name_value_type_and_separator_are_copied_and_serialized) {
     DecodeFastMapLookupNode node("m$lookup", ValueType::LONG, ": ");
     DecodeFastMapLookupNode copy(node);
-    EXPECT_EQ("m$lookup", copy.getAttributeName());
-    EXPECT_EQ(ValueType::LONG, copy.getValueType());
-    EXPECT_EQ(": ", copy.getSeparator());
+    EXPECT_EQ("m$lookup", copy.attribute_name());
+    EXPECT_EQ(ValueType::LONG, copy.value_type());
+    EXPECT_EQ(": ", copy.separator());
 
     size_t size = 0;
     auto   result = serialize_and_deserialize(node, &size);
     // class id, no result yet, the attribute name, one byte value type and the separator: nothing about the input
     EXPECT_EQ(4u + 1u + 4u + 8u + 1u + 4u + 2u, size);
     ASSERT_TRUE(result);
-    EXPECT_EQ("m$lookup", result->getAttributeName());
-    EXPECT_EQ(ValueType::LONG, result->getValueType());
-    EXPECT_EQ(": ", result->getSeparator());
+    EXPECT_EQ("m$lookup", result->attribute_name());
+    EXPECT_EQ(ValueType::LONG, result->value_type());
+    EXPECT_EQ(": ", result->separator());
 }
 
 TEST(DecodeFastMapLookupNodeTest, all_value_types_are_serialized) {
@@ -212,7 +212,7 @@ TEST(DecodeFastMapLookupNodeTest, all_value_types_are_serialized) {
     {
         auto result = serialize_and_deserialize(DecodeFastMapLookupNode("m$lookup", type));
         ASSERT_TRUE(result);
-        EXPECT_EQ(type, result->getValueType());
+        EXPECT_EQ(type, result->value_type());
     }
 }
 
@@ -226,9 +226,9 @@ TEST(DecodeFastMapLookupNodeTest, unknown_serialized_value_type_is_deserialized_
     auto  deserialized = vespalib::Identifiable::create(serializer);
     auto* result = dynamic_cast<DecodeFastMapLookupNode*>(deserialized.get());
     ASSERT_NE(nullptr, result);
-    EXPECT_EQ("m$lookup", result->getAttributeName());
-    EXPECT_EQ(ValueType::UNKNOWN, result->getValueType());
-    EXPECT_EQ("=", result->getSeparator());
+    EXPECT_EQ("m$lookup", result->attribute_name());
+    EXPECT_EQ(ValueType::UNKNOWN, result->value_type());
+    EXPECT_EQ("=", result->separator());
 }
 
 class DecodeFastMapLookupNodeAttributeTest : public ::testing::Test {
@@ -299,7 +299,7 @@ TEST_F(DecodeFastMapLookupNodeAttributeTest, entries_of_hidden_attribute_are_dec
 
 TEST_F(DecodeFastMapLookupNodeAttributeTest, entries_are_decoded_with_set_separator) {
     auto node = make_node("m$lookup", ValueType::INT);
-    node->setSeparator(" -> ");
+    node->separator(" -> ");
     auto tree = make_tree(std::move(node));
     EXPECT_EQ((std::vector<std::string>{"a -> 1", "b -> -1"}), values_of(tree, 1));
 }

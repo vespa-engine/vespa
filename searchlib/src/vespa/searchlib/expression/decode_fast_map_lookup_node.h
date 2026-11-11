@@ -26,8 +26,8 @@ public:
     static constexpr std::string_view default_separator = ":";
 
 private:
-    std::string                    _attributeName;
-    ValueType                      _valueType;
+    std::string                    _attribute_name;
+    ValueType                      _value_type;
     std::string                    _separator;
     std::unique_ptr<AttributeNode> _input; // reads the hidden attribute; created from the name, not serialized
 
@@ -40,16 +40,16 @@ public:
     DECLARE_NBO_SERIALIZE;
     DECLARE_EXPRESSIONNODE(DecodeFastMapLookupNode);
     DecodeFastMapLookupNode() noexcept;
-    DecodeFastMapLookupNode(std::string_view attributeName, ValueType valueType,
+    DecodeFastMapLookupNode(std::string_view attribute_name, ValueType value_type,
                             std::string_view separator = default_separator);
     DecodeFastMapLookupNode(const DecodeFastMapLookupNode&);
     DecodeFastMapLookupNode& operator=(const DecodeFastMapLookupNode&);
     ~DecodeFastMapLookupNode() override;
 
-    [[nodiscard]] const std::string& getAttributeName() const noexcept { return _attributeName; }
-    [[nodiscard]] ValueType getValueType() const noexcept { return _valueType; }
-    [[nodiscard]] const std::string& getSeparator() const noexcept { return _separator; }
-    DecodeFastMapLookupNode& setSeparator(std::string_view separator) {
+    [[nodiscard]] const std::string& attribute_name() const noexcept { return _attribute_name; }
+    [[nodiscard]] ValueType value_type() const noexcept { return _value_type; }
+    [[nodiscard]] const std::string& separator() const noexcept { return _separator; }
+    DecodeFastMapLookupNode& separator(std::string_view separator) {
         _separator = separator;
         return *this;
     }
@@ -62,7 +62,7 @@ public:
      * as is. An element without the encoded separator, or with a value that is not valid excess hex for the value
      * type, is returned as stored, without decoding.
      */
-    static std::string decode(std::string_view encoded, ValueType valueType,
+    static std::string decode(std::string_view encoded, ValueType value_type,
                               std::string_view separator = default_separator);
 
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
