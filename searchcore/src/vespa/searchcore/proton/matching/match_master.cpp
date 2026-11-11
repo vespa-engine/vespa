@@ -67,7 +67,18 @@ auto make_reply(const MatchToolsFactory& mtf, ResultProcessor& processor, Thread
         auto docs = processor.extract_docid_ordering(*full_result);
         auto reply = processor.makeReply(std::move(full_result));
         if ((docs.size() > 0) && reply->_reply) {
-            reply->_reply->match_features = ExtractFeatures::get_match_features(mtf, docs, bundle);
+            auto match_features = ExtractFeatures::get_match_features(mtf, docs, bundle);
+            if (match_features) {
+                reply->_reply->match_features = std::move(*match_features);
+            } else {
+                // Hard timeout during extraction: drop all hits, like when the
+                // hard timeout is reached during matching, instead of returning
+                // hits without their match features.
+                reply->_reply->totalHitCount = 0;
+                reply->_reply->hits.clear();
+                reply->_reply->sortIndex.clear();
+                reply->_reply->sortData.clear();
+            }
         }
         return reply;
     } else {

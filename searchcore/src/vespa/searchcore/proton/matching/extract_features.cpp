@@ -15,6 +15,8 @@
 #include <vespa/vespalib/util/runnable.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
+#include <atomic>
+
 using search::fef::FeatureResolver;
 using search::fef::RankProgram;
 using search::queryeval::MatchingPhase;
@@ -39,15 +41,21 @@ struct MyChunk : Runnable {
     const std::pair<uint32_t, uint32_t>* end;
     FeatureValues&                       result;
     const Doom&                          doom;
+    std::atomic<bool>&                   feature_extraction_failed;
     MyChunk(const std::pair<uint32_t, uint32_t>* begin_in, const std::pair<uint32_t, uint32_t>* end_in,
-            FeatureValues& result_in, const Doom& doom_in)
-        : begin(begin_in), end(end_in), result(result_in), doom(doom_in) {}
+            FeatureValues& result_in, const Doom& doom_in, std::atomic<bool>& feature_extraction_failed_in)
+        : begin(begin_in),
+          end(end_in),
+          result(result_in),
+          doom(doom_in),
+          feature_extraction_failed(feature_extraction_failed_in) {}
     void calculate_features(SearchIterator& search, const FeatureResolver& resolver) {
         CHECK(end > begin);
         CHECK(resolver.num_features() == result.names.size());
         search.initRange(begin[0].first, end[-1].first + 1);
         for (auto pos = begin; pos != end; ++pos) {
             if (doom.hard_doom()) {
+                feature_extraction_failed.store(true, std::memory_order_relaxed);
                 return;
             }
             search.unpack(pos->first);
@@ -61,17 +69,20 @@ struct FirstChunk : MyChunk {
     SearchIterator&        search;
     const FeatureResolver& resolver;
     FirstChunk(const std::pair<uint32_t, uint32_t>* begin_in, const std::pair<uint32_t, uint32_t>* end_in,
-               FeatureValues& result_in, const Doom& doom_in, SearchIterator& search_in,
-               const FeatureResolver& resolver_in)
-        : MyChunk(begin_in, end_in, result_in, doom_in), search(search_in), resolver(resolver_in) {}
+               FeatureValues& result_in, const Doom& doom_in, std::atomic<bool>& feature_extraction_failed_in,
+               SearchIterator& search_in, const FeatureResolver& resolver_in)
+        : MyChunk(begin_in, end_in, result_in, doom_in, feature_extraction_failed_in),
+          search(search_in),
+          resolver(resolver_in) {}
     void run() override { calculate_features(search, resolver); }
 };
 
 struct LaterChunk : MyChunk {
     const MatchToolsFactory& mtf;
     LaterChunk(const std::pair<uint32_t, uint32_t>* begin_in, const std::pair<uint32_t, uint32_t>* end_in,
-               FeatureValues& result_in, const Doom& doom_in, const MatchToolsFactory& mtf_in)
-        : MyChunk(begin_in, end_in, result_in, doom_in), mtf(mtf_in) {}
+               FeatureValues& result_in, const Doom& doom_in, std::atomic<bool>& feature_extraction_failed_in,
+               const MatchToolsFactory& mtf_in)
+        : MyChunk(begin_in, end_in, result_in, doom_in, feature_extraction_failed_in), mtf(mtf_in) {}
     void run() override {
         auto tools = mtf.createMatchTools();
         tools->setup_match_features();
@@ -101,8 +112,9 @@ FeatureSet::UP ExtractFeatures::get_feature_set(SearchIterator& search, RankProg
     return result;
 }
 
-FeatureValues ExtractFeatures::get_match_features(const MatchToolsFactory& mtf, const OrderedDocs& docs,
-                                                  ThreadBundle& thread_bundle) {
+std::optional<FeatureValues> ExtractFeatures::get_match_features(const MatchToolsFactory& mtf,
+                                                                 const OrderedDocs&       docs,
+                                                                 ThreadBundle&            thread_bundle) {
     FeatureValues result;
     mtf.query().set_matching_phase(MatchingPhase::MATCH_FEATURES);
     auto tools = mtf.createMatchTools();
@@ -110,6 +122,7 @@ FeatureValues ExtractFeatures::get_match_features(const MatchToolsFactory& mtf, 
     FeatureResolver resolver(tools->rank_program().get_seeds(false));
     result.names = FefUtils::extract_feature_names(resolver, mtf.get_feature_rename_map());
     result.values.resize(result.names.size() * docs.size());
+    std::atomic<bool>         feature_extraction_failed(false);
     size_t                    num_threads = thread_bundle.size();
     std::vector<Runnable::UP> chunks;
     chunks.reserve(num_threads);
@@ -123,15 +136,19 @@ FeatureValues ExtractFeatures::get_match_features(const MatchToolsFactory& mtf, 
         }
         if (i == 0) {
             chunks.push_back(std::make_unique<FirstChunk>(docs.data() + idx, docs.data() + idx + chunk_size, result,
-                                                          tools->getDoom(), tools->search(), resolver));
+                                                          tools->getDoom(), feature_extraction_failed,
+                                                          tools->search(), resolver));
         } else {
             chunks.push_back(std::make_unique<LaterChunk>(docs.data() + idx, docs.data() + idx + chunk_size, result,
-                                                          tools->getDoom(), mtf));
+                                                          tools->getDoom(), feature_extraction_failed, mtf));
         }
         idx += chunk_size;
     }
     CHECK(idx == docs.size());
     thread_bundle.run(chunks);
+    if (feature_extraction_failed.load(std::memory_order_relaxed)) {
+        return std::nullopt;
+    }
     return result;
 }
 

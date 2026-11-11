@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/vespalib/util/featureset.h>
 
+#include <optional>
 #include <vector>
 
 namespace vespalib {
@@ -45,10 +46,11 @@ struct ExtractFeatures {
     using OrderedDocs = std::vector<std::pair<uint32_t, uint32_t>>;
 
     /**
-     * Extract match features using multiple threads.
+     * Extract match features using multiple threads. Returns nothing if
+     * the hard timeout was reached before all features were extracted.
      **/
-    static FeatureValues get_match_features(const MatchToolsFactory& mtf, const OrderedDocs& docs,
-                                            ThreadBundle& thread_bundle);
+    static std::optional<FeatureValues> get_match_features(const MatchToolsFactory& mtf, const OrderedDocs& docs,
+                                                           ThreadBundle& thread_bundle);
 };
 
 } // namespace proton::matching
