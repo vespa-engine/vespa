@@ -93,8 +93,9 @@ public class FlagData {
     }
 
     public Optional<RawFlag> resolve(FetchVector fetchVector) {
+        FetchVector vector = defaultFetchVector.with(fetchVector);
         return rules.stream()
-                .filter(rule -> rule.match(defaultFetchVector.with(fetchVector)))
+                .filter(rule -> rule.match(vector))
                 .findFirst()
                 .flatMap(Rule::getValueToApply);
     }

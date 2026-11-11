@@ -18,6 +18,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -53,5 +55,24 @@ public class FlagsDbImplTest {
 
         db.removeValue(flagId2);
         assertFalse(db.getValue(flagId2).isPresent());
+    }
+
+    @Test
+    void parsed_data_is_reused_until_changed() {
+        FlagsDbImpl db = new FlagsDbImpl(new MockCurator());
+        FlagId flagId = new FlagId("id");
+        db.setValue(flagId, new FlagData(flagId, new FetchVector(), new Rule(Optional.of(JsonNodeRawFlag.fromJson("1")))));
+
+        FlagData first = db.getValue(flagId).get();
+        assertSame(first, db.getValue(flagId).get());
+
+        db.setValue(flagId, new FlagData(flagId, new FetchVector(), new Rule(Optional.of(JsonNodeRawFlag.fromJson("2")))));
+        FlagData second = db.getValue(flagId).get();
+        assertNotSame(first, second);
+        assertEquals("2", second.resolve(new FetchVector()).get().asJson());
+        assertSame(second, db.getValue(flagId).get());
+
+        db.removeValue(flagId);
+        assertFalse(db.getValue(flagId).isPresent());
     }
 }

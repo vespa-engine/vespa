@@ -10,9 +10,11 @@ import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
 import org.apache.curator.framework.recipes.cache.ChildData;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -26,6 +28,8 @@ public class FlagsDbImpl extends AbstractComponent implements FlagsDb {
 
     private final Curator curator;
     private final Curator.DirectoryCache cache;
+    /** Deserialized flag data, reused as long as the cached bytes are unchanged. */
+    private final Map<FlagId, Parsed> parsed = new ConcurrentHashMap<>();
 
     @Inject
     public FlagsDbImpl(Curator curator) {
@@ -40,8 +44,18 @@ public class FlagsDbImpl extends AbstractComponent implements FlagsDb {
     public Optional<FlagData> getValue(FlagId flagId) {
         return Optional.ofNullable(cache.getCurrentData(getZkPathFor(flagId)))
                 .map(ChildData::getData)
-                .map(FlagData::deserializeUtf8Json);
+                .map(bytes -> deserialize(flagId, bytes));
     }
+
+    private FlagData deserialize(FlagId flagId, byte[] bytes) {
+        Parsed previous = parsed.get(flagId);
+        if (previous != null && Arrays.equals(previous.bytes, bytes)) return previous.data;
+        FlagData data = FlagData.deserializeUtf8Json(bytes);
+        parsed.put(flagId, new Parsed(bytes.clone(), data));
+        return data;
+    }
+
+    private record Parsed(byte[] bytes, FlagData data) { }
 
     @Override
     public void setValue(FlagId flagId, FlagData data) {
