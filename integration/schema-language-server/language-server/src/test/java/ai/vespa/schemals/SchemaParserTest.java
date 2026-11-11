@@ -257,6 +257,7 @@ public class SchemaParserTest {
             "src/test/sdfiles/single/structinfieldset.sd",
             "src/test/sdfiles/single/subqueries.sd",
             "src/test/sdfiles/single/tensorfromlabels.sd",
+            "src/test/sdfiles/single/unprefixedfunctions.sd",
         };
 
         return Arrays.stream(filePaths)
@@ -357,6 +358,7 @@ public class SchemaParserTest {
             new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodelinput.sd", 6),
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
+            new BadFileTestCase("src/test/sdfiles/single/unprefixedfunctionsbad.sd", 3),
             new BadFileTestCase("src/test/sdfiles/single/rankproperties.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/sortfeaturesbad.sd", 11),
             new BadFileTestCase("src/test/sdfiles/single/tensorGenerate.sd", 2),

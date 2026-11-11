@@ -642,7 +642,8 @@ def build_grammar(
         },
     })
 
-    # function [inline] NAME(args) – like the LSP, color the parameter names but not the parentheses
+    # function [inline] NAME(args) { body } – like the LSP, color the parameter names but not the parentheses.
+    # The body is a ranking expression, optionally (legacy) written as "expression: ..." or "expression { ... }".
     declaration_patterns.append({
         "begin": r"\b(function)\s+(?:(inline)\s+)?(" + _IDENT + r")\s*(\()",
         "beginCaptures": {
@@ -651,9 +652,22 @@ def build_grammar(
             "3": {"name": "entity.name.function.vespa"},
             "4": {"name": "punctuation.section.parens.begin.vespa"},
         },
-        "end": r"\)",
-        "endCaptures": {"0": {"name": "punctuation.section.parens.end.vespa"}},
+        "end": r"(?<=\})",
         "patterns": [
+            {"match": r"\)", "name": "punctuation.section.parens.end.vespa"},
+            {"include": "#comment"},
+            {
+                "name": "meta.block.function-body.vespa",
+                "begin": r"\{",
+                "beginCaptures": {"0": {"name": "punctuation.section.block.begin.vespa"}},
+                "end": r"\}",
+                "endCaptures": {"0": {"name": "punctuation.section.block.end.vespa"}},
+                "patterns": [
+                    {"include": "#expression-block"},
+                    {"include": "#expression-inline"},
+                    {"include": "#ranking-expression"},
+                ],
+            },
             {"match": _IDENT, "name": "variable.parameter.vespa"},
             {"match": ",", "name": "punctuation.separator.comma.vespa"},
         ],

@@ -2567,7 +2567,7 @@ void functionElm(ParsedRankProfile profile) :
           [ parameter = identifierStr()         { func.addParameter(parameter); }
           ( <COMMA> parameter = identifierStr() { func.addParameter(parameter); } )* ]
       ")"
-      openLbrace() expression = expressionElm() (<NL>)* <RBRACE> )
+      openLbrace() expression = functionBodyElm() <RBRACE> )
     {
         func.setExpression(expression);
         func.setInline(inline);
@@ -3644,6 +3644,32 @@ Node consumedExpressionElm(boolean multiline) :
         }
     )
     { return thisProduction; }
+;
+
+/**
+ * Consumes the body of a function, up to but not including the closing brace:
+ * Either a bare ranking expression, or (for compatibility) an expression
+ * written as "expression: ..." or "expression { ... }".
+ *
+ * @return the ranking expression
+ */
+String functionBodyElm() :
+{
+    Node expressionNode;
+    String expr;
+}
+
+    (
+        ( expr = expressionElm() (<NL>)* )
+        |
+        ( expressionNode = consumedExpressionElm(true)
+          {
+              expr = ((consumedExpressionElm)expressionNode).getRankingExpression();
+              expressionNode.setBeginOffset(expressionNode.getBeginOffset() - expr.length());
+          }
+        )
+    )
+    { return expr; }
 ;
 
 /**
