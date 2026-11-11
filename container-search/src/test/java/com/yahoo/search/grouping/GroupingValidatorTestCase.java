@@ -4,11 +4,7 @@ package com.yahoo.search.grouping;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.ClusterConfig;
-import com.yahoo.search.grouping.request.DecodeFastMapLookupFunction;
 import com.yahoo.search.grouping.request.GroupingOperation;
-import com.yahoo.search.schema.Cluster;
-import com.yahoo.search.schema.Field;
-import com.yahoo.search.schema.Schema;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
@@ -218,125 +214,9 @@ public class GroupingValidatorTestCase {
     }
 
     @Test
-    void fast_map_lookup_value_type_is_resolved() {
-        for (String type : List.of("int", "long", "float", "double", "string")) {
-            var schemaInfo = schemaInfo(schemaWithLookup("one", type));
-            assertEquals(Field.Type.from(type), resolvedValueType(schemaInfo, createQuery(FAST_MAP_GROUPING)));
-        }
-        var query = createQuery("all(group(decodefastmaplookup(map.lookup, \": \")) each(output(count())))");
-        assertEquals(Field.Type.from("int"), resolvedValueType(schemaInfo(schemaWithLookup("one", "int")), query));
-    }
-
-    @Test
-    void fast_map_lookup_value_type_is_resolved_when_validation_is_disabled() {
-        var query = createQuery(FAST_MAP_GROUPING);
-        query.properties().set(GroupingValidator.PARAM_ENABLED, false);
-        assertEquals(Field.Type.from("long"), resolvedValueType(schemaInfo(schemaWithLookup("one", "long")), query));
-    }
-
-    @Test
-    void unavailable_fast_map_lookup_throws() {
-        var schemaInfo = schemaInfo(schemaWithLookup("one", "int"));
-        assertFastMapLookupRejected("Grouping request references fast map lookup 'map.other' which is not available in cluster 'myCluster'.",
-                                    schemaInfo, createQuery("all(group(decodefastmaplookup(map.other)) each(output(count())))"));
-        // The lookup attribute is missing, as for an imported field
-        var query = createQuery(FAST_MAP_GROUPING);
-        var exception = assertThrows(IllegalArgumentException.class,
-                                     () -> validateGrouping("myCluster", ClusterConfig.IndexMode.Enum.INDEX,
-                                                            createAttributesConfig(List.of()), schemaInfo, query));
-        assertEquals("Grouping request references fast map lookup 'map.lookup' which is not available in cluster 'myCluster'.",
-                     exception.getMessage());
-        // No schema in the cluster has the lookup
-        assertFastMapLookupRejected("Grouping request references fast map lookup 'map.lookup' which is not available in cluster 'myCluster'.",
-                                    schemaInfo(new Schema.Builder("one").build()), createQuery(FAST_MAP_GROUPING));
-    }
-
-    @Test
-    void fast_map_lookup_with_undecodable_value_type_throws() {
-        assertFastMapLookupRejected("Grouping request references fast map lookup 'map.lookup', whose values of type BYTE cannot be decoded.",
-                                    schemaInfo(schemaWithLookup("one", "byte")), createQuery(FAST_MAP_GROUPING));
-    }
-
-    @Test
-    void fast_map_lookup_must_have_same_value_type_in_schemas_searched() {
-        var schemaInfo = schemaInfo(schemaWithLookup("one", "int"), schemaWithLookup("two", "int"),
-                                    schemaWithLookup("three", "long"), new Schema.Builder("four").build());
-        assertFastMapLookupRejected("Grouping request references fast map lookup 'map.lookup', which has different value " +
-                                    "types in the schemas searched in cluster 'myCluster': {one=INT, three=LONG, two=INT}. " +
-                                    "Restrict the query to schemas with the same value type.",
-                                    schemaInfo, createQuery(FAST_MAP_GROUPING));
-        assertEquals(Field.Type.from("long"), resolvedValueType(schemaInfo, restricted(createQuery(FAST_MAP_GROUPING), "three")));
-        assertEquals(Field.Type.from("int"), resolvedValueType(schemaInfo, restricted(createQuery(FAST_MAP_GROUPING), "one", "two", "four")));
-    }
-
-    @Test
-    void fast_map_lookup_value_type_is_resolved_from_schemas_in_this_cluster_only() {
-        var schemaInfo = new SchemaInfo(List.of(schemaWithLookup("one", "int"), schemaWithLookup("elsewhere", "long")),
-                                        List.of(new Cluster.Builder("myCluster").addSchema("one").build(),
-                                                new Cluster.Builder("otherCluster").addSchema("elsewhere").build()));
-        assertEquals(Field.Type.from("int"), resolvedValueType(schemaInfo, createQuery(FAST_MAP_GROUPING)));
-    }
-
-    @Test
-    void fast_map_lookup_throws_in_streaming_mode() {
-        for (boolean validate : List.of(true, false)) {
-            var query = createQuery(FAST_MAP_GROUPING);
-            query.properties().set(GroupingValidator.PARAM_ENABLED, validate);
-            var exception = assertThrows(IllegalArgumentException.class,
-                                         () -> validateGrouping("myCluster", ClusterConfig.IndexMode.Enum.STREAMING,
-                                                                createFastMapLookupConfig(),
-                                                                schemaInfo(schemaWithLookup("one", "int")), query));
-            assertEquals("Grouping request references fast map lookup 'map.lookup', but decodefastmaplookup " +
-                         "is not supported in streaming mode (cluster 'myCluster').",
-                         exception.getMessage());
-        }
-    }
-
-    @Test
     void other_grouping_is_not_validated_in_streaming_mode() {
         validateGrouping("myCluster", ClusterConfig.IndexMode.Enum.STREAMING, createAttributesConfig(List.of()),
-                         SchemaInfo.empty(), createQuery("all(group(foo) each(output(max(bar))))"));
-    }
-
-    private static final String FAST_MAP_GROUPING = "all(group(decodefastmaplookup(map.lookup)) each(output(count())))";
-
-    private static AttributesConfig createFastMapLookupConfig() {
-        var builder = new AttributesConfig.Builder();
-        builder.attribute(new AttributesConfig.Attribute.Builder().name("map$lookup")
-                                  .datatype(AttributesConfig.Attribute.Datatype.STRING)
-                                  .collectiontype(AttributesConfig.Attribute.Collectiontype.ARRAY));
-        return new AttributesConfig(builder);
-    }
-
-    private static Schema schemaWithLookup(String name, String valueType) {
-        return new Schema.Builder(name)
-                .add(new Field.Builder("map", "map<string," + valueType + ">").addFastMapSearch("lookup").build())
-                .build();
-    }
-
-    private static SchemaInfo schemaInfo(Schema ... schemas) {
-        var cluster = new Cluster.Builder("myCluster");
-        for (var schema : schemas)
-            cluster.addSchema(schema.name());
-        return new SchemaInfo(List.of(schemas), List.of(cluster.build()));
-    }
-
-    private static Query restricted(Query query, String ... schemas) {
-        query.getModel().setRestrict(String.join(",", schemas));
-        return query;
-    }
-
-    private static Field.Type resolvedValueType(SchemaInfo schemaInfo, Query query) {
-        validateGrouping("myCluster", ClusterConfig.IndexMode.Enum.INDEX, createFastMapLookupConfig(), schemaInfo, query);
-        var function = (DecodeFastMapLookupFunction)query.getSelect().getGrouping().get(0).getRootOperation().getGroupBy();
-        return function.getValueType().orElseThrow();
-    }
-
-    private static void assertFastMapLookupRejected(String expectedMessage, SchemaInfo schemaInfo, Query query) {
-        var exception = assertThrows(IllegalArgumentException.class,
-                                     () -> validateGrouping("myCluster", ClusterConfig.IndexMode.Enum.INDEX,
-                                                            createFastMapLookupConfig(), schemaInfo, query));
-        assertEquals(expectedMessage, exception.getMessage());
+                         createQuery("all(group(foo) each(output(max(bar))))"));
     }
 
     private static AttributesConfig setupMismatchingKeySourceAttribute(boolean matchingDataType) {
@@ -385,16 +265,16 @@ public class GroupingValidatorTestCase {
     }
 
     private static void validateGrouping(String clusterName, AttributesConfig attributesConfig, Query query) {
-        validateGrouping(clusterName, ClusterConfig.IndexMode.Enum.INDEX, attributesConfig, SchemaInfo.empty(), query);
+        validateGrouping(clusterName, ClusterConfig.IndexMode.Enum.INDEX, attributesConfig, query);
     }
 
     private static void validateGrouping(String clusterName, ClusterConfig.IndexMode.Enum indexMode,
-                                         AttributesConfig attributesConfig, SchemaInfo schemaInfo, Query query) {
+                                         AttributesConfig attributesConfig, Query query) {
         ClusterConfig.Builder clusterConfig = new ClusterConfig.Builder()
                 .clusterName(clusterName)
                 .indexMode(indexMode);
         new Execution(new GroupingValidator(clusterConfig.build(), attributesConfig),
-                      Execution.Context.createContextStub(schemaInfo))
+                      Execution.Context.createContextStub(SchemaInfo.empty()))
                 .search(query);
     }
 }

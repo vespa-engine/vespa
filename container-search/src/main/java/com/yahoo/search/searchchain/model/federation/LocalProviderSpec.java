@@ -34,6 +34,7 @@ public class LocalProviderSpec {
                             com.yahoo.search.searchers.QueryValidator.class,
                             com.yahoo.prelude.cluster.ClusterSearcher.class,
                             com.yahoo.search.grouping.GroupingValidator.class,
+                            com.yahoo.search.grouping.vespa.GroupingRewriteSearcher.class,
                             com.yahoo.search.grouping.vespa.GroupingExecutor.class,
                             com.yahoo.prelude.querytransform.RecallSearcher.class,
                             com.yahoo.search.querytransform.WandSearcher.class,
