@@ -4,7 +4,8 @@ package com.yahoo.search.grouping.request;
 /**
  * This interface defines the necessary callback to recursively visit all {@link GroupingExpression} objects in a {@link
  * GroupingOperation}. It is used by the {@link com.yahoo.search.grouping.GroupingValidator} to ensure that all
- * referenced attributes are valid for the cluster being queried.
+ * referenced attributes are valid for the cluster being queried, and by
+ * {@code com.yahoo.search.grouping.vespa.GroupingRewriteSearcher} to prepare expressions for the backend.
  *
  * @author Simon Thoresen Hult
  */

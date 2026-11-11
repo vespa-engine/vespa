@@ -130,6 +130,7 @@ public class PlatformBundles {
             com.yahoo.search.grouping.GroupingQueryParser.class.getName(),
             com.yahoo.search.grouping.GroupingValidator.class.getName(),
             com.yahoo.search.grouping.vespa.GroupingExecutor.class.getName(),
+            com.yahoo.search.grouping.vespa.GroupingRewriteSearcher.class.getName(),
             com.yahoo.search.pagetemplates.PageTemplate.class.getName(),
             com.yahoo.search.pagetemplates.PageTemplateSearcher.class.getName(),
             com.yahoo.search.pagetemplates.engine.Resolver.class.getName(),
