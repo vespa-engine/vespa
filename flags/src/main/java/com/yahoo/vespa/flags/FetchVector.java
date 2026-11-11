@@ -52,8 +52,10 @@ public class FetchVector {
         return makeFetchVector(merged -> merged.put(dimension, value));
     }
 
-    /** Returns a new FetchVector, identical to {@code this} except for its values in the override's dimensions. */
+    /** Returns a FetchVector identical to {@code this} except for its values in the override's dimensions. */
     public FetchVector with(FetchVector override) {
+        if (override.isEmpty()) return this;
+        if (isEmpty()) return override;
         return makeFetchVector(vector -> vector.putAll(override.map));
     }
 
