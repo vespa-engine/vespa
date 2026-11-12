@@ -25,7 +25,8 @@ public class ParsedIndex extends ParsedBlock {
     private Long lowerBound = null;
     private Long upperBound = null;
     private Double densePLT = null;
-    
+    private boolean hasExplicitName = false;
+
     public ParsedIndex(String name) {
         super(name, "index");
     }
@@ -40,6 +41,12 @@ public class ParsedIndex extends ParsedBlock {
     Optional<Long> getLowerBound() { return Optional.ofNullable(this.lowerBound); }
     Optional<Long> getUpperBound() { return Optional.ofNullable(this.upperBound); }
     Optional<Double> getDensePostingListThreshold() { return Optional.ofNullable(this.densePLT); }
+    /** Returns whether this index block inside a field was given a name, rather than getting the name of the field. */
+    boolean hasExplicitName() { return hasExplicitName; }
+
+    public void setHasExplicitName() {
+        this.hasExplicitName = true;
+    }
 
     public void addAlias(String alias) {
         aliases.add(alias);

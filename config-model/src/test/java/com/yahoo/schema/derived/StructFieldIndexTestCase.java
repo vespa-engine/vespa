@@ -14,6 +14,7 @@ import java.util.List;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -92,6 +93,70 @@ public class StructFieldIndexTestCase extends AbstractExportingTestCase {
         assertStructFieldIndexes("disallow", List.of());
         assertStructFieldIndexes("allow_alone", List.of("f1.a"));
         assertStructFieldIndexes("allow", List.of("f1.a", "f1.b"));
+    }
+
+    @Test
+    void testUnsupportedIndexSettingsInStructField() {
+        assertStructFieldSettingFails("index other { enable-bm25 }",
+                                      "For schema 'test', field 'f1.a': 'index other' is not supported in a struct-field, " +
+                                      "use 'index: ...' or 'index { ... }' without a name instead.");
+        assertStructFieldSettingFails("index a { enable-bm25 }",
+                                      "For schema 'test', field 'f1.a': 'index a' is not supported in a struct-field, " +
+                                      "use 'index: ...' or 'index { ... }' without a name instead.");
+        assertStructFieldSettingFails("rank-type other: about",
+                                      "For schema 'test', field 'f1.a': 'rank-type other' is not supported in a struct-field, " +
+                                      "use 'rank-type: about' instead.");
+        assertStructFieldSettingFails("rank-type a: about",
+                                      "For schema 'test', field 'f1.a': 'rank-type a' is not supported in a struct-field, " +
+                                      "use 'rank-type: about' instead.");
+        assertStructFieldSettingFails("index { alias: other }",
+                                      "For schema 'test', field 'f1.a': only 'enable-bm25' " +
+                                      "is supported in the index block of a struct-field.");
+        assertStructFieldSettingFails("index: stemming: shortest",
+                                      "For schema 'test', field 'f1.a': 'stemming' is not supported in the index block " +
+                                      "of a struct-field, use 'stemming: shortest' directly in the struct-field instead.");
+        assertStructFieldSettingFails("index: prefix",
+                                      "For schema 'test', field 'f1.a': only 'enable-bm25' " +
+                                      "is supported in the index block of a struct-field.");
+    }
+
+    @Test
+    void testIndexSettingsRequireAStructFieldIndex() {
+        assertStructFieldSettingFails("summary", "stemming: none",
+                                      "For schema 'test', field 'f1.a': 'stemming' requires the struct field to be indexed.");
+        assertStructFieldSettingFails("attribute",
+                                      "normalizing: none\n" +
+                                      "linguistics {\n  profile: p1\n}\n" +
+                                      "index: enable-bm25\n" +
+                                      "rank-type: identity\n" +
+                                      "weight: 200",
+                                      "For schema 'test', field 'f1.a': 'normalizing', 'linguistics', 'index', 'rank-type' and 'weight' " +
+                                      "require the struct field to be indexed.");
+    }
+
+    private static void assertStructFieldSettingFails(String setting, String expectedMessage) {
+        assertStructFieldSettingFails("index", setting, expectedMessage);
+    }
+
+    private static void assertStructFieldSettingFails(String indexing, String setting, String expectedMessage) {
+        var builder = new ApplicationBuilder(new TestProperties().allowStructFieldIndex("allow_alone"));
+        var exception = assertThrows(IllegalArgumentException.class, () -> {
+            builder.addSchema(joinLines("schema test {",
+                                        "  document test {",
+                                        "    struct s {",
+                                        "      field a type string {}",
+                                        "    }",
+                                        "    field f1 type array<s> {",
+                                        "      struct-field a {",
+                                        "        indexing: " + indexing,
+                                        "        " + setting,
+                                        "      }",
+                                        "    }",
+                                        "  }",
+                                        "}"));
+            builder.build(true);
+        });
+        assertEquals(expectedMessage, exception.getMessage());
     }
 
     private static void assertStructFieldIndexes(String flagValue, List<String> expectedIndexes) throws ParseException {

@@ -13,6 +13,16 @@ schema index_struct_field {
         field c type string {}
         field d type string {}
     }
+    struct settings {
+        field nostem type string {}
+        field shortest type string {}
+        field nonorm type string {}
+        field bm25 type string {}
+        field ranktype type string {}
+        field weighted type string {}
+        field ling type string {}
+        field tokens type string {}
+    }
     document index_struct_field {
 
         field array_of_int type array<int> {
@@ -86,6 +96,75 @@ schema index_struct_field {
             struct-field d {
                 indexing: index
                 match: exact
+            }
+        }
+
+        # Index related settings given in struct-field blocks
+        # apply to the corresponding struct field indexes
+        field array_of_settings type array<settings> {
+            struct-field nostem {
+                indexing: index
+                stemming: none
+            }
+            struct-field shortest {
+                indexing: index
+                stemming: shortest
+            }
+            struct-field nonorm {
+                indexing: index
+                normalizing: none
+            }
+            struct-field bm25 {
+                indexing: index
+                index: enable-bm25
+            }
+            struct-field ranktype {
+                indexing: index
+                rank-type: identity
+            }
+            struct-field weighted {
+                indexing: index
+                weight: 200
+            }
+            struct-field ling {
+                indexing: index
+                linguistics {
+                    profile: p1
+                }
+            }
+            struct-field tokens {
+                indexing: index
+                linguistics {
+                    tokens: alternatives
+                }
+            }
+        }
+
+        # The same for the key and the struct fields of the value in a map
+        field map_of_settings type map<string, settings> {
+            struct-field key {
+                indexing: index
+                stemming: none
+            }
+            struct-field value {
+                struct-field bm25 {
+                    indexing: index
+                    index: enable-bm25
+                }
+                struct-field ranktype {
+                    indexing: index
+                    rank-type: identity
+                }
+                struct-field weighted {
+                    indexing: index
+                    weight: 300
+                }
+                struct-field ling {
+                    indexing: index
+                    linguistics {
+                        profile: p1
+                    }
+                }
             }
         }
     }

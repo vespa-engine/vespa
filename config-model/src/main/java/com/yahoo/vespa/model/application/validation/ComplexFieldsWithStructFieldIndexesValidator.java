@@ -17,7 +17,8 @@ import static java.util.logging.Level.WARNING;
  * Supported struct field indexes are listed in {@link ComplexIndexFieldUtils}; other struct field indexes
  * are not supported and will confuse the user if not validated.
  *
- * Only applies for indexed search clusters.
+ * Only applies for indexed search clusters, where it also validates that struct field indexes do not use literal boost.
+ * In other clusters, validates that struct fields have no index settings, as these only apply to struct field indexes.
  *
  * @author Geir Storli
  */
@@ -29,6 +30,9 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
             for (var spec : cluster.schemas().values()) {
                 if (spec.getIndexMode() == SchemaInfo.IndexMode.INDEX) {
                     validateComplexFields(cluster.getClusterName(), spec.fullSchema(), context);
+                    validateNoLiteralOnStructFieldIndexes(spec.fullSchema());
+                } else {
+                    validateNoStructFieldIndexSettings(cluster.getClusterName(), spec.fullSchema());
                 }
             }
         }
@@ -59,6 +63,36 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
         }
 
 
+    }
+
+    /**
+     * Literal boost is not implemented for struct field indexes. It is only rejected for supported struct field
+     * indexes, as 'rank: literal' was accepted (and ignored) in struct-field blocks before these were supported.
+     */
+    private static void validateNoLiteralOnStructFieldIndexes(Schema schema) {
+        var mode = ComplexIndexFieldUtils.Mode.of(schema);
+        schema.allFields()
+              .flatMap(field -> ComplexIndexFieldUtils.supportedIndexedStructFields(field, mode).stream())
+              .filter(structField -> structField.getRanking().isLiteral())
+              .findFirst()
+              .ifPresent(structField -> {
+                  throw new IllegalArgumentException("For schema '" + schema.getName() + "', field '" + structField.getName() +
+                                                     "': 'rank: literal' is not supported for struct field indexes.");
+              });
+    }
+
+    /** Index settings in struct-field blocks only apply to struct field indexes, which only exist in indexed search. */
+    private static void validateNoStructFieldIndexSettings(String clusterName, Schema schema) {
+        String fieldsWithSettings = schema.allFields()
+                .flatMap(field -> ComplexIndexFieldUtils.indexedStructFields(field).stream())
+                .filter(structField -> ! structField.getStructFieldIndexSettings().isEmpty())
+                .map(structField -> structField.getName() + " (" + String.join(", ", structField.getStructFieldIndexSettings()) + ")")
+                .collect(Collectors.joining(", "));
+        if (fieldsWithSettings.isEmpty()) return;
+        throw new IllegalArgumentException(Text.format(
+                "For cluster '%s', schema '%s': The following struct fields have index settings, which are only " +
+                        "supported for struct field indexes in indexed search: %s.",
+                clusterName, schema.getName(), fieldsWithSettings));
     }
 
     private static String toString(ImmutableSDField field, ComplexIndexFieldUtils.Mode mode) {

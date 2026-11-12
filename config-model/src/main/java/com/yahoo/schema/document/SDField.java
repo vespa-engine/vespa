@@ -140,6 +140,8 @@ public class SDField extends Field implements ImmutableSDField {
     private boolean wasConfiguredToDoAttributing = false;
     private boolean wasConfiguredToDoIndexing = false;
 
+    private List<String> structFieldIndexSettings = List.of();
+
     /** For internal fields generated synthetically.  */
     private boolean isInternalField = false;
 
@@ -420,6 +422,11 @@ public class SDField extends Field implements ImmutableSDField {
     public boolean wasConfiguredToDoIndexing() {
         return wasConfiguredToDoIndexing;
     }
+
+    @Override
+    public List<String> getStructFieldIndexSettings() { return structFieldIndexSettings; }
+
+    public void setStructFieldIndexSettings(List<String> settings) { this.structFieldIndexSettings = List.copyOf(settings); }
 
     @Override
     public boolean hasSingleAttribute() {

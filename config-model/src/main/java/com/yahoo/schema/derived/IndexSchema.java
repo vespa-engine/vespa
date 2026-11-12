@@ -77,7 +77,7 @@ public class IndexSchema extends Derived {
             uriFields.add(fieldName);
         }
         for (Field flatField : lst) {
-            deriveIndexFields(flatField, schema);
+            deriveIndexFields(flatField, schema.getIndex(flatField.getName()));
         }
         if (lst.size() > 1) {
             FieldSet fieldSet = new FieldSet(fieldName);
@@ -88,9 +88,8 @@ public class IndexSchema extends Derived {
         }
     }
 
-    private void deriveIndexFields(Field field, Schema schema) {
+    private void deriveIndexFields(Field field, com.yahoo.schema.Index definedIndex) {
         IndexField toAdd = new IndexField(field.getName(), Index.convertType(field.getDataType()), field.getDataType());
-        com.yahoo.schema.Index definedIndex = schema.getIndex(field.getName());
         if (definedIndex != null) {
             toAdd.setIndexSettings(definedIndex);
         }
@@ -98,10 +97,14 @@ public class IndexSchema extends Derived {
         addFieldToCollection(field.getName(), field.getName()); // implicit
     }
 
-    /** Each supported struct field index is an array of string, with one element per element in the complex field. */
+    /**
+     * Each supported struct field index is an array of string, with one element per element in the complex field.
+     * Its index settings (e.g. enable-bm25) are those given in an index block in its struct-field block.
+     */
     private void deriveStructFieldIndexes(ImmutableSDField field, Schema schema) {
         for (ImmutableSDField structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field, ComplexIndexFieldUtils.Mode.of(schema))) {
-            deriveIndexFields(new Field(structField.getName(), DataType.getArray(DataType.STRING)), schema);
+            deriveIndexFields(new Field(structField.getName(), DataType.getArray(DataType.STRING)),
+                              structField.getIndex(structField.getName()));
         }
     }
 

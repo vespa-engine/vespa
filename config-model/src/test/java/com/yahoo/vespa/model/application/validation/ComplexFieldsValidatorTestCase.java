@@ -12,6 +12,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
+import com.yahoo.vespa.model.content.utils.DocType;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
@@ -297,6 +298,72 @@ public class ComplexFieldsValidatorTestCase {
                 "}"));
     }
 
+    @Test
+    void throws_exception_when_struct_field_index_has_literal_boost() {
+        var exception = assertThrows(IllegalArgumentException.class, () ->
+                createModelAndValidate(structFieldSchema("index", "rank: literal"), null, "allow_alone"));
+        assertEquals("For schema 'test', field 'arr.f': 'rank: literal' is not supported for struct field indexes.",
+                     exception.getMessage());
+    }
+
+    @Test
+    void validation_passes_when_struct_field_attribute_has_literal_boost() throws IOException, SAXException {
+        createModelAndValidate(structFieldSchema("attribute", "rank: literal"), null, "allow_alone");
+    }
+
+    private static String structFieldSchema(String indexing, String setting) {
+        return joinLines("schema test {",
+                         "  document test {",
+                         "    struct s { field f type string {} }",
+                         "    field arr type array<s> {",
+                         "      struct-field f {",
+                         "        indexing: " + indexing,
+                         "        " + setting,
+                         "      }",
+                         "    }",
+                         "  }",
+                         "}");
+    }
+
+    @Test
+    void throws_exception_when_struct_field_index_has_prefix_matching() {
+        var exception = assertThrows(IllegalArgumentException.class, () ->
+                createModelAndValidate(joinLines("schema test {",
+                                                 "  document test {",
+                                                 "    struct s { field f type string {} }",
+                                                 "    field arr type array<s> {",
+                                                 "      struct-field f {",
+                                                 "        indexing: index",
+                                                 "        match: prefix",
+                                                 "      }",
+                                                 "    }",
+                                                 "  }",
+                                                 "}"), null, "allow_alone"));
+        assertEquals("For schema 'test', field 'arr.f': match/index:prefix is not supported for indexes.",
+                     exception.getMessage());
+    }
+
+    @Test
+    void throws_exception_when_struct_field_has_index_settings_in_streaming() {
+        var exception = assertThrows(IllegalArgumentException.class, () ->
+                createModelAndValidate(joinLines("schema test {",
+                                                 "  document test {",
+                                                 "    struct s { field f type string {} }",
+                                                 "    field arr type array<s> {",
+                                                 "      struct-field f {",
+                                                 "        indexing: index",
+                                                 "        stemming: none",
+                                                 "        weight: 200",
+                                                 "      }",
+                                                 "    }",
+                                                 "  }",
+                                                 "}"),
+                                       streamingServicesXml(), null, "allow_alone"));
+        assertEquals("For cluster 'mycluster', schema 'test': The following struct fields have index settings, " +
+                     "which are only supported for struct field indexes in indexed search: arr.f (stemming, weight).",
+                     exception.getMessage());
+    }
+
     private static void createModelAndValidate(String schema) throws IOException, SAXException {
         createModelAndValidate(schema, null);
     }
@@ -308,7 +375,14 @@ public class ComplexFieldsValidatorTestCase {
     private static void createModelAndValidate(String schema,
                                                DeployLogger logger,
                                                String allowStructFieldIndex) throws IOException, SAXException {
-        DeployState deployState = createDeployState(servicesXml(), schema, logger, allowStructFieldIndex);
+        createModelAndValidate(schema, servicesXml(), logger, allowStructFieldIndex);
+    }
+
+    private static void createModelAndValidate(String schema,
+                                               String servicesXml,
+                                               DeployLogger logger,
+                                               String allowStructFieldIndex) throws IOException, SAXException {
+        DeployState deployState = createDeployState(servicesXml, schema, logger, allowStructFieldIndex);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         ValidationParameters validationParameters = new ValidationParameters(CheckRouting.FALSE);
         new Validation().validate(model, validationParameters, deployState);
@@ -335,6 +409,12 @@ public class ComplexFieldsValidatorTestCase {
     private static String servicesXml() {
         return joinLines("<services version='1.0'>",
                 new ContentClusterBuilder().getXml(),
+                "</services>");
+    }
+
+    private static String streamingServicesXml() {
+        return joinLines("<services version='1.0'>",
+                new ContentClusterBuilder().docTypes(List.of(DocType.create("test", "streaming"))).getXml(),
                 "</services>");
     }
 }

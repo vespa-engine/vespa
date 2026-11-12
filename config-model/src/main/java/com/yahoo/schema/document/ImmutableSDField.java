@@ -62,6 +62,12 @@ public interface ImmutableSDField {
     boolean wasConfiguredToDoIndexing();
 
     /**
+     * Returns the names of the index settings (e.g. "stemming") given in the struct-field block of this struct field,
+     * which only apply to a struct field index, or an empty list if none are given or this is not a struct field.
+     */
+    default List<String> getStructFieldIndexSettings() { return List.of(); }
+
+    /**
      * Returns whether this field has a single attribute with the same name as this field.
      */
     boolean hasSingleAttribute();

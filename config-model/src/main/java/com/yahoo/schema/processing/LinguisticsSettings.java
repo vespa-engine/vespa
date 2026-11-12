@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.MatchType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Stemming;
@@ -33,10 +34,13 @@ public class LinguisticsSettings extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if (documentsOnly) return;
-        // Struct fields are not visited: a linguistics block is only accepted in a field body,
-        // and its settings are not propagated to the struct fields of that field
+        // The settings of a field are not propagated to its struct fields, which have their own settings.
+        // Of the struct fields, only struct field indexes are tokenized by the linguistics implementation.
         for (SDField field : schema.allConcreteFields()) {
             processField(field, validate);
+            for (var structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field, ComplexIndexFieldUtils.Mode.of(schema))) {
+                processField((SDField) structField, validate);
+            }
         }
     }
 
