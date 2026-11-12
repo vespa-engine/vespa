@@ -21,12 +21,6 @@ public class QuantizedTensorValidator  implements Validator {
             if (!attr.isQuantized()) {
                 return;
             }
-            // TODO remove this message once no longer experimental
-            String experimentalMsg = "quantization support is currently EXPERIMENTAL and should only be used for " +
-                    "testing. It is not guaranteed that persisted, experimental quantized tensors will be " +
-                    "compatible across Vespa versions.";
-            context.deployState().getDeployLogger().logApplicationPackage(
-                    Level.WARNING, makeFieldMessage(schema, field, experimentalMsg));
             if (attr.tensorType().isEmpty()) {
                 context.illegal(makeFieldMessage(schema, field, "quantization can only be set on tensor fields"));
                 return;

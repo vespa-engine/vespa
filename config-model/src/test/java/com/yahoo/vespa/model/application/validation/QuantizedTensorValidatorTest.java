@@ -69,30 +69,6 @@ public class QuantizedTensorValidatorTest {
         }
     }
 
-    // TODO remove this test once no longer experimental
-    @Test
-    void quantized_field_logs_experimental_feature_deployment_warning() {
-        var fieldSpec = quantizedField("tensor<float>(x[1024])");
-        var logger = new TestLogger();
-        assertDoesNotThrow(() -> createModelAndValidate(schema(fieldSpec), logger));
-        assertEquals("WARNING: For schema 'test', field 'f': quantization support is currently EXPERIMENTAL "+
-                "and should only be used for testing. It is not guaranteed that persisted, experimental " +
-                "quantized tensors will be compatible across Vespa versions.\n", logger.toString());
-    }
-
-    // TODO remove this test once no longer experimental
-    @Test
-    void non_quantized_fields_do_not_log_deployment_warnings() {
-        String fieldSpec = """
-               field f type tensor<float>(x[1024]) {
-                 indexing: attribute
-               }
-               """;
-        var logger = new TestLogger();
-        assertDoesNotThrow(() -> createModelAndValidate(schema(fieldSpec), logger));
-        assertEquals("", logger.toString());
-    }
-
     private static String quantizedField(String typeSpec, String extra) {
         return Text.format("""
                field f type %s {
