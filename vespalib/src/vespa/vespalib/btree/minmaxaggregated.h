@@ -7,23 +7,47 @@
 
 namespace vespalib::btree {
 
-class MinMaxAggregated {
-    int32_t _min;
-    int32_t _max;
+/**
+ * Aggregated min and max of the values (data) in a btree.
+ * Used with integer (int32_t) or floating point (float) values.
+ *
+ * Floating point values are expected to be finite; NaN and infinities
+ * are not expected to be stored. If they are, the aggregate can be
+ * inexact:
+ *
+ * - The empty aggregate has min = numeric_limits<T>::max() and
+ *   max = numeric_limits<T>::lowest(), i.e. the largest and smallest
+ *   finite values, not +/-infinity. Since +inf never compares less than
+ *   max(), min is reported as max() (not +inf) when every non-NaN value
+ *   is +inf. Likewise, max is reported as lowest() (not -inf) when every
+ *   non-NaN value is -inf. Otherwise infinities are reflected in min
+ *   and max.
+ *
+ * - NaN compares false with everything, so adding a NaN value has no
+ *   effect and NaN values are never reflected in min and max. An update
+ *   from the current min or max value to NaN does not request
+ *   recalculation and leaves min and max unchanged, so they still
+ *   reflect the old value.
+ */
+template <typename T> class MinMaxAggregatedT {
+    T _min;
+    T _max;
 
 public:
-    MinMaxAggregated() : _min(std::numeric_limits<int32_t>::max()), _max(std::numeric_limits<int32_t>::min()) {}
+    using ValueType = T;
 
-    MinMaxAggregated(int32_t min, int32_t max) : _min(min), _max(max) {}
+    MinMaxAggregatedT() : _min(std::numeric_limits<T>::max()), _max(std::numeric_limits<T>::lowest()) {}
 
-    int32_t getMin() const { return _min; }
-    int32_t getMax() const { return _max; }
+    MinMaxAggregatedT(T min, T max) : _min(min), _max(max) {}
 
-    bool operator==(const MinMaxAggregated& rhs) const { return ((_min == rhs._min) && (_max == rhs._max)); }
+    T getMin() const { return _min; }
+    T getMax() const { return _max; }
 
-    bool operator!=(const MinMaxAggregated& rhs) const { return ((_min != rhs._min) || (_max != rhs._max)); }
+    bool operator==(const MinMaxAggregatedT& rhs) const { return ((_min == rhs._min) && (_max == rhs._max)); }
 
-    void add(int32_t val) {
+    bool operator!=(const MinMaxAggregatedT& rhs) const { return ((_min != rhs._min) || (_max != rhs._max)); }
+
+    void add(T val) {
         if (_min > val) {
             _min = val;
         }
@@ -32,7 +56,7 @@ public:
         }
     }
 
-    void add(const MinMaxAggregated& ca) {
+    void add(const MinMaxAggregatedT& ca) {
         if (_min > ca._min) {
             _min = ca._min;
         }
@@ -41,21 +65,21 @@ public:
         }
     }
 
-    void add(const MinMaxAggregated& oldca, const MinMaxAggregated& ca) {
+    void add(const MinMaxAggregatedT& oldca, const MinMaxAggregatedT& ca) {
         (void)oldca;
         add(ca);
     }
 
     /* Returns true if recalculation is needed */
-    bool remove(int32_t val) { return (_min == val || _max == val); }
+    bool remove(T val) { return (_min == val || _max == val); }
 
     /* Returns true if recalculation is needed */
-    bool remove(const MinMaxAggregated& oldca, const MinMaxAggregated& ca) {
+    bool remove(const MinMaxAggregatedT& oldca, const MinMaxAggregatedT& ca) {
         return (_min == oldca._min && _min != ca._min) || (_max == oldca._max && _max != ca._max);
     }
 
     /* Returns true if recalculation is needed */
-    bool update(int32_t oldVal, int32_t val) {
+    bool update(T oldVal, T val) {
         if ((_min == oldVal && _min < val) || (_max == oldVal && _max > val)) {
             return true;
         }
@@ -64,7 +88,7 @@ public:
     }
 
     /* Returns true if recalculation is needed */
-    bool update(const MinMaxAggregated& oldca, const MinMaxAggregated& ca) {
+    bool update(const MinMaxAggregatedT& oldca, const MinMaxAggregatedT& ca) {
         if ((_min == oldca._min && _min < ca._min) || (_max == oldca._max && _max > ca._max)) {
             return true;
         }
@@ -72,5 +96,8 @@ public:
         return false;
     }
 };
+
+using MinMaxAggregated = MinMaxAggregatedT<int32_t>;
+using FloatMinMaxAggregated = MinMaxAggregatedT<float>;
 
 } // namespace vespalib::btree

@@ -1028,6 +1028,177 @@ TEST_F(BTreeAggregationTest, require_that_frozen_view_provides_aggregated_values
     EXPECT_EQ(old_aggregated.getMax(), std::numeric_limits<int32_t>::min());
 }
 
+namespace {
+
+using FloatTreeStore =
+    BTreeStore<uint32_t, float, FloatMinMaxAggregated, std::less<uint32_t>, BTreeDefaultTraits, FloatMinMaxAggrCalc>;
+
+FloatMinMaxAggregated expected_aggregated(const std::map<uint32_t, float>& values) {
+    FloatMinMaxAggregated result;
+    for (const auto& [key, value] : values) {
+        result.add(value);
+    }
+    return result;
+}
+
+void apply(FloatTreeStore& s, EntryRef& root, std::vector<FloatTreeStore::KeyDataType> additions,
+           std::vector<uint32_t> removals) {
+    s.apply(root, additions.data(), additions.data() + additions.size(), removals.data(),
+            removals.data() + removals.size());
+}
+
+} // namespace
+
+TEST_F(BTreeAggregationTest, float_values_are_aggregated) {
+    GenerationHandler         g;
+    FloatTreeStore            s;
+    std::map<uint32_t, float> mock;
+    EntryRef                  root;
+    auto                      check = [&](const char* label) {
+        SCOPED_TRACE(label);
+        auto aggregated = s.getAggregated(root);
+        auto expected = expected_aggregated(mock);
+        EXPECT_EQ(expected.getMin(), aggregated.getMin());
+        EXPECT_EQ(expected.getMax(), aggregated.getMax());
+        EXPECT_EQ(mock.size(), s.size(root));
+    };
+    FloatMinMaxAggregated empty;
+    EXPECT_EQ(std::numeric_limits<float>::max(), empty.getMin());
+    EXPECT_EQ(std::numeric_limits<float>::lowest(), empty.getMax());
+    check("empty");
+    apply(s, root, {{10, 0.5f}, {20, -1.25f}}, {});
+    mock[10] = 0.5f;
+    mock[20] = -1.25f;
+    EXPECT_TRUE(s.isSmallArray(root));
+    check("small array");
+    for (uint32_t i = 0; i < 200; ++i) {
+        float value = (i % 7) * 0.25f - 0.75f;
+        apply(s, root, {{100 + i, value}}, {});
+        mock[100 + i] = value;
+    }
+    EXPECT_FALSE(s.isSmallArray(root));
+    check("tree");
+    // add-or-update of existing keys, raising max and lowering min
+    apply(s, root, {{10, 1e10f}, {150, -1e-3f}, {170, -1e10f}}, {});
+    mock[10] = 1e10f;
+    mock[150] = -1e-3f;
+    mock[170] = -1e10f;
+    check("updated");
+    apply(s, root, {}, {10, 170});
+    mock.erase(10);
+    mock.erase(170);
+    check("removed extremes");
+    s.clear(root);
+    s.clearBuilder();
+    s.freeze();
+    s.assign_generation(g.getCurrentGeneration());
+    g.incGeneration();
+    s.reclaim_memory(g.get_oldest_used_generation());
+}
+
+// NaN and infinities are not expected to be stored; these tests document the current behavior.
+
+TEST(FloatMinMaxAggregatedTest, infinity_is_not_reflected_when_all_values_are_same_infinity) {
+    constexpr float       inf = std::numeric_limits<float>::infinity();
+    constexpr float       flt_max = std::numeric_limits<float>::max();
+    constexpr float       flt_lowest = std::numeric_limits<float>::lowest();
+    FloatMinMaxAggregated pos;
+    pos.add(inf);
+    EXPECT_EQ(flt_max, pos.getMin());
+    EXPECT_EQ(inf, pos.getMax());
+    FloatMinMaxAggregated neg;
+    neg.add(-inf);
+    EXPECT_EQ(-inf, neg.getMin());
+    EXPECT_EQ(flt_lowest, neg.getMax());
+}
+
+TEST(FloatMinMaxAggregatedTest, infinity_is_reflected_when_mixed_with_other_values) {
+    constexpr float       inf = std::numeric_limits<float>::infinity();
+    FloatMinMaxAggregated a;
+    a.add(inf);
+    a.add(1.0f);
+    EXPECT_EQ(1.0f, a.getMin());
+    EXPECT_EQ(inf, a.getMax());
+    a.add(-inf);
+    EXPECT_EQ(-inf, a.getMin());
+    EXPECT_EQ(inf, a.getMax());
+}
+
+TEST(FloatMinMaxAggregatedTest, nan_is_ignored_by_add_and_remove) {
+    constexpr float       nan = std::numeric_limits<float>::quiet_NaN();
+    FloatMinMaxAggregated empty;
+    FloatMinMaxAggregated a;
+    a.add(nan);
+    EXPECT_EQ(empty, a);
+    a.add(1.0f);
+    a.add(nan);
+    a.add(5.0f);
+    EXPECT_EQ(1.0f, a.getMin());
+    EXPECT_EQ(5.0f, a.getMax());
+    EXPECT_FALSE(a.remove(nan));
+}
+
+TEST(FloatMinMaxAggregatedTest, update_to_nan_does_not_request_recalculation) {
+    constexpr float       nan = std::numeric_limits<float>::quiet_NaN();
+    FloatMinMaxAggregated a;
+    a.add(1.0f);
+    a.add(5.0f);
+    // 1.0 (the min) is replaced by NaN, but min is left at 1.0
+    EXPECT_FALSE(a.update(1.0f, nan));
+    EXPECT_EQ(1.0f, a.getMin());
+    EXPECT_EQ(5.0f, a.getMax());
+    // 5.0 (the max) is replaced by NaN, but max is left at 5.0
+    EXPECT_FALSE(a.update(5.0f, nan));
+    EXPECT_EQ(1.0f, a.getMin());
+    EXPECT_EQ(5.0f, a.getMax());
+}
+
+TEST_F(BTreeAggregationTest, float_tree_with_only_positive_infinity) {
+    constexpr float   inf = std::numeric_limits<float>::infinity();
+    GenerationHandler g;
+    FloatTreeStore    s;
+    EntryRef          root;
+    apply(s, root, {{1, inf}, {2, inf}}, {});
+    EXPECT_TRUE(s.isSmallArray(root));
+    EXPECT_EQ(std::numeric_limits<float>::max(), s.getAggregated(root).getMin());
+    EXPECT_EQ(inf, s.getAggregated(root).getMax());
+    for (uint32_t i = 0; i < 200; ++i) {
+        apply(s, root, {{100 + i, inf}}, {});
+    }
+    EXPECT_FALSE(s.isSmallArray(root));
+    EXPECT_EQ(std::numeric_limits<float>::max(), s.getAggregated(root).getMin());
+    EXPECT_EQ(inf, s.getAggregated(root).getMax());
+    s.clear(root);
+    s.clearBuilder();
+    s.freeze();
+    s.assign_generation(g.getCurrentGeneration());
+    g.incGeneration();
+    s.reclaim_memory(g.get_oldest_used_generation());
+}
+
+TEST_F(BTreeAggregationTest, float_tree_ignores_nan_values) {
+    constexpr float   nan = std::numeric_limits<float>::quiet_NaN();
+    GenerationHandler g;
+    FloatTreeStore    s;
+    EntryRef          root;
+    apply(s, root, {{1, nan}, {2, 3.0f}}, {});
+    EXPECT_TRUE(s.isSmallArray(root));
+    EXPECT_EQ(3.0f, s.getAggregated(root).getMin());
+    EXPECT_EQ(3.0f, s.getAggregated(root).getMax());
+    for (uint32_t i = 0; i < 200; ++i) {
+        apply(s, root, {{100 + i, (i % 2 == 0) ? nan : float(i)}}, {});
+    }
+    EXPECT_FALSE(s.isSmallArray(root));
+    EXPECT_EQ(1.0f, s.getAggregated(root).getMin());
+    EXPECT_EQ(199.0f, s.getAggregated(root).getMax());
+    s.clear(root);
+    s.clearBuilder();
+    s.freeze();
+    s.assign_generation(g.getCurrentGeneration());
+    g.incGeneration();
+    s.reclaim_memory(g.get_oldest_used_generation());
+}
+
 } // namespace vespalib::btree
 
 GTEST_MAIN_RUN_ALL_TESTS()
