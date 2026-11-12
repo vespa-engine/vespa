@@ -12,7 +12,8 @@ struct Value;
 
 namespace search::tensor {
 
-class DirectTensorAttribute final : public TensorAttribute {
+class DirectTensorAttribute : public TensorAttribute {
+protected:
     DirectTensorStore _direct_store;
 
     void set_tensor(DocId docId, std::unique_ptr<vespalib::eval::Value> tensor);

@@ -11,6 +11,7 @@
 #include <vespa/check_require.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>
+#include <vespa/searchlib/tensor/direct_tensor_posting_attribute.h>
 
 #define INTPOSTING(T) SingleValueNumericPostingAttribute<ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>)>
 #define FLOATPOSTING(T) SingleValueNumericPostingAttribute<ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>)>
@@ -44,6 +45,9 @@ AttributeVector::SP AttributeFactory::createSingleFastSearch(std::string name, c
         return std::make_shared<SingleValueStringPostingAttribute>(name, info);
     case BasicType::TENSOR:
         if (!info.tensorType().is_dense()) {
+            if (info.tensor_label_postings()) {
+                return std::make_shared<tensor::DirectTensorPostingAttribute>(name, info);
+            }
             return std::make_shared<tensor::DirectTensorAttribute>(name, info);
         }
         break;

@@ -49,6 +49,13 @@ protected:
 
     void checkTensorType(const vespalib::eval::Value& tensor) const;
     void setTensorRef(DocId docId, EntryRef ref);
+    /*
+     * Called whenever the tensor stored for a document changes, after the
+     * reference vector has been updated but before the old tensor is put
+     * on hold (so both old and new tensors are still readable).
+     * Either ref may be invalid (no tensor).
+     */
+    virtual void on_tensor_ref_change(DocId docid, EntryRef old_ref, EntryRef new_ref);
     void internal_set_tensor(DocId docid, const vespalib::eval::Value& tensor);
     void consider_remove_from_index(DocId docid);
     virtual vespalib::MemoryUsage update_stat();
