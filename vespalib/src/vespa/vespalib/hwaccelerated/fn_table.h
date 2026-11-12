@@ -36,6 +36,12 @@ using SquaredEuclideanDistanceBF16Fn = double (*)(const BFloat16* a, const BFloa
 using SquaredEuclideanDistanceF32Fn = double (*)(const float* a, const float* b, size_t sz) noexcept;
 using SquaredEuclideanDistanceF64Fn = double (*)(const double* a, const double* b, size_t sz) noexcept;
 
+using EdenF32QSquaredEuclideanDistanceFn = float (*)(const float* lhs, const uint8_t* packed_rhs, float lhs_scale,
+                                                     uint8_t bits, size_t sz) noexcept;
+using EdenQQSquaredEuclideanDistanceFn = float (*)(const uint8_t* packed_lhs, const uint8_t* packed_rhs,
+                                                   float lhs_scale, float rhs_scale, uint8_t bits,
+                                                   size_t sz) noexcept;
+
 using SquaredEuclideanLengthF32Fn = float (*)(const float* v, size_t sz) noexcept;
 
 using BinaryHammingDistanceFn = size_t (*)(const void* lhs, const void* rhs, size_t sz) noexcept;
@@ -88,6 +94,9 @@ struct FnTable {
     SquaredEuclideanDistanceF32Fn  squared_euclidean_distance_f32 = nullptr;
     SquaredEuclideanDistanceF64Fn  squared_euclidean_distance_f64 = nullptr;
 
+    EdenF32QSquaredEuclideanDistanceFn eden_f32_q_squared_euclidean_distance = nullptr;
+    EdenQQSquaredEuclideanDistanceFn   eden_q_q_squared_euclidean_distance = nullptr;
+
     SquaredEuclideanLengthF32Fn squared_euclidean_length_f32 = nullptr;
 
     BinaryHammingDistanceFn binary_hamming_distance = nullptr;
@@ -124,6 +133,8 @@ struct FnTable {
         SQUARED_EUCLIDEAN_DISTANCE_F32,
         SQUARED_EUCLIDEAN_DISTANCE_F64,
         SQUARED_EUCLIDEAN_LENGTH_F32,
+        EDEN_F32_Q_SQUARED_EUCLIDEAN_DISTANCE,
+        EDEN_Q_Q_SQUARED_EUCLIDEAN_DISTANCE,
         BINARY_HAMMING_DISTANCE,
         POPULATION_COUNT,
         CONVERT_BFLOAT16_TO_FLOAT,
@@ -208,6 +219,10 @@ struct FnTable {
             FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_F32)                                                          \
     VISITOR(SquaredEuclideanDistanceF64Fn, squared_euclidean_distance_f64,                                          \
             FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_F64)                                                          \
+    VISITOR(EdenF32QSquaredEuclideanDistanceFn, eden_f32_q_squared_euclidean_distance,                              \
+            FnTable::FnId::EDEN_F32_Q_SQUARED_EUCLIDEAN_DISTANCE)                                                   \
+    VISITOR(EdenQQSquaredEuclideanDistanceFn, eden_q_q_squared_euclidean_distance,                                  \
+            FnTable::FnId::EDEN_Q_Q_SQUARED_EUCLIDEAN_DISTANCE)                                                     \
     VISITOR(SquaredEuclideanLengthF32Fn, squared_euclidean_length_f32, FnTable::FnId::SQUARED_EUCLIDEAN_LENGTH_F32) \
     VISITOR(BinaryHammingDistanceFn, binary_hamming_distance, FnTable::FnId::BINARY_HAMMING_DISTANCE)               \
     VISITOR(PopulationCountFn, population_count, FnTable::FnId::POPULATION_COUNT)                                   \

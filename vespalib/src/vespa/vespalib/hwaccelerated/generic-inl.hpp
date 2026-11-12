@@ -236,6 +236,76 @@ double my_squared_euclidean_distance_f32(const float* a, const float* b, size_t 
 double my_squared_euclidean_distance_f64(const double* a, const double* b, size_t sz) noexcept {
     return squaredEuclideanDistanceT<double, double, 16>(a, b, sz);
 }
+
+template <uint8_t Bits>
+__attribute__((noinline)) float do_eden_f32_q_squared_euclidean_distance(const float* lhs, const uint8_t* packed_rhs,
+                                                                         const float  rhs_scale,
+                                                                         const size_t sz) noexcept {
+    const auto codebook = codebooks::eden_bf16_codebook(Bits);
+    size_t     i = 0;
+    float      sq = 0;
+    with_scalar_unpacked_rhs_bits<Bits>(packed_rhs, sz, [&](const uint8_t* idx, const size_t chunk_sz) noexcept {
+        sq += sum_indexed_unrolled<4, float>(chunk_sz, [&](const size_t j) noexcept {
+            const float d = lhs[i + j] - (codebook[idx[j]] * rhs_scale);
+            return d * d;
+        });
+        i += chunk_sz;
+    });
+    return sq;
+}
+
+template <uint8_t Bits>
+__attribute__((noinline)) float
+do_eden_q_q_squared_euclidean_distance(const uint8_t* packed_lhs, const uint8_t* packed_rhs, const float lhs_scale,
+                                       const float rhs_scale, const size_t sz) noexcept {
+    const auto codebook = codebooks::eden_bf16_codebook(Bits);
+    float      sq = 0;
+    with_scalar_unpacked_lhs_rhs_bits<Bits>(
+        packed_lhs, packed_rhs, sz,
+        [&](const uint8_t* lhs_idx, const uint8_t* rhs_idx, const size_t chunk_sz) noexcept {
+            sq += sum_indexed_unrolled<4, float>(chunk_sz, [&](const size_t j) noexcept {
+                const float a = codebook[lhs_idx[j]] * lhs_scale;
+                const float b = codebook[rhs_idx[j]] * rhs_scale;
+                const float d = a - b;
+                return d * d;
+            });
+        });
+    return sq;
+}
+
+float my_eden_f32_q_squared_euclidean_distance(const float* lhs, const uint8_t* packed_rhs, const float rhs_scale,
+                                               const uint8_t bits, const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return do_eden_f32_q_squared_euclidean_distance<1>(lhs, packed_rhs, rhs_scale, sz);
+    case 2:
+        return do_eden_f32_q_squared_euclidean_distance<2>(lhs, packed_rhs, rhs_scale, sz);
+    case 3:
+        return do_eden_f32_q_squared_euclidean_distance<3>(lhs, packed_rhs, rhs_scale, sz);
+    case 4:
+        return do_eden_f32_q_squared_euclidean_distance<4>(lhs, packed_rhs, rhs_scale, sz);
+    default:
+        abort();
+    }
+}
+
+float my_eden_q_q_squared_euclidean_distance(const uint8_t* packed_lhs, const uint8_t* packed_rhs,
+                                             const float lhs_scale, const float rhs_scale, const uint8_t bits,
+                                             const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return do_eden_q_q_squared_euclidean_distance<1>(packed_lhs, packed_rhs, lhs_scale, rhs_scale, sz);
+    case 2:
+        return do_eden_q_q_squared_euclidean_distance<2>(packed_lhs, packed_rhs, lhs_scale, rhs_scale, sz);
+    case 3:
+        return do_eden_q_q_squared_euclidean_distance<3>(packed_lhs, packed_rhs, lhs_scale, rhs_scale, sz);
+    case 4:
+        return do_eden_q_q_squared_euclidean_distance<4>(packed_lhs, packed_rhs, lhs_scale, rhs_scale, sz);
+    default:
+        abort();
+    }
+}
+
 float my_squared_euclidean_length_f32(const float* v, size_t sz) noexcept {
     return sum_indexed_unrolled<16, float>(sz, [&](size_t idx) noexcept { return v[idx] * v[idx]; });
 }
@@ -249,7 +319,7 @@ void my_convert_bfloat16_to_float(const uint16_t* src, float* dest, size_t sz) n
     helper::convert_bfloat16_to_float(src, dest, sz);
 }
 void my_eden_quantize_centroids(const float* src, uint8_t* dest, const uint8_t bits, const float nx,
-                               const size_t sz) noexcept {
+                                const size_t sz) noexcept {
     const auto selection_codebook = codebooks::eden_f32_codebook(bits);
     for (size_t i = 0; i < sz; ++i) {
         dest[i] = closest_centroid_index<float>(src[i] * nx, selection_codebook);
