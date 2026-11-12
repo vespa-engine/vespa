@@ -101,8 +101,17 @@ public:
     explicit TermFieldMatchDataPositionIterator(Positions positions)
         : _begin(positions.begin()), _end(positions.end()) {}
 
-    auto& begin() noexcept { return _begin; }
-    const auto& end() const noexcept { return _end; }
+    auto begin() const noexcept { return _begin; }
+    auto end() const noexcept { return _end; }
+
+    [[nodiscard]] bool is_at_end() const noexcept { return _begin == _end; }
+
+    auto& operator++() {
+        _begin++;
+        return *this;
+    }
+
+    const auto& operator*() const { return *_begin; }
 };
 
 } // namespace search::fef

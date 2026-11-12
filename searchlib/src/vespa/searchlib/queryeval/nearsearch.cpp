@@ -468,30 +468,6 @@ ONearSearch::ONearSearch(Children terms, const TermFieldMatchDataArray& data, ui
                  exclusion_distance);
 }
 
-namespace {
-
-struct PositionsIterator {
-
-    using Positions = std::span<const TermFieldMatchDataPosition>;
-    using Iterator = Positions::iterator;
-
-    Iterator begin;
-    Iterator end;
-
-    explicit PositionsIterator(Positions positions) : begin(positions.begin()), end(positions.end()) {}
-
-    [[nodiscard]] bool is_at_end() const noexcept { return begin == end; }
-
-    const auto& operator*() const { return *begin; }
-
-    auto& operator++() {
-        ++begin;
-        return *this;
-    }
-};
-
-} // namespace
-
 ONearSearch::~ONearSearch() = default;
 
 template <typename MatchResult, typename Filter>
@@ -525,17 +501,17 @@ void ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result,
         return; // 1 term is always near itself
     }
 
-    std::vector<PositionsIterator> pos_iter;
+    std::vector<fef::TermFieldMatchDataPositionIterator> pos_iter;
     pos_iter.reserve(numTerms);
     for (uint32_t i = 0; i < numTerms; ++i) {
         const TermFieldMatchData* term = inputs()[i];
-        pos_iter.push_back(PositionsIterator(term->match_view()));
+        pos_iter.push_back(fef::TermFieldMatchDataPositionIterator(term->match_view()));
     }
 
     int32_t remain = window();
 
     TermFieldMatchDataPositionKey curTermPos;
-    auto                          lookahead = pos_iter.back().begin;
+    auto                          lookahead = pos_iter.back().begin();
 
     // Look for match for every occurrence of the first term.
     for (const auto& first_term_pos : first_term->match_view()) {
@@ -568,10 +544,10 @@ void ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result,
                     // OK for all terms
                     if constexpr (MatchResult::collect_spans) {
                         auto adjusted_last_allowed = filter.max_window_end(*pos_iter[i], lastAllowed);
-                        if (lookahead < pos_iter[i].begin) {
-                            lookahead = pos_iter[i].begin;
+                        if (lookahead < pos_iter[i].begin()) {
+                            lookahead = pos_iter[i].begin();
                         }
-                        while (lookahead != pos_iter[i].end && !(adjusted_last_allowed < lookahead->key())) {
+                        while (lookahead != pos_iter[i].end() && !(adjusted_last_allowed < lookahead->key())) {
                             ++lookahead;
                         }
                         --lookahead;
