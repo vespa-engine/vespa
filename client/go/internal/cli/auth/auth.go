@@ -26,6 +26,9 @@ type Authenticator struct {
 	ClientID           string
 	DeviceCodeEndpoint string
 	OauthTokenEndpoint string
+	// AuthorizationEndpoint is used by the authorization code flow with PKCE. If empty, it is derived from
+	// OauthTokenEndpoint.
+	AuthorizationEndpoint string
 }
 
 // SecretStore provides access to stored sensitive data.
