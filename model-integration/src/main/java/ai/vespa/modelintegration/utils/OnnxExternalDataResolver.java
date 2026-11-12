@@ -60,12 +60,12 @@ public class OnnxExternalDataResolver {
             var externalDataLocations = OnnxStreamParser.getExternalDataLocations(localPath);
             if (externalDataLocations.isEmpty()) return localPath;
             log.fine(() -> Text.format("Found external data locations for ONNX model '%s': %s", ref, externalDataLocations));
+            // Rejects the model before any of its external data files is downloaded.
+            externalDataLocations.forEach(OnnxExternalDataResolver::requireLocationInsideModelDirectory);
             var url = ref.url().get().value();
             var urlPrefix = url.substring(0, url.lastIndexOf('/') + 1);
             var externalDataFiles = new HashMap<Path, Path>();
             for (var location : externalDataLocations) {
-                if (location.toString().contains(".."))
-                    throw new IllegalArgumentException("External data path '" + location + "' must not contain '..'");
                 var dataFileUrl = urlPrefix + location;
                 log.info(Text.format("Downloading external data file '%s' for ONNX model '%s' using URL '%s'", location, localPath.getFileName(), dataFileUrl));
                 var externalDataRef = ModelReference.unresolved(
@@ -86,6 +86,14 @@ public class OnnxExternalDataResolver {
             // Fallback to returning local path
             return localPath;
         }
+    }
+
+    private static void requireLocationInsideModelDirectory(Path location) {
+        // Also rejects '..' inside a name: the location is appended to the model URL,
+        // where a server may read a name such as '..%2F' as the parent directory.
+        if (location.isAbsolute() || location.toString().contains("..") || location.normalize().toString().isEmpty())
+            throw new IllegalArgumentException("External data location '" + location +
+                                               "' must be a relative path inside the model directory, without '..'");
     }
 
     private static boolean shouldSkipExternalDataResolution(ModelReference ref) {
@@ -117,6 +125,8 @@ public class OnnxExternalDataResolver {
     static Path createDirectoryWithExternalDataFiles(Path model, Map<Path, Path> externalDataFiles) throws IOException {
         if (!Files.isRegularFile(model))
             throw new IllegalArgumentException("Model file does not exist or is not a regular file: " + model);
+        // Files are linked at these locations, so none of them may lead out of the temporary directory.
+        externalDataFiles.keySet().forEach(OnnxExternalDataResolver::requireLocationInsideModelDirectory);
 
         var tempDir = Files.createTempDirectory("onnx-model-");
         try {
