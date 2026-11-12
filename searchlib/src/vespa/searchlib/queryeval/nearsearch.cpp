@@ -207,9 +207,15 @@ NearSearch::~NearSearch() = default;
 namespace {
 
 struct PosIter {
-    TermFieldMatchData::PositionsIterator curPos;
-    TermFieldMatchData::PositionsIterator endPos;
-    TermFieldMatchData::PositionsIterator lookahead;
+    using Positions = std::span<const TermFieldMatchDataPosition>;
+    using Iterator = Positions::iterator;
+
+    Iterator curPos;
+    Iterator endPos;
+    Iterator lookahead;
+
+    explicit PosIter(Positions positions)
+        : curPos(positions.begin()), endPos(positions.end()), lookahead(positions.begin()) {}
 
     bool operator<(const PosIter& other) const {
         // assumes none is at end
@@ -244,8 +250,11 @@ public:
     bool setup(const TermFieldMatchDataArray& input, size_t num_positive_terms, uint32_t docid) {
         for (size_t i = num_positive_terms; i < input.size(); ++i) {
             const TermFieldMatchData* term = input[i];
-            if (term->has_data(docid) && term->begin() != term->end()) {
-                _queue.push({term->begin(), term->end(), term->begin()});
+            if (term->has_data(docid)) {
+                auto positions = term->match_view();
+                if (!positions.empty()) {
+                    _queue.push(PosIter(positions));
+                }
             }
         }
         return !_queue.empty();
@@ -332,10 +341,7 @@ struct Iterators {
     }
 
     void add(const TermFieldMatchData* term) {
-        PosIter iter;
-        iter.curPos = term->begin();
-        iter.endPos = term->end();
-        iter.lookahead = iter.curPos;
+        PosIter iter(term->match_view());
         LOG_ASSERT(iter.curPos != iter.endPos);
         _queue.push(iter);
         update(*iter.curPos);
@@ -388,7 +394,7 @@ template <typename MatchResult> void NearSearch::Matcher::match(uint32_t docId, 
     uint32_t  num_positive_terms = inputs().size() - num_negative_terms();
     for (uint32_t i = 0; i < num_positive_terms; ++i) {
         const TermFieldMatchData* term = inputs()[i];
-        if (!term->has_data(docId) || term->begin() == term->end()) {
+        if (!term->has_data(docId) || term->match_view().empty()) {
             LOG(debug, "No occurrences found for term %d.", i);
             return;
         }
@@ -462,29 +468,54 @@ ONearSearch::ONearSearch(Children terms, const TermFieldMatchDataArray& data, ui
                  exclusion_distance);
 }
 
+namespace {
+
+struct PositionsIterator {
+
+    using Positions = std::span<const TermFieldMatchDataPosition>;
+    using Iterator = Positions::iterator;
+
+    Iterator begin;
+    Iterator end;
+
+    explicit PositionsIterator(Positions positions) : begin(positions.begin()), end(positions.end()) {}
+
+    [[nodiscard]] bool is_at_end() const noexcept { return begin == end; }
+
+    const auto& operator*() const { return *begin; }
+
+    auto& operator++() {
+        ++begin;
+        return *this;
+    }
+};
+
+} // namespace
+
 ONearSearch::~ONearSearch() = default;
 
 template <typename MatchResult, typename Filter>
 void ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filter&& filter) {
-    uint32_t              numTerms = inputs().size() - num_negative_terms();
-    PositionsIteratorList pos;
+    uint32_t numTerms = inputs().size() - num_negative_terms();
 
+    // All terms must be in doc.
     for (uint32_t i = 0; i < numTerms; ++i) {
         const TermFieldMatchData* term = inputs()[i];
-        if (!term->has_data(docId) || term->begin() == term->end()) {
+        if (!term->has_data(docId) || term->match_view().empty()) {
             LOG(debug, "No occurrences found for term %d.", i);
             return;
         }
         LOG(debug, "Got positions iterator for term %d.", i);
-        pos.push_back(term->begin());
     }
+
+    const auto& first_term = inputs()[0];
     if (numTerms < 2) {
-        for (; pos[0] != inputs()[0]->end(); ++pos[0]) {
-            if (filter.check_window(*pos[0], *pos[0])) {
+        for (const auto& pos : first_term->match_view()) {
+            if (filter.check_window(pos, pos)) {
                 if constexpr (MatchResult::collect_spans) {
-                    match_result.register_match(MatchSpan(field_id(), *pos[0], *pos[0]));
+                    match_result.register_match(MatchSpan(field_id(), pos, pos));
                 } else {
-                    match_result.register_match(pos[0]->getElementId());
+                    match_result.register_match(pos.getElementId());
                 }
                 if constexpr (MatchResult::shortcut_return) {
                     return;
@@ -494,55 +525,59 @@ void ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result,
         return; // 1 term is always near itself
     }
 
+    std::vector<PositionsIterator> pos_iter;
+    pos_iter.reserve(numTerms);
+    for (uint32_t i = 0; i < numTerms; ++i) {
+        const TermFieldMatchData* term = inputs()[i];
+        pos_iter.push_back(PositionsIterator(term->match_view()));
+    }
+
     int32_t remain = window();
 
-    TermFieldMatchDataPositionKey         prevTermPos;
-    TermFieldMatchDataPositionKey         curTermPos;
-    TermFieldMatchDataPositionKey         lastAllowed;
-    TermFieldMatchData::PositionsIterator lookahead = pos.back();
+    TermFieldMatchDataPositionKey curTermPos;
+    auto                          lookahead = pos_iter.back().begin;
 
     // Look for match for every occurrence of the first term.
-    for (; pos[0] != inputs()[0]->end(); ++pos[0]) {
-        TermFieldMatchDataPositionKey firstTermPos = *pos[0];
-        lastAllowed = calc_window_end_pos(*pos[0], remain, get_element_gap());
+    for (const auto& first_term_pos : first_term->match_view()) {
+        TermFieldMatchDataPositionKey lastAllowed = calc_window_end_pos(first_term_pos, remain, get_element_gap());
         if (lastAllowed < curTermPos) {
             // if we already know that we must seek onwards:
             continue;
         }
-        prevTermPos = firstTermPos;
-        LOG(spam, "Looking for match in window [%d:%d, %d:%d].", firstTermPos.getElementId(),
-            firstTermPos.getPosition(), lastAllowed.getElementId(), lastAllowed.getPosition());
+        TermFieldMatchDataPositionKey prevTermPos = first_term_pos;
+        LOG(spam, "Looking for match in window [%d:%d, %d:%d].", first_term_pos.getElementId(),
+            first_term_pos.getPosition(), lastAllowed.getElementId(), lastAllowed.getPosition());
         for (uint32_t i = 1; i < numTerms; ++i) {
             LOG(spam, "Forwarding iterator for term %d beyond %d.", i, prevTermPos.getPosition());
-            while (pos[i] != inputs()[i]->end() && !(prevTermPos < *pos[i])) {
-                ++pos[i];
+            while (!pos_iter[i].is_at_end() && !(prevTermPos < *pos_iter[i])) {
+                ++pos_iter[i];
             }
-            if (pos[i] == inputs()[i]->end()) {
+            if (pos_iter[i].is_at_end()) {
                 LOG(debug, "Reached end of occurrences for term %d without matching ONEAR.", i);
                 return;
             }
-            curTermPos = *pos[i];
+            curTermPos = *pos_iter[i];
             if (lastAllowed < curTermPos) {
                 // outside window
                 break;
             }
             LOG(spam, "Current position for term %d is %d.", i, curTermPos.getPosition());
             if (i + 1 == numTerms) {
-                if (filter.check_window(*pos[0], *pos[i])) {
+                if (filter.check_window(first_term_pos, *pos_iter[i])) {
                     LOG(debug, "ONEAR match found for document %d.", docId);
                     // OK for all terms
                     if constexpr (MatchResult::collect_spans) {
-                        auto adjusted_last_allowed = filter.max_window_end(*pos[i], lastAllowed);
-                        if (lookahead < pos[i]) {
-                            lookahead = pos[i];
+                        auto adjusted_last_allowed = filter.max_window_end(*pos_iter[i], lastAllowed);
+                        if (lookahead < pos_iter[i].begin) {
+                            lookahead = pos_iter[i].begin;
                         }
-                        while (lookahead != inputs()[i]->end() && !(adjusted_last_allowed < lookahead->key())) {
+                        while (lookahead != pos_iter[i].end && !(adjusted_last_allowed < lookahead->key())) {
                             ++lookahead;
                         }
                         --lookahead;
-                        match_result.register_match(MatchSpan(field_id(), *pos[0], *lookahead));
+                        match_result.register_match(MatchSpan(field_id(), first_term_pos, *lookahead));
                     } else {
-                        match_result.register_match(pos[0]->getElementId());
+                        match_result.register_match(first_term_pos.getElementId());
                     }
                     if constexpr (MatchResult::shortcut_return) {
                         return;
