@@ -23,6 +23,7 @@
 #include "hwy_kernel-inl.h"
 #include "hwy_aux_ops-inl.h"
 #include "hwy_block_bit_packing-inl.h"
+#include "hwy_quantizer-inl.h"
 #include <hwy/contrib/dot/dot-inl.h>
 #include <hwy/contrib/bit_pack/bit_pack-inl.h>
 
@@ -577,6 +578,37 @@ HWY_NOINLINE float hwy_eden_q_q_dot(const uint8_t* HWY_RESTRICT packed_lhs, cons
         df32, parallel_reduce_accumulators(VecAdd{}, accu0, accu1, accu2, accu3, accu4, accu5, accu6, accu7));
 }
 
+template <size_t Bits>
+HWY_NOINLINE void hwy_eden_quantize_centroids(const float* HWY_RESTRICT src, uint8_t* HWY_RESTRICT dest,
+                                              const float nx, const size_t sz) noexcept {
+    static_assert(Bits >= 1 && Bits <= 4);
+    const hn::ScalableTag<float>              df32;
+    const hn::Rebind<uint8_t, decltype(df32)> du8;
+    using VF32 = hn::Vec<decltype(df32)>;
+
+    constexpr size_t NumBuckets = 1u << Bits;
+
+    const auto kernel_fn = [df32, du8, nx](InvocationMeta auto meta, const VF32 v) VESPA_HWY_LAMBDA {
+        (void)meta; // Partials are handled by HwyTransformKernel
+        // These are precomputed halfway points (thresholds) between positive EDEN centroids.
+        // Note that the zero-threshold is implicitly present and is not included.
+        // TODO use centroid spans and constexpr-compute these? Although, perhaps there is
+        //  such a thing as _too much_ compile-time magic...?! :O
+        constexpr float eden_f32_abs_thresholds[4][7] = {
+            {},                                                                                  // 1 bit
+            {0.98159879},                                                                        // 2 bits
+            {0.50054973, 1.04995728, 1.74792743},                                                // 3 bits
+            {0.25822166, 0.52240372, 0.79954982, 1.09928584, 1.43713880, 1.84353185, 2.40080333} // 4 bits
+        };
+        const float* t = eden_f32_abs_thresholds[Bits - 1];
+        const VF32   v_normalized = hn::Mul(v, hn::Set(df32, nx));
+        return ZeroSymmetricQuantizer::quantize_into_buckets<NumBuckets>(df32, du8, v_normalized, t);
+    };
+
+    using MyKernel = HwyTransformKernel<UnrolledBy<4>>;
+    MyKernel::elementwise_transform(df32, du8, src, dest, sz, kernel_fn);
+}
+
 HWY_INLINE
 const char* my_hwy_target_name() noexcept {
     return hwy::TargetName(HWY_TARGET);
@@ -650,6 +682,21 @@ size_t my_binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) n
 size_t my_population_count(const uint64_t* buf, size_t sz) noexcept {
     return my_hwy_popcount(buf, sz);
 }
+void my_eden_quantize_centroids(const float* src, uint8_t* dest, const uint8_t bits, const float nx,
+                                const size_t sz) noexcept {
+    switch (bits) {
+    case 1:
+        return hwy_eden_quantize_centroids<1>(src, dest, nx, sz);
+    case 2:
+        return hwy_eden_quantize_centroids<2>(src, dest, nx, sz);
+    case 3:
+        return hwy_eden_quantize_centroids<3>(src, dest, nx, sz);
+    case 4:
+        return hwy_eden_quantize_centroids<4>(src, dest, nx, sz);
+    default:
+        abort();
+    }
+}
 void my_pack_bits(const uint8_t* raw, uint8_t* packed, const uint8_t bits, const size_t sz) noexcept {
     switch (bits) {
     case 1:
@@ -706,6 +753,7 @@ public:
         ft.squared_euclidean_length_f32 = my_squared_euclidean_length_f32;
         ft.binary_hamming_distance = my_binary_hamming_distance;
         ft.population_count = my_population_count;
+        ft.eden_quantize_centroids = my_eden_quantize_centroids;
         ft.pack_bits = my_pack_bits;
         ft.unpack_bits = my_unpack_bits;
 #if HWY_TARGET == HWY_AVX2 || HWY_TARGET == HWY_AVX3
