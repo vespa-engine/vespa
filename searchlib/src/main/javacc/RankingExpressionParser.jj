@@ -37,17 +37,18 @@ import java.util.Optional;
 public class RankingExpressionParser {
 
     // Large expressions, such as imported tree models, repeat the same few names and strings very many times.
-    // These let all occurrences within one parsed expression share a single instance.
+    // These let all occurrences within one parsed expression share a single instance:
+    // Each maps a value to the first instance seen of it, which is returned for all later occurrences.
     private final HashMap<String, String> names = new HashMap<>();
     private final HashMap<String, ConstantNode> stringConstants = new HashMap<>();
 
-    private String name(String name) {
+    private String sharedName(String name) {
         if (name == null) return null;
         String existing = names.putIfAbsent(name, name);
         return existing != null ? existing : name;
     }
 
-    private ConstantNode stringConstant(String image) {
+    private ConstantNode sharedStringConstant(String image) {
         StringValue value = (StringValue)Value.parse(image);
         ConstantNode node = stringConstants.get(value.asString());
         if (node == null) {
@@ -339,8 +340,8 @@ ReferenceNode feature() :
 {
     ( name = identifier() [ <LBRACE> args = args() <RBRACE> ] [ <DOT> out = outs() ] )
     {
-        name = name(name);
-        out = name(out);
+        name = sharedName(name);
+        out = sharedName(out);
         if (args == null && out == null) { // know the difference between "foo" and "foo()"
             return new ReferenceNode(name);
         }
@@ -1077,7 +1078,7 @@ ExpressionNode constantPrimitive(boolean negate) :
         <FLOAT> { value = token.image; }
       ) { node = new ConstantNode(Value.parse(negate ? ("-" + value) : value)); } |
       <STRING> {
-        node = stringConstant(token.image);
+        node = sharedStringConstant(token.image);
         if (negate) node = new NegativeNode(node);
       } |
       ( <TRUE> | <FALSE> ) {
