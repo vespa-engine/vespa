@@ -212,13 +212,11 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     // Returns the set of applications that failed to redeploy
     private List<ApplicationId> redeployApplications(List<ApplicationId> applicationIds) throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numRedeploymentThreads(),
-                                                                new DaemonThreadFactory("redeploy-apps-"));
+        ExecutorService executor = createRedeploymentExecutor();
         // Keep track of deployment status per application
         Map<ApplicationId, Future<?>> deployments = new HashMap<>();
         if (!applicationIds.isEmpty()) {
-            log.log(Level.FINE, () -> "Redeploying " + applicationIds.size() + " apps " + applicationIds + " with " +
-                    configserverConfig.numRedeploymentThreads() + " threads");
+            log.log(Level.FINE, () -> "Redeploying " + applicationIds.size() + " apps " + applicationIds);
             applicationIds.forEach(appId -> deployments.put(appId, executor.submit(() -> {
                 var start = clock.instant();
                 log.log(Level.FINE, () -> "Starting redeployment of " + appId);
@@ -237,6 +235,13 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         }
 
         return failedDeployments;
+    }
+
+    private ExecutorService createRedeploymentExecutor() {
+        int numThreads = configserverConfig.numRedeploymentThreads() == 0
+                ? Runtime.getRuntime().availableProcessors()
+                : configserverConfig.numRedeploymentThreads();
+        return Executors.newFixedThreadPool(numThreads, new DaemonThreadFactory("redeploy-apps-"));
     }
 
     private enum DeploymentStatus { inProgress, done, failed }

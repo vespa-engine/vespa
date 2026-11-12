@@ -34,7 +34,9 @@ multitenant bool default=false
 numDelayedResponseThreads int default=1
 serverId string default="localhost"
 hostedVespa bool default=false
+# Number of threads used for bootstrapping tenants, 0 means use number of available processors
 numParallelTenantLoaders int default=4
+# Number of threads used for redeploying applications on bootstrap, 0 means use number of available processors
 numRedeploymentThreads int default=4
 
 # Configserver app

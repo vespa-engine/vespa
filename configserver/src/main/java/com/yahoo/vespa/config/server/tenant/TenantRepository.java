@@ -296,9 +296,15 @@ public class TenantRepository {
         curator.create(vespaPath);
     }
 
+    private ExecutorService createBootstrapExecutor() {
+        int numThreads = configserverConfig.numParallelTenantLoaders() == 0
+                ? Runtime.getRuntime().availableProcessors()
+                : configserverConfig.numParallelTenantLoaders();
+        return Executors.newFixedThreadPool(numThreads, new DaemonThreadFactory("bootstrap-tenant-"));
+    }
+
     private void bootstrapTenants() {
-        ExecutorService bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
-                new DaemonThreadFactory("bootstrap-tenant-"));
+        ExecutorService bootstrapExecutor = createBootstrapExecutor();
         // Keep track of tenants created
         Map<TenantName, Future<?>> futures = new HashMap<>();
         readTenantsFromZooKeeper(curator).forEach(t -> futures.put(t, bootstrapExecutor.submit(() -> bootstrapTenant(t))));
