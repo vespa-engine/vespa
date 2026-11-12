@@ -46,4 +46,9 @@ public class RangePredicate extends FilterExpression {
     public FilterExpression copy() {
         return new RangePredicate(lower, upper, expression.copy(), lowerInclusive, upperInclusive);
     }
+
+    @Override
+    public void visitExpressions(ExpressionVisitor visitor) {
+        expression.visit(visitor);
+    }
 }

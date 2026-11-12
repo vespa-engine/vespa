@@ -15,4 +15,12 @@ public abstract class FilterExpression {
 
     /** Returns a deep copy of this */
     public abstract FilterExpression copy();
+
+    /**
+     * Recursively calls {@link GroupingExpression#visit(ExpressionVisitor)} on all {@link GroupingExpression} objects
+     * in this filter and in all of its nested operations.
+     *
+     * @param visitor The visitor to call.
+     */
+    public abstract void visitExpressions(ExpressionVisitor visitor);
 }

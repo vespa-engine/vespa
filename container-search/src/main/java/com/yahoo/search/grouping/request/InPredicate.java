@@ -59,4 +59,9 @@ public class InPredicate extends FilterExpression {
     public FilterExpression copy() {
         return new InPredicate(expression.copy(), args);
     }
+
+    @Override
+    public void visitExpressions(ExpressionVisitor visitor) {
+        expression.visit(visitor);
+    }
 }

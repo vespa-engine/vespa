@@ -2859,7 +2859,8 @@
       "public void <init>(java.util.List)",
       "public java.util.List getArgs()",
       "public java.lang.String toString()",
-      "public com.yahoo.search.grouping.request.FilterExpression copy()"
+      "public com.yahoo.search.grouping.request.FilterExpression copy()",
+      "public void visitExpressions(com.yahoo.search.grouping.request.ExpressionVisitor)"
     ],
     "fields" : [ ]
   },
@@ -3305,7 +3306,8 @@
     "methods" : [
       "public void <init>()",
       "public abstract java.lang.String toString()",
-      "public abstract com.yahoo.search.grouping.request.FilterExpression copy()"
+      "public abstract com.yahoo.search.grouping.request.FilterExpression copy()",
+      "public abstract void visitExpressions(com.yahoo.search.grouping.request.ExpressionVisitor)"
     ],
     "fields" : [ ]
   },
@@ -3488,7 +3490,8 @@
       "public com.yahoo.search.grouping.request.GroupingExpression getExpression()",
       "public java.util.List getArgs()",
       "public java.lang.String toString()",
-      "public com.yahoo.search.grouping.request.FilterExpression copy()"
+      "public com.yahoo.search.grouping.request.FilterExpression copy()",
+      "public void visitExpressions(com.yahoo.search.grouping.request.ExpressionVisitor)"
     ],
     "fields" : [ ]
   },
@@ -3548,7 +3551,8 @@
       "public void <init>(com.yahoo.search.grouping.request.GroupingExpression)",
       "public com.yahoo.search.grouping.request.GroupingExpression getExpression()",
       "public java.lang.String toString()",
-      "public com.yahoo.search.grouping.request.FilterExpression copy()"
+      "public com.yahoo.search.grouping.request.FilterExpression copy()",
+      "public void visitExpressions(com.yahoo.search.grouping.request.ExpressionVisitor)"
     ],
     "fields" : [ ]
   },
@@ -4112,7 +4116,8 @@
       "public void <init>(com.yahoo.search.grouping.request.FilterExpression)",
       "public com.yahoo.search.grouping.request.FilterExpression getExpression()",
       "public java.lang.String toString()",
-      "public com.yahoo.search.grouping.request.FilterExpression copy()"
+      "public com.yahoo.search.grouping.request.FilterExpression copy()",
+      "public void visitExpressions(com.yahoo.search.grouping.request.ExpressionVisitor)"
     ],
     "fields" : [ ]
   },
@@ -4153,7 +4158,8 @@
       "public void <init>(java.util.List)",
       "public java.util.List getArgs()",
       "public java.lang.String toString()",
-      "public com.yahoo.search.grouping.request.FilterExpression copy()"
+      "public com.yahoo.search.grouping.request.FilterExpression copy()",
+      "public void visitExpressions(com.yahoo.search.grouping.request.ExpressionVisitor)"
     ],
     "fields" : [ ]
   },
@@ -4201,7 +4207,8 @@
       "public boolean getUpperInclusive()",
       "public com.yahoo.search.grouping.request.GroupingExpression getExpression()",
       "public java.lang.String toString()",
-      "public com.yahoo.search.grouping.request.FilterExpression copy()"
+      "public com.yahoo.search.grouping.request.FilterExpression copy()",
+      "public void visitExpressions(com.yahoo.search.grouping.request.ExpressionVisitor)"
     ],
     "fields" : [ ]
   },
@@ -4288,7 +4295,8 @@
       "public java.lang.String getPattern()",
       "public com.yahoo.search.grouping.request.GroupingExpression getExpression()",
       "public java.lang.String toString()",
-      "public com.yahoo.search.grouping.request.FilterExpression copy()"
+      "public com.yahoo.search.grouping.request.FilterExpression copy()",
+      "public void visitExpressions(com.yahoo.search.grouping.request.ExpressionVisitor)"
     ],
     "fields" : [ ]
   },
