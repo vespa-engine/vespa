@@ -14,6 +14,8 @@ class AttributeNode;
  * itself, where each element is the key, a separator (0x7F) and the value encoded according to the value type.
  * The result is an array of strings, one per entry, on the form key + separator + decoded value,
  * where the separator is ":" unless set otherwise.
+ * When the input is a single string (as when grouping on the same array, or an associated one, has already
+ * expanded it into separate elements), the result is the single decoded string.
  *
  * The attribute name, value type and separator are serialized; the container resolves the value type from the schema.
  */
@@ -28,6 +30,7 @@ public:
 private:
     std::string                    _attribute_name;
     ValueType                      _value_type;
+    bool                           _vector_mode;
     std::string                    _separator;
     std::unique_ptr<AttributeNode> _input; // reads the hidden attribute; created from the name, not serialized
 

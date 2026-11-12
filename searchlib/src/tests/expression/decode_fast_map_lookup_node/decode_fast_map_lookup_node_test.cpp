@@ -28,6 +28,7 @@ using search::expression::ConfigureStaticParams;
 using search::expression::DecodeFastMapLookupNode;
 using search::expression::ExpressionTree;
 using search::expression::ResultNodeVector;
+using search::expression::StringResultNode;
 using search::expression::StringResultNodeVector;
 using ValueType = DecodeFastMapLookupNode::ValueType;
 using vespalib::BufferRef;
@@ -241,6 +242,7 @@ protected:
                          {{entry("a", "80000001"), entry("b", "7fffffff")}, {}, {entry("c", "80000000")}});
         add_string_array("s$lookup", {{entry("x", "hello")}});
         add_string_array("a.b$lookup", {{entry("d", "80000002")}});
+        add_string_single("single$lookup", {entry("a", "80000001"), entry("b", "7fffffff")});
     }
     ~DecodeFastMapLookupNodeAttributeTest() override;
 
@@ -254,6 +256,19 @@ protected:
             for (const auto& value : docValues) {
                 sattr.append(docId, value, 1);
             }
+            attr->commit();
+        }
+        ASSERT_TRUE(mgr.add(attr));
+    }
+
+    void add_string_single(const std::string& name, const std::vector<std::string>& values) {
+        auto  attr = AttributeFactory::createAttribute(name, Config(BasicType::STRING, CollectionType::SINGLE));
+        auto& sattr = dynamic_cast<StringAttribute&>(*attr);
+        attr->addReservedDoc();
+        for (const auto& value : values) {
+            uint32_t docId = 0;
+            ASSERT_TRUE(attr->addDoc(docId));
+            sattr.update(docId, value);
             attr->commit();
         }
         ASSERT_TRUE(mgr.add(attr));
@@ -324,6 +339,20 @@ TEST_F(DecodeFastMapLookupNodeAttributeTest, copy_of_node_has_its_own_input) {
     EXPECT_EQ((std::vector<std::string>{"c:0"}), values_of(copy_tree, 3));
     EXPECT_EQ((std::vector<std::string>{"a:1", "b:-1"}), values_of(tree, 1));
     EXPECT_EQ((std::vector<std::string>{"c:0"}), values_of(copy_tree, 3));
+}
+
+// Grouping on the same (or an associated) array expands it, so the input then yields a single string.
+TEST_F(DecodeFastMapLookupNodeAttributeTest, single_string_input_is_decoded_to_single_string) {
+    auto tree = make_tree(make_node("single$lookup", ValueType::INT));
+    for (auto [docId, expected] : {std::pair<uint32_t, std::string>{1, "a:1"}, {2, "b:-1"}}) {
+        tree.execute(docId, 0.0);
+        const auto& result = *tree.getResult();
+        ASSERT_TRUE(result.inherits(StringResultNode::classId));
+        EXPECT_FALSE(result.inherits(StringResultNodeVector::classId));
+        char buf[100];
+        auto sbuf = result.getString(BufferRef(buf, sizeof(buf)));
+        EXPECT_EQ(expected, std::string(sbuf.c_str(), sbuf.size()));
+    }
 }
 
 TEST_F(DecodeFastMapLookupNodeAttributeTest, attribute_of_dotted_field_name_is_read) {
