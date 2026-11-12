@@ -72,6 +72,7 @@ private:
     static constexpr uint16_t UNPACK_ALL_FEATURES_MASK =
         UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG;
     static constexpr uint16_t HIDDEN_FROM_RANKING = 16;
+    static constexpr uint16_t POSITIONS_HIDDEN_FROM_RANKING = 32;
 
     uint32_t _docId;
     uint16_t _fieldId;
@@ -93,6 +94,27 @@ public:
     PositionsIterator end() const {
         return allocated() ? getMultiple() + _sz : empty() ? getFixed() : getFixed() + 1;
     }
+
+    /**
+     * Positions view for ranking.
+     */
+    [[nodiscard]] std::span<const TermFieldMatchDataPosition> rank_view() const noexcept {
+        if (_flags & POSITIONS_HIDDEN_FROM_RANKING) {
+            return {};
+        }
+        return match_view();
+    }
+
+    /**
+     * Positions view for matching.
+     */
+    [[nodiscard]] std::span<const TermFieldMatchDataPosition> match_view() const noexcept {
+        if (allocated()) {
+            return {getMultiple(), _sz};
+        }
+        return {getFixed(), empty() ? 0u : 1u};
+    }
+
     size_t size() const noexcept { return _sz; }
     size_t capacity() const noexcept { return allocated() ? _data._positions._allocated : 1; }
     void reservePositions(size_t sz) {
