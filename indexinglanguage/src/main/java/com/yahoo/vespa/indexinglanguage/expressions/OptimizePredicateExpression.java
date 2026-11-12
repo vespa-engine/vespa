@@ -5,7 +5,9 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
+import com.yahoo.document.predicate.FeatureRange;
 import com.yahoo.document.predicate.Predicate;
+import com.yahoo.document.predicate.PredicateOperator;
 import com.yahoo.search.predicate.optimization.AndOrSimplifier;
 import com.yahoo.search.predicate.optimization.BooleanSimplifier;
 import com.yahoo.search.predicate.optimization.ComplexNodeTransformer;
@@ -55,8 +57,28 @@ public final class OptimizePredicateExpression extends Expression {
         Long lower = lower_bound != null? lower_bound.getLong() : null;
         Long upper = upper_bound != null? upper_bound.getLong() : null;
         PredicateOptions options = new PredicateOptions(arity.getInteger(), lower, upper);
+        validateBounds(predicate.getPredicate(), options);
         predicate.setPredicate(optimizer.process(predicate.getPredicate(), options));
         context.setCurrentValue(predicate);
+    }
+
+    private static void validateBounds(Predicate predicate, PredicateOptions options) {
+        if (predicate instanceof PredicateOperator operator) {
+            for (Predicate operand : operator.getOperands()) {
+                validateBounds(operand, options);
+            }
+        } else if (predicate instanceof FeatureRange range) {
+            Long from = range.getFromInclusive();
+            Long to = range.getToInclusive();
+            long lower = options.getLowerBound();
+            long upper = options.getUpperBound();
+            if ((from != null && (from < lower || from > upper)) ||
+                (to != null && (to < lower || to > upper))) {
+                throw new InvalidInputException("Predicate attribute '" + range.getKey() + "' has range [" +
+                                                (from == null ? "" : from) + ".." + (to == null ? "" : to) +
+                                                "] outside configured bounds [" + lower + ".." + upper + "].");
+            }
+        }
     }
 
     private void checkVariable(TypeContext context, String var, DataType type, boolean required) {
