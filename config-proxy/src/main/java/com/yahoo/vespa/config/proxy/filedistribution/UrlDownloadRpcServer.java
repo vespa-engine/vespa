@@ -13,7 +13,6 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
@@ -46,7 +45,11 @@ class UrlDownloadRpcServer {
                                                                 new DaemonThreadFactory("Rpc URL download executor"));
 
     UrlDownloadRpcServer(Supervisor supervisor) {
-        this.rootDownloadDir = defaultDownloadDirectory;
+        this(supervisor, defaultDownloadDirectory);
+    }
+
+    UrlDownloadRpcServer(Supervisor supervisor, File rootDownloadDir) {
+        this.rootDownloadDir = rootDownloadDir;
         supervisor.addMethod(new Method("url.waitFor", "s*", "s", this::download)
                                     .requireCapabilities(Capability.CONFIGPROXY__FILEDISTRIBUTION_API)
                                     .methodDesc("get path to url download")
@@ -72,29 +75,24 @@ class UrlDownloadRpcServer {
 
     private void downloadFile(Request req) {
         String url = req.parameters().get(0).asString();
-        String authHeader = req.parameters().size() > 1 ? req.parameters().get(1).asString() : null;
 
-        File downloadDir = new File(rootDownloadDir, urlToDirName(url));
-        UrlDownloader downloader;
+        // A detached request that is not returned leaves the caller waiting until its timeout,
+        // so every failure must end up as an error on the request.
         try {
-            downloader = downloader(url, new DownloadOptions(authHeader));
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-        if (downloader.alreadyDownloaded(downloadDir)) {
-            log.log(Level.INFO, "URL '" + url + "' already downloaded");
-            req.returnValues().add(new StringValue(new File(downloadDir, downloader.fileName()).getAbsolutePath()));
-            req.returnRequest();
-            return;
-        }
-
-        try {
-            Files.createDirectories(downloadDir.toPath());
-            Optional<File> file = downloader.download(downloadDir);
-            if (file.isPresent())
-                req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
-            else
-                req.setError(DOES_NOT_EXIST, "URL '" + url + "' not found");
+            String authHeader = req.parameters().size() > 1 ? req.parameters().get(1).asString() : null;
+            File downloadDir = new File(rootDownloadDir, urlToDirName(url));
+            UrlDownloader downloader = downloader(url, new DownloadOptions(authHeader));
+            if (downloader.alreadyDownloaded(downloadDir)) {
+                log.log(Level.INFO, "URL '" + url + "' already downloaded");
+                req.returnValues().add(new StringValue(new File(downloadDir, downloader.fileName()).getAbsolutePath()));
+            } else {
+                Files.createDirectories(downloadDir.toPath());
+                Optional<File> file = downloader.download(downloadDir);
+                if (file.isPresent())
+                    req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
+                else
+                    req.setError(DOES_NOT_EXIST, "URL '" + url + "' not found");
+            }
         } catch (RuntimeException e) {
             logAndSetRpcError(req, url, e, HTTP_ERROR);
         } catch (Throwable e) {
@@ -103,10 +101,11 @@ class UrlDownloadRpcServer {
         req.returnRequest();
     }
 
-    private static UrlDownloader downloader(String urlString, DownloadOptions options) throws MalformedURLException {
+    private static UrlDownloader downloader(String urlString, DownloadOptions options) {
         Objects.requireNonNull(urlString, "url cannot be null");
         URI uri = URI.create(urlString);
         String scheme = uri.getScheme();
+        if (scheme == null) throw new IllegalArgumentException("URL '" + urlString + "' has no scheme");
         return switch (scheme) {
             case "http", "https" -> new UrlDownloader(uri, options);
             default -> throw new IllegalArgumentException("Unsupported scheme '" + scheme + "'");
@@ -114,9 +113,10 @@ class UrlDownloadRpcServer {
     }
 
     private static void logAndSetRpcError(Request req, String url, Throwable e, int rpcErrorCode) {
-        String message = "Download of '" + url + "' failed: " + Exceptions.toMessageString(e);
-        log.log(Level.SEVERE, message);
-        req.setError(rpcErrorCode, e.getMessage());
+        // Throwable.getMessage() can be null, and Request.returnRequest() throws NullPointerException on a null error message
+        String message = Exceptions.toMessageString(e);
+        log.log(Level.SEVERE, "Download of '" + url + "' failed: " + message);
+        req.setError(rpcErrorCode, message);
     }
 
     private static String urlToDirName(String uri) {
