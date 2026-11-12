@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include "andsearch.h"
-#include "irequestcontext.h"
+#include "multisearch.h"
 
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchlib/fef/termfieldmatchdataposition.h>
 #include <vespa/vespalib/util/vespa_dll_local.h>
 
-#include <memory>
 #include <vector>
 
 namespace search::queryeval {
@@ -26,7 +25,7 @@ class SimplePhraseSearch : public MultiSearch {
     uint32_t                     _unpacked_docid;
     bool                         _strict;
 
-    using It = fef::TermFieldMatchData::PositionsIterator;
+    using It = fef::TermFieldMatchDataPositionIterator;
     // Reuse this vector instead of allocating a new one when needed.
     std::vector<It> _iterators;
 
