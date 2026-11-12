@@ -11,7 +11,7 @@
 #include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
-#include <vespa/opentelemetry/rpc_server_tools.h>
+#include <vespa/opentelemetry/rpc_request_telemetry_context.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
@@ -22,8 +22,9 @@
 LOG_SETUP(".engine.proto_rpc_adapter");
 
 using opentelemetry::trace::Provider;
+using opentelemetry::trace::Span;
 using vespa_opentelemetry::ProtoTelemetryServerCarrier;
-using vespa_opentelemetry::RpcServerTools;
+using vespa_opentelemetry::RpcRequestTelemetryContext;
 
 namespace search::engine {
 
@@ -92,11 +93,16 @@ template <typename MSG> bool decode_message(const FRT_Values& src, MSG& dst) {
 //-----------------------------------------------------------------------------
 
 struct SearchRequestDecoder : SearchRequest::Source::Decoder {
-    FRT_RPCRequest& rpc; // valid until Return is called
-    QueryStats&     stats;
-    RelativeTime    relative_time;
-    SearchRequestDecoder(FRT_RPCRequest& rpc_in, QueryStats& stats_in)
-        : rpc(rpc_in), stats(stats_in), relative_time(std::make_unique<SteadyClock>()) {}
+    FRT_RPCRequest&             rpc; // valid until Return is called
+    QueryStats&                 stats;
+    RpcRequestTelemetryContext& request_telemetry_context;
+    RelativeTime                relative_time;
+    SearchRequestDecoder(FRT_RPCRequest& rpc_in, QueryStats& stats_in,
+                         RpcRequestTelemetryContext& request_telemetry_context_in)
+        : rpc(rpc_in),
+          stats(stats_in),
+          request_telemetry_context(request_telemetry_context_in),
+          relative_time(std::make_unique<SteadyClock>()) {}
     std::unique_ptr<SearchRequest> decode() override {
         ProtoSearchRequest msg;
         stats.request_size = (*rpc.GetParams())[2]._data._len;
@@ -106,16 +112,9 @@ struct SearchRequestDecoder : SearchRequest::Source::Decoder {
         }
         // Note: Decoding here is delayed
         ProtoTelemetryServerCarrier carrier(msg.telemetry_metadata().trace_context());
-        auto                        request_context = RpcServerTools::make_optional_request_context(carrier);
-        if (request_context.has_value()) {
-            auto provider = Provider::GetTracerProvider();
-            auto tracer = provider->GetTracer(proton_rpc_server);
-            auto server_span =
-                RpcServerTools::make_server_span(request_context.value(), *tracer, "vespa.searchprotocol.search");
-            {
-                auto scope = tracer->WithActiveSpan(server_span);
-            }
-            server_span->End();
+        request_telemetry_context.setup(carrier, proton_rpc_server, "vespa.searchprotocol.search");
+        if (request_telemetry_context.span()) {
+            request_telemetry_context.span()->AddEvent("Start search");
         }
         auto req = std::make_unique<SearchRequest>(std::move(relative_time));
         ProtoConverter::search_request_from_proto(msg, *req);
@@ -123,15 +122,18 @@ struct SearchRequestDecoder : SearchRequest::Source::Decoder {
     }
 };
 
-std::unique_ptr<SearchRequest::Source::Decoder> search_request_decoder(FRT_RPCRequest& rpc, QueryStats& stats) {
-    return std::make_unique<SearchRequestDecoder>(rpc, stats);
+std::unique_ptr<SearchRequest::Source::Decoder>
+search_request_decoder(FRT_RPCRequest& rpc, QueryStats& stats,
+                       RpcRequestTelemetryContext& request_telemetry_context) {
+    return std::make_unique<SearchRequestDecoder>(rpc, stats, request_telemetry_context);
 }
 
 // allocated in the stash of the request it is completing; no self-delete needed
 struct SearchCompletionHandler : SearchClient {
-    FRT_RPCRequest&        req;
-    SearchProtocolMetrics& metrics;
-    QueryStats             stats;
+    FRT_RPCRequest&            req;
+    SearchProtocolMetrics&     metrics;
+    QueryStats                 stats;
+    RpcRequestTelemetryContext request_telemetry_context;
     SearchCompletionHandler(FRT_RPCRequest& req_in, SearchProtocolMetrics& metrics_in)
         : req(req_in), metrics(metrics_in), stats() {}
     void searchDone(SearchReply::UP reply) override {
@@ -143,6 +145,10 @@ struct SearchCompletionHandler : SearchClient {
             stats.latency = vespalib::to_s(reply->request->getTimeUsed());
             metrics.update_query_metrics(stats);
         }
+        if (request_telemetry_context.span()) {
+            request_telemetry_context.span()->AddEvent("Done search");
+        }
+        request_telemetry_context.clear();
         req.Return();
     }
 };
@@ -150,11 +156,16 @@ struct SearchCompletionHandler : SearchClient {
 //-----------------------------------------------------------------------------
 
 struct DocsumRequestDecoder : DocsumRequest::Source::Decoder {
-    FRT_RPCRequest& rpc; // valid until Return is called
-    DocsumStats&    stats;
-    RelativeTime    relative_time;
-    DocsumRequestDecoder(FRT_RPCRequest& rpc_in, DocsumStats& stats_in)
-        : rpc(rpc_in), stats(stats_in), relative_time(std::make_unique<SteadyClock>()) {}
+    FRT_RPCRequest&             rpc; // valid until Return is called
+    DocsumStats&                stats;
+    RpcRequestTelemetryContext& request_telemetry_context;
+    RelativeTime                relative_time;
+    DocsumRequestDecoder(FRT_RPCRequest& rpc_in, DocsumStats& stats_in,
+                         RpcRequestTelemetryContext& request_telemetry_context_in)
+        : rpc(rpc_in),
+          stats(stats_in),
+          request_telemetry_context(request_telemetry_context_in),
+          relative_time(std::make_unique<SteadyClock>()) {}
     std::unique_ptr<DocsumRequest> decode() override {
         ProtoDocsumRequest msg;
         stats.request_size = (*rpc.GetParams())[2]._data._len;
@@ -164,16 +175,9 @@ struct DocsumRequestDecoder : DocsumRequest::Source::Decoder {
         }
         // Note: Decoding here is delayed
         ProtoTelemetryServerCarrier carrier(msg.telemetry_metadata().trace_context());
-        auto                        request_context = RpcServerTools::make_optional_request_context(carrier);
-        if (request_context.has_value()) {
-            auto provider = Provider::GetTracerProvider();
-            auto tracer = provider->GetTracer(proton_rpc_server);
-            auto server_span =
-                RpcServerTools::make_server_span(request_context.value(), *tracer, "vespa.searchprotocol.getDocsums");
-            {
-                auto scope = tracer->WithActiveSpan(server_span);
-            }
-            server_span->End();
+        request_telemetry_context.setup(carrier, proton_rpc_server, "vespa.searchprotocol.getDocsums");
+        if (request_telemetry_context.span()) {
+            request_telemetry_context.span()->AddEvent("Start docsum");
         }
         stats.requested_documents = msg.global_ids_size();
         auto req = std::make_unique<DocsumRequest>(std::move(relative_time));
@@ -182,17 +186,20 @@ struct DocsumRequestDecoder : DocsumRequest::Source::Decoder {
     }
 };
 
-std::unique_ptr<DocsumRequest::Source::Decoder> docsum_request_decoder(FRT_RPCRequest& rpc, DocsumStats& stats) {
-    return std::make_unique<DocsumRequestDecoder>(rpc, stats);
+std::unique_ptr<DocsumRequest::Source::Decoder>
+docsum_request_decoder(FRT_RPCRequest& rpc, DocsumStats& stats,
+                       RpcRequestTelemetryContext& request_telemetry_context) {
+    return std::make_unique<DocsumRequestDecoder>(rpc, stats, request_telemetry_context);
 }
 
 // allocated in the stash of the request it is completing; no self-delete needed
 struct GetDocsumsCompletionHandler : DocsumClient {
-    FRT_RPCRequest&        req;
-    SearchProtocolMetrics& metrics;
-    DocsumStats            stats;
+    FRT_RPCRequest&            req;
+    SearchProtocolMetrics&     metrics;
+    DocsumStats                stats;
+    RpcRequestTelemetryContext request_telemetry_context;
     GetDocsumsCompletionHandler(FRT_RPCRequest& req_in, SearchProtocolMetrics& metrics_in)
-        : req(req_in), metrics(metrics_in), stats() {}
+        : req(req_in), metrics(metrics_in), stats(), request_telemetry_context() {}
     void getDocsumsDone(DocsumReply::UP reply) override {
         ProtoDocsumReply msg;
         ProtoConverter::docsum_reply_to_proto(*reply, msg);
@@ -202,6 +209,10 @@ struct GetDocsumsCompletionHandler : DocsumClient {
             stats.latency = vespalib::to_s(reply->request().getTimeUsed());
             metrics.update_docsum_metrics(stats);
         }
+        if (request_telemetry_context.span()) {
+            request_telemetry_context.span()->AddEvent("Done docsum");
+        }
+        request_telemetry_context.clear();
         req.Return();
     }
 };
@@ -210,12 +221,17 @@ struct GetDocsumsCompletionHandler : DocsumClient {
 
 // allocated in the stash of the request it is completing; no self-delete needed
 struct PingCompletionHandler : MonitorClient {
-    FRT_RPCRequest& req;
+    FRT_RPCRequest&            req;
+    RpcRequestTelemetryContext request_telemetry_context;
     PingCompletionHandler(FRT_RPCRequest& req_in) : req(req_in) {}
     void pingDone(std::unique_ptr<MonitorReply> reply) override {
         ProtoMonitorReply msg;
         ProtoConverter::monitor_reply_to_proto(*reply, msg);
         encode_message(msg, *req.GetReturn());
+        if (request_telemetry_context.span()) {
+            request_telemetry_context.span()->AddEvent("Done ping");
+        }
+        request_telemetry_context.clear();
         req.Return();
     }
 };
@@ -270,7 +286,8 @@ void ProtoRpcAdapter::rpc_search(FRT_RPCRequest* req) {
     }
     req->Detach();
     auto& client = req->getStash().create<SearchCompletionHandler>(*req, _metrics);
-    auto  reply = _search_server.search(search_request_decoder(*req, client.stats), client);
+    auto  reply =
+        _search_server.search(search_request_decoder(*req, client.stats, client.request_telemetry_context), client);
     if (reply) {
         client.searchDone(std::move(reply));
     }
@@ -282,7 +299,8 @@ void ProtoRpcAdapter::rpc_getDocsums(FRT_RPCRequest* req) {
     }
     req->Detach();
     auto& client = req->getStash().create<GetDocsumsCompletionHandler>(*req, _metrics);
-    auto  reply = _docsum_server.getDocsums(docsum_request_decoder(*req, client.stats), client);
+    auto  reply = _docsum_server.getDocsums(
+        docsum_request_decoder(*req, client.stats, client.request_telemetry_context), client);
     if (reply) {
         client.getDocsumsDone(std::move(reply));
     }
@@ -295,23 +313,17 @@ void ProtoRpcAdapter::rpc_ping(FRT_RPCRequest* rpc) {
     rpc->Detach();
     ProtoMonitorRequest msg;
     if (decode_message(*rpc->GetParams(), msg)) {
+        auto& client = rpc->getStash().create<PingCompletionHandler>(*rpc);
         // Note: Decoding here is delayed
         ProtoTelemetryServerCarrier carrier(msg.telemetry_metadata().trace_context());
-        auto                        request_context = RpcServerTools::make_optional_request_context(carrier);
-        if (request_context.has_value()) {
-            auto provider = Provider::GetTracerProvider();
-            auto tracer = provider->GetTracer(proton_rpc_server);
-            auto server_span =
-                RpcServerTools::make_server_span(request_context.value(), *tracer, "vespa.searchprotocol.ping");
-            {
-                auto scope = tracer->WithActiveSpan(server_span);
-            }
-            server_span->End();
+        RpcRequestTelemetryContext& request_telemetry_context = client.request_telemetry_context;
+        request_telemetry_context.setup(carrier, proton_rpc_server, "vespa.searchprotocol.ping");
+        if (request_telemetry_context.span()) {
+            request_telemetry_context.span()->AddEvent("Start ping");
         }
         auto req = std::make_unique<MonitorRequest>();
         ProtoConverter::monitor_request_from_proto(msg, *req);
-        auto& client = rpc->getStash().create<PingCompletionHandler>(*rpc);
-        auto  reply = _monitor_server.ping(std::move(req), client);
+        auto reply = _monitor_server.ping(std::move(req), client);
         if (reply) {
             client.pingDone(std::move(reply));
         }
