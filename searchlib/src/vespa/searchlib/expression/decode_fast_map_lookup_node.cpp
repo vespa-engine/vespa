@@ -87,12 +87,22 @@ DecodeFastMapLookupNode::ValueType to_value_type(uint8_t value) {
 } // namespace
 
 DecodeFastMapLookupNode::DecodeFastMapLookupNode() noexcept
-    : FunctionNode(), _attribute_name(), _value_type(ValueType::UNKNOWN), _separator(default_separator), _input() {
+    : FunctionNode(),
+      _attribute_name(),
+      _value_type(ValueType::UNKNOWN),
+      _vector_mode(true),
+      _separator(default_separator),
+      _input() {
 }
 
 DecodeFastMapLookupNode::DecodeFastMapLookupNode(std::string_view attribute_name, ValueType value_type,
                                                  std::string_view separator)
-    : FunctionNode(), _attribute_name(attribute_name), _value_type(value_type), _separator(separator), _input() {
+    : FunctionNode(),
+      _attribute_name(attribute_name),
+      _value_type(value_type),
+      _vector_mode(true),
+      _separator(separator),
+      _input() {
     createInput();
 }
 
@@ -100,6 +110,7 @@ DecodeFastMapLookupNode::DecodeFastMapLookupNode(const DecodeFastMapLookupNode& 
     : FunctionNode(rhs),
       _attribute_name(rhs._attribute_name),
       _value_type(rhs._value_type),
+      _vector_mode(rhs._vector_mode),
       _separator(rhs._separator),
       _input(rhs._input ? std::make_unique<AttributeNode>(*rhs._input) : nullptr) {
 }
@@ -109,6 +120,7 @@ DecodeFastMapLookupNode& DecodeFastMapLookupNode::operator=(const DecodeFastMapL
         FunctionNode::operator=(rhs);
         _attribute_name = rhs._attribute_name;
         _value_type = rhs._value_type;
+        _vector_mode = rhs._vector_mode;
         _separator = rhs._separator;
         _input = rhs._input ? std::make_unique<AttributeNode>(*rhs._input) : nullptr;
     }
@@ -143,20 +155,31 @@ void DecodeFastMapLookupNode::onPrepare(bool preserveAccurateTypes) {
     }
     _input->prepare(preserveAccurateTypes);
     const ResultNode* inputResult = _input->getResult();
-    if (inputResult == nullptr || !inputResult->inherits(StringResultNodeVector::classId)) {
+    if (inputResult != nullptr && inputResult->inherits(StringResultNodeVector::classId)) {
+        setResultType(std::make_unique<StringResultNodeVector>());
+        _vector_mode = true;
+    } else if (inputResult != nullptr && inputResult->inherits(StringResultNode::classId)) {
+        setResultType(std::make_unique<StringResultNode>());
+        _vector_mode = false;
+    } else {
         throw std::runtime_error(
             std::format("Fast map lookup attribute '{}' is not an array of string", _attribute_name));
     }
-    setResultType(std::make_unique<StringResultNodeVector>());
 }
 
 void DecodeFastMapLookupNode::onExecute() const {
     _input->execute();
-    const auto& encoded = static_cast<const StringResultNodeVector&>(*_input->getResult()).getVector();
-    auto&       decoded = static_cast<StringResultNodeVector&>(updateResult()).getVector();
-    decoded.resize(encoded.size());
-    for (size_t i = 0; i < encoded.size(); ++i) {
-        decoded[i].set(decode(encoded[i].get(), _value_type, _separator));
+    if (_vector_mode) {
+        const auto& encoded = static_cast<const StringResultNodeVector&>(*_input->getResult()).getVector();
+        auto&       decoded = static_cast<StringResultNodeVector&>(updateResult()).getVector();
+        decoded.resize(encoded.size());
+        for (size_t i = 0; i < encoded.size(); ++i) {
+            decoded[i].set(decode(encoded[i].get(), _value_type, _separator));
+        }
+    } else {
+        const auto& encoded = static_cast<const StringResultNode&>(*_input->getResult());
+        auto&       decoded = static_cast<StringResultNode&>(updateResult());
+        decoded.set(decode(encoded.get(), _value_type, _separator));
     }
 }
 
