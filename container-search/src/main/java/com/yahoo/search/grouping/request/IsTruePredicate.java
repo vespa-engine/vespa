@@ -30,4 +30,9 @@ public class IsTruePredicate extends FilterExpression {
     public FilterExpression copy() {
         return new IsTruePredicate(expression.copy());
     }
+
+    @Override
+    public void visitExpressions(ExpressionVisitor visitor) {
+        expression.visit(visitor);
+    }
 }

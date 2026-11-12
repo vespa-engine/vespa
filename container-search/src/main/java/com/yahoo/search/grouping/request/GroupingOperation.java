@@ -502,6 +502,9 @@ public abstract class GroupingOperation extends GroupingNode {
         if (groupBy != null) {
             groupBy.visit(visitor);
         }
+        if (filterBy != null) {
+            filterBy.visitExpressions(visitor);
+        }
         for (GroupingOperation op : children) {
             op.visitExpressions(visitor);
         }

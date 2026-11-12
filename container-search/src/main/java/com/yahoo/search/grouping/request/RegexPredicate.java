@@ -51,4 +51,9 @@ public class RegexPredicate extends FilterExpression {
 
     @Override public String toString() { return Text.format("regex(%s, %s)", GroupingExpression.asImage(pattern), expression); }
     @Override public FilterExpression copy() { return new RegexPredicate(pattern, expression.copy()); }
+
+    @Override
+    public void visitExpressions(ExpressionVisitor visitor) {
+        expression.visit(visitor);
+    }
 }

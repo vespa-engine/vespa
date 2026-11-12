@@ -34,4 +34,9 @@ public class NotPredicate extends FilterExpression {
     public FilterExpression copy() {
         return new NotPredicate(expression.copy());
     }
+
+    @Override
+    public void visitExpressions(ExpressionVisitor visitor) {
+        expression.visitExpressions(visitor);
+    }
 }

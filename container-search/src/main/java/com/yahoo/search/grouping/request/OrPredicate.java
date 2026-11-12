@@ -37,4 +37,11 @@ public class OrPredicate extends FilterExpression {
     public FilterExpression copy() {
         return new OrPredicate(args.stream().map(FilterExpression::copy).toList());
     }
+
+    @Override
+    public void visitExpressions(ExpressionVisitor visitor) {
+        for (FilterExpression arg : args) {
+            arg.visitExpressions(visitor);
+        }
+    }
 }
