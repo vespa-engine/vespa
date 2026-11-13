@@ -394,7 +394,7 @@ struct FeedHandlerFixture {
           tlsSpec(tls_port_spec()),
           schema(),
           owner(),
-          _state(),
+          _state(schema.getDocType()),
           replayConfig(),
           feedView(schema.getRepo(), schema.getDocType()),
           _bucketDB(),

@@ -4,6 +4,10 @@
 
 #include <vespa/check_require.h>
 
+#include <vespa/log/logf.h>
+
+LOG_SETUP(".proton.server.ddbstate");
+
 namespace proton {
 
 std::vector<std::string> DDBState::_stateNames = {
@@ -21,10 +25,25 @@ std::vector<std::string> DDBState::_stateNames = {
 
 std::vector<std::string> DDBState::_configStateNames = {"OK", "NEED_RESTART"};
 
-DDBState::DDBState() : _state(State::CONSTRUCT), _configState(ConfigState::OK), _lock(), _cond() {
+DDBState::DDBState(const DocTypeName& doc_type_name)
+    : _state(State::CONSTRUCT),
+      _configState(ConfigState::OK),
+      _lock(),
+      _cond(),
+      _load_time(),
+      _online_time(),
+      _replay_time(),
+      _doc_type_name(doc_type_name) {
 }
 
 DDBState::~DDBState() = default;
+
+void DDBState::set_state(State state) {
+    auto old_state = getState();
+    _state.store(state, std::memory_order_release);
+    LOGF(info, "Switched document type {} ddb state from {} to {}", _doc_type_name.getName(),
+         getStateString(old_state), getStateString(state));
+}
 
 bool DDBState::enterLoadState() {
     Guard guard(_lock);

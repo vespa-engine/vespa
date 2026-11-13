@@ -184,7 +184,7 @@ DocumentDB::DocumentDB(const std::string& baseDir, DocumentDBConfig::SP configSn
       _refCount(),
       _owner(owner),
       _bucketExecutor(shared_service.bucket_executor()),
-      _state(std::make_shared<DDBState>()),
+      _state(std::make_shared<DDBState>(docTypeName)),
       _resource_usage_forwarder(_writeService.master()),
       _writeFilter(),
       _current_resource_usage_provider(),
