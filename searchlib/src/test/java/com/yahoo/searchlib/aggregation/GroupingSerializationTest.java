@@ -10,7 +10,7 @@ import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.CatFunctionNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.DebugWaitFunctionNode;
-import com.yahoo.searchlib.expression.DecodeFastMapLookupNode;
+import com.yahoo.searchlib.expression.FastSearchMapDecodeNode;
 import com.yahoo.searchlib.expression.DivideFunctionNode;
 import com.yahoo.searchlib.expression.DocumentFieldNode;
 import com.yahoo.searchlib.expression.PositionDocumentFieldNode;
@@ -123,8 +123,8 @@ public class GroupingSerializationTest {
             t.assertMatch(new AttributeNode("testattribute"));
             t.assertMatch(new DocumentFieldNode("testdocumentfield"));
             t.assertMatch(new GetDocIdNamespaceSpecificFunctionNode(new IntegerResultNode(7)));
-            t.assertMatch(new DecodeFastMapLookupNode("map$lookup", DecodeFastMapLookupNode.ValueType.INT));
-            t.assertMatch(new DecodeFastMapLookupNode("map$lookup", DecodeFastMapLookupNode.ValueType.STRING, ": "));
+            t.assertMatch(new FastSearchMapDecodeNode("map$lookup", FastSearchMapDecodeNode.ValueType.INT));
+            t.assertMatch(new FastSearchMapDecodeNode("map$lookup", FastSearchMapDecodeNode.ValueType.STRING, ": "));
         }
     }
 

@@ -7,8 +7,8 @@
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/expression/attributenode.h>
-#include <vespa/searchlib/expression/decode_fast_map_lookup_node.h>
 #include <vespa/searchlib/expression/expressiontree.h>
+#include <vespa/searchlib/expression/fast_search_map_decode_node.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nboserializer.h>
@@ -25,30 +25,30 @@ using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::expression::AttributeNode;
 using search::expression::ConfigureStaticParams;
-using search::expression::DecodeFastMapLookupNode;
 using search::expression::ExpressionTree;
+using search::expression::FastSearchMapDecodeNode;
 using search::expression::ResultNodeVector;
 using search::expression::StringResultNode;
 using search::expression::StringResultNodeVector;
-using ValueType = DecodeFastMapLookupNode::ValueType;
+using ValueType = FastSearchMapDecodeNode::ValueType;
 using vespalib::BufferRef;
 
 namespace {
 
 std::string entry(std::string_view key, std::string_view encoded_value) {
     std::string result(key);
-    result.push_back(DecodeFastMapLookupNode::encoded_separator);
+    result.push_back(FastSearchMapDecodeNode::encoded_separator);
     result.append(encoded_value);
     return result;
 }
 
 std::string decode(std::string_view key, std::string_view encoded_value, ValueType value_type) {
-    return DecodeFastMapLookupNode::decode(entry(key, encoded_value), value_type);
+    return FastSearchMapDecodeNode::decode(entry(key, encoded_value), value_type);
 }
 
 } // namespace
 
-TEST(DecodeFastMapLookupNodeTest, int_values_are_decoded_from_excess_hex) {
+TEST(FastSearchMapDecodeNodeTest, int_values_are_decoded_from_excess_hex) {
     EXPECT_EQ("k:0", decode("k", "80000000", ValueType::INT));
     EXPECT_EQ("k:7", decode("k", "80000007", ValueType::INT));
     EXPECT_EQ("k:-1", decode("k", "7fffffff", ValueType::INT));
@@ -57,14 +57,14 @@ TEST(DecodeFastMapLookupNodeTest, int_values_are_decoded_from_excess_hex) {
     EXPECT_EQ("k:2147483647", decode("k", "FFFFFFFF", ValueType::INT));
 }
 
-TEST(DecodeFastMapLookupNodeTest, long_values_are_decoded_from_excess_hex) {
+TEST(FastSearchMapDecodeNodeTest, long_values_are_decoded_from_excess_hex) {
     EXPECT_EQ("k:5", decode("k", "8000000000000005", ValueType::LONG));
     EXPECT_EQ("k:-2", decode("k", "7ffffffffffffffe", ValueType::LONG));
     EXPECT_EQ("k:-9223372036854775808", decode("k", "0000000000000000", ValueType::LONG));
     EXPECT_EQ("k:9223372036854775807", decode("k", "ffffffffffffffff", ValueType::LONG));
 }
 
-TEST(DecodeFastMapLookupNodeTest, float_values_are_decoded_from_excess_hex) {
+TEST(FastSearchMapDecodeNodeTest, float_values_are_decoded_from_excess_hex) {
     EXPECT_EQ("k:0", decode("k", "80000000", ValueType::FLOAT));
     EXPECT_EQ("k:-0", decode("k", "7fffffff", ValueType::FLOAT));
     EXPECT_EQ("k:1", decode("k", "bf800000", ValueType::FLOAT));
@@ -73,13 +73,13 @@ TEST(DecodeFastMapLookupNodeTest, float_values_are_decoded_from_excess_hex) {
     EXPECT_EQ("k:-inf", decode("k", "007fffff", ValueType::FLOAT));
 }
 
-TEST(DecodeFastMapLookupNodeTest, double_values_are_decoded_from_excess_hex) {
+TEST(FastSearchMapDecodeNodeTest, double_values_are_decoded_from_excess_hex) {
     EXPECT_EQ("k:2.5", decode("k", "c004000000000000", ValueType::DOUBLE));
     EXPECT_EQ("k:-0.25", decode("k", "402fffffffffffff", ValueType::DOUBLE));
     EXPECT_EQ("k:0.1", decode("k", "bfb999999999999a", ValueType::DOUBLE));
 }
 
-TEST(DecodeFastMapLookupNodeTest, nan_and_large_exponents_are_decoded) {
+TEST(FastSearchMapDecodeNodeTest, nan_and_large_exponents_are_decoded) {
     EXPECT_EQ("k:nan", decode("k", "ffc00000", ValueType::FLOAT));
     EXPECT_EQ("k:nan", decode("k", "fff8000000000000", ValueType::DOUBLE));
     EXPECT_EQ("k:1e+30", decode("k", "f149f2ca", ValueType::FLOAT));
@@ -89,7 +89,7 @@ TEST(DecodeFastMapLookupNodeTest, nan_and_large_exponents_are_decoded) {
 
 // The encoded values are those the Java encoders produce in vespajlib TextTestCase (testToExcessHex8,
 // testToExcessHex16, testFloatToExcessHex8 and testDoubleToExcessHex16); keep the two in sync.
-TEST(DecodeFastMapLookupNodeTest, values_encoded_by_java_text_are_decoded) {
+TEST(FastSearchMapDecodeNodeTest, values_encoded_by_java_text_are_decoded) {
     struct Vector {
         ValueType   type;
         const char* encoded;
@@ -145,29 +145,29 @@ TEST(DecodeFastMapLookupNodeTest, values_encoded_by_java_text_are_decoded) {
     }
 }
 
-TEST(DecodeFastMapLookupNodeTest, string_values_and_numeric_keys_are_kept_as_is) {
+TEST(FastSearchMapDecodeNodeTest, string_values_and_numeric_keys_are_kept_as_is) {
     EXPECT_EQ("k:some value", decode("k", "some value", ValueType::STRING));
     EXPECT_EQ("k:", decode("k", "", ValueType::STRING));
     EXPECT_EQ("42:7", decode("42", "80000007", ValueType::INT));
     EXPECT_EQ(":7", decode("", "80000007", ValueType::INT));
 }
 
-TEST(DecodeFastMapLookupNodeTest, separator_between_key_and_value_can_be_given) {
-    EXPECT_EQ("k: 7", DecodeFastMapLookupNode::decode(entry("k", "80000007"), ValueType::INT, ": "));
-    EXPECT_EQ("k7", DecodeFastMapLookupNode::decode(entry("k", "80000007"), ValueType::INT, ""));
-    EXPECT_EQ("no separator", DecodeFastMapLookupNode::decode("no separator", ValueType::INT, ": "));
+TEST(FastSearchMapDecodeNodeTest, separator_between_key_and_value_can_be_given) {
+    EXPECT_EQ("k: 7", FastSearchMapDecodeNode::decode(entry("k", "80000007"), ValueType::INT, ": "));
+    EXPECT_EQ("k7", FastSearchMapDecodeNode::decode(entry("k", "80000007"), ValueType::INT, ""));
+    EXPECT_EQ("no separator", FastSearchMapDecodeNode::decode("no separator", ValueType::INT, ": "));
 }
 
-TEST(DecodeFastMapLookupNodeTest, separator_defaults_to_colon_and_can_be_set) {
-    EXPECT_EQ(":", DecodeFastMapLookupNode("m$lookup", ValueType::INT).separator());
-    EXPECT_EQ(":", DecodeFastMapLookupNode().separator());
-    EXPECT_EQ("=", DecodeFastMapLookupNode("m$lookup", ValueType::INT, "=").separator());
-    DecodeFastMapLookupNode node("m$lookup", ValueType::INT);
+TEST(FastSearchMapDecodeNodeTest, separator_defaults_to_colon_and_can_be_set) {
+    EXPECT_EQ(":", FastSearchMapDecodeNode("m$lookup", ValueType::INT).separator());
+    EXPECT_EQ(":", FastSearchMapDecodeNode().separator());
+    EXPECT_EQ("=", FastSearchMapDecodeNode("m$lookup", ValueType::INT, "=").separator());
+    FastSearchMapDecodeNode node("m$lookup", ValueType::INT);
     EXPECT_EQ("->", node.separator("->").separator());
 }
 
-TEST(DecodeFastMapLookupNodeTest, malformed_entries_are_kept_undecoded) {
-    EXPECT_EQ("no separator", DecodeFastMapLookupNode::decode("no separator", ValueType::INT));
+TEST(FastSearchMapDecodeNodeTest, malformed_entries_are_kept_undecoded) {
+    EXPECT_EQ("no separator", FastSearchMapDecodeNode::decode("no separator", ValueType::INT));
     EXPECT_EQ("k:8000007", decode("k", "8000007", ValueType::INT));
     EXPECT_EQ("k:8000000x", decode("k", "8000000x", ValueType::INT));
     EXPECT_EQ("k:80000000", decode("k", "80000000", ValueType::LONG));
@@ -176,7 +176,7 @@ TEST(DecodeFastMapLookupNodeTest, malformed_entries_are_kept_undecoded) {
 
 namespace {
 
-std::unique_ptr<DecodeFastMapLookupNode> serialize_and_deserialize(const DecodeFastMapLookupNode& node,
+std::unique_ptr<FastSearchMapDecodeNode> serialize_and_deserialize(const FastSearchMapDecodeNode& node,
                                                                    size_t*                        size = nullptr) {
     vespalib::nbostream     os;
     vespalib::NBOSerializer serializer(os);
@@ -185,14 +185,14 @@ std::unique_ptr<DecodeFastMapLookupNode> serialize_and_deserialize(const DecodeF
         *size = os.size();
     }
     auto deserialized = vespalib::Identifiable::create(serializer);
-    return std::unique_ptr<DecodeFastMapLookupNode>(dynamic_cast<DecodeFastMapLookupNode*>(deserialized.release()));
+    return std::unique_ptr<FastSearchMapDecodeNode>(dynamic_cast<FastSearchMapDecodeNode*>(deserialized.release()));
 }
 
 } // namespace
 
-TEST(DecodeFastMapLookupNodeTest, attribute_name_value_type_and_separator_are_copied_and_serialized) {
-    DecodeFastMapLookupNode node("m$lookup", ValueType::LONG, ": ");
-    DecodeFastMapLookupNode copy(node);
+TEST(FastSearchMapDecodeNodeTest, attribute_name_value_type_and_separator_are_copied_and_serialized) {
+    FastSearchMapDecodeNode node("m$lookup", ValueType::LONG, ": ");
+    FastSearchMapDecodeNode copy(node);
     EXPECT_EQ("m$lookup", copy.attribute_name());
     EXPECT_EQ(ValueType::LONG, copy.value_type());
     EXPECT_EQ(": ", copy.separator());
@@ -207,44 +207,44 @@ TEST(DecodeFastMapLookupNodeTest, attribute_name_value_type_and_separator_are_co
     EXPECT_EQ(": ", result->separator());
 }
 
-TEST(DecodeFastMapLookupNodeTest, all_value_types_are_serialized) {
+TEST(FastSearchMapDecodeNodeTest, all_value_types_are_serialized) {
     for (auto type : {ValueType::UNKNOWN, ValueType::INT, ValueType::LONG, ValueType::FLOAT, ValueType::DOUBLE,
                       ValueType::STRING})
     {
-        auto result = serialize_and_deserialize(DecodeFastMapLookupNode("m$lookup", type));
+        auto result = serialize_and_deserialize(FastSearchMapDecodeNode("m$lookup", type));
         ASSERT_TRUE(result);
         EXPECT_EQ(type, result->value_type());
     }
 }
 
-TEST(DecodeFastMapLookupNodeTest, unknown_serialized_value_type_is_deserialized_as_unknown) {
+TEST(FastSearchMapDecodeNodeTest, unknown_serialized_value_type_is_deserialized_as_unknown) {
     vespalib::nbostream     os;
     vespalib::NBOSerializer serializer(os);
-    serializer << DecodeFastMapLookupNode("m$lookup", ValueType::INT, "=");
+    serializer << FastSearchMapDecodeNode("m$lookup", ValueType::INT, "=");
     // The value type is the byte just before the separator (length 4 + 1 byte).
     ASSERT_EQ(uint8_t(ValueType::INT), uint8_t(os.data()[os.size() - 6]));
     const_cast<char*>(os.data())[os.size() - 6] = 42;
     auto  deserialized = vespalib::Identifiable::create(serializer);
-    auto* result = dynamic_cast<DecodeFastMapLookupNode*>(deserialized.get());
+    auto* result = dynamic_cast<FastSearchMapDecodeNode*>(deserialized.get());
     ASSERT_NE(nullptr, result);
     EXPECT_EQ("m$lookup", result->attribute_name());
     EXPECT_EQ(ValueType::UNKNOWN, result->value_type());
     EXPECT_EQ("=", result->separator());
 }
 
-class DecodeFastMapLookupNodeAttributeTest : public ::testing::Test {
+class FastSearchMapDecodeNodeAttributeTest : public ::testing::Test {
 protected:
     AttributeManager mgr;
     AttributeContext context;
 
-    DecodeFastMapLookupNodeAttributeTest() : mgr(), context(mgr) {
+    FastSearchMapDecodeNodeAttributeTest() : mgr(), context(mgr) {
         add_string_array("m$lookup",
                          {{entry("a", "80000001"), entry("b", "7fffffff")}, {}, {entry("c", "80000000")}});
         add_string_array("s$lookup", {{entry("x", "hello")}});
         add_string_array("a.b$lookup", {{entry("d", "80000002")}});
         add_string_single("single$lookup", {entry("a", "80000001"), entry("b", "7fffffff")});
     }
-    ~DecodeFastMapLookupNodeAttributeTest() override;
+    ~FastSearchMapDecodeNodeAttributeTest() override;
 
     void add_string_array(const std::string& name, const std::vector<std::vector<std::string>>& values) {
         auto  attr = AttributeFactory::createAttribute(name, Config(BasicType::STRING, CollectionType::ARRAY));
@@ -274,13 +274,13 @@ protected:
         ASSERT_TRUE(mgr.add(attr));
     }
 
-    static std::unique_ptr<DecodeFastMapLookupNode> make_node(const std::string& attribute_name,
+    static std::unique_ptr<FastSearchMapDecodeNode> make_node(const std::string& attribute_name,
                                                               ValueType          value_type) {
-        return std::make_unique<DecodeFastMapLookupNode>(attribute_name, value_type);
+        return std::make_unique<FastSearchMapDecodeNode>(attribute_name, value_type);
     }
 
     // Wires and prepares the node as grouping does, then wraps it in a tree, which sets the docid on the input.
-    ExpressionTree make_tree(std::unique_ptr<DecodeFastMapLookupNode> node) {
+    ExpressionTree make_tree(std::unique_ptr<FastSearchMapDecodeNode> node) {
         AttributeNode::Configure configure(context);
         node->select(configure, configure);
         node->prepare(false);
@@ -302,9 +302,9 @@ protected:
     }
 };
 
-DecodeFastMapLookupNodeAttributeTest::~DecodeFastMapLookupNodeAttributeTest() = default;
+FastSearchMapDecodeNodeAttributeTest::~FastSearchMapDecodeNodeAttributeTest() = default;
 
-TEST_F(DecodeFastMapLookupNodeAttributeTest, entries_of_hidden_attribute_are_decoded_per_document) {
+TEST_F(FastSearchMapDecodeNodeAttributeTest, entries_of_hidden_attribute_are_decoded_per_document) {
     auto tree = make_tree(make_node("m$lookup", ValueType::INT));
     EXPECT_EQ((std::vector<std::string>{"a:1", "b:-1"}), values_of(tree, 1));
     EXPECT_EQ((std::vector<std::string>{}), values_of(tree, 2));
@@ -312,28 +312,28 @@ TEST_F(DecodeFastMapLookupNodeAttributeTest, entries_of_hidden_attribute_are_dec
     EXPECT_EQ((std::vector<std::string>{"a:1", "b:-1"}), values_of(tree, 1));
 }
 
-TEST_F(DecodeFastMapLookupNodeAttributeTest, entries_are_decoded_with_set_separator) {
+TEST_F(FastSearchMapDecodeNodeAttributeTest, entries_are_decoded_with_set_separator) {
     auto node = make_node("m$lookup", ValueType::INT);
     node->separator(" -> ");
     auto tree = make_tree(std::move(node));
     EXPECT_EQ((std::vector<std::string>{"a -> 1", "b -> -1"}), values_of(tree, 1));
 }
 
-TEST_F(DecodeFastMapLookupNodeAttributeTest, string_values_are_decoded) {
+TEST_F(FastSearchMapDecodeNodeAttributeTest, string_values_are_decoded) {
     auto tree = make_tree(make_node("s$lookup", ValueType::STRING));
     EXPECT_EQ((std::vector<std::string>{"x:hello"}), values_of(tree, 1));
 }
 
-TEST_F(DecodeFastMapLookupNodeAttributeTest, deserialized_node_decodes) {
+TEST_F(FastSearchMapDecodeNodeAttributeTest, deserialized_node_decodes) {
     auto node = serialize_and_deserialize(*make_node("m$lookup", ValueType::INT));
     ASSERT_TRUE(node);
     auto tree = make_tree(std::move(node));
     EXPECT_EQ((std::vector<std::string>{"a:1", "b:-1"}), values_of(tree, 1));
 }
 
-TEST_F(DecodeFastMapLookupNodeAttributeTest, copy_of_node_has_its_own_input) {
+TEST_F(FastSearchMapDecodeNodeAttributeTest, copy_of_node_has_its_own_input) {
     auto node = make_node("m$lookup", ValueType::INT);
-    auto copy = std::make_unique<DecodeFastMapLookupNode>(*node);
+    auto copy = std::make_unique<FastSearchMapDecodeNode>(*node);
     auto tree = make_tree(std::move(node));
     auto copy_tree = make_tree(std::move(copy));
     EXPECT_EQ((std::vector<std::string>{"c:0"}), values_of(copy_tree, 3));
@@ -342,7 +342,7 @@ TEST_F(DecodeFastMapLookupNodeAttributeTest, copy_of_node_has_its_own_input) {
 }
 
 // Grouping on the same (or an associated) array expands it, so the input then yields a single string.
-TEST_F(DecodeFastMapLookupNodeAttributeTest, single_string_input_is_decoded_to_single_string) {
+TEST_F(FastSearchMapDecodeNodeAttributeTest, single_string_input_is_decoded_to_single_string) {
     auto tree = make_tree(make_node("single$lookup", ValueType::INT));
     for (auto [docId, expected] : {std::pair<uint32_t, std::string>{1, "a:1"}, {2, "b:-1"}}) {
         tree.execute(docId, 0.0);
@@ -355,16 +355,16 @@ TEST_F(DecodeFastMapLookupNodeAttributeTest, single_string_input_is_decoded_to_s
     }
 }
 
-TEST_F(DecodeFastMapLookupNodeAttributeTest, attribute_of_dotted_field_name_is_read) {
+TEST_F(FastSearchMapDecodeNodeAttributeTest, attribute_of_dotted_field_name_is_read) {
     auto tree = make_tree(make_node("a.b$lookup", ValueType::INT));
     EXPECT_EQ((std::vector<std::string>{"d:2"}), values_of(tree, 1));
 }
 
-TEST_F(DecodeFastMapLookupNodeAttributeTest, grouping_prepares_node_with_serialized_value_type) {
+TEST_F(FastSearchMapDecodeNodeAttributeTest, grouping_prepares_node_with_serialized_value_type) {
     auto make_grouping = [](ValueType value_type) {
         Grouping      grouping;
         GroupingLevel level;
-        level.setExpression(std::make_unique<DecodeFastMapLookupNode>("m$lookup", value_type));
+        level.setExpression(std::make_unique<FastSearchMapDecodeNode>("m$lookup", value_type));
         grouping.addLevel(std::move(level));
         grouping.setFirstLevel(0).setLastLevel(1);
         return grouping;
@@ -378,12 +378,12 @@ TEST_F(DecodeFastMapLookupNodeAttributeTest, grouping_prepares_node_with_seriali
     EXPECT_THROW(unknown.configureStaticStuff(ConfigureStaticParams(&context, nullptr)), std::runtime_error);
 }
 
-TEST_F(DecodeFastMapLookupNodeAttributeTest, prepare_fails_for_unknown_value_type) {
+TEST_F(FastSearchMapDecodeNodeAttributeTest, prepare_fails_for_unknown_value_type) {
     EXPECT_THROW(make_tree(make_node("m$lookup", ValueType::UNKNOWN)), std::runtime_error);
-    EXPECT_THROW(make_tree(std::make_unique<DecodeFastMapLookupNode>()), std::runtime_error);
+    EXPECT_THROW(make_tree(std::make_unique<FastSearchMapDecodeNode>()), std::runtime_error);
 }
 
-TEST_F(DecodeFastMapLookupNodeAttributeTest, wiring_fails_without_attribute) {
+TEST_F(FastSearchMapDecodeNodeAttributeTest, wiring_fails_without_attribute) {
     EXPECT_THROW(make_tree(make_node("missing$lookup", ValueType::INT)), std::runtime_error);
     EXPECT_THROW(make_tree(make_node("m.lookup", ValueType::INT)), std::runtime_error);
 }

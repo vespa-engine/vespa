@@ -16,8 +16,8 @@
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/allocatedbitvector.h>
 #include <vespa/searchlib/expression/attributenode.h>
-#include <vespa/searchlib/expression/decode_fast_map_lookup_node.h>
 #include <vespa/searchlib/expression/enumresultnode.h>
+#include <vespa/searchlib/expression/fast_search_map_decode_node.h>
 #include <vespa/searchlib/expression/integerresultnode.h>
 #include <vespa/searchlib/expression/numelemfunctionnode.h>
 #include <vespa/searchlib/expression/stringresultnode.h>
@@ -667,13 +667,13 @@ TEST(GroupingTest, test_grouping_fork_and_join) {
 namespace {
 
 struct FastMapWorld {
-    using ValueType = DecodeFastMapLookupNode::ValueType;
+    using ValueType = FastSearchMapDecodeNode::ValueType;
 
     MockAttributeContext       attributeContext;
     search::AllocatedBitVector bv;
 
     static std::string entry(const std::string& key, const std::string& encoded_value) {
-        return key + DecodeFastMapLookupNode::encoded_separator + encoded_value;
+        return key + FastSearchMapDecodeNode::encoded_separator + encoded_value;
     }
 
     FastMapWorld() : attributeContext(), bv(4) {
@@ -698,7 +698,7 @@ struct FastMapWorld {
 
     static Grouping make_request(const std::string& attribute_name = "m$lookup",
                                  ValueType          value_type = ValueType::INT) {
-        return make_request(MU<DecodeFastMapLookupNode>(attribute_name, value_type));
+        return make_request(MU<FastSearchMapDecodeNode>(attribute_name, value_type));
     }
 
     static Grouping make_request(ExpressionNode::UP level_expression) {
@@ -732,7 +732,7 @@ FastMapWorld::~FastMapWorld() = default;
 
 } // namespace
 
-TEST(GroupingTest, decode_fast_map_lookup_nodes_are_wired_and_grouped) {
+TEST(GroupingTest, fast_search_map_decode_nodes_are_wired_and_grouped) {
     DoomFixture     f1;
     FastMapWorld    world;
     GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
@@ -744,7 +744,7 @@ TEST(GroupingTest, decode_fast_map_lookup_nodes_are_wired_and_grouped) {
     EXPECT_EQ(expected, FastMapWorld::group(context));
 }
 
-TEST(GroupingTest, decode_fast_map_lookup_nodes_are_grouped_in_thread_contexts) {
+TEST(GroupingTest, fast_search_map_decode_nodes_are_grouped_in_thread_contexts) {
     DoomFixture     f1;
     FastMapWorld    world;
     GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
@@ -758,13 +758,13 @@ TEST(GroupingTest, decode_fast_map_lookup_nodes_are_grouped_in_thread_contexts) 
     EXPECT_EQ(expected, FastMapWorld::group(*ctx1));
 }
 
-TEST(GroupingTest, decode_fast_map_lookup_nodes_nested_in_functions_are_wired) {
+TEST(GroupingTest, fast_search_map_decode_nodes_nested_in_functions_are_wired) {
     DoomFixture     f1;
     FastMapWorld    world;
     GroupingContext context(world.bv, f1.clock.nowRef(), f1.timeOfDoom);
-    // numelem(decodefastmaplookup(m.lookup)): the decode node and its input are reached through the function node
+    // numelem(fastsearchmap.decode(m.lookup)): the decode node and its input are reached through the function node
     context.addGrouping(std::make_shared<Grouping>(FastMapWorld::make_request(
-        MU<NumElemFunctionNode>(MU<DecodeFastMapLookupNode>("m$lookup", FastMapWorld::ValueType::INT)))));
+        MU<NumElemFunctionNode>(MU<FastSearchMapDecodeNode>("m$lookup", FastMapWorld::ValueType::INT)))));
     GroupingManager manager(context);
     manager.init(world.attributeContext, nullptr);
     ASSERT_EQ(1u, context.getGroupingList().size());

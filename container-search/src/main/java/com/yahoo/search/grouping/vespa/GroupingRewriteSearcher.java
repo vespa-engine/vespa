@@ -11,7 +11,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.GroupingValidator;
-import com.yahoo.search.grouping.request.DecodeFastMapLookupFunction;
+import com.yahoo.search.grouping.request.FastSearchMapDecodeFunction;
 import com.yahoo.search.grouping.request.ExpressionVisitor;
 import com.yahoo.search.grouping.request.GroupingExpression;
 import com.yahoo.search.schema.Field;
@@ -34,7 +34,7 @@ import static com.yahoo.search.grouping.GroupingQueryParser.SELECT_PARAMETER_PAR
  * GroupingValidator}, this always runs, as the backend depends on it:
  * <ul>
  *   <li>In indexed mode, it sets the value type of each fast map
- *       lookup ({@code decodefastmaplookup}), resolved from the
+ *       lookup ({@code fastsearchmap.decode}), resolved from the
  *       schemas in this cluster that the query searches.</li>
  *   <li>In streaming mode, it rejects fast map lookups, which the
  *       streaming backend cannot evaluate.</li>
@@ -112,11 +112,11 @@ public class GroupingRewriteSearcher extends Searcher {
 
         @Override
         public void visitExpression(GroupingExpression exp) {
-            if (exp instanceof DecodeFastMapLookupFunction function)
+            if (exp instanceof FastSearchMapDecodeFunction function)
                 function.setValueType(resolveValueType(function));
         }
 
-        private Field.Type resolveValueType(DecodeFastMapLookupFunction function) {
+        private Field.Type resolveValueType(FastSearchMapDecodeFunction function) {
             if ( ! attributes.contains(function.getAttributeName()))
                 throw unavailable(function);
             var typesBySchema = new TreeMap<String, Field.Type>();
@@ -140,7 +140,7 @@ public class GroupingRewriteSearcher extends Searcher {
             return type;
         }
 
-        private IllegalInputException unavailable(DecodeFastMapLookupFunction function) {
+        private IllegalInputException unavailable(FastSearchMapDecodeFunction function) {
             return new IllegalInputException("Grouping request references fast map lookup '" + function.getName() +
                                              "' which is not available in cluster '" + clusterName + "'.");
         }
@@ -163,9 +163,9 @@ public class GroupingRewriteSearcher extends Searcher {
 
         @Override
         public void visitExpression(GroupingExpression exp) {
-            if (exp instanceof DecodeFastMapLookupFunction function) {
+            if (exp instanceof FastSearchMapDecodeFunction function) {
                 throw new IllegalInputException("Grouping request references fast map lookup '" + function.getName() +
-                                                "', but decodefastmaplookup is not supported in streaming mode (cluster '" +
+                                                "', but fastsearchmap.decode is not supported in streaming mode (cluster '" +
                                                 clusterName + "').");
             }
         }

@@ -114,7 +114,7 @@ public class TextTestCase {
 	assertEquals("foo 3.14", Text.format("%s %.2f", "foo", 3.1415926536));
     }
 
-    // The excess hex vectors below are also decoded in searchlib decode_fast_map_lookup_node_test.cpp; keep them in sync.
+    // The excess hex vectors below are also decoded in searchlib fast_search_map_decode_node_test.cpp; keep them in sync.
     @Test
     public void testToExcessHex8() {
         assertEquals("00000000", Text.toExcessHex8(Integer.MIN_VALUE));

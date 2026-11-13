@@ -80,7 +80,7 @@ public class ForceLoad {
                 "MultiArgFunctionNode",
                 "DebugWaitFunctionNode",
                 "PositionDocumentFieldNode",
-                "DecodeFastMapLookupNode"
+                "FastSearchMapDecodeNode"
         };
         com.yahoo.system.ForceLoad.forceLoad(pkg, classes,
                                              ForceLoad.class.getClassLoader());

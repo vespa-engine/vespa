@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "decode_fast_map_lookup_node.h"
+#include "fast_search_map_decode_node.h"
 
 #include "attributenode.h"
 #include "resultvector.h"
@@ -16,7 +16,7 @@ using vespalib::Serializer;
 
 namespace search::expression {
 
-IMPLEMENT_EXPRESSIONNODE(DecodeFastMapLookupNode, FunctionNode);
+IMPLEMENT_EXPRESSIONNODE(FastSearchMapDecodeNode, FunctionNode);
 
 namespace {
 
@@ -29,8 +29,8 @@ template <typename T> bool decode_excess_hex(std::string_view hex, std::string& 
     return true;
 }
 
-bool decode_value(std::string_view encoded, DecodeFastMapLookupNode::ValueType value_type, std::string& out) {
-    using ValueType = DecodeFastMapLookupNode::ValueType;
+bool decode_value(std::string_view encoded, FastSearchMapDecodeNode::ValueType value_type, std::string& out) {
+    using ValueType = FastSearchMapDecodeNode::ValueType;
     switch (value_type) {
     case ValueType::INT:
         return decode_excess_hex<int32_t>(encoded, out);
@@ -49,8 +49,8 @@ bool decode_value(std::string_view encoded, DecodeFastMapLookupNode::ValueType v
     return false;
 }
 
-std::string_view to_string(DecodeFastMapLookupNode::ValueType value_type) {
-    using ValueType = DecodeFastMapLookupNode::ValueType;
+std::string_view to_string(FastSearchMapDecodeNode::ValueType value_type) {
+    using ValueType = FastSearchMapDecodeNode::ValueType;
     switch (value_type) {
     case ValueType::INT:
         return "int";
@@ -69,8 +69,8 @@ std::string_view to_string(DecodeFastMapLookupNode::ValueType value_type) {
 }
 
 // Maps a serialized value type to the enum, where unknown values (for example from a newer container) become UNKNOWN.
-DecodeFastMapLookupNode::ValueType to_value_type(uint8_t value) {
-    using ValueType = DecodeFastMapLookupNode::ValueType;
+FastSearchMapDecodeNode::ValueType to_value_type(uint8_t value) {
+    using ValueType = FastSearchMapDecodeNode::ValueType;
     switch (static_cast<ValueType>(value)) {
     case ValueType::INT:
     case ValueType::LONG:
@@ -86,7 +86,7 @@ DecodeFastMapLookupNode::ValueType to_value_type(uint8_t value) {
 
 } // namespace
 
-DecodeFastMapLookupNode::DecodeFastMapLookupNode() noexcept
+FastSearchMapDecodeNode::FastSearchMapDecodeNode() noexcept
     : FunctionNode(),
       _attribute_name(),
       _value_type(ValueType::UNKNOWN),
@@ -95,7 +95,7 @@ DecodeFastMapLookupNode::DecodeFastMapLookupNode() noexcept
       _input() {
 }
 
-DecodeFastMapLookupNode::DecodeFastMapLookupNode(std::string_view attribute_name, ValueType value_type,
+FastSearchMapDecodeNode::FastSearchMapDecodeNode(std::string_view attribute_name, ValueType value_type,
                                                  std::string_view separator)
     : FunctionNode(),
       _attribute_name(attribute_name),
@@ -106,7 +106,7 @@ DecodeFastMapLookupNode::DecodeFastMapLookupNode(std::string_view attribute_name
     createInput();
 }
 
-DecodeFastMapLookupNode::DecodeFastMapLookupNode(const DecodeFastMapLookupNode& rhs)
+FastSearchMapDecodeNode::FastSearchMapDecodeNode(const FastSearchMapDecodeNode& rhs)
     : FunctionNode(rhs),
       _attribute_name(rhs._attribute_name),
       _value_type(rhs._value_type),
@@ -115,7 +115,7 @@ DecodeFastMapLookupNode::DecodeFastMapLookupNode(const DecodeFastMapLookupNode& 
       _input(rhs._input ? std::make_unique<AttributeNode>(*rhs._input) : nullptr) {
 }
 
-DecodeFastMapLookupNode& DecodeFastMapLookupNode::operator=(const DecodeFastMapLookupNode& rhs) {
+FastSearchMapDecodeNode& FastSearchMapDecodeNode::operator=(const FastSearchMapDecodeNode& rhs) {
     if (this != &rhs) {
         FunctionNode::operator=(rhs);
         _attribute_name = rhs._attribute_name;
@@ -127,13 +127,13 @@ DecodeFastMapLookupNode& DecodeFastMapLookupNode::operator=(const DecodeFastMapL
     return *this;
 }
 
-DecodeFastMapLookupNode::~DecodeFastMapLookupNode() = default;
+FastSearchMapDecodeNode::~FastSearchMapDecodeNode() = default;
 
-void DecodeFastMapLookupNode::createInput() {
+void FastSearchMapDecodeNode::createInput() {
     _input = std::make_unique<AttributeNode>(_attribute_name);
 }
 
-std::string DecodeFastMapLookupNode::decode(std::string_view encoded, ValueType value_type,
+std::string FastSearchMapDecodeNode::decode(std::string_view encoded, ValueType value_type,
                                             std::string_view separator) {
     auto pos = encoded.find(encoded_separator);
     if (pos == std::string_view::npos) {
@@ -148,7 +148,7 @@ std::string DecodeFastMapLookupNode::decode(std::string_view encoded, ValueType 
     return std::format("{}{}{}", key, separator, decoded);
 }
 
-void DecodeFastMapLookupNode::onPrepare(bool preserveAccurateTypes) {
+void FastSearchMapDecodeNode::onPrepare(bool preserveAccurateTypes) {
     if (_value_type == ValueType::UNKNOWN || !_input) {
         throw std::runtime_error(
             std::format("No known value type for fast map lookup attribute '{}'", _attribute_name));
@@ -167,7 +167,7 @@ void DecodeFastMapLookupNode::onPrepare(bool preserveAccurateTypes) {
     }
 }
 
-void DecodeFastMapLookupNode::onExecute() const {
+void FastSearchMapDecodeNode::onExecute() const {
     _input->execute();
     if (_vector_mode) {
         const auto& encoded = static_cast<const StringResultNodeVector&>(*_input->getResult()).getVector();
@@ -183,7 +183,7 @@ void DecodeFastMapLookupNode::onExecute() const {
     }
 }
 
-void DecodeFastMapLookupNode::selectMembers(const vespalib::ObjectPredicate& predicate,
+void FastSearchMapDecodeNode::selectMembers(const vespalib::ObjectPredicate& predicate,
                                             vespalib::ObjectOperation&       operation) {
     // The input is not serialized, but must be visible for wiring attributes and setting the docid.
     FunctionNode::selectMembers(predicate, operation);
@@ -192,12 +192,12 @@ void DecodeFastMapLookupNode::selectMembers(const vespalib::ObjectPredicate& pre
     }
 }
 
-Serializer& DecodeFastMapLookupNode::onSerialize(Serializer& os) const {
+Serializer& FastSearchMapDecodeNode::onSerialize(Serializer& os) const {
     FunctionNode::onSerialize(os);
     return os << _attribute_name << static_cast<uint8_t>(_value_type) << _separator;
 }
 
-Deserializer& DecodeFastMapLookupNode::onDeserialize(Deserializer& is) {
+Deserializer& FastSearchMapDecodeNode::onDeserialize(Deserializer& is) {
     FunctionNode::onDeserialize(is);
     uint8_t value_type = 0;
     is >> _attribute_name >> value_type >> _separator;
@@ -206,7 +206,7 @@ Deserializer& DecodeFastMapLookupNode::onDeserialize(Deserializer& is) {
     return is;
 }
 
-void DecodeFastMapLookupNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
+void FastSearchMapDecodeNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
     FunctionNode::visitMembers(visitor);
     visit(visitor, "attributeName", _attribute_name);
     visit(visitor, "valueType", std::string(to_string(_value_type)));
