@@ -156,9 +156,9 @@ public class Flags {
 
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2026-12-01",
-            "Specifies configuration for sidecars to testing provisioning",
-            "Takes effect at redeployment",
+            List.of("glebashnik"), "2025-04-25", "2027-06-01",
+            "Provisions sidecars for testing",
+            "Takes effect on next host admin tick",
             __ -> true,
             APPLICATION
     );
