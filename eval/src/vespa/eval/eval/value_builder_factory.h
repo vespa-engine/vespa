@@ -82,6 +82,7 @@ public:
         return create_value_builder<T>(type, false, type.count_mapped_dimensions(), type.dense_subspace_size(), 1);
     }
     std::unique_ptr<Value> copy(const Value& value) const;
+    [[nodiscard]] std::unique_ptr<Value> make_empty(const ValueType& type) const;
     virtual ~ValueBuilderFactory() = default;
 
 protected:

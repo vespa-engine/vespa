@@ -111,6 +111,23 @@ TEST(StreamedValueTest, streamed_values_can_be_copied) {
     }
 }
 
+TEST(StreamedValueTest, streamed_empty_values_can_be_made) {
+    for (const auto& layout : layouts) {
+        for (CellType ct : CellTypeUtils::list_types()) {
+            auto desc = layout.cpy().cells(ct);
+            if (desc.bad_scalar()) {
+                continue;
+            }
+            ValueType              type = desc.type();
+            std::unique_ptr<Value> empty = StreamedValueBuilderFactory::get().make_empty(type);
+            EXPECT_EQ(empty->type(), type);
+            TensorSpec actual = spec_from_value(*empty);
+            TensorSpec expect = TensorSpec(type.to_spec()).normalize();
+            EXPECT_EQ(actual, expect);
+        }
+    }
+}
+
 TEST(StreamedValueTest, streamed_value_can_be_built_and_inspected) {
     ValueType                            type = ValueType::from_spec("tensor<float>(x{},y[2],z{})");
     const auto&                          factory = StreamedValueBuilderFactory::get();

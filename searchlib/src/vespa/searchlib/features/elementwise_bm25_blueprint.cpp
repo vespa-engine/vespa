@@ -8,7 +8,6 @@
 #include "elementwise_utils.h"
 
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -98,7 +97,7 @@ bool ElementwiseBm25Blueprint::setup(const fef::IIndexEnvironment& env, const fe
     if (fail_message.has_value()) {
         return fail("%s", fail_message.value().c_str());
     }
-    _empty_output = vespalib::eval::value_from_spec(_output_tensor_type.to_spec(), FastValueBuilderFactory::get());
+    _empty_output = FastValueBuilderFactory::get().make_empty(_output_tensor_type);
     FeatureType output_type = FeatureType::object(_output_tensor_type);
     describeOutput("score", "The elementwise bm25 score for all terms searching in the given index field",
                    output_type);

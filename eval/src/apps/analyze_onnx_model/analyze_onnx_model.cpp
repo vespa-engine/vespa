@@ -1,9 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/test_io.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/onnx/onnx_wrapper.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/guard.h>
@@ -264,8 +262,7 @@ struct MyEval {
     std::vector<Value::UP> inputs;
     MyEval(const Onnx& model, const Onnx::WireInfo& wire) : context(model, wire), inputs() {
         for (const auto& input_type : wire.vespa_inputs) {
-            TensorSpec spec(input_type.to_spec());
-            inputs.push_back(value_from_spec(spec, FastValueBuilderFactory::get()));
+            inputs.push_back(FastValueBuilderFactory::get().make_empty(input_type));
         }
     }
     void eval() {

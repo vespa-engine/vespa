@@ -7,7 +7,6 @@
 
 #include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/parameterdescriptions.h>
@@ -241,7 +240,7 @@ bool ClosestBlueprint::setup(const fef::IIndexEnvironment& env, const fef::Param
     FeatureType output_type = FeatureType::object(_output_tensor_type);
     describeOutput("out", "The closest tensor subspace.", output_type);
     _field_id = fi->id();
-    _empty_output = vespalib::eval::value_from_spec(_output_tensor_type.to_spec(), FastValueBuilderFactory::get());
+    _empty_output = FastValueBuilderFactory::get().make_empty(_output_tensor_type);
     setup_identity_cells(_output_tensor_type, _identity_space, _identity_cells);
     return true;
 }

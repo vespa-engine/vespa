@@ -78,8 +78,7 @@ TensorFieldValue& TensorFieldValue::operator=(std::unique_ptr<vespalib::eval::Va
 
 void TensorFieldValue::make_empty_if_not_existing() {
     if (!_tensor) {
-        TensorSpec empty_spec(_dataType.getTensorType().to_spec());
-        _tensor = value_from_spec(empty_spec, FastValueBuilderFactory::get());
+        _tensor = FastValueBuilderFactory::get().make_empty(_dataType.getTensorType());
     }
 }
 

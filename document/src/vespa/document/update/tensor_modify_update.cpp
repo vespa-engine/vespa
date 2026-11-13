@@ -12,9 +12,7 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/operation.h>
-#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/xmlstream.h>
@@ -158,9 +156,7 @@ std::unique_ptr<Value> TensorModifyUpdate::apply_to(const Value&               o
 namespace {
 
 std::unique_ptr<Value> create_empty_tensor(const ValueType& type) {
-    const auto&                factory = FastValueBuilderFactory::get();
-    vespalib::eval::TensorSpec empty_spec(type.to_spec());
-    return vespalib::eval::value_from_spec(empty_spec, factory);
+    return FastValueBuilderFactory::get().make_empty(type);
 }
 
 } // namespace

@@ -7,9 +7,7 @@
 
 #include <vespa/check_require.h>
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/net/http/state_explorer.h>
 
@@ -17,7 +15,6 @@
 LOG_SETUP(".searchlib.tensor.tensor_ext_attribute");
 
 using vespalib::eval::FastValueBuilderFactory;
-using vespalib::eval::TensorSpec;
 using vespalib::eval::TypedCells;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
@@ -27,9 +24,7 @@ namespace search::tensor {
 namespace {
 
 std::unique_ptr<Value> create_empty_tensor(const ValueType& type) {
-    const auto& factory = FastValueBuilderFactory::get();
-    TensorSpec  empty_spec(type.to_spec());
-    return vespalib::eval::value_from_spec(empty_spec, factory);
+    return FastValueBuilderFactory::get().make_empty(type);
 }
 
 } // namespace
