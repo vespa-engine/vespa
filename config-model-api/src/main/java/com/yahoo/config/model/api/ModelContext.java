@@ -233,6 +233,9 @@ public interface ModelContext {
         default List<String> requestPrefixForLoggingContent() { return List.of(); }
 
         default List<String> jdiscHttpComplianceViolations() { return List.of(); }
+
+        default boolean earlyProvisioning() { return false; }
+
     }
 
     /** A flag value that can be refined with additional dimensions before resolving. */

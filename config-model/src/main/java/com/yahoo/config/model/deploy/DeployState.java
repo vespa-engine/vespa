@@ -11,6 +11,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.AdditionalContent;
@@ -22,8 +23,8 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
-import com.yahoo.config.model.api.SidecarProvider;
 import com.yahoo.config.model.api.Reindexing;
+import com.yahoo.config.model.api.SidecarProvider;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
@@ -33,6 +34,8 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.ProvisionContext;
+import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.schema.Application;
@@ -62,6 +65,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.search.SemanticRules.SemanticRuleBuilder;
 
@@ -98,6 +102,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final OnnxModelCost onnxModelCost;
     private final Optional<SidecarProvider> sidecarProvider;
     private final AdditionalContent additionalContent;
+    private final ProvisionContext provisionContext;
 
     private DeployState(Application application,
                         RankProfileRegistry rankProfileRegistry,
@@ -140,7 +145,7 @@ public class DeployState implements ConfigDefinitionStore {
         this.documentModel = application.documentModel();
         this.configDefinitionRepo = configDefinitionRepo;
         this.endpoints = Set.copyOf(endpoints);
-        this.zone = zone;
+        this.zone = Objects.requireNonNull(zone, "zone cannot be null");
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
         this.importedModels = importMlModels(applicationPackage, modelImporters, mlModelImportCache, executor);
@@ -149,13 +154,29 @@ public class DeployState implements ConfigDefinitionStore {
                                                       .orElse(ValidationOverrides.empty));
 
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
-        this.now = now;
+        this.now = Objects.requireNonNull(now, "now cannot be null");
         this.wantedDockerImageRepo = wantedDockerImageRepo;
         this.reindexing = reindexing;
         this.onnxModelCost = onnxModelCost;
         this.sidecarProvider = sidecarProvider;
         this.additionalContent = additionalContent;
+
+        var builder = new ProvisionContext.Builder();
+        builder.setLogger(new ProvisionDeployLogger(deployLogger));
+        var validation = builder.validationOverrides();
+        if (properties != null) validation.setWarnOnly(warnOnlyOnValidationFailure(properties, zone));
+        validation.setOverrideResourcesReduction(this.validationOverrides.allows(ValidationId.resourcesReduction, now));
+        this.provisionContext = builder.build();
     }
+
+    /** A provision logger which forwards to the deploy logger */
+    private record ProvisionDeployLogger(DeployLogger deployLogger) implements ProvisionLogger {
+        @Override public void log(Level level, String message) { deployLogger.log(level, message); }
+        @Override public void logApplicationPackage(Level level, String message) { deployLogger.logApplicationPackage(level, message); }
+    }
+
+    /** Returns a singleton provision context. */
+    public ProvisionContext provisionContext() { return provisionContext; }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
         try (Reader hostsReader = applicationPackage.getHosts()) {
@@ -174,9 +195,11 @@ public class DeployState implements ConfigDefinitionStore {
     /** Returns the validation overrides of this. This is never null. */
     public ValidationOverrides validationOverrides() { return validationOverrides; }
 
-    public boolean warnOnlyOnValidationFailure() {
-        return isHosted() && zone().environment().isManuallyDeployed();
+    private static boolean warnOnlyOnValidationFailure(ModelContext.Properties properties, Zone zone) {
+        return properties.hostedVespa() && zone.environment().isManuallyDeployed();
     }
+
+    public boolean warnOnlyOnValidationFailure() { return warnOnlyOnValidationFailure(properties, zone); }
 
     @Override
     public final Optional<ConfigDefinition> getConfigDefinition(ConfigDefinitionKey defKey) {

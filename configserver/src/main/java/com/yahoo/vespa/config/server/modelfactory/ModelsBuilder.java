@@ -8,7 +8,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelFactory;
-import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
@@ -18,6 +17,7 @@ import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.lang.MutableBoolean;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
@@ -103,6 +103,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         List<MODELRESULT> builtModels = new ArrayList<>();
         // Build latest model for latest major only, if that fails build latest model for previous major
         boolean buildLatestModelForThisMajor = true;
+        // WARNING: `firstModel` is true for the first model being built (as expected), but will also
+        // be true when building the second model if the first model failed to build and was allowed to fail.
+        MutableBoolean firstModel = new MutableBoolean(true);
         for (int i = 0; i < majorVersions.size(); i++) {
             int majorVersion = majorVersions.get(i);
             log.log(Level.FINE, "Building major " + majorVersion + ", versionToBuildFirst=" + versionToBuildFirst);
@@ -111,7 +114,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                       applicationId, dockerImageRepository, wantedNodeVespaVersion,
                                                       applicationPackage, allocatedHosts, now,
                                                       buildLatestModelForThisMajor,
-                                                      versionToBuildFirst, majorVersion));
+                                                      versionToBuildFirst, majorVersion, firstModel));
                 buildLatestModelForThisMajor = false; // We have successfully built latest model version, do it only for this major
                 versionToBuildFirst = Optional.empty(); // Set to empty, cannot build this first on another major
             }
@@ -195,7 +198,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                  Instant now,
                                                  boolean buildLatestModelForThisMajor,
                                                  Optional<Version> versionToBuildFirst,
-                                                 int majorVersion) {
+                                                 int majorVersion,
+                                                 MutableBoolean firstModel) {
         List<MODELRESULT> built = new ArrayList<>();
         if (buildLatestModelForThisMajor) {
             if (versionToBuildFirst.isEmpty())
@@ -204,9 +208,11 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                applicationPackage,
                                                applicationId,
                                                wantedDockerImageRepository,
-                                               wantedNodeVespaVersion);
+                                               wantedNodeVespaVersion,
+                                               firstModel.get());
             allocatedHosts.add(builtFirst.getModel().allocatedHosts(), versionToBuildFirst.get());
             built.add(builtFirst);
+            firstModel.set(false);
         }
 
         versions = versionsToBuild(versions, wantedNodeVespaVersion, majorVersion, allocatedHosts);
@@ -218,9 +224,11 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                              applicationPackage,
                                                              applicationId,
                                                              wantedDockerImageRepository,
-                                                             wantedNodeVespaVersion);
+                                                             wantedNodeVespaVersion,
+                                                             firstModel.get());
                 allocatedHosts.add(modelVersion.getModel().allocatedHosts(), version);
                 built.add(modelVersion);
+                firstModel.set(false);
             } catch (RuntimeException e) {
                 if (allowBuildToFail(now, built))
                     log.log(Level.INFO, applicationId + ": Failed to build version " + version +
@@ -272,9 +280,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     }
 
     private Version findLatest(Set<Version> versionSet) {
-        List<Version> versionList = new ArrayList<>(versionSet);
-        Collections.sort(versionList);
-        return versionList.get(versionList.size() - 1);
+        return versionSet.stream().max(Version::compareTo).orElseThrow();
     }
 
     /** Returns the subset of the given versions which are in use on these hosts */
@@ -289,7 +295,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
                                                      ApplicationId applicationId, Optional<DockerImage> dockerImageRepository,
-                                                     Version wantedNodeVespaVersion);
+                                                     Version wantedNodeVespaVersion, boolean firstModel);
 
     /**
      * Returns a host provisioner returning the previously allocated hosts if available and when on hosted Vespa,

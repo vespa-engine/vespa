@@ -10,6 +10,8 @@ import com.yahoo.config.model.api.ConfigModelPlugin;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.ProvisionContext;
 import com.yahoo.vespa.model.VespaModel;
 import org.w3c.dom.Element;
 
@@ -73,6 +75,14 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
         MODEL model = factory.createModel(context);
         doBuild(model, spec, context);
         return model;
+    }
+
+    /** The arguments passed to an invocation of HostProvisioner.prepare(). */
+    public record AllocationRequest(ClusterSpec clusterSpec, ProvisionContext provisionContext) { }
+
+    /** @return the exact sequence of HostProvisioner.prepare() calls expected to be invoked during build(). */
+    public List<AllocationRequest> collectAllocationRequests(ConfigModelContext context, Element spec) {
+        return List.of();
     }
 
     public Class<MODEL> getModelClass() {

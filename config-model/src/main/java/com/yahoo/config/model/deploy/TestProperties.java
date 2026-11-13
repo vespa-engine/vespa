@@ -115,6 +115,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
+    @Override public boolean earlyProvisioning() { return false; }
     @Override public boolean useNonPublicEndpointForTest() { return true; }
     @Override public String responseSequencerType() { return responseSequencerType; }
     @Override public int defaultNumResponseThreads() { return responseNumThreads; }

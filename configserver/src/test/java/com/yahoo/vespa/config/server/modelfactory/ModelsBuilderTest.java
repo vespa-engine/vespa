@@ -5,7 +5,6 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
@@ -21,7 +20,6 @@ import org.junit.Test;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -60,7 +58,7 @@ public class ModelsBuilderTest {
         @Override
         protected ModelResult buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
                                                 ApplicationId applicationId, Optional<DockerImage> dockerImageRepository,
-                                                Version wantedNodeVespaVersion) {
+                                                Version wantedNodeVespaVersion, boolean firstModel) {
             modelFactory.createModel(null);
             throw new IllegalStateException("should not reach here");
         }

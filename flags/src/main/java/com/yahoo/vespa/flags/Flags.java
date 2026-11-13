@@ -55,6 +55,13 @@ public class Flags {
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
+    public static final UnboundBooleanFlag EARLY_PROVISIONING = defineFeatureFlag(
+            "early-provisioning", false,
+            List.of("hakonhall"), "2026-11-12", "2027-01-12",
+            "Whether to enable early provisioning.",
+            "Takes effect on the next internal or external deployment.",
+            TENANT_ID, APPLICATION, INSTANCE_ID, VESPA_VERSION);
+
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
             List.of("hmusum"), "2020-12-02", "2026-12-01",
