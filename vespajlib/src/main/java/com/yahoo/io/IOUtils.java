@@ -16,6 +16,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.channels.FileChannel;
@@ -391,15 +392,13 @@ public abstract class IOUtils {
         }
     }
 
-    /** Reads all data from a reader into a string. Uses a buffer to speed up reading. */
+    /** Reads all data from a reader into a string, and closes the reader. */
     public static String readAll(Reader reader) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader buffered = new BufferedReader(reader)) {
-            int c;
-            while ((c = buffered.read()) != -1)
-                sb.append((char)c);
+        try (reader) {
+            StringWriter writer = new StringWriter();
+            reader.transferTo(writer);
+            return writer.toString();
         }
-        return sb.toString();
     }
 
     /** Reads an input stream completely into a string. */

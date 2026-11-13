@@ -3,6 +3,7 @@ package com.yahoo.searchlib.rankingexpression;
 
 import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.searchlib.rankingexpression.evaluation.NamedStringValue;
+import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.OperationNode;
@@ -18,7 +19,9 @@ import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -43,6 +46,27 @@ import java.util.concurrent.TimeUnit;
  * @author bratseth
  */
 public class RankingExpressionTestCase {
+
+    @Test
+    public void testRepeatedNamesAndStringsShareInstancesWithinAnExpression() throws ParseException {
+        String expression = "if (foo in [\"a\", \"b\"], 1, 2) + if (foo in [\"a\"], 3, 4)";
+        List<ReferenceNode> references = new ArrayList<>();
+        List<ConstantNode> strings = new ArrayList<>();
+        collect(new RankingExpression(expression).getRoot(), references, strings);
+        assertEquals(2, references.size());
+        assertSame(references.get(0).getName(), references.get(1).getName());
+        assertEquals(3, strings.size());
+        assertSame(strings.get(0), strings.get(2)); // "a"
+        assertNotSame(strings.get(0), strings.get(1));
+    }
+
+    private static void collect(ExpressionNode node, List<ReferenceNode> references, List<ConstantNode> strings) {
+        if (node instanceof ReferenceNode reference) references.add(reference);
+        if (node instanceof ConstantNode constant && constant.getValue() instanceof StringValue)
+            strings.add(constant);
+        if (node instanceof CompositeNode composite)
+            composite.children().forEach(child -> collect(child, references, strings));
+    }
 
     @Test
     public void testParamInFeature() throws ParseException {
