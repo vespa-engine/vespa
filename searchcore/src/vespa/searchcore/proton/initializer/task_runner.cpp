@@ -8,8 +8,12 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
+#include <opentelemetry/trace/provider.h>
+
 #include <future>
 
+using opentelemetry::trace::Provider;
+using opentelemetry::trace::Span;
 using vespalib::makeLambdaTask;
 
 namespace proton::initializer {
@@ -70,7 +74,13 @@ void TaskRunner::internalRunTask(InitializerTask::SP task, Context::SP context) 
     setTaskRunning(*task);
     auto done(makeLambdaTask([this, task, context]() { setTaskDone(*task, context); }));
     _executor.execute(makeLambdaTask([task, context, done(std::move(done))]() mutable {
-        task->run();
+        {
+            auto provider = Provider::GetTracerProvider();
+            auto tracer = provider->GetTracer("proton");
+            auto parent_span = context->parent_span();
+            auto scope = tracer->WithActiveSpan(parent_span);
+            task->run();
+        }
         context->execute(std::move(done));
     }));
 }
@@ -111,7 +121,10 @@ void TaskRunner::pollTask(Context::SP context) {
 
 void TaskRunner::runTask(InitializerTask::SP rootTask, vespalib::Executor& contextExecutor,
                          vespalib::Executor::Task::UP doneTask) {
-    auto context(std::make_shared<Context>(rootTask, contextExecutor, std::move(doneTask)));
+    auto provider = Provider::GetTracerProvider();
+    auto tracer = provider->GetTracer("proton");
+    auto parent_span = tracer->GetCurrentSpan();
+    auto context(std::make_shared<Context>(rootTask, contextExecutor, std::move(doneTask), std::move(parent_span)));
     context->execute(makeLambdaTask([this, context = std::move(context)]() { pollTask(context); }));
 }
 

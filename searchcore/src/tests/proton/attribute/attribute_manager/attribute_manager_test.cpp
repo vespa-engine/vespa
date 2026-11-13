@@ -157,7 +157,7 @@ struct BaseFixture {
     ~BaseFixture();
     proton::AttributeManager::SP make_manager() {
         return std::make_shared<proton::AttributeManager>(
-            test_dir, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
+            test_dir, DocTypeName("test"), "subdb", TuneFileAttributes(), _fileHeaderContext,
             std::make_shared<search::attribute::Interlock>(), _attributeFieldWriter, _shared, _hwInfo);
     }
 };

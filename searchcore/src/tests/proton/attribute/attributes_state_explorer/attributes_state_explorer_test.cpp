@@ -115,9 +115,9 @@ AttributesStateExplorerTest::AttributesStateExplorerTest() noexcept
       _parent_dms(std::make_shared<const DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>())),
       _dms(),
       _parent_mgr(std::make_shared<AttributeManager>(
-          TEST_DIR, "test.parent.subdb", TuneFileAttributes(), _fileHeaderContext,
+          TEST_DIR, DocTypeName("test_parent"), "subdb", TuneFileAttributes(), _fileHeaderContext,
           std::make_shared<search::attribute::Interlock>(), *_attribute_field_writer, _shared, _hwInfo)),
-      _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
+      _mgr(new AttributeManager(TEST_DIR, DocTypeName("test"), "subdb", TuneFileAttributes(), _fileHeaderContext,
                                 std::make_shared<search::attribute::Interlock>(), *_attribute_field_writer, _shared,
                                 _hwInfo)),
       _explorer(_mgr) {

@@ -79,9 +79,9 @@ AttributePopulatorTest::AttributePopulatorTest()
       _attributeFieldWriter(),
       _shared(),
       _hwInfo(),
-      _mgr(std::make_shared<AttributeManager>(TEST_DIR, "test.subdb", TuneFileAttributes(), _fileHeader,
-                                              std::make_shared<search::attribute::Interlock>(), _attributeFieldWriter,
-                                              _shared, _hwInfo)),
+      _mgr(std::make_shared<AttributeManager>(TEST_DIR, DocTypeName("test"), "subdb", TuneFileAttributes(),
+                                              _fileHeader, std::make_shared<search::attribute::Interlock>(),
+                                              _attributeFieldWriter, _shared, _hwInfo)),
       _pop(),
       _ctx() {
     _mgr->addAttribute({"a1", AVConfig(AVBasicType::INT32)}, CREATE_SERIAL_NUM);

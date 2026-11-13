@@ -3,6 +3,7 @@
 #include "ddbstate.h"
 
 #include <vespa/check_require.h>
+#include <vespa/opentelemetry/span_attribute_names.h>
 
 #include <opentelemetry/trace/provider.h>
 
@@ -85,8 +86,11 @@ void DDBState::set_state(State state) {
     StartSpanOptions options;
     options.kind = SpanKind::kInternal;
     options.parent = _multistate_span->GetContext();
-    _state_span = tracer->StartSpan(
-        std::format("Document type {} ddb state {}", _doc_type_name.getName(), getStateString(state)), options);
+    _state_span =
+        tracer->StartSpan(std::format("ddb state {}", getStateString(state)),
+                          {{vespa_opentelemetry::span_attribute_names::document_type, _doc_type_name.getName()},
+                           {vespa_opentelemetry::span_attribute_names::ddb_prev_state, getStateString(old_state)}},
+                          options);
 }
 
 bool DDBState::enterLoadState() {
@@ -100,7 +104,9 @@ bool DDBState::enterLoadState() {
     StartSpanOptions options;
     options.kind = SpanKind::kInternal;
     options.parent = parent_span->GetContext();
-    _multistate_span = tracer->StartSpan(std::format("Document type {} init", _doc_type_name.getName()), options);
+    _multistate_span = tracer->StartSpan(
+        "ddb multistate init", {{vespa_opentelemetry::span_attribute_names::document_type, _doc_type_name.getName()}},
+        options);
     _load_time = std::chrono::system_clock::now();
     set_state(State::LOAD);
     return true;
@@ -185,7 +191,9 @@ void DDBState::enterShutdownState() {
     StartSpanOptions options;
     options.kind = SpanKind::kInternal;
     options.parent = parent_span->GetContext();
-    _multistate_span = tracer->StartSpan(std::format("Document type {} shutdown", _doc_type_name.getName()), options);
+    _multistate_span = tracer->StartSpan(
+        "ddb multistate shutdown",
+        {{vespa_opentelemetry::span_attribute_names::document_type, _doc_type_name.getName()}}, options);
     set_state(State::SHUTDOWN);
     _cond.notify_all();
 }

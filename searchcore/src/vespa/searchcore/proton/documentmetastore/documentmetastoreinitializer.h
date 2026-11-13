@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/common/growstrategy.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 
 #include <string>
@@ -18,16 +19,16 @@ namespace proton::documentmetastore {
  */
 class DocumentMetaStoreInitializer : public initializer::InitializerTask {
     std::string                        _baseDir;
-    std::string                        _subDbName;
-    std::string                        _docTypeName;
+    const DocTypeName                  _doc_type_name;
+    const std::string                  _subdb_name;
     std::shared_ptr<DocumentMetaStore> _dms;
 
 public:
     using SP = std::shared_ptr<DocumentMetaStoreInitializer>;
 
     // Note: lifetime of result must be handled by caller.
-    DocumentMetaStoreInitializer(const std::string baseDir, const std::string& subDbName,
-                                 const std::string& docTypeName, std::shared_ptr<DocumentMetaStore> dms);
+    DocumentMetaStoreInitializer(const std::string baseDir, const DocTypeName& doc_type_name_in,
+                                 const std::string& subdb_name_in, std::shared_ptr<DocumentMetaStore> dms);
     void run() override;
 };
 

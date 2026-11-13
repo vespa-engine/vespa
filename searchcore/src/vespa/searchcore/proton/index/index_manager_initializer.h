@@ -4,6 +4,7 @@
 
 #include "indexmanager.h"
 
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 
 namespace proton {
@@ -14,6 +15,8 @@ namespace proton {
  */
 class IndexManagerInitializer : public initializer::InitializerTask {
     const std::string                                     _baseDir;
+    const DocTypeName                                     _doc_type_name;
+    const std::string                                     _subdb_name;
     const index::IndexConfig                              _indexConfig;
     const search::index::Schema                           _schema;
     search::SerialNum                                     _serialNum;
@@ -28,7 +31,8 @@ class IndexManagerInitializer : public initializer::InitializerTask {
 
 public:
     // Note: lifetime of indexManager must be handled by caller.
-    IndexManagerInitializer(const std::string& baseDir, const index::IndexConfig& indexCfg,
+    IndexManagerInitializer(const std::string& baseDir, const DocTypeName& doc_type_name_in,
+                            const std::string& subdb_name_in, const index::IndexConfig& indexCfg,
                             const search::index::Schema& schema, search::SerialNum serialNum,
                             searchcorespi::IIndexManager::Reconfigurer&           reconfigurer,
                             searchcorespi::index::IThreadingService&              threadingService,

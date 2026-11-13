@@ -592,8 +592,8 @@ public:
           _attributeFieldWriter(),
           _shared(),
           _hwInfo(),
-          _baseMgr(new proton::AttributeManager(test_dir, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
-                                                std::make_shared<search::attribute::Interlock>(),
+          _baseMgr(new proton::AttributeManager(test_dir, DocTypeName("test"), "subdb", TuneFileAttributes(),
+                                                _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
                                                 _attributeFieldWriter, _shared, _hwInfo)),
           _filterMgr(ACCEPTED_ATTRIBUTES, _baseMgr) {
         _baseMgr->addAttribute({"a1", INT32_SINGLE}, createSerialNum);

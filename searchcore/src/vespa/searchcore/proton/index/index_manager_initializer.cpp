@@ -2,25 +2,34 @@
 
 #include "index_manager_initializer.h"
 
+#include "vespa/opentelemetry/span_attribute_names.h"
+
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
 #include <vespa/vespalib/io/fileutil.h>
+
+#include <opentelemetry/trace/provider.h>
 
 #include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.index.indexmanagerinitializer");
 
+using opentelemetry::trace::Provider;
+
 namespace proton {
 
 IndexManagerInitializer::IndexManagerInitializer(
-    const std::string& baseDir, const index::IndexConfig& indexCfg, const search::index::Schema& schema,
-    search::SerialNum serialNum, searchcorespi::IIndexManager::Reconfigurer& reconfigurer,
+    const std::string& baseDir, const DocTypeName& doc_type_name_in, const std::string& subdb_name_in,
+    const index::IndexConfig& indexCfg, const search::index::Schema& schema, search::SerialNum serialNum,
+    searchcorespi::IIndexManager::Reconfigurer& reconfigurer,
     searchcorespi::index::IThreadingService& threadingService, vespalib::Executor& warmupExecutor,
     const search::TuneFileIndexManager& tuneFileIndexManager, const search::TuneFileAttributes& tuneFileAttributes,
     const search::common::FileHeaderContext&              fileHeaderContext,
     std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
     std::shared_ptr<searchcorespi::IIndexManager::SP>     indexManager)
     : _baseDir(baseDir),
+      _doc_type_name(doc_type_name_in),
+      _subdb_name(subdb_name_in),
       _indexConfig(indexCfg),
       _schema(schema),
       _serialNum(serialNum),
@@ -37,6 +46,13 @@ IndexManagerInitializer::IndexManagerInitializer(
 IndexManagerInitializer::~IndexManagerInitializer() = default;
 
 void IndexManagerInitializer::run() {
+    auto provider = Provider::GetTracerProvider();
+    auto tracer = provider->GetTracer("proton");
+    auto span =
+        tracer->StartSpan("Initialize index manager",
+                          {{vespa_opentelemetry::span_attribute_names::document_type, _doc_type_name.getName()},
+                           {vespa_opentelemetry::span_attribute_names::subdb, _subdb_name}});
+    auto scope = tracer->WithActiveSpan(span);
     LOG(debug, "About to create proton::IndexManager with %u index field(s)", _schema.getNumIndexFields());
     std::filesystem::create_directory(std::filesystem::path(_baseDir));
     vespalib::File::sync(vespalib::dirname(_baseDir));
@@ -45,6 +61,7 @@ void IndexManagerInitializer::run() {
         _baseDir, _posting_list_cache, _indexConfig, _schema, _serialNum, _reconfigurer, _threadingService,
         _warmupExecutor, _tuneFileIndexManager, _tuneFileAttributes, _fileHeaderContext);
     MemoryUsageLogger::log("finish load disk index", _baseDir);
+    span->End();
 }
 
 } // namespace proton

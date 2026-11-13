@@ -176,7 +176,7 @@ protected:
     virtual IFlushTargetList getFlushTargetsInternal();
     StoreOnlyFeedView::Context getStoreOnlyFeedViewContext(const DocumentDBConfig& configSnapshot);
     StoreOnlyFeedView::PersistentParams getFeedViewPersistentParams();
-    std::string getSubDbName() const;
+    std::string get_document_type_and_subdb_name() const;
     void reconfigure(const search::LogDocumentStore::Config& protonConfig, const AllocStrategy& alloc_strategy);
     void reconfigureAttributesConsideringNodeState(OnDone onDone);
 
@@ -186,6 +186,7 @@ public:
 
     uint32_t getSubDbId() const override { return _subDbId; }
     std::string getName() const override { return _subName; }
+    [[nodiscard]] const DocTypeName& doc_type_name() const noexcept override;
 
     std::unique_ptr<DocumentSubDbInitializer> createInitializer(const DocumentDBConfig& configSnapshot,
                                                                 SerialNum               configSerialNum,

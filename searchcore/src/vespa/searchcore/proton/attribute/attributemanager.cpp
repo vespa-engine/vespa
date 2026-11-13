@@ -113,8 +113,8 @@ AttributeManager::FlushableWrap::~FlushableWrap() = default;
 AttributeVector::SP AttributeManager::internalAddAttribute(AttributeSpec&& spec, uint64_t serialNum,
                                                            const IAttributeFactory& factory) {
     std::string                name = spec.getName();
-    AttributeInitializer       initializer(_diskLayout->createAttributeDir(name), _documentSubDbName, std::move(spec),
-                                           serialNum, factory, _shared_executor);
+    AttributeInitializer       initializer(_diskLayout->createAttributeDir(name), _doc_type_name, _subdb_name,
+                                           std::move(spec), serialNum, factory, _shared_executor);
     AttributeInitializerResult result = initializer.init();
     if (result) {
         result.getAttribute()->setInterlock(_interlock);
@@ -192,7 +192,7 @@ void AttributeManager::addNewAttributes(const Spec& newSpec, Spec::AttributeList
             aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum().value_or(0));
 
         auto initializer = std::make_unique<AttributeInitializer>(
-            _diskLayout->createAttributeDir(aspec.getName()), _documentSubDbName, std::move(aspec),
+            _diskLayout->createAttributeDir(aspec.getName()), _doc_type_name, _subdb_name, std::move(aspec),
             newSpec.getCurrentSerialNum(), *_factory, _shared_executor);
         initializerRegistry.add(std::move(initializer));
 
@@ -217,8 +217,8 @@ void AttributeManager::transferExtraAttributes(const AttributeManager& currMgr) 
     }
 }
 
-AttributeManager::AttributeManager(const std::string& baseDir, const std::string& documentSubDbName,
-                                   const TuneFileAttributes&                     tuneFileAttributes,
+AttributeManager::AttributeManager(const std::string& baseDir, const DocTypeName& doc_type_name_in,
+                                   const std::string& subdb_name_in, const TuneFileAttributes& tuneFileAttributes,
                                    const FileHeaderContext&                      fileHeaderContext,
                                    std::shared_ptr<search::attribute::Interlock> interlock,
                                    vespalib::ISequencedTaskExecutor&             attributeFieldWriter,
@@ -228,7 +228,8 @@ AttributeManager::AttributeManager(const std::string& baseDir, const std::string
       _flushables(),
       _writableAttributes(),
       _diskLayout(AttributeDiskLayout::create(baseDir)),
-      _documentSubDbName(documentSubDbName),
+      _doc_type_name(doc_type_name_in),
+      _subdb_name(subdb_name_in),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
       _factory(std::make_shared<AttributeFactory>()),
@@ -239,19 +240,18 @@ AttributeManager::AttributeManager(const std::string& baseDir, const std::string
       _importedAttributes() {
 }
 
-AttributeManager::AttributeManager(const std::string& baseDir, const std::string& documentSubDbName,
-                                   const search::TuneFileAttributes&             tuneFileAttributes,
-                                   const search::common::FileHeaderContext&      fileHeaderContext,
-                                   std::shared_ptr<search::attribute::Interlock> interlock,
-                                   vespalib::ISequencedTaskExecutor&             attributeFieldWriter,
-                                   vespalib::Executor& shared_executor, IAttributeFactory::SP factory,
-                                   const vespalib::HwInfo& hwInfo)
+AttributeManager::AttributeManager(
+    const std::string& baseDir, const DocTypeName& doc_type_name_in, const std::string& subdb_name_in,
+    const search::TuneFileAttributes& tuneFileAttributes, const search::common::FileHeaderContext& fileHeaderContext,
+    std::shared_ptr<search::attribute::Interlock> interlock, vespalib::ISequencedTaskExecutor& attributeFieldWriter,
+    vespalib::Executor& shared_executor, IAttributeFactory::SP factory, const vespalib::HwInfo& hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
       _flushables(),
       _writableAttributes(),
       _diskLayout(AttributeDiskLayout::create(baseDir)),
-      _documentSubDbName(documentSubDbName),
+      _doc_type_name(doc_type_name_in),
+      _subdb_name(subdb_name_in),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
       _factory(std::move(factory)),
@@ -269,7 +269,8 @@ AttributeManager::AttributeManager(const AttributeManager& currMgr, Spec&& newSp
       _flushables(),
       _writableAttributes(),
       _diskLayout(currMgr._diskLayout),
-      _documentSubDbName(currMgr._documentSubDbName),
+      _doc_type_name(currMgr._doc_type_name),
+      _subdb_name(currMgr._subdb_name),
       _tuneFileAttributes(currMgr._tuneFileAttributes),
       _fileHeaderContext(currMgr._fileHeaderContext),
       _factory(currMgr._factory),

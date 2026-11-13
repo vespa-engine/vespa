@@ -62,8 +62,9 @@ InitializerTask::SP FastAccessDocSubDB::createAttributeManagerInitializer(
     AllocStrategy         alloc_strategy = configSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     IAttributeFactory::SP attrFactory = std::make_shared<AttributeFactory>();
     AttributeManager::SP  baseAttrMgr = std::make_shared<AttributeManager>(
-        _baseDir + "/attribute", getSubDbName(), configSnapshot.getTuneFileDocumentDBSP()->_attr, _fileHeaderContext,
-        _attribute_interlock, _writeService.field_writer(), _writeService.shared(), attrFactory, _hwInfo);
+        _baseDir + "/attribute", _docTypeName, _subName, configSnapshot.getTuneFileDocumentDBSP()->_attr,
+        _fileHeaderContext, _attribute_interlock, _writeService.field_writer(), _writeService.shared(), attrFactory,
+        _hwInfo);
     return std::make_shared<AttributeManagerInitializer>(
         configSerialNum, documentMetaStoreInitTask, documentMetaStore, *baseAttrMgr,
         configSnapshot.getAttributesConfig(), alloc_strategy, _fastAccessAttributesOnly, _writeService.master(),
@@ -139,8 +140,8 @@ IReprocessingTask::UP FastAccessDocSubDB::createReprocessingTask(
     const std::shared_ptr<const document::DocumentTypeRepo>& docTypeRepo) const {
     uint32_t docIdLimit = _metaStoreCtx->get().getCommittedDocIdLimit();
     CHECK(docIdLimit > 0);
-    return std::make_unique<ReprocessDocumentsTask>(initializer, getSummaryManager(), docTypeRepo, getSubDbName(),
-                                                    docIdLimit);
+    return std::make_unique<ReprocessDocumentsTask>(initializer, getSummaryManager(), docTypeRepo,
+                                                    get_document_type_and_subdb_name(), docIdLimit);
 }
 
 FastAccessDocSubDB::FastAccessDocSubDB(const Config& cfg, const Context& ctx)
@@ -148,7 +149,7 @@ FastAccessDocSubDB::FastAccessDocSubDB(const Config& cfg, const Context& ctx)
       _fastAccessAttributesOnly(cfg._fastAccessAttributesOnly),
       _initAttrMgr(),
       _fastAccessFeedView(),
-      _configurer(_fastAccessFeedView, getSubDbName()),
+      _configurer(_fastAccessFeedView, get_document_type_and_subdb_name()),
       _subAttributeMetrics(ctx._subAttributeMetrics),
       _metricsWireService(ctx._metricsWireService),
       _attribute_interlock(std::move(ctx._attribute_interlock)),
