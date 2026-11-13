@@ -65,6 +65,8 @@ type flowConfig struct {
 	ClientID           string `json:"client-id"`
 	DeviceCodeEndpoint string `json:"device-code-endpoint"`
 	OauthTokenEndpoint string `json:"oauth-token-endpoint"`
+	// AuthorizationEndpoint is optional, and is derived from OauthTokenEndpoint if not set
+	AuthorizationEndpoint string `json:"authorization-endpoint,omitempty"`
 }
 
 func cancelOnInterrupt() context.Context {
@@ -94,6 +96,8 @@ func NewClient(httpClient httputil.Client, options Options) (*Client, error) {
 		ClientID:           c.ClientID,
 		DeviceCodeEndpoint: c.DeviceCodeEndpoint,
 		OauthTokenEndpoint: c.OauthTokenEndpoint,
+
+		AuthorizationEndpoint: c.AuthorizationEndpoint,
 	}
 	provider, err := readConfig(options.ConfigPath)
 	if err != nil {
