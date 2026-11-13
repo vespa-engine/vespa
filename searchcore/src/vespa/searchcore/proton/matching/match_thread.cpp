@@ -449,12 +449,14 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
         return;
     }
     if (hasGrouping) {
+        trace->addEvent(6, "Perform grouping (unordered)");
         search::grouping::GroupingManager man(*context.grouping);
         man.groupUnordered(_distributionKey, hits, bits);
     }
     if (doom.hard_doom()) {
         return;
     }
+    trace->addEvent(6, "Sort hits");
     size_t sortLimit = hasGrouping ? hits.size() : context.result->maxSize();
     result->sort(*context.sort->sorter, sortLimit);
     if (context.sort->sortSpec.feature_values_failed()) {
@@ -465,6 +467,7 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
         return;
     }
     if (hasGrouping) {
+        trace->addEvent(6, "Perform grouping (relevance order)");
         search::grouping::GroupingManager man(*context.grouping);
         man.groupInRelevanceOrder(_distributionKey, hits);
         man.convertToGlobalId(matchToolsFactory.metaStore());
@@ -472,6 +475,7 @@ void MatchThread::processResult(const Doom& doom, search::ResultSet::UP result, 
     if (doom.hard_doom()) {
         return;
     }
+    trace->addEvent(6, "Fill partial result");
     fillPartialResult(context, totalHits, hits, bits);
 
     if (auto task = matchToolsFactory.createOnMatchTask()) {
