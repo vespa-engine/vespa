@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  * @author Steinar Knutsen
- * @author geirst
+ * @author Geir Storli
  */
 @After("*")
 public class ClusterSearcher extends Searcher {
@@ -408,14 +408,35 @@ public class ClusterSearcher extends Searcher {
 
     Set<String> resolveSchemas(Query query) {
         Set<String> restrict = query.getModel().getRestrict();
+        Set<String> schemas;
         if (restrict == null || restrict.isEmpty()) {
             Set<String> sources = query.getModel().getSources();
-            return (sources == null || sources.isEmpty())
-                    ? schema2Searcher.keySet()
-                    : resolveSourceSubset(sources);
+            schemas = (sources == null || sources.isEmpty())
+                      ? schema2Searcher.keySet()
+                      : resolveSourceSubset(sources);
         } else {
-            return filterValidDocumentTypes(restrict);
+            schemas = filterValidDocumentTypes(restrict);
         }
+        return removeExcludedSchemas(schemas, query.getModel().getExcludedSources());
+    }
+
+    /**
+     * Removes the excluded sources which name a schema of this cluster, either as the schema name
+     * or as 'thisCluster.schema'.
+     * Excluded sources naming a cluster are handled by the federation searcher and ignored here, since
+     * a schema may be present in multiple clusters.
+     */
+    private Set<String> removeExcludedSchemas(Set<String> schemas, Set<String> excludedSources) {
+        if (excludedSources == null || excludedSources.isEmpty()) {
+            return schemas;
+        }
+        Set<String> retval = new LinkedHashSet<>();
+        for (String schema : schemas) {
+            if ( ! excludedSources.contains(schema) && ! excludedSources.contains(searchClusterName + "." + schema)) {
+                retval.add(schema);
+            }
+        }
+        return retval;
     }
 
     private Set<String> filterValidDocumentTypes(Collection<String> restrict) {

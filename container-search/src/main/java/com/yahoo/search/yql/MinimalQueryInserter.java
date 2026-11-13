@@ -7,6 +7,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
+import com.yahoo.search.query.Model;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.processing.request.CompoundName;
@@ -23,6 +24,7 @@ import com.yahoo.yolean.chain.After;
 import com.yahoo.yolean.chain.Before;
 import com.yahoo.yolean.chain.Provides;
 
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -58,6 +60,23 @@ public class MinimalQueryInserter extends Searcher {
 
     static boolean warmup() {
         return warmup(new SimpleLinguistics());
+    }
+
+    /**
+     * Sources named explicitly in the YQL query override exclusions from model.sources:
+     * An exclusion is removed if a YQL source is the excluded name, or a 'cluster.schema' source within it.
+     */
+    private static void removeExclusionsOverriddenByYql(Model model, Set<String> yqlSources) {
+        if (model.getExcludedSources().isEmpty()) {
+            return;
+        }
+        for (String yqlSource : yqlSources) {
+            model.getExcludedSources().remove(yqlSource);
+            int dot = yqlSource.indexOf('.');
+            if (dot > 0) {
+                model.getExcludedSources().remove(yqlSource.substring(0, dot));
+            }
+        }
     }
 
     private static boolean warmup(Linguistics linguistics) {
@@ -127,6 +146,7 @@ public class MinimalQueryInserter extends Searcher {
             query.getModel().getSources().clear();
         } else {
             query.getModel().getSources().addAll(parser.getYqlSources());
+            removeExclusionsOverriddenByYql(query.getModel(), parser.getYqlSources());
         }
         if (parser.getOffset() != null) {
             query.setOffset(parser.getOffset());
