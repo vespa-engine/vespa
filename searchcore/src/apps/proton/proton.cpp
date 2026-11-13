@@ -291,6 +291,7 @@ void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
         {
             ExitOnSignal exit_on_signal;
             span->AddEvent("Starting proton");
+            auto scope = tracer->WithActiveSpan(span);
             proton.init(configSnapshot);
         }
         std::string file_distributor_connection_spec = configSnapshot->getFiledistributorrpcConfig().connectionspec;
@@ -298,6 +299,7 @@ void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
 
         if (!params.serviceidentity.empty()) {
             span->AddEvent("Starting service layer");
+            auto scope = tracer->WithActiveSpan(span);
             spiProton = std::make_unique<ProtonServiceLayerProcess>(
                 identityUri.createWithNewId(params.serviceidentity), proton, transport,
                 file_distributor_connection_spec, configSnapshot->getHwInfo());
@@ -311,6 +313,7 @@ void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
         configSnapshot.reset();
         span->AddEvent("Started proton");
         span->End();
+        span.reset();
         EV_STARTED("proton");
         while (!(SIG::INT.check() || SIG::TERM.check() || (spiProton && spiProton->getNode().attemptedStopped()))) {
             std::this_thread::sleep_for(1000ms);
@@ -319,6 +322,8 @@ void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
                 spiProton->updateConfig();
             }
         }
+        span = tracer->StartSpan("Proton process stopping");
+        auto scope = tracer->WithActiveSpan(span);
         // Ensure metric manager and state server are shut down before we start tearing
         // down any service layer components that they may end up transitively using.
         protonUP->shutdown_config_fetching_and_state_exposing_components_once();
@@ -328,6 +333,8 @@ void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
             EV_STOPPING("servicelayer", "clean shutdown");
         }
         protonUP.reset();
+        span->End();
+        span.reset();
         EV_STOPPING("proton", "clean shutdown");
     }
 }

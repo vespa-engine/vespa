@@ -3,6 +3,8 @@
 
 #include <vespa/searchcore/proton/common/doctypename.h>
 
+#include <opentelemetry/trace/span.h>
+
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -51,11 +53,15 @@ private:
     std::atomic<time_point> _online_time;
     std::atomic<time_point> _replay_time;
 
-    DocTypeName _doc_type_name;
+    DocTypeName                                 _doc_type_name;
+    std::shared_ptr<opentelemetry::trace::Span> _multistate_span; // Init states or shutdown states
+    std::shared_ptr<opentelemetry::trace::Span> _state_span;
 
     static std::vector<std::string> _stateNames;
     static std::vector<std::string> _configStateNames;
 
+    void end_multistate_span();
+    void end_state_span();
     void set_state(State state);
 
 public:

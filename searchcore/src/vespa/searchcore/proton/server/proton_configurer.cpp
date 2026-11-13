@@ -18,10 +18,14 @@
 #include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
 
+#include <opentelemetry/trace/provider.h>
+
 #include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton_configurer");
+
+using opentelemetry::trace::Provider;
 
 using vespa::config::search::core::ProtonConfig;
 using vespalib::makeLambdaTask;
@@ -113,7 +117,14 @@ void ProtonConfigurer::performReconfigure() {
     // called by proton executor thread
     CHECK(_executor.isCurrentThread());
     auto configSnapshot(getPendingConfigSnapshot());
+    auto provider = Provider::GetTracerProvider();
+    auto tracer = provider->GetTracer("proton");
+    auto span = tracer->StartSpan("reconfigure");
+    span->AddEvent("Start reconfigure");
+    auto scope = tracer->WithActiveSpan(span);
     applyConfig(configSnapshot, InitializeThreads(), false);
+    span->AddEvent("Done reconfigure");
+    span->End();
 }
 
 bool ProtonConfigurer::skipConfig(const ProtonConfigSnapshot* configSnapshot, bool initialConfig) {
