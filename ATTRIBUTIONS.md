@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-11-12
+Last updated: 2026-11-13
 
 ---
 
@@ -1006,9 +1006,9 @@ Last updated: 2026-11-12
 
 ---
 
-## org.jsoup 1.23.2 — MIT
+## org.jsoup 1.24.1 — MIT
 
-- Homepage: <https://jsoup.org/>
+- Homepage: <https://jhedley.com/>
 - Copyright 2009-2026 Jonathan Hedley <https://jsoup.org/>
 - Copyright 2009-2026 a href
 - Jonathan Hedley
