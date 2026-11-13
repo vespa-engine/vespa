@@ -101,12 +101,12 @@ public:
     explicit TermFieldMatchDataPositionIterator(Positions positions)
         : _begin(positions.begin()), _end(positions.end()) {}
 
-    auto begin() const noexcept { return _begin; }
-    auto end() const noexcept { return _end; }
+    auto& begin() const noexcept { return _begin; }
+    auto& end() const noexcept { return _end; }
 
     [[nodiscard]] bool is_at_end() const noexcept { return _begin == _end; }
 
-    auto& operator++() {
+    auto& operator++() noexcept {
         _begin++;
         return *this;
     }

@@ -18,6 +18,10 @@ namespace search::queryeval {
  * Search iterator for a phrase, based on a set of child search iterators.
  */
 class SimplePhraseSearch : public MultiSearch {
+public:
+    using It = std::span<const fef::TermFieldMatchDataPosition>::iterator;
+
+private:
     fef::MatchData::UP           _md;
     fef::TermFieldMatchDataArray _childMatch;
     std::vector<uint32_t>        _eval_order;
@@ -25,7 +29,6 @@ class SimplePhraseSearch : public MultiSearch {
     uint32_t                     _unpacked_docid;
     bool                         _strict;
 
-    using It = fef::TermFieldMatchDataPositionIterator;
     // Reuse this vector instead of allocating a new one when needed.
     std::vector<It> _iterators;
 

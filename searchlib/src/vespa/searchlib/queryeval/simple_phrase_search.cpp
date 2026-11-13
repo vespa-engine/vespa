@@ -3,7 +3,6 @@
 #include "simple_phrase_search.h"
 
 #include "element_id_extractor.h"
-#include "vespa/searchlib/fef/termfieldmatchdataposition.h"
 
 #include <vespa/check_require.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
@@ -18,16 +17,16 @@ namespace search::queryeval {
 namespace {
 // Helper class
 class PhraseMatcher {
-    const fef::TermFieldMatchDataArray&              _tmds;
-    const vector<uint32_t>&                          _eval_order;
-    vector<fef::TermFieldMatchDataPositionIterator>& _iterators;
-    uint32_t                                         _element_id;
-    uint32_t                                         _position;
-    const uint32_t _phraseLength; // currently all children of phrase must be 1-word terms
+    const fef::TermFieldMatchDataArray& _tmds;
+    const vector<uint32_t>&             _eval_order;
+    vector<SimplePhraseSearch::It>&     _iterators;
+    uint32_t                            _element_id;
+    uint32_t                            _position;
+    const uint32_t                      _phraseLength; // currently all children of phrase must be 1-word terms
 
-    auto& iterator(uint32_t word_index) { return _iterators[word_index].begin(); }
+    SimplePhraseSearch::It& iterator(uint32_t word_index) { return _iterators[word_index]; }
 
-    const auto& end(uint32_t word_index) { return _iterators[word_index].end(); }
+    SimplePhraseSearch::It end(uint32_t word_index) { return _tmds[word_index]->match_view().end(); }
 
     uint32_t elementId(uint32_t word_index) { return iterator(word_index)->getElementId(); }
 
@@ -69,7 +68,7 @@ class PhraseMatcher {
 
 public:
     PhraseMatcher(const fef::TermFieldMatchDataArray& tmds, const vector<uint32_t>& eval_order,
-                  vector<fef::TermFieldMatchDataPositionIterator>& iterators)
+                  vector<SimplePhraseSearch::It>& iterators)
         : _tmds(tmds),
           _eval_order(eval_order),
           _iterators(iterators),
@@ -77,7 +76,7 @@ public:
           _position(0),
           _phraseLength(tmds.size()) {
         for (size_t i = 0; i < _tmds.size(); ++i) {
-            _iterators[i] = fef::TermFieldMatchDataPositionIterator(_tmds[i]->match_view());
+            _iterators[i] = _tmds[i]->match_view().begin();
         }
     }
 
