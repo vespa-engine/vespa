@@ -11,6 +11,7 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Converts a saved XGBoost model into a ranking expression.
@@ -53,6 +54,12 @@ public class XGBoostImporter extends ModelImporter {
 
     @Override
     public boolean isCacheable() { return true; }
+
+    @Override
+    public List<File> additionalInputFiles(File modelPath) {
+        if ( ! modelPath.toString().endsWith(".ubj")) return List.of();
+        return XGBoostUbjParser.featuresFile(modelPath.toString()).map(List::of).orElse(List.of());
+    }
 
     @Override
     public ImportedModel importModel(String modelName, String modelPath) {

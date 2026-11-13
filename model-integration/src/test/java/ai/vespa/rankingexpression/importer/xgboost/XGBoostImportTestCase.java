@@ -3,8 +3,11 @@ package ai.vespa.rankingexpression.importer.xgboost;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import ai.vespa.rankingexpression.importer.ImportedModel;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -19,6 +22,9 @@ import static org.junit.Assert.assertFalse;
  * @author bratseth
  */
 public class XGBoostImportTestCase {
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
     public void testXGBoost() {
@@ -115,6 +121,21 @@ public class XGBoostImportTestCase {
         assertTrue("Expression should contain feature name from file", expression.contains("mean_radius"));
         assertTrue("Expression should contain feature name from file", expression.contains("worst_texture"));
         assertFalse("Expression should not contain indexed format", expression.contains("xgboost_input_"));
+    }
+
+    @Test
+    public void testAdditionalInputFilesAreTheFeaturesFileOfAUbjModel() throws IOException {
+        XGBoostImporter importer = new XGBoostImporter();
+        assertEquals(List.of(new File("src/test/models/xgboost/binary_breast_cancer-features.txt")),
+                     importer.additionalInputFiles(new File("src/test/models/xgboost/binary_breast_cancer.ubj")));
+        assertEquals(List.of(), importer.additionalInputFiles(new File("src/test/models/xgboost/binary_breast_cancer.json")));
+
+        File modelWithoutFeaturesFile = temporaryFolder.newFile("model.ubj");
+        assertEquals(List.of(), importer.additionalInputFiles(modelWithoutFeaturesFile));
+
+        // A directory with the name of the features file is not a features file
+        temporaryFolder.newFolder("model-features.txt");
+        assertEquals(List.of(), importer.additionalInputFiles(modelWithoutFeaturesFile));
     }
 
 }

@@ -44,9 +44,11 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
- * A cache of imported models stored on local disk, keyed by a hash of the model file content,
- * the model name, the importer and the Vespa version, so that unchanged models are not imported again
- * when an application is deployed again or when models for several Vespa versions are built.
+ * A cache of imported models, stored on local disk.
+ * The key is a hash of the model name, the importer, the Vespa version, the content of the model file
+ * and the content of the other files that the importer reads.
+ * An unchanged model is therefore not imported again when an application is deployed again,
+ * or when models are built for several Vespa versions.
  *
  * See {@link MlModelImportCacheLayout} for the disk layout.
  *
@@ -192,13 +194,25 @@ public class MlModelImportCacheImpl implements MlModelImportCache {
                        "version:" + vespaVersion + "\n" +
                        "importer:" + importer.getClass().getName() + "\n" +
                        "name:" + modelName + "\n").getBytes(StandardCharsets.UTF_8));
-        try (InputStream in = Files.newInputStream(modelPath.toPath())) {
+        updateWithFile(digest, modelPath);
+        for (File file : importer.additionalInputFiles(modelPath)) {
+            // The name tells apart two optional files with the same content, when only one of them exists.
+            digest.update(("file:" + file.getName() + "\n").getBytes(StandardCharsets.UTF_8));
+            updateWithFile(digest, file);
+        }
+        return HexFormat.of().formatHex(digest.digest());
+    }
+
+    private static void updateWithFile(MessageDigest digest, File file) throws IOException {
+        // The size marks where one file ends and the next begins.
+        // Without it, the two files "ab" and "c" get the same key as the two files "a" and "bc".
+        digest.update(("size:" + Files.size(file.toPath()) + "\n").getBytes(StandardCharsets.UTF_8));
+        try (InputStream in = Files.newInputStream(file.toPath())) {
             byte[] buffer = new byte[1 << 20];
             int read;
             while ((read = in.read(buffer)) != -1)
                 digest.update(buffer, 0, read);
         }
-        return HexFormat.of().formatHex(digest.digest());
     }
 
     private static void write(Path entry, ImportedModel model) throws IOException {

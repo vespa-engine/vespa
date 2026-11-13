@@ -88,6 +88,55 @@ public class MlModelImportCacheImplTest {
     }
 
     @Test
+    void key_separates_the_model_file_from_its_features_file(@TempDir Path tmp) throws IOException {
+        // The key hashes the model file and then the features file.
+        // Without a boundary between them, "ab" + "c" and "a" + "bc" are the same bytes and get the same key.
+        // An application could then craft its two files to get the cache entry of another application.
+        var cache = new MlModelImportCacheImpl(tmp, version);
+        Path first = Files.createDirectory(tmp.resolve("first"));
+        Files.writeString(first.resolve("model.ubj"), "ab");
+        Files.writeString(first.resolve("model-features.txt"), "c");
+        Path second = Files.createDirectory(tmp.resolve("second"));
+        Files.writeString(second.resolve("model.ubj"), "a");
+        Files.writeString(second.resolve("model-features.txt"), "bc");
+
+        assertNotEquals(cache.key("m", first.resolve("model.ubj").toFile(), new XGBoostImporter()),
+                        cache.key("m", second.resolve("model.ubj").toFile(), new XGBoostImporter()));
+    }
+
+    @Test
+    void key_depends_on_the_names_of_additional_input_files(@TempDir Path tmp) throws IOException {
+        var cache = new MlModelImportCacheImpl(tmp, version);
+        File model = Files.writeString(tmp.resolve("model.json"), "[ 1 ]").toFile();
+        File first = Files.writeString(tmp.resolve("first.txt"), "content").toFile();
+        File second = Files.writeString(tmp.resolve("second.txt"), "content").toFile();
+
+        assertNotEquals(cache.key("m", model, new ImporterWithAdditionalInputFile(first)),
+                        cache.key("m", model, new ImporterWithAdditionalInputFile(second)));
+    }
+
+    @Test
+    void xgboost_ubj_model_is_imported_again_when_its_features_file_changes(@TempDir Path tmp) throws IOException {
+        var cache = new MlModelImportCacheImpl(tmp.resolve("cache"), version);
+        File model = Files.copy(Path.of("src/test/models/xgboost/binary_breast_cancer.ubj"), tmp.resolve("model.ubj")).toFile();
+        Path featuresFile = Files.copy(Path.of("src/test/models/xgboost/binary_breast_cancer-features.txt"),
+                                       tmp.resolve("model-features.txt"));
+        ImportedMlModel withFeatureNames = cache.importModel("model", model, new XGBoostImporter());
+
+        Files.writeString(featuresFile, Files.readAllLines(featuresFile).stream()
+                                             .map(line -> line.isBlank() || line.startsWith("#") ? line : "renamed_" + line)
+                                             .collect(Collectors.joining("\n")));
+        ImportedMlModel withRenamedFeatures = cache.importModel("model", model, new XGBoostImporter());
+        assertModelsEqual(new XGBoostImporter().importModel("model", model), withRenamedFeatures);
+        assertNotEquals(asStrings(withFeatureNames.outputExpressions()), asStrings(withRenamedFeatures.outputExpressions()));
+
+        Files.delete(featuresFile);
+        ImportedMlModel withoutFeaturesFile = cache.importModel("model", model, new XGBoostImporter());
+        assertModelsEqual(new XGBoostImporter().importModel("model", model), withoutFeaturesFile);
+        assertNotEquals(asStrings(withRenamedFeatures.outputExpressions()), asStrings(withoutFeaturesFile.outputExpressions()));
+    }
+
+    @Test
     void corrupt_entry_is_deleted_and_model_imported(@TempDir Path cacheRoot) throws IOException {
         var importer = new CountingImporter(new LightGBMImporter());
         var cache = new MlModelImportCacheImpl(cacheRoot, version);
@@ -224,6 +273,23 @@ public class MlModelImportCacheImplTest {
         }
     }
 
+    private static class ImporterWithAdditionalInputFile implements MlModelImporter {
+
+        private final File additionalInputFile;
+
+        ImporterWithAdditionalInputFile(File additionalInputFile) { this.additionalInputFile = additionalInputFile; }
+
+        @Override public boolean canImport(String modelPath) { return true; }
+        @Override public boolean isCacheable() { return true; }
+        @Override public List<File> additionalInputFiles(File modelPath) { return List.of(additionalInputFile); }
+
+        @Override
+        public ImportedMlModel importModel(String modelName, File modelPath) {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
     private static class CountingImporter implements MlModelImporter {
 
         private final MlModelImporter delegate;
@@ -233,6 +299,7 @@ public class MlModelImportCacheImplTest {
 
         @Override public boolean canImport(String modelPath) { return delegate.canImport(modelPath); }
         @Override public boolean isCacheable() { return delegate.isCacheable(); }
+        @Override public List<File> additionalInputFiles(File modelPath) { return delegate.additionalInputFiles(modelPath); }
 
         @Override
         public ImportedMlModel importModel(String modelName, File modelPath) {
