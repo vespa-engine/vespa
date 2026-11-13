@@ -36,7 +36,7 @@ using SquaredEuclideanDistanceBF16Fn = double (*)(const BFloat16* a, const BFloa
 using SquaredEuclideanDistanceF32Fn = double (*)(const float* a, const float* b, size_t sz) noexcept;
 using SquaredEuclideanDistanceF64Fn = double (*)(const double* a, const double* b, size_t sz) noexcept;
 
-using EdenF32QSquaredEuclideanDistanceFn = float (*)(const float* lhs, const uint8_t* packed_rhs, float lhs_scale,
+using EdenF32QSquaredEuclideanDistanceFn = float (*)(const float* lhs, const uint8_t* packed_rhs, float rhs_scale,
                                                      uint8_t bits, size_t sz) noexcept;
 using EdenQQSquaredEuclideanDistanceFn = float (*)(const uint8_t* packed_lhs, const uint8_t* packed_rhs,
                                                    float lhs_scale, float rhs_scale, uint8_t bits,
