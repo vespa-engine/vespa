@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcommon/attribute/attribute_initialization_status.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/server/ddbstate.h>
 #include <vespa/searchcore/proton/server/document_db_initialization_status.h>
 #include <vespa/searchcore/proton/server/i_replay_progress_producer.h>
@@ -10,6 +11,7 @@
 #include <memory>
 
 using proton::DDBState;
+using proton::DocTypeName;
 using proton::DocumentDBInitializationStatus;
 
 class DummyReplayProgressProducer : public proton::IReplayProgressProducer {
@@ -32,7 +34,7 @@ protected:
 
     DocumentDBInitializationStatusTest()
         : _producer(std::make_shared<DummyReplayProgressProducer>()),
-          _state(std::make_shared<DDBState>()),
+          _state(std::make_shared<DDBState>(DocTypeName("test_database"))),
           _status("test_database", _state) {
 
         _queued_attribute1 = std::make_shared<AttributeInitializationStatus>("queued_attribute1");

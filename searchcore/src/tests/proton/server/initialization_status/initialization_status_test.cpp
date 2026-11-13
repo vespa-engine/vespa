@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/server/ddbstate.h>
 #include <vespa/searchcore/proton/server/document_db_initialization_status.h>
 #include <vespa/searchcore/proton/server/i_replay_progress_producer.h>
@@ -8,6 +9,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 using proton::DDBState;
+using proton::DocTypeName;
 using proton::DocumentDBInitializationStatus;
 using proton::IReplayProgressProducer;
 using proton::ProtonInitializationStatus;
@@ -31,9 +33,9 @@ protected:
 
     ProtonInitializationStatusTest()
         : _producer(std::make_shared<DummyReplayProgressProducer>()),
-          _db_state1(std::make_shared<DDBState>()),
-          _db_state2(std::make_shared<DDBState>()),
-          _db_state3(std::make_shared<DDBState>()),
+          _db_state1(std::make_shared<DDBState>(DocTypeName("db1"))),
+          _db_state2(std::make_shared<DDBState>(DocTypeName("db2"))),
+          _db_state3(std::make_shared<DDBState>(DocTypeName("db3"))),
           _db_status1(std::make_shared<DocumentDBInitializationStatus>("db1", _db_state1)),
           _db_status2(std::make_shared<DocumentDBInitializationStatus>("db2", _db_state2)),
           _db_status3(std::make_shared<DocumentDBInitializationStatus>("db3", _db_state3)) {

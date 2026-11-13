@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/searchcore/proton/common/doctypename.h>
+
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -49,13 +51,15 @@ private:
     std::atomic<time_point> _online_time;
     std::atomic<time_point> _replay_time;
 
+    DocTypeName _doc_type_name;
+
     static std::vector<std::string> _stateNames;
     static std::vector<std::string> _configStateNames;
 
-    void set_state(State state) noexcept { _state.store(state, std::memory_order_release); }
+    void set_state(State state);
 
 public:
-    DDBState();
+    DDBState(const DocTypeName& name);
     ~DDBState();
 
     /**

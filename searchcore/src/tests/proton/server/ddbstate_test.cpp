@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/server/ddbstate.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using proton::DDBState;
+using proton::DocTypeName;
 
 TEST(DDBStateTest, test_timestamps) {
     DDBState::time_point zero;
 
-    DDBState state;
+    DDBState state(DocTypeName("test"));
     state.enterLoadState();
 
     DDBState::time_point load_time = state.get_load_time();
