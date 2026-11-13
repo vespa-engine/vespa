@@ -272,6 +272,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableLandlock() { return flag(Flags.ENABLE_LANDLOCK).value(); }
         @Override public boolean enableLegacyFeedHandler() { return flag(Flags.ENABLE_LEGACY_FEED_HANDLER).value(); }
         @Override public boolean productDiscovery() { return flag(Flags.PRODUCT_DISCOVERY).value(); }
+        @Override public boolean rejectPredicateFeedOutsideBounds() { return flag(Flags.REJECT_PREDICATE_FEED_OUTSIDE_BOUNDS).value(); }
         @Override public boolean useMlModelImportCache() { return flag(Flags.USE_ML_MODEL_IMPORT_CACHE).value(); }
 
         private static OptionalInt toOptionalInt(int value) {

@@ -285,6 +285,14 @@ public class Flags {
             TENANT_ID
     );
 
+    public static final UnboundBooleanFlag REJECT_PREDICATE_FEED_OUTSIDE_BOUNDS = defineFeatureFlag(
+            "reject-predicate-feed-outside-bounds", false,
+            List.of("bragehk"), "2026-11-13", "2027-11-13",
+            "Whether feeding of documents with predicate bounds outside of the defined bounds in the schema" +
+                    "are rejected or not.",
+            "Takes effect at redeployment",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
                                                        String modificationEffect, Dimension... dimensions) {
