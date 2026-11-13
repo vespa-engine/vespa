@@ -48,6 +48,9 @@ class UrlDownloader {
     }
 
     public Optional<File> download(File downloadDir) throws IOException {
+        if (fileName().equals(".") || fileName().equals(".."))
+            throw new IllegalArgumentException("URL '" + uri + "' must not end with '" + fileName() + "'");
+
         long start = System.currentTimeMillis();
         log.log(Level.INFO, "Downloading URL '" + uri + "'");
         var tempFile = Files.createTempFile(downloadDir.toPath(), fileName(), "inprogress");
@@ -55,12 +58,17 @@ class UrlDownloader {
         HttpGet get = new HttpGet(uri);
         downloadOptions.getAuthToken()
                        .ifPresent(token -> get.setHeader(new BasicHeader("Authorization", "Bearer " + token)));
-        return httpClient.execute(get, resp -> {
-            var code = resp.getCode();
-            if (code != 200)
-                throw new RuntimeException("Download of URL '" + uri + "' failed, got response code " + code);
-            return writeContent(downloadDir, resp, tempFile, target, start);
-        });
+        try {
+            return httpClient.execute(get, resp -> {
+                var code = resp.getCode();
+                if (code != 200)
+                    throw new RuntimeException("Download of URL '" + uri + "' failed, got response code " + code);
+                return writeContent(downloadDir, resp, tempFile, target, start);
+            });
+        } finally {
+            // The temporary file is still there only when the download failed
+            Files.deleteIfExists(tempFile);
+        }
     }
 
     private Optional<File> writeContent(File downloadDir, ClassicHttpResponse resp, Path tempFile, Path target, long start) throws IOException {
@@ -90,8 +98,8 @@ class UrlDownloader {
     }
 
     boolean alreadyDownloaded(File downloadDir) {
-        File contents = new File(downloadDir,fileName());
-        return contents.exists() && contents.length() > 0;
+        File contents = new File(downloadDir, fileName());
+        return contents.isFile() && contents.length() > 0;
     }
 
     private static HttpClient createClient() {

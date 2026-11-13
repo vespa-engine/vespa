@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +50,53 @@ public class UrlDownloaderTest {
 
         Files.write(temporaryFolder.toPath().resolve("foo"), "bar".getBytes(StandardCharsets.UTF_8));
         assertTrue(downloader.alreadyDownloaded(temporaryFolder));
+    }
+
+    @Test
+    public void directoryIsNotAnAlreadyDownloadedFile() throws IOException {
+        var downloader = new UrlDownloader(URI.create("https://docs.vespa.ai/foo"), new DownloadOptions(null));
+
+        Files.createDirectory(temporaryFolder.toPath().resolve("foo"));
+        assertFalse(downloader.alreadyDownloaded(temporaryFolder));
+    }
+
+    @Test
+    public void urlPathEndingInDotOrDotDotIsRejectedWithoutDownload() throws IOException {
+        for (var path : List.of("/models/.", "/models/..")) {
+            var server = server().ok(path, "content");
+            var downloadDir = Files.createTempDirectory(temporaryFolder.toPath(), "download").toFile();
+            var downloader = new UrlDownloader(server.uri(path), new DownloadOptions(null));
+
+            assertFalse(downloader.alreadyDownloaded(downloadDir), path);
+            var e = assertThrows(IllegalArgumentException.class, () -> downloader.download(downloadDir), path);
+
+            assertTrue(e.getMessage().contains("must not end with"), e.getMessage());
+            assertFalse(server.wasRequested(path), path);
+            assertEquals(List.of(), List.of(downloadDir.list()), path);
+            assertFalse(downloader.alreadyDownloaded(downloadDir), path);
+        }
+    }
+
+    @Test
+    public void downloadDoesNotReplaceExistingFile() throws IOException {
+        var server = server().ok("/model.onnx", "content");
+        var existing = Files.writeString(temporaryFolder.toPath().resolve("model.onnx"), "existing content");
+
+        assertThrows(FileAlreadyExistsException.class, () -> download(server.uri("/model.onnx"), null));
+
+        assertEquals("existing content", Files.readString(existing));
+        assertEquals(List.of("model.onnx"), List.of(temporaryFolder.list()));
+    }
+
+    @Test
+    public void failedDownloadLeavesNothingBehind() throws IOException {
+        var server = server().handle("/model.onnx", 404, null, "");
+        var downloader = new UrlDownloader(server.uri("/model.onnx"), new DownloadOptions(null));
+
+        assertThrows(RuntimeException.class, () -> downloader.download(temporaryFolder));
+
+        assertEquals(List.of(), List.of(temporaryFolder.list()));
+        assertFalse(downloader.alreadyDownloaded(temporaryFolder));
     }
 
     @Test
