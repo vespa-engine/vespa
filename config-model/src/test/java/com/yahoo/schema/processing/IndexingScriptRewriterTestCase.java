@@ -149,6 +149,17 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
+    void requireThatPredicateBoundsValidationFlagIsPropagated() {
+        var properties = new TestProperties() {
+            @Override public boolean rejectPredicateFeedOutsideBounds() { return true; }
+        };
+        var field = createPredicateField("test", DataType.PREDICATE, "{ attribute; }", 2,
+                                         OptionalLong.empty(), OptionalLong.empty());
+        assertEquals("{ 2 | set_var arity | true | set_var reject_predicate_feed_outside_bounds | " +
+                     "{ input test | optimize_predicate | attribute test; }; }", processField(field, properties).toString());
+    }
+
+    @Test
     void requireThatMaxTermOccurrencesIsPropagated() {
         var field = new SDField("test", DataType.STRING);
         field.getMatching().maxTermOccurrences(10);
@@ -181,11 +192,15 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
     }
 
     private static ScriptExpression processField(SDField unprocessedField) {
+        return processField(unprocessedField, new TestProperties());
+    }
+
+    private static ScriptExpression processField(SDField unprocessedField, TestProperties properties) {
         SDDocumentType sdoc = new SDDocumentType("test");
         sdoc.addField(unprocessedField);
-        Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
+        Schema schema = new Schema("test", MockApplicationPackage.createEmpty(), null, new BaseDeployLogger(), properties);
         schema.addDocument(sdoc);
-        new Processing(new TestProperties())
+        new Processing(properties)
                 .process(schema, new BaseDeployLogger(), new RankProfileRegistry(),
                          new QueryProfiles(), true, false, Set.of());
         return unprocessedField.getIndexingScript();

@@ -148,6 +148,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum", "vekterli"}) default boolean enableLandlock() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean enableLegacyFeedHandler() { return true; }
         @ModelFeatureFlag(owners = {"sebasabe"}) default boolean productDiscovery() { return false; }
+        @ModelFeatureFlag(owners = {"bragehk"}) default boolean rejectPredicateFeedOutsideBounds() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean useMlModelImportCache() { return true; }
     }
 

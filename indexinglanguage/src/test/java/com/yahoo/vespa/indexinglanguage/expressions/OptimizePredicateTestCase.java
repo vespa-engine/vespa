@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
@@ -114,12 +115,25 @@ public class OptimizePredicateTestCase {
     public void requireThatDefaultBoundsAcceptTheFullLongRange() {
         var input = new PredicateFieldValue("value in [-9223372036854775808..9223372036854775807]");
         var context = new ExecutionContext().setCurrentValue(input)
+                                            .setVariable("reject_predicate_feed_outside_bounds", new BoolFieldValue(true))
                                             .setVariable("arity", new IntegerFieldValue(2));
         assertTrue(new OptimizePredicateExpression().execute(context) instanceof PredicateFieldValue);
     }
 
+    @Test
+    public void requireThatDisabledOrAbsentValidationStillOptimizes() {
+        var optimized = new PredicateFieldValue("true").getPredicate();
+        for (var flag : new BoolFieldValue[] {null, new BoolFieldValue(false)}) {
+            var context = boundedContext(new PredicateFieldValue("value in [100001..100002]"))
+                    .setVariable("reject_predicate_feed_outside_bounds", flag);
+            var output = new OptimizePredicateExpression((predicate, options) -> optimized).execute(context);
+            assertSame(optimized, ((PredicateFieldValue) output).getPredicate());
+        }
+    }
+
     private static ExecutionContext boundedContext(PredicateFieldValue input) {
         return new ExecutionContext().setCurrentValue(input)
+                                     .setVariable("reject_predicate_feed_outside_bounds", new BoolFieldValue(true))
                                      .setVariable("arity", new IntegerFieldValue(2))
                                      .setVariable("lower_bound", new LongFieldValue(-10))
                                      .setVariable("upper_bound", new LongFieldValue(100000));
@@ -154,6 +168,11 @@ public class OptimizePredicateTestCase {
         context.setVariableType("upper_bound", DataType.INT);
         ExpressionAssert.assertVerifyThrows(prefix + "Variable 'upper_bound' must have type long", exp, DataType.PREDICATE, context);
         context.setVariableType("upper_bound", DataType.LONG);
+        assertVerifyCtx(exp, context);
+        context.setVariableType("reject_predicate_feed_outside_bounds", DataType.INT);
+        ExpressionAssert.assertVerifyThrows(prefix + "Variable 'reject_predicate_feed_outside_bounds' must have type bool",
+                                           exp, DataType.PREDICATE, context);
+        context.setVariableType("reject_predicate_feed_outside_bounds", DataType.BOOL);
         assertVerifyCtx(exp, context);
     }
 
