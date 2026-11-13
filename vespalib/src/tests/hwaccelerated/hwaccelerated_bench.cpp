@@ -17,6 +17,8 @@ using namespace vespalib;
 using namespace vespalib::hwaccelerated;
 using dispatch::FnTable;
 
+namespace {
+
 template <typename> constexpr bool type_dependent_false_v = false;
 
 template <typename T> constexpr std::string_view type_string() noexcept {
@@ -95,15 +97,21 @@ void register_benchmark_for_all_accels(FnTable::FnId fn_id, BenchFn bench_fn, Re
 }
 
 template <typename T>
-[[nodiscard]] std::string make_bench_instance_name(std::string_view base_name, const TargetInfo& accel_target) {
+[[nodiscard]] std::string make_instance_name(std::string_view base_name, const TargetInfo& accel_target) {
     return std::format("{}/{}/{}/{}", base_name, type_string<T>(), accel_target.implementation_name(),
                        accel_target.target_name());
+}
+
+[[nodiscard]] std::string make_bits_instance_name(std::string_view base_name, const uint8_t bits,
+                                                  const TargetInfo& accel_target) {
+    return std::format("{}/{} {}/{}/{}", base_name, int(bits), bits > 1 ? "bits" : "bit",
+                       accel_target.implementation_name(), accel_target.target_name());
 }
 
 template <typename T, typename Fn>
 void register_benchmarks(std::string_view name, FnTable::FnId fn_id, Fn fn) {
     register_benchmark_for_all_accels(fn_id, fn, [name](auto accel, auto bench_fn) {
-        std::string instance_name = make_bench_instance_name<T>(name, accel->target_info());
+        std::string instance_name = make_instance_name<T>(name, accel->target_info());
         auto        input_fn = [](const size_t sz) { return create_and_fill_lhs_rhs<T>(sz); };
         register_accel_binary_arg_benchmark<T>(instance_name, std::move(accel), input_fn, bench_fn);
     });
@@ -126,9 +134,7 @@ void register_pack_bits_benchmark(const uint8_t bits) {
     };
     register_benchmark_for_all_accels(
         FnTable::FnId::PACK_BITS, pack_bits_fn, [input_fn, bits](auto accel, auto bench_fn) {
-            auto        target_info = accel->target_info();
-            std::string instance_name = std::format("Pack bits/{} {}/{}/{}", int(bits), bits > 1 ? "bits" : "bit",
-                                                    target_info.implementation_name(), target_info.target_name());
+            std::string instance_name = make_bits_instance_name("Pack bits", bits, accel->target_info());
             register_accel_binary_arg_benchmark<uint8_t>(instance_name, std::move(accel), input_fn, bench_fn);
         });
 }
@@ -147,30 +153,82 @@ void register_unpack_bits_benchmark(const uint8_t bits) {
     };
     register_benchmark_for_all_accels(
         FnTable::FnId::UNPACK_BITS, unpack_bits_fn, [input_fn, bits](auto accel, auto bench_fn) {
-            auto        target_info = accel->target_info();
-            std::string instance_name = std::format("Unpack bits/{} {}/{}/{}", int(bits), bits > 1 ? "bits" : "bit",
-                                                    target_info.implementation_name(), target_info.target_name());
+            std::string instance_name = make_bits_instance_name("Unpack bits", bits, accel->target_info());
             register_accel_binary_arg_benchmark<uint8_t>(instance_name, std::move(accel), input_fn, bench_fn);
         });
 }
 
+std::pair<std::vector<float>, std::vector<uint8_t>> make_f32_lhs_bit_packed_rhs_input(const uint8_t bits,
+                                                                                      const size_t  sz) {
+    Xoshiro256PlusPlusPrng prng(1234567 * bits);
+    std::vector<float>     f32_lhs = create_and_fill_float<float>(prng, sz);
+    std::vector<uint8_t>   packed_rhs(packed_bytes(bits, sz));
+    // For benchmarking we don't really care if the input has bits set for any padding bytes at the end.
+    std::ranges::generate(packed_rhs, [&] noexcept { return static_cast<uint8_t>(prng() & 0xff); });
+    return std::make_pair(std::move(f32_lhs), std::move(packed_rhs));
+}
+
+std::pair<std::vector<uint8_t>, std::vector<uint8_t>> make_bit_packed_lhs_rhs_input(const uint8_t bits,
+                                                                                    const size_t  sz) {
+    Xoshiro256PlusPlusPrng prng(1234567 * bits);
+    const size_t           packed_sz = packed_bytes(bits, sz);
+    std::vector<uint8_t>   packed_lhs(packed_sz);
+    std::vector<uint8_t>   packed_rhs(packed_sz);
+
+    auto gen_bits = [&] noexcept { return static_cast<uint8_t>(prng() & 0xff); };
+    std::ranges::generate(packed_lhs, gen_bits);
+    std::ranges::generate(packed_rhs, gen_bits);
+    return std::make_pair(std::move(packed_lhs), std::move(packed_rhs));
+}
+
 void register_eden_f32_q_dot_product_benchmark(const uint8_t bits) {
-    auto input_fn = [bits](const size_t sz) {
-        Xoshiro256PlusPlusPrng prng(1234567 * bits);
-        std::vector<float>     f32_lhs = create_and_fill_float<float>(prng, sz);
-        std::vector<uint8_t>   packed_rhs(packed_bytes(bits, sz));
-        std::ranges::generate(packed_rhs, [&] noexcept { return static_cast<uint8_t>(prng() & 0xff); });
-        return std::make_pair(std::move(f32_lhs), std::move(packed_rhs));
-    };
+    auto input_fn = [bits](const size_t sz) { return make_f32_lhs_bit_packed_rhs_input(bits, sz); };
     auto dot_product_fn = [bits](const float* f32_lhs, const uint8_t* packed_rhs, const size_t sz) noexcept {
         return eden_f32_q_dot_product(f32_lhs, packed_rhs, bits, sz);
     };
     register_benchmark_for_all_accels(
         FnTable::FnId::EDEN_F32_Q_DOT_PRODUCT, dot_product_fn, [input_fn, bits](auto accel, auto bench_fn) {
-            auto        target_info = accel->target_info();
+            std::string instance_name = make_bits_instance_name("EDEN F32vQ dot product", bits, accel->target_info());
+            register_accel_binary_arg_benchmark<uint8_t>(instance_name, std::move(accel), input_fn, bench_fn);
+        });
+}
+
+void register_eden_q_q_dot_product_benchmark(const uint8_t bits) {
+    auto input_fn = [bits](const size_t sz) { return make_bit_packed_lhs_rhs_input(bits, sz); };
+    auto dot_product_fn = [bits](const uint8_t* packed_lhs, const uint8_t* packed_rhs, const size_t sz) noexcept {
+        return eden_q_q_dot_product(packed_lhs, packed_rhs, bits, sz);
+    };
+    register_benchmark_for_all_accels(
+        FnTable::FnId::EDEN_Q_Q_DOT_PRODUCT, dot_product_fn, [input_fn, bits](auto accel, auto bench_fn) {
+            std::string instance_name = make_bits_instance_name("EDEN QvQ dot product", bits, accel->target_info());
+            register_accel_binary_arg_benchmark<uint8_t>(instance_name, std::move(accel), input_fn, bench_fn);
+        });
+}
+
+void register_eden_f32_q_squared_euclidean_distance_benchmark(const uint8_t bits) {
+    auto input_fn = [bits](const size_t sz) { return make_f32_lhs_bit_packed_rhs_input(bits, sz); };
+    auto euclidean_distance_fn = [bits](const float* f32_lhs, const uint8_t* packed_rhs, const size_t sz) noexcept {
+        return eden_f32_q_squared_euclidean_distance(f32_lhs, packed_rhs, 1.0f, bits, sz);
+    };
+    register_benchmark_for_all_accels(
+        FnTable::FnId::EDEN_F32_Q_SQUARED_EUCLIDEAN_DISTANCE, euclidean_distance_fn,
+        [input_fn, bits](auto accel, auto bench_fn) {
             std::string instance_name =
-                std::format("EDEN F32vQ dot product/{} {}/{}/{}", int(bits), bits > 1 ? "bits" : "bit",
-                            target_info.implementation_name(), target_info.target_name());
+                make_bits_instance_name("EDEN F32vQ Sq Euclidean", bits, accel->target_info());
+            register_accel_binary_arg_benchmark<uint8_t>(instance_name, std::move(accel), input_fn, bench_fn);
+        });
+}
+
+void register_eden_q_q_squared_euclidean_distance_benchmark(const uint8_t bits) {
+    auto input_fn = [bits](const size_t sz) { return make_bit_packed_lhs_rhs_input(bits, sz); };
+    auto euclidean_distance_fn = [bits](const uint8_t* packed_lhs, const uint8_t* packed_rhs,
+                                        const size_t sz) noexcept {
+        return eden_q_q_squared_euclidean_distance(packed_lhs, packed_rhs, 1.0f, 1.0f, bits, sz);
+    };
+    register_benchmark_for_all_accels(
+        FnTable::FnId::EDEN_Q_Q_SQUARED_EUCLIDEAN_DISTANCE, euclidean_distance_fn,
+        [input_fn, bits](auto accel, auto bench_fn) {
+            std::string instance_name = make_bits_instance_name("EDEN QvQ Sq Euclidean", bits, accel->target_info());
             register_accel_binary_arg_benchmark<uint8_t>(instance_name, std::move(accel), input_fn, bench_fn);
         });
 }
@@ -197,12 +255,16 @@ void register_eden_centroid_quantize_benchmark(const uint8_t bits) {
     };
     register_benchmark_for_all_accels(
         FnTable::FnId::EDEN_QUANTIZE_CENTROIDS, quantize_fn, [input_fn, bits](auto accel, auto bench_fn) {
-            auto        target_info = accel->target_info();
             std::string instance_name =
-                std::format("EDEN centroid quantization/{} {}/{}/{}", int(bits), bits > 1 ? "bits" : "bit",
-                            target_info.implementation_name(), target_info.target_name());
+                make_bits_instance_name("EDEN centroid quantization", bits, accel->target_info());
             register_accel_binary_arg_benchmark<uint8_t>(instance_name, std::move(accel), input_fn, bench_fn);
         });
+}
+
+void for_each_quant_bit_width(auto&& fn) {
+    for (const uint8_t bits : {1, 2, 3, 4}) {
+        fn(bits);
+    }
 }
 
 void register_all_benchmark_suites() {
@@ -217,6 +279,8 @@ void register_all_benchmark_suites() {
                                   euclidean_dist_fn);
     register_benchmarks<int8_t>("Squared Euclidean Distance", FnTable::FnId::SQUARED_EUCLIDEAN_DISTANCE_I8,
                                 euclidean_dist_fn);
+    for_each_quant_bit_width([](uint8_t bits) { register_eden_f32_q_squared_euclidean_distance_benchmark(bits); });
+    for_each_quant_bit_width([](uint8_t bits) { register_eden_q_q_squared_euclidean_distance_benchmark(bits); });
 
     auto euclidean_length_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
         (void)rhs; // ... a little bit sneaky; overestimates bytes processed/sec by 2x
@@ -230,13 +294,13 @@ void register_all_benchmark_suites() {
     register_benchmarks<float>("Dot Product", FnTable::FnId::DOT_PRODUCT_F32, dot_product_fn);
     register_benchmarks<BFloat16>("Dot Product", FnTable::FnId::DOT_PRODUCT_BF16, dot_product_fn);
     register_benchmarks<int8_t>("Dot Product", FnTable::FnId::DOT_PRODUCT_I8, dot_product_fn);
-    for (const uint8_t bits : {1, 2, 3, 4}) {
-        register_eden_f32_q_dot_product_benchmark(bits);
-        register_eden_centroid_quantize_benchmark(bits);
-        register_pack_bits_benchmark(bits);
-        register_unpack_bits_benchmark(bits);
-    }
+    for_each_quant_bit_width([](uint8_t bits) { register_eden_f32_q_dot_product_benchmark(bits); });
+    for_each_quant_bit_width([](uint8_t bits) { register_eden_q_q_dot_product_benchmark(bits); });
 
+    for_each_quant_bit_width([](uint8_t bits) { register_eden_centroid_quantize_benchmark(bits); });
+
+    for_each_quant_bit_width([](uint8_t bits) { register_pack_bits_benchmark(bits); });
+    for_each_quant_bit_width([](uint8_t bits) { register_unpack_bits_benchmark(bits); });
     auto binary_hamming_fn = [](const auto* lhs, const auto* rhs, size_t my_sz) {
         return binary_hamming_distance(lhs, rhs, my_sz);
     };
@@ -257,6 +321,8 @@ void register_all_benchmark_suites() {
     auto and_not_fn = [](auto* lhs, const auto* rhs, size_t my_sz) { return and_not_bit(lhs, rhs, my_sz); };
     register_benchmarks<uint8_t>("Bitwise ANDNOT", FnTable::FnId::AND_NOT_BIT, and_not_fn);
 }
+
+} // namespace
 
 int main(int argc, char* argv[]) {
     benchmark::MaybeReenterWithoutASLR(argc, argv);

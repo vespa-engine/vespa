@@ -524,8 +524,9 @@ void verify_eden_f32_q_dot_product_no_lane_confusion(std::span<const IAccelerate
     }
 }
 
-void verify_eden_f32_q_dot_product(std::span<const IAccelerated*> accels, const uint8_t bits,
-                                   const size_t test_length) {
+template <typename CheckFn>
+void verify_eden_f32_q_kernel(std::span<const IAccelerated*> accels, const uint8_t bits, const size_t test_length,
+                              CheckFn check_fn) {
     CHECK(bits >= 1 && bits <= 4);
     CHECK(test_length >= 32); // Due to boundary testing
     const auto             codebook = codebooks::eden_bf16_codebook(bits);
@@ -544,15 +545,63 @@ void verify_eden_f32_q_dot_product(std::span<const IAccelerated*> accels, const 
         std::ranges::transform(rhs_idx.begin(), rhs_idx.end(), rhs.begin(),
                                [&](const uint8_t idx) noexcept { return codebook[idx]; });
         for (size_t j = 0; j < 32; j++) {
-            const size_t           trunc_length = test_length - j;
-            std::span<const float> trunc_lhs(lhs.data() + j, trunc_length);
-            std::span<uint8_t>     trunc_packed(packed.data(), packed_bytes(bits, trunc_length));
-            bit_pack_reference_output(rhs_idx.data() + j, trunc_packed.data(), bits, trunc_length);
-            const float real_dot = dot_product(lhs.data() + j, rhs.data() + j, trunc_length);
-            ASSERT_NO_FATAL_FAILURE(
-                check_f32_q_dot_product_eq(accels, trunc_lhs, trunc_packed, bits, trunc_length, real_dot));
+            const size_t trunc_length = test_length - j;
+            std::span    real_lhs(lhs.data() + j, trunc_length);
+            std::span    real_rhs(rhs.data() + j, trunc_length);
+            std::span    trunc_packed_rhs(packed.data(), packed_bytes(bits, trunc_length));
+            bit_pack_reference_output(rhs_idx.data() + j, trunc_packed_rhs.data(), bits, trunc_length);
+            ASSERT_NO_FATAL_FAILURE(check_fn(accels, real_lhs, real_rhs, trunc_packed_rhs, bits, trunc_length));
         }
     }
+}
+
+void check_f32_q_dot_product(std::span<const IAccelerated*> accels, std::span<const float> real_lhs,
+                             std::span<const float> real_rhs, std::span<const uint8_t> packed_rhs, const uint8_t bits,
+                             const size_t sz) {
+    for (const auto* accel : accels) {
+        SCOPED_TRACE(accel->target_info().to_string());
+        ScopedFnTableOverride fn_scope(accel->fn_table());
+        const float           expected = dot_product(real_lhs.data(), real_rhs.data(), sz);
+        const float           actual = eden_f32_q_dot_product(real_lhs.data(), packed_rhs.data(), bits, sz);
+        // Floating point errors compound with dimensionality, so fudge the epsilon a bit to compensate.
+        ASSERT_THAT(actual, FloatNear(expected, 0.000001 * sz)) << "with bits=" << int(bits) << ", length=" << sz;
+    }
+}
+
+void verify_eden_f32_q_dot_product(std::span<const IAccelerated*> accels, const uint8_t bits,
+                                   const size_t test_length) {
+    verify_eden_f32_q_kernel(accels, bits, test_length, check_f32_q_dot_product);
+}
+
+[[nodiscard]] float scaled_squared_euclidean(const float* lhs, const float* rhs, const float lhs_scale,
+                                             const float rhs_scale, const size_t sz) noexcept {
+    double dist = 0; // Reduce FP errors while accumulating
+    for (size_t i = 0; i < sz; ++i) {
+        const double d = (lhs[i] * lhs_scale) - (rhs[i] * rhs_scale);
+        dist += d * d;
+    }
+    return static_cast<float>(dist);
+}
+
+void check_f32_q_squared_euclidean_distance(std::span<const IAccelerated*> accels, std::span<const float> real_lhs,
+                                            std::span<const float> real_rhs, std::span<const uint8_t> packed_rhs,
+                                            const uint8_t bits, const size_t sz) {
+    Xoshiro256PlusPlusPrng                prng(0x1337f00dULL * bits + sz);
+    std::uniform_real_distribution<float> scale_dist(-1, 1);
+    const float                           rhs_scale = scale_dist(prng);
+    for (const auto* accel : accels) {
+        SCOPED_TRACE(accel->target_info().to_string());
+        ScopedFnTableOverride fn_scope(accel->fn_table());
+        const float expected = scaled_squared_euclidean(real_lhs.data(), real_rhs.data(), 1.0f, rhs_scale, sz);
+        const float actual =
+            eden_f32_q_squared_euclidean_distance(real_lhs.data(), packed_rhs.data(), rhs_scale, bits, sz);
+        ASSERT_THAT(actual, FloatNear(expected, 0.00001 * sz)) << "with bits=" << int(bits) << ", length=" << sz;
+    }
+}
+
+void verify_eden_f32_q_squared_euclidean_distance(std::span<const IAccelerated*> accels, const uint8_t bits,
+                                                  const size_t test_length) {
+    verify_eden_f32_q_kernel(accels, bits, test_length, check_f32_q_squared_euclidean_distance);
 }
 
 void verify_eden_q_q_dot_product_no_lane_confusion(std::span<const IAccelerated*> accels, const uint8_t bits,
@@ -591,8 +640,9 @@ void verify_eden_q_q_dot_product_no_lane_confusion(std::span<const IAccelerated*
     }
 }
 
-void verify_eden_q_q_dot_product(std::span<const IAccelerated*> accels, const uint8_t bits,
-                                 const size_t test_length) {
+template <typename CheckFn>
+void verify_eden_q_q_kernel(std::span<const IAccelerated*> accels, const uint8_t bits, const size_t test_length,
+                            CheckFn check_fn) {
     CHECK(bits >= 1 && bits <= 4);
     CHECK(test_length >= 32); // Due to boundary testing
     const auto             codebook = codebooks::eden_bf16_codebook(bits);
@@ -613,17 +663,61 @@ void verify_eden_q_q_dot_product(std::span<const IAccelerated*> accels, const ui
         std::ranges::transform(lhs_idx.begin(), lhs_idx.end(), lhs.begin(), map_idx_to_centroid);
         std::ranges::transform(rhs_idx.begin(), rhs_idx.end(), rhs.begin(), map_idx_to_centroid);
         for (size_t j = 0; j < 32; j++) {
-            const size_t       trunc_length = test_length - j;
-            const size_t       trunc_packed_size = packed_bytes(bits, trunc_length);
-            std::span<uint8_t> trunc_packed_lhs(packed_lhs.data(), trunc_packed_size);
-            std::span<uint8_t> trunc_packed_rhs(packed_rhs.data(), trunc_packed_size);
+            const size_t trunc_length = test_length - j;
+            const size_t trunc_packed_size = packed_bytes(bits, trunc_length);
+            std::span    real_lhs(lhs.data() + j, trunc_length);
+            std::span    real_rhs(rhs.data() + j, trunc_length);
+            std::span    trunc_packed_lhs(packed_lhs.data(), trunc_packed_size);
+            std::span    trunc_packed_rhs(packed_rhs.data(), trunc_packed_size);
             bit_pack_reference_output(lhs_idx.data() + j, trunc_packed_lhs.data(), bits, trunc_length);
             bit_pack_reference_output(rhs_idx.data() + j, trunc_packed_rhs.data(), bits, trunc_length);
-            const float real_dot = dot_product(lhs.data() + j, rhs.data() + j, trunc_length);
             ASSERT_NO_FATAL_FAILURE(
-                check_q_q_dot_product_eq(accels, trunc_packed_lhs, trunc_packed_rhs, bits, trunc_length, real_dot));
+                check_fn(accels, real_lhs, real_rhs, trunc_packed_lhs, trunc_packed_rhs, bits, trunc_length));
         }
     }
+}
+
+void check_q_q_dot_product(std::span<const IAccelerated*> accels, std::span<const float> real_lhs,
+                           std::span<const float> real_rhs, std::span<const uint8_t> packed_lhs,
+                           std::span<const uint8_t> packed_rhs, const uint8_t bits, const size_t sz) {
+    ASSERT_EQ(real_lhs.size(), sz);
+    ASSERT_EQ(real_rhs.size(), sz);
+    for (const auto* accel : accels) {
+        SCOPED_TRACE(accel->target_info().to_string());
+        ScopedFnTableOverride fn_scope(accel->fn_table());
+        const float           expected = dot_product(real_lhs.data(), real_rhs.data(), sz);
+        const float           actual = eden_q_q_dot_product(packed_lhs.data(), packed_rhs.data(), bits, sz);
+        ASSERT_THAT(actual, FloatNear(expected, 0.000001 * sz)) << "with bits=" << int(bits) << ", length=" << sz;
+    }
+}
+
+void verify_eden_q_q_dot_product(std::span<const IAccelerated*> accels, const uint8_t bits,
+                                 const size_t test_length) {
+    verify_eden_q_q_kernel(accels, bits, test_length, check_q_q_dot_product);
+}
+
+void check_q_q_squared_euclidean_distance(std::span<const IAccelerated*> accels, std::span<const float> real_lhs,
+                                          std::span<const float> real_rhs, std::span<const uint8_t> packed_lhs,
+                                          std::span<const uint8_t> packed_rhs, const uint8_t bits, const size_t sz) {
+    ASSERT_EQ(real_lhs.size(), sz);
+    ASSERT_EQ(real_rhs.size(), sz);
+    Xoshiro256PlusPlusPrng                prng(0x1337f00dULL * bits + sz);
+    std::uniform_real_distribution<float> scale_dist(-1, 1);
+    const float                           lhs_scale = scale_dist(prng);
+    const float                           rhs_scale = scale_dist(prng);
+    for (const auto* accel : accels) {
+        SCOPED_TRACE(accel->target_info().to_string());
+        ScopedFnTableOverride fn_scope(accel->fn_table());
+        const float expected = scaled_squared_euclidean(real_lhs.data(), real_rhs.data(), lhs_scale, rhs_scale, sz);
+        const float actual =
+            eden_q_q_squared_euclidean_distance(packed_lhs.data(), packed_rhs.data(), lhs_scale, rhs_scale, bits, sz);
+        ASSERT_THAT(actual, FloatNear(expected, 0.00001 * sz)) << "with bits=" << int(bits) << ", length=" << sz;
+    }
+}
+
+void verify_eden_q_q_squared_euclidean_distance(std::span<const IAccelerated*> accels, const uint8_t bits,
+                                                const size_t test_length) {
+    verify_eden_q_q_kernel(accels, bits, test_length, check_q_q_squared_euclidean_distance);
 }
 
 void verify_eden_centroid_quantization(std::span<const IAccelerated*> accels, const uint8_t bits,
@@ -679,6 +773,17 @@ void verify_eden_centroid_quantization(std::span<const IAccelerated*> accels, co
     }
 }
 
+void do_test_quantized_kernel(auto test_fn) {
+    auto accelerators = all_accelerators_to_test();
+    for (uint8_t bits : {1, 2, 3, 4}) {
+        SCOPED_TRACE(std::format("bits = {}", bits));
+        for (size_t sz : {32, 64, 128, 256, 1024, 4096, 8192}) {
+            SCOPED_TRACE(std::format("input length = {}", sz));
+            ASSERT_NO_FATAL_FAILURE(test_fn(accelerators, bits, sz));
+        }
+    }
+}
+
 } // namespace
 
 TEST_F(HwAcceleratedTest, eden_f32_q_dot_product_does_not_have_lane_confusion) {
@@ -694,12 +799,9 @@ TEST_F(HwAcceleratedTest, eden_f32_q_dot_product_does_not_have_lane_confusion) {
 }
 
 TEST_F(HwAcceleratedTest, eden_f32_q_dot_product_impls_match_source_of_truth) {
-    auto accelerators = all_accelerators_to_test();
-    for (uint8_t bits : {1, 2, 3, 4}) {
-        for (size_t sz : {32, 64, 128, 256, 1024, 4096, 8192}) {
-            ASSERT_NO_FATAL_FAILURE(verify_eden_f32_q_dot_product(accelerators, bits, sz));
-        }
-    }
+    do_test_quantized_kernel([](auto accelerators, const uint8_t bits, const size_t sz) {
+        verify_eden_f32_q_dot_product(accelerators, bits, sz);
+    });
 }
 
 TEST_F(HwAcceleratedTest, eden_q_q_dot_product_does_not_have_lane_confusion) {
@@ -715,23 +817,27 @@ TEST_F(HwAcceleratedTest, eden_q_q_dot_product_does_not_have_lane_confusion) {
 }
 
 TEST_F(HwAcceleratedTest, eden_q_q_dot_product_impls_match_source_of_truth) {
-    auto accelerators = all_accelerators_to_test();
-    for (uint8_t bits : {1, 2, 3, 4}) {
-        for (size_t sz : {32, 64, 128, 256, 1024, 4096, 8192}) {
-            ASSERT_NO_FATAL_FAILURE(verify_eden_q_q_dot_product(accelerators, bits, sz));
-        }
-    }
+    do_test_quantized_kernel([](auto accelerators, const uint8_t bits, const size_t sz) {
+        verify_eden_q_q_dot_product(accelerators, bits, sz);
+    });
+}
+
+TEST_F(HwAcceleratedTest, eden_f32_q_squared_euclidean_distance_impls_match_source_of_truth) {
+    do_test_quantized_kernel([](auto accelerators, const uint8_t bits, const size_t sz) {
+        verify_eden_f32_q_squared_euclidean_distance(accelerators, bits, sz);
+    });
+}
+
+TEST_F(HwAcceleratedTest, eden_q_q_squared_euclidean_distance_impls_match_source_of_truth) {
+    do_test_quantized_kernel([](auto accelerators, const uint8_t bits, const size_t sz) {
+        verify_eden_q_q_squared_euclidean_distance(accelerators, bits, sz);
+    });
 }
 
 TEST_F(HwAcceleratedTest, eden_centroid_quantization_matches_source_of_truth) {
-    auto accelerators = all_accelerators_to_test();
-    for (uint8_t bits : {1, 2, 3, 4}) {
-        SCOPED_TRACE(std::format("bits = {}", bits));
-        for (size_t sz : {32, 64, 128, 256, 1024, 4096, 8192}) {
-            SCOPED_TRACE(std::format("input length = {}", sz));
-            ASSERT_NO_FATAL_FAILURE(verify_eden_centroid_quantization(accelerators, bits, sz));
-        }
-    }
+    do_test_quantized_kernel([](auto accelerators, const uint8_t bits, const size_t sz) {
+        verify_eden_centroid_quantization(accelerators, bits, sz);
+    });
 }
 
 using namespace dispatch;

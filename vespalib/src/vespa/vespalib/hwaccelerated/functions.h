@@ -68,6 +68,19 @@ namespace vespalib::hwaccelerated {
     return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(squared_euclidean_distance_f64)(a, b, sz);
 }
 
+[[nodiscard]] inline float eden_f32_q_squared_euclidean_distance(const float* lhs, const uint8_t* packed_rhs,
+                                                                 float rhs_scale, uint8_t bits, size_t sz) noexcept {
+    return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(eden_f32_q_squared_euclidean_distance)(lhs, packed_rhs,
+                                                                                               rhs_scale, bits, sz);
+}
+
+[[nodiscard]] inline float eden_q_q_squared_euclidean_distance(const uint8_t* packed_lhs, const uint8_t* packed_rhs,
+                                                               float lhs_scale, float rhs_scale, uint8_t bits,
+                                                               size_t sz) noexcept {
+    return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(eden_q_q_squared_euclidean_distance)(
+        packed_lhs, packed_rhs, lhs_scale, rhs_scale, bits, sz);
+}
+
 [[nodiscard]] inline float squared_euclidean_length(const float* v, size_t sz) noexcept {
     return dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(squared_euclidean_length_f32)(v, sz);
 }
