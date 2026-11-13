@@ -25,13 +25,14 @@ void ElementIdExtractor::and_element_ids_into(const fef::TermFieldMatchData& tfm
     if (tfmd.has_data(docid)) {
         size_t  toKeep(0);
         int32_t id(-1);
-        auto    it = tfmd.begin();
+        auto    pos = tfmd.match_view();
+        auto    it = pos.begin();
         for (int32_t candidate : element_ids) {
             if (candidate > id) {
-                while ((it != tfmd.end()) && (candidate > int32_t(it->getElementId()))) {
+                while ((it != pos.end()) && (candidate > int32_t(it->getElementId()))) {
                     ++it;
                 }
-                if (it == tfmd.end()) {
+                if (it == pos.end()) {
                     break;
                 }
                 id = it->getElementId();

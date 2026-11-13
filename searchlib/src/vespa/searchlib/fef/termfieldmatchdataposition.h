@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/fslimits.h>
 
 #include <cstdint>
+#include <span>
 
 namespace search::fef {
 
@@ -84,6 +85,33 @@ public:
         _matchLength = length;
         return *this;
     }
+};
+
+class TermFieldMatchDataPositionIterator {
+public:
+    using Positions = std::span<const TermFieldMatchDataPosition>;
+    using Iterator = Positions::iterator;
+
+private:
+    Iterator _begin{};
+    Iterator _end{};
+
+public:
+    TermFieldMatchDataPositionIterator() = default;
+    explicit TermFieldMatchDataPositionIterator(Positions positions)
+        : _begin(positions.begin()), _end(positions.end()) {}
+
+    auto& begin() const noexcept { return _begin; }
+    auto& end() const noexcept { return _end; }
+
+    [[nodiscard]] bool is_at_end() const noexcept { return _begin == _end; }
+
+    auto& operator++() noexcept {
+        _begin++;
+        return *this;
+    }
+
+    const auto& operator*() const { return *_begin; }
 };
 
 } // namespace search::fef

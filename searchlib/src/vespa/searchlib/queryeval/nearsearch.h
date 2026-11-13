@@ -7,8 +7,6 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 
-#include <optional>
-
 namespace search::queryeval {
 
 class IElementGapInspector;
@@ -64,11 +62,6 @@ protected:
         void hide_positive_terms_from_ranking();
         void filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans);
     };
-
-    /**
-     * Typedef the list of positions iterators because it takes far too much space to write out :-)
-     */
-    using PositionsIteratorList = std::vector<search::fef::TermFieldMatchData::PositionsIterator>;
 
     /**
      * Returns whether or not given document matches. This should only be called when all child terms are all
