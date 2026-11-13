@@ -4,7 +4,7 @@ package com.yahoo.search.grouping.vespa;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.request.AllOperation;
-import com.yahoo.search.grouping.request.DecodeFastMapLookupFunction;
+import com.yahoo.search.grouping.request.FastSearchMapDecodeFunction;
 import com.yahoo.search.grouping.request.AttributeValue;
 import com.yahoo.search.grouping.request.EachOperation;
 import com.yahoo.search.grouping.request.GroupingOperation;
@@ -21,7 +21,7 @@ import com.yahoo.searchlib.aggregation.SumAggregationResult;
 import com.yahoo.searchlib.expression.AddFunctionNode;
 import com.yahoo.searchlib.expression.AndPredicateNode;
 import com.yahoo.searchlib.expression.AttributeMapLookupNode;
-import com.yahoo.searchlib.expression.DecodeFastMapLookupNode;
+import com.yahoo.searchlib.expression.FastSearchMapDecodeNode;
 import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
@@ -744,23 +744,23 @@ public class RequestBuilderTestCase {
     }
 
     @Test
-    void requireThatDecodeFastMapLookupNodeIsCreatedWithResolvedValueType() {
-        assertEquals(new DecodeFastMapLookupNode("map$lookup", DecodeFastMapLookupNode.ValueType.INT),
-                     decodeFastMapLookupNodeOf("all(group(decodefastmaplookup(map.lookup)) each(output(count())))", "int"));
-        assertEquals(new DecodeFastMapLookupNode("a.b$lookup", DecodeFastMapLookupNode.ValueType.STRING, ": "),
-                     decodeFastMapLookupNodeOf("all(group(decodefastmaplookup(a.b.lookup, \": \")) each(output(count())))", "string"));
-        assertEquals(new DecodeFastMapLookupNode("map$lookup", DecodeFastMapLookupNode.ValueType.DOUBLE),
-                     decodeFastMapLookupNodeOf("all(group(decodefastmaplookup(map.lookup)) each(output(count())))", "double"));
+    void requireThatFastSearchMapDecodeNodeIsCreatedWithResolvedValueType() {
+        assertEquals(new FastSearchMapDecodeNode("map$lookup", FastSearchMapDecodeNode.ValueType.INT),
+                     fastSearchMapDecodeNodeOf("all(group(fastsearchmap.decode(map.lookup)) each(output(count())))", "int"));
+        assertEquals(new FastSearchMapDecodeNode("a.b$lookup", FastSearchMapDecodeNode.ValueType.STRING, ": "),
+                     fastSearchMapDecodeNodeOf("all(group(fastsearchmap.decode(a.b.lookup, \": \")) each(output(count())))", "string"));
+        assertEquals(new FastSearchMapDecodeNode("map$lookup", FastSearchMapDecodeNode.ValueType.DOUBLE),
+                     fastSearchMapDecodeNodeOf("all(group(fastsearchmap.decode(map.lookup)) each(output(count())))", "double"));
 
         var unresolved = new RequestBuilder(0)
-                .setRootOperation(GroupingOperation.fromString("all(group(decodefastmaplookup(map.lookup)) each(output(count())))"));
+                .setRootOperation(GroupingOperation.fromString("all(group(fastsearchmap.decode(map.lookup)) each(output(count())))"));
         var exception = assertThrows(IllegalInputException.class, unresolved::build);
         assertEquals("The value type of fast map lookup 'map.lookup' has not been resolved.", exception.getMessage());
     }
 
-    private static ExpressionNode decodeFastMapLookupNodeOf(String request, String valueType) {
+    private static ExpressionNode fastSearchMapDecodeNodeOf(String request, String valueType) {
         var operation = GroupingOperation.fromString(request);
-        ((DecodeFastMapLookupFunction)operation.getGroupBy()).setValueType(Field.Type.from(valueType));
+        ((FastSearchMapDecodeFunction)operation.getGroupBy()).setValueType(Field.Type.from(valueType));
         var builder = new RequestBuilder(0).setRootOperation(operation);
         builder.build();
         return builder.getRequestList().get(0).getLevels().get(0).getExpression();

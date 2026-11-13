@@ -19,9 +19,9 @@ class AttributeNode;
  *
  * The attribute name, value type and separator are serialized; the container resolves the value type from the schema.
  */
-class DecodeFastMapLookupNode : public FunctionNode {
+class FastSearchMapDecodeNode : public FunctionNode {
 public:
-    // Serialized as one byte; keep in sync with the Java DecodeFastMapLookupNode.ValueType.
+    // Serialized as one byte; keep in sync with the Java FastSearchMapDecodeNode.ValueType.
     enum class ValueType : uint8_t { UNKNOWN = 0, INT = 1, LONG = 2, FLOAT = 3, DOUBLE = 4, STRING = 5 };
 
     static constexpr char             encoded_separator = 0x7F;
@@ -41,18 +41,18 @@ private:
 
 public:
     DECLARE_NBO_SERIALIZE;
-    DECLARE_EXPRESSIONNODE(DecodeFastMapLookupNode);
-    DecodeFastMapLookupNode() noexcept;
-    DecodeFastMapLookupNode(std::string_view attribute_name, ValueType value_type,
+    DECLARE_EXPRESSIONNODE(FastSearchMapDecodeNode);
+    FastSearchMapDecodeNode() noexcept;
+    FastSearchMapDecodeNode(std::string_view attribute_name, ValueType value_type,
                             std::string_view separator = default_separator);
-    DecodeFastMapLookupNode(const DecodeFastMapLookupNode&);
-    DecodeFastMapLookupNode& operator=(const DecodeFastMapLookupNode&);
-    ~DecodeFastMapLookupNode() override;
+    FastSearchMapDecodeNode(const FastSearchMapDecodeNode&);
+    FastSearchMapDecodeNode& operator=(const FastSearchMapDecodeNode&);
+    ~FastSearchMapDecodeNode() override;
 
     [[nodiscard]] const std::string& attribute_name() const noexcept { return _attribute_name; }
     [[nodiscard]] ValueType value_type() const noexcept { return _value_type; }
     [[nodiscard]] const std::string& separator() const noexcept { return _separator; }
-    DecodeFastMapLookupNode& separator(std::string_view separator) {
+    FastSearchMapDecodeNode& separator(std::string_view separator) {
         _separator = separator;
         return *this;
     }

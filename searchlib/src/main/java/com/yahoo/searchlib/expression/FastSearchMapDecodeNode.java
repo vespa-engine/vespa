@@ -16,7 +16,7 @@ import java.util.Objects;
  *
  * @author arnej
  */
-public class DecodeFastMapLookupNode extends FunctionNode {
+public class FastSearchMapDecodeNode extends FunctionNode {
 
     /** The type of the values in the map. The ids are serialized; keep them in sync with the C++ implementation. */
     public enum ValueType {
@@ -39,7 +39,7 @@ public class DecodeFastMapLookupNode extends FunctionNode {
 
     }
 
-    public static final int classId = registerClass(0x4000 + 185, DecodeFastMapLookupNode.class, DecodeFastMapLookupNode::new);
+    public static final int classId = registerClass(0x4000 + 185, FastSearchMapDecodeNode.class, FastSearchMapDecodeNode::new);
     public static final String DEFAULT_SEPARATOR = ":";
     private String attributeName;
     private ValueType valueType = ValueType.UNKNOWN;
@@ -48,7 +48,7 @@ public class DecodeFastMapLookupNode extends FunctionNode {
     /**
      * Constructs an empty node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
      */
-    public DecodeFastMapLookupNode() { }
+    public FastSearchMapDecodeNode() { }
 
     /**
      * Constructs a node decoding the given fast map lookup attribute.
@@ -56,7 +56,7 @@ public class DecodeFastMapLookupNode extends FunctionNode {
      * @param attributeName the hidden attribute of the fast map lookup, on the form "fieldname$lookupname"
      * @param valueType     the type of the values in the map
      */
-    public DecodeFastMapLookupNode(String attributeName, ValueType valueType) {
+    public FastSearchMapDecodeNode(String attributeName, ValueType valueType) {
         this(attributeName, valueType, DEFAULT_SEPARATOR);
     }
 
@@ -67,7 +67,7 @@ public class DecodeFastMapLookupNode extends FunctionNode {
      * @param valueType     the type of the values in the map
      * @param separator     the separator between key and value in the decoded entries
      */
-    public DecodeFastMapLookupNode(String attributeName, ValueType valueType, String separator) {
+    public FastSearchMapDecodeNode(String attributeName, ValueType valueType, String separator) {
         if (attributeName == null) {
             throw new IllegalArgumentException("Fast map lookup attribute name cannot be null.");
         }
@@ -100,7 +100,7 @@ public class DecodeFastMapLookupNode extends FunctionNode {
      * @param separator the separator, ":" by default
      * @return this, to allow chaining
      */
-    public DecodeFastMapLookupNode setSeparator(String separator) {
+    public FastSearchMapDecodeNode setSeparator(String separator) {
         if (separator == null) {
             throw new IllegalArgumentException("Fast map lookup separator cannot be null.");
         }
@@ -136,7 +136,7 @@ public class DecodeFastMapLookupNode extends FunctionNode {
 
     @Override
     protected boolean equalsFunction(FunctionNode obj) {
-        DecodeFastMapLookupNode rhs = (DecodeFastMapLookupNode)obj;
+        FastSearchMapDecodeNode rhs = (FastSearchMapDecodeNode)obj;
         return attributeName.equals(rhs.attributeName) && valueType == rhs.valueType && separator.equals(rhs.separator);
     }
 

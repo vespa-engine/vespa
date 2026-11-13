@@ -232,39 +232,39 @@ public class ExpressionTestCase {
     }
 
     @Test
-    public void testDecodeFastMapLookupNode() {
-        var INT = DecodeFastMapLookupNode.ValueType.INT;
-        var LONG = DecodeFastMapLookupNode.ValueType.LONG;
-        assertThrows(IllegalArgumentException.class, () -> new DecodeFastMapLookupNode(null, INT));
-        assertThrows(IllegalArgumentException.class, () -> new DecodeFastMapLookupNode("map$lookup", null));
-        assertThrows(IllegalArgumentException.class, () -> new DecodeFastMapLookupNode("map$lookup", INT, null));
-        DecodeFastMapLookupNode a = new DecodeFastMapLookupNode("map$lookup", INT);
+    public void testFastSearchMapDecodeNode() {
+        var INT = FastSearchMapDecodeNode.ValueType.INT;
+        var LONG = FastSearchMapDecodeNode.ValueType.LONG;
+        assertThrows(IllegalArgumentException.class, () -> new FastSearchMapDecodeNode(null, INT));
+        assertThrows(IllegalArgumentException.class, () -> new FastSearchMapDecodeNode("map$lookup", null));
+        assertThrows(IllegalArgumentException.class, () -> new FastSearchMapDecodeNode("map$lookup", INT, null));
+        FastSearchMapDecodeNode a = new FastSearchMapDecodeNode("map$lookup", INT);
         assertEquals("map$lookup", a.getAttributeName());
         assertEquals(INT, a.getValueType());
         assertEquals(":", a.getSeparator());
-        DecodeFastMapLookupNode b = (DecodeFastMapLookupNode)assertSerialize(a);
+        FastSearchMapDecodeNode b = (FastSearchMapDecodeNode)assertSerialize(a);
         assertEquals("map$lookup", b.getAttributeName());
         assertEquals(INT, b.getValueType());
         assertEquals(":", b.getSeparator());
         assertEquals(a, b);
         assertEquals(a.hashCode(), b.hashCode());
-        assertNotEquals(a, new DecodeFastMapLookupNode("map$other", INT));
-        assertNotEquals(a, new DecodeFastMapLookupNode("map$lookup", LONG));
+        assertNotEquals(a, new FastSearchMapDecodeNode("map$other", INT));
+        assertNotEquals(a, new FastSearchMapDecodeNode("map$lookup", LONG));
         assertNotEquals(a, new AttributeNode("map$lookup"));
 
-        DecodeFastMapLookupNode c = new DecodeFastMapLookupNode("map$lookup", INT, ": ");
+        FastSearchMapDecodeNode c = new FastSearchMapDecodeNode("map$lookup", INT, ": ");
         assertEquals(": ", c.getSeparator());
         assertNotEquals(a, c);
-        assertEquals(c, new DecodeFastMapLookupNode("map$lookup", INT).setSeparator(": "));
-        DecodeFastMapLookupNode d = (DecodeFastMapLookupNode)assertSerialize(c);
+        assertEquals(c, new FastSearchMapDecodeNode("map$lookup", INT).setSeparator(": "));
+        FastSearchMapDecodeNode d = (FastSearchMapDecodeNode)assertSerialize(c);
         assertEquals(": ", d.getSeparator());
         assertEquals(c, d);
 
-        for (var type : DecodeFastMapLookupNode.ValueType.values()) {
-            assertEquals(type, DecodeFastMapLookupNode.ValueType.fromId(type.id()));
-            assertEquals(type, ((DecodeFastMapLookupNode)assertSerialize(new DecodeFastMapLookupNode("m$l", type))).getValueType());
+        for (var type : FastSearchMapDecodeNode.ValueType.values()) {
+            assertEquals(type, FastSearchMapDecodeNode.ValueType.fromId(type.id()));
+            assertEquals(type, ((FastSearchMapDecodeNode)assertSerialize(new FastSearchMapDecodeNode("m$l", type))).getValueType());
         }
-        assertEquals(DecodeFastMapLookupNode.ValueType.UNKNOWN, DecodeFastMapLookupNode.ValueType.fromId((byte)42));
+        assertEquals(FastSearchMapDecodeNode.ValueType.UNKNOWN, FastSearchMapDecodeNode.ValueType.fromId((byte)42));
     }
 
     @Test

@@ -23,7 +23,7 @@ import com.yahoo.search.grouping.request.DayOfMonthFunction;
 import com.yahoo.search.grouping.request.DayOfWeekFunction;
 import com.yahoo.search.grouping.request.DayOfYearFunction;
 import com.yahoo.search.grouping.request.DebugWaitFunction;
-import com.yahoo.search.grouping.request.DecodeFastMapLookupFunction;
+import com.yahoo.search.grouping.request.FastSearchMapDecodeFunction;
 import com.yahoo.search.grouping.request.DivFunction;
 import com.yahoo.search.grouping.request.DocIdNsSpecificValue;
 import com.yahoo.search.grouping.request.DoubleValue;
@@ -125,7 +125,7 @@ import com.yahoo.searchlib.expression.BucketResultNode;
 import com.yahoo.searchlib.expression.CatFunctionNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.DebugWaitFunctionNode;
-import com.yahoo.searchlib.expression.DecodeFastMapLookupNode;
+import com.yahoo.searchlib.expression.FastSearchMapDecodeNode;
 import com.yahoo.searchlib.expression.DivideFunctionNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
 import com.yahoo.searchlib.expression.FilterExpressionNode;
@@ -353,8 +353,8 @@ class ExpressionConverter {
                                              waitFunction.getWaitTime(),
                                              waitFunction.getBusyWait());
         }
-        if (exp instanceof DecodeFastMapLookupFunction function) {
-            return new DecodeFastMapLookupNode(function.getAttributeName(), toValueType(function), function.getSeparator());
+        if (exp instanceof FastSearchMapDecodeFunction function) {
+            return new FastSearchMapDecodeNode(function.getAttributeName(), toValueType(function), function.getSeparator());
         }
         if (exp instanceof DocIdNsSpecificValue) {
             return new GetDocIdNamespaceSpecificFunctionNode();
@@ -651,15 +651,15 @@ class ExpressionConverter {
         return ret;
     }
 
-    private static DecodeFastMapLookupNode.ValueType toValueType(DecodeFastMapLookupFunction function) {
+    private static FastSearchMapDecodeNode.ValueType toValueType(FastSearchMapDecodeFunction function) {
         var type = function.getValueType().orElseThrow(() -> new IllegalInputException(
                 "The value type of fast map lookup '" + function.getName() + "' has not been resolved."));
         return switch (type.kind()) {
-            case INT -> DecodeFastMapLookupNode.ValueType.INT;
-            case LONG -> DecodeFastMapLookupNode.ValueType.LONG;
-            case FLOAT -> DecodeFastMapLookupNode.ValueType.FLOAT;
-            case DOUBLE -> DecodeFastMapLookupNode.ValueType.DOUBLE;
-            case STRING -> DecodeFastMapLookupNode.ValueType.STRING;
+            case INT -> FastSearchMapDecodeNode.ValueType.INT;
+            case LONG -> FastSearchMapDecodeNode.ValueType.LONG;
+            case FLOAT -> FastSearchMapDecodeNode.ValueType.FLOAT;
+            case DOUBLE -> FastSearchMapDecodeNode.ValueType.DOUBLE;
+            case STRING -> FastSearchMapDecodeNode.ValueType.STRING;
             default -> throw new IllegalInputException("Values of type " + type + " of fast map lookup '" +
                                                        function.getName() + "' cannot be decoded.");
         };

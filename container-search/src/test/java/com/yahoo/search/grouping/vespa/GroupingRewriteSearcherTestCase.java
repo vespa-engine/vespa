@@ -7,7 +7,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.GroupingValidator;
-import com.yahoo.search.grouping.request.DecodeFastMapLookupFunction;
+import com.yahoo.search.grouping.request.FastSearchMapDecodeFunction;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.schema.Cluster;
 import com.yahoo.search.schema.Field;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 public class GroupingRewriteSearcherTestCase {
 
-    private static final String FAST_MAP_GROUPING = "all(group(decodefastmaplookup(map.lookup)) each(output(count())))";
+    private static final String FAST_MAP_GROUPING = "all(group(fastsearchmap.decode(map.lookup)) each(output(count())))";
 
     @Test
     void fast_map_lookup_value_type_is_resolved() {
@@ -35,7 +35,7 @@ public class GroupingRewriteSearcherTestCase {
             var schemaInfo = schemaInfo(schemaWithLookup("one", type));
             assertEquals(Field.Type.from(type), resolvedValueType(schemaInfo, createQuery(FAST_MAP_GROUPING)));
         }
-        var query = createQuery("all(group(decodefastmaplookup(map.lookup, \": \")) each(output(count())))");
+        var query = createQuery("all(group(fastsearchmap.decode(map.lookup, \": \")) each(output(count())))");
         assertEquals(Field.Type.from("int"), resolvedValueType(schemaInfo(schemaWithLookup("one", "int")), query));
     }
 
@@ -53,7 +53,7 @@ public class GroupingRewriteSearcherTestCase {
     void unavailable_fast_map_lookup_throws() {
         var schemaInfo = schemaInfo(schemaWithLookup("one", "int"));
         assertFastMapLookupRejected("Grouping request references fast map lookup 'map.other' which is not available in cluster 'myCluster'.",
-                                    schemaInfo, createQuery("all(group(decodefastmaplookup(map.other)) each(output(count())))"));
+                                    schemaInfo, createQuery("all(group(fastsearchmap.decode(map.other)) each(output(count())))"));
         // The lookup attribute is missing, as for an imported field
         var query = createQuery(FAST_MAP_GROUPING);
         var exception = assertThrows(IllegalArgumentException.class,
@@ -110,7 +110,7 @@ public class GroupingRewriteSearcherTestCase {
             var exception = assertThrows(IllegalArgumentException.class,
                                          () -> runWithValidator(ClusterConfig.IndexMode.Enum.STREAMING,
                                                                 schemaInfo(schemaWithLookup("one", "int")), query));
-            assertEquals("Grouping request references fast map lookup 'map.lookup', but decodefastmaplookup " +
+            assertEquals("Grouping request references fast map lookup 'map.lookup', but fastsearchmap.decode " +
                          "is not supported in streaming mode (cluster 'myCluster').",
                          exception.getMessage());
         }
@@ -148,7 +148,7 @@ public class GroupingRewriteSearcherTestCase {
     }
 
     private static Field.Type valueTypeOf(Query query) {
-        var function = (DecodeFastMapLookupFunction)query.getSelect().getGrouping().get(0).getRootOperation().getGroupBy();
+        var function = (FastSearchMapDecodeFunction)query.getSelect().getGrouping().get(0).getRootOperation().getGroupBy();
         return function.getValueType().orElseThrow();
     }
 
