@@ -158,7 +158,7 @@ public class Flags {
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
             List.of("glebashnik"), "2025-04-25", "2027-06-01",
             "Provisions sidecars for testing",
-            "Takes effect at redeployment",
+            "Takes effect on next host admin tick",
             __ -> true,
             APPLICATION
     );
