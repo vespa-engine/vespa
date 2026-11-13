@@ -8,8 +8,8 @@ import com.devsmart.ubjson.UBReader;
 import com.devsmart.ubjson.UBValue;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Parser for XGBoost models in Universal Binary JSON (UBJ) format.
@@ -155,8 +156,8 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
         this.objective = tmpObjective;
 
         // Check for optional feature names file (e.g., foobar-features.txt for foobar.ubj)
-        String featuresPath = withFeaturesSuffix(filePath);
-        List<String> overrideFeatureNames = loadFeatureNamesFromFile(featuresPath);
+        List<String> overrideFeatureNames = featuresFile(filePath).map(file -> loadFeatureNamesFromFile(file.getPath()))
+                                                                  .orElse(null);
         if (overrideFeatureNames != null) {
             tmpFeatureNames = overrideFeatureNames;
         }
@@ -344,6 +345,12 @@ class XGBoostUbjParser extends AbstractXGBoostParser {
         }
 
         return "if (" + condition + ", " + trueExp + ", " + falseExp + ")";
+    }
+
+    /** Returns the file with feature names for the given UBJ model file, if that file exists */
+    static Optional<File> featuresFile(String ubjFilePath) {
+        File featuresFile = new File(withFeaturesSuffix(ubjFilePath));
+        return featuresFile.isFile() ? Optional.of(featuresFile) : Optional.empty();
     }
 
     private static String withFeaturesSuffix(String ubjFilePath) {
