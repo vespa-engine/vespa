@@ -239,9 +239,18 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private ExecutorService createRedeploymentExecutor() {
         int numThreads = configserverConfig.numRedeploymentThreads() == 0
-                ? Runtime.getRuntime().availableProcessors()
+                ? defaultRedeploymentThreads(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().maxMemory())
                 : configserverConfig.numRedeploymentThreads();
+        log.log(Level.INFO, "Redeploying applications using " + numThreads + " threads");
         return Executors.newFixedThreadPool(numThreads, new DaemonThreadFactory("redeploy-apps-"));
+    }
+
+    /** Heap to reserve for each concurrent application build when bootstrapping. */
+    static final long heapBytesPerRedeploymentThread = 4L << 30;
+
+    /** One thread per processor, but no more than the heap allows, and at least one. */
+    static int defaultRedeploymentThreads(int processors, long maxHeapBytes) {
+        return Math.max(1, Math.min(processors, (int) (maxHeapBytes / heapBytesPerRedeploymentThread)));
     }
 
     private enum DeploymentStatus { inProgress, done, failed }

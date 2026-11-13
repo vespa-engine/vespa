@@ -190,6 +190,16 @@ public class ConfigServerBootstrapTest {
     }
 
     @Test
+    public void testDefaultRedeploymentThreads() {
+        assertEquals(4, ConfigServerBootstrap.defaultRedeploymentThreads(4, 23_600_000_000L));
+        assertEquals(5, ConfigServerBootstrap.defaultRedeploymentThreads(8, 24_700_000_000L));
+        assertEquals(11, ConfigServerBootstrap.defaultRedeploymentThreads(16, 50_500_000_000L));
+        assertEquals(2, ConfigServerBootstrap.defaultRedeploymentThreads(4, 10_700_000_000L));
+        assertEquals(2, ConfigServerBootstrap.defaultRedeploymentThreads(2, 50_500_000_000L));
+        assertEquals(1, ConfigServerBootstrap.defaultRedeploymentThreads(2, 1_000_000_000L));
+    }
+
+    @Test
     public void testBootstrapBetweenVersions() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfigNonHosted(temporaryFolder);
         String oldVespaVersion = "8.100.1";
