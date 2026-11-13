@@ -4,11 +4,26 @@
 
 #include <vespa/check_require.h>
 
+#include <opentelemetry/trace/provider.h>
+
 #include <vespa/log/logf.h>
 
 LOG_SETUP(".proton.server.ddbstate");
 
+using opentelemetry::trace::Provider;
+using opentelemetry::trace::SpanKind;
+using opentelemetry::trace::StartSpanOptions;
+
 namespace proton {
+
+namespace {
+
+[[nodiscard]] std::shared_ptr<opentelemetry::trace::Tracer> get_tracer() {
+    auto provider = Provider::GetTracerProvider();
+    return provider->GetTracer("proton");
+}
+
+} // namespace
 
 std::vector<std::string> DDBState::_stateNames = {
     "CONSTRUCT",
@@ -33,16 +48,45 @@ DDBState::DDBState(const DocTypeName& doc_type_name)
       _load_time(),
       _online_time(),
       _replay_time(),
-      _doc_type_name(doc_type_name) {
+      _doc_type_name(doc_type_name),
+      _multistate_span(),
+      _state_span() {
 }
 
 DDBState::~DDBState() = default;
 
+void DDBState::end_multistate_span() {
+    if (_multistate_span) {
+        _multistate_span->End();
+        _multistate_span.reset();
+    }
+}
+
+void DDBState::end_state_span() {
+    if (_state_span) {
+        _state_span->End();
+        _state_span.reset();
+    }
+}
+
 void DDBState::set_state(State state) {
     auto old_state = getState();
+    if (state == old_state) {
+        return;
+    }
+    end_state_span();
     _state.store(state, std::memory_order_release);
     LOGF(info, "Switched document type {} ddb state from {} to {}", _doc_type_name.getName(),
          getStateString(old_state), getStateString(state));
+    if (!_multistate_span) {
+        return;
+    }
+    auto             tracer = get_tracer();
+    StartSpanOptions options;
+    options.kind = SpanKind::kInternal;
+    options.parent = _multistate_span->GetContext();
+    _state_span = tracer->StartSpan(
+        std::format("Document type {} ddb state {}", _doc_type_name.getName(), getStateString(state)), options);
 }
 
 bool DDBState::enterLoadState() {
@@ -51,6 +95,12 @@ bool DDBState::enterLoadState() {
         return false;
     }
     CHECK(getState() == State::CONSTRUCT);
+    auto             tracer = get_tracer();
+    auto             parent_span = tracer->GetCurrentSpan();
+    StartSpanOptions options;
+    options.kind = SpanKind::kInternal;
+    options.parent = parent_span->GetContext();
+    _multistate_span = tracer->StartSpan(std::format("Document type {} init", _doc_type_name.getName()), options);
     _load_time = std::chrono::system_clock::now();
     set_state(State::LOAD);
     return true;
@@ -118,6 +168,8 @@ bool DDBState::enterOnlineState() {
     CHECK(getState() == State::REPROCESS);
     _online_time = std::chrono::system_clock::now();
     set_state(State::ONLINE);
+    end_state_span();
+    end_multistate_span();
     _cond.notify_all();
     return true;
 }
@@ -128,6 +180,12 @@ void DDBState::enterShutdownState() {
     if (getClosed()) {
         return;
     }
+    auto             tracer = get_tracer();
+    auto             parent_span = tracer->GetCurrentSpan();
+    StartSpanOptions options;
+    options.kind = SpanKind::kInternal;
+    options.parent = parent_span->GetContext();
+    _multistate_span = tracer->StartSpan(std::format("Document type {} shutdown", _doc_type_name.getName()), options);
     set_state(State::SHUTDOWN);
     _cond.notify_all();
 }
@@ -139,6 +197,8 @@ void DDBState::enterDeadState() {
     }
     CHECK(getState() == State::SHUTDOWN);
     set_state(State::DEAD);
+    end_state_span();
+    end_multistate_span();
     _cond.notify_all();
 }
 

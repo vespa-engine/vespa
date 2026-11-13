@@ -69,6 +69,7 @@
 #ifdef __linux__
 #include <malloc.h>
 #endif
+#include <opentelemetry/trace/provider.h>
 
 #include <sstream>
 
@@ -78,6 +79,7 @@ LOG_SETUP(".proton.server.proton");
 using CpuCategory = vespalib::CpuUsage::Category;
 
 using document::DocumentTypeRepo;
+using opentelemetry::trace::Provider;
 using proton::flushengine::PrepareRestartCostsConfig;
 using proton::flushengine::SetStrategyResult;
 using search::DiskSpaceCalculator;
@@ -637,8 +639,15 @@ void Proton::closeDocumentDBs(vespalib::ThreadStackExecutorBase& executor) {
     for (const auto& entry : _documentDBMap) {
         docTypes.push_back(entry.first);
     }
+    auto provider = Provider::GetTracerProvider();
+    auto tracer = provider->GetTracer("proton");
+    auto parent_span = tracer->GetCurrentSpan();
     for (const auto& docTypeName : docTypes) {
-        executor.execute(makeLambdaTask([this, docTypeName]() { removeDocumentDB(docTypeName); }));
+        executor.execute(makeLambdaTask([this, docTypeName, parent_span, tracer]() {
+            auto parent_span_copy = parent_span;
+            auto scope = tracer->WithActiveSpan(parent_span_copy);
+            removeDocumentDB(docTypeName);
+        }));
     }
     executor.sync();
 }
