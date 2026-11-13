@@ -205,8 +205,9 @@ public class ClusterSearcher extends Searcher {
                         server.fill(result, summaryClass);
                     } else {
                         if (result.hits().getErrorHit() == null) {
-                            result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries, query timeout was " +
-                                                                              query.getTimeout() + " ms"));
+                            result.hits().addError(ErrorMessage.createTimeout("Query timed out before summaries could be fetched from content cluster '" + searchClusterName + "'. " +
+                                                                              "Hits of indexed document types will be missing summary fields. " +
+                                                                              "Query timeout was " + query.getTimeout() + " ms."));
                         }
                     }
                 }
