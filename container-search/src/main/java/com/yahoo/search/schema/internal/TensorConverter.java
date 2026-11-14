@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.schema.internal;
 
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.InvocationContext;
+import com.yahoo.language.provider.DefaultEmbedderProvider;
 import com.yahoo.processing.request.Properties;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -11,11 +13,13 @@ import com.yahoo.text.Text;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * A class which knows how to convert an Object value to a tensor of a given type.
@@ -35,14 +39,58 @@ public class TensorConverter {
         this.embedders = embedders;
     }
 
+    /** Returns the given embedders as a map indexed by embedder id. */
+    public static Map<String, Embedder> toMap(ComponentRegistry<Embedder> embedders) {
+        var map = embedders.allComponentsById().entrySet().stream()
+                           .collect(Collectors.toMap(e -> e.getKey().stringValue(), Map.Entry::getValue));
+        if (map.size() > 1) {
+            map.remove(DefaultEmbedderProvider.class.getName());
+            // Ideally, this should be handled by dependency injection, however for now this workaround is necessary.
+        }
+        return Collections.unmodifiableMap(map);
+    }
+
     public Tensor convertTo(TensorType type, String key, Object value, Language language,
                             Map<String, String> contextValues, Properties properties, Instant deadline) {
+        Tensor tensor = toTensor(type, value, embedderContext(key, language, deadline), contextValues, properties);
+        if (tensor == null) return null;
+        return requireAssignableTo(type, tensor);
+    }
+
+    /**
+     * Embeds a text as specified by an input expression on the form embed(@input) or embed(embedder-id, @input),
+     * where @input is the text.
+     */
+    public Tensor embedInput(String inputExpression, String text, TensorType type, String key, Language language,
+                             Instant deadline) {
+        if ( ! isEmbed(inputExpression) || ! inputExpression.endsWith(")"))
+            throw new IllegalArgumentException("Expected an input expression on the form embed([embedder-id, ]@input), " +
+                                               "but got '" + inputExpression + "'");
+        String argument = inputExpression.substring("embed(".length(), inputExpression.length() - 1);
+        int comma = argument.indexOf(',');
+        String embedderId;
+        Embedder embedder;
+        if (comma >= 0) {
+            embedderId = argument.substring(0, comma).strip();
+            embedder = requireEmbedder(embedderId);
+        }
+        else {
+            var entry = requireSingleEmbedder("The embedder to use is not specified by '" + inputExpression + "'.");
+            embedderId = entry.getKey();
+            embedder = entry.getValue();
+        }
+        return requireAssignableTo(type, embed(text, embedderId, embedder, type, embedderContext(key, language, deadline)));
+    }
+
+    private static Embedder.Context embedderContext(String key, Language language, Instant deadline) {
         var context = new Embedder.Context(key).setLanguage(language);
         if (deadline != null) {
             context.setDeadline(InvocationContext.Deadline.of(deadline));
         }
-        Tensor tensor = toTensor(type, value, context, contextValues, properties);
-        if (tensor == null) return null;
+        return context;
+    }
+
+    private static Tensor requireAssignableTo(TensorType type, Tensor tensor) {
         if (! tensor.type().isAssignableTo(type))
             throw new IllegalArgumentException("Require a tensor of type " + type);
         return tensor;
@@ -56,7 +104,8 @@ public class TensorConverter {
         return null;
     }
 
-    static boolean isEmbed(String value) {
+    /** Returns whether this value is an embed(...) expression. */
+    public static boolean isEmbed(String value) {
         return value.startsWith("embed(");
     }
 
@@ -78,21 +127,27 @@ public class TensorConverter {
                 embedderId = matcher.group(1);
                 embedder = requireEmbedder(embedderId);
                 argument = matcher.group(2);
-        } else if (embedders.isEmpty()) {
-            throw new IllegalArgumentException("No embedders provided");  // should never happen
-        } else if (embedders.size() > 1) {
-            String usage = "Usage: embed(embedder-id, 'text'). " + embedderIds(embedders);
-            if (! argument.contains("\"") && ! argument.contains("'"))
-                throw new IllegalArgumentException("Multiple embedders are provided but the string to embed is not quoted. " + usage);
-            else
-                throw new IllegalArgumentException("Multiple embedders are provided but no embedder id is given. " + usage);
         } else {
-            var entry = embedders.entrySet().stream().findFirst().get();
+            String usage = "Usage: embed(embedder-id, 'text'). " + embedderIds(embedders);
+            var entry = requireSingleEmbedder(! argument.contains("\"") && ! argument.contains("'")
+                                              ? "Multiple embedders are provided but the string to embed is not quoted. " + usage
+                                              : "Multiple embedders are provided but no embedder id is given. " + usage);
             embedderId = entry.getKey();
             embedder = entry.getValue();
         }
-        var text = resolve(argument, contextValues, properties);
+        return embed(resolve(argument, contextValues, properties), embedderId, embedder, type, embedderContext);
+    }
 
+    private Map.Entry<String, Embedder> requireSingleEmbedder(String multipleEmbeddersMessage) {
+        if (embedders.isEmpty())
+            throw new IllegalArgumentException("No embedders provided");  // should never happen
+        if (embedders.size() > 1)
+            throw new IllegalArgumentException(multipleEmbeddersMessage);
+        return embedders.entrySet().stream().findFirst().get();
+    }
+
+    private static Tensor embed(String text, String embedderId, Embedder embedder, TensorType type,
+                                Embedder.Context embedderContext) {
         // Return zero tensor for empty input text as some embedder implementations does support blank or empty strings.
         // A zero vector might be close to a document embedding with a completely different semantic meaning.
         // Ideally we should include an additional annotation in the query to indicate empty input.
@@ -112,7 +167,11 @@ public class TensorConverter {
         return embedders.get(embedderId);
     }
 
-    private static String resolve(String s, Map<String, String> contextValues, Properties properties) {
+    /**
+     * Resolves the text given by an argument: A quoted string is unquoted,
+     * a reference (@name) is replaced by the value of the referenced property, and any other string is returned as-is.
+     */
+    public static String resolve(String s, Map<String, String> contextValues, Properties properties) {
         if (s.startsWith("'") && s.endsWith("'"))
             return s.substring(1, s.length() - 1);
         if (s.startsWith("\"") && s.endsWith("\""))
@@ -126,8 +185,7 @@ public class TensorConverter {
         String referenceKey = s.substring(1);
         Object referencedValue = properties.get(referenceKey, contextValues);
         if (referencedValue == null)
-            throw new IllegalArgumentException("Could not resolve query parameter reference '" + referenceKey +
-                                               "' used in an embed() argument");
+            throw new IllegalArgumentException("Could not resolve query parameter reference '" + referenceKey + "'");
         return referencedValue.toString();
     }
 
