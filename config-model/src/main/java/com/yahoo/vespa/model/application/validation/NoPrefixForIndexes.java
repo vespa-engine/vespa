@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.schema.Index;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
+import com.yahoo.schema.document.ComplexIndexFieldUtils;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.MatchAlgorithm;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
@@ -26,19 +27,25 @@ public class NoPrefixForIndexes implements Validator {
                     Schema schema = schemaInfo.fullSchema();
                     for (ImmutableSDField field : schema.allConcreteFields()) {
                         if (field.doesIndexing()) {
-                            //if (!field.getIndexTo().isEmpty() && !field.getIndexTo().contains(field.getName())) continue;
-                            // TODO Vespa 9: Fail for all except NORMAL
-                            if (field.getMatching().getAlgorithm().equals(MatchAlgorithm.PREFIX)) {
-                                failField(context, schema, field);
-                            }
-                            for (Map.Entry<String, Index> e : field.getIndices().entrySet()) {
-                                if (e.getValue().isPrefix()) {
-                                    failField(context, schema, field);
-                                }
-                            }
+                            validateField(context, schema, field);
+                        }
+                        for (ImmutableSDField structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field, ComplexIndexFieldUtils.Mode.of(schema))) {
+                            validateField(context, schema, structField);
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private void validateField(Context context, Schema schema, ImmutableSDField field) {
+        // TODO Vespa 9: Fail for all except NORMAL
+        if (field.getMatching().getAlgorithm().equals(MatchAlgorithm.PREFIX)) {
+            failField(context, schema, field);
+        }
+        for (Map.Entry<String, Index> e : field.getIndices().entrySet()) {
+            if (e.getValue().isPrefix()) {
+                failField(context, schema, field);
             }
         }
     }

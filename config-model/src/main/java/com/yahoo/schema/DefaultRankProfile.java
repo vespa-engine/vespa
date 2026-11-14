@@ -92,6 +92,7 @@ public class DefaultRankProfile extends RankProfile {
             addSetting(field, RankSetting.Type.LITERALBOOST, settings);
             addSetting(field, RankSetting.Type.PREFERBITVECTOR, settings);
             for (ImmutableSDField structField : ComplexIndexFieldUtils.supportedIndexedStructFields(field, ComplexIndexFieldUtils.Mode.of(schema()))) {
+                addSetting(structField, RankSetting.Type.WEIGHT, settings);
                 addSetting(structField, RankSetting.Type.RANKTYPE, settings);
                 addSetting(structField, RankSetting.Type.PREFERBITVECTOR, settings);
             }

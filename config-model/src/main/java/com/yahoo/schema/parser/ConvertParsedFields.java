@@ -24,6 +24,8 @@ import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
@@ -365,6 +367,69 @@ public class ConvertParsedFields {
                                                "for field '" + field.getName() + "'.");
         }
         convertCommonFieldSettings(schema, structField, parsed, true);
+        var indexSettings = structFieldIndexSettings(parsed);
+        if ( ! indexSettings.isEmpty()) {
+            // Whether this is a supported struct field index is validated later, as it depends on the search cluster
+            if ( ! structField.wasConfiguredToDoIndexing())
+                throw structFieldError(schema, structField, quotedList(indexSettings) +
+                                                            (indexSettings.size() == 1 ? " requires" : " require") +
+                                                            " the struct field to be indexed.");
+            structField.setStructFieldIndexSettings(indexSettings);
+        }
+        // The index of a struct field is named by its full path, e.g. "map.value.f", while the parsed names are local
+        for (var index : parsed.getIndexes()) {
+            if (index.hasExplicitName())
+                throw structFieldError(schema, structField, "'index " + index.name() + "' is not supported in a struct-field, " +
+                                                            "use 'index: ...' or 'index { ... }' without a name instead.");
+            // Stemming in an index block only applies to queries, so it is given directly in the struct-field instead
+            if (index.getStemming().isPresent())
+                throw structFieldError(schema, structField, "'stemming' is not supported in the index block of a struct-field, " +
+                                                            "use 'stemming: " + index.getStemming().get().getName() +
+                                                            "' directly in the struct-field instead.");
+            if ( ! index.getAliases().isEmpty() || index.getPrefix().isPresent() || index.getArity().isPresent() ||
+                 index.getLowerBound().isPresent() || index.getUpperBound().isPresent() ||
+                 index.getDensePostingListThreshold().isPresent() || index.getHnswIndexParams().isPresent())
+                throw structFieldError(schema, structField, "only 'enable-bm25' is supported " +
+                                                            "in the index block of a struct-field.");
+            Index converted = structField.getIndex(structField.getName());
+            if (converted == null) {
+                converted = new Index(structField.getName());
+                structField.addIndex(converted);
+            }
+            convertIndexSettings(converted, index);
+        }
+        parsed.getRankTypes().forEach((indexName, rankType) -> {
+            if ( ! indexName.isEmpty())
+                throw structFieldError(schema, structField, "'rank-type " + indexName + "' is not supported in a struct-field, " +
+                                                            "use 'rank-type: " + rankType + "' instead.");
+            structField.setRankType(RankType.fromString(rankType));
+        });
+    }
+
+    /** Returns the names of the settings given in a struct-field block which only apply to a struct field index. */
+    private static List<String> structFieldIndexSettings(ParsedField parsed) {
+        var settings = new ArrayList<String>();
+        if (parsed.getStemming().isPresent()) settings.add("stemming");
+        if (parsed.getNormalizing().isPresent()) settings.add("normalizing");
+        if (parsed.getIndexLinguisticsProfile().isPresent() || parsed.getSearchLinguisticsProfile().isPresent() ||
+            parsed.getIndexLinguisticsTokens().isPresent() || parsed.getSearchLinguisticsTokens().isPresent())
+            settings.add("linguistics");
+        if ( ! parsed.getIndexes().isEmpty()) settings.add("index");
+        if ( ! parsed.getRankTypes().isEmpty()) settings.add("rank-type");
+        if (parsed.getWeight().isPresent()) settings.add("weight");
+        return settings;
+    }
+
+    /** Returns e.g. "'a', 'b' and 'c'". */
+    private static String quotedList(List<String> items) {
+        var quoted = items.stream().map(item -> "'" + item + "'").toList();
+        if (quoted.size() == 1) return quoted.get(0);
+        return String.join(", ", quoted.subList(0, quoted.size() - 1)) + " and " + quoted.get(quoted.size() - 1);
+    }
+
+    private static IllegalArgumentException structFieldError(Schema schema, SDField structField, String message) {
+        return new IllegalArgumentException("For schema '" + schema.getName() + "', field '" + structField.getName() +
+                                            "': " + message);
     }
 
     private void convertExtraFieldSettings(Schema schema, SDField field, ParsedField parsed) {
