@@ -109,11 +109,11 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                     ApplicationPackage applicationPackage,
                                                     ApplicationId applicationId,
                                                     Optional<DockerImage> wantedDockerImageRepository,
-                                                    Version wantedNodeVespaVersion) {
+                                                    Version wantedNodeVespaVersion,
+                                                    boolean firstModel) {
         Version modelVersion = modelFactory.version();
         log.log(FINE, () -> "Building model " + modelVersion + " for " + applicationId);
 
-        // Use empty on non-hosted systems, use already allocated hosts if available, create connection to a host provisioner otherwise
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 modelOf(modelVersion),
@@ -124,7 +124,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 new ApplicationCuratorDatabase(applicationId.tenant(), curator, configserverConfig).readReindexingStatus(applicationId),
                 createHostProvisioner(applicationPackage),
                 provisioned,
-                createModelContextProperties(modelFactory.version(), applicationPackage),
+                createModelContextProperties(modelFactory.version(), applicationPackage, firstModel),
                 getAppDir(applicationPackage),
                 onnxModelCost,
                 wantedDockerImageRepository,
@@ -216,13 +216,15 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     }
 
     private ModelContext.Properties createModelContextProperties(Version modelVersion,
-                                                                 ApplicationPackage applicationPackage) {
+                                                                 ApplicationPackage applicationPackage,
+                                                                 boolean firstModel) {
         return new ModelContextImpl.Properties(params.getApplicationId(),
                                                modelVersion,
                                                configserverConfig,
                                                Set.copyOf(containerEndpoints),
                                                params.isBootstrap(),
                                                activeApplicationVersions.isEmpty(),
+                                               firstModel,
                                                LegacyFlags.from(applicationPackage, flagSource.snapshot()),
                                                endpointCertificateSecrets,
                                                params.athenzDomain(),

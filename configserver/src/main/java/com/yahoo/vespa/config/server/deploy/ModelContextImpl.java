@@ -71,7 +71,6 @@ public class ModelContextImpl implements ModelContext {
     private final Optional<File> appDir;
     private final OnnxModelCost onnxModelCost;
     private final Optional<File> mlModelImportCacheDir;
-
     private final Optional<DockerImage> wantedDockerImageRepository;
 
     /** The version of Vespa we are building a model for */
@@ -305,6 +304,7 @@ public class ModelContextImpl implements ModelContext {
         private final CloudAccount cloudAccount;
         private final CloudResourceTags cloudResourceTags;
         private final List<DataplaneToken> dataplaneTokens;
+        private final boolean firstModel;
 
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
@@ -312,6 +312,7 @@ public class ModelContextImpl implements ModelContext {
                           Set<ContainerEndpoint> endpoints,
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
+                          boolean firstModel,
                           FlagSource flagSource,
                           Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
                           Optional<AthenzDomain> athenzDomain,
@@ -337,6 +338,7 @@ public class ModelContextImpl implements ModelContext {
             this.endpoints = endpoints;
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
+            this.firstModel = firstModel;
             this.endpointCertificateSecrets = endpointCertificateSecrets;
             this.athenzDomain = athenzDomain;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
@@ -376,6 +378,11 @@ public class ModelContextImpl implements ModelContext {
         @Override public List<String> requestPrefixForLoggingContent() { return flag(PermanentFlags.LOG_REQUEST_CONTENT).value(); }
         @Override public List<String> jdiscHttpComplianceViolations() { return flag(PermanentFlags.JDISC_HTTP_COMPLIANCE_VIOLATIONS).value(); }
         @Override public ModelContext.FeatureFlag<String> jvmGCOptionsFlag() { return flag(PermanentFlags.JVM_GC_OPTIONS); }
+        @Override public boolean earlyProvisioning() {
+            // Not sure Properties should expose `firstModel` itself, since its value is subtle, and it may lead
+            // to subtle bugs if relied upon wrongly. Eventually, the flag should become true and can be removed.
+            return hostedVespa && firstModel && flag(Flags.EARLY_PROVISIONING).value();
+        }
 
         private <T, F extends Flag<T, F>, U extends UnboundFlag<T, F, U>> ModelContext.FeatureFlag<T> flag(U unboundFlag) {
             return new FeatureFlag<>(unboundFlag, flagSource, applicationId, modelVersion);

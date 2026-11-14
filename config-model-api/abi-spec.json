@@ -1624,7 +1624,8 @@
       "public java.time.Duration endpointConnectionTtl()",
       "public java.util.List dataplaneTokens()",
       "public java.util.List requestPrefixForLoggingContent()",
-      "public java.util.List jdiscHttpComplianceViolations()"
+      "public java.util.List jdiscHttpComplianceViolations()",
+      "public boolean earlyProvisioning()"
     ],
     "fields" : [ ]
   },

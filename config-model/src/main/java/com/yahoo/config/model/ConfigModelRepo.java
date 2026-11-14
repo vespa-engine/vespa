@@ -9,8 +9,6 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.graph.ModelGraphBuilder;
 import com.yahoo.config.model.graph.ModelNode;
-import com.yahoo.config.model.producer.AnyConfigProducer;
-import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.VespaModel;
@@ -30,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -83,7 +82,8 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Iterable<ConfigMod
 
     private Element getServicesFromApp(ApplicationPackage applicationPackage) throws IOException {
         try (Reader servicesFile = applicationPackage.getServices()) {
-            return getServicesFromReader(servicesFile);
+            Document doc = XmlHelper.getDocument(servicesFile);
+            return doc.getDocumentElement();
         }
     }
 
@@ -152,45 +152,51 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Iterable<ConfigMod
             }
         }
 
-        for (ModelNode node : graphBuilder.build().topologicalSort())
-            buildModels(node, getApplicationType(servicesRoot), deployState, vespaModel, root, model2Element.get(node.builder));
+        ApplicationType applicationType = getApplicationType(servicesRoot);
+        Function<Element, ConfigModelContext> serviceContextFactory = (Element servicesElement) -> {
+            String serviceId = getIdString(servicesElement);
+            return ConfigModelContext.create(applicationType, deployState, vespaModel, this, root, serviceId);
+        };
+
+        List<ModelNode> modelNodes = graphBuilder.build().topologicalSort();
+        doEarlyProvisioning(modelNodes, model2Element, serviceContextFactory, deployState);
+        doBuildModels(modelNodes, model2Element, serviceContextFactory);
+    }
+
+    private void doEarlyProvisioning(List<ModelNode> modelNodesInOrder, Map<ConfigModelBuilder, List<Element>> model2Element,
+                                     Function<Element, ConfigModelContext> serviceContextFactory, DeployState deployState) {
+        if (!deployState.getProperties().earlyProvisioning()) return;
+
+        for (ModelNode node : modelNodesInOrder) {
+            List<Element> elements = model2Element.get(node.builder);
+            for (Element servicesElement : elements) {
+                ConfigModelContext context = serviceContextFactory.apply(servicesElement);
+                // TODO: Override collectAllocationRequests() in ConfigModelBuilder subclasses that
+                //  implement method for various builders, and use the return value to provision hosts
+                List<ConfigModelBuilder.AllocationRequest> requests = node.builder.collectAllocationRequests(context, servicesElement);
+            }
+        }
+    }
+
+    private void doBuildModels(List<ModelNode> modelNodesInOrder, Map<ConfigModelBuilder, List<Element>> model2Element,
+                               Function<Element, ConfigModelContext> serviceContextFactory) {
+        for (ModelNode node : modelNodesInOrder) {
+            for (Element servicesElement : model2Element.get(node.builder)) {
+                ConfigModelContext context = serviceContextFactory.apply(servicesElement);
+                ConfigModel model = node.builder.build(node, servicesElement, context);
+                if (model.isServing())
+                    add(model);
+            }
+
+        }
         for (ConfigModel model : configModels)
             model.initialize(ConfigModelRepo.this); // XXX deprecated
     }
 
-    private ApplicationType getApplicationType(Element servicesRoot) {
+    private static ApplicationType getApplicationType(Element servicesRoot) {
         return XmlHelper.getOptionalAttribute(servicesRoot, "application-type")
                 .map(ApplicationType::fromString)
                 .orElse(ApplicationType.DEFAULT);
-    }
-
-    private Element getServicesFromReader(Reader reader) {
-        Document doc = XmlHelper.getDocument(reader);
-        return doc.getDocumentElement();
-    }
-
-    private void buildModels(ModelNode node,
-                             ApplicationType applicationType,
-                             DeployState deployState,
-                             VespaModel vespaModel,
-                             TreeConfigProducer<AnyConfigProducer> parent,
-                             List<Element> elements) {
-        for (Element servicesElement : elements) {
-            ConfigModel model = buildModel(node, applicationType, deployState, vespaModel, parent, servicesElement);
-            if (model.isServing())
-                add(model);
-        }
-    }
-
-    private ConfigModel buildModel(ModelNode node,
-                                   ApplicationType applicationType,
-                                   DeployState deployState,
-                                   VespaModel vespaModel,
-                                   TreeConfigProducer<AnyConfigProducer> parent,
-                                   Element servicesElement) {
-        ConfigModelBuilder builder = node.builder;
-        ConfigModelContext context = ConfigModelContext.create(applicationType, deployState, vespaModel, this, parent, getIdString(servicesElement));
-        return builder.build(node, servicesElement, context);
     }
 
     private static String getIdString(Element spec) {

@@ -2,17 +2,13 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.ProvisionContext;
-import com.yahoo.config.provision.ProvisionLogger;
 
 import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
@@ -118,7 +114,7 @@ public class HostSystem extends TreeConfigProducer<Host> {
     }
 
     public Map<HostResource, ClusterMembership> allocateHosts(ClusterSpec cluster, DeployState deployState) {
-        List<HostSpec> allocatedHosts = provisioner.prepare(cluster, toProvisionContext(deployState));
+        List<HostSpec> allocatedHosts = provisioner.prepare(cluster, deployState.provisionContext());
         deployState.provisioned().add(cluster);
 
         // TODO: Even if HostResource owns a set of memberships, we need to return a map because the caller needs the current membership.
@@ -130,15 +126,6 @@ public class HostSystem extends TreeConfigProducer<Host> {
         }
         retAllocatedHosts.keySet().forEach(host -> log.log(FINE, () -> "Allocated host " + host.getHostname() + " with resources " + host.advertisedResources()));
         return retAllocatedHosts;
-    }
-
-    private ProvisionContext toProvisionContext(DeployState deployState) {
-        var builder = new ProvisionContext.Builder();
-        builder.setLogger(new ProvisionDeployLogger(deployState.getDeployLogger()));
-        var validation = builder.validationOverrides();
-        validation.setWarnOnly(deployState.warnOnlyOnValidationFailure());
-        validation.setOverrideResourcesReduction(deployState.validationOverrides().allows(ValidationId.resourcesReduction, deployState.now()));
-        return builder.build();
     }
 
     private Optional<HostResource> getExistingHost(HostSpec key) {
@@ -159,27 +146,6 @@ public class HostSystem extends TreeConfigProducer<Host> {
 
     Set<HostSpec> getHostSpecs() {
         return getHosts().stream().map(HostResource::spec).collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    /** A provision logger which forwards to a deploy logger */
-    private static class ProvisionDeployLogger implements ProvisionLogger {
-
-        private final DeployLogger deployLogger;
-
-        public ProvisionDeployLogger(DeployLogger deployLogger) {
-            this.deployLogger = deployLogger;
-        }
-
-        @Override
-        public void log(Level level, String message) {
-            deployLogger.log(level, message);
-        }
-
-        @Override
-        public void logApplicationPackage(Level level, String message) {
-            deployLogger.logApplicationPackage(level, message);
-        }
-
     }
 
 }
