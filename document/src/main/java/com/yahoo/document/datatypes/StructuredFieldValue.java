@@ -6,12 +6,15 @@ import com.yahoo.document.Field;
 import com.yahoo.document.FieldPath;
 import com.yahoo.document.FieldPathEntry;
 import com.yahoo.document.StructuredDataType;
+import com.yahoo.document.TensorDataType;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.objects.Ids;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Håkon Humberset
@@ -62,6 +65,8 @@ public abstract class StructuredFieldValue extends CompositeFieldValue {
     /**
      * Sets the value of the given field. The type of the value must match the type of this field, i.e.
      * <pre>field.getDataType().getValueClass().isAssignableFrom(value.getClass())</pre> must be true.
+     * A float tensor stored into a bfloat16 tensor field of the same dimensions is cell-cast into a new
+     * field value; {@code value} itself is not modified.
      *
      * @param field the field whose value to set
      * @param value the value to set
@@ -73,7 +78,9 @@ public abstract class StructuredFieldValue extends CompositeFieldValue {
             return removeFieldValue(field);
         }
         DataType type = field.getDataType();
-        if (!type.getValueClass().isAssignableFrom(value.getClass())) {
+        // TensorFieldValue is the class of every tensor cell type, so a float tensor would otherwise
+        // be stored unchanged in a bfloat16 field. assign() on a fresh field value performs the cell cast.
+        if (!type.getValueClass().isAssignableFrom(value.getClass()) || needsFloatToBfloat16Cast(type, value)) {
             FieldValue tmp = type.createFieldValue();
             tmp.assign(value);
             value = tmp;
@@ -81,6 +88,22 @@ public abstract class StructuredFieldValue extends CompositeFieldValue {
         FieldValue ret = getFieldValue(field);
         doSetFieldValue(field, value);
         return ret;
+    }
+
+    private static boolean needsFloatToBfloat16Cast(DataType fieldType, FieldValue value) {
+        if (!(fieldType instanceof TensorDataType)) return false;
+        if (!(value instanceof TensorFieldValue)) return false;
+        TensorType target = ((TensorDataType)fieldType).getTensorType();
+        if (target == null) return false;
+        Optional<TensorType> source = ((TensorFieldValue)value).getTensorType();
+        if (source.isEmpty()) return false;
+        return canCastFloatToBFloat16(source.get(), target);
+    }
+
+    private static boolean canCastFloatToBFloat16(TensorType source, TensorType target) {
+        return source.valueType() == TensorType.Value.FLOAT &&
+               target.valueType() == TensorType.Value.BFLOAT16 &&
+               source.dimensions().equals(target.dimensions());
     }
 
     protected abstract void doSetFieldValue(Field field, FieldValue value);

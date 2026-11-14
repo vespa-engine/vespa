@@ -1,13 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.TensorDataType;
+import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import org.junit.Test;
+
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 
@@ -120,6 +127,28 @@ public class TensorFieldValueTestCase {
 
         assertEquals(Optional.of(TensorType.fromSpec("tensor<bfloat16>(x[2])")), target.getTensorType());
         assertEquals(Optional.of(Tensor.from("tensor<bfloat16>(x[2]):[1.25,2.5]")), target.getTensor());
+    }
+
+    @Test
+    public void requireThatSettingFloatTensorInBfloat16FieldConvertsIt() {
+        Tensor source = Tensor.from("tensor<float>(x[2]):[1.25,2.5]");
+        Tensor expected = Tensor.from("tensor<bfloat16>(x[2]):[1.25,2.5]");
+        DocumentType type = new DocumentType("test");
+        type.addField("embedding", new TensorDataType(expected.type()));
+        Document doc = new Document(type, "id:ns:test::1");
+        TensorFieldValue value = new TensorFieldValue(source);
+        doc.setFieldValue("embedding", value);
+
+        TensorFieldValue stored = (TensorFieldValue)doc.getFieldValue("embedding");
+        assertNotSame(value, stored);
+        assertEquals(expected.type(), stored.getDataType().getTensorType());
+        assertEquals(expected.type(), stored.getTensor().get().type());
+        assertEquals(Optional.of(expected), stored.getTensor());
+        Tensor decoded = TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(stored.getSerializedTensor().get()));
+        assertEquals(expected.type(), decoded.type());
+        assertEquals(expected, decoded);
+        assertEquals(Optional.of(source.type()), value.getTensorType());
+        assertEquals(Optional.of(source), value.getTensor());
     }
 
 }
