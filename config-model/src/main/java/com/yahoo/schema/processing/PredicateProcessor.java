@@ -17,6 +17,7 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.expressions.ConstantExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.LiteralBoolExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.OptimizePredicateExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
@@ -121,6 +122,12 @@ public class PredicateProcessor extends Processor {
         if (options.hasUpperBound()) {
             expressions.add(new ConstantExpression(new LongFieldValue(options.getUpperBound())));
             expressions.add(new SetVarExpression("upper_bound"));
+        }
+        var properties = schema.getDeployProperties();
+        boolean rejectPredicateOutsideBounds = properties != null && properties.featureFlags().rejectPredicateFeedOutsideBounds();
+        if (rejectPredicateOutsideBounds) {
+            expressions.add(new LiteralBoolExpression(true));
+            expressions.add(new SetVarExpression("reject_predicate_feed_outside_bounds"));
         }
         return new StatementExpression(expressions);
     }

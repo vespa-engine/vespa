@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
@@ -17,6 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -69,6 +71,75 @@ public class OptimizePredicateTestCase {
     }
 
     @Test
+    public void requireThatRangesOutsideBoundsAreRejectedBeforeOptimization() {
+        for (String range : new String[] {"[100001..100002]", "[99999..100002]", "[-12..-11]", "[-11..0]",
+                                          "[100001..]", "[..-11]"}) {
+            PredicateFieldValue input = new PredicateFieldValue("approval_date in " + range);
+            var context = boundedContext(input);
+            var expression = new OptimizePredicateExpression((predicate, options) -> {
+                throw new AssertionError("Out-of-bounds predicates must be rejected before optimization");
+            });
+            var exception = assertThrows(InvalidInputException.class,
+                                         () -> expression.execute(context));
+            assertEquals("Predicate attribute 'approval_date' has range " + range +
+                         " outside configured bounds [-10..100000].", exception.getMessage());
+            assertEquals(new PredicateFieldValue("approval_date in " + range), input);
+        }
+    }
+
+    @Test
+    public void requireThatBoundsAreValidatedInNestedPredicates() {
+        for (String predicate : new String[] {
+                "category in [a] and approval_date in [100001..100002]",
+                "category in [a] or approval_date in [99999..100002]",
+                "not (category in [a] or (price in [0..10] and approval_date in [-11..0]))"}) {
+            assertThrows(InvalidInputException.class,
+                         () -> new OptimizePredicateExpression().execute(boundedContext(new PredicateFieldValue(predicate))));
+        }
+    }
+
+    @Test
+    public void requireThatInclusiveBoundsAndOpenRangesRemainValid() {
+        for (String predicate : new String[] {"approval_date in [-10..100000]", "approval_date in [-10..-10]",
+                                              "approval_date in [100000..100000]", "approval_date in [10..]",
+                                              "approval_date in [..10]", "approval_date in [100000..]",
+                                              "approval_date in [..-10]", "approval_date in [..]",
+                                              "not (approval_date in [0..10])", "category in [a]", "true", "false"}) {
+            var input = new PredicateFieldValue(predicate);
+            var output = new OptimizePredicateExpression().execute(boundedContext(input));
+            assertTrue(output instanceof PredicateFieldValue);
+        }
+    }
+
+    @Test
+    public void requireThatDefaultBoundsAcceptTheFullLongRange() {
+        var input = new PredicateFieldValue("value in [-9223372036854775808..9223372036854775807]");
+        var context = new ExecutionContext().setCurrentValue(input)
+                                            .setVariable("reject_predicate_feed_outside_bounds", new BoolFieldValue(true))
+                                            .setVariable("arity", new IntegerFieldValue(2));
+        assertTrue(new OptimizePredicateExpression().execute(context) instanceof PredicateFieldValue);
+    }
+
+    @Test
+    public void requireThatDisabledOrAbsentValidationStillOptimizes() {
+        var optimized = new PredicateFieldValue("true").getPredicate();
+        for (var flag : new BoolFieldValue[] {null, new BoolFieldValue(false)}) {
+            var context = boundedContext(new PredicateFieldValue("value in [100001..100002]"))
+                    .setVariable("reject_predicate_feed_outside_bounds", flag);
+            var output = new OptimizePredicateExpression((predicate, options) -> optimized).execute(context);
+            assertSame(optimized, ((PredicateFieldValue) output).getPredicate());
+        }
+    }
+
+    private static ExecutionContext boundedContext(PredicateFieldValue input) {
+        return new ExecutionContext().setCurrentValue(input)
+                                     .setVariable("reject_predicate_feed_outside_bounds", new BoolFieldValue(true))
+                                     .setVariable("arity", new IntegerFieldValue(2))
+                                     .setVariable("lower_bound", new LongFieldValue(-10))
+                                     .setVariable("upper_bound", new LongFieldValue(100000));
+    }
+
+    @Test
     public void requireThatHashCodeAndEqualsAreImplemented() {
         Expression exp = new OptimizePredicateExpression();
         assertTrue(exp.equals(exp));
@@ -97,6 +168,11 @@ public class OptimizePredicateTestCase {
         context.setVariableType("upper_bound", DataType.INT);
         ExpressionAssert.assertVerifyThrows(prefix + "Variable 'upper_bound' must have type long", exp, DataType.PREDICATE, context);
         context.setVariableType("upper_bound", DataType.LONG);
+        assertVerifyCtx(exp, context);
+        context.setVariableType("reject_predicate_feed_outside_bounds", DataType.INT);
+        ExpressionAssert.assertVerifyThrows(prefix + "Variable 'reject_predicate_feed_outside_bounds' must have type bool",
+                                           exp, DataType.PREDICATE, context);
+        context.setVariableType("reject_predicate_feed_outside_bounds", DataType.BOOL);
         assertVerifyCtx(exp, context);
     }
 

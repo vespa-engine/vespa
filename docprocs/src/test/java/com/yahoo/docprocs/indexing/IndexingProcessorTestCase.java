@@ -15,6 +15,7 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.PredicateFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.update.AssignValueUpdate;
@@ -59,6 +60,59 @@ public class IndexingProcessorTestCase {
         DocumentOperation output = tester.process(new DocumentPut(input));
         assertTrue(output instanceof DocumentPut);
         assertSame(input, ((DocumentPut)output).getDocument());
+    }
+
+    @Test
+    public void requireThatPredicatePutOutsideBoundsIsRejectedAsInvalidInput() {
+        var tester = predicateTester(true);
+        var input = new DocumentPut(tester.getDocumentType("test"), "id:ns:test::1");
+        input.getDocument().setFieldValue("filters", new PredicateFieldValue("approval_date in [100001..100002]"));
+        var progress = tester.processForProgress(input);
+        assertEquals(DocumentProcessor.Progress.INVALID_INPUT, progress);
+        assertTrue(progress.getReason().orElseThrow().endsWith(
+                "Predicate attribute 'approval_date' has range [100001..100002] outside configured bounds [0..100000]."));
+    }
+
+    @Test
+    public void requireThatPredicateUpdateStraddlingBoundsIsRejectedAsInvalidInput() {
+        var tester = predicateTester(true);
+        var type = tester.getDocumentType("test");
+        var input = new DocumentUpdate(type, "id:ns:test::1");
+        input.addFieldUpdate(FieldUpdate.createAssign(type.getField("filters"),
+                                                     new PredicateFieldValue("approval_date in [99999..100002]")));
+        var progress = tester.processForProgress(input);
+        assertEquals(DocumentProcessor.Progress.INVALID_INPUT, progress);
+        assertTrue(progress.getReason().orElseThrow().endsWith(
+                "Predicate attribute 'approval_date' has range [99999..100002] outside configured bounds [0..100000]."));
+    }
+
+    @Test
+    public void requireThatPredicateOutsideBoundsIsAcceptedWhenValidationIsDisabled() {
+        var tester = predicateTester(false);
+        var type = tester.getDocumentType("test");
+        var predicate = new PredicateFieldValue("approval_date in [100001..100002]");
+        var put = new DocumentPut(type, "id:ns:test::1");
+        put.getDocument().setFieldValue("filters", predicate);
+        assertEquals(DocumentProcessor.Progress.DONE, tester.processForProgress(put));
+        var update = new DocumentUpdate(type, "id:ns:test::1");
+        update.addFieldUpdate(FieldUpdate.createAssign(type.getField("filters"), predicate));
+        assertEquals(DocumentProcessor.Progress.DONE, tester.processForProgress(update));
+    }
+
+    private static IndexingProcessorTester predicateTester(boolean rejectOutsideBounds) {
+        var documentTypes = new DocumentTypeManager();
+        var type = new DocumentType("test");
+        type.addField("filters", DataType.PREDICATE);
+        documentTypes.register(type);
+        var config = new IlscriptsConfig(new IlscriptsConfig.Builder().ilscript(
+                new IlscriptsConfig.Ilscript.Builder().doctype("test").docfield("filters")
+                        .content("2 | set_var arity | 0L | set_var lower_bound | 100000L | set_var upper_bound | " +
+                                 rejectOutsideBounds + " | set_var reject_predicate_feed_outside_bounds | " +
+                                 "{ input filters | optimize_predicate | attribute filters; }")));
+        var scripts = new ScriptManager(documentTypes, config, new SimpleLinguistics(),
+                                        Chunker.throwsOnUse.asMap(), Embedder.throwsOnUse.asMap(),
+                                        FieldGenerator.throwsOnUse.asMap(), MetricReceiver.nullImplementation);
+        return new IndexingProcessorTester(documentTypes, scripts);
     }
 
     @Test
