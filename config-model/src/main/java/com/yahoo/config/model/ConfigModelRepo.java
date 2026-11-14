@@ -165,7 +165,6 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Iterable<ConfigMod
 
     private void doEarlyProvisioning(List<ModelNode> modelNodesInOrder, Map<ConfigModelBuilder, List<Element>> model2Element,
                                      Function<Element, ConfigModelContext> serviceContextFactory, DeployState deployState) {
-        if (! deployState.isHosted()) return;
         if (!deployState.getProperties().earlyProvisioning()) return;
 
         for (ModelNode node : modelNodesInOrder) {
