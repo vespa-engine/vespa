@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-11-13
+Last updated: 2026-11-14
 
 ---
 
@@ -780,14 +780,6 @@ Last updated: 2026-11-13
 
 - Homepage: <https://github.com/ruby/logger>
 - Copyright 1993-2013 Yukihiro Matsumoto
-
----
-
-## mdast-util-to-hast 13.2.1 — MIT
-
-- Homepage: <https://github.com/syntax-tree/mdast-util-to-hast#readme>
-- Copyright Titus Wormer
-- Copyright 2016 Titus Wormer <tituswormer@gmail.com>
 
 ---
 
