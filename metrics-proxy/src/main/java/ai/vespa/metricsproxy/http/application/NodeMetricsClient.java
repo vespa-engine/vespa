@@ -6,12 +6,16 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil;
 import ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor;
 
-import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
+import org.apache.hc.client5.http.async.methods.SimpleRequestProducer;
 
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.concurrent.FutureCallback;
+import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.core5.http.Message;
+import org.apache.hc.core5.http.nio.support.BasicResponseConsumer;
 
+import java.io.InputStream;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -71,11 +75,13 @@ public class NodeMetricsClient {
         log.log(FINE, () -> "Retrieving metrics from host " + metricsUri);
 
         CompletableFuture<?> onDone = new CompletableFuture<>();
-        httpClient.execute(SimpleRequestBuilder.get(metricsUri).build(),
+        httpClient.execute(SimpleRequestProducer.create(SimpleRequestBuilder.get(metricsUri).build()),
+                new BasicResponseConsumer<>(new ChunkedBodyConsumer()),
                 new FutureCallback<>() {
-                    @Override public void completed(SimpleHttpResponse result) {
+                    @Override public void completed(Message<HttpResponse, InputStream> result) {
+                        InputStream body = result.getBody() != null ? result.getBody() : InputStream.nullInputStream();
                         try {
-                            handleResponse(node, metricsUri, consumer, result.getBodyText());
+                            handleResponse(node, metricsUri, consumer, body);
                             onDone.complete(null);
                         } catch (RuntimeException e) { // Fail the fetch now, rather than leaving it to time out
                             onDone.completeExceptionally(e);
@@ -87,7 +93,7 @@ public class NodeMetricsClient {
         return onDone;
     }
 
-    void handleResponse(Node node, String metricsUri, ConsumerId consumer, String response) {
+    void handleResponse(Node node, String metricsUri, ConsumerId consumer, InputStream response) {
         var metrics = processAndBuild(GenericJsonUtil.toMetricsPackets(response),
                 new ServiceIdDimensionProcessor(),
                 new ClusterIdDimensionProcessor(),
