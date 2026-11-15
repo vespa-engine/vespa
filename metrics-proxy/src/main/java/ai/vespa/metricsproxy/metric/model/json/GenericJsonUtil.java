@@ -61,8 +61,8 @@ public class GenericJsonUtil {
         var genericServices = new ArrayList<GenericService>();
         packetsByService.forEach((serviceId, packets) -> {
             var genericMetricsList = packets.stream()
-                    .filter(packet -> ! (packet.metrics().isEmpty() && packet.dimensions().isEmpty()))
-                    .map(packet -> new GenericMetrics(packet.metrics(), packet.dimensions()))
+                    .filter(packet -> ! (packet.metricCount() == 0 && packet.dimensionCount() == 0))
+                    .map(GenericMetrics::new)
                     .toList();
             var genericService = packets.stream().findFirst()
                     .map(firstPacket -> new GenericService(serviceId.id,

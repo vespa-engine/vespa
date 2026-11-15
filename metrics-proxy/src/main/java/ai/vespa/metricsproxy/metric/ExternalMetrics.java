@@ -95,9 +95,9 @@ public class ExternalMetrics {
     public static Map<DimensionId, String> extractConfigserverDimensions(Collection<MetricsPacket.Builder> packets) {
         Map<DimensionId, String> dimensions = new HashMap<>();
         for (MetricsPacket.Builder packet : packets) {
-            dimensions.putAll(packet.build().dimensions());
+            putIfPresent(packet, ROLE_DIMENSION, dimensions);
+            putIfPresent(packet, STATE_DIMENSION, dimensions);
         }
-        dimensions.keySet().retainAll(Set.of(ROLE_DIMENSION, STATE_DIMENSION));
         return dimensions;
     }
 
@@ -111,10 +111,15 @@ public class ExternalMetrics {
     public Map<DimensionId, String> extractHostDimensions(Collection<MetricsPacket.Builder> packets) {
         Map<DimensionId, String> dimensions = new HashMap<>();
         for (MetricsPacket.Builder packet : packets) {
-            dimensions.putAll(packet.build().dimensions());
+            for (DimensionId id : dimensionMapping.managedDimensions())
+                putIfPresent(packet, id, dimensions);
         }
-        dimensions.keySet().retainAll(dimensionMapping.managedDimensions());
         return dimensions;
+    }
+
+    private static void putIfPresent(MetricsPacket.Builder packet, DimensionId id, Map<DimensionId, String> dimensions) {
+        String value = packet.getDimensionValue(id);
+        if (value != null) dimensions.put(id, value);
     }
 
     /**

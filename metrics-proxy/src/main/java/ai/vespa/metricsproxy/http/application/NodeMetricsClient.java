@@ -74,8 +74,12 @@ public class NodeMetricsClient {
         httpClient.execute(SimpleRequestBuilder.get(metricsUri).build(),
                 new FutureCallback<>() {
                     @Override public void completed(SimpleHttpResponse result) {
-                        handleResponse(node, metricsUri, consumer, result.getBodyText());
-                        onDone.complete(null);
+                        try {
+                            handleResponse(node, metricsUri, consumer, result.getBodyText());
+                            onDone.complete(null);
+                        } catch (RuntimeException e) { // Fail the fetch now, rather than leaving it to time out
+                            onDone.completeExceptionally(e);
+                        }
                     }
                     @Override public void failed(Exception ex) { onDone.completeExceptionally(ex); }
                     @Override public void cancelled() { onDone.cancel(false);  }
@@ -96,9 +100,10 @@ public class NodeMetricsClient {
 
     private static List<MetricsPacket> processAndBuild(List<MetricsPacket.Builder> builders,
                                                        MetricsProcessor... processors) {
+        var sharing = new MetricsPacket.Sharing();
         return builders.stream()
                     .map(builder -> applyProcessors(builder, processors))
-                    .map(MetricsPacket.Builder::build)
+                    .map(builder -> builder.build(sharing))
                     .toList();
     }
 

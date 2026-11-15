@@ -131,7 +131,7 @@ public class NodeMetricsClientTest {
         assertEquals(4, customMetrics.size());
 
         MetricsPacket replacedCpuMetric = customMetrics.get(0);
-        assertTrue(replacedCpuMetric.metrics().containsKey(toMetricId(REPLACED_CPU_METRIC)));
+        assertTrue(replacedCpuMetric.hasMetric(toMetricId(REPLACED_CPU_METRIC)));
     }
 
     private void updateSnapshot(ConsumerId consumerId, Duration ttl) {

@@ -1,17 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric.model.json;
 
-import ai.vespa.metricsproxy.metric.model.DimensionId;
-import ai.vespa.metricsproxy.metric.model.MetricId;
+import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
-import static com.yahoo.stream.CustomCollectors.toLinkedMap;
 
 /**
  * @author gjoranv
@@ -29,9 +28,11 @@ public class GenericMetrics {
 
     public GenericMetrics() { }
 
-    GenericMetrics(Map<MetricId, Number> values, Map<DimensionId, String> dimensions) {
-        this.values = values.entrySet().stream().collect(toLinkedMap(entry -> entry.getKey().id, entry -> entry.getValue().doubleValue()));
-        this.dimensions = dimensions.entrySet().stream().collect(toLinkedMap(entry -> entry.getKey().id, Map.Entry::getValue));
+    GenericMetrics(MetricsPacket packet) {
+        values = new LinkedHashMap<>();
+        packet.forEachMetric((id, value) -> values.put(id.id, value));
+        dimensions = new LinkedHashMap<>();
+        packet.forEachDimension((id, value) -> dimensions.put(id.id, value));
     }
 
 }

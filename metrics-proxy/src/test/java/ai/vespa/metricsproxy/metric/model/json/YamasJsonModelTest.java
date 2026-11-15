@@ -68,7 +68,7 @@ public class YamasJsonModelTest {
         // Do some sanity checking
         assertEquals(toServiceId("vespa.searchnode"), metricsPacket.service());
         assertTrue(metricsPacket.consumers().contains(toConsumerId("Vespa")));
-        assertEquals(5.555555555E9, metricsPacket.metrics().get(toMetricId("memory_rss")).doubleValue(), 0.1d); //Not using custom double rendrer
+        assertEquals(5.555555555E9, metricsPacket.metricValue(metricsPacket.metricIndex(toMetricId("memory_rss"))), 0.1d); //Not using custom double rendrer
 
         // Serialize and verify
         String string = YamasJsonUtil.toJson(List.of(metricsPacket), false);

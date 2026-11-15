@@ -42,8 +42,8 @@ public class NodeMetricGathererTest {
 
         assertEquals("host_life", packet.service().id);
         assertEquals(123, packet.timestamp().getEpochSecond());
-        assertEquals(12L, packet.metrics().get(MetricId.toMetricId("uptime")));
-        assertEquals(1L, packet.metrics().get(MetricId.toMetricId("alive")));
+        assertEquals(12.0, packet.metricValue(packet.metricIndex(MetricId.toMetricId("uptime"))), 0);
+        assertEquals(1.0, packet.metricValue(packet.metricIndex(MetricId.toMetricId("alive"))), 0);
         assertEquals(Set.of(ConsumerId.toConsumerId("Vespa")), packet.consumers());
     }
 
@@ -70,9 +70,9 @@ public class NodeMetricGathererTest {
                 .filter(p -> p.service().id.equals("host_life"))
                 .findFirst().orElseThrow();
 
-        assertEquals("host1", hostLife.dimensions().get(toDimensionId(PublicDimensions.HOSTNAME)));
-        assertEquals("parent1", hostLife.dimensions().get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
-        assertEquals("8.4.0", hostLife.dimensions().get(toDimensionId(PublicDimensions.OS_VERSION)));
+        assertEquals("host1", hostLife.dimension(toDimensionId(PublicDimensions.HOSTNAME)));
+        assertEquals("parent1", hostLife.dimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
+        assertEquals("8.4.0", hostLife.dimension(toDimensionId(PublicDimensions.OS_VERSION)));
     }
 
     @Test

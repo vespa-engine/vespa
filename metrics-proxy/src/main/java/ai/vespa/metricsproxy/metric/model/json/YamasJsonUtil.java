@@ -133,19 +133,19 @@ public class YamasJsonUtil {
         }
         generator.writeStringField("application", metric.service().id);
 
-        if ( ! metric.metrics().isEmpty()) {
+        if (metric.metricCount() > 0) {
             generator.writeObjectFieldStart("metrics");
-            for (var m : metric.metrics().entrySet()) {
-                generator.writeFieldName(m.getKey().id);
-                JacksonUtil.writeDouble(generator, m.getValue().doubleValue());
+            for (int i = 0; i < metric.metricCount(); i++) {
+                generator.writeFieldName(metric.metricId(i).id);
+                JacksonUtil.writeDouble(generator, metric.metricValue(i));
             }
             generator.writeEndObject();
         }
 
-        if ( ! metric.dimensions().isEmpty()) {
+        if (metric.dimensionCount() > 0) {
             generator.writeObjectFieldStart("dimensions");
-            for (var m : metric.dimensions().entrySet()) {
-                generator.writeStringField(m.getKey().id, m.getValue());
+            for (int i = 0; i < metric.dimensionCount(); i++) {
+                generator.writeStringField(metric.dimensionId(i).id, metric.dimensionValue(i));
             }
             generator.writeEndObject();
         }
