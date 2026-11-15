@@ -1556,6 +1556,7 @@
       "public boolean enableLandlock()",
       "public boolean enableLegacyFeedHandler()",
       "public boolean productDiscovery()",
+      "public boolean rejectPredicateFeedOutsideBounds()",
       "public boolean useMlModelImportCache()"
     ],
     "fields" : [ ]
