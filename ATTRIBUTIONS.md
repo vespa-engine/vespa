@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-11-14
+Last updated: 2026-11-15
 
 ---
 
@@ -94,29 +94,28 @@ Last updated: 2026-11-14
 
 ---
 
-## addressable 2.9.0 — Apache 2.0
+## addressable 2.9.2 — Apache 2.0
 
 - Homepage: <https://github.com/sporkmonger/addressable>
 - Copyright Bob Aman</dd>
 
 ---
 
-## afm 0.2.2 — MIT
+## afm 1.0.1 — MIT
 
 - Homepage: <http://github.com/halfbyte/afm>
-- Copyright 2010 Jan Krutisch
-- Copyright 2009 Jan Krutisch
+- Copyright Jan Krutisch
 
 ---
 
-## Ascii85 1.1.1 — Adobe Postscript AFM
+## Ascii85 2.0.1 — Adobe Postscript AFM
 
 - Homepage: <https://github.com/DataWraith/ascii85gem/>
 - Copyright 2009 Johannes Holzfuß
 
 ---
 
-## Ascii85 1.1.1 — MIT
+## Ascii85 2.0.1 — MIT
 
 - Homepage: <https://github.com/DataWraith/ascii85gem/>
 - Copyright 2009 Johannes Holzfuß
@@ -131,13 +130,9 @@ Last updated: 2026-11-14
 
 ---
 
-## async 2.39.0 — MIT
+## async 2.46.0 — MIT
 
 - Homepage: <https://github.com/socketry/async>
--  by Kent Gruber
-- Copyright 2024
-- Copyright 2017
--  by Patrik Wenger
 
 ---
 
@@ -209,14 +204,15 @@ Last updated: 2026-11-14
 
 ---
 
-## com.fasterxml.jackson.core 2.22 — Apache 2.0
+## com.fasterxml.jackson.core 2.23 — Apache 2.0
 
-- Homepage: <https://github.com/FasterXML/jackson>
+- Homepage: <http://fasterxml.com/>
+- Copyright 2007 Tatu Saloranta tatu.saloranta@iki.fi
 - FasterXML
 
 ---
 
-## com.fasterxml.jackson.core 2.22.4 — Apache 2.0
+## com.fasterxml.jackson.core 2.23.0 — Apache 2.0
 
 - Homepage: <http://fasterxml.com/>
 - Copyright 2007 Tatu Saloranta tatu.saloranta@iki.fi
@@ -297,28 +293,26 @@ Last updated: 2026-11-14
 
 ---
 
-## console 1.35.1 — MIT
+## console 1.38.0 — MIT
 
-- Homepage: <https://socketry.github.io/console>
--  by Samuel Williams
-- Copyright 2022
+- Homepage: <https://github.com/socketry/console>
 
 ---
 
-## csv 3.3.6 — BSD 2
+## csv 3.3.7 — BSD 2
 
 - Homepage: <https://github.com/ruby/csv>
 - Copyright 2007-2017 Yukihiro Matsumoto
 - Copyright 2017 pavel
-- Copyright 2018 Vladislav
 - Copyright 2018 Kouhei Sutou
+- Copyright 2018 Vladislav
 - Copyright 2017-2018 Steven Daniels
 - Copyright 2017 Espartaco Palma
 - Copyright 2018 Tomohiro Ogoke
-- Copyright 2017 Marcus Stollsteimer
-- Copyright 2005-2016 James Edward Gray II
 - Copyright 2017 SHIBATA Hiroshi
 - Copyright 2017 Olivier Lacan
+- Copyright 2005-2016 James Edward Gray II
+- Copyright 2017 Marcus Stollsteimer
 - Copyright 2018 Mitsutaka Mimura
 
 ---
@@ -344,7 +338,7 @@ Last updated: 2026-11-14
 
 ---
 
-## ethon 0.18.0 — MIT
+## ethon 0.19.2 — MIT
 
 - Homepage: <https://github.com/typhoeus/ethon>
 - Copyright 2012-2016 Hans Hasselberg
@@ -389,10 +383,10 @@ Last updated: 2026-11-14
 
 ---
 
-## fiber-storage 0.1.2 — MIT
+## fiber-storage 1.0.1 — MIT
 
-- Homepage: <https://github.com/socketry/fiber-storage>
-- Copyright, 2022-2023, by Samuel Williams.
+- Homepage: <https://github.com/ioquatix/fiber-storage>
+- Copyright, 2022-2025, by Samuel Williams.
 
 ---
 
@@ -627,9 +621,10 @@ Last updated: 2026-11-14
 
 ---
 
-## html-proofer 5.2.2 — MIT
+## html-proofer 5.2.3 — MIT
 
 - Homepage: <https://github.com/gjtorikian/html-proofer>
+- Copyright 2013 Garen Torikian
 
 ---
 
@@ -655,7 +650,7 @@ Last updated: 2026-11-14
 
 ---
 
-## io-event 1.16.4 — MIT
+## io-event 1.22.3 — MIT
 
 - Homepage: <https://github.com/socketry/io-event>
 -  by Wander Hillen
@@ -711,7 +706,7 @@ Last updated: 2026-11-14
 
 ---
 
-## jekyll-seo-tag 2.8.0 — MIT
+## jekyll-seo-tag 2.9.1 — MIT
 
 - Homepage: <https://github.com/jekyll/jekyll-seo-tag>
 - Copyright 2015 Ben Balter and the jekyll-seo-tag contributors
@@ -783,17 +778,17 @@ Last updated: 2026-11-14
 
 ---
 
+## mdast-util-to-hast 13.2.2 — MIT
+
+- Homepage: <https://github.com/syntax-tree/mdast-util-to-hast#readme>
+- Copyright Titus Wormer <tituswormer@gmail.com>
+
+---
+
 ## mercenary 0.4.0 — MIT
 
 - Homepage: <https://github.com/jekyll/mercenary>
 - Copyright 2013 Parker Moore and the mercenary contributors
-
----
-
-## metrics 0.15.0 — MIT
-
-- Homepage: <https://github.com/socketry/metrics>
-- Copyright, 2021-2025, by Samuel Williams.
 
 ---
 
@@ -850,12 +845,13 @@ Last updated: 2026-11-14
 
 ---
 
-## nokogiri 1.19.4 — MIT
+## nokogiri 1.19.7 — MIT
 
 - Homepage: <https://nokogiri.org>
 - Copyright 2008-2023 Mike Dalessio
-- Copyright 1998-2012 Daniel Veillard
 - Copyright 1995-2017 Jean-loup Gailly and Mark Adler
+- Copyright 1998-2012 Daniel Veillard
+- Copyright 2020 Joshua J Baker
 - Copyright 2001-2003 Thai Open Source Software Center Ltd
 - Copyright 2001-2002 SourceForge ISO-RELAX Project
 - Copyright 2001-2002 Thomas Broyer
@@ -1042,7 +1038,7 @@ Last updated: 2026-11-14
 
 ---
 
-## pdf-reader 2.15.1 — MIT
+## pdf-reader 2.16.0 — MIT
 
 - Homepage: <https://github.com/yob/pdf-reader>
 - Copyright 2009 Peter Jones
@@ -1175,13 +1171,6 @@ Last updated: 2026-11-14
 
 ---
 
-## ruby-rc4 0.1.5 — MIT
-
-- Homepage: <http://www.caigenichols.com/>
-- Copyright 2010 Max Prokopiev, Alexandar Simic, Caige Nichols
-
----
-
 ## safe_yaml 1.0.5 — MIT
 
 - Homepage: <https://github.com/dtao/safe_yaml>
@@ -1189,7 +1178,7 @@ Last updated: 2026-11-14
 
 ---
 
-## sass-embedded 1.105.1 — MIT
+## sass-embedded 1.108.2 — MIT
 
 - Homepage: <https://github.com/sass-contrib/sass-embedded-host-ruby>
 
@@ -1239,13 +1228,6 @@ Last updated: 2026-11-14
 
 ---
 
-## traces 0.18.2 — MIT
-
-- Homepage: <https://github.com/socketry/traces>
-- Copyright, 2021-2025, by Samuel Williams.
-
----
-
 ## trim-lines 3.0.1 — MIT
 
 - Homepage: <https://github.com/wooorm/trim-lines#readme>
@@ -1265,7 +1247,7 @@ Last updated: 2026-11-14
 
 ---
 
-## typhoeus 1.6.0 — MIT
+## typhoeus 1.7.1 — MIT
 
 - Homepage: <https://github.com/typhoeus/typhoeus>
 - Copyright 2011-2012 David Balatero
