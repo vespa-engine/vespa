@@ -28,6 +28,7 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/feedoperation/noopoperation.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
@@ -48,8 +49,6 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <opentelemetry/trace/provider.h>
-
 #include <vespa/log/log.h>
 
 LOG_SETUP(".proton.server.documentdb");
@@ -67,7 +66,6 @@ using namespace search::engine;
 using namespace search::fef;
 using namespace search::index;
 using namespace search::transactionlog;
-using opentelemetry::trace::Provider;
 using proton::initializer::InitializerTask;
 using proton::initializer::TaskRunner;
 using search::TuneFileDocumentDB;
@@ -295,8 +293,7 @@ void DocumentDB::initManagers() {
     std::shared_ptr<TaskRunner> taskRunner(std::make_shared<TaskRunner>(*initializeThreads));
     auto                        doneTask =
         std::make_unique<InitDoneTask>(std::move(initializeThreads), taskRunner, std::move(configSnapshot), *this);
-    auto provider = Provider::GetTracerProvider();
-    auto tracer = provider->GetTracer("proton");
+    auto tracer = get_tracer();
     auto parent_span = _state->state_span();
     auto scope = tracer->WithActiveSpan(parent_span);
     taskRunner->runTask(rootTask, _writeService.master(), std::move(doneTask));

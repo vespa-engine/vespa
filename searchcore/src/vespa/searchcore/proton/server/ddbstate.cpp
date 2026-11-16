@@ -4,27 +4,16 @@
 
 #include <vespa/check_require.h>
 #include <vespa/opentelemetry/span_attribute_names.h>
-
-#include <opentelemetry/trace/provider.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 
 #include <vespa/log/logf.h>
 
 LOG_SETUP(".proton.server.ddbstate");
 
-using opentelemetry::trace::Provider;
 using opentelemetry::trace::SpanKind;
 using opentelemetry::trace::StartSpanOptions;
 
 namespace proton {
-
-namespace {
-
-[[nodiscard]] std::shared_ptr<opentelemetry::trace::Tracer> get_tracer() {
-    auto provider = Provider::GetTracerProvider();
-    return provider->GetTracer("proton");
-}
-
-} // namespace
 
 std::vector<std::string> DDBState::_stateNames = {
     "CONSTRUCT",

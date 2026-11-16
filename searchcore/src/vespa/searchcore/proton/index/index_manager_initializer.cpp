@@ -2,19 +2,15 @@
 
 #include "index_manager_initializer.h"
 
-#include "vespa/opentelemetry/span_attribute_names.h"
-
+#include <vespa/opentelemetry/span_attribute_names.h>
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/vespalib/io/fileutil.h>
-
-#include <opentelemetry/trace/provider.h>
 
 #include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.index.indexmanagerinitializer");
-
-using opentelemetry::trace::Provider;
 
 namespace proton {
 
@@ -46,8 +42,7 @@ IndexManagerInitializer::IndexManagerInitializer(
 IndexManagerInitializer::~IndexManagerInitializer() = default;
 
 void IndexManagerInitializer::run() {
-    auto provider = Provider::GetTracerProvider();
-    auto tracer = provider->GetTracer("proton");
+    auto tracer = get_tracer();
     auto span =
         tracer->StartSpan("Initialize index manager",
                           {{vespa_opentelemetry::span_attribute_names::document_type, _doc_type_name.getName()},

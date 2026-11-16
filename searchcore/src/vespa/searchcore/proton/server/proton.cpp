@@ -34,6 +34,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_usage_notifier.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_and_load_info_listener.h>
 #include <vespa/searchcore/proton/common/scheduled_forward_executor.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/flushengine/tls_stats_factory.h>
@@ -69,7 +70,6 @@
 #ifdef __linux__
 #include <malloc.h>
 #endif
-#include <opentelemetry/trace/provider.h>
 
 #include <sstream>
 
@@ -79,7 +79,6 @@ LOG_SETUP(".proton.server.proton");
 using CpuCategory = vespalib::CpuUsage::Category;
 
 using document::DocumentTypeRepo;
-using opentelemetry::trace::Provider;
 using proton::flushengine::PrepareRestartCostsConfig;
 using proton::flushengine::SetStrategyResult;
 using search::DiskSpaceCalculator;
@@ -639,8 +638,7 @@ void Proton::closeDocumentDBs(vespalib::ThreadStackExecutorBase& executor) {
     for (const auto& entry : _documentDBMap) {
         docTypes.push_back(entry.first);
     }
-    auto provider = Provider::GetTracerProvider();
-    auto tracer = provider->GetTracer("proton");
+    auto tracer = get_tracer();
     auto parent_span = tracer->GetCurrentSpan();
     for (const auto& docTypeName : docTypes) {
         executor.execute(makeLambdaTask([this, docTypeName, parent_span, tracer]() {

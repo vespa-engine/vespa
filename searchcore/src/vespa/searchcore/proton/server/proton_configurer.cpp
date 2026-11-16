@@ -12,20 +12,17 @@
 #include <vespa/check_require.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
 
-#include <opentelemetry/trace/provider.h>
-
 #include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton_configurer");
-
-using opentelemetry::trace::Provider;
 
 using vespa::config::search::core::ProtonConfig;
 using vespalib::makeLambdaTask;
@@ -117,8 +114,7 @@ void ProtonConfigurer::performReconfigure() {
     // called by proton executor thread
     CHECK(_executor.isCurrentThread());
     auto configSnapshot(getPendingConfigSnapshot());
-    auto provider = Provider::GetTracerProvider();
-    auto tracer = provider->GetTracer("proton");
+    auto tracer = get_tracer();
     auto span = tracer->StartSpan("reconfigure");
     span->AddEvent("Start reconfigure");
     auto scope = tracer->WithActiveSpan(span);
@@ -237,8 +233,7 @@ void ProtonConfigurer::pruneDocumentDBs(const ProtonConfigSnapshot& configSnapsh
 void ProtonConfigurer::applyInitialConfig(InitializeThreads initializeThreads) {
     // called by proton app main thread
     CHECK(!_executor.isCurrentThread());
-    auto               provider = Provider::GetTracerProvider();
-    auto               tracer = provider->GetTracer("proton");
+    auto               tracer = get_tracer();
     auto               span = tracer->GetCurrentSpan();
     std::promise<void> promise;
     auto               future = promise.get_future();
