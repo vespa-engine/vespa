@@ -35,7 +35,7 @@ public class TensorConverter {
         this.embedders = embedders;
     }
 
-    public Tensor convertTo(TensorType type, String key, Object value, Language language,
+    public Tensor convertTo(TensorType type, Object value, String key, Language language,
                             Map<String, String> contextValues, Properties properties, Instant deadline) {
         var context = new Embedder.Context(key).setLanguage(language);
         if (deadline != null) {
