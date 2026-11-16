@@ -20,10 +20,12 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -381,6 +383,35 @@ public class RankProfileInputTest {
         assertNotNull(embedderWithDeadline.receivedDeadline);
         assertTrue(embedderWithDeadline.receivedDeadline.isAfter(Instant.EPOCH));
         assertTrue(embedderWithDeadline.receivedDeadline.isBefore(Instant.MAX));
+    }
+
+    @Test
+    void testDeadlinePropagationWhenOutOfTime() {
+        class MockEmbedderRecordingTimeRemaining implements Embedder {
+            Optional<Duration> receivedTimeRemaining = Optional.empty();
+            @Override public List<Integer> embed(String text, Context context) { return List.of(); }
+
+            @Override
+            public Tensor embed(String text, Context context, TensorType tensorType) {
+                receivedTimeRemaining = context.getDeadline().map(deadline -> deadline.timeRemaining());
+                return Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]");
+            }
+        }
+
+        var embedder = new MockEmbedderRecordingTimeRemaining();
+        new Query.Builder()
+                .setRequest(HttpRequest.createTestRequest(
+                        "?" + urlEncode("ranking.features.query(myTensor4)") +
+                                "=" + urlEncode("embed(text to embed)") +
+                                "&ranking=commonProfile&timeout=0",
+                        com.yahoo.jdisc.http.HttpRequest.Method.GET))
+                .setSchemaInfo(createSchemaInfo())
+                .setQueryProfile(createQueryProfile())
+                .setEmbedders(embedder.asMap())
+                .build();
+
+        assertTrue(embedder.receivedTimeRemaining.isPresent(), "The embedder receives a deadline");
+        assertEquals(0, embedder.receivedTimeRemaining.get().toMillis());
     }
 
 
