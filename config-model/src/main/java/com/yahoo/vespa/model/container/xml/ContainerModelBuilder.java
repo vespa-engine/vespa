@@ -1248,14 +1248,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             var nodesSpec = NodesSpecification.dedicated(nodeCount, context);
             ClusterSpec.Id clusterId = ClusterSpec.Id.from(cluster.getName());
             var sidecars = getSidecars(cluster, deployState, nodesSpec);
-            var hosts = nodesSpec.provision(hostSystem,
-                                            ClusterSpec.Type.container,
-                                            clusterId,
-                                            zoneEndpoint(context, clusterId),
-                                            deployState,
-                                            false,
-                                            context.clusterInfo().build(),
-                                            sidecars);
+            var hosts = nodesSpec.setClusterSpecFrom(ClusterSpec.Type.container,
+                                                     clusterId,
+                                                     zoneEndpoint(context, clusterId),
+                                                     false,
+                                                     context.clusterInfo().build(),
+                                                     sidecars)
+                                 .provision(hostSystem, deployState);
             return createNodesFromHosts(hosts, nodesSpec.cluster(), cluster, context.getDeployState());
         }
         else {
@@ -1288,14 +1287,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             requireFixedSizeSingularNodeIfTester(context, nodesSpecification);
             var clusterId = ClusterSpec.Id.from(cluster.name());
             var sidecars = getSidecars(cluster, context.getDeployState(), nodesSpecification);
-            Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
-                                                                                      ClusterSpec.Type.container,
-                                                                                      clusterId,
-                                                                                      zoneEndpoint(context, clusterId),
-                                                                                      context.getDeployState(),
-                                                                                      getZooKeeper(containerElement) != null,
-                                                                                      context.clusterInfo().build(),
-                                                                                      sidecars);
+            Map<HostResource, ClusterMembership> hosts = nodesSpecification
+                    .setClusterSpecFrom(ClusterSpec.Type.container,
+                                        clusterId,
+                                        zoneEndpoint(context, clusterId),
+                                        getZooKeeper(containerElement) != null,
+                                        context.clusterInfo().build(),
+                                        sidecars)
+                    .provision(cluster.getRoot().hostSystem(),
+                               context.getDeployState());
             return createNodesFromHosts(hosts, nodesSpecification.cluster(), cluster, context.getDeployState());
         }
         catch (IllegalArgumentException e) {

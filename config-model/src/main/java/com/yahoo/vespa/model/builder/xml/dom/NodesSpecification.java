@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AzName;
@@ -320,40 +319,53 @@ public class NodesSpecification {
         return Optional.ofNullable(profile);
     }
 
+    public NodesSpecification setClusterSpecFrom(ClusterSpec.Type clusterType,
+                                                 ClusterSpec.Id clusterId,
+                                                 boolean stateful,
+                                                 ClusterInfo clusterInfo) {
+        return setClusterSpecFrom(clusterType, clusterId, ZoneEndpoint.defaultEndpoint, stateful, clusterInfo, List.of());
+    }
+
+    /** Builds and sets cluster spec on this (accessible via {@link #cluster()}, and returns this. */
+    public NodesSpecification setClusterSpecFrom(ClusterSpec.Type clusterType,
+                                                 ClusterSpec.Id clusterId,
+                                                 ZoneEndpoint zoneEndpoint,
+                                                 boolean stateful,
+                                                 ClusterInfo clusterInfo,
+                                                 List<SidecarSpec> sidecars) {
+        var capacity = Capacity.from(min, max, groupSize, maxCostFactor, required, canFail, cloudAccount, cloudResourceTags, clusterInfo);
+        cluster = ClusterSpec.builder(clusterType, clusterId, capacity, version)
+                             .exclusive(exclusive)
+                             .dockerImageRepository(dockerImageRepo)
+                             .loadBalancerSettings(zoneEndpoint)
+                             .stateful(stateful)
+                             .sidecars(sidecars)
+                             .availabilityZones(availabilityZones)
+                             .profile(profile)
+                             .build();
+        return this;
+    }
+
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
                                                           DeployState deployState,
                                                           boolean stateful,
                                                           ClusterInfo clusterInfo) {
-        return provision(hostSystem, clusterType, clusterId, ZoneEndpoint.defaultEndpoint, deployState, stateful, clusterInfo, List.of());
+        return setClusterSpecFrom(clusterType, clusterId, ZoneEndpoint.defaultEndpoint, stateful, clusterInfo, List.of())
+                .provision(hostSystem, deployState);
     }
 
-    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
-                                                          ClusterSpec.Type clusterType,
-                                                          ClusterSpec.Id clusterId,
-                                                          ZoneEndpoint zoneEndpoint,
-                                                          DeployState deployState,
-                                                          boolean stateful,
-                                                          ClusterInfo info,
-                                                          List<SidecarSpec> sidecars) {
-        var capacity = Capacity.from(min, max, groupSize, maxCostFactor, required, canFail, cloudAccount, cloudResourceTags, info);
-        cluster = ClusterSpec.builder(clusterType, clusterId, capacity, version)
-                .exclusive(exclusive)
-                .dockerImageRepository(dockerImageRepo)
-                .loadBalancerSettings(zoneEndpoint)
-                .stateful(stateful)
-                .sidecars(sidecars)
-                .availabilityZones(availabilityZones)
-                .profile(profile)
-                .build();
-
-        return hostSystem.allocateHosts(cluster, deployState);
+    /** Allocates hosts. The cluster spec must have been set first. */
+    public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem, DeployState deployState) {
+        if (cluster == null)
+            throw new IllegalStateException("provision() can only be called after setClusterSpecFrom()");
+        return hostSystem.allocateHosts(cluster(), deployState);
     }
 
     public ClusterSpec cluster() {
         if (cluster == null)
-            throw new IllegalStateException("cluster() can only be accessed after calling provision()");
+            throw new IllegalStateException("cluster() can only be accessed after calling setClusterSpecFrom()");
         return cluster;
     }
 

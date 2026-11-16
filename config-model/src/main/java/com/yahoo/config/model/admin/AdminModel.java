@@ -95,6 +95,15 @@ public class AdminModel extends ConfigModel {
                 ((ApplicationConfigProducerRoot)parent).setupAdmin(model.admin);
             }
         }
+
+        @Override
+        public List<AllocationRequest> collectAllocationRequests(ConfigModelContext context, Element element) {
+            // v2 in hosted behaves as v4, see doBuild().
+            if (context.getDeployState().isHosted()) {
+                return new BuilderV4().collectAllocationRequests(context, element);
+            }
+            return super.collectAllocationRequests(context, element);
+        }
     }
 
     public static class BuilderV4 extends ConfigModelBuilder<AdminModel> {
@@ -122,6 +131,18 @@ public class AdminModel extends ConfigModel {
             if (parent instanceof ApplicationConfigProducerRoot) {
                 ((ApplicationConfigProducerRoot)parent).setupAdmin(model.admin);
             }
+        }
+
+        @Override
+        public List<AllocationRequest> collectAllocationRequests(ConfigModelContext context, Element element) {
+            var domBuilder = new DomAdminV4Builder(context,
+                                                   context.getDeployState().getProperties().multitenant(),
+                                                   context.getDeployState().getProperties().configServerSpecs(),
+                                                   // Avoid creating and passing realistic ContainerModels here
+                                                   // as it has side-effects.  Fortunately these models aren't needed
+                                                   // to reconstruct realistic allocation requests.
+                                                   List.of());
+            return domBuilder.collectAllocationRequests(element);
         }
     }
 

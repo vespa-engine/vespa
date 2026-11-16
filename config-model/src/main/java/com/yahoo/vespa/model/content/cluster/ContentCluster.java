@@ -452,17 +452,17 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                                                                                 DeployState deployState,
                                                                                 String clusterName) {
             if (admin.getClusterControllers() == null) {
-                NodesSpecification spec = NodesSpecification.requiredFromSharedParents(deployState.zone().environment().isProduction() ? 3 : 1,
-                                                                                       NodeResources.unspecified(),
-                                                                                       contentElement,
-                                                                                       context);
-                Collection<HostResource> hosts = spec.provision(admin.hostSystem(),
-                                                                ClusterSpec.Type.admin,
-                                                                ClusterSpec.Id.from(clusterName),
-                                                                context.getDeployState(),
-                                                                true,
-                                                                context.clusterInfo().build())
-                                                     .keySet();
+                Collection<HostResource> hosts = NodesSpecification
+                        .requiredFromSharedParents(deployState.zone().environment().isProduction() ? 3 : 1,
+                                                   NodeResources.unspecified(),
+                                                   contentElement,
+                                                   context)
+                        .setClusterSpecFrom(ClusterSpec.Type.admin,
+                                            ClusterSpec.Id.from(clusterName),
+                                            true,
+                                            context.clusterInfo().build())
+                        .provision(admin.hostSystem(), deployState)
+                        .keySet();
                 admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
                                                                      hosts,
                                                                      clusterName,

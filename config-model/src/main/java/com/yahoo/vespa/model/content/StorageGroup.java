@@ -187,12 +187,11 @@ public class StorageGroup {
                                                                       ClusterSpec.Id clusterId,
                                                                       HostSystem hostSystem,
                                                                       ConfigModelContext context) {
-        return nodesSpecification.provision(hostSystem,
-                                            ClusterSpec.Type.content,
-                                            clusterId,
-                                            context.getDeployState(),
-                                            true,
-                                            context.clusterInfo().build());
+        return nodesSpecification.setClusterSpecFrom(ClusterSpec.Type.content,
+                                                     clusterId,
+                                                     true,
+                                                     context.clusterInfo().build())
+                                 .provision(hostSystem, context.getDeployState());
     }
 
     public static class Builder {

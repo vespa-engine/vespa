@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.HostResource;
@@ -32,6 +33,9 @@ import static java.util.logging.Level.WARNING;
  */
 public class DomAdminV4Builder extends DomAdminBuilderBase {
 
+    private static final ClusterSpec.Id LOGSERVER_CLUSTER_ID = ClusterSpec.Id.from("logserver");
+    private static final ClusterSpec.Id SLOBROKS_CLUSTER_ID = ClusterSpec.Id.from("slobroks");
+
     private final Collection<ContainerModel> containerModels;
     private final ConfigModelContext context;
 
@@ -48,15 +52,11 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         admin.addConfigservers(getConfigServersFromSpec(deployState, admin));
 
         // Note: These two elements only exists in admin version 4.0
-        Optional<NodesSpecification> requestedSlobroks =
-                NodesSpecification.optionalDedicatedFromParent(adminElement.child("slobroks"), context);
-        Optional<NodesSpecification> requestedLogservers = 
-                NodesSpecification.optionalDedicatedFromParent(adminElement.child("logservers"), context);
-        validateNodeSpecification(requestedSlobroks);
-        validateNodeSpecification(requestedLogservers);
+        NodesSpecification slobroksNodeSpec = slobroksNodeSpecification(adminElement.child("slobroks"));
+        NodesSpecification logserversNodeSpec = logserverNodeSpecification(adminElement.child("logservers"));
 
-        assignSlobroks(deployState, requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
-        assignLogserver(deployState, requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
+        assignSlobroks(deployState, slobroksNodeSpec, admin);
+        assignLogserver(deployState, logserversNodeSpec, admin);
 
         addLogForwarders(adminElement.child("logforwarding"), admin, deployState);
         addLoggingSpecs(adminElement.child("logging"), admin);
@@ -65,11 +65,50 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         validateAdminV20Elements(deployState, adminElement);
     }
 
+    private NodesSpecification slobroksNodeSpecification(ModelElement slobroksElement) {
+        Optional<NodesSpecification> nodesSpecification = NodesSpecification.optionalDedicatedFromParent(slobroksElement, context);
+        validateNodeSpecification(nodesSpecification);
+        return nodesSpecification.orElse(NodesSpecification.nonDedicated(3, context));
+    }
+
+    private NodesSpecification logserverNodeSpecification(ModelElement logserversElement) {
+        Optional<NodesSpecification> nodesSpecification = NodesSpecification.optionalDedicatedFromParent(logserversElement, context);
+        validateNodeSpecification(nodesSpecification);
+        nodesSpecification.ifPresent(spec -> {
+            if (spec.minResources().nodes() > 1)
+                throw new IllegalArgumentException("You can only request a single log server");
+        });
+        return nodesSpecification.orElse(createNodesSpecificationForLogserver());
+    }
+
+    /**
+     * Collect the allocation requests that would have been done in {@link #doBuildAdmin(DeployState, Admin, Element) doBuildAdmin()}.
+     * WARNING: Keep them in sync.
+     */
+    public List<ConfigModelBuilder.AllocationRequest> collectAllocationRequests(Element adminElement) {
+        var allocationRequests = new ArrayList<ConfigModelBuilder.AllocationRequest>();
+        ModelElement adminModelElement = new ModelElement(adminElement);
+
+        NodesSpecification slobroks = slobroksNodeSpecification(adminModelElement.child("slobroks"));
+        if (slobroks.isDedicated()) {
+            ClusterSpec clusterSpec = setClusterSpecOn(slobroks, SLOBROKS_CLUSTER_ID).cluster();
+            allocationRequests.add(new ConfigModelBuilder.AllocationRequest(clusterSpec, context.getDeployState().provisionContext()));
+        }
+
+        NodesSpecification logservers = logserverNodeSpecification(adminModelElement.child("logservers"));
+        if (logservers.isDedicated()) {
+            ClusterSpec clusterSpec = setClusterSpecOn(logservers, LOGSERVER_CLUSTER_ID).cluster();
+            allocationRequests.add(new ConfigModelBuilder.AllocationRequest(clusterSpec, context.getDeployState().provisionContext()));
+        }
+
+        return allocationRequests;
+    }
+
     private void assignSlobroks(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
         if (nodesSpecification.isDedicated()) {
             createSlobroks(deployState,
                            admin,
-                           allocateHosts(admin.hostSystem(), "slobroks", nodesSpecification));
+                           allocateHosts(admin.hostSystem(), SLOBROKS_CLUSTER_ID, nodesSpecification));
         }
         else { // These will be removed later, if an admin cluster (for cluster controllers) is assigned
             createSlobroks(deployState,
@@ -79,12 +118,9 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     }
 
     private void assignLogserver(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
-        if (nodesSpecification.minResources().nodes() > 1)
-            throw new IllegalArgumentException("You can only request a single log server");
-
         Collection<HostResource> hosts = List.of();
         if (nodesSpecification.isDedicated())
-            hosts = allocateHosts(admin.hostSystem(), "logserver", nodesSpecification);
+            hosts = allocateHosts(admin.hostSystem(), LOGSERVER_CLUSTER_ID, nodesSpecification);
         else if (containerModels.iterator().hasNext())
             hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.minResources().nodes(), false);
         else
@@ -124,15 +160,12 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         context.getConfigModelRepoAdder().add(logserverClusterModel);
     }
 
+    private Collection<HostResource> allocateHosts(HostSystem hostSystem, ClusterSpec.Id clusterId, NodesSpecification nodesSpecification) {
+        return setClusterSpecOn(nodesSpecification, clusterId).provision(hostSystem, context.getDeployState()).keySet();
+    }
 
-    private Collection<HostResource> allocateHosts(HostSystem hostSystem, String clusterId, NodesSpecification nodesSpecification) {
-        return nodesSpecification.provision(hostSystem, 
-                                            ClusterSpec.Type.admin, 
-                                            ClusterSpec.Id.from(clusterId), 
-                                            context.getDeployState(),
-                                            false,
-                                            context.clusterInfo().build())
-                                 .keySet();
+    private NodesSpecification setClusterSpecOn(NodesSpecification nodesSpecification, ClusterSpec.Id clusterId) {
+        return nodesSpecification.setClusterSpecFrom(ClusterSpec.Type.admin, clusterId, false, context.clusterInfo().build());
     }
 
     /**
