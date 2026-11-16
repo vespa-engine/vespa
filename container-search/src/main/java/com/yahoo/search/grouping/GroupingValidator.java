@@ -5,6 +5,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
+import com.yahoo.prelude.IndexFacts;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.grouping.request.AttributeMapLookupValue;
 import com.yahoo.vespa.config.search.AttributesConfig;
@@ -26,7 +27,8 @@ import static com.yahoo.search.grouping.GroupingQueryParser.SELECT_PARAMETER_PAR
 /**
  * This searcher ensure that all {@link GroupingRequest} objects attached to a {@link Query} makes sense to the search
  * cluster for which this searcher has been deployed. This searcher uses exceptions to signal invalid grouping
- * requests.
+ * requests. Field aliases are accepted where attribute names are expected; they are replaced by the attribute names
+ * by {@link com.yahoo.search.grouping.vespa.GroupingRewriteSearcher}.
  *
  * @author Simon Thoresen Hult
  */
@@ -58,7 +60,7 @@ public class GroupingValidator extends Searcher {
     @Override
     public Result search(Query query, Execution execution) {
         if ( ! streamingMode && query.properties().getBoolean(PARAM_ENABLED, true))
-            visitExpressions(query, new MyVisitor());
+            visitExpressions(query, new MyVisitor(query, execution.context().getIndexFacts()));
         return execution.search(query);
     }
 
@@ -152,6 +154,21 @@ public class GroupingValidator extends Searcher {
 
     private class MyVisitor implements ExpressionVisitor {
 
+        private final Query query;
+        private final IndexFacts indexFacts;
+        private IndexFacts.Session session = null; // created on first use, as most names are attribute names
+
+        MyVisitor(Query query, IndexFacts indexFacts) {
+            this.query = query;
+            this.indexFacts = indexFacts;
+        }
+
+        private String attributeName(String name) {
+            if (attributes.containsKey(name)) return name;
+            if (session == null) session = indexFacts.newSession(query);
+            return session.getCanonicName(name);
+        }
+
         @Override
         public void visitExpression(GroupingExpression exp) {
             if (exp instanceof AttributeMapLookupValue mapLookup) {
@@ -161,8 +178,8 @@ public class GroupingValidator extends Searcher {
                     verifyHasAttribute(mapLookup.getKeySourceAttribute(), true);
                     verifyCompatibleAttributeTypes(mapLookup.getKeyAttribute(), mapLookup.getKeySourceAttribute());
                 }
-            } else if (exp instanceof AttributeValue) {
-                verifyHasAttribute(((AttributeValue) exp).getAttributeName(), false);
+            } else if (exp instanceof AttributeValue value) {
+                verifyHasAttribute(attributeName(value.getAttributeName()), false);
             }
         }
     }

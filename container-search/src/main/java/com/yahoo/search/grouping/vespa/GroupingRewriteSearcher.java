@@ -4,6 +4,7 @@ package com.yahoo.search.grouping.vespa;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
+import com.yahoo.prelude.IndexFacts;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -11,6 +12,9 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.GroupingValidator;
+import com.yahoo.search.grouping.request.AttributeFunction;
+import com.yahoo.search.grouping.request.AttributeMapLookupValue;
+import com.yahoo.search.grouping.request.AttributeValue;
 import com.yahoo.search.grouping.request.FastSearchMapDecodeFunction;
 import com.yahoo.search.grouping.request.ExpressionVisitor;
 import com.yahoo.search.grouping.request.GroupingExpression;
@@ -33,6 +37,7 @@ import static com.yahoo.search.grouping.GroupingQueryParser.SELECT_PARAMETER_PAR
  * search cluster this searcher is deployed for.  Unlike {@link
  * GroupingValidator}, this always runs, as the backend depends on it:
  * <ul>
+ *   <li>It replaces field aliases used as attribute names by the attribute names they refer to.</li>
  *   <li>In indexed mode, it sets the value type of each fast map
  *       lookup ({@code fastsearchmap.decode}), resolved from the
  *       schemas in this cluster that the query searches.</li>
@@ -69,6 +74,7 @@ public class GroupingRewriteSearcher extends Searcher {
 
     @Override
     public Result search(Query query, Execution execution) {
+        visitExpressions(query, new FieldAliasResolver(query, execution.context().getIndexFacts()));
         if (streamingMode)
             visitExpressions(query, new StreamingRejecter());
         else
@@ -79,6 +85,36 @@ public class GroupingRewriteSearcher extends Searcher {
     private static void visitExpressions(Query query, ExpressionVisitor visitor) {
         for (GroupingRequest req : query.getSelect().getGrouping())
             req.getRootOperation().visitExpressions(visitor);
+    }
+
+    /**
+     * Replaces field aliases used as attribute names by the attribute names they refer to, as only the container
+     * knows about aliases. The expression image is kept, so result labels stay as written in the request.
+     */
+    private class FieldAliasResolver implements ExpressionVisitor {
+        private final Query query;
+        private final IndexFacts indexFacts;
+        private IndexFacts.Session session = null; // created on first use, as most names are attribute names
+
+        FieldAliasResolver(Query query, IndexFacts indexFacts) {
+            this.query = query;
+            this.indexFacts = indexFacts;
+        }
+
+        @Override
+        public void visitExpression(GroupingExpression exp) {
+            if (exp instanceof AttributeMapLookupValue) return; // addresses the key and value attributes directly
+            if (exp instanceof AttributeValue value)
+                value.setAttributeName(attributeName(value.getAttributeName()));
+            else if (exp instanceof AttributeFunction function)
+                function.setAttributeName(attributeName(function.getAttributeName()));
+        }
+
+        private String attributeName(String name) {
+            if (attributes.contains(name)) return name;
+            if (session == null) session = indexFacts.newSession(query);
+            return session.getCanonicName(name);
+        }
     }
 
     /**
