@@ -39,4 +39,19 @@ public:
     using Posting = PostingStoreBase::KeyDataType;
 };
 
+template <> class PostingListTraits<float> {
+private:
+    using BTreeTraits = vespalib::btree::BTreeTraits<32, 16, 9, true>;
+
+public:
+    using AggregatedType = vespalib::btree::FloatMinMaxAggregated;
+    using AggrCalcType = vespalib::btree::FloatMinMaxAggrCalc;
+    using const_iterator =
+        vespalib::btree::BTreeConstIterator<uint32_t, float, AggregatedType, std::less<uint32_t>, BTreeTraits>;
+    using PostingStoreBase = vespalib::btree::BTreeStore<uint32_t, float, AggregatedType, std::less<uint32_t>,
+                                                         BTreeTraits, AggrCalcType>;
+    using PostingStoreType = PostingStore<float>;
+    using Posting = PostingStoreBase::KeyDataType;
+};
+
 } // namespace search::attribute

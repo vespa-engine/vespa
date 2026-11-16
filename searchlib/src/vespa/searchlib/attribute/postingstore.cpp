@@ -712,5 +712,6 @@ PostingStore<DataT>::make_bitvector_iterator(RefType ref, uint32_t doc_id_limit,
 
 template class PostingStore<BTreeNoLeafData>;
 template class PostingStore<int32_t>;
+template class PostingStore<float>;
 
 } // namespace search::attribute

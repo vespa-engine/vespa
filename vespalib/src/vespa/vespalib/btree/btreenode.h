@@ -152,6 +152,7 @@ public:
 };
 
 template <> MinMaxAggregated BTreeNodeAggregatedWrap<MinMaxAggregated>::_instance;
+template <> FloatMinMaxAggregated BTreeNodeAggregatedWrap<FloatMinMaxAggregated>::_instance;
 
 template <typename KeyT, uint32_t NumSlots> class BTreeNodeT : public BTreeNode {
 protected:

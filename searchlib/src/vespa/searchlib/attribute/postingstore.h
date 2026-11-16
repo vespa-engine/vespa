@@ -225,4 +225,8 @@ template <> inline int32_t PostingStore<int32_t>::bitVectorWeight() {
     return 1;
 }
 
+template <> inline float PostingStore<float>::bitVectorWeight() {
+    return 1.0f;
+}
+
 } // namespace search::attribute

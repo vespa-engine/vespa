@@ -14,7 +14,7 @@ template <typename ostream> void printAggregated(ostream& os, const NoAggregated
     (void)aggr;
 }
 
-template <typename ostream> void printAggregated(ostream& os, const MinMaxAggregated& aggr) {
+template <typename ostream, typename T> void printAggregated(ostream& os, const MinMaxAggregatedT<T>& aggr) {
     os << "[min=" << aggr.getMin() << ",max=" << aggr.getMax() << "]";
 }
 

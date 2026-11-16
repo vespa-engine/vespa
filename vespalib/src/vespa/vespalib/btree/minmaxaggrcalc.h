@@ -6,33 +6,32 @@
 
 namespace vespalib::btree {
 
-class MinMaxAggrCalc {
+template <typename T> class MinMaxAggrCalcT {
 public:
-    constexpr MinMaxAggrCalc() = default;
+    using Aggregated = MinMaxAggregatedT<T>;
+
+    constexpr MinMaxAggrCalcT() = default;
     constexpr static bool hasAggregated() { return true; }
     constexpr static bool aggregate_over_values() { return true; }
-    static int32_t getVal(int32_t val) { return val; }
-    static void add(MinMaxAggregated& a, int32_t val) { a.add(val); }
-    static void add(MinMaxAggregated& a, const MinMaxAggregated& ca) { a.add(ca); }
-    static void add(MinMaxAggregated& a, const MinMaxAggregated& oldca, const MinMaxAggregated& ca) {
-        a.add(oldca, ca);
-    }
+    static T getVal(T val) { return val; }
+    static void add(Aggregated& a, T val) { a.add(val); }
+    static void add(Aggregated& a, const Aggregated& ca) { a.add(ca); }
+    static void add(Aggregated& a, const Aggregated& oldca, const Aggregated& ca) { a.add(oldca, ca); }
 
     /* Returns true if recalculation is needed */
-    static bool remove(MinMaxAggregated& a, int32_t val) { return a.remove(val); }
+    static bool remove(Aggregated& a, T val) { return a.remove(val); }
 
     /* Returns true if recalculation is needed */
-    static bool remove(MinMaxAggregated& a, const MinMaxAggregated& oldca, const MinMaxAggregated& ca) {
-        return a.remove(oldca, ca);
-    }
+    static bool remove(Aggregated& a, const Aggregated& oldca, const Aggregated& ca) { return a.remove(oldca, ca); }
 
     /* Returns true if recalculation is needed */
-    static bool update(MinMaxAggregated& a, int32_t oldVal, int32_t val) { return a.update(oldVal, val); }
+    static bool update(Aggregated& a, T oldVal, T val) { return a.update(oldVal, val); }
 
     /* Returns true if recalculation is needed */
-    static bool update(MinMaxAggregated& a, const MinMaxAggregated& oldca, const MinMaxAggregated& ca) {
-        return a.update(oldca, ca);
-    }
+    static bool update(Aggregated& a, const Aggregated& oldca, const Aggregated& ca) { return a.update(oldca, ca); }
 };
+
+using MinMaxAggrCalc = MinMaxAggrCalcT<int32_t>;
+using FloatMinMaxAggrCalc = MinMaxAggrCalcT<float>;
 
 } // namespace vespalib::btree

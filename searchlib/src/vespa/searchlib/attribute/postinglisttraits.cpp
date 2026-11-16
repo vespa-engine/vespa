@@ -13,6 +13,7 @@ namespace vespalib::btree {
 
 using NoD = search::attribute::PostingListTraits<BTreeNoLeafData>;
 using WD = search::attribute::PostingListTraits<int32_t>;
+using FWD = search::attribute::PostingListTraits<float>;
 
 template class BTreeStore<uint32_t, BTreeNoLeafData, NoD::AggregatedType, std::less<uint32_t>, NoD::BTreeTraits,
                           NoD::AggrCalcType>;
@@ -42,5 +43,20 @@ template class BTreeIteratorBase<uint32_t, int32_t, WD::AggregatedType, WD::BTre
 template class BTreeConstIterator<uint32_t, int32_t, WD::AggregatedType, std::less<uint32_t>, WD::BTreeTraits>;
 template class BTreeAggregator<uint32_t, int32_t, WD::AggregatedType, WD::BTreeTraits::INTERNAL_SLOTS,
                                WD::BTreeTraits::LEAF_SLOTS, WD::AggrCalcType>;
+
+template class BTreeStore<uint32_t, float, FWD::AggregatedType, std::less<uint32_t>, FWD::BTreeTraits,
+                          FWD::AggrCalcType>;
+template class BTreeRoot<uint32_t, float, FWD::AggregatedType, std::less<uint32_t>, FWD::BTreeTraits,
+                         FWD::AggrCalcType>;
+template class BTreeRootT<uint32_t, float, FWD::AggregatedType, std::less<uint32_t>, FWD::BTreeTraits>;
+template class BTreeNodeAllocator<uint32_t, float, FWD::AggregatedType, FWD::BTreeTraits::INTERNAL_SLOTS,
+                                  FWD::BTreeTraits::LEAF_SLOTS>;
+template class BTreeBuilder<uint32_t, float, FWD::AggregatedType, FWD::BTreeTraits::INTERNAL_SLOTS,
+                            FWD::BTreeTraits::LEAF_SLOTS, FWD::AggrCalcType>;
+template class BTreeIteratorBase<uint32_t, float, FWD::AggregatedType, FWD::BTreeTraits::INTERNAL_SLOTS,
+                                 FWD::BTreeTraits::LEAF_SLOTS, FWD::BTreeTraits::PATH_SIZE>;
+template class BTreeConstIterator<uint32_t, float, FWD::AggregatedType, std::less<uint32_t>, FWD::BTreeTraits>;
+template class BTreeAggregator<uint32_t, float, FWD::AggregatedType, FWD::BTreeTraits::INTERNAL_SLOTS,
+                               FWD::BTreeTraits::LEAF_SLOTS, FWD::AggrCalcType>;
 
 } // namespace vespalib::btree
