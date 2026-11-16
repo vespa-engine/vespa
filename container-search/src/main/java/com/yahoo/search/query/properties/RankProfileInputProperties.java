@@ -42,17 +42,13 @@ public class RankProfileInputProperties extends Properties {
             try {
                 var expectedType = typeOf(name);
                 if (expectedType != null && ! expectedType.declaredString()) {
-                    long timeLeftMs = query.getTimeLeft();
-                    var deadline = timeLeftMs > 0
-                            ? Instant.now().plusMillis(timeLeftMs)
-                            : null;
                     value = tensorConverter.convertTo(expectedType.tensorType(),
                                                       value,
                                                       name.last(),
                                                       query.getModel().getLanguage(),
                                                       context,
                                                       query.properties(),
-                                                      deadline);
+                                                      Instant.now().plusMillis(query.getTimeLeft()));
                 }
             }
             catch (IllegalArgumentException e) {

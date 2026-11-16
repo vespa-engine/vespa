@@ -80,7 +80,7 @@ public class InvocationContext<SUBCLASS extends InvocationContext<SUBCLASS>> {
         return (SUBCLASS)this;
     }
 
-    /** @return the operation timeout represented as a {@link Deadline} */
+    /** Returns the deadline of this, or empty to use the default. */
     public Optional<Deadline> getDeadline() { return Optional.ofNullable(deadline); }
 
     @SuppressWarnings("unchecked")
