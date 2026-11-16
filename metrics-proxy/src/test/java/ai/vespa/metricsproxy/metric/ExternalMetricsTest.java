@@ -19,6 +19,7 @@ import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -113,12 +114,12 @@ public class ExternalMetricsTest {
                         .putDimension(toDimensionId(PublicDimensions.RETIRING), "true")
                         .putDimension(toDimensionId("role"), "tenants")));
 
-        Map<DimensionId, String> dims = externalMetrics.getMetrics().get(0).build().dimensions();
-        assertEquals("host1", dims.get(toDimensionId(PublicDimensions.HOSTNAME)));
-        assertEquals("parent1", dims.get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
-        assertEquals("tenants", dims.get(toDimensionId("role")));
-        assertFalse(dims.containsKey(toDimensionId(PublicDimensions.OS_VERSION)));
-        assertFalse(dims.containsKey(toDimensionId(PublicDimensions.RETIRING)));
+        MetricsPacket packet = externalMetrics.getMetrics().get(0).build();
+        assertEquals("host1", packet.dimension(toDimensionId(PublicDimensions.HOSTNAME)));
+        assertEquals("parent1", packet.dimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
+        assertEquals("tenants", packet.dimension(toDimensionId("role")));
+        assertNull(packet.dimension(toDimensionId(PublicDimensions.OS_VERSION)));
+        assertNull(packet.dimension(toDimensionId(PublicDimensions.RETIRING)));
     }
 
     @Test
@@ -132,11 +133,11 @@ public class ExternalMetricsTest {
                         .putDimension(toDimensionId(PublicDimensions.OS_VERSION), "8.4.0")
                         .putDimension(toDimensionId(PublicDimensions.RETIRING), "true")));
 
-        Map<DimensionId, String> dims = externalMetrics.getMetrics().get(0).build().dimensions();
-        assertEquals("8.4.0", dims.get(toDimensionId(PublicDimensions.OS_VERSION)));
-        assertEquals("true", dims.get(toDimensionId(PublicDimensions.RETIRING)));
-        assertEquals("host1", dims.get(toDimensionId(PublicDimensions.HOSTNAME)));
-        assertEquals("parent1", dims.get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
+        MetricsPacket packet = externalMetrics.getMetrics().get(0).build();
+        assertEquals("8.4.0", packet.dimension(toDimensionId(PublicDimensions.OS_VERSION)));
+        assertEquals("true", packet.dimension(toDimensionId(PublicDimensions.RETIRING)));
+        assertEquals("host1", packet.dimension(toDimensionId(PublicDimensions.HOSTNAME)));
+        assertEquals("parent1", packet.dimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
     }
 
 }

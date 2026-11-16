@@ -34,7 +34,7 @@ import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -70,9 +70,9 @@ public class MetricsManagerTest {
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         assertEquals(1, packets.size());
-        assertTrue(packets.get(0).metrics().isEmpty());
-        assertEquals(DownService.NAME, packets.get(0).dimensions().get(toDimensionId("instance")));
-        assertEquals("value", packets.get(0).dimensions().get(toDimensionId("global")));
+        assertEquals(0, packets.get(0).metricCount());
+        assertEquals(DownService.NAME, packets.get(0).dimension(toDimensionId("instance")));
+        assertEquals("value", packets.get(0).dimension(toDimensionId("global")));
     }
 
     @Test
@@ -80,13 +80,13 @@ public class MetricsManagerTest {
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         assertEquals(2, packets.size());
 
-        assertEquals("dummy0", packets.get(0).dimensions().get(toDimensionId("instance")));
-        assertEquals(1, packets.get(0).metrics().get(toMetricId("c.test")));
-        assertEquals(1.05, packets.get(0).metrics().get(toMetricId("val")));
+        assertEquals("dummy0", packets.get(0).dimension(toDimensionId("instance")));
+        assertEquals(1.0, packets.get(0).metricValue(packets.get(0).metricIndex(toMetricId("c.test"))), 0);
+        assertEquals(1.05, packets.get(0).metricValue(packets.get(0).metricIndex(toMetricId("val"))), 0);
 
-        assertEquals("dummy1", packets.get(1).dimensions().get(toDimensionId("instance")));
-        assertEquals(6, packets.get(1).metrics().get(toMetricId("c.test")));
-        assertEquals(2.35, packets.get(1).metrics().get(toMetricId("val")));
+        assertEquals("dummy1", packets.get(1).dimension(toDimensionId("instance")));
+        assertEquals(6.0, packets.get(1).metricValue(packets.get(1).metricIndex(toMetricId("c.test"))), 0);
+        assertEquals(2.35, packets.get(1).metricValue(packets.get(1).metricIndex(toMetricId("val"))), 0);
     }
 
     @Test
@@ -109,13 +109,13 @@ public class MetricsManagerTest {
     public void global_dimensions_are_added_but_do_not_override_metric_dimensions() {
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         assertEquals(2, packets.size());
-        assertGlobalDimensions(packets.get(0).dimensions());
-        assertGlobalDimensions(packets.get(1).dimensions());
+        assertGlobalDimensions(packets.get(0));
+        assertGlobalDimensions(packets.get(1));
     }
 
-    private void assertGlobalDimensions(Map<DimensionId, String> dimensions) {
-        assertEquals("value", dimensions.get(toDimensionId("global")));
-        assertEquals("metric-dim", dimensions.get(toDimensionId("dim0")));
+    private void assertGlobalDimensions(MetricsPacket packet) {
+        assertEquals("value", packet.dimension(toDimensionId("global")));
+        assertEquals("metric-dim", packet.dimension(toDimensionId("dim0")));
     }
 
 
@@ -130,8 +130,8 @@ public class MetricsManagerTest {
         assertEquals(3, packets.size());
 
         MetricsPacket systemPacket = packets.get(0); // system metrics are added before other metrics
-        assertEquals(1, systemPacket.metrics().get(toMetricId("cpu")));
-        assertEquals("system", systemPacket.dimensions().get(toDimensionId("metrictype")));
+        assertEquals(1.0, systemPacket.metricValue(systemPacket.metricIndex(toMetricId("cpu"))), 0);
+        assertEquals("system", systemPacket.dimension(toDimensionId("metrictype")));
 
         service0.setSystemMetrics(oldSystemMetrics);
     }
@@ -181,7 +181,7 @@ public class MetricsManagerTest {
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         for (MetricsPacket packet : packets) {
-            assertEquals("role from extraMetrics", packet.dimensions().get(ROLE_DIMENSION));
+            assertEquals("role from extraMetrics", packet.dimension(ROLE_DIMENSION));
         }
     }
 
@@ -193,9 +193,9 @@ public class MetricsManagerTest {
                         .putDimension(METRIC_TYPE_DIMENSION_ID, "from extraMetrics")));
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
-        assertEquals("standard", packets.get(0).dimensions().get(METRIC_TYPE_DIMENSION_ID));
-        assertEquals("standard", packets.get(1).dimensions().get(METRIC_TYPE_DIMENSION_ID));
-        assertEquals("from extraMetrics", packets.get(2).dimensions().get(METRIC_TYPE_DIMENSION_ID));
+        assertEquals("standard", packets.get(0).dimension(METRIC_TYPE_DIMENSION_ID));
+        assertEquals("standard", packets.get(1).dimension(METRIC_TYPE_DIMENSION_ID));
+        assertEquals("from extraMetrics", packets.get(2).dimension(METRIC_TYPE_DIMENSION_ID));
     }
 
     @Test
@@ -219,10 +219,10 @@ public class MetricsManagerTest {
         MetricsPacket carrier = metricsManager.getMetrics(testServices, Instant.EPOCH).stream()
                 .filter(p -> p.service().equals(toServiceId("vespa.node")))
                 .findFirst().orElseThrow();
-        assertEquals("h1", carrier.dimensions().get(toDimensionId(PublicDimensions.HOSTNAME)));
-        assertEquals("p1", carrier.dimensions().get(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
-        assertEquals("tenants", carrier.dimensions().get(ROLE_DIMENSION));
-        assertFalse(carrier.dimensions().containsKey(toDimensionId(PublicDimensions.OS_VERSION)));
+        assertEquals("h1", carrier.dimension(toDimensionId(PublicDimensions.HOSTNAME)));
+        assertEquals("p1", carrier.dimension(toDimensionId(PublicDimensions.PARENT_HOSTNAME)));
+        assertEquals("tenants", carrier.dimension(ROLE_DIMENSION));
+        assertNull(carrier.dimension(toDimensionId(PublicDimensions.OS_VERSION)));
     }
 
     @Test

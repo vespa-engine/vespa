@@ -7,6 +7,7 @@ import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.metric.model.StatusCode;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,8 +62,8 @@ public class GenericJsonUtil {
         var genericServices = new ArrayList<GenericService>();
         packetsByService.forEach((serviceId, packets) -> {
             var genericMetricsList = packets.stream()
-                    .filter(packet -> ! (packet.metrics().isEmpty() && packet.dimensions().isEmpty()))
-                    .map(packet -> new GenericMetrics(packet.metrics(), packet.dimensions()))
+                    .filter(packet -> ! (packet.metricCount() == 0 && packet.dimensionCount() == 0))
+                    .map(GenericMetrics::new)
                     .toList();
             var genericService = packets.stream().findFirst()
                     .map(firstPacket -> new GenericService(serviceId.id,
@@ -89,6 +90,16 @@ public class GenericJsonUtil {
             return toMetricsPackets(jsonModel);
         } catch (IOException e) {
             log.log(WARNING, "Could not create metrics packet from string:\n" + jsonString, e);
+            return List.of();
+        }
+    }
+
+    public static List<MetricsPacket.Builder> toMetricsPackets(InputStream json) {
+        try (json) {
+            GenericJsonModel jsonModel = objectMapper().readValue(json, GenericJsonModel.class);
+            return toMetricsPackets(jsonModel);
+        } catch (IOException e) {
+            log.log(WARNING, "Could not create metrics packets from json", e);
             return List.of();
         }
     }

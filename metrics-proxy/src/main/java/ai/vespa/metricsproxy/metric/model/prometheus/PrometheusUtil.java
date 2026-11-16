@@ -41,7 +41,7 @@ public class PrometheusUtil {
 
         // Collect both metric names and packets grouped by service in a single pass
         Map<ServiceId, List<MetricsPacket>> packetsByService = metricsPacketsStream
-                .peek(packet -> metricNames.addAll(packet.metrics().keySet()))
+                .peek(packet -> { for (int i = 0; i < packet.metricCount(); i++) metricNames.add(packet.metricId(i)); })
                 .collect(Collectors.groupingBy(MetricsPacket::service));
 
         var labelKeys = new ArrayList<String>();

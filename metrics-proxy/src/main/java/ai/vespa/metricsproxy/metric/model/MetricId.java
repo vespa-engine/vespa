@@ -2,17 +2,17 @@
 package ai.vespa.metricsproxy.metric.model;
 
 import ai.vespa.metricsproxy.metric.model.prometheus.PrometheusUtil;
-import com.yahoo.concurrent.CopyOnWriteHashMap;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author gjoranv
  */
 public class MetricId {
 
-    private static final Map<String, MetricId> dictionary = new CopyOnWriteHashMap<>();
+    private static final Map<String, MetricId> dictionary = new ConcurrentHashMap<>();
     public static final MetricId empty = toMetricId("");
     public final String id;
 
@@ -21,7 +21,8 @@ public class MetricId {
     }
 
     public static MetricId toMetricId(String id) {
-        return dictionary.computeIfAbsent(id, MetricId::new);
+        MetricId existing = dictionary.get(id); // computeIfAbsent may lock even when the id is present
+        return existing != null ? existing : dictionary.computeIfAbsent(id, MetricId::new);
     }
     public String getIdForPrometheus() { return PrometheusUtil.sanitize(id); }
 

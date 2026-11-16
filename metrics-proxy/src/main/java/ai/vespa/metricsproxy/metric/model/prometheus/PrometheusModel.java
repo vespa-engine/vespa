@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric.model.prometheus;
 
-import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.ServiceId;
@@ -67,28 +66,28 @@ public class PrometheusModel implements Enumeration<MetricFamilySamples> {
         List<MetricFamilySamples.Sample> sampleList = new ArrayList<>();
         packetsByServiceId.forEach(((serviceId, packets) -> {
             for (var packet : packets) {
-                Number metric = packet.metrics().get(metricId);
-                if (metric != null) {
-                    sampleList.add(createSample(serviceId, metricId, metric, packet.timestamp().toEpochMilli(), packet.dimensions()));
+                int index = packet.metricIndex(metricId);
+                if (index >= 0) {
+                    sampleList.add(createSample(serviceId, metricId, packet.metricValue(index), packet.timestamp().toEpochMilli(), packet));
                 }
             }
         }));
         return new MetricFamilySamples(metricId.getIdForPrometheus(), Collector.Type.UNKNOWN, "", sampleList);
     }
 
-    private static Sample createSample(ServiceId serviceId, MetricId metricId, Number metric,
-                                       Long timeStamp, Map<DimensionId, String> dimensions)
+    private static Sample createSample(ServiceId serviceId, MetricId metricId, double value,
+                                       long timeStamp, MetricsPacket packet)
     {
-        List<String> labels = new ArrayList<>(dimensions.size());
-        List<String> labelValues = new ArrayList<>(dimensions.size());
-        for (var entry : dimensions.entrySet()) {
-            var labelName = entry.getKey().getIdForPrometheus();
-            labels.add(labelName);
-            labelValues.add(entry.getValue());
+        int dimensionCount = packet.dimensionCount();
+        List<String> labels = new ArrayList<>(dimensionCount + 1);
+        List<String> labelValues = new ArrayList<>(dimensionCount + 1);
+        for (int i = 0; i < dimensionCount; i++) {
+            labels.add(packet.dimensionId(i).getIdForPrometheus());
+            labelValues.add(packet.dimensionValue(i));
         }
         labels.add("vespa_service");
         labelValues.add(serviceId.getIdForPrometheus());
-        return new Sample(metricId.getIdForPrometheus(), labels, labelValues, metric.doubleValue(), timeStamp);
+        return new Sample(metricId.getIdForPrometheus(), labels, labelValues, value, timeStamp);
     }
 
 }
