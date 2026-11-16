@@ -28,7 +28,7 @@ public enum SearchNodeMetrics implements VespaMetrics {
     CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_LATENCY("content.proton.search_protocol.query.latency", Unit.SECOND, "Query request latency (seconds)"),
     CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_REQUEST_SIZE("content.proton.search_protocol.query.request_size", Unit.BYTE, "Query request size (network bytes)"),
     CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_REPLY_SIZE("content.proton.search_protocol.query.reply_size", Unit.BYTE, "Query reply size (network bytes)"),
-    CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_LATENCY("content.proton.search_protocol.docsum.latency", Unit.SECOND, "Docsum request latency (seconds)"),
+    CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_LATENCY("content.proton.search_protocol.docsum.latency", Unit.SECOND, "Docsum request latency (including request decoding and reply encoding) (seconds)"),
     CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_REQUEST_SIZE("content.proton.search_protocol.docsum.request_size", Unit.BYTE, "Docsum request size (network bytes)"),
     CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_REPLY_SIZE("content.proton.search_protocol.docsum.reply_size", Unit.BYTE, "Docsum reply size (network bytes)"),
     CONTENT_PROTON_SEARCH_PROTOCOL_DOCSUM_REQUESTED_DOCUMENTS("content.proton.search_protocol.docsum.requested_documents", Unit.DOCUMENT, "Total requested document summaries"),

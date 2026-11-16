@@ -14,7 +14,8 @@ SearchProtocolMetrics::QueryMetrics::~QueryMetrics() = default;
 
 SearchProtocolMetrics::DocsumMetrics::DocsumMetrics(metrics::MetricSet* parent)
     : metrics::MetricSet("docsum", {}, "Docsum metrics", parent),
-      latency("latency", {{"logdefault"}}, "Docsum request latency (seconds)", this),
+      latency("latency", {{"logdefault"}},
+              "Docsum request latency (including request decoding and reply encoding) (seconds)", this),
       request_size("request_size", {{"logdefault"}}, "Docsum request size (network bytes)", this),
       reply_size("reply_size", {{"logdefault"}}, "Docsum reply size (network bytes)", this),
       requested_documents("requested_documents", {{"logdefault"}}, "Total requested document summaries", this) {
