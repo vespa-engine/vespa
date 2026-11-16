@@ -147,7 +147,7 @@ void DocumentSubDBCollection::maintenanceSync(MaintenanceController& mc) {
 initializer::InitializerTask::SP DocumentSubDBCollection::createInitializer(const DocumentDBConfig&   configSnapshot,
                                                                             SerialNum                 configSerialNum,
                                                                             const index::IndexConfig& indexCfg) {
-    auto task = std::make_shared<DocumentSubDbCollectionInitializer>();
+    auto task = std::make_shared<DocumentSubDbCollectionInitializer>(DocTypeName(_owner.getName()));
     for (auto subDb : _subDBs) {
         task->add(subDb->createInitializer(configSnapshot, configSerialNum, indexCfg));
     }

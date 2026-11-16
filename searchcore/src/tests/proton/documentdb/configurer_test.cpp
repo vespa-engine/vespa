@@ -228,7 +228,7 @@ void Fixture::initViewSet(ViewSet& views) {
                                               views._reconfigurer, views._service.write(), _summaryExecutor,
                                               TuneFileIndexManager(), TuneFileAttributes(), views._fileHeaderContext);
     auto attrMgr = make_shared<AttributeManager>(
-        BASE_DIR, "test.subdb", TuneFileAttributes(), views._fileHeaderContext,
+        BASE_DIR, DocTypeName("test"), "subdb", TuneFileAttributes(), views._fileHeaderContext,
         std::make_shared<search::attribute::Interlock>(), views._service.write().field_writer(),
         views._service.write().shared(), views._hwInfo);
     auto summaryMgr =
@@ -324,8 +324,8 @@ void MyFastAccessFeedView::init() {
     StoreOnlyFeedView::Context              storeOnlyCtx(summaryAdapter, schema, _dmsc, repo, _pendingLidsForCommit,
                                                          *_gidToLidChangeHandler, _writeService);
     StoreOnlyFeedView::PersistentParams     params(1, 1, DocTypeName(DOC_TYPE), 0, SubDbType::NOTREADY);
-    auto mgr = make_shared<AttributeManager>(BASE_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
-                                             std::make_shared<search::attribute::Interlock>(),
+    auto mgr = make_shared<AttributeManager>(BASE_DIR, DocTypeName("test"), "subdb", TuneFileAttributes(),
+                                             _fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
                                              _writeService.field_writer(), _writeService.shared(), _hwInfo);
     auto writer = std::make_shared<AttributeWriter>(mgr);
     FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);

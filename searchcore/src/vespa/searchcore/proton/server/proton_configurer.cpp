@@ -237,12 +237,18 @@ void ProtonConfigurer::pruneDocumentDBs(const ProtonConfigSnapshot& configSnapsh
 void ProtonConfigurer::applyInitialConfig(InitializeThreads initializeThreads) {
     // called by proton app main thread
     CHECK(!_executor.isCurrentThread());
+    auto               provider = Provider::GetTracerProvider();
+    auto               tracer = provider->GetTracer("proton");
+    auto               span = tracer->GetCurrentSpan();
     std::promise<void> promise;
     auto               future = promise.get_future();
-    _executor.execute(makeLambdaTask([this, executor = std::move(initializeThreads), &promise]() mutable {
-        applyConfig(getPendingConfigSnapshot(), std::move(executor), true);
-        promise.set_value();
-    }));
+    _executor.execute(
+        makeLambdaTask([this, executor = std::move(initializeThreads), &promise, tracer, span]() mutable {
+            auto span_copy = span;
+            auto scope = tracer->WithActiveSpan(span_copy);
+            applyConfig(getPendingConfigSnapshot(), std::move(executor), true);
+            promise.set_value();
+        }));
     future.wait();
 }
 

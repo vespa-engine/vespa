@@ -224,8 +224,8 @@ struct AttributeManagerFixture {
 };
 
 AttributeManagerFixture::AttributeManagerFixture(BaseFixture& bf)
-    : _msp(std::make_shared<AttributeManager>(test_dir, "test.subdb", TuneFileAttributes(), bf._fileHeaderContext,
-                                              std::make_shared<search::attribute::Interlock>(),
+    : _msp(std::make_shared<AttributeManager>(test_dir, DocTypeName("test"), "subdb", TuneFileAttributes(),
+                                              bf._fileHeaderContext, std::make_shared<search::attribute::Interlock>(),
                                               bf._attributeFieldWriter, bf._shared, bf._hwInfo)),
       _m(*_msp) {
 }

@@ -35,6 +35,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB {
     void close() override {}
     uint32_t getSubDbId() const override { return _subDbId; }
     std::string getName() const override { return "dummysubdb"; }
+    [[nodiscard]] const DocTypeName& doc_type_name() const noexcept override;
     DocumentSubDbInitializer::UP createInitializer(const DocumentDBConfig&, SerialNum,
                                                    const index::IndexConfig&) const override {
         return std::make_unique<DocumentSubDbInitializer>(const_cast<DummyDocumentSubDb&>(*this),

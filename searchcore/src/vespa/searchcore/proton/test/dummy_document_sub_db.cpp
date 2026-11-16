@@ -8,6 +8,12 @@ using searchcorespi::common::ResourceUsage;
 
 namespace proton::test {
 
+namespace {
+
+const DocTypeName dummy_doc_type_name("dummy_doc_type_name");
+
+}
+
 DummyDocumentSubDb::DummyDocumentSubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, uint32_t subDbId)
     : _subDbId(subDbId),
       _metaStoreCtx(std::move(bucketDB)),
@@ -23,6 +29,10 @@ DummyDocumentSubDb::~DummyDocumentSubDb() = default;
 
 ResourceUsage DummyDocumentSubDb::get_resource_usage() const {
     return {};
+}
+
+const DocTypeName& DummyDocumentSubDb::doc_type_name() const noexcept {
+    return dummy_doc_type_name;
 }
 
 } // namespace proton::test

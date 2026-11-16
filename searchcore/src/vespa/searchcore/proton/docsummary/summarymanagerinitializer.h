@@ -17,7 +17,8 @@ class SummaryManagerInitializer : public initializer::InitializerTask {
     using IBucketizerSP = std::shared_ptr<search::IBucketizer>;
     const search::GrowStrategy                         _grow;
     const std::string                                  _baseDir;
-    const std::string                                  _subDbName;
+    const DocTypeName                                  _doc_type_name;
+    const std::string                                  _subdb_name;
     vespalib::Executor&                                _shared_executor;
     const search::LogDocumentStore::Config             _storeCfg;
     const search::TuneFileSummary                      _tuneFile;
@@ -32,8 +33,8 @@ public:
 
     // Note: lifetime of result must be handled by caller.
     SummaryManagerInitializer(const search::GrowStrategy& grow, const std::string& baseDir,
-                              const std::string& subDbName, vespalib::Executor& shared_executor,
-                              const search::LogDocumentStore::Config&  storeCfg,
+                              const DocTypeName& doc_type_name_in, const std::string& subdb_name_in,
+                              vespalib::Executor& shared_executor, const search::LogDocumentStore::Config& storeCfg,
                               const search::TuneFileSummary&           tuneFile,
                               const search::common::FileHeaderContext& fileHeaderContext,
                               search::transactionlog::SyncProxy& tlSyncer, IBucketizerSP bucketizer,

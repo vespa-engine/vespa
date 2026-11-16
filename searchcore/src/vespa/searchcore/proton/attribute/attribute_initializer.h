@@ -5,6 +5,7 @@
 #include "attribute_initializer_result.h"
 #include "attribute_spec.h"
 
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchlib/common/serialnum.h>
 
 #include <optional>
@@ -37,7 +38,8 @@ public:
 private:
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     std::shared_ptr<AttributeDirectory>                               _attrDir;
-    const std::string                                                 _documentSubDbName;
+    const DocTypeName                                                 _doc_type_name;
+    const std::string                                                 _subdb_name;
     const AttributeSpec                                               _spec;
     const std::optional<uint64_t>                                     _currentSerialNum;
     const IAttributeFactory&                                          _factory;
@@ -58,9 +60,10 @@ private:
     AttributeVectorSP createAndSetupEmptyAttribute() const;
 
 public:
-    AttributeInitializer(const std::shared_ptr<AttributeDirectory>& attrDir, const std::string& documentSubDbName,
-                         AttributeSpec&& spec, std::optional<uint64_t> currentSerialNum,
-                         const IAttributeFactory& factory, vespalib::Executor& shared_executor);
+    AttributeInitializer(const std::shared_ptr<AttributeDirectory>& attrDir, const DocTypeName& doc_type_name_in,
+                         const std::string& subdb_name_in, AttributeSpec&& spec,
+                         std::optional<uint64_t> currentSerialNum, const IAttributeFactory& factory,
+                         vespalib::Executor& shared_executor);
     ~AttributeInitializer();
 
     AttributeInitializerResult init() const;
@@ -69,6 +72,9 @@ public:
     std::shared_ptr<search::attribute::AttributeInitializationStatus> get_attribute_initialization_status() const {
         return _initialization_status;
     }
+    [[nodiscard]] const std::shared_ptr<AttributeDirectory>& attr_dir() const noexcept { return _attrDir; }
+    [[nodiscard]] const DocTypeName& doc_type_name() const noexcept { return _doc_type_name; }
+    [[nodiscard]] const std::string& subdb_name() const noexcept { return _subdb_name; }
 };
 
 } // namespace proton

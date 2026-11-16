@@ -36,6 +36,7 @@ namespace matching {
 class SessionManager;
 }
 
+class DocTypeName;
 class DocumentDBConfig;
 class DocumentSubDBReconfig;
 class DocumentSubDbInitializer;
@@ -81,6 +82,7 @@ public:
     virtual ~IDocumentSubDB() = default;
     virtual uint32_t getSubDbId() const = 0;
     virtual std::string getName() const = 0;
+    [[nodiscard]] virtual const DocTypeName& doc_type_name() const noexcept = 0;
 
     virtual std::unique_ptr<DocumentSubDbInitializer> createInitializer(const DocumentDBConfig& configSnapshot,
                                                                         SerialNum               configSerialNum,

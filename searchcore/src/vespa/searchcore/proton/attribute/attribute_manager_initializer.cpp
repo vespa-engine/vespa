@@ -3,14 +3,20 @@
 #include "attribute_manager_initializer.h"
 
 #include "attribute_collection_spec_factory.h"
+#include "attribute_directory.h"
 #include "attributes_initializer_base.h"
 
+#include <vespa/opentelemetry/span_attribute_names.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
 #include <vespa/searchcore/proton/initializer/load_memory_usage.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 
+#include <opentelemetry/trace/provider.h>
+
 #include <future>
 
+using opentelemetry::trace::Provider;
+using opentelemetry::trace::Span;
 using proton::initializer::LoadMemoryUsage;
 using search::AttributeVector;
 using search::GrowStrategy;
@@ -35,29 +41,53 @@ private:
 public:
     AttributeInitializerTask(AttributeInitializer::UP                    initializer,
                              std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
-                             InitializedAttributesResult&                result) noexcept
-        : _initializer(std::move(initializer)),
-          _documentMetaStore(std::move(documentMetaStore)),
-          _result(result),
-          _load_memory_usage(_initializer->get_load_memory_usage()) {}
-
-    void run() override {
-        AttributeInitializerResult result = _initializer->init();
-        if (result) {
-            AttributesInitializerBase::considerPadAttribute(*result.getAttribute(),
-                                                            _initializer->getCurrentSerialNum(),
-                                                            _documentMetaStore->getCommittedDocIdLimit());
-            _result.add(result);
-        }
-    }
-    [[nodiscard]] LoadMemoryUsage get_load_memory_usage() const noexcept override { return _load_memory_usage; }
-    void accept_visitor(initializer::InitializerTaskVisitor& visitor) override {
-        visitor.visit_attribute_initializer(*_initializer);
-        InitializerTask::accept_visitor(visitor);
-    }
+                             InitializedAttributesResult&                result) noexcept;
+    ~AttributeInitializerTask() override;
+    void run() override;
+    [[nodiscard]] LoadMemoryUsage get_load_memory_usage() const noexcept override;
+    void accept_visitor(initializer::InitializerTaskVisitor& visitor) override;
 };
 
+AttributeInitializerTask::AttributeInitializerTask(AttributeInitializer::UP                    initializer,
+                                                   std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
+                                                   InitializedAttributesResult&                result) noexcept
+    : _initializer(std::move(initializer)),
+      _documentMetaStore(std::move(documentMetaStore)),
+      _result(result),
+      _load_memory_usage(_initializer->get_load_memory_usage()) {
+}
+
+AttributeInitializerTask::~AttributeInitializerTask() = default;
+
+void AttributeInitializerTask::run() {
+    auto provider = Provider::GetTracerProvider();
+    auto tracer = provider->GetTracer("proton");
+    auto span = tracer->StartSpan(
+        "Load attribute",
+        {{vespa_opentelemetry::span_attribute_names::document_type, _initializer->doc_type_name().getName()},
+         {vespa_opentelemetry::span_attribute_names::subdb, _initializer->subdb_name()},
+         {vespa_opentelemetry::span_attribute_names::attribute, _initializer->attr_dir()->getAttrName()}});
+    auto                       scope = tracer->WithActiveSpan(span);
+    AttributeInitializerResult result = _initializer->init();
+    if (result) {
+        AttributesInitializerBase::considerPadAttribute(*result.getAttribute(), _initializer->getCurrentSerialNum(),
+                                                        _documentMetaStore->getCommittedDocIdLimit());
+        _result.add(result);
+    }
+    span->End();
+}
+
+LoadMemoryUsage AttributeInitializerTask::get_load_memory_usage() const noexcept {
+    return _load_memory_usage;
+}
+
+void AttributeInitializerTask::accept_visitor(initializer::InitializerTaskVisitor& visitor) {
+    visitor.visit_attribute_initializer(*_initializer);
+    InitializerTask::accept_visitor(visitor);
+}
+
 class AttributeManagerInitializerTask : public vespalib::Executor::Task {
+    std::shared_ptr<Span>                       _span;
     std::promise<void>                          _promise;
     search::SerialNum                           _configSerialNum;
     std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
@@ -65,7 +95,8 @@ class AttributeManagerInitializerTask : public vespalib::Executor::Task {
     InitializedAttributesResult&                _attributesResult;
 
 public:
-    AttributeManagerInitializerTask(std::promise<void>&& promise, search::SerialNum configSerialNum,
+    AttributeManagerInitializerTask(std::shared_ptr<Span> span, std::promise<void>&& promise,
+                                    search::SerialNum                           configSerialNum,
                                     std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
                                     AttributeManager::SP attrMgr, InitializedAttributesResult& attributesResult);
     ~AttributeManagerInitializerTask() override;
@@ -73,10 +104,11 @@ public:
 };
 
 AttributeManagerInitializerTask::AttributeManagerInitializerTask(
-    std::promise<void>&& promise, search::SerialNum configSerialNum,
+    std::shared_ptr<Span> span, std::promise<void>&& promise, search::SerialNum configSerialNum,
     std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore, AttributeManager::SP attrMgr,
     InitializedAttributesResult& attributesResult)
-    : _promise(std::move(promise)),
+    : _span(std::move(span)),
+      _promise(std::move(promise)),
       _configSerialNum(configSerialNum),
       _documentMetaStore(std::move(documentMetaStore)),
       _attrMgr(std::move(attrMgr)),
@@ -86,6 +118,10 @@ AttributeManagerInitializerTask::AttributeManagerInitializerTask(
 AttributeManagerInitializerTask::~AttributeManagerInitializerTask() = default;
 
 void AttributeManagerInitializerTask::run() {
+    auto provider = Provider::GetTracerProvider();
+    auto tracer = provider->GetTracer("proton");
+    auto scope = tracer->WithActiveSpan(_span);
+    _span->AddEvent("Running attribute manager initializer task in document db main executor");
     _attrMgr->addExtraAttribute(_documentMetaStore);
     _attrMgr->addInitializedAttributes(_attributesResult.get(), 1, _configSerialNum);
     _attrMgr->pruneRemovedFields(_configSerialNum);
@@ -157,6 +193,13 @@ AttributeManagerInitializer::AttributeManagerInitializer(
 AttributeManagerInitializer::~AttributeManagerInitializer() = default;
 
 void AttributeManagerInitializer::run() {
+    auto provider = Provider::GetTracerProvider();
+    auto tracer = provider->GetTracer("proton");
+    auto span = tracer->StartSpan(
+        "Initialize attribute manager",
+        {{vespa_opentelemetry::span_attribute_names::document_type, _attrMgr->doc_type_name().getName()},
+         {vespa_opentelemetry::span_attribute_names::subdb, _attrMgr->subdb_name()}});
+    auto               scope = tracer->WithActiveSpan(span);
     std::promise<void> promise;
     auto               future = promise.get_future();
     /*
@@ -164,9 +207,10 @@ void AttributeManagerInitializer::run() {
      * by document db master thread and lacks locking to handle calls from multiple threads.
      */
     _master.execute(std::make_unique<AttributeManagerInitializerTask>(
-        std::move(promise), _configSerialNum, _documentMetaStore, _attrMgr, _attributesResult));
+        span, std::move(promise), _configSerialNum, _documentMetaStore, _attrMgr, _attributesResult));
     future.wait();
     *_attrMgrResult = _attrMgr;
+    span->End();
 }
 
 } // namespace proton

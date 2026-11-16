@@ -136,6 +136,10 @@ StoreOnlyDocSubDB::~StoreOnlyDocSubDB() {
     _rSummaryMgr.reset();
 }
 
+const DocTypeName& StoreOnlyDocSubDB::doc_type_name() const noexcept {
+    return _docTypeName;
+}
+
 void StoreOnlyDocSubDB::clearViews() {
     _iFeedView.clear();
     _iSearchView.clear();
@@ -214,8 +218,8 @@ initializer::InitializerTask::SP StoreOnlyDocSubDB::createSummaryManagerInitiali
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     std::string  baseDir(_baseDir + "/summary");
     return std::make_shared<SummaryManagerInitializer>(
-        grow, baseDir, getSubDbName(), _writeService.shared(), storeCfg, tuneFile, _fileHeaderContext, _tlSyncer,
-        std::move(bucketizer), std::move(document_id_provider), std::move(result));
+        grow, baseDir, _docTypeName, _subName, _writeService.shared(), storeCfg, tuneFile, _fileHeaderContext,
+        _tlSyncer, std::move(bucketizer), std::move(document_id_provider), std::move(result));
 }
 
 void StoreOnlyDocSubDB::setupSummaryManager(SummaryManager::SP summaryManager) {
@@ -240,8 +244,8 @@ InitializerTask::SP StoreOnlyDocSubDB::createDocumentMetaStoreInitializer(
     *result = std::make_shared<DocumentMetaStoreInitializerResult>(
         std::make_shared<DocumentMetaStore>(_bucketDB, attrFileName, grow, store_full_document_ids, _subDbType),
         tuneFile);
-    return std::make_shared<documentmetastore::DocumentMetaStoreInitializer>(
-        baseDir, getSubDbName(), _docTypeName.toString(), (*result)->documentMetaStore());
+    return std::make_shared<documentmetastore::DocumentMetaStoreInitializer>(baseDir, _docTypeName, _subName,
+                                                                             (*result)->documentMetaStore());
 }
 
 void StoreOnlyDocSubDB::setupDocumentMetaStore(const DocumentMetaStoreInitializerResult& dmsResult) {
@@ -379,8 +383,8 @@ void StoreOnlyDocSubDB::initFeedView(const DocumentDBConfig& configSnapshot) {
     _iFeedView.set(std::move(feedView));
 }
 
-std::string StoreOnlyDocSubDB::getSubDbName() const {
-    return vespalib::make_string("%s.%s", _owner.getName().c_str(), _subName.c_str());
+std::string StoreOnlyDocSubDB::get_document_type_and_subdb_name() const {
+    return std::format("{}.{}", _docTypeName.getName(), _subName);
 }
 
 std::unique_ptr<DocumentSubDBReconfig>

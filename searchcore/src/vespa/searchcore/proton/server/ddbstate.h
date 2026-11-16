@@ -122,6 +122,8 @@ public:
     time_point get_replay_time() const { return _replay_time; }
 
     time_point get_online_time() const { return _online_time; }
+
+    const std::shared_ptr<opentelemetry::trace::Span>& state_span() const noexcept { return _state_span; }
 };
 
 } // namespace proton

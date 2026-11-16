@@ -7,6 +7,8 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/executor.h>
 
+#include <opentelemetry/trace/span.h>
+
 namespace proton::initializer {
 
 /*
@@ -21,22 +23,30 @@ class TaskRunner {
     using TaskSet = vespalib::hash_set<const void*>;
 
     class Context {
-        InitializerTask::SP          _rootTask;
-        vespalib::Executor&          _contextExecutor; // single threaded executor
-        vespalib::Executor::Task::UP _doneTask;
+        InitializerTask::SP                         _rootTask;
+        vespalib::Executor&                         _contextExecutor; // single threaded executor
+        vespalib::Executor::Task::UP                _doneTask;
+        std::shared_ptr<opentelemetry::trace::Span> _parent_span;
 
     public:
         using SP = std::shared_ptr<Context>;
         Context(InitializerTask::SP rootTask, vespalib::Executor& contextExecutor,
-                vespalib::Executor::Task::UP doneTask) noexcept
-            : _rootTask(rootTask), _contextExecutor(contextExecutor), _doneTask(std::move(doneTask)) {}
+                vespalib::Executor::Task::UP                doneTask,
+                std::shared_ptr<opentelemetry::trace::Span> parent_span) noexcept
+            : _rootTask(rootTask),
+              _contextExecutor(contextExecutor),
+              _doneTask(std::move(doneTask)),
+              _parent_span(std::move(parent_span)) {}
         bool done() const { return !_doneTask; }
         void execute(vespalib::Executor::Task::UP task) {
             auto res = _contextExecutor.execute(std::move(task));
             CHECK(!res);
         }
         void setDone() { execute(std::move(_doneTask)); }
-        const InitializerTask::SP& rootTask() { return _rootTask; }
+        [[nodiscard]] const InitializerTask::SP& rootTask() noexcept { return _rootTask; }
+        [[nodiscard]] const std::shared_ptr<opentelemetry::trace::Span>& parent_span() noexcept {
+            return _parent_span;
+        }
     };
     void getReadyTasks(const InitializerTask::SP task, TaskList& readyTasks, TaskSet& checked);
     void setTaskRunning(InitializerTask& task);

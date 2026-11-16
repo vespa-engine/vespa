@@ -3,11 +3,16 @@
 #include "document_subdb_initializer.h"
 
 #include "idocumentsubdb.h"
+#include "vespa/opentelemetry/opentelemetry_tracer_providers.h"
+#include "vespa/opentelemetry/span_attribute_names.h"
 
 #include <vespa/check_require.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
+#include <opentelemetry/trace/provider.h>
+
+using opentelemetry::trace::Provider;
 using vespalib::makeLambdaTask;
 
 namespace proton {
@@ -24,13 +29,23 @@ void DocumentSubDbInitializer::addDocumentMetaStoreInitTask(InitTask::SP documen
 }
 
 void DocumentSubDbInitializer::run() {
+    auto provider = Provider::GetTracerProvider();
+    auto tracer = provider->GetTracer("proton");
+    auto span = tracer->StartSpan(
+        "Initialize document subdb",
+        {{vespa_opentelemetry::span_attribute_names::document_type, _subDB.doc_type_name().getName()},
+         {vespa_opentelemetry::span_attribute_names::subdb, _subDB.getName()}});
+    auto               scope = tracer->WithActiveSpan(span);
     std::promise<void> promise;
     auto               future = promise.get_future();
-    _master.execute(makeLambdaTask([&]() {
+    _master.execute(makeLambdaTask([&, tracer, span]() {
+        auto span_copy = span;
+        auto scope2 = tracer->WithActiveSpan(span_copy);
         _subDB.setup(_result);
         promise.set_value();
     }));
     future.wait();
+    span->End();
 }
 
 } // namespace proton

@@ -90,7 +90,7 @@ MyConfig::MyConfig()
       _attributeFieldWriter(),
       _shared(),
       _hwInfo(),
-      _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
+      _mgr(new AttributeManager(TEST_DIR, DocTypeName("test"), "subdb", TuneFileAttributes(), _fileHeaderContext,
                                 std::make_shared<search::attribute::Interlock>(), _attributeFieldWriter, _shared,
                                 _hwInfo)),
       _schema() {
@@ -138,7 +138,7 @@ public:
           _attributeFieldWriter(),
           _shared(),
           _hwInfo(),
-          _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
+          _mgr(new AttributeManager(TEST_DIR, DocTypeName("test"), "subdb", TuneFileAttributes(), _fileHeaderContext,
                                     std::make_shared<search::attribute::Interlock>(), _attributeFieldWriter, _shared,
                                     _hwInfo)),
           _oldCfg(),

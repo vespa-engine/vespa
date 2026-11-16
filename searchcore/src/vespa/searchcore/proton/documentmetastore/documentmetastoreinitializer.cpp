@@ -3,6 +3,8 @@
 #include "documentmetastoreinitializer.h"
 
 #include "documentmetastore.h"
+#include "vespa/opentelemetry/opentelemetry_tracer_providers.h"
+#include "vespa/opentelemetry/span_attribute_names.h"
 
 #include <vespa/check_require.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
@@ -10,8 +12,11 @@
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <opentelemetry/trace/provider.h>
+
 #include <filesystem>
 
+using opentelemetry::trace::Provider;
 using proton::initializer::InitializerTask;
 using search::GrowStrategy;
 using search::IndexMetaInfo;
@@ -20,10 +25,11 @@ using vespalib::make_string;
 
 namespace proton::documentmetastore {
 
-DocumentMetaStoreInitializer::DocumentMetaStoreInitializer(const std::string baseDir, const std::string& subDbName,
-                                                           const std::string&                 docTypeName,
+DocumentMetaStoreInitializer::DocumentMetaStoreInitializer(const std::string                  baseDir,
+                                                           const DocTypeName&                 doc_type_name_in,
+                                                           const std::string&                 subdb_name_in,
                                                            std::shared_ptr<DocumentMetaStore> dms)
-    : _baseDir(baseDir), _subDbName(subDbName), _docTypeName(docTypeName), _dms(std::move(dms)) {
+    : _baseDir(baseDir), _doc_type_name(doc_type_name_in), _subdb_name(subdb_name_in), _dms(std::move(dms)) {
 }
 
 namespace {
@@ -33,6 +39,13 @@ std::string failedMsg(const char* msg) {
 } // namespace
 
 void DocumentMetaStoreInitializer::run() {
+    auto provider = Provider::GetTracerProvider();
+    auto tracer = provider->GetTracer("proton");
+    auto span =
+        tracer->StartSpan("Load documentmetastore",
+                          {{vespa_opentelemetry::span_attribute_names::document_type, _doc_type_name.getName()},
+                           {vespa_opentelemetry::span_attribute_names::subdb, _subdb_name}});
+    auto          scope = tracer->WithActiveSpan(span);
     std::string   name = DocumentMetaStore::getFixedName();
     IndexMetaInfo info(_baseDir);
     if (info.load()) {
@@ -42,20 +55,23 @@ void DocumentMetaStoreInitializer::run() {
             _dms->setBaseFileName(attrFileName);
             CHECK(_dms->hasLoadData());
             vespalib::Timer stopWatch;
-            EventLogger::loadDocumentMetaStoreStart(_subDbName);
-            MemoryUsageLogger::log("start load documentmetastore", _subDbName);
+            std::string document_type_and_subdb_name = std::format("{}.{}", _doc_type_name.getName(), _subdb_name);
+
+            EventLogger::loadDocumentMetaStoreStart(document_type_and_subdb_name);
+            MemoryUsageLogger::log("start load documentmetastore", document_type_and_subdb_name);
             if (!_dms->load()) {
-                throw IllegalStateException(failedMsg(_docTypeName.c_str()));
+                throw IllegalStateException(failedMsg(_doc_type_name.getName().c_str()));
             } else {
                 _dms->commit(search::CommitParam(snap.syncToken, search::CommitParam::UpdateStats::SKIP));
             }
-            EventLogger::loadDocumentMetaStoreComplete(_subDbName, stopWatch.elapsed());
-            MemoryUsageLogger::log("finished load documentmetastore", _subDbName);
+            EventLogger::loadDocumentMetaStoreComplete(document_type_and_subdb_name, stopWatch.elapsed());
+            MemoryUsageLogger::log("finished load documentmetastore", document_type_and_subdb_name);
         }
     } else {
         std::filesystem::create_directory(std::filesystem::path(_baseDir));
         info.save();
     }
+    span->End();
 }
 
 } // namespace proton::documentmetastore

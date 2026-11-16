@@ -49,7 +49,7 @@ SearchableDocSubDB::SearchableDocSubDB(const Config& cfg, const Context& ctx)
       _tensorLoader(FastValueBuilderFactory::get()),
       _constantValueCache(_tensorLoader),
       _configurer(_iSummaryMgr, _rSearchView, _rFeedView, ctx._queryLimiter, _constantValueCache, ctx._now_ref,
-                  getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey(),
+                  get_document_type_and_subdb_name(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey(),
                   ctx._delete_search_view_executor),
       _warmupExecutor(ctx._warmupExecutor),
       _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>()),
@@ -88,10 +88,10 @@ initializer::InitializerTask::SP SearchableDocSubDB::createIndexManagerInitializ
     std::string   vespaIndexDir(_baseDir + "/index");
     // Note: const_cast for reconfigurer role
     return std::make_shared<IndexManagerInitializer>(
-        vespaIndexDir, indexCfg, schema, configSerialNum, const_cast<SearchableDocSubDB&>(*this), _writeService,
-        _warmupExecutor, configSnapshot.getTuneFileDocumentDBSP()->_index,
-        configSnapshot.getTuneFileDocumentDBSP()->_attr, _fileHeaderContext, _posting_list_cache,
-        std::move(indexManager));
+        vespaIndexDir, _docTypeName, _subName, indexCfg, schema, configSerialNum,
+        const_cast<SearchableDocSubDB&>(*this), _writeService, _warmupExecutor,
+        configSnapshot.getTuneFileDocumentDBSP()->_index, configSnapshot.getTuneFileDocumentDBSP()->_attr,
+        _fileHeaderContext, _posting_list_cache, std::move(indexManager));
 }
 
 void SearchableDocSubDB::setupIndexManager(searchcorespi::IIndexManager::SP indexManager, const Schema& schema) {

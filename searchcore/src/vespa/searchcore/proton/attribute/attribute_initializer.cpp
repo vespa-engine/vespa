@@ -184,8 +184,9 @@ AttributeVector::SP AttributeInitializer::tryLoadAttribute() const {
 bool AttributeInitializer::loadAttribute(const AttributeVectorSP& attr, search::SerialNum serialNum) const {
     CHECK(attr->hasLoadData());
     vespalib::Timer timer;
-    EventLogger::loadAttributeStart(_documentSubDbName, attr->getName());
-    auto label = _documentSubDbName + "/" + attr->getName();
+    std::string     document_type_and_subdb_name = std::format("{}.{}", _doc_type_name.getName(), _subdb_name);
+    EventLogger::loadAttributeStart(document_type_and_subdb_name, attr->getName());
+    auto label = document_type_and_subdb_name + "/" + attr->getName();
     MemoryUsageLogger::log("start load attribute", label);
     if (!attr->load(&_shared_executor)) {
         LOG(warning, "Could not load attribute vector '%s' from disk. Returning empty attribute vector",
@@ -194,7 +195,7 @@ bool AttributeInitializer::loadAttribute(const AttributeVectorSP& attr, search::
     } else {
         attr->set_reserved_doc_values();
         attr->commit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP));
-        EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), timer.elapsed());
+        EventLogger::loadAttributeComplete(document_type_and_subdb_name, attr->getName(), timer.elapsed());
         MemoryUsageLogger::log("finish load attribute", label);
     }
     return true;
@@ -227,11 +228,12 @@ AttributeVector::SP AttributeInitializer::createAndSetupEmptyAttribute() const {
 }
 
 AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirectory>& attrDir,
-                                           const std::string& documentSubDbName, AttributeSpec&& spec,
-                                           std::optional<uint64_t> currentSerialNum, const IAttributeFactory& factory,
-                                           vespalib::Executor& shared_executor)
+                                           const DocTypeName& doc_type_name_in, const std::string& subdb_name_in,
+                                           AttributeSpec&& spec, std::optional<uint64_t> currentSerialNum,
+                                           const IAttributeFactory& factory, vespalib::Executor& shared_executor)
     : _attrDir(attrDir),
-      _documentSubDbName(documentSubDbName),
+      _doc_type_name(doc_type_name_in),
+      _subdb_name(subdb_name_in),
       _spec(std::move(spec)),
       _currentSerialNum(currentSerialNum),
       _factory(factory),
