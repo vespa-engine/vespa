@@ -9,6 +9,7 @@ import io.prometheus.client.Collector.MetricFamilySamples;
 import io.prometheus.client.Collector.MetricFamilySamples.Sample;
 import io.prometheus.client.exporter.common.TextFormat;
 
+import java.io.BufferedWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -56,7 +57,10 @@ public class PrometheusModel implements Enumeration<MetricFamilySamples> {
 
     public void serialize(Writer writer) {
         try {
-            TextFormat.write004(writer, this);
+            // TextFormat writes many small strings, which are slow to encode one by one
+            var buffered = new BufferedWriter(writer, 1 << 16);
+            TextFormat.write004(buffered, this);
+            buffered.flush();
         } catch (Exception e) {
             throw new PrometheusRenderingException("Could not render metrics. Check the log for details.", e);
         }
