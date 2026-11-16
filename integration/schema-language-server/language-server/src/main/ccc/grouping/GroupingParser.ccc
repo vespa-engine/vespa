@@ -192,10 +192,12 @@ TOKEN :
     <COSH: "cosh"> |
     <COUNT: "count"> |
     <DEBUGWAIT: "debugwait"> |
+    <DECODE: "decode"> |
     <DIV: "div"> |
     <DOCIDNSSPECIFIC: "docidnsspecific"> |
     <EACH: "each"> |
     <EXP: "exp"> |
+    <FASTSEARCHMAP: "fastsearchmap"> |
     <FILTER: "filter"> |
     <FIXEDWIDTH: "fixedwidth"> |
     <FLOOR: "floor"> |
@@ -463,6 +465,7 @@ GroupingExpression value(GroupingOperation grp) :
                    exp = parameterStringValue        |
                    exp = countAggregator             |
                    exp = debugWaitFunction(grp)        |
+                   exp = fastSearchMapDecodeFunction   |
                    exp = divFunction(grp)              |
                    exp = docIdNsSpecificValue        |
                    exp = fixedWidthFunction(grp)       |
@@ -672,6 +675,25 @@ DebugWaitFunction debugWaitFunction(GroupingOperation grp) :
                            busy = booleanValue
                   rbraceElm )
   	{ return new DebugWaitFunction(arg, new DoubleValue(waitTime.doubleValue()), busy); }
+;
+
+
+FastSearchMapDecodeFunction fastSearchMapDecodeFunction :
+{
+    List<String> names = new ArrayList<String>();
+    String str;
+    String separator = null;
+}
+    ( <FASTSEARCHMAP> <DOT> <DECODE> lbraceElm str = identifierStr { names.add(str); }
+      ( <DOT> str = identifierStr { names.add(str); } )+
+      [ commaElm separator = stringElm ] rbraceElm )
+    {
+        // The last name is the lookup name, the others form the (possibly dotted) field name.
+        String fieldName = String.join(".", names.subList(0, names.size() - 1));
+        String lookupName = names.get(names.size() - 1);
+        return separator == null ? new FastSearchMapDecodeFunction(fieldName, lookupName)
+                                 : new FastSearchMapDecodeFunction(fieldName, lookupName, separator);
+    }
 ;
 
 
@@ -1348,10 +1370,12 @@ String identifierStr :
         <COSH> |
         <COUNT> |
         <DEBUGWAIT> |
+        <DECODE> |
         <DIV> |
         <DOCIDNSSPECIFIC> |
         <EACH> |
         <EXP> |
+        <FASTSEARCHMAP> |
         <FILTER> |
         <FIXEDWIDTH> |
         <FLOOR> |
