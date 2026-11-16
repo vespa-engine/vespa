@@ -47,8 +47,8 @@ public class RankProfileInputProperties extends Properties {
                             ? Instant.now().plusMillis(timeLeftMs)
                             : null;
                     value = tensorConverter.convertTo(expectedType.tensorType(),
-                                                      name.last(),
                                                       value,
+                                                      name.last(),
                                                       query.getModel().getLanguage(),
                                                       context,
                                                       query.properties(),

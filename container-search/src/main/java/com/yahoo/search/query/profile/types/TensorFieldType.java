@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types;
 
+import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.request.Properties;
 import com.yahoo.search.schema.internal.TensorConverter;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -49,9 +50,8 @@ public class TensorFieldType extends FieldType {
     public Object convertFrom(Object o, ConversionContext context) {
         if (o instanceof SubstituteString) return new SubstituteStringTensor((SubstituteString) o, type);
         return new TensorConverter(context.embedders())
-                .convertTo(
-                        type, context.destination(), o, context.language(), context.contextValues(),
-                        context.properties(), null);
+                .convertTo(type, o, context.destination(), context.language(), context.contextValues(),
+                           context.properties(), null);
     }
 
     public static TensorFieldType fromTypeString(String s) {
