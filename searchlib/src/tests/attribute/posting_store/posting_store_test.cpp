@@ -245,21 +245,6 @@ TEST_P(PostingStoreTest, require_that_bitvectors_are_compacted) {
     test_compact_sequence(huge_sequence_length);
 }
 
-TEST_P(PostingStoreTest, require_that_aggregated_min_max_is_correct_for_bitvector) {
-    auto root = add_sequence(4, 4 + huge_sequence_length);
-    ASSERT_TRUE(_store.has_bitvector(root));
-    auto aggregated = _store.getAggregated(root);
-    if (GetParam().enable_only_bitvector) {
-        EXPECT_FALSE(_store.has_btree(root));
-        EXPECT_EQ(MyPostingStore::AggregatedType(1, 1), aggregated);
-    } else {
-        EXPECT_TRUE(_store.has_btree(root));
-        // All weights in the btree are 0 (see add_sequence())
-        EXPECT_EQ(MyPostingStore::AggregatedType(0, 0), aggregated);
-    }
-    _store.clear(root);
-}
-
 namespace {
 
 /*

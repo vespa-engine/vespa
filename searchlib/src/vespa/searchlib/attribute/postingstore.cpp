@@ -492,12 +492,7 @@ typename PostingStore<DataT>::AggregatedType PostingStore<DataT>::getAggregated(
                 const BTreeType* tree = getTreeEntry(iRef2);
                 return tree->getAggregated(_allocator);
             }
-            if constexpr (AggrCalcType::hasAggregated()) {
-                // Bitvector without btree: all postings implicitly have bitVectorWeight()
-                return AggregatedType(bitVectorWeight(), bitVectorWeight());
-            } else {
-                return AggregatedType();
-            }
+            return AggregatedType();
         }
         const BTreeType* tree = getTreeEntry(iRef);
         return tree->getAggregated(_allocator);
