@@ -46,7 +46,8 @@ SummaryEngine::DocsumMetrics::DocsumMetrics()
     : metrics::MetricSet("docsum", {}, "Docsum metrics", nullptr),
       count("count", {{"logdefault"}}, "Docsum requests handled", this),
       docs("docs", {{"logdefault"}}, "Total docsums returned", this),
-      latency("latency", {{"logdefault"}}, "Docsum request latency", this) {
+      latency("latency", {{"logdefault"}},
+              "Docsum request latency (including request decoding, excluding reply encoding)", this) {
 }
 
 SummaryEngine::DocsumMetrics::~DocsumMetrics() = default;
