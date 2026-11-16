@@ -22,7 +22,7 @@ public enum SearchNodeMetrics implements VespaMetrics {
     CONTENT_PROTON_DOCUMENTDB_HEART_BEAT_AGE("content.proton.documentdb.heart_beat_age", Unit.SECOND, "How long ago (in seconds) heart beat maintenance job was run"),
     CONTENT_PROTON_DOCSUM_COUNT("content.proton.docsum.count", Unit.REQUEST, "Docsum requests handled"),
     CONTENT_PROTON_DOCSUM_DOCS("content.proton.docsum.docs", Unit.DOCUMENT, "Total docsums returned"),
-    CONTENT_PROTON_DOCSUM_LATENCY("content.proton.docsum.latency", Unit.MILLISECOND, "Docsum request latency (including request decoding, excluding reply encoding)"),
+    CONTENT_PROTON_DOCSUM_LATENCY("content.proton.docsum.latency", Unit.SECOND, "Docsum request latency (including request decoding, excluding reply encoding)"),
 
     // Search protocol
     CONTENT_PROTON_SEARCH_PROTOCOL_QUERY_LATENCY("content.proton.search_protocol.query.latency", Unit.SECOND, "Query request latency (seconds)"),
