@@ -1,24 +1,47 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
+import ai.vespa.cloud.ZoneInfo;
+import com.yahoo.component.ComponentId;
+import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.container.core.ChainsConfig;
+import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jdisc.Request;
+import com.yahoo.jdisc.test.MockMetric;
+import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.TimeoutException;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.grouping.result.Group;
 import com.yahoo.search.grouping.result.RootId;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.rendering.XmlRenderer;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
+import com.yahoo.search.schema.Cluster;
+import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.ExecutionFactory;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -78,6 +101,15 @@ public class SearchHandlerTest {
     synchronized void testPluginError() {
         try (var tester = new SearchHandlerTester()) {
             assertTrue(tester.sendRequest("http://localhost?query=test&searchChain=exceptionInPlugin").readAll().contains("NullPointerException"));
+        }
+    }
+
+    @Test
+    void testTimeoutInPluginReturnsTimeout() {
+        try (var tester = new SearchHandlerTester()) {
+            var response = tester.sendRequest("http://localhost?query=test&searchChain=timeoutInPlugin");
+            response.readAll();
+            assertEquals(504, response.getStatus());
         }
     }
 
@@ -379,6 +411,55 @@ public class SearchHandlerTest {
         }
     }
 
+    @Test
+    void testEmbedderTimeoutReturnsTimeout() {
+        var schemaInfo = new SchemaInfo(List.of(new Schema.Builder("test")
+                                                        .add(new RankProfile.Builder("default")
+                                                                     .addInput("query(q)", RankProfile.InputType.fromSpec("tensor<float>(x[2])"))
+                                                                     .build())
+                                                        .build()),
+                                        List.of(new Cluster.Builder("test").addSchema("test").build()));
+        var executionFactory = new ExecutionFactory(new ChainsConfig.Builder().build(),
+                                                    new IndexInfoConfig.Builder().build(),
+                                                    schemaInfo,
+                                                    new QrSearchersConfig.Builder().build(),
+                                                    new ComponentRegistry<>(),
+                                                    new SpecialtokensConfig.Builder().build(),
+                                                    new SimpleLinguistics(),
+                                                    new ComponentRegistry<>(),
+                                                    null);
+        var embedders = new ComponentRegistry<Embedder>();
+        embedders.register(ComponentId.fromString("timeoutThrowing"), new TimeoutThrowingEmbedder());
+        embedders.freeze();
+        var searchHandler = new SearchHandler(new MockMetric(),
+                                              () -> Runnable::run,
+                                              CompiledQueryProfileRegistry.empty,
+                                              new ContainerHttpConfig.Builder().warmup(false).build(),
+                                              embedders,
+                                              executionFactory,
+                                              ZoneInfo.defaultInfo());
+        try {
+            var response = searchHandler.handle(HttpRequest.createTestRequest("/search/?" +
+                                                                              URLEncoder.encode("input.query(q)", StandardCharsets.UTF_8) + "=" +
+                                                                              URLEncoder.encode("embed(text)", StandardCharsets.UTF_8),
+                                                                              com.yahoo.jdisc.http.HttpRequest.Method.GET));
+            assertEquals(504, response.getStatus());
+        }
+        finally {
+            executionFactory.deconstruct();
+        }
+    }
+
+    private static class TimeoutThrowingEmbedder implements Embedder {
+
+        @Override
+        public List<Integer> embed(String text, Context context) { throw new TimeoutException("Timed out"); }
+
+        @Override
+        public Tensor embed(String text, Context context, TensorType tensorType) { throw new TimeoutException("Timed out"); }
+
+    }
+
     /** Referenced from config */
     public static class TestSearcher extends Searcher {
 
@@ -442,6 +523,14 @@ public class SearchHandlerTest {
             }
             return result;
         }
+
+    }
+
+    /** Referenced from config */
+    public static class TimeoutThrowingSearcher extends Searcher {
+
+        @Override
+        public Result search(Query query, Execution execution) { throw new TimeoutException("Timed out"); }
 
     }
 

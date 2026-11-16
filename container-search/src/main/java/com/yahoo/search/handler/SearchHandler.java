@@ -23,6 +23,7 @@ import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.TimeoutException;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
 import com.yahoo.net.AcceptHeaderMatcher;
 import com.yahoo.net.HostName;
@@ -189,6 +190,8 @@ public class SearchHandler extends LoggingRequestHandler {
                 return handleBody(request);
             } catch (IllegalInputException | IllegalAssignmentException e) {
                 return illegalQueryResponse(request, e);
+            } catch (TimeoutException e) {
+                return timeoutResponse(request, e);
             } catch (RuntimeException e) { // Make sure we generate a valid response even on unexpected errors
                 log.log(Level.WARNING, "Failed handling " + request, e);
                 return internalServerErrorResponse(request, e);
@@ -224,6 +227,10 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private HttpResponse illegalQueryResponse(HttpRequest request, RuntimeException e) {
         return errorResponse(request, ErrorMessage.createIllegalQuery(Exceptions.toMessageString(e)));
+    }
+
+    private HttpResponse timeoutResponse(HttpRequest request, TimeoutException e) {
+        return errorResponse(request, ErrorMessage.createTimeout(Exceptions.toMessageString(e)));
     }
 
     private HttpResponse internalServerErrorResponse(HttpRequest request, RuntimeException e) {
@@ -429,6 +436,8 @@ public class SearchHandler extends LoggingRequestHandler {
                                                                + Exceptions.toMessageString(e));
             log.log(Level.FINE, error::getDetailedMessage);
             return new Result(query, error);
+        } catch (TimeoutException e) {
+            return new Result(query, ErrorMessage.createTimeout(Exceptions.toMessageString(e)));
         } catch (Exception e) {
             log(request, query, e);
             return new Result(query, ErrorMessage.createUnspecifiedError("Failed: " +
