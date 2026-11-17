@@ -297,6 +297,26 @@ template <typename P> std::unique_lock<std::mutex> cache<P>::getGuard() const {
 
 template <typename P>
 template <typename... BackingStoreArgs>
+typename P::Value cache<P>::read_no_populate(const K& key, BackingStoreArgs&&... backing_store_args) {
+    V value;
+    {
+        std::lock_guard guard(_hashLock);
+        if (_probationary_segment.has_key(key)) {
+            return _probationary_segment.get_existing(key);
+        }
+        if (multi_segment() && _protected_segment.has_key(key)) {
+            return _protected_segment.get_existing(key);
+        }
+    }
+    std::lock_guard store_guard(getLock(key));
+    if (!_store.read(key, value, std::forward<BackingStoreArgs>(backing_store_args)...)) {
+        _non_existing.fetch_add(1, std::memory_order_relaxed); // Atomic since we're outside _hashLock
+    }
+    return value;
+}
+
+template <typename P>
+template <typename... BackingStoreArgs>
 typename P::Value cache<P>::read(const K& key, BackingStoreArgs&&... backing_store_args) {
     V value;
     {
@@ -385,7 +405,7 @@ template <typename P> void cache<P>::write(const K& key, V value) {
 }
 
 template <typename P> void cache<P>::updated(const K& key) {
-    V value;
+    V               value;
     std::lock_guard storeGuard(getLock(key));
     if (_store.read(key, value)) {
         std::lock_guard guard(_hashLock);

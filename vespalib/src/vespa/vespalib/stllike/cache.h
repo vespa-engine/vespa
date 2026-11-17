@@ -308,6 +308,13 @@ public:
     [[nodiscard]] V read(const K& key, BackingStoreArgs&&... backing_store_args);
 
     /**
+     * Return the cached value for key if present, without updating LRU/LFU state.
+     * Otherwise read it from the backing store without inserting it into the cache.
+     */
+    template <typename... BackingStoreArgs>
+    [[nodiscard]] V read_no_populate(const K& key, BackingStoreArgs&&... backing_store_args);
+
+    /**
      * Update the cache and write through to backing store.
      * Object is then put at head of LRU list.
      */

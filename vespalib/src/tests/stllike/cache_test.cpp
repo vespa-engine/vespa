@@ -244,6 +244,25 @@ TEST_F(CacheTest, can_forward_arguments_to_backing_store_on_cache_miss) {
     EXPECT_EQ(m._forwarded_arg, "");
 }
 
+TEST_F(CacheTest, read_no_populate_does_not_insert_or_reorder) {
+    cache<CacheParam<P, B>> cache(m, -1);
+    cache.maxElements(2);
+    cache.write(1, "foo");
+    cache.write(2, "bar");
+    m[3] = "baz";
+    // Cache miss is served from backing store, but not inserted.
+    EXPECT_EQ(cache.read_no_populate(3), "baz");
+    EXPECT_FALSE(cache.hasKey(3));
+    // Non-existing key yields empty value.
+    EXPECT_EQ(cache.read_no_populate(4), "");
+    // Cache hit does not move element to head of LRU list; 1 is still evicted first.
+    EXPECT_EQ(cache.read_no_populate(1), "foo");
+    cache.write(5, "zoid");
+    EXPECT_FALSE(cache.hasKey(1));
+    EXPECT_TRUE(cache.hasKey(2));
+    EXPECT_TRUE(cache.hasKey(5));
+}
+
 TEST_F(CacheTest, fetching_element_moves_it_to_head_of_lru_list) {
     cache<CacheParam<P, B>> cache(m, -1);
     cache.maxElements(3);
