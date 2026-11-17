@@ -212,13 +212,11 @@ void DocumentStore::remove(uint64_t syncToken, DocumentIdT lid) {
     }
 }
 
-void DocumentStore::move(uint64_t syncToken, DocumentIdT fromLid, DocumentIdT toLid, const document::Document& doc) {
+void DocumentStore::move(uint64_t syncToken, [[maybe_unused]] DocumentIdT fromLid, DocumentIdT toLid,
+                         const document::Document& doc) {
     write(syncToken, toLid, doc);
-    if (useCache() && _cache->hasKey(fromLid)) {
-        // The document is hot under fromLid, so keep it hot under toLid as well.
-        // The cached copy at fromLid is invalidated when fromLid is removed.
-        [[maybe_unused]] Value value = _cache->read(toLid);
-    }
+    // The cached copy at fromLid is invalidated when fromLid is removed.
+    // fromLid will always be freshly read, so we don't know if toLid should be hot in the cache.
 }
 
 void DocumentStore::compactBloat(uint64_t syncToken) {
