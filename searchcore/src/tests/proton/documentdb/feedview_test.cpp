@@ -439,8 +439,7 @@ struct SchemaContext {
 Schema make_schema(const DocBuilder& builder) {
     using search::index::schema::CollectionType;
     using search::index::schema::DataType;
-    auto schema =
-        SchemaBuilder(builder).add_indexes({"i1", "url"}).add_attributes({"a1", "a2", "a3", "a4"}).build();
+    auto schema = SchemaBuilder(builder).add_indexes({"i1", "url"}).add_attributes({"a1", "a2", "a3", "a4"}).build();
     // Struct field indexes for the struct field 'name' in the array of struct field 'sa', the key and value of
     // the map of string field 'sm', and the struct field 'name' in the value of the map of struct field 'pm'.
     schema.addIndexField({"sa.name", DataType::STRING, CollectionType::ARRAY});
@@ -746,9 +745,9 @@ FastAccessFeedViewFixture::~FastAccessFeedViewFixture() {
 
 // Constructs a feed view with a schema that has the given index in addition to the plain index 'i1'.
 // The struct field indexes of the fixture schema are left out, so that the given index is the only one checked.
-void make_feed_view_with_index(FixtureBase& f, const std::string& index_name,
-                               search::index::schema::CollectionType collection_type =
-                                   search::index::schema::CollectionType::SINGLE) {
+void make_feed_view_with_index(
+    FixtureBase& f, const std::string& index_name,
+    search::index::schema::CollectionType collection_type = search::index::schema::CollectionType::SINGLE) {
     auto schema = std::make_shared<Schema>(SchemaBuilder(f.sc._builder).add_indexes({"i1"}).build());
     schema->addIndexField(Schema::IndexField(index_name, search::index::schema::DataType::STRING, collection_type));
     StoreOnlyFeedView fv(StoreOnlyFeedView::Context(f.sa, std::move(schema), f._dmsc, f.sc.getRepo(),
@@ -1220,14 +1219,14 @@ TEST(FeedViewTest, update_to_non_indexed_field_does_not_update_index) {
 
 TEST(FeedViewTest, field_path_update_to_indexed_field_updates_index) {
     SearchableFeedViewFixture f;
-    auto trace = put_document_and_assign_by_field_path(f, "i1");
+    auto                      trace = put_document_and_assign_by_field_path(f, "i1");
     EXPECT_NE(std::string::npos, trace.find("put(adapter=index,serialNum=2,lid=1)")) << trace;
     EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
 }
 
 TEST(FeedViewTest, field_path_update_to_field_with_struct_field_index_updates_index) {
     SearchableFeedViewFixture f;
-    auto trace = put_document_and_assign_by_field_path(f, "sa[0].name");
+    auto                      trace = put_document_and_assign_by_field_path(f, "sa[0].name");
     EXPECT_NE(std::string::npos, trace.find("put(adapter=index,serialNum=2,lid=1)")) << trace;
     EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
 }
@@ -1236,7 +1235,7 @@ TEST(FeedViewTest, field_path_update_to_field_with_struct_field_indexes_in_map_u
     for (const auto* field_path : {"sm{foo}", "pm{foo}.name"}) {
         SCOPED_TRACE(field_path);
         SearchableFeedViewFixture f;
-        auto trace = put_document_and_assign_by_field_path(f, field_path);
+        auto                      trace = put_document_and_assign_by_field_path(f, field_path);
         EXPECT_NE(std::string::npos, trace.find("put(adapter=index,serialNum=2,lid=1)")) << trace;
         EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
     }
@@ -1244,7 +1243,7 @@ TEST(FeedViewTest, field_path_update_to_field_with_struct_field_indexes_in_map_u
 
 TEST(FeedViewTest, field_path_update_to_non_indexed_field_does_not_update_index) {
     SearchableFeedViewFixture f;
-    auto trace = put_document_and_assign_by_field_path(f, "s1");
+    auto                      trace = put_document_and_assign_by_field_path(f, "s1");
     EXPECT_EQ(std::string::npos, trace.find("put(adapter=index,serialNum=2")) << trace;
     EXPECT_EQ(2u, f.msa._store._lastSyncToken); // document store updated
 }
@@ -1266,8 +1265,8 @@ TEST(FeedViewTest, index_that_is_not_a_valid_struct_field_index_is_rejected) {
                "struct or map field";
     };
     auto not_valid = [](const std::string& index_name, const std::string& problem) {
-        return "Index '" + index_name + "' in document type 'searchdocument' is not a valid struct field index: " +
-               problem;
+        return "Index '" + index_name +
+               "' in document type 'searchdocument' is not a valid struct field index: " + problem;
     };
     // Not a complex field
     VESPA_EXPECT_EXCEPTION(make_feed_view_with_index(f, "s1.name", CollectionType::ARRAY),

@@ -13,8 +13,8 @@
 #include <vespa/document/base/fieldpath.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/update/fieldpathupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/update/fieldpathupdate.h>
 #include <vespa/searchcore/proton/attribute/ifieldupdatecallback.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
@@ -168,10 +168,11 @@ UpdateScope::UpdateScope(const vespalib::hash_set<int32_t>& indexedFields, const
     // Otherwise the updated document is only written to the document store and the index is left stale.
     for (const auto& fieldPathUpdate : upd.getFieldPathUpdates()) {
         const std::string& path = fieldPathUpdate->getOriginalFieldPath();
-        std::string_view fieldName(path.data(), std::min(path.find_first_of("[{."), path.size()));
-        const auto& docType = upd.getType();
+        std::string_view   fieldName(path.data(), std::min(path.find_first_of("[{."), path.size()));
+        const auto&        docType = upd.getType();
         if (docType.hasField(fieldName) &&
-            (_indexedFields.find(docType.getField(fieldName).getId()) != _indexedFields.end())) {
+            (_indexedFields.find(docType.getField(fieldName).getId()) != _indexedFields.end()))
+        {
             _hasIndexedFields = true;
             break;
         }
