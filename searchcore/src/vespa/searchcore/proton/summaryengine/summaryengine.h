@@ -26,7 +26,7 @@ private:
     struct DocsumMetrics : metrics::MetricSet {
         metrics::LongCountMetric     count;
         metrics::LongCountMetric     docs;
-        metrics::DoubleAverageMetric latency;
+        metrics::DoubleAverageMetric latency; // TODO Vespa 9 Remove
 
         DocsumMetrics();
         ~DocsumMetrics();
