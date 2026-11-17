@@ -11,6 +11,7 @@ import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.builder.xml.dom.DomAdminV2Builder;
 import com.yahoo.vespa.model.builder.xml.dom.DomAdminV4Builder;
@@ -97,12 +98,12 @@ public class AdminModel extends ConfigModel {
         }
 
         @Override
-        public List<AllocationRequest> collectAllocationRequests(ConfigModelContext context, Element element) {
+        public List<ClusterSpec> collectAllocationRequests(Element element, ConfigModelContext context) {
             // v2 in hosted behaves as v4, see doBuild().
             if (context.getDeployState().isHosted()) {
-                return new BuilderV4().collectAllocationRequests(context, element);
+                return new BuilderV4().collectAllocationRequests(element, context);
             }
-            return super.collectAllocationRequests(context, element);
+            return super.collectAllocationRequests(element, context);
         }
     }
 
@@ -134,7 +135,7 @@ public class AdminModel extends ConfigModel {
         }
 
         @Override
-        public List<AllocationRequest> collectAllocationRequests(ConfigModelContext context, Element element) {
+        public List<ClusterSpec> collectAllocationRequests(Element element, ConfigModelContext context) {
             var domBuilder = new DomAdminV4Builder(context,
                                                    context.getDeployState().getProperties().multitenant(),
                                                    context.getDeployState().getProperties().configServerSpecs(),

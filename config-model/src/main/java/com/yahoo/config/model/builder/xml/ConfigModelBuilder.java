@@ -11,7 +11,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.ProvisionContext;
 import com.yahoo.vespa.model.VespaModel;
 import org.w3c.dom.Element;
 
@@ -43,11 +42,11 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
     /**
      * Convenience hook called from {@link #build}. Implement this method to build a config model.
      *
-     * @param spec the XML element that this builder should handle
+     * @param element the XML element that this builder should handle
      * @param modelContext a model context that contains the application package and other data needed by the
      *                     config model constructor
      */
-    public abstract void doBuild(MODEL model, Element spec, ConfigModelContext modelContext);
+    public abstract void doBuild(MODEL model, Element element, ConfigModelContext modelContext);
 
     /**
      * Builds an instance of this component model.
@@ -55,12 +54,12 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
      *
      * @param deployState a global deployment state used for this model.
      * @param parent the root config producer this should be added to
-     * @param spec the XML element this is constructed from
+     * @param element the XML element this is constructed from
      */
     public final MODEL build(DeployState deployState, VespaModel vespaModel, ConfigModelRepo configModelRepo,
-                             TreeConfigProducer<AnyConfigProducer> parent, Element spec) {
-        ConfigModelContext context = ConfigModelContext.create(deployState, vespaModel, configModelRepo, parent, getIdString(spec));
-        return build(new DefaultModelInstanceFactory(), spec, context);
+                             TreeConfigProducer<AnyConfigProducer> parent, Element element) {
+        ConfigModelContext context = ConfigModelContext.create(deployState, vespaModel, configModelRepo, parent, getIdString(element));
+        return build(new DefaultModelInstanceFactory(), element, context);
     }
 
     /**
@@ -68,20 +67,28 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
      * This calls instantiate(...), instance.setUp(...), doBuild(instance, ...).
      *
      * @param factory A factory capable of creating models.
-     * @param spec the XML element this is constructed from
+     * @param element the XML element this is constructed from
      * @param context A context object containing various data used by builders.
      */
-    public MODEL build(ConfigModelInstanceFactory<MODEL> factory, Element spec, ConfigModelContext context) {
+    public MODEL build(ConfigModelInstanceFactory<MODEL> factory, Element element, ConfigModelContext context) {
         MODEL model = factory.createModel(context);
-        doBuild(model, spec, context);
+        doBuild(model, element, context);
         return model;
     }
 
-    /** The arguments passed to an invocation of HostProvisioner.prepare(). */
-    public record AllocationRequest(ClusterSpec clusterSpec, ProvisionContext provisionContext) { }
 
-    /** @return the exact sequence of HostProvisioner.prepare() calls expected to be invoked during build(). */
-    public List<AllocationRequest> collectAllocationRequests(ConfigModelContext context, Element spec) {
+    /**
+     * Collects the exact sequence of HostProvisioner.prepare() calls which this builder is anticipated to invoke during build().
+     *
+     * <p>HostProvisioner.prepare() has two parameters: a ClusterSpec and a ProvisionContext. The ProvisionContext
+     * is expected to be equal across all prepare invocations, and available through
+     * e.g. {@link DeployState#provisionContext() context.getDeployState().provisionContext()}.
+     * Therefore, each prepare() invocation can be represented by a single ClusterSpec.</p>
+     *
+     * @param element the XML element this is constructed from, which must match the one passed to build().
+     * @param context A context object containing various data used by builders, which must match the one passed to build().
+     */
+    public List<ClusterSpec> collectAllocationRequests(Element element, ConfigModelContext context) {
         return List.of();
     }
 

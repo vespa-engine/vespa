@@ -1421,6 +1421,7 @@
     ],
     "methods" : [
       "public com.yahoo.config.provision.HostSpec allocateHost(java.lang.String)",
+      "public void earlyPrepare(java.util.List, com.yahoo.config.provision.ProvisionContext)",
       "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.ProvisionContext)",
       "public java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionContext)"
     ],
