@@ -90,10 +90,6 @@ template <typename P> bool cache<P>::SizeConstrainedLru::try_erase_and_update_si
     return false;
 }
 
-template <typename P> const typename P::Value& cache<P>::SizeConstrainedLru::get_existing(const KeyT& key) const {
-    return Lru::get(key);
-}
-
 template <typename P> const typename P::Key* cache<P>::SizeConstrainedLru::last_key_or_nullptr() const noexcept {
     // There is no const_iterator on the LRU base class, so do an awkward const_cast instead.
     // We don't do any direct or indirect mutations, so should be fully well-defined.
@@ -106,6 +102,15 @@ template <typename P> bool cache<P>::SizeConstrainedLru::try_get_and_ref(const K
     const auto* maybe_val = Lru::find_and_ref(key);
     if (maybe_val) {
         val_out = *maybe_val;
+        return true;
+    }
+    return false;
+}
+
+template <typename P> bool cache<P>::SizeConstrainedLru::try_get_no_ref(const KeyT& key, ValueT& val_out) {
+    auto iter = Lru::find_no_ref(key);
+    if (iter != Lru::end()) {
+        val_out = *iter;
         return true;
     }
     return false;
@@ -302,15 +307,15 @@ typename P::Value cache<P>::read_no_populate(const K& key, CacheReadContext& con
     V value;
     {
         std::lock_guard guard(_hashLock);
-        if (_probationary_segment.has_key(key)) {
+        if (_probationary_segment.try_get_no_ref(key, value)) {
             context.found_in_cache = true;
             context.was_protected = false;
-            return _probationary_segment.get_existing(key);
+            return value;
         }
-        if (multi_segment() && _protected_segment.has_key(key)) {
+        if (multi_segment() && _protected_segment.try_get_no_ref(key, value)) {
             context.found_in_cache = true;
             context.was_protected = true;
-            return _protected_segment.get_existing(key);
+            return value;
         }
     }
     context.found_in_cache = false;

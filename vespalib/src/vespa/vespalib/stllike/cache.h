@@ -115,8 +115,6 @@ template <typename P> class cache {
         [[nodiscard]] bool has_key(const KeyT& key) const noexcept;
         // Precondition: key does not already exist in the mapping
         void insert_and_update_size(const KeyT& key, ValueT value);
-        // Fetches an existing key from the cache _without_ updating the LRU ordering.
-        [[nodiscard]] const typename P::Value& get_existing(const KeyT& key) const;
 
         const KeyT* last_key_or_nullptr() const noexcept;
 
@@ -144,6 +142,10 @@ template <typename P> class cache {
         // This also updates the underlying LRU order.
         // Otherwise, `val_out` is not modified and false is returned.
         [[nodiscard]] bool try_get_and_ref(const KeyT& key, ValueT& val_out);
+        // Iff element exists in cache, assigns `val_out` the stored value and returns true.
+        // This does _not_ update the underlying LRU order.
+        // Otherwise, `val_out` is not modified and false is returned.
+        [[nodiscard]] bool try_get_no_ref(const KeyT& key, ValueT& val_out);
 
         // Trims the cache segment so that after the call the following holds:
         //   size_bytes() <= capacity() && size() <= maxElements()

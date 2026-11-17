@@ -477,6 +477,47 @@ TEST_F(SlruCacheTest, update_of_existing_element_does_not_update_lru_order) {
     ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {5, 4}, {1, 3, 2}));
 }
 
+TEST_F(SlruCacheTest, read_no_populate_does_not_promote_or_reorder_segments) {
+    cache<CacheParam<P, B, zero<uint32_t>, size<std::string>>> cache(m, -1, -1);
+
+    cache.write(1, "a");
+    cache.write(2, "b");
+    cache.write(3, "c");
+    EXPECT_EQ(cache.read(1), "a"); // --> protected
+    EXPECT_EQ(cache.read(2), "b"); // --> protected
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3}, {2, 1}));
+    // Backing store must not be consulted on cache hits.
+    m[1] = "backing store should not be consulted for cached entry";
+    m[3] = "backing store should not be consulted for cached entry";
+    m[4] = "d";
+
+    CacheReadContext ctx;
+    // Hit in protected segment; stays at protected LRU tail.
+    EXPECT_EQ(cache.read_no_populate(1, ctx), "a");
+    EXPECT_TRUE(ctx.found_in_cache);
+    EXPECT_TRUE(ctx.was_protected);
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3}, {2, 1}));
+    // Hit in probationary segment; not promoted to protected.
+    EXPECT_EQ(cache.read_no_populate(3, ctx), "c");
+    EXPECT_TRUE(ctx.found_in_cache);
+    EXPECT_FALSE(ctx.was_protected);
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3}, {2, 1}));
+    // Miss; served from backing store without being inserted.
+    EXPECT_EQ(cache.read_no_populate(4, ctx), "d");
+    EXPECT_FALSE(ctx.found_in_cache);
+    EXPECT_FALSE(ctx.was_protected);
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3}, {2, 1}));
+    // Same behavior when dispatched via read() with use_no_populate set.
+    ctx.use_no_populate = true;
+    EXPECT_EQ(cache.read(1, ctx), "a");
+    EXPECT_TRUE(ctx.found_in_cache);
+    EXPECT_TRUE(ctx.was_protected);
+    EXPECT_EQ(cache.read(3, ctx), "c");
+    EXPECT_TRUE(ctx.found_in_cache);
+    EXPECT_FALSE(ctx.was_protected);
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {3}, {2, 1}));
+}
+
 TEST_F(SlruCacheTest, growing_element_via_update_trims_probationary_segment) {
     cache<CacheParam<P, B, zero<uint32_t>, size<std::string>>> cache(m, 300, 0);
 
