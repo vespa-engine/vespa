@@ -48,12 +48,12 @@ void handleProgress(TlsReplayProgress& progress, SerialNum currentSerial) {
 }
 
 class TransactionLogReplayPacketHandler : public IReplayPacketHandler {
-    IFeedView*&                                        _feed_view_ptr; // Pointer can be changed in executor thread.
-    IBucketDBHandler&                                  _bucketDBHandler;
-    IReplayConfig&                                     _replay_config;
-    FeedConfigStore&                                   _config_store;
-    IIncSerialNum&                                     _inc_serial_num;
-    CommitTimeTracker                                  _commitTimeTracker;
+    IFeedView*&       _feed_view_ptr; // Pointer can be changed in document db main executor thread.
+    IBucketDBHandler& _bucketDBHandler;
+    IReplayConfig&    _replay_config;
+    FeedConfigStore&  _config_store;
+    IIncSerialNum&    _inc_serial_num;
+    CommitTimeTracker _commitTimeTracker;
     std::shared_ptr<SharedOperationThrottler>          _throttler;
     std::unique_ptr<feedtoken::ReplayFeedTokenFactory> _replay_feed_token_factory;
 
@@ -149,7 +149,7 @@ void PacketDispatcher::handlePacket(PacketWrapper& wrap) {
 }
 
 void PacketDispatcher::handleEntry(const Packet::Entry& entry) {
-    // Called by handlePacket() in executor thread.
+    // Called by handlePacket() in document db main executor thread.
     LOG(spam, "replay packet entry: entrySerial(%" PRIu64 "), entryType(%u)", entry.serial(), entry.type());
 
     auto entry_serial_num = entry.serial();

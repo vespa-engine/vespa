@@ -198,7 +198,7 @@ IFlushTarget::Time FlushableAttribute::getLastFlushTime() const {
 }
 
 void FlushableAttribute::internal_init_flush(SerialNum currentSerial, TaskPromise task_promise) {
-    // Called by attribute field writer thread while document db executor waits
+    // Called by attribute field writer thread
     _attr->reclaim_unused_memory();
     SerialNum syncToken = std::max(currentSerial, _attr->getStatus().getLastSyncToken());
     auto      writer = _attrDir->tryGetWriter();
@@ -218,7 +218,7 @@ void FlushableAttribute::internal_init_flush(SerialNum currentSerial, TaskPromis
 
 void FlushableAttribute::init_flush(SerialNum   currentSerial, std::shared_ptr<search::IFlushToken>,
                                     TaskPromise task_promise) {
-    // Called by document db executor
+    // Called by document db main executor
     _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(_attr->getNamePrefix()),
                                   [this, currentSerial, task_promise(std::move(task_promise))]() mutable {
                                       internal_init_flush(currentSerial, std::move(task_promise));

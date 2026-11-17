@@ -57,6 +57,7 @@ IFlushTarget::SerialNum IndexFlushTarget::getFlushedSerialNum() const {
 void IndexFlushTarget::init_flush(SerialNum   serialNum, std::shared_ptr<search::IFlushToken>,
                                   TaskPromise task_promise) {
     // the target must live until this task is done (handled by flush engine).
+    // Called by document db main executor
     task_promise.set_value(_indexMaintainer.initFlush(serialNum, &_lastStats));
 }
 

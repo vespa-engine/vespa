@@ -378,10 +378,10 @@ void DocumentDB::applySubDBConfig(const DocumentDBConfig& newConfigSnapshot, Ser
 
 void DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum,
                              std::unique_ptr<DocumentDBReconfig> prepared_reconfig) {
-    // Always called by executor thread:
-    // Called by performReconfig() by executor thread during normal
+    // Always called by document db main executor thread:
+    // Called by performReconfig() by document db executor thread during normal
     // feed mode and when switching to normal feed mode after replay.
-    // Called by replayConfig() in visitor callback by executor thread
+    // Called by replayConfig() in visitor callback by document db main executor thread
     // when using config from transaction log.
     if (_state->getClosed()) {
         LOG(error, "Applying config to closed document db");
@@ -478,7 +478,7 @@ void DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum seri
 }
 
 void DocumentDB::tearDownReferences() {
-    // Called by master executor thread
+    // Called by document db main executor thread
     auto registry = _owner.getDocumentDBReferenceRegistry();
     auto activeConfig = getActiveConfig();
     auto repo = activeConfig->getDocumentTypeRepoSP();
@@ -611,7 +611,7 @@ void DocumentDB::resumeSaveConfig() {
 }
 
 void DocumentDB::onTransactionLogReplayDone() {
-    // Called by executor thread
+    // Called by document db main executor thread
     _subDBs.onReplayDone();
     if (!_owner.isInitializing()) {
         // This document db is added when system is up,
@@ -696,7 +696,7 @@ void DocumentDB::flushDone(SerialNum flushedSerial) {
 }
 
 void DocumentDB::setIndexSchema(const DocumentDBConfig& configSnapshot, SerialNum serialNum) {
-    // Called by executor thread
+    // Called by documen db main executor thread
     _subDBs.getReadySubDB()->setIndexSchema(configSnapshot.getSchemaSP(), serialNum);
 
     // TODO: Adjust tune.
@@ -801,7 +801,7 @@ StatusReport::UP DocumentDB::reportStatus() const {
 }
 
 void DocumentDB::replayConfig(search::SerialNum serialNum) {
-    // Called by executor thread during transaction log replay.
+    // Called by document db main executor thread during transaction log replay.
     DocumentDBConfig::SP configSnapshot = getActiveConfig();
     if (!configSnapshot) {
         LOG(warning, "DocumentDB(%s): Missing old config when replaying config, serialNum=%" PRIu64,
@@ -841,7 +841,7 @@ bool DocumentDB::hasDocument(const document::DocumentId& id) {
 }
 
 void DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig& config) {
-    // Called by executor thread
+    // Called by document db main executor thread
     _maintenanceController.killJobs();
     MaintenanceJobsInjector::injectJobs(
         _maintenanceController, config, _bucketExecutor,
@@ -860,7 +860,7 @@ void DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig& config
 }
 
 void DocumentDB::performStartMaintenance() {
-    // Called by executor thread
+    // Called by document db main executor thread
     // Only start once, after replay done
 
     std::shared_ptr<DocumentDBConfig> activeConfig;
@@ -885,7 +885,7 @@ void DocumentDB::stopMaintenance() {
 }
 
 void DocumentDB::forwardMaintenanceConfig() {
-    // Called by executor thread
+    // Called by document db main executor thread
     DocumentDBConfig::SP activeConfig = getActiveConfig();
     CHECK(activeConfig);
     auto maintenanceConfig(activeConfig->getMaintenanceConfigSP());
@@ -898,7 +898,7 @@ void DocumentDB::forwardMaintenanceConfig() {
 }
 
 void DocumentDB::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator>& newCalc) {
-    // Called by executor thread
+    // Called by document db main executor thread
     _calc = newCalc; // Save for maintenance job injection
     // Forward changes of cluster state to feed view
     IFeedView::SP feedView(_feedView.get());
@@ -927,7 +927,7 @@ void notifyBucketsChanged(const documentmetastore::IBucketHandler& metaStore, IB
 } // namespace
 
 void DocumentDB::notifyAllBucketsChanged() {
-    // Called by executor thread
+    // Called by document db main executor thread
     notifyBucketsChanged(_subDBs.getReadySubDB()->getDocumentMetaStoreContext().get(), _clusterStateHandler, "ready");
     notifyBucketsChanged(_subDBs.getRemSubDB()->getDocumentMetaStoreContext().get(), _clusterStateHandler, "removed");
     notifyBucketsChanged(_subDBs.getNotReadySubDB()->getDocumentMetaStoreContext().get(), _clusterStateHandler,
@@ -955,7 +955,7 @@ void DocumentDB::sync(SerialNum syncTo) {
 }
 
 SerialNum DocumentDB::getCurrentSerialNumber() const {
-    // Called by flush scheduler thread, by executor task or
+    // Called by flush scheduler thread, by document db main executor task or
     // visitor callback.
     // XXX: Contains future value during replay.
     return _feedHandler->getSerialNum();

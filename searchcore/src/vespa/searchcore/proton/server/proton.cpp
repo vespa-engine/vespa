@@ -496,7 +496,7 @@ BootstrapConfig::SP Proton::getActiveConfigSnapshot() const {
 }
 
 void Proton::applyConfig(const BootstrapConfig::SP& configSnapshot) {
-    // Called by executor thread during reconfig.
+    // Called by proton executor thread during reconfig.
     const ProtonConfig& protonConfig = configSnapshot->getProtonConfig();
     setFS4Compression(protonConfig);
     _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
