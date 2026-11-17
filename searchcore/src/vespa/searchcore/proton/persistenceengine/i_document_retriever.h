@@ -44,9 +44,11 @@ public:
     /**
      * Extracts the full document based on the LID
      */
-    virtual DocumentUP getFullDocument(search::DocumentIdT lid) const = 0;
+    virtual DocumentUP getFullDocument(search::DocumentIdT lid, bool allowCache = true) const = 0;
     /**
      * Fetches the necessary set of fields, allowing for more optimal fetch when combining only from attributes.
+     * Always reads through the summary cache: the callers (SPI get and document iteration) serve
+     * client reads, where caching is wanted, so they have no need to bypass the cache.
      */
     virtual DocumentUP getPartialDocument(search::DocumentIdT lid, const document::DocumentId& docId,
                                           const document::FieldSet& fieldSet) const;

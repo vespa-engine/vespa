@@ -64,7 +64,9 @@ MoveOperation::UP LidSpaceCompactionHandler::createMoveOperation(const search::D
     if (_subDb.lidNeedsCommit(moveFromLid)) {
         return MoveOperation::UP();
     }
-    auto doc = _subDb.retriever()->getFullDocument(moveFromLid);
+    // Bypass the summary cache: the document is about to move to another lid, so
+    // pulling it into the cache under moveFromLid would only evict genuinely hot entries.
+    auto doc = _subDb.retriever()->getFullDocument(moveFromLid, false);
     auto op = std::make_unique<MoveOperation>(document.bucketId, storage::spi::Timestamp(document.timestamp),
                                               std::move(doc), DbDocumentId(_subDb.sub_db_id(), moveFromLid),
                                               _subDb.sub_db_id());

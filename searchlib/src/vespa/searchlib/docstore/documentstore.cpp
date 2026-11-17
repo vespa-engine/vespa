@@ -154,9 +154,10 @@ void DocumentStore::visit(const LidVector& lids, const DocumentTypeRepo& repo, I
     }
 }
 
-std::unique_ptr<document::Document> DocumentStore::read(DocumentIdT lid, const DocumentTypeRepo& repo) const {
+std::unique_ptr<document::Document> DocumentStore::read(DocumentIdT lid, const DocumentTypeRepo& repo,
+                                                        bool allowCache) const {
     Value value;
-    if (useCache()) {
+    if (allowCache && useCache()) {
         value = _cache->read(lid);
         if (value.empty()) {
             return std::unique_ptr<document::Document>();
@@ -171,7 +172,10 @@ std::unique_ptr<document::Document> DocumentStore::read(DocumentIdT lid, const D
         }
     }
 
-    _uncached_lookups.fetch_add(1);
+    if (allowCache) {
+        // Only count lookups that could have been served by the cache.
+        _uncached_lookups.fetch_add(1);
+    }
     _store->read(lid, value);
     if (!value.empty()) {
         Value::Result result = value.decompressed();

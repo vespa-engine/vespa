@@ -28,7 +28,7 @@ public:
                            bool populate_docid) const override;
     bool can_populate_document_metadata_docid() const noexcept override;
     search::DocumentMetadata getDocumentMetadata(const document::DocumentId& id) const override;
-    DocumentUP getFullDocument(search::DocumentIdT lid) const override;
+    DocumentUP getFullDocument(search::DocumentIdT lid, bool allowCache = true) const override;
     DocumentUP getPartialDocument(search::DocumentIdT lid, const document::DocumentId& docId,
                                   const document::FieldSet& fieldSet) const override;
     bool need_fetch_from_doc_store(const document::FieldSet& field_set) const override;

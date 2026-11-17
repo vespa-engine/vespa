@@ -152,7 +152,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
         }
         return DocumentMetadata();
     }
-    document::Document::UP getFullDocument(DocumentIdT lid) const override {
+    document::Document::UP getFullDocument(DocumentIdT lid, bool = true) const override {
         if (lid == docid) {
             ++get_full_document_calls;
         }
@@ -258,7 +258,7 @@ struct VisitRecordingUnitDR : UnitDR {
     VisitRecordingUnitDR(VisitedLIDs& visited, const DocumentType& dt, Document::UP d, Timestamp t, Bucket b, bool r)
         : UnitDR(dt, std::move(d), t, b, r), visited_lids(visited) {}
 
-    document::Document::UP getFullDocument(DocumentIdT lid) const override {
+    document::Document::UP getFullDocument(DocumentIdT lid, bool = true) const override {
         if (lid == docid) {
             visited_lids.insert(lid);
         }
@@ -337,9 +337,9 @@ struct PairDR : DocumentRetrieverBaseForTest {
         DocumentMetadata ret = first->getDocumentMetadata(id);
         return (ret.valid()) ? ret : second->getDocumentMetadata(id);
     }
-    document::Document::UP getFullDocument(DocumentIdT lid) const override {
-        Document::UP ret = first->getFullDocument(lid);
-        return ret ? std::move(ret) : second->getFullDocument(lid);
+    document::Document::UP getFullDocument(DocumentIdT lid, bool allowCache = true) const override {
+        Document::UP ret = first->getFullDocument(lid, allowCache);
+        return ret ? std::move(ret) : second->getFullDocument(lid, allowCache);
     }
     DocumentUP getPartialDocument(DocumentIdT lid, const DocumentId& docId, const FieldSet& fieldSet) const override {
         auto doc = first->getPartialDocument(lid, docId, fieldSet);

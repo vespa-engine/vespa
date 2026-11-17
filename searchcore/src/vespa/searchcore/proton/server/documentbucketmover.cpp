@@ -34,7 +34,9 @@ MoveOperation::UP BucketMover::createMoveOperation(const MoveKey& key) {
         return {};
     }
 
-    Document::SP doc(_source->retriever()->getFullDocument(key._lid));
+    // Bypass the summary cache: the document is about to move out of this sub db, so
+    // pulling it into the cache under key._lid would only evict genuinely hot entries.
+    Document::SP doc(_source->retriever()->getFullDocument(key._lid, false));
     if (!doc || doc->getId().getGlobalId() != key._gid) {
         // Failed to retrieve document, removed or changed identity
         return {};

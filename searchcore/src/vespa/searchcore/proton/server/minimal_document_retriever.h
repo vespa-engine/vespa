@@ -28,7 +28,7 @@ public:
                              bool hasFields);
     ~MinimalDocumentRetriever() override;
 
-    document::Document::UP getFullDocument(search::DocumentIdT lid) const override;
+    document::Document::UP getFullDocument(search::DocumentIdT lid, bool allowCache = true) const override;
     bool need_fetch_from_doc_store(const document::FieldSet& field_set) const override;
     void visitDocuments(const LidVector& lids, search::IDocumentVisitor& visitor, ReadConsistency) const override;
 };

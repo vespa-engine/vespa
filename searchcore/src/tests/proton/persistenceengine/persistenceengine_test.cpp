@@ -120,7 +120,7 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
         }
         return DocumentMetadata();
     }
-    Document::UP getFullDocument(search::DocumentIdT) const override {
+    Document::UP getFullDocument(search::DocumentIdT, bool = true) const override {
         if (document != nullptr) {
             return Document::UP(document->clone());
         }

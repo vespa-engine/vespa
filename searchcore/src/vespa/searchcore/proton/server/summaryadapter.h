@@ -26,7 +26,8 @@ public:
     void move(SerialNum serialNum, const DocumentIdT prevLid, const DocumentIdT lid, const Document& doc) override;
     void heartBeat(SerialNum serialNum) override;
     const search::IDocumentStore& getDocumentStore() const override;
-    std::unique_ptr<document::Document> get(const DocumentIdT lid, const DocumentTypeRepo& repo) override;
+    std::unique_ptr<document::Document> get(const DocumentIdT lid, const DocumentTypeRepo& repo,
+                                            bool allowCache = true) override;
     void compactLidSpace(uint32_t wantedDocIdLimit) override;
 };
 

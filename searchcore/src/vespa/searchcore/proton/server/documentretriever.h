@@ -43,7 +43,7 @@ public:
                       const search::IAttributeManager& attr_manager, const search::IDocumentStore& doc_store);
     ~DocumentRetriever() override;
 
-    document::Document::UP getFullDocument(search::DocumentIdT lid) const override;
+    document::Document::UP getFullDocument(search::DocumentIdT lid, bool allowCache = true) const override;
     void visitDocuments(const LidVector& lids, search::IDocumentVisitor& visitor, ReadConsistency) const override;
     DocumentUP getPartialDocument(search::DocumentIdT lid, const document::DocumentId&,
                                   const document::FieldSet&) const override;
