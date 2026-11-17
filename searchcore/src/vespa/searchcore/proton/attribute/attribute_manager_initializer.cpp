@@ -7,15 +7,13 @@
 #include "attributes_initializer_base.h"
 
 #include <vespa/opentelemetry/span_attribute_names.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
 #include <vespa/searchcore/proton/initializer/load_memory_usage.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 
-#include <opentelemetry/trace/provider.h>
-
 #include <future>
 
-using opentelemetry::trace::Provider;
 using opentelemetry::trace::Span;
 using proton::initializer::LoadMemoryUsage;
 using search::AttributeVector;
@@ -60,8 +58,7 @@ AttributeInitializerTask::AttributeInitializerTask(AttributeInitializer::UP     
 AttributeInitializerTask::~AttributeInitializerTask() = default;
 
 void AttributeInitializerTask::run() {
-    auto provider = Provider::GetTracerProvider();
-    auto tracer = provider->GetTracer("proton");
+    auto tracer = get_tracer();
     auto span = tracer->StartSpan(
         "Load attribute",
         {{vespa_opentelemetry::span_attribute_names::document_type, _initializer->doc_type_name().getName()},
@@ -118,8 +115,7 @@ AttributeManagerInitializerTask::AttributeManagerInitializerTask(
 AttributeManagerInitializerTask::~AttributeManagerInitializerTask() = default;
 
 void AttributeManagerInitializerTask::run() {
-    auto provider = Provider::GetTracerProvider();
-    auto tracer = provider->GetTracer("proton");
+    auto tracer = get_tracer();
     auto scope = tracer->WithActiveSpan(_span);
     _span->AddEvent("Running attribute manager initializer task in document db main executor");
     _attrMgr->addExtraAttribute(_documentMetaStore);
@@ -193,8 +189,7 @@ AttributeManagerInitializer::AttributeManagerInitializer(
 AttributeManagerInitializer::~AttributeManagerInitializer() = default;
 
 void AttributeManagerInitializer::run() {
-    auto provider = Provider::GetTracerProvider();
-    auto tracer = provider->GetTracer("proton");
+    auto tracer = get_tracer();
     auto span = tracer->StartSpan(
         "Initialize attribute manager",
         {{vespa_opentelemetry::span_attribute_names::document_type, _attrMgr->doc_type_name().getName()},

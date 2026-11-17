@@ -3,16 +3,13 @@
 #include "document_subdb_initializer.h"
 
 #include "idocumentsubdb.h"
-#include "vespa/opentelemetry/opentelemetry_tracer_providers.h"
-#include "vespa/opentelemetry/span_attribute_names.h"
 
 #include <vespa/check_require.h>
+#include <vespa/opentelemetry/span_attribute_names.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
-#include <opentelemetry/trace/provider.h>
-
-using opentelemetry::trace::Provider;
 using vespalib::makeLambdaTask;
 
 namespace proton {
@@ -29,8 +26,7 @@ void DocumentSubDbInitializer::addDocumentMetaStoreInitTask(InitTask::SP documen
 }
 
 void DocumentSubDbInitializer::run() {
-    auto provider = Provider::GetTracerProvider();
-    auto tracer = provider->GetTracer("proton");
+    auto tracer = get_tracer();
     auto span = tracer->StartSpan(
         "Initialize document subdb",
         {{vespa_opentelemetry::span_attribute_names::document_type, _subDB.doc_type_name().getName()},

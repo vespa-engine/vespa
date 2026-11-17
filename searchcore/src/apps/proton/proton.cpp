@@ -7,6 +7,7 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/opentelemetry/opentelemetry_tracer_providers.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchcore/proton/server/proton.h>
 #include <vespa/searchvisitor/searchvisitor.h>
 #include <vespa/storage/storageserver/storagenode.h>
@@ -20,7 +21,6 @@
 #include <fcntl.h>
 #include <google/protobuf/message_lite.h>
 #include <grpc/grpc.h>
-#include <opentelemetry/trace/provider.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -32,6 +32,7 @@
 LOG_SETUP("proton");
 
 using SIG = vespalib::SignalHandler;
+using proton::get_tracer;
 using vespa::config::search::core::ProtonConfig;
 using vespa_opentelemetry::OpenTelemetryTracerProviders;
 
@@ -283,8 +284,8 @@ void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
     } else {
         OpenTelemetryTracerProviders::init_grpc_tracer_provider("proton-service",
                                                                 *configSnapshot->get_telemetry_config_sp());
-        auto tracer = ::opentelemetry::trace::Provider::GetTracerProvider()->GetTracer("proton-tracer");
-        auto span = tracer->StartSpan("Proton process starting");
+        auto                tracer = get_tracer();
+        auto                span = tracer->StartSpan("Proton process starting");
         const ProtonConfig& protonConfig = configSnapshot->getProtonConfig();
         std::string         basedir = protonConfig.basedir;
         std::filesystem::create_directories(std::filesystem::path(basedir));

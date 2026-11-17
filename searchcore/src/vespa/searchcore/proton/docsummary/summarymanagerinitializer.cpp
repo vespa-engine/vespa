@@ -2,16 +2,12 @@
 
 #include "summarymanagerinitializer.h"
 
-#include "vespa/opentelemetry/span_attribute_names.h"
-
+#include <vespa/opentelemetry/span_attribute_names.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
-
-#include <opentelemetry/trace/provider.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 
 #include <filesystem>
-
-using opentelemetry::trace::Provider;
 
 namespace proton {
 
@@ -40,8 +36,7 @@ SummaryManagerInitializer::SummaryManagerInitializer(
 SummaryManagerInitializer::~SummaryManagerInitializer() = default;
 
 void SummaryManagerInitializer::run() {
-    auto provider = Provider::GetTracerProvider();
-    auto tracer = provider->GetTracer("proton");
+    auto tracer = get_tracer();
     auto span = tracer->StartSpan(
         "Load document store", {{vespa_opentelemetry::span_attribute_names::document_type, _doc_type_name.getName()},
                                 {vespa_opentelemetry::span_attribute_names::subdb, _subdb_name}});

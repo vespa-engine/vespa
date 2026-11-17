@@ -3,20 +3,17 @@
 #include "documentmetastoreinitializer.h"
 
 #include "documentmetastore.h"
-#include "vespa/opentelemetry/opentelemetry_tracer_providers.h"
-#include "vespa/opentelemetry/span_attribute_names.h"
 
 #include <vespa/check_require.h>
+#include <vespa/opentelemetry/span_attribute_names.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/memory_usage_logger.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/vespalib/util/exceptions.h>
 
-#include <opentelemetry/trace/provider.h>
-
 #include <filesystem>
 
-using opentelemetry::trace::Provider;
 using proton::initializer::InitializerTask;
 using search::GrowStrategy;
 using search::IndexMetaInfo;
@@ -39,8 +36,7 @@ std::string failedMsg(const char* msg) {
 } // namespace
 
 void DocumentMetaStoreInitializer::run() {
-    auto provider = Provider::GetTracerProvider();
-    auto tracer = provider->GetTracer("proton");
+    auto tracer = get_tracer();
     auto span =
         tracer->StartSpan("Load documentmetastore",
                           {{vespa_opentelemetry::span_attribute_names::document_type, _doc_type_name.getName()},

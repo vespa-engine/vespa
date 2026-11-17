@@ -21,7 +21,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".engine.proto_rpc_adapter");
 
-using opentelemetry::trace::Provider;
 using opentelemetry::trace::Span;
 using vespa_opentelemetry::ProtoTelemetryServerCarrier;
 using vespa_opentelemetry::RpcRequestTelemetryContext;

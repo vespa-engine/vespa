@@ -2,12 +2,8 @@
 
 #include "document_subdb_collection_initializer.h"
 
-#include "vespa/opentelemetry/opentelemetry_tracer_providers.h"
-#include "vespa/opentelemetry/span_attribute_names.h"
-
-#include <opentelemetry/trace/provider.h>
-
-using opentelemetry::trace::Provider;
+#include <vespa/opentelemetry/span_attribute_names.h>
+#include <vespa/searchcore/proton/common/tracing.h>
 
 namespace proton {
 
@@ -16,8 +12,7 @@ DocumentSubDbCollectionInitializer::DocumentSubDbCollectionInitializer(const Doc
 }
 
 void DocumentSubDbCollectionInitializer::run() {
-    auto provider = Provider::GetTracerProvider();
-    auto tracer = provider->GetTracer("proton");
+    auto tracer = get_tracer();
     auto span =
         tracer->StartSpan("Initialize document subdb collection",
                           {{vespa_opentelemetry::span_attribute_names::document_type, _doc_type_name.getName()}});
